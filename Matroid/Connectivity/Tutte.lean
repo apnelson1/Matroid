@@ -5,101 +5,101 @@ import Matroid.ForMathlib.Data.Set.Subsingleton
 import Matroid.ForMathlib.Tactic.ENatToNat
 import Matroid.ForMathlib.Tactic.TautoSet
 
-lemma ENat.eq_zero_or_exists_eq_add_one (a : ℕ∞) : a = 0 ∨ ∃ b, a = b + 1 := by
+lemma ENat.eq_zero_or_exists_eq_add_one (a : ℕ∞) : a = 0 ∨ ∃ i, a = i + 1 := by
   obtain (a | a | a) := a
   · exact .inr ⟨⊤, rfl⟩
   · exact .inl rfl
   exact .inr ⟨a, rfl⟩
 
-open Set Matroid.Partition Function
+open Set Matroid.Separation Function
 
-variable {α : Type*} {M : Matroid α} {j k : ℕ∞} {d k : ℕ∞} {A X Y : Set α} {P : M.Partition}
-  {b : Bool}
+variable {α : Type*} {M : Matroid α} {j k : ℕ∞} {d k : ℕ∞} {A X Y : Set α} {P : M.Separation}
+  {i : Bool}
 
 namespace Matroid
 
 variable {dg dg' dg_l dg_r : Bool → Matroid α → Set α → Prop}
 
-namespace Partition
+namespace Separation
 
 /-! ### Abstract Separations -/
 
 /-- An abstract notion of nondegenerate separation : given a predicate on sets in `M`,
 `P.IsPredSeparation` means that neither side of `P` satisfies the degeneracy predicate. -/
-def IsPredSeparation (dg : Bool → Matroid α → Set α → Prop) (P : M.Partition) := ∀ b, ¬ dg b M (P b)
+def IsPredSeparation (dg : Bool → Matroid α → Set α → Prop) (P : M.Separation) :=
+  ∀ i, ¬ dg i M (P i)
 
-lemma isPredSeparation_iff : P.IsPredSeparation dg ↔ ∀ b, ¬ dg b M (P b) := Iff.rfl
+lemma isPredSeparation_iff : P.IsPredSeparation dg ↔ ∀ i, ¬ dg i M (P i) := Iff.rfl
 
-lemma not_isPredSeparation_iff {dg} : ¬ P.IsPredSeparation dg ↔ ∃ b, dg b M (P b) := by
+lemma not_isPredSeparation_iff {dg} : ¬ P.IsPredSeparation dg ↔ ∃ i, dg i M (P i) := by
   simp only [IsPredSeparation, Bool.forall_bool, not_and, not_not, Bool.exists_bool]
   grind
 
 lemma IsPredSeparation.dual {dg dg' : Bool → Matroid α → Set α → Prop}
-    (hdg : ∀ ⦃M X b⦄, X ⊆ M.E → dg' b M X → dg b M✶ X) (hP : P.IsPredSeparation dg) :
+    (hdg : ∀ ⦃M X i⦄, X ⊆ M.E → dg' i M X → dg i M✶ X) (hP : P.IsPredSeparation dg) :
     P.dual.IsPredSeparation dg' :=
-  fun b h ↦ hP b <| by simpa using hdg (by simp) h
+  fun i h ↦ hP i <| by simpa using hdg (by simp) h
 
-lemma IsPredSeparation.dual_compl (hdg : ∀ ⦃M X b⦄, X ⊆ M.E → dg' b M X → dg (!b) M✶ (M.E \ X))
+lemma IsPredSeparation.dual_compl (hdg : ∀ ⦃M X i⦄, X ⊆ M.E → dg' i M X → dg (!i) M✶ (M.E \ X))
     (hP : P.IsPredSeparation dg) : P.dual.IsPredSeparation dg' :=
-  fun b h ↦ hP (!b) <| by simpa using hdg (by simp) h
+  fun i h ↦ hP (!i) <| by simpa using hdg (by simp) h
 
-lemma IsPredSeparation.of_dual (hdg : ∀ ⦃M X b⦄, X ⊆ M.E → dg' b M X → dg b M✶ X)
+lemma IsPredSeparation.of_dual (hdg : ∀ ⦃M X i⦄, X ⊆ M.E → dg' i M X → dg i M✶ X)
     (hP : P.dual.IsPredSeparation dg) : P.IsPredSeparation dg' :=
   fun i h ↦ hP i <| hdg (by simp) h
 
-lemma isPredSeparation_dual_iff (hdg : ∀ ⦃M X b⦄, X ⊆ M.E → dg b M X → dg b M✶ X) :
+lemma isPredSeparation_dual_iff (hdg : ∀ ⦃M X i⦄, X ⊆ M.E → dg i M X → dg i M✶ X) :
     P.dual.IsPredSeparation dg ↔ P.IsPredSeparation dg :=
   ⟨IsPredSeparation.of_dual hdg, IsPredSeparation.dual hdg⟩
 
-lemma isPredSeparation_ofDual_iff {P : M✶.Partition}
-    (hdg : ∀ ⦃M X b⦄, X ⊆ M.E → dg b M X → dg b M✶ X) :
+lemma isPredSeparation_ofDual_iff {P : M✶.Separation}
+    (hdg : ∀ ⦃M X i⦄, X ⊆ M.E → dg i M X → dg i M✶ X) :
     P.ofDual.IsPredSeparation dg ↔ P.IsPredSeparation dg := by
   rw [← isPredSeparation_dual_iff hdg, ofDual_dual]
 
 lemma IsPredSeparation.symm (hP : P.IsPredSeparation dg) :
-    P.symm.IsPredSeparation (fun b ↦ dg !b) :=
-  fun b ↦ hP !b
+    P.symm.IsPredSeparation (fun i ↦ dg !i) :=
+  fun i ↦ hP !i
 
 lemma IsPredSeparation.of_symm (hP : P.symm.IsPredSeparation dg) :
-    P.IsPredSeparation (fun b ↦ dg !b) :=
-  fun b ↦ by simpa using hP !b
+    P.IsPredSeparation (fun i ↦ dg !i) :=
+  fun i ↦ by simpa using hP !i
 
 lemma isPredSeparation_symm_iff :
-    P.symm.IsPredSeparation dg ↔ P.IsPredSeparation (fun b ↦ dg !b) :=
+    P.symm.IsPredSeparation dg ↔ P.IsPredSeparation (fun i ↦ dg !i) :=
   ⟨IsPredSeparation.of_symm, fun h ↦ by simpa using h.symm⟩
 
-lemma IsPredSeparation.mono (h_imp : ∀ ⦃M X b⦄, X ⊆ M.E → dg' b M X → dg b M X)
+lemma IsPredSeparation.mono (h_imp : ∀ ⦃M X i⦄, X ⊆ M.E → dg' i M X → dg i M X)
     (hP : P.IsPredSeparation dg) : P.IsPredSeparation dg' :=
-  fun b h ↦ hP b <| h_imp (by simp) h
+  fun i h ↦ hP i <| h_imp (by simp) h
 
-lemma IsPredSeparation.nonempty (h : P.IsPredSeparation dg) (hdg : ∀ b, dg b M ∅) (b : Bool) :
-    (P b).Nonempty := by
+lemma IsPredSeparation.nonempty (h : P.IsPredSeparation dg) (hdg : ∀ i, dg i M ∅) (i : Bool) :
+    (P i).Nonempty := by
   rw [nonempty_iff_ne_empty]
-  refine fun he ↦ h b ?_
+  refine fun he ↦ h i ?_
   rw [he]
   apply hdg
 
-lemma IsPredSeparation.not_trivial (h : P.IsPredSeparation dg) (hdg : ∀ b, dg b M ∅) :
+lemma IsPredSeparation.not_trivial (h : P.IsPredSeparation dg) (hdg : ∀ i, dg i M ∅) :
     ¬ P.Trivial := by
-  simp_rw [Partition.Trivial, not_exists, ← nonempty_iff_ne_empty]
-  exact h.nonempty hdg
+  simp [Separation.not_trivial_iff, h.nonempty hdg]
 
 /-! ### Tutte Separations -/
 
-abbrev IsTutteSeparation (P : M.Partition) := IsPredSeparation
+abbrev IsTutteSeparation (P : M.Separation) := IsPredSeparation
     (fun _ M X ↦ M.Indep X ∧ M.Coindep X) P
 
-lemma isTutteSeparation_iff_forall : P.IsTutteSeparation ↔ ∀ b, M.Dep (P b) ∨ M.Codep (P b) := by
+lemma isTutteSeparation_iff_forall : P.IsTutteSeparation ↔ ∀ i, M.Dep (P i) ∨ M.Codep (P i) := by
   simp_rw [IsTutteSeparation, IsPredSeparation, Classical.not_and_iff_not_or_not]
   simp
 
-lemma isTutteSeparation_iff (b : Bool) :
-    P.IsTutteSeparation ↔ (M.Dep (P b) ∨ M.Codep (P b)) ∧ (M.Dep (P !b) ∨ M.Codep (P !b)) := by
-  simp_rw [isTutteSeparation_iff_forall, b.forall_bool']
+lemma isTutteSeparation_iff (i : Bool) :
+    P.IsTutteSeparation ↔ (M.Dep (P i) ∨ M.Codep (P i)) ∧ (M.Dep (P !i) ∨ M.Codep (P !i)) := by
+  simp_rw [isTutteSeparation_iff_forall, i.forall_bool']
 
-lemma isTutteSeparation_iff' (b : Bool) : P.IsTutteSeparation ↔
-    (M.Dep (P b) ∨ M.Nonspanning (P !b)) ∧ (M.Dep (P !b) ∨ M.Nonspanning (P b)) := by
-  rw [isTutteSeparation_iff b, nonspanning_not_iff, ← codep_not_iff]
+lemma isTutteSeparation_iff' (i : Bool) : P.IsTutteSeparation ↔
+    (M.Dep (P i) ∨ M.Nonspanning (P !i)) ∧ (M.Dep (P !i) ∨ M.Nonspanning (P i)) := by
+  rw [isTutteSeparation_iff i, nonspanning_not_iff, ← codep_not_iff]
 
 @[simp]
 lemma isTutteSeparation_dual_iff : P.dual.IsTutteSeparation ↔ P.IsTutteSeparation :=
@@ -108,7 +108,7 @@ lemma isTutteSeparation_dual_iff : P.dual.IsTutteSeparation ↔ P.IsTutteSeparat
 alias ⟨IsTutteSeparation.of_dual, IsTutteSeparation.dual⟩ := isTutteSeparation_dual_iff
 
 @[simp]
-lemma isTutteSeparation_ofDual_iff {P : M✶.Partition} :
+lemma isTutteSeparation_ofDual_iff {P : M✶.Separation} :
     P.ofDual.IsTutteSeparation ↔ P.IsTutteSeparation :=
   isPredSeparation_ofDual_iff <| by simp [and_comm]
 
@@ -119,79 +119,79 @@ lemma isTutteSeparation_symm_iff : P.symm.IsTutteSeparation ↔ P.IsTutteSeparat
 lemma IsTutteSeparation.symm (h : P.IsTutteSeparation) : P.symm.IsTutteSeparation :=
   IsPredSeparation.symm h
 
-lemma IsTutteSeparation.codep_of_indep (hP : P.IsTutteSeparation) (hi : M.Indep (P b)) :
-    M.Codep (P b) := by
+lemma IsTutteSeparation.codep_of_indep (hP : P.IsTutteSeparation) (hi : M.Indep (P i)) :
+    M.Codep (P i) := by
   contrapose hi
-  rw [isTutteSeparation_iff b, or_iff_left hi] at hP
+  rw [isTutteSeparation_iff i, or_iff_left hi] at hP
   exact hP.1.not_indep
 
-lemma IsTutteSeparation.nonspanning_of_indep (hP : P.IsTutteSeparation) (hi : M.Indep (P b)) :
-    M.Nonspanning (P !b) :=
+lemma IsTutteSeparation.nonspanning_of_indep (hP : P.IsTutteSeparation) (hi : M.Indep (P i)) :
+    M.Nonspanning (P !i) :=
   nonspanning_not_iff.2 (hP.codep_of_indep hi)
 
-lemma IsTutteSeparation.dep_of_spanning (hP : P.IsTutteSeparation) (hs : M.Spanning (P b)) :
-    M.Dep (P !b) := by
-  simpa using hP.dual.codep_of_indep (b := !b) (by simpa using hs.compl_coindep)
+lemma IsTutteSeparation.dep_of_spanning (hP : P.IsTutteSeparation) (hs : M.Spanning (P i)) :
+    M.Dep (P !i) := by
+  simpa using hP.dual.codep_of_indep (i := !i) (by simpa using hs.compl_coindep)
 
 lemma isTutteSeparation_iff_lt_encard (hP : P.eConn ≠ ⊤) :
-    P.IsTutteSeparation ↔ ∀ b, P.eConn < (P b).encard := by
+    P.IsTutteSeparation ↔ ∀ i, P.eConn < (P i).encard := by
   rw [isTutteSeparation_iff_forall]
-  convert Iff.rfl with b
-  simp_rw [← M.eConn_add_nullity_add_nullity_dual (P b), P.eConn_eq, add_assoc]
+  convert Iff.rfl with i
+  simp_rw [← M.eConn_add_nullity_add_nullity_dual (P i), P.eConn_eq, add_assoc]
   simp [-not_and, Classical.not_and_iff_not_or_not, hP]
 
 lemma isTutteSeparation_iff_add_one_le_encard (hP : P.eConn ≠ ⊤) :
-    P.IsTutteSeparation ↔ ∀ b, P.eConn + 1 ≤ (P b).encard := by
-  convert isTutteSeparation_iff_lt_encard hP using 2 with b
+    P.IsTutteSeparation ↔ ∀ i, P.eConn + 1 ≤ (P i).encard := by
+  convert isTutteSeparation_iff_lt_encard hP using 2 with i
   rw [ENat.add_one_le_iff hP]
 
 lemma isTutteSeparation_iff_nullity :
-    P.IsTutteSeparation ↔ ∀ b, 1 ≤ M.nullity (P b) + M✶.nullity (P b) := by
+    P.IsTutteSeparation ↔ ∀ i, 1 ≤ M.nullity (P i) + M✶.nullity (P i) := by
   simp only [ENat.one_le_iff_ne_zero, ne_eq, add_eq_zero, nullity_eq_zero,
     Classical.not_and_iff_not_or_not, dual_ground,
-    Partition.subset_ground, not_indep_iff, dep_dual_iff, isTutteSeparation_iff_forall]
+    Separation.subset_ground, not_indep_iff, dep_dual_iff, isTutteSeparation_iff_forall]
 
 lemma not_isTutteSeparation_iff_exists :
-    ¬ P.IsTutteSeparation ↔ ∃ b, M.Indep (P b) ∧ M.Coindep (P b) := by
-  simp_rw [isTutteSeparation_iff_forall, not_forall, not_or, Partition.not_dep_iff,
-    Partition.not_codep_iff]
+    ¬ P.IsTutteSeparation ↔ ∃ i, M.Indep (P i) ∧ M.Coindep (P i) := by
+  simp_rw [isTutteSeparation_iff_forall, not_forall, not_or, Separation.not_dep_iff,
+    Separation.not_codep_iff]
 
 -- lemma not_isTutteSeparation_iff' : ¬ P.IsTutteSeparation ↔
 --     (M.Indep P.left ∧ M.Spanning P.right) ∨ (M.Spanning P.left ∧ M.Indep P.right) := by
 --   rw [isTutteSeparation_iff', ← not_spanning_iff, ← not_indep_iff, ← not_spanning_iff,
 --     ← not_indep_iff]
 --   tauto
-lemma isTutteSeparation_of_encard (h : P.eConn < (P b).encard) (h' : P.eConn < (P !b).encard) :
+lemma isTutteSeparation_of_encard (h : P.eConn < (P i).encard) (h' : P.eConn < (P !i).encard) :
     P.IsTutteSeparation := by
-  rwa [isTutteSeparation_iff_lt_encard (fun hP ↦ by simp [hP] at h), b.forall_bool',
+  rwa [isTutteSeparation_iff_lt_encard (fun hP ↦ by simp [hP] at h), i.forall_bool',
     and_iff_right h]
 
-lemma IsTutteSeparation.nonempty (h : P.IsTutteSeparation) (b : Bool) : (P b).Nonempty := by
-  rw [isTutteSeparation_iff b] at h
+lemma IsTutteSeparation.nonempty (h : P.IsTutteSeparation) (i : Bool) : (P i).Nonempty := by
+  rw [isTutteSeparation_iff i] at h
   exact h.1.elim Dep.nonempty Dep.nonempty
 
-lemma IsTutteSeparation.ssubset_ground (h : P.IsTutteSeparation) (b : Bool) : P b ⊂ M.E := by
-  refine (P.subset_ground b).eq_or_ssubset.elim (fun h' ↦ ?_) id
-  have hne := P.compl_eq _ ▸ h.nonempty !b
+lemma IsTutteSeparation.ssubset_ground (h : P.IsTutteSeparation) (i : Bool) : P i ⊂ M.E := by
+  refine P.subset_ground.eq_or_ssubset.elim (fun h' ↦ ?_) id
+  have hne := P.compl_eq _ ▸ h.nonempty !i
   simp [h'] at hne
 
-lemma IsTutteSeparation.exists_of_indep (h : P.IsTutteSeparation) (hi : M.Indep (P b)) :
-    ∃ Q : M.Partition, Q.IsTutteSeparation ∧
-      Q b ⊆ P b ∧ M.IsCocircuit (Q b) ∧ Q.eConn ≤ P.eConn := by
+lemma IsTutteSeparation.exists_of_indep (h : P.IsTutteSeparation) (hi : M.Indep (P i)) :
+    ∃ Q : M.Separation, Q.IsTutteSeparation ∧
+      Q i ⊆ P i ∧ M.IsCocircuit (Q i) ∧ Q.eConn ≤ P.eConn := by
   obtain ⟨C, hCP, hC⟩ := (h.codep_of_indep hi).exists_isCocircuit_subset
-  refine ⟨M.partition C b, ?_, ?_⟩
-  · rw [isTutteSeparation_iff b, partition_apply, partition_apply_not,
+  refine ⟨M.ofSetSep C i, ?_, ?_⟩
+  · rw [isTutteSeparation_iff i, ofSetSep_apply_not, ofSetSep_apply_self,
       and_iff_right (.inr hC.codep), codep_compl_iff, ← not_spanning_iff, ← imp_iff_or_not]
     intro hCs
-    obtain rfl : C = P b := hi.eq_of_spanning_subset hCs hCP
+    obtain rfl : C = P i := hi.eq_of_spanning_subset hCs hCP
     simpa using h.dep_of_spanning hCs
-  grw [← Partition.eConn_eq _ b, partition_apply, (hi.subset hCP).eConn_eq, ← P.eConn_eq b,
+  grw [← Separation.eConn_eq _ i, ofSetSep_apply_self, (hi.subset hCP).eConn_eq, ← P.eConn_eq i,
     hi.eConn_eq]
   exact ⟨hCP, hC, M✶.eRk_mono hCP⟩
 
 
 
-end Partition
+end Separation
 
 
 
@@ -207,51 +207,51 @@ specifies what it means for a set `X` with connectivity `t` to be degenerate in 
 For instance, for `k`-Tutte-connectivity, sets of connectivity `k-1` or higher are not degenerate,
 and sets of connectivity `k-2` or less are degenerate iff they are independent and coindependent. -/
 def PredConnected (dg : Bool → ℕ∞ → Matroid α → Set α → Prop) (M : Matroid α) :=
-    ∀ P : M.Partition, ∃ b, dg b P.eConn M (P b)
+    ∀ P : M.Separation, ∃ i, dg i P.eConn M (P i)
 
 lemma not_predConnected_iff :
-    ¬ M.PredConnected dg ↔ ∃ P : M.Partition, P.IsPredSeparation (dg · P.eConn) := by
-  simp [PredConnected, Partition.IsPredSeparation]
+    ¬ M.PredConnected dg ↔ ∃ P : M.Separation, P.IsPredSeparation (dg · P.eConn) := by
+  simp [PredConnected, Separation.IsPredSeparation]
 
-lemma PredConnected.not_IsPredSeparation (h : M.PredConnected dg) (P : M.Partition) :
+lemma PredConnected.not_IsPredSeparation (h : M.PredConnected dg) (P : M.Separation) :
     ¬ P.IsPredSeparation (dg · P.eConn) := by
   contrapose! h
   rw [not_predConnected_iff]
   exact ⟨P, h⟩
 
 lemma PredConnected.mono'
-    (hdegen : ∀ ⦃k b M X⦄, X ⊆ M.E → dg b k M X → (dg' b k M X ∨ dg' (!b) k M (M.E \ X)))
+    (hdegen : ∀ ⦃k i M X⦄, X ⊆ M.E → dg i k M X → (dg' i k M X ∨ dg' (!i) k M (M.E \ X)))
     (h : M.PredConnected dg) : M.PredConnected dg' := by
   refine fun P ↦ ?_
-  obtain ⟨b, h'⟩ := h P
-  obtain h1 | h2 := hdegen (P.subset_ground _) h'
-  · exact ⟨b, h1⟩
-  exact ⟨!b, by simpa using h2⟩
+  obtain ⟨i, h'⟩ := h P
+  obtain h1 | h2 := hdegen P.subset_ground h'
+  · exact ⟨i, h1⟩
+  exact ⟨!i, by simpa using h2⟩
 
 lemma PredConnected.mono {dg : Bool → ℕ∞ → Matroid α → Set α → Prop}
-    (hdegen : ∀ ⦃b k M X⦄, X ⊆ M.E → dg b k M X → dg' b k M X)
+    (hdegen : ∀ ⦃i k M X⦄, X ⊆ M.E → dg i k M X → dg' i k M X)
     (h : M.PredConnected dg) : M.PredConnected dg' :=
   h.mono' fun _ _ _ _ hX h' ↦ .inl <| hdegen hX h'
 
-lemma PredConnected.mono_compl (hdegen : ∀ ⦃b k M X⦄, X ⊆ M.E → dg b k M X → dg' (!b) k M (M.E \ X))
+lemma PredConnected.mono_compl (hdegen : ∀ ⦃i k M X⦄, X ⊆ M.E → dg i k M X → dg' (!i) k M (M.E \ X))
     (h : M.PredConnected dg) : M.PredConnected dg' :=
   h.mono' fun _ _ _ _ hX h' ↦ .inr <| hdegen hX h'
 
-lemma PredConnected.dual' (hdegen : ∀ ⦃b k M X⦄, X ⊆ M.E → dg b k M X →
-    (dg' b k M✶ X ∨ dg' (!b) k M✶ (M.E \ X))) (h : M.PredConnected dg) :
+lemma PredConnected.dual' (hdegen : ∀ ⦃i k M X⦄, X ⊆ M.E → dg i k M X →
+    (dg' i k M✶ X ∨ dg' (!i) k M✶ (M.E \ X))) (h : M.PredConnected dg) :
     M✶.PredConnected dg' := by
   intro P
-  obtain ⟨b, hb⟩ := h.mono' (dg' := fun b k N Y ↦ dg' b k N✶ Y) (P := P.ofDual)
+  obtain ⟨i, hb⟩ := h.mono' (dg' := fun i k N Y ↦ dg' i k N✶ Y) (P := P.ofDual)
     (fun _ _ _ _ hX h ↦ hdegen hX h)
-  exact ⟨b, by simpa using hb⟩
+  exact ⟨i, by simpa using hb⟩
 
-lemma PredConnected.dual_compl (hdg : ∀ ⦃b k M X⦄, X ⊆ M.E → dg b k M X → dg' (!b) k M✶ (M.E \ X))
+lemma PredConnected.dual_compl (hdg : ∀ ⦃i k M X⦄, X ⊆ M.E → dg i k M X → dg' (!i) k M✶ (M.E \ X))
     (h : M.PredConnected dg) : M✶.PredConnected dg' :=
   h.dual' fun _ _ _ _ hX h' ↦ by simp [hdg hX h']
 
-lemma PredConnected.dual (hdegen : ∀ ⦃b k M X⦄, X ⊆ M.E → dg b k M X → dg' b k M✶ X)
+lemma PredConnected.dual (hdegen : ∀ ⦃i k M X⦄, X ⊆ M.E → dg i k M X → dg' i k M✶ X)
     (h : M.PredConnected dg) : M✶.PredConnected dg' :=
-  h.dual' fun b k N X hX h' ↦ by simp [hdegen hX h']
+  h.dual' fun i k N X hX h' ↦ by simp [hdegen hX h']
 
 /-- A slightly more concrete notion of connectivity that still abstracts Tutte, vertical and cyclic
 connectivity. `M.numConnected dg (k+1)` means that every separation of connectivity less than `k`
@@ -267,26 +267,26 @@ lemma NumConnected.mono {dg} (h : M.NumConnected dg k) (hjk : j ≤ k) : M.NumCo
 
 /-- A version with `k`-connectedness rather than `(k+1)`. Usually the latter is preferred-/
 lemma numConnected_iff_forall' {dg} : M.NumConnected dg k ↔
-    ∀ (P : M.Partition), P.eConn + 1 + 1 ≤ k → ¬ P.IsPredSeparation (fun _ ↦ dg) := by
+    ∀ (P : M.Separation), P.eConn + 1 + 1 ≤ k → ¬ P.IsPredSeparation (fun _ ↦ dg) := by
   simp only [NumConnected, PredConnected, Bool.exists_bool, IsPredSeparation, Bool.forall_bool]
   grind
 
 lemma numConnected_iff_forall {dg} : M.NumConnected dg (k+1) ↔
-    ∀ (P : M.Partition), P.eConn + 1 ≤ k → ¬ P.IsPredSeparation (fun _ ↦ dg) := by
+    ∀ (P : M.Separation), P.eConn + 1 ≤ k → ¬ P.IsPredSeparation (fun _ ↦ dg) := by
   simp [numConnected_iff_forall']
 
 lemma numConnected_iff_forall_set {dg} : M.NumConnected dg (k + 1) ↔
     ∀ ⦃X⦄, X ⊆ M.E → M.eConn X + 1 ≤ k → dg M X ∨ dg M (M.E \ X) := by
   simp only [numConnected_iff_forall, IsPredSeparation, not_forall_not]
   refine ⟨fun hP X hX hconn ↦ ?_, fun h P hP ↦ ?_⟩
-  · obtain ⟨rfl | rfl, hb⟩ := hP (M.partition X true) (by simpa)
+  · obtain ⟨rfl | rfl, hb⟩ := hP (M.ofSetSep X true) (by simpa)
     · exact .inr <| by simpa using hb
     exact .inl <| by simpa using hb
-  obtain h | h := h (P.subset_ground true) (by simpa)
+  obtain h | h := h P.subset_ground (by simpa)
   · exact ⟨true, h⟩
   exact ⟨false, by simpa using h⟩
 
-lemma numConnected_top_iff {dg} : M.NumConnected dg ⊤ ↔ ∀ (P : M.Partition),
+lemma numConnected_top_iff {dg} : M.NumConnected dg ⊤ ↔ ∀ (P : M.Separation),
     ¬ P.IsPredSeparation (fun _ ↦ dg) := by
   simp [numConnected_iff_forall']
 
@@ -301,21 +301,21 @@ lemma NumConnected.not_isPredSeparation {dg} (h : M.NumConnected dg (k+1)) (hP :
   exact h P hP
 
 -- lemma exists_of_not_numConnected {dg} (h : ¬ M.NumConnected dg (k+1)) :
---     ∃ (P : M.Partition), P.eConn + 1 ≤ k ∧ P.IsPredSeparation (fun _ ↦ dg) := by
+--     ∃ (P : M.Separation), P.eConn + 1 ≤ k ∧ P.IsPredSeparation (fun _ ↦ dg) := by
 
   -- simpa [numConnected_iff_forall] using h
 
 -- lemma exists_right_le_of_not_numConnected {β : Type*} [LinearOrder β] {dg}
 --     (h : ¬ M.NumConnected dg (k+1)) (f : Set α → β) :
---     ∃ (P : M.Partition), P.eConn + 1 ≤ k ∧ P.IsPredSeparation dg ∧ f P.right ≤ f P.left := by
+--     ∃ (P : M.Separation), P.eConn + 1 ≤ k ∧ P.IsPredSeparation dg ∧ f P.right ≤ f P.left := by
 --   obtain ⟨P, hPle, hP, hPf⟩ := exists_left_le_of_not_numConnected h f
 --   exact ⟨P.symm, by simpa, hP.symm, by simpa⟩
 
 lemma not_numConnected_iff_exists {dg} : ¬ M.NumConnected dg (k+1) ↔
-    ∃ (P : M.Partition), P.eConn + 1 ≤ k ∧ P.IsPredSeparation (fun _ ↦ dg) := by
+    ∃ (P : M.Separation), P.eConn + 1 ≤ k ∧ P.IsPredSeparation (fun _ ↦ dg) := by
   simp [numConnected_iff_forall]
 
-lemma Partition.IsPredSeparation.not_numConnected {dg} (h : P.IsPredSeparation (fun _ ↦ dg)) :
+lemma Separation.IsPredSeparation.not_numConnected {dg} (h : P.IsPredSeparation (fun _ ↦ dg)) :
     ¬ M.NumConnected dg (P.eConn + 1 + 1) :=
   fun hM ↦ hM.not_isPredSeparation rfl.le h
 
@@ -337,8 +337,8 @@ lemma NumConnected.mono_degen {dg dg'} (h : M.NumConnected dg k)
   obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
   simp_rw [numConnected_iff_forall, not_isPredSeparation_iff] at h ⊢
   rintro P hPconn
-  obtain ⟨b, hb⟩ := h P hPconn
-  exact ⟨b, hdg (P.subset_ground _) hb⟩
+  obtain ⟨i, hb⟩ := h P hPconn
+  exact ⟨i, hdg P.subset_ground hb⟩
 
 lemma NumConnected.congr_degen {dg dg'} (hdg : ∀ ⦃X⦄, X ⊆ M.E → (dg M X ↔ dg' M X)) :
     M.NumConnected dg = M.NumConnected dg' := by
@@ -359,9 +359,8 @@ lemma numConnected_of_subsingleton {dg} (h : M.E.Subsingleton) (k : ℕ∞) (hdg
   obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
   rw [numConnected_iff_forall]
   refine fun P hPconn hP ↦ ?_
-  obtain ⟨b, hb⟩ := P.trivial_of_ground_subsingleton h
-  exact hP b <| by rwa [hb]
-
+  obtain ⟨i, hi⟩ := (P.trivial_of_ground_subsingleton h).exists_eq_empty
+  exact hP i <| by rwa [hi]
 
 /-! ### Tutte Connectivity -/
 
@@ -375,15 +374,15 @@ def TutteConnected (M : Matroid α) (k : ℕ∞) := M.NumConnected (fun M X ↦ 
 
 
 lemma not_tutteConnected_iff_exists : ¬ M.TutteConnected (k + 1) ↔
-    ∃ P : M.Partition, P.eConn + 1 ≤ k ∧ P.IsTutteSeparation :=
+    ∃ P : M.Separation, P.eConn + 1 ≤ k ∧ P.IsTutteSeparation :=
   not_numConnected_iff_exists
 
 lemma tutteConnected_iff_forall : M.TutteConnected (k + 1) ↔
-    ∀ (P : M.Partition), P.eConn + 1 ≤ k → ¬ P.IsTutteSeparation :=
+    ∀ (P : M.Separation), P.eConn + 1 ≤ k → ¬ P.IsTutteSeparation :=
   numConnected_iff_forall
 
 lemma tutteConnected_top_iff_forall : M.TutteConnected ⊤ ↔
-    ∀ (P : M.Partition), ¬ P.IsTutteSeparation :=
+    ∀ (P : M.Separation), ¬ P.IsTutteSeparation :=
   numConnected_top_iff ..
 
 lemma TutteConnected.dual (h : M.TutteConnected k) : M✶.TutteConnected k :=
@@ -417,7 +416,7 @@ lemma tutteConnected_dual_iff : M✶.TutteConnected = M.TutteConnected := by
   ext k
   exact ⟨TutteConnected.of_dual, TutteConnected.dual⟩
 
-lemma Partition.IsTutteSeparation.not_tutteConnected (hP : P.IsTutteSeparation) :
+lemma Separation.IsTutteSeparation.not_tutteConnected (hP : P.IsTutteSeparation) :
     ¬ M.TutteConnected (P.eConn + 1 + 1) := by
   rw [not_tutteConnected_iff_exists]
   exact ⟨P, rfl.le, hP⟩
@@ -435,8 +434,8 @@ lemma tutteConnected_iff_numConnected_encard (hk : k ≠ ⊤) :
   obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
   simp only [tutteConnected_iff_forall, numConnected_iff_forall,
     isPredSeparation_iff, not_forall_not]
-  convert Iff.rfl with P hP b
-  rw [← M.eConn_add_nullity_add_nullity_dual (P b)]
+  convert Iff.rfl with P hP i
+  rw [← M.eConn_add_nullity_add_nullity_dual (P i)]
   simp [add_assoc, show P.eConn ≠ ⊤ by enat_to_nat!]
 
 
@@ -448,7 +447,7 @@ lemma uniqueBaseOn_tutteConnected_iff {B E : Set α} :
   obtain (rfl | ⟨k,rfl⟩) := k.eq_zero_or_exists_eq_add_one; simp
   refine iff_of_false (fun ht ↦ ?_) (by simp [hE.not_subsingleton])
   obtain ⟨e, he⟩ := hE.nonempty
-  refine ht.not_isTutteSeparation (P := Matroid.partition _ {e} true) (by simp) ?_
+  refine ht.not_isTutteSeparation (P := Matroid.ofSetSep _ {e} true) (by simp) ?_
   rw [isTutteSeparation_iff_add_one_le_encard (by simp)]
   simp [hE.diff_singleton_nonempty e]
 
@@ -493,13 +492,13 @@ lemma TutteConnected.le_girth (h : M.TutteConnected (k + 1)) (hlt : 2 * k ≤ M.
     k + 1 ≤ M.girth := by
   rw [← not_lt, girth_lt_iff, not_exists]
   rintro C ⟨hC, hCcard⟩
-  have hlt' : (M.partition C true).eConn + 1 < k + 1 := by
-    grw [eConn_partition, eConn_le_eRk, hC.eRk_add_one_eq]
+  have hlt' : (M.ofSetSep C true).eConn + 1 < k + 1 := by
+    grw [eConn_ofSetSep, eConn_le_eRk, hC.eRk_add_one_eq]
     assumption
-  refine h.not_isTutteSeparation (P := M.partition C true)
+  refine h.not_isTutteSeparation (P := M.ofSetSep C true)
     (by simpa using Order.le_of_lt_add_one hlt') ?_
   grw [isTutteSeparation_iff_add_one_le_encard (fun h ↦ by simp [h] at hlt'),
-    Bool.forall_bool, eConn_partition, partition_true_false, partition_apply, eConn_le_eRk,
+    Bool.forall_bool, eConn_ofSetSep, ofSetSep_true_false, ofSetSep_apply_self, eConn_le_eRk,
     hC.eRk_add_one_eq, and_iff_left rfl.le, Order.le_of_lt_add_one hCcard]
   rw [← encard_diff_add_encard_of_subset hC.subset_ground] at hlt
   enat_to_nat! <;> cutsat
@@ -517,7 +516,7 @@ lemma TutteConnected.isUniform_of_encard_le (h : M.TutteConnected (k + 1))
     enat_to_nat!
     omega
   have hXconn : M.eConn X + 1 ≤ k := by grw [eConn_le_eRk, hnot.1.eRk_add_one_le_encard, hXcard]
-  refine h.not_isTutteSeparation (P := M.partition X true) (by simpa) ?_
+  refine h.not_isTutteSeparation (P := M.ofSetSep X true) (by simpa) ?_
   simp [isTutteSeparation_iff' true, hnot.1, hnot.2]
 
 -- lemma TutteConnected.contract {C : Set α} (h : M.TutteConnected (k + M.eRk C + 1))

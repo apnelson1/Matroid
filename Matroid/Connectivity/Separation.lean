@@ -5,359 +5,289 @@ import Matroid.Connectivity.Minor
 import Matroid.ForMathlib.Finset
 import Matroid.ForMathlib.Matroid.Sum
 import Matroid.ForMathlib.Data.Set.Subsingleton
+import Matroid.ForMathlib.Set
+import Matroid.ForMathlib.Data.Set.IndexedPartition
 -- import Matroid.ForMathlib.Data.Set.IndexedPartitiom
 
 open Set Function
 
-lemma pairwise_on_bool' {α : Type*} {r : α → α → Prop} {f : Bool → α} (b : Bool) :
-    Pairwise (r on f) ↔ r (f b) (f !b) ∧ r (f !b) (f b) := by
-  simp_rw [Pairwise, b.forall_bool']
+lemma pairwise_on_bool' {α : Type*} {r : α → α → Prop} {f : Bool → α} (i : Bool) :
+    Pairwise (r on f) ↔ r (f i) (f !i) ∧ r (f !i) (f i) := by
+  simp_rw [Pairwise, i.forall_bool']
   simp
 
-lemma pairwise_disjoint_on_bool' {α : Type*} {f : Bool → Set α} (b : Bool) :
-    Pairwise (Disjoint on f) ↔ Disjoint (f b) (f !b) := by
+lemma pairwise_disjoint_on_bool' {α : Type*} {f : Bool → Set α} (i : Bool) :
+    Pairwise (Disjoint on f) ↔ Disjoint (f i) (f !i) := by
   rw [_root_.pairwise_on_bool', disjoint_comm, and_self]
 
-lemma iUnion_bool' {α : Type*} (f : Bool → Set α) (b : Bool) : ⋃ i, f i = f b ∪ f !b := by
-  cases b <;> simp [iUnion_bool, union_comm]
-
-abbrev left : Bool := true
-abbrev right : Bool := false
-
-@[simp]
-lemma not_left : (!left) = right := rfl
-
-@[simp]
-lemma not_right : (!right) = left := rfl
-
-def Bool.recLeftRight {motive : Bool → Sort*} (left : motive left) (right : motive right)
-    (b : Bool) :
-    motive b := match b with
-  | false => right
-  | true => left
+lemma iUnion_bool' {α : Type*} (f : Bool → Set α) (i : Bool) : ⋃ i, f i = f i ∪ f !i := by
+  cases i <;> simp [iUnion_bool, union_comm]
 
 namespace Matroid
 
 section separation
 
-variable {α : Type*} {M N : Matroid α} {j k : ℕ∞} {e f : α} {A B X X' Y Y' : Set α} {b : Bool}
+variable {α : Type*} {M N : Matroid α} {j k : ℕ∞} {e f : α} {A B X X' Y Y' : Set α} {i : Bool}
 
-/-- A partition of the ground set of a matroid into two parts.
-Used for reasoning about connectivity. -/
-protected structure Partition' (M : Matroid α) where
-  left : Set α
-  right : Set α
-  disjoint : Disjoint left right
-  union_eq : left ∪ right = M.E
+/-- A bipartition of the ground set of a matroid,
+implicitly including the data of the actual matroid. -/
+protected def Separation (M : Matroid α) := M.E.Bipartition
 
-protected structure Partition (M : Matroid α) where
-  toFun : Bool → Set α
-  pairwise_disjoint' : Pairwise (Disjoint on toFun)
-  iUnion_eq' : ⋃ i, toFun i = M.E
+instance : FunLike M.Separation Bool (Set α) where
+  coe P i := IndexedPartition.toFun P i
+  coe_injective' P Q := by simp
 
-instance : FunLike M.Partition Bool (Set α) where
-  coe := Partition.toFun
-  coe_injective' := by rintro ⟨f,h⟩ ⟨f', h'⟩; simp
+-- protected def Separation.mk ()
 
-variable {P : M.Partition}
+variable {P : M.Separation}
 
-namespace Partition
+namespace Separation
+
+protected def toBipartition (P : M.Separation) : M.E.Bipartition := P
+@[simp, simp↓]
+protected lemma toBipartition_apply (P : M.Separation) (i : Bool) : P.toBipartition i = P i := rfl
 
 @[simp]
-protected lemma toFun_eq_coe (P : M.Partition) : P.toFun = P := rfl
+protected lemma toFun_eq_coe (P : M.Separation) : P.toFun = P := rfl
 
-@[simp]
-protected lemma mk_apply (f : Bool → Set α) (dj) (hu : ⋃ i, f i = M.E) (b : Bool) :
-    Partition.mk f dj hu b = f b := rfl
+-- @[simp]
+-- protected lemma mk_apply (f : Bool → Set α) (dj) (hu : ⋃ i, f i = M.E) (i : Bool) :
+--     Separation.mk f dj hu i = f i := rfl
 
-protected lemma pairwise_disjoint (P : M.Partition) : Pairwise (Disjoint on P) :=
+protected lemma pairwise_disjoint (P : M.Separation) : Pairwise (Disjoint on P) :=
   P.pairwise_disjoint'
 
-protected lemma iUnion_eq (P : M.Partition) : ⋃ i, P i = M.E :=
+protected lemma iUnion_eq (P : M.Separation) : ⋃ i, P i = M.E :=
   P.iUnion_eq'
 
-@[simp]
-protected lemma union_eq' : P false ∪ P true = M.E := by
-  simp [← P.iUnion_eq, union_comm]
+@[simp] protected lemma union_eq : P true ∪ P false = M.E := Bipartition.union_eq
+@[simp] protected lemma union_eq' : P false ∪ P true = M.E := Bipartition.union_eq'
+@[simp] protected lemma union_bool_eq (i : Bool) : P i ∪ P (!i) = M.E :=
+  Bipartition.union_bool_eq i
+@[simp] protected lemma union_bool_eq' (i : Bool) : P (!i) ∪ P i = M.E :=
+  Bipartition.union_bool_eq' i
+@[simp] protected lemma disjoint_true_false : Disjoint (P true) (P false) :=
+  Bipartition.disjoint_true_false
+@[simp] protected lemma disjoint_false_true : Disjoint (P false) (P true) :=
+  Bipartition.disjoint_false_true
+@[simp] protected lemma disjoint_bool (i : Bool) : Disjoint (P i) (P (!i)) :=
+  Bipartition.disjoint_bool i
+@[simp] protected lemma compl_eq (P : M.Separation) (i : Bool) : M.E \ (P i) = P (!i) :=
+  Bipartition.compl_eq P i
+@[simp] protected lemma compl_not_eq (P : M.Separation) (i : Bool) : M.E \ (P (!i)) = P i :=
+  Bipartition.compl_not_eq P i
+@[simp] lemma compl_dual_eq (P : M✶.Separation) (i : Bool) : M.E \ P i = P !i :=
+  Bipartition.compl_eq P i
+@[simp] lemma compl_dual_not_eq (P : M✶.Separation) (i : Bool) : M.E \ P (!i) = P i :=
+  Bipartition.compl_not_eq P i
 
-@[simp]
-protected lemma union_eq : P true ∪ P false = M.E := by
-  simp [← P.iUnion_eq]
+protected def mk (f : Bool → Set α) (dj : Pairwise (Disjoint on f)) (iUnion_eq : ⋃ i, f i = M.E) :
+    M.Separation :=
+  IndexedPartition.mk f dj iUnion_eq
 
-@[simp]
-protected lemma union_bool_eq (b : Bool) : P b ∪ P (!b) = M.E := by
-  cases b <;> simp
-
-@[simp]
-protected lemma union_bool_eq' (b : Bool) : P (!b) ∪ P b = M.E := by
-  cases b <;> simp
-
-@[simp]
-protected lemma disjoint : Disjoint (P true) (P false) := by
-  rw [← pairwise_disjoint_on_bool]
-  convert P.pairwise_disjoint with b
-  cases b <;> rfl
-
-@[simp]
-protected lemma disjoint' : Disjoint (P false) (P true) :=
-  P.disjoint.symm
-
-@[simp]
-protected lemma disjoint_bool (b : Bool) : Disjoint (P b) (P (!b)) := by
-  cases b
-  · exact P.disjoint.symm
-  exact P.disjoint
-
-@[simp]
-protected lemma compl_eq (P : M.Partition) (b : Bool) : M.E \ (P b) = P (!b) := by
-  rw [← P.union_bool_eq b, union_diff_cancel_left (P.disjoint_bool b).inter_eq.subset]
-
-protected lemma compl_not_eq (P : M.Partition) (b : Bool) : M.E \ (P (!b)) = P b := by
-  rw [P.compl_eq, Bool.not_not]
-
-@[simp]
-lemma compl_dual_eq (P : M✶.Partition) (b : Bool) : M.E \ P b = P !b := by
-  rw [← dual_ground, P.compl_eq]
-
-lemma compl_dual_not_eq (P : M✶.Partition) (b : Bool) : M.E \ P (!b) = P b := by
-  rw [← dual_ground, P.compl_eq, b.not_not]
+@[simp, simp↓]
+lemma mk_apply (f : Bool → Set α) (dj) (iUnion_eq : ⋃ i, f i = M.E) (i : Bool) :
+    Separation.mk f dj iUnion_eq i = f i := rfl
 
 protected def mk' (A B : Set α) (disjoint : Disjoint A B) (union_eq : A ∪ B = M.E) :
-    M.Partition where
-  toFun b := bif b then A else B
+    M.Separation where
+  toFun i := bif i then A else B
   pairwise_disjoint' := by rwa [pairwise_disjoint_on_bool]
   iUnion_eq' := by simpa
 
 @[simp]
-protected lemma mk'_left {A B : Set α} {hdj} {hu : A ∪ B = M.E} :
-    Partition.mk' A B hdj hu left = A := rfl
+protected lemma mk'_true {A B : Set α} {hdj} {hu : A ∪ B = M.E} :
+    Separation.mk' A B hdj hu true = A := rfl
 
 @[simp]
-protected lemma mk'_right {A B : Set α} {hdj} {hu : A ∪ B = M.E} :
-    Partition.mk' A B hdj hu right = B := rfl
+protected lemma mk'_false {A B : Set α} {hdj} {hu : A ∪ B = M.E} :
+    Separation.mk' A B hdj hu false = B := rfl
 
-protected lemma ext_bool {P P' : M.Partition} (h : P b = P' b) : P = P' := by
-  have h' (i) : P i = P' i := by
-    obtain rfl | rfl := b.eq_or_eq_not i
-    · assumption
-    rw [← P.compl_not_eq, h, P'.compl_not_eq]
-  cases P; cases P'; simpa [funext_iff] using h'
+protected lemma ext_bool {P P' : M.Separation} (i : Bool) (h : P i = P' i) : P = P' :=
+  Bipartition.ext_bool i h
 
-protected lemma ext {P P' : M.Partition} (h_left : P true = P' true) : P = P' :=
-  P.ext_bool h_left
+protected lemma ext {P P' : M.Separation} (h : P true = P' true) : P = P' := P.ext_bool _ h
 
-protected lemma ext_iff {P P' : M.Partition} (b : Bool) : P = P' ↔ P b = P' b :=
-  ⟨fun h ↦ by simp [h], fun h ↦ P.ext_bool h⟩
+protected lemma ext_iff_bool {P P' : M.Separation} (i : Bool) : P = P' ↔ P i = P' i :=
+  ⟨fun h ↦ by simp [h], fun h ↦ P.ext_bool i h⟩
 
-@[simps]
-protected def symm (P : M.Partition) : M.Partition where
-  toFun b := P.toFun !b
-  pairwise_disjoint' := P.pairwise_disjoint.comp_of_injective <| by trivial
-  iUnion_eq' := by
-    rw [← P.iUnion_eq]
-    simp [union_comm]
+protected def symm (P : M.Separation) : M.Separation := Bipartition.symm P
+protected lemma symm_true (P : M.Separation) : P.symm true = P false := rfl
+protected lemma symm_false (P : M.Separation) : P.symm false = P true := rfl
+@[simp] protected lemma symm_apply (P : M.Separation) (i : Bool) : P.symm i = P !i := rfl
+@[simp] protected lemma symm_symm (P : M.Separation) : P.symm.symm = P := Separation.ext rfl
 
-protected lemma symm_left (P : M.Partition) : P.symm left = P false := rfl
+@[simp] protected lemma compl_true (P : M.Separation) : M.E \ (P true) = P false :=
+  Bipartition.compl_true P
 
-protected lemma symm_right (P : M.Partition) : P.symm right = P true := rfl
-
-@[simp]
-protected lemma symm_apply (P : M.Partition) (b : Bool) : P.symm b = P !b := rfl
-
-@[simp]
-protected lemma symm_symm (P : M.Partition) : P.symm.symm = P := Partition.ext rfl
-
-protected lemma compl_true (P : M.Partition) : M.E \ (P true) = P false := by
-  rw [← P.union_eq, union_diff_left, sdiff_eq_left]
-  exact P.symm.disjoint
-
-@[simp]
-protected lemma compl_false (P : M.Partition) : M.E \ (P false) = P true := by
-  rw [← P.symm_right, ← P.symm.compl_true, P.symm_left]
+@[simp] protected lemma compl_false (P : M.Separation) : M.E \ (P false) = P true :=
+  Bipartition.compl_false P
 
 @[simp, aesop unsafe 10% (rule_sets := [Matroid])]
-protected lemma subset_ground (P : M.Partition) (b : Bool) : P b ⊆ M.E := by
-  rw [← P.iUnion_eq]
-  exact subset_iUnion ..
+protected lemma subset_ground (P : M.Separation) : P i ⊆ M.E := P.subset
 
 /-- Transfer a partition across a matroid equality. -/
-protected def copy {M' : Matroid α} (P : M.Partition) (h_eq : M = M') : M'.Partition where
+protected def copy {M' : Matroid α} (P : M.Separation) (h_eq : M = M') : M'.Separation where
   toFun := P.toFun
   pairwise_disjoint' := P.pairwise_disjoint
   iUnion_eq' := h_eq ▸ P.iUnion_eq
 
 @[simp]
-lemma copy_apply (P : M.Partition) (h_eq : M = N) (b : Bool) : P.copy h_eq b = P b := rfl
+lemma copy_apply (P : M.Separation) (h_eq : M = N) (i : Bool) : P.copy h_eq i = P i := rfl
 
 /-- A version of `copy` where the ground sets are equal, but the matroids need not be.
 `copy` is preferred where possible, so that lemmas depending on matroid structure
 like `eConn_copy` can be `@[simp]`. -/
-@[simps] protected def copy' {M' : Matroid α} (P : M.Partition) (h_eq : M.E = M'.E) :
-    M'.Partition where
-  toFun := P.toFun
-  pairwise_disjoint' := P.pairwise_disjoint
-  iUnion_eq' := h_eq ▸ P.iUnion_eq
+protected def copy' {M' : Matroid α} (P : M.Separation) (h_eq : M.E = M'.E) :=
+  Bipartition.copy P h_eq
 
 @[simp]
-lemma copy'_apply (P : M.Partition) (h_eq : M.E = N.E) (b : Bool) : P.copy' h_eq b = P b := rfl
+lemma copy'_apply (P : M.Separation) (h_eq : M.E = N.E) (i : Bool) : P.copy' h_eq i = P i := rfl
 
-protected def dual (P : M.Partition) : M✶.Partition := P.copy' rfl
+protected def dual (P : M.Separation) : M✶.Separation := P.copy' rfl
 
-protected def ofDual (P : M✶.Partition) : M.Partition := P.copy' rfl
-
-@[simp]
-protected lemma dual_apply (P : M.Partition) (b : Bool) : P.dual b = P b := rfl
+protected def ofDual (P : M✶.Separation) : M.Separation := P.copy' rfl
 
 @[simp]
-protected lemma ofDual_apply (P : M✶.Partition) (b : Bool) : P.ofDual b = P b := rfl
+protected lemma dual_apply (P : M.Separation) (i : Bool) : P.dual i = P i := rfl
 
-@[simp] lemma dual_ofDual (P : M.Partition) : P.dual.ofDual = P := rfl
+@[simp]
+protected lemma ofDual_apply (P : M✶.Separation) (i : Bool) : P.ofDual i = P i := rfl
 
-@[simp] lemma ofDual_dual (P : M✶.Partition) : P.ofDual.dual = P := rfl
+@[simp] lemma dual_ofDual (P : M.Separation) : P.dual.ofDual = P := rfl
 
-attribute [simp] Partition.disjoint Partition.union_eq
+@[simp] lemma ofDual_dual (P : M✶.Separation) : P.ofDual.dual = P := rfl
 
-@[simps] def dualEquiv (M : Matroid α) : M.Partition ≃ M✶.Partition where
-  toFun := Partition.dual
-  invFun := Partition.ofDual
+@[simps] def dualEquiv (M : Matroid α) : M.Separation ≃ M✶.Separation where
+  toFun := Separation.dual
+  invFun := Separation.ofDual
   left_inv P := by simp
   right_inv P := by simp
 
 /-- A partition is trivial if one side is empty. -/
-protected def Trivial (P : M.Partition) : Prop := ∃ b, P b = ∅
+protected def Trivial (P : M.Separation) : Prop := Bipartition.Trivial P
 
-lemma trivial_of_eq_empty (h : P b = ∅) : P.Trivial := ⟨_, h⟩
+protected lemma trivial_of_eq_empty (h : P i = ∅) : P.Trivial := Bipartition.trivial_of_eq_empty h
+protected lemma trivial_of_eq_ground (h : P i = M.E) : P.Trivial := Bipartition.trivial_of_eq h
+protected lemma trivial_def : P.Trivial ↔ P true = ∅ ∨ P false = ∅ := Bipartition.trivial_def
+protected lemma not_trivial_iff : ¬ P.Trivial ↔ ∀ i, (P i).Nonempty := Bipartition.not_trivial_iff
+protected lemma trivial_def' : P.Trivial ↔ P true = M.E ∨ P false = M.E := Bipartition.trivial_def'
+lemma Trivial.exists_eq_ground (h : P.Trivial) : ∃ i, P i = M.E := Bipartition.Trivial.exists_eq h
 
-lemma trivial_of_eq_ground (h : P b = M.E) : P.Trivial := ⟨!b, by rw [← P.compl_eq, h, diff_self]⟩
+lemma trivial_of_ground_subsingleton (P : M.Separation) (h : M.E.Subsingleton) : P.Trivial :=
+  Bipartition.trivial_of_subsingleton P h
 
-protected lemma trivial_def : P.Trivial ↔ P true = ∅ ∨ P false = ∅ := by
-  simp [Partition.Trivial, or_comm]
-
-lemma not_trivial_iff : ¬ P.Trivial ↔ ∀ b, (P b).Nonempty := by
-  simp [nonempty_iff_ne_empty, P.trivial_def, and_comm]
-
-protected lemma trivial_def' : P.Trivial ↔ P true = M.E ∨ P false = M.E := by
-  rw [or_comm, ← Bool.exists_bool (p := fun i ↦ P i = M.E)]
-  exact ⟨fun ⟨b, hb⟩ ↦ ⟨!b, by rw [← P.compl_eq, hb, diff_empty]⟩,
-    fun ⟨b, hb⟩ ↦ trivial_of_eq_ground hb⟩
-
-lemma Trivial.exists_eq_ground (h : P.Trivial) : ∃ b, P b = M.E := by
-  obtain ⟨b, hb⟩ := h
-  refine ⟨!b, by rw [← P.compl_eq, hb, diff_empty]⟩
-
-lemma trivial_of_ground_subsingleton (P : M.Partition) (h : M.E.Subsingleton) : P.Trivial :=
-  (h.eq_or_eq_of_subset (P.subset_ground left)).elim trivial_of_eq_empty trivial_of_eq_ground
-
-noncomputable abbrev eConn (P : M.Partition) : ℕ∞ := M.eLocalConn (P true) (P false)
+/-- The connectivity of a separation of `M`. -/
+noncomputable abbrev eConn (P : M.Separation) : ℕ∞ := M.eLocalConn (P true) (P false)
 
 @[simp]
-lemma eConn_symm (P : M.Partition) : P.symm.eConn = P.eConn :=
+lemma eConn_symm (P : M.Separation) : P.symm.eConn = P.eConn :=
   M.eLocalConn_comm ..
 
 @[simp]
-lemma eConn_copy {M' : Matroid α} (P : M.Partition) (h_eq : M = M') :
+lemma eConn_copy {M' : Matroid α} (P : M.Separation) (h_eq : M = M') :
     (P.copy h_eq).eConn = P.eConn := by
   simp [eConn, h_eq]
 
 @[simp]
-lemma eConn_eq (P : M.Partition) (b : Bool) : M.eConn (P b) = P.eConn := by
-  rw [Partition.eConn, eConn_eq_eLocalConn]
-  simp only [Partition.compl_eq]
-  cases b with
-  | false => exact eLocalConn_comm ..
-  | true => rfl
+lemma eConn_eq (P : M.Separation) (i : Bool) : M.eConn (P i) = P.eConn := by
+  rw [Separation.eConn, eConn_eq_eLocalConn, Separation.compl_eq]
+  cases i
+  <;> simp [eLocalConn_comm]
 
-lemma eConn_eq_eLocalConn (P : M.Partition) : P.eConn = M.eLocalConn (P true) (P false) := rfl
+lemma eConn_eq_eLocalConn (P : M.Separation) : P.eConn = M.eLocalConn (P true) (P false) := rfl
 
 @[simp]
-lemma eConn_dual (P : M.Partition) : P.dual.eConn = P.eConn := by
-  rw [← P.dual.eConn_eq left, M.eConn_dual, P.dual_apply, P.eConn_eq]
+lemma eConn_dual (P : M.Separation) : P.dual.eConn = P.eConn := by
+  rw [← P.dual.eConn_eq true, M.eConn_dual, P.dual_apply, P.eConn_eq]
 
 @[simp]
-lemma eConn_ofDual (P : M✶.Partition) : P.ofDual.eConn = P.eConn := by
+lemma eConn_ofDual (P : M✶.Separation) : P.ofDual.eConn = P.eConn := by
   rw [← P.dual_ofDual, ← eConn_dual]
   simp
 
 lemma Trivial.eConn (h : P.Trivial) : P.eConn = 0 := by
-  obtain ⟨b, hb⟩ := h
-  simp [← P.eConn_eq b, hb]
+  obtain ⟨i, hb⟩ := h
+  simp [← P.eConn_eq i, hb]
 
 @[simp]
-protected lemma not_indep_iff : ¬ M.Indep (P b) ↔ M.Dep (P b) := by
+protected lemma not_indep_iff : ¬ M.Indep (P i) ↔ M.Dep (P i) := by
   rw [not_indep_iff]
 
 @[simp]
-protected lemma not_dep_iff : ¬ M.Dep (P b) ↔ M.Indep (P b) := by
+protected lemma not_dep_iff : ¬ M.Dep (P i) ↔ M.Indep (P i) := by
   rw [not_dep_iff]
 
 @[simp]
-protected lemma not_coindep_iff : ¬ M.Coindep (P b) ↔ M.Codep (P b) := by
+protected lemma not_coindep_iff : ¬ M.Coindep (P i) ↔ M.Codep (P i) := by
   rw [not_coindep_iff]
 
 @[simp]
-protected lemma not_codep_iff : ¬ M.Codep (P b) ↔ M.Coindep (P b) := by
+protected lemma not_codep_iff : ¬ M.Codep (P i) ↔ M.Coindep (P i) := by
   rw [← not_coindep_iff, not_not]
 
 @[simp]
-protected lemma not_indep_dual_iff : ¬ M✶.Indep (P b) ↔ M.Codep (P b) := by
+protected lemma not_indep_dual_iff : ¬ M✶.Indep (P i) ↔ M.Codep (P i) := by
   rw [not_coindep_iff]
 
 @[simp]
-protected lemma not_spanning_iff : ¬ M.Spanning (P b) ↔ M.Nonspanning (P b) := by
+protected lemma not_spanning_iff : ¬ M.Spanning (P i) ↔ M.Nonspanning (P i) := by
   rw [not_spanning_iff]
 
 @[simp]
-protected lemma not_nonspanning_iff : ¬ M.Nonspanning (P b) ↔ M.Spanning (P b) := by
+protected lemma not_nonspanning_iff : ¬ M.Nonspanning (P i) ↔ M.Spanning (P i) := by
   rw [not_nonspanning_iff]
 
-lemma coindep_not_iff : M.Coindep (P !b) ↔ M.Spanning (P b) := by
+lemma coindep_not_iff : M.Coindep (P !i) ↔ M.Spanning (P i) := by
   rw [← P.compl_eq, spanning_iff_compl_coindep]
 
-lemma codep_not_iff : M.Codep (P !b) ↔ M.Nonspanning (P b) := by
+lemma codep_not_iff : M.Codep (P !i) ↔ M.Nonspanning (P i) := by
   rw [← not_coindep_iff, coindep_not_iff, not_spanning_iff]
 
-lemma nonspanning_not_iff : M.Nonspanning (P !b) ↔ M.Codep (P b) := by
+lemma nonspanning_not_iff : M.Nonspanning (P !i) ↔ M.Codep (P i) := by
   rw [← codep_not_iff, Bool.not_not]
 
-lemma spanning_not_iff : M.Spanning (P !b) ↔ M.Coindep (P b) := by
+lemma spanning_not_iff : M.Spanning (P !i) ↔ M.Coindep (P i) := by
   rw [← not_nonspanning_iff, nonspanning_not_iff, not_codep_iff]
 
-lemma isCocircuit_not_iff : M.IsCocircuit (P !b) ↔ M.IsHyperplane (P b) := by
+lemma isCocircuit_not_iff : M.IsCocircuit (P !i) ↔ M.IsHyperplane (P i) := by
   rw [← isHyperplane_compl_iff_isCocircuit, P.compl_not_eq]
 
-lemma isHyperplane_not_iff : M.IsHyperplane (P !b) ↔ M.IsCocircuit (P b) := by
+lemma isHyperplane_not_iff : M.IsHyperplane (P !i) ↔ M.IsCocircuit (P i) := by
   rw [← isCocircuit_not_iff, Bool.not_not]
 
-protected lemma spanning_dual_iff : M✶.Spanning (P b) ↔ M.Indep (P !b) := by
+protected lemma spanning_dual_iff : M✶.Spanning (P i) ↔ M.Indep (P !i) := by
   simp [spanning_dual_iff]
 
-protected lemma nonspanning_dual_iff : M✶.Nonspanning (P b) ↔ M.Dep (P !b) := by
+protected lemma nonspanning_dual_iff : M✶.Nonspanning (P i) ↔ M.Dep (P !i) := by
   rw [← not_spanning_iff, spanning_dual_iff, not_indep_iff, P.compl_eq]
 
 /-- The connectivity of a partition as a natural number. Takes a value of `0` if infinite. -/
-noncomputable def conn (P : M.Partition) : ℕ := M.localConn (P true) (P false)
+noncomputable def conn (P : M.Separation) : ℕ := M.localConn (P true) (P false)
 
 @[simp]
-lemma conn_symm (P : M.Partition) : P.symm.conn = P.conn := by
+lemma conn_symm (P : M.Separation) : P.symm.conn = P.conn := by
   simp [conn, localConn_comm]
 
 @[simps!]
-protected def setCompl (M : Matroid α) [OnUniv M] (X : Set α) : M.Partition :=
-  Matroid.Partition.mk' X Xᶜ disjoint_compl_right (by simp)
+protected def setCompl (M : Matroid α) [OnUniv M] (X : Set α) : M.Separation :=
+  Matroid.Separation.mk' X Xᶜ disjoint_compl_right (by simp)
+
+end Separation
 
 -- /-- Restrict a partition to a set. The junk elements go on the right. -/
--- @[simps!] protected def restrict (P : M.Partition) (R : Set α) : (M ↾ R).Partition :=
--- Partition.mk'
+-- @[simps!] protected def restrict (P : M.Separation) (R : Set α) : (M ↾ R).Separation :=
+-- Separation.mk'
 --   (P.left ∩ R) ((P.right ∩ R) ∪ (R \ M.E))
 --   (disjoint_union_right.2 ⟨(P.disjoint.mono inter_subset_left inter_subset_left),
 --       disjoint_sdiff_right.mono_left (inter_subset_left.trans P.left_subset_ground)⟩)
 --   (by rw [← union_assoc, ← union_inter_distrib_right, P.union_eq, inter_comm, inter_union_diff,
 --     restrict_ground_eq])
 
--- lemma eConn_restrict_eq (P : M.Partition) (R : Set α) :
+-- lemma eConn_restrict_eq (P : M.Separation) (R : Set α) :
 --     (P.restrict R).eConn = M.eLocalConn (P.left ∩ R) (P.right ∩ R) := by
---   simp only [eConn, Partition.restrict, eLocalConn_restrict_eq, Partition.mk'_left,
---     Partition.mk'_right]
+--   simp only [eConn, Separation.restrict, eLocalConn_restrict_eq, Separation.mk'_left,
+--     Separation.mk'_right]
 --   rw [union_inter_distrib_right, inter_assoc, inter_assoc, inter_self,
 --     inter_eq_self_of_subset_left diff_subset, ← eLocalConn_inter_ground_right,
 --     union_inter_distrib_right, disjoint_sdiff_left.inter_eq, union_empty,
@@ -367,189 +297,198 @@ protected def setCompl (M : Matroid α) [OnUniv M] (X : Set α) : M.Partition :=
 /-- The partition of `M` given by a subset of `M.E` and its complement. The elements of the set
 go on side `b`.   -/
 @[simps!]
-protected def _root_.Matroid.partition (M : Matroid α) (A : Set α) (b : Bool)
-    (hA : A ⊆ M.E := by aesop_mat) : M.Partition where
-  toFun i := bif (i == b) then A else M.E \ A
-  pairwise_disjoint' := by
-    rw [pairwise_disjoint_on_bool' b]
-    cases b <;> simp [disjoint_sdiff_right]
-  iUnion_eq' := by cases b <;> simpa
-
-lemma _root_.Matroid.partition_apply (hA : A ⊆ M.E) : (M.partition A b hA) b = A := by
-  simp
-
-lemma _root_.Matroid.partition_apply_not (hA : A ⊆ M.E) : (M.partition A b hA !b) = M.E \ A := by
-  simp
+def ofSetSep (M : Matroid α) (A : Set α) (i : Bool) (hA : A ⊆ M.E := by aesop_mat) :
+    M.Separation :=
+  Bipartition.ofSubset hA i
 
 @[simp]
-lemma _root_.Matroid.partition_true_false (hA : A ⊆ M.E) :
-    (M.partition A true hA false) = M.E \ A := Matroid.partition_apply_not hA
+lemma ofSetSep_apply_self (hA : A ⊆ M.E) : (M.ofSetSep A i hA) i = A :=
+  Bipartition.ofSubset_apply_self hA _
 
 @[simp]
-lemma _root_.Matroid.partition_false_true (hA : A ⊆ M.E) :
-    (M.partition A false hA true) = M.E \ A := Matroid.partition_apply_not hA
+lemma ofSetSep_apply_not (hA : A ⊆ M.E) : (M.ofSetSep A i hA !i) = M.E \ A :=
+  Bipartition.ofSubset_apply_not hA _
 
 @[simp]
-lemma _root_.Matroid.eConn_partition (hA : A ⊆ M.E) : (M.partition A b hA).eConn = M.eConn A := by
-  rw [← Partition.eConn_eq _ b, partition_apply]
+lemma ofSetSep_not_apply (hA : A ⊆ M.E) : (M.ofSetSep A (!i) hA i) = M.E \ A :=
+  Bipartition.ofSubset_not_apply hA _
 
 @[simp]
-lemma _root_.Matroid.partition_dual (hA : A ⊆ M.E) :
-  M✶.partition A b hA = (M.partition A b hA).dual := rfl
+lemma ofSetSep_true_false (hA : A ⊆ M.E) : (M.ofSetSep A true hA false) = M.E \ A :=
+  Bipartition.ofSubset_true_false hA
 
-lemma Trivial.exists_eq (h : P.Trivial) : ∃ b, P = M.partition ∅ b := by
-  obtain ⟨b, hb⟩ := h
-  exact ⟨b, Partition.ext_bool (b := b) (by simpa)⟩
+@[simp]
+lemma ofSetSep_false_true (hA : A ⊆ M.E) : (M.ofSetSep A false hA true) = M.E \ A :=
+  Bipartition.ofSubset_false_true hA
+
+@[simp]
+lemma eConn_ofSetSep (hA : A ⊆ M.E) : (M.ofSetSep A i hA).eConn = M.eConn A := by
+  rw [← Separation.eConn_eq _ i, M.ofSetSep_apply_self]
+
+@[simp]
+lemma ofSetSep_dual (hA : A ⊆ M.E) :
+  M✶.ofSetSep A i hA = (M.ofSetSep A i hA).dual := rfl
+
+namespace Separation
+
+lemma Trivial.exists_eq (h : P.Trivial) : ∃ i, P = M.ofSetSep ∅ i := by
+  obtain ⟨i, hb⟩ := h
+  refine ⟨!i, Separation.ext_bool i (by simpa)⟩
 
 /-- Intersect a partition with the ground set of a smaller matroid -/
-def induce (P : M.Partition) (hN : N.E ⊆ M.E) : N.Partition where
-  toFun b := P b ∩ N.E
-  pairwise_disjoint' := P.pairwise_disjoint.mono <| by grind
-  iUnion_eq' := by rw [← iUnion_inter, P.iUnion_eq, inter_eq_self_of_subset_right hN]
+def induce (P : M.Separation) (hN : N.E ⊆ M.E) : N.Separation := Bipartition.induce P hN
 
 @[simp]
-lemma induce_apply (P : M.Partition) (hN : N.E ⊆ M.E) (b) : P.induce hN b = (P b) ∩ N.E := rfl
+lemma induce_apply (P : M.Separation) (hN : N.E ⊆ M.E) (i) : P.induce hN i = (P i) ∩ N.E := rfl
 
 @[simp]
-lemma induce_symm (P : M.Partition) (hN : N.E ⊆ M.E) : (P.induce hN).symm = P.symm.induce hN :=
-  Partition.ext rfl
+lemma induce_symm (P : M.Separation) (hN : N.E ⊆ M.E) : (P.induce hN).symm = P.symm.induce hN :=
+  Separation.ext rfl
 
 /-- Every partition has a larger side for a given numerical notion of 'large' -/
-lemma exists_larger_side {β : Type*} [ConditionallyCompleteLinearOrder β] (P : M.Partition)
-    (f : Set α → β) : ∃ b, ∀ i, f (P i) ≤ f (P b) := by
-  obtain ⟨b, hb⟩ := exists_eq_ciSup_of_finite (f := fun i ↦ f (P i))
-  refine ⟨b, fun i ↦ ?_⟩
-  grw [hb, ← le_ciSup (by simp)]
+lemma exists_larger_side {β : Type*} [ConditionallyCompleteLinearOrder β] (P : M.Separation)
+    (f : Set α → β) : ∃ i, ∀ j, f (P j) ≤ f (P i) := by
+  obtain ⟨j, hj⟩ := exists_eq_ciSup_of_finite (f := fun i ↦ f (P i))
+  refine ⟨j, fun i ↦ ?_⟩
+  grw [hj, ← le_ciSup (by simp)]
 
 /-- For any two partitions, one of the four cells obtained by intersecting them is the
 smaller one, for a given numerical notion of 'small'. -/
-lemma exists_smaller_side {β : Type*} [ConditionallyCompleteLinearOrder β] (P : M.Partition)
-    (f : Set α → β) : ∃ b, ∀ i, f (P b) ≤ f (P i) :=
+lemma exists_smaller_side {β : Type*} [ConditionallyCompleteLinearOrder β] (P : M.Separation)
+    (f : Set α → β) : ∃ i, ∀ j, f (P i) ≤ f (P j) :=
   exists_larger_side (β := βᵒᵈ) P f
 
 /-- For any two partitions, one of the four cells obtained by intersecting them is the
 largest one, for a given numerical notion of 'large'. -/
-lemma exists_largest_inter {β : Type*} [ConditionallyCompleteLinearOrder β] (P : M.Partition)
-    (Q : N.Partition) (f : Set α → β) : ∃ b b', ∀ i j, f (P i ∩ Q j) ≤ f (P b ∩ Q b') := by
+lemma exists_largest_inter {β : Type*} [ConditionallyCompleteLinearOrder β] (P : M.Separation)
+    (Q : N.Separation) (f : Set α → β) : ∃ i i', ∀ j j', f (P j ∩ Q j') ≤ f (P i ∩ Q i') := by
   set φ := fun (p : Bool × Bool) ↦ f (P p.1 ∩ Q p.2) with hφ
-  obtain ⟨⟨b, b'⟩, hb⟩ := exists_eq_ciSup_of_finite (f := φ)
-  refine ⟨b, b', fun i j ↦ ?_⟩
-  simp only [φ] at hb
-  grw [hb, ← hφ, ← le_ciSup (c := (i,j)) (finite_range φ).bddAbove]
+  obtain ⟨⟨j, j'⟩, hj⟩ := exists_eq_ciSup_of_finite (f := φ)
+  refine ⟨j, j', fun i i' ↦ ?_⟩
+  simp only [φ] at hj
+  grw [hj, ← hφ, ← le_ciSup (c := (i,i')) (finite_range φ).bddAbove]
 
 /-- For any two partitions, one of the four cells obtained by intersecting them is the
 smallest one, for a given numerical notion of small'. -/
-lemma exists_smallest_inter {β : Type*} [ConditionallyCompleteLinearOrder β] (P : M.Partition)
-    (Q : N.Partition) (f : Set α → β) : ∃ b b', ∀ i j, f (P b ∩ Q b') ≤ f (P i ∩ Q j) :=
+lemma exists_smallest_inter {β : Type*} [ConditionallyCompleteLinearOrder β] (P : M.Separation)
+    (Q : N.Separation) (f : Set α → β) : ∃ i i', ∀ j j', f (P i ∩ Q i') ≤ f (P j ∩ Q j') :=
   exists_largest_inter (β := βᵒᵈ) P Q f
 
 section Cross
 
-variable {Q : M.Partition}
+variable {Q : M.Separation}
 
-/-- Cross two partitions by intersecting their `b`-sides and unioning their `!b`-sides-/
-protected def cross (P Q : M.Partition) (b : Bool) : M.Partition where
-  toFun i := bif (i == b) then P i ∩ Q i else P i ∪ Q i
-  pairwise_disjoint' := by
-    simp only [_root_.pairwise_on_bool' b, BEq.rfl, cond_true, Bool.not_beq_self, cond_false,
-      disjoint_union_right, disjoint_union_left]
-    refine ⟨⟨(P.disjoint_bool b).mono_left ?_, (Q.disjoint_bool b).mono_left ?_⟩,
-      (P.disjoint_bool b).symm.mono_right ?_, (Q.disjoint_bool b).symm.mono_right ?_⟩ <;> simp
-  iUnion_eq' := by
-    simp only [_root_.iUnion_bool' _ b, BEq.rfl, cond_true, Bool.not_beq_self, cond_false]
-    rw [← P.compl_eq, ← Q.compl_eq, ← inter_eq_self_of_subset_left (P.subset_ground b),
-      ← inter_eq_self_of_subset_left (Q.subset_ground b)]
-    tauto_set
+/-- Cross two partitions by intersecting their `i`-sides and unioning their `!i`-sides-/
+protected def cross (P Q : M.Separation) (i : Bool) : M.Separation := Bipartition.cross P Q i
 
-@[simp]
-protected lemma cross_apply (P Q : M.Partition) (b : Bool) : (P.cross Q b) b = P b ∩ Q b := by
-  simp [Partition.cross]
+@[simp, simp↓]
+protected lemma cross_apply (P Q : M.Separation) (i j : Bool) : (P.cross Q i) j =
+    bif j == i then P j ∩ Q j else P j ∪ Q j :=
+  Bipartition.cross_apply ..
 
-@[simp]
-protected lemma cross_apply_not (P Q : M.Partition) (b : Bool) :
-    (P.cross Q b) (!b) = P (!b) ∪ Q !b := by
-  simp [Partition.cross]
+protected lemma cross_apply_not (P Q : M.Separation) (i : Bool) :
+    (P.cross Q i) (!i) = P (!i) ∪ Q !i :=
+  Bipartition.cross_apply_not ..
 
-@[simp]
-protected lemma cross_not_apply (P Q : M.Partition) (b : Bool) : (P.cross Q !b) b = P b ∪ Q b := by
-  simp [Partition.cross]
+protected lemma cross_not_apply (P Q : M.Separation) (i : Bool) : (P.cross Q !i) i = P i ∪ Q i :=
+  Bipartition.cross_not_apply ..
 
-@[simp]
-protected lemma cross_true_false (P Q : M.Partition) :
-    (P.cross Q true) false = P false ∪ Q false := by
-  simp [Partition.cross]
+protected lemma cross_true_false (P Q : M.Separation) :
+    (P.cross Q true) false = P false ∪ Q false :=
+  Bipartition.cross_true_false ..
 
-@[simp]
-protected lemma cross_false_true (P Q : M.Partition) :
-    (P.cross Q false) true = P true ∪ Q true := by
-  simp [Partition.cross]
+protected lemma cross_false_true (P Q : M.Separation) :
+    (P.cross Q false) true = P true ∪ Q true :=
+  Bipartition.cross_false_true ..
+
+@[simp, simp↓]
+protected lemma cross_symm (P Q : M.Separation) (i : Bool) :
+    (P.cross Q i).symm = P.symm.cross Q.symm !i :=
+  Bipartition.cross_symm ..
+
+
+
+
+
+/-- Cross two partitions by intersecting the `true` sets. -/
+def inter (P Q : M.Separation) : M.Separation := P.cross Q true
 
 @[simp]
-protected lemma cross_symm (P Q : M.Partition) (b : Bool) :
-    (P.cross Q b).symm = P.symm.cross Q.symm !b :=
-  Partition.ext_bool (b := b) <| by simp
-
-
-
-/-- Cross two partitions by intersecting the left sets. -/
-def inter (P Q : M.Partition) : M.Partition := P.cross Q true
+lemma inter_true (P Q : M.Separation) : (P.inter Q) true = P true ∩ Q true := rfl
 
 @[simp]
-lemma inter_left (P Q : M.Partition) : (P.inter Q) left = P true ∩ Q left := rfl
-
-@[simp]
-lemma inter_right (P Q : M.Partition) : (P.inter Q) right = P false ∪ Q right := rfl
+lemma inter_false (P Q : M.Separation) : (P.inter Q) false = P false ∪ Q false := rfl
 
 /-- Cross two partitions by intersecting the right sets. -/
-def union (P Q : M.Partition) : M.Partition := (P.symm.inter Q.symm).symm
+def union (P Q : M.Separation) : M.Separation := (P.symm.inter Q.symm).symm
 
 @[simp]
-lemma union_left (P Q : M.Partition) : (P.union Q) left = P true ∪ Q left := rfl
+lemma union_true (P Q : M.Separation) : (P.union Q) true = P true ∪ Q true := rfl
 
 @[simp]
-lemma union_right (P Q : M.Partition) : (P.union Q) right = P false ∩ Q right := rfl
+lemma union_false (P Q : M.Separation) : (P.union Q) false = P false ∩ Q false := rfl
 
 @[simp]
-lemma inter_symm (P Q : M.Partition) : (P.inter Q).symm = P.symm.union Q.symm := by
+lemma inter_symm (P Q : M.Separation) : (P.inter Q).symm = P.symm.union Q.symm := by
   simp [inter, union]
 
 @[simp]
-lemma union_symm (P Q : M.Partition) : (P.union Q).symm = P.symm.inter Q.symm :=
-  Partition.ext rfl
+lemma union_symm (P Q : M.Separation) : (P.union Q).symm = P.symm.inter Q.symm :=
+  Separation.ext rfl
 
 @[simp]
-lemma disjoint_inter_right (P : M.Partition) {X Y : Set α} : Disjoint (P true ∩ X) (P false ∩ Y) :=
-  P.disjoint.mono inter_subset_left inter_subset_left
+lemma disjoint_inter_right (P : M.Separation) : Disjoint (P true ∩ X) (P false ∩ Y) :=
+  P.disjoint_true_false.mono inter_subset_left inter_subset_left
 
 @[simp]
-lemma disjoint_inter_left (P : M.Partition) {X Y : Set α} : Disjoint (X ∩ P true) (Y ∩ P false) :=
-  P.disjoint.mono inter_subset_right inter_subset_right
+lemma disjoint_inter_left (P : M.Separation) : Disjoint (X ∩ P true) (Y ∩ P false) :=
+  P.disjoint_true_false.mono inter_subset_right inter_subset_right
 
 @[simp]
-lemma inter_ground_eq (P : M.Partition) (b) : P b ∩ M.E = P b :=
-  inter_eq_self_of_subset_left <| P.subset_ground b
+lemma disjoint_bool_inter_right (P : M.Separation) (i : Bool) :
+    Disjoint (P i ∩ X) (P (!i) ∩ Y) :=
+  (P.disjoint_bool i).mono inter_subset_left inter_subset_left
 
-lemma union_inter_right' (P : M.Partition) (X : Set α) (b : Bool) :
-    (P b ∩ X) ∪ (P (!b) ∩ X) = X ∩ M.E := by
+@[simp]
+lemma disjoint_bool_inter_left (P : M.Separation) (i : Bool) :
+    Disjoint (X ∩ P i) (Y ∩ P (!i)) :=
+  (P.disjoint_bool i).mono inter_subset_right inter_subset_right
+
+@[simp]
+lemma disjoint_bool_inter_right' (P : M.Separation) (i : Bool) :
+    Disjoint (P (!i) ∩ X) (P i ∩ Y) :=
+  (P.disjoint_bool i).symm.mono inter_subset_left inter_subset_left
+
+@[simp]
+lemma disjoint_bool_inter_left' (P : M.Separation) (i : Bool) :
+    Disjoint (X ∩ P (!i)) (Y ∩ P i) :=
+  (P.disjoint_bool i).symm.mono inter_subset_right inter_subset_right
+
+@[simp]
+lemma inter_ground_eq (P : M.Separation) (i) : P i ∩ M.E = P i :=
+  inter_eq_self_of_subset_left P.subset_ground
+
+lemma union_inter_right' (P : M.Separation) (X : Set α) (i : Bool) :
+    (P i ∩ X) ∪ (P (!i) ∩ X) = X ∩ M.E := by
   rw [← union_inter_distrib_right, P.union_bool_eq, inter_comm]
 
-lemma union_inter_left' (P : M.Partition) (X : Set α) (b : Bool) :
-    (X ∩ (P b)) ∪ (X ∩ (P !b)) = X ∩ M.E := by
+lemma union_inter_left' (P : M.Separation) (X : Set α) (i : Bool) :
+    (X ∩ (P i)) ∪ (X ∩ (P !i)) = X ∩ M.E := by
   rw [← inter_union_distrib_left, P.union_bool_eq, inter_comm]
 
 @[simp]
-lemma union_inter_right (P : M.Partition) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) (b : Bool) :
-    (P b ∩ X) ∪ ((P !b) ∩ X) = X := by
+lemma union_inter_right (P : M.Separation) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) (i : Bool) :
+    (P i ∩ X) ∪ ((P !i) ∩ X) = X := by
   rw [union_inter_right', inter_eq_self_of_subset_left hX]
 
 @[simp]
-lemma union_inter_left (P : M.Partition) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) (b : Bool):
-    (X ∩ (P b)) ∪ (X ∩ (P !b)) = X := by
+lemma union_inter_left (P : M.Separation) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) (i : Bool):
+    (X ∩ (P i)) ∪ (X ∩ (P !i)) = X := by
   rw [union_inter_left', inter_eq_self_of_subset_left hX]
 
-protected lemma eConn_inter_add_eConn_union_le (P Q : M.Partition) :
+protected lemma eConn_inter_add_eConn_union_le (P Q : M.Separation) :
     (P.inter Q).eConn + (P.union Q).eConn ≤ P.eConn + Q.eConn := by
-  simp_rw [← Partition.eConn_eq _ left, union_left, inter_left]
+  simp_rw [← Separation.eConn_eq _ true, union_true, inter_true]
   exact M.eConn_inter_add_eConn_union_le ..
 
 end Cross
@@ -559,300 +498,292 @@ section Minor
 variable {C D : Set α} {e f : α}
 
 @[simp, aesop unsafe 10% (rule_sets := [Matroid])]
-lemma subset_ground_of_delete (P : (M ＼ D).Partition) (b : Bool) : P b ⊆ M.E :=
-  (P.subset_ground b).trans diff_subset
+lemma subset_ground_of_delete (P : (M ＼ D).Separation) (i : Bool) : P i ⊆ M.E :=
+  P.subset_ground.trans diff_subset
 
 @[simp, aesop unsafe 10% (rule_sets := [Matroid])]
-lemma left_subset_ground_of_contract (P : (M ／ C).Partition) (b : Bool) : P b ⊆ M.E :=
-  (P.subset_ground b).trans diff_subset
+lemma left_subset_ground_of_contract (P : (M ／ C).Separation) (i : Bool) : P i ⊆ M.E :=
+  P.subset_ground.trans diff_subset
 
 /-- Contract the elements of `C` to take a partition of `M` to a partition of `M ／ C`. -/
-def contract (P : M.Partition) (C : Set α) : (M ／ C).Partition := P.induce diff_subset
+def contract (P : M.Separation) (C : Set α) : (M ／ C).Separation := P.induce diff_subset
 
-@[simp]
-lemma contract_apply (P : M.Partition) (C : Set α) : (P.contract C) b = P b \ C := by
+@[simp, simp↓]
+lemma contract_apply (P : M.Separation) (C : Set α) : (P.contract C) i = P i \ C := by
   simp only [contract, induce_apply, contract_ground]
-  rw [← inter_diff_assoc, inter_eq_self_of_subset_left (P.subset_ground b)]
+  rw [← inter_diff_assoc, inter_eq_self_of_subset_left P.subset_ground]
 
-@[simp]
-lemma contract_symm (P : M.Partition) (C : Set α) : (P.contract C).symm = P.symm.contract C := by
+@[simp, simp↓]
+lemma contract_symm (P : M.Separation) (C : Set α) : (P.contract C).symm = P.symm.contract C := by
   simp [contract]
 
-lemma contract_contract (P : M.Partition) (C₁ C₂ : Set α) :
+lemma contract_contract (P : M.Separation) (C₁ C₂ : Set α) :
     (P.contract C₁).contract C₂ = (P.contract (C₁ ∪ C₂)).copy (by simp) := by
-  apply Partition.ext; simp [diff_diff]
+  apply Separation.ext; simp [diff_diff]
 
-lemma contract_congr (P : M.Partition) {C₁ C₂ : Set α} (h : C₁ ∩ M.E = C₂ ∩ M.E) :
+lemma contract_congr (P : M.Separation) {C₁ C₂ : Set α} (h : C₁ ∩ M.E = C₂ ∩ M.E) :
     P.contract C₁ = (P.contract C₂).copy
       (by rw [← contract_inter_ground_eq, ← h, contract_inter_ground_eq]) := by
-  have h1 := P.subset_ground left
-  refine Partition.ext ?_;
+  have h1 := P.subset_ground (i := true)
+  refine Separation.ext ?_;
   simp only [contract_apply, copy_apply]
   tauto_set
 
-lemma contract_inter_ground (P : M.Partition) (C : Set α) :
+lemma contract_inter_ground (P : M.Separation) (C : Set α) :
     (P.contract (C ∩ M.E)) = (P.contract C).copy (by simp) :=
   P.contract_congr <| by simp [inter_assoc]
 
 /-- Delete the elements of `D` to take a partition of `M` to a partition of `M ＼ D`. -/
-def delete (P : M.Partition) (D : Set α) : (M ＼ D).Partition := P.induce diff_subset
+def delete (P : M.Separation) (D : Set α) : (M ＼ D).Separation := P.induce diff_subset
 
-@[simp]
-lemma delete_apply (P : M.Partition) (D : Set α) (b : Bool) : (P.delete D) b = P b \ D := by
+@[simp, simp↓]
+lemma delete_apply (P : M.Separation) (D : Set α) (i : Bool) : (P.delete D) i = P i \ D := by
   simp only [delete, induce_apply, delete_ground]
-  rw [← inter_diff_assoc, inter_eq_self_of_subset_left (P.subset_ground _)]
+  rw [← inter_diff_assoc, inter_eq_self_of_subset_left P.subset_ground]
 
-@[simp]
-lemma delete_symm (P : M.Partition) (D : Set α) : (P.delete D).symm = P.symm.delete D := by
+@[simp, simp↓]
+lemma delete_symm (P : M.Separation) (D : Set α) : (P.delete D).symm = P.symm.delete D := by
   simp [delete]
 
-lemma delete_delete (P : M.Partition) (D₁ D₂ : Set α) :
+lemma delete_delete (P : M.Separation) (D₁ D₂ : Set α) :
     (P.delete D₁).delete D₂ = (P.delete (D₁ ∪ D₂)).copy (by simp) := by
-  apply Partition.ext; simp [diff_diff]
+  apply Separation.ext; simp [diff_diff]
 
 @[simp]
-lemma contract_dual (P : M.Partition) (C : Set α) :
+lemma contract_dual (P : M.Separation) (C : Set α) :
     (P.contract C).dual = (P.dual.delete C).copy (by simp) :=
-  Partition.ext rfl
+  Separation.ext rfl
 
-lemma dual_contract (P : M.Partition) (C : Set α) :
+lemma dual_contract (P : M.Separation) (C : Set α) :
     P.dual.contract C = (P.delete C).dual.copy (by simp) :=
-  Partition.ext rfl
+  Separation.ext rfl
 
 @[simp]
-lemma delete_dual (P : M.Partition) (D : Set α) :
+lemma delete_dual (P : M.Separation) (D : Set α) :
     (P.delete D).dual = (P.dual.contract D).copy (by simp) :=
-  Partition.ext rfl
+  Separation.ext rfl
 
-lemma dual_delete (P : M.Partition) (D : Set α) :
+lemma dual_delete (P : M.Separation) (D : Set α) :
     (P.delete D).dual = (P.dual.contract D).copy (by simp) :=
-  Partition.ext rfl
+  Separation.ext rfl
 
-lemma delete_congr (P : M.Partition) {D₁ D₂ : Set α} (h : D₁ ∩ M.E = D₂ ∩ M.E) :
+lemma delete_congr (P : M.Separation) {D₁ D₂ : Set α} (h : D₁ ∩ M.E = D₂ ∩ M.E) :
     P.delete D₁ = (P.delete D₂).copy
       (by rw [← delete_inter_ground_eq, ← h, delete_inter_ground_eq]) := by
-  have h2 := P.subset_ground left
-  refine Partition.ext ?_
+  have h2 := P.subset_ground (i := true)
+  refine Separation.ext ?_
   simp only [delete_apply, copy_apply]
   tauto_set
 
-lemma delete_inter_ground (P : M.Partition) (D : Set α) :
+lemma delete_inter_ground (P : M.Separation) (D : Set α) :
     (P.delete (D ∩ M.E)) = (P.delete D).copy (by rw [delete_inter_ground_eq]) :=
   P.delete_congr <| by simp [inter_assoc]
 
 @[simp]
-lemma disjoint_contract (P : (M ／ C).Partition) (b : Bool) : Disjoint (P b) C := by
+lemma disjoint_contract (P : (M ／ C).Separation) (i : Bool) : Disjoint (P i) C := by
   grw [P.subset_ground]
   exact disjoint_sdiff_left
 
 @[simp]
-lemma disjoint_delete (P : (M ＼ D).Partition) (b : Bool) : Disjoint (P b) D := by
+lemma disjoint_delete (P : (M ＼ D).Separation) (i : Bool) : Disjoint (P i) D := by
   grw [P.subset_ground]
   exact disjoint_sdiff_left
 
 @[simps!]
-abbrev contractDual (P : (M ／ C).Partition) : (M✶ ＼ C).Partition := P.dual.copy (by simp)
+abbrev contractDual (P : (M ／ C).Separation) : (M✶ ＼ C).Separation := P.dual.copy (by simp)
 
 @[simps!]
-abbrev deleteDual (P : (M ＼ D).Partition) : (M✶ ／ D).Partition := P.dual.copy (by simp)
+abbrev deleteDual (P : (M ＼ D).Separation) : (M✶ ／ D).Separation := P.dual.copy (by simp)
 
 /-- Extend a partition `P` of some matroid `N` to a matroid `M` with larger ground set by
 adding the extra elements to side `b` of `P`. `-/
-def ofSubset (P : N.Partition) (hNM : N.E ⊆ M.E) (b : Bool) : M.Partition where
-  toFun i := bif (i == b) then P i ∪ (M.E \ N.E) else P i
-  pairwise_disjoint' := by
-    suffices Disjoint (M.E \ N.E) (P !b) by simpa [pairwise_disjoint_on_bool' b]
-    exact disjoint_sdiff_left.mono_right <| P.subset_ground _
-  iUnion_eq' := by
-    cases b
-    · simpa [← union_assoc]
-    simpa [union_right_comm _ (M.E \ N.E)]
+def ofGroundSubset (P : N.Separation) (hNM : N.E ⊆ M.E) (i : Bool) : M.Separation :=
+  Bipartition.expand P hNM i
 
-lemma ofSubset_apply (P : N.Partition) (hNM : N.E ⊆ M.E) (b i : Bool) :
-    P.ofSubset hNM b i = bif (i == b) then P i ∪ (M.E \ N.E) else P i := rfl
+@[simp, simp↓]
+lemma ofGroundSubset_apply (P : N.Separation) (hNM : N.E ⊆ M.E) (i j : Bool) :
+    P.ofGroundSubset hNM j i = bif (i == j) then P i ∪ (M.E \ N.E) else P i := by
+  simp [ofGroundSubset, Bipartition.expand_apply ..]
 
-lemma ofSubset_symm (P : N.Partition) (hNM : N.E ⊆ M.E) (b : Bool) :
-    (P.ofSubset hNM b).symm = P.symm.ofSubset hNM (!b) :=
-  Partition.ext <| by simp [ofSubset_apply]
+lemma ofGroundSubset_symm (P : N.Separation) (hNM : N.E ⊆ M.E) (i : Bool) :
+    (P.ofGroundSubset hNM i).symm = P.symm.ofGroundSubset hNM (!i) :=
+  Separation.ext <| by simp [ofGroundSubset_apply]
 
-@[simp]
-lemma ofSubset_apply_self (P : N.Partition) (hNM : N.E ⊆ M.E) (b : Bool) :
-    P.ofSubset hNM b b = P b ∪ (M.E \ N.E) := by
-  simp [ofSubset_apply]
+lemma ofSubset_apply_self (P : N.Separation) (hNM : N.E ⊆ M.E) (i : Bool) :
+    P.ofGroundSubset hNM i i = P i ∪ (M.E \ N.E) := by
+  simp
+
+lemma ofSubset_apply_not (P : N.Separation) (hNM : N.E ⊆ M.E) (i : Bool) :
+    P.ofGroundSubset hNM i (!i) = P (!i) := by
+  simp
 
 @[simp]
-lemma ofSubset_apply_not (P : N.Partition) (hNM : N.E ⊆ M.E) (b : Bool) :
-    P.ofSubset hNM b (!b) = P (!b) := by
-  simp [ofSubset_apply]
+lemma ofSubset_not_apply (P : N.Separation) (hNM : N.E ⊆ M.E) (i : Bool) :
+    P.ofGroundSubset hNM (!i) i = P i := by
+  simp
 
-@[simp]
-lemma ofSubset_not_apply (P : N.Partition) (hNM : N.E ⊆ M.E) (b : Bool) :
-    P.ofSubset hNM (!b) b = P b := by
-  simp [ofSubset_apply]
-
-@[simp]
-lemma ofSubset_copy {N' : Matroid α} (P : N.Partition) (hN' : N = N') (hN'M : N'.E ⊆ M.E)
-    (b : Bool) : (P.copy hN').ofSubset hN'M b = P.ofSubset (hN' ▸ hN'M) b :=
-  Partition.ext_bool (b := !b) <| by simp
+@[simp, simp↓]
+lemma ofGroundSubset_copy {N' : Matroid α} (P : N.Separation) (hN' : N = N') (hN'M : N'.E ⊆ M.E)
+    (i : Bool) : (P.copy hN').ofGroundSubset hN'M i = P.ofGroundSubset (hN' ▸ hN'M) i :=
+  Separation.ext_bool (i := !i) <| by simp
 
 /-- Extend a partition of `M ／ C` to one of `M` by extending using side `b`. -/
-def ofContract (P : (M ／ C).Partition) (b : Bool) : M.Partition := P.ofSubset diff_subset b
+def ofContract (P : (M ／ C).Separation) (i : Bool) : M.Separation := P.ofGroundSubset diff_subset i
 
-lemma ofContract_apply (P : (M ／ C).Partition) (hC : C ⊆ M.E := by aesop_mat) (b i : Bool) :
-    P.ofContract b i = bif i == b then P i ∪ C else P i := by
-  simp [ofContract, ofSubset_apply, inter_eq_self_of_subset_right hC]
+@[simp, simp↓]
+lemma ofContract_apply (P : (M ／ C).Separation) (hC : C ⊆ M.E := by aesop_mat) (i j : Bool) :
+    P.ofContract i j = bif j == i then P j ∪ C else P j := by
+  simp [ofContract, inter_eq_self_of_subset_right hC]
 
-@[simp]
-lemma ofContract_apply_self (P : (M ／ C).Partition) (hC : C ⊆ M.E := by aesop_mat) (b : Bool) :
-    P.ofContract b b = P b ∪ C := by
+lemma ofContract_apply_self (P : (M ／ C).Separation) (hC : C ⊆ M.E := by aesop_mat) (i : Bool) :
+    P.ofContract i i = P i ∪ C := by
   simp [P.ofContract_apply]
 
 @[simp]
-lemma ofContract_apply_not (P : (M ／ C).Partition) (b : Bool) : P.ofContract b (!b) = P !b := by
-  simp [ofContract, ofSubset_apply]
+lemma ofContract_apply_not (P : (M ／ C).Separation) (i : Bool) : P.ofContract i (!i) = P !i := by
+  simp [ofContract]
 
 @[simp]
-lemma ofContract_not_apply (P : (M ／ C).Partition) (b : Bool) : P.ofContract (!b) b = P b := by
-  simpa using P.ofContract_apply_not (!b)
+lemma ofContract_not_apply (P : (M ／ C).Separation) (i : Bool) : P.ofContract (!i) i = P i := by
+  simpa using P.ofContract_apply_not (!i)
 
-@[simp]
-lemma ofContract_true_false (P : (M ／ C).Partition) : P.ofContract true false = P false :=
+lemma ofContract_true_false (P : (M ／ C).Separation) : P.ofContract true false = P false :=
   P.ofContract_apply_not true
 
-@[simp]
-lemma ofContract_false_true (P : (M ／ C).Partition) : P.ofContract false true = P true :=
+lemma ofContract_false_true (P : (M ／ C).Separation) : P.ofContract false true = P true :=
   P.ofContract_apply_not false
 
-@[simp]
-lemma ofContract_symm (P : (M ／ C).Partition) (b : Bool) :
-    (P.ofContract b).symm = P.symm.ofContract (!b) :=
-  ofSubset_symm ..
+@[simp, simp↓]
+lemma ofContract_symm (P : (M ／ C).Separation) (i : Bool) :
+    (P.ofContract i).symm = P.symm.ofContract (!i) :=
+  ofGroundSubset_symm ..
 
-@[simp]
-lemma ofContract_copy {C' : Set α} (P : (M ／ C).Partition) (h_eq : M ／ C = M ／ C') (b : Bool) :
-    (P.copy h_eq).ofContract b = P.ofContract b :=
-  Partition.ext_bool (b := !b) <| by simp
+@[simp, simp↓]
+lemma ofContract_copy {C' : Set α} (P : (M ／ C).Separation) (h_eq : M ／ C = M ／ C') (i : Bool) :
+    (P.copy h_eq).ofContract i = P.ofContract i :=
+  Separation.ext_bool (i := !i) <| by
+    simp
 
 /-- Extend a partition of `M ＼ D` to a partition of `M` by adding `D` to the left side. -/
-def ofDelete (P : (M ＼ D).Partition) (b : Bool) : M.Partition := P.ofSubset diff_subset b
+def ofDelete (P : (M ＼ D).Separation) (i : Bool) : M.Separation := P.ofGroundSubset diff_subset i
 
-lemma ofDelete_apply (P : (M ＼ D).Partition) (hD : D ⊆ M.E := by aesop_mat) (b i : Bool) :
-    P.ofDelete b i = bif i == b then P i ∪ D else P i := by
-  simp [ofDelete, ofSubset_apply, inter_eq_self_of_subset_right hD]
+lemma ofDelete_apply (P : (M ＼ D).Separation) (hD : D ⊆ M.E := by aesop_mat) (i j : Bool) :
+    P.ofDelete i j = bif j == i then P j ∪ D else P j := by
+  simp [ofDelete, inter_eq_self_of_subset_right hD]
 
 @[simp]
-lemma ofDelete_apply_self (P : (M ＼ D).Partition) (hD : D ⊆ M.E := by aesop_mat) (b : Bool) :
-    P.ofDelete b b = P b ∪ D := by
+lemma ofDelete_apply_self (P : (M ＼ D).Separation) (hD : D ⊆ M.E := by aesop_mat) (i : Bool) :
+    P.ofDelete i i = P i ∪ D := by
   simp [P.ofDelete_apply]
 
 @[simp]
-lemma ofDelete_apply_not (P : (M ＼ D).Partition) (b : Bool) : P.ofDelete b (!b) = P !b := by
+lemma ofDelete_apply_not (P : (M ＼ D).Separation) (i : Bool) : P.ofDelete i (!i) = P !i := by
   simp [ofDelete]
 
 @[simp]
-lemma ofDelete_not_apply (P : (M ＼ D).Partition) (b : Bool) : P.ofDelete (!b) b = P b := by
+lemma ofDelete_not_apply (P : (M ＼ D).Separation) (i : Bool) : P.ofDelete (!i) i = P i := by
   simp [ofDelete]
 
 @[simp]
-lemma ofDelete_copy {D' : Set α} (P : (M ＼ D).Partition) (h_eq : M ＼ D = M ＼ D') (b : Bool) :
-    (P.copy h_eq).ofDelete b = P.ofDelete b :=
-  Partition.ext_bool (b := !b) <| by simp
+lemma ofDelete_copy {D' : Set α} (P : (M ＼ D).Separation) (h_eq : M ＼ D = M ＼ D') (i : Bool) :
+    (P.copy h_eq).ofDelete i = P.ofDelete i :=
+  Separation.ext_bool (i := !i) <| by simp
 
 @[simp]
-lemma ofDelete_symm (P : (M ＼ D).Partition) (b : Bool):
-    (P.ofDelete b).symm = P.symm.ofDelete !b :=
-  ofSubset_symm ..
+lemma ofDelete_symm (P : (M ＼ D).Separation) (i : Bool):
+    (P.ofDelete i).symm = P.symm.ofDelete !i :=
+  ofGroundSubset_symm ..
 
 @[simp]
-lemma ofDelete_dual (P : (M ＼ D).Partition) (b : Bool) :
-    (P.ofDelete b).dual = P.deleteDual.ofContract b := rfl
+lemma ofDelete_dual (P : (M ＼ D).Separation) (i : Bool) :
+    (P.ofDelete i).dual = P.deleteDual.ofContract i := rfl
 
 @[simp]
-lemma ofContract_dual (P : (M ／ C).Partition) (b : Bool) :
-    (P.ofContract b).dual = P.contractDual.ofDelete b := rfl
+lemma ofContract_dual (P : (M ／ C).Separation) (i : Bool) :
+    (P.ofContract i).dual = P.contractDual.ofDelete i := rfl
 
 @[simp]
-lemma ofContract_contract (P : (M ／ C).Partition) (hC : C ⊆ M.E := by aesop_mat) (b : Bool) :
-    (P.ofContract b).contract C = P := by
-  apply Partition.ext
-  obtain rfl | rfl := b.eq_or_eq_not true
-  · rw [contract_apply, ofContract_apply_self, union_diff_cancel_right]
-    exact (P.disjoint_contract true).inter_eq.subset
-  rw [contract_apply, Bool.not_true, ← Bool.not_false, ofContract_apply_not, sdiff_eq_left]
-  simp
-
-lemma contract_ofContract (P : M.Partition) (hC : C ⊆ P b) : (P.contract C).ofContract b = P :=
-  Partition.ext_bool (b := b) <| by
-    rw [ofContract_apply_self, contract_apply, diff_union_of_subset hC]
-
-lemma delete_ofDelete (P : M.Partition) (hD : D ⊆ P b) :
-    (P.delete D).ofDelete b = P :=
-  Partition.ext_bool (b := b) <| by rw [ofDelete_apply_self, delete_apply, diff_union_of_subset hD]
+lemma ofContract_contract (P : (M ／ C).Separation) (i : Bool) :
+    (P.ofContract i).contract C = P :=
+  Separation.ext_bool (!i) <| by simp
 
 @[simp]
-lemma ofDelete_delete (P : (M ＼ D).Partition) (hD : D ⊆ M.E := by aesop_mat) :
-    (P.ofDelete b).delete D = P :=
-  Partition.ext_bool (b := b) <| by simp [ofDelete_apply_self _ hD]
+lemma ofDelete_delete (P : (M ＼ D).Separation) : (P.ofDelete i).delete D = P :=
+  Separation.ext_bool (!i) <| by simp
 
-lemma compl_delete (P : (M ＼ D).Partition) (hD : D ⊆ M.E := by aesop_mat) (b : Bool) :
-    M.E \ P b = P (!b) ∪ D := by
+lemma contract_ofContract (P : M.Separation) (hC : C ⊆ P i) : (P.contract C).ofContract i = P :=
+  Separation.ext_bool (!i) <| by simp [(P.disjoint_bool i).symm.mono_right hC]
+
+lemma delete_ofDelete (P : M.Separation) (hD : D ⊆ P i) : (P.delete D).ofDelete i = P :=
+  Separation.ext_bool (!i) <| by simp [(P.disjoint_bool i).symm.mono_right hD]
+
+lemma compl_delete (P : (M ＼ D).Separation) (hD : D ⊆ M.E := by aesop_mat) (i : Bool) :
+    M.E \ P i = P (!i) ∪ D := by
   grw [← P.compl_eq, delete_ground, diff_diff_comm, diff_union_self, eq_comm, union_eq_left,
     subset_diff, and_iff_right hD, P.subset_ground]
   exact disjoint_sdiff_right
 
-lemma compl_contract (P : (M ／ C).Partition) (hC : C ⊆ M.E := by aesop_mat) (b : Bool) :
-    M.E \ (P b) = P (!b) ∪ C :=  by
-  simpa using (P.dual.copy (M.dual_contract C)).compl_delete hC b
+lemma compl_delete_not (P : (M ＼ D).Separation) (hD : D ⊆ M.E := by aesop_mat) (i : Bool) :
+    M.E \ (P !i) = P i ∪ D := by
+  simpa using P.compl_delete hD !i
+
+lemma compl_contract (P : (M ／ C).Separation) (hC : C ⊆ M.E := by aesop_mat) (i : Bool) :
+    M.E \ (P i) = P (!i) ∪ C :=  by
+  simpa using (P.dual.copy (M.dual_contract C)).compl_delete hC i
+
+lemma compl_contract_not (P : (M ／ C).Separation) (hC : C ⊆ M.E := by aesop_mat) (i : Bool) :
+    M.E \ (P !i) = P i ∪ C := by
+  simpa using P.compl_contract hC !i
 
 @[simp]
-lemma compl_union_contract (P : (M ／ C).Partition) (b : Bool) : M.E \ (P b ∪ C) = P !b := by
+lemma compl_union_contract (P : (M ／ C).Separation) (i : Bool) : M.E \ (P i ∪ C) = P !i := by
   rw [← P.compl_eq, union_comm, contract_ground, diff_diff]
 
 @[simp]
-lemma compl_union_delete (P : (M ＼ D).Partition) (b : Bool) : M.E \ (P b ∪ D) = P !b := by
+lemma compl_union_delete (P : (M ＼ D).Separation) (i : Bool) : M.E \ (P i ∪ D) = P !i := by
   rw [← P.compl_eq, union_comm, delete_ground, diff_diff]
 
-lemma compl_delete_singleton (P : (M ＼ {e}).Partition) (he : e ∈ M.E := by aesop_mat) (b : Bool) :
-    M.E \ (P b) = insert e (P (!b)) := by
+lemma compl_delete_singleton (P : (M ＼ {e}).Separation) (he : e ∈ M.E := by aesop_mat) (i : Bool) :
+    M.E \ (P i) = insert e (P (!i)) := by
   rw [compl_delete, union_singleton]
 
-lemma compl_contract_singleton (P : (M ／ {e}).Partition) (he : e ∈ M.E := by aesop_mat) (b : Bool) :
-    M.E \ (P b) = insert e (P !b) := by
+lemma compl_contract_singleton (P : (M ／ {e}).Separation) (he : e ∈ M.E := by aesop_mat)
+    (i : Bool) : M.E \ (P i) = insert e (P !i) := by
   rw [compl_contract, union_singleton]
 
-lemma eConn_ofContract (P : (M ／ C).Partition) (b : Bool) :
-    (P.ofContract b).eConn = P.eConn + M.eLocalConn (P !b) C := by
+lemma eConn_ofContract (P : (M ／ C).Separation) (i : Bool) :
+    (P.ofContract i).eConn = P.eConn + M.eLocalConn (P !i) C := by
   wlog hCE : C ⊆ M.E generalizing C P with aux
   · simpa using aux (C := C ∩ M.E) (P.copy (by simp)) inter_subset_right
-  rw [← (P.ofContract b).eConn_eq b, ofContract_apply_self,
-    eConn_union_eq_eConn_contract_add _ (by simp), P.compl_union_contract, P.eConn_eq b]
+  rw [← (P.ofContract i).eConn_eq i, ofContract_apply_self,
+    eConn_union_eq_eConn_contract_add _ (by simp), P.compl_union_contract, P.eConn_eq i]
 
-lemma eConn_ofDelete (P : (M ＼ D).Partition) (b : Bool) :
-    (P.ofDelete b).eConn = P.eConn + M✶.eLocalConn (P !b) D := by
+lemma eConn_ofDelete (P : (M ＼ D).Separation) (i : Bool) :
+    (P.ofDelete i).eConn = P.eConn + M✶.eLocalConn (P !i) D := by
   rw [← eConn_dual, ofDelete_dual, eConn_ofContract]
   simp
 
-lemma eConn_induce_le_of_isMinor (P : M.Partition) (hNM : N ≤m M) :
+lemma eConn_induce_le_of_isMinor (P : M.Separation) (hNM : N ≤m M) :
     (P.induce hNM.subset).eConn ≤ P.eConn := by
-  rw [← eConn_eq _ left, induce_apply, ← eConn_eq _ left, eConn_inter_ground]
+  rw [← eConn_eq _ true, induce_apply, ← eConn_eq _ true, eConn_inter_ground]
   exact hNM.eConn_le _
 
-lemma eConn_contract_le (P : M.Partition) (C : Set α) : (P.contract C).eConn ≤ P.eConn :=
+lemma eConn_contract_le (P : M.Separation) (C : Set α) : (P.contract C).eConn ≤ P.eConn :=
   eConn_induce_le_of_isMinor P <| contract_isMinor ..
 
-lemma eConn_delete_le (P : M.Partition) (D : Set α) : (P.delete D).eConn ≤ P.eConn :=
+lemma eConn_delete_le (P : M.Separation) (D : Set α) : (P.delete D).eConn ≤ P.eConn :=
   eConn_induce_le_of_isMinor P <| delete_isMinor ..
 
-lemma eConn_eq_eConn_contract_add (P : M.Partition) (hC : C ⊆ P b) :
-    P.eConn = (P.contract C).eConn + M.eLocalConn (P !b) C := by
+lemma eConn_eq_eConn_contract_add (P : M.Separation) (hC : C ⊆ P i) :
+    P.eConn = (P.contract C).eConn + M.eLocalConn (P !i) C := by
   rw [← P.contract_ofContract hC, eConn_ofContract]
   rw [contract_apply, ofContract_contract, contract_ofContract _ hC, sdiff_eq_left.2]
-  exact (P.disjoint_bool b).symm.mono_right hC
+  exact (P.disjoint_bool i).symm.mono_right hC
 
-lemma eConn_le_eConn_contract_add (P : M.Partition) (C : Set α) :
+lemma eConn_le_eConn_contract_add (P : M.Separation) (C : Set α) :
     P.eConn ≤ (P.contract C).eConn + M.eRk C := by
   grw [P.eConn_eq_eConn_contract_add (C := C ∩ (P true)) inter_subset_right,
-    eConn_eq_eConn_contract_add (C := C ∩ (P false)) (b := right), eLocalConn_le_eRk_right,
+    eConn_eq_eConn_contract_add (C := C ∩ (P false)) (i := false), eLocalConn_le_eRk_right,
     eLocalConn_le_eRk_right, add_assoc, ← eRelRk_eq_eRk_contract, eRelRk_add_eRk_eq,
     ← inter_union_distrib_left, P.union_eq', eRk_inter_ground, contract_contract,
     P.contract_congr (by rw [← inter_union_distrib_left, P.union_eq]),
@@ -861,53 +792,52 @@ lemma eConn_le_eConn_contract_add (P : M.Partition) (C : Set α) :
   rw [P.contract_apply, ← P.compl_false]
   tauto_set
 
-lemma eConn_le_eConn_delete_add (P : M.Partition) (D : Set α) :
+lemma eConn_le_eConn_delete_add (P : M.Separation) (D : Set α) :
     P.eConn ≤ (P.delete D).eConn + M✶.eRk D := by
   grw [← eConn_dual, eConn_le_eConn_contract_add _ D, dual_contract, eConn_copy, eConn_dual]
 
-lemma eConn_ofContract_singleton_le_eConn_add_one (P : (M ／ {e}).Partition) (b : Bool) :
-    (P.ofContract b).eConn ≤ P.eConn + 1 := by
+lemma eConn_ofContract_singleton_le_eConn_add_one (P : (M ／ {e}).Separation) (i : Bool) :
+    (P.ofContract i).eConn ≤ P.eConn + 1 := by
   grw [eConn_ofContract, eLocalConn_le_eRk_right, eRk_singleton_le]
 
-lemma eConn_ofDelete_singleton_le_eConn_add_one (P : (M ＼ {e}).Partition) (b : Bool) :
-    (P.ofDelete b).eConn ≤ P.eConn + 1 := by
+lemma eConn_ofDelete_singleton_le_eConn_add_one (P : (M ＼ {e}).Separation) (i : Bool) :
+    (P.ofDelete i).eConn ≤ P.eConn + 1 := by
   grw [eConn_ofDelete, eLocalConn_le_eRk_right, eRk_singleton_le]
 
-lemma eConn_eq_of_subset_closure_of_isRestriction {N : Matroid α} {Q : N.Partition}
-    {P : M.Partition} (hNM : N ≤r M) (forall_subset : ∀ b, Q b ⊆ P b)
-    (forall_subset_closure : ∀ b, P b ⊆ M.closure (Q b)) : P.eConn = Q.eConn := by
-  rw [Partition.eConn, Partition.eConn,
-    hNM.eLocalConn_eq_of_subset (Q.subset_ground left) (Q.subset_ground right)]
-  refine le_antisymm ?_ <| M.eLocalConn_mono (forall_subset left) (forall_subset right)
+lemma eConn_eq_of_subset_closure_of_isRestriction {N : Matroid α} {Q : N.Separation}
+    {P : M.Separation} (hNM : N ≤r M) (forall_subset : ∀ i, Q i ⊆ P i)
+    (forall_subset_closure : ∀ i, P i ⊆ M.closure (Q i)) : P.eConn = Q.eConn := by
+  rw [Separation.eConn, Separation.eConn,
+    hNM.eLocalConn_eq_of_subset Q.subset_ground Q.subset_ground]
+  refine le_antisymm ?_ <| M.eLocalConn_mono (forall_subset true) (forall_subset false)
   grw [← eLocalConn_closure_closure (X := Q _),
-  M.eLocalConn_mono (forall_subset_closure left) (forall_subset_closure right)]
+  M.eLocalConn_mono (forall_subset_closure true) (forall_subset_closure false)]
 
 end Minor
 
-lemma eConn_eq_zero_iff_skew {P : M.Partition} {b : Bool} : P.eConn = 0 ↔ M.Skew (P b) (P !b) := by
-  rw [← M.eLocalConn_eq_zero (P.subset_ground b) (P.subset_ground (!b)), Partition.eConn]
-  cases b
+lemma eConn_eq_zero_iff_skew {P : M.Separation} {i : Bool} : P.eConn = 0 ↔ M.Skew (P i) (P !i) := by
+  rw [← M.eLocalConn_eq_zero P.subset_ground P.subset_ground, Separation.eConn]
+  cases i
   · rw [eLocalConn_comm]
     rfl
   rfl
 
-lemma eConn_eq_zero_iff_eq_disjointSum {P : M.Partition} {b : Bool} :
-    P.eConn = 0 ↔ M = (M ↾ (P b)).disjointSum (M ↾ (P !b)) (P.disjoint_bool b) := by
-  rw [eConn_eq_zero_iff_skew,
-    skew_iff_restrict_union_eq (P.subset_ground _) (P.subset_ground _) (P.disjoint_bool b),
-    P.union_bool_eq, restrict_ground_eq_self]
+lemma eConn_eq_zero_iff_eq_disjointSum {P : M.Separation} {i : Bool} :
+    P.eConn = 0 ↔ M = (M ↾ (P i)).disjointSum (M ↾ (P !i)) (P.disjoint_bool i) := by
+  rw [eConn_eq_zero_iff_skew, skew_iff_restrict_union_eq P.subset_ground P.subset_ground
+    (P.disjoint_bool i), P.union_bool_eq, restrict_ground_eq_self]
 
 lemma exists_partition_of_not_connected [M.Nonempty] (h : ¬ M.Connected) :
-    ∃ P : M.Partition, P.eConn = 0 ∧ ¬ P.Trivial := by
+    ∃ P : M.Separation, P.eConn = 0 ∧ ¬ P.Trivial := by
   obtain ⟨M₁, M₂, hdj, hM₁, hM₂, rfl⟩ := eq_disjointSum_of_not_connected h
-  refine ⟨Matroid.partition _ M₁.E true (by simp), ?_⟩
-  simp [Partition.trivial_def, hdj.symm.sdiff_eq_left, hM₁.ground_nonempty.ne_empty,
+  refine ⟨ofSetSep _ M₁.E true (by simp), ?_⟩
+  simp [Separation.trivial_def, hdj.symm.sdiff_eq_left, hM₁.ground_nonempty.ne_empty,
     hM₂.ground_nonempty.ne_empty]
 
 lemma exists_partition_iff_not_connected [M.Nonempty] :
-    ¬ M.Connected ↔ ∃ P : M.Partition, P.eConn = 0 ∧ ¬ P.Trivial := by
+    ¬ M.Connected ↔ ∃ P : M.Separation, P.eConn = 0 ∧ ¬ P.Trivial := by
   refine ⟨exists_partition_of_not_connected, fun ⟨P, hP, hPnt⟩ ↦ ?_⟩
-  rw [eConn_eq_zero_iff_eq_disjointSum (b := left)] at hP
+  rw [eConn_eq_zero_iff_eq_disjointSum (i := true)] at hP
   rw [hP]
   simp only [P.trivial_def, not_or, ← nonempty_iff_ne_empty] at hPnt
   apply disjointSum_not_connected
@@ -916,46 +846,21 @@ lemma exists_partition_iff_not_connected [M.Nonempty] :
   rw [← ground_nonempty_iff]
   exact hPnt.2
 
+/-- The generalized Bixby-Coullard inequality for pairs of separations. -/
+lemma eConn_inter_add_eConn_inter_le (P : (M ／ X).Separation) (Q : (M ＼ X).Separation) (i : Bool) :
+    M.eConn (P i ∩ Q i) + M.eConn (P (!i) ∩ Q (!i)) ≤ P.eConn + Q.eConn + M.eConn X := by
+  wlog hX : X ⊆ M.E generalizing X P Q with aux
+  · simpa using aux (X := X ∩ M.E) (P.copy (by simp)) (Q.copy (by simp)) inter_subset_right
+  convert M.eConn_inter_add_eConn_union_union_le (C := P i) (D := Q i) (X := X) (by simp) (by simp)
+    using 2
+  · rw [union_assoc, union_comm X, union_union_distrib_right, ← Q.compl_contract_not,
+      ← P.compl_delete_not, dual_ground, ← diff_inter, eConn_compl]
+  simp
 
--- section wlog
+/-- The Bixby-Coullard inequality for pairs of separations. -/
+lemma eConn_inter_add_eConn_inter_le_of_singleton
+    (P : (M ／ {e}).Separation) (Q : (M ＼ {e}).Separation) (i : Bool) :
+    M.eConn (P i ∩ Q i) + M.eConn (P (!i) ∩ Q (!i)) ≤ P.eConn + Q.eConn + 1 := by
+  grw [P.eConn_inter_add_eConn_inter_le, eConn_le_encard, encard_singleton]
 
-
--- -- protected lemma wlog_symm' (motive : {N : Matroid α} → (P : N.Partition) → Prop)
--- --     (property : {N : Matroid α} → N.Partition → Prop)
--- --     (h_symm : ∀ P, property P ∨ property P.symm)
--- --     (h_wlog : ∀ P, property P → motive P) (P₀ : M.Partition) :
-
--- protected lemma wlog_symm (motive : {N : Matroid α} → (P : N.Partition) → Prop)
---     (property : Matroid α → Set α → Prop)
---     (h_symm : ∀ ⦃N⦄ ⦃P : Matroid.Partition N⦄, motive P.symm → motive P)
---     (h_some : ∀ ⦃N⦄ ⦃P : Matroid.Partition N⦄, property N P.left → motive P)
---     (h_not : ∀ ⦃N⦄ ⦃P : Matroid.Partition N⦄, ¬ property N P.left → ¬ property N P.right →
--- motive P)
---     (P₀ : M.Partition) : motive P₀ := by
---   by_cases h1 : property M P₀.left
---   · exact h_some h1
---   by_cases h2 : property M P₀.right
---   · exact h_symm <| h_some (P := P₀.symm) (by simpa)
---   exact h_not h1 h2
-
--- protected lemma wlog_symm_dual (motive : {N : Matroid α} → (P : N.Partition) → Prop)
---     (property : Matroid α → Set α → Prop)
---     (h_symm : ∀ ⦃N⦄ ⦃P : Matroid.Partition N⦄, motive P.symm → motive P)
---     (h_dual : ∀ ⦃N⦄ ⦃P : Matroid.Partition N⦄, motive P.dual → motive P)
---     (h_some : ∀ ⦃N⦄ ⦃P : Matroid.Partition N⦄, property N P.left → motive P)
---     (h_not : ∀ ⦃N⦄ ⦃P : Matroid.Partition N⦄, ¬ property N P.left → ¬ property N P.right →
---       ¬ property N✶ P.left → ¬ property N✶ P.right → motive P) (P₀ : M.Partition) :
---  motive P₀ := by
---   by_cases h1 : property M P₀.left
---   · exact h_some h1
---   by_cases h2 : property M P₀.right
---   · exact h_symm <| h_some (P := P₀.symm) (by simpa)
---   by_cases h1' : property M✶ P₀.left
---   · exact h_dual <| h_some (N := M✶) (P := P₀.dual) (by simpa)
---   by_cases h2' : property M✶ P₀.right
---   · exact h_symm <| h_dual <| h_some (N := M✶) (P := P₀.symm.dual) (by simpa)
---   exact h_not h1 h2 h1' h2'
-
---end wlog
-
-end Partition
+end Separation

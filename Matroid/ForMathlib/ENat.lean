@@ -6,6 +6,9 @@ namespace ENat
 
 variable {a b c x y m n : ℕ∞}
 
+lemma le_one_iff_eq_zero_or_eq_one : a ≤ 1 ↔ a = 0 ∨ a = 1 := by
+  cases a with simp [Nat.le_one_iff_eq_zero_or_eq_one]
+
 def recTopZeroCoe {C : ℕ∞ → Sort*} (top : C ⊤) (zero : C 0) (coe : (a : ℕ) → C ↑(a + 1)) (n : ℕ∞) :
     C n := by
   cases n with

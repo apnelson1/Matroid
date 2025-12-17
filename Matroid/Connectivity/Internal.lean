@@ -1,16 +1,16 @@
 import Matroid.Connectivity.Vertical
 
-variable {α : Type*} {M : Matroid α} {j k : ℕ∞} {d k : ℕ∞} {A X Y : Set α} {P : M.Partition}
+variable {α : Type*} {M : Matroid α} {j k : ℕ∞} {d k : ℕ∞} {A X Y : Set α} {P : M.Separation}
   {b : Bool}
 
-open Set Matroid Matroid.Partition Function
+open Set Matroid Matroid.Separation Function
 
-namespace Matroid.Partition
+namespace Matroid.Separation
 
 /-- An internal separation is the type of separation required by internal connectivity.
 For finite connectivity, is it equivalent to both sides of the separation having cardinality
 exceeding the connectivity by at least two. -/
-def IsInternalSeparation (P : M.Partition) :=
+def IsInternalSeparation (P : M.Separation) :=
     P.IsPredSeparation (fun _ M X ↦ M.nullity X + M✶.nullity X ≤ 1)
 
 lemma isInternalSeparation_iff : P.IsInternalSeparation ↔
@@ -72,7 +72,7 @@ lemma isInternalSeparation_dual_iff : P.dual.IsInternalSeparation ↔ P.IsIntern
 lemma isInternalSeparation_symm_iff : P.symm.IsInternalSeparation ↔ P.IsInternalSeparation :=
   ⟨IsInternalSeparation.of_symm, IsInternalSeparation.symm⟩
 
-end Partition
+end Separation
 
 /-! ### Internal and Weak Connectivity -/
 
@@ -81,7 +81,7 @@ Weak `3`-connectedness is `3`-connectedness up to series/parallel pairs (TODO). 
 def WeaklyConnected (M : Matroid α) := M.NumConnected (fun M X ↦ M.Indep X ∨ M.Coindep X)
 
 lemma weaklyConnected_iff_forall : M.WeaklyConnected (k + 1) ↔
-    ∀ (P : M.Partition), P.eConn + 1 ≤ k → ¬ P.IsStrongSeparation := by
+    ∀ (P : M.Separation), P.eConn + 1 ≤ k → ¬ P.IsStrongSeparation := by
   simp [WeaklyConnected, numConnected_iff_forall]
 
 @[simp]
@@ -121,7 +121,7 @@ lemma WeaklyConnected.eq_uniqueBaseOn_of_isLoop_isColoop {e f : α} (hM : M.Weak
     (he : M.IsLoop e) (hf : M.IsColoop f) :
     ∃ E, e ∈ E ∧ f ∈ E ∧ (M = uniqueBaseOn {f} E ∨ M = uniqueBaseOn (E \ {e}) E) := by
   rw [← one_add_one_eq_two] at hM
-  replace hM := hM.not_isStrongSeparation (P := M.partition {e,f} true)
+  replace hM := hM.not_isStrongSeparation (P := M.ofSetSep {e,f} true)
   have heE := he.mem_ground
   have hfE := hf.mem_ground
   have hefD : M.Dep {e, f} := he.dep_of_mem (by simp)
@@ -169,7 +169,7 @@ lemma weaklyConnected_uniqueBaseOn_iff {B E : Set α} (hBE : B ⊆ E) (hk : k �
   · simpa [inter_eq_self_of_subset_left hBE, uniqueBaseOn_loops_eq] using
       (h.mono (show 2 ≤ k + 1 by eomega)).subsingleton_loops_or_coloops.symm
   obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp at hk
-  have aux (P : (uniqueBaseOn B E).Partition) (b : Bool) : P b ⊆ E := P.subset_ground b
+  have aux (P : (uniqueBaseOn B E).Separation) (b : Bool) : P b ⊆ E := P.subset_ground
   simp +contextual only [weaklyConnected_iff_forall, ENat.add_le_add_right_iff, ENat.one_ne_top,
     or_false, isStrongSeparation_iff, uniqueBaseOn_dep_iff, ← dep_dual_iff, uniqueBaseOn_dual_eq,
     not_and, Bool.forall_bool, and_imp, not_true_eq_false, imp_false, not_not, forall_const, aux]
@@ -178,10 +178,10 @@ lemma weaklyConnected_uniqueBaseOn_iff {B E : Set α} (hBE : B ⊆ E) (hk : k �
   rw [subset_diff, hB.disjoint_iff_right, and_iff_right (aux ..)] at ⊢ h4
   simp only [Classical.not_imp] at h4
   intro h5
-  grw [← subset_empty_iff, subset_inter h4.1 h5, P.disjoint'.inter_eq]
+  grw [← subset_empty_iff, subset_inter h4.1 h5, P.disjoint_false_true.inter_eq]
 
 lemma TutteConnected.weaklyConnected_add_one_iff (h : M.TutteConnected (k + 1)) :
-    M.WeaklyConnected (k + 1 + 1) ↔ ∀ (P : M.Partition), P.eConn = k → ¬ P.IsStrongSeparation := by
+    M.WeaklyConnected (k + 1 + 1) ↔ ∀ (P : M.Separation), P.eConn = k → ¬ P.IsStrongSeparation := by
   simp only [weaklyConnected_iff_forall, ENat.add_le_add_right_iff, ENat.one_ne_top, or_false]
   refine ⟨fun h' P hPconn ↦ h' P hPconn.le, fun h' P hPconn hP ↦ h' P ?_ hP⟩
   obtain rfl | hlt := hPconn.eq_or_lt
@@ -244,7 +244,7 @@ lemma weaklyConnected_two_iff :
 -- /-- This lemma is most relevant when `k = 1`; it means that a connected matroid is weakly
 -- three-connected if and only if it is three-connected up to simplification and cosimplification.
 -- lemma TutteConnected.weaklyConnected_add_one_iff (h : M.TutteConnected (k + 1)) :
---     M.WeaklyConnected (k + 1 + 1) ↔ ∀ (P : M.Partition), P.eConn = k → M.eRk P.left = k ∨
+--     M.WeaklyConnected (k + 1 + 1) ↔ ∀ (P : M.Separation), P.eConn = k → M.eRk P.left = k ∨
 --         M.eRk P.right = k ∨ M✶.eRk P.left = k ∨ M✶.eRk P.right = k := by
 --   obtain rfl | hne := eq_or_ne k ⊤
 --   · simp_rw [top_add, ← top_le_iff]
@@ -268,7 +268,7 @@ lemma weaklyConnected_two_iff :
 
 -- lemma TutteConnected.exists_of_not_weaklyConnected_add_one (h : M.TutteConnected (k + 1))
 --     (h' : ¬ M.WeaklyConnected (k + 1 + 1)) :
---     ∃ (P : M.Partition), P.eConn = k ∧ k < M.eRk P.left ∧ k < M.eRk P.right ∧
+--     ∃ (P : M.Separation), P.eConn = k ∧ k < M.eRk P.left ∧ k < M.eRk P.right ∧
 --       k < M✶.eRk P.left ∧ k < M✶.eRk P.right := by
 --   simp only [h.weaklyConnected_add_one_iff, not_forall, exists_prop, not_or] at h'
 --   obtain ⟨P, rfl, h1, h2, h3, h4⟩ := h'
@@ -287,7 +287,7 @@ def WeaklyInternallyConnected (M : Matroid α) :=
     M.NumConnected (fun M X ↦ M.nullity X + M✶.nullity X ≤ 1)
 
 lemma weaklyInternallyConnected_iff_forall : M.WeaklyInternallyConnected (k + 1) ↔
-    ∀ P : M.Partition, P.eConn + 1 ≤ k → ¬ P.IsInternalSeparation :=
+    ∀ P : M.Separation, P.eConn + 1 ≤ k → ¬ P.IsInternalSeparation :=
   numConnected_iff_forall
 
 lemma TutteConnected.weaklyInternallyConnected (h : M.TutteConnected k) :
@@ -332,7 +332,7 @@ lemma internallyConnected_one (M : Matroid α) : M.InternallyConnected 1 := by
   simp [internallyConnected_iff']
 
 lemma internallyConnected_iff_forall : M.InternallyConnected (k + 1) ↔
-    ∀ (P : M.Partition), (P.eConn + 1 + 1 ≤ k → ¬ P.IsTutteSeparation) ∧
+    ∀ (P : M.Separation), (P.eConn + 1 + 1 ≤ k → ¬ P.IsTutteSeparation) ∧
       (P.eConn + 1 = k → ¬ P.IsInternalSeparation) := by
   obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
   simp only [ENat.add_one_le_add_one_iff, ENat.add_one_inj, internallyConnected_iff,
@@ -359,7 +359,7 @@ lemma TutteConnected.internallyConnected (h : M.TutteConnected k) : M.Internally
 
 lemma TutteConnected.internallyConnected_iff_forall (h : M.TutteConnected k) :
     M.InternallyConnected (k + 1) ↔
-    ∀ P : M.Partition, P.eConn + 1 = k → ¬ P.IsInternalSeparation := by
+    ∀ P : M.Separation, P.eConn + 1 = k → ¬ P.IsInternalSeparation := by
   obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
   rw [tutteConnected_iff_forall] at h
   simp only [internallyConnected_iff_forall, ENat.add_one_le_add_one_iff, ENat.add_one_inj,
@@ -388,17 +388,17 @@ lemma WeaklyConnected.weaklyConnected_of_isRestriction {N : Matroid α} (h : M.W
   have hu' : ⋃ i, φ ⁻¹' (P i) ∩ M.E = M.E := by
     rw [← iUnion_inter, ← preimage_iUnion, P.iUnion_eq, inter_eq_right]
     exact fun e he ↦ (hφ e he).1
-  let Q := Matroid.Partition.mk (M := M) _ hdj' hu'
-  have hPE {b} : P b ⊆ M.E := (P.subset_ground _).trans hN.subset
+  let Q := Matroid.Separation.mk (M := M) _ hdj' hu'
+  have hPE {b} : P b ⊆ M.E := P.subset_ground.trans hN.subset
   have hssQ {b} : Q b ⊆ φ ⁻¹' (P b) := by simp [Q]
   have hclQ {b} : (Q b) ⊆ M.closure (P b) :=
     fun e ⟨he, heE⟩ ↦ M.closure_subset_closure (by simpa using he) (hφ e heE).2.1
   have hPS {b} : P b ⊆ Q b := by
-    simp only [Partition.mk_apply, subset_inter_iff, Q]
+    simp only [Separation.mk_apply, subset_inter_iff, Q]
     refine ⟨fun e he ↦ ?_, hPE⟩
-    rwa [mem_preimage, ← (hφ e (hPE he)).2.2 (P.subset_ground _ he)]
+    rwa [mem_preimage, ← (hφ e (hPE he)).2.2 (P.subset_ground he)]
   refine h Q ?_ ?_
-  · grw [← hPk, Partition.eConn_eq_eLocalConn, eLocalConn_mono _ hclQ hclQ,
+  · grw [← hPk, Separation.eConn_eq_eLocalConn, eLocalConn_mono _ hclQ hclQ,
       eLocalConn_closure_closure, P.eConn_eq_eLocalConn, hN.eLocalConn_eq_of_subset]
   refine isStrongSeparation_iff'.2 ⟨fun b ↦ ?_, fun b ↦ ?_⟩
   · exact ((hP.dep b).of_isRestriction hN).superset hPS

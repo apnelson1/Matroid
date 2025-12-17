@@ -13,6 +13,8 @@ section Delete
 
 variable {D D₁ D₂ R : Set α}
 
+attribute [simp] Matroid.delete_inter_ground_eq
+
 
 @[simp] lemma delete_ground_self (M : Matroid α) : M ＼ M.E = emptyOn α := by
   simp [← ground_eq_empty_iff]
