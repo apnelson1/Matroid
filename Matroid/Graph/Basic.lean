@@ -246,4 +246,8 @@ lemma setIncEdges_subset (G : Graph α β) (S : Set α) : E(G, S) ⊆ E(G) := by
 lemma mem_setIncEdges_iff (G : Graph α β) (S : Set α) : e ∈ E(G, S) ↔ ∃ x ∈ S, G.Inc e x := by
   simp [SetIncEdges]
 
+@[simp]
+lemma setIncEdges_singleton (G : Graph α β) (x : α) : E(G, {x}) = E(G, x) := by
+  simp [SetIncEdges, IncEdges]
+
 end Neighborhood

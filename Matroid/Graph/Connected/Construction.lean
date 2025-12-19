@@ -61,22 +61,9 @@ def singleEdge_edgeCut (hne : u ≠ v) : EdgeCut (Graph.singleEdge u v e) where
 
 example (n : ℕ) : (⊥ : Graph α β).PreconnGe n := by simp
 
-@[simp]
-lemma ConnGe_bot : (⊥ : Graph α β).ConnGe n ↔ n = 0 := by
-  refine ⟨fun h ↦ ?_, ?_⟩
-  · simpa using h <| mixedCut_of_cut (Cut.of_not_connected (X := ∅) (by simp))
-  rintro rfl
-  simp
-
 example (n : ℕ) : (bouquet v F).PreconnGe n := by simp
 
-@[simp]
-lemma ConnGe_bouquet_iff (n : ℕ) : (bouquet v F).ConnGe n ↔ n ≤ 1 := by
-  refine ⟨fun h ↦ ?_, fun h ↦ ConnGe.anti_right h fun C ↦ ?_⟩
-  · simpa using h (mixedCut_of_cut bouquet_cut)
-  by_contra! hcd
-  have := by simpa using ENat.lt_one_iff_eq_zero.mp hcd
-  simpa [this.1, this.2] using C.not_conn'
+
 
 @[simp]
 lemma banana_preconnGe (hF : F.Nonempty) (n : ℕ) : (banana u v F).PreconnGe n := by
@@ -94,4 +81,3 @@ lemma singleEdge_connGe (hne : u ≠ v) (n : ℕ) : (Graph.singleEdge u v e).Con
   by_contra! hcd
   have := by simpa using ENat.lt_one_iff_eq_zero.mp hcd
   simpa [this.1, this.2] using C.not_conn'
-

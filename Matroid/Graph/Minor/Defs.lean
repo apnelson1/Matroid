@@ -244,4 +244,8 @@ lemma edge_subset (h : G ≤ₘ H) : E(G) ⊆ E(H) := by
 --       sorry
 
 --     sorry
---   antisymm G H hGH hHG := by sorry
+--   antisymm G H hGH hHG := by
+--     obtain ⟨C, φ, hle⟩ := by exact hGH
+--     obtain ⟨C', φ', hle'⟩ := by exact hHG
+
+--     sorry

@@ -242,6 +242,12 @@ instance : IsPartialOrder (Graph α β) (· ≤i ·) where
   trans _ _ _ h₁ h₂ := h₁.trans h₂
   antisymm _ _ h₁ h₂ := antisymm h₁.le h₂.le
 
+lemma IsInducedSubgraph.vertexSet_mono (h : H ≤i G) : V(H) ⊆ V(G) :=
+  h.le.vertex_subset
+
+lemma IsInducedSubgraph.edgeSet_mono (h : H ≤i G) : E(H) ⊆ E(G) :=
+  G.edgeSet_mono h.le
+
 lemma isInducedSubgraph_iff :
     H ≤i G ↔ H ≤ G ∧ ∀ ⦃e x y⦄, G.IsLink e x y → x ∈ V(H) → y ∈ V(H) → H.IsLink e x y :=
   ⟨fun h ↦ ⟨h.1, h.2⟩, fun h ↦ ⟨h.1, h.2⟩⟩
@@ -252,7 +258,7 @@ lemma IsInducedSubgraph.adj_of_adj (h : H ≤i G) (hxy : G.Adj x y) (hx : x ∈ 
   exact (h.isLink_of_mem_mem hxy hx hy).adj
 
 lemma IsInducedSubgraph.eq_of_vertexSet (h : H ≤i G) (hV : V(H) = V(G)) : H = G :=
-  ext_of_le_le h.le le_rfl hV <| antisymm (edgeSet_mono h.le) <| fun e he ↦ by
+  ext_of_le_le h.le le_rfl hV <| antisymm h.edgeSet_mono <| fun e he ↦ by
     obtain ⟨_, _, hxy⟩ := G.exists_isLink_of_mem_edgeSet he
     exact h.isLink_of_mem_mem hxy (hV ▸ hxy.left_mem) (hV ▸ hxy.right_mem) |>.edge_mem
 

@@ -176,7 +176,7 @@ lemma bouquet_adj_iff : (bouquet v F).Adj x y ↔ F.Nonempty ∧ x = v ∧ y = v
   exact fun _ _ ↦ Iff.rfl
 
 /-- Every graph on just one vertex is a bouquet on that vertex-/
-lemma eq_bouquet (hv : v ∈ V(G)) (hss : V(G).Subsingleton) : G = bouquet v E(G) := by
+lemma eq_bouquet_of_mem (hv : v ∈ V(G)) (hss : V(G).Subsingleton) : G = bouquet v E(G) := by
   have hrw := hss.eq_singleton_of_mem hv
   refine Graph.ext_inc (by simpa) fun e x ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · simp [bouquet_inc_iff, ← mem_singleton_iff, ← hrw, h.edge_mem, h.vertex_mem]
@@ -185,12 +185,15 @@ lemma eq_bouquet (hv : v ∈ V(G)) (hss : V(G).Subsingleton) : G = bouquet v E(G
   rw [h.2, ← show z = v from (show z ∈ {v} from hrw ▸ hzw.left_mem)]
   exact hzw.inc_left
 
+lemma eq_bouquet (hV : V(G) = {v}) : G = bouquet v E(G) :=
+  eq_bouquet_of_mem (by simp [hV]) (by simp [hV])
+
 /-- Every graph on just one vertex is a bouquet on that vertex-/
 lemma exists_eq_bouquet_edge (hv : v ∈ V(G)) (hss : V(G).Subsingleton) : ∃ F, G = bouquet v F :=
-  ⟨E(G), eq_bouquet hv hss⟩
+  ⟨E(G), eq_bouquet_of_mem hv hss⟩
 
 lemma exists_eq_bouquet (hne : V(G).Nonempty) (hss : V(G).Subsingleton) : ∃ x F, G = bouquet x F :=
-  ⟨_, _, eq_bouquet hne.some_mem hss⟩
+  ⟨_, _, eq_bouquet_of_mem hne.some_mem hss⟩
 
 lemma bouquet_empty (v : α) : bouquet v ∅ = Graph.noEdge {v} β := by
   ext <;> simp

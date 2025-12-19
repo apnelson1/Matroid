@@ -175,10 +175,14 @@ lemma isEmtpy_cutBetween_self (hs : s ∈ V(G)) : IsEmpty (G.CutBetween s s) := 
   simp [hs, hsC] at h
 
 @[simp]
-lemma isEmpty_cutBetween_isLink (he : G.IsLink e s t) : IsEmpty (G.CutBetween s t) := by
+lemma IsLink.isEmpty_cutBetween (he : G.IsLink e s t) : IsEmpty (G.CutBetween s t) := by
   by_contra! h
   obtain ⟨C, _, hsC, htC, h⟩ := h
   exact h ⟨he.walk, by simp [hsC, htC], rfl, rfl⟩
+
+@[simp]
+lemma Adj.isEmpty_cutBetween (h : G.Adj s t) : IsEmpty (G.CutBetween s t) :=
+  h.choose_spec.isEmpty_cutBetween
 
 def cutBetween_empty (h : ¬ G.ConnBetween s t) : G.CutBetween s t where
   carrier := ∅
@@ -489,11 +493,24 @@ lemma connBetweenGe_one_iff : G.ConnBetweenGe s t 1 ↔ G.ConnBetween s t := by
   simp only [cast_one, one_le_encard_iff_nonempty]
   use x, hxC
 
+lemma ConnBetweenGe.left_mem (h : G.ConnBetweenGe s t n) (hn : n ≠ 0) : s ∈ V(G) := by
+  have := h.anti_right (by omega : 1 ≤ n)
+  rw [connBetweenGe_one_iff] at this
+  exact this.left_mem
+
+lemma ConnBetweenGe.right_mem (h : G.ConnBetweenGe s t n) (hn : n ≠ 0) : t ∈ V(G) := by
+  have := h.anti_right (by omega : 1 ≤ n)
+  rw [connBetweenGe_one_iff] at this
+  exact this.right_mem
+
 lemma connBetweenGe_self (hs : s ∈ V(G)) (n : ℕ) : G.ConnBetweenGe s s n :=
   (isEmtpy_cutBetween_self hs).elim
 
 lemma IsLink.connBetweenGe (h : G.IsLink e s t) (n : ℕ) : G.ConnBetweenGe s t n :=
-  (isEmpty_cutBetween_isLink h).elim
+  h.isEmpty_cutBetween.elim
+
+lemma Adj.connBetweenGe (h : G.Adj s t) (n : ℕ) : G.ConnBetweenGe s t n :=
+  h.isEmpty_cutBetween.elim
 
 lemma ConnBetweenGe.of_le (h : H.ConnBetweenGe s t n) (hle : H ≤ G) : G.ConnBetweenGe s t n := by
   rintro C
@@ -507,6 +524,19 @@ lemma IsComplete.connBetweenGe (h : G.IsComplete) (hs : s ∈ V(G)) (ht : t ∈ 
 lemma connBetweenGe_le_diff_encard (h : G.ConnBetweenGe s t n) (hne : s ≠ t) (hadj : ¬ G.Adj s t) :
     n ≤ (V(G) \ {s, t}).encard := by
   simpa using h (cutBetween_of_not_adj hne hadj)
+
+lemma connBetweenGe_le_encard_sub_two (h : G.ConnBetweenGe s t n) (hne : s ≠ t)
+  (hadj : ¬ G.Adj s t) : n ≤ V(G).encard - 2 := by
+  by_cases hst : s ∈ V(G) ∧ t ∈ V(G)
+  · refine (connBetweenGe_le_diff_encard h hne hadj).trans ?_
+    rw [← encard_diff_add_encard_of_subset (Set.pair_subset hst.1 hst.2), encard_pair hne]
+    exact ENat.le_sub_of_add_le_right (by simp) <| refl _
+  rw [not_and_or] at hst
+  obtain hs | ht := hst
+  · obtain rfl := by simpa using mt h.left_mem hs
+    simp
+  · obtain rfl := by simpa using mt h.right_mem ht
+    simp
 
 lemma connBetweenGe_le_encard (h : G.ConnBetweenGe s t n) (hne : s ≠ t) (hadj : ¬ G.Adj s t) :
     n ≤ V(G).encard :=

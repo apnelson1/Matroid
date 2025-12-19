@@ -245,7 +245,7 @@ lemma edgeRestrict_induce (G : Graph α β) (X : Set α) (F : Set β) : (G ↾ F
 lemma induce_isInducedSubgraph (hX : X ⊆ V(G)) : G[X] ≤i G := ⟨by simpa, by simp_all⟩
 
 lemma IsInducedSubgraph.induce_vertexSet_eq (h : H ≤i G) : G[V(H)] = H := by
-  have hle : G[V(H)] ≤ G := by simp [vertexSet_mono h.le]
+  have hle : G[V(H)] ≤ G := by simp [h.vertexSet_mono]
   refine G.ext_of_le_le hle h.le (by simp) <| Set.ext fun e ↦ ?_
   simp only [induce_edgeSet, mem_setOf_eq]
   refine ⟨fun ⟨x, y, h', hx, hy⟩ ↦ (h.isLink_of_mem_mem h' hx hy).edge_mem, fun h' ↦ ?_⟩
@@ -266,7 +266,7 @@ lemma isSpanningSubgraph_of_induce (h : H ≤ G) (X : Set α) : H[X] ≤s G[X] w
 /-- An induced subgraph is precisely a subgraph of the form `G[X]` for some `X ⊆ V(G)`.
 This version of the lemma can be used with `subst` or `obtain rfl` to replace `H` with `G[X]`. -/
 lemma IsInducedSubgraph.exists_eq_induce (h : H ≤i G) : ∃ X ⊆ V(G), H = G[X] :=
-  ⟨V(H), vertexSet_mono h.le, h.induce_vertexSet_eq.symm⟩
+  ⟨V(H), h.vertexSet_mono, h.induce_vertexSet_eq.symm⟩
 
 lemma IsInducedSubgraph.eq_of_isSpanningSubgraph (hi : H ≤i G) (hs : H ≤s G) : H = G := by
   obtain ⟨X, hX, rfl⟩ := hi.exists_eq_induce
@@ -352,6 +352,13 @@ lemma induce_vertexDelete (G : Graph α β) (X D : Set α) : G[X] - D = G[X \ D]
   Graph.ext rfl <| by
   simp only [vertexDelete_isLink_iff, induce_isLink, mem_diff]
   tauto
+
+@[simp]
+lemma edgeDelete_vertexDelete (G : Graph α β) (F : Set β) (X : Set α) :
+    (G ＼ F) - X = (G - X) ＼ F := by
+  rw [edgeDelete_eq_edgeRestrict, edgeRestrict_vertexDelete, ← edgeRestrict_inter_edgeSet,
+    diff_inter_right_comm, inter_eq_right.mpr (edgeSet_mono vertexDelete_le),
+    ← edgeDelete_eq_edgeRestrict]
 
 lemma vertexDelete_vertexDelete (G : Graph α β) (X Y : Set α) : (G - X) - Y = G - (X ∪ Y) := by
   rw [G.vertexDelete_def, induce_vertexDelete, diff_diff, ← vertexDelete_def]
