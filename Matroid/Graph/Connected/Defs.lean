@@ -540,42 +540,41 @@ def MixedCut.of_isSpanningSubgraph (C : G.MixedCut) (hle : H ≤s G) : H.MixedCu
     apply this.isSpanningSubgraph
     gcongr
 
-/-- A graph has `PreconnGe n`, if for every pair of vertices `s` and `t`, there is no
+/-- A graph has `PreconnGE n`, if for every pair of vertices `s` and `t`, there is no
     `n`-vertex cut between them.
-    In the case of complete graphs, K_n, ∀ κ, K_n.PreconnGe κ. -/
-def PreconnGe (G : Graph α β) (n : ℕ) : Prop :=
-  ∀ ⦃s t⦄, s ∈ V(G) → t ∈ V(G) → G.ConnBetweenGe s t n
+    In the case of complete graphs, K_n, ∀ κ, K_n.PreconnGE κ. -/
+def PreconnGE (G : Graph α β) (n : ℕ) : Prop :=
+  ∀ ⦃s t⦄, s ∈ V(G) → t ∈ V(G) → G.ConnBetweenGE s t n
 
-/-- A graph has `ConnGe n`, if every cut has size at least `n` and the number of vertices is at
+/-- A graph has `ConnGE n`, if every cut has size at least `n` and the number of vertices is at
   least `n + 1`. -/
 @[mk_iff]
-structure ConnGe (G : Graph α β) (n : ℕ) : Prop where
+structure ConnGE (G : Graph α β) (n : ℕ) : Prop where
   le_cut : ∀ ⦃C⦄, G.IsSepSet C → n ≤ C.encard
   le_card : V(G).Subsingleton ∨ n < V(G).encard
 
-/-- A graph has `EdgeConnGe n`, if for every pair of vertices `s` and `t`, there is no
+/-- A graph has `EdgeConnGE n`, if for every pair of vertices `s` and `t`, there is no
     `n`-edge cut between them. -/
-def EdgeConnGe (G : Graph α β) (n : ℕ) : Prop :=
-  ∀ ⦃s t⦄, s ∈ V(G) → t ∈ V(G) → G.EdgeConnBetweenGe s t n
+def EdgeConnGE (G : Graph α β) (n : ℕ) : Prop :=
+  ∀ ⦃s t⦄, s ∈ V(G) → t ∈ V(G) → G.EdgeConnBetweenGE s t n
 
 @[simp]
-lemma PreconnGe_zero : G.PreconnGe 0 := by
-  simp [PreconnGe]
+lemma PreconnGE_zero : G.PreconnGE 0 := by
+  simp [PreconnGE]
 
-lemma PreconnGe.anti_right (hle : n ≤ m) (h : G.PreconnGe m) :
-    G.PreconnGe n := by
+lemma PreconnGE.anti_right (hle : n ≤ m) (h : G.PreconnGE m) : G.PreconnGE n := by
   intro s t hs ht
   exact h hs ht |>.anti_right hle
 
 @[simp]
-lemma preconnGe_one_iff : G.PreconnGe 1 ↔ G.Preconnected := by
-  simp [PreconnGe, connBetweenGe_one_iff, Preconnected]
+lemma preconnGE_one_iff : G.PreconnGE 1 ↔ G.Preconnected := by
+  simp [PreconnGE, connBetweenGE_one_iff, Preconnected]
 
-lemma preconnGe_iff_forall_connBetweenGe :
-    G.PreconnGe n ↔ ∀ ⦃s t⦄, s ∈ V(G) → t ∈ V(G) → G.ConnBetweenGe s t n := Iff.rfl
+lemma preconnGE_iff_forall_connBetweenGE :
+    G.PreconnGE n ↔ ∀ ⦃s t⦄, s ∈ V(G) → t ∈ V(G) → G.ConnBetweenGE s t n := Iff.rfl
 
-lemma preconnGe_iff_forall_preconnected :
-    G.PreconnGe n ↔ ∀ ⦃X⦄, X.encard < ↑n → (G - X).Preconnected := by
+lemma preconnGE_iff_forall_preconnected :
+    G.PreconnGE n ↔ ∀ ⦃X⦄, X.encard < ↑n → (G - X).Preconnected := by
   refine ⟨fun h X hX => ?_, fun h s t hs ht C => ?_⟩
   · rw [preconnected_iff_isEmpty_separation]
     by_contra! hS
@@ -588,8 +587,8 @@ lemma preconnGe_iff_forall_preconnected :
   · by_contra! hC
     exact C.not_connBetween' <| h hC _ _ (by simpa) (by simpa)
 
-lemma preconnGe_iff_forall_setConnGe : G.PreconnGe n ↔ ∀ S T : Set α, S ⊆ V(G) → T ⊆ V(G) →
-    G.SetConnGe S T (min ↑n (min S.encard T.encard)).toNat := by
+lemma preconnGE_iff_forall_setConnGE : G.PreconnGE n ↔ ∀ S T : Set α, S ⊆ V(G) → T ⊆ V(G) →
+    G.SetConnGE S T (min ↑n (min S.encard T.encard)).toNat := by
   refine ⟨fun h S T hS hT C hC ↦ ?_, fun h s t hs ht C ↦ ?_⟩
   · rw [ENat.coe_toNat (by simp)]
     by_contra! hCcd
@@ -609,21 +608,21 @@ lemma preconnGe_iff_forall_setConnGe : G.PreconnGe n ↔ ∀ S T : Set α, S ⊆
   rw [ENat.coe_toNat (by simp)] at hcd
   simpa [hsC.not_ge, htC.not_ge] using hcd
 
-lemma PreconnGe.isSpanningSubgraph (hconn : H.PreconnGe n) (hsle : H ≤s G) :
-    G.PreconnGe n :=
+lemma PreconnGE.isSpanningSubgraph (hconn : H.PreconnGE n) (hsle : H ≤s G) :
+    G.PreconnGE n :=
   fun _ _ hs ht C ↦ hconn (hsle.vertexSet_eq ▸ hs) (hsle.vertexSet_eq ▸ ht) |>.of_le hsle.le C
 
 @[simp]
-lemma IsComplete.preconnGe (h : G.IsComplete) (n : ℕ) : G.PreconnGe n :=
-  fun _ _ hs ht ↦ h.connBetweenGe hs ht n
+lemma IsComplete.preconnGE (h : G.IsComplete) (n : ℕ) : G.PreconnGE n :=
+  fun _ _ hs ht ↦ h.connBetweenGE hs ht n
 
-lemma encard_le_preconnGe_of_not_isComplete (h : ¬ G.IsComplete) (hn : G.PreconnGe n) :
+lemma encard_le_preconnGE_of_not_isComplete (h : ¬ G.IsComplete) (hn : G.PreconnGE n) :
     n ≤ V(G).encard := by
   obtain ⟨x, hx, y, hy, hne, hxy⟩ := by simpa [IsComplete] using h
-  exact connBetweenGe_le_encard (hn hx hy) hne hxy
+  exact connBetweenGE_le_encard (hn hx hy) hne hxy
 
--- lemma PreconnGe.edgeDelete_singleton_of_not_isComplete (h : G.PreconnGe n)
---     (hne : ¬ G.IsComplete) (e : β) : (G ＼ {e}).PreconnGe (n - 1) := by
+-- lemma PreconnGE.edgeDelete_singleton_of_not_isComplete (h : G.PreconnGE n)
+--     (hne : ¬ G.IsComplete) (e : β) : (G ＼ {e}).PreconnGE (n - 1) := by
 --   obtain he | he := (em <| e ∈ E(G)).symm
 --   · rw [edgeDelete_eq_self _ (by simpa)]
 --     exact h.anti_right (by omega)
@@ -631,24 +630,24 @@ lemma encard_le_preconnGe_of_not_isComplete (h : ¬ G.IsComplete) (hn : G.Precon
 
 
 @[simp]
-lemma connGe_zero : G.ConnGe 0 := by
-  obtain h | h := V(G).eq_empty_or_nonempty <;> simp [connGe_iff, h]
+lemma connGE_zero : G.ConnGE 0 := by
+  obtain h | h := V(G).eq_empty_or_nonempty <;> simp [connGE_iff, h]
 
-lemma ConnGe.anti_right (hle : n ≤ m) (h : G.ConnGe m) : G.ConnGe n where
+lemma ConnGE.anti_right (hle : n ≤ m) (h : G.ConnGE m) : G.ConnGE n where
   le_cut C hC := (by norm_cast : (n : ℕ∞) ≤ ↑m).trans (h.le_cut hC)
   le_card := h.le_card.imp id (fun h ↦ by enat_to_nat!; omega)
 
 @[simp]
-lemma connGe_one_iff : G.ConnGe 1 ↔ G.Connected := by
+lemma connGE_one_iff : G.ConnGE 1 ↔ G.Connected := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · by_contra! hc
     simpa using h.le_cut <| empty_isSepSet_iff.mpr hc
   by_contra! hCcd
-  simp [connGe_iff, one_lt_encard_iff_nontrivial, V(G).subsingleton_or_nontrivial,
+  simp [connGE_iff, one_lt_encard_iff_nontrivial, V(G).subsingleton_or_nontrivial,
     Set.not_nonempty_iff_eq_empty, h] at hCcd
 
 @[simp]
-lemma connGe_bot : (⊥ : Graph α β).ConnGe n ↔ n = 0 := by
+lemma connGE_bot : (⊥ : Graph α β).ConnGE n ↔ n = 0 := by
   refine ⟨fun h ↦ ?_, ?_⟩
   · simpa using h.le_cut <| (isSepSet_of_not_connected (S := ∅) (by simp))
   rintro rfl
@@ -659,15 +658,15 @@ lemma bouquet_vertexDelete : (bouquet v F) - {v} = ⊥ :=
   (vertexDelete_eq_bot_iff (bouquet v F) {v}).mpr <| by simp
 
 @[simp]
-lemma connGe_bouquet_iff (n : ℕ) : (bouquet v F).ConnGe n ↔ n ≤ 1 := by
-  refine ⟨fun h ↦ ?_, fun h ↦ ConnGe.anti_right h <| by simp⟩
+lemma connGE_bouquet_iff (n : ℕ) : (bouquet v F).ConnGE n ↔ n ≤ 1 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ConnGE.anti_right h <| by simp⟩
   simpa using h.le_cut (C := {v}) ⟨by simp, by simp⟩
 
-lemma connGe_iff_of_vertexSet_singleton (h : V(G) = {x}) : G.ConnGe n ↔ n ≤ 1 := by
-  rw [eq_bouquet h, connGe_bouquet_iff]
+lemma connGE_iff_of_vertexSet_singleton (h : V(G) = {x}) : G.ConnGE n ↔ n ≤ 1 := by
+  rw [eq_bouquet h, connGE_bouquet_iff]
 
-lemma ConnGe.pre (h : G.ConnGe n) : G.PreconnGe n := by
-  rw [preconnGe_iff_forall_preconnected]
+lemma ConnGE.pre (h : G.ConnGE n) : G.PreconnGE n := by
+  rw [preconnGE_iff_forall_preconnected]
   intro X hX
   by_contra! hc
   have := mt Connected.pre hc
@@ -675,54 +674,54 @@ lemma ConnGe.pre (h : G.ConnGe n) : G.PreconnGe n := by
   exact hX.not_ge <| this.trans <| encard_le_encard inter_subset_right
 
 /-- If `G` is not complete, (or contain a complete graph as a spanning subgraph), then
-  `G.PreconnGe n` is equivalent to `G.ConnGe n`. -/
-lemma preconnGe_iff_connGe_of_not_isComplete (h : ¬ G.IsComplete) (n : ℕ) :
-    G.PreconnGe n ↔ G.ConnGe n := by
+  `G.PreconnGE n` is equivalent to `G.ConnGE n`. -/
+lemma preconnGE_iff_connGE_of_not_isComplete (h : ¬ G.IsComplete) (n : ℕ) :
+    G.PreconnGE n ↔ G.ConnGE n := by
   refine ⟨fun hn ↦ ⟨fun C hC ↦ ?_ , ?_⟩, fun hn ↦ hn.pre⟩
   · have := hC.not_connected
     rw [connected_iff, not_and_or] at this
     simp only [vertexDelete_vertexSet, not_nonempty_iff_eq_empty, diff_eq_empty] at this
     obtain hsu | hne := this
     · obtain ⟨x, hx, y, hy, hne, hxy⟩ := by simpa [IsComplete] using h
-      exact connBetweenGe_le_encard (hn hx hy) hne hxy |>.trans <| encard_le_encard hsu
-    rw [preconnGe_iff_forall_preconnected] at hn
+      exact connBetweenGE_le_encard (hn hx hy) hne hxy |>.trans <| encard_le_encard hsu
+    rw [preconnGE_iff_forall_preconnected] at hn
     exact not_lt.mp <| mt (hn (X := C)) hne
   rw [or_iff_not_imp_left, not_subsingleton_iff]
   rintro -
   obtain ⟨x, hx, y, hy, hne, hxy⟩ := by simpa [IsComplete] using h
-  grw [← ENat.add_one_le_iff (by simp), connBetweenGe_le_diff_encard (hn hx hy) hne hxy,
+  grw [← ENat.add_one_le_iff (by simp), connBetweenGE_le_diff_encard (hn hx hy) hne hxy,
     ← encard_insert_of_notMem (a := x) (by simp)]
   exact encard_le_encard <| by simp [hx, insert_subset_iff]
 
-lemma IsComplete.connGe_iff (h : G.IsComplete) (n : ℕ) :
-    G.ConnGe n ↔ (V(G).Subsingleton ∧ n ≤ V(G).encard ∨ n < V(G).encard) := by
+lemma IsComplete.connGE_iff (h : G.IsComplete) (n : ℕ) :
+    G.ConnGE n ↔ (V(G).Subsingleton ∧ n ≤ V(G).encard ∨ n < V(G).encard) := by
   refine ⟨fun h ↦ ?_, fun h => ?_⟩
   · apply h.le_card.imp (fun h1 ↦ ?_) id
     obtain hem | ⟨x, hsin⟩ := h1.eq_empty_or_singleton
     · simp_all
-    simp_all [connGe_iff_of_vertexSet_singleton hsin]
+    simp_all [connGE_iff_of_vertexSet_singleton hsin]
   obtain ⟨hss, hn⟩ | hn := h
   · obtain hem | ⟨x, hsin⟩ := hss.eq_empty_or_singleton
     · simp_all
-    simp_all [connGe_iff_of_vertexSet_singleton hsin]
+    simp_all [connGE_iff_of_vertexSet_singleton hsin]
   exact ⟨fun C hC ↦ le_trans (by simp) (lt_of_lt_of_le hn <| encard_le_encard
   <| h.subset_isSepSet hC).le, Or.inr hn⟩
 
-lemma ConnGe.isSpanningSubgraph (h : H.ConnGe n) (hsle : H ≤s G) : G.ConnGe n where
+lemma ConnGE.isSpanningSubgraph (h : H.ConnGE n) (hsle : H ≤s G) : G.ConnGE n where
   le_cut C hC := by simpa using h.le_cut <| hC.of_isSpanningSubgraph hsle
   le_card := hsle.vertexSet_eq ▸ h.le_card
 
-lemma ConnGe.of_edgeDelete (h : (G ＼ F).ConnGe n) : G.ConnGe n :=
+lemma ConnGE.of_edgeDelete (h : (G ＼ F).ConnGE n) : G.ConnGE n :=
   h.isSpanningSubgraph edgeDelete_isSpanningSubgraph
 
--- lemma ConnGe.mt (h : G.ConnGe n) (hconn : ¬ (G - X).Connected) :
+-- lemma ConnGE.mt (h : G.ConnGE n) (hconn : ¬ (G - X).Connected) :
 --     n ≤ X.encard := by
 --   by_contra! hcd
---   rw [connGe_iff_forall_connected] at h
+--   rw [connGE_iff_forall_connected] at h
 --   exact hconn (h hcd)
 
-lemma ConnGe.vertexDelete (h : G.ConnGe n) (hFin : (V(G) ∩ X).Finite) :
-    (G - X).ConnGe (n - (V(G) ∩ X).encard).toNat where
+lemma ConnGE.vertexDelete (h : G.ConnGE n) (hFin : (V(G) ∩ X).Finite) :
+    (G - X).ConnGE (n - (V(G) ∩ X).encard).toNat where
   le_cut C hC := by
     rw [ENat.coe_toNat (by simp), tsub_le_iff_right, ← encard_union_eq]
     exact h.le_cut hC.of_vertexDelete
@@ -740,28 +739,28 @@ lemma ConnGe.vertexDelete (h : G.ConnGe n) (hFin : (V(G) ∩ X).Finite) :
     rw [ENat.coe_toNat (by simp), this, inter_comm]
     enat_to_nat! <;> omega
 
--- lemma ConnGe.edgeDelete_singleton (h : G.ConnGe (n+1)) (e : β) :
---     (G ＼ {e}).ConnGe n where
+-- lemma ConnGE.edgeDelete_singleton (h : G.ConnGE (n+1)) (e : β) :
+--     (G ＼ {e}).ConnGE n where
 --   le_cut C hC := by
 --     by_contra! hcd
 --     have := h.le_cut hC.of_edgeDelete
 --   le_card := by
 --     rw [← encard_singleton]
 
--- lemma ConnGe.edgeDelete_parallel (h : G.ConnGe (n+1)) (u v : α) :
---     (G ＼ {e | G.IsLink e u v}).ConnGe n where
+-- lemma ConnGE.edgeDelete_parallel (h : G.ConnGE (n+1)) (u v : α) :
+--     (G ＼ {e | G.IsLink e u v}).ConnGE n where
 --   le_cut C hC := by
 
 @[simp]
-lemma EdgeConnGe_zero : G.EdgeConnGe 0 := by
-  simp [EdgeConnGe]
+lemma EdgeConnGE_zero : G.EdgeConnGE 0 := by
+  simp [EdgeConnGE]
 
-lemma EdgeConnGe.anti_right (hle : n ≤ m) (h : G.EdgeConnGe m) : G.EdgeConnGe n := by
+lemma EdgeConnGE.anti_right (hle : n ≤ m) (h : G.EdgeConnGE m) : G.EdgeConnGE n := by
   intro s t hs ht
   exact h hs ht |>.anti_right hle
 
 @[simp]
-lemma edgeConnGe_one_iff : G.EdgeConnGe 1 ↔ G.Preconnected := by
-  simp [EdgeConnGe, edgeConnBetweenGe_one_iff, Preconnected]
+lemma edgeConnGE_one_iff : G.EdgeConnGE 1 ↔ G.Preconnected := by
+  simp [EdgeConnGE, edgeConnBetweenGE_one_iff, Preconnected]
 
 end Graph

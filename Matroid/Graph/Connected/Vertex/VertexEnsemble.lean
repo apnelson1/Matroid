@@ -24,8 +24,8 @@ def IsSetCut.cutBetween_of_neighbor (hC : (G - {s, t}).IsSetCut (N(G, s) \ {s}) 
       (h.neighbor_setConnected hne <| (hadj <| ·.of_le vertexDelete_le)).subset
       (by grw [neighbor_mono vertexDelete_le]) (by grw [neighbor_mono vertexDelete_le])
 
-lemma connBetweenGe_iff_setConnGe (hne : s ≠ t) (hadj : ¬ G.Adj s t) :
-    G.ConnBetweenGe s t n ↔ (G - {s, t}).SetConnGe (N(G, s) \ {s}) (N(G, t) \ {t}) n := by
+lemma connBetweenGE_iff_setConnGE (hne : s ≠ t) (hadj : ¬ G.Adj s t) :
+    G.ConnBetweenGE s t n ↔ (G - {s, t}).SetConnGE (N(G, s) \ {s}) (N(G, t) \ {t}) n := by
   refine ⟨fun h C hC => ?_, fun h C => ?_⟩
   · obtain ⟨hCsub, hCs, hCt⟩ := by simpa [subset_diff] using hC.subset_vertexSet
     simpa using h (hC.cutBetween_of_neighbor hne hadj)
@@ -41,14 +41,14 @@ lemma connBetweenGe_iff_setConnGe (hne : s ≠ t) (hadj : ¬ G.Adj s t) :
   exact (hsa'.connBetween.trans ((G.vertexDelete_vertexDelete_comm _ _ ▸ hab).of_le
     vertexDelete_le)).trans htb'.connBetween.symm
 
-lemma ConnBetweenGe.le_left_Neighbor_encard (hne : s ≠ t) (hadj : ¬ G.Adj s t)
-    (hconn : G.ConnBetweenGe s t n) : n ≤ (N(G, s) \ {s}).encard := by
-  rw [connBetweenGe_iff_setConnGe hne hadj] at hconn
+lemma ConnBetweenGE.le_left_Neighbor_encard (hne : s ≠ t) (hadj : ¬ G.Adj s t)
+    (hconn : G.ConnBetweenGE s t n) : n ≤ (N(G, s) \ {s}).encard := by
+  rw [connBetweenGE_iff_setConnGE hne hadj] at hconn
   have := hconn.left_encard_le
   rwa [inter_eq_right.mpr (by simp [neighbor_subset_of_ne_not_adj hne hadj])] at this
 
-lemma ConnBetweenGe.le_right_Neighbor_encard (hne : s ≠ t) (hadj : ¬ G.Adj s t)
-    (hconn : G.ConnBetweenGe s t n) : n ≤ (N(G, t) \ {t}).encard :=
+lemma ConnBetweenGE.le_right_Neighbor_encard (hne : s ≠ t) (hadj : ¬ G.Adj s t)
+    (hconn : G.ConnBetweenGE s t n) : n ≤ (N(G, t) \ {t}).encard :=
   hconn.symm.le_left_Neighbor_encard hne.symm (by rwa [adj_comm])
 
 noncomputable def link (G : Graph α β) (x : α) : N(G, x) → β := fun y ↦ y.prop.choose

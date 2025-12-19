@@ -12,7 +12,7 @@ variable {α β ι : Type*} {G H : Graph α β} {u v x x₁ x₂ y y₁ y₂ z s
 namespace Graph
 
 lemma Menger'sTheorem_aux [G.Finite] {S T : Set α} (hS : S ⊆ V(G)) (hT : T ⊆ V(G))
-    (hconn : G.SetConnGe S T n) {A : G.SetEnsemble} (hA : A.between S T)
+    (hconn : G.SetConnGE S T n) {A : G.SetEnsemble} (hA : A.between S T)
     (hAFin : A.paths.Finite) (hAcard : A.paths.encard < n) :
     ∃ B : G.SetEnsemble, B.between S T ∧
     ∃ x ∉ last '' A.paths, insert x (last '' A.paths) = (last '' B.paths) := by
@@ -22,7 +22,7 @@ lemma Menger'sTheorem_aux [G.Finite] {S T : Set α} (hS : S ⊆ V(G)) (hT : T �
 
   /- Since we have less paths than the connectivity, the last ends of the paths is not an ST cut.
     Therefore, there is an S-(T \ last '' A.paths) path. -/
-  have h1 : (G - (last '' A.paths)).SetConnGe S (T \ last '' A.paths) 1 := by
+  have h1 : (G - (last '' A.paths)).SetConnGE S (T \ last '' A.paths) 1 := by
     have hlast : last '' A.paths ⊆ V(G) := by
       rintro _ ⟨P, hP, rfl⟩
       exact hT <| hA hP |>.last_mem
@@ -179,7 +179,7 @@ decreasing_by
   use (hP'P.subset.trans hGP.vertexSet_subset) first_mem, Or.inr (R.first_mem_bQ2)
 
 lemma Menger'sTheorem_aux' [G.Finite] (hS : S ⊆ V(G)) (hT : T ⊆ V(G)) {n : ℕ}
-    (hconn : G.SetConnGe S T n) :
+    (hconn : G.SetConnGE S T n) :
     ∀ m ≤ n, ∃ A : G.SetEnsemble, A.between S T ∧ A.paths.encard = m := by
   rintro m hn
   match m with
@@ -201,7 +201,7 @@ lemma Menger'sTheorem_aux' [G.Finite] (hS : S ⊆ V(G)) (hT : T ⊆ V(G)) {n : �
   For vertex sets `S` and `T`, if every `S`-`T` cut has at least `n` vertices, then there are `n`
   disjoint paths from `S` to `T`. -/
 theorem Menger'sTheorem_set [G.Finite] (hS : S ⊆ V(G)) (hT : T ⊆ V(G)) (n : ℕ) :
-    G.SetConnGe S T n ↔ ∃ A : G.SetEnsemble, A.between S T ∧ A.paths.encard = n := by
+    G.SetConnGE S T n ↔ ∃ A : G.SetEnsemble, A.between S T ∧ A.paths.encard = n := by
   refine ⟨(Menger'sTheorem_aux' hS hT · n le_rfl), fun ⟨A, hA, hAcard⟩ C hC => ?_⟩
   match n with
   | 0 => exact StrictMono.minimal_preimage_bot (fun ⦃a b⦄ a_1 ↦ a_1) rfl _
@@ -229,18 +229,18 @@ theorem Menger'sTheorem_set [G.Finite] (hS : S ⊆ V(G)) (hT : T ⊆ V(G)) (n : 
 /-- For two vertices `s` and `t`, if every `s`-`t` cut has at least `n` vertices,
     then there are `n` internally disjoint paths from `s` to `t`. -/
 theorem Menger'sTheorem_vertex [G.Finite] (hs : s ∈ V(G)) (ht : t ∈ V(G)) (hι : ENat.card ι = n) :
-    G.ConnBetweenGe s t n ↔ Nonempty (G.VertexEnsemble s t ι) := by
+    G.ConnBetweenGE s t n ↔ Nonempty (G.VertexEnsemble s t ι) := by
   have hιFin : Finite ι := ENat.card_lt_top.mp <| hι ▸ ENat.coe_lt_top n
   obtain hne | hne := eq_or_ne s t
   · subst t
-    simp only [hs, connBetweenGe_self, true_iff]
+    simp only [hs, connBetweenGE_self, true_iff]
     exact ⟨G.vertexEnsemble_nil hs ι⟩
   by_cases hadj : G.Adj s t
   · obtain ⟨e, he⟩ := hadj
-    simp only [he.connBetweenGe, true_iff]
+    simp only [he.connBetweenGE, true_iff]
     exact ⟨he.vertexEnsemble ι hne⟩
   refine ⟨fun h => ?_, fun ⟨A⟩ => ?_⟩
-  · rw [connBetweenGe_iff_setConnGe hne hadj, Menger'sTheorem_set
+  · rw [connBetweenGE_iff_setConnGE hne hadj, Menger'sTheorem_set
     (by simpa [subset_diff, hadj] using (G.neighbor_subset s).trans <| subset_insert ..)
     (by simpa [subset_diff, not_symm_not hadj] using (G.neighbor_subset t).trans
     <| subset_insert ..)] at h
@@ -258,7 +258,7 @@ theorem Menger'sTheorem_vertex [G.Finite] (hs : s ∈ V(G)) (ht : t ∈ V(G)) (h
     have hAcardFin : (first '' A.paths).Finite := finite_of_encard_eq_coe hAcard
     rw [← hAcardFin.cast_ncard_eq, ENat.coe_inj] at hAcard
     exact (Finite.equivFinOfCardEq hι).trans (hAcardFin.equivFinOfCardEq hAcard).symm |>.toEmbedding
-  unfold ConnBetweenGe
+  unfold ConnBetweenGE
   by_contra! hC
   obtain ⟨C, hC⟩ := hC
   obtain ⟨i, hdj⟩ : ∃ i, Disjoint V(A.f i) C := by
@@ -279,14 +279,14 @@ theorem Menger'sTheorem_vertex [G.Finite] (hs : s ∈ V(G)) (ht : t ∈ V(G)) (h
 -- #print axioms Menger'sTheorem_vertex
 
 theorem Menger'sTheoremPre [G.Finite] (hι : ENat.card ι = n) :
-    G.PreconnGe n ↔ ∀ ⦃s t⦄, s ∈ V(G) → t ∈ V(G) → Nonempty (G.VertexEnsemble s t ι) :=
+    G.PreconnGE n ↔ ∀ ⦃s t⦄, s ∈ V(G) → t ∈ V(G) → Nonempty (G.VertexEnsemble s t ι) :=
   forall₄_congr fun _ _ hs ht ↦ Menger'sTheorem_vertex hs ht hι
 
 -- theorem Menger'sTheorem [G.Finite] (hι : ENat.card ι = n) :
---     G.ConnGe n ↔ ∀ ⦃s t⦄, s ∈ V(G) → t ∈ V(G) → ∃ A : G.VertexEnsemble s t ι,
+--     G.ConnGE n ↔ ∀ ⦃s t⦄, s ∈ V(G) → t ∈ V(G) → ∃ A : G.VertexEnsemble s t ι,
 --     Set.Subsingleton {i | (A.f i).length = 1} := by
 --   by_cases hC : G.IsComplete
---   · rw [hC.connGe_iff n]
+--   · rw [hC.connGE_iff n]
 --     by_cases hss : V(G).Subsingleton
 --     · simp only [hss, true_and]
 --       rw [or_iff_left_iff_imp.mpr (fun hn ↦ le_trans (by simp) hn)]
@@ -299,13 +299,13 @@ theorem Menger'sTheoremPre [G.Finite] (hι : ENat.card ι = n) :
 --     simp only [hss, false_and, false_or]
 --     push_neg at hss
 --     sorry
---   rw [← G.preconnGe_iff_connGe_of_not_isComplete hC n, iff_comm]
+--   rw [← G.preconnGE_iff_connGE_of_not_isComplete hC n, iff_comm]
 --   refine ⟨fun h s t hs ht => ?_, fun h s t hs ht => ?_⟩
 --   · rw [Menger'sTheorem_vertex hs ht hι]
 --     exact ⟨(h hs ht).choose⟩
 --   simp only [IsComplete, ne_eq, not_forall] at hC
 --   obtain ⟨x, hx, y, hy, hne, hxy⟩ := hC
---   have := (connBetweenGe_le_encard_sub_two (n := n) · hne hxy)
+--   have := (connBetweenGE_le_encard_sub_two (n := n) · hne hxy)
 
 
 

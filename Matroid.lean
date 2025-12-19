@@ -9,6 +9,7 @@ import Matroid.Binary.Representation
 import Matroid.Circuit
 import Matroid.Clone
 import Matroid.Closure
+-- import Matroid.Connectivity.Adherent
 import Matroid.Connectivity.Basic
 -- import Matroid.Connectivity.Connected
 -- import Matroid.Connectivity.Core
@@ -19,6 +20,7 @@ import Matroid.Connectivity.Finitize
 -- import Matroid.Connectivity.Internal
 import Matroid.Connectivity.Minor
 import Matroid.Connectivity.Nat
+-- import Matroid.Connectivity.Offset
 import Matroid.Connectivity.Separation
 import Matroid.Connectivity.Skew
 -- import Matroid.Connectivity.ThreeConnected

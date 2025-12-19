@@ -8,8 +8,8 @@ variable {α β : Type*} {G H K : Graph α β} {s t u v x x₁ x₂ y y₁ y₂ 
 namespace Graph
 
 @[simp]
-lemma ConnBetweenGe_bouquet_self (n : ℕ) : (bouquet v F).ConnBetweenGe v v n :=
-  connBetweenGe_self (by simp) n
+lemma ConnBetweenGE_bouquet_self (n : ℕ) : (bouquet v F).ConnBetweenGE v v n :=
+  connBetweenGE_self (by simp) n
 
 @[simp]
 lemma bouquet_vertexDelete : (bouquet v F) - {v} = ⊥ :=
@@ -59,24 +59,24 @@ def singleEdge_edgeCut (hne : u ≠ v) : EdgeCut (Graph.singleEdge u v e) where
       exists_eq_singleton_iff_nonempty_subsingleton] at h
     exact hne <| h.2 (by simp : u ∈ _) (by simp : v ∈ _)
 
-example (n : ℕ) : (⊥ : Graph α β).PreconnGe n := by simp
+example (n : ℕ) : (⊥ : Graph α β).PreconnGE n := by simp
 
-example (n : ℕ) : (bouquet v F).PreconnGe n := by simp
+example (n : ℕ) : (bouquet v F).PreconnGE n := by simp
 
 
 
 @[simp]
-lemma banana_preconnGe (hF : F.Nonempty) (n : ℕ) : (banana u v F).PreconnGe n := by
+lemma banana_preconnGE (hF : F.Nonempty) (n : ℕ) : (banana u v F).PreconnGE n := by
   obtain rfl | hne := eq_or_ne u v
   · simp
-  apply IsComplete.preconnGe
+  apply IsComplete.preconnGE
   simp [hne, hF]
 
-example (n : ℕ) : (Graph.singleEdge u v e).PreconnGe n := by simp
+example (n : ℕ) : (Graph.singleEdge u v e).PreconnGE n := by simp
 
 @[simp]
-lemma singleEdge_connGe (hne : u ≠ v) (n : ℕ) : (Graph.singleEdge u v e).ConnGe n ↔ n ≤ 1 := by
-  refine ⟨fun h ↦ ?_, fun h ↦ ConnGe.anti_right h fun C ↦ ?_⟩
+lemma singleEdge_connGE (hne : u ≠ v) (n : ℕ) : (Graph.singleEdge u v e).ConnGE n ↔ n ≤ 1 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ConnGE.anti_right h fun C ↦ ?_⟩
   · simpa using h (mixedCut_of_edgeCut <| singleEdge_edgeCut hne)
   by_contra! hcd
   have := by simpa using ENat.lt_one_iff_eq_zero.mp hcd

@@ -48,15 +48,15 @@ def Cut.of_map {f : α → α'} (C : (f ''ᴳ G).Cut) : G.Cut where
   not_connected' := fun h => C.not_connected <| by simpa [map_vertexDelete_preimage] using
       (by simpa [vertexDelete_vertexSet_inter] using h : (G - (f ⁻¹' C)).Connected).map f
 
--- private lemma noSepSet_of_adj [G.Finite] (hG : G.PreconnGe 3)
---     (h : ∀ (e : β) (x : α) (h : G.Inc e x), ¬(Inc.contract G h).PreconnGe 3) :
+-- private lemma noSepSet_of_adj [G.Finite] (hG : G.PreconnGE 3)
+--     (h : ∀ (e : β) (x : α) (h : G.Inc e x), ¬(Inc.contract G h).PreconnGE 3) :
 --     ∀ a b c, G.Adj a b → ¬ G.IsSepSet {a, b, c} := by
 --   intro a b c hab hSep
 
 
 -- -- need to add some condition for K4 case
--- theorem exists_contract_connGe_three [G.Finite] (hG : G.PreconnGe 3) :
---     ∃ (e : β) (x : α) (h : G.Inc e x), h.contract.PreconnGe 3 := by
+-- theorem exists_contract_connGE_three [G.Finite] (hG : G.PreconnGE 3) :
+--     ∃ (e : β) (x : α) (h : G.Inc e x), h.contract.PreconnGE 3 := by
 --   by_contra! h
 --   have H : ∀ a b c, G.Adj a b → ¬ G.IsSepSet {a, b, c} := by
 --     intro a b c hab hSep
