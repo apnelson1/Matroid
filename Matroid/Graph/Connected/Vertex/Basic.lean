@@ -29,3 +29,19 @@ lemma IsWalk.isWalk_or_isWalk_of_union_of_disjoint (h : G.StronglyDisjoint H)
   · exact .inl hCG
   rw [ClosedSubgraph.compl_eq_of_stronglyDisjoint_union h] at hCH
   exact .inr hCH
+
+lemma IsWalk.prefixUntil_isWalk_subgraph {W} {H : G.Subgraph} [DecidablePred (· ∈ V(Hᶜ.val))]
+    (hW : G.IsWalk W) (hWf : W.first ∈ V(H.val)) :
+    H.val.IsWalk <| W.prefixUntil (· ∈ V(Hᶜ.val)) := by
+  match W with
+  | .nil u => simpa using hWf
+  | .cons u e w =>
+    simp_all only [cons_isWalk_iff, first_cons, prefixUntil_cons]
+    split_ifs with h
+    · simpa using hWf
+    · simp only [cons_isWalk_iff, prefixUntil_first]
+      have := hW.1.of_le_of_mem H.prop
+      <| H.mem_edgeSet_or_compl_edgeSet hW.1.edge_mem |>.resolve_right
+      <| fun hec ↦ h (hW.1.of_le_of_mem Hᶜ.prop hec |>.left_mem)
+      use this, hW.2.prefixUntil_isWalk_subgraph this.right_mem
+

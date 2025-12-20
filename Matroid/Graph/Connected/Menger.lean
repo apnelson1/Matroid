@@ -289,7 +289,6 @@ theorem Menger'sTheoremPre [G.Finite] (hι : ENat.card ι = n) :
 --   · rw [hC.connGE_iff n]
 --     by_cases hss : V(G).Subsingleton
 --     · simp only [hss, true_and]
---       rw [or_iff_left_iff_imp.mpr (fun hn ↦ le_trans (by simp) hn)]
 --       refine ⟨fun h s t hs ht => ?_, fun h => ?_⟩
 --       · grw [← hι, encard_le_one_iff_subsingleton.mpr hss] at h
 --         refine ⟨⟨fun ι ↦ WList.nil s, by simp [hs], by simp, by simp [hss hs ht], ?_⟩, ?_⟩
@@ -306,8 +305,6 @@ theorem Menger'sTheoremPre [G.Finite] (hι : ENat.card ι = n) :
 --   simp only [IsComplete, ne_eq, not_forall] at hC
 --   obtain ⟨x, hx, y, hy, hne, hxy⟩ := hC
 --   have := (connBetweenGE_le_encard_sub_two (n := n) · hne hxy)
-
-
 
 
 

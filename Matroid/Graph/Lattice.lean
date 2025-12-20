@@ -172,6 +172,10 @@ lemma le_iff_subset : H₁ ≤ H₂ ↔ V(H₁.val) ⊆ V(H₂.val) ∧ E(H₁.v
   refine ⟨fun h => ⟨by grw [h], by grw [h]⟩, fun ⟨H1, H2⟩ => ?_⟩
   exact Subtype.coe_le_coe.mp <| le_of_le_le_subset_subset H₁.prop H₂.prop H1 H2
 
+@[ext]
+lemma ext (hV : V(H₁.val) = V(H₂.val)) (hE : E(H₁.val) = E(H₂.val)) : H₁ = H₂ :=
+  Subtype.ext <| Graph.ext_of_le_le H₁.prop H₂.prop hV hE
+
 lemma _root_.Graph.IsLink.of_mem (hxy : H₁.val.IsLink e x y) (he : e ∈ E(H₂.val)) :
     H₂.val.IsLink e x y := hxy.of_le H₁.prop |>.of_le_of_mem H₂.prop he
 
@@ -352,6 +356,33 @@ def minAx : CompletelyDistribLattice.MinimalAxioms G.Subgraph where
 instance : CompletelyDistribLattice G.Subgraph :=
   CompletelyDistribLattice.ofMinimalAxioms Subgraph.minAx
 
+/-- The minimal subgraph of `G` that contains the edges in `F`. -/
+def ofEdge (G : Graph α β) (F : Set β) : G.Subgraph where
+  val := G[V(G, F)] ↾ F
+  property := edgeRestrict_le.trans <| induce_le (by simp)
+
+@[simp]
+lemma induce_endSetSet_inter_eq (F : Set β) : E(G[V(G, F)]) ∩ F = E(G) ∩ F := by
+  ext e
+  simp only [induce_edgeSet, mem_endSetSet_iff, mem_inter_iff, mem_setOf_eq, and_congr_left_iff]
+  refine fun he ↦ ⟨fun ⟨_, _, he, _⟩ => he.edge_mem, fun h => ?_⟩
+  obtain ⟨x, y, h⟩ := exists_isLink_of_mem_edgeSet h
+  exact ⟨x, y, h, ⟨e, he, h.inc_left⟩, ⟨e, he, h.inc_right⟩⟩
+
+@[simp]
+lemma ofEdge_vertexSet (F : Set β) : V((ofEdge G F).val) = V(G, F) := by
+  simp [ofEdge]
+
+@[simp]
+lemma ofEdge_edgeSet (F : Set β) : E((ofEdge G F).val) = E(G) ∩ F := by
+  simp [ofEdge, edgeRestrict_edgeSet]
+
+@[simp]
+lemma ofEdge_isLink (F : Set β) : (ofEdge G F).val.IsLink e x y ↔ e ∈ F ∧ G.IsLink e x y := by
+  simp only [ofEdge, edgeRestrict_isLink, induce_isLink, mem_endSetSet_iff, and_congr_right_iff,
+    and_iff_left_iff_imp]
+  exact fun heF he ↦ ⟨⟨e, heF, he.inc_left⟩, e, heF, he.inc_right⟩
+
 /-- The complement of a subgraph of `G` is the minimal subgraph of `G` that contains
   the edges and vertices that are not in the subgraph. See `compl_le_iff`.
   This complement is not well behaved in general order theoretically. See `inf_compl_eq_bot_iff`.
@@ -378,6 +409,15 @@ lemma compl_edgeSet (H : G.Subgraph) : E(Hᶜ.val) = E(G) \ E(H.val) := by
   · exact hxy.inc_left
   · exact hxy.inc_right
 
+lemma disjoint_compl_edgeSet (H : G.Subgraph) : Disjoint E(H.val) E(Hᶜ.val) := by
+  simp only [compl_edgeSet]
+  exact disjoint_sdiff_right
+
+lemma mem_edgeSet_or_compl_edgeSet (H : G.Subgraph) (he : e ∈ E(G)) :
+    e ∈ E(H.val) ∨ e ∈ E(Hᶜ.val) := by
+  simp only [compl_edgeSet, mem_diff, he, true_and]
+  exact em _
+
 @[simp]
 lemma compl_isLink (H : G.Subgraph) : Hᶜ.val.IsLink e x y ↔ G.IsLink e x y ∧ e ∉ E(H.val) := by
   rw [isLink_iff_isLink_and_mem_of_le Hᶜ.prop, compl_edgeSet, mem_diff, ← and_assoc]
@@ -397,6 +437,33 @@ lemma compl_le_iff : H₁ᶜ ≤ H₂ ↔ V(G) \ V(H₁.val) ⊆ V(H₂.val) ∧
   have := coe_top ▸ endSetSet_subset_of_le_subset ⊤ H2
   grw [this, endSetSet_subset]
 
+lemma ofEdge_diff_le_compl (H : G.Subgraph) : ofEdge G (E(G) \ E(H.val)) ≤ Hᶜ := by
+  refine le_iff_subset.mpr ⟨?_, ?_⟩
+  · simp [ofEdge_vertexSet, compl_vertexSet]
+  simp
+
+-- @[simp]
+-- lemma compl_compl (H : G.Subgraph) : Hᶜᶜ = H := by
+--   rw [Subgraph.ext_iff]
+--   have hE : E(Hᶜᶜ.val) = E(H.val) := by
+--     simp [edgeSet_mono H.prop]
+--   refine ⟨?_, hE⟩
+--   ext x
+--   simp +contextual only [compl_vertexSet, compl_edgeSet, sdiff_sdiff_right_self,
+-- Set.inf_eq_inter,
+--     mem_union, mem_diff, mem_endSetSet_iff, not_or, not_and, not_not, not_exists, and_imp,
+--     mem_inter_iff, iff_def, implies_true, true_and]
+--   refine ⟨fun h => ?_, fun h => ?_⟩
+--   · obtain ⟨h, h', h''⟩ | ⟨e, h, h'⟩ := h
+--     · exact h' h
+--     exact h'.of_le_of_mem H.prop h.2 |>.vertex_mem
+--   by_cases he : ∃ e, H.val.Inc e x
+--   · obtain ⟨e, he⟩ := he
+--     exact Or.inr ⟨e, ⟨edgeSet_mono H.prop he.edge_mem, he.edge_mem⟩, he.of_le H.prop⟩
+--   left
+--   use vertexSet_mono H.prop h
+--   rintro e heG heH hex
+--   have := he
 
 def sep (H : G.Subgraph) : Set α := V(H.val) ∩ V(G, E(G) \ E(H.val))
 

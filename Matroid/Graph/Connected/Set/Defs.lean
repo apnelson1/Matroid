@@ -205,6 +205,16 @@ lemma IsEdgeSetCut.disjoint (hF : G.IsEdgeSetCut S T F) : Disjoint V(G) (S ∩ T
 lemma not_isEdgeSetCut_of_not_disjoint (hdj : ¬ Disjoint V(G) (S ∩ T)) : ¬ G.IsEdgeSetCut S T F :=
   mt IsEdgeSetCut.disjoint hdj
 
+noncomputable def inc_vert (e : E(G)) : α :=
+  exists_isLink_of_mem_edgeSet e.prop |>.choose
+
+@[simp]
+lemma inc_vert_inc (e : E(G)) : G.Inc e (inc_vert e) :=
+  exists_isLink_of_mem_edgeSet e.prop |>.choose_spec
+
+lemma inc_vert_mem (e : E(G)) : inc_vert e ∈ V(G) :=
+  inc_vert_inc e |>.vertex_mem
+
 open Notation in
 private lemma inc_vert_foo : ∀ e ∈ E(G) ∩ F, ∃ x ∈ inc_vert '' (E(G) ↓∩ F), G.Inc e x := by
   rintro e ⟨he, heF⟩
@@ -298,12 +308,10 @@ def single (hP : G.IsPath P) : G.SetEnsemble where
   valid := by simp [hP]
 
 @[simp]
-lemma single_between (hP : G.IsPathFrom S T P) :
-    (single hP.isPath).between S T := by
+lemma single_between (hP : G.IsPathFrom S T P) : (single hP.isPath).between S T := by
   simpa [between]
 
-noncomputable def of_vertex (A : G.SetEnsemble) (v : α) (hv : v ∈ A.vertexSet) :
-    WList α β :=
+noncomputable def of_vertex (A : G.SetEnsemble) (v : α) (hv : v ∈ A.vertexSet) : WList α β :=
   (A.vertexPartition.exists_unique_of_mem_supp hv).choose_spec.1.1.choose
 
 @[simp]
@@ -347,8 +355,7 @@ lemma of_vertex_injOn_last (hu : u ∈ last '' A.paths) (hv : v ∈ last '' A.pa
     ← A.eq_of_vertex_mem (image_last_subset A hv) hQ last_mem] at h
   exact h ▸ rfl
 
-lemma between.image_last_eq_inter (hAST : A.between S T) :
-    last '' A.paths = T ∩ A.vertexSet := by
+lemma between.image_last_eq_inter (hAST : A.between S T) : last '' A.paths = T ∩ A.vertexSet := by
   ext x
   simp only [mem_image, mem_inter_iff, mem_vertexSet_iff]
   refine ⟨fun ⟨P, hPA, hx⟩ => ?_, fun ⟨hxT, P, hPA, hxP⟩ => by use P, hPA,
@@ -356,8 +363,7 @@ lemma between.image_last_eq_inter (hAST : A.between S T) :
   subst x
   use hAST hPA |>.last_mem, P, hPA, last_mem
 
-lemma between.image_first_eq_inter (hAST : A.between S T) :
-    first '' A.paths = S ∩ A.vertexSet := by
+lemma between.image_first_eq_inter (hAST : A.between S T) : first '' A.paths = S ∩ A.vertexSet := by
   ext x
   simp only [mem_image, mem_inter_iff, mem_vertexSet_iff]
   refine ⟨fun ⟨P, hPA, hx⟩ => ?_, fun ⟨hxS, P, hPA, hxP⟩ => by use P, hPA,
@@ -376,8 +382,7 @@ def SetConnGE (G : Graph α β) (S T : Set α) (n : ℕ) : Prop :=
 lemma SetConnGE_zero (G : Graph α β) (S T : Set α) : G.SetConnGE S T 0 := by
   simp [SetConnGE]
 
-lemma SetConnGE.anti_right (hle : n ≤ m) (h : G.SetConnGE S T m) :
-    G.SetConnGE S T n :=
+lemma SetConnGE.anti_right (hle : n ≤ m) (h : G.SetConnGE S T m) : G.SetConnGE S T n :=
   fun _ hC ↦ le_trans (by norm_cast) (h hC)
 
 @[simp]
@@ -391,8 +396,7 @@ lemma setConnGE_one_iff : G.SetConnGE S T 1 ↔ G.SetConnected S T := by
   simp only [cast_one, one_le_encard_iff_nonempty]
   use x, hxC
 
-lemma SetConnGE.SetConnected (h : G.SetConnGE S T n) (hn : n ≠ 0) :
-    G.SetConnected S T := by
+lemma SetConnGE.SetConnected (h : G.SetConnGE S T n) (hn : n ≠ 0) : G.SetConnected S T := by
   unfold SetConnGE at h
   contrapose! h
   use ∅, isSetCut_empty h
@@ -420,8 +424,7 @@ lemma SetConnGE.vertexDelete' (h : G.SetConnGE S T n) (X : Set α) :
   have := by simpa using h ((hC.of_vertexDelete').subset (by simp) (by simp))
   exact (ENat.coe_toNat_le_self _).trans <| tsub_le_iff_left.mpr <| this.trans <| encard_union_le ..
 
-lemma SetConnGE.subset (h : G.SetConnGE S T n) (hS : S ⊆ S') (hT : T ⊆ T') :
-    G.SetConnGE S' T' n :=
+lemma SetConnGE.subset (h : G.SetConnGE S T n) (hS : S ⊆ S') (hT : T ⊆ T') : G.SetConnGE S' T' n :=
   fun _ hC ↦ h (hC.subset hS hT)
 
 lemma setConnGE_inter_ncard (hFin : (V(G) ∩ S ∩ T).Finite) :
@@ -458,11 +461,9 @@ lemma EdgeSetConnGE_one_iff : G.EdgeSetConnGE S T 1 ↔ G.SetConnected S T := by
   simp only [cast_one, one_le_encard_iff_nonempty]
   use x, hxF
 
-lemma EdgeSetConnGE.of_not_disjoint (hdj : ¬ Disjoint V(G) (S ∩ T)) :
-    G.EdgeSetConnGE S T n :=
+lemma EdgeSetConnGE.of_not_disjoint (hdj : ¬ Disjoint V(G) (S ∩ T)) : G.EdgeSetConnGE S T n :=
   fun _ hF ↦ (hdj hF.disjoint).elim
 
-lemma SetConnGE.edgeSetConnGE (h : G.SetConnGE S T n) :
-    G.EdgeSetConnGE S T n :=
+lemma SetConnGE.edgeSetConnGE (h : G.SetConnGE S T n) : G.EdgeSetConnGE S T n :=
   fun _ hF ↦ h hF.isSetCut |>.trans (encard_image_le _ _)
   |>.trans (encard_preimage_val_le_encard_right _ _)

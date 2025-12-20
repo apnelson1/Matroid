@@ -1,4 +1,5 @@
 import Matroid.Graph.Connected.Basic
+import Matroid.Graph.Connected.Vertex.Basic
 
 open Set Function Nat WList
 
@@ -167,3 +168,23 @@ lemma Connected.exists_delete_vertex_connected [G.Finite] (hG : G.Connected)
   obtain ⟨x, hx⟩ := hG.nonempty
   obtain ⟨P, hP⟩ := Finite.exists_maximal G.isPath_finite ⟨nil x, by simpa⟩
   exact ⟨_, hP.prop.isWalk.first_mem, hG.delete_first_connected_of_maximal_isPath hnt hP⟩
+
+lemma Preconnected.left_mem_of_edgeDelete_linkEdges (h : G.Preconnected)
+    (h' : ¬ (G ＼ E(G, u, v)).Preconnected) : u ∈ V(G) := by
+  by_contra huv
+  simp [huv, h] at h'
+
+lemma Preconnected.right_mem_of_edgeDelete_linkEdges (h : G.Preconnected)
+    (h' : ¬ (G ＼ E(G, u, v)).Preconnected) : v ∈ V(G) := by
+  by_contra huv
+  simp [huv, h] at h'
+
+-- lemma Preconnected.connBetween_of_edgeDelete_linkEdges (h : G.Preconnected)
+--     (h' : ¬ (G ＼ E(G, u, v)).Preconnected) (hx : x ∈ V(G)) :
+--     (G ＼ E(G, u, v)).ConnBetween u x ∨ (G ＼ E(G, u, v)).ConnBetween v x := by
+--   classical
+--   obtain ⟨P, hP, rfl, rfl⟩ := h x u hx (h.left_mem_of_edgeDelete_linkEdges h')
+--   let H := (Subgraph.ofEdge G E(G, P.first, v))ᶜ
+--   have := hP.prefixUntil_isWalk_subgraph (H := H) ?_
+--   simp? [H, Subgraph.compl_compl] at this
+--   sorry

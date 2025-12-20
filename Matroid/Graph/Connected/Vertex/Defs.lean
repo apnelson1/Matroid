@@ -7,16 +7,6 @@ variable {α β ι ι' : Type*} {G H K : Graph α β} {s t u v x x₁ x₂ y y�
 
 namespace Graph
 
-noncomputable def inc_vert (e : E(G)) : α :=
-  exists_isLink_of_mem_edgeSet e.prop |>.choose
-
-@[simp]
-lemma inc_vert_inc (e : E(G)) : G.Inc e (inc_vert e) :=
-  exists_isLink_of_mem_edgeSet e.prop |>.choose_spec
-
-lemma inc_vert_mem (e : E(G)) : inc_vert e ∈ V(G) :=
-  inc_vert_inc e |>.vertex_mem
-
 /-! ### Connectivity between two vertices -/
 
 def ConnBetween (G : Graph α β) (x y : α) : Prop :=
