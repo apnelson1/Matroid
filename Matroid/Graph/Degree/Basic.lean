@@ -3,6 +3,19 @@ import Mathlib.Algebra.BigOperators.Finsupp.Basic
 import Matroid.ForMathlib.Topology.ENat
 import Matroid.ForMathlib.Tactic.ENatToNat
 
+lemma List.eq_of_sum_eq_le {α : Type*} [AddCommMonoid α] [PartialOrder α] [AddLeftStrictMono α]
+    [AddRightStrictMono α] [AddLeftMono α] {l : List (α × α)}
+    (hle : ∀ x ∈ l, x.1 ≤ x.2) (hsum : l.unzip.1.sum = l.unzip.2.sum) : l.unzip.1 = l.unzip.2 := by
+  match l with
+  | [] => simp
+  | (x, y) :: tail =>
+    simp_all only [mem_cons, forall_eq_or_imp, Prod.forall, unzip_cons, unzip_fst, unzip_snd,
+      sum_cons, cons.injEq, map_inj_left]
+    obtain ⟨hxy, hle⟩ := hle
+    rw [add_eq_add_iff_eq_and_eq hxy (by apply List.sum_le_sum; simpa)] at hsum
+    have := by simpa using tail.eq_of_sum_eq_le (by simpa) (by simp [hsum.2])
+    exact ⟨hsum.1, this⟩
+
 open Set
 
 variable {α β : Type*} {x y z u v w : α} {e f : β} {G H : Graph α β}
@@ -310,7 +323,7 @@ lemma degree_eq_ncard_add_ncard (G : Graph α β) [G.LocallyFinite] (x : α) :
   rw [← Nat.cast_inj (R := ℕ∞), natCast_degree_eq, eDegree_eq_encard_add_encard]
   simp [G.finite_setOf_isLoopAt.cast_ncard_eq, G.finite_setOf_isNonloopAt.cast_ncard_eq]
 
-lemma adj_eq_isLoopAt_union_isNonloopAt :
+lemma incEdges_eq_isLoopAt_union_isNonloopAt :
     E(G, y) = {e | G.IsLoopAt e y} ∪ {e | G.IsNonloopAt e y} := by
   simp +contextual only [Set.ext_iff, mem_incEdges_iff, inc_iff_isLoopAt_or_isNonloopAt, mem_union,
     mem_setOf_eq, implies_true]
@@ -319,7 +332,7 @@ lemma encard_adj_le_encard_inc : N(G, x).encard ≤ E(G, x).encard :=
   Function.Embedding.encard_le ⟨G.adjIncFun x, G.adjIncFun_injective x⟩
 
 lemma encard_inc_le_eDegree : E(G, x).encard ≤ G.eDegree x := by
-  rw [eDegree_eq_encard_add_encard, adj_eq_isLoopAt_union_isNonloopAt,
+  rw [eDegree_eq_encard_add_encard, incEdges_eq_isLoopAt_union_isNonloopAt,
     encard_union_eq disjoint_isLoopAt_isNonLoopAt]
   enat_to_nat! <;> omega
 
@@ -348,6 +361,14 @@ lemma forall_eDegree_ne_top_iff : (∀ x, G.eDegree x ≠ ⊤) ↔ G.LocallyFini
 
 lemma exists_eDegree_eq_top_iff : (∃ x, G.eDegree x = ⊤) ↔ ¬ G.LocallyFinite := by
   simpa using forall_eDegree_ne_top_iff.not
+
+@[simp]
+lemma natCast_degree_eq_iff (G : Graph α β) (v : α) :
+    (G.degree v : ℕ∞) = G.eDegree v ↔ E(G, v).Finite := by
+  rw [degree, ENat.coe_toNat_eq_self, ← lt_top_iff_ne_top, eDegree_eq_encard_add_encard,
+    incEdges_eq_isLoopAt_union_isNonloopAt]
+  simp [lt_top_iff_ne_top, ENat.mul_eq_top_iff]
+
 
 /-! ### Subgraphs -/
 
@@ -379,5 +400,21 @@ lemma IsClosedSubgraph.eDegree_eq (h : H ≤c G) (hx : x ∈ V(H)) : H.eDegree x
 
 lemma IsClosedSubgraph.degree_eq (h : H ≤c G) (hx : x ∈ V(H)) : H.degree x = G.degree x := by
   rw [Graph.degree, h.eDegree_eq hx, Graph.degree]
+
+lemma incEdges_of_degree [G.LocallyFinite] (hle : H ≤ G) (h : H.degree x = G.degree x) :
+    E(H, x) = E(G, x) := by
+  have : H.LocallyFinite := ‹G.LocallyFinite›.mono hle
+  have hlfin : Finite ↑{e | G.IsLoopAt e x} := G.finite_setOf_isLoopAt
+  have hnlfin : Finite ↑{e | G.IsNonloopAt e x} := G.finite_setOf_isNonloopAt
+  refine subset_antisymm (incEdges_mono hle x) ?_
+  rw [incEdges_eq_isLoopAt_union_isNonloopAt, incEdges_eq_isLoopAt_union_isNonloopAt]
+  rw [degree_eq_ncard_add_ncard, degree_eq_ncard_add_ncard, add_eq_add_iff_eq_and_eq] at h
+  obtain ⟨hlcd, hnlcd⟩ := h
+  simp only [mul_eq_mul_left_iff, OfNat.ofNat_ne_zero, or_false] at hlcd
+  rw [eq_of_subset_of_ncard_le (fun e he ↦ he.of_le hle) hlcd.ge,
+    eq_of_subset_of_ncard_le (fun e he ↦ he.of_le hle) hnlcd.ge]
+  · simp only [Nat.ofNat_pos, mul_le_mul_iff_right₀]
+    exact ncard_le_ncard (fun e he ↦ he.of_le hle) hlfin
+  · exact ncard_le_ncard (fun e he ↦ he.of_le hle) hnlfin
 
 end Graph

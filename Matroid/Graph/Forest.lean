@@ -123,6 +123,17 @@ lemma IsCycle.toGraph_eq_of_le {C C₀ : WList α β} (hC : G.IsCycle C) (hC₀ 
   rw [← edgeRestrict_induce, ← edgeRestrict_induce]
   exact induce_mono_right _ hCV
 
+lemma IsCycleGraph.eq_of_le (hG : G.IsCycleGraph) (hH : H.IsCycleGraph) (hle : G ≤ H) :
+    G = H := by
+  obtain ⟨C', hC', rfl⟩ := by simpa [isCycleGraph_iff_toGraph_isCycle] using hG
+  obtain ⟨C'', hC'', rfl⟩ := by simpa [isCycleGraph_iff_toGraph_isCycle] using hH
+  exact hC''.toGraph_eq_of_le (hC'.of_le hle) hle
+
+lemma IsCycleGraph.toGraph_of_isCycle {C : WList α β} (hG : G.IsCycleGraph)
+    (hC : G.IsCycle C) : C.toGraph = G := by
+  obtain ⟨C', hC', rfl⟩ := by simpa [isCycleGraph_iff_toGraph_isCycle] using hG
+  exact hC'.toGraph_eq_of_le hC <| hC.isWalk.toGraph_le
+
 lemma isForest_of_minimal_connected (hF : Minimal (fun F ↦ (G ↾ F).Connected) F) :
     (G ↾ F).IsForest := by
   intro C hC

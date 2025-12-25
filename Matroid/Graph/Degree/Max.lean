@@ -1,7 +1,7 @@
 import Matroid.Graph.Forest
 
-variable {α β : Type*} {x y z u v w : α} {e f : β} {G H : Graph α β} {F F₁ F₂ : Set β} {X Y : Set α}
-{d : ℕ}
+variable {α β : Type*} {x y z u v w : α} {e f : β} {G H C : Graph α β} {F F₁ F₂ : Set β}
+  {X Y : Set α} {d : ℕ}
 
 open Set WList
 
@@ -32,7 +32,13 @@ lemma Connected.loopless_of_maxDegreeLE_two (hG : G.Connected) (hmax : G.MaxDegr
 
 def IsPathGraph (G : Graph α β) : Prop := ∃ P, G.IsPath P ∧ G = P.toGraph
 
--- def IsCycleGraph (G : Graph α β) : Prop := ∃ C, G.IsCycle C ∧ G = C.toGraph
+lemma IsPathGraph.connected (hP : H.IsPathGraph) : H.Connected := by
+  obtain ⟨P', hP', rfl⟩ := hP
+  exact hP'.isWalk.toGraph_connected
+
+lemma IsCycleGraph.connected (hC : C.IsCycleGraph) : C.Connected := by
+  obtain ⟨C', hC', hV, hE⟩ := by rwa [isCycleGraph_iff_toGraph_isCycle] at hC
+  exact hC'.isWalk.toGraph_connected
 
 /-- If `v` and `w` are leaves of a connected graph `G` with maximum degree at most `2`,
 then `G` is a path from `v` to `w`. -/
@@ -86,14 +92,30 @@ lemma Connected.isCycleGraph_of_regular [G.Finite] (hG : G.Connected) (hreg : G.
     simpa [hx.degree] using hreg.degree hx.mem
   obtain ⟨C, hC : G.IsCycle C⟩ := by simpa [IsForest] using hF
   rw [← hG.eq_of_le_of_forall_degree_ge hC.isWalk.toGraph_le (by simp) ?_]
-  · exact isCycleGraph_of_cycle_toGraph hC
+  · exact hC.toGraph_isCycleGraph
   simp +contextual only [toGraph_vertexSet, mem_vertexSet_iff, hC.toGraph_regular.degree]
   exact fun x hxC ↦ (hreg.degree (hC.isWalk.vertex_mem_of_mem hxC)).le
 
 /-- Every finite connected graph with maximum degree `2` is a path or a cycle. -/
-lemma Connected.isPathGraph_or_isCycle_Graph_of_maxDegreeLE [G.Finite] (hG : G.Connected)
+lemma Connected.isPathGraph_or_isCycleGraph_of_maxDegreeLE [G.Finite] (hG : G.Connected)
     (hmax : G.MaxDegreeLE 2) : G.IsPathGraph ∨ G.IsCycleGraph := by
   obtain h | h := exists_or_forall_not (fun v ↦ v ∈ V(G) ∧ G.degree v ≤ 1)
   · exact .inl <| hG.isPathGraph_of_maxDegreeLE hmax h
   exact .inr <| hG.isCycleGraph_of_regular <| regular_iff.2
     fun v hv ↦ (hmax.degree_le v).antisymm <| by aesop
+
+lemma IsCompOf.isPathGraph_or_isCycleGraph_of_maxDegreeLE [G.Finite] (hH : H.IsCompOf G)
+    (hmax : G.MaxDegreeLE 2) : H.IsPathGraph ∨ H.IsCycleGraph := by
+  have hHFin : H.Finite := ‹G.Finite›.mono hH.le
+  exact hH.connected.isPathGraph_or_isCycleGraph_of_maxDegreeLE <| hmax.mono hH.le
+
+lemma IsCycleGraph.isCompOf_of_maxDegreeLE (hC : C.IsCycleGraph) (hmax : G.MaxDegreeLE 2)
+    (hle : C ≤ G) : C.IsCompOf G := by
+  refine hC.connected.IsCompOf_of_isClosedSubgraph ⟨hle, fun e x hex hxC ↦ ?_⟩
+  have := hmax.locallyFinite
+  have : E(C, x) = E(G, x) := by
+    refine incEdges_of_degree hle (le_antisymm (degree_mono hle _) ?_)
+    rw [hC.regular_two |>.degree hxC]
+    exact hmax.degree_le x
+  rw [Set.ext_iff] at this
+  exact this e |>.mpr hex |>.edge_mem

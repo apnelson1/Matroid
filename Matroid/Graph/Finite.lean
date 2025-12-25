@@ -115,6 +115,11 @@ instance (W : WList α β) : W.toGraph.Finite where
   vertexSet_finite := by simp
   edgeSet_finite := by simp
 
+lemma IsCycleGraph.finite (hC : H.IsCycleGraph) : H.Finite := by
+  rw [isCycleGraph_iff_toGraph_isCycle] at hC
+  obtain ⟨C, hC, rfl⟩ := hC
+  infer_instance
+
 /-- Used for well-founded induction on finite graphs by number of vertices -/
 lemma encard_delete_vertex_lt [G.Finite] (hx : x ∈ V(G)) :
     V(G - {x}).encard < V(G).encard := by

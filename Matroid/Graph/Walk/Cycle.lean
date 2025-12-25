@@ -204,19 +204,39 @@ lemma rotate_toGraph {n : ℕ} (hC : C.IsClosed) (hCwf : C.WellFormed) :
 
 def IsCycleGraph (G : Graph α β) := ∃ C, G.IsCycle C ∧ V(G) ⊆ V(C) ∧ E(G) ⊆ E(C)
 
-lemma isCycleGraph_of_cycle_toGraph (hC : G.IsCycle C) : C.toGraph.IsCycleGraph :=
+lemma IsCycle.toGraph_isCycleGraph (hC : G.IsCycle C) : C.toGraph.IsCycleGraph :=
   ⟨C, hC.isCycle_toGraph, by simp, by simp⟩
 
--- lemma IsCycleGraph.exists_cycle_from (hG : G.IsCycleGraph) (hx : x ∈ V(G)) :
---     ∃ C, G.IsCycle C ∧ V(G) ⊆ V(C) ∧ E(G) ⊆ E(C) ∧ C.first = x := by
---   obtain ⟨C, hC, hV, hE⟩ := hG
---   obtain ⟨n, hn, rfl⟩ := hC.isClosed.exists_rotate_first_eq hC.nonempty (hV hx)
---   use (C.rotate n), hC.rotate n
---   simp [hC.isClosed.rotate_vertexSet, hE, hV]
+lemma isCycleGraph_iff_toGraph_isCycle : G.IsCycleGraph ↔ ∃ C, G.IsCycle C ∧ G = C.toGraph := by
+  refine ⟨fun ⟨C, hC, hV, hE⟩ ↦ ?_, fun ⟨C, hC, heq⟩ ↦ heq ▸ hC.toGraph_isCycleGraph⟩
+  use C, hC, ext_of_le_le le_rfl hC.isWalk.toGraph_le
+    (antisymm (by simpa) <| vertexSet_mono hC.isWalk.toGraph_le)
+    (antisymm (by simpa) <| edgeSet_mono hC.isWalk.toGraph_le)
 
--- lemma IsCycleGraph.exists_cycle_of_isLink (hG : G.IsCycleGraph) (he : G.IsLink e x y) :
---     ∃ C, G.IsCycle (cons x e C) ∧ V(G) ⊆ V(cons x e C) ∧ E(G) ⊆ E(cons x e C) ∧ C.first = y := by
---   sorry
+lemma IsCycleGraph.exists_cycle_from (hG : G.IsCycleGraph) (hx : x ∈ V(G)) :
+    ∃ C, G.IsCycle C ∧ V(G) ⊆ V(C) ∧ E(G) ⊆ E(C) ∧ C.first = x := by
+  obtain ⟨C, hC, hV, hE⟩ := hG
+  obtain ⟨n, hn, rfl⟩ := hC.isClosed.exists_rotate_first_eq hC.nonempty (hV hx)
+  use (C.rotate n), hC.rotate n
+  simp [hC.isClosed.rotate_vertexSet, hE, hV]
+
+/-- Given a cycle graph, it can be oriented to a cyclic walk with an arbitrary starting vertex and
+  arbitrary starting edge. -/
+lemma IsCycleGraph.exists_cycle_of_isLink (hG : G.IsCycleGraph) (he : G.IsLink e x y) :
+    ∃ C, G.IsCycle (cons x e C) ∧ V(G) ⊆ V(cons x e C) ∧ E(G) ⊆ E(cons x e C) ∧ C.first = y := by
+  obtain ⟨C, hC, hV, hE⟩ := hG
+  rw [← hC.isWalk.isLink_iff_isLink_of_mem <| hE he.edge_mem, isLink_iff_dInc] at he
+  obtain h | h := he
+  · obtain ⟨w', n, h', rfl⟩ := hC.isClosed.exists_first_of_dInc h
+    use w'
+    rw [← h', rotate_edgeSet, hC.isClosed.rotate_vertexSet]
+    use hC.rotate n
+  rw [← dInc_reverse_iff] at h
+  obtain ⟨w', n, h', rfl⟩ := reverse_isClosed_iff.mpr hC.isClosed |>.exists_first_of_dInc h
+  use w'
+  rw [← h', rotate_edgeSet, reverse_edgeSet, hC.reverse.isClosed.rotate_vertexSet,
+    reverse_vertexSet]
+  use hC.reverse.rotate n
 
 -- lemma IsCycleGraph.exists_cycle_of_adj (hG : G.IsCycleGraph) (hadj : G.Adj x y) :
 --     ∃ C, G.IsCycle C ∧ V(G) ⊆ V(C) ∧ E(G) ⊆ E(C) ∧ C.first = x ∧ C.get 1 = y := by
@@ -224,13 +244,9 @@ lemma isCycleGraph_of_cycle_toGraph (hC : G.IsCycle C) : C.toGraph.IsCycleGraph 
 --   obtain ⟨C, hC, hV, hE, rfl⟩ := hG.exists_cycle_of_isLink he
 --   use (cons x e C), hC, hV, hE, by simp, by simp
 
--- /-- List of vertices in the cycle graph is the cyclic order-/
--- noncomputable def IsCycleGraph.vertices (hG : G.IsCycleGraph) (hx : x ∈ V(G)) : List α :=
---   hG.exists_cycle_from hx |>.choose.vertex.dropLast
-
--- lemma IsCycleGraph.encard_eq : V(G).encard = E(G).encard := by
---   sorry
-
+/-- List of vertices in the cycle graph is the cyclic order-/
+noncomputable def IsCycleGraph.vertices (hG : G.IsCycleGraph) (hx : x ∈ V(G)) : List α :=
+  hG.exists_cycle_from hx |>.choose.vertex.dropLast
 
 lemma IsCycle.exists_isPath (hC : G.IsCycle C) (hnt : C.Nontrivial) : ∃ P u e f,
     G.IsPath P ∧ u ∉ P ∧ e ∉ P.edge ∧ f ∉ P.edge ∧ e ≠ f ∧ C = cons u e (P.concat f u) := by

@@ -234,3 +234,7 @@ lemma IsCycle.toGraph_regular (hC : G.IsCycle C) : C.toGraph.Regular 2 := by
       (huP'.1.first_isLeaf_toGraph hne).degree]
   rw [singleEdge_degree_of_ne _ hvu hvlast, singleEdge_degree_of_ne _ hvu hvfirst,
     huP'.1.degree_toGraph_eq_two hvP hvfirst hvlast]
+
+lemma IsCycleGraph.regular_two {C : Graph α β} (hC : C.IsCycleGraph) : C.Regular 2 := by
+  obtain ⟨C', hC', rfl⟩ := by simpa [isCycleGraph_iff_toGraph_isCycle] using hC
+  exact hC'.toGraph_regular
