@@ -82,10 +82,21 @@ lemma IsSublist.trans (h : w₁.IsSublist w₂) (h' : w₂.IsSublist w₃) : w�
 lemma IsSublist.antisymm (h : w₁.IsSublist w₂) (h' : w₂.IsSublist w₁) : w₁ = w₂ :=
   h.eq_of_length_ge h'.length_le
 
-instance : IsPartialOrder (WList α β) IsSublist where
-  refl := isSublist_refl
-  trans _ _ _ := IsSublist.trans
-  antisymm _ _ := IsSublist.antisymm
+/-- The sublist order as a partial order on `WList α β`, for access to order API.  -/
+instance : PartialOrder (WList α β) where
+  le := IsSublist
+  le_refl := isSublist_refl
+  le_trans _ _ _ := IsSublist.trans
+  le_antisymm _ _ := IsSublist.antisymm
+
+@[simp] lemma le_iff_isSublist : w₁ ≤ w₂ ↔ w₁.IsSublist w₂ := Iff.rfl
+
+lemma length_monotone : Monotone (WList.length (α := α) (β := β)) :=
+  fun _ _ h ↦ h.length_le
+
+lemma Nil.eq_of_le (h : w₁ ≤ w₂) (hnil : w₂.Nil) : w₁ = w₂ := by
+  obtain ⟨x, rfl⟩ := nil_iff_eq_nil.mp hnil
+  simpa using h
 
 @[simp]
 lemma isSublist_cons_self (w : WList α β) (x : α) (e : β) : w.IsSublist (cons x e w) :=
@@ -1416,16 +1427,6 @@ lemma exists_sublist_of_mem_mem (hx : x ∈ w) (hy : y ∈ w) : ∃ w₀ : WList
   · simp only [prefixUntilVertex_first, w₂]
     exact (suffixFromVertex_first hx).symm
   · exact (prefixUntilVertex_last hyw₂).symm
-
-/-- The sublist order as a partial order on `WList α β`, for access to order API.  -/
-instance : PartialOrder (WList α β) where
-  le := IsSublist
-  le_refl := isSublist_refl
-  le_trans _ _ _ := IsSublist.trans
-  le_antisymm _ _ := IsSublist.antisymm
-
-@[simp]
-lemma le_iff_isSublist : w₁ ≤ w₂ ↔ w₁.IsSublist w₂ := Iff.rfl
 
 section drop
 

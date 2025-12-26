@@ -392,7 +392,7 @@ instance : HasCompl G.Subgraph where
     use G[V(G) \ V(H.val) ∪ V(G, E(G) \ E(H.val))] ＼ E(H.val)
     grw [edgeDelete_le, induce_le]
     rw [union_subset_iff]
-    refine ⟨?_, endSetSet_subset⟩
+    refine ⟨?_, endSetSet_subset G _⟩
     grw [← vertexDelete_vertexSet, vertexSet_mono (vertexDelete_le)]
 
 lemma compl_vertexSet (H : G.Subgraph) : V(Hᶜ.val) = V(G) \ V(H.val) ∪ V(G, E(G) \ E(H.val)) := rfl

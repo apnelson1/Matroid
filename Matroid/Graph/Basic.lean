@@ -1,4 +1,5 @@
 import Mathlib.Combinatorics.Graph.Basic
+import Mathlib.Data.Set.Card.Arithmetic
 
 variable {α β : Type*} {x y z u v w : α} {e f : β} {G H : Graph α β} {F : Set β}
 
@@ -87,6 +88,14 @@ lemma endSet_eq_of_notMem_edgeSet (he : e ∉ E(G)) : V(G, e) = ∅ := by
 lemma inc_iff_isLoopAt_or_isNonloopAt : G.Inc e x ↔ G.IsLoopAt e x ∨ G.IsNonloopAt e x :=
   ⟨Inc.isLoopAt_or_isNonloopAt, fun h ↦ h.elim IsLoopAt.inc IsNonloopAt.inc⟩
 
+@[simp]
+lemma endSet_encard_le_two (G : Graph α β) (e : β) : V(G, e).encard ≤ 2 := by
+  by_cases heE : e ∈ E(G)
+  · obtain ⟨x, y, h⟩ := exists_isLink_of_mem_edgeSet heE
+    rw [h.endSet_eq]
+    by_cases hxy : x = y <;> simp [hxy, encard_pair]
+  simp [endSet_eq_of_notMem_edgeSet heE]
+
 -- Terrible name
 def endSetSet (G : Graph α β) (F : Set β) : Set α := {x | ∃ e ∈ F, G.Inc e x}
 
@@ -96,11 +105,30 @@ notation "V(" G ", " F ")" => Graph.endSetSet G F
 lemma mem_endSetSet_iff : x ∈ V(G, F) ↔ ∃ e ∈ F, G.Inc e x := Iff.rfl
 
 @[simp]
-lemma endSetSet_subset : V(G, F) ⊆ V(G) := by
+lemma endSetSet_subset (G : Graph α β) (F : Set β) : V(G, F) ⊆ V(G) := by
   rintro x ⟨e, hS, he⟩
   exact he.vertex_mem
 
+lemma endSetSet_eq_sUnion (G : Graph α β) (F : Set β) : V(G, F) = ⋃ e ∈ F, V(G, e) := by
+  ext x
+  simp
 
+lemma endSetSet_encard_le (G : Graph α β) (F : Set β) : V(G, F).encard ≤ 2 * F.encard := by
+  rw [endSetSet_eq_sUnion]
+  obtain hinf | hfin := F.finite_or_infinite.symm
+  · simp [hinf]
+  have : Fintype F := hfin.fintype
+  refine (hfin.encard_biUnion_le (V(G, ·))).trans ?_
+  grw [finsum_mem_eq_sum _ (hfin.inter_of_left _), Finset.sum_le_card_nsmul _ _ 2 (by simp)]
+  simp only [nsmul_eq_mul, mul_comm, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true,
+    ENat.ofNat_ne_top, ENat.mul_le_mul_left_iff]
+  refine le_trans ?_ (encard_eq_coe_toFinset_card F).ge
+  refine ENat.coe_le_coe.mpr <| Finset.card_le_card <| by simp
+
+lemma endSetSet_inter_edgeSet (G : Graph α β) (F : Set β) : V(G, F ∩ E(G)) = V(G, F) := by
+  ext x
+  simp only [mem_endSetSet_iff, mem_inter_iff]
+  refine exists_congr fun e ↦ and_congr_left fun he ↦ and_iff_left_of_imp fun _ ↦ he.edge_mem
 
 /-- The function which maps a term in the subtype of edges of `G` to an unordered pair of
 elements in the subtype of vertices of `G`.

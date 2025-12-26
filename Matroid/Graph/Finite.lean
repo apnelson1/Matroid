@@ -24,11 +24,128 @@ namespace Graph
 
 /-! ### Finiteness -/
 
+@[mk_iff]
+class EdgeFinite (G : Graph α β) : Prop where
+  edgeSet_finite : E(G).Finite
+
+lemma edgeFinite_of_le [G.EdgeFinite] (hHG : H ≤ G) : H.EdgeFinite where
+  edgeSet_finite := ‹G.EdgeFinite›.edgeSet_finite.subset <| edgeSet_mono hHG
+
+instance [G.EdgeFinite] (X : Set α) : (G - X).EdgeFinite :=
+  edgeFinite_of_le vertexDelete_le
+
+instance [G.EdgeFinite] (F : Set β) : (G ↾ F).EdgeFinite :=
+  edgeFinite_of_le edgeRestrict_le
+
+instance [G.EdgeFinite] (F : Set β) : (G ＼ F).EdgeFinite :=
+  edgeFinite_of_le edgeDelete_le
+
+lemma edgeFinite_induce [G.EdgeFinite] (hX : X ⊆ V(G)) : (G[X]).EdgeFinite :=
+  edgeFinite_of_le (induce_le hX)
+
+@[simp]
+lemma edgeSet_finite [G.EdgeFinite] : E(G).Finite := EdgeFinite.edgeSet_finite
+
+lemma endSetSet_finite (G : Graph α β) [G.EdgeFinite] (F : Set β) : V(G, F).Finite := by
+  rw [← endSetSet_inter_edgeSet, ← encard_lt_top_iff]
+  refine lt_of_le_of_lt (G.endSetSet_encard_le (F ∩ E(G)))
+  <| WithTop.mul_lt_top (compareOfLessAndEq_eq_lt.mp rfl)
+  <| encard_lt_top_iff.mpr G.edgeSet_finite |>.trans_le' (encard_le_encard inter_subset_right)
+
+lemma nonempty_isTrail_finite (G : Graph α β) [G.EdgeFinite] :
+    {P | P.Nonempty ∧ G.IsTrail P}.Finite := by
+  have hVfin := G.endSetSet_finite E(G) |>.to_subtype
+  have hEfin := G.edgeSet_finite.to_subtype
+  have : Finite {L : List E(G) // L.Nodup} := finite_list_nodup E(G)
+  let f (P : {P // P.Nonempty ∧ G.IsTrail P}) : V(G, E(G)) × {L : List E(G) // L.Nodup} :=
+    ⟨⟨P.1.first, ?endSetSet⟩,
+    ⟨P.1.edge.attachWith _ (fun _ ↦ P.2.2.isWalk.edge_mem_of_mem), by simp [P.2.2.edge_nodup]⟩⟩
+  case endSetSet =>
+    obtain ⟨v, e, w, hp⟩ := P.2.1.exists_cons
+    obtain ⟨hl, hw⟩ := by simpa [hp] using P.2.2.isWalk
+    exact hp ▸ ⟨e, hl.edge_mem, hl.inc_left⟩
+  change Finite {P // P.Nonempty ∧ G.IsTrail P}
+  refine Finite.of_injective f fun ⟨P, hP⟩ ⟨P', hP'⟩ hPP' ↦ ?_
+  simp only [Prod.mk.injEq, Subtype.mk.injEq, f] at hPP'
+  simp only [Subtype.mk.injEq]
+  apply hP.2.isWalk.eq_of_edge_eq_first_eq hP'.2.isWalk hPP'.1
+  convert congr_arg (fun L ↦ L.map Subtype.val) hPP'.2 <;> simp
+
+-- Please suggest a better name for the following set of lemmas.
+/-- use with `zorn_le_nonempty₀`. -/
+lemma isTrail_zorn [G.EdgeFinite] : ∀ c ⊆ {P | G.IsTrail P}, IsChain (· ≤ ·) c →
+    ∀ y ∈ c, ∃ ub ∈ {P | G.IsTrail P}, ∀ z ∈ c, z ≤ ub := by
+  intro c hc hch p hpc
+  by_cases hcne : ∃ p' ∈ c, p'.Nonempty
+  · obtain ⟨p', hp'c, hp'ne⟩ := hcne
+    obtain ⟨ub, hub, hubmax⟩ := G.nonempty_isTrail_finite.subset inter_subset_right
+      |>.exists_le_maximal ⟨hp'c, hp'ne, hc hp'c⟩
+    use ub, hubmax.prop.2.2, fun z hz ↦ ?_
+    obtain ⟨x, rfl⟩ | hzne := z.exists_eq_nil_or_nonempty
+    · apply hch.total hubmax.prop.1 hz |>.resolve_left fun hle ↦ ?_
+      apply_fun WList.length (α := α) (β := β) at hle using WList.length_monotone (α := α) (β := β)
+      simp [← WList.not_nonempty_iff, hubmax.prop.2.1] at hle
+    exact hch.total hubmax.prop.1 hz |>.elim (hubmax.le_of_ge ⟨hz, hzne, hc hz⟩) id
+  simp only [not_exists, not_and, WList.not_nonempty_iff] at hcne
+  obtain rfl : c = {p} := by
+    apply Subsingleton.eq_singleton_of_mem (fun x hx y hy ↦ ?_) hpc
+    obtain hle | hle := hch.total hx hy
+    · exact (hcne y hy).eq_of_le hle
+    · exact (hcne x hx).eq_of_le hle |>.symm
+  use p, (by simpa using hc), by simp
+
+/-- use with `zorn_le_nonempty₀`. -/
+lemma isPath_zorn [G.EdgeFinite] : ∀ c ⊆ {P | G.IsPath P}, IsChain (· ≤ ·) c →
+    ∀ y ∈ c, ∃ ub ∈ {P | G.IsPath P}, ∀ z ∈ c, z ≤ ub := by
+  intro c hc hch p hpc
+  by_cases hcne : ∃ p' ∈ c, p'.Nonempty
+  · obtain ⟨p', hp'c, hp'ne⟩ := hcne
+    have hsu : c ∩ {P | P.Nonempty ∧ G.IsPath P} ⊆ {p' | p'.Nonempty ∧ G.IsTrail p'} :=
+      fun _ ⟨hc, hne, hp⟩ ↦ ⟨hne, hp.isTrail⟩
+    obtain ⟨ub, hub, hubmax⟩ := G.nonempty_isTrail_finite.subset hsu
+      |>.exists_le_maximal ⟨hp'c, hp'ne, hc hp'c⟩
+    use ub, hubmax.prop.2.2, fun z hz ↦ ?_
+    obtain ⟨x, rfl⟩ | hzne := z.exists_eq_nil_or_nonempty
+    · apply hch.total hubmax.prop.1 hz |>.resolve_left fun hle ↦ ?_
+      apply_fun WList.length (α := α) (β := β) at hle using WList.length_monotone (α := α) (β := β)
+      simp [← WList.not_nonempty_iff, hubmax.prop.2.1] at hle
+    exact hch.total hubmax.prop.1 hz |>.elim (hubmax.le_of_ge ⟨hz, hzne, hc hz⟩) id
+  simp only [not_exists, not_and, WList.not_nonempty_iff] at hcne
+  obtain rfl : c = {p} := by
+    apply Subsingleton.eq_singleton_of_mem (fun x hx y hy ↦ ?_) hpc
+    obtain hle | hle := hch.total hx hy
+    · exact (hcne y hy).eq_of_le hle
+    · exact (hcne x hx).eq_of_le hle |>.symm
+  use p, (by simpa using hc), by simp
+
+/-- use with `zorn_le_nonempty₀`. -/
+lemma isCycle_zorn [G.EdgeFinite] : ∀ c ⊆ {P | G.IsCycle P}, IsChain (· ≤ ·) c →
+    ∀ y ∈ c, ∃ ub ∈ {P | G.IsCycle P}, ∀ z ∈ c, z ≤ ub := by
+  intro c hc hch p hpc
+  by_cases hcne : ∃ p' ∈ c, p'.Nonempty
+  · obtain ⟨p', hp'c, hp'ne⟩ := hcne
+    have hsu : c ∩ {P | P.Nonempty ∧ G.IsCycle P} ⊆ {p' | p'.Nonempty ∧ G.IsTrail p'} :=
+      fun _ ⟨hc, hne, hp⟩ ↦ ⟨hne, hp.isTrail⟩
+    obtain ⟨ub, hub, hubmax⟩ := G.nonempty_isTrail_finite.subset hsu
+      |>.exists_le_maximal ⟨hp'c, hp'ne, hc hp'c⟩
+    use ub, hubmax.prop.2.2, fun z hz ↦ ?_
+    obtain ⟨x, rfl⟩ | hzne := z.exists_eq_nil_or_nonempty
+    · apply hch.total hubmax.prop.1 hz |>.resolve_left fun hle ↦ ?_
+      apply_fun WList.length (α := α) (β := β) at hle using WList.length_monotone (α := α) (β := β)
+      simp [← WList.not_nonempty_iff, hubmax.prop.2.1] at hle
+    exact hch.total hubmax.prop.1 hz |>.elim (hubmax.le_of_ge ⟨hz, hzne, hc hz⟩) id
+  simp only [not_exists, not_and, WList.not_nonempty_iff] at hcne
+  obtain rfl : c = {p} := by
+    apply Subsingleton.eq_singleton_of_mem (fun x hx y hy ↦ ?_) hpc
+    obtain hle | hle := hch.total hx hy
+    · exact (hcne y hy).eq_of_le hle
+    · exact (hcne x hx).eq_of_le hle |>.symm
+  use p, (by simpa using hc), by simp
+
 /-- A graph is finite if it has finitely many vertices and edges -/
 @[mk_iff]
-protected class Finite (G : Graph α β) : Prop where
+protected class Finite (G : Graph α β) : Prop extends G.EdgeFinite where
   vertexSet_finite : V(G).Finite
-  edgeSet_finite : E(G).Finite
 
 lemma Finite.mono (hG : G.Finite) (hHG : H ≤ G) : H.Finite where
   vertexSet_finite := hG.vertexSet_finite.subset <| vertexSet_mono hHG
@@ -53,10 +170,6 @@ lemma Finite.induce (hG : G.Finite) (hX : X ⊆ V(G)) : G[X].Finite where
 @[simp]
 lemma vertexSet_finite [G.Finite] : G.vertexSet.Finite :=
   Finite.vertexSet_finite
-
-@[simp]
-lemma edgeSet_finite [G.Finite] : G.edgeSet.Finite :=
-  Finite.edgeSet_finite
 
 lemma isTrail_finite (G : Graph α β) [G.Finite] : {P | G.IsTrail P}.Finite := by
   have hVfin := G.vertexSet_finite.to_subtype
@@ -192,8 +305,8 @@ instance [G.LocallyFinite] (F : Set β) : (G ↾ F).LocallyFinite :=
 instance [G.LocallyFinite] (F : Set β) : (G ＼ F).LocallyFinite :=
   ‹G.LocallyFinite›.mono edgeDelete_le
 
-instance [G.Finite] : G.LocallyFinite where
-  finite _ := G.edgeSet_finite.subset fun _ ↦ Inc.edge_mem
+instance [G.EdgeFinite] : G.LocallyFinite where
+  finite _ := ‹G.EdgeFinite›.edgeSet_finite.subset fun _ ↦ Inc.edge_mem
 
 instance [G.LocallyFinite] [H.LocallyFinite] : (G ∪ H).LocallyFinite where
   finite x := by
@@ -206,7 +319,7 @@ instance (V : Set α) : (Graph.noEdge V β).LocallyFinite where
 
 @[simp]
 lemma vertexSet_finite_iff [G.LocallyFinite] : V(G).Finite ↔ G.Finite := by
-  refine ⟨fun h ↦ ⟨h, ?_⟩, fun h ↦ Finite.vertexSet_finite⟩
+  refine ⟨fun h ↦ {vertexSet_finite := h, edgeSet_finite := ?_}, fun h ↦ Finite.vertexSet_finite⟩
   refine (h.biUnion (t := fun v ↦ E(G, v)) (fun i a ↦ LocallyFinite.finite i )).subset ?_
   simp only [subset_def, mem_iUnion, exists_prop]
   intro e he

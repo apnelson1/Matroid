@@ -58,8 +58,9 @@ lemma Connected.exists_isPath_of_leaves [G.Finite] (hG : G.Connected) (hmax : G.
   apply hmax.degree_le
 
 /-- Every finite non-regular connected graph with max degree at most `2` is a path. -/
-lemma Connected.isPathGraph_of_maxDegreeLE [G.Finite] (hG : G.Connected) (hmax : G.MaxDegreeLE 2)
-    (hv : ∃ v ∈ V(G), G.degree v ≤ 1) : G.IsPathGraph := by
+lemma Connected.isPathGraph_of_maxDegreeLE [G.EdgeFinite] (hG : G.Connected)
+    (hmax : G.MaxDegreeLE 2) (hv : ∃ v ∈ V(G), G.degree v ≤ 1) : G.IsPathGraph := by
+  have := hG.finite
   simp_rw [Nat.le_one_iff_eq_zero_or_eq_one, degree_eq_one_iff] at hv
   obtain ⟨v, hvG, h0 | hv⟩ := hv
   · obtain hV | hnt := eq_singleton_or_nontrivial hvG
@@ -84,7 +85,7 @@ lemma Connected.isPathGraph_of_maxDegreeLE [G.Finite] (hG : G.Connected) (hmax :
   exact ⟨P, hP, rfl⟩
 
 /-- Every finite `2`-regular connected graph is a cycle. -/
-lemma Connected.isCycleGraph_of_regular [G.Finite] (hG : G.Connected) (hreg : G.Regular 2) :
+lemma Connected.isCycleGraph_of_regular [G.EdgeFinite] (hG : G.Connected) (hreg : G.Regular 2) :
     G.IsCycleGraph := by
   have hE := (hreg.degreePos (by simp)).edgeSet_nonempty hG.nonempty
   by_cases hF : G.IsForest
@@ -97,16 +98,16 @@ lemma Connected.isCycleGraph_of_regular [G.Finite] (hG : G.Connected) (hreg : G.
   exact fun x hxC ↦ (hreg.degree (hC.isWalk.vertex_mem_of_mem hxC)).le
 
 /-- Every finite connected graph with maximum degree `2` is a path or a cycle. -/
-lemma Connected.isPathGraph_or_isCycleGraph_of_maxDegreeLE [G.Finite] (hG : G.Connected)
+lemma Connected.isPathGraph_or_isCycleGraph_of_maxDegreeLE [G.EdgeFinite] (hG : G.Connected)
     (hmax : G.MaxDegreeLE 2) : G.IsPathGraph ∨ G.IsCycleGraph := by
   obtain h | h := exists_or_forall_not (fun v ↦ v ∈ V(G) ∧ G.degree v ≤ 1)
   · exact .inl <| hG.isPathGraph_of_maxDegreeLE hmax h
   exact .inr <| hG.isCycleGraph_of_regular <| regular_iff.2
     fun v hv ↦ (hmax.degree_le v).antisymm <| by aesop
 
-lemma IsCompOf.isPathGraph_or_isCycleGraph_of_maxDegreeLE [G.Finite] (hH : H.IsCompOf G)
+lemma IsCompOf.isPathGraph_or_isCycleGraph_of_maxDegreeLE [G.EdgeFinite] (hH : H.IsCompOf G)
     (hmax : G.MaxDegreeLE 2) : H.IsPathGraph ∨ H.IsCycleGraph := by
-  have hHFin : H.Finite := ‹G.Finite›.mono hH.le
+  have hHFin : H.EdgeFinite := edgeFinite_of_le hH.le
   exact hH.connected.isPathGraph_or_isCycleGraph_of_maxDegreeLE <| hmax.mono hH.le
 
 lemma IsCycleGraph.isCompOf_of_maxDegreeLE (hC : C.IsCycleGraph) (hmax : G.MaxDegreeLE 2)

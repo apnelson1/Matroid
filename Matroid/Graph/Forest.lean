@@ -185,13 +185,13 @@ lemma isAcyclicSet_iff : G.IsAcyclicSet F ↔ F ⊆ E(G) ∧ (G ↾ F).IsForest 
 /-! ### Leaves -/
 
 /-- Every forest with at least one edge has a pendant. -/
-lemma IsForest.exists_isPendant [G.Finite] (hG : G.IsForest) (hne : E(G).Nonempty) :
+lemma IsForest.exists_isPendant [G.EdgeFinite] (hG : G.IsForest) (hne : E(G).Nonempty) :
     ∃ e x, G.IsPendant e x := by
   classical
   have := hG.simple
   obtain ⟨e₀, he₀⟩ := hne
   obtain ⟨x₀, y₀, he₀⟩ := exists_isLink_of_mem_edgeSet he₀
-  obtain ⟨P, heP, hmax⟩ := G.isPath_finite.exists_le_maximal (he₀.walk_isPath he₀.adj.ne)
+  obtain ⟨P, heP, hmax⟩ := (zorn_le_nonempty₀ _ G.isPath_zorn _) (he₀.walk_isPath he₀.adj.ne)
   simp only [IsLink.walk, le_iff_isSublist] at heP
   cases P with | nil => simp at heP | cons u f P =>
   have ⟨hP, hfuP, huP⟩ : G.IsPath P ∧ G.IsLink f u P.first ∧ u ∉ P := by simpa using hmax.prop
@@ -209,7 +209,7 @@ lemma IsForest.exists_isPendant [G.Finite] (hG : G.IsForest) (hne : E(G).Nonempt
   rwa [prefixUntilVertex_last, eq_comm, prefixUntilVertex_first] at hne
   rwa [mem_cons_iff, or_iff_right he.adj.ne.symm] at hwP
 
-lemma IsForest.exists_isLeaf [G.Finite] (hG : G.IsForest) (hne : E(G).Nonempty) :
+lemma IsForest.exists_isLeaf [G.EdgeFinite] (hG : G.IsForest) (hne : E(G).Nonempty) :
     ∃ x, G.IsLeaf x := by
   obtain ⟨e, x, h⟩ := hG.exists_isPendant hne
   exact ⟨x, h.isLeaf⟩

@@ -182,8 +182,7 @@ lemma Connected.addEdge_connected (hG : G.Connected) (hx : x ∈ V(G)) (he : e �
   rw [singleEdge_vertexSet]
   exact ⟨x, hx, by simp⟩
 
-lemma walkable_eq_induce_setOf_connBetween :
-    G.walkable x = G[{y | G.ConnBetween x y}] := by
+lemma walkable_eq_induce_setOf_connBetween : G.walkable x = G[{y | G.ConnBetween x y}] := by
   rw [walkable_isClosedSubgraph.eq_induce]
   congr
 
@@ -277,27 +276,51 @@ lemma Connected.exists_connBetween_deleteEdge_set_set (hG : G.Connected)
     hxy'.mem_induce_iff, and_iff_right hxy'.edge_mem]
   simp [hP.notMem_left_of_dInc hxy, hP.notMem_right_of_dInc hxy]
 
-lemma Connected.exists_isLink_of_mem (hG : G.Connected) (hV : V(G).Nontrivial) (hx : x ∈ V(G)) :
+lemma Preconnected.exists_isLink_of_mem (h : G.Preconnected) (hV : V(G).Nontrivial) (hx : x ∈ V(G)):
     ∃ e y, G.IsLink e x y ∧ y ≠ x := by
   obtain ⟨z, hz, hne⟩ := hV.exists_ne x
-  obtain ⟨P, hP, rfl, rfl⟩ := (hG.connBetween hx hz).exists_isPath
+  obtain ⟨P, hP, rfl, rfl⟩ := (h _ _ hx hz).exists_isPath
   rw [ne_comm, first_ne_last_iff hP.nodup] at hne
   obtain ⟨x, e, P⟩ := hne
   simp only [cons_isPath_iff] at hP
   exact ⟨e, P.first, hP.2.1, mt (by simp +contextual [eq_comm]) hP.2.2⟩
 
+lemma Connected.exists_isLink_of_mem (hG : G.Connected) (hV : V(G).Nontrivial) (hx : x ∈ V(G)) :
+    ∃ e y, G.IsLink e x y ∧ y ≠ x := hG.pre.exists_isLink_of_mem hV hx
+
+lemma Isolated.not_preconnected (hx : G.Isolated x) (hnt : V(G).Nontrivial) : ¬ G.Preconnected :=
+  fun h ↦ by simpa [hx.not_isLink] using h.exists_isLink_of_mem hnt hx.mem
+
 lemma Isolated.not_connected (hx : G.Isolated x) (hnt : V(G).Nontrivial) : ¬ G.Connected :=
   fun h ↦ by simpa [hx.not_isLink] using h.exists_isLink_of_mem hnt hx.mem
 
-lemma Connected.degreePos (h : G.Connected) (hnt : V(G).Nontrivial) : G.DegreePos := by
+lemma Preconnected.degreePos (h : G.Preconnected) (hnt : V(G).Nontrivial) : G.DegreePos := by
   intro x hx
   obtain ⟨e, y, h, -⟩ := h.exists_isLink_of_mem hnt hx
   exact ⟨e, h.inc_left⟩
+
+lemma Connected.degreePos (h : G.Connected) (hnt : V(G).Nontrivial) : G.DegreePos :=
+  h.pre.degreePos hnt
 
 lemma Connected.edgeSet_nonempty (h : G.Connected) (hnt : V(G).Nontrivial) : E(G).Nonempty := by
   obtain ⟨x, hx⟩ := hnt.nonempty
   obtain ⟨e, y, he, -⟩ := h.exists_isLink_of_mem hnt hx
   exact ⟨e, he.edge_mem⟩
+
+lemma Preconnected.finite [G.EdgeFinite] (h : G.Preconnected) : G.Finite where
+  vertexSet_finite := by
+    obtain hss | hnt := V(G).subsingleton_or_nontrivial
+    · exact hss.finite
+    have : V(G, E(G)) = V(G) := by
+      ext x
+      refine ⟨fun ⟨e, he, hex⟩ ↦ hex.vertex_mem, fun hx ↦ ?_⟩
+      obtain ⟨e, y, h, -⟩ := h.exists_isLink_of_mem hnt hx
+      exact ⟨e, h.edge_mem, h.inc_left⟩
+    rw [← this, ← encard_lt_top_iff]
+    exact lt_of_le_of_lt (endSetSet_encard_le G E(G))
+    <| WithTop.mul_lt_top (compareOfLessAndEq_eq_lt.mp rfl) (encard_lt_top_iff.mpr G.edgeSet_finite)
+
+lemma Connected.finite [G.EdgeFinite] (h : G.Connected) : G.Finite := h.pre.finite
 
 /-- If `G` is connected but its restriction to some set `F` of edges is not,
 then there is an edge of `G` joining two vertices that are not connected in the restriction. -/

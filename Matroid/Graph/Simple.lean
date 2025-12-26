@@ -39,8 +39,18 @@ lemma Loopless.mono (hG : G.Loopless) (hle : H ≤ G) : H.Loopless := by
   rw [loopless_iff_forall_ne_of_adj] at hG ⊢
   exact fun x y hxy ↦ hG x y <| hxy.of_le hle
 
+@[simp]
 lemma Inc.isNonloopAt [G.Loopless] (h : G.Inc e x) : G.IsNonloopAt e x :=
   h.isLoopAt_or_isNonloopAt.elim (False.elim ∘ Loopless.not_isLoopAt _ _) id
+
+@[simp]
+lemma setOf_isLoopAt_empty [G.Loopless] : {e | G.IsLoopAt e x} = ∅ := by
+  ext e
+  simp
+
+lemma setOf_isNonloopAt_incEdges [G.Loopless] (x : α) : {e | G.IsNonloopAt e x} = E(G, x) := by
+  ext e
+  simp +contextual [iff_def, IsNonloopAt.inc]
 
 instance [G.Loopless] (X : Set α) : G[X].Loopless where
   not_isLoopAt e x (h : G[X].IsLink e x x) := h.1.adj.ne rfl
@@ -67,6 +77,51 @@ lemma eq_noEdge_or_vertexSet_nontrivial (G : Graph α β) [G.Loopless] :
 
 instance Loopless.union [G.Loopless] [H.Loopless] : (G ∪ H).Loopless where
   not_isLoopAt := by simp [union_isLoopAt_iff]
+
+/-- Maximally loopless subgraph of `G`. -/
+def loopRemove (G : Graph α β) : Graph α β := G ↾ {e | ∀ x, ¬ G.IsLoopAt e x}
+
+instance : (loopRemove G).Loopless where
+  not_isLoopAt e x := by
+    simp only [loopRemove, edgeRestrict_isLoopAt_iff, mem_setOf_eq, not_and, not_forall, not_not]
+    exact fun h ↦ ⟨x, h⟩
+
+lemma loopRemove_le (G : Graph α β) : loopRemove G ≤ G := edgeRestrict_le
+
+@[simp]
+lemma loopRemove_vertexSet : V(loopRemove G) = V(G) := by
+  simp only [loopRemove, edgeRestrict_vertexSet]
+
+@[simp]
+lemma loopRemove_edgeSet : E(loopRemove G) = {e ∈ E(G) | ∀ x, ¬ G.IsLoopAt e x} := by
+  simp only [loopRemove, edgeRestrict_edgeSet]
+  rw [setOf_and]
+  rfl
+
+@[simp]
+lemma loopRemove_isLink : (loopRemove G).IsLink e x y ↔ G.IsLink e x y ∧ x ≠ y := by
+  rw [and_comm]
+  simp only [loopRemove, edgeRestrict_isLink, mem_setOf_eq, ne_eq, and_congr_left_iff]
+  intro h
+  rw [iff_not_comm]
+  simp only [not_forall, not_not]
+  refine ⟨fun h' ↦ ⟨x, h' ▸ h⟩, fun ⟨z, hz⟩ ↦ ?_⟩
+  obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := hz.isLink_iff.mp h <;> rfl
+
+/-- Proof that `loopRemove` is the maximally loopless subgraph of `G`. -/
+lemma le_loopRemove [H.Loopless] (h : H ≤ G) : H ≤ loopRemove G where
+  vertex_subset := by simp [vertexSet_mono h]
+  isLink_of_isLink e x y he := by
+    rw [loopRemove_isLink]
+    refine ⟨he.of_le h, he.ne⟩
+
+@[simp]
+lemma loopRemove_eq_self [G.Loopless] : loopRemove G = G :=
+  (loopRemove_le G).antisymm (le_loopRemove le_rfl)
+
+@[simp]
+lemma loopRemove_eq_self_iff [G.Loopless] : loopRemove G = G ↔ G.Loopless :=
+  ⟨fun _ ↦ ‹G.Loopless›, fun _ ↦ loopRemove_eq_self⟩
 
 section Simple
 
