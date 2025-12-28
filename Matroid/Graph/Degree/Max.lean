@@ -42,7 +42,7 @@ lemma IsCycleGraph.connected (hC : C.IsCycleGraph) : C.Connected := by
 
 /-- If `v` and `w` are leaves of a connected graph `G` with maximum degree at most `2`,
 then `G` is a path from `v` to `w`. -/
-lemma Connected.exists_isPath_of_leaves [G.Finite] (hG : G.Connected) (hmax : G.MaxDegreeLE 2)
+lemma Connected.exists_isPath_of_leaves [G.EdgeFinite] (hG : G.Connected) (hmax : G.MaxDegreeLE 2)
     (hv : G.IsLeaf v) (hw : G.IsLeaf w) (hne : v ≠ w) :
     ∃ P, G.IsPath P ∧ P.first = v ∧ P.last = w ∧ G = P.toGraph := by
   have hlf := hmax.locallyFinite

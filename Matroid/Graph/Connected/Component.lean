@@ -168,7 +168,7 @@ def Components (G : Graph α β) : Set (Graph α β) := {H | H.IsCompOf G}
 def compPartition (G : Graph α β) : Partition (G.Subgraph) := by
   refine Partition.ofPairwiseDisjoint' (parts := {H | H.val.IsCompOf G}) ?_ ?_
   · rintro H₁ hH₁ H₂ hH₂ hne
-    exact H₁.disjoint_iff H₂ |>.mpr
+    exact H₁.disjoint_iff_stronglyDisjoint H₂ |>.mpr
     <| hH₁.stronglyDisjoint_of_ne hH₂ (by rwa [Subtype.coe_ne_coe])
   intro H hH
   simp only [ne_eq, Subgraph.ne_bot_iff]

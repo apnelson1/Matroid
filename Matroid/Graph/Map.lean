@@ -32,7 +32,7 @@ def ofPFun (f : β →. Sym2 α) : Graph α β where
 by applying a function `f : α → α'` to each vertex.
 Edges between identified vertices become loops. -/
 @[simps]
-def Map {α' : Type*} (f : α → α') (G : Graph α β) : Graph α' β where
+def map {α' : Type*} (f : α → α') (G : Graph α β) : Graph α' β where
   vertexSet := f '' V(G)
   edgeSet := E(G)
   IsLink e x' y' := ∃ x y, G.IsLink e x y ∧ x' = f x ∧ y' = f y
@@ -52,31 +52,31 @@ def Map {α' : Type*} (f : α → α') (G : Graph α β) : Graph α' β where
     rintro e - - ⟨x, y, h, rfl, rfl⟩
     exact Set.mem_image_of_mem _ h.left_mem
 
-scoped infix:51 " ''ᴳ " => Map
+scoped infix:51 " ''ᴳ " => map
 
 variable {α' α'' : Type*} {f g : α → α'} {f' g' : α' → α} {x y z : α'} {G' H' : Graph α' β}
 
 /-- `Map` has the expected incidence predicate. -/
 @[simp]
 lemma map_inc : (f ''ᴳ G).Inc e x ↔ ∃ v, G.Inc e v ∧ x = f v := by
-  simp only [Inc, Map_isLink]
+  simp only [Inc, map_isLink]
   tauto
 
 @[simp]
 lemma map_vertexSet_subset (h : X ⊆ V(G)) : f '' X ⊆ V(f ''ᴳ G) := by
-  rw [Map_vertexSet]
+  rw [map_vertexSet]
   gcongr
 
 lemma IsLink.map (h : G.IsLink e u v) (f : α → α') : (f ''ᴳ G).IsLink e (f u) (f v) := by
-  simp only [Map_isLink]
+  simp only [map_isLink]
   use u, v, h
 
 @[gcongr]
 lemma map_congr_left_of_eqOn (h : EqOn f g V(G)) : (f ''ᴳ G) = (g ''ᴳ G) := by
   apply Graph.ext ?_ fun e x y ↦ ?_
-  · rw [Map_vertexSet, Map_vertexSet]
+  · rw [map_vertexSet, map_vertexSet]
     exact image_congr h
-  · simp_rw [Map_isLink]
+  · simp_rw [map_isLink]
     refine ⟨fun ⟨v, w, hvw, _, _⟩ ↦ ?_, fun ⟨v, w, hvw, _, _⟩ ↦ ?_⟩ <;> subst x y
     · use v, w, hvw, h hvw.left_mem, h hvw.right_mem
     · use v, w, hvw, (h hvw.left_mem).symm, (h hvw.right_mem).symm
@@ -92,11 +92,11 @@ lemma map_map {α'' : Type*} {f : α' → α''} : (f ''ᴳ (g ''ᴳ G)) = (f ∘
 @[gcongr]
 lemma map_mono (h : G ≤ H) : f ''ᴳ G ≤ f ''ᴳ H where
   vertex_subset v := by
-    simp only [Map_vertexSet, mem_image, forall_exists_index, and_imp]
+    simp only [map_vertexSet, mem_image, forall_exists_index, and_imp]
     rintro u hu rfl
     use u, vertexSet_mono h hu
   isLink_of_isLink e x y := by
-    simp only [Map_isLink, forall_exists_index, and_imp]
+    simp only [map_isLink, forall_exists_index, and_imp]
     rintro a b hab rfl rfl
     use a, b, hab.of_le h
 
@@ -108,13 +108,13 @@ lemma map_isSpanningSubgraph (hsle : G ≤s H) : f ''ᴳ G ≤s f ''ᴳ H where
 lemma map_edgeRestrict_comm : f ''ᴳ (G ↾ F) = (f ''ᴳ G) ↾ F := by
   ext a b c
   · simp
-  simp only [Map_isLink, edgeRestrict_isLink]
+  simp only [map_isLink, edgeRestrict_isLink]
   tauto
 
 lemma map_edgeDelete_comm : f ''ᴳ (G ＼ F) = (f ''ᴳ G) ＼ F := by
   ext a b c
   · simp
-  simp only [Map_isLink, edgeDelete_isLink]
+  simp only [map_isLink, edgeDelete_isLink]
   tauto
 
 @[simp]
@@ -122,7 +122,7 @@ lemma IsWalk.map (f : α → α') {w : WList α β} (hw : G.IsWalk w) : (f ''ᴳ
   refine hw.recOn ?hnil ?hcons
   · intro x hx
     have hx' : f x ∈ V(f ''ᴳ G) := by
-      simpa [Map_vertexSet] using Set.mem_image_of_mem f hx
+      simpa [map_vertexSet] using Set.mem_image_of_mem f hx
     simpa [WList.map] using Graph.IsWalk.nil (G := f ''ᴳ G) (x := f x) hx'
   · intro x e w hw hlink ih
     have hlink' : (f ''ᴳ G).IsLink e (f x) (w.map f).first := by
@@ -133,7 +133,7 @@ lemma IsWalk.map (f : α → α') {w : WList α β} (hw : G.IsWalk w) : (f ''ᴳ
 lemma induce_map_isSpanningSubgraph : f ''ᴳ (G[X]) ≤s (f ''ᴳ G)[f '' X] where
   vertexSet_eq := by simp
   isLink_of_isLink e x y := by
-    simp only [Map_isLink, induce_isLink, mem_image, forall_exists_index, and_imp]
+    simp only [map_isLink, induce_isLink, mem_image, forall_exists_index, and_imp]
     intro a b hab ha hb rfl rfl
     use (by use a, b), (by use a), by use b
 
@@ -141,15 +141,15 @@ lemma map_vertexDelete_isInducedSubgraph : (f ''ᴳ G) - (f '' X) ≤i f ''ᴳ (
   le := by
     constructor
     · simp [subset_image_diff]
-    simp only [vertexDelete_isLink_iff, Map_isLink, mem_image, not_exists, not_and, and_imp,
+    simp only [vertexDelete_isLink_iff, map_isLink, mem_image, not_exists, not_and, and_imp,
       forall_exists_index]
     intro e u v x y hxy rfl rfl hnex hney
     have hx := by simpa using hnex x
     have hy := by simpa using hney y
     use x, y
   isLink_of_mem_mem e x y := by
-    simp +contextual only [Map_isLink, vertexDelete_isLink_iff, vertexDelete_vertexSet,
-      Map_vertexSet, mem_diff, mem_image, not_exists, not_and, not_false_eq_true, implies_true,
+    simp +contextual only [map_isLink, vertexDelete_isLink_iff, vertexDelete_vertexSet,
+      map_vertexSet, mem_diff, mem_image, not_exists, not_and, not_false_eq_true, implies_true,
       and_self, and_true, and_imp, forall_exists_index]
     intro u v huv huX hvX rfl rfl a ha hau hneu b hb hbv hnev
     use u, v
@@ -164,14 +164,14 @@ lemma exists_map_eq_of_le_map {G} (h : G ≤ f ''ᴳ H) : ∃ H' ≤ H, f ''ᴳ 
   · gcongr
     exact .trans edgeRestrict_le <| induce_le inter_subset_left
   · ext x
-    simp only [Map_vertexSet, edgeRestrict_vertexSet, induce_vertexSet, mem_image, mem_inter_iff,
+    simp only [map_vertexSet, edgeRestrict_vertexSet, induce_vertexSet, mem_image, mem_inter_iff,
       mem_preimage]
     refine ⟨?_, fun hx ↦ ?_⟩
     · rintro ⟨y, ⟨hyH, hy⟩, rfl⟩
       exact hy
     obtain ⟨y, hy, rfl⟩ := by simpa using vertexSet_mono h hx
     use y
-  simp only [Map_edgeSet, edgeRestrict_edgeSet, inter_eq_right, induce_edgeSet, mem_inter_iff,
+  simp only [map_edgeSet, edgeRestrict_edgeSet, inter_eq_right, induce_edgeSet, mem_inter_iff,
     mem_preimage]
   intro e he
   obtain ⟨x', y', hxy'⟩ := exists_isLink_of_mem_edgeSet <| edgeSet_mono h he
@@ -203,10 +203,10 @@ lemma mem (hf : G.IsRetr f) (ha : a ∈ V(G)) : f a ∈ V(G) :=
 @[simp]
 lemma idem (hf : G.IsRetr f) : f ''ᴳ (f ''ᴳ G) = f ''ᴳ G := by
   ext a b c
-  · simp only [map_map, Map_vertexSet, comp_apply, mem_image]
+  · simp only [map_map, map_vertexSet, comp_apply, mem_image]
     refine exists_congr fun x ↦ and_congr_right fun hx ↦ ?_
     rw [hf.isIdem x hx]
-  simp only [map_map, Map_isLink, comp_apply]
+  simp only [map_map, map_isLink, comp_apply]
   refine exists₂_congr fun x y ↦ and_congr_right fun hxy ↦ ?_
   rw [hf.isIdem x hxy.left_mem, hf.isIdem y hxy.right_mem]
 
@@ -236,7 +236,7 @@ lemma map_eq_of_le_map_le_map (hf : G.IsRetr f) (hf' : H.IsRetr f') (hGH : G ≤
     hf'.mapsTo.image_subset.antisymm <| by simpa [hV] using vertexSet_mono hGH
   have hE : E(G) = E(H) := by
     apply_fun edgeSet (α := α) (β := β) at hHG hGH using edgeSet_monotone (α := α) (β := β)
-    simp only [Map_edgeSet, le_eq_subset] at hHG hGH
+    simp only [map_edgeSet, le_eq_subset] at hHG hGH
     exact hGH.antisymm hHG
   refine ⟨?_, ?_⟩
   · exact ext_of_le_le hGH le_rfl (by simp [hF'H, hV]) (by simpa)

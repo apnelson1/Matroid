@@ -207,6 +207,22 @@ lemma bouquet_incEdges : E(bouquet v F, v) = F := by
   ext e
   simp
 
+@[simp]
+lemma bouquet_le_iff_of_mem (hv : v ∈ V(G)) (F : Set β) :
+    bouquet v F ≤ G ↔ ∀ e ∈ F, G.IsLoopAt e v := by
+  refine ⟨fun h e heF ↦ IsLoopAt.of_le (by simpa) h, fun h ↦ ⟨by simpa, ?_⟩⟩
+  rintro e x y ⟨hef, rfl, rfl⟩
+  exact h e hef
+
+@[simp]
+lemma bouquet_le_iff_of_nonempty (v : α) (hF : F.Nonempty) :
+    bouquet v F ≤ G ↔ ∀ e ∈ F, G.IsLoopAt e v := by
+  refine ⟨fun h e heF ↦ IsLoopAt.of_le (by simpa) h, fun h ↦ ⟨?_, ?_⟩⟩
+  · simp only [bouquet_vertexSet, singleton_subset_iff]
+    exact (h _ hF.some_mem).vertex_mem
+  rintro e x y ⟨hef, rfl, rfl⟩
+  exact h e hef
+
 /-! ### Two vertices -/
 
 /-- A graph with exactly two vertices and no loops. -/

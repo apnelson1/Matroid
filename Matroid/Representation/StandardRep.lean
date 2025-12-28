@@ -84,7 +84,7 @@ noncomputable def Rep.FullRank.basis_of_isBase {v : M.Rep 𝔽 W} (h : v.FullRan
 lemma Rep.FullRank.compEquiv {v : M.Rep 𝔽 W} (h : v.FullRank) (ψ : W ≃ₗ[𝔽] W') :
     (v.compEquiv ψ).FullRank := by
   rw [Rep.fullRank_iff, Rep.compEquiv, comp', comp, ← Rep.to_fun_eq_coe]
-  simp [LinearEquiv.coe_coe, range_comp, h.span_range, span_image]
+  simp [LinearEquiv.coe_coe, range_comp, h.span_range]
 
 /-- A base of `M` gives a (linear) basis for the span of the range of a representation -/
 noncomputable def Rep.isBasis_of_isBase (v : M.Rep 𝔽 W) (hB : M.IsBase B) :

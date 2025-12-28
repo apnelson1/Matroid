@@ -330,9 +330,15 @@ lemma range_iInf (f : ι' → ι) (H : ι → G.Subgraph) :
     simp
   · simp [Graph.iInter_range]
 
-lemma disjoint_iff (H₁ H₂ : G.Subgraph) : Disjoint H₁ H₂ ↔ H₁.val.StronglyDisjoint H₂.val := by
+lemma disjoint_iff_stronglyDisjoint (H₁ H₂ : G.Subgraph) :
+    Disjoint H₁ H₂ ↔ H₁.val.StronglyDisjoint H₂.val := by
   rw [_root_.disjoint_iff, ← Subtype.coe_inj, coe_inf, coe_bot, ← disjoint_iff_inter_eq_bot,
     stronglyDisjoint_iff_disjoint_of_compatible (H₁.compatible H₂)]
+
+@[simp]
+lemma disjoint_iff (H₁ H₂ : G.Subgraph) : Disjoint H₁ H₂ ↔ Disjoint V(H₁.val) V(H₂.val) := by
+  rw [_root_.disjoint_iff, ← Subtype.coe_inj, coe_inf, coe_bot, ← disjoint_iff_inter_eq_bot,
+    disjoint_iff_vertexSet_disjoint]
 
 def of_le {H : Graph α β} (H' : H.Subgraph) (hle : H ≤ G) : G.Subgraph :=
   ⟨H', H'.le.trans hle⟩
