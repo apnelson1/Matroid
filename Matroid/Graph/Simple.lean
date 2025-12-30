@@ -88,6 +88,9 @@ instance : (loopRemove G).Loopless where
 
 lemma loopRemove_le (G : Graph α β) : loopRemove G ≤ G := edgeRestrict_le
 
+lemma loopRemove_isSpanningSubgraph (G : Graph α β) : loopRemove G ≤s G :=
+  edgeRestrict_isSpanningSubgraph
+
 @[simp]
 lemma loopRemove_vertexSet : V(loopRemove G) = V(G) := by
   simp only [loopRemove, edgeRestrict_vertexSet]
@@ -122,6 +125,34 @@ lemma loopRemove_eq_self [G.Loopless] : loopRemove G = G :=
 @[simp]
 lemma loopRemove_eq_self_iff [G.Loopless] : loopRemove G = G ↔ G.Loopless :=
   ⟨fun _ ↦ ‹G.Loopless›, fun _ ↦ loopRemove_eq_self⟩
+
+lemma IsPath.loopRemove (hP : G.IsPath P) : (loopRemove G).IsPath P := by
+  induction P with
+  | nil => simp_all
+  | cons x e w ih =>
+    simp_all only [cons_isPath_iff, loopRemove_isLink, ne_eq, true_and, not_false_eq_true, and_true,
+      forall_const]
+    rintro rfl
+    exact hP.2.2 first_mem
+
+lemma loopRemove_isSpanningSubgraph_edgeDelete_isLoopAt (G : Graph α β) (x : α) :
+    loopRemove G ≤s (G ＼ {e | G.IsLoopAt e x}) := by
+  rw [edgeDelete_eq_edgeRestrict]
+  apply edgeRestrict_isSpanningSubgraph_edgeRestrict
+  intro e ⟨he, hel⟩
+  use he, he, hel x
+
+lemma loopRemove_le_edgeDelete_isLoopAt (G : Graph α β) (x : α) :
+    loopRemove G ≤ (G ＼ {e | G.IsLoopAt e x}) :=
+  G.loopRemove_isSpanningSubgraph_edgeDelete_isLoopAt x |>.le
+
+lemma IsLoopAt.loopRemove_isSpanningSubgraph_edgeDelete (h : G.IsLoopAt e x) :
+    loopRemove G ≤s (G ＼ {e}) :=
+  G.loopRemove_isSpanningSubgraph_edgeDelete_isLoopAt x |>.trans
+  <| G.edgeDelete_isSpanningSubgraph_anti_right <| by simpa
+
+lemma IsLoopAt.loopRemove_le_edgeDelete (h : G.IsLoopAt e x) : loopRemove G ≤ (G ＼ {e}) :=
+  h.loopRemove_isSpanningSubgraph_edgeDelete.le
 
 section Simple
 

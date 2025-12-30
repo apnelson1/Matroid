@@ -270,6 +270,10 @@ lemma setIncEdges_subset (G : Graph α β) (S : Set α) : E(G, S) ⊆ E(G) := by
   rintro e ⟨x, hxS, he⟩
   exact he.edge_mem
 
+lemma setIncEdges_mono_right (G : Graph α β) {S T : Set α} (hST : S ⊆ T) : E(G, S) ⊆ E(G, T) := by
+  rintro e ⟨x, hxS, he⟩
+  exact ⟨x, hST hxS, he⟩
+
 @[simp]
 lemma mem_setIncEdges_iff (G : Graph α β) (S : Set α) : e ∈ E(G, S) ↔ ∃ x ∈ S, G.Inc e x := by
   simp [SetIncEdges]
@@ -277,5 +281,45 @@ lemma mem_setIncEdges_iff (G : Graph α β) (S : Set α) : e ∈ E(G, S) ↔ ∃
 @[simp]
 lemma setIncEdges_singleton (G : Graph α β) (x : α) : E(G, {x}) = E(G, x) := by
   simp [SetIncEdges, IncEdges]
+
+lemma incEdge_subset_setIncEdges (G : Graph α β) {S : Set α} (hx : x ∈ S) : E(G, x) ⊆ E(G, S) := by
+  rw [← setIncEdges_singleton]
+  exact G.setIncEdges_mono_right <| by simpa
+
+def LinkEdges (G : Graph α β) (u v : α) : Set β := {e | G.IsLink e u v}
+
+notation "E(" G ", " u ", " v ")" => LinkEdges G u v
+
+@[simp]
+lemma linkEdges_empty (G : Graph α β) (u v : α) : E(G, u, v) = ∅ ↔ ¬ G.Adj u v := by
+  simp [LinkEdges, Adj, Set.ext_iff]
+
+@[simp]
+lemma linkEdges_self (G : Graph α β) (u : α) : E(G, u, u) = {e | G.IsLoopAt e u} := by
+  simp [LinkEdges]
+
+@[simp]
+lemma mem_linkEdges_iff (G : Graph α β) (u v : α) (e : β) : e ∈ E(G, u, v) ↔ G.IsLink e u v := by
+  simp [LinkEdges]
+
+lemma linkEdges_subset_incEdges_left (G : Graph α β) (u v : α) : E(G, u, v) ⊆ E(G, u) :=
+  fun _ hxy ↦ ⟨v, hxy⟩
+
+lemma linkEdges_subset_incEdges_right (G : Graph α β) (u v : α) : E(G, u, v) ⊆ E(G, v) :=
+  fun _ hxy ↦ ⟨u, hxy.symm⟩
+
+@[simp]
+lemma linkEdges_eq_empty_of_left_not_mem (hu : u ∉ V(G)) (v) : E(G, u, v) = ∅ := by
+  rw [linkEdges_empty]
+  exact mt Adj.left_mem hu
+
+@[simp]
+lemma linkEdges_eq_empty_of_right_not_mem (u) (hv : v ∉ V(G)) : E(G, u, v) = ∅ := by
+  rw [linkEdges_empty]
+  exact mt Adj.right_mem hv
+
+lemma linkEdges_comm (G : Graph α β) (u v : α) : E(G, u, v) = E(G, v, u) := by
+  ext e
+  simp [isLink_comm]
 
 end Neighborhood

@@ -30,6 +30,11 @@ lemma edgeRestrict_le {E₀ : Set β} : G ↾ E₀ ≤ G where
   isLink_of_isLink := by simp
 
 @[simp]
+lemma edgeRestrict_eq_self_iff (G : Graph α β) (E₀ : Set β) : G ↾ E₀ = G ↔ E(G) ⊆ E₀ :=
+  ⟨fun h ↦ by simpa using edgeSet_mono h.ge,
+    fun h ↦ ext_of_le_le edgeRestrict_le le_rfl (by simp) (by simpa)⟩
+
+@[simp]
 lemma edgeRestrict_self (G : Graph α β) : G ↾ E(G) = G :=
   ext_of_le_le (G := G) (by simp) (by simp) rfl (by simp)
 

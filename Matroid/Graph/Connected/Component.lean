@@ -160,7 +160,7 @@ lemma IsCompOf.eq_of_not_disjoint (hH₁co : H₁.IsCompOf G) (hH₂co : H₂.Is
   obtain ⟨x, hx₁, hx₂⟩ := hV
   obtain rfl := hH₂co.eq_walkable_of_mem_walkable hx₂
   exact hH₁co.eq_walkable_of_mem_walkable hx₁
-
+  
 
 def Components (G : Graph α β) : Set (Graph α β) := {H | H.IsCompOf G}
 
@@ -253,23 +253,14 @@ lemma components_eq_empty_iff : G.Components = ∅ ↔ G = ⊥ := by
   ext H
   simp
 
+lemma components_eq_walkable_image (G : Graph α β) : G.Components = G.walkable '' V(G) := by
+  ext H
+  rw [mem_components_iff_isCompOf, mem_image, isCompOf_iff_exists_walkable]
+  exact exists_congr fun x => and_congr_left fun hH ↦ by simp [← hH]
+
 lemma components_encard_le (G : Graph α β) : G.Components.encard ≤ V(G).encard := by
-  have h_disj := G.components_pairwise_stronglyDisjoint
-  have h_eq := G.eq_sUnion_components
-  replace h_eq : V(G) = ⋃ H ∈ G.Components, V(H) := by
-    apply congr_arg (fun H : Graph α β ↦ V(H)) at h_eq
-    simp_all
-  let surj : V(G) → G.Components := by
-    rintro ⟨x, hx⟩
-    refine ⟨G.walkable x, walkable_isCompOf hx⟩
-  have surj_surjective : Function.Surjective surj := by
-    rintro ⟨H, H_spec⟩
-    have ⟨x, hxH⟩ := H_spec.1.2
-    use ⟨x, H_spec.1.1.le.vertex_subset hxH⟩
-    simp [surj, H_spec.eq_walkable_of_mem_walkable hxH]
-  have inj_spec := Function.injective_surjInv surj_surjective
-  set inj := Function.surjInv surj_surjective
-  exact Function.Embedding.encard_le ⟨inj, inj_spec⟩
+  rw [components_eq_walkable_image]
+  exact encard_image_le ..
 
 lemma IsClosedSubgraph.components_subset_components (hcl : H ≤c G) :
     H.Components ⊆ G.Components := by

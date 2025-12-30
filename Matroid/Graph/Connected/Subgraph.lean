@@ -49,7 +49,7 @@ lemma Connected.edgeDelete_singleton_connected (hG : G.Connected) (he : ¬ G.IsB
   simp only [edgeDelete_induce, edgeDelete_edgeSet, edgeDelete_edgeDelete, union_diff_self,
     singleton_union, edgeDelete_vertexSet, induce_vertexSet, mem_vertexSet_iff]
   intro x hx
-  obtain ⟨y, hy, hconn⟩ := hG.exists_connBetween_deleteEdge_set (X := V(C))
+  obtain ⟨y, hy, hconn⟩ := hG.pre.exists_connBetween_deleteEdge_set (X := V(C))
     (by simp [inter_eq_self_of_subset_left hC.vertexSet_subset]) hx
   refine ⟨y, hy, ?_⟩
   rwa [insert_eq_of_mem (hC.isWalk.edgeSet_subset_induce_edgeSet heC )]

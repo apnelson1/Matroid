@@ -96,3 +96,101 @@ noncomputable def VertexEnsemble.ofSetEnsemble (x y : α) (hxy : x ≠ y)
     rw [← disjoint_iff_inter_eq_empty]
     apply A.disjoint (A.of_vertex_mem_setEnsemble hu) (A.of_vertex_mem_setEnsemble hv)
     rwa [ne_eq, A.of_vertex_injOn_first u.prop v.prop, Subtype.coe_inj]
+
+lemma VertexEnsemble.of_linkEdges_edgeDelete (A : (G ＼ E(G, u, v)).VertexEnsemble u v ι) (i : ι) :
+    (A.f i).length ≠ 1 := by
+  by_contra h
+  obtain ⟨x, e, y, heq⟩ := WList.length_eq_one_iff.mp h
+  obtain rfl := by simpa [heq] using A.first_eq i
+  obtain rfl := by simpa [heq] using A.last_eq i
+  simpa [heq] using A.isPath i
+
+def VertexEnsemble.extend_singleEdge [DecidableEq ι] (k : ι)
+    (A : G.VertexEnsemble s t ({k}ᶜ : Set ι)) (hP : G.IsPath <| cons s e (nil t)) :
+    G.VertexEnsemble s t ι where
+  f i := if h : i = k then cons s e (nil t) else A.f ⟨i, h⟩
+  isPath i := by
+    by_cases h : i = k
+    · simp [h, ↓reduceDIte, hP]
+    simp [A.isPath ⟨i, h⟩, h]
+  first_eq i := by
+    by_cases h : i = k
+    · simp [h]
+    simp [h, A.first_eq ⟨i, h⟩]
+  last_eq i := by
+    by_cases h : i = k
+    · simp [h]
+    simp [h, A.last_eq ⟨i, h⟩]
+  internallyDisjoint i j hne := by by_cases h : i = k <;> by_cases h' : j = k <;> simp_all
+
+@[simp]
+lemma VertexEnsemble.extend_singleEdge_of_eq [DecidableEq ι] (k : ι)
+    (A : G.VertexEnsemble s t ({k}ᶜ : Set ι)) (hP : G.IsPath <| cons s e (nil t)) :
+    (A.extend_singleEdge k hP).f k = cons s e (nil t) := by
+  simp [extend_singleEdge]
+
+@[simp]
+lemma VertexEnsemble.extend_singleEdge_of_ne [DecidableEq ι] {i k : ι}
+    (A : G.VertexEnsemble s t ({k}ᶜ : Set ι)) (hP : G.IsPath <| cons s e (nil t)) (hne : i ≠ k) :
+    (A.extend_singleEdge k hP).f i = A.f ⟨i, hne⟩ := by
+  simp [extend_singleEdge, hne]
+
+lemma VertexEnsemble.map_second_inj {A : G.VertexEnsemble s t ι} (hne : s ≠ t)
+    (hA : {i | (A.f i).length = 1}.Subsingleton) : Injective (A.f · |>.second) := by
+  intro i j hij
+  beta_reduce at hij
+  obtain hi1 | hi1 := eq_or_ne (A.f i).length 1 <;> obtain hj1 | hj1 := eq_or_ne (A.f j).length 1
+  · exact hA hi1 hj1
+  · obtain ⟨s, e, t, hi⟩ := (A.f i).length_eq_one_iff.mp hi1
+    obtain rfl := by simpa [hi] using A.first_eq i
+    obtain rfl := by simpa [hi] using A.last_eq i
+    have := A.nonempty_of_ne hne j |>.nontrivial_of_length_ne_one hj1
+    |>.second_ne_last_of_nodup (A.isPath j).nodup
+    obtain hl := by simpa [hij] using A.last_eq j
+    simp [hi, ← hl, this.symm] at hij
+  · obtain ⟨s, e, t, hj⟩ := (A.f j).length_eq_one_iff.mp hj1
+    obtain rfl := by simpa [hj] using A.first_eq j
+    obtain rfl := by simpa [hj] using A.last_eq j
+    have := A.nonempty_of_ne hne i |>.nontrivial_of_length_ne_one hi1
+    |>.second_ne_last_of_nodup (A.isPath i).nodup
+    obtain hl := by simpa [hij] using A.last_eq i
+    simp [hj, ← hl, this] at hij
+  by_contra hijne
+  have hnt := A.nonempty_of_ne hne i |>.nontrivial_of_length_ne_one hi1
+  have := by simpa [Set.ext_iff] using A.internallyDisjoint hijne
+  obtain hs | ht := this (A.f i).second |>.mp ⟨second_mem, hij ▸ second_mem⟩
+  · obtain hf := by simpa [hs] using A.first_eq i
+    exact hnt.first_ne_second_of_nodup (A.isPath i).nodup (hf.trans hs.symm)
+  · obtain hf := by simpa [ht] using A.last_eq i
+    exact hnt.second_ne_last_of_nodup (A.isPath i).nodup (ht.trans hf.symm)
+
+lemma VertexEnsemble.map_second_mem (A : G.VertexEnsemble s t ι) (i : ι) :
+    (A.f i).second ∈ V(G) := A.isPath i |>.vertexSet_subset (A.f i).second_mem
+
+lemma VertexEnsemble.vertexSet_encard_of_length_one_subsingleton (hι : ENat.card ι = n)
+    (hs : s ∈ V(G)) (hne : s ≠ t) {A : G.VertexEnsemble s t ι}
+    (hA : {i | (A.f i).length = 1}.Subsingleton) : n < V(G).encard := by
+  have := hι ▸ (A.map_second_inj hne hA).encard_range
+  have hsn : s ∉ (range fun x ↦ (A.f x).second) := by
+    simp only [mem_range, not_exists]
+    rintro i hs
+    generalize hi : A.f i = w
+    match w with
+    | .nil x =>
+      obtain rfl := by simpa [hi] using A.first_eq i
+      obtain rfl := by simpa [hi] using A.last_eq i
+      simp at hne
+    | .cons s e (nil t) =>
+      obtain rfl := by simpa [hi] using A.first_eq i
+      obtain rfl := by simpa [hi] using A.last_eq i
+      simp [hi, hne.symm] at hs
+    | .cons s e (cons x e' w) =>
+      obtain rfl := by simpa [hi] using A.first_eq i
+      obtain rfl := by simpa [hi] using A.last_eq i
+      obtain rfl := by simpa [hi] using hs
+      simpa [hi] using A.isPath i
+  grw [← ENat.add_one_le_iff (by simp), this, ← encard_insert_of_notMem hsn]
+  apply encard_le_encard
+  simp only [insert_subset_iff, hs, true_and]
+  rintro - ⟨i, rfl⟩
+  exact A.isPath i |>.vertexSet_subset (A.f i).second_mem

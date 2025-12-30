@@ -180,6 +180,9 @@ lemma setIncEdges_mono (hle : G ≤ H) (S : Set α) : E(G, S) ⊆ E(H, S) :=
 lemma endSetSet_subset_of_subset_of_le (hle : G ≤ H) (hF : F ⊆ E(G)) : V(H, F) ⊆ V(G) :=
   fun _ ⟨_, he, hx⟩ ↦ hx.of_le_of_mem hle (hF he) |>.vertex_mem
 
+lemma linkEdges_mono (hle : G ≤ H) (u v : α) : E(G, u, v) ⊆ E(H, u, v) :=
+  fun _ he ↦ he.of_le hle
+
 instance [Finite α] [Finite β] : WellFoundedLT (Graph α β) :=
   ⟨Subrelation.wf sum_ncard_lt_of_lt (measure fun (G : Graph α β) => V(G).ncard + E(G).ncard).2⟩
 

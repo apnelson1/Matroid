@@ -45,3 +45,4 @@ lemma IsWalk.prefixUntil_isWalk_subgraph {W} {H : G.Subgraph} [DecidablePred (·
       <| fun hec ↦ h (hW.1.of_le_of_mem Hᶜ.prop hec |>.left_mem)
       use this, hW.2.prefixUntil_isWalk_subgraph this.right_mem
 
+

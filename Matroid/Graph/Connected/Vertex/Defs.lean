@@ -335,6 +335,36 @@ lemma VertexEnsemble.eq_or_eq_of_mem {i j} (P : G.VertexEnsemble s t ι) (hxi : 
   have := P.internallyDisjoint hne ▸ (show x ∈ V(P.f i) ∩ V(P.f j) by simp [hxi, hxj])
   simpa
 
+@[simp]
+lemma VertexEnsemble.ends_subset (P : G.VertexEnsemble s t ι) (i : ι) : {s, t} ⊆ V(P.f i) := by
+  simp [pair_subset_iff, P.first_eq i ▸ first_mem, P.last_eq i ▸ last_mem]
+
+@[simp]
+lemma VertexEnsemble.vertexSet_inter (P : G.VertexEnsemble s t ι) {i j : ι} (hne : i ≠ j) :
+    V(P.f i) ∩ V(P.f j) = {s, t} := P.internallyDisjoint hne
+
+lemma VertexEnsemble.nonempty_of_ne (P : G.VertexEnsemble s t ι) (hne : s ≠ t) (i) :
+    (P.f i).Nonempty := by
+  by_contra!
+  obtain hs := by simpa [this.first_eq_last] using P.first_eq i
+  obtain ht := by simpa using P.last_eq i
+  exact hne (hs.symm.trans ht)
+
+lemma VertexEnsemble.nontrivial_of_not_adj (P : G.VertexEnsemble s t ι) (hne : s ≠ t)
+    (hadj : ¬ G.Adj s t) (i) : (P.f i).Nontrivial := by
+  generalize hi : P.f i = w
+  match w with
+  | .nil x =>
+    obtain rfl := by simpa [hi] using P.first_eq i
+    obtain rfl := by simpa [hi] using P.last_eq i
+    simp at hne
+  | .cons s e (nil t) =>
+    obtain rfl := by simpa [hi] using P.first_eq i
+    obtain rfl := by simpa [hi] using P.last_eq i
+    have := by simpa [hi] using P.isPath i
+    exact hadj ⟨e, this.2.1⟩ |>.elim
+  | .cons s e (cons x e' w) => simp
+
 @[simps]
 def vertexEnsemble_empty (G : Graph α β) (s t : α) (ι : Type*) [h : IsEmpty ι] :
     G.VertexEnsemble s t ι where

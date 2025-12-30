@@ -155,59 +155,54 @@ lemma contract_vertex_mono (φ : (H ↾ C).connPartition.RepFun) : V(H /[φ, C])
   refine vertexSet_mono edgeDelete_le |>.trans ?_
   simpa only [connPartition_supp, edgeRestrict_vertexSet] using φ.image_subset_self
 
-lemma map_repFun_of_walk {φ : (H ↾ C).connPartition.RepFun} {u v : α} {W : WList α β}
-    (hw : (φ ''ᴳ H).IsWalk W) (hu : W.first = φ u) (hv : W.last = φ v) : H.ConnBetween u v := by
+lemma IsWalk.map_connBetween_foo {φ : (H ↾ C).connPartition.RepFun} {u} {W}
+    (hw : ((φ ''ᴳ H) ＼ C ↾ F).IsWalk W) (hu : W.first = φ u) (hv : W.last = φ v) :
+    (H ↾ (C ∪ F)).ConnBetween u v := by
   match W with
   | .nil x =>
-  simp_all only [nil_isWalk_iff, WList.nil_first, WList.nil_last]
+  simp_all only [edgeDelete_edgeRestrict, nil_isWalk_iff, edgeRestrict_vertexSet, map_vertexSet,
+    mem_image, WList.nil_first, WList.nil_last]
   obtain ⟨y, hy, hyv⟩ := by simpa using hw
   have := φ.apply_eq_apply_iff_rel (by simp; exact hy) |>.mp (hyv.trans hv.symm)
   have := by simpa using this.symm.trans (φ.apply_eq_apply_iff_rel (by simp; exact hy) |>.mp hyv)
-  exact this.of_le edgeRestrict_le
+  exact this.of_le <|H.edgeRestrict_mono_right subset_union_left
   | .cons x e w =>
-  simp only [cons_isWalk_iff, WList.first_cons, WList.last_cons] at hw hu hv
+  simp only [cons_isWalk_iff, edgeRestrict_isLink, edgeDelete_isLink, map_isLink, WList.first_cons,
+    WList.last_cons] at hw hu hv
   subst x
-  obtain ⟨x, hx, hxeq⟩ := hw.1.right_mem
-  refine .trans ?_ <| map_repFun_of_walk hw.2 hxeq.symm hv
-  obtain ⟨a, b, hab, hu, hx⟩ := hxeq ▸ hw.1
-  have hua := by simpa using φ.apply_eq_apply_iff_rel (by simpa using hab.left_mem) |>.mp hu.symm
+  obtain ⟨⟨heF, ⟨x, y, hxy, hux, hwfy⟩, heC⟩, hw⟩ := hw
+  refine .trans ?_ <| hw.map_connBetween_foo hwfy hv
+  have hua := by simpa using φ.apply_eq_apply_iff_rel (by simpa using hxy.left_mem) |>.mp hux.symm
   |>.symm
-  have hva := by simpa using φ.apply_eq_apply_iff_rel (by simpa using hab.right_mem) |>.mp hx.symm
-  exact (hua.of_le edgeRestrict_le).trans hab.connBetween |>.trans (hva.of_le edgeRestrict_le)
+  refine (hua.of_le <| H.edgeRestrict_mono_right subset_union_left).trans
+  <| IsLink.connBetween (e := e) (by simp [heF, hxy])
 
 @[simp]
-lemma map_repFun_connBetween {φ : (H ↾ C).connPartition.RepFun} {u v : α} :
-    (φ ''ᴳ H).ConnBetween (φ u) (φ v) ↔ H.ConnBetween u v := by
-  refine ⟨fun ⟨w, hw, hu, hv⟩ ↦ map_repFun_of_walk hw hu hv, ?_⟩
+lemma contract_edgeRestrict_connBetween (φ : (H ↾ C).connPartition.RepFun) (F : Set β)
+    (u v) : (H /[φ, C] ↾ F).ConnBetween (φ u) (φ v) ↔ (H ↾ (C ∪ F)).ConnBetween u v := by
+  refine ⟨fun ⟨w, hw, hu, hv⟩ ↦ hw.map_connBetween_foo hu hv, ?_⟩
   rintro ⟨w, hw, rfl, rfl⟩
   induction w with
   | nil u =>
-    simp only [nil_isWalk_iff, WList.nil_first, WList.nil_last, connBetween_self, map_vertexSet,
-      mem_image] at hw ⊢
+    simp only [nil_isWalk_iff, edgeRestrict_vertexSet, WList.nil_first, WList.nil_last,
+      connBetween_self, contract_vertexSet, mem_image] at hw ⊢
     use u
   | cons u e w ih =>
-    simp_all only [cons_isWalk_iff, WList.first_cons, WList.last_cons, forall_const]
-    exact hw.1.map φ |>.connBetween.trans ih
-
-@[simp]
-lemma contract_connBetween {φ : (H ↾ C).connPartition.RepFun} :
-    (H /[φ, C]).ConnBetween (φ u) (φ v) ↔ H.ConnBetween u v := by
-  refine ⟨fun h ↦ map_repFun_connBetween.mp (h.of_le edgeDelete_le), fun h ↦ ?_⟩
-  obtain ⟨w, hw, rfl, rfl⟩ := h
-  induction w with
-  | nil u =>
-    simp only [nil_isWalk_iff, WList.nil_first, WList.nil_last, connBetween_self,
-      contract_vertexSet, mem_image] at hw ⊢
-    use u
-  | cons u e w ih =>
-    simp_all only [cons_isWalk_iff, WList.first_cons, WList.last_cons, forall_const]
+    simp only [cons_isWalk_iff, edgeRestrict_isLink, mem_union, WList.first_cons,
+      WList.last_cons] at hw ⊢
     by_cases he : e ∈ C
     · have heq : φ u = φ w.first := φ.apply_eq_of_rel _ _ <| connPartition_rel_iff _ _ _ |>.mpr
-        <| hw.1.of_le_of_mem edgeRestrict_le (by simp [he, hw.1.edge_mem]) |>.connBetween
-      rwa [heq]
-    exact hw.1.map φ |>.of_le_of_mem edgeDelete_le (by simp [he, hw.1.edge_mem])
-    |>.connBetween.trans ih
+        <| hw.1.2.of_le_of_mem edgeRestrict_le (by simp [he, hw.1.2.edge_mem]) |>.connBetween
+      rw [heq]
+      exact ih hw.2
+    specialize ih hw.2
+    exact hw.1.2.contract φ he |>.of_le_of_mem edgeRestrict_le
+      (by simp [he, hw.1.2.edge_mem, hw.1.1.resolve_left he]) |>.connBetween.trans ih
 
+@[simp]
+lemma contract_connBetween (φ : (H ↾ C).connPartition.RepFun) (u v) :
+    (H /[φ, C]).ConnBetween (φ u) (φ v) ↔ H.ConnBetween u v := by
+  convert contract_edgeRestrict_connBetween φ univ u v using 2 <;> rw [eq_comm] <;> simp
 
 class IsPartitionGraph [Order.Frame α] (G : Graph α β) where
   exists_partition : ∃ P : Partition α, V(G) = P.parts
@@ -271,6 +266,8 @@ instance : FunLike (minorMap G H) V(G) H.Subgraph where
 
 def IsMinor (G H : Graph α β) := Nonempty (minorMap G H)
 
+notation G " ≤ₘ " H => IsMinor G H
+
 lemma minorMap.ne_bot (F : minorMap G H) (x : V(G)) : F.map x ≠ ⊥ := by
   simpa using F.nonempty x
 
@@ -311,6 +308,8 @@ instance : IsPreorder (Graph α β) IsMinor where
   refl G := ⟨minorMap_refl G⟩
   trans _ _ _ F₁ F₂ := ⟨F₁.some.trans F₂.some⟩
 
+-- Not antisymm (it is upto vertex relabeling)
+
 private noncomputable def minorMap.some_vx (F : minorMap G H) : V(G) → V(H) :=
   fun x ↦ ⟨(F.nonempty x).some, vertexSet_mono (F.map x).prop (F.nonempty x).some_mem⟩
 
@@ -333,6 +332,7 @@ lemma minorMap.edgeSet_mono (F : minorMap G H) : E(G) ⊆ E(H) := by
   obtain ⟨u, v, huv⟩ := G.exists_isLink_of_mem_edgeSet he
   obtain ⟨_, _, hab, -, -⟩ := F.link e ⟨u, huv.left_mem⟩ ⟨v, huv.right_mem⟩ huv
   exact hab.edge_mem
+
 
 
 -- def IsMinor (G H : Graph α β) :=

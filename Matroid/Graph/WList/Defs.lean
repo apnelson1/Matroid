@@ -291,7 +291,7 @@ lemma nil_injective : Injective (nil : α → WList α β) := by
   rintro x y h
   rwa [nil.injEq] at h
 
-@[simp,  push] lemma not_nonempty_iff : ¬ w.Nonempty ↔ w.Nil := by
+@[simp,  push] protected lemma not_nonempty_iff : ¬ w.Nonempty ↔ w.Nil := by
   induction w with
   | nil u => simp
   | cons u e w ih =>
@@ -299,7 +299,7 @@ lemma nil_injective : Injective (nil : α → WList α β) := by
   rintro ⟨_⟩
 
 @[simp, push] lemma not_nil_iff : ¬ w.Nil ↔ w.Nonempty := by
-  rw [← not_nonempty_iff, not_not]
+  rw [← WList.not_nonempty_iff, not_not]
 
 lemma Nonempty.exists_cons (hw : w.Nonempty) : ∃ x e w', w = .cons x e w' := by
   cases hw with simp
@@ -347,6 +347,14 @@ lemma Nonempty.firstEdge_eq_head (hw : w.Nonempty) :
 lemma Nonempty.edgeSet_nonempty (h : w.Nonempty) : E(w).Nonempty := by
   cases h with simp
 
+lemma Nonempty.first_ne_last_of_nodup (hne : w.Nonempty) (hv : w.vertex.Nodup) :
+    w.first ≠ w.last := by
+  obtain ⟨x, e, w, rfl⟩ := hne.exists_cons
+  obtain ⟨hxw, hh⟩ := by simpa using hv
+  simp only [first_cons, last_cons, ne_eq]
+  contrapose! hxw
+  exact hxw ▸ last_mem
+
 /-! ### Nontriviality -/
 
 /-- a `WList` is nontrivial if it has at least two edges. -/
@@ -369,6 +377,19 @@ lemma not_nontrivial_cons_nil : ¬ (cons x e (nil y)).Nontrivial := by
 @[simp]
 lemma cons_nontrivial_iff : (cons u e w).Nontrivial ↔ w.Nonempty := by
   induction w with simp_all
+
+lemma Nontrivial.first_ne_second_of_nodup (hnt : w.Nontrivial) (hv : w.vertex.Nodup) :
+    w.first ≠ w.second := by
+  obtain ⟨u, e, v, f, w⟩ := hnt
+  simp_all
+
+lemma Nontrivial.second_ne_last_of_nodup (hnt : w.Nontrivial) (hv : w.vertex.Nodup) :
+    w.second ≠ w.last := by
+  obtain ⟨u, e, v, f, w⟩ := hnt
+  obtain ⟨hxw, hh⟩ := by simpa using hv
+  simp only [second_cons, first_cons, last_cons, ne_eq]
+  rintro rfl
+  exact hh.1 last_mem
 
 /-! ### Length -/
 
@@ -425,6 +446,18 @@ lemma two_le_length_iff : 2 ≤ w.length ↔ w.Nontrivial := by
 
 lemma Nontrivial.one_lt_length (hw : w.Nontrivial) : 1 < w.length := by
   simpa
+
+lemma Nonempty.nontrivial_of_length_ne_one (hw : w.Nonempty) (hne : w.length ≠ 1) :
+    w.Nontrivial := by
+  match w with
+  | nil x => simp at hw
+  | .cons u e (nil v) => simp at hne
+  | .cons u e (.cons v f w) => simp_all
+
+protected lemma length_eq_one_iff : w.length = 1 ↔ ∃ u e v, w = cons u e (nil v) := by
+  match w with
+  | .nil u => simp
+  | .cons u e w => simp [nil_iff_eq_nil]
 
 lemma vertex_toFinset_card_le [DecidableEq α] (w : WList α β) :
     w.vertex.toFinset.card ≤ w.length + 1 := by

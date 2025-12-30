@@ -95,8 +95,12 @@ lemma vertexSet_eq_empty_iff : V(G) = ∅ ↔ G = ⊥ := by
   refine ⟨fun h ↦ bot_le.antisymm' ⟨by simp [h], fun e x y he ↦ False.elim ?_⟩, fun h ↦ by simp [h]⟩
   simpa [h] using he.left_mem
 
-@[push]
+@[push, simp]
 lemma ne_bot_iff : G ≠ ⊥ ↔ V(G).Nonempty := not_iff_not.mp <| by
+  simp [not_nonempty_iff_eq_empty]
+
+@[push, simp]
+lemma vertexSet_not_nonempty_iff : ¬ V(G).Nonempty ↔ G = ⊥ := by
   simp [not_nonempty_iff_eq_empty]
 
 lemma ne_bot_of_mem_vertexSet (h : x ∈ V(G)) : G ≠ ⊥ :=

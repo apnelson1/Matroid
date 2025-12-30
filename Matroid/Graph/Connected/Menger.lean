@@ -276,37 +276,62 @@ theorem Menger'sTheorem_vertex [G.Finite] (hs : s ∈ V(G)) (ht : t ∈ V(G)) (h
   apply C.not_connBetween
   use A.f i, by simpa [(A.isPath i).isWalk], A.first_eq i, A.last_eq i
 
--- #print axioms Menger'sTheorem_vertex
-
 theorem Menger'sTheoremPre [G.Finite] (hι : ENat.card ι = n) :
     G.PreconnGE n ↔ ∀ ⦃s t⦄, s ∈ V(G) → t ∈ V(G) → Nonempty (G.VertexEnsemble s t ι) :=
   forall₄_congr fun _ _ hs ht ↦ Menger'sTheorem_vertex hs ht hι
 
--- theorem Menger'sTheorem [G.Finite] (hι : ENat.card ι = n) :
---     G.ConnGE n ↔ ∀ ⦃s t⦄, s ∈ V(G) → t ∈ V(G) → ∃ A : G.VertexEnsemble s t ι,
---     Set.Subsingleton {i | (A.f i).length = 1} := by
---   by_cases hC : G.IsComplete
---   · rw [hC.connGE_iff n]
---     by_cases hss : V(G).Subsingleton
---     · simp only [hss, true_and]
---       refine ⟨fun h s t hs ht => ?_, fun h => ?_⟩
---       · grw [← hι, encard_le_one_iff_subsingleton.mpr hss] at h
---         refine ⟨⟨fun ι ↦ WList.nil s, by simp [hs], by simp, by simp [hss hs ht], ?_⟩, ?_⟩
---         · simp [hss hs ht, internallyDisjoint, Pairwise]
---         simp
---       sorry
---     simp only [hss, false_and, false_or]
---     push_neg at hss
---     sorry
---   rw [← G.preconnGE_iff_connGE_of_not_isComplete hC n, iff_comm]
---   refine ⟨fun h s t hs ht => ?_, fun h s t hs ht => ?_⟩
---   · rw [Menger'sTheorem_vertex hs ht hι]
---     exact ⟨(h hs ht).choose⟩
---   simp only [IsComplete, ne_eq, not_forall] at hC
---   obtain ⟨x, hx, y, hy, hne, hxy⟩ := hC
---   have := (connBetweenGE_le_encard_sub_two (n := n) · hne hxy)
-
-
+theorem Menger'sTheorem [G.Finite] (hι : ENat.card ι = n) (hnt : V(G).Nontrivial) :
+    G.ConnGE n ↔ ∀ ⦃s t⦄, s ∈ V(G) → t ∈ V(G) → ∃ A : G.VertexEnsemble s t ι,
+    Set.Subsingleton {i | (A.f i).length = 1} := by
+  classical
+  refine iff_comm.mp ⟨fun h => ?_, fun h s t hs ht => ?_⟩
+  · by_cases hC : G.IsComplete
+    · rw [hC.connGE_iff n]
+      simp only [hnt.not_subsingleton, false_and, false_or]
+      obtain ⟨s, hs, t, ht, hne⟩ := hnt
+      obtain ⟨A, hA⟩ := h hs ht
+      exact A.vertexSet_encard_of_length_one_subsingleton hι hs hne hA
+    rw [← G.preconnGE_iff_connGE_of_not_isComplete hC n]
+    intro s t hs ht
+    rw [Menger'sTheorem_vertex hs ht hι]
+    exact ⟨(h hs ht).choose⟩
+  obtain rfl | hne := eq_or_ne s t
+  · use G.vertexEnsemble_nil hs ι, by simp
+  obtain hem | ⟨e, he⟩ := E(G, s, t).eq_empty_or_nonempty
+  · obtain ⟨A⟩ := Menger'sTheoremPre hι |>.mp h.pre hs ht
+    use A
+    convert subsingleton_empty
+    simp only [WList.length_eq_one_iff, mem_setOf_eq, mem_empty_iff_false, iff_false,
+      not_exists, Set.ext_iff]
+    intro i u e v hi
+    obtain rfl := by simpa using hi ▸ (A.first_eq i)
+    obtain rfl := by simpa using hi ▸ (A.last_eq i)
+    obtain ⟨-, huv, -⟩ := cons_isPath_iff.mp <| hi ▸ (A.isPath i)
+    simp only [first_cons, last_cons, nil_last, Set.ext_iff, mem_linkEdges_iff,
+      mem_empty_iff_false, iff_false] at hem
+    exact hem e huv
+  match n with
+  | 0 =>
+    simp only [cast_zero, ENat.card_eq_zero_iff_empty] at hι
+    use G.vertexEnsemble_empty s t ι, by simp
+  | n + 1 =>
+    have hιn : Nonempty ι := by simp [← ENat.one_le_card_iff_nonempty, hι]
+    have hι' : ENat.card ({hιn.some}ᶜ : Set ι) = n := by
+      have := by simpa [hι] using encard_add_encard_compl ({hιn.some} : Set ι)
+      simp only [ENat.card_coe_set_eq]
+      enat_to_nat!
+      omega
+    obtain ⟨A⟩ := (G ＼ E(G, s, t)).Menger'sTheoremPre hι' |>.mp
+      (h.edgeDelete_linkEdges s t |>.pre) (by simpa : s ∈ _) (by simpa : t ∈ _)
+    have hP : G.IsPath <| cons s e (nil t) := by simpa [hne, ht]
+    use A.of_le edgeDelete_le |>.extend_singleEdge hιn.some hP
+    intro i hAi j hAj
+    obtain rfl | hnei := eq_or_ne i hιn.some <;> obtain rfl | hnej := eq_or_ne j hιn.some
+    <;> simp_all only [mem_linkEdges_iff, cast_add, cast_one, ENat.card_coe_set_eq,
+      mem_setOf_eq, VertexEnsemble.extend_singleEdge_of_eq, cons_length, nil_length, zero_add]
+    · simp [(A.of_le _).extend_singleEdge_of_ne hP hnej, A.of_linkEdges_edgeDelete] at hAj
+    · simp [(A.of_le _).extend_singleEdge_of_ne hP hnei, A.of_linkEdges_edgeDelete] at hAi
+    simp [(A.of_le _).extend_singleEdge_of_ne hP hnei, A.of_linkEdges_edgeDelete] at hAi
 
 theorem Menger'sTheorem_mixed [G.Finite] (hs : s ∈ V(G)) (ht : t ∈ V(G)) (hι : ENat.card ι = n) :
     (∀ X ⊆ V(G), s ∉ X ∧ t ∉ X → ∀ F ⊆ E(G), ¬ (G - X ＼ F).ConnBetween s t →
