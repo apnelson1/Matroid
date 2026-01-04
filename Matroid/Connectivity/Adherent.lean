@@ -128,6 +128,17 @@ lemma TutteConnected.contract_or_delete_internallyConnected_three
     (.inr ∘ fun h ↦ h.internallyConnected_of_tutteConnected_three hM)
 
 
+lemma TutteConnected.exists_contract_verticallyConnected_three [M.RankFinite]
+    (h : M.TutteConnected 3) : ∃ e ∈ M.E, (M ／ {e}).VerticallyConnected 3 := sorry
+
+lemma VerticallyConnected.exists_contract_verticallyConnected_three [M.RankFinite]
+    (h : M.VerticallyConnected 3) : ∃ e ∈ M.E, (M ／ {e}).VerticallyConnected 3 := by
+  obtain ⟨N, hN⟩ := M.exists_isSimplification
+  have := hN.isRestriction.rankFinite
+  obtain ⟨e, he, hMe⟩ :=
+    (hN.tutteConnected_of_verticallyConnected_three h).exists_contract_verticallyConnected_three
+  exact ⟨e, hN.isRestriction.subset he,
+    (hN.simplifies.contract (by simpa)).verticallyConnected_iff.1 hMe⟩
 
 
 

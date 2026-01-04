@@ -48,6 +48,13 @@ protected lemma subset (P : s.IndexedPartition ι) {i : ι} : P i ⊆ s := by
   simp_rw [← P.iUnion_eq]
   exact subset_iUnion ..
 
+protected lemma exists_mem (P : s.IndexedPartition ι) {a : α} (ha : a ∈ s) :
+    ∃ i, a ∈ P i := by
+  rwa [← P.iUnion_eq, mem_iUnion] at ha
+
+protected lemma eq_of_mem_of_mem {a : α} (hi : a ∈ P i) (hj : a ∈ P j) : i = j :=
+  P.pairwise_disjoint.eq fun h ↦ disjoint_left.1 h hi hj
+
 lemma single_eq_diff_iUnion (P : s.IndexedPartition ι) (i : ι) : P i = s \ (⋃ j ≠ i, P j) := by
   simp only [subset_antisymm_iff, subset_diff, P.subset, disjoint_iUnion_right, true_and,
     diff_subset_iff]
@@ -297,6 +304,12 @@ protected lemma ext {P P' : s.Bipartition} (h : P true = P' true) : P = P' :=
 
 protected lemma ext_iff {P P' : s.Bipartition} (b : Bool) : P = P' ↔ P b = P' b :=
   ⟨fun h ↦ by simp [h], fun h ↦ P.ext_bool b h⟩
+
+protected lemma eq_of_mem_of_mem {a : α} (hi : a ∈ P i) (hj : a ∈ P j) : i = j :=
+  P.pairwise_disjoint.eq fun h ↦ disjoint_left.1 h hi hj
+
+protected lemma mem_or_mem (P : s.Bipartition) {a : α} (ha : a ∈ s) : a ∈ P true ∨ a ∈ P false := by
+  simpa [or_comm] using IndexedPartition.exists_mem P ha
 
 @[simps]
 protected def symm (P : s.Bipartition) : s.Bipartition where

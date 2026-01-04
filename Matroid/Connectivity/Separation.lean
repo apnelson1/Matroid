@@ -148,10 +148,10 @@ protected def dual (P : M.Separation) : M✶.Separation := P.copy' rfl
 
 protected def ofDual (P : M✶.Separation) : M.Separation := P.copy' rfl
 
-@[simp]
+@[simp, simp↓]
 protected lemma dual_apply (P : M.Separation) (i : Bool) : P.dual i = P i := rfl
 
-@[simp]
+@[simp, simp↓]
 protected lemma ofDual_apply (P : M✶.Separation) (i : Bool) : P.ofDual i = P i := rfl
 
 @[simp] lemma dual_ofDual (P : M.Separation) : P.dual.ofDual = P := rfl
@@ -345,6 +345,11 @@ lemma induce_apply (P : M.Separation) (hN : N.E ⊆ M.E) (i) : P.induce hN i = (
 lemma induce_symm (P : M.Separation) (hN : N.E ⊆ M.E) : (P.induce hN).symm = P.symm.induce hN :=
   Separation.ext rfl
 
+lemma IsMinor.eConn_induce_le (P : M.Separation) (hNM : N ≤m M) :
+    (P.induce hNM.subset).eConn ≤ P.eConn := by
+  grw [← P.eConn_eq true, ← Separation.eConn_eq _ true, induce_apply, eConn_inter_ground,
+    hNM.eConn_le]
+
 /-- Every partition has a larger side for a given numerical notion of 'large' -/
 lemma exists_larger_side {β : Type*} [ConditionallyCompleteLinearOrder β] (P : M.Separation)
     (f : Set α → β) : ∃ i, ∀ j, f (P j) ≤ f (P i) := by
@@ -405,10 +410,6 @@ protected lemma cross_false_true (P Q : M.Separation) :
 protected lemma cross_symm (P Q : M.Separation) (i : Bool) :
     (P.cross Q i).symm = P.symm.cross Q.symm !i :=
   Bipartition.cross_symm ..
-
-
-
-
 
 /-- Cross two partitions by intersecting the `true` sets. -/
 def inter (P Q : M.Separation) : M.Separation := P.cross Q true
@@ -862,5 +863,46 @@ lemma eConn_inter_add_eConn_inter_le_of_singleton
     (P : (M ／ {e}).Separation) (Q : (M ＼ {e}).Separation) (i : Bool) :
     M.eConn (P i ∩ Q i) + M.eConn (P (!i) ∩ Q (!i)) ≤ P.eConn + Q.eConn + 1 := by
   grw [P.eConn_inter_add_eConn_inter_le, eConn_le_encard, encard_singleton]
+
+/-- If `P` is a separation of a restriction of `M`, and each element of `M` is spanned by
+one side of `P`, then `P` extends to a separation of `M` with the same connectivity. -/
+lemma exists_of_isRestriction_of_forall_mem_closure (P : N.Separation) (hNM : N ≤r M)
+    (h : ∀ e, M.IsNonloop e → ∃ i, e ∈ M.closure (P i)) : ∃ (Q : M.Separation),
+    (∀ i, (P i ⊆ Q i ∧ M.closure (Q i) = M.closure (P i))) ∧ Q.eConn = P.eConn := by
+  have h' (e : α) (he : e ∈ M.E) : ∃ i, e ∈ M.closure (P i) ∧ (e ∈ N.E → e ∈ P i) := by
+    by_cases heN : e ∈ N.E
+    · obtain ⟨i, hi⟩ := IndexedPartition.exists_mem P heN
+      exact ⟨i, mem_closure_of_mem' _ hi he, fun _ ↦ hi⟩
+    obtain hel | henl := M.isLoop_or_isNonloop e
+    · exact ⟨true, hel.mem_closure (P true), by simp [heN]⟩
+    simpa [heN] using h e henl
+  choose! φ hφ using h'
+  have aux {i} : P i ⊆ φ ⁻¹' {i} := fun e he ↦
+    P.eq_of_mem_of_mem ((hφ _ (hNM.subset (P.subset_ground he))).2 (P.subset_ground he)) he
+  have auxcl {i} : M.closure (φ ⁻¹' {i}) = M.closure (P i) := by
+    refine (M.closure_subset_closure aux).antisymm' ?_
+    rw [← M.closure_inter_ground, M.closure_subset_closure_iff_subset_closure]
+    rintro x ⟨rfl, hxE⟩
+    exact (hφ x hxE).1
+  refine ⟨Separation.mk (fun i ↦ φ ⁻¹' {i} ∩ M.E) ?_ ?_, ?_⟩
+  · simp +contextual [Pairwise, disjoint_left]
+  · simp [← union_inter_distrib_right, ← preimage_union, subset_def]
+  simp only [↓mk_apply, subset_inter_iff, aux, P.subset_ground.trans hNM.subset, and_self,
+    closure_inter_ground, true_and]
+  refine ⟨fun _ ↦ auxcl, ?_⟩
+  simp only [eConn_eq_eLocalConn, ↓mk_apply, eLocalConn_inter_ground_right,
+    eLocalConn_inter_ground_left]
+  rw [hNM.eLocalConn_eq_of_subset, ← M.eLocalConn_closure_closure, auxcl, auxcl,
+    eLocalConn_closure_closure]
+
+/-- If `N` simplifies `M`, then each separation of `N` extends naturally to one of `M`. -/
+lemma exists_of_simplifies (P : N.Separation) (hNM : N ≤si M) : ∃ (Q : M.Separation),
+    (∀ i, (P i ⊆ Q i ∧ M.closure (Q i) = M.closure (P i))) ∧ Q.eConn = P.eConn := by
+  refine P.exists_of_isRestriction_of_forall_mem_closure hNM.isRestriction fun e he ↦ ?_
+  obtain ⟨f, hfN, hef⟩ := hNM.exists_of_isNonloop he
+  obtain ⟨i, hi⟩ := P.exists_mem hfN
+  use i
+  grw [← singleton_subset_iff.2 hi]
+  exact hef.mem_closure
 
 end Separation

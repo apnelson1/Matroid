@@ -1,11 +1,13 @@
 import Matroid.Connectivity.Vertical
 import Matroid.Tame
 
-variable {α : Type*} {M : Matroid α} {X Y : Set α} {e f : α} {P : M.Partition} {k : ℕ∞}
+variable {α : Type*} {M : Matroid α} {X Y : Set α} {e f : α} {P : M.Separation} {k : ℕ∞}
 
-open Set Matroid.Partition
+open Set Matroid.Separation
 
 namespace Matroid
+
+
 
 @[simp]
 lemma freeOn_tutteConnected_top_iff {E : Set α} : (freeOn E).TutteConnected ⊤ ↔ E.Subsingleton := by
@@ -22,29 +24,25 @@ lemma cyclicallyConnected_top_iff :
     M.CyclicallyConnected ⊤ ↔ ∀ X ⊆ M.E, M.Indep X ∨ M.Indep (M.E \ X) := by
   rw [CyclicallyConnected, numConnected_top_iff']
 
-lemma cyclicallyConnected_top_iff_forall_inter_nonempty :
-    M.CyclicallyConnected ⊤ ↔ ∀ ⦃C₁ C₂⦄, M.IsCircuit C₁ → M.IsCircuit C₂ → (C₁ ∩ C₂).Nonempty := by
-  rw [cyclicallyConnected_top_iff]
-  refine ⟨fun h C₁ C₂ hC₁ hC₂ ↦ not_disjoint_iff_nonempty_inter.1 fun he ↦ ?_,
-    fun h X hXE ↦ ?_⟩
-  · specialize h C₁ hC₁.subset_ground
-    rw [or_iff_right hC₁.not_indep] at h
-    refine (h.subset ?_).not_dep hC₂.dep
-    rwa [subset_diff, and_iff_right hC₂.subset_ground, disjoint_comm]
-  obtain hX | hX := M.indep_or_dep (X := X)
-  · exact .inl hX
-  rw [or_iff_right hX.not_indep, ← not_dep_iff, dep_iff_superset_isCircuit, not_exists]
-  rintro C₂ ⟨hC₂X, hC₂⟩
-  obtain ⟨C₁, hC₁X, hC₁⟩ := hX.exists_isCircuit_subset
-  exact (h hC₁ hC₂).not_disjoint <| disjoint_sdiff_right.mono hC₁X hC₂X
-
 lemma CyclicallyConnected.inter_nonempty_of_dep_dep (h : M.CyclicallyConnected ⊤)
     (hX : M.Dep X) (hY : M.Dep Y) : (X ∩ Y).Nonempty := by
+  by_contra! hcon
+  have hX' := cyclicallyConnected_top_iff.1 h X hX.subset_ground
+  rw [or_iff_right hX.not_indep] at hX'
+  exact (hX'.subset (subset_diff.2 ⟨hY.subset_ground,
+    by rwa [disjoint_comm, disjoint_iff_inter_eq_empty]⟩)).not_dep hY
+
+lemma cyclicallyConnected_top_iff_forall_inter_nonempty :
+    M.CyclicallyConnected ⊤ ↔ ∀ ⦃C₁ C₂⦄, M.IsCircuit C₁ → M.IsCircuit C₂ → (C₁ ∩ C₂).Nonempty := by
+  refine ⟨fun h C₁ C₂ hC₁ hC₂ ↦ h.inter_nonempty_of_dep_dep hC₁.dep hC₂.dep,
+    fun h ↦ cyclicallyConnected_top_iff.2 fun X hX ↦ ?_⟩
+  rw [← not_dep_iff, ← not_dep_iff, ← Classical.not_and_iff_not_or_not]
+  rintro ⟨hX, hX'⟩
   obtain ⟨C₁, hC₁X, hC₁⟩ := hX.exists_isCircuit_subset
-  obtain ⟨C₂, hC₂Y, hC₂⟩ := hY.exists_isCircuit_subset
-  have hne := cyclicallyConnected_top_iff_forall_inter_nonempty.1 h hC₁ hC₂
-  grw [hC₁X, hC₂Y] at hne
-  assumption
+  obtain ⟨C₂, hC₂X, hC₂⟩ := hX'.exists_isCircuit_subset
+  refine (h hC₁ hC₂).ne_empty ?_
+  grw [← subset_empty_iff, hC₁X, hC₂X]
+  simp
 
 lemma verticallyConnected_top_iff_forall_inter_nonempty : M.VerticallyConnected ⊤ ↔
     ∀ ⦃C₁ C₂⦄, M.IsCocircuit C₁ → M.IsCocircuit C₂ → (C₁ ∩ C₂).Nonempty := by
@@ -63,29 +61,6 @@ lemma TutteConnected.inter_nonempty_of_dep_codep (h : M.TutteConnected ⊤) (hX 
   · exact hX.not_indep hi
   refine hY.not_coindep (hd.subset ?_)
   rwa [subset_diff, disjoint_comm, and_iff_right hY.subset_ground]
-
-/-- `U₃,₈` (for example) is `(3 + 1)`-connected with rank `3`, but not infinitely connected;
-hence the bound is tight. -/
-lemma TutteConnected.tutteConnected_top_of_eRank_add_one_le
-    (h : M.TutteConnected (k + 1)) (hle : M.eRank + 1 ≤ k) : M.TutteConnected ⊤ := by
-  rw [tutteConnected_top_iff_forall]
-  refine fun P hP ↦ h.not_isTutteSeparation ?_ hP
-  grw [← P.eConn_eq true, eConn_le_eRk, eRk_le_eRank, hle]
-
-/-- `U₅,₈` (for example) is `(3 + 1)`-connected with corank `3`, but not infinitely connected.
-hence the bound is tight. -/
-lemma TutteConnected.tutteConnected_top_of_eRank_dual_add_one_le
-    (h : M.TutteConnected (k + 1)) (hle : M✶.eRank + 1 ≤ k) : M.TutteConnected ⊤ := by
-  simpa using h.dual.tutteConnected_top_of_eRank_add_one_le hle
-
-lemma TutteConnected.tutteConnected_top_of_encard_add_one_le
-    (h : M.TutteConnected (k + 1)) (hlt : M.E.encard + 1 ≤ 2 * k) : M.TutteConnected ⊤ := by
-  wlog hle : M.eRank ≤ M✶.eRank generalizing M with aux
-  · simpa using aux h.dual (by simpa) (by simpa using (not_le.1 hle).le)
-  obtain hle | hlt' := le_or_gt (M.eRank + 1) k
-  · exact h.tutteConnected_top_of_eRank_add_one_le hle
-  grw [← M.eRank_add_eRank_dual] at hlt
-  eomega
 
 lemma TutteConnected.isUniform (h : M.TutteConnected ⊤) : M.IsUniform :=
   TutteConnected.isUniform_of_encard_le (k := ⊤) (by simpa) (by simp)
@@ -202,15 +177,15 @@ lemma unifOn_tutteConnected_iff {E : Set α} {r : ℕ} (hrE : r ≤ E.encard) :
   rw [tutteConnected_iff_verticallyConnected_girth (by rw [unifOn_ground_eq]; eomega),
     le_girth_iff, verticallyConnected_iff_forall]
   refine ⟨fun P hPconn hPsep ↦ ?_, fun C hC ↦ ?_⟩
-  · simp_rw [isVerticalSeparation_iff_forall_nonspanning, ← Partition.not_spanning_iff,
-      unifOn_spanning_iff hrE (P.subset_ground _), not_le] at hPsep
+  · simp_rw [isVerticalSeparation_iff_forall_nonspanning, ← Separation.not_spanning_iff,
+      unifOn_spanning_iff hrE P.subset_ground, not_le] at hPsep
     rw [← (unifOn_ground_eq E (k := r)), ← eRank_add_eRank_dual,
       ← Indep.eConn_eq_of_compl_indep (I := P true), P.eConn_eq, unifOn_eRank_eq,
       min_eq_right hrE, add_comm, WithTop.add_le_add_iff_left (ENat.coe_ne_top r)] at hkrE
     · eomega
-    · simpa [(hPsep true).le] using P.subset_ground _
+    · simpa [(hPsep true).le] using P.subset_ground
     rw [P.compl_true]
-    simpa [(hPsep false).le] using P.subset_ground _
+    simpa [(hPsep false).le] using P.subset_ground
   rw [unifOn_isCircuit_iff] at hC
   simpa [hC.1]
 
@@ -268,7 +243,7 @@ lemma tutteConnected_top_iff_of_tame [M.Tame] : M.TutteConnected ⊤ ↔
 lemma Paving.cyclicallyConnected (h : M.Paving) (hk : k < M.eRank) : M.CyclicallyConnected k := by
   obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
   refine cyclicallyConnected_iff_forall.2 fun P hPconn hP ↦ ?_
-  rw [Partition.isCyclicSeparation_iff_forall] at hP
+  rw [Separation.isCyclicSeparation_iff_forall] at hP
   nth_grw 1 [h.eRank_le_eRk_add_one_of_dep (hP false), ← hPconn,
     ← h.eRelRk_ground_le_of_dep (hP true), ← P.compl_false, ← nullity_dual_eq ..,
     ← P.eConn_eq false, M.eConn_add_nullity_dual_eq_eRk (P false)] at hk
@@ -277,10 +252,10 @@ lemma Paving.cyclicallyConnected (h : M.Paving) (hk : k < M.eRank) : M.Cyclicall
 lemma Paving.cyclicallyConnected_of_verticallyConnected (h : M.Paving)
     (hconn : M.VerticallyConnected (k + 1)) (hk : k < M.eRank) : M.CyclicallyConnected (k + 1) := by
   refine cyclicallyConnected_iff_forall.2 fun P hPconn hP ↦ ?_
-  rw [Partition.isCyclicSeparation_iff_forall] at hP
+  rw [Separation.isCyclicSeparation_iff_forall] at hP
   wlog hs : M.Spanning (P true) generalizing P with aux
   · refine hconn.not_isVerticalSeparation (P := P) (by simpa) ?_
-    simp_rw [Partition.isVerticalSeparation_iff_forall_nonspanning, ← Partition.not_spanning_iff,
+    simp_rw [Separation.isVerticalSeparation_iff_forall_nonspanning, ← Separation.not_spanning_iff,
       Bool.forall_bool, and_iff_left hs]
     exact aux P.symm (by simpa) <| by simpa [and_comm] using Bool.forall_bool.1 hP
   grw [← hPconn, ← P.eConn_eq true, hs.eConn_eq, P.compl_true,

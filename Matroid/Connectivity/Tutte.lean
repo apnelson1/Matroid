@@ -372,7 +372,6 @@ For this reason, we use `TutteConnected (k+1)` in the API in all places except w
 no convenience is lost. Vertical and Cyclic connectivities have the same issues. -/
 def TutteConnected (M : Matroid α) (k : ℕ∞) := M.NumConnected (fun M X ↦ M.Indep X ∧ M.Coindep X) k
 
-
 lemma not_tutteConnected_iff_exists : ¬ M.TutteConnected (k + 1) ↔
     ∃ P : M.Separation, P.eConn + 1 ≤ k ∧ P.IsTutteSeparation :=
   not_numConnected_iff_exists
@@ -425,19 +424,49 @@ lemma TutteConnected.not_isTutteSeparation (h : M.TutteConnected (k + 1)) (hP : 
     ¬ P.IsTutteSeparation :=
   fun h' ↦ h'.not_tutteConnected <| h.mono <| add_left_mono hP
 
+lemma TutteConnected.exists_indep_coindep (h : M.TutteConnected (k + 1)) (hP : P.eConn + 1 ≤ k) :
+    ∃ i, M.Indep (P i) ∧ M.Coindep (P i) := by
+  simpa only [isTutteSeparation_iff_forall, not_forall, not_or, Separation.not_dep_iff,
+    Separation.not_codep_iff] using h.not_isTutteSeparation hP
+
+lemma TutteConnected.exists_encard_eq (h : M.TutteConnected (k + 1)) (hP : P.eConn + 1 ≤ k) :
+    ∃ i, (P i).encard = P.eConn :=
+  (h.exists_indep_coindep hP).imp fun i hi ↦ by
+    simp [← M.eConn_add_nullity_add_nullity_dual (P i), hi.1.nullity_eq, hi.2.nullity_eq]
+
+lemma tutteConnected_iff_forall_exists_encard_le (hk : k ≠ ⊤) : M.TutteConnected (k + 1) ↔
+    ∀ ⦃P : M.Separation⦄, P.eConn + 1 ≤ k → ∃ i, (P i).encard ≤ P.eConn := by
+  refine ⟨fun h P hP ↦ ?_, fun h ↦ ?_⟩
+  · obtain ⟨i, hi⟩ := h.exists_encard_eq hP
+    exact ⟨i, hi.le⟩
+  rw [tutteConnected_iff_forall]
+  intro P hPk hP
+  obtain ⟨i, hi⟩ := h hPk
+  rw [isTutteSeparation_iff_lt_encard (by enat_to_nat!)] at hP
+  exact (hP i).not_ge hi
+
+lemma TutteConnected.encard_eq_or_encard_compl_eq (h : M.TutteConnected (k + 1))
+    (hX : M.eConn X + 1 ≤ k) (hXE : X ⊆ M.E := by aesop_mat) :
+    X.encard = M.eConn X ∨ (M.E \ X).encard = M.eConn X := by
+  have h' := h.exists_encard_eq (P := M.ofSetSep X true) (by simpa)
+  simpa [or_comm, eq_comm] using h'
+
 lemma tutteConnected_of_subsingleton (h : M.E.Subsingleton) (k : ℕ∞) : M.TutteConnected k :=
   numConnected_of_subsingleton h _ <| by simp
-
 
 lemma tutteConnected_iff_numConnected_encard (hk : k ≠ ⊤) :
     M.TutteConnected k ↔ M.NumConnected (fun M X ↦ X.encard ≤ M.eConn X) k := by
   obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
-  simp only [tutteConnected_iff_forall, numConnected_iff_forall,
-    isPredSeparation_iff, not_forall_not]
-  convert Iff.rfl with P hP i
-  rw [← M.eConn_add_nullity_add_nullity_dual (P i)]
-  simp [add_assoc, show P.eConn ≠ ⊤ by enat_to_nat!]
+  simp_rw [tutteConnected_iff_forall_exists_encard_le (by simpa using hk),
+    numConnected_iff_forall, isPredSeparation_iff, not_forall_not]
+  simp
 
+/-- A matroid is `InfinitelyConnected` if it is both finite and infinitely Tutte-connected.
+All such matroids are uniform and nearly self-dual. -/
+@[mk_iff]
+structure InfinitelyConnected (M : Matroid α) : Prop where
+  tutteConnected : M.TutteConnected ⊤
+  finite : M.Finite
 
 @[simp]
 lemma uniqueBaseOn_tutteConnected_iff {B E : Set α} :
@@ -488,20 +517,57 @@ lemma Connected.tutteConnected_two (hM : M.Connected) : (M.TutteConnected 2) := 
 lemma Connected.tutteConnected_one_add_one (hM : M.Connected) : (M.TutteConnected (1 + 1)) :=
   hM.tutteConnected_two
 
-lemma TutteConnected.le_girth (h : M.TutteConnected (k + 1)) (hlt : 2 * k ≤ M.E.encard) :
+lemma TutteConnected.girth_ge (h : M.TutteConnected (k + 1)) (hlt : 2 * k ≤ M.E.encard) :
     k + 1 ≤ M.girth := by
-  rw [← not_lt, girth_lt_iff, not_exists]
-  rintro C ⟨hC, hCcard⟩
-  have hlt' : (M.ofSetSep C true).eConn + 1 < k + 1 := by
-    grw [eConn_ofSetSep, eConn_le_eRk, hC.eRk_add_one_eq]
-    assumption
-  refine h.not_isTutteSeparation (P := M.ofSetSep C true)
-    (by simpa using Order.le_of_lt_add_one hlt') ?_
-  grw [isTutteSeparation_iff_add_one_le_encard (fun h ↦ by simp [h] at hlt'),
-    Bool.forall_bool, eConn_ofSetSep, ofSetSep_true_false, ofSetSep_apply_self, eConn_le_eRk,
-    hC.eRk_add_one_eq, and_iff_left rfl.le, Order.le_of_lt_add_one hCcard]
-  rw [← encard_diff_add_encard_of_subset hC.subset_ground] at hlt
-  enat_to_nat! <;> cutsat
+  simp_rw [le_girth_iff, ← not_lt]
+  intro C hC hCcard
+  have hle : M.eConn C + 1 ≤ k := by
+    grw [hC.eConn_add_one_eq, ← Order.le_of_lt_add_one hCcard, eRk_le_encard]
+  have hCfin : C.Finite := by rw [← encard_lt_top_iff]; enat_to_nat!
+  have h' := Or.imp Eq.le Eq.le <| h.encard_eq_or_encard_compl_eq (X := C) hle
+  nth_grw 1 [M.eConn_le_eRk, ← hC.eRk_add_one_eq, or_iff_right
+    ((by simpa using M.isRkFinite_of_finite hCfin))] at h'
+  have aux := encard_diff_add_encard_of_subset hC.subset_ground
+  grw [← encard_diff_add_encard_of_subset hC.subset_ground] at hlt
+  have := M.eConn_le_encard C
+  enat_to_nat! <;> lia
+
+lemma TutteConnected.girth_ge_of_exists_eConn_ge (h : M.TutteConnected (k + 1))
+    (hP : ∃ (P : M.Separation), k ≤ P.eConn) : k + 1 ≤ M.girth := by
+  obtain ⟨P, hP⟩ := hP
+  refine h.girth_ge ?_
+  grw [← encard_diff_add_encard_of_subset (P.subset_ground (i := true)), P.compl_true, hP,
+    ← M.eConn_le_encard, ← M.eConn_le_encard, P.eConn_eq, P.eConn_eq, two_mul]
+
+/-- `U₃,₈` (for example) is `(3 + 1)`-connected with rank `3`, but not infinitely connected;
+hence the bound is tight. -/
+lemma TutteConnected.tutteConnected_top_of_eRank_add_one_le
+    (h : M.TutteConnected (k + 1)) (hle : M.eRank + 1 ≤ k) : M.TutteConnected ⊤ := by
+  rw [tutteConnected_top_iff_forall]
+  refine fun P hP ↦ h.not_isTutteSeparation ?_ hP
+  grw [← P.eConn_eq true, eConn_le_eRk, eRk_le_eRank, hle]
+
+/-- `U₅,₈` (for example) is `(3 + 1)`-connected with corank `3`, but not infinitely connected.
+hence the bound is tight. -/
+lemma TutteConnected.tutteConnected_top_of_eRank_dual_add_one_le
+    (h : M.TutteConnected (k + 1)) (hle : M✶.eRank + 1 ≤ k) : M.TutteConnected ⊤ := by
+  simpa using h.dual.tutteConnected_top_of_eRank_add_one_le hle
+
+lemma TutteConnected.tutteConnected_top_of_encard_add_one_le
+    (h : M.TutteConnected (k + 1)) (hlt : M.E.encard + 1 ≤ 2 * k) : M.TutteConnected ⊤ := by
+  wlog hle : M.eRank ≤ M✶.eRank generalizing M with aux
+  · simpa using aux h.dual (by simpa) (by simpa using (not_le.1 hle).le)
+  obtain hle | hlt' := le_or_gt (M.eRank + 1) k
+  · exact h.tutteConnected_top_of_eRank_add_one_le hle
+  grw [← M.eRank_add_eRank_dual] at hlt
+  eomega
+
+lemma TutteConnected.girth_ge_of_not_tutteConnected_top (h : M.TutteConnected k)
+    (h_top : ¬ M.TutteConnected ⊤) : k ≤ M.girth := by
+  obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
+  refine h.girth_ge ?_
+  contrapose! h_top
+  exact h.tutteConnected_top_of_encard_add_one_le (Order.add_one_le_of_lt h_top)
 
 /-- Every `(k + 1)`-connected matroid on at most `2k` elements is uniform. -/
 lemma TutteConnected.isUniform_of_encard_le (h : M.TutteConnected (k + 1))
@@ -518,6 +584,10 @@ lemma TutteConnected.isUniform_of_encard_le (h : M.TutteConnected (k + 1))
   have hXconn : M.eConn X + 1 ≤ k := by grw [eConn_le_eRk, hnot.1.eRk_add_one_le_encard, hXcard]
   refine h.not_isTutteSeparation (P := M.ofSetSep X true) (by simpa) ?_
   simp [isTutteSeparation_iff' true, hnot.1, hnot.2]
+
+
+
+
 
 -- lemma TutteConnected.contract {C : Set α} (h : M.TutteConnected (k + M.eRk C + 1))
 --     (hnt : 2 * (k + M.eRk C) < M.E.encard + 1) : (M ／ C).TutteConnected (k + 1) := by

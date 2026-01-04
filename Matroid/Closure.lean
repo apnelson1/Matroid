@@ -1,7 +1,7 @@
 import Mathlib.Combinatorics.Matroid.Closure -- inefficient import
 import Matroid.ForMathlib.Matroid.Closure
 
-variable {α : Type*} {M : Matroid α} {X : Set α}
+variable {α : Type*} {M N : Matroid α} {X : Set α}
 
 open Set
 
@@ -38,6 +38,49 @@ lemma spanning_dual_iff  (hXE : X ⊆ M.E := by aesop_mat) :
 lemma spanning_compl_dual_iff (hXE : X ⊆ M.E := by aesop_mat) :
     M✶.Spanning (M.E \ X) ↔ M.Indep X := by
   rw [spanning_iff_compl_coindep, dual_coindep_iff, dual_ground, diff_diff_cancel_left hXE]
+
+@[mk_iff]
+structure IsSpanningRestriction (N M : Matroid α) : Prop where
+  isRestriction : N ≤r M
+  spanning : M.Spanning N.E
+
+scoped infix:50  " ≤sr " => IsSpanningRestriction
+
+lemma IsSpanningRestriction.subset (h : N ≤sr M) : N.E ⊆ M.E :=
+  h.isRestriction.subset
+
+lemma IsSpanningRestriction.refl : M.IsSpanningRestriction M :=
+  ⟨IsRestriction.refl, M.ground_spanning⟩
+
+lemma IsSpanningRestriction.spanning_of_spanning (h : N ≤sr M) (hX : N.Spanning X) :
+    M.Spanning X := by
+  grw [spanning_iff_ground_subset_closure (hX.subset_ground.trans h.subset),
+    ← h.spanning.closure_eq, closure_subset_closure_iff_subset_closure h.subset,
+    ← h.isRestriction.closure_subset_closure, hX.closure_eq]
+
+lemma IsSpanningRestriction.spanning_iff (h : N ≤sr M) : N.Spanning X ↔ M.Spanning X ∧ X ⊆ N.E := by
+  refine ⟨fun h' ↦ ⟨h.spanning_of_spanning h', h'.subset_ground⟩, fun h' ↦ ?_⟩
+  grw [spanning_iff_ground_subset_closure, h.isRestriction.closure_eq, h'.1.closure_eq,
+    ← h.subset, inter_self]
+
+lemma IsSpanningRestriction.trans {M₁ M₂ M₃ : Matroid α} (h : M₁ ≤sr M₂) (h' : M₂ ≤sr M₃) :
+    M₁ ≤sr M₃ :=
+  ⟨h.isRestriction.trans h'.isRestriction,
+    h'.spanning_of_spanning <| h.spanning_of_spanning M₁.ground_spanning⟩
+
+@[simp]
+lemma restrict_isSpanningRestriction_iff : (M ↾ X) ≤sr M ↔ M.Spanning X :=
+  ⟨fun h ↦ by simpa using h.spanning, fun h ↦ ⟨restrict_isRestriction .., h⟩⟩
+
+lemma Spanning.restrict_isSpanningRestriction (h : M.Spanning X) : M ↾ X ≤sr M := by
+  simpa
+
+
+-- lemma Coindep.delete_isSpanningRestriction (h : M.Coindep X) : M ＼ X →
+
+  -- grw [spanning_iff_ground_subset_closure (h.subset.trans h'.subset), ← h'.spanning.closure_eq,
+  --   closure_subset_closure_iff_subset_closure h'.subset, ← h.spanning.closure_eq,
+  --   h'.isRestriction.closure_subset_closure]
 
 -- lemma nonspanning_dual_iff (hXE : X ⊆ M.E := by aesop_mat) :
 --     M✶.Nonspanning X ↔ M.Dep (M.E \ X) := by

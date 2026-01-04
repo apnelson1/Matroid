@@ -99,6 +99,14 @@ lemma Spanning.dep_of_ssuperset (h : M.Spanning X) (hssu : X ⊂ Y) (hY : Y ⊆ 
   obtain ⟨B, hB, hBX⟩ := h.exists_isBase_subset
   exact hB.dep_of_ssubset (hBX.trans_ssubset hssu)
 
+lemma IsRestriction.closure_eq' {N : Matroid α} (hNM : N ≤r M) (X : Set α) :
+    N.closure X = M.closure (X ∩ N.E) ∩ N.E := by
+  obtain ⟨R, hR, rfl⟩ := hNM
+  simp [diff_eq_empty.2 hR]
+
+lemma IsRestriction.closure_eq {N : Matroid α} (hNM : N ≤r M)
+    (hX : X ⊆ N.E := by aesop_mat) : N.closure X = M.closure X ∩ N.E := by
+  rw [hNM.closure_eq', inter_eq_self_of_subset_left hX]
 -- lemma closure_iUnion_closure_eq_closure_iUnion'
 
 -- lemma closure_iUnion_congr' {α : Type*} {ι : Sort*} {κ : ι → Sort*} (M : Matroid α)

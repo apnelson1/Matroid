@@ -80,3 +80,9 @@ lemma IsBasis'.exists_isBasis'_inter_eq_of_superset {I X Y : Set α} (hIX : M.Is
 
 @[simp] lemma emptyOn_spanning_iff {X : Set α} : (emptyOn α).Spanning X ↔ X = ∅ := by
   rw [← loopyOn_empty, loopyOn_spanning_iff, subset_empty_iff]
+
+lemma IsRestriction.restrict {N : Matroid α} (h : N ≤r M) {R : Set α} (hR : R ⊆ N.E) :
+    N ↾ R ≤r M ↾ R := by
+  obtain ⟨R', hR', rfl⟩ := h
+  rw [restrict_restrict_eq _ (by simpa using hR)]
+  exact IsRestriction.refl

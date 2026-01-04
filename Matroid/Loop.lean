@@ -305,4 +305,16 @@ lemma uniqueBaseOn_coloops_eq {I E : Set α} (h : I ⊆ E) : (uniqueBaseOn I E).
 
 end Constructions
 
+lemma IsNonloop.isNonloop_of_isRestriction_of_mem (he : M.IsNonloop e) (hNM : N ≤r M)
+    (heN : e ∈ N.E) : N.IsNonloop e := by
+  simpa using he.indep.indep_isRestriction hNM (by simpa)
+
+lemma IsRestriction.isNonloop_iff (hNM : N ≤r M) : N.IsNonloop e ↔ M.IsNonloop e ∧ e ∈ N.E := by
+  refine ⟨fun h ↦ ⟨h.of_isRestriction hNM, h.mem_ground⟩,
+    fun h ↦ h.1.isNonloop_of_isRestriction_of_mem hNM h.2⟩
+
+lemma IsLoop.isLoop_of_isRestriction_of_mem (he : M.IsLoop e) (hNM : N ≤r M)
+    (heN : e ∈ N.E) : N.IsLoop e := by
+  simpa using he.dep.dep_isRestriction hNM (by simpa)
+
 end Matroid

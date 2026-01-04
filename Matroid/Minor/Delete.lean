@@ -2,6 +2,7 @@ import Matroid.Loop
 import Matroid.ForMathlib.Matroid.Dual
 import Matroid.ForMathlib.Matroid.Closure
 import Mathlib.Combinatorics.Matroid.Minor.Delete
+import Matroid.Closure
 
 open Set
 
@@ -52,6 +53,12 @@ lemma delete_restrict_eq_restrict (M : Matroid α) {D R : Set α} (hDR : Disjoin
     M ＼ D ↾ R = M ↾ R := by
   suffices ∀ ⦃I : Set α⦄, I ⊆ R → M.Indep I → Disjoint I D from ext_indep rfl <| by simpa
   exact fun I hIR _ ↦ hDR.symm.mono_left hIR
+
+lemma IsRestriction.delete (h : N ≤r M) (D : Set α) : N ＼ D ≤r M ＼ D := by
+  obtain ⟨R, hR, rfl⟩ := h
+  rw [delete_eq_restrict, delete_eq_restrict, restrict_ground_eq,
+    restrict_restrict_eq _ diff_subset]
+  exact IsRestriction.of_subset M <| diff_subset_diff_left hR
 
 lemma restrict_comap {β : Type*} (M : Matroid β) (f : α → β) (R : Set β) :
     (M ↾ R).comap f = M.comap f ↾ (f ⁻¹' R) := by
@@ -115,5 +122,14 @@ lemma Nonspanning.of_isRestriction (h : N.Nonspanning X) (hNM : N ≤r M) :
     M.Nonspanning X := by
   obtain ⟨D, hD, rfl⟩ := hNM.exists_eq_delete
   exact h.of_delete
+
+lemma Coindep.delete_isSpanningRestriction (hX : M.Coindep X) : M ＼ X ≤sr M :=
+  restrict_compl _ _ ▸ hX.compl_spanning.restrict_isSpanningRestriction
+
+lemma delete_isSpanningRestriction_iff (hX : X ⊆ M.E := by aesop_mat) :
+    M ＼ X ≤sr M ↔ M.Coindep X := by
+  refine ⟨fun h ↦ ?_, Coindep.delete_isSpanningRestriction⟩
+  rw [← diff_diff_cancel_left hX]
+  exact h.spanning.compl_coindep
 
 end Delete

@@ -630,6 +630,12 @@ lemma IsBase.finDiff_of_finite_diff (hB : M.IsBase B) (hB' : M.IsBase B') (hBB' 
 
 end Infinite
 
+section Strong
+
+
+
+end Strong
+
 section LowRank
 
 lemma eq_unifOn_of_eRank_le_one [M.Loopless] (hM : M.eRank ≤ 1) : ∃ E, M = unifOn E 1 := by

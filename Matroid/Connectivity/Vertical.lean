@@ -1,7 +1,7 @@
 import Matroid.Connectivity.Tutte
 
 
-variable {α : Type*} {M : Matroid α} {j k : ℕ∞} {d k : ℕ∞} {A X Y : Set α} {P : M.Separation}
+variable {α : Type*} {M N : Matroid α} {j k : ℕ∞} {d k : ℕ∞} {A X Y : Set α} {P : M.Separation}
   {b : Bool}
 
 
@@ -133,80 +133,79 @@ lemma not_isCyclicSeparation_iff : ¬ P.IsCyclicSeparation ↔ ∃ b, M.Indep (P
 lemma IsCyclicSeparation.eRk_dual_ge (h : P.IsCyclicSeparation) : P.eConn + 1 ≤ M✶.eRk (P b) := by
   simpa using h.dual.eRk_ge b
 
-/-! ### Strong Separations -/
+/-! ### Strict Separations -/
 
-/-- A strong separation is one where both sides are dependent and nonspanning. -/
-abbrev IsStrongSeparation (P : M.Separation) : Prop :=
+/-- A strict separation is one where both sides are dependent and nonspanning. -/
+abbrev IsStrictSeparation (P : M.Separation) : Prop :=
   IsPredSeparation (fun _ M X ↦ M.Indep X ∨ M.Coindep X) P
 
 @[simp]
-lemma isStrongSeparation_symm_iff : P.symm.IsStrongSeparation ↔ P.IsStrongSeparation :=
+lemma isStrictSeparation_symm_iff : P.symm.IsStrictSeparation ↔ P.IsStrictSeparation :=
   isPredSeparation_symm_iff
 
 @[simp]
-lemma isStrongSeparation_dual_iff : P.dual.IsStrongSeparation ↔ P.IsStrongSeparation :=
+lemma isStrictSeparation_dual_iff : P.dual.IsStrictSeparation ↔ P.IsStrictSeparation :=
   isPredSeparation_dual_iff <| by simp [or_comm]
 
 @[simp]
-lemma isStrongSeparation_ofDual_iff {P : M✶.Separation} :
-    P.ofDual.IsStrongSeparation ↔ P.IsStrongSeparation := by
-  rw [← isStrongSeparation_dual_iff, ofDual_dual]
+lemma isStrictSeparation_ofDual_iff {P : M✶.Separation} :
+    P.ofDual.IsStrictSeparation ↔ P.IsStrictSeparation := by
+  rw [← isStrictSeparation_dual_iff, ofDual_dual]
 
-alias ⟨IsStrongSeparation.of_dual, IsStrongSeparation.dual⟩ := isStrongSeparation_dual_iff
+alias ⟨IsStrictSeparation.of_dual, IsStrictSeparation.dual⟩ := isStrictSeparation_dual_iff
 
-lemma IsStrongSeparation.isCyclicSeparation (h : P.IsStrongSeparation) : P.IsCyclicSeparation :=
+lemma IsStrictSeparation.isCyclicSeparation (h : P.IsStrictSeparation) : P.IsCyclicSeparation :=
   h.mono <| by simp +contextual
 
-lemma IsStrongSeparation.isVerticalSeparation (h : P.IsStrongSeparation) :
+lemma IsStrictSeparation.isVerticalSeparation (h : P.IsStrictSeparation) :
     P.IsVerticalSeparation := by
   simpa using h.dual.isCyclicSeparation
 
-lemma IsStrongSeparation.isTutteSeparation (h : P.IsStrongSeparation) : P.IsTutteSeparation :=
+lemma IsStrictSeparation.isTutteSeparation (h : P.IsStrictSeparation) : P.IsTutteSeparation :=
   h.isVerticalSeparation.isTutteSeparation
 
-lemma isStrongSeparation_iff : P.IsStrongSeparation ↔ (∀ b, M.Dep (P b)) ∧ ∀ b, M.Codep (P b) := by
-  simp_rw [IsStrongSeparation, IsPredSeparation, not_or, P.not_indep_iff, P.not_coindep_iff,
+lemma isStrictSeparation_iff : P.IsStrictSeparation ↔ (∀ b, M.Dep (P b)) ∧ ∀ b, M.Codep (P b) := by
+  simp_rw [IsStrictSeparation, IsPredSeparation, not_or, P.not_indep_iff, P.not_coindep_iff,
     forall_and]
 
-lemma not_isStrongSeparation_iff :
-    ¬ P.IsStrongSeparation ↔ ∃ b, M.Indep (P b) ∨ M.Coindep (P b) := by
-  simp_rw [isStrongSeparation_iff, Classical.not_and_iff_not_or_not, ← P.not_indep_iff,
+lemma not_isStrictSeparation_iff :
+    ¬ P.IsStrictSeparation ↔ ∃ b, M.Indep (P b) ∨ M.Coindep (P b) := by
+  simp_rw [isStrictSeparation_iff, Classical.not_and_iff_not_or_not, ← P.not_indep_iff,
     ← P.not_coindep_iff, not_forall_not, exists_or]
 
-lemma isStrongSeparation_iff' :
-    P.IsStrongSeparation ↔ (∀ b, M.Dep (P b)) ∧ (∀ b, M.Nonspanning (P b)) := by
-  rw [isStrongSeparation_iff, and_congr_right_iff]
+lemma isStrictSeparation_iff' :
+    P.IsStrictSeparation ↔ (∀ b, M.Dep (P b)) ∧ (∀ b, M.Nonspanning (P b)) := by
+  rw [isStrictSeparation_iff, and_congr_right_iff]
   rintro -
   rw [true.forall_bool', (!true).forall_bool', nonspanning_not_iff, nonspanning_not_iff]
 
-lemma IsStrongSeparation.dep (h : P.IsStrongSeparation) (b : Bool) : M.Dep (P b) :=
+lemma IsStrictSeparation.dep (h : P.IsStrictSeparation) (b : Bool) : M.Dep (P b) :=
   h.isCyclicSeparation.dep b
 
-lemma IsStrongSeparation.codep (h : P.IsStrongSeparation) (b : Bool) : M.Codep (P b) :=
+lemma IsStrictSeparation.codep (h : P.IsStrictSeparation) (b : Bool) : M.Codep (P b) :=
   h.isVerticalSeparation.codep b
 
-lemma IsStrongSeparation.nonspanning (h : P.IsStrongSeparation) (b : Bool) : M.Nonspanning (P b) :=
+lemma IsStrictSeparation.nonspanning (h : P.IsStrictSeparation) (b : Bool) : M.Nonspanning (P b) :=
   h.isVerticalSeparation.nonspanning b
 
-lemma IsStrongSeparation.encard_ge (h : P.IsStrongSeparation) : P.eConn + 2 ≤ (P b).encard := by
+lemma IsStrictSeparation.encard_ge (h : P.IsStrictSeparation) : P.eConn + 2 ≤ (P b).encard := by
   grw [← P.eConn_eq b, ← M.eConn_add_nullity_add_nullity_dual (P b), ← (h.dep b).one_le_nullity,
     ← (h.codep b).one_le_nullity, add_assoc, one_add_one_eq_two]
 
-lemma isStrongSeparation_iff_eRk (hP : P.eConn ≠ ⊤) : P.IsStrongSeparation ↔
+lemma isStrictSeparation_iff_eRk (hP : P.eConn ≠ ⊤) : P.IsStrictSeparation ↔
     (∀ b, P.eConn < M.eRk (P b)) ∧ (∀ b, P.eConn < M✶.eRk (P b)) := by
   rw [and_comm]
-  convert isStrongSeparation_iff with b b
+  convert isStrictSeparation_iff with b b
   · rw [← ENat.add_one_le_iff hP, ← M.eConn_add_nullity_eq_eRk_dual (P b)]
     simp [hP, ENat.one_le_iff_ne_zero]
   rw [← ENat.add_one_le_iff hP, ← M.eConn_add_nullity_dual_eq_eRk (P b)]
   simp [hP, ENat.one_le_iff_ne_zero]
 
-
-/-- A Tutte separation with connectivity zero is either a strong separation, or has one side
-only loops or coloops. -/
-lemma isTutteSeparation_iff_isStrongSeparation_of_zero (hP : P.eConn = 0) : P.IsTutteSeparation ↔
-    P.IsStrongSeparation ∨ ((∀ b, (P b).Nonempty) ∧ (∃ b, P b ⊆ M.loops ∨ P b ⊆ M.coloops)) := by
-  rw [isStrongSeparation_iff_eRk (by simp [hP]), isTutteSeparation_iff_lt_encard (by simp [hP]), hP]
+/-- A Tutte separation with connectivity zero is either strict,
+or has one side only loops or coloops. -/
+lemma isTutteSeparation_iff_isStrictSeparation_of_zero (hP : P.eConn = 0) : P.IsTutteSeparation ↔
+    P.IsStrictSeparation ∨ ((∀ b, (P b).Nonempty) ∧ (∃ b, P b ⊆ M.loops ∨ P b ⊆ M.coloops)) := by
+  rw [isStrictSeparation_iff_eRk (by simp [hP]), isTutteSeparation_iff_lt_encard (by simp [hP]), hP]
   simp_rw [pos_iff_ne_zero, encard_ne_zero, Ne, eRk_eq_zero_iff', dual_ground,
     inter_eq_self_of_subset_left P.subset_ground, dual_loops]
   by_cases hne : ∀ b, (P b).Nonempty
@@ -244,10 +243,10 @@ lemma Dep.ofSetSep_isCyclicSeparation (hX : M.Dep X) (hXc : M.Dep (M.E \ X)) :
   rw [Separation.isCyclicSeparation_iff_forall, b.forall_bool']
   simp [hX, hXc]
 
-lemma Dep.ofSetSep_isStrongSeparation (hX : M.Dep X) (hns : M.Nonspanning X)
+lemma Dep.ofSetSep_isStrictSeparation (hX : M.Dep X) (hns : M.Nonspanning X)
     (hXc : M.Dep (M.E \ X)) (hXsc : M.Nonspanning (M.E \ X)) :
-    (M.ofSetSep X b).IsStrongSeparation := by
-  rw [Separation.isStrongSeparation_iff, b.forall_bool', b.forall_bool']
+    (M.ofSetSep X b).IsStrictSeparation := by
+  rw [Separation.isStrictSeparation_iff, b.forall_bool', b.forall_bool']
   rw [nonspanning_compl_iff] at hXsc
   simp [hXc, hX, hns.codep_compl, hXsc]
 
@@ -263,18 +262,18 @@ lemma TutteConnected.not_isVerticalSeparation (h : M.TutteConnected (k + 1))
 a separation arising from a small circuit or cocircuit. -/
 lemma exists_strong_or_small_of_not_tutteConnected (h : ¬ M.TutteConnected (k + 1)) (b : Bool) :
     ∃ P : M.Separation, P.eConn + 1 ≤ k ∧ P.IsTutteSeparation ∧
-    (P.IsStrongSeparation ∨ ((P b).encard ≤ k ∧
+    (P.IsStrictSeparation ∨ ((P b).encard ≤ k ∧
     ((M.Indep (P b) ∧ M.IsHyperplane (P !b)) ∨ (M.IsCircuit (P b) ∧ M.Spanning (P !b))))) := by
   obtain ⟨P, hPconn, hP⟩ := not_tutteConnected_iff_exists.1 h
-  by_cases hPs : P.IsStrongSeparation
+  by_cases hPs : P.IsStrictSeparation
   · exact ⟨P, hPconn, hP, .inl hPs⟩
   wlog hi : M.Indep (P b) generalizing P M with aux
-  · obtain ⟨i, (hi | hci)⟩ := Separation.not_isStrongSeparation_iff.1 hPs
+  · obtain ⟨i, (hi | hci)⟩ := Separation.not_isStrictSeparation_iff.1 hPs
     · obtain rfl | rfl := i.eq_or_eq_not b
       · contradiction
       exact aux h P.symm (by simpa) (by simpa) (by simpa) hi
     suffices aux' : ∃ Q : M✶.Separation,
-        Q.eConn + 1 ≤ k ∧ Q.IsTutteSeparation ∧ ¬ Q.IsStrongSeparation ∧ M✶.Indep (Q b) by
+        Q.eConn + 1 ≤ k ∧ Q.IsTutteSeparation ∧ ¬ Q.IsStrictSeparation ∧ M✶.Indep (Q b) by
       obtain ⟨Q, hQconn, hQsep, hQsep', hQb⟩ := aux'
       obtain ⟨P', hP'k, hP't, hP' | hP'⟩ :=
         aux (by simpa) Q (by simpa) (by simpa) (by simpa) (by simpa)
@@ -322,22 +321,50 @@ lemma verticallyConnected_iff_forall : M.VerticallyConnected (k + 1) ↔
   rw [← not_iff_not]
   simp [not_verticallyConnected_iff_exists]
 
+lemma VerticallyConnected.exists_eRk_eq (h : M.VerticallyConnected (k + 1)) (hP : P.eConn + 1 ≤ k) :
+    ∃ i, M.eRk (P i) = P.eConn := by
+  by_contra! hcon
+  replace hcon := fun i ↦ (hcon i).symm.lt_of_le <| by grw [← P.eConn_eq i, eConn_le_eRk]
+  rw [verticallyConnected_iff_forall] at h
+  exact h P hP <| by rwa [isVerticalSeparation_iff_eRk (fun h ↦ by simpa [h] using hcon true)]
+
+lemma verticallyConnected_iff_forall_exists_eRk_le (hk : k ≠ ⊤) : M.VerticallyConnected (k + 1) ↔
+    ∀ (P : M.Separation), P.eConn + 1 ≤ k → ∃ i, M.eRk (P i) ≤ P.eConn := by
+  refine ⟨fun h P hPk ↦ ?_, fun h ↦ ?_⟩
+  · obtain ⟨i, hi⟩ := h.exists_eRk_eq hPk
+    exact ⟨i, hi.le⟩
+  rw [verticallyConnected_iff_forall]
+  intro P hPk hP
+  obtain ⟨i, hle⟩ := h P hPk
+  rw [isVerticalSeparation_iff_eRk (by enat_to_nat!)] at hP
+  exact (hP i).not_ge hle
+
+lemma VerticallyConnected.exists_spanning (h : M.VerticallyConnected (k + 1))
+    (hP : P.eConn + 1 ≤ k) : ∃ i, M.Spanning (P i) := by
+  by_contra! hcon
+  refine verticallyConnected_iff_forall.1 h P hP ?_
+  rw [isVerticalSeparation_iff_forall_nonspanning]
+  simpa using hcon
+
+lemma VerticallyConnected.exists_coindep (h : M.VerticallyConnected (k + 1))
+    (hP : P.eConn + 1 ≤ k) : ∃ i, M.Coindep (P i) := by
+  obtain ⟨i, hi⟩ := h.exists_spanning hP
+  exact ⟨!i, by simpa using hi.compl_coindep⟩
+
 lemma Separation.IsVerticalSeparation.not_verticallyConnected (hP : P.IsVerticalSeparation) :
     ¬ M.VerticallyConnected (P.eConn + 1 + 1) := by
   rw [not_verticallyConnected_iff_exists]
   exact ⟨P, rfl.le, hP⟩
 
-lemma VerticallyConnected.not_isVerticalSeparation (h : M.VerticallyConnected k)
-    (hP : P.eConn + 1 + 1 ≤ k) : ¬ P.IsVerticalSeparation :=
-  fun h' ↦ h'.not_verticallyConnected <| h.mono hP
+lemma VerticallyConnected.not_isVerticalSeparation (h : M.VerticallyConnected (k + 1))
+    (hP : P.eConn + 1 ≤ k) : ¬ P.IsVerticalSeparation :=
+  fun h' ↦ h'.not_verticallyConnected <| h.mono <| by simpa
 
 lemma VerticallyConnected.compl_spanning_of_nonspanning_of_eConn_le
-    (h : M.VerticallyConnected (k+1))
-    (hX : M.Nonspanning X) (hconn : M.eConn X + 1 ≤ k) : M.Spanning (M.E \ X) := by
-  have hnv := h.not_isVerticalSeparation (P := M.ofSetSep X true) (by simpa)
-  rwa [not_isVerticalSeparation_iff_exists, Bool.exists_bool, ofSetSep_apply_self,
-    ← Bool.not_true, ofSetSep_apply_not, or_iff_right hX.codep_compl.not_coindep,
-    coindep_iff_compl_spanning] at hnv
+    (h : M.VerticallyConnected (k + 1)) (hX : M.Nonspanning X) (hconn : M.eConn X + 1 ≤ k) :
+    M.Spanning (M.E \ X) := by
+  replace h := h.exists_spanning (P := M.ofSetSep X true) (by simpa)
+  simpa [hX.not_spanning] using h
 
 lemma verticallyConnected_top_iff :
     M.VerticallyConnected ⊤ ↔ ∀ X ⊆ M.E, M.Spanning X ∨ M.Spanning (M.E \ X) := by
@@ -380,7 +407,6 @@ lemma verticallyConnected_freeOn_iff (E : Set α) (k : ℕ∞) :
     nonspanning_iff, hx]
   rintro rfl
   exact hne.symm (by simpa using hy)
-
 
 /-! ### Cyclic connectivity -/
 
@@ -472,55 +498,33 @@ lemma CyclicallyConnected.le_girth (h : M.CyclicallyConnected k) (hlt : k ≤ M�
   grw [← M✶.eRk_le_encard, hi.eRk_eq] at hCcard
   exact hCcard.not_ge hlt
 
+lemma VerticallyConnected.tutteConnected_of_girth_ge (h : M.VerticallyConnected k) (hk : k ≠ ⊤)
+    (h_girth : k ≤ M.girth) : M.TutteConnected k := by
+  obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
+  rw [tutteConnected_iff_forall_exists_encard_le (by simpa using hk)]
+  intro P hPconn
+  obtain ⟨i, hi⟩ := h.exists_eRk_eq hPconn
+  use i
+  rw [← hi, Indep.eRk_eq_encard]
+  exact indep_of_eRk_add_one_lt_girth <| by enat_to_nat!; lia
+
 /-- This needs the strict inequality in the hypothesis, since nothing like this can be true
 for `k = ⊤`. This is also false for matroids like `U₂,₅` if there is no lower bound on size. -/
 lemma tutteConnected_iff_verticallyConnected_girth (hlt : 2 * k < M.E.encard + 1) :
-    M.TutteConnected (k + 1) ↔ M.VerticallyConnected (k + 1) ∧ k + 1 ≤ M.girth := by
-  have hk : k ≠ ⊤ := by rintro rfl; simp at hlt
-  refine ⟨fun h ↦ ⟨h.verticallyConnected, h.le_girth (by eomega)⟩,
-    fun ⟨h', hle⟩ ↦ by_contra fun h ↦ ?_⟩
-  obtain ⟨P, hPconn, hP, (hPs | ⟨hcard, ⟨hi, hh⟩ | ⟨hc, hs⟩⟩)⟩ :=
-    exists_strong_or_small_of_not_tutteConnected h true
-  · exact h'.not_isVerticalSeparation (by simpa) hPs.isVerticalSeparation
-  · refine h'.not_isVerticalSeparation (by simpa) ?_
-    simp_rw [P.isVerticalSeparation_iff_forall_nonspanning, ← P.not_spanning_iff, Bool.forall_bool,
-      ← Bool.not_true, and_iff_right hh.not_spanning]
-    intro hPs
-    obtain ⟨C, hCP, hC⟩ := (hP.dep_of_spanning hPs).exists_isCircuit_subset
-    grw [hC.girth_le_card, ← hC.eRk_add_one_eq, M.eRk_mono hCP, ← hcard, hh.eRk_add_one_eq,
-      ← hPs.eRk_eq, hi.eRk_eq_encard] at hle
-    simp [Infinite.encard_eq (by simpa using hle), hk] at hcard
-  grw [hc.girth_le_card, ← hcard] at hle
-  simp [Infinite.encard_eq (by simpa using hle), hk] at hcard
+    M.TutteConnected (k + 1) ↔ M.VerticallyConnected (k + 1) ∧ k + 1 ≤ M.girth :=
+  ⟨fun h ↦ ⟨h.verticallyConnected, h.girth_ge (by eomega)⟩,
+    fun h ↦ h.1.tutteConnected_of_girth_ge (by enat_to_nat!) h.2⟩
 
 lemma tutteConnected_iff_verticallyConnected_cyclicallyConnected (hlt : 2 * k < M.E.encard) :
     M.TutteConnected (k + 1) ↔ M.VerticallyConnected (k + 1) ∧ M.CyclicallyConnected (k + 1) := by
-  refine ⟨fun h ↦ ⟨h.verticallyConnected, h.cyclicallyConnected⟩,
-    fun ⟨hv, hc⟩ ↦ by_contra fun h ↦ ?_⟩
-  obtain ⟨P, hPconn, hP, (hPs | ⟨hcard, hP'⟩)⟩ :=
-    exists_strong_or_small_of_not_tutteConnected h true
-  · exact hv.not_isVerticalSeparation (by simpa) hPs.isVerticalSeparation
-  wlog hi : M.Indep (P true) generalizing M P with aux
-  · rw [or_iff_right (by simp [hi]), P.spanning_not_iff, and_comm, coindep_def] at hP'
-    exact aux (M := M✶) (by simpa) (by simp [hc, hv]) (by simpa) (by simpa) (by simpa) P.dual
-      (by simpa) (by simpa) (by simpa) (.inl (by simpa [isHyperplane_dual_iff])) hP'.1
-  rw [or_iff_left (fun h ↦ h.1.not_indep hi), and_iff_right hi] at hP'
-  have hnv := hv.not_isVerticalSeparation (by simpa)
-  have hPconn_ne : P.eConn ≠ ⊤ := fun h ↦ by enat_to_nat!
-  simp_rw [P.not_isVerticalSeparation_iff_exists_spanning, Bool.exists_bool, ← Bool.not_true,
-    or_iff_right hP'.not_spanning] at hnv
-  obtain ⟨C, hCr, hC⟩ := (hP.dep_of_spanning hnv).exists_isCircuit_subset
-  have hb := hi.isBase_of_spanning hnv
-  refine hc.not_isCyclicSeparation (P := M.ofSetSep C true) ?_ ?_
-  · grw [eConn_ofSetSep, eConn_le_eRk, eRk_mono _ hCr, hP'.eRk_add_one_eq, ← hb.encard_eq_eRank]
-    simpa
-  obtain rfl | hssu := hCr.eq_or_ssubset
-  · rw [← P.union_eq, encard_union_eq P.disjoint_true_false] at hlt
-    have := Bool.not_true ▸ hb.encard_eq_eRank ▸ hP'.eRk_add_one_eq ▸ hC.eRk_add_one_eq
-    eomega
-  refine hC.dep.ofSetSep_isCyclicSeparation (hb.dep_of_ssubset ?_)
-  exact P.compl_false ▸ diff_ssubset_diff_right P.subset_ground hssu
-
+  wlog hcon : k + 1 ≤ M✶.eRank generalizing M with aux
+  · have hle' : k + 1 ≤ M.eRank := by
+      rw [← eRank_add_eRank_dual] at hlt
+      enat_to_nat! <;> lia
+    rw [← tutteConnected_dual_iff, aux (by simpa) (by simpa), and_comm]
+    simp
+  exact ⟨fun h ↦ ⟨h.verticallyConnected, h.cyclicallyConnected⟩,
+    fun ⟨hv, hc⟩ ↦ hv.tutteConnected_of_girth_ge (by enat_to_nat!) <| hc.le_girth hcon⟩
 
 lemma VerticallyConnected.contract {C : Set α} (h : M.VerticallyConnected (k + M.eRk C)) :
     (M ／ C).VerticallyConnected k := by
@@ -531,8 +535,7 @@ lemma VerticallyConnected.contract {C : Set α} (h : M.VerticallyConnected (k + 
   rw [add_right_comm] at h
   refine verticallyConnected_iff_forall.2 fun P hPconn hP ↦ ?_
   refine h.not_isVerticalSeparation (P := P.ofContract true) ?_ ?_
-  · grw [ENat.add_one_le_add_one_iff, eConn_ofContract, Bool.not_true, eLocalConn_le_eRk_right,
-      add_right_comm, hPconn]
+  · grw [eConn_ofContract, Bool.not_true, eLocalConn_le_eRk_right, add_right_comm, hPconn]
   rw [isVerticalSeparation_iff_forall_nonspanning, Bool.forall_bool, ofContract_true_false,
     ofContract_apply_self]
   rw [isVerticalSeparation_iff_forall_nonspanning, Bool.forall_bool, contract_nonspanning_iff,
@@ -542,6 +545,50 @@ lemma VerticallyConnected.contract {C : Set α} (h : M.VerticallyConnected (k + 
 lemma VerticallyConnected.contract_of_top (h : M.VerticallyConnected ⊤) (C : Set α) :
     (M ／ C).VerticallyConnected ⊤ :=
   (h.mono le_top).contract
+
+lemma VerticallyConnected.of_isSpanningRestriction (h : N.VerticallyConnected k) (hNM : N ≤sr M) :
+    M.VerticallyConnected k := by
+  obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
+  refine verticallyConnected_iff_forall.2 fun P hPconn hP ↦ ?_
+  obtain ⟨i, hsp⟩ := h.exists_spanning (P := P.induce hNM.subset)
+    <| by grw [eConn_induce_le_of_isMinor _ hNM.isRestriction.isMinor, hPconn]
+  exact (hP.nonspanning i).not_spanning <| (hNM.spanning_of_spanning hsp).superset <| by simp
+
+lemma VerticallyConnected.of_simplifies (h : M.VerticallyConnected k) (hNM : N ≤si M) :
+    N.VerticallyConnected k := by
+  obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
+  refine verticallyConnected_iff_forall.2 fun P hPconn hP ↦ ?_
+  obtain ⟨Q, hQP, hQconn⟩ := Separation.exists_of_simplifies P hNM
+  obtain ⟨i, hi⟩ := h.exists_spanning (P := Q) (by grw [hQconn, hPconn])
+  refine (hP.nonspanning i).not_spanning ?_
+  rw [hNM.isSpanningRestriction.spanning_iff, spanning_iff, ← (hQP i).2, hi.closure_eq]
+  simp [P.subset.trans hNM.isRestriction.subset]
+
+lemma Simplifies.verticallyConnected_iff (hNM : N ≤si M) :
+    N.VerticallyConnected k ↔ M.VerticallyConnected k :=
+  ⟨fun h ↦ h.of_isSpanningRestriction hNM.isSpanningRestriction, fun h ↦ h.of_simplifies hNM⟩
+
+lemma verticallyConnected_two_iff : M.VerticallyConnected 2 ↔ M.removeLoops.TutteConnected 2 :=
+  ⟨fun h ↦ (h.of_simplifies M.removeLoops_simplifies).tutteConnected_of_girth_ge (by simp)
+    (by simp [removeLoops_loopless]), fun h ↦ h.verticallyConnected.of_isSpanningRestriction
+    M.removeLoops_simplifies.isSpanningRestriction⟩
+
+/-- `M` is vertically `3`-connected if and only if its simplification is `3`-connected. -/
+lemma IsSimplification.verticallyConnected_three_iff (hNM : N.IsSimplification M) :
+    M.VerticallyConnected 3 ↔ N.TutteConnected 3 :=
+  ⟨fun h ↦ (h.of_simplifies hNM.simplifies).tutteConnected_of_girth_ge (by simp)
+    <| three_le_girth_iff.2 hNM.simple,
+    fun h ↦ h.verticallyConnected.of_isSpanningRestriction hNM.isSpanningRestriction⟩
+
+lemma IsSimplification.tutteConnected_of_verticallyConnected_three (hNM : N.IsSimplification M)
+    (hM : M.VerticallyConnected 3) : N.TutteConnected 3 := by
+  rwa [← hNM.verticallyConnected_three_iff]
+
+@[simp]
+lemma verticallyConnected_three_iff [M.Simple] : M.VerticallyConnected 3 ↔ M.TutteConnected 3 :=
+  isSimplification_self.verticallyConnected_three_iff
+
+
 
 
 end Matroid

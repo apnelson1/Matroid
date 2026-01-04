@@ -1,6 +1,7 @@
 import Matroid.Parallel
 import Matroid.Minor.Iso
 import Matroid.ForMathlib.Card
+import Matroid.Closure
 
 open Set Set.Notation
 
@@ -258,7 +259,108 @@ lemma Indep.simple_of_contract_simple (hI : M.Indep I) (h : (M ／ I).Simple) : 
 
 
 
+section LE
 
+/-- `N` simplifies `M` if `N` is a restriction of `M`, and every nonloop of `M` is parallel
+to an element of `M`. Equivalently, `N` is a restriction of `M` that has some simplification
+of `M` as a restriction. -/
+@[mk_iff]
+structure Simplifies (N M : Matroid α) : Prop where
+  isRestriction : N ≤r M
+  exists_of_isNonloop : ∀ ⦃e⦄, M.IsNonloop e → ∃ f ∈ N.E, M.Parallel e f
+
+scoped infix:50  " ≤si " => Simplifies
+
+lemma Simplifies.refl : M ≤si M :=
+  ⟨IsRestriction.refl, fun e he ↦ ⟨e, he.mem_ground, he.parallel_self⟩⟩
+
+lemma Simplifies.trans {R : Matroid α} (hNM : N ≤si M) (hMR : M ≤si R) : N ≤si R := by
+  refine ⟨hNM.isRestriction.trans hMR.isRestriction, fun e he ↦ ?_⟩
+  obtain ⟨e', he'E, hee'⟩ := hMR.exists_of_isNonloop he
+  obtain ⟨f, hfN, hef⟩ := hNM.exists_of_isNonloop
+    (hee'.isNonloop_right.isNonloop_of_isRestriction_of_mem hMR.isRestriction he'E)
+  exact ⟨f, hfN, hee'.trans (hef.of_isRestriction hMR.isRestriction)⟩
+
+lemma Simplifies.antisymm (hNM : N ≤si M) (hMN : M ≤si N) : N = M :=
+  hNM.isRestriction.antisymm hMN.isRestriction
+
+lemma Simplifies.exists_mem_closure [N.Nonempty] (hM : N ≤si M) (he : e ∈ M.E) :
+    ∃ f ∈ N.E, e ∈ M.closure {f} := by
+  obtain he | he := M.isLoop_or_isNonloop e
+  · obtain ⟨f, hf⟩ := N.ground_nonempty
+    exact ⟨f, hf, he.mem_closure {f}⟩
+  obtain ⟨f, hf, hef⟩ := hM.exists_of_isNonloop he
+  exact ⟨f, hf, hef.mem_closure⟩
+
+lemma Simplifies.exists_mem_closure_subsingleton (hM : N ≤si M) (he : e ∈ M.E) :
+    ∃ X ⊆ N.E, X.Subsingleton ∧ e ∈ M.closure X := by
+  obtain he | he := M.isLoop_or_isNonloop e
+  · exact ⟨∅, by simp, by simp, he⟩
+  obtain ⟨f, hfE, hef⟩ := hM.exists_of_isNonloop he
+  exact ⟨{f}, by simpa, by simp, hef.mem_closure⟩
+
+lemma Simplifies.isSpanningRestriction (h : N ≤si M) : N ≤sr M := by
+  rw [isSpanningRestriction_iff, spanning_iff_ground_subset_closure h.isRestriction.subset,
+    and_iff_right h.isRestriction]
+  intro e heE
+  obtain he | he := M.isLoop_or_isNonloop e
+  · exact he.mem_closure _
+  obtain ⟨f, hfN, hef⟩ := h.exists_of_isNonloop he
+  exact mem_of_mem_of_subset hef.mem_closure <| M.closure_mono <| by simpa
+
+lemma Simplifies.simplifies_of_isRestriction {R : Matroid α} (h : N ≤si M) (hNR : N ≤r R)
+    (hRM : R ≤r M) : N ≤si R := by
+  refine ⟨hNR, fun e he ↦ ?_⟩
+  obtain ⟨f, hfE, hef⟩ := h.exists_of_isNonloop (he.of_isRestriction hRM)
+  exact ⟨f, hfE, hef.parallel_isRestriction hRM he.mem_ground (hNR.subset hfE)⟩
+
+lemma Simplifies.simplifies_of_isRestriction_right {R : Matroid α} (h : N ≤si M) (hNR : N ≤r R)
+    (hRM : R ≤r M) : R ≤si M := by
+  refine ⟨hRM, fun e he ↦ ?_⟩
+  obtain ⟨f, hfE, hef⟩ := h.exists_of_isNonloop he
+  exact ⟨f, hNR.subset hfE, hef⟩
+
+lemma delete_simplifies_of_subset_loops (h : X ⊆ M.loops) : M ＼ X ≤si M :=
+  ⟨delete_isRestriction .., fun e he ↦ ⟨e, ⟨he.mem_ground, notMem_subset h he.not_isLoop⟩,
+    he.parallel_self⟩⟩
+
+lemma removeLoops_simplifies (M : Matroid α) : M.removeLoops ≤si M :=
+  removeLoops_eq_delete _ ▸ delete_simplifies_of_subset_loops rfl.subset
+
+lemma IsLoop.delete_simplifies (h : M.IsLoop e) : M ＼ {e} ≤si M :=
+  delete_simplifies_of_subset_loops (by simpa using h)
+
+lemma Parallel.delete_left_simplifies (h : M.Parallel e f) (hne : e ≠ f) : (M ＼ {e}) ≤si M := by
+  refine ⟨delete_isRestriction .., fun x hx ↦ ?_⟩
+  obtain rfl | hne := eq_or_ne e x
+  · exact ⟨f, ⟨h.mem_ground_right, by simpa using hne.symm⟩, h⟩
+  exact ⟨x, ⟨hx.mem_ground, by simpa using hne.symm⟩, hx.parallel_self⟩
+
+lemma Parallel.delete_right_simplifies (h : M.Parallel e f) (hne : e ≠ f) : (M ＼ {f}) ≤si M :=
+  h.symm.delete_left_simplifies hne.symm
+
+lemma Simple.eq_of_simplifies (h : M.Simple) (hNM : N ≤si M) : N = M := by
+  refine (hNM.isRestriction.isMinor.eq_of_ground_subset fun e he ↦ ?_).symm
+  obtain ⟨f, hfN, hef⟩ := hNM.exists_of_isNonloop <| h.isNonloop_of_mem he
+  rwa [hef.eq]
+
+@[simp]
+lemma simplifies_iff_eq [M.Simple] : N ≤si M ↔ N = M :=
+  ⟨fun h ↦ Simple.eq_of_simplifies (by assumption) h, fun h ↦ h ▸ Simplifies.refl⟩
+
+lemma Simple.simplifies_iff_eq (h : M.Simple) : N ≤si M ↔ N = M :=
+  _root_.Matroid.simplifies_iff_eq
+
+lemma Simplifies.contract {C : Set α} (h : N ≤si M) (hC : C ⊆ N.E) : N ／ C ≤si M ／ C := by
+  refine ⟨h.isRestriction.contract hC, fun e he ↦ ?_⟩
+  obtain ⟨f, hfE, hef⟩ := h.exists_of_isNonloop he.of_contract
+  simp only [contract_isNonloop_iff, mem_diff] at he
+  refine ⟨f, ⟨hfE, fun hfC ↦ he.2 ?_⟩, ?_⟩
+  · exact mem_of_mem_of_subset hef.mem_closure <| M.closure_mono <| by simpa
+  rw [parallel_comm, contract_parallel_iff, and_iff_left he.2]
+  exact mem_of_mem_of_subset hef.mem_closure <| M.closure_mono <| by simp
+
+end LE
 -- end Simple
 
 section IsSimplification
@@ -345,12 +447,22 @@ lemma IsSimplification.exists_unique (h : N.IsSimplification M) (he : M.IsNonloo
   · rintro _ ⟨⟨y, -, rfl⟩, hey⟩
     simp [f.apply_eq_apply hey]
 
+lemma IsSimplification.simplifies (h : N.IsSimplification M) : N ≤si M :=
+  ⟨h.isRestriction, fun _ he ↦ (h.exists_unique he).exists⟩
+
 lemma IsSimplification.eq_of_parallel (h : N.IsSimplification M) (he : e ∈ N.E) (hf : f ∈ N.E)
     (hef : M.Parallel e f) : e = f := by
   have := h.simple
   apply Parallel.eq (M := N)
   obtain ⟨R, hR, rfl⟩ := h.isRestriction
   rwa [restrict_parallel_iff, and_iff_left (show f ∈ R from hf), and_iff_left (show e ∈ R from he)]
+
+lemma IsSimplification.eq_of_simplifies_ge {N₀ : Matroid α} (h : N.IsSimplification M)
+    (hN₀ : N₀ ≤si M) (hN₀N : N₀ ≤r N) : N₀ = N := by
+  refine Eq.symm <| hN₀N.isMinor.eq_of_ground_subset fun e heN ↦ ?_
+  obtain ⟨f, hfN₀, hef⟩ :=
+    hN₀.exists_of_isNonloop <| (h.simple.isNonloop_of_mem heN).of_isRestriction h.isRestriction
+  rwa [h.eq_of_parallel heN (hN₀N.subset hfN₀) hef]
 
 /-- A simplification of `M` is the restriction of `M` to a transversal of its parallel classes. -/
 lemma isSimplification_iff : N.IsSimplification M ↔ N.Loopless ∧ N ≤r M ∧
@@ -373,6 +485,30 @@ lemma isSimplification_iff : N.IsSimplification M ↔ N.Loopless ∧ N ≤r M �
   have hx := ((isNonloop_of_loopless h).of_isRestriction hr)
   simp only [Partition.RepFun.mk_apply, mem_image, mem_setOf_eq]
   exact ⟨x, hx, by rw [dif_pos hx, ← (hf hx).2 _ ⟨h, hx.parallel_self⟩]⟩
+
+/-- `N` is a simplification of `M` if `N` is minimal in the restriction order simplifying `M`. -/
+lemma isSimplification_iff_minimal_simplifies :
+    N.IsSimplification M ↔ N ≤si M ∧ ∀ ⦃N₀⦄, N₀ ≤r N → N₀ ≤si M → N₀ = N := by
+  refine ⟨fun h ↦ ⟨h.simplifies, fun N₀ hr hN₀N ↦ h.eq_of_simplifies_ge hN₀N hr⟩, fun ⟨h1, h2⟩ ↦ ?_⟩
+  rw [isSimplification_iff, loopless_iff_forall_not_isLoop]
+  have aux {f : α} (hf : f ∈ N.E) : N ＼ {f} <r N :=
+    (delete_isRestriction ..).isStrictRestriction_of_ground_ne (by simpa)
+  refine ⟨fun e heN he ↦ ?_, h1.isRestriction, fun e he ↦ ?_⟩
+  · exact (aux heN).ne <| h2 (aux heN).isRestriction (he.delete_simplifies.trans h1)
+  obtain ⟨f, hfN, hef⟩ := h1.exists_of_isNonloop he
+  specialize aux hfN
+  refine ⟨f, ⟨hfN, hef⟩, fun g ⟨hgE, hgf⟩ ↦ by_contra fun hne ↦ aux.ne (h2 aux.isRestriction ?_)⟩
+  have hgf : N.Parallel g f := (hgf.symm.trans hef).parallel_isRestriction h1.isRestriction hgE hfN
+  exact (hgf.delete_right_simplifies hne).trans h1
+
+lemma Simple.isSimplification_of_simplifies (hN : N.Simple) (hNM : N ≤si M) :
+    N.IsSimplification M := by
+  rw [isSimplification_iff_minimal_simplifies, and_iff_right hNM]
+  exact fun N' hN' hN'M ↦ by simpa using hN'M.simplifies_of_isRestriction hN' hNM.isRestriction
+
+lemma IsSimplification.isSimplification_of_simplifies {N₀ : Matroid α}
+    (hN₀N : N₀.IsSimplification N) (hNM : N ≤si M) : N₀.IsSimplification M :=
+  hN₀N.simple.isSimplification_of_simplifies <| hN₀N.simplifies.trans hNM
 
 lemma IsSimplification.of_isRestriction {M' : Matroid α} (h : N.IsSimplification M) (hNM' : N ≤r M')
     (hM'M : M' ≤r M) : N.IsSimplification M' := by
@@ -444,21 +580,17 @@ lemma IsSimplification.exists_of_isStrictRestriction (hN : N.IsSimplification M)
   simp only [hN, restrict_ground_eq, mem_image, mem_setOf_eq]
   exact ⟨e, he, rfl⟩
 
-lemma IsSimplification.ground_spanning (hN : N.IsSimplification M) : M.Spanning N.E := by
-  rw [spanning_iff_ground_subset_closure hN.isRestriction.subset]
-  intro e he
-  obtain he' | he' := M.isLoop_or_isNonloop e
-  · apply he'.mem_closure
-  refine mem_of_mem_of_subset (hN.parallel_repFun he').mem_closure (M.closure_subset_closure ?_)
-  simpa using repFun_apply_mem_ground hN he'
+lemma IsSimplification.isSpanningRestriction (hN : N.IsSimplification M) : N ≤sr M :=
+  hN.simplifies.isSpanningRestriction
 
 lemma IsSimplification.isBase_of_isBase {B : Set α} (hN : N.IsSimplification M) (hB : N.IsBase B) :
     M.IsBase B :=
-  (IsBase.isBasis_of_isRestriction hB hN.isRestriction).isBase_of_spanning hN.ground_spanning
+  (IsBase.isBasis_of_isRestriction hB hN.isRestriction).isBase_of_spanning
+    hN.isSpanningRestriction.spanning
 
 lemma IsSimplification.eRank_eq (hN : N.IsSimplification M) : N.eRank = M.eRank := by
   obtain ⟨R, hR : R ⊆ M.E, rfl⟩ := hN.isRestriction
-  exact hN.ground_spanning.eRank_restrict
+  exact hN.isSpanningRestriction.spanning.eRank_restrict
 
 lemma IsSimplification.ground_eq_biUnion_setOf_parallel [M.Loopless] (hNM : N.IsSimplification M) :
     M.E = ⋃ e ∈ N.E, {x | M.Parallel e x} := by
@@ -494,6 +626,7 @@ lemma IsSimplification.closure_pairwiseDisjoint [M.Loopless] (hNM : N.IsSimplifi
   rintro a hax _ hay rfl
   rw [← (M.isNonloop_of_loopless).parallel_iff_mem_closure] at hax hay
   exact hne <| hNM.eq_of_parallel hx hy (hax.symm.trans hay)
+
 
 end IsSimplification
 
@@ -531,6 +664,10 @@ instance simplification_simple (M : Matroid α) : Simple M.simplification :=
 
 lemma simplification_eq_self_iff : M.simplification = M ↔ M.Simple :=
   ⟨fun h ↦ by rw [← h]; exact M.simplification_simple, fun _ ↦ simplification_eq_self⟩
+
+lemma isSimplification_self [M.Simple] : M.IsSimplification M := by
+  nth_rw 1 [← M.simplification_eq_self_iff.2 (by assumption)]
+  exact M.simplification_isSimplification
 
 lemma simplification_factorsThrough_removeLoops :
     Function.FactorsThrough (α := Matroid α) simplification removeLoops :=
