@@ -498,6 +498,37 @@ lemma CyclicallyConnected.le_girth (h : M.CyclicallyConnected k) (hlt : k ≤ M�
   grw [← M✶.eRk_le_encard, hi.eRk_eq] at hCcard
   exact hCcard.not_ge hlt
 
+-- lemma IsSpanningRestriction.foo (hNM : N ≤sr M) (hN : N.CyclicallyConnected k)
+--     (h : ∀ C, M.IsCircuit C → C.encard ≤ k → C ⊆ N.E) : M.CyclicallyConnected k := by
+--     -- (hM : ¬ M.CyclicallyConnected k) : ∃ C, M.IsCircuit C ∧ ¬ (C ⊆ N.E) ∧ C.encard ≤ k := by
+--   obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
+--   rw [cyclicallyConnected_iff_forall]
+--   intro P hPk hP
+--   refine hN.not_isCyclicSeparation (P := P.induce hNM.subset) ?_ ?_
+--   · grw [eConn_induce_le_of_isMinor _ hNM.isRestriction.isMinor, hPk]
+--   refine isCyclicSeparation_iff_forall.2 fun i ↦ ?_
+--   simp only [induce_apply]
+--   obtain ⟨C, hCi, hC⟩ := (hP.dep i).exists_isCircuit_subset
+--   rw [← not_indep_iff]
+--   intro hi
+
+
+
+
+  -- obtain ⟨P, hPconn, hP⟩ := not_cyclicallyConnected_iff_exists.1 hM
+  -- have := hN.not_isCyclicSeparation (P := P.induce h.subset)
+  -- grw [eConn_induce_le_of_isMinor h.isRestriction.isMinor] at this
+
+
+-- lemma CyclicallyConnected.exists_isCircuit_of_delete {e : α}
+-- (h : (M ＼ {e}).CyclicallyConnected k)
+--     (hM : ¬ M.CyclicallyConnected k) : ∃ C, M.IsCircuit C ∧ e ∈ C ∧ C.encard = k := by
+--   obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp at hM
+--   have heE : e ∈ M.E := by_contra fun heE ↦ hM <| by rwa [← deleteElem_eq_self heE]
+--   obtain ⟨P, hPconn, hP⟩ := not_cyclicallyConnected_iff_exists.1 hM
+--   obtain ⟨i, hi⟩ := P.exists_mem heE
+
+
 lemma VerticallyConnected.tutteConnected_of_girth_ge (h : M.VerticallyConnected k) (hk : k ≠ ⊤)
     (h_girth : k ≤ M.girth) : M.TutteConnected k := by
   obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
