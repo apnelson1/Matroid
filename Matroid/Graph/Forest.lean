@@ -191,7 +191,7 @@ lemma IsForest.exists_isPendant [G.EdgeFinite] (hG : G.IsForest) (hne : E(G).Non
   have := hG.simple
   obtain ⟨e₀, he₀⟩ := hne
   obtain ⟨x₀, y₀, he₀⟩ := exists_isLink_of_mem_edgeSet he₀
-  obtain ⟨P, heP, hmax⟩ := (zorn_le_nonempty₀ _ G.isPath_zorn _) (he₀.walk_isPath he₀.adj.ne)
+  obtain ⟨P, heP, hmax⟩ := exists_le_maximal_isPath (he₀.walk_isPath he₀.adj.ne)
   simp only [IsLink.walk, le_iff_isSublist] at heP
   cases P with | nil => simp at heP | cons u f P =>
   have ⟨hP, hfuP, huP⟩ : G.IsPath P ∧ G.IsLink f u P.first ∧ u ∉ P := by simpa using hmax.prop

@@ -155,7 +155,7 @@ lemma CutBetween.left_notMem (C : G.CutBetween s t) : s ∉ C := C.left_not_mem
 lemma CutBetween.right_notMem (C : G.CutBetween s t) : t ∉ C := C.right_not_mem
 
 @[simp]
-lemma CutBetween.not_connBetween (C : G.CutBetween s t) : ¬ (G - C).ConnBetween s t :=
+lemma CutBetween.not_connBetween (C : G.CutBetween s t) : ¬ (G - (C : Set α)).ConnBetween s t :=
   C.not_connBetween'
 
 @[simp]

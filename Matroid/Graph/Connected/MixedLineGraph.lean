@@ -85,7 +85,7 @@ lemma mixedLineGraph_inr_eDegree_le_two : L'(G).eDegree (Sum.inr e) ≤ 2 := by
   rw [eDegree_eq_encard_adj, mixedLineGraph_neighbor_inr, inl_injective.encard_image]
   exact G.endSet_encard_le e
 
-lemma mixedLineGraph_edgeDelete : L'(G ＼ F) = L'(G) - (Sum.inr '' F) := by
+lemma mixedLineGraph_edgeDelete : L'(G ＼ F) = L'(G) - (Sum.inr '' F : Set (α ⊕ β)) := by
   ext a b c
   · simp only [mixedLineGraph_vertexSet, edgeDelete_vertexSet, edgeDelete_edgeSet,
       vertexDelete_vertexSet, image_diff Sum.inr_injective, union_diff_distrib]

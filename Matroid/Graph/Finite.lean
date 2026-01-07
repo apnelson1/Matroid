@@ -71,33 +71,31 @@ lemma nonempty_isTrail_finite (G : Graph α β) [G.EdgeFinite] :
   apply hP.2.isWalk.eq_of_edge_eq_first_eq hP'.2.isWalk hPP'.1
   convert congr_arg (fun L ↦ L.map Subtype.val) hPP'.2 <;> simp
 
--- Please suggest a better name for the following set of lemmas.
-/-- use with `zorn_le_nonempty₀`. -/
-lemma isTrail_zorn [G.EdgeFinite] : ∀ c ⊆ {P | G.IsTrail P}, IsChain (· ≤ ·) c →
-    ∀ y ∈ c, ∃ ub ∈ {P | G.IsTrail P}, ∀ z ∈ c, z ≤ ub := by
-  intro c hc hch p hpc
+private lemma eq_singleton_of_forall_nil {c : Set (WList α β)} {p : WList α β}
+    (hch : IsChain (· ≤ ·) c) (hcne : ∀ x ∈ c, x.Nil) (hpc : p ∈ c) : c = {p} := by
+  apply Subsingleton.eq_singleton_of_mem (fun x hx y hy ↦ ?_) hpc
+  obtain hle | hle := hch.total hx hy
+  · exact (hcne y hy).eq_of_le hle
+  · exact (hcne x hx).eq_of_le hle |>.symm
+
+lemma exists_le_maximal_isTrail [G.EdgeFinite] {t : WList α β} (ht : G.IsTrail t) :
+    ∃ m, t ≤ m ∧ Maximal G.IsTrail m := by
+  refine zorn_le_nonempty₀ {p | G.IsTrail p} (fun c hc hch p hpc ↦ ?_) t ht
   by_cases hcne : ∃ p' ∈ c, p'.Nonempty
   · obtain ⟨p', hp'c, hp'ne⟩ := hcne
     obtain ⟨ub, hub, hubmax⟩ := G.nonempty_isTrail_finite.subset inter_subset_right
       |>.exists_le_maximal ⟨hp'c, hp'ne, hc hp'c⟩
     use ub, hubmax.prop.2.2, fun z hz ↦ ?_
     obtain ⟨x, rfl⟩ | hzne := z.exists_eq_nil_or_nonempty
-    · apply hch.total hubmax.prop.1 hz |>.resolve_left fun hle ↦ ?_
-      apply_fun WList.length (α := α) (β := β) at hle using WList.length_monotone (α := α) (β := β)
-      simp [← WList.not_nonempty_iff, hubmax.prop.2.1] at hle
+    · exact hch.total hubmax.prop.1 hz |>.resolve_left fun hle ↦ by simp_all
     exact hch.total hubmax.prop.1 hz |>.elim (hubmax.le_of_ge ⟨hz, hzne, hc hz⟩) id
   simp only [not_exists, not_and, WList.not_nonempty_iff] at hcne
-  obtain rfl : c = {p} := by
-    apply Subsingleton.eq_singleton_of_mem (fun x hx y hy ↦ ?_) hpc
-    obtain hle | hle := hch.total hx hy
-    · exact (hcne y hy).eq_of_le hle
-    · exact (hcne x hx).eq_of_le hle |>.symm
+  obtain rfl : c = {p} := eq_singleton_of_forall_nil hch hcne hpc
   use p, (by simpa using hc), by simp
 
-/-- use with `zorn_le_nonempty₀`. -/
-lemma isPath_zorn [G.EdgeFinite] : ∀ c ⊆ {P | G.IsPath P}, IsChain (· ≤ ·) c →
-    ∀ y ∈ c, ∃ ub ∈ {P | G.IsPath P}, ∀ z ∈ c, z ≤ ub := by
-  intro c hc hch p hpc
+lemma exists_le_maximal_isPath [G.EdgeFinite] {p : WList α β} (hp : G.IsPath p) :
+    ∃ m, p ≤ m ∧ Maximal G.IsPath m := by
+  refine zorn_le_nonempty₀ {p | G.IsPath p} (fun c hc hch p hpc ↦ ?_) p hp
   by_cases hcne : ∃ p' ∈ c, p'.Nonempty
   · obtain ⟨p', hp'c, hp'ne⟩ := hcne
     have hsu : c ∩ {P | P.Nonempty ∧ G.IsPath P} ⊆ {p' | p'.Nonempty ∧ G.IsTrail p'} :=
@@ -106,22 +104,15 @@ lemma isPath_zorn [G.EdgeFinite] : ∀ c ⊆ {P | G.IsPath P}, IsChain (· ≤ �
       |>.exists_le_maximal ⟨hp'c, hp'ne, hc hp'c⟩
     use ub, hubmax.prop.2.2, fun z hz ↦ ?_
     obtain ⟨x, rfl⟩ | hzne := z.exists_eq_nil_or_nonempty
-    · apply hch.total hubmax.prop.1 hz |>.resolve_left fun hle ↦ ?_
-      apply_fun WList.length (α := α) (β := β) at hle using WList.length_monotone (α := α) (β := β)
-      simp [← WList.not_nonempty_iff, hubmax.prop.2.1] at hle
+    · exact hch.total hubmax.prop.1 hz |>.resolve_left fun hle ↦ by simp_all
     exact hch.total hubmax.prop.1 hz |>.elim (hubmax.le_of_ge ⟨hz, hzne, hc hz⟩) id
   simp only [not_exists, not_and, WList.not_nonempty_iff] at hcne
-  obtain rfl : c = {p} := by
-    apply Subsingleton.eq_singleton_of_mem (fun x hx y hy ↦ ?_) hpc
-    obtain hle | hle := hch.total hx hy
-    · exact (hcne y hy).eq_of_le hle
-    · exact (hcne x hx).eq_of_le hle |>.symm
+  obtain rfl : c = {p} := eq_singleton_of_forall_nil hch hcne hpc
   use p, (by simpa using hc), by simp
 
-/-- use with `zorn_le_nonempty₀`. -/
-lemma isCycle_zorn [G.EdgeFinite] : ∀ c ⊆ {P | G.IsCycle P}, IsChain (· ≤ ·) c →
-    ∀ y ∈ c, ∃ ub ∈ {P | G.IsCycle P}, ∀ z ∈ c, z ≤ ub := by
-  intro c hc hch p hpc
+lemma exists_le_maximal_isCycle [G.EdgeFinite] (hC : G.IsCycle C) :
+    ∃ m, C ≤ m ∧ Maximal G.IsCycle m := by
+  refine zorn_le_nonempty₀ {p | G.IsCycle p} (fun c hc hch p hpc ↦ ?_) C hC
   by_cases hcne : ∃ p' ∈ c, p'.Nonempty
   · obtain ⟨p', hp'c, hp'ne⟩ := hcne
     have hsu : c ∩ {P | P.Nonempty ∧ G.IsCycle P} ⊆ {p' | p'.Nonempty ∧ G.IsTrail p'} :=
@@ -130,16 +121,10 @@ lemma isCycle_zorn [G.EdgeFinite] : ∀ c ⊆ {P | G.IsCycle P}, IsChain (· ≤
       |>.exists_le_maximal ⟨hp'c, hp'ne, hc hp'c⟩
     use ub, hubmax.prop.2.2, fun z hz ↦ ?_
     obtain ⟨x, rfl⟩ | hzne := z.exists_eq_nil_or_nonempty
-    · apply hch.total hubmax.prop.1 hz |>.resolve_left fun hle ↦ ?_
-      apply_fun WList.length (α := α) (β := β) at hle using WList.length_monotone (α := α) (β := β)
-      simp [← WList.not_nonempty_iff, hubmax.prop.2.1] at hle
+    · exact hch.total hubmax.prop.1 hz |>.resolve_left fun hle ↦ by simp_all
     exact hch.total hubmax.prop.1 hz |>.elim (hubmax.le_of_ge ⟨hz, hzne, hc hz⟩) id
   simp only [not_exists, not_and, WList.not_nonempty_iff] at hcne
-  obtain rfl : c = {p} := by
-    apply Subsingleton.eq_singleton_of_mem (fun x hx y hy ↦ ?_) hpc
-    obtain hle | hle := hch.total hx hy
-    · exact (hcne y hy).eq_of_le hle
-    · exact (hcne x hx).eq_of_le hle |>.symm
+  obtain rfl : c = {p} := eq_singleton_of_forall_nil hch hcne hpc
   use p, (by simpa using hc), by simp
 
 /-- A graph is finite if it has finitely many vertices and edges -/
@@ -235,7 +220,7 @@ lemma IsCycleGraph.finite (hC : H.IsCycleGraph) : H.Finite := by
 
 /-- Used for well-founded induction on finite graphs by number of vertices -/
 lemma encard_delete_vertex_lt [G.Finite] (hx : x ∈ V(G)) :
-    V(G - {x}).encard < V(G).encard := by
+    V(G - ({x} : Set α)).encard < V(G).encard := by
   rw [vertexDelete_vertexSet]
   exact (G.vertexSet_finite.subset diff_subset).encard_lt_encard (by simpa)
 

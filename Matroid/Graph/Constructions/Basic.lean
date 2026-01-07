@@ -1,5 +1,6 @@
 import Matroid.Graph.Subgraph.Basic
 import Mathlib.Data.PFun
+import Mathlib.Combinatorics.SimpleGraph.Basic
 
 variable {α β : Type*} {x y z u v w a b : α} {e f : β} {G H : Graph α β} {F F₁ F₂ : Set β}
   {X Y V : Set α}
@@ -435,25 +436,56 @@ def fromList (S : Set α) (l : List (α × α)) : Graph α ℕ where
       rw [← Prod.swap_eq_iff_eq_swap] at hp
       exact List.mem_of_getElem? <| hp ▸ hep
 
+@[simps]
+def OfSimpleGraph (G : SimpleGraph α) : Graph α (Sym2 α) where
+  vertexSet := univ
+  edgeSet := {s | ∃ x y, G.Adj x y ∧ s(x, y) = s}
+  IsLink e x y := G.Adj x y ∧ s(x, y) = e
+  isLink_symm e he x y h := by use h.1.symm, Sym2.eq_swap ▸ h.2
+  eq_or_eq_of_isLink_of_isLink e x y z w h1 h2 := by
+    have := by simpa using h1.2.trans h2.2.symm
+    tauto
+  left_mem_of_isLink e x y h := by simp
 
-/-- The line graph of a graph `G` is the graph with the same vertices as `G` and edges
+@[simps]
+def OfSimpleGraphSet {S : Set α} (G : SimpleGraph S) : Graph α (Sym2 α) where
+  vertexSet := S
+  edgeSet := {s | ∃ x y, G.Adj x y ∧ s(x.val, y.val) = s}
+  IsLink e x y := ∃ (hx : x ∈ S) (hy : y ∈ S), G.Adj ⟨x, hx⟩ ⟨y, hy⟩ ∧ s(x, y) = e
+  isLink_symm e he x y h := by
+    obtain ⟨hx, hy, h, rfl⟩ := h
+    use hy, hx, h.symm, Sym2.eq_swap
+  eq_or_eq_of_isLink_of_isLink e x y z w h1 h2 := by
+    obtain ⟨-, -, -, rfl⟩ := h1
+    obtain ⟨-, -, -, heq⟩ := h2
+    have := by simpa using heq
+    tauto
+  left_mem_of_isLink e x y h := h.1
+  edge_mem_iff_exists_isLink e := ⟨fun ⟨a, b, hab, he⟩ ↦ ⟨a.val, b.val, a.prop, b.prop, hab, by
+    assumption⟩, fun ⟨x, y, hx, hy, h, heq⟩ ↦ ⟨⟨x, hx⟩, ⟨y, hy⟩, h, heq⟩⟩
+
+@[simps!]
+def LineSimpleGraph (G : Graph α β) : SimpleGraph E(G) :=
+  SimpleGraph.fromRel (fun e f ↦ ∃ x, G.Inc e x ∧ G.Inc f x)
+
+/-- The line graph of a graph `G` is the simple graph with the same vertices as `G` and edges
     given by the pairs of edges in `G` that have a common vertex. -/
 @[simps]
 def LineGraph (G : Graph α β) : Graph β (Sym2 β) where
   vertexSet := E(G)
-  edgeSet := Sym2.mk '' { (e, f) | ∃ x, G.Inc e x ∧ G.Inc f x }
-  IsLink a e f := (∃ x, G.Inc e x ∧ G.Inc f x) ∧ s(e, f) = a
-  edge_mem_iff_exists_isLink a := by simp only [mem_image, mem_setOf_eq, Prod.exists]
+  edgeSet := Sym2.mk '' { (e, f) | (e ≠ f) ∧ ∃ x, G.Inc e x ∧ G.Inc f x }
+  IsLink a e f := s(e, f) = a ∧ e ≠ f ∧ ∃ x, G.Inc e x ∧ G.Inc f x
+  edge_mem_iff_exists_isLink a := by simp only [and_comm, mem_image, mem_setOf_eq, Prod.exists]
   isLink_symm a ha e f hef := by
     simp_all only [mem_image, mem_setOf_eq, Prod.exists]
-    simp_rw [and_comm, ← hef.2]
-    simp [hef.1]
+    simp_rw [and_comm, Sym2.eq_swap]
+    simp [hef.1, hef.2.1.symm, hef.2.2]
   eq_or_eq_of_isLink_of_isLink := by
-    rintro a e f g h ⟨hef, rfl⟩ ⟨hgf, heq⟩
+    rintro a e f g h ⟨rfl, hef, h⟩ ⟨heq, hgf, h'⟩
     simp only [Sym2.eq, Sym2.rel_iff', Prod.mk.injEq, Prod.swap_prod_mk] at heq
     tauto
   left_mem_of_isLink := by
-    rintro a e f ⟨⟨x, he, hf⟩, rfl⟩
+    rintro a e f ⟨rfl, hef, ⟨x, he, hf⟩⟩
     exact he.edge_mem
 
 scoped notation "L(" G ")" => LineGraph G
@@ -463,14 +495,15 @@ lemma lineGraph_inc (G : Graph α β) (s : Sym2 β) (e : β) : L(G).Inc s e ↔ 
   unfold Inc
   simp +contextual only [LineGraph_isLink, LineGraph_edgeSet, mem_image, mem_setOf_eq, Prod.exists,
     iff_def, forall_exists_index, and_imp]
-  refine ⟨fun a x he ha hs ↦ ?_, fun a b x ha hb hs hes ↦ ?_⟩ <;> subst s
-  · exact ⟨⟨e, a, ⟨x, he, ha⟩, rfl⟩, by simp⟩
+  refine ⟨fun a hs hne x he ha ↦ ?_, fun a b hne x ha hb hs hes ↦ ?_⟩ <;> subst s
+  · exact ⟨⟨e, a, ⟨hne, x, he, ha⟩, rfl⟩, by simp⟩
   obtain rfl | rfl := by simpa using hes
-  · use b, (by use x)
-  use a, (by use x), Sym2.eq_swap
+  · use b, rfl, hne, x
+  use a, Sym2.eq_swap, hne.symm, x
 
 @[simp]
-lemma lineGraph_adj_iff (G : Graph α β) (e f : β) : L(G).Adj e f ↔ ∃ x, G.Inc e x ∧ G.Inc f x := by
+lemma lineGraph_adj (G : Graph α β) (e f : β) :
+    L(G).Adj e f ↔ e ≠ f ∧ ∃ x, G.Inc e x ∧ G.Inc f x := by
   simp [Adj]
 
 lemma lineGraph_bouquet_isComplete (v : α) (F : Set β) : L(bouquet v F).IsComplete := by
@@ -487,8 +520,8 @@ lemma lineGraph_singleEdge_isComplete (u v : α) (e : β) : L(Graph.singleEdge u
 
 lemma lineGraph_starGraph_isComplete (v : α) (f : β →. α) : L(StarGraph v f).IsComplete := by
   rintro e h e'
-  simp_all only [LineGraph_vertexSet, StarGraph_edgeSet, PFun.mem_dom, ne_eq, lineGraph_adj_iff,
-    starGraph_inc_iff, and_true, forall_exists_index]
+  simp_all only [LineGraph_vertexSet, StarGraph_edgeSet, PFun.mem_dom, ne_eq, lineGraph_adj,
+    starGraph_inc_iff, and_true, forall_exists_index, not_false_iff, true_and]
   intro _ _ _
   use v
   simp

@@ -340,7 +340,7 @@ lemma Preconnected.edgeDelete_linkEdges_components (hG : G.Preconnected) (hu : u
     · use v
 
 lemma Preconnected.walkable_singleton_left_of_vertexDelete_connected (hG : G.Preconnected)
-    (h : ¬ (G ＼ E(G, u, v)).Connected) (huconn : (G - {u}).Connected) :
+    (h : ¬ (G ＼ E(G, u, v)).Connected) (huconn : (G - u).Connected) :
     V((G ＼ E(G, u, v)).walkable u) = {u} := by
   rw [connected_iff, not_and_or, edgeDelete_vertexSet, vertexSet_not_nonempty_iff] at h
   obtain rfl | h := h
@@ -359,23 +359,26 @@ lemma Preconnected.walkable_singleton_left_of_vertexDelete_connected (hG : G.Pre
     exact h <| hG.isSpanningSubgraph <| G.loopRemove_isSpanningSubgraph_edgeDelete_isLoopAt u
   refine subset_antisymm ?_ (by simpa)
   have := (G ＼ E(G, u, v)).walkable_isClosedSubgraph (u := u) |>.vertexDelete {u}
-  rw [edgeDelete_vertexDelete, (G - {u}).edgeDelete_eq_self ?_] at this
+  rw [edgeDelete_vertexDelete, ← vertexDelete_singleton, ← vertexDelete_singleton,
+    (G - u).edgeDelete_eq_self ?_] at this
   have := mt (huconn.eq_of_isClosedSubgraph this) ?_
-  simpa only [vertexDelete_vertexSet, not_nonempty_iff_eq_empty, diff_eq_empty] using this
+  simpa [vertexDelete_vertexSet, not_nonempty_iff_eq_empty, diff_eq_empty] using this
   · apply_fun vertexSet
     intro heq
-    have : v ∈ V(G - {u}) := by simp [hne.symm, hv]
+    have : v ∈ V(G - u) := by simp [hne.symm, hv]
     rw [← heq] at this
-    simp only [vertexDelete_vertexSet, mem_diff, mem_singleton_iff, hne.symm, not_false_eq_true,
-      and_true, ← connBetween_iff_mem_walkable_of_mem] at this
+    simp only [vertexDelete_singleton, vertexDelete_vertexSet, mem_diff,
+      ← connBetween_iff_mem_walkable_of_mem, mem_singleton_iff, hne.symm, not_false_eq_true,
+      and_true] at this
     exact hG.edgeDelete_linkEdges_not_connBetween h this
-  · rw [disjoint_iff_forall_notMem, vertexDelete_edgeSet_diff, setIncEdges_singleton]
+  · rw [disjoint_iff_forall_notMem, vertexDelete_singleton, vertexDelete_edgeSet_diff,
+      setIncEdges_singleton]
     intro e ⟨he, heu⟩
     contrapose! heu
     exact G.linkEdges_subset_incEdges_left u v heu
 
 lemma Preconnected.walkable_singleton_right_of_vertexDelete_connected (hG : G.Preconnected)
-    (h : ¬ (G ＼ E(G, u, v)).Connected) (hvconn : (G - {v}).Connected) :
+    (h : ¬ (G ＼ E(G, u, v)).Connected) (hvconn : (G - v).Connected) :
     V((G ＼ E(G, u, v)).walkable v) = {v} := by
   rw [linkEdges_comm] at h ⊢
   exact hG.walkable_singleton_left_of_vertexDelete_connected h hvconn

@@ -108,7 +108,7 @@ lemma IsLeaf.eq_first_or_eq_last_of_mem_path {P : WList α β} (hx : G.IsLeaf x)
     (hP : G.IsPath P) (hxP : x ∈ P) : x = P.first ∨ x = P.last :=
   hx.eq_first_or_eq_last_of_mem_trail hP.isTrail hxP
 
-lemma IsLeaf.delete_connected (hx : G.IsLeaf x) (hG : G.Connected) : (G - {x}).Connected := by
+lemma IsLeaf.delete_connected (hx : G.IsLeaf x) (hG : G.Connected) : (G - x).Connected := by
   obtain ⟨y, hy : G.Adj x y, hu⟩ := hx.exists_unique_adj
   refine connected_of_vertex ⟨hy.right_mem, fun h : y = x ↦ hx.not_adj_self (h ▸ hy)⟩ fun z hz ↦ ?_
   obtain ⟨P, hP, rfl, rfl⟩ := (hG.connBetween hz.1 hy.right_mem).exists_isPath
@@ -121,7 +121,7 @@ lemma IsLeaf.delete_connected (hx : G.IsLeaf x) (hG : G.Connected) : (G - {x}).C
 
 /-- Deleting the first vertex of a maximal path of a connected graph gives a connected graph. -/
 lemma Connected.delete_first_connected_of_maximal_isPath (hG : G.Connected) (hnt : V(G).Nontrivial)
-    (hP : Maximal (fun P ↦ G.IsPath P) P) : (G - {P.first}).Connected := by
+    (hP : Maximal (fun P ↦ G.IsPath P) P) : (G - P.first).Connected := by
   cases P with
   | nil u =>
     obtain ⟨e, y, huy, hne⟩ := hG.exists_isLink_of_mem hnt (x := u) (by simpa using hP.prop)
@@ -131,7 +131,7 @@ lemma Connected.delete_first_connected_of_maximal_isPath (hG : G.Connected) (hnt
     have ⟨hP', he, huP⟩ : G.IsPath P ∧ G.IsLink e u P.first ∧ u ∉ P := by simpa using hP.prop
     by_contra hcon
     simp only [first_cons] at hcon
-    have hP'' : (G - {u}).IsPath P := by simp [isPath_vertexDelete_iff, huP, hP']
+    have hP'' : (G - u).IsPath P := by simp [isPath_vertexDelete_iff, huP, hP']
     obtain ⟨S, hS⟩ :=
       hP''.isWalk.toGraph_connected.exists_separation_of_le hcon hP''.isWalk.toGraph_le
     have hPS : V(P) ⊆ S.left := by simpa using vertexSet_mono hS
@@ -145,7 +145,7 @@ lemma Connected.delete_first_connected_of_maximal_isPath (hG : G.Connected) (hnt
       rintro x y (rfl | hxS) hyS ⟨e, hxy⟩
       · exact hu y hyS hxy.adj
       refine S.not_adj hxS hyS ⟨e, ?_⟩
-      simp only [vertexDelete_isLink_iff, hxy, mem_singleton_iff, true_and]
+      simp only [vertexDelete_singleton, vertexDelete_isLink_iff, hxy, mem_singleton_iff, true_and]
       constructor <;> (rintro rfl; contradiction)
     rintro x hx ⟨f, hux⟩
     have hne : u ≠ x := by rintro rfl; contradiction
@@ -154,7 +154,7 @@ lemma Connected.delete_first_connected_of_maximal_isPath (hG : G.Connected) (hnt
 
 /-- Deleting the last vertex of a maximal path of a connected graph gives a connected graph. -/
 lemma Connected.delete_last_connected_of_maximal_isPath (hG : G.Connected) (hnt : V(G).Nontrivial)
-    (hP : Maximal (fun P ↦ G.IsPath P) P) : (G - {P.last}).Connected := by
+    (hP : Maximal (fun P ↦ G.IsPath P) P) : (G - P.last).Connected := by
   suffices aux : Maximal (fun P ↦ G.IsPath P) P.reverse by
     simpa using hG.delete_first_connected_of_maximal_isPath hnt aux
   refine ⟨by simpa using hP.prop, fun Q hQ hPQ ↦ ?_⟩
@@ -164,7 +164,7 @@ lemma Connected.delete_last_connected_of_maximal_isPath (hG : G.Connected) (hnt 
 preserves its connectedness.
 (This requires a finite graph, since otherwise an infinite path is a counterexample.) -/
 lemma Connected.exists_delete_vertex_connected [G.Finite] (hG : G.Connected)
-    (hnt : V(G).Nontrivial) : ∃ x ∈ V(G), (G - {x}).Connected := by
+    (hnt : V(G).Nontrivial) : ∃ x ∈ V(G), (G - x).Connected := by
   obtain ⟨x, hx⟩ := hG.nonempty
   obtain ⟨P, hP⟩ := Finite.exists_maximal G.isPath_finite ⟨nil x, by simpa⟩
   exact ⟨_, hP.prop.isWalk.first_mem, hG.delete_first_connected_of_maximal_isPath hnt hP⟩

@@ -321,3 +321,23 @@ lemma exists_eq_banana_of_encard [G.Loopless] (hV : V(G).encard = 2) :
 
 lemma banana_loopless (hab : a ≠ b) (F : Set α) : (banana a b F).Loopless where
   not_isLoopAt e x := by simp [hab]
+
+instance lineGraph_simple : L(G).Simple where
+  not_isLoopAt e x h := by
+    unfold IsLoopAt at h
+    simp [-isLink_self_iff] at h
+  eq_of_isLink e f x y he hf := by
+    obtain ⟨rfl, hne, h⟩ := he
+    obtain ⟨rfl, -, h'⟩ := hf
+    rfl
+
+instance mixedLineGraph_simple : L'(G).Simple where
+  not_isLoopAt ab x h := by
+    unfold IsLoopAt at h
+    cases x <;> simp [-isLink_self_iff] at h
+  eq_of_isLink e f x y h1 h2 := by
+    cases e
+    cases f
+    rw [mixedLineGraph_isLink] at h1 h2
+    rw [← h1.2] at h2
+    simp_all

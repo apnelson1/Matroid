@@ -55,11 +55,11 @@ lemma Connected.exists_isTree_spanningSubgraph (hG : G.Connected) : ∃ T, T.IsT
   exact hG.isTree_of_maximal_isAcyclicSet hB
 
 lemma IsTree.exists_delete_vertex_isTree [T.Finite] (hT : T.IsTree)
-    (hnt : V(T).Nontrivial) : ∃ v ∈ V(T), (T - {v}).IsTree := by
+    (hnt : V(T).Nontrivial) : ∃ v ∈ V(T), (T - v).IsTree := by
   obtain ⟨x, hxT, hconn⟩ := hT.connected.exists_delete_vertex_connected hnt
   exact ⟨x, hxT, hT.isForest.mono vertexDelete_le, hconn⟩
 
-lemma IsLeaf.delete_isTree (hT : T.IsTree) (hx : T.IsLeaf x) : (T - {x}).IsTree :=
+lemma IsLeaf.delete_isTree (hT : T.IsTree) (hx : T.IsLeaf x) : (T - x).IsTree :=
   ⟨hT.isForest.mono vertexDelete_le, hx.delete_connected hT.connected⟩
 
 lemma IsTree.encard_vertexSet {T : Graph α β} (h : T.IsTree) : V(T).encard = E(T).encard + 1 := by
@@ -75,7 +75,7 @@ lemma IsTree.encard_vertexSet {T : Graph α β} (h : T.IsTree) : V(T).encard = E
   have hxV := he.isNonloopAt.vertex_mem
   have hlt := encard_delete_vertex_lt hxV
   have := he.isLeaf.delete_isTree h
-  rw [← encard_diff_singleton_add_one hxV, ← vertexDelete_vertexSet,
+  rw [← encard_diff_singleton_add_one hxV, ← vertexDelete_vertexSet, ← vertexDelete_singleton,
     (he.isLeaf.delete_isTree h).encard_vertexSet, he.edgeSet_delete_vertex_eq,
     encard_diff_singleton_add_one he.isNonloopAt.edge_mem]
 termination_by V(T).encard

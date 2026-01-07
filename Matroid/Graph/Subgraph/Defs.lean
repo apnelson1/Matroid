@@ -159,13 +159,23 @@ lemma induce_vertexSet_self (G : Graph α β) : G[V(G)] = G := by
   exact ⟨x, y, h, h.left_mem, h.right_mem⟩
 
 /-- The graph obtained from `G` by deleting a set of vertices. -/
-@[simps! vertexSet]
 protected def vertexDelete (G : Graph α β) (X : Set α) : Graph α β := G[V(G) \ X]
 
 /-- `G - X` is the graph obtained from `G` by deleting the set `X` of vertices. -/
-notation:max G:1000 " - " S:1000 => Graph.vertexDelete G S
+instance : HSub (Graph α β) (Set α) (Graph α β) where
+  hSub G X := G[V(G) \ X]
+
+instance : HSub (Graph α β) α (Graph α β) where
+  hSub G x := G - ({x} : Set α)
+-- scoped notation:51 G:100 " - " S:100 => Graph.vertexDelete G S
 
 lemma vertexDelete_def (G : Graph α β) (X : Set α) : G - X = G [V(G) \ X] := rfl
+
+@[simp]
+lemma vertexDelete_singleton (G : Graph α β) (x : α) : G - x = G - ({x} : Set α) := rfl
+
+@[simp]
+lemma vertexDelete_vertexSet (G : Graph α β) (X : Set α) : V(G - X) = V(G) \ X := rfl
 
 @[simp]
 lemma vertexDelete_isLink_iff (G : Graph α β) (X : Set α) :
@@ -190,7 +200,7 @@ lemma vertexDelete_edgeSet_diff (G : Graph α β) (X : Set α) : E(G - X) = E(G)
   use x, y
 
 @[simp]
-lemma vertexDelete_empty (G : Graph α β) : G - ∅ = G := by
+lemma vertexDelete_empty (G : Graph α β) : G - (∅ : Set α) = G := by
   simp [vertexDelete_def]
 
 @[simp]

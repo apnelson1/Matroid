@@ -68,7 +68,7 @@ lemma setConnected_iff_exists_isPathFrom (S T : Set α) :
   exact ⟨P.extractPathFrom S T, hP.extractPathFrom_isPathFrom hs ht⟩
 
 lemma ConnBetween.neighbor_setConnected (h : G.ConnBetween s t) (hne : s ≠ t)
-    (hadj : ¬ G.Adj s t) : (G - {s, t}).SetConnected (N(G, s) \ {s}) (N(G, t) \ {t}) := by
+    (hadj : ¬ G.Adj s t) : (G - ({s, t} : Set α)).SetConnected (N(G, s) \ {s}) (N(G, t) \ {t}) := by
   obtain ⟨w, hw, rfl, rfl⟩ := h.exists_isPath
   obtain ⟨x, e, w', f, y, rfl⟩ := (hw.isWalk.nontrivial_of_ne_not_adj hne hadj).exists_cons_concat
   obtain ⟨⟨hw', hf, hyw'⟩, he, hxw', hxy⟩ := by simpa using hw
@@ -167,10 +167,10 @@ lemma IsSetCut.inter_subset (hC : G.IsSetCut S T C) : V(G) ∩ S ∩ T ⊆ C := 
 lemma CutBetween.isSetCut (C : G.CutBetween s t) : G.IsSetCut (insert s C) (insert t C) C where
   subset_vertexSet x hxC := C.coe_subset hxC
   ST_disconnects h := by
-    have hs : (V(G - C) ∩ insert s ↑C) ⊆ {s} := by
+    have hs : (V(G - (C : Set α)) ∩ insert s ↑C) ⊆ {s} := by
       rintro x
       simp +contextual
-    have ht : (V(G - C) ∩ insert t ↑C) ⊆ {t} := by
+    have ht : (V(G - (C : Set α)) ∩ insert t ↑C) ⊆ {t} := by
       rintro x
       simp +contextual
     have := h.vertexSet_inter.subset hs ht

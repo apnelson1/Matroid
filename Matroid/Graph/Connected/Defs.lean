@@ -511,7 +511,7 @@ lemma preconnGE_iff_forall_connBetweenGE :
     G.PreconnGE n ↔ ∀ ⦃s t⦄, s ∈ V(G) → t ∈ V(G) → G.ConnBetweenGE s t n := Iff.rfl
 
 lemma preconnGE_iff_forall_preconnected :
-    G.PreconnGE n ↔ ∀ ⦃X⦄, X.encard < ↑n → (G - X).Preconnected := by
+    G.PreconnGE n ↔ ∀ ⦃X : Set α⦄, X.encard < ↑n → (G - X).Preconnected := by
   refine ⟨fun h X hX => ?_, fun h s t hs ht C => ?_⟩
   · rw [preconnected_iff_isEmpty_separation]
     by_contra! hS
@@ -591,13 +591,15 @@ lemma connGE_bot : (⊥ : Graph α β).ConnGE n ↔ n = 0 := by
   simp
 
 @[simp]
-lemma bouquet_vertexDelete : (bouquet v F) - {v} = ⊥ :=
+lemma bouquet_vertexDelete : (bouquet v F) - v = ⊥ :=
   (vertexDelete_eq_bot_iff (bouquet v F) {v}).mpr <| by simp
 
 @[simp]
 lemma connGE_bouquet_iff (n : ℕ) : (bouquet v F).ConnGE n ↔ n ≤ 1 := by
   refine ⟨fun h ↦ ?_, fun h ↦ ConnGE.anti_right h <| by simp⟩
-  simpa using h.le_cut (C := {v}) ⟨by simp, by simp⟩
+  simpa using h.le_cut (C := {v}) ⟨by simp, by
+    rw [← vertexDelete_singleton, bouquet_vertexDelete]
+    simp⟩
 
 lemma connGE_iff_of_vertexSet_singleton (h : V(G) = {x}) : G.ConnGE n ↔ n ≤ 1 := by
   rw [eq_bouquet h, connGE_bouquet_iff]

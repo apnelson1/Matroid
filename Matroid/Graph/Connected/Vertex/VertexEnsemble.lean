@@ -8,8 +8,8 @@ variable {α β ι ι' : Type*} {G H : Graph α β} {s t u v x x₁ x₂ y y₁ 
 namespace Graph
 
 @[simps]
-def IsSetCut.cutBetween_of_neighbor (hC : (G - {s, t}).IsSetCut (N(G, s) \ {s}) (N(G, t) \ {t}) C)
-    (hne : s ≠ t) (hadj : ¬ G.Adj s t) : G.CutBetween s t where
+def IsSetCut.cutBetween_of_neighbor (hC : (G - ({s, t} : Set α)).IsSetCut (N(G, s) \ {s})
+    (N(G, t) \ {t}) C) (hne : s ≠ t) (hadj : ¬ G.Adj s t) : G.CutBetween s t where
   carrier := C
   carrier_subset := by
     have := by simpa [subset_diff] using hC.subset_vertexSet
@@ -25,7 +25,7 @@ def IsSetCut.cutBetween_of_neighbor (hC : (G - {s, t}).IsSetCut (N(G, s) \ {s}) 
       (by grw [neighbor_mono vertexDelete_le]) (by grw [neighbor_mono vertexDelete_le])
 
 lemma connBetweenGE_iff_setConnGE (hne : s ≠ t) (hadj : ¬ G.Adj s t) :
-    G.ConnBetweenGE s t n ↔ (G - {s, t}).SetConnGE (N(G, s) \ {s}) (N(G, t) \ {t}) n := by
+    G.ConnBetweenGE s t n ↔ (G - ({s, t} : Set α)).SetConnGE (N(G, s) \ {s}) (N(G, t) \ {t}) n := by
   refine ⟨fun h C hC => ?_, fun h C => ?_⟩
   · obtain ⟨hCsub, hCs, hCt⟩ := by simpa [subset_diff] using hC.subset_vertexSet
     simpa using h (hC.cutBetween_of_neighbor hne hadj)
@@ -60,7 +60,7 @@ lemma link_isLink (y : N(G, x)) : G.IsLink (G.link x y) x y := y.prop.choose_spe
 lemma link_mem {y : N(G, x)} : G.link x y ∈ E(G) := y.prop.choose_spec.edge_mem
 
 noncomputable def VertexEnsemble.ofSetEnsemble (x y : α) (hxy : x ≠ y)
-    (A : (G - {x, y}).SetEnsemble) (hA : A.between N(G, x) N(G, y)) :
+    (A : (G - ({x, y} : Set α)).SetEnsemble) (hA : A.between N(G, x) N(G, y)) :
     G.VertexEnsemble x y (first '' A.paths) where
   f u := by
     let a := u.prop.choose

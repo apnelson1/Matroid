@@ -134,8 +134,7 @@ lemma induce_map_isSpanningSubgraph : f ''ᴳ (G[X]) ≤s (f ''ᴳ G)[f '' X] wh
   vertexSet_eq := by simp
   isLink_of_isLink e x y := by
     simp only [map_isLink, induce_isLink, mem_image, forall_exists_index, and_imp]
-    intro a b hab ha hb rfl rfl
-    use (by use a, b), (by use a), by use b
+    grind
 
 lemma map_vertexDelete_isInducedSubgraph : (f ''ᴳ G) - (f '' X) ≤i f ''ᴳ (G - X) where
   le := by
@@ -143,16 +142,19 @@ lemma map_vertexDelete_isInducedSubgraph : (f ''ᴳ G) - (f '' X) ≤i f ''ᴳ (
     · simp [subset_image_diff]
     simp only [vertexDelete_isLink_iff, map_isLink, mem_image, not_exists, not_and, and_imp,
       forall_exists_index]
-    intro e u v x y hxy rfl rfl hnex hney
-    have hx := by simpa using hnex x
-    have hy := by simpa using hney y
-    use x, y
+    grind
   isLink_of_mem_mem e x y := by
-    simp +contextual only [map_isLink, vertexDelete_isLink_iff, vertexDelete_vertexSet,
-      map_vertexSet, mem_diff, mem_image, not_exists, not_and, not_false_eq_true, implies_true,
-      and_self, and_true, and_imp, forall_exists_index]
-    intro u v huv huX hvX rfl rfl a ha hau hneu b hb hbv hnev
-    use u, v
+    simp only [map_isLink, vertexDelete_isLink_iff, vertexDelete_vertexSet, map_vertexSet, mem_diff,
+      mem_image, not_exists, not_and, and_imp, forall_exists_index]
+    grind
+
+@[simp]
+lemma map_vertexDelete_preimage {X : Set α'} : f ''ᴳ (G - (f ⁻¹' X)) = (f ''ᴳ G) - X := by
+  ext a b c
+  · simp only [map_vertexSet, vertexDelete_vertexSet, mem_image, mem_diff, mem_preimage]
+    grind
+  · simp only [map_isLink, vertexDelete_isLink_iff, mem_preimage, ← exists_and_right, and_assoc]
+    grind
 
 lemma surjOn_of_le_map {G} (h : G ≤ f ''ᴳ H) : SurjOn f V(H) V(G) := by
   intro a' ha'

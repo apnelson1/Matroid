@@ -60,6 +60,11 @@ def Inc.contract (G : Graph α β) (he : G.Inc e x) : Graph α β where
     simp_rw [← contract_isLink_lemma he, ← contract_vertexSet_lemma he]
     convert (_ ''ᴳ G ＼ {e}).left_mem_of_isLink (e := e') (x := x') (y := y')
 
+lemma Inc.contract_vertexSet_of_ne (he : G.Inc e x) (hne : x ≠ he.other) :
+    V(he.contract) = V(G) \ {he.other} := by
+  rw [contract_vertexSet]
+  simp [he.vertex_mem, hne]
+
 lemma Inc.contract_eq_map_edgeDelete [DecidableEq α] (he : G.Inc e x) :
     he.contract = (fun v ↦ if v = he.other then x else v) ''ᴳ (G ＼ {e}) :=
   Graph.ext (contract_vertexSet_lemma he).symm fun _ _ _ ↦ (contract_isLink_lemma he).symm
@@ -72,6 +77,11 @@ lemma IsLoopAt.contract_eq (he : G.IsLoopAt e x) : he.inc.contract = G ＼ {e} :
   refine map_congr_left_of_eqOn fun u hu ↦ ?_
   simp only [he.other_eq, id_eq, ite_eq_right_iff]
   exact (·.symm)
+
+lemma Inc.contract_of_eq (he : G.Inc e x) (h : x = he.other) : he.contract = G ＼ {e} := by
+  apply IsLoopAt.contract_eq
+  unfold IsLoopAt
+  convert he.isLink_other
 
 @[simp]
 lemma IsNonloopAt.contract_vertexSet (he : G.IsNonloopAt e x) :
@@ -88,6 +98,20 @@ lemma Inc.contract_eq_iff (he : G.Inc e x) : he.contract = G ＼ {e} ↔ G.IsLoo
   refine ⟨fun h ↦ he.isLoopAt_or_isNonloopAt.resolve_right ?_, fun h ↦ h.contract_eq⟩
   rintro hnl
   simpa [h, hnl.inc.other_mem] using hnl.other_notMem_contract
+
+@[simp]
+lemma Inc.contract_vertexDelete_of_mem (he : G.Inc e x) (hx : x ∈ X) :
+    (he.contract - X) = G - insert he.other X := by
+  ext a b c
+  · simp only [vertexDelete_vertexSet, contract_vertexSet, mem_diff, mem_insert_iff,
+    mem_singleton_iff, not_or]
+    grind
+  simp only [vertexDelete_isLink_iff, contract_isLink, ne_eq, mem_insert_iff, not_or]
+  refine ⟨by grind, fun ⟨hbc, ⟨hb, hbX⟩, hc, hcX⟩ ↦ ?_⟩
+  have hne : a ≠ e := by
+    rintro rfl
+    obtain rfl | rfl := he.eq_or_eq_of_isLink hbc <;> tauto
+  use (by use b, c; grind)
 
 /-! ## Contracting a set of edges -/
 
@@ -203,6 +227,75 @@ lemma contract_edgeRestrict_connBetween (φ : (H ↾ C).connPartition.RepFun) (F
 lemma contract_connBetween (φ : (H ↾ C).connPartition.RepFun) (u v) :
     (H /[φ, C]).ConnBetween (φ u) (φ v) ↔ H.ConnBetween u v := by
   convert contract_edgeRestrict_connBetween φ univ u v using 2 <;> rw [eq_comm] <;> simp
+
+@[simp]
+lemma preimage_vertexDelete_contract (φ : (H ↾ C).connPartition.RepFun) :
+    (H - φ ⁻¹' X) /[φ, C] = H /[φ, C] - X := by
+  rw [contract, contract, edgeDelete_vertexDelete, map_vertexDelete_preimage]
+
+lemma ConnBetween.eq_or_isLink_of_edgeSet_singleton (h : G.ConnBetween x y) (hE : E(G) = {e}) :
+    x = y ∨ G.IsLink e x y := by
+  obtain ⟨w, hw, rfl, rfl⟩ := h.exists_isPath
+  match w with
+  | .nil x => simp
+  | .cons x e (.nil y) =>
+    simp_all only [cons_isPath_iff, nil_isPath_iff, WList.nil_first, WList.mem_nil_iff,
+      WList.first_cons, WList.last_cons, WList.nil_last, false_or]
+    obtain ⟨hw, hlink, hxw⟩ := hw
+    obtain rfl := by simpa [hE] using hlink.edge_mem
+    exact hlink
+  | .cons x e (.cons y f w) =>
+    simp_all only [cons_isPath_iff, WList.first_cons, WList.mem_cons_iff, not_or, WList.last_cons]
+    obtain ⟨⟨hw, hywf, hyw⟩, hxy, hne, hxw⟩ := hw
+    obtain rfl := by simpa [hE] using hywf.edge_mem
+    obtain rfl := by simpa [hE] using hxy.edge_mem
+    obtain rfl := hxy.left_unique hywf.symm
+    simp at hxw
+
+noncomputable def Inc.repFun (he : G.Inc e x) : (G ↾ {e}).connPartition.RepFun where
+  toFun v := by classical
+    exact if v = he.other then x else v
+  apply_eq_self_of_notMem v hv := by
+    split_ifs with hveq
+    · subst v
+      simp at hv
+    rfl
+  rel_apply_of_mem v hv := by
+    split_ifs with hveq
+    · subst v
+      simp only [connPartition_rel_iff]
+      apply Adj.connBetween
+      use e, by simp, he.isLink_other.symm
+    simpa using hv
+  apply_eq_of_rel v w hvw := by
+    rw [connPartition_rel_iff] at hvw
+    obtain rfl | hlink := hvw.eq_or_isLink_of_edgeSet_singleton (e := e) (by simp [he.edge_mem])
+    · rfl
+    simp only [edgeRestrict_isLink, mem_singleton_iff, true_and] at hlink
+    obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := hlink.eq_and_eq_or_eq_and_eq he.isLink_other <;> simp
+
+@[simp]
+lemma Inc.repFun_apply [DecidableEq α] (he : G.Inc e x) (v : α) :
+    he.repFun v = if v = he.other then x else v := by
+  simp [repFun]
+
+@[simp]
+lemma Inc.repFun_apply_of_ne (he : G.Inc e x) (hne : v ≠ he.other) : he.repFun v = v := by
+  simp [repFun, hne]
+
+@[simp]
+lemma Inc.repFun_apply_other (he : G.Inc e x) : he.repFun he.other = x := by
+  simp [repFun]
+
+@[simp]
+lemma Inc.repFun_toFun [DecidableEq α] (he : G.Inc e x) :
+    he.repFun = fun v ↦ if v = he.other then x else v := by
+  ext v
+  simp [repFun]
+
+lemma Inc.contract' (he : G.Inc e x) : he.contract = G /[he.repFun, {e}] := by
+  classical
+  simp [he.contract_eq_map_edgeDelete, Graph.contract, map_edgeDelete_comm]
 
 class IsPartitionGraph [Order.Frame α] (G : Graph α β) where
   exists_partition : ∃ P : Partition α, V(G) = P.parts

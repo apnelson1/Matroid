@@ -373,9 +373,9 @@ lemma vertexDelete_anti_right (G : Graph α β) (hXY : X ⊆ Y) : G - Y ≤ G - 
   induce_mono_right _ <| diff_subset_diff_right hXY
 
 lemma vertexDelete_singleton_le_edgeDelete_linkEdges (G : Graph α β) (u v : α) :
-    G - {u} ≤ G ＼ E(G, u, v) := by
+    G - u ≤ G ＼ E(G, u, v) := by
   refine le_of_le_le_subset_subset vertexDelete_le edgeDelete_le (by simp) ?_
-  rw [vertexDelete_edgeSet_diff, edgeDelete_edgeSet, setIncEdges_singleton]
+  rw [vertexDelete_singleton, vertexDelete_edgeSet_diff, edgeDelete_edgeSet, setIncEdges_singleton]
   exact diff_subset_diff_right <| G.linkEdges_subset_incEdges_left u v
 
 @[simp]
