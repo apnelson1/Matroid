@@ -8,10 +8,9 @@ variable {α β ι ι' : Type*} {G H : Graph α β} {s t u v x x₁ x₂ y y₁ 
 namespace Graph
 
 @[simps]
-def IsSetCut.cutBetween_of_neighbor (hC : (G - ({s, t} : Set α)).IsSetCut (N(G, s) \ {s})
-    (N(G, t) \ {t}) C) (hne : s ≠ t) (hadj : ¬ G.Adj s t) : G.CutBetween s t where
-  carrier := C
-  carrier_subset := by
+def IsSetCut.isSepBetween_of_neighbor (hC : (G - ({s, t} : Set α)).IsSetCut (N(G, s) \ {s})
+    (N(G, t) \ {t}) C) (hne : s ≠ t) (hadj : ¬ G.Adj s t) : G.IsSepBetween s t C where
+  subset := by
     have := by simpa [subset_diff] using hC.subset_vertexSet
     exact this.1
   left_not_mem := by
@@ -20,24 +19,23 @@ def IsSetCut.cutBetween_of_neighbor (hC : (G - ({s, t} : Set α)).IsSetCut (N(G,
   right_not_mem := by
     have := by simpa [subset_diff] using hC.subset_vertexSet
     exact this.2.2
-  not_connBetween' h := hC.ST_disconnects <| G.vertexDelete_vertexDelete_comm _ _ ▸
-      (h.neighbor_setConnected hne <| (hadj <| ·.of_le vertexDelete_le)).subset
-      (by grw [neighbor_mono vertexDelete_le]) (by grw [neighbor_mono vertexDelete_le])
+  not_connBetween hst := hC.ST_disconnects <| G.vertexDelete_vertexDelete_comm _ _ ▸
+      (hst.neighbor_setConnected hne <| (hadj <| ·.of_le vertexDelete_le)).subset
+        (by grw [neighbor_mono vertexDelete_le]) (by grw [neighbor_mono vertexDelete_le])
 
 lemma connBetweenGE_iff_setConnGE (hne : s ≠ t) (hadj : ¬ G.Adj s t) :
     G.ConnBetweenGE s t n ↔ (G - ({s, t} : Set α)).SetConnGE (N(G, s) \ {s}) (N(G, t) \ {t}) n := by
-  refine ⟨fun h C hC => ?_, fun h C => ?_⟩
+  refine ⟨fun h C hC => ?_, fun h C hC => ?_⟩
   · obtain ⟨hCsub, hCs, hCt⟩ := by simpa [subset_diff] using hC.subset_vertexSet
-    simpa using h (hC.cutBetween_of_neighbor hne hadj)
+    simpa using h (hC.isSepBetween_of_neighbor (s := s) (t := t) hne hadj)
   refine h ⟨?_, ?_⟩
-  · simp only [vertexDelete_vertexSet, subset_diff, disjoint_insert_right, SetLike.mem_coe,
-    disjoint_singleton_right]
-    exact ⟨C.carrier_subset, C.left_not_mem, C.right_not_mem⟩
-  have hh := C.not_connBetween
+  · simp only [vertexDelete_vertexSet, subset_diff, disjoint_insert_right, disjoint_singleton_right]
+    exact ⟨hC.subset, hC.left_not_mem, hC.right_not_mem⟩
+  have hh := hC.not_connBetween
   contrapose! hh
   obtain ⟨a, ⟨hsa, hsane⟩, b, ⟨htb, htbne⟩, hab⟩ := hh
-  have hsa' := (G.vertexDelete_adj_iff C).mpr ⟨hsa, C.left_not_mem, hab.left_mem.2⟩
-  have htb' := (G.vertexDelete_adj_iff C).mpr ⟨htb, C.right_not_mem, hab.right_mem.2⟩
+  have hsa' := (G.vertexDelete_adj_iff C).mpr ⟨hsa, hC.left_not_mem, hab.left_mem.2⟩
+  have htb' := (G.vertexDelete_adj_iff C).mpr ⟨htb, hC.right_not_mem, hab.right_mem.2⟩
   exact (hsa'.connBetween.trans ((G.vertexDelete_vertexDelete_comm _ _ ▸ hab).of_le
     vertexDelete_le)).trans htb'.connBetween.symm
 

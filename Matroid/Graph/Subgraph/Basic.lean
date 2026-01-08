@@ -249,6 +249,11 @@ lemma IsInducedSubgraph.trans {G₁ G₂ G₃ : Graph α β} (h₁₂ : G₁ ≤
     (h₂₃.isLink_of_mem_mem h (vertexSet_mono h₁₂.le hx) (vertexSet_mono h₁₂.le hy))
     hx hy⟩
 
+lemma IsInducedSubgraph.adj_of_mem_mem (h : H ≤i G) (hxy : G.Adj x y) (hx : x ∈ V(H))
+    (hy : y ∈ V(H)) : H.Adj x y := by
+  obtain ⟨e, hxy⟩ := hxy
+  exact (h.isLink_of_mem_mem hxy hx hy).adj
+
 instance : IsPartialOrder (Graph α β) (· ≤i ·) where
   refl _ := ⟨le_rfl, by tauto⟩
   trans _ _ _ h₁ h₂ := h₁.trans h₂

@@ -127,139 +127,92 @@ lemma connBetween_iff_of_edgeless (h : E(G) = ∅) : G.ConnBetween x y ↔ x ∈
   obtain ⟨hx, rfl⟩ := h
   exact ConnBetween.refl hx
 
-/-! ### Cut between two vertices -/
+/-! ### Separators between two vertices -/
 
--- Beware that `CutBetween` does not check if `s` and `t` are in the graph.
-structure CutBetween (G : Graph α β) (s t : α) where
-  carrier : Set α
-  carrier_subset : carrier ⊆ V(G)
-  left_not_mem : s ∉ carrier
-  right_not_mem : t ∉ carrier
-  not_connBetween' : ¬ (G - carrier).ConnBetween s t
+structure IsSepBetween (G : Graph α β) (s t : α) (C : Set α) : Prop where
+  subset : C ⊆ V(G)
+  left_not_mem : s ∉ C
+  right_not_mem : t ∉ C
+  not_connBetween : ¬ (G - C).ConnBetween s t
 
-instance : SetLike (G.CutBetween s t) α where
-  coe := (·.carrier)
-  coe_injective' C1 C2 h := by rwa [CutBetween.mk.injEq]
+attribute [simp] IsSepBetween.subset IsSepBetween.left_not_mem IsSepBetween.right_not_mem
+  IsSepBetween.not_connBetween
 
-@[ext]
-lemma CutBetween.ext (C1 C2 : G.CutBetween s t) (h : (C1 : Set α) = C2) : C1 = C2 := by
-  cases C1; cases C2; simp_all
+@[symm]
+lemma IsSepBetween.symm (hX : G.IsSepBetween s t X) : G.IsSepBetween t s X := by
+  refine ⟨hX.subset, hX.right_not_mem, hX.left_not_mem, ?_⟩
+  simpa [connBetween_comm] using hX.not_connBetween
 
-@[simp]
-lemma CutBetween.coe_subset (C : G.CutBetween s t) : (C : Set α) ⊆ V(G) := C.carrier_subset
+instance : IsSymm _ (G.IsSepBetween · · X) where
+  symm _ _ := IsSepBetween.symm
 
-@[simp]
-lemma CutBetween.left_notMem (C : G.CutBetween s t) : s ∉ C := C.left_not_mem
+lemma not_isSepBetween_self (hs : s ∈ V(G)) : ¬ G.IsSepBetween s s X := by
+  refine fun hX ↦ hX.not_connBetween <| ConnBetween.refl ?_
+  simp [vertexDelete_vertexSet, hs, hX.left_not_mem]
 
-@[simp]
-lemma CutBetween.right_notMem (C : G.CutBetween s t) : t ∉ C := C.right_not_mem
+lemma IsLink.not_isSepBetween (he : G.IsLink e s t) : ¬ G.IsSepBetween s t X := by
+  refine fun hX ↦ hX.not_connBetween <| Adj.connBetween <| ?_
+  simpa [vertexDelete_adj_iff, hX.left_not_mem, hX.right_not_mem] using he.adj
 
-@[simp]
-lemma CutBetween.not_connBetween (C : G.CutBetween s t) : ¬ (G - (C : Set α)).ConnBetween s t :=
-  C.not_connBetween'
+lemma Adj.not_isSepBetween (h : G.Adj s t) : ¬ G.IsSepBetween s t X := by
+  refine fun hX ↦ hX.not_connBetween <| Adj.connBetween <| ?_
+  simpa [vertexDelete_adj_iff, hX.left_not_mem, hX.right_not_mem] using h
 
-@[simp]
-lemma isEmtpy_cutBetween_self (hs : s ∈ V(G)) : IsEmpty (G.CutBetween s s) := by
-  by_contra! h
-  obtain ⟨C, _, hsC, _, h⟩ := h
-  simp [hs, hsC] at h
+def isSepBetween_empty (h : ¬ G.ConnBetween s t) : G.IsSepBetween s t ∅ := by
+  refine ⟨by simp, by simp, by simp, ?_⟩
+  simpa using h
 
-@[simp]
-lemma IsLink.isEmpty_cutBetween (he : G.IsLink e s t) : IsEmpty (G.CutBetween s t) := by
-  by_contra! h
-  obtain ⟨C, _, hsC, htC, h⟩ := h
-  exact h ⟨he.walk, by simp [hsC, htC], rfl, rfl⟩
+lemma IsSepBetween.of_le (hX : G.IsSepBetween s t X) (hle : H ≤ G) :
+    H.IsSepBetween s t (V(H) ∩ X) := by
+  refine ⟨inter_subset_left, by simp [hX.left_not_mem], by simp [hX.right_not_mem], ?_⟩
+  have : ¬ (H - X).ConnBetween s t :=
+    mt (ConnBetween.of_le · (by gcongr)) hX.not_connBetween
+  simpa [vertexDelete_vertexSet_inter] using this
 
-@[simp]
-lemma Adj.isEmpty_cutBetween (h : G.Adj s t) : IsEmpty (G.CutBetween s t) :=
-  h.choose_spec.isEmpty_cutBetween
-
-def cutBetween_empty (h : ¬ G.ConnBetween s t) : G.CutBetween s t where
-  carrier := ∅
-  carrier_subset := empty_subset _
-  left_not_mem := by simp
-  right_not_mem := by simp
-  not_connBetween' := by simpa
-
-@[simp]
-lemma cutBetween_empty_coe (h : ¬ G.ConnBetween s t) : (cutBetween_empty h : Set α) = ∅ := rfl
-
-def CutBetween.symm (C : G.CutBetween s t) : G.CutBetween t s where
-  carrier := C.carrier
-  carrier_subset := C.carrier_subset
-  left_not_mem := C.right_not_mem
-  right_not_mem := C.left_not_mem
-  not_connBetween' := by
-    rw [← connBetween_comm]
-    exact C.not_connBetween
-
-@[simp]
-lemma CutBetween.symm_coe (C : G.CutBetween s t) : (C.symm : Set α) = C := rfl
-
-@[simp]
-lemma CutBetween.symm_symm (C : G.CutBetween s t) : C.symm.symm = C := by
-  ext x
-  simp
-
-def CutBetween.of_le (C : G.CutBetween s t) (hle : H ≤ G) : H.CutBetween s t where
-  carrier := V(H) ∩ C
-  carrier_subset := inter_subset_left
-  left_not_mem := by simp [C.left_notMem]
-  right_not_mem := by simp [C.right_notMem]
-  not_connBetween' := by
-    rw [vertexDelete_vertexSet_inter]
-    exact mt (ConnBetween.of_le · (by gcongr)) C.not_connBetween
-
-@[simp]
-lemma CutBetween.of_le_coe (C : G.CutBetween s t) (hle : H ≤ G) :
-    (C.of_le hle : Set α) = V(H) ∩ C := rfl
-
-lemma IsWalk.not_disjoint_cutBetween (hW : G.IsWalk W) (C : G.CutBetween W.first W.last) :
-    ¬ Disjoint V(W) C := by
+lemma IsWalk.not_disjoint_isSepBetween (hW : G.IsWalk W) (hX : G.IsSepBetween W.first W.last X) :
+    ¬ Disjoint V(W) X := by
   by_contra hc
-  apply C.not_connBetween
+  apply hX.not_connBetween
   use W, hW.vertexDelete hc
 
-lemma IsWalk.exists_mem_cutBetween (hW : G.IsWalk W) (C : G.CutBetween W.first W.last) :
-    ∃ x ∈ V(W), x ∈ C := by
-  have := hW.not_disjoint_cutBetween C
+lemma IsWalk.exists_mem_isSepBetween (hW : G.IsWalk W) (hX : G.IsSepBetween W.first W.last X) :
+    ∃ x ∈ V(W), x ∈ X := by
+  have := hW.not_disjoint_isSepBetween (X := X) hX
   rwa [not_disjoint_iff] at this
 
-lemma IsComplete.cutBetween_isEmpty (h : G.IsComplete) (hs : s ∈ V(G)) (ht : t ∈ V(G)) :
-    IsEmpty (G.CutBetween s t) := by
-  by_contra! hc
-  obtain ⟨C, hCG, hsC, htC, hconn⟩ := hc
-  apply hconn
+lemma IsComplete.not_isSepBetween (h : G.IsComplete) (hs : s ∈ V(G)) (ht : t ∈ V(G)) :
+    ¬ G.IsSepBetween s t X := by
+  refine fun hX ↦ hX.not_connBetween <| ?_
   obtain rfl | hne := eq_or_ne s t
-  · simp [hsC, hs]
+  · exact ConnBetween.refl (by simp [vertexDelete_vertexSet, hs, hX.left_not_mem])
   apply Adj.connBetween
-  simp only [vertexDelete_adj_iff]
-  use h s hs t ht hne
+  exact (G.vertexDelete_adj_iff X).2 ⟨h s hs t ht hne, hX.left_not_mem, hX.right_not_mem⟩
 
-@[simps]
-def cutBetween_of_not_adj (hne : s ≠ t) (hnst : ¬ G.Adj s t) : G.CutBetween s t where
-  carrier := V(G) \ {s, t}
-  carrier_subset := diff_subset
-  left_not_mem := by simp
-  right_not_mem := by simp
-  not_connBetween' := by
-    contrapose! hnst
-    obtain ⟨W, hW, rfl, rfl⟩ := hnst.exists_isPath
-    match W with
-    | .nil u => simp at hne
-    | .cons u e (nil v) =>
-      simp only [first_cons, last_cons, nil_last, cons_isPath_iff, nil_isPath_iff,
-        vertexDelete_vertexSet, sdiff_sdiff_right_self, inf_eq_inter, mem_inter_iff, mem_insert_iff,
-        mem_singleton_iff, or_true, and_true, nil_first, vertexDelete_isLink_iff, mem_diff, true_or,
-        not_true_eq_false, and_false, not_false_eq_true, and_self, mem_nil_iff] at hW ⊢
-      use e, hW.2.1
-    | cons u e (cons v f w) =>
-      simp_all only [first_cons, last_cons, ne_eq, cons_isPath_iff, isPath_vertexDelete_iff,
-        vertexDelete_isLink_iff, mem_diff, mem_insert_iff, mem_singleton_iff, not_or, not_and,
-        not_not, or_false, not_true_eq_false, and_false, not_false_eq_true, true_and, mem_cons_iff]
-      obtain ⟨⟨⟨-, -⟩, ⟨-, hvwl, -⟩, -⟩, ⟨huv, -⟩, hne, -⟩ := hW
-      obtain rfl := hvwl huv.right_mem (hne ·.symm)
-      use e
+def isSepBetween_of_not_adj (hne : s ≠ t) (hnst : ¬ G.Adj s t) :
+    G.IsSepBetween s t (V(G) \ {s, t}) := by
+  refine ⟨diff_subset, by simp, by simp, ?_⟩
+  contrapose! hnst
+  obtain ⟨W, hW, rfl, rfl⟩ := hnst.exists_isPath
+  match W with
+  | .nil u => simp at hne
+  | .cons u e (nil v) =>
+    simp only [first_cons, last_cons, nil_last, cons_isPath_iff, nil_isPath_iff,
+      vertexDelete_vertexSet, sdiff_sdiff_right_self, inf_eq_inter, mem_inter_iff, mem_insert_iff,
+      mem_singleton_iff, or_true, and_true, nil_first, vertexDelete_isLink_iff, mem_diff, true_or,
+      not_true_eq_false, and_false, not_false_eq_true, and_self, mem_nil_iff] at hW ⊢
+    use e, hW.2.1
+  | cons u e (cons v f w) =>
+    simp_all only [first_cons, last_cons, ne_eq, cons_isPath_iff, isPath_vertexDelete_iff,
+      vertexDelete_isLink_iff, mem_diff, mem_insert_iff, mem_singleton_iff, not_or, not_and,
+      not_not, or_false, not_true_eq_false, and_false, not_false_eq_true, true_and, mem_cons_iff]
+    obtain ⟨⟨⟨-, -⟩, ⟨-, hvwl, -⟩, -⟩, ⟨huv, -⟩, hne, -⟩ := hW
+    obtain rfl := hvwl huv.right_mem (hne ·.symm)
+    use e
+
+def isSepBetween_of_vertexDelete (h : ¬ (G - X).ConnBetween s t) (hs : s ∉ X) (ht : t ∉ X) :
+    G.IsSepBetween s t (V(G) ∩ X) := by
+  refine ⟨inter_subset_left, by simp [hs], by simp [ht], ?_⟩
+  simpa [vertexDelete_vertexSet_inter] using h
 
 structure EdgeCutBetween (G : Graph α β) (s t : α) where
   carrier : Set β
@@ -485,17 +438,18 @@ def VertexEnsemble.sum (P : G.VertexEnsemble s t ι) (Q : G.VertexEnsemble s t �
 /-! ### k-connectivity between two vertices -/
 
 def ConnBetweenGE (G : Graph α β) (s t : α) (n : ℕ) : Prop :=
-  ∀ C : G.CutBetween s t, n ≤ (↑C : Set α).encard
+  ∀ ⦃C : Set α⦄, G.IsSepBetween s t C → n ≤ C.encard
 
 @[simp]
 lemma connBetweenGE_zero (G : Graph α β) (s t : α) : G.ConnBetweenGE s t 0 := by
   simp [ConnBetweenGE]
 
 lemma ConnBetweenGE.anti_right (hle : n ≤ m) (h : G.ConnBetweenGE s t m) : G.ConnBetweenGE s t n :=
-  fun C ↦ le_trans (by norm_cast) (h C)
+  fun _ hC ↦ le_trans (by exact_mod_cast hle) (h hC)
 
 @[symm]
-lemma ConnBetweenGE.symm (h : G.ConnBetweenGE s t n) : G.ConnBetweenGE t s n := (h <| ·.symm)
+lemma ConnBetweenGE.symm (h : G.ConnBetweenGE s t n) : G.ConnBetweenGE t s n :=
+  fun _ hC ↦ h (hC.symm)
 
 instance : IsSymm _ (G.ConnBetweenGE · · n) where
   symm _ _ := ConnBetweenGE.symm
@@ -505,11 +459,11 @@ lemma connBetweenGE_comm : G.ConnBetweenGE s t n ↔ G.ConnBetweenGE t s n :=
 
 @[simp]
 lemma connBetweenGE_one_iff : G.ConnBetweenGE s t 1 ↔ G.ConnBetween s t := by
-  refine ⟨fun h => ?_, fun h C => ?_⟩
+  refine ⟨fun h => ?_, fun h C hC => ?_⟩
   · by_contra hc
-    simpa using h <| cutBetween_empty hc
+    simpa using h (isSepBetween_empty (G := G) (s := s) (t := t) hc)
   obtain ⟨w, hw, rfl, rfl⟩ := h
-  obtain ⟨x, hxw, hxC⟩ := hw.exists_mem_cutBetween C
+  obtain ⟨x, hxw, hxC⟩ := hw.exists_mem_isSepBetween hC
   simp only [cast_one, one_le_encard_iff_nonempty]
   use x, hxC
 
@@ -524,26 +478,27 @@ lemma ConnBetweenGE.right_mem (h : G.ConnBetweenGE s t n) (hn : n ≠ 0) : t ∈
   exact this.right_mem
 
 lemma connBetweenGE_self (hs : s ∈ V(G)) (n : ℕ) : G.ConnBetweenGE s s n :=
-  (isEmtpy_cutBetween_self hs).elim
+  fun _ hC => (not_isSepBetween_self (X := _) hs hC).elim
 
 lemma IsLink.connBetweenGE (h : G.IsLink e s t) (n : ℕ) : G.ConnBetweenGE s t n :=
-  h.isEmpty_cutBetween.elim
+  fun _ hC => (h.not_isSepBetween hC).elim
 
 lemma Adj.connBetweenGE (h : G.Adj s t) (n : ℕ) : G.ConnBetweenGE s t n :=
-  h.isEmpty_cutBetween.elim
+  fun _ hC => (h.not_isSepBetween hC).elim
 
 lemma ConnBetweenGE.of_le (h : H.ConnBetweenGE s t n) (hle : H ≤ G) : G.ConnBetweenGE s t n := by
-  rintro C
-  have := by simpa using h (C.of_le hle)
+  intro C hC
+  have hC' : H.IsSepBetween s t (V(H) ∩ C) := hC.of_le hle
+  have := h (C := V(H) ∩ C) hC'
   exact this.trans <| encard_le_encard inter_subset_right
 
 lemma IsComplete.connBetweenGE (h : G.IsComplete) (hs : s ∈ V(G)) (ht : t ∈ V(G)) (n : ℕ) :
     G.ConnBetweenGE s t n :=
-  h.cutBetween_isEmpty hs ht |>.elim
+  fun _ hC => (h.not_isSepBetween hs ht hC).elim
 
 lemma connBetweenGE_le_diff_encard (h : G.ConnBetweenGE s t n) (hne : s ≠ t) (hadj : ¬ G.Adj s t) :
     n ≤ (V(G) \ {s, t}).encard := by
-  simpa using h (cutBetween_of_not_adj hne hadj)
+  simpa using h (isSepBetween_of_not_adj hne hadj)
 
 lemma connBetweenGE_le_encard_sub_two (h : G.ConnBetweenGE s t n) (hne : s ≠ t)
     (hadj : ¬ G.Adj s t) : n ≤ V(G).encard - 2 := by

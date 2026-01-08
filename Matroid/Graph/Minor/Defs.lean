@@ -113,6 +113,21 @@ lemma Inc.contract_vertexDelete_of_mem (he : G.Inc e x) (hx : x ∈ X) :
     obtain rfl | rfl := he.eq_or_eq_of_isLink hbc <;> tauto
   use (by use b, c; grind)
 
+lemma IsLink.contract_vertexDelete_of_notMem (he : G.IsLink e x y) (hx : x ∉ X) :
+    he.inc_left.contract - X = (G.vertexDelete_isInducedSubgraph (X \ {y}) |>.isLink_of_mem_mem
+    he (by simp [hx, he.left_mem]) (by simp [he.right_mem]) |>.inc_left.contract) := by
+  have he' := G.vertexDelete_isInducedSubgraph (X \ {y}) |>.isLink_of_mem_mem
+    he (by simp [hx, he.left_mem]) (by simp [he.right_mem])
+  ext a b c <;>
+  · simp +contextual only [vertexDelete_vertexSet, Inc.contract_vertexSet, vertexDelete_isLink_iff,
+    Inc.contract_isLink, he.other_eq, mem_diff, mem_insert_iff, mem_singleton_iff, he'.other_eq]
+    grind
+
+lemma Inc.contract_vertexDelete_of_notMem (he : G.Inc e x) (hx : x ∉ X) : he.contract - X =
+    (G.vertexDelete_isInducedSubgraph (X \ {he.other}) |>.isLink_of_mem_mem he.isLink_other
+    (by simp [hx, he.vertex_mem]) (by simp) |>.inc_left.contract) :=
+  he.isLink_other.contract_vertexDelete_of_notMem hx
+
 /-! ## Contracting a set of edges -/
 
 variable {α' α'' : Type*}

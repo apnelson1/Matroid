@@ -131,19 +131,12 @@ lemma not_connBetween (S : G.Separation) (hx : x ∈ S.left) (hy : y ∈ S.right
   obtain ⟨e, x, y, hinc, hx, hy⟩ := exists_dInc_prop_not_prop hx hy
   exact hy <| S.left_mem_of_adj hx (hW.isLink_of_dInc hinc).adj
 
-def cutBetween_of_vertexDelete (S : (G - X).Separation) (hx : x ∈ S.left)
-    (hy : y ∈ S.right) : G.CutBetween x y where
-  carrier := V(G) ∩ X
-  carrier_subset := inter_subset_left
-  left_not_mem := by simp [(S.left_subset hx).2]
-  right_not_mem := by simp [(S.right_subset hy).2]
-  not_connBetween' := by
-    rw [vertexDelete_vertexSet_inter]
-    exact S.not_connBetween hx hy
-
-@[simp]
-lemma cutBetween_of_vertexDelete_coe (S : (G - X).Separation) (hx : x ∈ S.left)
-    (hy : y ∈ S.right) : (S.cutBetween_of_vertexDelete hx hy : Set α) = V(G) ∩ X := rfl
+def isSepBetween_of_vertexDelete (S : (G - X).Separation) (hx : x ∈ S.left)
+    (hy : y ∈ S.right) : G.IsSepBetween x y (V(G) ∩ X) := by
+  refine ⟨inter_subset_left, ?_, ?_, ?_⟩
+  · simp [(S.left_subset hx).2]
+  · simp [(S.right_subset hy).2]
+  · simpa [vertexDelete_vertexSet_inter] using S.not_connBetween hx hy
 
 end Separation
 
@@ -512,42 +505,49 @@ lemma preconnGE_iff_forall_connBetweenGE :
 
 lemma preconnGE_iff_forall_preconnected :
     G.PreconnGE n ↔ ∀ ⦃X : Set α⦄, X.encard < ↑n → (G - X).Preconnected := by
-  refine ⟨fun h X hX => ?_, fun h s t hs ht C => ?_⟩
+  refine ⟨fun h X hX => ?_, fun h s t hs ht C hC => ?_⟩
   · rw [preconnected_iff_isEmpty_separation]
     by_contra! hS
     obtain ⟨S⟩ := hS
-    have := h (diff_subset <| S.left_subset S.nonempty_left.some_mem)
-      (diff_subset <| S.right_subset S.nonempty_right.some_mem)
-      <| S.cutBetween_of_vertexDelete S.nonempty_left.some_mem S.nonempty_right.some_mem
-    simp only [Separation.cutBetween_of_vertexDelete_coe] at this
-    exact this.trans (encard_le_encard inter_subset_right) |>.not_gt hX
-  · by_contra! hC
-    exact C.not_connBetween' <| h hC _ _ (by simpa) (by simpa)
+    have hcut := h (diff_subset <| S.left_subset S.nonempty_left.some_mem)
+        (diff_subset <| S.right_subset S.nonempty_right.some_mem)
+        (S.isSepBetween_of_vertexDelete (X := X) S.nonempty_left.some_mem S.nonempty_right.some_mem)
+    exact hcut.trans (encard_le_encard inter_subset_right) |>.not_gt hX
+  · by_contra! hCn
+    have hpre : (G - C).Preconnected := h (X := C) hCn
+    have hs' : s ∈ V(G - C) := by simp [vertexDelete_vertexSet, hs, hC.left_not_mem]
+    have ht' : t ∈ V(G - C) := by simp [vertexDelete_vertexSet, ht, hC.right_not_mem]
+    exact hC.not_connBetween <| hpre s t hs' ht'
 
 lemma preconnGE_iff_forall_setConnGE : G.PreconnGE n ↔ ∀ S T : Set α, S ⊆ V(G) → T ⊆ V(G) →
     G.SetConnGE S T (min ↑n (min S.encard T.encard)).toNat := by
-  refine ⟨fun h S T hS hT C hC ↦ ?_, fun h s t hs ht C ↦ ?_⟩
+  refine ⟨fun h S T hS hT C hC ↦ ?_, fun h s t hs ht C hC ↦ ?_⟩
   · rw [ENat.coe_toNat (by simp)]
     by_contra! hCcd
     obtain ⟨hCn, hCS, hCT⟩ := (by simpa using hCcd); clear hCcd
     obtain ⟨s, hs, hsC⟩ := diff_nonempty_of_encard_lt_encard hCS
     obtain ⟨t, ht, htC⟩ := diff_nonempty_of_encard_lt_encard hCT
     have := by simpa [SetConnected] using hC.ST_disconnects
-    exact hCn.not_ge <| h (hS hs) (hT ht) ⟨C, hC.subset_vertexSet, hsC, htC, this s hs t ht⟩
-  obtain hCinfty | hCFin := eq_or_ne (C : Set α).encard ⊤
+    have hSep : G.IsSepBetween s t C :=
+      ⟨hC.subset_vertexSet, hsC, htC, this s hs t ht⟩
+    exact hCn.not_ge <| h (hS hs) (hT ht) hSep
+  obtain hCinfty | hCFin := eq_or_ne C.encard ⊤
   · exact StrictMono.maximal_preimage_top (fun ⦃a b⦄ a_1 ↦ a_1) hCinfty ↑n
   simp only [ne_eq, encard_eq_top_iff, not_infinite] at hCFin
-  have hsC : (C : Set α).encard < Set.encard (insert s C) :=
-    hCFin.encard_lt_encard (ssubset_insert C.left_notMem)
-  have htC : (C : Set α).encard < Set.encard (insert t C) :=
-    hCFin.encard_lt_encard (ssubset_insert C.right_notMem)
-  have hcd := h _ _ (by simpa [insert_subset_iff]) (by simpa [insert_subset_iff]) C.isSetCut
+  have hsC : C.encard < Set.encard (insert s C) :=
+    hCFin.encard_lt_encard (ssubset_insert hC.left_not_mem)
+  have htC : C.encard < Set.encard (insert t C) :=
+    hCFin.encard_lt_encard (ssubset_insert hC.right_not_mem)
+  have hSC : insert s C ⊆ V(G) := by
+    simpa [insert_subset_iff] using And.intro hs hC.subset
+  have hTC : insert t C ⊆ V(G) := by
+    simpa [insert_subset_iff] using And.intro ht hC.subset
+  have hcd := h _ _ hSC hTC hC.isSetCut
   rw [ENat.coe_toNat (by simp)] at hcd
   simpa [hsC.not_ge, htC.not_ge] using hcd
 
-lemma PreconnGE.isSpanningSubgraph (hconn : H.PreconnGE n) (hsle : H ≤s G) :
-    G.PreconnGE n :=
-  fun _ _ hs ht C ↦ hconn (hsle.vertexSet_eq ▸ hs) (hsle.vertexSet_eq ▸ ht) |>.of_le hsle.le C
+lemma PreconnGE.isSpanningSubgraph (hconn : H.PreconnGE n) (hsle : H ≤s G) : G.PreconnGE n :=
+  fun _ _ hs ht => hconn (hsle.vertexSet_eq ▸ hs) (hsle.vertexSet_eq ▸ ht) |>.of_le hsle.le
 
 @[simp]
 lemma IsComplete.preconnGE (h : G.IsComplete) (n : ℕ) : G.PreconnGE n :=

@@ -164,18 +164,19 @@ lemma IsSetCut.inter_subset (hC : G.IsSetCut S T C) : V(G) ∩ S ∩ T ⊆ C := 
   obtain ⟨v, hv, hvC⟩ := hw.exists_mem_isSetCut hC
   simp_all
 
-lemma CutBetween.isSetCut (C : G.CutBetween s t) : G.IsSetCut (insert s C) (insert t C) C where
-  subset_vertexSet x hxC := C.coe_subset hxC
+lemma IsSepBetween.isSetCut (hC : G.IsSepBetween s t C) :
+    G.IsSetCut (insert s C) (insert t C) C where
+  subset_vertexSet := hC.subset
   ST_disconnects h := by
-    have hs : (V(G - (C : Set α)) ∩ insert s ↑C) ⊆ {s} := by
+    have hs : (V(G - C) ∩ insert s C) ⊆ {s} := by
       rintro x
       simp +contextual
-    have ht : (V(G - (C : Set α)) ∩ insert t ↑C) ⊆ {t} := by
+    have ht : (V(G - C) ∩ insert t C) ⊆ {t} := by
       rintro x
       simp +contextual
     have := h.vertexSet_inter.subset hs ht
     rw [SetConnected_singleton] at this
-    exact C.not_connBetween this
+    exact hC.not_connBetween this
 
 structure IsEdgeSetCut (G : Graph α β) (S T : Set α) (C : Set β) where
   subset_edgeSet : C ⊆ E(G)
