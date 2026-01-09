@@ -46,200 +46,45 @@ structure IsTriad (M : Matroid α) (T : Set α) : Prop where
 
 lemma IsCocircuit.exists_subset_isCocircuit_of_delete (hC : (M ＼ K).IsCocircuit C) :
     ∃ C', M.IsCocircuit C' ∧ C ⊆ C' ∧ C' ⊆ C ∪ K := by
-  have h : (M✶ ／ K).IsCircuit C := by
-    rw [← dual_delete, ← IsCocircuit]
-    exact hC
-  apply IsCircuit.exists_subset_isCircuit_of_contract at h
-  obtain ⟨C', hC'⟩ := h
-  use C'
+  apply IsCircuit.exists_subset_isCircuit_of_contract
+  rwa [← dual_isCocircuit_iff, dual_contract_dual]
 
-lemma IsCircuit.singleton_iff_dep (hXsing : X.encard = 1) : M.IsCircuit X ↔ M.Dep X := by
+lemma isCircuit_iff_dep_of_singleton (hXsing : X.encard = 1) : M.IsCircuit X ↔ M.Dep X := by
   rw [encard_eq_one] at hXsing
-  obtain ⟨x, hx⟩ := hXsing
-  apply Iff.intro
-  apply IsCircuit.dep
-  intro h₁
-  rw [dep_iff_superset_isCircuit] at h₁
-  obtain ⟨C, hC⟩ := h₁
-  have h₂ : C ⊆ X := hC.1
-  have h₃ : M.IsCircuit C := hC.2
-  rw [hx, subset_singleton_iff_eq] at h₂
-  have h₄ : C = ∅ → M.IsCircuit X := by
-    intro h₅
-    by_contra h₆
-    have h₇ : C.Nonempty := h₃.nonempty
-    rw [nonempty_iff_ne_empty] at h₇
-    tauto
-  have h₈ : C = {x} → M.IsCircuit X := by
-    intro h₉
-    rw [hx, ← h₉]
-    exact hC.2
-  apply Or.elim h₂ h₄ h₈
+  obtain ⟨x, rfl⟩ := hXsing
+  simp
 
-lemma IsCocircuit.singleton_iff_codep (hXsing : X.encard = 1) : M.IsCocircuit X ↔ M.Codep X := by
-  apply Iff.intro
-  intro h₁
-  have h₂ : M✶.IsCircuit X := by
-    rw [← IsCocircuit]
-    exact h₁
-  rw [IsCircuit.singleton_iff_dep, ← Codep] at h₂
-  exact h₂
-  exact hXsing
-  intro h₃
-  have h₄ : M✶.Dep X := by
-    rw [← Codep]
-    exact h₃
-  rw [← IsCircuit.singleton_iff_dep, ← IsCocircuit] at h₄
-  exact h₄
-  exact hXsing
+-- `M.IsCocircuit` is definitionally `M✶.IsCircuit`, which allows golfs like what is below.
+-- generally the dual version of an established statement should be an easy proof.
+lemma isCocircuit_iff_codep_of_singleton (hXsing : X.encard = 1) : M.IsCocircuit X ↔ M.Codep X :=
+  isCircuit_iff_dep_of_singleton hXsing
 
-lemma IsTutteSeparation.ne_empty (hPtutte : P.IsTutteSeparation) (i : Bool): Nonempty (P i) ∧ Nonempty (P !i) := by
-  by_contra hc
-  simp only [not_and_or, not_nonempty_iff, isEmpty_coe_sort] at hc
-  wlog h : (P i) = ∅ generalizing i
-  apply this !i
-  apply Or.resolve_left at hc
-  apply hc at h
-  tauto
-  tauto
-  have h₁ : M.Indep (P i) ∧ M.Coindep (P i) := by
-    rw [h]
-    simp only [empty_indep, true_and]
-  have h₂ : ∃ i, M.Indep (P i) ∧ M.Coindep (P i) := by
-    use i
-  rw [← not_isTutteSeparation_iff_exists] at h₂
-  tauto
+lemma IsTutteSeparation.singleton_is_circuit_or_cocircuit (hPtutte : P.IsTutteSeparation) (i : Bool)
+    (hPtruesing : (P i).encard = 1) : M.IsCircuit (P i) ∨ M.IsCocircuit (P i) := by
+  rw [isTutteSeparation_iff i, ← isCocircuit_iff_codep_of_singleton hPtruesing,
+    ← isCircuit_iff_dep_of_singleton hPtruesing] at hPtutte
+  exact hPtutte.1
 
-lemma IsTutteSeparation.singleton_is_circuit_or_cocircuit (hPtutte : P.IsTutteSeparation) (i : Bool) (hPtruesing : (P i).encard = 1) : M.IsCircuit (P i) ∨ M.IsCocircuit (P i) := by
-  have h₁ : M.Dep (P i) ∨ M.Codep (P i) := by
-      rw [isTutteSeparation_iff i] at hPtutte
-      exact hPtutte.1
-  have h₄ : M.Dep (P i) → (M.IsCircuit (P i) ∨ M.IsCocircuit (P i)) := by
-    intro h
-    apply IsCircuit.singleton_iff_dep at hPtruesing
-    rw [← hPtruesing] at h
-    apply Or.inl
-    exact h
-  have h₅ : M.Codep (P i) → (M.IsCircuit (P i) ∨ M.IsCocircuit (P i)) := by
-    intro h
-    apply IsCocircuit.singleton_iff_codep at hPtruesing
-    rw [← hPtruesing] at h
-    apply Or.inr
-    exact h
-  apply Or.elim h₁ h₄ h₅
+-- already proved as `Connected.loopless`
+lemma IsConnected.nontrivial_of_loopless (hc : M.Connected) (hn : M.E.Nontrivial) : M.Loopless :=
+  hc.loopless hn
 
-lemma IsConnected.nontrivial_of_loopless (hc : M.Connected) (hn : M.E.Nontrivial) : M.Loopless := by
-  by_contra hc
-  simp only [loopless_iff] at hc
-  rw [← ne_eq, ← nonempty_iff_ne_empty, nonempty_def] at hc
-  obtain ⟨l, hl⟩ := hc
-  have h₁ : l ∈ M.E := by
-    apply hl
-    simp_all only [empty_inter, empty_subset, and_true, mem_setOf_eq, ground_isFlat]
-  simp only [nontrivial_iff_pair_subset] at hn
-  obtain ⟨x, y, hxy⟩ := hn
-  wlog h₂ : x ≠ l generalizing x y
-  apply this y x
-  have h₃ : y ≠ x := by
-    tauto
-  have h₄ : {x, y} ⊆ M.E := hxy.2
-  have h₅ : {y, x} ⊆ M.E := by
-    simp only [insert_subset_iff, singleton_subset_iff, and_comm]
-    nth_rewrite 2 [← singleton_subset_iff]
-    rw [← insert_subset_iff]
-    exact h₄
-  apply And.intro h₃ h₅
-  simp only [ne_eq, not_not] at h₂
-  rw [← h₂]
-  tauto
-  have h₆ : {x, y} ⊆ M.E := hxy.2
-  have h₇ : x ∈ M.E := by
-    simp_all only [insert_subset_iff]
-  rw [connected_iff] at hc
-  have h₈ : ∀ ⦃e f : α⦄, e ∈ M.E → f ∈ M.E → M.ConnectedTo e f := hc.2
-  apply h₈ at h₁
-  apply h₁ at h₇
-  unfold ConnectedTo at h₇
-  by_cases h₉ : l = x ∧ l ∈ M.E
-  have h₁₀ : l = x := h₉.1
-  tauto
-  simp only [h₉, false_or] at h₇
-  obtain ⟨C, hC⟩ := h₇
-  rw [← isLoop_iff] at hl
-  have h₁₁ : M.IsCircuit {l} := by
-    rw [singleton_isCircuit]
-    exact hl
-  have h₁₂ : M.IsCircuit C := hC.1
-  apply IsCircuit.eq_of_subset_isCircuit at h₁₁
-  apply h₁₁ at h₁₂
-  have h₁₃ : {l} ⊆ C := by
-    simp only [singleton_subset_iff]
-    exact hC.2.1
-  apply h₁₂ at h₁₃
-  have h₁₄ : x ∈ C := by
-    exact hC.2.2
-  rw [← h₁₃] at h₁₄
-  simp only [mem_singleton_iff] at h₁₄
-  tauto
+lemma Set.third_mem (hT : T.encard = 3) (he : e ∈ T) (hf : f ∈ T) (hef : e ≠ f) :
+    ∃ g ∈ T, g ≠ e ∧ g ≠ f ∧ T = {e,f,g} := by
+    rw [encard_eq_three] at hT
+    obtain ⟨a, b, c, hab, hac, hb, rfl⟩ := hT
+    simp only [mem_insert_iff, mem_singleton_iff] at he hf
+    simp only [mem_insert_iff, mem_singleton_iff, ne_eq, exists_eq_or_imp, ↓existsAndEq, true_and]
+    grind -- is your friend.
 
-lemma Set.third_mem (hT : T.encard = 3) (he : e ∈ T) (hf : f ∈ T) (hef : e ≠ f) : ∃ g ∈ T, g ≠ e ∧ g ≠ f ∧ T = {e,f,g} := by
-    have h₂ : {e,f} ⊆ T := (by simp [pair_subset_iff, he, hf])
-    have h₃ : ({e,f} : Set α ) ≠ T := by
-      by_contra! hc
-      have h₄ : ({e,f} : Set α).encard = 3 := by
-        rwa [hc]
-      rw [encard_pair] at h₄
-      tauto
-      exact hef
-    have h₆ : ({e,f} : Set α ) ⊂ T := by
-      rw [ssubset_iff_subset_ne]
-      simp only [h₂, true_and]
-      exact h₃
-    apply exists_of_ssubset at h₆
-    obtain ⟨g, h₇⟩ := h₆
-    use g
-    simp only [h₇.1, true_and]
-    have h₈ : g ∉ {e,f} := h₇.2
-    have h₉ : g ≠ e := by
-      simp only [mem_insert_iff, not_or] at h₈
-      tauto
-    have h₁₀ : g ≠ f := by
-      simp only [mem_insert_iff, not_or] at h₈
-      tauto
-    simp [h₉, h₁₀]
-    have h₁₁ : {e,f,g} ⊆ T := by
-      simp [insert_subset_iff, he, hf, singleton_subset_iff, h₇.1]
-    have h₁₂ : 3 = ({e,f,g} : Set α).encard := by
-      symm
-      rw [encard_eq_three]
-      use e, f, g
-      tauto
-    have h₁₃ : ({e,f,g} : Set α).Finite := by
-      rw [← encard_ne_top_iff, ← h₁₂]
-      tauto
-    have h₁₄ : T.encard ≤ ({e,f,g} : Set α).encard := by
-      rw [← h₁₂, hT]
-    by_contra hc
-    have h₁₅ : ¬T ⊆ ({e,f,g} : Set α) := by
-      by_contra hc₂
-      rw [Subset.antisymm_iff, not_and_or] at hc
-      by_cases hc₃ : ¬T ⊆ ({e,f,g} : Set α)
-      tauto
-      rw [or_iff_not_imp_left] at hc
-      apply hc at hc₃
-      tauto
-    have h₁₆ : ({e,f,g} : Set α) ⊂ T := by
-      simp only [ssubset_def, h₁₁, true_and]
-      exact h₁₅
-    apply Finite.encard_lt_encard at h₁₆
-    rw [← h₁₂, hT] at h₁₆
-    tauto
-    exact h₁₃
 
--- lemma tutte_triangle_four_element (hG : 4 ≤ M.E.encard) (hM : M.TutteConnected 3) (he : e ∈ M.E) (hde : ¬((M＼{e}).TutteConnected 3)) : 4 < M.E.encard := by
+-- lemma tutte_triangle_four_element (hG : 4 ≤ M.E.encard) (hM : M.TutteConnected 3) (he : e ∈ M.E)
+-- (hde : ¬((M＼{e}).TutteConnected 3)) : 4 < M.E.encard := by
 --   sorry
 
-lemma tutte_triangle_disconnected_case (hG : 4 < M.E.encard) (hM : M.TutteConnected 3) (hT : M.IsTriangle T) (he : e ∈ T) (hf : f ∈ T) (hef : e ≠ f) (hdef : ¬(M ＼ {e,f}).Connected) : ∃ K, (M.IsTriad K ∧ e ∈ K ∧ (K ∩ T).encard = 2) := by
+lemma tutte_triangle_disconnected_case (hG : 4 < M.E.encard) (hM : M.TutteConnected 3)
+    (hT : M.IsTriangle T) (he : e ∈ T) (hf : f ∈ T) (hef : e ≠ f) (hdef : ¬(M ＼ {e,f}).Connected) :
+    ∃ K, (M.IsTriad K ∧ e ∈ K ∧ (K ∩ T).encard = 2) := by
 
   have heM : e ∈ M.E := by
     apply hT.isCircuit.subset_ground
@@ -265,13 +110,13 @@ lemma tutte_triangle_disconnected_case (hG : 4 < M.E.encard) (hM : M.TutteConnec
     refine hg.1
     refine hT.isCircuit.subset_ground
 
-  have hgMdef : g ∈ (M ＼ {e,f}).E := by
-    simp only [delete_ground, mem_diff, hgM, true_and, mem_insert_iff, not_or, mem_singleton_iff, hg.2, not_false_eq_true]
+  have hgMdef : g ∈ (M ＼ {e,f}).E := by simp [hgM, hg.2]
 
 -- M\ e, f is nonempty and disconnected, so it contains a separation P.
 
   have h₂ : (M＼{e,f}).Nonempty := by
-    simp only [← ground_nonempty_iff, delete_ground, diff_nonempty, not_subset_iff_exists_mem_notMem]
+    simp only [← ground_nonempty_iff, delete_ground, diff_nonempty,
+      not_subset_iff_exists_mem_notMem]
     use g
     simp only [hgM, true_and, mem_insert_iff, not_or, mem_singleton_iff]
     tauto
@@ -286,22 +131,22 @@ lemma tutte_triangle_disconnected_case (hG : 4 < M.E.encard) (hM : M.TutteConnec
     by_contra hc
     apply mem_of_mem_of_subset at hc
     apply hc at hPfalse
-    simp only [delete_ground, mem_diff, mem_insert_iff, true_or, not_true_eq_false, and_false] at hPfalse
+    simp at hPfalse
   have hPetrue : e ∉ P true := by
     by_contra hc
     apply mem_of_mem_of_subset at hc
     apply hc at hPtrue
-    simp only [delete_ground, mem_diff, mem_insert_iff, true_or, not_true_eq_false, and_false] at hPtrue
+    simp at hPtrue
   have hPffalse : f ∉ P false := by
     by_contra hc
     apply mem_of_mem_of_subset at hc
     apply hc at hPfalse
-    simp only [delete_ground, mem_diff, mem_insert_iff, mem_singleton_iff, or_true, not_true_eq_false, and_false] at hPfalse
+    simp at hPfalse
   have hPftrue : f ∉ P true := by
     by_contra hc
     apply mem_of_mem_of_subset at hc
     apply hc at hPtrue
-    simp only [delete_ground, mem_diff, mem_insert_iff, mem_singleton_iff, or_true, not_true_eq_false, and_false] at hPtrue
+    simp at hPtrue
 
 -- Without loss of generality, g is in (P false).
 
@@ -323,7 +168,8 @@ lemma tutte_triangle_disconnected_case (hG : 4 < M.E.encard) (hM : M.TutteConnec
   exact hPffalse
   simp only [Separation.symm_false]
   have hgtrue₁ : g ∈ (M ＼ {e,f}).E \ (P false) := by
-    simp only [delete_ground, diff_diff, mem_diff, hgM, mem_union, not_or, hgtrue, not_false_eq_true, and_true, mem_insert_iff, hg.2.1, mem_singleton_iff, hg.2.2]
+    simp only [delete_ground, diff_diff, mem_diff, hgM, mem_union, not_or,
+      hgtrue, not_false_eq_true, and_true, mem_insert_iff, hg.2.1, mem_singleton_iff, hg.2.2]
   rw [Separation.compl_eq] at hgtrue₁
   exact hgtrue₁
 
@@ -336,7 +182,8 @@ lemma tutte_triangle_disconnected_case (hG : 4 < M.E.encard) (hM : M.TutteConnec
     have hQpartition₄ : (P true) ⊆ (M ＼ {e,f}).E := P.subset_ground
     have hQpartition₅ : Disjoint (P true) {e,f} := by
       by_contra hc
-      simp only [disjoint_insert_right, not_and_or, hPetrue, not_not, false_or, disjoint_singleton_right] at hc
+      simp only [disjoint_insert_right, not_and_or, hPetrue, not_not, false_or,
+        disjoint_singleton_right] at hc
       tauto
     apply Disjoint.union_right
     exact P.disjoint_true_false
@@ -357,7 +204,7 @@ lemma tutte_triangle_disconnected_case (hG : 4 < M.E.encard) (hM : M.TutteConnec
       refine P.subset_ground
       simp only [delete_ground, diff_subset]
     have hQpartition₈ : (P true) ∪ ((P false) ∪ {e,f}) ⊆ M.E := by
-      simp only [union_subset_iff, hQpartition₇, insert_subset_iff, heM, singleton_subset_iff, hfM, and_true, hQpartition₆]
+      simp [heM, hfM, insert_subset_iff, diff_subset]
     have hQpartition₉ : (M ＼ {e,f}).E ⊆ ((P false) ∪ {e,f}) ∪ (P true) := by
       rw [← P.union_eq]
       simp only [union_subset_iff, subset_union_right]
@@ -372,7 +219,8 @@ lemma tutte_triangle_disconnected_case (hG : 4 < M.E.encard) (hM : M.TutteConnec
       nth_rewrite 2 [union_comm]
       rfl
     have hQpartition₁₂ : M.E ⊆ (P true) ∪ ((P false) ∪ {e,f}) := by
-      rw [hQpartition₁₀, delete_ground, diff_union_self, union_insert, union_singleton, insert_eq_of_mem, insert_eq_of_mem, ← union_assoc]
+      rw [hQpartition₁₀, delete_ground, diff_union_self, union_insert, union_singleton,
+        insert_eq_of_mem, insert_eq_of_mem, ← union_assoc]
       have hQpartition₁₃ : ⋃ i, P i = (M ＼ {e,f}).E := by
         simp only [P.iUnion_eq]
       have hQpartition₁₄ : ⋃ i, P i = (P true) ∪ (P false) := by
@@ -473,7 +321,8 @@ lemma tutte_triangle_disconnected_case (hG : 4 < M.E.encard) (hM : M.TutteConnec
         use T
         simp only [subset_insert_iff, mem_diff_singleton]
         rw [hg.2.2.2]
-        simp only [diff_singleton_subset_iff, insert_subset_iff, mem_insert_iff, true_or, true_and, or_true, singleton_subset_iff, hgtrue, and_true]
+        simp only [diff_singleton_subset_iff, insert_subset_iff, mem_insert_iff, true_or, true_and,
+        or_true, singleton_subset_iff, hgtrue, and_true]
         symm at hef
         simp_all only [ne_eq, not_false_eq_true, or_true]
         rw [← hg.2.2.2]
@@ -492,10 +341,12 @@ lemma tutte_triangle_disconnected_case (hG : 4 < M.E.encard) (hM : M.TutteConnec
         exact hfM
       apply subset_closure at hQ2sep₅₃
       exact hQ2sep₅₃
-    have hQ2sep₄ : M.eLocalConn (Q true) (Q false) ≤  M.eLocalConn (Q true) (M.closure (Q false \ {f})) := by
+    have hQ2sep₄ : M.eLocalConn (Q true) (Q false) ≤
+      M.eLocalConn (Q true) (M.closure (Q false \ {f})) := by
       apply eLocalConn_mono_right at hQ2sep₅
       exact hQ2sep₅
-    have hQ2sep₃ : M.eLocalConn (Q true) (Q false) + 1 ≤  M.eLocalConn (Q true) (M.closure (Q false \ {f})) + 1:= by
+    have hQ2sep₃ : M.eLocalConn (Q true) (Q false) + 1 ≤
+      M.eLocalConn (Q true) (M.closure (Q false \ {f})) + 1:= by
       grw [hQ2sep₄]
     have hQ2sep₂ : M.eLocalConn (Q true) (Q false) + 1 ≤ 2 := by
       grw [← hQ2sep₆]
@@ -523,13 +374,15 @@ lemma tutte_triangle_disconnected_case (hG : 4 < M.E.encard) (hM : M.TutteConnec
       use T
       simp only [hT.isCircuit, and_true]
       rw [hQleft, hg.2.2.2]
-      simp only [insert_subset_iff, mem_union, mem_insert_iff, true_or, or_true, true_and, mem_singleton_iff, singleton_subset_iff, hgtrue]
+      simp only [insert_subset_iff, mem_union, mem_insert_iff, true_or, or_true, true_and,
+        mem_singleton_iff, singleton_subset_iff, hgtrue]
     have hQtruesing₄ : M.Dep (Q false) := by
       rw [dep_iff_superset_isCircuit]
       use T
       simp only [hT.isCircuit, and_true]
       rw [hg.2.2.2]
-      simp only [insert_subset_iff, hQleft, union_insert, mem_insert_iff, true_or, true_and, union_singleton, or_true, singleton_subset_iff, hgtrue]
+      simp only [insert_subset_iff, hQleft, union_insert, mem_insert_iff, true_or, true_and,
+        union_singleton, or_true, singleton_subset_iff, hgtrue]
     have hQtruesing₅ : (M.Dep (Q false) ∨ M.Codep (Q false)) := Or.inl hQtruesing₄
     have hQtruesing₆ : ¬(M.Dep (Q true) ∨ M.Codep (Q true)) := by
       tauto
@@ -553,8 +406,7 @@ lemma tutte_triangle_disconnected_case (hG : 4 < M.E.encard) (hM : M.TutteConnec
       by_contra hc
       rw [encard_eq_zero, hQtrue] at hc
       have hQtruesing₁₀ : P.IsTutteSeparation := hP.2
-      apply IsTutteSeparation.ne_empty at hQtruesing₁₀
-      simp [hc] at hQtruesing₁₀
+      exact (hQtruesing₁₀.nonempty true).ne_empty hc
     apply Or.resolve_left at hQtruesing
     apply hQtruesing at hQtruesing₉
     exact hQtruesing₉
@@ -601,7 +453,8 @@ lemma tutte_triangle_disconnected_case (hG : 4 < M.E.encard) (hM : M.TutteConnec
     rw [← hQtrue, hQtruesing₈] at h
     tauto
     exact hPtruecoc₃
-    simp only [disjoint_insert_right, hPetrue, not_false_eq_true, true_and, disjoint_singleton_right, hPftrue]
+    simp only [disjoint_insert_right, hPetrue, not_false_eq_true, true_and,
+      disjoint_singleton_right, hPftrue]
 
   have hPtruecoc : (M ＼ {e,f}).IsCocircuit (P true) := Or.elim hPtruecocorcir hPtruecoc₇ (by simp)
 
@@ -634,7 +487,7 @@ lemma tutte_triangle_disconnected_case (hG : 4 < M.E.encard) (hM : M.TutteConnec
       rw [dual_ground]
       grw [← hG]
       rw [two_mul, two_add_two_eq_four]
-    apply TutteConnected.le_girth at h₈
+    apply TutteConnected.girth_ge at h₈
     apply h₈ at h₉
     tauto
   have h₁₀ : M✶.IsCircuit C' := by
@@ -672,7 +525,8 @@ lemma tutte_triangle_disconnected_case (hG : 4 < M.E.encard) (hM : M.TutteConnec
   simp only [h₁₆, true_and]
   have h₁₇ : C' ∩ T = {e,f} := by
     have h₁₈ : {e,f} ⊆ C' ∩ T := by
-      simp only [insert_subset_iff, h₁₃, mem_inter_iff, he, mem_union, mem_insert_iff, true_or, or_true, and_true, singleton_subset_iff, mem_singleton_iff, hf]
+      simp only [insert_subset_iff, h₁₃, mem_inter_iff, he, mem_union, mem_insert_iff, true_or,
+        or_true, and_true, singleton_subset_iff, mem_singleton_iff, hf]
     apply subset_antisymm
     rw [h₁₃, hg.2.2.2]
     simp only [union_inter_distrib_right]
