@@ -589,38 +589,16 @@ lemma TutteConnected.isUniform_of_encard_le (h : M.TutteConnected (k + 1))
 
 
 
--- lemma TutteConnected.contract {C : Set α} (h : M.TutteConnected (k + M.eRk C + 1))
---     (hnt : 2 * (k + M.eRk C) < M.E.encard + 1) : (M ／ C).TutteConnected (k + 1) := by
---   obtain rfl | hne := eq_or_ne k 0; simp
---   wlog hCE : C ⊆ M.E generalizing C with aux
---   · specialize aux (C := C ∩ M.E)
---     grw [M.eRk_mono inter_subset_left, imp_iff_right inter_subset_right,
---       contract_inter_ground_eq] at aux
---     exact aux h hnt
---   have hnt' := Order.le_of_lt_add_one hnt
---   have hgirth := h.le_girth hnt'
---   have hC : M.Indep C := indep_of_eRk_add_one_lt_girth (by enat_to_nat! <;> omega) hCE
---   have hfin : C.Finite := not_infinite.1 fun hinf ↦ by
---     simp [hC.eRk_eq_encard, hinf.encard_eq] at hnt
---   rw [tutteConnected_iff_verticallyConnected_girth]
---   refine ⟨(h.verticallyConnected.mono ?_).contract, ?_⟩
---   · grw [add_right_comm]
---   · have hle := hgirth.trans (M.girth_le_girth_contract_add C)
---     · rwa [add_right_comm, WithTop.add_le_add_iff_right
---         (M.isRkFinite_of_finite hfin).eRk_lt_top.ne] at hle
---   grw [hC.eRk_eq_encard, ← encard_diff_add_encard_of_subset hCE, ← contract_ground] at hnt
---   enat_to_nat! <;> omega
+  -- rw [tutteConnected_iff_verticallyConnected_girth]
+  -- refine ⟨(h.verticallyConnected.mono ?_).contract, ?_⟩
+  -- · grw [add_right_comm]
+  -- · have hle := hgirth.trans (M.girth_le_girth_contract_add C)
+  --   · rwa [add_right_comm, WithTop.add_le_add_iff_right
+  --       (M.isRkFinite_of_finite hfin).eRk_lt_top.ne] at hle
+  -- grw [hC.eRk_eq_encard, ← encard_diff_add_encard_of_subset hCE, ← contract_ground] at hnt
+  -- enat_to_nat! <;> omega
 
--- lemma TutteConnected.delete {D : Set α} (h : M.TutteConnected (k + M✶.eRk D + 1))
---     (hnt : 2 * (k + M✶.eRk D) < M.E.encard + 1) : (M ＼ D).TutteConnected (k + 1) :=
---   dual_contract_dual .. ▸ (h.dual.contract (by simpa)).dual
 
--- lemma TutteConnected.contractElem (h : M.TutteConnected (k + 1)) (hnt : 2 * k < M.E.encard + 1)
---     (e : α) : (M ／ {e}).TutteConnected k := by
---   obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
---   refine TutteConnected.contract (h.mono (by grw [eRk_singleton_le])) ?_
---   grw [eRk_singleton_le]
---   assumption
 
 
 end Matroid
