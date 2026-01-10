@@ -85,11 +85,7 @@ lemma Set.third_mem (hT : T.encard = 3) (he : e ∈ T) (hf : f ∈ T) (hef : e �
 lemma tutte_triangle_disconnected_case (hG : 4 < M.E.encard) (hM : M.TutteConnected 3)
     (hT : M.IsTriangle T) (he : e ∈ T) (hf : f ∈ T) (hef : e ≠ f) (hdef : ¬(M ＼ {e,f}).Connected) :
     ∃ K, (M.IsTriad K ∧ e ∈ K ∧ (K ∩ T).encard = 2) := by
-<<<<<<< HEAD
-
-=======
   -- the hypothesis `hef` shouldn't be needed, since
->>>>>>> main
   have heM : e ∈ M.E := by
     apply hT.isCircuit.subset_ground
     exact he
