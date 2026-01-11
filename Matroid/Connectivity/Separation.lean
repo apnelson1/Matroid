@@ -195,7 +195,19 @@ lemma eConn_eq (P : M.Separation) (i : Bool) : M.eConn (P i) = P.eConn := by
   cases i
   <;> simp [eLocalConn_comm]
 
-lemma eConn_eq_eLocalConn (P : M.Separation) : P.eConn = M.eLocalConn (P true) (P false) := rfl
+lemma eConn_eq_eLocalConn_true_false (P : M.Separation) :
+  P.eConn = M.eLocalConn (P true) (P false) := rfl
+
+lemma eConn_eq_eLocalConn (P : M.Separation) (i : Bool) :
+    P.eConn = M.eLocalConn (P i) (P !i) := by
+  obtain rfl | rfl := i
+  · rw [eLocalConn_comm]
+    rfl
+  rfl
+
+lemma eConn_eq_eLocalConn_of_isRestriction (P : N.Separation) (hNM : N ≤r M) (i : Bool) :
+    P.eConn = M.eLocalConn (P i) (P !i) := by
+  rw [eConn_eq_eLocalConn _ i, hNM.eLocalConn_eq_of_subset]
 
 @[simp]
 lemma eConn_dual (P : M.Separation) : P.dual.eConn = P.eConn := by
@@ -890,7 +902,7 @@ lemma exists_of_isRestriction_of_forall_mem_closure (P : N.Separation) (hNM : N 
   simp only [↓mk_apply, subset_inter_iff, aux, P.subset_ground.trans hNM.subset, and_self,
     closure_inter_ground, true_and]
   refine ⟨fun _ ↦ auxcl, ?_⟩
-  simp only [eConn_eq_eLocalConn, ↓mk_apply, eLocalConn_inter_ground_right,
+  simp only [eConn_eq_eLocalConn_true_false, ↓mk_apply, eLocalConn_inter_ground_right,
     eLocalConn_inter_ground_left]
   rw [hNM.eLocalConn_eq_of_subset, ← M.eLocalConn_closure_closure, auxcl, auxcl,
     eLocalConn_closure_closure]
