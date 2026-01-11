@@ -126,6 +126,9 @@ lemma tutte_triangle_disconnected_case (hM : M.TutteConnected 3) (hT : M.IsTrian
   -- let `j` be the side of `P` containing `g`.
   obtain ⟨j, hgj⟩ : ∃ j, g ∈ P j := by rwa [← P.iUnion_eq, mem_iUnion] at hgE'
   -- the separation `Q` obtained by adding `{e,f}` to side `j` of `P` has connectivity at most `1`.
+  -- This is because `P` itself has connectivity zero, and we get from `P` to `Q` by
+  -- adding a single element `e` to side `j`, and then an element `f` which is already spanned
+  -- by `e` and side `j`.
   have hconn : (P.ofDelete j).eConn ≤ 1 := by
     grw [Separation.eConn_eq_eLocalConn _ j, ofDelete_apply_self, ofDelete_apply_not,
       show P j ∪ {e,f} = insert f (insert e (P j)) by grind, ← eLocalConn_closure_left,
@@ -134,7 +137,7 @@ lemma tutte_triangle_disconnected_case (hM : M.TutteConnected 3) (hT : M.IsTrian
     exact mem_of_mem_of_subset (hT.isCircuit.mem_closure_diff_singleton_of_mem hf)
       <| M.closure_subset_closure <| by grind
   -- Since `Q` is not a Tutte separation, and has at least three elements on the `j`
-  -- side, it follows that `P !j` is a singleton `{x}`.
+  -- side, it follows that `Q !j = P !j` is a singleton `{x}`.
   rw [show (3 : ℕ∞) = 1 + 1 + 1 from rfl] at hM
   have hnotsep : ¬ (P.ofDelete j).IsTutteSeparation :=
     hM.not_isTutteSeparation (P := P.ofDelete j) (by grw [hconn])
