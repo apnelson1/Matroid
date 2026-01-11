@@ -227,8 +227,27 @@ structure StronglyDisjoint (G H : Graph α β) : Prop where
   vertex : Disjoint V(G) V(H)
   edge : Disjoint E(G) E(H)
 
+@[symm]
 lemma StronglyDisjoint.symm (h : G.StronglyDisjoint H) : H.StronglyDisjoint G :=
   ⟨h.1.symm, h.2.symm⟩
+
+instance : IsSymm (Graph α β) StronglyDisjoint where
+  symm _ _ := StronglyDisjoint.symm
+
+lemma StronglyDisjoint.anti_left (h : G.StronglyDisjoint H) (h₁ : H₁ ≤ G) :
+    H₁.StronglyDisjoint H where
+  vertex := h.vertex.mono_left (vertexSet_mono h₁)
+  edge := h.edge.mono_left (edgeSet_mono h₁)
+
+lemma StronglyDisjoint.anti_right (h : G.StronglyDisjoint H) (h₂ : H₂ ≤ H) :
+    G.StronglyDisjoint H₂ where
+  vertex := h.vertex.mono_right (vertexSet_mono h₂)
+  edge := h.edge.mono_right (edgeSet_mono h₂)
+
+lemma StronglyDisjoint.anti (h : G.StronglyDisjoint H) (h₁ : H₁ ≤ G) (h₂ : H₂ ≤ H) :
+    H₁.StronglyDisjoint H₂ where
+  vertex := h.vertex.mono (vertexSet_mono h₁) (vertexSet_mono h₂)
+  edge := h.edge.mono (edgeSet_mono h₁) (edgeSet_mono h₂)
 
 lemma StronglyDisjoint_iff_of_le_le (h₁ : H₁ ≤ G) (h₂ : H₂ ≤ G) :
     StronglyDisjoint H₁ H₂ ↔ Disjoint V(H₁) V(H₂) := by

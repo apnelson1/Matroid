@@ -25,6 +25,7 @@ import Matroid.Connectivity.Separation
 import Matroid.Connectivity.Skew
 -- import Matroid.Connectivity.ThreeConnected
 -- import Matroid.Connectivity.Tutte
+-- import Matroid.Connectivity.TutteTriangle
 -- import Matroid.Connectivity.Vertical
 import Matroid.Constructions.Matching
 import Matroid.Constructions.Project
@@ -49,6 +50,7 @@ import Matroid.Graph.Connected.Basic
 import Matroid.Graph.Connected.Component
 -- import Matroid.Graph.Connected.Construction
 import Matroid.Graph.Connected.Defs
+-- import Matroid.Graph.Connected.Gammoid
 import Matroid.Graph.Connected.Menger
 -- import Matroid.Graph.Connected.Minor
 -- import Matroid.Graph.Connected.MixedLineGraph
@@ -72,6 +74,7 @@ import Matroid.Graph.Forest
 -- import Matroid.Graph.Independent
 import Matroid.Graph.Lattice
 import Matroid.Graph.Map
+-- import Matroid.Graph.Matching
 import Matroid.Graph.Minor.Defs
 import Matroid.Graph.Simple
 import Matroid.Graph.Subgraph.Basic
