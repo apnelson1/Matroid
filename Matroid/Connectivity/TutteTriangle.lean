@@ -100,9 +100,7 @@ lemma Set.third_mem (hT : T.encard = 3) (he : e ∈ T) (hf : f ∈ T) (hef : e �
     grind -- is your friend.
 
 
-/- Golfed. The hypotheses `hG` and `hef` are not actually needed; the first because the lemma is
-easy in the case where `M.E.encard ≤ 3` (since `M.E = T`), and the second because if `e = f`,
-then `M ＼ {e,f} = M ＼ {e}` must be connected. Removing these is still TODO.
+/- Golfed. The hypothesis `hef` is only actually needed to handle the case where `M.E = T`.
 We could also change the conclusion to the more concise and descriptive
 `∃ x, x ∉ T ∧ M.IsTriad {e,f,x}`, but maybe this doesn't really matter for the wider lemma.
 
@@ -113,8 +111,8 @@ The second was using the existing definition `Separation.ofDelete`,
 which extends a separation of `M ＼ D` to a separation of `M`. This meant all the work defining
 `Q` and proving it was a valid separation wasn't needed.
 -/
-lemma tutte_triangle_disconnected_case (hG : 4 ≤ M.E.encard) (hM : M.TutteConnected 3)
-    (hT : M.IsTriangle T) (he : e ∈ T) (hf : f ∈ T) (hef : e ≠ f) (hdef : ¬(M ＼ {e,f}).Connected) :
+lemma tutte_triangle_disconnected_case (hM : M.TutteConnected 3) (hT : M.IsTriangle T) (he : e ∈ T)
+    (hf : f ∈ T) (hef : e ≠ f) (hdef : ¬(M ＼ {e,f}).Connected) :
     ∃ K, (M.IsTriad K ∧ e ∈ K ∧ (K ∩ T).encard = 2) := by
   obtain ⟨g, hge, hgf, rfl⟩ :=
     T.exists_eq_of_encard_eq_three_of_mem_of_mem hT.three_elements he hf hef
@@ -153,6 +151,14 @@ lemma tutte_triangle_disconnected_case (hG : 4 ≤ M.E.encard) (hM : M.TutteConn
   have hxE : x ∈ (M ＼ {e,f}).E := by grw [← singleton_subset_iff, ← hPx, P.subset_ground]
   obtain ⟨hxE' : x ∈ M.E, hxe : x ≠ e, hxf : x ≠ f⟩ := by simpa using hxE
   -- Now we have that `x` is a loop or coloop of `M ＼ {e,f}`.
+  have hxT : x ∉ ({e,f,g} : Set α) := by
+    simp only [mem_insert_iff, hxe, hxf, mem_singleton_iff, false_or]
+    rintro rfl
+    exact (P.disjoint_bool j).notMem_of_mem_left hgj <| by simp [hPx]
+  have hcard : 4 ≤ M.E.encard := by
+    grw [show (4 : ℕ∞) = 2 + 1 + 1 from rfl, ← encard_le_encard (s := {x, e, f, g}) (by grind),
+      encard_insert_of_notMem hxT, encard_insert_of_notMem, encard_pair hgf.symm]
+    simp [hef, hge.symm]
   rw [← P.eConn_eq !j, hPx, eConn_singleton_eq_zero_iff hxE] at hP0
   obtain hxl | hxcl := hP0
   · -- the loop case doesn't happen, because this would mean that `x` is a loop of the
@@ -174,10 +180,8 @@ lemma tutte_triangle_disconnected_case (hG : 4 ≤ M.E.encard) (hM : M.TutteConn
     grw [← hM.dual.girth_ge, hcard]
     · enat_to_nat; lia
     simpa
-  rw [insert_inter_of_notMem, inter_eq_self_of_subset_left (by grind), encard_pair hef]
-  suffices hxg : x ≠ g by simpa [hxe, hxf]
-  rintro rfl
-  exact (P.disjoint_bool j).notMem_of_mem_left hgj <| by simp [hPx]
+  rwa [insert_inter_of_notMem, inter_eq_self_of_subset_left (by grind), encard_pair hef]
+
 
 
 
