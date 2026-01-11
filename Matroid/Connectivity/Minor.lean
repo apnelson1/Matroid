@@ -212,6 +212,16 @@ lemma multiConn_project_add_tsum_eLocalConn_ne_eq (M : Matroid α) (X : ι → S
   rw [closure_union_congr_left
     (closure_iUnion_congr _ _ (fun i : {i // i ≠ a} ↦ (hI i).closure_eq_closure)), iUnion_subtype]
 
+
+
+
+
+  -- obtain hι | hι := subsingleton_or_nontrivial ι
+  -- · simp [tsub_eq_zero_iff_le]
+  -- obtain ⟨I, hI⟩ := M.exists_isBasis' X
+  -- have hI' (i : ι) : M.IsBasis' I ((fun (i : ι) ↦ X) i) := hI
+  -- rw [multiConn_eq_comap_nullity hI']
+
 lemma multiConn_project_add_tsum_eLocalConn_eq (M : Matroid α) (X : ι → Set α) (C : Set α) :
     (M.project C).multiConn X + ∑' i, M.eLocalConn (X i) C
       = M.multiConn X + M.eLocalConn (⋃ i, X i) C := by
@@ -226,12 +236,19 @@ lemma multiConn_project_add_tsum_eLocalConn_eq (M : Matroid α) (X : ι → Set 
   rw [union_comm, ← biUnion_univ, show univ = insert a {a}ᶜ by ext; simp [em]]
   simp
 
--- /-- An auxiliary lemma used to numerically relate the `multiConn` in a matroid its projection,
--- in terms of chosen bases.  -/
--- lemma multiConn_project_aux' (M : Matroid α) {C : Set α} (hI : ∀ i, M.IsBasis' (I i) (X i)) :
---     (M.project C).multiConn X + (M.project (⋃ i, X i)).eRk C + ∑' i, (M.project C).nullity (I i)
---     = M.multiConn X + M.eRk C := by
---   sorry
+lemma multiConn_union_eq_multiConn_project_add (M : Matroid α) (X : ι → Set α) (A : Set α) :
+    M.multiConn (fun i ↦ X i ∪ A) = (M.project A).multiConn X + (ENat.card ι - 1) * M.eRk A := by
+  obtain hι | ⟨⟨i⟩⟩ := isEmpty_or_nonempty ι
+  · simp [tsub_eq_zero_iff_le]
+  convert Eq.symm <| M.multiConn_project_add_tsum_eLocalConn_ne_eq (fun i ↦ (X i ∪ A)) A i using 1
+  · rw [← eLocalConn_closure_right, union_comm, ← project_project,
+      project_closure_congr (Y := ∅) (by simp), eLocalConn_closure_right, eLocalConn_empty,
+      add_zero]
+  rw [tsum_congr (fun _ ↦ M.eLocalConn_comm ..), tsum_congr (fun _ ↦ M.eLocalConn_subset (by simp)),
+    ENat.tsum_const, ENat.card_coe_setOf_ne, mul_comm]
+  convert rfl using 2
+  apply multiConn_closure_congr
+  simp [union_assoc]
 
 lemma multiConn_project_add_disjoint (M : Matroid α) {C : Set α} (hCX : C ⊆ ⋃ i, X i)
     (hdj : Pairwise (Disjoint on X)) (hC : M.Indep C) :
@@ -323,16 +340,12 @@ lemma multiConn_le_multiConn_project_add_mul_eLocalConn
     (M : Matroid α) (X : ι → Set α) (C : Set α) :
     M.multiConn X ≤ (M.project C).multiConn X + (ENat.card ι - 1) * M.eLocalConn (⋃ i, X i) C := by
   obtain hι | ⟨⟨a⟩⟩ := isEmpty_or_nonempty ι; simp
-  have hcard : ENat.card ι - 1 = ENat.card {i | i ≠ a} := by
-    rw [← encard_univ, ← encard_diff_singleton_of_mem (a := a) (by simp), ENat.card_coe_set_eq]
-    congr
-    ext
-    simp
   have hle := (M.multiConn_project_add_tsum_eLocalConn_ne_eq X C a).symm.le
   grw [← le_self_add] at hle
   grw [hle, add_le_add_right]
   grw [ENat.tsum_le_tsum (g := fun i ↦ M.eLocalConn (⋃ j, X j) C)
-    fun i ↦ eLocalConn_mono_left _ (by simp [subset_iUnion]) _, ENat.tsum_const, hcard, mul_comm]
+    fun i ↦ eLocalConn_mono_left _ (by simp [subset_iUnion]) _, ENat.tsum_const,
+    ENat.card_coe_setOf_ne, mul_comm]
 
 lemma multiConn_project_le_multiConn_add (M : Matroid α) (X : ι → Set α) (C : Set α) :
     (M.project C).multiConn X ≤ M.multiConn X + M.eRk C := by
@@ -364,7 +377,6 @@ lemma multiConn_projectElem_eq_multiConn_add_iff (M : Matroid α) {X : ι → Se
   rw [← he.eRk_eq, multiConn_project_eq_multiConn_add_iff _ hXfin hXE (by simp)
     (by simpa using he.mem_ground), singleton_subset_iff]
   simp_rw [he.skew_right_iff (hXE _)]
-
 
 end Multi
 
@@ -677,5 +689,7 @@ theorem eConn_inter_add_eConn_insert_union_le (M : Matroid α) (heC : e ∉ C) (
     M.eConn (C ∩ D) + M.eConn (insert e (C ∪ D)) ≤ (M ／ {e}).eConn C + (M ＼ {e}).eConn D + 1 := by
   grw [← singleton_union, ← union_assoc, M.eConn_inter_add_eConn_union_union_le (by simpa)
     (by simpa), eConn_le_encard _ {e}, encard_singleton]
+
+
 
 end Pair
