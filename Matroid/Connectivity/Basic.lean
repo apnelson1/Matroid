@@ -782,6 +782,14 @@ lemma eLocalConn_union_right_le (M : Matroid α) (X Y A : Set α) :
     M.eLocalConn X (Y ∪ A) ≤ M.eLocalConn X Y + M.eRk A := by
   grw [eLocalConn_comm, eLocalConn_union_left_le, eLocalConn_comm]
 
+lemma eLocalConn_insert_left_le (M : Matroid α) (X Y : Set α) (e : α) :
+    M.eLocalConn (insert e X) Y ≤ M.eLocalConn X Y + 1 := by
+  grw [← union_singleton, eLocalConn_union_left_le, eRk_le_encard, encard_singleton]
+
+lemma eLocalConn_insert_right_le (M : Matroid α) (X Y : Set α) (e : α) :
+    M.eLocalConn X (insert e Y) ≤ M.eLocalConn X Y + 1 := by
+  grw [← union_singleton, eLocalConn_union_right_le, eRk_le_encard, encard_singleton]
+
 @[simp]
 lemma removeLoops_eLocalConn (M : Matroid α) : M.removeLoops.eLocalConn = M.eLocalConn := by
   ext _ _
@@ -1235,5 +1243,28 @@ lemma eConn_contract_le (M : Matroid α) (X C : Set α) : (M ／ C).eConn X ≤ 
 lemma IsMinor.eConn_le {N : Matroid α} (hNM : N ≤m M) (X : Set α) : N.eConn X ≤ M.eConn X := by
   obtain ⟨C, D, rfl⟩ := hNM
   exact ((M ／ C).eConn_delete_le X D).trans <| M.eConn_contract_le X C
+
+lemma eConn_eq_zero_of_subset_loops {L : Set α} (hL : L ⊆ M.loops) : M.eConn L = 0 := by
+  rw [eConn_eq_eLocalConn, ← eLocalConn_diff_left_of_subset_loops hL]
+  simp
+
+lemma eConn_eq_zero_of_subset_coloops {L : Set α} (hL : L ⊆ M.coloops) : M.eConn L = 0 := by
+  rw [← eConn_dual]
+  exact eConn_eq_zero_of_subset_loops <| by simpa
+
+lemma IsLoop.eConn_eq_zero {e : α} (he : M.IsLoop e) : M.eConn {e} = 0 :=
+  eConn_eq_zero_of_subset_loops <| by simpa
+
+lemma IsColoop.eConn_eq_zero {e : α} (he : M.IsColoop e) : M.eConn {e} = 0 :=
+  eConn_eq_zero_of_subset_coloops <| by simpa
+
+lemma eConn_singleton_eq_zero_iff {e : α} (heM : e ∈ M.E) :
+    M.eConn {e} = 0 ↔ M.IsLoop e ∨ M.IsColoop e := by
+  rw [iff_def, or_imp, and_iff_right IsLoop.eConn_eq_zero, and_iff_left IsColoop.eConn_eq_zero]
+  intro h
+  obtain he | he := M.isLoop_or_isNonloop e
+  · exact .inl he
+  rw [he.indep.eConn_eq_zero_iff, singleton_subset_iff] at h
+  exact .inr h
 
 end Global

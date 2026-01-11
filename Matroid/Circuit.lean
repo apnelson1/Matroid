@@ -459,6 +459,18 @@ lemma IsRestriction.girth_ge {N M : Matroid α} (h : N ≤r M) : M.girth ≤ N.g
 lemma girth_le_girth_restrict (M : Matroid α) (hR : R ⊆ M.E) : M.girth ≤ (M ↾ R).girth :=
   (restrict_isRestriction _ _ hR).girth_ge
 
+lemma Dep.isCircuit_of_encard_le_girth (hX : M.Dep X) (hXfin : X.Finite)
+    (hXcard : X.encard ≤ M.girth) : M.IsCircuit X := by
+  obtain ⟨C, hCX, hC⟩ := hX.exists_isCircuit_subset
+  rwa [← hXfin.eq_of_subset_of_encard_le' hCX (hXcard.trans hC.girth_le_card)]
+
+lemma Dep.isCircuit_of_encard_lt_girth_add_one (hX : M.Dep X) (hXcard : X.encard < M.girth + 1) :
+    M.IsCircuit X := by
+  refine hX.isCircuit_of_encard_le_girth ?_ ?_
+  · rw [← encard_lt_top_iff]
+    exact hXcard.trans_le le_top
+  exact Order.le_of_lt_add_one hXcard
+
 end Girth
 section IsBasisExchange
 
