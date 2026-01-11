@@ -141,10 +141,10 @@ lemma tutte_triangle_disconnected_case (hM : M.TutteConnected 3) (hT : M.IsTrian
   rw [show (3 : ℕ∞) = 1 + 1 + 1 from rfl] at hM
   have hnotsep : ¬ (P.ofDelete j).IsTutteSeparation :=
     hM.not_isTutteSeparation (P := P.ofDelete j) (by grw [hconn])
-  rw [isTutteSeparation_iff_add_one_le_encard (by enat_to_nat!), not_forall] at hnotsep
+  rw [isTutteSeparation_iff_lt_encard (by enat_to_nat!), not_forall] at hnotsep
+  -- rw [isTutteSeparation_iff_add_one_le_encard (by enat_to_nat!), not_forall] at hnotsep
   obtain ⟨i, hi⟩ := hnotsep
-  grw [hconn, one_add_one_eq_two, not_le, ← one_add_one_eq_two,
-    ENat.lt_add_one_iff (by simp)] at hi
+  grw [hconn, not_lt] at hi
   obtain rfl | rfl := (i.eq_or_eq_not j)
   · grw [ofDelete_apply_self, ← encard_le_encard subset_union_right, encard_pair hef] at hi
     simp at hi
@@ -168,8 +168,8 @@ lemma tutte_triangle_disconnected_case (hM : M.TutteConnected 3) (hT : M.IsTrian
     -- three-connected matroid `M`.
     exfalso
     refine (hxl.of_isRestriction (delete_isRestriction ..)).not_tutteConnected ?_ (by simp) hM
-    rw [← two_le_encard_iff_nontrivial]
-    enat_to_nat!; lia
+    grw [← two_le_encard_iff_nontrivial, ← hcard]
+    norm_num
   -- in the coloop case, we get that `K = {e,f,x}` is codependent in `M`.
   -- Therefore it contains a cocircuit. But `M` is `3`-connected, so in fact `K` is a cocircuit
   -- satisfying the lemma.
@@ -180,9 +180,8 @@ lemma tutte_triangle_disconnected_case (hM : M.TutteConnected 3) (hT : M.IsTrian
   · refine Dep.isCircuit_of_encard_lt_girth_add_one ?_ ?_
     · rw [dep_dual_iff, ← nonspanning_compl_iff, nonspanning_iff, and_iff_left diff_subset]
       refine fun hsp ↦ hxcl.1 <| by simpa [hsp.closure_eq] using hxcl.2.1
-    grw [← hM.dual.girth_ge, hcard]
-    · enat_to_nat; lia
-    simpa
+    grw [← hM.dual.girth_ge (by simpa), hcard]
+    norm_num
   rwa [insert_inter_of_notMem, inter_eq_self_of_subset_left (by grind), encard_pair hef]
 
 
