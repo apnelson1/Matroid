@@ -4,34 +4,15 @@
 -- T* contains e and the intersection of T and T* has cardinality two.
 -- This file contains the proof that the lemma holds in the case that
 -- M\e,f is not connected (when M has at least 5 elements).
-
--- Type checks with the toml entries:
-
--- [[require]]
--- name = "mathlib"
--- scope = "leanprover-community"
--- rev = "v4.27.0-rc1"
-
--- [[require]]
--- name = "Matroid"
--- git = "https://github.com/apnelson1/Matroid"
--- rev = "038d4db06185e42383e513372bdd4105d19a08ea"
-
-import Mathlib.Logic.Function.Defs
-import Mathlib.Combinatorics.Matroid.Basic
-import Mathlib.Combinatorics.Matroid.Dual
-import Mathlib.Combinatorics.Matroid.Circuit
-import Mathlib.Combinatorics.Matroid.Minor.Contract
 import Mathlib.Combinatorics.Matroid.Minor.Order
-import Matroid.Connectivity.Basic
 import Matroid.Connectivity.Vertical
 import Matroid.Connectivity.Minor
-import Matroid.Connectivity.Separation
 
 open Set Matroid Function Separation
 
 set_option linter.style.longLine false
 
+-- for mathlib
 lemma Set.exists_eq_of_encard_eq_three_of_mem {α : Type*} {s : Set α} {x : α}
     (hs : s.encard = 3) (hxs : x ∈ s) : ∃ y z, y ≠ x ∧ z ≠ x ∧ y ≠ z ∧ s = {x,y,z} := by
   obtain ⟨a, b, c, hab, hbc, hac, rfl⟩ := encard_eq_three.1 hs
@@ -40,6 +21,7 @@ lemma Set.exists_eq_of_encard_eq_three_of_mem {α : Type*} {s : Set α} {x : α}
   · use a, c; grind
   use a, b; grind
 
+-- for mathlib
 lemma Set.exists_eq_of_encard_eq_three_of_mem_of_mem {α : Type*} {s : Set α} {x y : α}
     (hs : s.encard = 3) (hxs : x ∈ s) (hys : y ∈ s) (hxy : x ≠ y) :
     ∃ z, z ≠ x ∧ z ≠ y ∧ s = {x,y,z} := by
@@ -62,43 +44,25 @@ structure IsTriad (M : Matroid α) (T : Set α) : Prop where
   isCocircuit : M.IsCocircuit T
   three_elements : T.encard = 3
 
-
+@[aesop unsafe 20% (rule_sets := [Matroid])]
 lemma IsTriangle.subset_ground (hT : M.IsTriangle T) : T ⊆ M.E := hT.isCircuit.subset_ground
+
+@[aesop unsafe 20% (rule_sets := [Matroid])]
 lemma IsTriad.subset_ground (hT : M.IsTriad T) : T ⊆ M.E := hT.isCocircuit.subset_ground
 
-lemma IsCocircuit.exists_subset_isCocircuit_of_delete (hC : (M ＼ K).IsCocircuit C) :
-    ∃ C', M.IsCocircuit C' ∧ C ⊆ C' ∧ C' ⊆ C ∪ K := by
-  apply IsCircuit.exists_subset_isCircuit_of_contract
-  rwa [← dual_isCocircuit_iff, dual_contract_dual]
+lemma IsTriangle.dual_isTriad (h : M.IsTriangle T) : M✶.IsTriad T := by
+  simpa [isTriad_iff, isTriangle_iff] using h
 
-lemma isCircuit_iff_dep_of_singleton (hXsing : X.encard = 1) : M.IsCircuit X ↔ M.Dep X := by
-  rw [encard_eq_one] at hXsing
-  obtain ⟨x, rfl⟩ := hXsing
-  simp
+lemma IsTriad.dual_isTriangle (h : M.IsTriad T) : M✶.IsTriangle T := by
+  simpa [isTriad_iff, isTriangle_iff] using h
 
--- `M.IsCocircuit` is definitionally `M✶.IsCircuit`, which allows golfs like what is below.
--- generally the dual version of an established statement should be an easy proof.
-lemma isCocircuit_iff_codep_of_singleton (hXsing : X.encard = 1) : M.IsCocircuit X ↔ M.Codep X :=
-  isCircuit_iff_dep_of_singleton hXsing
+@[simp]
+lemma dual_isTriad_iff : M✶.IsTriad T ↔ M.IsTriangle T := by
+  simp [isTriad_iff, isTriangle_iff]
 
-lemma IsTutteSeparation.singleton_is_circuit_or_cocircuit (hPtutte : P.IsTutteSeparation) (i : Bool)
-    (hPtruesing : (P i).encard = 1) : M.IsCircuit (P i) ∨ M.IsCocircuit (P i) := by
-  rw [isTutteSeparation_iff i, ← isCocircuit_iff_codep_of_singleton hPtruesing,
-    ← isCircuit_iff_dep_of_singleton hPtruesing] at hPtutte
-  exact hPtutte.1
-
--- already proved as `Connected.loopless`
-lemma IsConnected.nontrivial_of_loopless (hc : M.Connected) (hn : M.E.Nontrivial) : M.Loopless :=
-  hc.loopless hn
-
-lemma Set.third_mem (hT : T.encard = 3) (he : e ∈ T) (hf : f ∈ T) (hef : e ≠ f) :
-    ∃ g ∈ T, g ≠ e ∧ g ≠ f ∧ T = {e,f,g} := by
-    rw [encard_eq_three] at hT
-    obtain ⟨a, b, c, hab, hac, hb, rfl⟩ := hT
-    simp only [mem_insert_iff, mem_singleton_iff] at he hf
-    simp only [mem_insert_iff, mem_singleton_iff, ne_eq, exists_eq_or_imp, ↓existsAndEq, true_and]
-    grind -- is your friend.
-
+@[simp]
+lemma dual_isTriangle_iff : M✶.IsTriangle T ↔ M.IsTriad T := by
+  simp [isTriad_iff, isTriangle_iff]
 
 /- Golfed. The hypothesis `hef` is only actually needed to handle the case where `M.E = T`.
 We could also change the conclusion to the more concise and descriptive
