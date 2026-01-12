@@ -109,16 +109,14 @@ The first main optimization was considering the side of `P` containing `g` as op
 
 The second was using the existing definition `Separation.ofDelete`,
 which extends a separation of `M ＼ D` to a separation of `M`. This meant all the work defining
-`Q` and proving it was a valid separation wasn't needed.
--/
+`Q` and proving it was a valid separation wasn't needed. -/
 lemma tutte_triangle_disconnected_case (hM : M.TutteConnected 3) (hT : M.IsTriangle T) (he : e ∈ T)
     (hf : f ∈ T) (hef : e ≠ f) (hdef : ¬(M ＼ {e,f}).Connected) :
     ∃ K, (M.IsTriad K ∧ e ∈ K ∧ (K ∩ T).encard = 2) := by
-  obtain ⟨g, hge, hgf, rfl⟩ :=
+  obtain ⟨g, hge : g ≠ e, hgf : g ≠ f, rfl : T = {e,f,g}⟩ :=
     T.exists_eq_of_encard_eq_three_of_mem_of_mem hT.three_elements he hf hef
-  have heE : e ∈ M.E := hT.isCircuit.subset_ground (by simp)
-  have hfE : f ∈ M.E := hT.isCircuit.subset_ground (by simp)
-  have hgE : g ∈ M.E := hT.isCircuit.subset_ground (by simp)
+  obtain ⟨heE : e ∈ M.E, hfE : f ∈ M.E, hgE : g ∈ M.E⟩ :=
+    by simpa [insert_subset_iff] using hT.subset_ground
   have hgE' : g ∈ (M ＼ {e,f}).E := ⟨(hT.subset_ground (by simp)), (by simp [hge, hgf])⟩
   have hne : (M ＼ {e,f}).Nonempty := by rw [← ground_nonempty_iff]; use g
   obtain ⟨P, hP0, hPnt⟩ := exists_partition_of_not_connected hdef
@@ -151,10 +149,10 @@ lemma tutte_triangle_disconnected_case (hM : M.TutteConnected 3) (hT : M.IsTrian
   rw [ENat.le_one_iff_eq_zero_or_eq_one, ofDelete_apply_not, encard_eq_zero,
     ← not_nonempty_iff_eq_empty, ← imp_iff_not_or, imp_iff_right (hPnt _), encard_eq_one] at hi
   obtain ⟨x, hPx⟩ := hi
-  have hxE : x ∈ (M ＼ {e,f}).E := by grw [← singleton_subset_iff, ← hPx, P.subset_ground]
+  have hxE : x ∈ (M ＼ {e, f}).E := by grw [← singleton_subset_iff, ← hPx, P.subset_ground]
   obtain ⟨hxE' : x ∈ M.E, hxe : x ≠ e, hxf : x ≠ f⟩ := by simpa using hxE
   -- Now we have that `x` is a loop or coloop of `M ＼ {e,f}`.
-  have hxT : x ∉ ({e,f,g} : Set α) := by
+  have hxT : x ∉ ({e, f, g} : Set α) := by
     simp only [mem_insert_iff, hxe, hxf, mem_singleton_iff, false_or]
     rintro rfl
     exact (P.disjoint_bool j).notMem_of_mem_left hgj <| by simp [hPx]
