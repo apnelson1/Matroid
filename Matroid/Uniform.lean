@@ -538,8 +538,8 @@ lemma maximal_right_of_forall_ge {α : Type*} {P Q : α → Prop} {a : α} [Part
 
 /-- A finite-rank uniform matroid is one of the obvious ones. -/
 lemma IsUniform.exists_eq_unifOn [M.RankFinite] (hM : M.IsUniform) :
-    ∃ (E : Set α) (k : ℕ), k ≤ E.encard ∧ M = unifOn E k := by
-  refine ⟨M.E, M.rank, ?_, ext_isBase rfl fun B hBE ↦ ?_⟩
+    ∃ (E : Set α) (k : ℕ), k ≤ E.encard ∧ M = unifOn E k ∧ M.eRank = k := by
+  refine ⟨M.E, M.rank, ?_, ext_isBase rfl fun B hBE ↦ ?_, by simp⟩
   · grw [cast_rank_eq, eRank_le_encard_ground]
   rw [unifOn_isBase_iff (M.cast_rank_eq ▸ M.eRank_le_encard_ground) hBE,
     cast_rank_eq, iff_def, and_iff_right IsBase.encard_eq_eRank]
@@ -553,7 +553,7 @@ lemma IsUniform.exists_eq_unifOn [M.RankFinite] (hM : M.IsUniform) :
 
 /-- A finitary non-free uniform matroid is one of the obvious ones. -/
 lemma IsUniform.exists_eq_unifOn_of_finitary [M.Finitary] [M✶.RankPos] (hM : M.IsUniform) :
-    ∃ (E : Set α) (k : ℕ), k ≤ E.encard ∧ M = unifOn E k := by
+    ∃ (E : Set α) (k : ℕ), k ≤ E.encard ∧ M = unifOn E k ∧ M.eRank = k := by
   obtain ⟨C, hC⟩ := M.exists_isCircuit
   obtain ⟨e, heC⟩ := hC.nonempty
   obtain hCi | hCs := hM.indep_or_spanning C
@@ -563,16 +563,28 @@ lemma IsUniform.exists_eq_unifOn_of_finitary [M.Finitary] [M✶.RankPos] (hM : M
   exact hM.exists_eq_unifOn
 
 lemma IsUniform.exists_eq_freeOn_or_unifOn_of_finitary [M.Finitary] (hM : M.IsUniform) :
-    ∃ (E : Set α), M = freeOn E ∨ ∃ (k : ℕ), k ≤ E.encard ∧ M = unifOn E k := by
+    ∃ (E : Set α), M = freeOn E ∨ ∃ (k : ℕ), k ≤ E.encard ∧ M = unifOn E k ∧ M.eRank = k := by
   obtain ⟨E, rfl⟩ | hr := M.exists_eq_freeOn_or_rankPos_dual
   · exact ⟨E, .inl rfl⟩
-  obtain ⟨E, k, hle, rfl⟩ := hM.exists_eq_unifOn_of_finitary
-  exact ⟨E, .inr ⟨k, hle, rfl⟩⟩
+  obtain ⟨E, k, hle, rfl, hk⟩ := hM.exists_eq_unifOn_of_finitary
+  exact ⟨E, .inr ⟨k, hle, rfl, hk⟩⟩
 
 lemma unifOn_isUniform (E : Set α) (k : ℕ) : (unifOn E k).IsUniform := by
   intro X (hX : X ⊆ E)
   rw [unifOn_indep_iff, unifOn_spanning_iff']
   grind
+
+lemma isUniform_of_eRank_add_one_le_girth [M.RankFinite] (hM : M.eRank + 1 ≤ M.girth) :
+    M.IsUniform := by
+  rw [isUniform_iff]
+  intro X hXE
+  rw [← not_dep_iff, ← imp_iff_not_or]
+  intro hX
+  grw [spanning_iff_eRk, ← ENat.add_one_le_add_one_iff, hM, hX.girth_le_eRk_add_one]
+
+lemma isUniform_of_eRank_lt_girth (hM : M.eRank < M.girth) : M.IsUniform := by
+  have _ : M.RankFinite := by rw [← eRank_lt_top_iff]; enat_to_nat!
+  refine isUniform_of_eRank_add_one_le_girth <| Order.add_one_le_of_lt hM
 
 @[simps!] def uniformMatroidOfBase (E : Set α) (IsBase : Set α → Prop)
     (exists_isBase : ∃ B, IsBase B)

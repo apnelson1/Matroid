@@ -5,101 +5,35 @@
 -- This file contains the proof that the lemma holds in the case that
 -- M\e,f is not connected (when M has at least 5 elements).
 import Mathlib.Combinatorics.Matroid.Minor.Order
-import Matroid.Connectivity.Vertical
-import Matroid.Connectivity.Minor
+import Matroid.Connectivity.Triangle
 
 open Set Matroid Function Separation
 
 set_option linter.style.longLine false
 
--- for mathlib
-lemma Set.exists_eq_of_encard_eq_three_of_mem {α : Type*} {s : Set α} {x : α}
-    (hs : s.encard = 3) (hxs : x ∈ s) : ∃ y z, y ≠ x ∧ z ≠ x ∧ y ≠ z ∧ s = {x,y,z} := by
-  obtain ⟨a, b, c, hab, hbc, hac, rfl⟩ := encard_eq_three.1 hs
-  obtain rfl | rfl | rfl := by simpa using hxs
-  · use b, c; grind
-  · use a, c; grind
-  use a, b; grind
-
--- for mathlib
-lemma Set.exists_eq_of_encard_eq_three_of_mem_of_mem {α : Type*} {s : Set α} {x y : α}
-    (hs : s.encard = 3) (hxs : x ∈ s) (hys : y ∈ s) (hxy : x ≠ y) :
-    ∃ z, z ≠ x ∧ z ≠ y ∧ s = {x,y,z} := by
-  obtain ⟨a, b, hax, hbc, hab, rfl⟩ := s.exists_eq_of_encard_eq_three_of_mem hs hxs
-  obtain rfl | rfl : y = a ∨ y = b := by simpa [hxy.symm] using hys
-  · use b, hbc, hab.symm
-  use a, hax, hab, by grind
 
 namespace Matroid
 
 variable {i : Bool} {α : Type*} {e f g : α} {C K T X : Set α} {M : Matroid α} {P Q: M.Separation}
 
-@[mk_iff]
-structure IsTriangle (M : Matroid α) (T : Set α) : Prop where
-  isCircuit : M.IsCircuit T
-  three_elements : T.encard = 3
 
-@[mk_iff]
-structure IsTriad (M : Matroid α) (T : Set α) : Prop where
-  isCocircuit : M.IsCocircuit T
-  three_elements : T.encard = 3
-
-@[aesop unsafe 20% (rule_sets := [Matroid])]
-lemma IsTriangle.subset_ground (hT : M.IsTriangle T) : T ⊆ M.E := hT.isCircuit.subset_ground
-
-@[aesop unsafe 20% (rule_sets := [Matroid])]
-lemma IsTriad.subset_ground (hT : M.IsTriad T) : T ⊆ M.E := hT.isCocircuit.subset_ground
-
-lemma IsTriangle.dual_isTriad (h : M.IsTriangle T) : M✶.IsTriad T := by
-  simpa [isTriad_iff, isTriangle_iff] using h
-
-lemma IsTriad.dual_isTriangle (h : M.IsTriad T) : M✶.IsTriangle T := by
-  simpa [isTriad_iff, isTriangle_iff] using h
-
-@[simp]
-lemma dual_isTriad_iff : M✶.IsTriad T ↔ M.IsTriangle T := by
-  simp [isTriad_iff, isTriangle_iff]
-
-@[simp]
-lemma dual_isTriangle_iff : M✶.IsTriangle T ↔ M.IsTriad T := by
-  simp [isTriad_iff, isTriangle_iff]
-
-/- Golfed. The hypothesis `hef` is only actually needed to handle the case where `M.E = T`.
-We could also change the conclusion to the more concise and descriptive
-`∃ x, x ∉ T ∧ M.IsTriad {e,f,x}`, but maybe this doesn't really matter for the wider lemma.
-
-The first main optimization was considering the side of `P` containing `g` as opposed to using
-`wlog` to make `g` on the `false` side.
-
-The second was using the existing definition `Separation.ofDelete`,
-which extends a separation of `M ＼ D` to a separation of `M`. This meant all the work defining
-`Q` and proving it was a valid separation wasn't needed. -/
-lemma tutte_triangle_disconnected_case (hM : M.TutteConnected 3) (hT : M.IsTriangle T) (he : e ∈ T)
-    (hf : f ∈ T) (hef : e ≠ f) (hdef : ¬(M ＼ {e,f}).Connected) :
-    ∃ K, (M.IsTriad K ∧ e ∈ K ∧ (K ∩ T).encard = 2) := by
-  obtain ⟨g, hge : g ≠ e, hgf : g ≠ f, rfl : T = {e,f,g}⟩ :=
-    T.exists_eq_of_encard_eq_three_of_mem_of_mem hT.three_elements he hf hef
-  obtain ⟨heE : e ∈ M.E, hfE : f ∈ M.E, hgE : g ∈ M.E⟩ :=
-    by simpa [insert_subset_iff] using hT.subset_ground
-  have hgE' : g ∈ (M ＼ {e,f}).E := ⟨(hT.subset_ground (by simp)), (by simp [hge, hgf])⟩
+/- the proof for the disconnected case with named elements of the triangle. Prevents some faff.
+We also prove a weaker conclusion that implies the stronger one anyway. -/
+lemma tutte_triangle_disconnected_case (hM : M.TutteConnected 3) (hT : M.IsTriangle {e,f,g})
+    (hdisc : ¬(M ＼ {e,f}).Connected) : ∃ K, M.IsTriad K ∧ e ∈ K := by
+  have hgE' : g ∈ (M ＼ {e,f}).E := ⟨hT.mem_ground₃, by simp [hT.ne₁₃.symm, hT.ne₂₃.symm]⟩
   have hne : (M ＼ {e,f}).Nonempty := by rw [← ground_nonempty_iff]; use g
-  obtain ⟨P, hP0, hPnt⟩ := exists_partition_of_not_connected hdef
+  obtain ⟨P, hP0, hPnt⟩ := exists_partition_of_not_connected hdisc
   rw [P.not_trivial_iff] at hPnt
   -- let `j` be the side of `P` containing `g`.
   obtain ⟨j, hgj⟩ : ∃ j, g ∈ P j := by rwa [← P.iUnion_eq, mem_iUnion] at hgE'
-  -- the separation `Q` obtained by adding `{e,f}` to side `j` of `P` has connectivity at most `1`.
-  -- This is because `P` itself has connectivity zero, and we get from `P` to `Q` by
-  -- adding a single element `e` to side `j`, and then an element `f` which is already spanned
-  -- by `e` and side `j`.
   have hconn : (P.ofDelete j).eConn ≤ 1 := by
     grw [Separation.eConn_eq_eLocalConn _ j, ofDelete_apply_self, ofDelete_apply_not,
       show P j ∪ {e,f} = insert f (insert e (P j)) by grind, ← eLocalConn_closure_left,
       closure_insert_eq_of_mem_closure, eLocalConn_closure_left, eLocalConn_insert_left_le,
       ← P.eConn_eq_eLocalConn_of_isRestriction (by simp), hP0, zero_add]
-    exact mem_of_mem_of_subset (hT.isCircuit.mem_closure_diff_singleton_of_mem hf)
+    exact mem_of_mem_of_subset (hT.isCircuit.mem_closure_diff_singleton_of_mem (by simp))
       <| M.closure_subset_closure <| by grind
-  -- Since `Q` is not a Tutte separation, and has at least three elements on the `j`
-  -- side, it follows that `Q !j = P !j` is a singleton `{x}`.
   rw [show (3 : ℕ∞) = 1 + 1 + 1 from rfl] at hM
   have hnotsep : ¬ (P.ofDelete j).IsTutteSeparation :=
     hM.not_isTutteSeparation (P := P.ofDelete j) (by grw [hconn])
@@ -108,7 +42,7 @@ lemma tutte_triangle_disconnected_case (hM : M.TutteConnected 3) (hT : M.IsTrian
   obtain ⟨i, hi⟩ := hnotsep
   grw [hconn, not_lt] at hi
   obtain rfl | rfl := (i.eq_or_eq_not j)
-  · grw [ofDelete_apply_self, ← encard_le_encard subset_union_right, encard_pair hef] at hi
+  · grw [ofDelete_apply_self, ← encard_le_encard subset_union_right, encard_pair hT.ne₁₂] at hi
     simp at hi
   rw [ENat.le_one_iff_eq_zero_or_eq_one, ofDelete_apply_not, encard_eq_zero,
     ← not_nonempty_iff_eq_empty, ← imp_iff_not_or, imp_iff_right (hPnt _), encard_eq_one] at hi
@@ -121,9 +55,9 @@ lemma tutte_triangle_disconnected_case (hM : M.TutteConnected 3) (hT : M.IsTrian
     rintro rfl
     exact (P.disjoint_bool j).notMem_of_mem_left hgj <| by simp [hPx]
   have hcard : 4 ≤ M.E.encard := by
-    grw [show (4 : ℕ∞) = 2 + 1 + 1 from rfl, ← encard_le_encard (s := {x, e, f, g}) (by grind),
-      encard_insert_of_notMem hxT, encard_insert_of_notMem, encard_pair hgf.symm]
-    simp [hef, hge.symm]
+    grw [show (4 : ℕ∞) = 2 + 1 + 1 from rfl, ← encard_le_encard (s := {x, e, f, g}) (by aesop_mat),
+      encard_insert_of_notMem hxT, encard_insert_of_notMem, encard_pair hT.ne₂₃]
+    simp [hT.ne₁₂, hT.ne₁₃]
   rw [← P.eConn_eq !j, hPx, eConn_singleton_eq_zero_iff hxE] at hP0
   obtain hxl | hxcl := hP0
   · -- the loop case doesn't happen, because this would mean that `x` is a loop of the
@@ -137,14 +71,55 @@ lemma tutte_triangle_disconnected_case (hM : M.TutteConnected 3) (hT : M.IsTrian
   -- satisfying the lemma.
   rw [delete_isColoop_iff, diff_diff, union_singleton] at hxcl
   have hcard : encard {x,e,f} = 3 := by
-    rw [encard_insert_of_notMem (by simp [hxe, hxf]), encard_pair hef, two_add_one_eq_three]
-  refine ⟨{x,e,f}, ⟨?_, hcard⟩, by simp, ?_⟩
-  · refine Dep.isCircuit_of_encard_lt_girth_add_one ?_ ?_
-    · rw [dep_dual_iff, ← nonspanning_compl_iff, nonspanning_iff, and_iff_left diff_subset]
-      refine fun hsp ↦ hxcl.1 <| by simpa [hsp.closure_eq] using hxcl.2.1
-    grw [← hM.dual.girth_ge (by simpa), hcard]
-    norm_num
-  rwa [insert_inter_of_notMem, inter_eq_self_of_subset_left (by grind), encard_pair hef]
+    rw [encard_insert_of_notMem (by simp [hxe, hxf]), encard_pair hT.ne₁₂, two_add_one_eq_three]
+  refine ⟨{x,e,f}, ⟨?_, hcard⟩, by simp⟩
+  refine Dep.isCircuit_of_encard_lt_girth_add_one ?_ ?_
+  · rw [dep_dual_iff, ← nonspanning_compl_iff, nonspanning_iff, and_iff_left diff_subset]
+    refine fun hsp ↦ hxcl.1 <| by simpa [hsp.closure_eq] using hxcl.2.1
+  grw [← hM.dual.girth_ge (by simpa), hcard]
+  norm_num
+
+lemma tutte_triangle_weak (hM : M.TutteConnected 3) (hT : M.IsTriangle {e,f,g})
+    (he : ¬ (M ＼ {e}).TutteConnected 3) (hf : ¬ (M ＼ {f}).TutteConnected 3) :
+    ∃ K, M.IsTriad K ∧ e ∈ K := by
+  obtain hdisc | hcon := em' <| (M ＼ {e,f}).Connected
+  · exact tutte_triangle_disconnected_case hM hT hdisc
+  -- wlog `(M ＼ {e,f})` is connected.
+  sorry
+
+/-- The familiar, stronger, form of Tutte's triangle lemma follows from the above. -/
+lemma tutte_triangle (hM : M.TutteConnected 3) (hT : M.IsTriangle {e,f,g})
+    (he : ¬ (M ＼ {e}).TutteConnected 3) (hf : ¬ (M ＼ {f}).TutteConnected 3) :
+    ∃ K, M.IsTriad K ∧ e ∈ K ∧ ((f ∈ K ∧ g ∉ K) ∨ (f ∉ K ∧ g ∈ K)) := by
+  obtain ⟨K, hK, heK⟩ := tutte_triangle_weak hM hT he hf
+  -- If `K = {e,f,g}`, then `M` is `U₂,₄`, and we have some easy bookkeeping to do.
+  obtain rfl | hne := eq_or_ne {e,f,g} K
+  · obtain ⟨E, hE4, rfl⟩ := hT.eq_unifOn_two_four_of_isTriad_of_tutteConnected hK hM
+    obtain ⟨x, hxE : x ∈ E, hxT⟩ : ∃ x ∈ (unifOn E 2).E, x ∉ ({e, f, g} : Set α)
+    · refine exists_of_ssubset (hT.subset_ground.ssubset_of_ne ?_)
+      rintro (rfl : {e,f,g} = E)
+      replace hE4 := hE4.symm.le
+      grw [encard_insert_le, encard_pair_le] at hE4
+      norm_num at hE4
+    have hef := hT.ne₁₂
+    have heg := hT.ne₁₃
+    have hfg := hT.ne₂₃
+    obtain ⟨hxe : x ≠ e, hxf : x ≠ f, hxg : x ≠ g⟩ := by simpa using hxT
+    refine ⟨{e, f, x}, ?_, by grind⟩
+    rw [isTriad_iff, encard_insert_of_notMem (by grind), encard_pair hxf.symm,
+      and_iff_left (by rfl), isCocircuit_def, unifOn_dual_eq' (j := 2) (by enat_to_nat!; lia), unifOn_isCircuit_iff, encard_insert_of_notMem (by grind), encard_pair hxf.symm]
+    grind [hT.mem_ground₁, hT.mem_ground₂]
+  refine ⟨K, hK, heK, ?_⟩
+  have hnt := hT.isCircuit.isCocircuit_inter_nontrivial hK.isCocircuit (by use e; simp_all)
+  obtain ⟨x, ⟨hxT, hxK⟩, hxe⟩ := hnt.exists_ne e
+  have aux : ¬ (f ∈ K ∧ g ∈ K) :=
+    fun ⟨hf, hg⟩ ↦ hne <| Finite.eq_of_subset_of_encard_le (by simp) (by grind)
+    (by rw [hK.three_elements, hT.three_elements])
+  grind
+
+
+
+
 
 
 

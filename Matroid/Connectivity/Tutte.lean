@@ -585,6 +585,41 @@ lemma TutteConnected.isUniform_of_encard_le (h : M.TutteConnected (k + 1))
   refine h.not_isTutteSeparation (P := M.ofSetSep X true) (by simpa) ?_
   simp [isTutteSeparation_iff' true, hnot.1, hnot.2]
 
+/-- If a `(k + 1)`-connected matroid `M` has a finite circuit/cocircuit of size `k + 1`,
+then `M` is a self-dual uniform matroid of rank `k`. -/
+lemma IsCircuit.exists_eq_unifOn_of_isCocircuit_of_tutteConnected {C : Set α} (hC : M.IsCircuit C)
+    (hC' : M.IsCocircuit C) (hCk : C.encard = k + 1) (hk : k ≠ ⊤) (hM : M.TutteConnected (k + 1)) :
+    ∃ (E : Set α) (r : ℕ), r = k ∧ E.encard = 2 * k ∧ M = unifOn E r := by
+  obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one
+  · obtain ⟨e, rfl⟩ := encard_eq_one.1 (show C.encard = 1 by simpa using hCk)
+    simp only [singleton_isCircuit, dual_isLoop_iff_isColoop] at hC hC'
+    exact False.elim <| hC.not_isColoop hC'
+  obtain hCconn : M.eConn C = k := by
+    rw [← ENat.add_one_eq_add_one_iff, hC.eConn_add_one_eq, ← ENat.add_one_eq_add_one_iff,
+      hC'.eRk_add_one_eq, hCk]
+  have hcard := hM.encard_eq_or_encard_compl_eq (X := C) (by simp [hCconn])
+  have hfin : M✶.IsRkFinite C := by grw [← eRk_lt_top_iff, eRk_le_encard]; enat_to_nat!
+  rw [← ENat.add_one_eq_add_one_iff, hC.eConn_add_one_eq, ← ENat.add_one_eq_add_one_iff,
+    ← hC'.eRk_add_one_eq, or_iff_right (by simpa [add_assoc]), hCconn] at hcard
+  have hEcard : M.E.encard = 2 * (k + 1) := by
+    rw [← encard_diff_add_encard_of_subset hC.subset_ground, hCk, hcard]
+    enat_to_nat; lia
+  have hgirth : k + 1 < M.girth := by
+    grw [← hM.girth_ge (by simp [hEcard])]
+    enat_to_nat; lia
+  have hgirth_dual : k + 1 < M✶.girth := by
+    grw [← hM.dual.girth_ge (by simp [hEcard])]
+    enat_to_nat; lia
+  have hrank : M.eRank = k + 1 := by
+    rw [← Coindep.delete_eRank_eq (X := M.E \ C), delete_compl, eRank_restrict,
+      ← ENat.add_one_eq_add_one_iff, ← hCk, hC.eRk_add_one_eq]
+    exact indep_of_card_lt_girth (by enat_to_nat! <;> lia) diff_subset
+  have hfin : M.Finite := by
+    rw [finite_iff, ← encard_lt_top_iff]
+    enat_to_nat!
+  obtain ⟨E, r, hrE, rfl, hr⟩ := (M.isUniform_of_eRank_lt_girth (hrank ▸ hgirth)).exists_eq_unifOn
+  refine ⟨E, r, ?_, by simpa using hEcard, rfl⟩
+  rwa [unifOn_eRank_eq' hrE] at hrank
 
 
 

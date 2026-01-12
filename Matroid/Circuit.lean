@@ -471,6 +471,14 @@ lemma Dep.isCircuit_of_encard_lt_girth_add_one (hX : M.Dep X) (hXcard : X.encard
     exact hXcard.trans_le le_top
   exact Order.le_of_lt_add_one hXcard
 
+lemma Dep.girth_le_card (hX : M.Dep X) : M.girth ≤ X.encard := by
+  obtain ⟨C, hCX, hC⟩ := hX.exists_isCircuit_subset
+  grw [← encard_le_encard hCX, hC.girth_le_card]
+
+lemma Dep.girth_le_eRk_add_one (hX : M.Dep X) : M.girth ≤ M.eRk X + 1 := by
+  obtain ⟨C, hCX, hC⟩ := hX.exists_isCircuit_subset
+  grw [← M.eRk_mono hCX, hC.eRk_add_one_eq, hC.girth_le_card]
+
 end Girth
 section IsBasisExchange
 
