@@ -159,6 +159,24 @@ lemma IsMutualBasis.mono (hI : M.IsMutualBasis I Xs) (hIB : I ⊆ B) (hB : M.Ind
   hB.isMutualBasis_of_forall_subset_closure fun i ↦ (hI.subset_closure_inter i).trans
     <| M.closure_subset_closure <| inter_subset_inter_right _ hIB
 
+lemma IsMutualBasis.isMutualBasis_compl_dual {Xs : ι → Set α} (h : M.IsMutualBasis B Xs)
+    (hB : M.IsBase B) : M✶.IsMutualBasis (M.E \ B) (fun i ↦ M.E \ Xs i) := by
+  refine ⟨hB.compl_isBase_dual.indep, fun i ↦ ?_⟩
+  have hi := h.isBasis_inter i
+  rw [inter_comm]
+  exact hB.compl_inter_isBasis_of_inter_isBasis (X := Xs i) (by rwa [inter_comm])
+
+lemma IsMutualBasis.isMutualBasis_compl_ofDual {Xs : ι → Set α} (h : M✶.IsMutualBasis B Xs)
+    (hB : M✶.IsBase B) : M.IsMutualBasis (M.E \ B) (fun i ↦ M.E \ Xs i) := by
+  simpa using h.isMutualBasis_compl_dual hB
+
+lemma IsMutualBasis.isMutualBasis_of_compl {Xs : ι → Set α} (hXs : ∀ i, Xs i ⊆ M.E)
+    (h : M.IsMutualBasis B (fun i ↦ M.E \ Xs i)) (hB : M.IsBase B) :
+    M✶.IsMutualBasis (M.E \ B) Xs := by
+  convert h.isMutualBasis_compl_dual hB with i
+  rw [diff_diff_cancel_left (hXs i)]
+
+
 end IsMutualBasis
 section IsModularFamily
 
@@ -593,6 +611,20 @@ lemma IsModularPair.closure_closure (h : M.IsModularPair X Y) :
 
 lemma isModularPair_loops (M : Matroid α) (hX : X ⊆ M.E) : M.IsModularPair X (M.loops) :=
   ((M.isModularPair_of_subset (empty_subset X) hX).closure_left).symm
+
+lemma Spanning.isModularPair_iff (hX : M.Spanning X) :
+    M.IsModularPair X Y ↔ Y ⊆ M.closure (X ∩ Y) := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · obtain ⟨I, hIXY, hIX, hIY, hIi⟩ := h.exists_common_isBasis
+    grw [← hIi.closure_eq_closure,
+      (hIX.isBase_of_spanning hX).eq_of_subset_indep hIXY.indep inter_subset_left]
+    exact hIY.subset_closure
+  obtain ⟨I, J, hI, hJ, hIJ⟩ :=
+    M.exists_isBasis_subset_isBasis (show X ∩ Y ⊆ X from inter_subset_left)
+  rw [isModularPair_iff_exists_isBasis_isBasis]
+  refine ⟨J, I, hJ, ?_, hJ.indep.subset <| by simpa⟩
+  refine hI.indep.isBasis_of_subset_of_subset_closure (hI.subset.trans inter_subset_right) ?_
+  grw [hI.closure_eq_closure, ← h]
 
 lemma isModularPair_singleton (he : e ∈ M.E) (hX : X ⊆ M.E) (heX : e ∉ M.closure X) :
     M.IsModularPair {e} X := by

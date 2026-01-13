@@ -123,6 +123,16 @@ lemma isSkewFamily_restrict_iff {Xs : η → Set α} {R : Set α} (hXs : ∀ i, 
     (M ↾ R).IsSkewFamily Xs ↔ M.IsSkewFamily Xs ∧ ∀ i, Xs i ⊆ R := by
   simp_rw [isSkewFamily_restrict_iff', inter_eq_self_of_subset_left (hXs _)]
 
+lemma isSkewFamily_dual_iff_isModularFamily_compl {X : η → Set α} (hX : ∀ i, X i ⊆ M.E)
+    (hdj : Pairwise (Disjoint on X)) :
+    M✶.IsSkewFamily X ↔ M.IsModularFamily (fun i ↦ M.E \ (X i)) := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · obtain ⟨B, hB, hBX⟩ := h.isModularFamily.exists_isMutualBasis_isBase
+    exact (hBX.isMutualBasis_compl_ofDual hB).isModularFamily
+  obtain ⟨B, hB, hBX⟩ := h.exists_isMutualBasis_isBase
+  refine ⟨(hBX.isMutualBasis_of_compl hX hB).isModularFamily,
+    fun i j hne ↦ by simp [(hdj hne).inter_eq]⟩
+
 lemma Indep.isSkewFamily_iff_pairwise_disjoint {Is : η → Set α} (hI : M.Indep (⋃ i, Is i)) :
     M.IsSkewFamily Is ↔ Pairwise (Disjoint on Is) := by
   refine ⟨fun h ↦ h.pairwise_disjoint_of_indep_subsets
@@ -525,6 +535,19 @@ lemma skew_iff_diff_loops_skew_left : M.Skew X Y ↔ M.Skew (X \ M.loops) Y :=
 lemma skew_iff_isBases_skew (hI : M.IsBasis I X) (hJ : M.IsBasis J Y) : M.Skew I J ↔ M.Skew X Y :=
   ⟨fun h ↦ h.closure_skew.mono hI.subset_closure hJ.subset_closure,
     fun h ↦ h.mono hI.subset hJ.subset⟩
+
+lemma skew_dual_iff (hXY : Disjoint X Y) (hX : X ⊆ M.E := by aesop_mat)
+    (hY : Y ⊆ M.E := by aesop_mat) : M✶.Skew X Y ↔ M.IsModularPair (M.E \ X) (M.E \ Y) := by
+  rw [Skew, isSkewFamily_dual_iff_isModularFamily_compl (by grind) (by grind [Pairwise]),
+    IsModularPair]
+  simp [Bool.apply_cond (f := fun X ↦ M.E \ X)]
+
+lemma isModularPair_dual_iff (hXY : X ∪ Y = M.E) :
+    M✶.IsModularPair X Y ↔ M.Skew (M.E \ X) (M.E \ Y) := by
+  nth_rw 2 [← dual_dual M]
+  rw [← dual_ground, skew_dual_iff, dual_ground, ← hXY, diff_diff_cancel_left subset_union_left,
+    diff_diff_cancel_left subset_union_right]
+  rw [dual_ground, disjoint_iff_inter_eq_empty, diff_inter_diff, hXY, diff_self]
 
 /-- Can we just lose this one by the below? -/
 lemma Skew.union_indep_of_indep_subsets (h : M.Skew X Y) (hI : M.Indep I) (hIX : I ⊆ X)
@@ -1010,6 +1033,12 @@ lemma skew_disjointSum {M₁ M₂ : Matroid α} (hdj : Disjoint M₁.E M₂.E) :
   rintro C (h | h) -
   · exact .inl h.subset_ground
   exact .inr h.subset_ground
+
+-- lemma skew_dual_iff (hX : X ⊆ M.E) (hY : Y ⊆ M.E) (hXY : Disjoint X Y) : M✶.Skew X Y ↔ False := by
+
+--   rw [M✶.skew_iff_contract_restrict_eq_restrict, ← dual_inj, ← delete_compl _ (R := Y),
+--     dual_contract_delete, ← delete_compl, dual_delete, dual_dual, contract_ground, dual_ground,
+--     diff_diff, ← contract_delete_comm _ (by grind)]
 
 section ModularCompl
 

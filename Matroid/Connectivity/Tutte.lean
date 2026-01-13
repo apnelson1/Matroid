@@ -491,7 +491,7 @@ lemma freeOn_tutteConnected_iff (E : Set α) :
   rw [← tutteConnected_dual_iff, freeOn_dual_eq, loopyOn_tutteConnected_iff]
 
 lemma tutteConnected_two_iff [M.Nonempty] : M.TutteConnected 2 ↔ M.Connected := by
-  rw [← not_iff_not, exists_partition_iff_not_connected, ← one_add_one_eq_two,
+  rw [← not_iff_not, exists_separation_iff_not_connected, ← one_add_one_eq_two,
     not_tutteConnected_iff_exists]
   simp only [ENat.add_le_right_iff, ENat.one_ne_top, or_false]
   refine ⟨fun ⟨P, hP0, hP⟩ ↦ ⟨P, hP0, IsPredSeparation.not_trivial hP (by simp)⟩,
@@ -504,6 +504,16 @@ lemma tutteConnected_two_iff [M.Nonempty] : M.TutteConnected 2 ↔ M.Connected :
 lemma TutteConnected.connected [M.Nonempty] (hM : M.TutteConnected k) (hk : 2 ≤ k) :
     M.Connected :=
   tutteConnected_two_iff.1 (hM.mono hk)
+
+lemma exists_of_tutteConnected_of_not_tutteConnected_add_one (hM : M.TutteConnected k)
+    (hM' : ¬ M.TutteConnected (k + 1)) :
+    ∃ (P : M.Separation), P.eConn + 1 = k ∧ P.IsTutteSeparation := by
+  obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one
+  · simp at hM'
+  obtain ⟨P, hPconn, hP⟩ := not_tutteConnected_iff_exists.1 hM'
+  refine ⟨P, hPconn.antisymm ?_, hP⟩
+  by_contra! hcon
+  exact (mt <| hM.not_isTutteSeparation (P := P)) (by simpa) <| Order.le_of_lt_add_one hcon
 
 @[simp]
 lemma emptyOn_tutteConnected (α : Type*) (k : ℕ∞) : (emptyOn α).TutteConnected k := by

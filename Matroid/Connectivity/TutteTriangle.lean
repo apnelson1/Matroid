@@ -23,7 +23,7 @@ lemma tutte_triangle_disconnected_case (hM : M.TutteConnected 3) (hT : M.IsTrian
     (hdisc : ¬(M ＼ {e,f}).Connected) : ∃ K, M.IsTriad K ∧ e ∈ K := by
   have hgE' : g ∈ (M ＼ {e,f}).E := ⟨hT.mem_ground₃, by simp [hT.ne₁₃.symm, hT.ne₂₃.symm]⟩
   have hne : (M ＼ {e,f}).Nonempty := by rw [← ground_nonempty_iff]; use g
-  obtain ⟨P, hP0, hPnt⟩ := exists_partition_of_not_connected hdisc
+  obtain ⟨P, hP0, hPnt⟩ := exists_separation_of_not_connected hdisc
   rw [P.not_trivial_iff] at hPnt
   -- let `j` be the side of `P` containing `g`.
   obtain ⟨j, hgj⟩ : ∃ j, g ∈ P j := by rwa [← P.iUnion_eq, mem_iUnion] at hgE'
@@ -80,18 +80,18 @@ lemma tutte_triangle_disconnected_case (hM : M.TutteConnected 3) (hT : M.IsTrian
   norm_num
 
 lemma tutte_triangle_weak (hM : M.TutteConnected 3) (hT : M.IsTriangle {e,f,g})
-    (he : ¬ (M ＼ {e}).TutteConnected 3) (hf : ¬ (M ＼ {f}).TutteConnected 3) :
-    ∃ K, M.IsTriad K ∧ e ∈ K := by
+    (hcard : 4 ≤ M.E.encard) (he : ¬ (M ＼ {e}).TutteConnected 3)
+    (hf : ¬ (M ＼ {f}).TutteConnected 3) : ∃ K, M.IsTriad K ∧ e ∈ K := by
   obtain hdisc | hcon := em' <| (M ＼ {e,f}).Connected
   · exact tutte_triangle_disconnected_case hM hT hdisc
   -- wlog `(M ＼ {e,f})` is connected.
   sorry
 
 /-- The familiar, stronger, form of Tutte's triangle lemma follows from the above. -/
-lemma tutte_triangle (hM : M.TutteConnected 3) (hT : M.IsTriangle {e,f,g})
+lemma tutte_triangle (hM : M.TutteConnected 3) (hT : M.IsTriangle {e,f,g}) (hcard : 4 ≤ M.E.encard)
     (he : ¬ (M ＼ {e}).TutteConnected 3) (hf : ¬ (M ＼ {f}).TutteConnected 3) :
     ∃ K, M.IsTriad K ∧ e ∈ K ∧ ((f ∈ K ∧ g ∉ K) ∨ (f ∉ K ∧ g ∈ K)) := by
-  obtain ⟨K, hK, heK⟩ := tutte_triangle_weak hM hT he hf
+  obtain ⟨K, hK, heK⟩ := tutte_triangle_weak hM hT hcard he hf
   -- If `K = {e,f,g}`, then `M` is `U₂,₄`, and we have some easy bookkeeping to do.
   obtain rfl | hne := eq_or_ne {e,f,g} K
   · obtain ⟨E, hE4, rfl⟩ := hT.eq_unifOn_two_four_of_isTriad_of_tutteConnected hK hM
@@ -107,7 +107,7 @@ lemma tutte_triangle (hM : M.TutteConnected 3) (hT : M.IsTriangle {e,f,g})
     obtain ⟨hxe : x ≠ e, hxf : x ≠ f, hxg : x ≠ g⟩ := by simpa using hxT
     refine ⟨{e, f, x}, ?_, by grind⟩
     rw [isTriad_iff, encard_insert_of_notMem (by grind), encard_pair hxf.symm,
-      and_iff_left (by rfl), isCocircuit_def, unifOn_dual_eq' (j := 2) (by enat_to_nat!; lia), unifOn_isCircuit_iff, encard_insert_of_notMem (by grind), encard_pair hxf.symm]
+      and_iff_left (by rfl), isCocircuit_def, unifOn_dual_eq' (j := 2) (by enat_to_nat! <;> lia), unifOn_isCircuit_iff, encard_insert_of_notMem (by grind), encard_pair hxf.symm]
     grind [hT.mem_ground₁, hT.mem_ground₂]
   refine ⟨K, hK, heK, ?_⟩
   have hnt := hT.isCircuit.isCocircuit_inter_nontrivial hK.isCocircuit (by use e; simp_all)
