@@ -141,6 +141,29 @@ lemma multiConn_subsingleton [Subsingleton ι] (M : Matroid α) (X : ι → Set 
   · simp
   exact (hI i).indep.subset <| iUnion_subset_iff.2 fun j ↦ by rw [Subsingleton.elim i j]
 
+@[simp]
+lemma multiConn_const (M : Matroid α) (X : Set α) :
+    M.multiConn (fun (_ : ι) ↦ X) = (ENat.card ι - 1) * M.eRk X := by
+  obtain hι | ⟨⟨i⟩⟩ := isEmpty_or_nonempty ι
+  · simp [tsub_eq_zero_iff_le]
+  obtain ⟨I, hI⟩ := M.exists_isBasis' X
+  rw [M.multiConn_eq_comap_nullity (fun _ ↦ hI), ← biUnion_univ]
+  simp_rw [← union_compl_self {i}, biUnion_union]
+  rw [nullity_union_eq_nullity_add_encard_diff, sdiff_eq_left.2]
+  · simp only [mem_singleton_iff]
+    rw [Indep.nullity_eq, zero_add]
+    · rw [← ENat.tsum_encard_eq_encard_biUnion, tsum_congr (fun _ ↦ InjOn.encard_image (by simp)),
+        ENat.tsum_const, mul_comm, ← ENat.card_coe_setOf_ne i, hI.encard_eq_eRk]
+      · rfl
+      intro p (hp : p ≠ i) q (hq : q ≠ i) hpq
+      simp [disjoint_left, hpq.symm]
+    simp only [iUnion_iUnion_eq_left, comap_indep_iff, image_image, image_id', hI.indep, true_and]
+    exact LeftInvOn.injOn_image fun ⦃x⦄ ↦ congrFun rfl
+  · simp only [mem_compl_iff, mem_singleton_iff, iUnion_iUnion_eq_left, disjoint_iUnion_left]
+    intro j hji
+    simp [disjoint_left, Ne.symm hji]
+  simp [image_image, preimage_preimage, M.subset_closure _ hI.indep.subset_ground]
+
 lemma multiconn_eq_comap_prod_multiConn (X : ι → Set α) :
     M.multiConn X = (M.comap Prod.fst).multiConn (fun i ↦ (· , i) '' X i) := by
   choose I hI using fun i ↦ M.exists_isBasis' (X i)
@@ -252,6 +275,13 @@ lemma tsum_eRk_eq_eRk_iUnion_add_multiConn :
   simp_rw [image_iUnion, image_image, image_id'] at hrw
   rw [← hrw, eRk_add_nullity_eq_encard, ← ENat.tsum_encard_eq_encard_iUnion
     disjoint_map_prod_right, tsum_congr (fun i ↦ InjOn.encard_image (by simp))]
+
+
+
+  -- obtain h_eq | hne := eq_or_ne (M.eRk X) ⊤
+  -- · grw [h_eq, ENat.mul_eq_top_iff.2 (by simp [tsub_eq_zero_iff_le])]
+  -- obtain ⟨I, hI⟩ := M.exists_isBasis' X
+  -- rw [IsBasis'.multiConn_eq_nullity_iUnion]
 
 section Minor
 
@@ -445,6 +475,13 @@ lemma eLocalConn_inter_ground (M : Matroid α) (X Y : Set α) :
 @[simp] lemma eLocalConn_inter_ground_right (M : Matroid α) (X Y : Set α) :
     M.eLocalConn X (Y ∩ M.E) = M.eLocalConn X Y := by
   rw [← eLocalConn_closure_right, closure_inter_ground, eLocalConn_closure_right]
+
+@[simp]
+lemma eLocalConn_self (M : Matroid α) (X : Set α) : M.eLocalConn X X = M.eRk X := by
+  obtain ⟨I, hI⟩ := M.exists_isBasis' X
+  rw [hI.eLocalConn_eq_nullity_project_left, hI.project_eq_project, hI.eRk_eq_encard,
+    nullity_eq_encard]
+  simp [M.subset_closure I hI.indep.subset_ground]
 
 lemma eLocalConn_of_subset_coloops (M : Matroid α) (X : Set α) (hY : Y ⊆ M.coloops) :
     M.eLocalConn X Y = (X ∩ Y).encard := by
@@ -729,6 +766,36 @@ lemma IsHyperplane.eLocalConn_add_one_eq {H X : Set α} (hH : M.IsHyperplane H) 
     (hXE : X ⊆ M.E := by aesop_mat) : M.eLocalConn X H + 1 = M.eRk X := by
   rw [← M.eLocalConn_add_eRelRk_union_eq_eRk X H, ← eRelRk_closure_right,
     (hH.spanning_of_ssuperset (show H ⊂ X ∪ H by simpa)).closure_eq, hH.eRelRk_eq_one]
+
+lemma eLocalConn_le_add_eRelRk_left (M : Matroid α) (hXY : X ⊆ Y) (Z : Set α) :
+    M.eLocalConn Y Z ≤ M.eLocalConn X Z + M.eRelRk X Y := by
+  obtain ⟨IX, hIX⟩ := M.exists_isBasis' X
+  obtain ⟨J, hJ, rfl⟩ := hIX.exists_isBasis'_inter_eq_of_superset hXY
+  rw [hJ.eLocalConn_eq_nullity_project_right, hIX.eLocalConn_eq_nullity_project_right,
+    hJ.eRelRk_eq_encard_diff_of_subset hXY hIX]
+  nth_grw 1 [← inter_union_diff J X, nullity_union_le_nullity_add_encard_diff,
+    sdiff_eq_left.2 disjoint_sdiff_inter]
+
+lemma eLocalConn_le_add_eRelRk_right (M : Matroid α) (hXY : X ⊆ Y) (Z : Set α) :
+    M.eLocalConn Z Y ≤ M.eLocalConn Z X + M.eRelRk X Y := by
+  grw [eLocalConn_comm, eLocalConn_le_add_eRelRk_left _ hXY, eLocalConn_comm]
+
+lemma eLocalConn_union_left_le (M : Matroid α) (X Y A : Set α) :
+    M.eLocalConn (X ∪ A) Y ≤ M.eLocalConn X Y + M.eRk A := by
+  grw [M.eLocalConn_le_add_eRelRk_left subset_union_left, union_comm, ← eRelRk_eq_union_right,
+    eRelRk_le_eRk]
+
+lemma eLocalConn_union_right_le (M : Matroid α) (X Y A : Set α) :
+    M.eLocalConn X (Y ∪ A) ≤ M.eLocalConn X Y + M.eRk A := by
+  grw [eLocalConn_comm, eLocalConn_union_left_le, eLocalConn_comm]
+
+lemma eLocalConn_insert_left_le (M : Matroid α) (X Y : Set α) (e : α) :
+    M.eLocalConn (insert e X) Y ≤ M.eLocalConn X Y + 1 := by
+  grw [← union_singleton, eLocalConn_union_left_le, eRk_le_encard, encard_singleton]
+
+lemma eLocalConn_insert_right_le (M : Matroid α) (X Y : Set α) (e : α) :
+    M.eLocalConn X (insert e Y) ≤ M.eLocalConn X Y + 1 := by
+  grw [← union_singleton, eLocalConn_union_right_le, eRk_le_encard, encard_singleton]
 
 @[simp]
 lemma removeLoops_eLocalConn (M : Matroid α) : M.removeLoops.eLocalConn = M.eLocalConn := by
@@ -1183,5 +1250,28 @@ lemma eConn_contract_le (M : Matroid α) (X C : Set α) : (M ／ C).eConn X ≤ 
 lemma IsMinor.eConn_le {N : Matroid α} (hNM : N ≤m M) (X : Set α) : N.eConn X ≤ M.eConn X := by
   obtain ⟨C, D, rfl⟩ := hNM
   exact ((M ／ C).eConn_delete_le X D).trans <| M.eConn_contract_le X C
+
+lemma eConn_eq_zero_of_subset_loops {L : Set α} (hL : L ⊆ M.loops) : M.eConn L = 0 := by
+  rw [eConn_eq_eLocalConn, ← eLocalConn_diff_left_of_subset_loops hL]
+  simp
+
+lemma eConn_eq_zero_of_subset_coloops {L : Set α} (hL : L ⊆ M.coloops) : M.eConn L = 0 := by
+  rw [← eConn_dual]
+  exact eConn_eq_zero_of_subset_loops <| by simpa
+
+lemma IsLoop.eConn_eq_zero {e : α} (he : M.IsLoop e) : M.eConn {e} = 0 :=
+  eConn_eq_zero_of_subset_loops <| by simpa
+
+lemma IsColoop.eConn_eq_zero {e : α} (he : M.IsColoop e) : M.eConn {e} = 0 :=
+  eConn_eq_zero_of_subset_coloops <| by simpa
+
+lemma eConn_singleton_eq_zero_iff {e : α} (heM : e ∈ M.E) :
+    M.eConn {e} = 0 ↔ M.IsLoop e ∨ M.IsColoop e := by
+  rw [iff_def, or_imp, and_iff_right IsLoop.eConn_eq_zero, and_iff_left IsColoop.eConn_eq_zero]
+  intro h
+  obtain he | he := M.isLoop_or_isNonloop e
+  · exact .inl he
+  rw [he.indep.eConn_eq_zero_iff, singleton_subset_iff] at h
+  exact .inr h
 
 end Global

@@ -126,7 +126,7 @@ protected lemma symm_false (P : M.Separation) : P.symm false = P true := rfl
 @[simp, aesop unsafe 10% (rule_sets := [Matroid])]
 protected lemma subset_ground (P : M.Separation) : P i ⊆ M.E := P.subset
 
-/-- Transfer a partition across a matroid equality. -/
+/-- Transfer a separation across a matroid equality. -/
 protected def copy {M' : Matroid α} (P : M.Separation) (h_eq : M = M') : M'.Separation where
   toFun := P.toFun
   pairwise_disjoint' := P.pairwise_disjoint
@@ -164,7 +164,7 @@ protected lemma ofDual_apply (P : M✶.Separation) (i : Bool) : P.ofDual i = P i
   left_inv P := by simp
   right_inv P := by simp
 
-/-- A partition is trivial if one side is empty. -/
+/-- A separation is trivial if one side is empty. -/
 protected def Trivial (P : M.Separation) : Prop := Bipartition.Trivial P
 
 protected lemma trivial_of_eq_empty (h : P i = ∅) : P.Trivial := Bipartition.trivial_of_eq_empty h
@@ -195,7 +195,19 @@ lemma eConn_eq (P : M.Separation) (i : Bool) : M.eConn (P i) = P.eConn := by
   cases i
   <;> simp [eLocalConn_comm]
 
-lemma eConn_eq_eLocalConn (P : M.Separation) : P.eConn = M.eLocalConn (P true) (P false) := rfl
+lemma eConn_eq_eLocalConn_true_false (P : M.Separation) :
+  P.eConn = M.eLocalConn (P true) (P false) := rfl
+
+lemma eConn_eq_eLocalConn (P : M.Separation) (i : Bool) :
+    P.eConn = M.eLocalConn (P i) (P !i) := by
+  obtain rfl | rfl := i
+  · rw [eLocalConn_comm]
+    rfl
+  rfl
+
+lemma eConn_eq_eLocalConn_of_isRestriction (P : N.Separation) (hNM : N ≤r M) (i : Bool) :
+    P.eConn = M.eLocalConn (P i) (P !i) := by
+  rw [eConn_eq_eLocalConn _ i, hNM.eLocalConn_eq_of_subset]
 
 @[simp]
 lemma eConn_dual (P : M.Separation) : P.dual.eConn = P.eConn := by
@@ -262,7 +274,7 @@ protected lemma spanning_dual_iff : M✶.Spanning (P i) ↔ M.Indep (P !i) := by
 protected lemma nonspanning_dual_iff : M✶.Nonspanning (P i) ↔ M.Dep (P !i) := by
   rw [← not_spanning_iff, spanning_dual_iff, not_indep_iff, P.compl_eq]
 
-/-- The connectivity of a partition as a natural number. Takes a value of `0` if infinite. -/
+/-- The connectivity of a separation as a natural number. Takes a value of `0` if infinite. -/
 noncomputable def conn (P : M.Separation) : ℕ := M.localConn (P true) (P false)
 
 @[simp]
@@ -275,7 +287,7 @@ protected def setCompl (M : Matroid α) [OnUniv M] (X : Set α) : M.Separation :
 
 end Separation
 
--- /-- Restrict a partition to a set. The junk elements go on the right. -/
+-- /-- Restrict a separation to a set. The junk elements go on the right. -/
 -- @[simps!] protected def restrict (P : M.Separation) (R : Set α) : (M ↾ R).Separation :=
 -- Separation.mk'
 --   (P.left ∩ R) ((P.right ∩ R) ∪ (R \ M.E))
@@ -294,7 +306,7 @@ end Separation
 --     eLocalConn_inter_ground_right]
 
 
-/-- The partition of `M` given by a subset of `M.E` and its complement. The elements of the set
+/-- The separation of `M` given by a subset of `M.E` and its complement. The elements of the set
 go on side `b`.   -/
 @[simps!]
 def ofSetSep (M : Matroid α) (A : Set α) (i : Bool) (hA : A ⊆ M.E := by aesop_mat) :
@@ -335,7 +347,7 @@ lemma Trivial.exists_eq (h : P.Trivial) : ∃ i, P = M.ofSetSep ∅ i := by
   obtain ⟨i, hb⟩ := h
   refine ⟨!i, Separation.ext_bool i (by simpa)⟩
 
-/-- Intersect a partition with the ground set of a smaller matroid -/
+/-- Intersect a separation with the ground set of a smaller matroid -/
 def induce (P : M.Separation) (hN : N.E ⊆ M.E) : N.Separation := Bipartition.induce P hN
 
 @[simp]
@@ -350,20 +362,20 @@ lemma IsMinor.eConn_induce_le (P : M.Separation) (hNM : N ≤m M) :
   grw [← P.eConn_eq true, ← Separation.eConn_eq _ true, induce_apply, eConn_inter_ground,
     hNM.eConn_le]
 
-/-- Every partition has a larger side for a given numerical notion of 'large' -/
+/-- Every separation has a larger side for a given numerical notion of 'large' -/
 lemma exists_larger_side {β : Type*} [ConditionallyCompleteLinearOrder β] (P : M.Separation)
     (f : Set α → β) : ∃ i, ∀ j, f (P j) ≤ f (P i) := by
   obtain ⟨j, hj⟩ := exists_eq_ciSup_of_finite (f := fun i ↦ f (P i))
   refine ⟨j, fun i ↦ ?_⟩
   grw [hj, ← le_ciSup (by simp)]
 
-/-- For any two partitions, one of the four cells obtained by intersecting them is the
+/-- For any two separations, one of the four cells obtained by intersecting them is the
 smaller one, for a given numerical notion of 'small'. -/
 lemma exists_smaller_side {β : Type*} [ConditionallyCompleteLinearOrder β] (P : M.Separation)
     (f : Set α → β) : ∃ i, ∀ j, f (P i) ≤ f (P j) :=
   exists_larger_side (β := βᵒᵈ) P f
 
-/-- For any two partitions, one of the four cells obtained by intersecting them is the
+/-- For any two separations, one of the four cells obtained by intersecting them is the
 largest one, for a given numerical notion of 'large'. -/
 lemma exists_largest_inter {β : Type*} [ConditionallyCompleteLinearOrder β] (P : M.Separation)
     (Q : N.Separation) (f : Set α → β) : ∃ i i', ∀ j j', f (P j ∩ Q j') ≤ f (P i ∩ Q i') := by
@@ -373,7 +385,7 @@ lemma exists_largest_inter {β : Type*} [ConditionallyCompleteLinearOrder β] (P
   simp only [φ] at hj
   grw [hj, ← hφ, ← le_ciSup (c := (i,i')) (finite_range φ).bddAbove]
 
-/-- For any two partitions, one of the four cells obtained by intersecting them is the
+/-- For any two separations, one of the four cells obtained by intersecting them is the
 smallest one, for a given numerical notion of small'. -/
 lemma exists_smallest_inter {β : Type*} [ConditionallyCompleteLinearOrder β] (P : M.Separation)
     (Q : N.Separation) (f : Set α → β) : ∃ i i', ∀ j j', f (P i ∩ Q i') ≤ f (P j ∩ Q j') :=
@@ -383,7 +395,7 @@ section Cross
 
 variable {Q : M.Separation}
 
-/-- Cross two partitions by intersecting their `i`-sides and unioning their `!i`-sides-/
+/-- Cross two separations by intersecting their `i`-sides and unioning their `!i`-sides-/
 protected def cross (P Q : M.Separation) (i : Bool) : M.Separation := Bipartition.cross P Q i
 
 @[simp, simp↓]
@@ -411,7 +423,7 @@ protected lemma cross_symm (P Q : M.Separation) (i : Bool) :
     (P.cross Q i).symm = P.symm.cross Q.symm !i :=
   Bipartition.cross_symm ..
 
-/-- Cross two partitions by intersecting the `true` sets. -/
+/-- Cross two separations by intersecting the `true` sets. -/
 def inter (P Q : M.Separation) : M.Separation := P.cross Q true
 
 @[simp]
@@ -420,7 +432,7 @@ lemma inter_true (P Q : M.Separation) : (P.inter Q) true = P true ∩ Q true := 
 @[simp]
 lemma inter_false (P Q : M.Separation) : (P.inter Q) false = P false ∪ Q false := rfl
 
-/-- Cross two partitions by intersecting the right sets. -/
+/-- Cross two separations by intersecting the right sets. -/
 def union (P Q : M.Separation) : M.Separation := (P.symm.inter Q.symm).symm
 
 @[simp]
@@ -506,7 +518,7 @@ lemma subset_ground_of_delete (P : (M ＼ D).Separation) (i : Bool) : P i ⊆ M.
 lemma left_subset_ground_of_contract (P : (M ／ C).Separation) (i : Bool) : P i ⊆ M.E :=
   P.subset_ground.trans diff_subset
 
-/-- Contract the elements of `C` to take a partition of `M` to a partition of `M ／ C`. -/
+/-- Contract the elements of `C` to take a separation of `M` to a separation of `M ／ C`. -/
 def contract (P : M.Separation) (C : Set α) : (M ／ C).Separation := P.induce diff_subset
 
 @[simp, simp↓]
@@ -534,7 +546,7 @@ lemma contract_inter_ground (P : M.Separation) (C : Set α) :
     (P.contract (C ∩ M.E)) = (P.contract C).copy (by simp) :=
   P.contract_congr <| by simp [inter_assoc]
 
-/-- Delete the elements of `D` to take a partition of `M` to a partition of `M ＼ D`. -/
+/-- Delete the elements of `D` to take a separation of `M` to a separation of `M ＼ D`. -/
 def delete (P : M.Separation) (D : Set α) : (M ＼ D).Separation := P.induce diff_subset
 
 @[simp, simp↓]
@@ -596,7 +608,7 @@ abbrev contractDual (P : (M ／ C).Separation) : (M✶ ＼ C).Separation := P.du
 @[simps!]
 abbrev deleteDual (P : (M ＼ D).Separation) : (M✶ ／ D).Separation := P.dual.copy (by simp)
 
-/-- Extend a partition `P` of some matroid `N` to a matroid `M` with larger ground set by
+/-- Extend a separation `P` of some matroid `N` to a matroid `M` with larger ground set by
 adding the extra elements to side `b` of `P`. `-/
 def ofGroundSubset (P : N.Separation) (hNM : N.E ⊆ M.E) (i : Bool) : M.Separation :=
   Bipartition.expand P hNM i
@@ -628,7 +640,7 @@ lemma ofGroundSubset_copy {N' : Matroid α} (P : N.Separation) (hN' : N = N') (h
     (i : Bool) : (P.copy hN').ofGroundSubset hN'M i = P.ofGroundSubset (hN' ▸ hN'M) i :=
   Separation.ext_bool (i := !i) <| by simp
 
-/-- Extend a partition of `M ／ C` to one of `M` by extending using side `b`. -/
+/-- Extend a separation of `M ／ C` to one of `M` by extending using side `b`. -/
 def ofContract (P : (M ／ C).Separation) (i : Bool) : M.Separation := P.ofGroundSubset diff_subset i
 
 @[simp, simp↓]
@@ -665,7 +677,7 @@ lemma ofContract_copy {C' : Set α} (P : (M ／ C).Separation) (h_eq : M ／ C =
   Separation.ext_bool (i := !i) <| by
     simp
 
-/-- Extend a partition of `M ＼ D` to a partition of `M` by adding `D` to the left side. -/
+/-- Extend a separation of `M ＼ D` to a separation of `M` by adding `D` to the left side. -/
 def ofDelete (P : (M ＼ D).Separation) (i : Bool) : M.Separation := P.ofGroundSubset diff_subset i
 
 lemma ofDelete_apply (P : (M ＼ D).Separation) (hD : D ⊆ M.E := by aesop_mat) (i j : Bool) :
@@ -676,6 +688,11 @@ lemma ofDelete_apply (P : (M ＼ D).Separation) (hD : D ⊆ M.E := by aesop_mat)
 lemma ofDelete_apply_self (P : (M ＼ D).Separation) (hD : D ⊆ M.E := by aesop_mat) (i : Bool) :
     P.ofDelete i i = P i ∪ D := by
   simp [P.ofDelete_apply]
+
+lemma ofDelete_apply_self' (P : (M ＼ D).Separation) (i : Bool) :
+    P.ofDelete i i = P i ∪ (D ∩ M.E) := by
+  rw [ofDelete, ofGroundSubset_apply]
+  simp [inter_comm]
 
 @[simp]
 lemma ofDelete_apply_not (P : (M ＼ D).Separation) (i : Bool) : P.ofDelete i (!i) = P !i := by
@@ -764,6 +781,22 @@ lemma eConn_ofDelete (P : (M ＼ D).Separation) (i : Bool) :
   rw [← eConn_dual, ofDelete_dual, eConn_ofContract]
   simp
 
+lemma eConn_ofDelete_le_eConn_add_eRelRk (P : (M ＼ D).Separation) (i : Bool) :
+    (P.ofDelete i).eConn ≤ P.eConn + M.eRelRk (P i) (P i ∪ D) := by
+  rw [P.eConn_eq_eLocalConn_of_isRestriction (delete_isRestriction M D) i,
+    eConn_eq_eLocalConn _ i, ofDelete_apply_not, Separation.ofDelete, ofGroundSubset_apply]
+  simp only [BEq.rfl, delete_ground, sdiff_sdiff_right_self, inf_eq_inter, cond_true]
+  grw [eLocalConn_le_add_eRelRk_left _ subset_union_left, ← eRelRk_inter_ground_right,
+    union_inter_distrib_right, inter_right_comm, inter_self, inter_comm M.E,
+    ← union_inter_distrib_right, eRelRk_inter_ground_right]
+
+lemma eConn_ofdelete_eq_self_iff_of_coindep {P : (M ＼ D).Separation} (hPconn : P.eConn ≠ ⊤)
+    (hD : M.Coindep D) : (P.ofDelete i).eConn = P.eConn ↔ D ⊆ M.closure (P i) := by
+  rw [← eConn_eq _ i, ofDelete_apply_self, ← eConn_eq _ i, eq_comm,
+    hD.delete_eConn_eq_union_iff' _ (by simpa)]
+  grw [P.subset_ground]
+  exact disjoint_sdiff_left
+
 lemma eConn_induce_le_of_isMinor (P : M.Separation) (hNM : N ≤m M) :
     (P.induce hNM.subset).eConn ≤ P.eConn := by
   rw [← eConn_eq _ true, induce_apply, ← eConn_eq _ true, eConn_inter_ground]
@@ -814,6 +847,18 @@ lemma eConn_eq_of_subset_closure_of_isRestriction {N : Matroid α} {Q : N.Separa
   grw [← eLocalConn_closure_closure (X := Q _),
   M.eLocalConn_mono (forall_subset_closure true) (forall_subset_closure false)]
 
+lemma eConn_ofDelete_eq_of_subset_closure (P : (M ＼ D).Separation) (j : Bool)
+    (hD : D ⊆ M.closure (P j)) : (P.ofDelete j).eConn = P.eConn := by
+  refine eConn_eq_of_subset_closure_of_isRestriction (by simp) (fun i ↦ ?_) (fun i ↦ ?_)
+  · obtain rfl | rfl := i.eq_or_eq_not j
+    · grw [ofDelete_apply_self, ← subset_union_left]
+    simp
+  obtain rfl | rfl := i.eq_or_eq_not j
+  · rw [ofDelete_apply_self, union_subset_iff, and_iff_left hD]
+    exact M.subset_closure _ <| P.subset_ground.trans diff_subset
+  rw [ofDelete_apply_not]
+  exact M.subset_closure _ <| P.subset_ground.trans diff_subset
+
 end Minor
 
 lemma eConn_eq_zero_iff_skew {P : M.Separation} {i : Bool} : P.eConn = 0 ↔ M.Skew (P i) (P !i) := by
@@ -828,16 +873,16 @@ lemma eConn_eq_zero_iff_eq_disjointSum {P : M.Separation} {i : Bool} :
   rw [eConn_eq_zero_iff_skew, skew_iff_restrict_union_eq P.subset_ground P.subset_ground
     (P.disjoint_bool i), P.union_bool_eq, restrict_ground_eq_self]
 
-lemma exists_partition_of_not_connected [M.Nonempty] (h : ¬ M.Connected) :
+lemma _root_.Matroid.exists_separation_of_not_connected [M.Nonempty] (h : ¬ M.Connected) :
     ∃ P : M.Separation, P.eConn = 0 ∧ ¬ P.Trivial := by
   obtain ⟨M₁, M₂, hdj, hM₁, hM₂, rfl⟩ := eq_disjointSum_of_not_connected h
   refine ⟨ofSetSep _ M₁.E true (by simp), ?_⟩
   simp [Separation.trivial_def, hdj.symm.sdiff_eq_left, hM₁.ground_nonempty.ne_empty,
     hM₂.ground_nonempty.ne_empty]
 
-lemma exists_partition_iff_not_connected [M.Nonempty] :
+lemma _root_.Matroid.exists_separation_iff_not_connected [M.Nonempty] :
     ¬ M.Connected ↔ ∃ P : M.Separation, P.eConn = 0 ∧ ¬ P.Trivial := by
-  refine ⟨exists_partition_of_not_connected, fun ⟨P, hP, hPnt⟩ ↦ ?_⟩
+  refine ⟨exists_separation_of_not_connected, fun ⟨P, hP, hPnt⟩ ↦ ?_⟩
   rw [eConn_eq_zero_iff_eq_disjointSum (i := true)] at hP
   rw [hP]
   simp only [P.trivial_def, not_or, ← nonempty_iff_ne_empty] at hPnt
@@ -846,6 +891,20 @@ lemma exists_partition_iff_not_connected [M.Nonempty] :
     exact hPnt.1
   rw [← ground_nonempty_iff]
   exact hPnt.2
+
+lemma _root_.Matroid.connected_iff_forall_separation [M.Nonempty] :
+    M.Connected ↔ ∀ P : M.Separation, P.eConn = 0 → P.Trivial := by
+  rw [← not_iff_not, exists_separation_iff_not_connected]
+  simp
+
+lemma _root_.Matroid.Connected.trivial_of_eConn_eq_zero (h : M.Connected) (hP : P.eConn = 0) :
+    P.Trivial := by
+  have := h.nonempty
+  exact connected_iff_forall_separation.1 h P hP
+
+lemma one_le_eConn_of_connected (hP : ¬ P.Trivial) (hM : M.Connected) : 1 ≤ P.eConn := by
+  contrapose! hP
+  exact hM.trivial_of_eConn_eq_zero <| ENat.lt_one_iff_eq_zero.1 hP
 
 /-- The generalized Bixby-Coullard inequality for pairs of separations. -/
 lemma eConn_inter_add_eConn_inter_le (P : (M ／ X).Separation) (Q : (M ＼ X).Separation) (i : Bool) :
@@ -890,7 +949,7 @@ lemma exists_of_isRestriction_of_forall_mem_closure (P : N.Separation) (hNM : N 
   simp only [↓mk_apply, subset_inter_iff, aux, P.subset_ground.trans hNM.subset, and_self,
     closure_inter_ground, true_and]
   refine ⟨fun _ ↦ auxcl, ?_⟩
-  simp only [eConn_eq_eLocalConn, ↓mk_apply, eLocalConn_inter_ground_right,
+  simp only [eConn_eq_eLocalConn_true_false, ↓mk_apply, eLocalConn_inter_ground_right,
     eLocalConn_inter_ground_left]
   rw [hNM.eLocalConn_eq_of_subset, ← M.eLocalConn_closure_closure, auxcl, auxcl,
     eLocalConn_closure_closure]

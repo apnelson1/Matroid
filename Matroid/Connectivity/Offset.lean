@@ -151,17 +151,17 @@ lemma InternallyConnected.exists_indep_coindep_of_eConn_lt (h : M.InternallyConn
   obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp at hP
   exact h.tutteConnected.exists_indep_coindep (P := P) (Order.le_of_lt_add_one hP)
 
-lemma InternallyConnected.foo (hk : k ≠ ⊤) : M.InternallyConnected (k + 1) ↔
-    M.TutteConnected k ∧ ∀ (P : M.Separation), P.eConn + 1 = k → P.IsTutteSeparation →
-    ∃ i, M.IsCircuit (P i) ∨ M.IsCocircuit (P i) := by
-  obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
-  have hktop : k ≠ ⊤ := by simpa using hk
+-- lemma InternallyConnected.foo (hk : k ≠ ⊤) : M.InternallyConnected (k + 1) ↔
+--     M.TutteConnected k ∧ ∀ (P : M.Separation), P.eConn + 1 = k → P.IsTutteSeparation →
+--     ∃ i, M.IsCircuit (P i) ∨ M.IsCocircuit (P i) := by
+--   obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
+--   have hktop : k ≠ ⊤ := by simpa using hk
 
-  refine ⟨fun h ↦ ⟨h.tutteConnected, fun P hPconn hP ↦ ?_⟩, fun h ↦ ?_⟩
-  · obtain rfl : P.eConn = k := by simpa using hPconn
-    obtain ⟨i, hi⟩ := OffsetConnected.exists_encard_le h P
-    have hle : (P i).encard ≤ P.eConn + 1 := by simpa [hktop] using hi
-    clear hi h hPconn hk
+--   refine ⟨fun h ↦ ⟨h.tutteConnected, fun P hPconn hP ↦ ?_⟩, fun h ↦ ?_⟩
+--   · obtain rfl : P.eConn = k := by simpa using hPconn
+--     obtain ⟨i, hi⟩ := OffsetConnected.exists_encard_le h P
+--     have hle : (P i).encard ≤ P.eConn + 1 := by simpa [hktop] using hi
+--     clear hi h hPconn hk
 
 
 

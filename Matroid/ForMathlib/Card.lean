@@ -195,3 +195,9 @@ lemma finsum_one (s : Set α) : ∑ᶠ x ∈ s, 1 = s.ncard := by
   -- · rw [finsum_mem_eq_finite_toFinset_sum _ hs, ncard_eq_toFinset_card _ hs]
   --   simp
   -- rw [hs.ncard, finsum_mem_eq_zero_of_infinite (by simpa [Function.support])]
+
+lemma ENat.card_coe_setOf_ne (a : α) : ENat.card {i | i ≠ a} = ENat.card α - 1 := by
+  rw [← encard_univ α, ENat.card_coe_set_eq, ← encard_diff_singleton_of_mem (mem_univ a)]
+  convert rfl using 2
+  ext
+  simp

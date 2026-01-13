@@ -255,3 +255,11 @@ lemma forall_mem_and {α : Type*} {p q : α → Prop} {s : Set α} :
     (∀ x ∈ s, p x ∧ q x) ↔ (∀ x ∈ s, p x) ∧ (∀ x ∈ s, q x) :=
   ⟨fun h ↦ ⟨fun x hx ↦ (h x hx).1, fun x hx ↦ (h x hx).2⟩,
     fun ⟨hp, hq⟩ x hx ↦ ⟨hp x hx, hq x hx⟩⟩
+
+lemma biUnion_congr {α ι : Type*} {p : Set ι} {s t : ι → Set α}
+    (h : ∀ i ∈ p, s i = t i) : ⋃ i ∈ p, s i = ⋃ i ∈ p, t i :=
+  iUnion₂_congr h
+
+lemma biInter_congr {α ι : Type*} {p : Set ι} {s t : ι → Set α}
+    (h : ∀ i ∈ p, s i = t i) : ⋂ i ∈ p, s i = ⋂ i ∈ p, t i :=
+  iInter₂_congr h

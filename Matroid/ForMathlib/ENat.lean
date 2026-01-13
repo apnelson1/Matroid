@@ -141,6 +141,12 @@ protected lemma lt_add_one_self_iff {a : ℕ∞} : a < a + 1 ↔ a ≠ ⊤ := by
 protected lemma lt_one_add_self_iff {a : ℕ∞} : a < 1 + a ↔ a ≠ ⊤ := by
   simp
 
+protected lemma add_one_eq_add_one_iff {a b : ℕ∞} : a + 1 = b + 1 ↔ a = b := by
+  simp
+
+protected lemma one_add_eq_one_add_iff {a b : ℕ∞} : a + 1 = b + 1 ↔ a = b := by
+  simp
+
 lemma add_sub_cancel_right (a : ℕ∞) (hb : b ≠ ⊤) : a + b - b = a := by
   lift b to ℕ using hb
   cases a with

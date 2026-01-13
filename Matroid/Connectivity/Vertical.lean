@@ -410,7 +410,7 @@ lemma verticallyConnected_freeOn_iff (E : Set α) (k : ℕ∞) :
 
 /-! ### Cyclic connectivity -/
 
-def CyclicallyConnected (M : Matroid α) := M.NumConnected Matroid.Indep
+def CyclicallyConnected (M : Matroid α) (k : ℕ∞) := M.NumConnected Matroid.Indep k
 
 lemma CyclicallyConnected.dual_verticallyConnected (h : M.CyclicallyConnected k) :
     M✶.VerticallyConnected k :=
@@ -498,19 +498,7 @@ lemma CyclicallyConnected.le_girth (h : M.CyclicallyConnected k) (hlt : k ≤ M�
   grw [← M✶.eRk_le_encard, hi.eRk_eq] at hCcard
   exact hCcard.not_ge hlt
 
--- lemma IsSpanningRestriction.foo (hNM : N ≤sr M) (hN : N.CyclicallyConnected k)
---     (h : ∀ C, M.IsCircuit C → C.encard ≤ k → C ⊆ N.E) : M.CyclicallyConnected k := by
---     -- (hM : ¬ M.CyclicallyConnected k) : ∃ C, M.IsCircuit C ∧ ¬ (C ⊆ N.E) ∧ C.encard ≤ k := by
---   obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
---   rw [cyclicallyConnected_iff_forall]
---   intro P hPk hP
---   refine hN.not_isCyclicSeparation (P := P.induce hNM.subset) ?_ ?_
---   · grw [eConn_induce_le_of_isMinor _ hNM.isRestriction.isMinor, hPk]
---   refine isCyclicSeparation_iff_forall.2 fun i ↦ ?_
---   simp only [induce_apply]
---   obtain ⟨C, hCi, hC⟩ := (hP.dep i).exists_isCircuit_subset
---   rw [← not_indep_iff]
---   intro hi
+
 
 
 
