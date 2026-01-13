@@ -776,6 +776,15 @@ lemma eConn_ofDelete (P : (M ＼ D).Separation) (i : Bool) :
   rw [← eConn_dual, ofDelete_dual, eConn_ofContract]
   simp
 
+lemma eConn_ofDelete_le_eConn_add_eRelRk (P : (M ＼ D).Separation) (i : Bool) :
+    (P.ofDelete i).eConn ≤ P.eConn + M.eRelRk (P i) (P i ∪ D) := by
+  rw [P.eConn_eq_eLocalConn_of_isRestriction (delete_isRestriction M D) i,
+    eConn_eq_eLocalConn _ i, ofDelete_apply_not, Separation.ofDelete, ofGroundSubset_apply]
+  simp only [BEq.rfl, delete_ground, sdiff_sdiff_right_self, inf_eq_inter, cond_true]
+  grw [eLocalConn_le_add_eRelRk_left _ subset_union_left, ← eRelRk_inter_ground_right,
+    union_inter_distrib_right, inter_right_comm, inter_self, inter_comm M.E,
+    ← union_inter_distrib_right, eRelRk_inter_ground_right]
+
 lemma eConn_induce_le_of_isMinor (P : M.Separation) (hNM : N ≤m M) :
     (P.induce hNM.subset).eConn ≤ P.eConn := by
   rw [← eConn_eq _ true, induce_apply, ← eConn_eq _ true, eConn_inter_ground]
@@ -825,6 +834,18 @@ lemma eConn_eq_of_subset_closure_of_isRestriction {N : Matroid α} {Q : N.Separa
   refine le_antisymm ?_ <| M.eLocalConn_mono (forall_subset true) (forall_subset false)
   grw [← eLocalConn_closure_closure (X := Q _),
   M.eLocalConn_mono (forall_subset_closure true) (forall_subset_closure false)]
+
+lemma eConn_ofDelete_eq_of_subset_closure (P : (M ＼ D).Separation) (j : Bool)
+    (hD : D ⊆ M.closure (P j)) : (P.ofDelete j).eConn = P.eConn := by
+  refine eConn_eq_of_subset_closure_of_isRestriction (by simp) (fun i ↦ ?_) (fun i ↦ ?_)
+  · obtain rfl | rfl := i.eq_or_eq_not j
+    · grw [ofDelete_apply_self, ← subset_union_left]
+    simp
+  obtain rfl | rfl := i.eq_or_eq_not j
+  · rw [ofDelete_apply_self, union_subset_iff, and_iff_left hD]
+    exact M.subset_closure _ <| P.subset_ground.trans diff_subset
+  rw [ofDelete_apply_not]
+  exact M.subset_closure _ <| P.subset_ground.trans diff_subset
 
 end Minor
 

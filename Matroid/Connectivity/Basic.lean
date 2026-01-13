@@ -767,16 +767,23 @@ lemma IsHyperplane.eLocalConn_add_one_eq {H X : Set α} (hH : M.IsHyperplane H) 
   rw [← M.eLocalConn_add_eRelRk_union_eq_eRk X H, ← eRelRk_closure_right,
     (hH.spanning_of_ssuperset (show H ⊂ X ∪ H by simpa)).closure_eq, hH.eRelRk_eq_one]
 
+lemma eLocalConn_le_add_eRelRk_left (M : Matroid α) (hXY : X ⊆ Y) (Z : Set α) :
+    M.eLocalConn Y Z ≤ M.eLocalConn X Z + M.eRelRk X Y := by
+  obtain ⟨IX, hIX⟩ := M.exists_isBasis' X
+  obtain ⟨J, hJ, rfl⟩ := hIX.exists_isBasis'_inter_eq_of_superset hXY
+  rw [hJ.eLocalConn_eq_nullity_project_right, hIX.eLocalConn_eq_nullity_project_right,
+    hJ.eRelRk_eq_encard_diff_of_subset hXY hIX]
+  nth_grw 1 [← inter_union_diff J X, nullity_union_le_nullity_add_encard_diff,
+    sdiff_eq_left.2 disjoint_sdiff_inter]
+
+lemma eLocalConn_le_add_eRelRk_right (M : Matroid α) (hXY : X ⊆ Y) (Z : Set α) :
+    M.eLocalConn Z Y ≤ M.eLocalConn Z X + M.eRelRk X Y := by
+  grw [eLocalConn_comm, eLocalConn_le_add_eRelRk_left _ hXY, eLocalConn_comm]
+
 lemma eLocalConn_union_left_le (M : Matroid α) (X Y A : Set α) :
     M.eLocalConn (X ∪ A) Y ≤ M.eLocalConn X Y + M.eRk A := by
-  obtain ⟨IX, hIX⟩ := M.exists_isBasis' X
-  obtain ⟨J, hJ, rfl⟩ := hIX.exists_isBasis'_inter_eq_of_superset
-    (show X ⊆ X ∪ A from subset_union_left)
-  rw [hJ.eLocalConn_eq_nullity_project_right, hIX.eLocalConn_eq_nullity_project_right]
-  nth_grw 1 [← inter_union_diff J X, nullity_union_le_nullity_add_encard_diff,
-    sdiff_eq_left.2 disjoint_sdiff_inter, (hJ.indep.diff _).encard_le_eRk_of_subset]
-  rw [diff_subset_iff]
-  exact hJ.subset
+  grw [M.eLocalConn_le_add_eRelRk_left subset_union_left, union_comm, ← eRelRk_eq_union_right,
+    eRelRk_le_eRk]
 
 lemma eLocalConn_union_right_le (M : Matroid α) (X Y A : Set α) :
     M.eLocalConn X (Y ∪ A) ≤ M.eLocalConn X Y + M.eRk A := by
