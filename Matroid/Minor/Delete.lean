@@ -110,6 +110,15 @@ lemma Coindep.delete_nonspanning_iff (hD : M.Coindep D) :
   rw [and_iff_left hdj, ← not_spanning_iff, hD.delete_spanning_iff, and_iff_left hdj,
     not_spanning_iff]
 
+lemma Coindep.delete_coindep_iff (hD : M.Coindep D) :
+    (M ＼ D).Coindep X ↔ M.Coindep (X ∪ D) ∧ Disjoint X D := by
+  wlog hX : X ⊆ (M ＼ D).E generalizing with aux
+  · exact iff_of_false (fun h ↦ hX h.subset_ground)
+      (fun h ↦ hX <| subset_diff.2 ⟨subset_union_left.trans h.1.subset_ground, h.2⟩)
+  have hX' := subset_diff.1 hX
+  rw [coindep_iff_compl_spanning, coindep_iff_compl_spanning, hD.delete_spanning_iff, delete_ground,
+    diff_diff, union_comm, and_iff_left hX'.2, and_iff_left (by grind)]
+
 lemma girth_le_girth_delete (M : Matroid α) (D : Set α) : M.girth ≤ (M ＼ D).girth :=
     (delete_isRestriction ..).girth_ge
 

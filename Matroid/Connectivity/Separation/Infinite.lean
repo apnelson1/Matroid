@@ -82,11 +82,11 @@ lemma tutteConnected_top_iff_verticallyConnected_cyclicallyConnected_isUniform :
     rw [dual_ground, diff_diff_cancel_left hXE] at h
     exact .inl ⟨h', h⟩
   obtain (hXci | hXcd) := M.coindep_or_codep X
-  · simp [hXi, hXci]
+  · simp [hXi, hXci, TutteDegen]
   have hXi' := hu.dual.spanning_of_dep hXcd
   rw [spanning_dual_iff] at hXi'
   obtain (hXci' | hXcd') := M.coindep_or_codep (X := M.E \ X)
-  · simp [hXci', hXi']
+  · simp [hXci', hXi', TutteDegen]
   simpa using h.inter_nonempty_of_codep_codep hXcd hXcd'
 
 lemma VerticallyConnected.two_mul_eRank_le (h : M.VerticallyConnected ⊤) :
@@ -147,12 +147,11 @@ lemma unifOn_tutteConnected_top_iff {E : Set α} {k : ℕ} (hkE : k ≤ E.encard
       by simpa [min_eq_right hkE] using h.cyclicallyConnected.encard_le⟩
   suffices hsuff : ∀ ⦃X⦄, X ⊆ E →
     X.encard ≤ k ∧ k ≤ (E \ X).encard ∨ (E \ X).encard ≤ k ∧ k ≤ X.encard by
-    simpa +contextual [TutteConnected, numConnected_top_iff', unifOn_coindep_iff'' hkE, diff_subset]
+    simpa +contextual [TutteConnected, numConnected_top_iff', unifOn_coindep_iff'' hkE,
+      diff_subset, TutteDegen]
   intro X hX
   have hcard := encard_diff_add_encard_of_subset hX
-  by_contra!
-  enat_to_nat!
-  omega
+  enat_to_nat!; lia
 
 /-- For finite `r`, a rank-`r` uniform matroid is `k`-Tutte-connected if and only if either
 it has size `2r-1, 2r` or `2r+1`, or `k` is at most the rank and at most the corank. -/

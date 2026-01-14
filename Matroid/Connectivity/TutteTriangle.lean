@@ -195,7 +195,7 @@ lemma foo (hM : M.TutteConnected 3) (hT : M.IsTriangle {e,f,g}) (hcard : 4 ≤ M
     have := M.closure_subset_closure hss (hcl _)
     grind
   -- let `Q₀` be the separation with `true` side equal to `Q false ∩ Q false`.
-  -- This has connecttivity at most `1` by a submodularity argument.
+  -- This has connectivity at most `1` by a submodularity argument.
   set Q₀ := (Q true).inter (Q false) false false with hQ₀_def
   have hQ₀conn : Q₀.eConn ≤ 1 := by
     have hQu : 1 ≤ ((Q true).union (Q false) false false).eConn := by

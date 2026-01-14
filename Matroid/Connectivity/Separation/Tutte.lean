@@ -268,6 +268,15 @@ lemma PredConnected.dual (hdegen : ∀ ⦃i k M X⦄, X ⊆ M.E → dg i k M X �
     (h : M.PredConnected dg) : M✶.PredConnected dg' :=
   h.dual' fun i k N X hX h' ↦ by simp [hdegen hX h']
 
+
+section Monotone
+
+structure DeleteMonotone (dg : Matroid α → Set α → Prop) : Prop where
+  mono_subset : ∀ ⦃M X Y⦄, dg M Y → X ⊆ Y → dg M X
+  mono_del : ∀ ⦃M : Matroid α⦄ ⦃D : Set α⦄ ⦃P : M.Separation⦄, M.Coindep D →
+    (P.delete D).IsPredSeparation (fun _ ↦ dg) → P.IsPredSeparation (fun _ ↦ dg)
+
+end Monotone
 /-- A slightly more concrete notion of connectivity that still abstracts Tutte, vertical and cyclic
 connectivity. `M.numConnected dg (k+1)` means that every separation of connectivity less than `k`
 has a degenerate side in the of a specified `dg`.
@@ -379,13 +388,39 @@ lemma numConnected_of_subsingleton {dg} (h : M.E.Subsingleton) (k : ℕ∞) (hdg
 
 /-! ### Tutte Connectivity -/
 
+def TutteDegen (M : Matroid α) (X : Set α) : Prop := M.Indep X ∧ M.Coindep X
+
+-- lemma TutteDegen.delete_monotone : DeleteMonotone (α := α) TutteDegen where
+--   mono_subset M X Y hY hXY := ⟨hY.1.subset hXY, hY.2.subset hXY⟩
+
+--   mono_del M D P hD hP k := by
+--     intro ⟨hi, hi'⟩
+--     have := hP k
+--     simp [TutteDegen, disjoint_sdiff_left, hi.diff] at this
+--     apply this
+--     rw [hD.delete_coindep_iff]
+--     simp
+--     rw [← hD.coin]
+--     have := hP !k
+--     simp [TutteDegen, disjoint_sdiff_left] at this
+
+-- lemma TutteDegen.mono (h : M.TutteDegen X) (hYX : Y ⊆ X) : M.TutteDegen Y :=
+--   ⟨h.1.subset hYX, h.2.subset hYX⟩
+
+-- lemma TutteDegen.mono_delete (h : M.TutteDegen X) (hYX : Y ⊆ X) : (M ＼ Y).TutteDegen (X \ Y) :=
+-- by
+--   rw [TutteDegen, delete_indep_iff, and_iff_left disjoint_sdiff_left, and_iff_right (h.1.diff _),
+--     coindep_def, dual_delete, (h.2.subset hYX).contract_indep_iff,
+--     and_iff_right disjoint_sdiff_left]
+--   exact h.2.subset <| by grind
+
 /-- `M` is `k`-connected if the connectivity of every Tutte separation strictly exceeds `k - 2`.
 The term has always been defined this way, but the difference of two is very awkward to work with;
 `(k+1)`-connectedness is much more natural than `k`-connectedness.
 
 For this reason, we use `TutteConnected (k+1)` in the API in all places except where
 no convenience is lost. Vertical and Cyclic connectivities have the same issues. -/
-def TutteConnected (M : Matroid α) (k : ℕ∞) := M.NumConnected (fun M X ↦ M.Indep X ∧ M.Coindep X) k
+def TutteConnected (M : Matroid α) (k : ℕ∞) := M.NumConnected TutteDegen k
 
 lemma not_tutteConnected_iff_exists : ¬ M.TutteConnected (k + 1) ↔
     ∃ P : M.Separation, P.eConn + 1 ≤ k ∧ P.IsTutteSeparation :=
@@ -400,7 +435,7 @@ lemma tutteConnected_top_iff_forall : M.TutteConnected ⊤ ↔
   numConnected_top_iff ..
 
 lemma TutteConnected.dual (h : M.TutteConnected k) : M✶.TutteConnected k :=
-  (NumConnected.dual h).mono_degen <| by simp +contextual [coindep_def]
+  (NumConnected.dual h).mono_degen <| by simp +contextual [TutteDegen, coindep_def]
 
 lemma TutteConnected.of_dual (h : M✶.TutteConnected k) : M.TutteConnected k :=
   M.dual_dual ▸ h.dual
@@ -467,7 +502,7 @@ lemma TutteConnected.encard_eq_or_encard_compl_eq (h : M.TutteConnected (k + 1))
   simpa [or_comm, eq_comm] using h'
 
 lemma tutteConnected_of_subsingleton (h : M.E.Subsingleton) (k : ℕ∞) : M.TutteConnected k :=
-  numConnected_of_subsingleton h _ <| by simp
+  numConnected_of_subsingleton h _ <| by simp [TutteDegen]
 
 lemma tutteConnected_iff_numConnected_encard (hk : k ≠ ⊤) :
     M.TutteConnected k ↔ M.NumConnected (fun M X ↦ X.encard ≤ M.eConn X) k := by
