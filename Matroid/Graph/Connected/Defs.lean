@@ -191,6 +191,16 @@ lemma preconnected_of_exists_connBetween (h : ∃ x, ∀ y ∈ V(G), G.ConnBetwe
   obtain ⟨x, hx⟩ := h
   exact fun s t hs ht ↦ (hx s hs).symm.trans <| hx t ht
 
+lemma preconnected_iff_exists_connBetween (hG : V(G).Nonempty) :
+    G.Preconnected ↔ ∃ x, ∀ y ∈ V(G), G.ConnBetween x y := by
+  refine ⟨fun h => ⟨hG.some, fun y hy ↦ h hG.some y hG.some_mem hy⟩, fun ⟨x, hx⟩ => ?_⟩
+  exact fun s t hs ht ↦ (hx s hs).symm.trans <| hx t ht
+
+lemma exists_not_connBetween_of_not_preconnected (h : ¬ G.Preconnected) (hx : x ∈ V(G)) :
+    ∃ y ∈ V(G), ¬ G.ConnBetween x y := by
+  simp only [preconnected_iff_exists_connBetween ⟨x, hx⟩, not_exists, not_forall, exists_prop] at h
+  exact h x
+
 /- ### Connectedness -/
 
 /-- A graph is connected if it is a minimal closed subgraph of itself -/
@@ -330,10 +340,16 @@ structure IsSepSet (G : Graph α β) (S : Set α) : Prop where
 structure IsMinSepSet (G : Graph α β) (S : Set α) : Prop extends IsSepSet G S where
   minimal : ∀ A, IsSepSet G A → S.encard ≤ A.encard
 
+lemma IsMinSepSet.isSepSet (hM : IsMinSepSet G S) : IsSepSet G S :=
+  hM.toIsSepSet
+
+lemma IsMinSepSet.encard_le_of_isSepSet (hS : G.IsMinSepSet S) (hT : G.IsSepSet T) :
+    S.encard ≤ T.encard := hS.minimal T hT
+
 lemma IsMinSepSet.not_isSepSet_of_encard_lt (hM : IsMinSepSet G S) (hSS' : S'.encard < S.encard) :
     ¬ IsSepSet G S' := by
   by_contra hc
-  grw [hM.2 S' hc, lt_self_iff_false S'.encard] at hSS'
+  grw [hM.minimal S' hc, lt_self_iff_false S'.encard] at hSS'
   exact hSS'
 
 lemma connected_of_not_isSepSet (hV : S ⊆ V(G)) (hS : ¬ IsSepSet G S) : (G - S).Connected := by
@@ -348,6 +364,101 @@ lemma conn_iff_forall_isSepSet : G.Connected ↔ ∀ ⦃S⦄, IsSepSet G S → S
   refine ⟨fun h S hS => ?_, fun h => ?_⟩ <;> by_contra! hC
   · simpa [hC, h] using hS.not_connected
   simpa using h (empty_isSepSet_iff.mpr hC)
+
+lemma IsSepSet.nonempty_of_connected (hG : G.Connected) (hS : G.IsSepSet S) : S.Nonempty :=
+  conn_iff_forall_isSepSet.mp hG hS
+
+lemma IsMinSepSet.nonempty_of_connected (hG : G.Connected) (hM : G.IsMinSepSet S) : S.Nonempty :=
+  hM.isSepSet.nonempty_of_connected hG
+
+/-!
+### Neighborhood of a minimum separator
+
+For a connected graph, a minimum (cardinality) separator must “touch” every component of the
+vertex-deleted graph: otherwise that component would already be a closed subgraph of `G`.
+-/
+
+lemma IsSepSet.exists_adj_of_isCompOf_vertexDelete (hM : IsSepSet G S) (hG : G.Connected)
+    (hH : H.IsCompOf (G - S)) : ∃ x ∈ S, ∃ y ∈ V(H), G.Adj x y := by
+  -- If no vertex of `S` is adjacent to `H`, then `H` is a closed subgraph of `G`,
+  -- contradicting connectedness of `G` (since `S` is nonempty and disjoint from `V(H)`).
+  by_contra! hno
+  have hHcl' : H ≤c (G - S) := hH.1.1
+  have hHcl : H ≤c G := by
+    refine ⟨hHcl'.le.trans vertexDelete_le, fun e x ⟨y, hxy⟩ hxH ↦ ?_⟩
+    -- unpack the incidence in `G`
+    have hxS : x ∉ S := by
+      have : x ∈ V(G - S) := vertexSet_mono hHcl'.le hxH
+      simpa [vertexDelete_vertexSet, mem_diff] using this.2
+    have hyS : y ∉ S := (hno y · x hxH <| by simpa [adj_comm] using hxy.adj)
+    -- the edge also lives in `G - S`, so closedness of `H ≤c (G - S)` applies
+    have hxy' : (G - S).IsLink e x y := by
+      -- `vertexDelete_isLink_iff` is the characterization of links in `G - S`
+      exact (G.vertexDelete_isLink_iff S).2 ⟨hxy, hxS, hyS⟩
+    exact hHcl'.closed hxy'.inc_left hxH
+  obtain rfl : H = G := hG.eq_of_isClosedSubgraph hHcl hH.1.2
+  -- `S` is nonempty in a connected graph and is disjoint from `V(H) = V(G)`
+  obtain ⟨x, hxS⟩ := hM.nonempty_of_connected hG
+  have hxH : x ∈ V(H) := by simpa using (hM.subset_vx hxS)
+  have hxVS : x ∈ V(H - S) := vertexSet_mono hHcl'.le hxH
+  exact hxVS.2 hxS
+
+lemma IsMinSepSet.exists_adj_of_isCompOf_vertexDelete (hM : IsMinSepSet G S) (_hG : G.Connected)
+    (hH : H.IsCompOf (G - S)) (hx : x ∈ S) (hfin : S.Finite) :
+    ∃ y ∈ V(H), G.Adj x y := by
+  -- If `x` had no neighbor in the component `H`,
+  -- then removing `S \ {x}` would still disconnect `G`.
+  -- This contradicts minimality of `S` because for finite `S`,
+  -- the set `S \ {x}` has strictly smaller `encard`.
+  by_contra hno
+
+  -- Set of deleted vertices with `x` removed.
+  set S' : Set α := S \ {x}
+
+  have hS : G.IsSepSet S := hM.isSepSet
+  have hxV : x ∈ V(G) := hS.subset_vx hx
+
+  have hHcl' : H ≤c (G - S) := hH.1.1
+  have hdel_le : (G - S) ≤ (G - S') := by
+    refine G.vertexDelete_anti_right ?_
+    simp [S']
+
+  have hHclS' : H ≤c (G - S') := by
+    refine ⟨hHcl'.le.trans hdel_le, ?_⟩
+    intro e u ⟨v, huv⟩ huH
+    -- unpack the link data in `G`
+    have huvG : G.IsLink e u v := huv.of_le vertexDelete_le
+    have huS' : u ∉ S' := (G.vertexDelete_isLink_iff S').mp huv |>.2.1
+    have hvS' : v ∉ S' := (G.vertexDelete_isLink_iff S').mp huv |>.2.2
+    have huS : u ∉ S := vertexSet_mono hHcl'.le huH |>.2
+    have hvS : v ∉ S := by
+      intro hvS
+      obtain rfl | hvne := eq_or_ne v x
+      · refine hno ⟨u, huH, ?_⟩
+        simpa [hvS] using huvG.adj.symm
+      apply hvS'
+      simp [S', hvS, hvne]
+    -- now the link also lives in `G - S`, so closedness of `H ≤c (G - S)` applies
+    have huvDel : (G - S).IsLink e u v := by
+      exact (G.vertexDelete_isLink_iff S).mpr ⟨huvG, huS, hvS⟩
+    exact hHcl'.closed huvDel.inc_left huH
+
+  have hSep' : G.IsSepSet S' := by
+    refine ⟨diff_subset.trans hS.subset_vx, fun hcon ↦ ?_⟩
+    -- `G - S'` is not connected: `H` is a nontrivial closed subgraph of `G - S'`.
+    obtain rfl : H = G - S' := hcon.eq_of_isClosedSubgraph hHclS' hH.1.2
+    have hxnotH : x ∉ V(G - S') := by
+      intro hxH
+      exact (vertexSet_mono hHcl'.le hxH).2 hx
+    -- contradict `x ∈ V(G - S')` via `H = G - S'`
+    exact hxnotH <| by simp [hxV, S']
+
+  have hSneTop : S.encard ≠ ⊤ := encard_ne_top_iff.mpr hfin
+  have hSneZero : S.encard ≠ 0 := encard_ne_zero_of_mem hx
+  apply hM.not_isSepSet_of_encard_lt ?_ hSep'
+  simp [S', encard_diff_singleton_of_mem hx]
+  cases h : S.encard with | top => exact (hSneTop h).elim | coe n =>
+  cases n with | zero => exact (hSneZero h).elim | succ n => norm_cast; omega
 
 lemma vertexSet_isSepSet : G.IsSepSet V(G) := ⟨refl _, by simp⟩
 
@@ -375,21 +486,6 @@ lemma IsComplete.subset_isSepSet (h : G.IsComplete) (hS : G.IsSepSet S) : V(G) �
   |>.connected_iff.not.mp hS.not_connected
   simpa only [vertexDelete_vertexSet, not_nonempty_iff_eq_empty, diff_eq_empty] using this
 
--- structure Cut (G : Graph α β) where
---   carrier : Set α
---   carrier_subset : carrier ⊆ V(G)
---   not_connected' : ¬ (G - carrier).Connected
-
--- instance : SetLike (G.Cut) α where
---   coe := (·.carrier)
---   coe_injective' C1 C2 h := by rwa [Cut.mk.injEq]
-
--- @[simp]
--- lemma Cut.coe_subset (C : G.Cut) : (C : Set α) ⊆ V(G) := C.carrier_subset
-
--- @[simp]
--- lemma Cut.not_connected (C : G.Cut) : ¬ (G - C).Connected := C.not_connected'
-
 structure IsEdgeSepSet (G : Graph α β) (S : Set β) : Prop where
   subset_edgeSet : S ⊆ E(G)
   not_connected : ¬ (G ＼ S).Connected
@@ -407,8 +503,6 @@ lemma empty_isEdgeSepSet_iff : G.IsEdgeSepSet ∅ ↔ ¬ G.Connected := by
 
 --   obtain ⟨S, hxS⟩ := exists_mem_left_of_nonempty_separation (nonempty_separation_of_not_connected
 --     (by use u; simpa) h.not_connected) hu
-
-
 
 structure EdgeCut (G : Graph α β) where
   carrier : Set β
@@ -482,6 +576,16 @@ def PreconnGE (G : Graph α β) (n : ℕ) : Prop :=
 structure ConnGE (G : Graph α β) (n : ℕ) : Prop where
   le_cut : ∀ ⦃C⦄, G.IsSepSet C → n ≤ C.encard
   le_card : V(G).Subsingleton ∨ n < V(G).encard
+
+lemma exists_isSepSet_encard_lt_of_not_connGE (hnV : n < V(G).encard) (h : ¬ G.ConnGE n) :
+    ∃ C, G.IsSepSet C ∧ C.encard < n := by
+  by_contra! hno
+  exact h ⟨hno, Or.inr hnV⟩
+
+lemma exists_isSepSet_encard_le_of_not_connGE (hnV : n + 1 < V(G).encard) (h : ¬ G.ConnGE (n+1)) :
+    ∃ C, G.IsSepSet C ∧ C.encard ≤ n := by
+  obtain ⟨C, hC, hlt⟩ := exists_isSepSet_encard_lt_of_not_connGE (G := G) (n := n+1) hnV h
+  use C, hC, by enat_to_nat! <;> omega
 
 /-- A graph has `EdgeConnGE n`, if for every pair of vertices `s` and `t`, there is no
     `n`-edge cut between them. -/

@@ -20,11 +20,14 @@ import Matroid.Connectivity.Nat
 import Matroid.Connectivity.Separation.Adherent
 import Matroid.Connectivity.Separation.Basic
 import Matroid.Connectivity.Separation.Infinite
-import Matroid.Connectivity.Separation.Offset
+-- import Matroid.Connectivity.Separation.Internal
 import Matroid.Connectivity.Separation.Minor
+import Matroid.Connectivity.Separation.Offset
 import Matroid.Connectivity.Separation.Tutte
 import Matroid.Connectivity.Separation.Vertical
 import Matroid.Connectivity.Skew
+-- import Matroid.Connectivity.Triangle
+-- import Matroid.Connectivity.TutteTriangle
 import Matroid.Constructions.Matching
 import Matroid.Constructions.Project
 import Matroid.Constructions.Relax
@@ -50,8 +53,8 @@ import Matroid.Graph.Connected.Component
 import Matroid.Graph.Connected.Defs
 -- import Matroid.Graph.Connected.Gammoid
 import Matroid.Graph.Connected.Menger
--- import Matroid.Graph.Connected.Minor
--- import Matroid.Graph.Connected.MixedLineGraph
+import Matroid.Graph.Connected.Minor
+import Matroid.Graph.Connected.MixedLineGraph
 import Matroid.Graph.Connected.Set.Defs
 import Matroid.Graph.Connected.Set.Leg
 import Matroid.Graph.Connected.Set.SetEnsemble
@@ -77,7 +80,7 @@ import Matroid.Graph.Minor.Defs
 import Matroid.Graph.Simple
 import Matroid.Graph.Subgraph.Basic
 import Matroid.Graph.Subgraph.Compatible
--- import Matroid.Graph.Subgraph.Defs
+import Matroid.Graph.Subgraph.Defs
 import Matroid.Graph.Subgraph.Delete
 import Matroid.Graph.Subgraph.Inter
 import Matroid.Graph.Subgraph.Lemma

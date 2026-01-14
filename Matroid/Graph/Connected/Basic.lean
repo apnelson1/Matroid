@@ -179,6 +179,28 @@ lemma walkable_eq_induce_setOf_connBetween : G.walkable x = G[{y | G.ConnBetween
   rw [walkable_isClosedSubgraph.eq_induce]
   congr
 
+lemma walkable_mono (hle : G ≤ H) (x : α) : G.walkable x ≤ H.walkable x := by
+  obtain hxG | hxG := (em <| x ∈ V(G)).symm
+  · simp [hxG]
+  have := (walkable_isCompOf <| vertexSet_mono hle hxG).isInducedSubgraph
+  apply this.le_of_le_subset (walkable_isCompOf hxG |>.le.trans hle)
+  intro v hv
+  exact ConnBetween.of_le hv hle
+
+lemma IsCompOf.of_vertexDelete (hH : H.IsCompOf G) (hS : Disjoint V(H) S) : H.IsCompOf (G - S) := by
+  refine ⟨⟨hH.isClosedSubgraph.vertexDelete_of_disjoint hS, hH.1.2⟩, ?_⟩
+  rintro K ⟨hKcS, ⟨v, hvK⟩⟩ hKH
+  obtain rfl := hH.eq_walkable_of_mem_walkable (vertexSet_mono hKH hvK)
+  have hKG := hKcS.isInducedSubgraph.trans <| G.vertexDelete_isInducedSubgraph _
+  apply hKG.le_of_le_subset hH.le
+  rintro u ⟨w, hw, rfl, rfl⟩
+  have hwW : (G.walkable w.first).IsWalk w :=
+    hw.isWalk_isClosedSubgraph_of_first_mem G.walkable_isClosedSubgraph (by simp [hw.first_mem])
+  have hwS : (G - S).IsWalk w := by
+    simp only [isWalk_vertexDelete_iff, hw, true_and]
+    exact hS.mono_left hwW.vertexSet_subset
+  exact hwS.isWalk_isClosedSubgraph_of_first_mem hKcS hvK |>.last_mem
+
 lemma singleVertex_connected (hG : V(G) = {x}) : G.Connected := by
   simp [connected_iff, hG, preconnected_of_vertexSet_subsingleton]
 

@@ -61,7 +61,7 @@ lemma adheresTo_contract_or_delete (M : Matroid α) (e : α) :
   by_contra! hcon
   obtain ⟨⟨P, hP⟩, Q, hQ⟩ := hcon
   replace hP : ∀ i, ∃ j, P.eConn < M.eConn (P i ∩ Q j) :=
-    by simpa [inter_comm] using fun i ↦ hP i <| Q.toBipartition.induce P.subset
+    by simpa [Set.inter_comm] using fun i ↦ hP i <| Q.toBipartition.induce P.subset
   replace hQ : ∀ i, ∃ j, Q.eConn < M.eConn (P j ∩ Q i) :=
     by simpa using fun i ↦ hQ i <| P.toBipartition.induce Q.subset
   simp_rw [Bool.forall_bool, Bool.exists_bool] at hP hQ
