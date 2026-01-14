@@ -1,4 +1,4 @@
-import Matroid.Connectivity.Separation
+import Matroid.Connectivity.Separation.Minor
 import Matroid.Connectivity.Minor
 import Matroid.ForMathlib.Matroid.Constructions
 import Matroid.ForMathlib.Data.Set.Subsingleton
@@ -80,9 +80,9 @@ lemma IsPredSeparation.nonempty (h : P.IsPredSeparation dg) (hdg : ∀ i, dg i M
   rw [he]
   apply hdg
 
-lemma IsPredSeparation.not_trivial (h : P.IsPredSeparation dg) (hdg : ∀ i, dg i M ∅) :
-    ¬ P.Trivial := by
-  simp [Separation.not_trivial_iff, h.nonempty hdg]
+lemma IsPredSeparation.nontrivial (h : P.IsPredSeparation dg) (hdg : ∀ i, dg i M ∅) :
+    P.Nontrivial := by
+  simp [P.nontrivial_def, h.nonempty hdg]
 
 /-! ### Tutte Separations -/
 
@@ -145,6 +145,13 @@ lemma isTutteSeparation_iff_add_one_le_encard (hP : P.eConn ≠ ⊤) :
   convert isTutteSeparation_iff_lt_encard hP using 2 with i
   rw [ENat.add_one_le_iff hP]
 
+lemma isTutteSeparation_of_lt_encard (h : ∀ i, P.eConn < (P i).encard) : P.IsTutteSeparation := by
+  have hP : P.eConn ≠ ⊤ := by
+    specialize h true
+    enat_to_nat!
+  rw [isTutteSeparation_iff_add_one_le_encard hP]
+  exact fun i ↦ Order.add_one_le_of_lt (h i)
+
 lemma isTutteSeparation_iff_nullity :
     P.IsTutteSeparation ↔ ∀ i, 1 ≤ M.nullity (P i) + M✶.nullity (P i) := by
   simp only [ENat.one_le_iff_ne_zero, ne_eq, add_eq_zero, nullity_eq_zero,
@@ -189,7 +196,15 @@ lemma IsTutteSeparation.exists_of_indep (h : P.IsTutteSeparation) (hi : M.Indep 
     hi.eConn_eq]
   exact ⟨hCP, hC, M✶.eRk_mono hCP⟩
 
+lemma IsTutteSeparation.eConn_add_one_le (h : P.IsTutteSeparation) (i : Bool) :
+    P.eConn + 1 ≤ (P i).encard := by
+  by_cases hP : P.eConn = ⊤
+  · grw [← M.eConn_le_encard, P.eConn_eq, hP, top_add]
+  exact (isTutteSeparation_iff_add_one_le_encard hP).1 h i
 
+lemma IsTutteSeparation.nontrivial (h : P.IsTutteSeparation) (hP : 1 ≤ P.eConn) (i : Bool) :
+    (P i).Nontrivial := by
+  grw [← two_le_encard_iff_nontrivial, ← h.eConn_add_one_le i, ← hP, one_add_one_eq_two]
 
 end Separation
 
@@ -494,12 +509,10 @@ lemma tutteConnected_two_iff [M.Nonempty] : M.TutteConnected 2 ↔ M.Connected :
   rw [← not_iff_not, exists_separation_iff_not_connected, ← one_add_one_eq_two,
     not_tutteConnected_iff_exists]
   simp only [ENat.add_le_right_iff, ENat.one_ne_top, or_false]
-  refine ⟨fun ⟨P, hP0, hP⟩ ↦ ⟨P, hP0, IsPredSeparation.not_trivial hP (by simp)⟩,
+  refine ⟨fun ⟨P, hP0, hP⟩ ↦ ⟨P, hP0, IsPredSeparation.nontrivial hP (by simp)⟩,
     fun ⟨P, hP0, hP⟩ ↦ ⟨P, hP0, ?_⟩⟩
   rw [isTutteSeparation_iff_add_one_le_encard (by simp [hP0]), hP0]
-  simp only [zero_add, one_le_encard_iff_nonempty, Bool.forall_bool]
-  simp_rw [nonempty_iff_ne_empty, ← not_or, or_comm (a := P false = ∅), ← P.trivial_def]
-  exact hP
+  simpa [one_le_encard_iff_nonempty, ← P.nontrivial_def]
 
 lemma TutteConnected.connected [M.Nonempty] (hM : M.TutteConnected k) (hk : 2 ≤ k) :
     M.Connected :=
@@ -514,6 +527,15 @@ lemma exists_of_tutteConnected_of_not_tutteConnected_add_one (hM : M.TutteConnec
   refine ⟨P, hPconn.antisymm ?_, hP⟩
   by_contra! hcon
   exact (mt <| hM.not_isTutteSeparation (P := P)) (by simpa) <| Order.le_of_lt_add_one hcon
+
+lemma TutteConnected.exists_subsingleton_of_isTutteSeparation (hM : M.TutteConnected (2 + 1))
+    (hP : P.eConn ≤ 1) : ∃ i, (P i).Subsingleton := by
+  have hP' : ¬ P.IsTutteSeparation := hM.not_isTutteSeparation (P := P) (by enat_to_nat!; lia)
+  simp_rw [isTutteSeparation_iff_add_one_le_encard (by enat_to_nat!),
+    not_forall, not_le] at hP'
+  obtain ⟨i, hlt⟩ := hP'
+  refine ⟨i, encard_le_one_iff_subsingleton.1 ?_⟩
+  grw [← hP, Order.le_of_lt_add_one hlt]
 
 @[simp]
 lemma emptyOn_tutteConnected (α : Type*) (k : ℕ∞) : (emptyOn α).TutteConnected k := by

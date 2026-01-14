@@ -1,9 +1,3 @@
--- Tutte's Triangle Lemma says that if T is a triangle of M,  a 3-connected matroid,
--- with at least 4 elements, and e and f are distinct elements of T such that M\e
--- and M\f both fail to be 3-connected, then then there is a triad T* of M such that
--- T* contains e and the intersection of T and T* has cardinality two.
--- This file contains the proof that the lemma holds in the case that
--- M\e,f is not connected (when M has at least 5 elements).
 import Mathlib.Combinatorics.Matroid.Minor.Order
 import Matroid.Connectivity.Triangle
 
@@ -16,7 +10,6 @@ namespace Matroid
 
 variable {i : Bool} {α : Type*} {e f g : α} {C K T X : Set α} {M : Matroid α} {P Q: M.Separation}
 
-
 /- the proof for the disconnected case with named elements of the triangle. Prevents some faff.
 We also prove a weaker conclusion that implies the stronger one anyway. -/
 lemma tutte_triangle_disconnected_case (hM : M.TutteConnected 3) (hT : M.IsTriangle {e,f,g})
@@ -24,7 +17,7 @@ lemma tutte_triangle_disconnected_case (hM : M.TutteConnected 3) (hT : M.IsTrian
   have hgE' : g ∈ (M ＼ {e,f}).E := ⟨hT.mem_ground₃, by simp [hT.ne₁₃.symm, hT.ne₂₃.symm]⟩
   have hne : (M ＼ {e,f}).Nonempty := by rw [← ground_nonempty_iff]; use g
   obtain ⟨P, hP0, hPnt⟩ := exists_separation_of_not_connected hdisc
-  rw [P.not_trivial_iff] at hPnt
+  -- rw [P.not_trivial_iff] at hPnt
   -- let `j` be the side of `P` containing `g`.
   obtain ⟨j, hgj⟩ : ∃ j, g ∈ P j := by rwa [← P.iUnion_eq, mem_iUnion] at hgE'
   have hconn : (P.ofDelete j).eConn ≤ 1 := by
@@ -129,469 +122,104 @@ lemma tutte_triangle (hM : M.TutteConnected 3) (hT : M.IsTriangle {e,f,g}) (hcar
 
 
 
+lemma foo (hM : M.TutteConnected 3) (hT : M.IsTriangle {e,f,g}) (hcard : 4 ≤ M.E.encard)
+    (he : ¬ (M ＼ {e}).TutteConnected 3) (hf : ¬ (M ＼ {f}).TutteConnected 3)
+    (hconn : (M ＼ {e,f}).Connected) : ∃ K, M.IsTriad K ∧ e ∈ K := by
+  rw [show (3 : ℕ∞) = 1 + 1 + 1 from rfl] at *
+  -- define `x` to abstract the common properties of `e` and `f`.
+  set x := fun b ↦ bif b then e else f with hx_def
+  have hxsep {b} : ¬ (M ＼ {x b}).TutteConnected (1 + 1 + 1) := by grind
+  clear he hf
+  have hxE {b} : x b ∈ M.E := by grind [hT.mem_ground₁, hT.mem_ground₂]
+  have hxne {b} : x b ≠ x !b := by grind [hT.ne₁₂]
+  have hxdel {b} : (M ＼ {x b}).TutteConnected (1 + 1) :=
+    hM.deleteElem (by grw [← hcard]; norm_num) _
+  have hdel {b} : (M ＼ {x b}) ＼ {x !b} = M ＼ {e,f} := by
+    rw [delete_delete, singleton_union]; grind [pair_comm]
+  have hgx {b} : x b ≠ g := by grind [hT.ne₁₃, hT.ne₂₃]
+  have hclx {b} : x b ∈ M.closure {x !b, g} := by grind [hT.mem_closure₁, hT.mem_closure₂]
 
--- lemma tutte_triangle_disconnected_case (hG : 4 < M.E.encard) (hM : M.TutteConnected 3)
---     (hT : M.IsTriangle T) (he : e ∈ T) (hf : f ∈ T) (hef : e ≠ f) (hdef : ¬(M ＼ {e,f}).Connected) :
---     ∃ K, (M.IsTriad K ∧ e ∈ K ∧ (K ∩ T).encard = 2) := by
---   -- the hypothesis `hef` shouldn't be needed, since
---   have heM : e ∈ M.E := by
---     apply hT.isCircuit.subset_ground
---     exact he
---   have hfM : f ∈ M.E := by
---     apply hT.isCircuit.subset_ground
---     exact hf
+  -- For each `b`, there is an exact `2`-separation of `M ＼ {x b}` with `x !b` on the `true` side.
+  have aux (b : Bool) : ∃ (P : (M ＼ {x b}).Separation), P.eConn = 1 ∧ P.IsTutteSeparation
+      ∧ x (!b) ∈ P true := by
+    obtain ⟨P', hP'conn, hP'⟩ :=
+      exists_of_tutteConnected_of_not_tutteConnected_add_one (hxdel (b := b)) hxsep
+    obtain ht | hf := P'.mem_or_mem (a := x !b) ⟨hxE, hxne.symm⟩
+    · exact ⟨P', (by simpa using hP'conn), hP', ht⟩
+    exact ⟨P'.symm, (by simpa using hP'conn), by simpa, hf⟩
 
--- -- There is an element g in T such that T = {e,f,g}.
+  choose P hP using aux
+  have hPconn {b} : (P b).eConn = 1 := (hP b).1
+  have hPsep {b} : (P b).IsTutteSeparation := (hP b).2.1
+  have hPmem {b} : x (!b) ∈ P b true := (hP b).2.2
+  clear hP
+  -- Neither side of `P` spans `x b`, since otherwise `P b` would induce a `2`-separation of `M`.
+  have hxncl (b c) : x b ∉ M.closure (P b c) := by
+    intro hx
+    have hConn' : ((P b).ofDelete c).eConn = 1 := by
+      rw [eConn_ofDelete_eq_of_subset_closure _ _ (by simpa), hPconn]
+    refine hM.not_isTutteSeparation (P := (P b).ofDelete c) (by simp [hConn']) ?_
+    refine isTutteSeparation_of_lt_encard fun i ↦ ?_
+    grw [hConn', ← ofDelete_apply_superset, ← hPsep.eConn_add_one_le, hPconn]
+    norm_num
+  -- and therefore `g` is on the `false` side of `P b`.
+  have hPg {b} : g ∈ P b false := by
+    refine Or.elim ((P b).mem_or_mem ⟨hT.mem_ground₃, hgx.symm⟩) (fun hg ↦ False.elim ?_) id
+    exact hxncl b true <| mem_of_mem_of_subset hclx <| M.closure_subset_closure <| by grind
+  -- let `Q b` be the separation of `M ＼ {e,f}` obtained by deleting `x !b` from `P b`.
+  set Q := fun b ↦ ((P b).delete {x !b}).copy hdel with hQ_def
+  have hQf {b} : Q b false = P b false := by
+    simp only [hQ_def, copy_apply, ↓delete_apply, sdiff_eq_left, disjoint_singleton_right]
+    exact (P b).disjoint_true_false.notMem_of_mem_left hPmem
+  have hQt {b} : Q b true = P b true \ {x !b} := by simp [hQ_def]
+  have hQnt {b} : (Q b).Nontrivial := by
+    simp only [hQ_def, Separation.nontrivial_iff_forall, copy_apply, ↓delete_apply]
+    exact fun i ↦ (hPsep.nontrivial (by grw [hPconn]) i).diff_singleton_nonempty (x !b)
+  -- `Q b` has connectivity `1` by the connectedness of `M ＼ {e,f}`.
+  have hQg {b} : g ∈ Q b false := by simp [hQ_def, hPg, hgx.symm]
+  have hQconn {b : Bool} : (Q b).eConn = 1 := by
+    refine (hQnt.one_le_eConn_of_connected hconn).antisymm' ?_
+    grw [hQ_def, eConn_copy, (P b).eConn_delete_le, hPconn]
+  -- Since `Q b` and `P b` have the same connectivity, the `true` side of `Q b` spans `x !b`.
+  have hcl (b): x (!b) ∈ M.closure (Q b true) := by
+    specialize hQconn (b := b)
+    simp only [hQ_def, copy_apply, delete_apply]
+    rw [← hPconn (b := b), hQ_def, eConn_copy,
+      eConn_delete_eq_eConn_iff_of_coindep (by simp [hPconn]) sorry] at hQconn
+    specialize hQconn true
+    rw [inter_eq_self_of_subset_left (by simpa using hPmem)] at hQconn
+    nth_grw 1 [← singleton_subset_iff, hQconn, delete_closure_eq, diff_subset, diff_subset]
 
---   have hTcard : T.encard = 3 := hT.three_elements
+  have hnss (b) : ¬ Q b true ⊆ P (!b) false := by
+    intro hss
+    have := M.closure_subset_closure hss (hcl _)
+    grind
+  -- let `Q₀` be the separation with `true` side equal to `Q false ∩ Q false`.
+  -- This has connecttivity at most `1` by a submodularity argument.
+  set Q₀ := (Q true).inter (Q false) false false with hQ₀_def
+  have hQ₀conn : Q₀.eConn ≤ 1 := by
+    have hQu : 1 ≤ ((Q true).union (Q false) false false).eConn := by
+      refine Nontrivial.one_le_eConn_of_connected ?_ hconn
+      rw [← Separation.not_trivial_iff, hQnt.union_trivial_iff, Bool.not_false, not_or,
+        hQf, hQf]
+      exact ⟨hnss true, hnss false⟩
+    have hsm := (Q true).eConn_inter_add_eConn_union_le (Q false) false false
+    grw [← hQu, hQconn, hQconn, ← hQ₀_def, ENat.add_one_le_add_one_iff] at hsm
+    assumption
+  -- `Q₀` also has connectivity equal to `Q₀.ofDelete false`, since its large side spans `{e,f}`.
+  have hQ₀P : (Q₀.ofDelete false).eConn = Q₀.eConn := by
+    refine eConn_ofDelete_eq_of_subset_closure _ _ ?_
+    rw [hQ₀_def, Separation.inter_apply_false, Bool.not_false, pair_subset_iff]
+    nth_grw 1 [← subset_union_right, ← subset_union_left]
+    exact ⟨hcl false, hcl true⟩
+  -- Since `M` is `3`-connected, this means that the small side of `Q₀` is just `{g}`.
+  have hQg : Q true false ∩ Q false false = {g} := by
+    obtain ⟨rfl | rfl, hi⟩ := hM.exists_subsingleton_of_isTutteSeparation (hQ₀P.trans_le hQ₀conn)
+    · grw [ofDelete_apply_self, ← encard_le_one_iff_subsingleton, ← subset_union_right,
+        encard_pair hT.ne₁₂] at hi
+      simp at hi
+    rw [Q₀.ofDelete_apply, Bool.cond_eq_ite, if_neg (by simp), hQ₀_def,
+      Separation.inter_apply_true] at hi
+    exact hi.eq_singleton_of_mem <| by grind
 
---   have h₁ : ∃ g ∈ T, g ≠ e ∧ g ≠ f ∧ T = {e,f,g} := by
---     apply Set.third_mem at hTcard
---     apply hTcard at he
---     apply he at hf
---     apply hf at hef
---     exact hef
---   obtain ⟨g, hg⟩ := h₁
-
---   have hgM : g ∈ M.E := by
---     apply mem_of_mem_of_subset
---     refine hg.1
---     refine hT.isCircuit.subset_ground
-
---   have hgMdef : g ∈ (M ＼ {e,f}).E := by simp [hgM, hg.2]
-
--- -- M\ e, f is nonempty and disconnected, so it contains a separation P.
-
---   have h₂ : (M＼{e,f}).Nonempty := by
---     simp only [← ground_nonempty_iff, delete_ground, diff_nonempty,
---       not_subset_iff_exists_mem_notMem]
---     use g
---     simp only [hgM, true_and, mem_insert_iff, not_or, mem_singleton_iff]
---     tauto
---   apply tutteConnected_two_iff at h₂
---   rw [← h₂, ← one_add_one_eq_two, not_tutteConnected_iff_exists] at hdef
-
---   obtain ⟨P, hP⟩ := hdef
-
---   have hPfalse : P false ⊆ (M ＼ {e,f}).E := P.subset_ground
---   have hPtrue : P true ⊆ (M ＼ {e,f}).E := P.subset_ground
---   have hPefalse : e ∉ P false := by
---     by_contra hc
---     apply mem_of_mem_of_subset at hc
---     apply hc at hPfalse
---     simp at hPfalse
---   have hPetrue : e ∉ P true := by
---     by_contra hc
---     apply mem_of_mem_of_subset at hc
---     apply hc at hPtrue
---     simp at hPtrue
---   have hPffalse : f ∉ P false := by
---     by_contra hc
---     apply mem_of_mem_of_subset at hc
---     apply hc at hPfalse
---     simp at hPfalse
---   have hPftrue : f ∉ P true := by
---     by_contra hc
---     apply mem_of_mem_of_subset at hc
---     apply hc at hPtrue
---     simp at hPtrue
-
--- -- Without loss of generality, g is in (P false).
-
---   wlog hgtrue : g ∈ P false generalizing P
---   apply this P.symm
---   simp only [eConn_symm, isTutteSeparation_symm_iff]
---   exact hP
---   simp only [Separation.symm_false]
---   exact hPtrue
---   simp only [Separation.symm_true]
---   exact hPfalse
---   simp only [Separation.symm_false]
---   exact hPetrue
---   simp only [Separation.symm_true]
---   exact hPefalse
---   simp only [Separation.symm_false]
---   exact hPftrue
---   simp only [Separation.symm_true]
---   exact hPffalse
---   simp only [Separation.symm_false]
---   have hgtrue₁ : g ∈ (M ＼ {e,f}).E \ (P false) := by
---     simp only [delete_ground, diff_diff, mem_diff, hgM, mem_union, not_or,
---       hgtrue, not_false_eq_true, and_true, mem_insert_iff, hg.2.1, mem_singleton_iff, hg.2.2]
---   rw [Separation.compl_eq] at hgtrue₁
---   exact hgtrue₁
-
--- -- We consider the partition Q = (P true, P false ∪ {e,f}) of M.
-
---   let QtoFun : Bool → Set α := fun i ↦ bif i then (P true) else ((P false) ∪ ({e,f} : Set α))
-
---   have hQpartition₁ : Disjoint (P true) ((P false) ∪ {e,f}) := by
---     have hQpartition₃ : Disjoint (P false) (P true) := P.disjoint_false_true
---     have hQpartition₄ : (P true) ⊆ (M ＼ {e,f}).E := P.subset_ground
---     have hQpartition₅ : Disjoint (P true) {e,f} := by
---       by_contra hc
---       simp only [disjoint_insert_right, not_and_or, hPetrue, not_not, false_or,
---         disjoint_singleton_right] at hc
---       tauto
---     apply Disjoint.union_right
---     exact P.disjoint_true_false
---     exact hQpartition₅
-
---   have hQpartitiondis : Pairwise (Disjoint on QtoFun) := by
---     rw [pairwise_disjoint_on_bool]
---     exact hQpartition₁
-
---   have hQpartition₂ : (P true) ∪ ((P false) ∪ {e,f}) = M.E := by
---     rw [subset_antisymm_iff]
---     have hQpartition₆ : (P false) ⊆ M.E := by
---       apply subset_trans
---       refine P.subset_ground
---       simp only [delete_ground, diff_subset]
---     have hQpartition₇ : (P true) ⊆ M.E := by
---       apply subset_trans
---       refine P.subset_ground
---       simp only [delete_ground, diff_subset]
---     have hQpartition₈ : (P true) ∪ ((P false) ∪ {e,f}) ⊆ M.E := by
---       simp [heM, hfM, insert_subset_iff, diff_subset]
---     have hQpartition₉ : (M ＼ {e,f}).E ⊆ ((P false) ∪ {e,f}) ∪ (P true) := by
---       rw [← P.union_eq]
---       simp only [union_subset_iff, subset_union_right]
---       grw [← subset_union_left]
---       simp only [subset_union_left, and_true]
---     have hQpartition₁₀ : M.E = (M ＼ {e,f}).E ∪ {e,f} := by
---       simp only [delete_ground, diff_union_self]
---       rw [union_eq_self_of_subset_right]
---       simp only [insert_subset_iff, heM, singleton_subset_iff, hfM, true_and]
---     have hQpartition₁₁ : (P false) ∪ {e,f} ∪ (P true) = ((P false) ∪ (P true)) ∪ {e,f} := by
---       simp only [union_assoc]
---       nth_rewrite 2 [union_comm]
---       rfl
---     have hQpartition₁₂ : M.E ⊆ (P true) ∪ ((P false) ∪ {e,f}) := by
---       rw [hQpartition₁₀, delete_ground, diff_union_self, union_insert, union_singleton,
---         insert_eq_of_mem, insert_eq_of_mem, ← union_assoc]
---       have hQpartition₁₃ : ⋃ i, P i = (M ＼ {e,f}).E := by
---         simp only [P.iUnion_eq]
---       have hQpartition₁₄ : ⋃ i, P i = (P true) ∪ (P false) := by
---         simp only [iUnion_bool, Separation.union_eq]
---       rw [← hQpartition₁₄, hQpartition₁₃, delete_ground]
---       simp only [subset_diff_union]
---       exact hfM
---       simp only [mem_insert_iff, heM, or_true]
---     apply And.intro hQpartition₈ hQpartition₁₂
-
---   have hQpartitioniunion : ⋃ i, QtoFun i = M.E := by
---     simp_all only [iUnion_bool, cond_true, cond_false, QtoFun]
-
---   let Q : M.Separation := (Separation.mk QtoFun hQpartitiondis hQpartitioniunion)
-
---   have hQtrue : Q true = P true := by rfl
---   have hQleft : Q false = P false ∪ {e,f} := by rfl
-
--- -- Q is a 2-separation of M.
-
---   have hQ2sep : Q.eConn + 1 ≤ 2 := by
---     have hQ2sep₆ : M.eLocalConn (Q true) (M.closure (Q false \ {f})) + 1 ≤ 2 := by
---       have hQ2sep₆₁ : M.eLocalConn (Q true) (Q false \ {f}) + 1 ≤ 2 := by
---         have hQ2sep₆₂ : (M ＼ {f}).eLocalConn (Q true) (Q false \ {f}) + 1 ≤ 2 := by
---           have hQ2sep₆₄ : (M ＼ {f}).eConn (Q true) + 1 ≤ 2 := by
---             have hQ2sep₆₁₃ : (M ＼ {f} ＼ {e}).eConn (Q true) + 1 ≤ 1 := by
---               simp only [delete_delete, union_singleton, hQtrue]
---               simp only [eConn_eq]
---               exact hP.1
---             grw [eConn_le_eConn_delete_singleton_add_one]
---             rw [← one_add_one_eq_two]
---             simp only [ENat.add_one_le_add_one_iff]
---             exact hQ2sep₆₁₃
---           rw [eConn_eq_eLocalConn] at hQ2sep₆₄
---           have hQ2sep₆₅ : ((M ＼ {f}).E \ Q true) = Q false \ {f} := by
---             rw [hQleft, hQtrue, delete_ground]
---             have hQ2sep₆₆ : P true  = (M.E \ {e,f}) \ (P false) := by
---               rw [← delete_ground]
---               rw [Separation.compl_eq]
---               tauto
---             rw [hQ2sep₆₆]
---             simp only [diff_diff]
---             have hQ2sep₆₇ : ({f} ∪ M.E \ ({e, f} ∪ P false)) = M.E \ (P false ∪ {e}) := by
---               simp [union_singleton, ← diff_diff]
---               rw [← delete_ground]
---               simp only [Separation.compl_eq]
---               have hQ2sep₆₁₁ : insert e (P false) = (Q false) \ {f} := by
---                 rw [hQleft]
---                 simp only [union_insert, union_singleton]
---                 rw [insert_comm]
---                 have hQ2sep₆₁₂ : f ∉ insert e (P false) := by
---                   simp only [mem_insert_iff, not_or, hPffalse, not_false_eq_true, and_true]
---                   tauto
---                 apply insert_diff_self_of_notMem at hQ2sep₆₁₂
---                 rw [hQ2sep₆₁₂]
---               rw [hQ2sep₆₁₁]
---               rw [diff_diff_eq_sdiff_union]
---               nth_rewrite 1 [Separation.compl_eq]
---               simp only [union_singleton]
---               tauto
---               simp only [singleton_subset_iff, hfM]
---             rw [hQ2sep₆₇]
---             rw [diff_diff_right_self]
---             have hQ2sep₆₈ : (P false ∪ {e}) ⊆ M.E := by
---               simp only [union_subset_iff, singleton_subset_iff, heM, and_true]
---               apply subset_trans at hPfalse
---               have hQ2sep₆₉ : (M ＼ {e,f}).E ⊆ M.E := by
---                 simp only [delete_ground, diff_subset]
---               apply hPfalse at hQ2sep₆₉
---               exact hQ2sep₆₉
---             apply inter_eq_self_of_subset_right at hQ2sep₆₈
---             rw [hQ2sep₆₈]
---             simp only [union_singleton, union_insert]
---             rw [insert_comm]
---             have hQ2sep₆₁₀ : f ∉ insert e (P false) := by
---               simp only [mem_insert_iff, hPffalse, or_false]
---               rw [← not_ne_iff, not_not]
---               tauto
---             apply insert_diff_self_of_notMem at hQ2sep₆₁₀
---             rw [hQ2sep₆₁₀]
---           rw [← hQ2sep₆₅]
---           exact hQ2sep₆₄
---         rw [eLocalConn_delete_eq] at hQ2sep₆₂
---         simp only [diff_diff, union_singleton, pair_eq_singleton] at hQ2sep₆₂
---         have hQ2sep₆₃ : Q true = Q true \ {f} := by
---           rw [diff_singleton_eq_self]
---           rw [hQtrue]
---           exact hPftrue
---         rw [hQ2sep₆₃]
---         exact hQ2sep₆₂
---       rw [eLocalConn_closure_right]
---       exact hQ2sep₆₁
---     have hQ2sep₅ : Q false ⊆ M.closure (Q false \ {f}) := by
---       have hQ2sep₅₁ : f ∈  M.closure (Q false \ {f}) := by
---         rw [mem_closure_iff_mem_or_exists_isCircuit, mem_diff_singleton, hQleft]
---         simp_all only [mem_union, mem_insert_iff, mem_singleton_iff, or_true, true_and]
---         simp
---         use T
---         simp only [subset_insert_iff, mem_diff_singleton]
---         rw [hg.2.2.2]
---         simp only [diff_singleton_subset_iff, insert_subset_iff, mem_insert_iff, true_or, true_and,
---         or_true, singleton_subset_iff, hgtrue, and_true]
---         symm at hef
---         simp_all only [ne_eq, not_false_eq_true, or_true]
---         rw [← hg.2.2.2]
---         simp_all only [hT.isCircuit, true_and]
---       have hQ2sep₅₂ : Q false = (Q false \ {f}) ∪ {f} := by
---         simp only [union_singleton, insert_diff_singleton]
---         rw [hQleft]
---         simp_all only [union_insert, union_singleton, insert_comm]
---         simp only [mem_insert_iff, true_or, insert_eq_of_mem]
---       nth_rewrite 1 [hQ2sep₅₂]
---       simp only [union_subset_iff, singleton_subset_iff, hQ2sep₅₁, and_true]
---       have hQ2sep₅₃ : Q false \ {f} ⊆ M.E := by
---         simp only [diff_subset_iff, singleton_union]
---         rw [insert_eq_of_mem]
---         simp only [Separation.subset_ground]
---         exact hfM
---       apply subset_closure at hQ2sep₅₃
---       exact hQ2sep₅₃
---     have hQ2sep₄ : M.eLocalConn (Q true) (Q false) ≤
---       M.eLocalConn (Q true) (M.closure (Q false \ {f})) := by
---       apply eLocalConn_mono_right at hQ2sep₅
---       exact hQ2sep₅
---     have hQ2sep₃ : M.eLocalConn (Q true) (Q false) + 1 ≤
---       M.eLocalConn (Q true) (M.closure (Q false \ {f})) + 1:= by
---       grw [hQ2sep₄]
---     have hQ2sep₂ : M.eLocalConn (Q true) (Q false) + 1 ≤ 2 := by
---       grw [← hQ2sep₆]
---       exact hQ2sep₃
---     have hQ2sep₁ : M.eConn (Q true) + 1 ≤ 2 := by
---       simp only [eConn_eq_eLocalConn]
---       rw [Separation.compl_eq]
---       exact hQ2sep₂
---     rw [← eConn_eq]
---     exact hQ2sep₁
-
--- -- Now Q true must contain a single element.
-
---   have hQtruesing : (Q true).encard ≤ 1 := by
---     have hQtruesing₁ : ¬Q.IsTutteSeparation := by
---       by_contra hc
---       have hQtruesing₂ : ∃ R : M.Separation, R.eConn + 1 ≤ 2 ∧ R.IsTutteSeparation := by
---         use Q
---       rw [← not_tutteConnected_iff_exists] at hQtruesing₂
---       simp only [two_add_one_eq_three] at hQtruesing₂
---       tauto
---     rw [isTutteSeparation_iff true] at hQtruesing₁
---     simp only [not_and_or] at hQtruesing₁
---     have hQtruesing₃ : ∃ C ⊆ Q false, M.IsCircuit C := by
---       use T
---       simp only [hT.isCircuit, and_true]
---       rw [hQleft, hg.2.2.2]
---       simp only [insert_subset_iff, mem_union, mem_insert_iff, true_or, or_true, true_and,
---         mem_singleton_iff, singleton_subset_iff, hgtrue]
---     have hQtruesing₄ : M.Dep (Q false) := by
---       rw [dep_iff_superset_isCircuit]
---       use T
---       simp only [hT.isCircuit, and_true]
---       rw [hg.2.2.2]
---       simp only [insert_subset_iff, hQleft, union_insert, mem_insert_iff, true_or, true_and,
---         union_singleton, or_true, singleton_subset_iff, hgtrue]
---     have hQtruesing₅ : (M.Dep (Q false) ∨ M.Codep (Q false)) := Or.inl hQtruesing₄
---     have hQtruesing₆ : ¬(M.Dep (Q true) ∨ M.Codep (Q true)) := by
---       tauto
---     rw [not_or, not_dep_iff, not_codep_iff] at hQtruesing₆
---     rw [← eConn_eq_encard_iff'] at hQtruesing₆
---     rw [← one_add_one_eq_two, ENat.add_one_le_add_one_iff] at hQ2sep
---     rw [← hQtruesing₆]
---     rw [eConn_eq]
---     exact hQ2sep
---     simp only [eConn_eq]
---     have hQtruesing₇ : Q.eConn ≤ 1 := by
---       rw [← one_add_one_eq_two, ENat.add_one_le_add_one_iff] at hQ2sep
---       exact hQ2sep
---     apply ne_top_of_le_ne_top at hQtruesing₇
---     exact hQtruesing₇
---     symm
---     apply ENat.top_ne_one
---   have hQtruesing₈ : (Q true).encard = 1 := by
---     rw [ENat.le_one_iff_eq_zero_or_eq_one] at hQtruesing
---     have hQtruesing₉ : ¬(Q true).encard = 0 := by
---       by_contra hc
---       rw [encard_eq_zero, hQtrue] at hc
---       have hQtruesing₁₀ : P.IsTutteSeparation := hP.2
---       exact (hQtruesing₁₀.nonempty true).ne_empty hc
---     apply Or.resolve_left at hQtruesing
---     apply hQtruesing at hQtruesing₉
---     exact hQtruesing₉
-
---   -- (P true) is a circuit or a cocircuit of M \ e, f.
-
---   have hPtutte : P.IsTutteSeparation := hP.2
-
---   have hPtruecocorcir : (M ＼ {e,f}).IsCircuit (P true) ∨ (M ＼ {e,f}).IsCocircuit (P true) := by
---     apply IsTutteSeparation.singleton_is_circuit_or_cocircuit at hPtutte
---     rw [hQtrue] at hQtruesing₈
---     apply hPtutte at hQtruesing₈
---     exact hQtruesing₈
-
---   -- (P true) must be a cocircuit of M \ e,f.
-
---   have hPtruecoc₇ : (M ＼ {e,f}).IsCircuit (P true) → (M ＼ {e,f}).IsCocircuit (P true) := by
---     have hPtruecoc₁ : M.Nonempty := by
---       simp only [← ground_nonempty_iff, nonempty_def]
---       use g
---     have hPtruecoc₂ : M.E.Nontrivial := by
---       rw [Set.nontrivial_iff_exists_ne heM]
---       use g
---       simp only [hgM, true_and]
---       exact hg.2.1
---     intro h
---     by_contra hc
---     rw [← circuit_iff_delete_of_disjoint] at h
---     have hPtruecoc₃ : M.Connected := by
---       have hPtruecoc₄ : 2 ≤ 3 := by simp
---       have hPtruecoc₅ : (2 : ENat) ≤ (3 : ENat) := by
---         rw [← ENat.coe_le_coe] at hPtruecoc₄
---         exact hPtruecoc₄
---       have hPtruecoc₆ : M.TutteConnected 2 := by
---         apply TutteConnected.mono at hM
---         apply hM at hPtruecoc₅
---         exact hPtruecoc₅
---       rw [tutteConnected_two_iff] at hPtruecoc₆
---       exact hPtruecoc₆
---     apply IsConnected.nontrivial_of_loopless at hPtruecoc₂
---     simp only [loopless_iff_forall_isCircuit] at hPtruecoc₂
---     apply hPtruecoc₂ at h
---     rw [← one_lt_encard_iff_nontrivial] at h
---     rw [← hQtrue, hQtruesing₈] at h
---     tauto
---     exact hPtruecoc₃
---     simp only [disjoint_insert_right, hPetrue, not_false_eq_true, true_and,
---       disjoint_singleton_right, hPftrue]
-
---   have hPtruecoc : (M ＼ {e,f}).IsCocircuit (P true) := Or.elim hPtruecocorcir hPtruecoc₇ (by simp)
-
---   -- Now (P true) ∪ {e,f} is the triad we are seeking.
-
---   apply IsCocircuit.exists_subset_isCocircuit_of_delete at hPtruecoc
---   obtain ⟨C', hC'⟩ := hPtruecoc
-
---   have h₃ : Disjoint (P true) {e,f} := by
---     simp only [disjoint_insert_right, disjoint_singleton_right, hPetrue, hPftrue]
---     tauto
---   have h₄ : ((P true) ∪ {e,f}).encard = 3 := by
---     rw [encard_union_eq]
---     rw [← hQtrue, hQtruesing₈, encard_insert_of_notMem, encard_singleton]
---     rw [← add_assoc, one_add_one_eq_two, two_add_one_eq_three]
---     simp only [mem_singleton_iff]
---     exact hef
---     exact h₃
---   have h₅ : C' ⊆ (P true) ∪ {e,f} := hC'.2.2
---   have h₆ : C'.encard ≤ 3 := by
---     apply encard_mono at h₅
---     rw [h₄] at h₅
---     exact h₅
---   have h₇ : 3 ≤ M✶.girth := by
---     have h₈ : M✶.TutteConnected (2 + 1) := by
---       simp [tutteConnected_dual_iff]
---       rw [two_add_one_eq_three]
---       exact hM
---     have h₉ : 2 * 2 ≤ M✶.E.encard := by
---       rw [dual_ground]
---       grw [← hG]
---       rw [two_mul, two_add_two_eq_four]
---     apply TutteConnected.girth_ge at h₈
---     apply h₈ at h₉
---     tauto
---   have h₁₀ : M✶.IsCircuit C' := by
---     rw [← IsCocircuit]
---     exact hC'.1
---   have h₁₁ : 3 ≤ C'.encard := by
---     apply IsCircuit.girth_le_card at h₁₀
---     grw [h₇]
---     exact h₁₀
---   have h₁₂ : C'.encard = 3 := by
---     apply le_antisymm
---     exact h₆
---     exact h₁₁
---   have h₁₃ : C' = (P true) ∪ {e,f} := by
---     by_contra hc
---     have h₁₄ : ¬((P true) ∪ {e,f}) ⊆ C' := by
---       by_contra hc₂
---       apply subset_antisymm at h₅
---       apply h₅ at hc₂
---       tauto
---     have h₁₅ : C' ⊂ (P true) ∪ {e,f} := by
---       simp only [ssubset_def, h₅, h₁₄, not_false_eq_true, true_and]
---     apply Finite.encard_lt_encard at h₁₅
---     rw [h₁₂, h₄] at h₁₅
---     tauto
---     rw [← encard_ne_top_iff, h₁₂]
---     simp only [ne_eq, ENat.ofNat_ne_top, not_false_eq_true]
---   use C'
---   rw [h₁₃, mem_union, mem_insert_iff, eq_self_iff_true, true_or, or_true, true_and]
---   rw [← h₁₃]
---   have h₁₆ : M.IsTriad C' := by
---     rw [isTriad_iff]
---     simp only [hC'.1, true_and]
---     exact h₁₂
---   simp only [h₁₆, true_and]
---   have h₁₇ : C' ∩ T = {e,f} := by
---     have h₁₈ : {e,f} ⊆ C' ∩ T := by
---       simp only [insert_subset_iff, h₁₃, mem_inter_iff, he, mem_union, mem_insert_iff, true_or,
---         or_true, and_true, singleton_subset_iff, mem_singleton_iff, hf]
---     apply subset_antisymm
---     rw [h₁₃, hg.2.2.2]
---     simp only [union_inter_distrib_right]
---     have h₁₉ : (P true) ∩ {e,f,g} = ∅ := by
---       rw [inter_insert_of_notMem, inter_insert_of_notMem, inter_singleton_eq_empty]
---       have h₂₀ : g ∈ (M ＼ {e,f}).E \ (P true) := by
---         rw [Separation.compl_true]
---         exact hgtrue
---       rw [mem_diff] at h₂₀
---       simp only [hgMdef, true_and] at h₂₀
---       exact h₂₀
---       exact hPftrue
---       exact hPetrue
---     rw [h₁₉]
---     simp only [empty_union, inter_subset_left]
---     exact h₁₈
---   rw [h₁₇]
---   rw [encard_insert_of_notMem, encard_singleton]
---   rw [one_add_one_eq_two]
---   simp only [mem_singleton_iff, hef, not_false_eq_true]
+  sorry

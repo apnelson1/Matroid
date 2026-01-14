@@ -1,7 +1,6 @@
 
 import Mathlib.Combinatorics.Matroid.Minor.Order
-import Matroid.Connectivity.Vertical
-import Matroid.Connectivity.Minor
+import Matroid.Connectivity.Separation.Vertical
 
 open Set
 

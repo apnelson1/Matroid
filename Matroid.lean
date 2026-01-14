@@ -9,24 +9,22 @@ import Matroid.Binary.Representation
 import Matroid.Circuit
 import Matroid.Clone
 import Matroid.Closure
--- import Matroid.Connectivity.Adherent
 import Matroid.Connectivity.Basic
--- import Matroid.Connectivity.Connected
--- import Matroid.Connectivity.Core
--- import Matroid.Connectivity.Extension
+import Matroid.Connectivity.Connected
+import Matroid.Connectivity.Core
+import Matroid.Connectivity.Extension
 import Matroid.Connectivity.Finitize
 -- import Matroid.Connectivity.Global
--- import Matroid.Connectivity.Infinite
--- import Matroid.Connectivity.Internal
 import Matroid.Connectivity.Minor
 import Matroid.Connectivity.Nat
--- import Matroid.Connectivity.Offset
-import Matroid.Connectivity.Separation
+import Matroid.Connectivity.Separation.Adherent
+import Matroid.Connectivity.Separation.Basic
+import Matroid.Connectivity.Separation.Infinite
+import Matroid.Connectivity.Separation.Offset
+import Matroid.Connectivity.Separation.Minor
+import Matroid.Connectivity.Separation.Tutte
+import Matroid.Connectivity.Separation.Vertical
 import Matroid.Connectivity.Skew
--- import Matroid.Connectivity.ThreeConnected
--- import Matroid.Connectivity.Tutte
--- import Matroid.Connectivity.TutteTriangle
--- import Matroid.Connectivity.Vertical
 import Matroid.Constructions.Matching
 import Matroid.Constructions.Project
 import Matroid.Constructions.Relax

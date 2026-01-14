@@ -226,7 +226,6 @@ lemma trivial_of_subsingleton [Nonempty ι] (P : s.IndexedPartition ι) (h : s.S
   have hs : s = ∅ := by simp [← P.iUnion_eq, hi']
   exact hcon (Classical.arbitrary ι) <| by simp [hs, hi']
 
-
 end IndexedPartition
 
 def Bipartition (s : Set α) := s.IndexedPartition Bool
@@ -345,7 +344,6 @@ like `eConn_copy` can be `@[simp]`. -/
 @[simp, simp↓]
 lemma copy_apply (P : s.Bipartition) (h_eq : s = t) (b : Bool) : P.copy h_eq b = P b := rfl
 
-
 /-- A partition is trivial if one side is empty. -/
 protected def Trivial (P : s.Bipartition) : Prop := IndexedPartition.Trivial P
 
@@ -358,26 +356,82 @@ lemma trivial_of_eq (h : P i = s) : P.Trivial :=
 lemma trivial_of_eq_empty (h : P i = ∅) : P.Trivial :=
   trivial_of_eq (i := !i) <| by rw [← P.compl_eq, h, diff_empty]
 
-protected lemma trivial_def : P.Trivial ↔ P true = ∅ ∨ P false = ∅ := by
+protected lemma trivial_def : P.Trivial ↔ P false = ∅ ∨ P true = ∅ := by
   refine ⟨fun h ↦ ?_, fun h ↦ Or.elim h trivial_of_eq_empty trivial_of_eq_empty⟩
   obtain ⟨rfl | rfl, rfl⟩ := h.exists_eq_single
-  · exact .inl <| IndexedPartition.single_apply_of_ne _ <| by trivial
-  exact .inr <| IndexedPartition.single_apply_of_ne _ <| by trivial
+  · exact .inr <| IndexedPartition.single_apply_of_ne _ <| by trivial
+  exact .inl <| IndexedPartition.single_apply_of_ne _ <| by trivial
 
-lemma not_trivial_iff : ¬ P.Trivial ↔ ∀ b, (P b).Nonempty := by
-  simp [nonempty_iff_ne_empty, P.trivial_def, and_comm]
-
-protected lemma trivial_def' : P.Trivial ↔ P true = s ∨ P false = s := by
+protected lemma trivial_def' : P.Trivial ↔ P false = s ∨ P true = s := by
   refine ⟨fun h ↦ ?_, fun h ↦ Or.elim h trivial_of_eq trivial_of_eq⟩
   obtain ⟨rfl | rfl, rfl⟩ := h.exists_eq_single
-  · exact .inr <| IndexedPartition.single_apply (s := s) false
-  exact .inl <| IndexedPartition.single_apply (s := s) true
+  · exact .inl <| IndexedPartition.single_apply (s := s) false
+  exact .inr <| IndexedPartition.single_apply (s := s) true
+
+protected lemma trivial_def_bool (i : Bool) : P.Trivial ↔ P i = ∅ ∨ P (!i) = ∅ := by
+  obtain rfl | rfl := i
+  <;> simp [P.trivial_def, or_comm]
+
+protected lemma trivial_def_bool' (i : Bool) : P.Trivial ↔ P i = s ∨ P (!i) = s := by
+  obtain rfl | rfl := i
+  <;> simp [P.trivial_def', or_comm]
 
 lemma Trivial.exists_eq (h : P.Trivial) : ∃ b, P b = s := h
 
 lemma Trivial.exists_eq_empty (h : P.Trivial) : ∃ b, P b = ∅ := by
   rw [Bool.exists_bool]
-  rwa [Bipartition.trivial_def, or_comm] at h
+  rwa [Bipartition.trivial_def] at h
+
+lemma Trivial.exists_eq_eq (h : P.Trivial) : ∃ b, P b = ∅ ∧ P (!b) = s := by
+  obtain ⟨i, hi⟩ := h.exists_eq_empty
+  exact ⟨i, hi, by rw [← P.compl_eq, hi, diff_empty]⟩
+
+lemma Trivial.symm (h : P.Trivial) : P.symm.Trivial := by
+  rwa [P.symm.trivial_def_bool true, P.symm_apply, Bool.not_true, P.symm_apply, Bool.not_false,
+    ← P.trivial_def]
+
+@[simp]
+lemma trivial_symm_iff : P.symm.Trivial ↔ P.Trivial :=
+  ⟨fun h ↦ by simpa using h.symm, Trivial.symm⟩
+
+lemma apply_eq_iff : P i = s ↔ P (!i) = ∅ := by
+  rw [← P.compl_eq, diff_eq_empty, subset_antisymm_iff, and_iff_right P.subset]
+
+/-- A bipartition is trivial if both sides are nonempty -/
+protected def Nontrivial (P : s.Bipartition) : Prop := ∀ i, (P i).Nonempty
+
+lemma Nontrivial.nonempty (h : P.Nontrivial) {i : Bool} : (P i).Nonempty := h i
+
+protected lemma nontrivial_def : P.Nontrivial ↔ (P false).Nonempty ∧ (P true).Nonempty := by
+  simp [Bipartition.Nontrivial]
+
+@[simp]
+protected lemma not_trivial_iff : ¬ P.Trivial ↔ P.Nontrivial := by
+  rw [P.trivial_def, P.nontrivial_def, not_or, nonempty_iff_ne_empty, nonempty_iff_ne_empty]
+
+@[simp]
+protected lemma not_nontrivial_iff : ¬ P.Nontrivial ↔ P.Trivial := by
+  rw [← not_iff_not, not_not, P.not_trivial_iff]
+
+protected lemma Nontrivial.not_trivial (h : P.Nontrivial) : ¬ P.Trivial := by
+  simpa
+
+protected lemma Trivial.not_nontrivial (h : P.Trivial) : ¬ P.Nontrivial := by
+  simpa
+
+protected lemma trivial_or_nontrivial (P : s.Bipartition) : P.Trivial ∨ P.Nontrivial := by
+  simp [or_iff_not_imp_left]
+
+lemma Nontrivial.ssubset (h : P.Nontrivial) {i : Bool} : P i ⊂ s := by
+  rw [← P.not_trivial_iff, P.trivial_def_bool' i, not_or] at h
+  exact P.subset.ssubset_of_ne h.1
+
+lemma Nontrivial.symm (h : P.Nontrivial) : P.symm.Nontrivial := by
+  simpa [← P.symm.not_trivial_iff]
+
+@[simp]
+lemma nonttrivial_symm_iff : P.symm.Nontrivial ↔ P.Nontrivial :=
+  ⟨fun h ↦ by simpa using h.symm, Nontrivial.symm⟩
 
 /-- Intersect a partition with a smaller set -/
 def induce (P : s.Bipartition) (h : t ⊆ s) : t.Bipartition := IndexedPartition.induce P h
@@ -497,73 +551,161 @@ protected lemma ofSubset_copy (hst : s ⊆ t) (htr : t = r) :
 
 section Cross
 
-variable {Q : s.Bipartition}
+variable {Q : s.Bipartition} {b c : Bool}
 
-/-- Cross two bipartitions by intersecting their `b`-sides and unioning their `!b`-sides-/
-protected def cross (P Q : s.Bipartition) (b : Bool) : s.Bipartition where
-  toFun i := bif (i == b) then P i ∩ Q i else P i ∪ Q i
+/-- The bipartition whose `true` side is `P b ∩ Q c` and whose `false` side is `P !b ∪ Q !c`. -/
+protected def inter (P Q : s.Bipartition) (b c : Bool) : s.Bipartition where
+  toFun i := bif i then P b ∩ Q c else P (!b) ∪ Q !c
   pairwise_disjoint' := by
-    simp only [pairwise_on_bool' b, BEq.rfl, cond_true, Bool.not_beq_self, cond_false,
-      disjoint_union_right, disjoint_union_left]
-    refine ⟨⟨(P.disjoint_bool b).mono_left ?_, (Q.disjoint_bool b).mono_left ?_⟩,
-      (P.disjoint_bool b).symm.mono_right ?_, (Q.disjoint_bool b).symm.mono_right ?_⟩ <;> simp
+    rw [pairwise_disjoint_on_bool', cond_true, cond_false, disjoint_union_right]
+    exact ⟨(P.disjoint_bool b).mono_left inter_subset_left,
+      (Q.disjoint_bool c).mono_left inter_subset_right⟩
   iUnion_eq' := by
-    simp only [iUnion_bool' _ b, BEq.rfl, cond_true, Bool.not_beq_self, cond_false]
-    rw [← P.compl_eq, ← Q.compl_eq, ← inter_eq_self_of_subset_left P.subset,
-      ← inter_eq_self_of_subset_left Q.subset]
-    grind
+    rw [iUnion_bool, cond_true, cond_false]
+    grind [P.union_bool_eq b, Q.union_bool_eq c]
 
-@[simp, simp↓]
-protected lemma cross_apply (P Q : s.Bipartition) (i j : Bool) :
-    (P.cross Q i) j = bif (j == i) then P j ∩ Q j else P j ∪ Q j := rfl
+protected lemma inter_apply (P Q : s.Bipartition) :
+    P.inter Q b c i = bif i then P b ∩ Q c else P (!b) ∪ Q !c := rfl
+@[simp]
+protected lemma inter_apply_true (P Q : s.Bipartition) : P.inter Q b c true = P b ∩ Q c := rfl
+@[simp]
+protected lemma inter_apply_false (P Q : s.Bipartition) : P.inter Q b c false = P (!b) ∪ Q !c := rfl
 
-protected lemma cross_apply_not (P Q : s.Bipartition) (b : Bool) :
-    (P.cross Q b) (!b) = P (!b) ∪ Q !b := by
-  rw [Bipartition.cross, IndexedPartition.mk_apply]
-  simp
+lemma inter_comm (P Q : s.Bipartition) (b c : Bool) : P.inter Q b c = Q.inter P c b :=
+  Bipartition.ext <| by simp [Set.inter_comm]
 
-protected lemma cross_not_apply (P Q : s.Bipartition) (b : Bool) :
-    (P.cross Q !b) b = P b ∪ Q b := by
-  rw [Bipartition.cross, IndexedPartition.mk_apply]
-  simp
+/-- The bipartition whose `true` side is `P b ∪ Q c` and whose `false` side is `P !b ∩ Q !c`. -/
+protected def union (P Q : s.Bipartition) (b c : Bool) : s.Bipartition := (P.inter Q (!b) !c).symm
 
-protected lemma cross_true_false (P Q : s.Bipartition) :
-    (P.cross Q true) false = P false ∪ Q false :=
-  P.cross_apply_not Q true
+protected lemma union_apply (P Q : s.Bipartition) :
+    P.union Q b c i = bif i then P b ∪ Q c else P (!b) ∩ Q !c := by
+  simp [Bipartition.union, Bipartition.symm_apply, P.inter_apply]
 
-protected lemma cross_false_true (P Q : s.Bipartition) : (P.cross Q false) true = P true ∪ Q true :=
-  P.cross_apply_not Q false
+@[simp]
+protected lemma union_apply_true (P Q : s.Bipartition) : P.union Q b c true = P b ∪ Q c := by
+  simp [P.union_apply]
 
-protected lemma cross_symm (P Q : s.Bipartition) (b : Bool) :
-    (P.cross Q b).symm = P.symm.cross Q.symm !b :=
-  Bipartition.ext_bool (i := b) <| by simp
+@[simp]
+protected lemma union_apply_false (P Q : s.Bipartition) : P.union Q b c false = P (!b) ∩ Q !c := rfl
+
+lemma inter_symm (P Q : s.Bipartition) (b c : Bool) :
+    (P.inter Q b c).symm = P.union Q (!b) (!c) := by
+  simp [Bipartition.union]
+
+lemma union_symm (P Q : s.Bipartition) (b c : Bool) :
+    (P.union Q b c).symm = P.inter Q (!b) (!c) := by
+  rw [Bipartition.union, Bipartition.symm_symm]
+
+@[simp]
+lemma union_not_symm (P Q : s.Bipartition) (b c : Bool) :
+    (P.union Q (!b) (!c)).symm = P.inter Q b c := by
+  simp [union_symm]
+
+@[simp]
+lemma inter_not_symm (P Q : s.Bipartition) (b c : Bool) :
+    (P.inter Q (!b) (!c)).symm = P.union Q b c := by
+  simp [inter_symm]
+
+lemma union_comm (P Q : s.Bipartition) (b c : Bool) : P.union Q b c = Q.union P c b :=
+  Bipartition.ext <| by simp [Set.union_comm]
+
+lemma Nontrivial.inter_trivial_iff (hP : P.Nontrivial) (b c : Bool) :
+    (P.inter Q b c).Trivial ↔ P b ⊆ Q !c ∨ Q c ⊆ P !b := by
+  grw [Bipartition.trivial_def, Bipartition.inter_apply_false, or_iff_not_imp_left, ← Ne,
+    ← nonempty_iff_ne_empty, imp_iff_right (hP.nonempty.mono subset_union_left),
+    P.inter_apply_true]
+  rw [← Q.compl_eq, subset_diff, ← P.compl_eq, subset_diff, disjoint_comm, Set.inter_comm,
+    and_iff_right P.subset, and_iff_right Q.subset, or_self, disjoint_iff_inter_eq_empty]
+
+lemma Nontrivial.union_trivial_iff (hP : P.Nontrivial) (b c : Bool) :
+    (P.union Q b c).Trivial ↔ P (!b) ⊆ Q c ∨ Q (!c) ⊆ P b := by
+  rw [← inter_not_symm, trivial_symm_iff, hP.inter_trivial_iff, Bool.not_not, Bool.not_not]
+
+lemma inter_trivial_iff (P Q : s.Bipartition) (b c : Bool) :
+    (P.inter Q b c).Trivial ↔ P b ⊆ Q !c ∨ Q c ⊆ P !b ∨ (P b = s ∧ Q c = s) := by
+  obtain ht | hnt := P.trivial_or_nontrivial
+  · obtain ht' | hnt' := Q.trivial_or_nontrivial
+    · obtain ⟨i, hi, hi'⟩ := ht.exists_eq_eq
+      obtain ⟨j, hj, hj'⟩ := ht'.exists_eq_eq
+      obtain rfl | rfl := i.eq_or_eq_not b
+      · simp [Bipartition.trivial_def, hi]
+      obtain rfl | rfl := j.eq_or_eq_not c
+      · simp [Bipartition.trivial_def, hj]
+      rw [Bool.not_not] at hi' hj'
+      simp [Bipartition.trivial_def, hj, hj', hi, hi']
+    rw [inter_comm, hnt'.inter_trivial_iff, or_comm]
+    simp [hnt'.ssubset.ne]
+  simp [hnt.inter_trivial_iff, (hnt.ssubset (i := b)).ne]
+
+lemma union_trivial_iff (P Q : s.Bipartition) (b c : Bool) :
+    (P.union Q b c).Trivial ↔ P (!b) ⊆ Q c ∨ Q (!c) ⊆ P b ∨ (P b = ∅ ∧ Q c = ∅) := by
+  rw [← inter_not_symm, trivial_symm_iff, inter_trivial_iff, Bool.not_not, Bool.not_not,
+    ← or_assoc, ← or_assoc]
+  convert Iff.rfl using 3
+  · rw [← P.compl_not_eq, diff_eq_empty, subset_antisymm_iff, and_iff_right P.subset]
+  rw [← Q.compl_not_eq, diff_eq_empty, subset_antisymm_iff, and_iff_right Q.subset]
 
 
-/-- Cross two partitions by intersecting the left sets. -/
-def inter (P Q : s.Bipartition) : s.Bipartition := P.cross Q true
 
-@[simp, simp↓]
-lemma inter_true (P Q : s.Bipartition) : (P.inter Q) true = P true ∩ Q true := rfl
 
-@[simp, simp↓]
-lemma inter_false (P Q : s.Bipartition) : (P.inter Q) false = P false ∪ Q false := rfl
 
-/-- Cross two partitions by intersecting the right sets. -/
-def union (P Q : s.Bipartition) : s.Bipartition := (P.symm.inter Q.symm).symm
 
-@[simp, simp↓]
-lemma union_true (P Q : s.Bipartition) : (P.union Q) true = P true ∪ Q true := rfl
 
-@[simp, simp↓]
-lemma union_false (P Q : s.Bipartition) : (P.union Q) false = P false ∩ Q false := rfl
+-- protected lemma cross_apply (P Q : s.Bipartition) : P.cross Q b c b = P b ∩ Q c := rfl
 
-@[simp, simp↓]
-lemma inter_symm (P Q : s.Bipartition) : (P.inter Q).symm = P.symm.union Q.symm := by
-  simp [inter, union]
 
-@[simp, simp↓]
-lemma union_symm (P Q : s.Bipartition) : (P.union Q).symm = P.symm.inter Q.symm :=
-  Bipartition.ext rfl
+-- @[simp, simp↓]
+-- protected lemma cross_apply (P Q : s.Bipartition) (i j : Bool) :
+--     (P.cross Q i) j = bif (j == i) then P j ∩ Q j else P j ∪ Q j := rfl
+
+-- protected lemma cross_apply_not (P Q : s.Bipartition) (b : Bool) :
+--     (P.cross Q b) (!b) = P (!b) ∪ Q !b := by
+--   rw [Bipartition.cross, IndexedPartition.mk_apply]
+--   simp
+
+-- protected lemma cross_not_apply (P Q : s.Bipartition) (b : Bool) :
+--     (P.cross Q !b) b = P b ∪ Q b := by
+--   rw [Bipartition.cross, IndexedPartition.mk_apply]
+--   simp
+
+-- protected lemma cross_true_false (P Q : s.Bipartition) :
+--     (P.cross Q true) false = P false ∪ Q false :=
+--   P.cross_apply_not Q true
+
+-- protected lemma cross_false_true (P Q : s.Bipartition) :
+-- (P.cross Q false) true = P true ∪ Q true :=
+--   P.cross_apply_not Q false
+
+-- protected lemma cross_symm (P Q : s.Bipartition) (b : Bool) :
+--     (P.cross Q b c).symm = P.symm.cross Q.symm !b :=
+--   Bipartition.ext_bool (i := b) <| by simp
+
+
+-- /-- Cross two partitions by intersecting the left sets. -/
+-- def inter (P Q : s.Bipartition) : s.Bipartition := P.cross Q true
+
+-- @[simp, simp↓]
+-- lemma inter_true (P Q : s.Bipartition) : (P.inter Q) true = P true ∩ Q true := rfl
+
+-- @[simp, simp↓]
+-- lemma inter_false (P Q : s.Bipartition) : (P.inter Q) false = P false ∪ Q false := rfl
+
+-- /-- Cross two partitions by intersecting the right sets. -/
+-- def union (P Q : s.Bipartition) : s.Bipartition := (P.symm.inter Q.symm).symm
+
+-- @[simp, simp↓]
+-- lemma union_true (P Q : s.Bipartition) : (P.union Q) true = P true ∪ Q true := rfl
+
+-- @[simp, simp↓]
+-- lemma union_false (P Q : s.Bipartition) : (P.union Q) false = P false ∩ Q false := rfl
+
+-- @[simp, simp↓]
+-- lemma inter_symm (P Q : s.Bipartition) : (P.inter Q).symm = P.symm.union Q.symm := by
+--   simp [inter, union]
+
+-- @[simp, simp↓]
+-- lemma union_symm (P Q : s.Bipartition) : (P.union Q).symm = P.symm.inter Q.symm :=
+--   Bipartition.ext rfl
 
 @[simp]
 lemma disjoint_inter_right (P : s.Bipartition) : Disjoint (P true ∩ t) (P false ∩ r) :=
@@ -599,11 +741,11 @@ lemma inter_ground_eq (P : s.Bipartition) (b) : P b ∩ s = P b :=
 
 lemma union_inter_right' (P : s.Bipartition) (X : Set α) (b : Bool) :
     (P b ∩ X) ∪ (P (!b) ∩ X) = X ∩ s := by
-  rw [← union_inter_distrib_right, P.union_bool_eq, inter_comm]
+  rw [← union_inter_distrib_right, P.union_bool_eq, Set.inter_comm]
 
 lemma union_inter_left' (P : s.Bipartition) (X : Set α) (b : Bool) :
     (X ∩ (P b)) ∪ (X ∩ (P !b)) = X ∩ s := by
-  rw [← inter_union_distrib_left, P.union_bool_eq, inter_comm]
+  rw [← inter_union_distrib_left, P.union_bool_eq, Set.inter_comm]
 
 lemma union_inter_right (P : s.Bipartition) (h : t ⊆ s) (b : Bool) :
     (P b ∩ t) ∪ ((P !b) ∩ t) = t := by

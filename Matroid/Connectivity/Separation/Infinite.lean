@@ -1,4 +1,4 @@
-import Matroid.Connectivity.Vertical
+import Matroid.Connectivity.Separation.Vertical
 import Matroid.Tame
 
 variable {α : Type*} {M : Matroid α} {X Y : Set α} {e f : α} {P : M.Separation} {k : ℕ∞}
@@ -235,7 +235,7 @@ lemma tutteConnected_top_iff_of_tame [M.Tame] : M.TutteConnected ⊤ ↔
     M.IsUniform ∧ M.Finite ∧ M.E.encard ≤ 2 * M.eRank + 1 ∧ 2 * M.eRank ≤ M.E.encard + 1 := by
   refine ⟨fun h ↦ ⟨h.isUniform, h.finite_of_tame, ?_⟩, fun ⟨hU, hfin, hle, hle'⟩ ↦ ?_⟩
   · exact ⟨h.cyclicallyConnected.encard_le, h.verticallyConnected.two_mul_eRank_le⟩
-  obtain ⟨E, k, hkE, rfl⟩ := hU.exists_eq_unifOn
+  obtain ⟨E, k, hkE, rfl, h'⟩ := hU.exists_eq_unifOn
   rw [unifOn_tutteConnected_top_iff hkE]
   rw [unifOn_ground_eq, unifOn_eRank_eq' hkE] at hle hle'
   eomega
