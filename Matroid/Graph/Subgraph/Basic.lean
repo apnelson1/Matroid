@@ -279,6 +279,14 @@ lemma IsInducedSubgraph.eq_of_vertexSet (h : H ≤i G) (hV : V(H) = V(G)) : H = 
     obtain ⟨_, _, hxy⟩ := G.exists_isLink_of_mem_edgeSet he
     exact h.isLink_of_mem_mem hxy (hV ▸ hxy.left_mem) (hV ▸ hxy.right_mem) |>.edge_mem
 
+lemma IsInducedSubgraph.le_of_le_subset (h : H ≤i G) (h' : K ≤ G) (hsu : V(K) ⊆ V(H)) :
+    K ≤ H := by
+  refine le_of_le_le_subset_subset h' h.le hsu ?_
+  intro e he
+  rw [isInducedSubgraph_iff] at h
+  obtain ⟨u, v, huv⟩ := K.exists_isLink_of_mem_edgeSet he
+  exact h.2 (huv.of_le h') (hsu huv.left_mem) (hsu huv.right_mem) |>.edge_mem
+
 /-! ### Closed Subgraphs -/
 
 /-- A closed subgraph of `G` is a union of components of `G`.  -/

@@ -1034,6 +1034,13 @@ lemma skew_disjointSum {M₁ M₂ : Matroid α} (hdj : Disjoint M₁.E M₂.E) :
   · exact .inl h.subset_ground
   exact .inr h.subset_ground
 
+-- lemma skew_dual_iff (hX : X ⊆ M.E) (hY : Y ⊆ M.E) (hXY : Disjoint X Y) :
+-- M✶.Skew X Y ↔ False := by
+
+--   rw [M✶.skew_iff_contract_restrict_eq_restrict, ← dual_inj, ← delete_compl _ (R := Y),
+--     dual_contract_delete, ← delete_compl, dual_delete, dual_dual, contract_ground, dual_ground,
+--     diff_diff, ← contract_delete_comm _ (by grind)]
+
 section ModularCompl
 
 

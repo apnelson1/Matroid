@@ -457,6 +457,12 @@ lemma IsClosedSubgraph.vertexDelete (h : H ≤c G) (X : Set α) : H - X ≤c G -
     obtain ⟨⟨y, hxy⟩, hinc⟩ := he
     use x, y, h.isLink_iff_of_mem hx.1 |>.mpr hxy, hx.2, mt (hinc y) (by simp [hxy.inc_right])
 
+lemma IsClosedSubgraph.vertexDelete_of_disjoint (h : H ≤c G) (hS : Disjoint V(H) X) :
+    H ≤c G - X where
+  le := (G.vertexDelete_isInducedSubgraph X).le_of_le_subset h.le
+    (by simp [subset_diff, hS, h.vertexSet_mono])
+  closed e x hex hx := h.closed (hex.of_le vertexDelete_le) hx
+
 lemma IsClosedSubgraph.diff {H₁ H₂ : Graph α β} (h₁ : H₁ ≤c G) (h₂ : H₂ ≤c G) :
     H₁ - V(H₂) ≤c G where
   le := vertexDelete_le.trans h₁.le

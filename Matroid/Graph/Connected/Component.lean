@@ -160,7 +160,7 @@ lemma IsCompOf.eq_of_not_disjoint (hH₁co : H₁.IsCompOf G) (hH₂co : H₂.Is
   obtain ⟨x, hx₁, hx₂⟩ := hV
   obtain rfl := hH₂co.eq_walkable_of_mem_walkable hx₂
   exact hH₁co.eq_walkable_of_mem_walkable hx₁
-  
+
 
 def Components (G : Graph α β) : Set (Graph α β) := {H | H.IsCompOf G}
 
