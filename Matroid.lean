@@ -22,6 +22,7 @@ import Matroid.Connectivity.Separation.Basic
 import Matroid.Connectivity.Separation.Infinite
 -- import Matroid.Connectivity.Separation.Internal
 import Matroid.Connectivity.Separation.Minor
+-- import Matroid.Connectivity.Separation.MinorDuo
 import Matroid.Connectivity.Separation.Offset
 import Matroid.Connectivity.Separation.Tutte
 import Matroid.Connectivity.Separation.Vertical

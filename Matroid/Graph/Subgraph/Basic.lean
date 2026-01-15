@@ -165,21 +165,40 @@ lemma sum_ncard_lt_of_lt [Finite α] [Finite β] (h : G < H) :
     have hEncard : E(G).ncard < E(H).ncard := ncard_lt_ncard hE
     omega
 
+@[gcongr]
 lemma neighbor_mono (hle : G ≤ H) : N(G, x) ⊆ N(H, x) :=
   fun _ ⟨hne, hy⟩ ↦ ⟨hne, hy.of_le hle⟩
 
+@[gcongr]
 lemma setNeighbor_mono (hle : G ≤ H) (S : Set α) : N(G, S) ⊆ N(H, S) :=
   fun _ ⟨hne, x, hxS, hadj⟩ ↦ ⟨hne, x, hxS, hadj.of_le hle⟩
 
+@[gcongr]
 lemma incEdges_mono (hle : G ≤ H) (x : α) : E(G, x) ⊆ E(H, x) :=
   fun _ he ↦ he.of_le hle
 
+@[gcongr]
 lemma setIncEdges_mono (hle : G ≤ H) (S : Set α) : E(G, S) ⊆ E(H, S) :=
   fun _ ⟨x, hxS, he⟩ ↦ ⟨x, hxS, he.of_le hle⟩
+
+@[gcongr]
+lemma endSet_mono (hle : G ≤ H) (e : β) : V(G, e) ⊆ V(H, e) :=
+  fun _ hx ↦ hx.of_le hle
+
+@[simp]
+lemma endSet_eq_of_le (hle : G ≤ H) (he : e ∈ E(G)) : V(H, e) = V(G, e) := by
+  ext v
+  rw [mem_endSet_iff, mem_endSet_iff, inc_eq_inc_iff.mpr]
+  exact isLink_eq_of_le hle he |>.symm
+
+@[gcongr]
+lemma endSetSet_mono (hle : G ≤ H) (F : Set β) : V(G, F) ⊆ V(H, F) :=
+  fun _ ⟨e, he, hx⟩ ↦ ⟨e, he, hx.of_le hle⟩
 
 lemma endSetSet_subset_of_subset_of_le (hle : G ≤ H) (hF : F ⊆ E(G)) : V(H, F) ⊆ V(G) :=
   fun _ ⟨_, he, hx⟩ ↦ hx.of_le_of_mem hle (hF he) |>.vertex_mem
 
+@[gcongr]
 lemma linkEdges_mono (hle : G ≤ H) (u v : α) : E(G, u, v) ⊆ E(H, u, v) :=
   fun _ he ↦ he.of_le hle
 

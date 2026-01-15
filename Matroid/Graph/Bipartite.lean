@@ -285,6 +285,12 @@ lemma Bipartite.of_le (hG : G.Bipartite) (hle : H ≤ G) : H.Bipartite := by
   replace hxy := hxy.of_le_of_mem hle he
   exact ⟨x, ⟨hx, hxy.left_mem⟩, y, ⟨hy, hxy.right_mem⟩, hxy⟩
 
+lemma Bipartite.loopless (hG : G.Bipartite) : G.Loopless where
+  not_isLoopAt e v h := by
+    obtain ⟨x, hx, y, hy, hxy⟩ := hG.some.forall_edge e h.edge_mem
+    have := hG.some.notMem_right (x := x)
+    obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := hxy.eq_and_eq_or_eq_and_eq h <;> tauto
+
 /-- A disjoint union of bipartite graphs is bipartite. -/
 lemma iUnion_stronglyDisjoint_bipartite {ι : Type*} {H : ι → Graph α β}
     (hdj : Pairwise (StronglyDisjoint on H)) (hbp : ∀ i, Bipartite (H i)) :

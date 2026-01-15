@@ -13,7 +13,6 @@ lemma ConnBetween.map (f : α → α') (h : G.ConnBetween x y) :
   obtain ⟨W, hW, rfl, rfl⟩ := h
   exact ⟨W.map f, hW.map f, by simp, by simp⟩
 
-
 lemma Preconnected.map (f : α → α') (h : G.Preconnected) : (f ''ᴳ G).Preconnected := by
   intro x' y' hx' hy'
   obtain ⟨x, hx, rfl⟩ := by simpa [map_vertexSet] using hx'

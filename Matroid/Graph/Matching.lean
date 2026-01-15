@@ -1,5 +1,5 @@
 import Matroid.Graph.Degree.Max
-import Matroid.Graph.Connected.Component
+import Matroid.Graph.Bipartite
 import Matroid.Parallel
 
 namespace Graph
@@ -48,6 +48,18 @@ structure IsOddCompOf (H G : Graph α β) extends H.IsCompOf G where
 def OddComponents (G : Graph α β) : Set (Graph α β) :=
   {H | H.IsOddCompOf G}
 
+structure IsCover (G : Graph α β) (S : Set α) : Prop where
+  subset : S ⊆ V(G)
+  cover : E(G) ⊆ E(G, S)
+
+structure IsMinCover (G : Graph α β) (S : Set α) : Prop extends IsCover G S where
+  minimal : ∀ T, IsCover G T → S.encard ≤ T.encard
+
+noncomputable def CoverNumber (G : Graph α β) : ℕ∞ :=
+  sInf {n | ∃ S, G.IsCover S ∧ n = S.encard}
+
+scoped notation "τ(" G ")" => CoverNumber G
+
 variable {P P' : WList α β} {hM : G.IsMatching M}
 
 lemma IsMatching.subsingleton_inc (h : G.IsMatching M) (v : α) : (M ∩ E(G, v)).Subsingleton := by
@@ -70,6 +82,11 @@ lemma IsMatching.maxDegree_le_one [G.Loopless] (h : G.IsMatching M) : (G ↾ M).
   rw [eDegree_eq_encard_inc]
   exact this v
 
+lemma IsMatching.of_le (hle : G ≤ H) (h : G.IsMatching M) : H.IsMatching M where
+  subset := h.subset.trans (edgeSet_mono hle)
+  disjoint e f he hf hne := by
+    sorry
+
 lemma IsMatching.isMaxMatching_of_vertex_subset (hM : G.IsMatching M) (hsu : V(G) ⊆ V(G, M)) :
     G.IsMaxMatching M where
   toIsMatching := hM
@@ -81,6 +98,12 @@ lemma IsMatching.encard_le (hM : G.IsMatching M) : M.encard ≤ ν(G) := by
 
 lemma IsMaxMatching.encard (h : G.IsMaxMatching M) : M.encard = ν(G) := by
   sorry
+
+lemma IsMatching.isMaxMatching_of_encard_eq (hM : G.IsMatching M) (h : M.encard = ν(G)) :
+    G.IsMaxMatching M where
+  toIsMatching := hM
+  max M' hM' := by
+    sorry
 
 def IsMatching.restrict₂ (hM : G.IsMatching M) (hM' : G.IsMatching M') : Graph α β :=
   G ↾ (M ∆ M') |>.loopRemove
@@ -114,6 +137,13 @@ lemma IsMatching.inter_encard_eq_of_isCycleGraph_isCompOf_symmDiff (hM : G.IsMat
 --     <| hcd G' hG'
 --   clear hcd hmax
 --   sorry -- component partition
+
+lemma isMaxMatching_iff_maximalFor : G.IsMaxMatching M ↔ MaximalFor G.IsMatching Set.encard M :=
+  ⟨fun h => ⟨h.toIsMatching, fun T hT _ ↦ h.2 T hT⟩,
+    fun h => ⟨h.1, fun T hT ↦ (le_total T.encard M.encard).elim id <| h.2 hT⟩⟩
+
+lemma matchingNumber_mono (hle : G ≤ H) : ν(G) ≤ ν(H) := by
+  sorry
 
 @[simp]
 lemma nil_isAltPath (hM : G.IsMatching M) (x : α) : G.IsAltPath hM (.nil x) ↔ x ∈ V(G) := by
@@ -178,7 +208,8 @@ lemma IsAugPath.augment (h : G.IsAugPath hM P) : G.IsMatching (M ∆ E(P)) := by
 lemma IsAugPath.augment_vertex_subset (h : G.IsAugPath hM P) : V(G, M) ⊆ V(G, M ∆ E(P)) := by
   sorry
 
-lemma IsAugPath.augment_encard (h : G.IsAugPath hM P) : (M ∆ E(P)).encard = M.encard + 1 := by
+lemma IsAugPath.augment_encard [G.EdgeFinite] (h : G.IsAugPath hM P) :
+    (M ∆ E(P)).encard = M.encard + 1 := by
   sorry
 
 lemma IsMatching.exists_isAugPath_not_max (hM : G.IsMatching M) (hnotmax : ¬ G.IsMaxMatching M)
@@ -187,6 +218,86 @@ lemma IsMatching.exists_isAugPath_not_max (hM : G.IsMatching M) (hnotmax : ¬ G.
     simpa only [isMaxMatching_iff, hM, true_and, not_forall, not_le] using hnotmax
   sorry
 
+
+-- Konig's & Hall's theorem Section
+
+lemma IsCover.mem_or_mem_or_isLink (h : G.IsCover S) (he : G.IsLink e u v) : u ∈ S ∨ v ∈ S := by
+  sorry
+
+lemma IsCover.le_encard (h : G.IsCover S) : τ(G) ≤ S.encard := by
+  sorry
+
+lemma IsMinCover.encard (h : G.IsMinCover S) : S.encard = τ(G) := by
+  sorry
+
+lemma isMinCover_iff_minimalFor : G.IsMinCover S ↔ MinimalFor G.IsCover Set.encard S :=
+  ⟨fun h => ⟨h.toIsCover, fun T hT _ ↦ h.minimal T hT⟩,
+    fun h => ⟨h.1, fun T hT ↦ (le_total T.encard S.encard).elim (h.2 hT) id⟩⟩
+
+lemma IsCover.of_vertexDelete (h : (G - X).IsCover S) : G.IsCover ((V(G) ∩ X) ∪ S) where
+  subset := sorry
+  cover e he := sorry
+
+lemma IsCover.isMinCover_of_encard_eq (hC : G.IsCover S) (h : S.encard = τ(G)) :
+    G.IsMinCover S where
+  toIsCover := hC
+  minimal T hT := by
+    sorry
+
+def IsMatching.mapToCover (hM : G.IsMatching M) (hC : G.IsCover S) : M → S := by
+  sorry
+
+lemma IsMatching.mapToCover_inj (hM : G.IsMatching M) (hC : G.IsCover S) :
+    Function.Injective (hM.mapToCover hC) := by
+  sorry
+
+lemma IsMatching.mapToCover_inc (hM : G.IsMatching M) (hC : G.IsCover S) (he : e ∈ M) :
+    G.Inc e (hM.mapToCover hC ⟨e, he⟩) := by
+  sorry
+
+lemma matchingNumber_le_coverNumber : ν(G) ≤ τ(G) := by
+  sorry
+
+lemma IsMatching.mapToCover_range_eq_of_encard_eq (hC : G.IsCover S) (hM : G.IsMatching M)
+    (h : S.encard = M.encard) : range (hM.mapToCover hC) = ⊤ := by
+  sorry
+
+lemma coverNumber_mono (hle : G ≤ H) : τ(G) ≤ τ(H) := by
+  sorry
+
+lemma IsPathGraph.konig (h : G.IsPathGraph) : τ(G) = ν(G) := by
+  sorry
+
+lemma IsCycleGraph.konig (hB : G.Bipartite) (h : G.IsCycleGraph) : τ(G) = ν(G) := by
+  sorry
+
+/-!
+### König's Matching Theorem
+Source: Romeo Rizzi (2000) [cite: 2]
+
+Theorem: Let G be a bipartite graph. Then ν(G) = τ(G).
+
+Proof:
+Let G be a minimal counterexample. Then G is connected, is not a circuit, nor a path. [cite: 14]
+So, G has a node of degree at least 3. Let u be such a node and v one of its neighbors. [cite: 15]
+
+Case 1: If ν(G \ v) < ν(G). [cite: 16]
+By minimality, G \ v has a cover W' with |W'| < ν(G). [cite: 16]
+Hence, W' ∪ {v} is a cover of G with cardinality ν(G) at most. [cite: 17]
+
+Case 2: Assume there exists a maximum matching M of G having no edge incident at v. [cite: 18]
+Let f be an edge of G \ M incident at u but not at v. [cite: 18]
+Let W' be a cover of G \ f with |W'| = ν(G). [cite: 22]
+Since no edge of M is incident at v, it follows that W' does not contain v. [cite: 22]
+So W' contains u and is a cover of G. [cite: 22]
+-/
+theorem Konig'sTheorem [H.Finite] (hB : H.Bipartite) : τ(H) = ν(H) := by
+
+  sorry
+
+theorem Hall'sTheorem (B : G.Bipartition) :
+    (∃ M, G.IsMatching M ∧ B.left ⊆ V(G, M)) ↔ ∀ D ⊆ B.left, D.encard ≤ N(G, D).encard := by
+  sorry
 
 -- Matroid exercise 4 Q2
 
