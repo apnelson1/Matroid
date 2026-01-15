@@ -348,7 +348,7 @@ lemma banana_isComplete (a b : α) (hF : F.Nonempty) : (banana a b F).IsComplete
   obtain rfl | rfl := hx <;> obtain rfl | rfl := hy <;> simp [hF] at hne ⊢
 
 @[simp]
-lemma banana_isComplete_iff (a b : α) (F : Set β ) :
+lemma banana_isComplete_iff (a b : α) (F : Set β) :
     (banana a b F).IsComplete ↔ a = b ∨ F.Nonempty := by
   obtain rfl | hne := eq_or_ne a b
   · simp only [true_or, iff_true]

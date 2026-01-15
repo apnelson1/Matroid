@@ -332,6 +332,12 @@ lemma vertexDelete_adj_iff (G : Graph α β) (X : Set α) :
 lemma vertexDelete_vertexSet_inter (G : Graph α β) (X : Set α) : G - (V(G) ∩ X) = G - X := by
   simp [vertexDelete_def]
 
+@[simp]
+lemma vertexDelete_eq_self_iff (G : Graph α β) (X : Set α) : G - X = G ↔ Disjoint V(G) X := by
+  refine ⟨fun h ↦ ?_, fun h ↦ (G.vertexDelete_isInducedSubgraph X).eq_of_vertexSet (by simpa)⟩
+  rw [← h, vertexDelete_vertexSet]
+  exact disjoint_sdiff_left
+
 lemma IsLink.mem_vertexDelete_iff (hG : G.IsLink e x y) : e ∈ E(G - X) ↔ x ∉ X ∧ y ∉ X := by
   rw [vertexDelete_def, hG.mem_induce_iff, mem_diff, mem_diff, and_iff_right hG.left_mem,
     and_iff_right hG.right_mem]

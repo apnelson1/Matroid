@@ -32,11 +32,15 @@ structure IsAltPath (G : Graph α β) (hM : G.IsMatching M) (P : WList α β) : 
   mem_matching : P.edge.IsChain (fun e f ↦ e ∈ M ∨ f ∈ M)
 
 @[mk_iff]
-structure IsAugPath (G : Graph α β) (hM : G.IsMatching M) (P : WList α β) : Prop
+structure IsSemiAugPath (G : Graph α β) (hM : G.IsMatching M) (P : WList α β) : Prop
   extends G.IsAltPath hM P where
   nonempty : P.Nonempty
-  first_not_in : P.first ∉ V(G, M)
   last_not_in : P.last ∉ V(G, M)
+
+@[mk_iff]
+structure IsAugPath (G : Graph α β) (hM : G.IsMatching M) (P : WList α β) : Prop
+  extends G.IsSemiAugPath hM P where
+  first_not_in : P.first ∉ V(G, M)
 
 def inessential (G : Graph α β) (x : α) : Prop :=
   ∃ M, G.IsMaxMatching M ∧ x ∉ V(G, M)
@@ -200,10 +204,101 @@ lemma IsAltPath.mem_matching_iff' {P : WList α β} (h : G.IsAltPath hM P) :
 
 lemma isAugPath_of_singleEdge (hl : G.IsLink e u v) (hu : u ∉ V(G, M)) (hv : v ∉ V(G, M))
     (huv : u ≠ v) : G.IsAugPath hM (.cons u e (.nil v)) := by
-  simp [hu, hv, isAugPath_iff, isAltPath_iff, hl.right_mem, huv, hl]
+  simp [hu, hv, isAugPath_iff, isSemiAugPath_iff, isAltPath_iff, hl.right_mem, huv, hl]
 
-lemma IsAugPath.augment (h : G.IsAugPath hM P) : G.IsMatching (M ∆ E(P)) := by
-  sorry
+@[simp]
+lemma nil_not_isAugPath : ¬ G.IsAugPath hM (.nil x) := by
+  rintro h
+  simpa using h.nonempty
+
+@[simp]
+lemma IsAugPath.vertex_notMem_of_cons (h : G.IsAugPath hM (cons u e P)) : u ∉ V(G, M) :=
+  h.first_not_in
+
+@[simp]
+lemma IsAugPath.edge_notMem_of_cons (h : G.IsAugPath hM (cons u e P)) : e ∉ M := by
+  rintro heM
+  have := by simpa using h.first_not_in
+  obtain ⟨h1, h2⟩ := cons_isWalk_iff.mp h.isWalk
+  exact this e heM h1.inc_left
+
+@[simp]
+lemma IsAugPath.firstEdge_notMem (h : G.IsAugPath hM P) : h.nonempty.firstEdge ∉ M := by
+  obtain ⟨u, e, P, rfl⟩ := h.nonempty.exists_cons
+  rw [Nonempty.firstEdge_cons]
+  exact h.edge_notMem_of_cons
+
+@[simp]
+lemma IsAugPath.vertex_notMem_of_concat (h : G.IsAugPath hM (concat P e v)) : v ∉ V(G, M) := by
+  simpa using h.last_not_in
+
+@[simp]
+lemma IsAugPath.edge_notMem_of_concat (h : G.IsAugPath hM (concat P e v)) : e ∉ M := by
+  rintro heM
+  have := by simpa using h.last_not_in
+  obtain ⟨h1, h2⟩ := concat_isWalk_iff.mp h.isWalk
+  exact this e heM h2.inc_right
+
+@[simp]
+lemma IsAugPath.lastEdge_notMem (h : G.IsAugPath hM P) : h.nonempty.lastEdge ∉ M := by
+  obtain ⟨u, e, P, rfl⟩ := h.nonempty.exists_concat
+  simp only [lastEdge_concat]
+  rintro heM
+  have := by simpa using h.last_not_in
+  obtain ⟨h1, h2⟩ := concat_isWalk_iff.mp h.isWalk
+  exact this e heM h2.inc_right
+
+@[simp]
+lemma IsAugPath.mem_of_cons_cons (h : G.IsAugPath hM (cons u e (cons v f P))) : f ∈ M := by
+  have := by simpa [h.edge_notMem_of_cons] using h.toIsAltPath.mem_matching
+  exact this.1
+
+@[simp]
+lemma IsAugPath.mem_of_concat_concat (h : G.IsAugPath hM ((concat P e u).concat f v)) : e ∈ M := by
+  have := by simpa [h.edge_notMem_of_concat] using h.toIsAltPath.mem_matching
+  exact this.2
+
+lemma not_isAugPath_of_length_two (h : P.length = 2) : ¬ G.IsAugPath hM P := by
+  rintro hP
+  obtain ⟨a, e, b, f, c, rfl⟩ := P.length_eq_two_iff.mp h; clear h
+  have heM := hP.edge_notMem_of_cons
+  have heq : cons a e (cons b f (nil c)) = (cons a e (nil b)).concat f c := rfl
+  have hfM := (heq ▸ hP).edge_notMem_of_concat
+  simpa [heM, hfM] using hP.toIsAltPath.mem_matching
+
+-- lemma IsAugPath.trivial_or_cons_cons (h : G.IsAugPath hM P) : (∃ u e v, P = cons u e (nil v)) ∨
+--     (∃ u e v f P', P = cons u e (cons v f P') ∧ G.IsAugPath hM P') := by
+--   match P with
+--   | .nil u => simpa using h.nonempty
+--   | .cons u' e' (.nil v') => simp
+--   | .cons u e (.cons v f P') =>
+--     simp only [cons.injEq, reduceCtorEq, and_false, exists_false, ↓existsAndEq, and_true,
+--       exists_and_right, true_and, false_or]
+--     refine ⟨h.toIsAltPath.of_cons.of_cons, ?_, ?_, ?_⟩
+--     · by_contra! h
+--       match h with
+--       | .nil x => exact (not_isAugPath_of_length_two <| by simp) h
+--     ·
+--       sorry
+--     simpa using h.last_not_in
+
+-- lemma IsAugPath.length_odd (h : G.IsAugPath hM P) : Odd P.length := by
+--   induction P with
+--   | nil _ => simp at h
+--   | cons u e P ih =>
+--     simp only [length]
+--     exact ih.add_one
+--   sorry
+
+lemma IsAugPath.augment (h : G.IsAugPath hM P) : G.IsMatching (M ∆ E(P)) where
+  subset := symmDiff_subset_union.trans <| union_subset hM.subset h.isWalk.edgeSet_subset
+  disjoint e f he hf hne := by
+    by_cases heM : e ∈ M <;> by_cases hfM : f ∈ M <;> simp [mem_symmDiff, heM, hfM] at he hf
+    · exact hM.disjoint heM hfM hne
+    · sorry
+    · sorry
+
+    sorry
 
 lemma IsAugPath.augment_vertex_subset (h : G.IsAugPath hM P) : V(G, M) ⊆ V(G, M ∆ E(P)) := by
   sorry
@@ -292,7 +387,24 @@ Since no edge of M is incident at v, it follows that W' does not contain v. [cit
 So W' contains u and is a cover of G. [cite: 22]
 -/
 theorem Konig'sTheorem [H.Finite] (hB : H.Bipartite) : τ(H) = ν(H) := by
-
+  have hloopless := hB.loopless
+  by_contra! hne
+  let P := fun (G : H.Subgraph) ↦ G.val.Bipartite ∧ τ(G.val) ≠ ν(G.val)
+  obtain ⟨⟨G, hle⟩, ⟨hB, hne⟩, hMin⟩ := exists_minimal_of_wellFoundedLT P ⟨⟨H, le_refl _⟩, hB, hne⟩
+  simp only [Subgraph.le_mk_iff, Subgraph.mk_le_iff, and_imp, Subtype.forall, P] at hB hMin hne
+  have : G.Finite := finite_of_le hle
+  have hcon : G.Connected := by
+    /- Otherwise, by def of `Connected`, there is a strictly smaller component of `G`.
+    `τ` and `ν` are additive over the components so at least one component must have `τ` or `ν`
+    different.
+    That component is a smaller counterexample to the theorem, contradicting minimality.-/
+    sorry
+  obtain ⟨u, hu, hdegu⟩ : ∃ u ∈ V(G), 3 ≤ G.degree u := by
+    /- Otherwise, by `isPathGraph_or_isCycleGraph_of_maxDegreeLE`, `G` would be a path or cycle,
+    By lemmas above, any path graph or cycle graph has `τ = ν`, contradicting `τ ≠ ν` assumption.-/
+    sorry
+  obtain ⟨v, hv⟩ := G.degree_ne_zero_iff_inc (v := u) |>.mp (by omega)
+  -- have hlt := G.coverNumber_le_matchingNumber.lt_of_ne hne
   sorry
 
 theorem Hall'sTheorem (B : G.Bipartition) :

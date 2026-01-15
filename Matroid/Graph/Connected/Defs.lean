@@ -481,10 +481,14 @@ lemma IsComplete.isInducedSubgraph (hG : G.IsComplete) (hH : H ≤i G) : H.IsCom
   rintro x hx y hy hne
   exact hH.adj_of_adj (hG x (hH.vertexSet_mono hx) y (hH.vertexSet_mono hy) hne) hx hy
 
-lemma IsComplete.subset_isSepSet (h : G.IsComplete) (hS : G.IsSepSet S) : V(G) ⊆ S := by
-  have := h.isInducedSubgraph (G.vertexDelete_isInducedSubgraph S)
-  |>.connected_iff.not.mp hS.not_connected
-  simpa only [vertexDelete_vertexSet, not_nonempty_iff_eq_empty, diff_eq_empty] using this
+@[simp]
+lemma IsComplete.isSepSet_iff_subset (h : G.IsComplete) : G.IsSepSet S ↔ S = V(G) := by
+  refine ⟨fun hS => hS.subset_vx.antisymm ?_, ?_⟩
+  · have := h.isInducedSubgraph (G.vertexDelete_isInducedSubgraph S)
+    |>.connected_iff.not.mp hS.not_connected
+    simpa only [vertexDelete_vertexSet, not_nonempty_iff_eq_empty, diff_eq_empty] using this
+  rintro rfl
+  exact vertexSet_isSepSet
 
 structure IsEdgeSepSet (G : Graph α β) (S : Set β) : Prop where
   subset_edgeSet : S ⊆ E(G)
@@ -748,7 +752,7 @@ lemma IsComplete.connGE_iff (h : G.IsComplete) (n : ℕ) :
     · simp_all
     simp_all [connGE_iff_of_vertexSet_singleton hsin]
   exact ⟨fun C hC ↦ le_trans (by simp) (lt_of_lt_of_le hn <| encard_le_encard
-  <| h.subset_isSepSet hC).le, Or.inr hn⟩
+  <| (h.isSepSet_iff_subset.mp hC).superset).le, Or.inr hn⟩
 
 lemma ConnGE.isSpanningSubgraph (h : H.ConnGE n) (hsle : H ≤s G) : G.ConnGE n where
   le_cut C hC := by simpa using h.le_cut <| hC.of_isSpanningSubgraph hsle

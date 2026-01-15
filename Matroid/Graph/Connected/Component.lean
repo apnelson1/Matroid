@@ -73,7 +73,7 @@ lemma walkable_isClosedSubgraph : G.walkable u ≤c G := by
   · rintro e x ⟨y, hl⟩ ⟨W, hW, rfl, rfl⟩
     simp only [induce_edgeSet, mem_setOf_eq, walkable]
     use W.last, y, hl, ⟨W, hW, rfl, rfl⟩, W.concat e y, ?_, concat_first, concat_last
-    simp only [isWalk_concat_iff, hW, hl, and_self]
+    simp only [concat_isWalk_iff, hW, hl, and_self]
 
 lemma Adj.mem_walkable (h : G.Adj x y) : y ∈ V(G.walkable x) := by
   obtain ⟨e, hl⟩ := h

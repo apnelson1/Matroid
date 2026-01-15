@@ -113,7 +113,7 @@ lemma IsWalk.of_concat (h : G.IsWalk (w.concat e x)) : G.IsWalk w := by
     exact (ih h.2).cons (by simpa using h.1)
 
 @[simp]
-lemma isWalk_concat_iff : G.IsWalk (w.concat e x) ↔ G.IsWalk w ∧ G.IsLink e w.last x :=
+lemma concat_isWalk_iff : G.IsWalk (w.concat e x) ↔ G.IsWalk w ∧ G.IsLink e w.last x :=
   ⟨fun h ↦ ⟨h.of_concat, by induction w with simp_all⟩, fun h ↦ h.1.concat h.2⟩
 
 lemma IsWalk.of_append_left (h : G.IsWalk (w₁ ++ w₂)) (h_eq : w₁.last = w₂.first) :

@@ -50,7 +50,7 @@ import Matroid.Graph.Basic
 import Matroid.Graph.Bipartite
 import Matroid.Graph.Connected.Basic
 import Matroid.Graph.Connected.Component
--- import Matroid.Graph.Connected.Construction
+import Matroid.Graph.Connected.Construction
 import Matroid.Graph.Connected.Defs
 -- import Matroid.Graph.Connected.Gammoid
 import Matroid.Graph.Connected.Menger

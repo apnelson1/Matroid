@@ -459,6 +459,12 @@ protected lemma length_eq_one_iff : w.length = 1 ↔ ∃ u e v, w = cons u e (ni
   | .nil u => simp
   | .cons u e w => simp [nil_iff_eq_nil]
 
+protected lemma length_eq_two_iff :
+    w.length = 2 ↔ ∃ a e b f c, w = cons a e (cons b f (nil c)) := by
+  match w with
+  | .nil u => simp
+  | .cons u e w => simp_all [w.length_eq_one_iff]
+
 lemma vertex_toFinset_card_le [DecidableEq α] (w : WList α β) :
     w.vertex.toFinset.card ≤ w.length + 1 := by
   induction w with
