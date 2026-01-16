@@ -279,6 +279,10 @@ lemma banana_eq_bouquet : banana a a F = bouquet a F := by
   ext a b c <;> simp
 
 @[simp]
+lemma banana_eq_noEdge : banana a b ∅ = Graph.noEdge {a, b} β := by
+  ext <;> simp
+
+@[simp]
 lemma banana_incEdges_left : E(banana a b F, a) = F := by
   ext e
   simp

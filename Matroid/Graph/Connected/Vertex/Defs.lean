@@ -477,6 +477,7 @@ lemma ConnBetweenGE.right_mem (h : G.ConnBetweenGE s t n) (hn : n ≠ 0) : t ∈
   rw [connBetweenGE_one_iff] at this
   exact this.right_mem
 
+@[simp]
 lemma connBetweenGE_self (hs : s ∈ V(G)) (n : ℕ) : G.ConnBetweenGE s s n :=
   fun _ hC => (not_isSepBetween_self (X := _) hs hC).elim
 
