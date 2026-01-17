@@ -94,7 +94,8 @@ theorem Konig'sTheorem [H.Finite] (hB : H.Bipartite) : τ(H) = ν(H) := by
     /- Otherwise, by `isPathGraph_or_isCycleGraph_of_maxDegreeLE`, `G` would be a path or cycle,
     By lemmas above, any path graph or cycle graph has `τ = ν`, contradicting `τ ≠ ν` assumption.-/
     sorry
-  obtain ⟨v, hv⟩ := G.degree_ne_zero_iff_inc (v := u) |>.mp (by omega)
+  obtain ⟨e, v, huv⟩ := G.degree_ne_zero_iff_inc (v := u) |>.mp (by omega)
+
   -- have hlt := G.coverNumber_le_matchingNumber.lt_of_ne hne
   sorry
 

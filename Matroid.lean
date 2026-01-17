@@ -75,8 +75,11 @@ import Matroid.Graph.Finite
 import Matroid.Graph.Forest
 -- import Matroid.Graph.Independent
 import Matroid.Graph.Lattice
-import Matroid.Graph.Map
 -- import Matroid.Graph.Matching
+-- import Matroid.Graph.Matching.AugmentingPath
+-- import Matroid.Graph.Matching.Defs
+-- import Matroid.Graph.Matching.Konigs
+-- import Matroid.Graph.Matching.TutteBerge
 import Matroid.Graph.Minor.Defs
 import Matroid.Graph.Simple
 import Matroid.Graph.Subgraph.Basic

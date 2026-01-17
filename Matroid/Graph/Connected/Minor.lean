@@ -39,40 +39,22 @@ lemma IsSepSet.of_map {f : α → α'} {S : Set α'} (hS : (f ''ᴳ G).IsSepSet 
   exact hS.not_connected this
 
 lemma IsSepSet.of_contract (φ : (G ↾ C).connPartition.RepFun) (hS : (G /[φ, C]).IsSepSet S) :
-    G.IsSepSet (φ ⁻¹' S) := by
-  have hSV : S ⊆ V(G) :=
-    (hS.subset_vx).trans (Graph.contract_vertex_mono (H := G) (C := C) φ)
-  have hpreV : φ ⁻¹' S ⊆ V(G) := by
-    intro v hv
-    by_contra hvG
-    have hvG' : v ∉ (G ↾ C).connPartition.supp := by
-      -- `supp = V(G)` for `connPartition` on `G ↾ C`
-      simpa [connPartition_supp, edgeRestrict_vertexSet] using hvG
-    have hφv : φ v = v := φ.apply_eq_self_of_notMem v hvG'
-    have : v ∈ S := by
-      -- outside `V(G)`, `φ` is the identity
-      simpa [hφv] using hv
-    exact hvG (hSV this)
-  refine ⟨hpreV, fun hcon ↦ ?_⟩
-  have hcon' : (G - φ ⁻¹' S).Connected := by
-    simpa using hcon
-  have hmap : ((φ ''ᴳ G) - S).Connected := by
-    simpa [map_vertexDelete_preimage] using (Connected.map (G := G - φ ⁻¹' S) φ hcon')
-
-  have hsc : G.SoundContract (φ : α → α) C :=
-    SoundContract.of_connPartition_repFun (G := G) (C := C) φ
-  have hloops : ∀ e ∈ (C ∩ E((φ ''ᴳ G) - S)), ∃ x, ((φ ''ᴳ G) - S).IsLoopAt e x := by
-    intro e he
-    simpa using (_root_.Graph.SoundContract.exists_isLoopAt_map_vertexDelete_of_mem
-      (G := G) (φ := (φ : α → α)) (C := C) hsc S he)
-
-  have hdel : (((φ ''ᴳ G) - S) ＼ C).Connected := by
-    rw [← edgeDelete_inter_edgeSet]
-    exact (edgeDelete_connected_iff_of_forall_isLoopAt hloops).2 hmap
-
-  have : ((G /[φ, C]) - S).Connected := by
-    simpa [Graph.contract, contract, edgeDelete_vertexDelete] using hdel
-  exact hS.not_connected this
+    G.IsSepSet (φ ⁻¹' S) where
+  subset_vx v hvS := by
+    obtain ⟨x, hx, hvx⟩ := by simpa using hS.subset_vx (mem_preimage.mp hvS)
+    rw [φ.apply_eq_apply_iff_rel (by simpa)] at hvx
+    simpa using hvx.right_mem
+  not_connected hcon := by
+    absurd hS.not_connected
+    have hsc : G.IsContractClosed (φ : α → α) C := IsContractClosed.of_connPartition_repFun φ
+    have hmap : ((φ ''ᴳ G) - S).Connected := by
+      simpa [map_vertexDelete_preimage] using hcon.map φ
+    have hdel : (((φ ''ᴳ G) - S) ＼ C).Connected := by
+      rw [← edgeDelete_inter_edgeSet]
+      refine (edgeDelete_connected_iff_of_forall_isLoopAt ?hloops).2 hmap
+      intro e he
+      simpa using hsc.exists_isLoopAt_map_vertexDelete_of_mem S he
+    simpa [contract] using hdel
 
 /-! ### Connectivity bounds under contracting a single edge -/
 
@@ -100,48 +82,19 @@ lemma ConnGE.contract_isLink {n : ℕ} (hG : G.ConnGE (n + 1)) (hl : G.IsLink e 
     hl.contract.ConnGE n where
   le_cut S hS := by
     classical
-    have hS' : (G /[(hl.repFun : α → α), ({e} : Set β)]).IsSepSet S := by
-      simpa [hl.contract'] using hS
-    have hSepG : G.IsSepSet (hl.repFun ⁻¹' S) :=
-      hS'.of_contract hl.repFun
-    have hcut : (n : ℕ∞) + 1 ≤ (hl.repFun ⁻¹' S).encard := by
-      simpa using hG.le_cut hSepG
-    have hle' : (hl.repFun ⁻¹' S).encard ≤ S.encard + 1 := hl.encard_preimage_le S
-    have hcut' : (n : ℕ∞) + 1 ≤ S.encard + 1 := le_trans hcut hle'
-    exact (ENat.add_one_le_add_one_iff).1 hcut'
+    simpa using (hG.le_cut <| (hl.contract' ▸ hS).of_contract hl.repFun).trans
+    <| hl.encard_preimage_le S
   le_card := by
-    classical
-    have hsubV : V(hl.contract) ⊆ V(G) := by
-      intro v hv
-      have hv' : v = x ∨ v ∈ (V(G) \ ({y} : Set α)) := by
-        simpa [IsLink.contract, Set.mem_insert_iff] using hv
-      rcases hv' with rfl | hv'
-      · exact hl.left_mem
-      exact hv'.1
-    have hVle : V(G).encard ≤ V(hl.contract).encard + 1 := by
-      have hsub : V(G) ⊆ V(hl.contract) ∪ ({y} : Set α) := by
-        intro v hv
-        obtain rfl | hvy := eq_or_ne v y
-        · simp
-        · left
-          have : v ∈ (V(G) \ ({y} : Set α)) := by
-            exact ⟨hv, by simpa [Set.mem_singleton_iff] using hvy⟩
-          -- everything in `V(G) \ {y}` lies in the contracted vertex set
-          have : v ∈ V(hl.contract) := by
-            simp [IsLink.contract, this]
-          exact this
-      calc
-        V(G).encard ≤ (V(hl.contract) ∪ ({y} : Set α)).encard := encard_le_encard hsub
-        _ ≤ V(hl.contract).encard + ({y} : Set α).encard := encard_union_le _ _
-        _ = V(hl.contract).encard + 1 := by simp
-    rcases hG.le_card with hss | hlt
+    obtain h1 | h2 := hG.le_card
     · left
-      intro a ha b hb
-      exact hss (hsubV ha) (hsubV hb)
-    · right
-      have hlt' : (n : ℕ∞) + 1 < V(G).encard := by simpa using hlt
-      have : (n : ℕ∞) + 1 < V(hl.contract).encard + 1 := lt_of_lt_of_le hlt' hVle
-      exact (ENat.add_one_lt_add_one_iff).1 this
+      apply h1.anti
+      simp [hl.left_mem, insert_subset_iff]
+    right
+    rw [IsLink.contract_vertexSet]
+    apply lt_of_lt_of_le ?_ <| encard_le_encard (subset_insert ..)
+    rw [encard_diff_singleton_of_mem hl.right_mem]
+    enat_to_nat!
+    omega
 
 /-!
 ### Endpoint separators from bad single-edge contractions
@@ -151,55 +104,18 @@ If contracting a nonloop edge destroys `ConnGE (n+1)` (and the contracted graph 
 of the edge.
 -/
 
-lemma ConnGE.exists_isSepSet_endpoints_of_not_connGE_contract_isLink
-    {n : ℕ} (hG : G.ConnGE (n + 1)) (hl : G.IsLink e x y) (hxy : x ≠ y)
-    (hnV : ((n + 1 : ℕ) : ℕ∞) < V(hl.contract).encard) (hbad : ¬ hl.contract.ConnGE (n + 1)) :
+lemma ConnGE.exists_isSepSet_endpoints_of_not_connGE_contract_isLink {n : ℕ} (hG : G.ConnGE (n + 1))
+    (hl : G.IsLink e x y) (hnV : n + 1 < V(hl.contract).encard)
+    (hbad : ¬ hl.contract.ConnGE (n + 1)) :
     ∃ T, G.IsSepSet T ∧ T.encard ≤ (n + 1) ∧ x ∈ T ∧ y ∈ T := by
   classical
-  -- an `n`-separator in the contracted graph
-  obtain ⟨S, hSsep, hScard⟩ :=
-    exists_isSepSet_encard_le_of_not_connGE hnV hbad
-
-  -- pull it back to `G`
-  have hSsep' : (G /[(hl.repFun : α → α), ({e} : Set β)]).IsSepSet S := by
-    simpa [hl.contract'] using hSsep
-  have hTsep : G.IsSepSet (hl.repFun ⁻¹' S) := IsSepSet.of_contract hl.repFun hSsep'
-
-  -- show `x ∈ S`; otherwise we get an `n`-separator of `G`, contradicting `ConnGE (n+1)`
-  have hxS : x ∈ S := by
-    by_contra hxS
-    have hpre : hl.repFun ⁻¹' S ⊆ S := by
-      intro v hv
-      obtain rfl | hvy := eq_or_ne v y
-      · have : x ∈ S := by
-          have : hl.repFun v ∈ S := by simpa [Set.mem_preimage] using hv
-          simpa [hl.repFun_apply_right] using this
-        exact (hxS this).elim
-      have hv' : hl.repFun v = v := hl.repFun_apply_of_ne hvy
-      have hvS : hl.repFun v ∈ S := by
-        simpa [Set.mem_preimage] using hv
-      simpa [hv'] using hvS
-    have hle : (hl.repFun ⁻¹' S).encard ≤ n :=
-      (encard_le_encard hpre).trans hScard
-    have hge : ((n + 1 : ℕ) : ℕ∞) ≤ (hl.repFun ⁻¹' S).encard := by
-      simpa using hG.le_cut hTsep
-    have hnlt : (n : ℕ∞) < ((n + 1 : ℕ) : ℕ∞) := by
-      exact_mod_cast (Nat.lt_succ_self n)
-    exact hge.not_gt (hle.trans_lt hnlt)
-
-  refine ⟨hl.repFun ⁻¹' S, hTsep, ?_, ?_, ?_⟩
-  · have hle : (hl.repFun ⁻¹' S).encard ≤ S.encard + 1 := hl.encard_preimage_le S
-    have hSle : S.encard + 1 ≤ (n + 1) := by
-      -- `S.encard ≤ n` implies `S.encard + 1 ≤ n + 1`
-      have : S.encard ≤ n := hScard
-      enat_to_nat! <;> omega
-    exact hle.trans hSle
-  · have hxfix : hl.repFun x = x := by simp
-    simpa [Set.mem_preimage, hxfix] using hxS
-  · -- `hi.repFun y = x`, so `y ∈ preimage S` iff `x ∈ S`
-    have hrep : hl.repFun y = x := by simp
-    have : hl.repFun y ∈ S := by simpa [hrep] using hxS
-    simpa [Set.mem_preimage] using this
+  obtain ⟨S, hSsep, hScard⟩ := exists_isSepSet_encard_le_of_not_connGE hnV hbad
+  have hTsep : G.IsSepSet (hl.repFun ⁻¹' S) := (hl.contract' ▸ hSsep).of_contract hl.repFun
+  rw [hl.repFun_preimage] at hTsep
+  split_ifs at hTsep with hxS; swap
+  · simpa using hG.le_cut hTsep |>.trans (encard_le_encard diff_subset) |>.trans hScard
+  refine ⟨_, hTsep, ?_, by simp [hxS], by simp⟩
+  exact (encard_insert_le ..).trans <| ENat.add_one_le_add_one_iff.mpr hScard
 
 lemma ConnGE.connected {n : ℕ} (hG : G.ConnGE n) (hn : 1 ≤ n) : G.Connected := by
   have h1 : G.ConnGE 1 := hG.anti_right hn
@@ -246,7 +162,7 @@ theorem exists_contract_connGE_three [G.Finite] (hG : G.ConnGE 3) (hV : 5 ≤ V(
       enat_to_nat!
       omega
     obtain ⟨T, hTsep, hTcard, hxT, hyT⟩ :=
-      hG.exists_isSepSet_endpoints_of_not_connGE_contract_isLink hl hxy hnV (hbad e x y hl)
+      hG.exists_isSepSet_endpoints_of_not_connGE_contract_isLink hl hnV (hbad e x y hl)
 
     -- Reduce the small separator `T` to a triple `{x, y, z}` (allowing repetitions).
     norm_num at hTcard
@@ -302,7 +218,7 @@ theorem exists_contract_connGE_three [G.Finite] (hG : G.ConnGE 3) (hV : 5 ≤ V(
     exact hzC hwC
 
   -- 2. Every edge is bad. Hence, there is a 3-sep that contains `w` and `z`.
-  have := hG.exists_isSepSet_endpoints_of_not_connGE_contract_isLink hzw hzwne ?_ (hbad _ _ _ hzw)
+  have := hG.exists_isSepSet_endpoints_of_not_connGE_contract_isLink hzw ?_ (hbad _ _ _ hzw)
   rotate_left
   · rw [hzw.contract_vertex_encard_eq_add_one hzwne] at hV
     enat_to_nat! <;> omega
@@ -407,11 +323,9 @@ theorem exists_contract_connGE_three [G.Finite] (hG : G.ConnGE 3) (hV : 5 ≤ V(
 
   -- 9. Therefore, `T` and `(G - T).walkable u` is a smaller component than `{x, y, z}` and `C`.
   -- contradiction!
-  have hlt := Finite.encard_lt_encard (vertexSet_finite.subset <|
-    vertexSet_mono hC'.le) hsub
+  have hlt := Finite.encard_lt_encard (vertexSet_finite.subset <| vertexSet_mono hC'.le) hsub
   refine hlt.ne' <| hMin (j := (G - ({w, z, w'} : Set α)).walkable u) ?_ hlt.le |>.antisymm hlt.le
-  use w, z, w', hMsep'.isSepSet, hC', ⟨f, hzw.symm⟩, hzwne.symm, hw'.1.symm,
-    hw'.2.symm
+  use w, z, w', hMsep'.isSepSet, hC', ⟨f, hzw.symm⟩, hzwne.symm, hw'.1.symm, hw'.2.symm
 
 -- #print axioms exists_contract_connGE_three
 

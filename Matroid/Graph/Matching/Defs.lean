@@ -21,10 +21,10 @@ structure IsMatching (G : Graph α β) (M : Set β) : Prop where
 structure IsMaxMatching (G : Graph α β) (M : Set β) : Prop extends G.IsMatching M where
   max : ∀ M', G.IsMatching M' → M'.encard ≤ M.encard
 
-noncomputable def MatchingNumber (G : Graph α β) : ℕ∞ :=
+noncomputable def matchingNumber (G : Graph α β) : ℕ∞ :=
   sSup {n | ∃ M, G.IsMatching M ∧ n = M.encard}
 
-scoped notation "ν(" G ")" => MatchingNumber G
+scoped notation "ν(" G ")" => matchingNumber G
 
 def IsMatchable (G : Graph α β) (S : Set α) : Prop := ∃ M, G.IsMatching M ∧ V(G, M) = S
 
@@ -132,14 +132,14 @@ structure IsAugPath (G : Graph α β) (hM : G.IsMatching M) (P : WList α β) : 
 
 /-! ### Structure of graph from maximal matching -/
 
-def inessential (G : Graph α β) (x : α) : Prop :=
+def Inessential (G : Graph α β) (x : α) : Prop :=
   ∃ M, G.IsMaxMatching M ∧ x ∉ V(G, M)
 
 structure IsOddCompOf (H G : Graph α β) extends H.IsCompOf G where
   finite : V(H).Finite
   odd : Odd V(H).encard
 
-def OddComponents (G : Graph α β) : Set (Graph α β) :=
+def oddComponents (G : Graph α β) : Set (Graph α β) :=
   {H | H.IsOddCompOf G}
 
 /-! ### Cover -/
@@ -149,9 +149,9 @@ structure IsCover (G : Graph α β) (S : Set α) : Prop where
   cover : E(G) ⊆ E(G, S)
 
 structure IsMinCover (G : Graph α β) (S : Set α) : Prop extends IsCover G S where
-  minimal : ∀ T, IsCover G T → S.encard ≤ T.encard
+  min : ∀ T, IsCover G T → S.encard ≤ T.encard
 
-noncomputable def CoverNumber (G : Graph α β) : ℕ∞ :=
+noncomputable def coverNumber (G : Graph α β) : ℕ∞ :=
   sInf {n | ∃ S, G.IsCover S ∧ n = S.encard}
 
-scoped notation "τ(" G ")" => CoverNumber G
+scoped notation "τ(" G ")" => coverNumber G
