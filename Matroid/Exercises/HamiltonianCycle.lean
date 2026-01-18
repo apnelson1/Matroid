@@ -124,12 +124,12 @@ lemma IsTree.exists_nontrivial_path (hT : T.IsTree) (hV : 3 ≤ V(T).encard) :
 --   have ⟨x, hx⟩ : V(T).Nonempty := nonempty_of_encard_ne_zero (by sorry)
 
 lemma IsForest.exists_isSepSet' (hT : T.IsForest) (hV : 3 ≤ V(T).encard) :
-    ∃ S, IsSepSet T S ∧ S.encard = 1 := by
+    ∃ S, IsSep T S ∧ S.encard = 1 := by
 
   sorry
 
 lemma IsForest.exists_isSepSet (hT : T.IsForest) (hV : 3 ≤ V(T).encard) :
-    ∃ S, IsSepSet T S ∧ S.encard = 1 := by
+    ∃ S, IsSep T S ∧ S.encard = 1 := by
   -- If T is not connected (ie. not a tree), then the result is """vacuously""" true.
   obtain (h | hConn) := em' T.Connected
   · exact exists_isSepSet_size_one_of_not_connected hV h
@@ -142,7 +142,7 @@ lemma IsForest.exists_isSepSet (hT : T.IsForest) (hV : 3 ≤ V(T).encard) :
 
   -- now we have our vertex x of degree ≥ 2
   refine ⟨{x}, ?_, by simp⟩
-  simp only [isSepSet_iff, singleton_subset_iff]
+  simp only [isSep_iff, singleton_subset_iff]
   refine ⟨hxT, ?_⟩
   -- choose any two neighbors of x; they must be separated by x
   intro bad
@@ -154,7 +154,7 @@ lemma IsForest.exists_isSepSet (hT : T.IsForest) (hV : 3 ≤ V(T).encard) :
   -- pick a path between y and z which does not go through x
   obtain ⟨hy, hz⟩ : T.Adj x y ∧ T.Adj x z := by
     refine ⟨hN_sub ?_, hN_sub ?_⟩ <;> simp
-  have ⟨hyT', hzT'⟩ : y ∈ V(T - {x}) ∧ z ∈ V(T - {x}) := by
+  have ⟨hyT', hzT'⟩ : y ∈ V(T - x) ∧ z ∈ V(T - x) := by
     simp
     have := hT.isForest.loopless
     refine ⟨⟨hy.right_mem, ?_⟩, ⟨hz.right_mem, ?_⟩⟩
@@ -178,14 +178,13 @@ lemma IsForest.exists_isSepSet (hT : T.IsForest) (hV : 3 ≤ V(T).encard) :
     simp only [first_cons, last_cons, hP_last, hxz, cons_nontrivial_iff, forall_const, Q'] at this
     apply this
     by_contra! bad
-    simp only [WList.not_nonempty_iff] at bad
     apply hne
     rw [←hP_first, ←hP_last]
     exact Nil.first_eq_last bad
   exact hT.isForest _ hQ_isCycle
 
 lemma IsTree.exists_isMinSepSet (hT : T.IsTree) (hV : 3 ≤ V(T).encard) :
-    ∃ S, IsMinSepSet T S ∧ S.encard = 1 := by
+    ∃ S, IsMinSep T S ∧ S.encard = 1 := by
   obtain ⟨S, hS, hS_encard⟩ := hT.isForest.exists_isSepSet hV
   refine ⟨S, ⟨hS, ?_⟩, hS_encard⟩
   intro A hA
@@ -195,7 +194,7 @@ lemma IsTree.exists_isMinSepSet (hT : T.IsTree) (hV : 3 ≤ V(T).encard) :
   simp [hT.connected] at hA
 
 lemma Bound_on_indepSet {G : Graph α β} [G.Simple] [G.Finite]
-    (S : Set (α)) (hS : IsSepSet G S)
+    (S : Set (α)) (hS : IsSep G S)
     (H : Graph α β ) (hH : IsCompOf H (G-S) )
     (A : Set (α)) (hA : IsMaxIndependent G A) ( v : α ) (hx : v ∈ V(H) ∩ A )
     : G.degree v + (A ∩ V(H)).ncard ≤ (V(H)).ncard + S.ncard := by
@@ -394,7 +393,7 @@ lemma Bound_on_indepSet {G : Graph α β} [G.Simple] [G.Finite]
 
 --Again, is missing when G is complete but whatever
 lemma indep_to_Dirac [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).ncard)
-    (S : Set (α)) (HS : IsMinSepSet G S )
+    (S : Set (α)) (HS : IsMinSep G S )
     (A : Set (α)) (hA : IsMaxIndependent G A)
     (hDirac : V(G).ncard ≤ 2 * G.minDegree ) : A.ncard ≤ S.ncard := by
   --Trivial case: Independent set is completely contained in the separator
@@ -525,7 +524,7 @@ lemma IsCompOf.exists_path (hHco : H.IsCompOf G) (hx : x ∈ V(H)) (hy : y ∈ V
 
 omit [DecidableEq α] in
 lemma Hamiltonian_alpha_kappa_exists_cycle [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).encard)
-    (hS : IsMinSepSet G S) (hA : IsMaxIndependent G A) (hAS : A.encard ≤ S.encard) :
+    (hS : IsMinSep G S) (hA : IsMaxIndependent G A) (hAS : A.encard ≤ S.encard) :
     ∃ C, G.IsCycle C := by
   -- The proof should be an easy combination of a few things:
   -- 1 : In a tree on at least three vertices, the `MinSepSet` has size `1`.
@@ -549,7 +548,7 @@ lemma Hamiltonian_alpha_kappa_exists_cycle [G.Simple] [G.Finite] (h3 : 3 ≤ V(G
   have S_encard : S.encard = 1 := by
     obtain ⟨S', hS', hS'_encard⟩ := h_isTree.exists_isMinSepSet h3
     rw [←hS'_encard]
-    exact hS.encard_eq_encard_of_isMinSepSet hS'
+    exact hS.encard_eq_encard_of_isMinSep hS'
   -- 3 : Trees are bipartite.
   have ⟨B⟩ := IsForest.bipartite h_isForest
   -- 2 : In a bipartite graph, the `MaxIndependentSet` contains at least half the vertices.
@@ -1126,7 +1125,7 @@ lemma indep_nbrsnext [G.Simple] [G.Finite] {D : Graph α β} (hCs : MaximalFor G
   sorry
 
 lemma Hamiltonian_alpha_kappa [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).encard)
-    (S : Set α) (HS : IsMinSepSet G S )
+    (S : Set α) (HS : IsMinSep G S )
     (A : Set α) (hA : IsMaxIndependent G A)
     (hAS : A.encard ≤ S.encard ) : ∃ C : WList α β, IsHamiltonCycle G C := by
 --grw
@@ -1181,7 +1180,7 @@ lemma Hamiltonian_alpha_kappa [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).encard)
     exact this
   have hI : G.IsIndependent (insert d nbrIndepSet) := by sorry
   -- Use isIndependent_insert_iff (It's in Matroid/Graph/Independent.lean)
-  have hS : G.IsSepSet nbrIndepSet := by
+  have hS : G.IsSep nbrIndepSet := by
     have hVn : nbrIndepSet ⊆ V(G) := by exact hindep.subset
     have hnconn : ¬ (G - nbrIndepSet).Connected := by
       by_contra hcon

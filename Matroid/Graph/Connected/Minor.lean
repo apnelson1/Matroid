@@ -27,8 +27,8 @@ lemma Connected.map (f : α → α') (h : G.Connected) : (f ''ᴳ G).Connected :
 
 /-! ### Pulling separators back along a map -/
 
-lemma IsSepSet.of_map {f : α → α'} {S : Set α'} (hS : (f ''ᴳ G).IsSepSet S) :
-    G.IsSepSet (V(G) ∩ f ⁻¹' S) := by
+lemma IsSep.of_map {f : α → α'} {S : Set α'} (hS : (f ''ᴳ G).IsSep S) :
+    G.IsSep (V(G) ∩ f ⁻¹' S) := by
   refine ⟨inter_subset_left, ?_⟩
   by_contra hcon
   have hcon' : (G - (f ⁻¹' S)).Connected := by
@@ -38,8 +38,8 @@ lemma IsSepSet.of_map {f : α → α'} {S : Set α'} (hS : (f ''ᴳ G).IsSepSet 
     simpa [map_vertexDelete_preimage] using (Connected.map (G := G - (f ⁻¹' S)) f hcon')
   exact hS.not_connected this
 
-lemma IsSepSet.of_contract (φ : (G ↾ C).connPartition.RepFun) (hS : (G /[φ, C]).IsSepSet S) :
-    G.IsSepSet (φ ⁻¹' S) where
+lemma IsSep.of_contract (φ : (G ↾ C).connPartition.RepFun) (hS : (G /[φ, C]).IsSep S) :
+    G.IsSep (φ ⁻¹' S) where
   subset_vx v hvS := by
     obtain ⟨x, hx, hvx⟩ := by simpa using hS.subset_vx (mem_preimage.mp hvS)
     rw [φ.apply_eq_apply_iff_rel (by simpa)] at hvx
@@ -107,10 +107,10 @@ of the edge.
 lemma ConnGE.exists_isSepSet_endpoints_of_not_connGE_contract_isLink {n : ℕ} (hG : G.ConnGE (n + 1))
     (hl : G.IsLink e x y) (hnV : n + 1 < V(hl.contract).encard)
     (hbad : ¬ hl.contract.ConnGE (n + 1)) :
-    ∃ T, G.IsSepSet T ∧ T.encard ≤ (n + 1) ∧ x ∈ T ∧ y ∈ T := by
+    ∃ T, G.IsSep T ∧ T.encard ≤ (n + 1) ∧ x ∈ T ∧ y ∈ T := by
   classical
   obtain ⟨S, hSsep, hScard⟩ := exists_isSepSet_encard_le_of_not_connGE hnV hbad
-  have hTsep : G.IsSepSet (hl.repFun ⁻¹' S) := (hl.contract' ▸ hSsep).of_contract hl.repFun
+  have hTsep : G.IsSep (hl.repFun ⁻¹' S) := (hl.contract' ▸ hSsep).of_contract hl.repFun
   rw [hl.repFun_preimage] at hTsep
   split_ifs at hTsep with hxS; swap
   · simpa using hG.le_cut hTsep |>.trans (encard_le_encard diff_subset) |>.trans hScard
@@ -130,7 +130,7 @@ lemma Preconnected.exists_isNonloopAt_of_nontrivial (hG : G.Preconnected)
 lemma ConnGE.exists_isNonloopAt {k : ℕ} (hG : G.ConnGE k) (hk : 2 ≤ k) :
     ∃ e x, G.IsNonloopAt e x := by
   have hconn : G.Connected := hG.connected (show 1 ≤ k from (by decide : 1 ≤ 2).trans hk)
-  have hle : (k : ℕ∞) ≤ V(G).encard := by simpa using hG.le_cut vertexSet_isSepSet
+  have hle : (k : ℕ∞) ≤ V(G).encard := by simpa using hG.le_cut vertexSet_isSep
   have hnt : V(G).Nontrivial := by
     exact two_le_encard_iff_nontrivial.mp <| (by norm_cast : (2 : ℕ∞) ≤ k).trans hle
   obtain ⟨x, hx⟩ := hconn.nonempty
@@ -139,15 +139,9 @@ lemma ConnGE.exists_isNonloopAt {k : ℕ} (hG : G.ConnGE k) (hk : 2 ≤ k) :
 
 theorem exists_contract_connGE_three [G.Finite] (hG : G.ConnGE 3) (hV : 5 ≤ V(G).encard) :
     ∃ (e : β) (x y : α) (h : G.IsLink e x y), h.contract.ConnGE 3 := by
-  obtain h4conn | h4nconn := em (G.ConnGE 4)
-  · -- if `G` is 4-connected, then we can contract any edge to get a 3-connected graph
-    obtain ⟨e, x, hx⟩ := ConnGE.exists_isNonloopAt h4conn (by decide : 2 ≤ 4)
-    refine ⟨e, x, hx.inc.other, hx.inc.isLink_other, ?_⟩
-    simpa using h4conn.contract_isLink hx.inc.isLink_other
-
   -- If the conclusion fails, then every edge-contraction is "bad".
   by_contra! hbad
-  letI P := fun C : Graph α β ↦ ∃ (x y z : α), G.IsSepSet {x, y, z} ∧
+  letI P := fun C : Graph α β ↦ ∃ (x y z : α), G.IsSep {x, y, z} ∧
     C.IsCompOf (G - ({x, y, z} : Set α)) ∧ G.Adj x y ∧ x ≠ y ∧ x ≠ z ∧ y ≠ z
   have hexP : ∃ C : Graph α β, P C := by
     -- Pick a nonloop edge; by `hbad`, contracting it destroys `ConnGE 3`,
@@ -162,7 +156,7 @@ theorem exists_contract_connGE_three [G.Finite] (hG : G.ConnGE 3) (hV : 5 ≤ V(
       enat_to_nat!
       omega
     obtain ⟨T, hTsep, hTcard, hxT, hyT⟩ :=
-      hG.exists_isSepSet_endpoints_of_not_connGE_contract_isLink hl hnV (hbad e x y hl)
+      hG.exists_isSepSet_endpoints_of_not_connGE_contract_isLink hl hnV (hbad e x y hl); clear hnV
 
     -- Reduce the small separator `T` to a triple `{x, y, z}` (allowing repetitions).
     norm_num at hTcard
@@ -172,20 +166,11 @@ theorem exists_contract_connGE_three [G.Finite] (hG : G.ConnGE 3) (hV : 5 ≤ V(
       encard_diff_singleton_of_mem hxT, hTcard]
       rfl
     obtain ⟨z, hz⟩ := encard_eq_one.mp hT'card
-    obtain rfl : (T : Set α) = ({x, y, z} : Set α) := by
-      ext t
-      obtain rfl | hnex := eq_or_ne t x
-      · simpa
-      obtain rfl | hney := eq_or_ne t y
-      · simpa
-      have htTR : (t ∈ T) ↔ (t ∈ (T \ ({x, y} : Set α))) := by
-        simp [hnex, hney]
-      rw [htTR, hz]
-      simp [hnex, hney]
+    obtain rfl : (T : Set α) = ({x, y, z} : Set α) := by grind
+    clear hxT hyT
 
     simp only [mem_insert_iff, mem_singleton_iff, true_or, insert_diff_of_mem, or_true,
       sdiff_eq_left, disjoint_singleton_left, not_or, ← ne_eq] at hz
-    clear hxT hyT
     -- Pick a vertex outside the separator and take its walkable component.
     have hlt : ({x, y, z} : Set α).encard < V(G).encard := by
       rw [hTcard]
@@ -194,23 +179,20 @@ theorem exists_contract_connGE_three [G.Finite] (hG : G.ConnGE 3) (hV : 5 ≤ V(
     refine ⟨(G - ({x, y, z} : Set α)).walkable w, ⟨x, y, z, ?_, walkable_isCompOf hw, ?_⟩⟩
     · simpa using hTsep
     · simpa [y, hxy, hz.1.symm, hz.2.symm] using hAdj
-  obtain ⟨C, ⟨x, y, z, hsep, hC, hxy, hxyne, hzxne, hzyne⟩, hMin⟩ :=
-    exists_minimalFor_of_wellFoundedLT P (fun G ↦ V(G).encard) hexP
-  clear hexP
-  obtain ⟨-, hxC, hyC, hzC⟩ := by simpa [subset_diff] using vertexSet_mono hC.le
+  obtain ⟨C, ⟨x, y, z, hMsep, hC, hxy, hxyne, hzxne, hzyne⟩, hMin⟩ :=
+    exists_minimalFor_of_wellFoundedLT P (fun G ↦ V(G).encard) hexP; clear hexP
 
   -- 1. `{x, y, z}` is a minimum separator of `G` as `G` is 3-connected.
-  have hMsep : G.IsMinSepSet {x, y, z} := {
-    toIsSepSet := hsep
+  replace hMsep : G.IsMinSep {x, y, z} := {
+    toIsSep := hMsep
     minimal A hA := by
       refine le_trans ?_ (hG.le_cut hA)
       rw [(by norm_num : ((3: ℕ) : ℕ∞) = 1 + 1 + 1)]
       refine (encard_insert_le _ _).trans <| ENat.add_one_le_add_one_iff.mpr ?_
       refine (encard_insert_le _ _).trans <| ENat.add_one_le_add_one_iff.mpr ?_
       simp}
-  clear hsep
   obtain ⟨w, hwC, f, hzw⟩ := hMsep.exists_adj_of_isCompOf_vertexDelete (hG.connected (by simp)) hC
-    (x := z) (by simp) (by simp)
+    (x := z) (by simp) (by simp); clear hMsep
   -- `z ≠ w` since `z ∉ C` and `w ∈ C`
   have hzwne : z ≠ w := by
     rintro rfl
@@ -219,87 +201,59 @@ theorem exists_contract_connGE_three [G.Finite] (hG : G.ConnGE 3) (hV : 5 ≤ V(
 
   -- 2. Every edge is bad. Hence, there is a 3-sep that contains `w` and `z`.
   have := hG.exists_isSepSet_endpoints_of_not_connGE_contract_isLink hzw ?_ (hbad _ _ _ hzw)
-  rotate_left
+  swap
   · rw [hzw.contract_vertex_encard_eq_add_one hzwne] at hV
     enat_to_nat! <;> omega
-  obtain ⟨T, hTsep, hTcard, hzT, hwT⟩ := this
-  clear hbad
+  obtain ⟨T, hTsep, hTcard, hzT, hwT⟩ := this; clear hbad hV
 
   -- 3. Either `x` or `y` is not in `T`. WLOG, assume `x ∉ T`.
   norm_num at hTcard
   replace hTcard : T.encard = 3 := hTcard.antisymm <| hG.le_cut hTsep
-  have hT'card : (T \ ({w, z} : Set α)).encard = 1 := by
-    rw [← diff_singleton_diff_eq, encard_diff_singleton_of_mem (by simpa [hzwne]),
-    encard_diff_singleton_of_mem hwT, hTcard]
+  have hTdiff : (T \ {w, z}).encard = 1 := by
+    rw [← diff_singleton_diff_eq, encard_diff_singleton_of_mem (by simpa [hzwne] using hzT: z ∈ _),
+      encard_diff_singleton_of_mem hwT, hTcard]
     rfl
-  obtain ⟨w', hw'⟩ := encard_eq_one.mp hT'card
-  obtain rfl : (T : Set α) = ({w, z, w'} : Set α) := by
-    ext t
-    obtain rfl | hnew := eq_or_ne t w
-    · simpa
-    obtain rfl | hnez := eq_or_ne t z
-    · simpa
-    have htTR : (t ∈ T) ↔ (t ∈ (T \ ({w, z} : Set α))) := by
-      simp [hnew, hnez]
-    rw [htTR, hw']
-    simp [hnez, hnew]
-  clear hzT hT'card
-  simp only [mem_insert_iff, mem_singleton_iff, true_or, insert_diff_of_mem, or_true, sdiff_eq_left,
-    disjoint_singleton_left, not_or, ← ne_eq] at hw'
+  obtain ⟨w', hw'⟩ := encard_eq_one.mp hTdiff
+  obtain rfl : T = ({w, z, w'} : Set α) := by grind
+  simp_all only [mem_insert_iff, mem_singleton_iff, true_or, or_true, hzwne.symm, false_or,
+    encard_singleton, or_false, insert_diff_of_mem, sdiff_eq_left, disjoint_singleton_left, not_or,
+    ← ne_eq]
+
   have hor : x ∉ ({w, z, w'} : Set α) ∨ y ∉ ({w, z, w'} : Set α) := by
+    obtain ⟨-, hxC, hyC, hzC⟩ := by simpa [subset_diff] using vertexSet_mono hC.le
     by_contra! h
     simp only [mem_insert_iff, mem_singleton_iff] at h
     obtain ⟨(rfl | rfl | rfl), (rfl | rfl | rfl)⟩ := h <;> tauto
-
+  clear hxyne hzxne hzyne
   wlog hxnT : x ∉ ({w, z, w'} : Set α)
   · have hh : ({y, x, z} : Set α) = {x, y, z} := insert_comm y x {z}
-    exact this hG hV h4nconn C hMin y x z (hh ▸ hC) hxy.symm hxyne.symm hzyne hzxne hyC hxC hzC
-      (hh ▸ hMsep) w hwC f hzw hzwne w' hTsep hwT hTcard hw' hor.symm
-      (hor.resolve_left hxnT)
+    exact this hG C y x z w f w' hMin (hh ▸ hC) hxy.symm hwC hzw hzwne hTsep hTcard hw'
+      hor.symm (hor.resolve_left hxnT)
   clear hor
+
   -- 3.a. `x` and `y` is adjacent in `G - T` and therefore connected in `G - T`.
   have hxy' : y ∉ ({w, z, w'} : Set α) → (G - ({w, z, w'} : Set α)).Adj x y := by
     simp +contextual [hxy, hxnT]
   -- 4. This 3-sep, `T`, is also a minimum separator of `G` as `G` is 3-connected.
-  have hMsep' : G.IsMinSepSet ({w, z, w'} : Set α) := {
-    toIsSepSet := hTsep
+  replace hTsep : G.IsMinSep ({w, z, w'} : Set α) := {
+    toIsSep := hTsep
     minimal A hA := hTcard ▸ (hG.le_cut hA)}
-  clear hTsep
   -- 5. There is some `v` in `G - T` that is not connected to `x` and therefore `y`.
-  have := hMsep'.not_connected
+  have := hTsep.not_connected
   rw [connected_iff, not_and] at this
   obtain ⟨v, hv, hvx⟩ := exists_not_connBetween_of_not_preconnected (this ⟨x, hxy.left_mem, hxnT⟩)
     ⟨hxy.left_mem, hxnT⟩
-  clear this
   -- 6. In the component containing `v`, there is some `u` that is adjacent to `w`.
-  obtain ⟨u, huv, hwuadj⟩ := hMsep'.exists_adj_of_isCompOf_vertexDelete (hG.connected (by simp))
-    (walkable_isCompOf hv) hwT (vertexSet_finite.subset hMsep'.subset_vx)
-
+  obtain ⟨u, huv, hwuadj⟩ := hTsep.exists_adj_of_isCompOf_vertexDelete (hG.connected (by simp))
+    (walkable_isCompOf hv) (by simp : w ∈ _) (vertexSet_finite.subset hTsep.subset_vx)
+  clear this hTcard hv
   -- 7. `u ∈ C` since `w ∈ C`, `G.Adj w u`, `u ∉ T` and `u ∉ {x, y, z}`.
   have huT := (by exact huv : (G - ({w, z, w'} : Set α)).ConnBetween v u).right_mem
   have hxuconn : ¬ (G - ({w, z, w'} : Set α)).ConnBetween x u :=
     fun hxu ↦ hvx <| hxu.trans (by exact huv : (G - ({w, z, w'} : Set α)).ConnBetween v u).symm
-  have hxu : u ≠ x := by
-    rintro rfl
-    simp [hxnT, hxy.left_mem] at hxuconn
-  have hyu : u ≠ y := by
-    rintro rfl
-    exact hxuconn <| hxy' huT.2 |>.connBetween
-  have hzu : u ≠ z := by
-    rintro rfl
-    exact huT.2 (by simp)
-  have hwu : u ≠ w := by
-    rintro rfl
-    exact huT.2 hwT
-  have huC : u ∈ V(C) := by
-    refine hC.isClosedSubgraph.adj_of_adj_of_mem hwC (y := u) ?_ |>.right_mem
-    rw [vertexDelete_adj_iff]
-    use hwuadj, (vertexSet_mono hC.le) hwC |>.2
-    simp [hxu, hyu, hzu]
-
   -- 8. The entire `(G - T).walkable u` must be strictly contained in `C`.
   have hC' := walkable_isCompOf huT
-  have := hC'.of_vertexDelete (S := {x, y, z}) <| by
+  have h := hC'.of_vertexDelete (S := {x, y, z}) <| by
     rw [connBetween_comm] at hxuconn
     simp only [disjoint_insert_right, ← connBetween_iff_mem_walkable_of_mem, hxuconn,
       not_false_eq_true, disjoint_singleton_right, vertexDelete_vertexSet, mem_diff, mem_insert_iff,
@@ -307,25 +261,31 @@ theorem exists_contract_connGE_three [G.Finite] (hG : G.ConnGE 3) (hV : 5 ≤ V(
       not_connBetween_of_right_not_mem, and_true, true_and]
     by_cases hy : y ∈ ({w, z, w'} : Set α)
     · simp [hy]
-    intro h
-    exact hxuconn <| h.trans (hxy' hy |>.connBetween).symm
-
-  have := this.eq_walkable_of_mem_walkable (x := u) (by simpa using huT)
-  rw [vertexDelete_vertexDelete_comm] at this
+    exact fun h ↦ hxuconn <| h.trans (hxy' hy |>.connBetween).symm
+  replace h := h.eq_walkable_of_mem_walkable (x := u) (by simpa using huT)
+  rw [vertexDelete_vertexDelete_comm] at h
   have hC'C : (G - ({w, z, w'} : Set α)).walkable u ≤ C := by
-    rw [hC.eq_walkable_of_mem_walkable huC, this]
-    exact walkable_mono vertexDelete_le u
+    suffices huC : u ∈ V(C) by
+      rw [hC.eq_walkable_of_mem_walkable huC, h]
+      exact walkable_mono vertexDelete_le u
+    refine hC.isClosedSubgraph.adj_of_adj_of_mem hwC (y := u) ?_ |>.right_mem
+    rw [vertexDelete_adj_iff]
+    use hwuadj, (vertexSet_mono hC.le) hwC |>.2
+    simp only [mem_insert_iff, mem_singleton_iff, not_or]
+    refine ⟨?_, ?_, ?_⟩ <;> rintro rfl
+    · simp [hxnT, hxy.left_mem] at hxuconn
+    · exact hxuconn <| hxy' huT.2 |>.connBetween
+    · exact huT.2 (by simp)
   have hsub : V((G - ({w, z, w'} : Set α)).walkable u) ⊂ V(C) := by
-    apply ssubset_of_ne_of_subset ?_ (vertexSet_mono hC'C)
-    intro hVeq
+    refine ssubset_of_ne_of_subset (fun hVeq ↦ ?_) (vertexSet_mono hC'C)
     rw [← hVeq] at hwC
-    simpa [hwT] using vertexSet_mono hC'.le hwC
+    simpa using vertexSet_mono hC'.le hwC
 
   -- 9. Therefore, `T` and `(G - T).walkable u` is a smaller component than `{x, y, z}` and `C`.
   -- contradiction!
   have hlt := Finite.encard_lt_encard (vertexSet_finite.subset <| vertexSet_mono hC'.le) hsub
   refine hlt.ne' <| hMin (j := (G - ({w, z, w'} : Set α)).walkable u) ?_ hlt.le |>.antisymm hlt.le
-  use w, z, w', hMsep'.isSepSet, hC', ⟨f, hzw.symm⟩, hzwne.symm, hw'.1.symm, hw'.2.symm
+  use w, z, w', hTsep.toIsSep, hC', ⟨f, hzw.symm⟩, hzwne.symm, hw'.1.symm, hw'.2.symm
 
 -- #print axioms exists_contract_connGE_three
 

@@ -27,6 +27,12 @@ theorem Set.Finite.encard_union_eq_add_encard_iff_disjoint (h : (s ∪ t).Finite
     simp
   rw [encard_pair hne]
 
+@[simp]
+lemma encard_pair_iff (e f : α) : encard {e,f} = 2 ↔ e ≠ f := by
+  refine ⟨?_, encard_pair⟩
+  rintro h rfl
+  simp at h
+
 lemma two_le_encard_iff_nontrivial : 2 ≤ s.encard ↔ s.Nontrivial := by
   rw [← s.one_lt_encard_iff_nontrivial, ← one_add_one_eq_two, ENat.add_one_le_iff (by simp)]
 

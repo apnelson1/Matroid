@@ -262,13 +262,6 @@ lemma prefixUntilVertex_concat_of_exists [DecidableEq α] (w : WList α β)
   have hrw' : (w.prefixUntil fun x ↦ x = v) = w.prefixUntilVertex v := by exact rfl
   rw [hrw, prefixUntil_concat_of_exists w (· = v) h, hrw' ]
 
-lemma prefixUntilVertex_cons [DecidableEq α] (w) :
-    (cons x e w).prefixUntilVertex v = if x = v then nil x else cons x e (w.prefixUntilVertex v) :=
-    by
-  have hrw :  (cons x e w).prefixUntilVertex v = (cons x e w).prefixUntil (· = v) := by exact rfl
-  have hrw' : (w.prefixUntil fun x ↦ x = v) = w.prefixUntilVertex v := by exact rfl
-  rw [hrw, prefixUntil_cons w, hrw' ]
-
 --No
 lemma prefixUntilVertex_last_eq_self [DecidableEq α] (w : WList α β) (hw : w.vertex.Nodup) :
     w.prefixUntilVertex w.last = w := by
@@ -431,7 +424,7 @@ lemma mem_rotate_n_of_n_le_idxOf [DecidableEq α] (hx : x ∈ w) (hle : n ≤ w.
 lemma idxOf_rotate_n_of_n_le_idxOf [DecidableEq α] (hx : x ∈ w) (hle : n ≤ w.idxOf x) :
     (w.rotate n).idxOf x + n = w.idxOf x := by
   obtain (h | hNonempty) := em' w.Nonempty
-  · simp only [not_nonempty_iff, nil_iff_eq_nil] at h
+  · simp only [WList.not_nonempty_iff, nil_iff_eq_nil] at h
     -- TODO: nil_iff_eq_nil should be made into a @[simp] lemma.
     obtain ⟨y, rfl⟩ := h
     simp_all

@@ -332,44 +332,41 @@ lemma not_preconnected_of_ne_of_isClosedSubgraph {H₁ H₂ : Graph α β} (h₁
 /-! ### Cut -/
 
 @[mk_iff]
-structure IsSepSet (G : Graph α β) (S : Set α) : Prop where
+structure IsSep (G : Graph α β) (S : Set α) : Prop where
   subset_vx : S ⊆ V(G)
   not_connected : ¬ (G - S).Connected
 
 @[mk_iff]
-structure IsMinSepSet (G : Graph α β) (S : Set α) : Prop extends IsSepSet G S where
-  minimal : ∀ A, IsSepSet G A → S.encard ≤ A.encard
+structure IsMinSep (G : Graph α β) (S : Set α) : Prop extends IsSep G S where
+  minimal : ∀ A, IsSep G A → S.encard ≤ A.encard
 
-lemma IsMinSepSet.isSepSet (hM : IsMinSepSet G S) : IsSepSet G S :=
-  hM.toIsSepSet
-
-lemma IsMinSepSet.encard_le_of_isSepSet (hS : G.IsMinSepSet S) (hT : G.IsSepSet T) :
+lemma IsMinSep.encard_le_of_isSep (hS : G.IsMinSep S) (hT : G.IsSep T) :
     S.encard ≤ T.encard := hS.minimal T hT
 
-lemma IsMinSepSet.not_isSepSet_of_encard_lt (hM : IsMinSepSet G S) (hSS' : S'.encard < S.encard) :
-    ¬ IsSepSet G S' := by
+lemma IsMinSep.not_isSep_of_encard_lt (hM : IsMinSep G S) (hSS' : S'.encard < S.encard) :
+    ¬ IsSep G S' := by
   by_contra hc
   grw [hM.minimal S' hc, lt_self_iff_false S'.encard] at hSS'
   exact hSS'
 
-lemma connected_of_not_isSepSet (hV : S ⊆ V(G)) (hS : ¬ IsSepSet G S) : (G - S).Connected := by
+lemma connected_of_not_isSep (hV : S ⊆ V(G)) (hS : ¬ IsSep G S) : (G - S).Connected := by
   by_contra hc
   exact hS ⟨hV, hc⟩
 
 @[simp]
-lemma empty_isSepSet_iff : G.IsSepSet ∅ ↔ ¬ G.Connected :=
+lemma empty_isSep_iff : G.IsSep ∅ ↔ ¬ G.Connected :=
   ⟨fun h ↦ by simpa using h.not_connected, fun h ↦ ⟨empty_subset _, by simpa⟩⟩
 
-lemma conn_iff_forall_isSepSet : G.Connected ↔ ∀ ⦃S⦄, IsSepSet G S → S.Nonempty := by
+lemma conn_iff_forall_isSep : G.Connected ↔ ∀ ⦃S⦄, IsSep G S → S.Nonempty := by
   refine ⟨fun h S hS => ?_, fun h => ?_⟩ <;> by_contra! hC
   · simpa [hC, h] using hS.not_connected
-  simpa using h (empty_isSepSet_iff.mpr hC)
+  simpa using h (empty_isSep_iff.mpr hC)
 
-lemma IsSepSet.nonempty_of_connected (hG : G.Connected) (hS : G.IsSepSet S) : S.Nonempty :=
-  conn_iff_forall_isSepSet.mp hG hS
+lemma IsSep.nonempty_of_connected (hG : G.Connected) (hS : G.IsSep S) : S.Nonempty :=
+  conn_iff_forall_isSep.mp hG hS
 
-lemma IsMinSepSet.nonempty_of_connected (hG : G.Connected) (hM : G.IsMinSepSet S) : S.Nonempty :=
-  hM.isSepSet.nonempty_of_connected hG
+lemma IsMinSep.nonempty_of_connected (hG : G.Connected) (hM : G.IsMinSep S) : S.Nonempty :=
+  hM.toIsSep.nonempty_of_connected hG
 
 /-!
 ### Neighborhood of a minimum separator
@@ -378,7 +375,7 @@ For a connected graph, a minimum (cardinality) separator must “touch” every 
 vertex-deleted graph: otherwise that component would already be a closed subgraph of `G`.
 -/
 
-lemma IsSepSet.exists_adj_of_isCompOf_vertexDelete (hM : IsSepSet G S) (hG : G.Connected)
+lemma IsSep.exists_adj_of_isCompOf_vertexDelete (hM : IsSep G S) (hG : G.Connected)
     (hH : H.IsCompOf (G - S)) : ∃ x ∈ S, ∃ y ∈ V(H), G.Adj x y := by
   -- If no vertex of `S` is adjacent to `H`, then `H` is a closed subgraph of `G`,
   -- contradicting connectedness of `G` (since `S` is nonempty and disjoint from `V(H)`).
@@ -403,7 +400,7 @@ lemma IsSepSet.exists_adj_of_isCompOf_vertexDelete (hM : IsSepSet G S) (hG : G.C
   have hxVS : x ∈ V(H - S) := vertexSet_mono hHcl'.le hxH
   exact hxVS.2 hxS
 
-lemma IsMinSepSet.exists_adj_of_isCompOf_vertexDelete (hM : IsMinSepSet G S) (_hG : G.Connected)
+lemma IsMinSep.exists_adj_of_isCompOf_vertexDelete (hM : IsMinSep G S) (_hG : G.Connected)
     (hH : H.IsCompOf (G - S)) (hx : x ∈ S) (hfin : S.Finite) :
     ∃ y ∈ V(H), G.Adj x y := by
   -- If `x` had no neighbor in the component `H`,
@@ -415,7 +412,7 @@ lemma IsMinSepSet.exists_adj_of_isCompOf_vertexDelete (hM : IsMinSepSet G S) (_h
   -- Set of deleted vertices with `x` removed.
   set S' : Set α := S \ {x}
 
-  have hS : G.IsSepSet S := hM.isSepSet
+  have hS : G.IsSep S := hM.toIsSep
   have hxV : x ∈ V(G) := hS.subset_vx hx
 
   have hHcl' : H ≤c (G - S) := hH.1.1
@@ -443,7 +440,7 @@ lemma IsMinSepSet.exists_adj_of_isCompOf_vertexDelete (hM : IsMinSepSet G S) (_h
       exact (G.vertexDelete_isLink_iff S).mpr ⟨huvG, huS, hvS⟩
     exact hHcl'.closed huvDel.inc_left huH
 
-  have hSep' : G.IsSepSet S' := by
+  have hSep' : G.IsSep S' := by
     refine ⟨diff_subset.trans hS.subset_vx, fun hcon ↦ ?_⟩
     -- `G - S'` is not connected: `H` is a nontrivial closed subgraph of `G - S'`.
     obtain rfl : H = G - S' := hcon.eq_of_isClosedSubgraph hHclS' hH.1.2
@@ -455,17 +452,17 @@ lemma IsMinSepSet.exists_adj_of_isCompOf_vertexDelete (hM : IsMinSepSet G S) (_h
 
   have hSneTop : S.encard ≠ ⊤ := encard_ne_top_iff.mpr hfin
   have hSneZero : S.encard ≠ 0 := encard_ne_zero_of_mem hx
-  apply hM.not_isSepSet_of_encard_lt ?_ hSep'
+  apply hM.not_isSep_of_encard_lt ?_ hSep'
   simp [S', encard_diff_singleton_of_mem hx]
   cases h : S.encard with | top => exact (hSneTop h).elim | coe n =>
   cases n with | zero => exact (hSneZero h).elim | succ n => norm_cast; omega
 
-lemma vertexSet_isSepSet : G.IsSepSet V(G) := ⟨refl _, by simp⟩
+lemma vertexSet_isSep : G.IsSep V(G) := ⟨refl _, by simp⟩
 
-lemma isSepSet_of_not_connected (h : ¬ (G - S).Connected) : G.IsSepSet (V(G) ∩ S) :=
+lemma isSep_of_not_connected (h : ¬ (G - S).Connected) : G.IsSep (V(G) ∩ S) :=
   ⟨inter_subset_left, by simpa⟩
 
-lemma IsSepSet.of_vertexDelete (h : (G - X).IsSepSet S) : G.IsSepSet (S ∪ (V(G) ∩ X)) where
+lemma IsSep.of_vertexDelete (h : (G - X).IsSep S) : G.IsSep (S ∪ (V(G) ∩ X)) where
   subset_vx := by
     have := by simpa [subset_diff] using h.subset_vx
     simp [this.1]
@@ -473,7 +470,7 @@ lemma IsSepSet.of_vertexDelete (h : (G - X).IsSepSet S) : G.IsSepSet (S ∪ (V(G
     rw [union_comm, ← vertexDelete_vertexDelete, vertexDelete_vertexSet_inter]
     exact h.not_connected
 
-lemma IsSepSet.of_isSpanningSubgraph (h : G.IsSepSet S) (hsle : H ≤s G) : H.IsSepSet S where
+lemma IsSep.of_isSpanningSubgraph (h : G.IsSep S) (hsle : H ≤s G) : H.IsSep S where
   subset_vx := by simp [hsle.vertexSet_eq, h.subset_vx]
   not_connected h' := h.not_connected (h'.of_isSpanningSubgraph <| by gcongr)
 
@@ -482,91 +479,76 @@ lemma IsComplete.isInducedSubgraph (hG : G.IsComplete) (hH : H ≤i G) : H.IsCom
   exact hH.adj_of_adj (hG x (hH.vertexSet_mono hx) y (hH.vertexSet_mono hy) hne) hx hy
 
 @[simp]
-lemma IsComplete.isSepSet_iff_subset (h : G.IsComplete) : G.IsSepSet S ↔ S = V(G) := by
+lemma IsComplete.isSep_iff_subset (h : G.IsComplete) : G.IsSep S ↔ S = V(G) := by
   refine ⟨fun hS => hS.subset_vx.antisymm ?_, ?_⟩
   · have := h.isInducedSubgraph (G.vertexDelete_isInducedSubgraph S)
     |>.connected_iff.not.mp hS.not_connected
     simpa only [vertexDelete_vertexSet, not_nonempty_iff_eq_empty, diff_eq_empty] using this
   rintro rfl
-  exact vertexSet_isSepSet
+  exact vertexSet_isSep
 
-structure IsEdgeSepSet (G : Graph α β) (S : Set β) : Prop where
+@[mk_iff isEdgeSep_iff]
+structure IsEdgeSep (G : Graph α β) (S : Set β) : Prop where
   subset_edgeSet : S ⊆ E(G)
   not_connected : ¬ (G ＼ S).Connected
 
+@[mk_iff]
+structure IsMinEdgeSep (G : Graph α β) (S : Set β) : Prop extends IsEdgeSep G S where
+  minimal : ∀ A, IsEdgeSep G A → S.encard ≤ A.encard
+
+lemma IsMinEdgeSep.isEdgeSep (hM : IsMinEdgeSep G (S := F)) : IsEdgeSep G F :=
+  hM.toIsEdgeSep
+
+lemma IsMinEdgeSep.encard_le_of_isEdgeSep (hF : G.IsMinEdgeSep F) (hF' : G.IsEdgeSep F') :
+    F.encard ≤ F'.encard := hF.minimal F' hF'
+
 @[simp]
-lemma empty_isEdgeSepSet_iff : G.IsEdgeSepSet ∅ ↔ ¬ G.Connected := by
+lemma empty_isEdgeSep_iff : G.IsEdgeSep ∅ ↔ ¬ G.Connected := by
   refine ⟨fun h => ?_, fun h => ?_⟩
   · simpa using h.not_connected
   exact ⟨empty_subset _, by simpa⟩
 
--- lemma not_connBetween_of_linkEdges_isEdgeSepSet (hc : G.Preconnected)
---     (h : G.IsEdgeSepSet E(G, u, v)) : ¬ (G ＼ E(G, u, v)).ConnBetween u v := by
+-- lemma not_connBetween_of_linkEdges_isEdgeSep (hc : G.Preconnected)
+--     (h : G.IsEdgeSep E(G, u, v)) : ¬ (G ＼ E(G, u, v)).ConnBetween u v := by
 --   obtain hu | hu := em (u ∈ V(G)) |>.symm
 --   · simp [linkEdges_eq_empty_of_left_not_mem hu v, mt ConnBetween.left_mem hu]
 
 --   obtain ⟨S, hxS⟩ := exists_mem_left_of_nonempty_separation (nonempty_separation_of_not_connected
 --     (by use u; simpa) h.not_connected) hu
 
-structure EdgeCut (G : Graph α β) where
-  carrier : Set β
-  carrier_subset : carrier ⊆ E(G)
-  not_connected' : ¬ (G ＼ carrier).Connected
+@[mk_iff isMixedSep_iff]
+structure IsMixedSep (G : Graph α β) (S : Set α) (F : Set β) : Prop where
+  subset_vertexSet : S ⊆ V(G)
+  subset_edgeSet : F ⊆ E(G)
+  not_connected : ¬ ((G ＼ F) - S).Connected
 
-instance : SetLike (G.EdgeCut) β where
-  coe := (·.carrier)
-  coe_injective' C1 C2 h := by rwa [EdgeCut.mk.injEq]
+noncomputable def IsMixedSep.size (S : Set α) (F : Set β) : ℕ∞ := S.encard + F.encard
 
-@[simp]
-lemma EdgeCut.coe_subset (C : G.EdgeCut) : (C : Set β) ⊆ E(G) := C.carrier_subset
+@[mk_iff]
+structure IsMinMixedSep (G : Graph α β) (S : Set α) (F : Set β) : Prop
+    extends IsMixedSep G S F where
+  minimal :
+    ∀ S' F',
+      IsMixedSep G S' F' →
+        IsMixedSep.size (α := α) (β := β) S F ≤ IsMixedSep.size (α := α) (β := β) S' F'
 
-@[simp]
-lemma EdgeCut.not_connected (C : G.EdgeCut) : ¬ (G ＼ C).Connected := C.not_connected'
+lemma IsMinMixedSep.isMixedSep (hM : IsMinMixedSep G S F) : IsMixedSep G S F :=
+  hM.toIsMixedSep
 
-def edgeCut_empty (h : ¬ G.Connected) : G.EdgeCut where
-  carrier := ∅
-  carrier_subset := empty_subset _
-  not_connected' := by simpa
+lemma IsMinMixedSep.size_le_of_isMixedSep (hM : G.IsMinMixedSep S F) (h : G.IsMixedSep S' F') :
+    IsMixedSep.size (α := α) (β := β) S F ≤ IsMixedSep.size (α := α) (β := β) S' F' :=
+  hM.minimal S' F' h
 
-@[simp]
-lemma edgeCut_empty_coe (h : ¬ G.Connected) : (edgeCut_empty h : Set β) = ∅ := rfl
+lemma IsEdgeSep.toIsMixedSep (h : G.IsEdgeSep F) : G.IsMixedSep ∅ F :=
+  ⟨empty_subset _, h.subset_edgeSet, by simpa using h.not_connected⟩
 
-
-structure MixedCut (G : Graph α β) where
-  vertexSet : Set α
-  edgeSet : Set β
-  vertexSet_subset : vertexSet ⊆ V(G)
-  edgeSet_subset : edgeSet ⊆ E(G)
-  not_conn' : ¬ ((G ＼ edgeSet)- vertexSet).Connected
-
--- @[simps]
--- def mixedCut_of_cut (C : G.Cut) : G.MixedCut where
---   vertexSet := ↑C
---   edgeSet := ∅
---   vertexSet_subset := C.coe_subset
---   edgeSet_subset := empty_subset _
---   not_conn' := by simp
-
-@[simps]
-def mixedCut_of_edgeCut (F : G.EdgeCut) : G.MixedCut where
-  vertexSet := ∅
-  edgeSet := F
-  vertexSet_subset := empty_subset _
-  edgeSet_subset := F.coe_subset
-  not_conn' := by simp
-
-@[simps]
-def MixedCut.of_isSpanningSubgraph (C : G.MixedCut) (hle : H ≤s G) : H.MixedCut where
-  vertexSet := V(H) ∩ C.vertexSet
-  edgeSet := E(H) ∩ C.edgeSet
-  vertexSet_subset := inter_subset_left
-  edgeSet_subset := inter_subset_left
-  not_conn' := by
-    rw [edgeDelete_edgeSet_inter, ← edgeDelete_vertexSet, vertexDelete_vertexSet_inter]
-    have := C.not_conn'
-    contrapose! this
-    apply this.of_isSpanningSubgraph
-    gcongr
+lemma IsMixedSep.of_isSpanningSubgraph (h : G.IsMixedSep S F) (hsle : H ≤s G) :
+    H.IsMixedSep S (E(H) ∩ F) where
+  subset_vertexSet := hsle.vertexSet_eq ▸ h.subset_vertexSet
+  subset_edgeSet := inter_subset_left
+  not_connected hc := by
+    rw [edgeDelete_edgeSet_inter] at hc
+    exact h.not_connected <| hc.of_isSpanningSubgraph (by gcongr)
 
 /-- A graph has `PreconnGE n`, if for every pair of vertices `s` and `t`, there is no
     `n`-vertex cut between them.
@@ -578,16 +560,16 @@ def PreconnGE (G : Graph α β) (n : ℕ) : Prop :=
   least `n + 1`. -/
 @[mk_iff]
 structure ConnGE (G : Graph α β) (n : ℕ) : Prop where
-  le_cut : ∀ ⦃C⦄, G.IsSepSet C → n ≤ C.encard
+  le_cut : ∀ ⦃C⦄, G.IsSep C → n ≤ C.encard
   le_card : V(G).Subsingleton ∨ n < V(G).encard
 
 lemma exists_isSepSet_encard_lt_of_not_connGE (hnV : n < V(G).encard) (h : ¬ G.ConnGE n) :
-    ∃ C, G.IsSepSet C ∧ C.encard < n := by
+    ∃ C, G.IsSep C ∧ C.encard < n := by
   by_contra! hno
   exact h ⟨hno, Or.inr hnV⟩
 
 lemma exists_isSepSet_encard_le_of_not_connGE (hnV : n + 1 < V(G).encard) (h : ¬ G.ConnGE (n+1)) :
-    ∃ C, G.IsSepSet C ∧ C.encard ≤ n := by
+    ∃ C, G.IsSep C ∧ C.encard ≤ n := by
   obtain ⟨C, hC, hlt⟩ := exists_isSepSet_encard_lt_of_not_connGE (G := G) (n := n+1) hnV h
   use C, hC, by enat_to_nat! <;> omega
 
@@ -686,7 +668,7 @@ lemma ConnGE.anti_right (hle : n ≤ m) (h : G.ConnGE m) : G.ConnGE n where
 lemma connGE_one_iff : G.ConnGE 1 ↔ G.Connected := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · by_contra! hc
-    simpa using h.le_cut <| empty_isSepSet_iff.mpr hc
+    simpa using h.le_cut <| empty_isSep_iff.mpr hc
   by_contra! hCcd
   simp [connGE_iff, one_lt_encard_iff_nontrivial, V(G).subsingleton_or_nontrivial,
     Set.not_nonempty_iff_eq_empty, h] at hCcd
@@ -694,7 +676,7 @@ lemma connGE_one_iff : G.ConnGE 1 ↔ G.Connected := by
 @[simp]
 lemma connGE_bot : (⊥ : Graph α β).ConnGE n ↔ n = 0 := by
   refine ⟨fun h ↦ ?_, ?_⟩
-  · simpa using h.le_cut <| (isSepSet_of_not_connected (S := ∅) (by simp))
+  · simpa using h.le_cut <| (isSep_of_not_connected (S := ∅) (by simp))
   rintro rfl
   simp
 
@@ -717,7 +699,7 @@ lemma ConnGE.pre (h : G.ConnGE n) : G.PreconnGE n := by
   intro X hX
   by_contra! hc
   have := mt Connected.pre hc
-  have := by simpa using h.le_cut (isSepSet_of_not_connected this)
+  have := by simpa using h.le_cut (isSep_of_not_connected this)
   exact hX.not_ge <| this.trans <| encard_le_encard inter_subset_right
 
 /-- If `G` is not complete, (or contain a complete graph as a spanning subgraph), then
@@ -752,7 +734,7 @@ lemma IsComplete.connGE_iff (h : G.IsComplete) (n : ℕ) :
     · simp_all
     simp_all [connGE_iff_of_vertexSet_singleton hsin]
   exact ⟨fun C hC ↦ le_trans (by simp) (lt_of_lt_of_le hn <| encard_le_encard
-  <| (h.isSepSet_iff_subset.mp hC).superset).le, Or.inr hn⟩
+  <| (h.isSep_iff_subset.mp hC).superset).le, Or.inr hn⟩
 
 lemma ConnGE.isSpanningSubgraph (h : H.ConnGE n) (hsle : H ≤s G) : G.ConnGE n where
   le_cut C hC := by simpa using h.le_cut <| hC.of_isSpanningSubgraph hsle

@@ -312,7 +312,7 @@ lemma edgeDelete_connected_iff_of_forall_isLoopAt (hF : ∀ e ∈ F, ∃ x, G.Is
   have := by simpa using mt (hF e)
   use he, he, this hel
 
-lemma edgeDelete_isLoopAt_isSepSet_iff (C) : (G ＼ E(G, u, u)).IsSepSet C ↔ G.IsSepSet C := by
+lemma edgeDelete_isLoopAt_isSep_iff (C) : (G ＼ E(G, u, u)).IsSep C ↔ G.IsSep C := by
   refine ⟨fun h ↦ ⟨h.subset_vx, fun hc ↦ ?_⟩, fun h ↦ ⟨h.subset_vx, fun hc ↦ ?_⟩⟩
   swap
   · rw [edgeDelete_vertexDelete] at hc
@@ -405,8 +405,8 @@ lemma Preconnected.walkable_singleton_right_of_vertexDelete_connected (hG : G.Pr
   rw [linkEdges_comm] at h ⊢
   exact hG.walkable_singleton_left_of_vertexDelete_connected h hvconn
 
-lemma not_connected_or_singleton_isSepSet_or_pair (h : ¬ (G ＼ E(G, u, v)).Connected) :
-    ¬ G.Connected ∨ G.IsSepSet {u} ∨ G.IsSepSet {v} ∨ V(G) = {u, v} := by
+lemma not_connected_or_singleton_isSep_or_pair (h : ¬ (G ＼ E(G, u, v)).Connected) :
+    ¬ G.Connected ∨ G.IsSep {u} ∨ G.IsSep {v} ∨ V(G) = {u, v} := by
   simp only [or_iff_not_imp_left, not_not]
   intro hG husep hvsep
   have hu : u ∈ V(G) := by
@@ -415,7 +415,7 @@ lemma not_connected_or_singleton_isSepSet_or_pair (h : ¬ (G ＼ E(G, u, v)).Con
   have hv : v ∈ V(G) := by
     by_contra! hv
     simp [hv, hG] at h
-  simp only [isSepSet_iff, singleton_subset_iff, hu, hv, true_and, not_not] at husep hvsep
+  simp only [isSep_iff, singleton_subset_iff, hu, hv, true_and, not_not] at husep hvsep
   have hcomp := (G ＼ E(G, u, v)).eq_sUnion_components
   apply_fun vertexSet at hcomp
   simp only [edgeDelete_vertexSet, (hG.pre.edgeDelete_linkEdges_components hu hv), sUnion_vertexSet,
@@ -424,14 +424,14 @@ lemma not_connected_or_singleton_isSepSet_or_pair (h : ¬ (G ＼ E(G, u, v)).Con
     hG.pre.walkable_singleton_right_of_vertexDelete_connected h hvsep, pair_comm]
   simp
 
-lemma not_preconnected_or_singleton_isSepSet_or_pair (h : ¬ (G ＼ E(G, u, v)).Preconnected) :
-    ¬ G.Preconnected ∨ G.IsSepSet {u} ∨ G.IsSepSet {v} ∨ V(G) = {u, v} := by
-  refine not_connected_or_singleton_isSepSet_or_pair (mt Connected.pre h) |>.imp (mt ?_) id
+lemma not_preconnected_or_singleton_isSep_or_pair (h : ¬ (G ＼ E(G, u, v)).Preconnected) :
+    ¬ G.Preconnected ∨ G.IsSep {u} ∨ G.IsSep {v} ∨ V(G) = {u, v} := by
+  refine not_connected_or_singleton_isSep_or_pair (mt Connected.pre h) |>.imp (mt ?_) id
   simp_all only [preconnected_iff, ← vertexSet_not_nonempty_iff, edgeDelete_vertexSet, not_or,
     not_not, not_true_eq_false, false_or, implies_true]
 
-lemma IsSepSet.of_edgeDelete_linkEdges (h : (G ＼ E(G, u, v)).IsSepSet S) :
-    G.IsSepSet S ∨ G.IsSepSet (insert u S) ∨ G.IsSepSet (insert v S) ∨ V(G) = {u, v} ∪ S := by
+lemma IsSep.of_edgeDelete_linkEdges (h : (G ＼ E(G, u, v)).IsSep S) :
+    G.IsSep S ∨ G.IsSep (insert u S) ∨ G.IsSep (insert v S) ∨ V(G) = {u, v} ∪ S := by
   obtain huS | huS := em (u ∈ S)
   · refine Or.inl ⟨by simpa using h.subset_vx, ?_⟩
     have := h.not_connected
@@ -454,7 +454,7 @@ lemma IsSepSet.of_edgeDelete_linkEdges (h : (G ＼ E(G, u, v)).IsSepSet S) :
     rw [edgeDelete_vertexDelete] at this
     exact mt (Connected.of_isSpanningSubgraph ·
     <| (G - S).edgeDelete_isSpanningSubgraph_anti_right <| by simp [huS, hvS]) this
-  obtain hnconn | hsepu | hsepv | hpair := (G - S).not_connected_or_singleton_isSepSet_or_pair
+  obtain hnconn | hsepu | hsepv | hpair := (G - S).not_connected_or_singleton_isSep_or_pair
     this
   · exact Or.inl ⟨by simpa using h.subset_vx, hnconn⟩
   · refine Or.inr (Or.inl ⟨?_, ?_⟩)
@@ -488,7 +488,7 @@ lemma ConnGE.edgeDelete_linkEdges (h : G.ConnGE (n + 1)) (u v) : (G ＼ E(G, u, 
     obtain hne | rfl := eq_or_ne u v |>.symm
     · apply hss.not_nontrivial
       use u, (by simp [h4]), v, (by simp [h4])
-    rw [edgeDelete_isLoopAt_isSepSet_iff] at hC
+    rw [edgeDelete_isLoopAt_isSep_iff] at hC
     have := h.le_cut ⟨hC.subset_vx, hC.not_connected⟩
     enat_to_nat!
     omega

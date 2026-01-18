@@ -116,7 +116,7 @@ lemma ConnBetweenGE_bouquet_self (n : ℕ) : (bouquet v F).ConnBetweenGE v v n :
 
 example : (bouquet v F).Preconnected := by simp only [bouquet_isComplete, IsComplete.preconnected]
 example : (bouquet v F).Connected := by simp
-example : (bouquet v F).IsSepSet S ↔ S = {v} := by simp
+example : (bouquet v F).IsSep S ↔ S = {v} := by simp
 example (n : ℕ) : (bouquet v F).PreconnGE n := by simp
 example (n : ℕ) : (bouquet v F).ConnGE n ↔ n ≤ 1 := by simp
 
@@ -137,15 +137,14 @@ lemma connected_iff_of_edgeSet_empty (hE : E(G) = ∅) : G.Connected ↔ ∃ v, 
     exists_eq_singleton_iff_nonempty_subsingleton]
 
 @[simps]
-def singleEdge_edgeCut (hne : u ≠ v) : EdgeCut (Graph.singleEdge u v e) where
-  carrier := {e}
-  carrier_subset := by simp
-  not_connected' h := by
+def singleEdge_isEdgeSep (hne : u ≠ v) : (Graph.singleEdge u v e).IsEdgeSep {e} where
+  subset_edgeSet := by simp
+  not_connected h := by
     rw [connected_iff_of_edgeSet_empty (by simp),
       exists_eq_singleton_iff_nonempty_subsingleton] at h
     exact hne <| h.2 (by simp : u ∈ _) (by simp : v ∈ _)
 
-example : (Graph.singleEdge u v e).IsSepSet S ↔ S = {u, v} := by simp
+example : (Graph.singleEdge u v e).IsSep S ↔ S = {u, v} := by simp
 example (n : ℕ) : (Graph.singleEdge u v e).PreconnGE n := by simp
 
 @[simp]

@@ -60,65 +60,59 @@ lemma components_eq_singleton_self_iff : H.Components = {H} ↔ H.Connected :=
 
 -- ISSEPSET
 
-lemma IsMinSepSet.isSepSet (hS : G.IsMinSepSet S) : G.IsSepSet S := hS.toIsSepSet
-
-lemma empty_isSepset (h : ¬ G.Connected) : G.IsSepSet ∅ where
+lemma empty_isSep (h : ¬ G.Connected) : G.IsSep ∅ where
   subset_vx := empty_subset _
   not_connected := by simpa
 
-lemma IsSepSet.not_connected_of_empty (h : G.IsSepSet ∅) : ¬ G.Connected := by
+lemma IsSep.not_connected_of_empty (h : G.IsSep ∅) : ¬ G.Connected := by
   have := h.not_connected
   simp_all only [vertexDelete_empty, not_false_eq_true]
 
 @[simp]
-lemma empty_isSepSet_iff : G.IsSepSet ∅ ↔ ¬ G.Connected :=
-  ⟨IsSepSet.not_connected_of_empty, empty_isSepset⟩
-
-@[simp]
-lemma IsMinSepSet.eq_empty_iff (hS : G.IsMinSepSet S) : S = ∅ ↔ ¬ G.Connected := by
-  refine ⟨fun h ↦ (h ▸ hS).toIsSepSet.not_connected_of_empty, ?_⟩
+lemma IsMinSep.eq_empty_iff (hS : G.IsMinSep S) : S = ∅ ↔ ¬ G.Connected := by
+  refine ⟨fun h ↦ (h ▸ hS).toIsSep.not_connected_of_empty, ?_⟩
   by_contra! hcon
   obtain ⟨hG, hSne⟩ := hcon
-  obtain rfl := by simpa using hS.minimal ∅ <| empty_isSepset hG
+  obtain rfl := by simpa using hS.minimal ∅ <| empty_isSep hG
   simp at hSne
 
 @[simp]
-lemma empty_isMinSepSet_iff : G.IsMinSepSet ∅ ↔ ¬ G.Connected :=
-  ⟨fun h ↦ h.toIsSepSet.not_connected_of_empty, fun h ↦ ⟨empty_isSepset h, by simp⟩⟩
+lemma empty_isMinSep_iff : G.IsMinSep ∅ ↔ ¬ G.Connected :=
+  ⟨fun h ↦ h.toIsSep.not_connected_of_empty, fun h ↦ ⟨empty_isSep h, by simp⟩⟩
 
-lemma IsMinSepSet.connected_iff (hS : G.IsMinSepSet S) : G.Connected ↔ S.Nonempty := by
+lemma IsMinSep.connected_iff (hS : G.IsMinSep S) : G.Connected ↔ S.Nonempty := by
   simpa [nonempty_iff_ne_empty] using hS.eq_empty_iff.not.symm
 
--- lemma IsMinSepSet.encard_pos_iff (hS : G.IsMinSepSet S) : 0 < S.encard ↔ G.Connected := by
+-- lemma IsMinSep.encard_pos_iff (hS : G.IsMinSep S) : 0 < S.encard ↔ G.Connected := by
 --   rw [Set.encard_pos, ←not_iff_not, Set.not_nonempty_iff_eq_empty, ←Set.encard_eq_zero]
 --   exact hS.encard_eq_zero_iff
 
--- lemma IsMinSepSet.encard_ne_zero_iff (hS : G.IsMinSepSet S) : S.encard ≠ 0 ↔ G.Connected := by
+-- lemma IsMinSep.encard_ne_zero_iff (hS : G.IsMinSep S) : S.encard ≠ 0 ↔ G.Connected := by
 --   rw [encard_ne_zero, ←not_iff_not, Set.not_nonempty_iff_eq_empty, ←Set.encard_eq_zero]
 --   exact hS.encard_eq_zero_iff
 
 -- any two MinSepSets have the same encard
-lemma IsMinSepSet.encard_eq_encard_of_isMinSepSet (hS : G.IsMinSepSet S) (hA : G.IsMinSepSet A) :
+lemma IsMinSep.encard_eq_encard_of_isMinSep (hS : G.IsMinSep S) (hA : G.IsMinSep A) :
     S.encard = A.encard := by
-  have h₁ := hS.minimal _ hA.toIsSepSet
-  have h₂ := hA.minimal _ hS.toIsSepSet
+  have h₁ := hS.minimal _ hA.toIsSep
+  have h₂ := hA.minimal _ hS.toIsSep
   exact h₁.antisymm h₂
 
-lemma isSepSet_empty_iff_not_connected : G.IsSepSet ∅ ↔ ¬ G.Connected := by
+lemma isSep_empty_iff_not_connected : G.IsSep ∅ ↔ ¬ G.Connected := by
   refine ⟨fun h ↦ h.not_connected_of_empty, ?_⟩
   intro hyp
   refine ⟨by simp only [empty_subset], by simpa only [vertexDelete_empty]⟩
 
-lemma isSepSet_empty_iff_isMinSepSet_empty : G.IsSepSet ∅ ↔ G.IsMinSepSet ∅ := by
-  refine ⟨?_, fun h ↦ h.isSepSet⟩
+lemma isSep_empty_iff_isMinSep_empty : G.IsSep ∅ ↔ G.IsMinSep ∅ := by
+  refine ⟨?_, fun h ↦ h.toIsSep⟩
   intro hyp
   refine ⟨hyp, ?_⟩
   intro A hA
   simp only [encard_empty, zero_le]
 
-lemma isMinSepSet_empty_iff_not_connected : G.IsMinSepSet ∅ ↔ ¬ G.Connected := by
-  rw [← isSepSet_empty_iff_isMinSepSet_empty]
-  exact isSepSet_empty_iff_not_connected
+lemma isMinSep_empty_iff_not_connected : G.IsMinSep ∅ ↔ ¬ G.Connected := by
+  rw [← isSep_empty_iff_isMinSep_empty]
+  exact isSep_empty_iff_not_connected
 
 lemma eq_iff_components_eq_components : G = H ↔ G.Components = H.Components := by
   refine ⟨by rintro rfl; rfl, ?_⟩
@@ -174,7 +168,7 @@ lemma IsCompOf.vertexDelete_components_encard_eq (hH : H.IsCompOf G) :
   exact hH.isClosedSubgraph.vertexDelete_components_encard_eq
 
 lemma IsCompOf.isSepSet_of_three_le_components_encard
-    (hH : H.IsCompOf G) (hG : 3 ≤ G.Components.encard) : G.IsSepSet V(H) := by
+    (hH : H.IsCompOf G) (hG : 3 ≤ G.Components.encard) : G.IsSep V(H) := by
   refine ⟨hH.subset, ?_⟩
   refine not_connected_of_components_encard_ge_two ?_
   suffices : 3 ≤ 1 + (G - V(H)).Components.encard
@@ -195,7 +189,7 @@ lemma IsCompOf.isCompOf_compl_of_disjoint
   refine ⟨hle_closed, hH.connected⟩
 
 lemma IsCompOf.isSepSet_of_not_connected_of_ssubset
-    (hH : H.IsCompOf G) (hG : ¬ G.Connected) (hssub : S ⊂ V(H)) : G.IsSepSet S := by
+    (hH : H.IsCompOf G) (hG : ¬ G.Connected) (hssub : S ⊂ V(H)) : G.IsSep S := by
   refine ⟨hssub.le.trans hH.subset, ?_⟩
   rw [ssubset_iff_exists] at hssub
   obtain ⟨hSH, x, hxH, hxnS⟩ := hssub
@@ -243,7 +237,7 @@ lemma vertexDelete_components_encard_ge (x : α) :
 
 lemma exists_isSepSet_with_encard_lt_components_encard
     (hG : 3 ≤ V(G).encard) (hConn : ¬ G.Connected) {n} (hn : n < G.Components.encard) :
-    ∃ S, G.IsSepSet S ∧ S.encard = n := by
+    ∃ S, G.IsSep S ∧ S.encard = n := by
   obtain (rfl | h) := em (n = ⊤)
   · simp at hn
   enat_to_nat; clear h
@@ -254,7 +248,7 @@ lemma exists_isSepSet_with_encard_lt_components_encard
 -/
 
 lemma exists_isSepSet_size_one_of_not_connected (hG : 3 ≤ V(G).encard) (h : ¬ G.Connected) :
-    ∃ S, G.IsSepSet S ∧ S.encard = 1 := by
+    ∃ S, G.IsSep S ∧ S.encard = 1 := by
   -- This is actually a little subtle.
   -- I'm guessing there's probably machinery to better deal with this.
 

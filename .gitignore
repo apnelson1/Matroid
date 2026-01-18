@@ -3,3 +3,4 @@ docbuild/.lake/*
 lake-manifest.json
 lakefile.olean
 lakefile.olean.trace
+.cursor/*
