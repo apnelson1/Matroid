@@ -444,7 +444,7 @@ lemma refl (w : WList α β) : w.IsInfix w := by
   simp
 
 @[simp]
-lemma isSublist (h : w₁.IsInfix w₂) : w₁.IsSublist w₂ := by
+lemma isSublist (h : w₁.IsInfix w₂) : w₁ ≤ w₂ := by
   rcases h with ⟨wL, wR, hL, hR, rfl⟩
   simpa [append_assoc] using ((isPrefix_append_right hR).isSublist).trans
   <| wL.isSuffix_append_left (w₁ ++ wR) |>.isSublist
@@ -462,6 +462,22 @@ lemma eq_of_length_ge (h : w₁.IsInfix w₂) (hge : w₂.length ≤ w₁.length
 
 lemma length_lt (h : w₁.IsInfix w₂) (hne : w₁ ≠ w₂) : w₁.length < w₂.length :=
   h.isSublist.length_lt hne
+
+lemma trans (h₁ : w₁.IsInfix w₂) (h₂ : w₂.IsInfix w₃) : w₁.IsInfix w₃ := by
+  rcases h₁ with ⟨L₁, R₁, hL₁, hR₁, rfl⟩
+  rcases h₂ with ⟨L₂, R₂, hL₂, hR₂, rfl⟩
+  refine ⟨L₂ ++ L₁, R₁ ++ R₂, ?_, ?_, ?_⟩
+  · simpa [append_last] using hL₁
+  · rcases R₁.exists_eq_nil_or_nonempty with ⟨x, rfl⟩ | hne <;> simp_all
+  · simp [append_assoc]
+
+lemma antisymm (h : w₁.IsInfix w₂) (h' : w₂.IsInfix w₁) : w₁ = w₂ :=
+  h.eq_of_length_ge h'.length_le
+
+instance : IsPartialOrder (WList α β) IsInfix where
+  refl := refl
+  trans _ _ _ := trans
+  antisymm _ _ := antisymm
 
 lemma reverse (h : w₁.IsInfix w₂) : w₁.reverse.IsInfix w₂.reverse := by
   rcases h with ⟨wL, wR, hL, hR, rfl⟩

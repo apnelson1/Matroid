@@ -2,7 +2,6 @@ import Matroid.Graph.Independent
 import Matroid.Graph.Connected.Menger
 import Matroid.ForMathlib.Minimal
 
-import Matroid.Exercises.HamiltonianCycle.MinimalMaximal
 import Matroid.Exercises.HamiltonianCycle.Degree
 import Matroid.Exercises.HamiltonianCycle.Walk
 import Matroid.Exercises.HamiltonianCycle.Connected
@@ -53,17 +52,16 @@ lemma IsSpanningSubgraph.minDegree_le_minDegree [G.LocallyFinite] (hHG : H ≤s 
   omega
 
 def ConnectivityGE (G : Graph α β) (k : ℕ∞) : Prop :=
-  ∀ S, S.encard < k → (G - S).Connected
+  ∀ S : Set α, S.encard < k → (G - S).Connected
 
 lemma Connected.exists_vertex_eDegree_ge_two (hT : T.Connected) (hV : 3 ≤ V(T).encard) :
     ∃ x ∈ V(T), 2 ≤ T.eDegree x := by
-  have hMinDeg : ∀ x ∈ V(T), 1 ≤ T.eDegree x := hT.minEDegree_ge_one_of_nontrivial (by
-    rw [← one_lt_encard_iff_nontrivial]; enat_to_nat!; omega)
+  have hMinDeg := hT.degreePos (by rw [← one_lt_encard_iff_nontrivial]; enat_to_nat!; omega)
   by_contra! hyp
   replace hyp : ∀ x ∈ V(T), T.eDegree x = 1 := by
     intro x hxT
     specialize hyp _ hxT
-    specialize hMinDeg _ hxT
+    have := hMinDeg.one_le_eDegree hxT
     enat_to_nat! <;> omega
   clear hMinDeg
   have hT_nonempty : V(T).Nonempty := by

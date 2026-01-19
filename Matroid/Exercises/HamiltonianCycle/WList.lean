@@ -33,16 +33,6 @@ lemma cycle_cons_index [DecidableEq α] (huv : v ≠ u) (hCP : v ∈ cons u e (P
 
 ---- prefix / suffix lemmas
 
-lemma suffixFromVertex_from_second_eq [DecidableEq α] (e) (hx : x ≠ w.first) :
-    (cons x e w).suffixFromVertex w.first = w := by
-  simp only [suffixFromVertex, suffixFrom_cons, hx, ↓reduceIte]
-  exact suffixFromVertex_first_eq w
-
-lemma suffixFromVertex_cons_or [DecidableEq α] (u e) (w : WList α β) (x) :
-    (u = x ∧ (cons u e w).suffixFromVertex x = cons u e w) ∨
-    (u ≠ x ∧ (cons u e w).suffixFromVertex x = w.suffixFromVertex x) := by
-  obtain h | h := em (u = x) <;> simp_all [suffixFromVertex]
-
 lemma prefixUntilVertex_index [DecidableEq α] (hx : x ∈ w) (hle : w.idxOf y ≤ w.idxOf x) :
     w.idxOf y = (w.prefixUntilVertex x).idxOf y := by
   simp only [prefixUntilVertex]

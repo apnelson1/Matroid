@@ -69,6 +69,19 @@ lemma isSepBetween_noEdge_of_ne (hne : x ≠ y) (hY : Y ⊆ X \ {x, y}) :
     exact hne hW.1.nil_of_noEdge.first_eq_last
 
 @[simp]
+lemma isEdgeSep_noEdge_iff : (Graph.noEdge X β).IsEdgeSep F ↔ F = ∅ ∧ X.encard ≠ 1 := by
+  refine ⟨fun ⟨hF, h⟩ => ?_, ?_⟩
+  · obtain rfl := by simpa using hF
+    simpa [encard_eq_one] using h
+  rintro ⟨rfl, hne⟩
+  simpa [encard_eq_one] using hne
+
+@[simp]
+lemma isEdgeSep_bot_iff : (⊥ : Graph α β).IsEdgeSep F ↔ F = ∅ := by
+  rw [← noEdge_empty, isEdgeSep_noEdge_iff]
+  simp
+
+@[simp]
 lemma noEdge_connBetweenGE_iff (n : ℕ) : (Graph.noEdge X β).ConnBetweenGE x y n ↔
     n = 0 ∨ (x = y ∧ x ∈ X) := by
   refine ⟨fun h => ?_, ?_⟩

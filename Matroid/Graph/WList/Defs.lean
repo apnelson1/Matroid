@@ -297,9 +297,11 @@ lemma nil_injective : Injective (nil : α → WList α β) := by
   | cons u e w ih =>
   simp only [cons_nonempty, not_true_eq_false, false_iff]
   rintro ⟨_⟩
+alias ⟨_, Nil.not_nonempty⟩ := not_nonempty_iff
 
 @[simp, push] lemma not_nil_iff : ¬ w.Nil ↔ w.Nonempty := by
   rw [← WList.not_nonempty_iff, not_not]
+alias ⟨_, Nonempty.not_nil⟩ := not_nil_iff
 
 lemma Nonempty.exists_cons (hw : w.Nonempty) : ∃ x e w', w = .cons x e w' := by
   cases hw with simp
@@ -446,6 +448,10 @@ lemma two_le_length_iff : 2 ≤ w.length ↔ w.Nontrivial := by
 
 lemma Nontrivial.one_lt_length (hw : w.Nontrivial) : 1 < w.length := by
   simpa
+
+lemma Nontrivial.two_le_length (hw : w.Nontrivial) : 2 ≤ w.length := by
+  rw [two_le_length_iff]
+  exact hw
 
 lemma Nonempty.nontrivial_of_length_ne_one (hw : w.Nonempty) (hne : w.length ≠ 1) :
     w.Nontrivial := by

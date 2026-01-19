@@ -87,16 +87,6 @@ lemma minDegree_lt_ncard [G.Simple] [G.Finite] (hNe : V(G).Nonempty) :G.minDegre
   rw [← vspec]
   exact degree_lt_ncard hvG
 
-lemma Connected.minEDegree_ge_one_of_nontrivial (hConn : G.Connected) (hnt : V(G).Nontrivial) :
-    ∀ x ∈ V(G), 1 ≤ G.eDegree x := by
-  by_contra! hyp
-  obtain ⟨x, hxG, hx⟩ := hyp
-  rw [connected_iff_forall_exists_adj (by use x)] at hConn
-  have : {x} ⊂ V(G) := ⟨by simpa, (not_nontrivial_singleton <| hnt.mono ·)⟩
-  obtain ⟨y, ⟨hyG, hne⟩, hadj⟩ := by simpa using hConn _ this
-  rw [ENat.lt_one_iff_eq_zero, eDegree_eq_zero_iff_adj] at hx
-  exact hx y hadj
-
 lemma unique_neighbor_of_eDegree_eq_one (hx : G.eDegree x = 1) (hxy : G.Adj x y) (hxz : G.Adj x z) :
     y = z := by
   have heq := hx ▸ G.eDegree_eq_encard_add_encard x

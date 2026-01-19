@@ -139,6 +139,8 @@ lemma exists_adj_of_eDist_eq_add_one {n : ℕ} (hxy : G.eDist x y = n + 1) :
 
 protected noncomputable def dist (G : Graph α β) (x y : α) : ℕ := (G.eDist x y).toNat
 
+-- notation "d(" G ", " x ", " y ")" => Graph.dist G x y
+
 lemma dist_comm (G : Graph α β) (x y : α) : G.dist x y = G.dist y x := by
   rw [Graph.dist, eDist_comm, ← Graph.dist]
 
