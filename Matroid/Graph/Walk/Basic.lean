@@ -1,4 +1,4 @@
-import Matroid.Graph.WList.Sublist
+import Matroid.Graph.WList.TakeDrop
 import Matroid.Graph.Subgraph.Delete
 
 /-

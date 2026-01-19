@@ -1,3 +1,4 @@
+import Matroid.Graph.WList.Decompose
 import Matroid.Graph.Walk.Basic
 
 variable {α β ι : Type*} {x y z u v : α} {e f : β} {G H : Graph α β}
@@ -179,7 +180,7 @@ lemma IsPath.induce (hP : G.IsPath P) (hX : V(P) ⊆ X) : (G[X]).IsPath P :=
 
 lemma IsPath.sublist (hP : G.IsPath P) (hP₀ : P₀.IsSublist P) : G.IsPath P₀ where
   isWalk := hP.isWalk.sublist hP₀
-  nodup := hP.nodup.sublist hP₀.vertex_sublist
+  nodup := hP.nodup.sublist hP₀.sublist
 
 lemma IsPath.prefix (hP : G.IsPath P) (hP₀ : P₀.IsPrefix P) : G.IsPath P₀ :=
   hP.sublist hP₀.isSublist

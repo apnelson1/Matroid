@@ -39,10 +39,10 @@ theorem twoPaths (hP : G.IsPath P) (hQ : G.IsPath Q) (hPQ : P ≠ Q) (h0 : P.fir
       refine ⟨(Q ++ P.reverse).dedup, ?_, ?_, ?_, by simp, ?_⟩
       · exact IsWalk.dedup_isPath (hQ.isWalk.append hP.1.isWalk.reverse (by simpa using h1.symm))
       · rw [← mem_edgeSet_iff]
-        refine notMem_subset (t := E(Q ++ P.reverse)) ((dedup_isSublist _).edgeSet_subset) ?_
+        refine notMem_subset (t := E(Q ++ P.reverse)) ((dedup_isSublist _).edge_subset) ?_
         simp [heQ, heP]
       · simp [append_first_of_nonempty hne]
-      exact (dedup_isSublist _).edgeSet_subset.trans <| by simp
+      exact (dedup_isSublist _).edge_subset.trans <| by simp
     obtain ⟨R, hR, heR, hfirst, hlast, hss⟩ := hR_ex
     refine ⟨_, hR.concat_isCycle ?_ heR, ?_⟩
     · rw [hfirst, hlast]

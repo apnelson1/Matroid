@@ -33,7 +33,7 @@ lemma injOn_iff (f : WList α β → ι) :
 lemma injOn_of_isSublist (A : G.SetEnsemble) {f : WList α β → WList α β}
     (hf : ∀ w, (f w).IsSublist w) : A.paths.InjOn f :=
   (injOn_iff f).mp (fun P Q _ _ hPQ ↦
-    ⟨(f P).first, (hf P).vertex_subset first_mem, (hf Q).vertex_subset (hPQ ▸ first_mem)⟩) A
+    ⟨(f P).first, (hf P).subset first_mem, (hf Q).subset (hPQ ▸ first_mem)⟩) A
 
 lemma first_injOn (A : G.SetEnsemble) : A.paths.InjOn WList.first := by
   intro P hP Q hQ h
@@ -179,7 +179,7 @@ lemma between.path_remove (hAST : A.between S T) (P) : (A.path_remove P).between
 def shorten (A : G.SetEnsemble) (P : WList α β) (hQ : Q.IsSublist P) (hP : P ∈ A.paths) :
     G.SetEnsemble :=
   A.path_remove P |>.path_insert Q (A.valid hP |>.sublist hQ)
-  <| (path_remove_vertexSet_disjoint hP).mono_right hQ.vertex_subset
+  <| (path_remove_vertexSet_disjoint hP).mono_right hQ.subset
 
 lemma shorten_last (hQ : Q.IsSublist P) (hP : P ∈ A.paths) :
     last '' (A.shorten P hQ hP).paths = insert Q.last ((last '' A.paths) \ {P.last}) := by

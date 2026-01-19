@@ -20,149 +20,173 @@ variable {α β ι : Type*} {x y z u v a b : α} {e f : β} {G H : Graph α β} 
 lemma IsWalk.eq_of_vertex_eq [G.Simple] (hp : G.IsWalk p) (hq : G.IsWalk q)
     (heq : p.vertex = q.vertex) : p = q := by
   induction q generalizing p with
-  | nil x =>
-      cases p <;> simp_all
+  | nil x => cases p <;> simp_all
   | cons x e w IH =>
-      induction p <;> simp_all
-      case cons x' e' w' =>
-        exact IsLink.unique_edge (G := G) hp hq.1
+    induction p with | nil u => simp_all | cons u e w ih =>
+    simp_all only [cons_isWalk_iff, and_self, cons_vertex, List.cons.injEq, cons.injEq, and_true,
+      true_and, forall_const, List.ne_cons_self, List.cons_ne_self, implies_true]
+    exact hp.unique_edge hq.1
 
-lemma IsPath.vertex_length_eq_vertexSet_ncard (hp : G.IsPath p) : p.vertex.length = V(p).ncard := by
+lemma IsPath.vertex_length_eq_ncard (hp : G.IsPath p) : p.vertex.length = V(p).ncard := by
   induction p with simp_all
 
-lemma IsPath.vertex_length_eq_vertexSet_encard (hp : G.IsPath p) :
-    p.vertex.length = V(p).encard := by
-  have vx_finite : V(p).Finite := p.vertexSet_finite
-  rw [← vx_finite.cast_ncard_eq]
-  enat_to_nat
-  exact hp.vertex_length_eq_vertexSet_ncard
+lemma IsPath.vertex_length_eq_encard (hp : G.IsPath p) : p.vertex.length = V(p).encard := by
+  rw [← p.vertexSet_finite.cast_ncard_eq]
+  norm_cast
+  exact hp.vertex_length_eq_ncard
 
-lemma IsCycle.length_eq_tail_vertex_length (hC : G.IsCycle C) :
+lemma _root_.WList.Nonempty.length_eq_tail_vertex_length (hCne : C.Nonempty) :
     C.length = C.tail.vertex.length := by
   induction C with simp_all
 
-lemma IsCycle.length_eq_vertexSet_encard (hC : G.IsCycle C) : C.length = V(C).encard := by
-  rw [hC.length_eq_tail_vertex_length, ← hC.isClosed.vertexSet_tail]
-  have : G.IsPath C.tail := hC.tail_isPath
-  exact this.vertex_length_eq_vertexSet_encard
+lemma IsCycle.length_eq_encard (hC : G.IsCycle C) : C.length = V(C).encard := by
+  rw [hC.nonempty.length_eq_tail_vertex_length, ← hC.isClosed.vertexSet_tail]
+  exact hC.tail_isPath.vertex_length_eq_encard
 
-lemma IsCycle.length_eq_vertexSet_ncard (hC : G.IsCycle C) : C.length = V(C).ncard := by
-  have vx_finite : V(C).Finite := C.vertexSet_finite
-  have := hC.length_eq_vertexSet_encard
-  rw [←vx_finite.cast_ncard_eq] at this
-  enat_to_nat; assumption
+lemma IsCycle.length_eq_ncard (hC : G.IsCycle C) : C.length = V(C).ncard := by
+  have := hC.length_eq_encard
+  rw [← C.vertexSet_finite.cast_ncard_eq] at this
+  norm_cast at this
 
 private lemma IsWalk.vertex_mem_of_mem' (hp : G.IsWalk p) (x) (hx : x ∈ p.vertex) : x ∈ V(G) :=
   hp.vertex_mem_of_mem hx
 
---------- vertex_coe
+--------- vertexAttach
 
 -- Important def: for any graph G, we have an embedding {p // G.IsWalk p} ↪ List V(G)
-def IsWalk.vertex_coe (hp : G.IsWalk p) : List ↑V(G) :=
-  p.vertex.attachWith V(G) (vertex_mem_of_mem' hp)
+def IsWalk.vertexAttach (hp : G.IsWalk p) : List ↑V(G) :=
+  p.vertex.attachWith V(G) hp.vertex_mem_of_mem'
 
-lemma IsWalk.vertex_coe_inj [G.Simple]
-    {p q} (hp : G.IsWalk p) (hq : G.IsWalk q) (heq : hp.vertex_coe = hq.vertex_coe) :
-    p = q := by
+lemma IsWalk.vertexAttach_inj [G.Simple] (hp : G.IsWalk p) (hq : G.IsWalk q)
+    (heq : hp.vertexAttach = hq.vertexAttach) : p = q := by
   apply congr_arg (List.map Subtype.val) at heq
   replace heq : p.vertex = q.vertex := by
-    simp [vertex_coe] at heq
+    simp only [vertexAttach, List.map_subtype, List.map_id_fun', id_eq] at heq
     have rw1 := p.vertex.unattach_attachWith (p := V(G)) (H := hp.vertex_mem_of_mem')
     have rw2 := q.vertex.unattach_attachWith (p := V(G)) (H := hq.vertex_mem_of_mem')
     simp [rw1, rw2] at heq
     assumption
-  exact IsWalk.eq_of_vertex_eq hp hq heq
+  exact hp.eq_of_vertex_eq hq heq
 
-lemma IsPath.vertex_coe_nodup {p} (hp : G.IsPath p) :
-    hp.isWalk.vertex_coe.Nodup := by
-  simp [IsWalk.vertex_coe]
+lemma IsPath.vertexAttach_nodup (hp : G.IsPath p) : hp.isWalk.vertexAttach.Nodup := by
+  simp only [IsWalk.vertexAttach, List.nodup_attachWith]
   exact hp.nodup
 
-lemma IsWalk.vertex_coe_length_eq {p} (hp : G.IsWalk p) :
-    hp.vertex_coe.length = p.vertex.length := by
-  simp [vertex_coe]
+@[simp]
+lemma IsWalk.vertexAttach_length (hp : G.IsWalk p) :hp.vertexAttach.length = p.vertex.length := by
+  simp [vertexAttach]
 
-lemma IsPath.vertex_length_le_encard {G : Graph α β} {p} (hp : G.IsPath p) :
-    p.vertex.length ≤ V(G).encard := by
-  obtain (eqTop|neTop) := Classical.em $ V(G).encard = ⊤
+@[simp]
+lemma IsWalk.vertexAttach_map_val (hp : G.IsWalk p) :
+    hp.vertexAttach.map Subtype.val = p.vertex :=
+  List.unattach_attachWith
+
+lemma IsPath.vertex_length_le_encard (hp : G.IsPath p) : p.vertex.length ≤ V(G).encard := by
+  obtain eqTop | neTop := em $ V(G).encard = ⊤
   · simp_all
-  simp at neTop
-  rw [←hp.isWalk.vertex_coe_length_eq]
-  have hfintype : Fintype V(G) := neTop.fintype
+  simp only [encard_eq_top_iff, not_infinite] at neTop
+  rw [← hp.isWalk.vertexAttach_length]
+  have : Fintype V(G) := neTop.fintype
   rw [← Set.coe_fintypeCard]
   enat_to_nat
-  exact hp.vertex_coe_nodup.length_le_card
+  exact hp.vertexAttach_nodup.length_le_card
 
-lemma IsPath.vertex_length_le_ncard [G.Finite] {p} (hp : G.IsPath p) :
+lemma IsPath.vertex_length_le_ncard [G.Finite] (hp : G.IsPath p) :
     p.vertex.length ≤ V(G).ncard := by
-  have vx_finite := ‹G.Finite›.vertexSet_finite
   have := hp.vertex_length_le_encard
-  rw [←vx_finite.cast_ncard_eq] at this
-  enat_to_nat; assumption
+  rw [← G.vertexSet_finite.cast_ncard_eq] at this
+  norm_cast at this
+
+--------- edgeAttach
+
+private lemma IsWalk.edge_mem_of_mem' (hp : G.IsWalk p) (e) (he : e ∈ p.edge) : e ∈ E(G) :=
+  hp.edge_mem_of_mem he
+
+-- Important def: for any graph `G`, we can attach the edges of a walk as elements of `E(G)`.
+def IsWalk.edgeAttach (hp : G.IsWalk p) : List ↑E(G) :=
+  p.edge.attachWith E(G) hp.edge_mem_of_mem'
+
+lemma IsTrail.edgeAttach_nodup (hp : G.IsTrail p) : hp.isWalk.edgeAttach.Nodup := by
+  simp only [IsWalk.edgeAttach, List.nodup_attachWith]
+  exact hp.edge_nodup
+
+@[simp]
+lemma IsWalk.edgeAttach_length (hp : G.IsWalk p) : hp.edgeAttach.length = p.length := by
+  simp [IsWalk.edgeAttach]
+
+lemma IsWalk.eq_of_edgeAttach_eq_first_eq (hp : G.IsWalk p) (hq : G.IsWalk q)
+    (hfirst : p.first = q.first) (heq : hp.edgeAttach = hq.edgeAttach) : p = q := by
+  apply congr_arg (List.map Subtype.val) at heq
+  have hedge : p.edge = q.edge := by
+    simp only [IsWalk.edgeAttach, List.map_subtype, List.map_id_fun', id_eq] at heq
+    have rw1 := p.edge.unattach_attachWith (p := E(G)) (H := hp.edge_mem_of_mem')
+    have rw2 := q.edge.unattach_attachWith (p := E(G)) (H := hq.edge_mem_of_mem')
+    simpa [rw1, rw2] using heq
+  exact hp.eq_of_edge_eq_first_eq hq hfirst hedge
+
+lemma IsTrail.length_le_encard (hp : G.IsTrail p) : p.length ≤ E(G).encard := by
+  obtain eqTop | neTop := em $ E(G).encard = ⊤
+  · simp_all
+  simp only [encard_eq_top_iff, not_infinite] at neTop
+  rw [← hp.isWalk.edgeAttach_length]
+  have : Fintype E(G) := neTop.fintype
+  rw [← Set.coe_fintypeCard]
+  enat_to_nat
+  exact hp.edgeAttach_nodup.length_le_card
+
+lemma IsTrail.length_le_ncard [G.Finite] (hp : G.IsTrail p) : p.length ≤ E(G).ncard := by
+  have := hp.length_le_encard
+  rw [← G.edgeSet_finite.cast_ncard_eq] at this
+  norm_cast at this
 
 -- every path in a graph has at most V(G) - 1 edges
-lemma IsPath.length_le_encard
-    {p} (hp : G.IsPath p) :
-    p.length + 1 ≤ V(G).encard := by
-  have := hp.vertex_length_le_encard
-  simp at this
-  assumption
+lemma IsPath.length_le_encard (hp : G.IsPath p) : p.length + 1 ≤ V(G).encard := by
+  simpa using hp.vertex_length_le_encard
 
-lemma IsPath.length_le_ncard
-    [G.Finite] {p} (hp : G.IsPath p) :
-    p.length + 1 ≤ V(G).ncard := by
-  have vx_finite := ‹G.Finite›.vertexSet_finite
+lemma IsPath.length_le_ncard [G.Finite] (hp : G.IsPath p) : p.length + 1 ≤ V(G).ncard := by
   have := hp.length_le_encard
-  rw [←vx_finite.cast_ncard_eq] at this
-  enat_to_nat; assumption
+  rw [← G.vertexSet_finite.cast_ncard_eq] at this
+  norm_cast at this
 
-lemma IsTrail.edge_encard_eq_length
-    [DecidableEq β] {p} (hp : G.IsTrail p) :
-    E(p).encard = p.length := by
-  rw [←p.length_edge]
-  have edge_nodup : p.edge.Nodup := hp.edge_nodup
-  rw [←p.edgeSet_finite.cast_ncard_eq]
+lemma IsTrail.edge_encard_eq_length (hp : G.IsTrail p) : E(p).encard = p.length := by
+  classical
+  rw [← p.length_edge, ← p.edgeSet_finite.cast_ncard_eq]
   enat_to_nat
   change {e | e ∈ p.edge}.ncard = p.edge.length
-  rw [←p.edge.toFinset_card_of_nodup edge_nodup, ←p.edge.coe_toFinset, ncard_coe_finset]
+  rw [← p.edge.toFinset_card_of_nodup hp.edge_nodup, ←p.edge.coe_toFinset, ncard_coe_finset]
 
-lemma IsTrail.edge_ncard_eq_length
-    [DecidableEq β] {p} (hp : G.IsTrail p) :
-    E(p).ncard = p.length := by
+lemma IsTrail.edge_ncard_eq_length (hp : G.IsTrail p) : E(p).ncard = p.length := by
   have := hp.edge_encard_eq_length
-  rw [←p.edgeSet_finite.cast_ncard_eq] at this
-  enat_to_nat; assumption
+  rw [← p.edgeSet_finite.cast_ncard_eq] at this
+  norm_cast at this
 
 ----- PathSet
 
 def PathSet (G : Graph α β) := {p | IsPath G p}
 
-lemma pathSet_finite (G : Graph α β) [G.Simple] [G.Finite] :
-    G.PathSet.Finite := by
-  -- the number of G-paths IN A SIMPLE GRAPH is directly upper-bounded by the number of
-  -- nodup lists with elements in V(G).
-  -- Note that in a non-simple graph, we could have infinitely many edges between just two vertices,
-  -- hence infinitely many paths.
-  have isInG {p} (hp : G.IsPath p) (x) (h : x ∈ p.vertex) : x ∈ V(G) := by
-    exact hp.isWalk.vertex_mem_of_mem h
-  let inj : G.PathSet → List V(G) := fun ⟨_, hp⟩ ↦ hp.isWalk.vertex_coe
-  have inj_injective : Function.Injective inj := by
-    intro ⟨p, hp⟩ ⟨q, hq⟩ heq
-    simp [inj] at heq ⊢
-    exact IsWalk.vertex_coe_inj hp.isWalk hq.isWalk heq
-  -- refine ‹G.Finite›.vertexSet_finite.finite_of_encard_le ?_
-  have vx_finite : Finite V(G) := vertexSet_finite
-  have ⟨n, hn⟩ := G.vertexSet_finite.exists_encard_eq_coe
-  have h_subset : range inj ⊆ {l : List V(G) | l.length ≤ n} := by
-    intro l hl
-    simp [inj] at hl ⊢
-    obtain ⟨p, hp, rfl⟩ := hl
-    have := hp.vertex_length_le_encard
-    rw [hp.isWalk.vertex_coe_length_eq]
-    enat_to_nat!; omega
-  change Finite G.PathSet
-  rw [←Set.finite_range_iff inj_injective]
-  refine Set.Finite.subset (List.finite_length_le V(G) n) h_subset
+lemma pathSet_finite (G : Graph α β) [G.Finite] : G.PathSet.Finite := by
+  let f : G.PathSet →
+    {l : List V(G) // l.length ≤ V(G).ncard} × {l : List E(G) // l.length ≤ E(G).ncard} := fun P ↦
+    (⟨P.prop.isWalk.vertexAttach, by
+      simp only [IsWalk.vertexAttach_length, length_vertex]
+      exact P.prop.length_le_ncard⟩,
+    ⟨P.prop.isWalk.edgeAttach, by
+      rw [IsWalk.edgeAttach_length]
+      exact P.prop.isTrail.length_le_ncard⟩)
+  have f_inj : Function.Injective f := by
+    intro ⟨P, hp⟩ ⟨Q, hq⟩ heq
+    simp only [PathSet, mem_setOf_eq] at hp hq
+    obtain ⟨hV, hE⟩ := by
+      simpa [Prod.mk.injEq, Subtype.mk.injEq, f, IsWalk.vertexAttach, IsWalk.edgeAttach] using heq
+    apply_fun List.unattach at hV hE
+    rw [List.unattach_attachWith, List.unattach_attachWith] at hV hE
+    rw [Subtype.mk.injEq]
+    exact ext_vertex_edge hV hE
+  have : Finite {l : List V(G) // l.length ≤ V(G).ncard} :=
+    @List.finite_length_le _ G.vertexSet_finite _
+  have : Finite {l : List E(G) // l.length ≤ E(G).ncard} :=
+    @List.finite_length_le _ G.edgeSet_finite _
+  exact Finite.of_injective f f_inj
 
 lemma pathSet_nonempty (G : Graph α β) (hnonempty : V(G).Nonempty) : G.PathSet.Nonempty := by
   obtain ⟨x, hx⟩ := hnonempty
@@ -268,7 +292,7 @@ lemma IsPath.dInc_suffixFromVertex
       · obtain ⟨rfl, rfl, rfl⟩ := h
         have x'_first : x' = (cons x' e' p).first := by simp
         conv => left; right; rw [x'_first]
-        rw [WList.suffixFromVertex_from_first_eq (cons x' e' p)]
+        rw [WList.suffixFromVertex_first_eq (cons x' e' p)]
         rw [WList.suffixFromVertex_from_second_eq]
         intro rfl
         have := p.first_mem
@@ -298,7 +322,7 @@ lemma IsPath.first_in_suffixFromVertex_iff
   refine ⟨?_, ?_⟩
   swap
   · rintro rfl
-    simp [WList.suffixFromVertex_from_first_eq p]
+    simp [WList.suffixFromVertex_first_eq p]
   induction p generalizing x with simp_all
   | cons u e w IH =>
       obtain (rfl|hx) := hx
@@ -339,7 +363,7 @@ lemma IsCycle.idxOf_rotate_first [DecidableEq α] (_ : G.IsCycle C) (hlt : n < C
 
 lemma IsCycle.idxOf_rotate_n_le [DecidableEq α] (_ : G.IsCycle C) (ha : a ∈ C)
     (hle : n ≤ C.idxOf a) : (C.rotate n).idxOf a + n = C.idxOf a :=
-  C.idxOf_rotate_n_of_n_le_idxOf ha hle
+  C.idxOf_rotate_add_of_le_idxOf ha hle
 
 lemma IsCycle.idxOf_rotate_one_first' [DecidableEq α] (hC : G.IsCycle C) :
     (C.rotate 1).idxOf C.first + 1 = C.length := by
@@ -392,7 +416,7 @@ lemma IsCycle.idxOf_rotate_n [DecidableEq α] (hC : G.IsCycle C) (ha : a ∈ C) 
     rw [hii] at hg
     linarith
   have ha' : a ∈ C.rotate n := (IsClosed.mem_rotate (hC.isClosed)).mpr ha
-  have hf := ((rotate_nonempty_iff n).mpr hnt).idxOf_rotate_one hnf ha'
+  have hf := (rotate_nonempty_iff.mpr hnt).idxOf_rotate_one hnf ha'
   linarith
 
 lemma IsTrail.idxOf_Adj [DecidableEq α] (hw : G.IsTrail w) (ha : a ∈ w) (hb : b ∈ w)
@@ -403,21 +427,12 @@ lemma IsTrail.idxOf_Adj [DecidableEq α] (hw : G.IsTrail w) (ha : a ∈ w) (hb :
   · simp_all only [true_or, idxOf_cons_self, zero_add]
     obtain rfl | hbb := eq_or_ne a b
     · simp at he
-    simp [idxOf_cons a e w, hbb] at he
-    simp [hbb.symm] at hb
-    have : b = w.first := by
-      have h1 := w.get_idxOf hb
-      rw[he ] at h1
-      --have : w.first ∈ w := by exact first_mem
-      have h2 := w.get_idxOf first_mem
-      rw [idxOf_first w, h1] at h2
-      exact h2
-    rw [this]
-    use e
-    exact hw.2.1
+    simp only [idxOf_cons a e w, hbb, ↓reduceIte, Nat.add_eq_right, idxOf_eq_zero_iff] at he
+    rw [he]
+    exact hw.2.1.adj
   simp only [hu, false_or] at ha
   obtain rfl | hau := eq_or_ne b u
-  simp_all
+  · simp_all
   simp [hau] at hb
   simp [idxOf_cons_ne hu.symm, idxOf_cons_ne hau.symm ] at he
   exact ih ha hb he

@@ -1,6 +1,6 @@
-import Matroid.Graph.WList.Sublist
+import Matroid.Graph.WList.TakeDrop
 
-variable {α β : Type*} {x y z u v : α} {e f : β} {w w₁ w₂ : WList α β} (m n : ℕ)
+variable {α β : Type*} {x y z u v : α} {e f : β} {w w₁ w₂ : WList α β} {m n : ℕ}
 
 open Set WList
 
@@ -166,7 +166,7 @@ lemma rotate_nontrivial_iff : (w.rotate n).Nontrivial ↔ w.Nontrivial := by
   rw [← one_lt_length_iff, length_rotate, one_lt_length_iff]
 
 lemma Nontrivial.rotate (hw : w.Nontrivial) (n : ℕ) : (w.rotate n).Nontrivial := by
-  exact (rotate_nontrivial_iff n).mpr hw
+  exact rotate_nontrivial_iff.mpr hw
 
 lemma rotate_firstEdge (n : ℕ) (hn : n < w.length) :
     have hne : w.Nonempty := length_pos_iff.1 <| (zero_le _).trans_lt hn
@@ -184,6 +184,7 @@ lemma rotate_firstEdge (n : ℕ) (hn : n < w.length) :
       rw [IH (hn.trans (by simp))]
       simp [concat_edge, add_comm (a := 1), hn]
 
+@[simp]
 lemma rotate_first (w : WList α β) (n : ℕ) (hn : n ≤ w.length) : (w.rotate n).first = w.get n := by
   induction n generalizing w with
   | zero => simp
@@ -214,6 +215,60 @@ lemma rotate_vertex_tail (w : WList α β) (n : ℕ) :
       | zero => simp
       | succ n IH => rw [← rotate_rotate, aux, ← List.rotate_rotate, IH]
   rintro (w | ⟨x, e, (w | ⟨y, f, w⟩)⟩) <;> simp
+
+
+lemma Nonempty.rotate_one {C : WList α β} (hCne : C.Nonempty) :
+    ∃ e, C.rotate 1 = (C.tail).concat e C.tail.first := by
+  use hCne.firstEdge
+  nth_rw 1 [(Nonempty.cons_tail hCne).symm]
+  rw [cons_rotate_one]
+
+lemma Nonempty.idxOf_rotate_one [DecidableEq α] (hw : w.Nonempty) (h1 : w.first ≠ x) (hx : x ∈ w) :
+    (w.rotate 1).idxOf x + 1 = w.idxOf x := by
+  obtain ⟨e, h⟩ := hw.rotate_one
+  have hxt : x ∈ w.tail := by
+    refine (eq_first_or_mem_tail hx).elim ?_ id
+    rintro rfl
+    simp at h1
+  rw [h, idxOf_concat_of_mem hxt]
+  exact idxOf_tail hw h1 hx
+
+lemma mem_rotate_of_le_idxOf [DecidableEq α] (hx : x ∈ w) (hle : n ≤ w.idxOf x) :
+    x ∈ w.rotate n := by
+  fun_induction WList.rotate with | case1 | case2 => simp_all | case3 u e w n IH =>
+  obtain rfl | hne := eq_or_ne u x
+  · simp at hle
+  replace hx : x ∈ w := (mem_cons_iff.mp hx).resolve_left hne.symm
+  simp_all only [mem_concat, true_or, forall_const, Nat.succ_eq_add_one, ne_eq, not_false_eq_true,
+    idxOf_cons_ne, add_le_add_iff_right]
+  refine IH ?_
+  rwa [idxOf_concat_of_mem hx]
+
+lemma idxOf_rotate_add_of_le_idxOf [DecidableEq α] (hx : x ∈ w) (hle : n ≤ w.idxOf x) :
+    (w.rotate n).idxOf x + n = w.idxOf x := by
+  obtain ⟨y, rfl⟩ | hNonempty := w.exists_eq_nil_or_nonempty
+  · simp_all
+  fun_induction w.rotate n with | case1 | case2 => simp_all | case3 u e w n IH =>
+  obtain rfl | hne := eq_or_ne u x
+  · simp at hle
+  replace hx : x ∈ w := (mem_cons_iff.mp hx).resolve_left hne.symm
+  simp only [Nat.succ_eq_add_one, ne_eq, hne, not_false_eq_true, idxOf_cons_ne,
+    add_le_add_iff_right] at hle
+  simp only [mem_concat, hx, true_or, idxOf_concat_of_mem, hle, concat_nonempty, forall_const] at IH
+  simp [hne, ← add_assoc, IH]
+
+lemma idxOf_rotate_first_ne_of_lt [DecidableEq α] (hlt : n < w.idxOf x) :
+    (w.rotate n).first ≠ x := by
+  rw [w.rotate_first n (by have := w.idxOf_le x; omega)]
+  exact get_ne_of_lt_idxOf hlt
+
+lemma get_rotate [DecidableEq α] (w : WList α β) {a b : ℕ} (hab : a + b ≤ w.length) :
+    (w.rotate a).get b = w.get (a + b) := by
+  induction b generalizing w a with
+  | zero => simp_all
+  | succ b IH =>
+    rw [add_comm, ← IH (w.rotate a) (by simp; omega), w.rotate_rotate, IH _ (by omega), add_assoc]
+
 
 lemma IsClosed.rotate_vertexSet (hw : w.IsClosed) (n) : V(w.rotate n) = V(w) := by
   simp_rw [← (hw.rotate _).vertexSet_tail, WList.vertexSet, ← mem_vertex, rotate_vertex_tail,
@@ -333,7 +388,7 @@ lemma IsClosed.rotate_eq_drop_append_take_mod (hw : w.IsClosed) (n : ℕ) :
     w.rotate n = w.drop (n % w.length) ++ w.take (n % w.length) := by
   obtain ⟨x, rfl⟩ | hne := w.exists_eq_nil_or_nonempty
   · simp [rotate_nil]
-  rw [hw.rotate_eq_mod, hw.rotate_take_drop _ (Nat.mod_lt _ hne.length_pos).le]
+  rw [hw.rotate_eq_mod, hw.rotate_take_drop (Nat.mod_lt _ hne.length_pos).le]
 
 -- Note: The general relationship `w.rotate n = w.drop n ++ w.take n` requires `w.IsClosed`
 -- because rotate is designed for closed lists. See `IsClosed.rotate_take_drop` for the
@@ -381,7 +436,7 @@ lemma IsClosed.rotate_eq_drop_append_take_mod (hw : w.IsClosed) (n : ℕ) :
 lemma IsClosed.exists_first_of_dInc (hC : w.IsClosed) (he : w.DInc e x y) :
     ∃ w' n, w.rotate n = cons x e w' ∧ w'.first = y := by
   obtain ⟨w', hsf, rfl⟩ := he.exists_isSuffix
-  obtain heq := hC.rotate_take_drop (w.length - (cons x e w').length) (by omega)
+  obtain heq := hC.rotate_take_drop (n := w.length - (cons x e w').length) (by omega)
   rw [← hsf.eq_drop_length, cons_append] at heq
   use w' ++ w.take (w.length - (cons x e w').length), (w.length - (cons x e w').length), heq, ?_
   rw [append_first_of_eq]

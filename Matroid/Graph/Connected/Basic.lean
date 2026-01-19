@@ -562,6 +562,60 @@ lemma Connected.exists_of_edgeRestrict_not_connected (hG : G.Connected)
   refine ⟨S, e, x, y, fun heF ↦ ?_, hx, hy, h'⟩
   exact S.not_adj hx hy <| IsLink.adj <| h'.of_le_of_mem (by simp) <| by simpa [h'.edge_mem]
 
+lemma IsSep.exists_adj_of_isCompOf_vertexDelete (hM : IsSep G S) (hG : G.Connected)
+    (hH : H.IsCompOf (G - S)) : ∃ x ∈ S, ∃ y ∈ V(H), G.Adj x y := by
+  by_contra! hno
+  have hHcl' : H ≤c G - S := hH.1.1
+  have hHcl : H ≤c G := by
+    refine ⟨hHcl'.le.trans vertexDelete_le, fun e x ⟨y, hxy⟩ hxH ↦ hHcl'.closed ?_ hxH⟩
+    refine ((G.vertexDelete_isLink_iff S).2 ⟨hxy, ?_, ?_⟩).inc_left
+    · simpa using (vertexSet_mono hHcl'.le hxH).2
+    exact (hno y · x hxH <| by simpa [adj_comm] using hxy.adj)
+  obtain rfl : H = G := hG.eq_of_isClosedSubgraph hHcl hH.1.2
+  obtain ⟨x, hxS⟩ := hM.nonempty_of_connected hG
+  have := by simpa [disjoint_iff_forall_notMem] using hHcl'.le
+  exact this (hM.subset_vx hxS) hxS
+
+/-- Every vertex in a mininum cardinality separator has an edge to components of the vertex-deleted
+graph. This lemma requires the separator to be finite because `IsMinSep` uses `encard` for
+cardinality comparison and cannot tell the size difference of infinite sets. -/
+lemma IsMinSep.exists_adj_of_isCompOf_vertexDelete (hM : IsMinSep G S) (hH : H.IsCompOf (G - S))
+    (hx : x ∈ S) (hfin : S.Finite) : ∃ y ∈ V(H), G.Adj x y := by
+  by_contra! hno
+  have hHcl : H ≤c G - S := hH.1.1
+  refine hM.not_isSep_of_encard_lt (hfin.diff.encard_lt_encard (by simpa : S \ {x} ⊂ _)) ?_
+  refine ⟨diff_subset.trans hM.subset_vx, fun hcon ↦ ?_⟩
+  have hHclS' : H ≤c (G - (S \ {x})) := by
+    refine ⟨hHcl.le.trans (by grw [diff_subset]), fun e u ⟨v, huv⟩ huH ↦ hHcl.closed ⟨v, ?_⟩ huH⟩
+    simp only [vertexDelete_isLink_iff, huv.of_le vertexDelete_le, vertexSet_mono hHcl.le huH |>.2,
+      not_false_eq_true, true_and]
+    obtain rfl | hvne := eq_or_ne v x
+    · exact hno u huH (huv.symm.of_le vertexDelete_le).adj |>.elim
+    simpa [hvne] using huv.right_mem.2
+  obtain rfl : H = G - (S \ {x}) := hcon.eq_of_isClosedSubgraph hHclS' hH.1.2
+  have hxnotH : x ∉ V(G - (S \ {x})) := (vertexSet_mono hHcl.le · |>.2 hx)
+  exact hxnotH <| by simp [hM.toIsSep.subset_vx hx]
+
+lemma ConnGE.connected {n : ℕ} (hG : G.ConnGE n) (hn : 1 ≤ n) : G.Connected := by
+  have h1 : G.ConnGE 1 := hG.anti_right hn
+  simpa [connGE_one_iff] using h1
+
+lemma Preconnected.exists_isNonloopAt_of_nontrivial (hG : G.Preconnected)
+    (hnt : V(G).Nontrivial) : ∃ e x, G.IsNonloopAt e x := by
+  obtain ⟨x, hx⟩ := hnt.nonempty
+  obtain ⟨e, y, hxy, hne⟩ := hG.exists_isLink_of_mem hnt hx
+  exact ⟨e, x, ⟨y, hne, hxy⟩⟩
+
+lemma ConnGE.exists_isNonloopAt {k : ℕ} (hG : G.ConnGE k) (hk : 2 ≤ k) :
+    ∃ e x, G.IsNonloopAt e x := by
+  have hconn : G.Connected := hG.connected (show 1 ≤ k from (by decide : 1 ≤ 2).trans hk)
+  have hle : (k : ℕ∞) ≤ V(G).encard := by simpa using hG.le_cut vertexSet_isSep
+  have hnt : V(G).Nontrivial := by
+    exact two_le_encard_iff_nontrivial.mp <| (by norm_cast : (2 : ℕ∞) ≤ k).trans hle
+  obtain ⟨x, hx⟩ := hconn.nonempty
+  obtain ⟨e, y, hxy, hne⟩ := hconn.exists_isLink_of_mem hnt hx
+  exact ⟨e, x, ⟨y, hne, hxy⟩⟩
+
 /- ### Unions -/
 
 lemma Compatible.union_connected_of_forall (h : G.Compatible H) (hG : G.Connected)

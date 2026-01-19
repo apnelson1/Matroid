@@ -117,26 +117,6 @@ lemma ConnGE.exists_isSepSet_endpoints_of_not_connGE_contract_isLink {n : ℕ} (
   refine ⟨_, hTsep, ?_, by simp [hxS], by simp⟩
   exact (encard_insert_le ..).trans <| ENat.add_one_le_add_one_iff.mpr hScard
 
-lemma ConnGE.connected {n : ℕ} (hG : G.ConnGE n) (hn : 1 ≤ n) : G.Connected := by
-  have h1 : G.ConnGE 1 := hG.anti_right hn
-  simpa [connGE_one_iff] using h1
-
-lemma Preconnected.exists_isNonloopAt_of_nontrivial (hG : G.Preconnected)
-    (hnt : V(G).Nontrivial) : ∃ e x, G.IsNonloopAt e x := by
-  obtain ⟨x, hx⟩ := hnt.nonempty
-  obtain ⟨e, y, hxy, hne⟩ := hG.exists_isLink_of_mem hnt hx
-  exact ⟨e, x, ⟨y, hne, hxy⟩⟩
-
-lemma ConnGE.exists_isNonloopAt {k : ℕ} (hG : G.ConnGE k) (hk : 2 ≤ k) :
-    ∃ e x, G.IsNonloopAt e x := by
-  have hconn : G.Connected := hG.connected (show 1 ≤ k from (by decide : 1 ≤ 2).trans hk)
-  have hle : (k : ℕ∞) ≤ V(G).encard := by simpa using hG.le_cut vertexSet_isSep
-  have hnt : V(G).Nontrivial := by
-    exact two_le_encard_iff_nontrivial.mp <| (by norm_cast : (2 : ℕ∞) ≤ k).trans hle
-  obtain ⟨x, hx⟩ := hconn.nonempty
-  obtain ⟨e, y, hxy, hne⟩ := hconn.exists_isLink_of_mem hnt hx
-  exact ⟨e, x, ⟨y, hne, hxy⟩⟩
-
 theorem exists_contract_connGE_three [G.Finite] (hG : G.ConnGE 3) (hV : 5 ≤ V(G).encard) :
     ∃ (e : β) (x y : α) (h : G.IsLink e x y), h.contract.ConnGE 3 := by
   -- If the conclusion fails, then every edge-contraction is "bad".
@@ -191,8 +171,8 @@ theorem exists_contract_connGE_three [G.Finite] (hG : G.ConnGE 3) (hV : 5 ≤ V(
       refine (encard_insert_le _ _).trans <| ENat.add_one_le_add_one_iff.mpr ?_
       refine (encard_insert_le _ _).trans <| ENat.add_one_le_add_one_iff.mpr ?_
       simp}
-  obtain ⟨w, hwC, f, hzw⟩ := hMsep.exists_adj_of_isCompOf_vertexDelete (hG.connected (by simp)) hC
-    (x := z) (by simp) (by simp); clear hMsep
+  obtain ⟨w, hwC, f, hzw⟩ := hMsep.exists_adj_of_isCompOf_vertexDelete hC (x := z) (by simp)
+    (by simp); clear hMsep
   -- `z ≠ w` since `z ∉ C` and `w ∈ C`
   have hzwne : z ≠ w := by
     rintro rfl
@@ -244,8 +224,8 @@ theorem exists_contract_connGE_three [G.Finite] (hG : G.ConnGE 3) (hV : 5 ≤ V(
   obtain ⟨v, hv, hvx⟩ := exists_not_connBetween_of_not_preconnected (this ⟨x, hxy.left_mem, hxnT⟩)
     ⟨hxy.left_mem, hxnT⟩
   -- 6. In the component containing `v`, there is some `u` that is adjacent to `w`.
-  obtain ⟨u, huv, hwuadj⟩ := hTsep.exists_adj_of_isCompOf_vertexDelete (hG.connected (by simp))
-    (walkable_isCompOf hv) (by simp : w ∈ _) (vertexSet_finite.subset hTsep.subset_vx)
+  obtain ⟨u, huv, hwuadj⟩ := hTsep.exists_adj_of_isCompOf_vertexDelete (walkable_isCompOf hv)
+    (by simp : w ∈ _) (vertexSet_finite.subset hTsep.subset_vx)
   clear this hTcard hv
   -- 7. `u ∈ C` since `w ∈ C`, `G.Adj w u`, `u ∉ T` and `u ∉ {x, y, z}`.
   have huT := (by exact huv : (G - ({w, z, w'} : Set α)).ConnBetween v u).right_mem

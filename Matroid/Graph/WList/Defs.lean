@@ -545,6 +545,51 @@ lemma DInc.ne_last (h : w.DInc e x y) (hnd : w.vertex.Nodup) : x ≠ w.last := b
 lemma DInc.nonempty (h : w.DInc e x y) : w.Nonempty := by
   cases h with simp
 
+-- in a WList with no repeated edges, each edge is part of exactly one DInc triplet
+lemma dInc_iff_eq_of_dInc_of_edge_nodup (hw : w.edge.Nodup) (he : w.DInc e u v) :
+    w.DInc e x y ↔ x = u ∧ y = v := by
+  refine ⟨fun h ↦ ?_, by rintro ⟨rfl, rfl⟩; assumption⟩
+  induction w with
+  | nil => simp_all
+  | cons z f w IH =>
+    simp only [cons_edge, nodup_cons, dInc_cons_iff] at hw h he
+    obtain ⟨rfl, rfl, rfl⟩ | h := h <;> obtain ⟨rfl, he, rfl⟩ | he := he
+    · tauto
+    · exact hw.1 he.edge_mem |>.elim
+    · subst f
+      exact hw.1 h.edge_mem |>.elim
+    apply IH <;> first | assumption | tauto
+
+lemma dInc_iff_eq_of_dInc_of_vertex_nodup_left (hw : w.vertex.Nodup) (hu : w.DInc e u v) :
+    w.DInc f u y ↔ f = e ∧ y = v := by
+  refine ⟨fun h ↦ ?_, by rintro ⟨rfl, rfl⟩; assumption⟩
+  induction w with | nil => simp_all | cons u' f' w IH =>
+  simp_all only [cons_vertex, List.nodup_cons, mem_vertex, dInc_cons_iff, forall_const]
+  obtain ⟨rfl, rfl, rfl⟩ | h := h <;> obtain ⟨hu, rfl, rfl⟩ | hu := hu
+  · tauto
+  · exact hw.1 hu.left_mem |>.elim
+  · exact hw.1 (hu ▸ h.left_mem) |>.elim
+  exact IH hu h
+
+lemma exists_left_edge (hyw : y ∈ w) (hy : y ≠ w.first) : ∃ e x, w.DInc e x y := by
+  induction w generalizing y with | nil u => simp_all | cons u e w IH =>
+  obtain (rfl | hne) := eq_or_ne y w.first
+  · use e, u
+    tauto
+  · simp_all only [ne_eq, mem_cons_iff, first_cons, dInc_cons_iff, false_or]
+    obtain ⟨f, x, h⟩ := IH hyw hne
+    use f, x, Or.inr h
+
+lemma exists_right_edge (hxw : x ∈ w) (hx : x ≠ w.last) : ∃ e y, w.DInc e x y := by
+  induction w generalizing x with simp_all only [ne_eq, mem_cons_iff, last_cons, dInc_cons_iff,
+  mem_nil_iff, nil_last, ne_eq, not_true_eq_false]
+  | cons u e w IH =>
+    obtain (rfl | hxw) := hxw
+    · use e, w.first
+      tauto
+    · obtain ⟨f, x, h⟩ := IH hxw hx
+      use f, x, Or.inr h
+
 /-- `w.IsLink e x y` means that `w` contains `[x,e,y]` or `[y,e,x]` as a contiguous sublist. -/
 protected inductive IsLink : WList α β → β → α → α → Prop
   | cons_left (x e w) : (cons x e w).IsLink e x w.first
@@ -786,6 +831,59 @@ lemma range_get (w : WList α β) : Set.range w.get = V(w) := by
     rintro (rfl | hx)
     · exact ⟨0, by simp⟩
     exact ⟨w.idxOf x + 1, by simp [get_idxOf _ hx]⟩
+
+-- idxOf is injective if either element is in the list
+lemma idxOf_inj_of_left_mem (hx : x ∈ w) (heq : w.idxOf x = w.idxOf y) : x = y := by
+  have hy : y ∈ w := idxOf_le_length_iff_mem.mp (heq ▸ idxOf_le_length_iff_mem.mpr hx)
+  rw [← get_idxOf w hx, ← get_idxOf w hy, heq]
+
+lemma idxOf_inj_of_right_mem (hy : y ∈ w) (heq : w.idxOf x = w.idxOf y) : x = y := by
+  symm at heq ⊢
+  exact idxOf_inj_of_left_mem hy heq
+
+lemma idxOf_inj (hmem : x ∈ w ∨ y ∈ w) : w.idxOf x = w.idxOf y ↔ x = y :=
+  ⟨hmem.elim idxOf_inj_of_left_mem idxOf_inj_of_right_mem, by tauto⟩
+
+@[simp]
+lemma idxOf_le (w : WList α β) (x : α) : w.idxOf x ≤ w.length + 1 := by
+  fun_induction w.idxOf x with simp_all
+
+@[simp]
+lemma idxOf_le_of_mem (hx : x ∈ w) : w.idxOf x ≤ w.length := by
+  fun_induction w.idxOf x with simp_all [eq_comm]
+
+@[simp]
+lemma idxOf_get_le (w : WList α β) (n : ℕ) : w.idxOf (w.get n) ≤ n := by
+  fun_induction w.get n with simp_all | case3 u e w n IH =>
+  simp [w.idxOf_cons u e]
+  obtain rfl | hne := em (u = w.get n) <;> simp_all
+
+-- idxOf is the first occurence of a value; all values before it must not be equal
+lemma get_ne_of_lt_idxOf {n} (hlt : n < w.idxOf x) : w.get n ≠ x := by
+  rintro rfl
+  have := w.idxOf_get_le n
+  omega
+
+@[simp]
+lemma idxOf_eq_zero_iff : w.idxOf x = 0 ↔ x = w.first := by
+  fun_induction WList.idxOf with simp_all [Ne.symm]
+
+lemma idxOf_cons_eq_one_iff : (cons u e w).idxOf x = 1 ↔ u ≠ x ∧ x = w.first := by
+  generalize w'_def : cons u e w = w'
+  fun_induction WList.idxOf with simp_all [idxOf_eq_zero_iff]
+
+@[simp]
+lemma idxOf_eq_succ_length_iff : w.idxOf x = w.length + 1 ↔ x ∉ w := by
+  fun_induction WList.idxOf with simp_all [Ne.symm]
+
+lemma idxOf_eq_length (h : w.idxOf x = w.length) : x = w.last := by
+  fun_induction WList.idxOf with simp_all
+
+@[simp]
+lemma idxOf_eq_length_iff (h : w.vertex.Nodup) : w.idxOf x = w.length ↔ x = w.last := by
+  fun_induction WList.idxOf with simp_all [Ne.symm] | case3 e w u =>
+  rintro rfl
+  exact h.1 w.last_mem
 
 end indices
 

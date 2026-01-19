@@ -75,7 +75,7 @@ import Matroid.Graph.Finite
 import Matroid.Graph.Forest
 -- import Matroid.Graph.Independent
 import Matroid.Graph.Lattice
--- import Matroid.Graph.Matching
+import Matroid.Graph.Map
 -- import Matroid.Graph.Matching.AugmentingPath
 -- import Matroid.Graph.Matching.Defs
 -- import Matroid.Graph.Matching.Konigs
@@ -91,9 +91,11 @@ import Matroid.Graph.Subgraph.Lemma
 import Matroid.Graph.Subgraph.Union
 import Matroid.Graph.Tree
 import Matroid.Graph.WList.Cycle
+import Matroid.Graph.WList.Decompose
 import Matroid.Graph.WList.Defs
 import Matroid.Graph.WList.Ops
 import Matroid.Graph.WList.Sublist
+import Matroid.Graph.WList.TakeDrop
 import Matroid.Graph.Walk.Basic
 import Matroid.Graph.Walk.Cycle
 import Matroid.Graph.Walk.Path
