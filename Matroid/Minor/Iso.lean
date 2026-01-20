@@ -183,14 +183,40 @@ delete and contract-sets, which may not be unique.  -/
   (exists_isMinor' : ∃ M₀, M₀ ≤m M ∧ M₀.E = ↑(range toFun) ∧
     ∀ (I : Set N.E), N.Indep I ↔ M₀.Indep ↑(toFun '' I))
 
+/-- `N <i M` means that `N` can be embeddeded in `M` as a minor via a function
+that is not surjective. -/
+@[pp_nodot] structure StrictIsoMinor (N : Matroid β) (M : Matroid α) where
+  (toFun : N.E → M.E)
+  (inj' : Injective toFun)
+  (exists_isMinor' : ∃ M₀, M₀ ≤m M ∧ M₀.E = ↑(range toFun) ∧
+    ∀ (I : Set N.E), N.Indep I ↔ M₀.Indep ↑(toFun '' I))
+  (not_surj : ¬ Surjective toFun)
+
 scoped infix:65 " ≤i " => IsoMinor
+
+scoped infix:65 " <i " => StrictIsoMinor
 
 instance : FunLike (N ≤i M) N.E M.E where
   coe f := f.toFun
   coe_injective' f g := by cases f; cases g; simp
 
+instance : FunLike (N <i M) N.E M.E where
+  coe f := f.toFun
+  coe_injective' f g := by cases f; cases g; simp
+
 instance {α β : Type*} {N : Matroid α} {M : Matroid β} : EmbeddingLike (N ≤i M) N.E M.E where
   injective' f := f.inj'
+
+instance {α β : Type*} {N : Matroid α} {M : Matroid β} : EmbeddingLike (N <i M) N.E M.E where
+  injective' f := f.inj'
+
+@[simps]
+def StrictIsoMinor.isoMinor (e : N <i M) : N ≤i M where
+  toFun := e
+  inj' := e.inj'
+  exists_isMinor' := e.exists_isMinor'
+
+lemma StrictIsoMinor.not_surjective (e : N <i M) : ¬ Surjective e := e.not_surj
 
 theorem IsoMinor.injective (f : N ≤i M) : Injective f :=
   f.inj'
@@ -199,8 +225,30 @@ theorem IsoMinor.exists_isMinor (i : N ≤i M) :
     ∃ M₀, M₀ ≤m M ∧ M₀.E = ↑(range i) ∧ ∀ (I : Set N.E), N.Indep I ↔ M₀.Indep ↑(i '' I) :=
       i.exists_isMinor'
 
+theorem StrictIsoMinor.exists_isMinor (i : N <i M) :
+    ∃ M₀, M₀ <m M ∧ M₀.E = ↑(range i) ∧ ∀ (I : Set N.E), N.Indep I ↔ M₀.Indep ↑(i '' I) := by
+  obtain ⟨M₀, hM₀, hE, hi⟩ := i.exists_isMinor'
+  obtain hM₀ | rfl := hM₀.isStrictMinor_or_eq
+  · exact ⟨M₀, hM₀, hE, hi⟩
+  exfalso
+  refine i.not_surjective ?_
+  rintro ⟨e, he_mem⟩
+  rw [hE] at he_mem
+  simp only [mem_image, mem_range, Subtype.exists, exists_and_right, exists_eq_right] at he_mem
+  obtain ⟨h1, a, ha, h_eq⟩ := he_mem
+  exact ⟨⟨a,ha⟩, h_eq⟩
+
 theorem IsoMinor.exists_iso (i : N ≤i M) :
     ∃ (M₀ : Matroid α) (hM₀ : M₀ ≤m M) (e : N ≂ M₀), ∀ x, inclusion hM₀.subset (e x) = i x := by
+  obtain ⟨M₀, hM₀, hE, h⟩ := i.exists_isMinor
+  refine ⟨M₀, hM₀,  ?_⟩
+  let e := Equiv.ofInjective _ (Subtype.val_injective.comp (EmbeddingLike.injective i))
+  exact ⟨Iso.mk (e.trans (Equiv.setCongr (by simp [hE, range_comp])))
+    fun _ ↦ by simp [h, image_image, e], fun ⟨x,hx⟩ ↦ rfl⟩
+
+theorem StrictIsoMinor.exists_iso (i : N <i M) :
+    ∃ (M₀ : Matroid α) (hM₀ : M₀ <m M) (e : N ≂ M₀),
+      ∀ x, inclusion hM₀.isMinor.subset (e x) = i x := by
   obtain ⟨M₀, hM₀, hE, h⟩ := i.exists_isMinor
   refine ⟨M₀, hM₀,  ?_⟩
   let e := Equiv.ofInjective _ (Subtype.val_injective.comp (EmbeddingLike.injective i))
@@ -258,6 +306,13 @@ def IsoMinor.trans_iso {α₁ α₂ α₃ : Type*} {M₁ : Matroid α₁} {M₂ 
   simp only [comp_apply, ← h]
   rfl
 
+@[simps]
+def IsoMinor.strictIsoMinor_of_not_surjective (i : N ≤i M) (hi : ¬ Surjective i) : N <i M where
+  toFun := i.toFun
+  inj' := i.inj'
+  exists_isMinor' := i.exists_isMinor'
+  not_surj := hi
+
 /-- If `M₁ ≤i M₂` and `M₂ ≤m M₃` then `M₁ ≤i M₃`. -/
 def IsoMinor.trans_isMinor {M' : Matroid α} (i : N ≤i M) (hM : M ≤m M') : N ≤i M' where
   toFun := (inclusion hM.subset) ∘ i
@@ -286,6 +341,16 @@ Useful for computability and defeq.  -/
     simp only [comp_apply, ← h']
     rfl )
 
+def IsoMinor.trans_strictIsoMinor {α₁ α₂ α₃ : Type*} {M₁ : Matroid α₁} {M₂ : Matroid α₂}
+    {M₃ : Matroid α₃} (i : M₁ ≤i M₂) (i' : M₂ <i M₃) : M₁ <i M₃ :=
+  (i.trans i'.isoMinor).strictIsoMinor_of_not_surjective
+    (fun h ↦ i'.not_surjective <| Surjective.of_comp h)
+
+def StrictIsoMinor.trans_isoMinor {α₁ α₂ α₃ : Type*} {M₁ : Matroid α₁} {M₂ : Matroid α₂}
+    {M₃ : Matroid α₃} (i : M₁ <i M₂) (i' : M₂ ≤i M₃) : M₁ <i M₃ :=
+  (i.isoMinor.trans i').strictIsoMinor_of_not_surjective
+    fun h ↦ i.not_surjective <| Surjective.of_comp_left h i'.injective
+
 @[simp] def emptyOn_isoMinor (α : Type*) (M : Matroid β) : emptyOn α ≤i M where
   toFun := IsEmpty.elim' (by simp)
   inj' x := IsEmpty.elim' (by simp) x
@@ -307,6 +372,16 @@ lemma IsoMinor.encard_ground_le (e : N ≤i M) : N.E.encard ≤ M.E.encard := by
   obtain ⟨M₀, hM₀, i, -⟩ := e.exists_iso
   convert encard_le_encard hM₀.subset
   exact i.toEquiv.encard_eq
+
+lemma StrictIsoMinor.encard_ground_lt (e : N <i M) (hN : N.Finite) : N.E.encard < M.E.encard := by
+  obtain ⟨M₀, hM₀, i, -⟩ := e.exists_iso
+  rw [i.toEquiv.encard_eq]
+  refine Finite.encard_lt_encard ?_ hM₀.ssubset
+  rw [← encard_lt_top_iff, ← i.toEquiv.encard_eq, encard_lt_top_iff]
+  exact N.ground_finite
+
+-- theorem IsoMinor.dual (h : N ≤i M) : N✶ ≤i M✶ :=
+
 
 
 -- @[simp] theorem IsoMinor.eq_emptyOn (f : M ≤i emptyOn β) : M = emptyOn α := by

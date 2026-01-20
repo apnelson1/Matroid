@@ -32,6 +32,9 @@ lemma TutteDegen.antitone : Antitone M.TutteDegen :=
 lemma TutteDegen.subset (h : M.TutteDegen X) (hYX : Y ⊆ X) : M.TutteDegen Y :=
   h.antitone hYX
 
+@[simp]
+lemma tutteWeight_eq_zero : M.tutteWeight X = 0 ↔ M.TutteDegen X := by
+  simp [tutteWeight_def, tutteDegen_iff]
 
 lemma SeqConnected.exists_encard_le {f} (h : M.SeqConnected Matroid.tutteWeight f)
     (P : M.Separation) : ∃ i, (P i).encard ≤ P.eConn + f P.eConn := by
@@ -216,6 +219,10 @@ The term has always been defined this way, but the difference of two is very awk
 For this reason, we use `TutteConnected (k+1)` in the API in all places except where
 no convenience is lost. Vertical and Cyclic connectivities have the same issues. -/
 def TutteConnected (M : Matroid α) (k : ℕ∞) := M.NumConnected TutteDegen k
+
+lemma tutteConnected_iff_numConnected_tutteWeight_eq_zero : M.TutteConnected k ↔
+    M.NumConnected (fun M X ↦ M.tutteWeight X = 0) k := by
+  simp [TutteConnected]
 
 lemma not_tutteConnected_iff_exists : ¬ M.TutteConnected (k + 1) ↔
     ∃ P : M.Separation, P.eConn + 1 ≤ k ∧ P.IsTutteSeparation :=
@@ -486,15 +493,41 @@ lemma IsCircuit.exists_eq_unifOn_of_isCocircuit_of_tutteConnected {C : Set α} (
 
 lemma tutteConnected_iff_seqConnected : M.TutteConnected (k + 1) ↔
     M.SeqConnected Matroid.tutteWeight (indicator {i | k < i + 1} ⊤) := by
-  simp_rw [tutteConnected_iff_forall, seqConnected_iff_exists, isTutteSeparation_iff_forall,
-    not_forall, not_or, Separation.not_dep_iff, Separation.not_codep_iff, tutteWeight_def]
-  convert Iff.rfl with P
-  obtain h | h := le_or_gt (P.eConn + 1) k <;> simp [h]
+  simp [seqConnected_indicator_iff_numConnected, TutteConnected]
 
 lemma tutteConnected_iff_seqConnected' : M.TutteConnected k ↔
     M.SeqConnected Matroid.tutteWeight (indicator {i | k < i + 1 + 1} ⊤) := by
   obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one <;>
   simp [tutteConnected_iff_seqConnected]
+
+lemma TutteConnected.eConn_union_le_of_eConn_le_eConn_le_card_ge (hM : M.TutteConnected (k + 1))
+    {P Q : M.Separation} (hP : P.eConn ≤ k) (hQ : Q.eConn ≤ k) {b c : Bool}
+    (hcard : k ≤ (P b ∩ Q c).encard) : (P.union Q b c).eConn ≤ k := by
+  by_contra! hcon
+  have hk : k ≠ ⊤ := by enat_to_nat!
+  have hsm := P.eConn_inter_add_eConn_union_le Q b c
+  obtain hle | hlt := le_or_gt k (P.inter Q b c).eConn
+  · grw [hP, hQ, ← hle, ENat.add_le_add_iff_left hk] at hsm
+    exact hcon.not_ge hsm
+  refine hM.not_isTutteSeparation (Order.add_one_le_of_lt hlt) ?_
+  rw [isTutteSeparation_iff_add_one_le_encard (by enat_to_nat!)]
+  rintro (rfl | rfl)
+  · grw [Order.add_one_le_of_lt hlt, P.inter_apply_false,
+      ← show P (!b) ∩ Q (!c) ⊆ P (!b) ∪ Q !c by grind, ← P.union_apply_false,
+      ← M.eConn_le_encard, eConn_eq, hcon]
+  grw [Order.add_one_le_of_lt hlt, P.inter_apply_true, hcard]
+
+
+  -- cases k with
+  -- | top => simp
+  -- | coe k =>
+  --   have hsm := P.eConn_inter_add_eConn_union_le Q b c
+
+  --   grw [hP, hQ] at hsm
+  --   have := hM.not_isTutteSeparation (P := P.inter Q b c)
+
+
+
 
 -- lemma tutteConnected_iff_biConnected :
 --     M.TutteConnected (k + 1) ↔ M.BiConnected (· + ·) (indicator {i | k < i + 1} ⊤) := by

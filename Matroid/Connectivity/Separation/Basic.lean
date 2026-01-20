@@ -450,7 +450,7 @@ protected lemma inter_apply_true (P Q : M.Separation) : P.inter Q b c true = P b
 @[simp]
 protected lemma inter_apply_false (P Q : M.Separation) : P.inter Q b c false = P (!b) ∪ Q !c := rfl
 
-lemma inter_comm (P Q : M.Separation) (b c : Bool) : P.inter Q b c = Q.inter P c b :=
+protected lemma inter_comm (P Q : M.Separation) (b c : Bool) : P.inter Q b c = Q.inter P c b :=
   Bipartition.inter_comm ..
 
 /-- The bipartition whose `true` side is `P b ∪ Q c` and whose `false` side is `P !b ∩ Q !c`. -/
@@ -482,7 +482,7 @@ lemma inter_not_symm (P Q : M.Separation) (b c : Bool) :
     (P.inter Q (!b) (!c)).symm = P.union Q b c := by
   simp [inter_symm]
 
-lemma union_comm (P Q : M.Separation) (b c : Bool) : P.union Q b c = Q.union P c b :=
+protected lemma union_comm (P Q : M.Separation) (b c : Bool) : P.union Q b c = Q.union P c b :=
   Bipartition.union_comm ..
 
 lemma Nontrivial.inter_trivial_iff (hP : P.Nontrivial) (b c : Bool) :
@@ -506,6 +506,16 @@ protected lemma eConn_inter_add_eConn_union_le (P Q : M.Separation) (b c : Bool)
   simp_rw [← P.eConn_eq b, ← Q.eConn_eq c, ← Separation.eConn_eq _ true, P.union_apply_true,
     P.inter_apply_true]
   exact M.eConn_inter_add_eConn_union_le ..
+
+protected lemma eConn_union_add_eConn_union_le (P Q : M.Separation) (b c : Bool) :
+    (P.union Q b c).eConn + (P.union Q (!b) (!c)).eConn ≤ P.eConn + Q.eConn := by
+  grw [← P.eConn_inter_add_eConn_union_le Q (!b) (!c), ← P.union_not_symm, eConn_symm,
+    Bool.not_not, Bool.not_not]
+
+protected lemma eConn_inter_add_eConn_inter_le (P Q : M.Separation) (b c : Bool) :
+    (P.inter Q b c).eConn + (P.inter Q (!b) (!c)).eConn ≤ P.eConn + Q.eConn := by
+  grw [← Separation.union_not_symm, ← Separation.union_not_symm, Bool.not_not, Bool.not_not,
+    eConn_symm, eConn_symm, add_comm, P.eConn_union_add_eConn_union_le Q]
 
 @[simp]
 lemma disjoint_inter_right (P : M.Separation) : Disjoint (P true ∩ X) (P false ∩ Y) :=

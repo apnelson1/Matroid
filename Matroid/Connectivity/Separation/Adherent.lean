@@ -64,8 +64,8 @@ lemma adheresTo_contract_or_delete (M : Matroid α) (e : α) :
   replace hQ : ∀ i, ∃ j, Q.eConn < M.eConn (P j ∩ Q i) :=
     by simpa using fun i ↦ hQ i <| P.toBipartition.induce Q.subset
   simp_rw [Bool.forall_bool, Bool.exists_bool] at hP hQ
-  have h1 := P.eConn_inter_add_eConn_inter_le_of_singleton Q.symm true
-  have h2 := P.eConn_inter_add_eConn_inter_le_of_singleton Q false
+  have h1 := P.eConn_inter_add_eConn_inter_le_add_of_singleton Q.symm true
+  have h2 := P.eConn_inter_add_eConn_inter_le_add_of_singleton Q false
   simp only [Separation.symm_apply, Bool.not_true, Bool.not_false, eConn_symm] at h1 h2
   simp_rw [← lt_max_iff] at hP hQ
   exact num_aux hQ.1 hQ.2 hP.1 hP.2 h2 h1

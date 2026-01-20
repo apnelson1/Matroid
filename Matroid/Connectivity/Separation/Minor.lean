@@ -486,7 +486,8 @@ lemma eConn_le_eConn_delete_iff_forall_skew (hP : (P.delete D).eConn ≠ ⊤)
   rwa [dual_contract, eConn_copy, eConn_dual]
 
 /-- The generalized Bixby-Coullard inequality for pairs of separations. -/
-lemma eConn_inter_add_eConn_inter_le (P : (M ／ X).Separation) (Q : (M ＼ X).Separation) (i : Bool) :
+lemma eConn_inter_add_eConn_inter_le_add (P : (M ／ X).Separation) (Q : (M ＼ X).Separation)
+    (i : Bool) :
     M.eConn (P i ∩ Q i) + M.eConn (P (!i) ∩ Q (!i)) ≤ P.eConn + Q.eConn + M.eConn X := by
   wlog hX : X ⊆ M.E generalizing X P Q with aux
   · simpa using aux (X := X ∩ M.E) (P.copy (by simp)) (Q.copy (by simp)) inter_subset_right
@@ -497,10 +498,10 @@ lemma eConn_inter_add_eConn_inter_le (P : (M ／ X).Separation) (Q : (M ＼ X).S
   simp
 
 /-- The Bixby-Coullard inequality for pairs of separations. -/
-lemma eConn_inter_add_eConn_inter_le_of_singleton
+lemma eConn_inter_add_eConn_inter_le_add_of_singleton
     (P : (M ／ {e}).Separation) (Q : (M ＼ {e}).Separation) (i : Bool) :
     M.eConn (P i ∩ Q i) + M.eConn (P (!i) ∩ Q (!i)) ≤ P.eConn + Q.eConn + 1 := by
-  grw [P.eConn_inter_add_eConn_inter_le, eConn_le_encard, encard_singleton]
+  grw [P.eConn_inter_add_eConn_inter_le_add, eConn_le_encard, encard_singleton]
 
 /-- If `P` is a separation of a restriction of `M`, and each element of `M` is spanned by
 one side of `P`, then `P` extends to a separation of `M` with the same connectivity. -/

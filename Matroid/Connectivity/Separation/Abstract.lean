@@ -205,8 +205,8 @@ lemma numConnected_top_iff' {dg} :
   rw [← top_add (a := 1), numConnected_iff_forall_set]
   simp
 
-lemma NumConnected.not_isPredSeparation {dg} (h : M.NumConnected dg (k+1)) (hP : P.eConn + 1 ≤ k) :
-    ¬ P.IsPredSeparation (fun _ ↦ dg) := by
+lemma NumConnected.not_isPredSeparation_of_eConn {dg} (h : M.NumConnected dg (k+1))
+    (hP : P.eConn + 1 ≤ k) : ¬ P.IsPredSeparation (fun _ ↦ dg) := by
   rw [numConnected_iff_forall] at h
   exact h P hP
 
@@ -227,7 +227,7 @@ lemma not_numConnected_iff_exists {dg} : ¬ M.NumConnected dg (k+1) ↔
 
 lemma Separation.IsPredSeparation.not_numConnected {dg} (h : P.IsPredSeparation (fun _ ↦ dg)) :
     ¬ M.NumConnected dg (P.eConn + 1 + 1) :=
-  fun hM ↦ hM.not_isPredSeparation rfl.le h
+  fun hM ↦ hM.not_isPredSeparation_of_eConn rfl.le h
 
 @[simp]
 lemma numConnected_zero (M : Matroid α) (dg) : M.NumConnected dg 0 := by
@@ -272,63 +272,28 @@ lemma numConnected_of_subsingleton {dg} (h : M.E.Subsingleton) (k : ℕ∞) (hdg
   obtain ⟨i, hi⟩ := (P.trivial_of_ground_subsingleton h).exists_eq_empty
   exact hP i <| by rwa [hi]
 
-/-- `BiConnected M w f` means that for each separation `P` of order `k`,
-one side `P i` satisfies `w (M.nullity X) (M✶.nullity X) ≤ f k`.
-If `w = (· + ·)`, and `f k ≠ ⊤`, then this condition is equivalent to `X.encard ≤ k + f k`.
-If `f = (0, .., 0, ⊤, ⊤, ..., ⊤)` with the first `⊤` in position `(k - 1)`, then this specializes
-to Tutte, Cyclic and Vertical `k`-connectedness for `w = (+)`, `w = fun x y ↦ x`
-and `w = fun x y ↦ y` respectively.
-If `f = (0, 0, ..., 1, ⊤, ⊤, ⊤, ...)` with the `1` in position `(k-2)`, and `w = (+)`, then
-this is internal `k`-connectedness. -/
-def BiConnected (M : Matroid α) (w : ℕ∞ → ℕ∞ → ℕ∞) (f : ℕ∞ → ℕ∞) :=
-    M.PredConnected (fun _ k M X ↦ w (M.nullity X) (M✶.nullity X) ≤ f k)
-
-lemma BiConnected.exists (h : M.BiConnected w f) (P : M.Separation) :
-    ∃ i, w (M.nullity (P i)) (M✶.nullity (P i)) ≤ f P.eConn := by
-  simpa using h P
-
-lemma BiConnected.exists_encard_le (h : M.BiConnected (· + ·) f) (P : M.Separation) :
-    ∃ i, (P i).encard ≤ P.eConn + f P.eConn := by
-  obtain ⟨i, hi⟩ := h.exists P
-  exact ⟨i, by grw [← M.eConn_add_nullity_add_nullity_dual (P i), add_assoc, hi, P.eConn_eq]⟩
-
-lemma biConnected_iff_exists : M.BiConnected w f ↔
-    ∀ (P : M.Separation), ∃ i, w (M.nullity (P i)) (M✶.nullity (P i)) ≤ f P.eConn := Iff.rfl
-
-lemma biConnected_iff_exists_encard_le (hf : f ⊤ = ⊤) : M.BiConnected (· + ·) f ↔
-    ∀ (P : M.Separation), ∃ i, (P i).encard ≤ P.eConn + f P.eConn := by
-  refine ⟨BiConnected.exists_encard_le, fun h P ↦ (?_ : ∃ i, _ ≤ _)⟩
-  obtain ⟨i, hi⟩ := h P
-  obtain htop | htop := eq_or_ne P.eConn ⊤
-  · simp [htop, hf]
-  exact ⟨i, by rwa [← ENat.add_le_add_iff_left htop, ← add_assoc, ← P.eConn_eq i,
-    M.eConn_add_nullity_add_nullity_dual (P i), P.eConn_eq]⟩
-
-lemma BiConnected.dual (h : M.BiConnected w f) : M✶.BiConnected (swap w) f := by
-  simp_rw [biConnected_iff_exists, Function.swap, dual_dual]
-  rw [biConnected_iff_exists] at h
-  convert fun (P : M✶.Separation) ↦ h P.ofDual using 3
-  simp
-
-lemma biConnected_dual_iff : M✶.BiConnected w f ↔ M.BiConnected (swap w) f :=
-  ⟨fun h ↦ M.dual_dual ▸ h.dual, fun h ↦ by simp [h.dual]⟩
-
-@[simp]
-lemma biConnected_add_dual_iff : M✶.BiConnected (· + ·) f ↔ M.BiConnected (· + ·) f := by
-  convert biConnected_dual_iff using 5 with a b
-  exact add_comm ..
-
-lemma BiConnected.of_dual (h : M✶.BiConnected w f) : M.BiConnected (swap w) f := by
-  simpa using h.dual
-
-lemma BiConnected.mono (h : M.BiConnected w f) (hfg : f ≤ g) : M.BiConnected w g := by
-  intro P
-  obtain ⟨i, hP⟩ := h.exists P
-  exact ⟨i, hP.trans <| hfg P.eConn⟩
-
-@[simp]
-lemma biConnected_top (M : Matroid α) (w) : M.BiConnected w ⊤ := by
-  simp [BiConnected, PredConnected]
+/-- An uncrossing lemma for an abstract connectivity notion. -/
+lemma NumConnected.eConn_union_le_of_eConn_le_eConn_le_ge {w : Matroid α → Set α → ℕ∞}
+    (hw : ∀ M ⦃X Y⦄, X ⊆ Y → M.eConn X + w M X ≤ M.eConn Y + w M Y)
+    (hM : M.NumConnected (fun M X ↦ w M X = 0) (k + 1)) {P Q : M.Separation} (hP : P.eConn ≤ k)
+    (hQ : Q.eConn ≤ k) {b c : Bool} (hwt : k ≤ (P.inter Q b c).eConn + w M (P b ∩ Q c)) :
+    (P.union Q b c).eConn ≤ k := by
+  by_contra! hlt
+  have hk : k ≠ ⊤ := by enat_to_nat!
+  have hsm := P.eConn_inter_add_eConn_union_le Q b c
+  grw [hP, hQ] at hsm
+  obtain hle | hlt' := le_or_gt k (P.inter Q b c).eConn
+  · grw [← hle, ENat.add_le_add_iff_left hk] at hsm
+    exact hlt.not_ge hsm
+  refine hM.not_isPredSeparation_of_eConn (Order.add_one_le_of_lt hlt') <| isPredSeparation_iff.2 ?_
+  rintro (rfl | rfl) hdg
+  · grw [P.inter_apply_false] at hdg
+    have hcon := hw M (show P (!b) ∩ Q (!c) ⊆ P (!b) ∪ Q (!c) by grind)
+    grw [hdg, add_zero, ← P.inter_apply_false, eConn_eq, ← le_self_add, ← P.union_apply_false,
+      eConn_eq] at hcon
+    exact hlt.not_ge <| by grw [hcon, hlt']
+  grw [hwt, ← P.inter_apply_true, hdg, add_zero] at hlt'
+  simp at hlt'
 
 /-- A numerical notion of connectivity. If `w` is a function assigning a `ℕ∞`-weight to each set `X`
 in a matroid `M`, and `f : ℕ∞ → ℕ∞` is a sequence, then `SeqConnected w f M` means that, for
@@ -381,3 +346,18 @@ lemma SeqConnected.mono_left {w w'} (h : M.SeqConnected w f) (hw : ∀ M X, w' M
 @[simp]
 lemma SeqConnected_top (M : Matroid α) (w) : M.SeqConnected w ⊤ := by
   simp [SeqConnected, PredConnected]
+
+lemma seqConnected_indicator_iff_numConnected {w} : M.SeqConnected w (indicator {i | k < i + 1} ⊤) ↔
+    M.NumConnected (fun M X ↦ w M X = 0) (k + 1) := by
+  simp_rw [seqConnected_iff_exists, numConnected_iff_forall, isPredSeparation_iff, not_forall_not]
+  convert Iff.rfl with P
+  obtain hle | hlt := le_or_gt (P.eConn + 1) k
+  · simp [hle]
+  simp [hlt]
+
+lemma seqConnected_indicator_iff_numConnected' {w} :
+    M.SeqConnected w (indicator {i | k < i + 1 + 1} ⊤) ↔
+    M.NumConnected (fun M X ↦ w M X = 0) k := by
+  obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one
+  · simp
+  simp [← seqConnected_indicator_iff_numConnected]

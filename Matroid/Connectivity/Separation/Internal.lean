@@ -69,9 +69,6 @@ lemma InternallyConnected.exists_indep_coindep_of_eConn_lt (h : M.InternallyConn
 --     have hle : (P i).encard ≤ P.eConn + 1 := by simpa [hktop] using hi
 --     clear hi h hPconn hk
 
-
-
-
 /-- If `P` is a separation of connectivity `k - 1` in an internally `(k + 1)`-connected matroid,
 then one side of `P` is either an independent, coindependent `(k - 1)`-set,
 or a `k`-set that is a circuit or cocircuit. -/
@@ -80,7 +77,7 @@ lemma InternallyConnected.exists_of_eConn_eq (hconn : M.InternallyConnected (k +
     ∃ i, ((P i).encard + 1 = k ∧ M.Indep (P i) ∧ M.Coindep (P i)) ∨
     ((P i).encard = k ∧ (M.IsCircuit (P i) ∨ M.IsCocircuit (P i))) := by
   obtain rfl := hP
-  obtain ⟨i, hi⟩ := BiConnected.exists_encard_le hconn P
+  obtain ⟨i, hi⟩ := SeqConnected.exists_encard_le hconn P
   use i
   have htop : P.eConn ≠ ⊤ := by simpa using hk
   have hle : (P i).encard ≤ P.eConn + 1 := by simpa [htop] using hi
@@ -110,7 +107,7 @@ lemma InternallyConnected.exists_of_eConn_eq (hconn : M.InternallyConnected (k +
 
 lemma InternallyConnected.exists_encard_le_of_eConn_le (h : M.InternallyConnected (k + 1))
     (hP : P.eConn + 1 ≤ k) : ∃ i, (P i).encard ≤ k := by
-  obtain ⟨i, hi⟩ := BiConnected.exists_encard_le h P
+  obtain ⟨i, hi⟩ := SeqConnected.exists_encard_le h P
   by_cases htop : P.eConn = ⊤
   · obtain rfl : k = ⊤ := by simpa [htop] using hP
     simp

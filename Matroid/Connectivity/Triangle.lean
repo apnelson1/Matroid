@@ -99,9 +99,8 @@ lemma IsTriangle.mem_ground₃ (h : M.IsTriangle {e,f,g}) : g ∈ M.E :=
   h.subset_ground <| by simp
 
 lemma IsTriangle.mem_closure₁ (h : M.IsTriangle {e,f,g}) : e ∈ M.closure {f,g} := by
-  have h := h.isCircuit.mem_closure_diff_singleton_of_mem (e := e) (by simp)
-  simp only [mem_singleton_iff, insert_diff_of_mem] at h
-  exact mem_of_mem_of_subset h <| M.closure_subset_closure diff_subset
+  have h' := h.isCircuit.mem_closure_diff_singleton_of_mem (e := e) (by simp)
+  rwa [insert_diff_self_of_notMem (by simp [h.ne₁₂, h.ne₁₃])] at h'
 
 lemma IsTriangle.mem_closure₂ (h : M.IsTriangle {e,f,g}) : f ∈ M.closure {e,g} :=
   IsTriangle.mem_closure₁ (M := M) <| by convert h using 1; grind
