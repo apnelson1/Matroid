@@ -82,11 +82,11 @@ lemma tutteConnected_top_iff_verticallyConnected_cyclicallyConnected_isUniform :
     rw [dual_ground, diff_diff_cancel_left hXE] at h
     exact .inl ⟨h', h⟩
   obtain (hXci | hXcd) := M.coindep_or_codep X
-  · simp [hXi, hXci, TutteDegen]
+  · simp [hXi, hXci, tutteDegen_iff]
   have hXi' := hu.dual.spanning_of_dep hXcd
   rw [spanning_dual_iff] at hXi'
   obtain (hXci' | hXcd') := M.coindep_or_codep (X := M.E \ X)
-  · simp [hXci', hXi', TutteDegen]
+  · simp [hXci', hXi', tutteDegen_iff]
   simpa using h.inter_nonempty_of_codep_codep hXcd hXcd'
 
 lemma VerticallyConnected.two_mul_eRank_le (h : M.VerticallyConnected ⊤) :
@@ -148,7 +148,7 @@ lemma unifOn_tutteConnected_top_iff {E : Set α} {k : ℕ} (hkE : k ≤ E.encard
   suffices hsuff : ∀ ⦃X⦄, X ⊆ E →
     X.encard ≤ k ∧ k ≤ (E \ X).encard ∨ (E \ X).encard ≤ k ∧ k ≤ X.encard by
     simpa +contextual [TutteConnected, numConnected_top_iff', unifOn_coindep_iff'' hkE,
-      diff_subset, TutteDegen]
+      diff_subset, tutteDegen_iff]
   intro X hX
   have hcard := encard_diff_add_encard_of_subset hX
   enat_to_nat!; lia

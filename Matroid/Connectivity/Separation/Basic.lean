@@ -161,6 +161,8 @@ protected lemma ofDual_apply (P : M✶.Separation) (i : Bool) : P.ofDual i = P i
 
 @[simp] lemma ofDual_dual (P : M✶.Separation) : P.ofDual.dual = P := rfl
 
+lemma dual_dual (P : M.Separation) : P.dual.dual = P.copy M.dual_dual.symm := rfl
+
 @[simps] def dualEquiv (M : Matroid α) : M.Separation ≃ M✶.Separation where
   toFun := Separation.dual
   invFun := Separation.ofDual
@@ -555,9 +557,12 @@ lemma union_inter_left (P : M.Separation) (X : Set α) (hX : X ⊆ M.E := by aes
     (X ∩ (P i)) ∪ (X ∩ (P !i)) = X := by
   rw [union_inter_left', inter_eq_self_of_subset_left hX]
 
+lemma diff_eq_inter_bool (P : M.Separation) (i : Bool) (hX : X ⊆ M.E := by aesop_mat) :
+    X \ P i = X ∩ P !i := by
+  rw [← P.compl_eq]
+  grind
+
 end Cross
-
-
 
 lemma eConn_eq_zero_iff_skew {P : M.Separation} {i : Bool} : P.eConn = 0 ↔ M.Skew (P i) (P !i) := by
   rw [← M.eLocalConn_eq_zero P.subset_ground P.subset_ground, Separation.eConn]

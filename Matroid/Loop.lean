@@ -100,6 +100,10 @@ lemma coloops_codep_iff : M.Codep M.coloops ↔ M.coloops.Nonempty :=
 lemma closure_coloops (M : Matroid α) : M.closure M.coloops = M.coloops ∪ M.loops :=
   closure_eq_of_subset_coloops rfl.subset
 
+@[simp]
+lemma loops_subset_closure (M : Matroid α) (X : Set α) : M.loops ⊆ M.closure X :=
+  M.closure_subset_closure <| empty_subset ..
+
 section IsLoopEquiv
 
 /-- Two sets are `IsLoopEquiv` in `M` if their symmetric difference contains only loops. -/

@@ -6,8 +6,18 @@ namespace ENat
 
 variable {a b c x y m n : ℕ∞}
 
+instance : LinearOrderedCommMonoidWithZero ℕ∞ where
+  mul_le_mul_left _ _ := mul_le_mul_left
+  zero_le_one := zero_le_one' ℕ∞
+
 lemma le_one_iff_eq_zero_or_eq_one : a ≤ 1 ↔ a = 0 ∨ a = 1 := by
   cases a with simp [Nat.le_one_iff_eq_zero_or_eq_one]
+
+lemma eq_zero_or_exists_eq_add_one (a : ℕ∞) : a = 0 ∨ ∃ i, a = i + 1 := by
+  obtain (a | a | a) := a
+  · exact .inr ⟨⊤, rfl⟩
+  · exact .inl rfl
+  exact .inr ⟨a, rfl⟩
 
 def recTopZeroCoe {C : ℕ∞ → Sort*} (top : C ⊤) (zero : C 0) (coe : (a : ℕ) → C ↑(a + 1)) (n : ℕ∞) :
     C n := by

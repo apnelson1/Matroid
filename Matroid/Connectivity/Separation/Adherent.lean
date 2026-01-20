@@ -1,4 +1,4 @@
-import Matroid.Connectivity.Separation.Offset
+import Matroid.Connectivity.Separation.Internal
 
 variable {α : Type*} {M N : Matroid α} {j k : ℕ∞} {d k : ℕ∞} {A X Y : Set α} {P : M.Separation}
   {b : Bool}
@@ -17,7 +17,6 @@ lemma Monotone.indicator_monotone {α β : Type*} [Preorder α] [Preorder β] [Z
   simp [hx, hy]
 
 namespace Matroid.Separation
-
 
 /-- A separation `P` of `N` splits in a matroid `M` if one side of `P` has a partition into two
 sets with connectivity in `M` not exceeding the connectivity of `P` in `N`.
@@ -71,9 +70,10 @@ lemma adheresTo_contract_or_delete (M : Matroid α) (e : α) :
   simp_rw [← lt_max_iff] at hP hQ
   exact num_aux hQ.1 hQ.2 hP.1 hP.2 h2 h1
 
-lemma AdheresTo.offsetConnected_add_two_mul {f : ℕ∞ → ℕ∞} (hNM : N.AdheresTo M) (hf : Monotone f)
-    (hM : M.OffsetConnected f) : N.OffsetConnected (fun i ↦ i + 2 * f i) := by
-  rw [offsetConnected_iff_exists_encard_le (by simp)]
+lemma AdheresTo.seqConnected_add_two_mul {f : ℕ∞ → ℕ∞} (hNM : N.AdheresTo M) (hf : Monotone f)
+    (hM : M.SeqConnected Matroid.tutteWeight f) :
+    N.SeqConnected Matroid.tutteWeight (fun i ↦ i + 2 * f i) := by
+  rw [seqConnected_tutteWeight_iff (by simp)]
   simp_rw [← add_assoc, ← two_mul, ← mul_add]
   intro P
   obtain ⟨i, P₀, hP₀⟩ := hNM.forall_splits P
@@ -93,19 +93,19 @@ lemma AdheresTo.offsetConnected_add_two_mul {f : ℕ∞ → ℕ∞} (hNM : N.Adh
 lemma AdheresTo.connected_of_connected [N.Nonempty] (hNM : N.AdheresTo M) (hM : M.Connected) :
     N.Connected := by
   have _ : M.Nonempty := (ground_nonempty_iff _).1 <| N.ground_nonempty.mono hNM.subset
-  rw [← tutteConnected_two_iff, ← one_add_one_eq_two, tutteConnected_iff_offsetConnected] at hM ⊢
-  refine (hNM.offsetConnected_add_two_mul ?_ hM).mono fun n ↦ ?_
+  rw [← tutteConnected_two_iff, ← one_add_one_eq_two, tutteConnected_iff_seqConnected'] at hM ⊢
+  refine (hNM.seqConnected_add_two_mul ?_ hM).mono fun n k ↦ ?_
   · refine monotone_const.indicator_monotone (fun _ ↦ le_top) fun x y hx hxy ↦ ?_
     grw [mem_setOf, ← hxy]
     assumption
-  simp [indicator_apply, em]
+  obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one <;> simp
 
 lemma AdheresTo.internallyConnected_of_tutteConnected_three (hNM : N.AdheresTo M)
     (hM : M.TutteConnected 3) : N.InternallyConnected 3 := by
   rw [show (3 : ℕ∞) = 1 + 1 + 1 from rfl] at *
-  simp only [tutteConnected_iff_offsetConnected', ENat.add_lt_add_right_iff, ne_eq,
+  simp only [tutteConnected_iff_seqConnected', ENat.add_lt_add_right_iff, ne_eq,
     ENat.one_ne_top, not_false_eq_true, and_true] at hM
-  refine (hNM.offsetConnected_add_two_mul ?_ hM).mono fun n ↦ ?_
+  refine (hNM.seqConnected_add_two_mul ?_ hM).mono_right fun n ↦ ?_
   · exact monotone_const.indicator_monotone (fun _ ↦ le_top) fun _ _ hx ↦ lt_of_lt_of_le hx
   obtain rfl | hne := eq_or_ne n ⊤
   · simp

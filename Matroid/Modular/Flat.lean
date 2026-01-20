@@ -703,14 +703,12 @@ lemma Modular.contract (hM : M.Modular) (C : Set α) : (M ／ C).Modular := by
   wlog h : C ⊆ M.E generalizing C with h'
   · rw [← contract_inter_ground_eq]
     apply h' _ inter_subset_right
-
   refine fun F hF ↦ ⟨hF, fun F' hF' ↦ ?_⟩
   rw [isFlat_contract_iff] at hF hF'
   convert (hM.isModularPair (M.closure_isFlat (F ∪ C))
-    (M.closure_isFlat (F' ∪ C))).contract (C := C)
-    (M.subset_closure_of_subset' subset_union_right)
-    (M.subset_closure_of_subset' subset_union_right)
-
+    (M.closure_isFlat (F' ∪ C))).contract_subset_closure (C := C)
+    (by grw [M.closure_closure, ← M.subset_closure _ hF.1.subset_ground, ← subset_union_right])
+    (by grw [M.closure_closure, ← M.subset_closure _ hF'.1.subset_ground, ← subset_union_right])
   · rw [hF.1.closure, union_diff_right, hF.2.sdiff_eq_left]
   rw [hF'.1.closure, union_diff_right, hF'.2.sdiff_eq_left]
 

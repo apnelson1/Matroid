@@ -99,6 +99,35 @@ lemma disjoint_delete (P : (M ＼ D).Separation) (i : Bool) : Disjoint (P i) D :
   grw [P.subset_ground]
   exact disjoint_sdiff_left
 
+@[simp]
+lemma induce_eq_contract (P : M.Separation) (C : Set α) :
+    (P.induce (M.contract_isMinor C).subset) = (P.contract C) := by
+  refine Separation.ext ?_
+  simp only [induce_apply, contract_ground, ↓contract_apply]
+  grind [show P true ⊆ M.E from P.subset]
+
+@[simp]
+lemma induce_eq_delete (P : M.Separation) (D : Set α) :
+    (P.induce (M.delete_isMinor D).subset) = (P.delete D) := by
+  refine Separation.ext ?_
+  simp only [induce_apply, delete_ground, ↓delete_apply]
+  grind [show P true ⊆ M.E from P.subset]
+
+@[simp]
+lemma induce_eq_contract_delete (P : M.Separation) (C D : Set α) :
+    (P.induce (M.contract_delete_isMinor C D).subset) = (P.contract C).delete D := by
+  refine Separation.ext ?_
+  simp only [induce_apply, delete_ground, contract_ground, ↓delete_apply, ↓contract_apply]
+  grind [show P true ⊆ M.E from P.subset]
+
+lemma contract_delete_comm (P : M.Separation) (hCD : Disjoint C D) :
+    (P.contract C).delete D = ((P.delete D).contract C).copy (M.contract_delete_comm hCD).symm :=
+  Separation.ext <| by simp [diff_diff_comm]
+
+lemma delete_contract_comm (P : M.Separation) (hCD : Disjoint C D) :
+    (P.delete D).contract C = ((P.contract C).delete D).copy (M.contract_delete_comm hCD) :=
+  Separation.ext <| by simp [diff_diff_comm]
+
 @[simps!]
 abbrev contractDual (P : (M ／ C).Separation) : (M✶ ＼ C).Separation := P.dual.copy (by simp)
 
@@ -207,6 +236,13 @@ lemma ofDelete_copy {D' : Set α} (P : (M ＼ D).Separation) (h_eq : M ＼ D = M
 lemma ofDelete_apply_superset (P : (M ＼ D).Separation) (i j : Bool) : P i ⊆ (P.ofDelete j) i := by
   obtain rfl | rfl := i.eq_or_eq_not j
   · grw [ofDelete_apply_self', ← subset_union_left]
+  simp
+
+@[simp]
+lemma ofDelete_apply_diff (P : (M ＼ D).Separation) (i j : Bool) : P.ofDelete j i \ D = P i := by
+  obtain rfl | rfl := i.eq_or_eq_not j
+  · grw [P.ofDelete_apply_self']
+    grind [subset_diff.1 <| P.subset (i := i)]
   simp
 
 @[simp]
@@ -421,6 +457,33 @@ lemma eConn_le_eConn_delete_iff_of_coindep (hP : P.eConn ≠ ⊤) (hD : M.Coinde
   rw [← eConn_delete_eq_eConn_iff_of_coindep hP hD, le_antisymm_iff, iff_and_self]
   exact fun _ ↦ eConn_delete_le ..
 
+lemma eConn_contract_eq_self_of_forall_skew (hsk : ∀ i, M.Skew (P i) (C \ P i)) :
+    (P.contract C).eConn = P.eConn := by
+  rw [← P.eConn_eq true, ← Separation.eConn_eq _ true, contract_apply,
+    (hsk true).eConn_contract_diff_eq_self_of_skew]
+  exact (hsk false).mono (by simp) <| by grind [P.disjoint_false_true]
+
+lemma eConn_contract_eq_eConn_iff_forall_skew (hP : (P.contract C).eConn ≠ ⊤)
+    (hCE : C ⊆ M.E := by aesop_mat) :
+    (P.contract C).eConn = P.eConn ↔ ∀ i, M.Skew (P i) (C \ P i) := by
+  rw [← P.eConn_eq false, ← (P.contract C).eConn_eq false, contract_apply,
+    eConn_contract_diff_eq_self_iff_skew_skew, Bool.forall_bool, P.compl_false,
+    P.diff_eq_inter_bool true, Bool.not_true]
+  rwa [← eConn_eq _ false, contract_apply] at hP
+
+lemma eConn_le_eConn_contract_iff_forall_skew (hP : (P.contract C).eConn ≠ ⊤)
+    (hCE : C ⊆ M.E := by aesop_mat) :
+    P.eConn ≤ (P.contract C).eConn ↔ ∀ i, M.Skew (P i) (C \ P i) := by
+  rw [← eConn_contract_eq_eConn_iff_forall_skew hP, le_antisymm_iff,
+    and_iff_right (P.eConn_contract_le ..)]
+
+lemma eConn_le_eConn_delete_iff_forall_skew (hP : (P.delete D).eConn ≠ ⊤)
+    (hDE : D ⊆ M.E := by aesop_mat) :
+    P.eConn ≤ (P.delete D).eConn ↔ ∀ i, M✶.Skew (P i) (D \ P i) := by
+  rw [← P.eConn_dual, ← (P.delete D).eConn_dual, delete_dual, eConn_copy,
+    eConn_le_eConn_contract_iff_forall_skew]
+  · simp
+  rwa [dual_contract, eConn_copy, eConn_dual]
 
 /-- The generalized Bixby-Coullard inequality for pairs of separations. -/
 lemma eConn_inter_add_eConn_inter_le (P : (M ／ X).Separation) (Q : (M ＼ X).Separation) (i : Bool) :
@@ -479,5 +542,3 @@ lemma exists_of_simplifies (P : N.Separation) (hNM : N ≤si M) : ∃ (Q : M.Sep
   use i
   grw [← singleton_subset_iff.2 hi]
   exact hef.mem_closure
-
-end Separation

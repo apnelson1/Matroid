@@ -2,6 +2,7 @@ import Matroid.Flat.Lattice
 import Matroid.Simple
 import Matroid.ForMathlib.Card
 import Matroid.ForMathlib.Matroid.Basic
+import Matroid.ForMathlib.GCongr
 
 open Set BigOperators Set.Notation
 
@@ -358,7 +359,8 @@ lemma IsModularFamily.exists_isMutualBasis_superset_of_indep_of_subset_inter
   exact ⟨_,  hB.switch hJ, hIJ.trans subset_union_right⟩
 
 /-- If `C` is spanned by the intersection of a modular family `Xs`,
-then we get a modular family in `M ／ C`.  -/
+then we get a modular family in `M ／ C`.
+TODO : Is this true for all `C ⊆ ⋃ i, X i`? -/
 lemma IsModularFamily.contract (h : M.IsModularFamily Xs) {C : Set α}
     (hC : ∀ i, C ⊆ M.closure (Xs i)) : (M ／ C).IsModularFamily (fun i ↦ (Xs i) \ C) := by
   obtain he | hne := isEmpty_or_nonempty ι
@@ -402,74 +404,41 @@ lemma IsModularFamily.finite_of_forall_isFlat [M.RankFinite] (h : M.IsModularFam
   rw [← (h_isFlat i).closure, ← (hB.isBasis_inter i).closure_eq_closure,
     ← (h_isFlat j).closure, ← (hB.isBasis_inter j).closure_eq_closure, h_eq]
 
+lemma isModularFamily_disjointSigma_iff (Xs : ι → Set α) {M : η → Matroid α} {hdj} :
+    (Matroid.disjointSigma M hdj).IsModularFamily Xs ↔
+    (∀ c, (M c).IsModularFamily (fun i ↦ Xs i ∩ (M c).E)) ∧ ∀ i, Xs i ⊆ ⋃ c, (M c).E := by
+  refine ⟨fun h ↦ ⟨fun c ↦ ?_, fun i ↦ ?_⟩, fun ⟨h, hE⟩ ↦ ?_⟩
+  · obtain ⟨B, hB, hBX⟩ := h.exists_isMutualBasis_isBase
+    simp only [disjointSigma_isBase_iff] at hB
+    refine ⟨B ∩ (M c).E, (hB.1 c).indep, fun i ↦ ?_⟩
+    rw [← inter_assoc, inter_right_comm, inter_assoc (Xs i), inter_self, inter_right_comm]
+    have hbas := hBX.isBasis_inter i
+    simp only [disjointSigma_isBasis_iff, inter_subset_left, true_and] at hbas
+    exact hbas.1 c
+  · simpa using h.subset_ground_of_mem i
+  choose B hB using fun c ↦ (h c)
+  have hrw (c) : (⋃ i, B i) ∩ (M c).E = B c := by
+    refine (subset_inter (subset_iUnion ..) (hB c).indep.subset_ground).antisymm' ?_
+    rw [iUnion_inter, iUnion_subset_iff]
+    intro d
+    obtain rfl | hne := eq_or_ne c d
+    · simp
+    simp [((hdj hne.symm).mono_left (hB d).indep.subset_ground).inter_eq]
+  use ⋃ i, B i
+  simp only [isMutualBasis_iff, disjointSigma_indep_iff, hrw, iUnion_subset_iff,
+    disjointSigma_isBasis_iff, inter_subset_left, true_and, inter_assoc]
+  refine ⟨⟨fun c ↦ (hB c).indep, fun c ↦ subset_iUnion_of_subset c (hB c).indep.subset_ground⟩,
+    fun i ↦ ⟨fun c ↦ ?_, hE i⟩⟩
+  rw [← inter_eq_self_of_subset_right (hB c).indep.subset_ground, ← inter_assoc]
+  exact (hB c).isBasis_inter i
 
-
-  -- have := (subset_range_iff_exists_image_eq (α := ι) (s := C) (f := Xs)).1
-  -- have := h.comp (fun X : C ↦ X)
-
--- lemma IsModularFamily_of_chain [Finitary M] (hX : IsChain (· ⊆ ·) (range Xs))
---  (hE : ∀ i, Xs i ⊆ M.E) :
---     M.IsModularFamily Xs := by
---   -- set Is := {I : Set α | ∀ i, M.IsBasis (I ∩ Xs i) (Xs i) ∨ I ⊆ M.closure (Xs i)}
---   -- refine Indep.isModularFamily (I := ⋃₀ Is) ?_ ?_
---   set Is : (Set (Set α)) :=
---     {I : Set α | M.Indep I ∧ ∀ i, M.IsBasis (Xs i ∩ I) (Xs i) ∨ I ⊆ Xs i}
---     with hIs
---   have h_chain : ∀ Ks ⊆ Is, IsChain (· ⊆ ·) Ks → ∃ J ∈ Is, ∀ I ∈ Ks, I ⊆ J
---   · intro Ks hKsIs h_chain
---     refine ⟨⋃₀ Ks, ⟨?_, fun i ↦ ?_⟩, fun _ ↦ subset_sUnion_of_mem⟩
---     · exact Indep.sUnion_chain (fun I hI ↦ (hKsIs hI).1) h_chain
-
-
---     simp only [sUnion_subset_iff, or_iff_not_imp_right, not_forall, Classical.not_imp,
---       forall_exists_index, and_imp]
---     intro K hK hKcl
-
---     have hbas : M.IsBasis (Xs i ∩ K) (Xs i) := by simpa [hKcl] using (hKsIs hK).2 i
---     convert hbas using 1
---     rw [subset_antisymm_iff, and_iff_left (inter_subset_inter_right _ (subset_sUnion_of_mem hK))]
---     simp +contextual only [subset_def, mem_inter_iff, mem_sUnion, true_and,
---       and_imp, forall_exists_index]
-
---     intro e heX K' hK' heK'
---     obtain hle | hle := h_chain.total hK' hK
---     · exact hle heK'
-
---     obtain hbas' | hcl := (hKsIs hK').2 i
---     · refine (hbas.mem_of_insert_indep heX (hbas'.indep.subset (insert_subset ⟨heX, heK'⟩ ?_))).2
---       exact inter_subset_inter_right _ hle
-
---     have h_eq := hbas.eq_of_subset_indep ?_ (inter_subset_inter_right _ hle) inter_subset_left
---     refine (h_eq.symm.subset ⟨heX, heK'⟩).2
---     exact (hKsIs hK').1.inter_left _
-
---   obtain ⟨I, hI⟩ := zorn_subset Is h_chain
---   refine hI.prop.1.isModularFamily fun i ↦ ?_
---   refine (hI.prop.2 i).elim id fun hIcl ↦ ?_
-
-
-
-
---   refine (hI.prop.1.inter_left (Xs i)).isBasis_of_forall_insert inter_subset_left ?_
-
-
---   simp only [inter_eq_self_of_subset_right hIcl, mem_diff, Dep, insert_subset_iff,
---     hIcl.trans (hE i), and_true, and_imp]
---   refine fun f hfX hfI ↦ ⟨fun hi ↦ hfI ?_, (hE i hfX)⟩
-
-
-
-
---   refine hI.mem_of_prop_insert ⟨hi, fun j ↦ ?_⟩
---   obtain hle | hle := hX.total (x := Xs i) (y := Xs j) (by simp) (by simp)
---   · exact .inr (insert_subset (hle hfX) (hIcl.trans hle))
-
---   obtain hbasj | b := (hI.prop.2 j)
---   · rw [← hbasj.eq_of_subset_indep (hi.inter_left _)
---       (inter_subset_inter_right _ (subset_insert _ _)) (inter_subset_left)]
---     exact .inl hbasj
-
-
+ lemma isModularFamily_disjointSum_iff {Xs : ι → Set α} {M N : Matroid α} (hdj) :
+    (M.disjointSum N hdj).IsModularFamily Xs ↔
+      (M.IsModularFamily (fun i ↦ Xs i ∩ M.E)) ∧ (N.IsModularFamily (fun i ↦ Xs i ∩ N.E)) ∧
+      ∀ i, Xs i ⊆ M.E ∪ N.E := by
+  rw [disjointSum_eq_disjointSigma, isModularFamily_disjointSigma_iff]
+  simp only [Bool.forall_bool, cond_false, cond_true, iUnion_bool]
+  tauto
 
 end IsModularFamily
 
@@ -748,20 +717,27 @@ lemma IsModularPair.contract_subset_closure {C : Set α} (hXY : M.IsModularPair 
   rw [IsModularPair, hrw]
   simpa [hCX, hCY] using IsModularFamily.contract (C := C) hXY
 
-lemma IsModularPair.contract {C : Set α} (hXY : M.IsModularPair X Y) (hCX : C ⊆ X) (hCY : C ⊆ Y) :
-    (M ／ C).IsModularPair (X \ C) (Y \ C) :=
-  hXY.contract_subset_closure (hCX.trans (M.subset_closure X)) (hCY.trans (M.subset_closure Y))
+lemma Coindep.subset_closure_iff_isModularPair (hX : M.Coindep (X \ Y))
+    (hY : Y ⊆ M.E := by aesop_mat) : X ⊆ M.closure Y ↔ M.IsModularPair (X ∪ Y) (M.E \ (X \ Y)) := by
+  rw [isModularPair_comm, hX.compl_spanning.isModularPair_iff,
+    show M.E \ (X \ Y) ∩ (X ∪ Y) = Y by grind, union_subset_iff, and_iff_left (M.subset_closure Y)]
 
+lemma isModularPair_disjointSigma_iff (X Y : Set α) {M : η → Matroid α} {hdj} :
+    (Matroid.disjointSigma M hdj).IsModularPair X Y ↔
+    (∀ c, (M c).IsModularPair (X ∩ (M c).E) (Y ∩ (M c).E)) ∧ X ∪ Y ⊆ ⋃ c, (M c).E := by
+  simp only [IsModularPair, isModularFamily_disjointSigma_iff, Bool.forall_bool, cond_false,
+    cond_true, union_subset_iff]
+  rw [and_comm (a := X ⊆ _)]
+  convert Iff.rfl using 5 with i j
+  grind
 
-
--- lemma IsFlat.isModularPair_iff_foo (hF : M.IsFlat F) (hX : M.IsFlat X) :
---     M.closure (F ∪ X) ∩ Y = M.closure (X ∪ (F ∩ Y))
-
-
-
+lemma isModularPair_disjointSum_iff (X Y : Set α) {M N : Matroid α} {hdj} :
+    (M.disjointSum N hdj).IsModularPair X Y ↔ M.IsModularPair (X ∩ M.E) (Y ∩ M.E) ∧
+      N.IsModularPair (X ∩ N.E) (Y ∩ N.E) ∧ X ∪ Y ⊆ M.E ∪ N.E := by
+  simp only [disjointSum_eq_disjointSigma, isModularPair_disjointSigma_iff, Bool.forall_bool,
+    cond_false, cond_true, iUnion_bool, union_subset_iff]
+  tauto
 
 end IsModularPair
-
-
 
 end Matroid

@@ -1234,23 +1234,6 @@ lemma eConn_disjointSum_right_eq {M₁ M₂ : Matroid α} (hdj : Disjoint M₁.E
   rw [disjointSum_comm]
   simp
 
-lemma eConn_restrict_le (M : Matroid α) (X R : Set α) : (M ↾ R).eConn X ≤ M.eConn X := by
-  rw [eConn_eq_eLocalConn, eLocalConn_restrict_eq, eConn_eq_eLocalConn, restrict_ground_eq,
-    ← eLocalConn_inter_ground_right]
-  exact M.eLocalConn_mono inter_subset_left (by tauto_set)
-
-lemma eConn_delete_le (M : Matroid α) (X D : Set α) : (M ＼ D).eConn X ≤ M.eConn X := by
-  rw [delete_eq_restrict]
-  apply eConn_restrict_le
-
-lemma eConn_contract_le (M : Matroid α) (X C : Set α) : (M ／ C).eConn X ≤ M.eConn X := by
-  rw [← eConn_dual, dual_contract, ← M.eConn_dual]
-  apply eConn_delete_le
-
-lemma IsMinor.eConn_le {N : Matroid α} (hNM : N ≤m M) (X : Set α) : N.eConn X ≤ M.eConn X := by
-  obtain ⟨C, D, rfl⟩ := hNM
-  exact ((M ／ C).eConn_delete_le X D).trans <| M.eConn_contract_le X C
-
 lemma eConn_eq_zero_of_subset_loops {L : Set α} (hL : L ⊆ M.loops) : M.eConn L = 0 := by
   rw [eConn_eq_eLocalConn, ← eLocalConn_diff_left_of_subset_loops hL]
   simp
@@ -1273,5 +1256,23 @@ lemma eConn_singleton_eq_zero_iff {e : α} (heM : e ∈ M.E) :
   · exact .inl he
   rw [he.indep.eConn_eq_zero_iff, singleton_subset_iff] at h
   exact .inr h
+
+-- the next four lemmas can't go in `Minor`, since they are needed in `Finitize`.
+lemma eConn_restrict_le (M : Matroid α) (X R : Set α) : (M ↾ R).eConn X ≤ M.eConn X := by
+  rw [eConn_eq_eLocalConn, eLocalConn_restrict_eq, eConn_eq_eLocalConn, restrict_ground_eq,
+    ← eLocalConn_inter_ground_right]
+  exact M.eLocalConn_mono inter_subset_left (by tauto_set)
+
+lemma eConn_delete_le (M : Matroid α) (X D : Set α) : (M ＼ D).eConn X ≤ M.eConn X := by
+  rw [delete_eq_restrict]
+  apply eConn_restrict_le
+
+lemma eConn_contract_le (M : Matroid α) (X C : Set α) : (M ／ C).eConn X ≤ M.eConn X := by
+  rw [← eConn_dual, dual_contract, ← M.eConn_dual]
+  apply eConn_delete_le
+
+lemma IsMinor.eConn_le {N : Matroid α} (hNM : N ≤m M) (X : Set α) : N.eConn X ≤ M.eConn X := by
+  obtain ⟨C, D, rfl⟩ := hNM
+  exact ((M ／ C).eConn_delete_le X D).trans <| M.eConn_contract_le X C
 
 end Global

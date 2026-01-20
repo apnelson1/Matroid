@@ -7,6 +7,15 @@ open Set
 
 namespace Matroid
 
+lemma coindep_iff_subset_closure_compl : M.Coindep X ↔ X ⊆ M.closure (M.E \ X) := by
+  by_cases hXE : X ⊆ M.E
+  · rw [coindep_iff_compl_spanning, spanning_iff, and_iff_left diff_subset]
+    refine ⟨fun h ↦ by rwa [h], fun h ↦ ?_⟩
+    nth_grw 1 [subset_antisymm_iff, and_iff_right (M.closure_subset_ground ..),
+      ← diff_union_of_subset hXE, union_subset_iff, and_iff_left h, ← M.subset_closure (M.E \ X)]
+  exact iff_of_false (fun h ↦ hXE h.subset_ground)
+    (fun h ↦ hXE (h.trans (M.closure_subset_ground ..)))
+
 lemma Spanning.rankFinite_of_finite {S : Set α} (hS : M.Spanning S) (hSfin : S.Finite) :
     M.RankFinite := by
   obtain ⟨B, hB⟩ := hS.exists_isBase_subset

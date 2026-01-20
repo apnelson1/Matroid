@@ -38,6 +38,11 @@ lemma IsMinor.exists_contract_indep_delete_coindep (h : N ≤m M) :
   rw [← dual_contract, dual_coloops, contract_loops_eq, hI.closure_eq_closure]
   exact diff_subset_diff_left <| M'.subset_closure C
 
+lemma IsMinor.exists_delete_coindep_contract_indep (h : N ≤m M) :
+    ∃ D C, M.Coindep D ∧ M.Indep C ∧ Disjoint D C ∧ N = M ＼ D ／ C := by
+  obtain ⟨C, D, hC, hD, hCD, rfl⟩ := h.exists_contract_indep_delete_coindep
+  exact ⟨D, C, hD, hC, hCD.symm, M.contract_delete_comm hCD⟩
+
 /-- A version of the scum theorem where the minor is obtained as a spanning restriction
 of a contraction rather than a contraction-deletion.  -/
 lemma IsMinor.exists_spanning_isRestriction_contract (h : N ≤m M) :
@@ -127,6 +132,11 @@ lemma restrict_isStrictMinor (hR : R ⊂ M.E) : M ↾ R <m M :=
 @[simp]
 lemma delete_contract_isMinor (M : Matroid α) (D C : Set α) : M ＼ D ／ C ≤m M :=
   ((M ＼ D).contract_isMinor C).trans <| M.delete_isMinor D
+
+lemma contract_delete_isMinor_delete {C D : Set α} (M : Matroid α) (hCD : Disjoint C D) :
+    M ／ C ＼ D ≤m M ＼ D := by
+  rw [contract_delete_comm _ hCD]
+  apply contract_isMinor ..
 
 lemma contract_restrict_isMinor (M : Matroid α) (C : Set α) (hR : R ⊆ M.E \ C) :
     (M ／ C) ↾ R ≤m M := by

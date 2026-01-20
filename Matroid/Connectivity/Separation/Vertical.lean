@@ -27,7 +27,7 @@ lemma IsVerticalSeparation.of_symm (hP : P.symm.IsVerticalSeparation) : P.IsVert
 
 lemma IsVerticalSeparation.isTutteSeparation (h : P.IsVerticalSeparation) :
     P.IsTutteSeparation :=
-  h.mono <| by simp
+  h.mono <| by simp [tutteDegen_iff]
 
 lemma isVerticalSeparation_iff_forall : P.IsVerticalSeparation ↔ ∀ b, M.Codep (P b) := by
   simp [IsVerticalSeparation, IsPredSeparation]
@@ -310,7 +310,7 @@ lemma VerticallyConnected.mono' (hjk : j ≤ k) (h : M.VerticallyConnected k) :
     M.VerticallyConnected j := h.mono hjk
 
 lemma TutteConnected.verticallyConnected (h : M.TutteConnected k) : M.VerticallyConnected k :=
-  NumConnected.mono_degen h <| fun _ _ ↦ And.right
+  NumConnected.mono_degen h <| fun _ _ ↦ TutteDegen.coindep
 
 lemma not_verticallyConnected_iff_exists : ¬ M.VerticallyConnected (k+1) ↔
     ∃ P : M.Separation, P.eConn + 1 ≤ k ∧ P.IsVerticalSeparation :=
@@ -408,6 +408,14 @@ lemma verticallyConnected_freeOn_iff (E : Set α) (k : ℕ∞) :
   rintro rfl
   exact hne.symm (by simpa using hy)
 
+lemma verticallyConnected_iff_seqConnected : M.VerticallyConnected (k + 1) ↔
+    M.SeqConnected (fun M ↦ M✶.nullity) (indicator {i | k < i + 1} ⊤) := by
+  simp_rw [verticallyConnected_iff_forall, isVerticalSeparation_iff_forall, not_forall,
+    Separation.not_codep_iff, seqConnected_iff_exists]
+  convert Iff.rfl with P
+  obtain h | h := le_or_gt (P.eConn + 1) k <;>
+  simp [h]
+
 /-! ### Cyclic connectivity -/
 
 def CyclicallyConnected (M : Matroid α) (k : ℕ∞) := M.NumConnected Matroid.Indep k
@@ -446,6 +454,11 @@ lemma not_cyclicallyConnected_iff_exists : ¬ M.CyclicallyConnected (k + 1) ↔
 lemma cyclicallyConnected_iff_forall : M.CyclicallyConnected (k + 1) ↔
     ∀ (P : M.Separation), P.eConn + 1 ≤ k → ¬ P.IsCyclicSeparation :=
   numConnected_iff_forall
+
+lemma cyclicallyConnected_iff_seqConnected : M.CyclicallyConnected (k + 1) ↔
+    M.SeqConnected Matroid.nullity (indicator {i | k < i + 1} ⊤) := by
+  rw [← verticallyConnected_dual_iff, verticallyConnected_iff_seqConnected, seqConnected_dual_iff]
+  simp
 
 lemma Separation.IsCyclicSeparation.not_cyclicallyConnected (hP : P.IsCyclicSeparation) :
     ¬ M.CyclicallyConnected (P.eConn + 1 + 1) := by

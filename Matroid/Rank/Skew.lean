@@ -70,6 +70,10 @@ lemma IsSkewFamily.nullity_iUnion_eq {X : ι → Set α} (hX : M.IsSkewFamily X)
     grw [← diff_inter_self_eq_diff (t := ⋃ i, Is i), inter_comm, (hIs i).2]
   exact h.mono fun i j h ↦ h.mono diff_subset diff_subset
 
+lemma Skew.nullity_union_eq (hXY : M.Skew X Y) (hdj : Disjoint X Y) :
+    M.nullity (X ∪ Y) = M.nullity X + M.nullity Y := by
+  simpa using IsSkewFamily.nullity_iUnion_eq hXY <| by rwa [pairwise_disjoint_on_bool]
+
 lemma tsum_nullity_eq_nullity_iUnion_iff_isSkewFamily {X : ι → Set α}
     (hX : Pairwise (Disjoint on X)) (hXE : ∀ i, X i ⊆ M.E) (hfin : M.nullity (⋃ i, X i) < ⊤) :
     M.nullity (⋃ i, X i) = ∑' i, M.nullity (X i) ↔ M.IsSkewFamily X := by

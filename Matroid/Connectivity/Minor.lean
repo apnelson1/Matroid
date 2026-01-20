@@ -478,6 +478,17 @@ lemma eConn_contract_eq_eConn_contract_diff (M : Matroid α) (X C : Set α) :
     (M ／ C).eConn X = (M ／ C).eConn (X \ C) := by
   rw [eConn_contract_diff_eq_eConn_project, eConn_contract_eq_eConn_project]
 
+lemma eConn_contract_diff_le (M : Matroid α) (X C : Set α) : (M ／ C).eConn (X \ C) ≤ M.eConn X := by
+  grw [← eConn_contract_eq_eConn_contract_diff, eConn_contract_le]
+
+lemma eConn_delete_diff_le (M : Matroid α) (X D : Set α) : (M ＼ D).eConn (X \ D) ≤ M.eConn X := by
+  grw [← eConn_dual, dual_delete, eConn_contract_diff_le, eConn_dual]
+
+lemma eConn_contract_union_eq_eConn (M : Matroid α) (X C : Set α) :
+    (M ／ C).eConn (X ∪ C) = (M ／ C).eConn X := by
+  rw [eConn_contract_eq_eConn_contract_diff, union_diff_right,
+    ← eConn_contract_eq_eConn_contract_diff]
+
 lemma eConn_delete_eq_eConn_delete_diff (M : Matroid α) (X D : Set α) :
     (M ＼ D).eConn X = (M ＼ D).eConn (X \ D) := by
   rw [← eConn_dual, dual_delete, eConn_contract_eq_eConn_contract_diff, ← dual_delete, eConn_dual]
@@ -514,6 +525,51 @@ lemma eConn_eq_eConn_contract_disjoint_add (M : Matroid α) (hdj : Disjoint X C)
   rw [← M.eConn_compl X, eConn_eq_eConn_contract_subset_add _ (subset_diff.2 ⟨hC, hdj.symm⟩),
     diff_diff_cancel_left hX, diff_diff_comm, ← contract_ground, eConn_compl]
 
+lemma Skew.eConn_contract_diff_eq_self (h : M.Skew X C) : (M ／ C).eConn (X \ C) = M.eConn X := by
+  nth_rw 1 [← inter_union_diff C X, eConn_contract_eq_eConn_project, ← project_closure_eq,
+    union_comm, closure_union_eq_closure_of_subset_loops _ _ h.symm.inter_subset_loops,
+    project_closure_eq, ← eConn_contract_eq_eConn_project, M.eConn_eq_eConn_contract_disjoint_add
+      (show Disjoint X (C \ X) from disjoint_sdiff_right), (h.mono_right diff_subset).eLocalConn,
+      eConn_contract_eq_eConn_project, eConn_contract_eq_eConn_project,
+      add_zero, ← eConn_union_eq_of_subset_loops (Y := X ∩ C), diff_union_inter]
+  grw [h.inter_subset_loops]
+  simp
+
+lemma Skew.eConn_contract_diff_eq_self_of_skew (h : M.Skew X (C \ X))
+    (h' : M.Skew (M.E \ X) (C ∩ X)) : (M ／ C).eConn (X \ C) = M.eConn X := by
+  rw [M.eConn_eq_eConn_contract_disjoint_add (C := C \ X) disjoint_sdiff_right,
+    h.eLocalConn, add_zero, (M ／ (C \ X)).eConn_eq_eConn_contract_subset_add (C := C ∩ X)
+    inter_subset_right, contract_contract, diff_union_inter, diff_inter_self_eq_diff,
+    contract_ground, diff_diff, diff_union_self, Skew.eLocalConn, add_zero]
+  rw [contract_skew_iff (by grind) (by grind), inter_union_diff, Disjoint.inter_eq (by grind),
+    and_iff_left (empty_subset ..)]
+  convert h'.isModularPair_union_union_of_subset (Z := C \ X) (by grind [h.subset_ground_right])
+    using 1 <;> grind
+
+lemma eConn_contract_diff_eq_self_iff_skew_skew (hconn : (M ／ C).eConn (X \ C) ≠ ⊤)
+    (hX : X ⊆ M.E := by aesop_mat) (hC : C ⊆ M.E := by aesop_mat) :
+    (M ／ C).eConn (X \ C) = M.eConn X ↔ M.Skew X (C \ X) ∧ M.Skew (M.E \ X) (C ∩ X) := by
+  refine ⟨fun h ↦ ⟨?_, ?_⟩, fun h ↦ h.1.eConn_contract_diff_eq_self_of_skew h.2⟩
+  · rw [M.eConn_eq_eConn_contract_disjoint_add (C := C \ X) disjoint_sdiff_right] at h
+    replace h := h.symm.le
+    grw [← eConn_contract_le (C := C ∩ X), contract_contract, diff_union_inter,
+      eConn_contract_eq_eConn_contract_diff, ENat.add_le_left_iff, or_iff_right hconn] at h
+    rwa [← eLocalConn_eq_zero]
+  rw [M.eConn_eq_eConn_contract_subset_add (C := C ∩ X) inter_subset_right] at h
+  replace h := h.symm.le
+  grw [← (eConn_contract_le (C := C \ X)), contract_contract, inter_union_diff,
+    diff_inter_self_eq_diff, ENat.add_le_left_iff, or_iff_right hconn] at h
+  rwa [← eLocalConn_eq_zero]
+
+/-- A version of `eConn_contract_diff_eq_self_iff_skew_skew` with the simpler but weaker assumption
+that `M.eConn X ≠ ⊤`. -/
+lemma eConn_contract_diff_eq_self_iff_skew_skew' (hconn : M.eConn X ≠ ⊤)
+    (hX : X ⊆ M.E := by aesop_mat) (hC : C ⊆ M.E := by aesop_mat) :
+    (M ／ C).eConn (X \ C) = M.eConn X ↔ M.Skew X (C \ X) ∧ M.Skew (M.E \ X) (C ∩ X) := by
+  rw [eConn_contract_diff_eq_self_iff_skew_skew]
+  grw [← lt_top_iff_ne_top, eConn_contract_diff_le, lt_top_iff_ne_top]
+  assumption
+
 lemma eConn_eq_eConn_delete_subset_add (M : Matroid α) (hDX : D ⊆ X) :
     M.eConn X = (M ＼ D).eConn (X \ D) + M✶.eLocalConn (M.E \ X) D := by
   simp [← M.eConn_dual, M✶.eConn_eq_eConn_contract_subset_add hDX, ← (M✶ ／ D).eConn_dual]
@@ -534,10 +590,10 @@ lemma Coindep.delete_eConn_eq_union_iff' (hD : M.Coindep D) (hDX : Disjoint X D)
   refine ⟨fun h ↦ ?_, fun h ↦ eConn_delete_eq_of_subset_closure h hDX⟩
   grw [M.eConn_eq_eConn_delete_subset_add (X := X ∪ D) subset_union_right, union_diff_right,
     hDX.sdiff_eq_left, eq_comm, ENat.add_eq_left_iff, or_iff_right hX, eLocalConn_eq_zero,
-    skew_dual_iff (by grind), diff_diff_cancel_left (union_subset hXE hD.subset_ground),
-    isModularPair_comm, hD.compl_spanning.isModularPair_iff, inter_union_distrib_left,
-    disjoint_sdiff_left.inter_eq, union_empty, inter_subset_right] at h
-  grw [← h, ← subset_union_right]
+    skew_comm, hD.skew_dual_iff (by grind), union_comm, ← diff_diff,
+      diff_diff_cancel_left (union_subset hXE hD.subset_ground),
+      union_diff_cancel_right hDX.inter_eq.subset] at h
+  exact h
 
 lemma Coindep.delete_eConn_eq_union_iff (hD : M.Coindep D) (hDX : Disjoint X D)
     (hX : M.eConn X ≠ ⊤) : (M ＼ D).eConn X = M.eConn (X ∪ D) ↔ D ⊆ M.closure X := by
