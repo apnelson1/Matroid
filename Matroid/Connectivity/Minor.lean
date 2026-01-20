@@ -541,8 +541,8 @@ lemma Skew.eConn_contract_diff_eq_self_of_skew (h : M.Skew X (C \ X))
     h.eLocalConn, add_zero, (M ／ (C \ X)).eConn_eq_eConn_contract_subset_add (C := C ∩ X)
     inter_subset_right, contract_contract, diff_union_inter, diff_inter_self_eq_diff,
     contract_ground, diff_diff, diff_union_self, Skew.eLocalConn, add_zero]
-  rw [contract_skew_iff (by grind) (by grind), inter_union_diff, Disjoint.inter_eq (by grind),
-    and_iff_left (empty_subset ..)]
+  rw [contract_skew_iff (by grind) (by grind) h.subset_ground_right, inter_union_diff,
+    Disjoint.inter_eq (by grind), and_iff_left (empty_subset ..)]
   convert h'.isModularPair_union_union_of_subset (Z := C \ X) (by grind [h.subset_ground_right])
     using 1 <;> grind
 

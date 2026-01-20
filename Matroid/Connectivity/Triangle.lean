@@ -160,3 +160,15 @@ lemma IsTriangle.eq_unifOn_two_four_of_isTriad_of_tutteConnected (hT : M.IsTrian
     (by rw [hT.three_elements]; norm_num) (by simp) hM
   obtain rfl : r = 2 := ENat.coe_inj.1 hr
   use E, hE
+
+@[mk_iff]
+structure Triadular (M : Matroid α) : Prop where
+  three_connected : M.TutteConnected (2 + 1)
+  forall_mem_triangle : ∀ e ∈ M.E, ∃ T, M.IsTriangle T ∧ e ∈ T
+  forall_mem_triad : ∀ e ∈ M.E, ∃ T, M.IsTriad T ∧ e ∈ T
+
+@[simp]
+lemma triadular_dual_iff : M✶.Triadular ↔ M.Triadular := by
+  simp [triadular_iff, and_comm]
+
+alias ⟨_, Triadular.dual⟩ := triadular_dual_iff
