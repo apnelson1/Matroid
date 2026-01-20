@@ -386,7 +386,7 @@ lemma StrictIsoMinor.encard_ground_lt (e : N <i M) (hN : N.Finite) : N.E.encard 
   rw [← encard_lt_top_iff, ← i.toEquiv.encard_eq, encard_lt_top_iff]
   exact N.ground_finite
 
-structure IsDeleteableSet (M : Matroid α) (N : Matroid β) (D : Set α) where
+structure IsDeletableSet (M : Matroid α) (N : Matroid β) (D : Set α) where
   subset_ground : D ⊆ M.E
   has_minor : Nonempty (N ≤i M ＼ D)
 
@@ -394,62 +394,62 @@ structure IsContractibleSet (M : Matroid α) (N : Matroid β) (C : Set α) where
   subset_ground : C ⊆ M.E
   has_minor : Nonempty (N ≤i M ／ C)
 
-abbrev IsDeleteable (M : Matroid α) (N : Matroid β) (e : α) := M.IsDeleteableSet N {e}
+abbrev IsDeletable (M : Matroid α) (N : Matroid β) (e : α) := M.IsDeletableSet N {e}
 
 abbrev IsContractible (M : Matroid α) (N : Matroid β) (e : α) := M.IsContractibleSet N {e}
 
-lemma IsDeleteable.mem_ground (h : M.IsDeleteable N e) : e ∈ M.E := by
+lemma IsDeletable.mem_ground (h : M.IsDeletable N e) : e ∈ M.E := by
   simpa using h.subset_ground
 
 lemma IsContractible.mem_ground (h : M.IsContractible N e) : e ∈ M.E := by
   simpa using h.subset_ground
 
-attribute [aesop unsafe 20% (rule_sets := [Matroid])] IsDeleteableSet.subset_ground
-  IsContractibleSet.subset_ground IsDeleteable.mem_ground IsContractible.mem_ground
+attribute [aesop unsafe 20% (rule_sets := [Matroid])] IsDeletableSet.subset_ground
+  IsContractibleSet.subset_ground IsDeletable.mem_ground IsContractible.mem_ground
 
-lemma IsDeleteableSet.isContractibleSet_dual (h : M.IsDeleteableSet N X) :
+lemma IsDeletableSet.isContractibleSet_dual (h : M.IsDeletableSet N X) :
     M✶.IsContractibleSet N✶ X := by
   obtain ⟨hE, ⟨e⟩⟩ := h
   exact ⟨hE, ⟨e.dual.trans_iso <| Iso.ofEq (M.dual_delete ..)⟩⟩
 
-lemma IsContractibleSet.isDeleteableSet_dual (h : M.IsContractibleSet N X) :
-    M✶.IsDeleteableSet N✶ X := by
+lemma IsContractibleSet.isDeletableSet_dual (h : M.IsContractibleSet N X) :
+    M✶.IsDeletableSet N✶ X := by
   obtain ⟨hE, ⟨e⟩⟩ := h
   exact ⟨hE, ⟨e.dual.trans_iso <| Iso.ofEq (M.dual_contract ..)⟩⟩
 
-lemma isDeleteableSet_dual_iff : M✶.IsDeleteableSet N X ↔ M.IsContractibleSet N✶ X :=
-  ⟨fun h ↦ M.dual_dual ▸ h.isContractibleSet_dual, fun h ↦ N.dual_dual ▸ h.isDeleteableSet_dual⟩
+lemma isDeletableSet_dual_iff : M✶.IsDeletableSet N X ↔ M.IsContractibleSet N✶ X :=
+  ⟨fun h ↦ M.dual_dual ▸ h.isContractibleSet_dual, fun h ↦ N.dual_dual ▸ h.isDeletableSet_dual⟩
 
-lemma isContractibleSet_dual_iff : M✶.IsContractibleSet N X ↔ M.IsDeleteableSet N✶ X := by
-  rw [← M.dual_dual, isDeleteableSet_dual_iff, dual_dual, dual_dual]
-
-@[simp]
-lemma dual_isDeleteableSet_dual_iff : M✶.IsDeleteableSet N✶ X ↔ M.IsContractibleSet N X := by
-  rw [isDeleteableSet_dual_iff, dual_dual]
+lemma isContractibleSet_dual_iff : M✶.IsContractibleSet N X ↔ M.IsDeletableSet N✶ X := by
+  rw [← M.dual_dual, isDeletableSet_dual_iff, dual_dual, dual_dual]
 
 @[simp]
-lemma dual_isContractibleSet_dual_iff : M✶.IsContractibleSet N✶ X ↔ M.IsDeleteableSet N X := by
+lemma dual_isDeletableSet_dual_iff : M✶.IsDeletableSet N✶ X ↔ M.IsContractibleSet N X := by
+  rw [isDeletableSet_dual_iff, dual_dual]
+
+@[simp]
+lemma dual_isContractibleSet_dual_iff : M✶.IsContractibleSet N✶ X ↔ M.IsDeletableSet N X := by
   rw [isContractibleSet_dual_iff, dual_dual]
 
-lemma isDeleteable_dual_iff : M✶.IsDeleteable N e ↔ M.IsContractible N✶ e :=
-  isDeleteableSet_dual_iff
+lemma isDeletable_dual_iff : M✶.IsDeletable N e ↔ M.IsContractible N✶ e :=
+  isDeletableSet_dual_iff
 
-lemma isContractible_dual_iff : M✶.IsContractible N e ↔ M.IsDeleteable N✶ e :=
+lemma isContractible_dual_iff : M✶.IsContractible N e ↔ M.IsDeletable N✶ e :=
   isContractibleSet_dual_iff
 
 @[simp]
-lemma dual_isDeleteable_dual_iff : M✶.IsDeleteable N✶ e ↔ M.IsContractible N e :=
-  dual_isDeleteableSet_dual_iff
+lemma dual_isDeletable_dual_iff : M✶.IsDeletable N✶ e ↔ M.IsContractible N e :=
+  dual_isDeletableSet_dual_iff
 
 @[simp]
-lemma dual_isContractible_dual_iff : M✶.IsContractible N✶ e ↔ M.IsDeleteable N e :=
+lemma dual_isContractible_dual_iff : M✶.IsContractible N✶ e ↔ M.IsDeletable N e :=
   dual_isContractibleSet_dual_iff
 
 alias ⟨_, IsContractible.dual_isDeletable⟩ := dual_isContractible_dual_iff
-alias ⟨_, IsDeleteable.dual_isContractible⟩ := dual_isDeleteable_dual_iff
+alias ⟨_, IsDeletable.dual_isContractible⟩ := dual_isDeletable_dual_iff
 
-lemma StrictIsoMinor.exists_isDeleteable_or_isContractible (i : N <i M) : ∃ e,
-    M.IsContractible N e ∨ M.IsDeleteable N e := by
+lemma StrictIsoMinor.exists_isDeletable_or_isContractible (i : N <i M) : ∃ e,
+    M.IsContractible N e ∨ M.IsDeletable N e := by
   obtain ⟨M₀, hm, φ, hφ⟩ := i.exists_iso
   obtain ⟨e, he, hc | hd⟩ := hm.exists_isMinor_contractElem_or_deleteElem
   · exact ⟨e, .inl ⟨by simpa, ⟨φ.isoMinor.trans hc.isoMinor⟩⟩⟩
