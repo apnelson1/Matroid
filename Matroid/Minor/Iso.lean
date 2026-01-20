@@ -7,7 +7,7 @@ namespace Matroid
 
 open Set Function Set.Notation Subtype
 
-variable {α β β' : Type*} {M : Matroid α} {N : Matroid β} {C D : Set α}
+variable {α β β' : Type*} {M : Matroid α} {N : Matroid β} {C D X Y : Set α} {e : α}
 section Iso
 
 /-- Deletions of isomorphic matroids are isomorphic. -/
@@ -255,6 +255,13 @@ theorem StrictIsoMinor.exists_iso (i : N <i M) :
   exact ⟨Iso.mk (e.trans (Equiv.setCongr (by simp [hE, range_comp])))
     fun _ ↦ by simp [h, image_image, e], fun ⟨x,hx⟩ ↦ rfl⟩
 
+@[simps!]
+def IsoMinor.strictIsoMinor_of_not_surjective (i : N ≤i M) (hi : ¬ Surjective i) : N <i M where
+  toFun := i.toFun
+  inj' := i.inj'
+  exists_isMinor' := i.exists_isMinor'
+  not_surj := hi
+
 /-- If there is an isomorphism from `N` to a isMinor `M₀` of `M`, then `N ≤i M`. -/
 @[simps] def IsoMinor.ofExistsIso (f : N.E → M.E)
   (h : ∃ (M₀ : Matroid α) (hM₀ : M₀ ≤m M) (e : N ≂ M₀), ∀ x, inclusion hM₀.subset (e x) = f x) :
@@ -297,6 +304,10 @@ theorem StrictIsoMinor.exists_iso (i : N <i M) :
     obtain ⟨M₀, hM₀, e, h⟩ := i.exists_iso
     exact ⟨M₀✶, hM₀.dual, e.dual, h⟩)
 
+@[simps!]
+def StrictIsoMinor.dual (e : N <i M) : N✶ <i M✶ :=
+  e.isoMinor.dual.strictIsoMinor_of_not_surjective e.not_surjective
+
 /-- If `M₁ ≤i M₂` and `M₂ ≂ M₃` then `M₁ ≤i M₃`. -/
 def IsoMinor.trans_iso {α₁ α₂ α₃ : Type*} {M₁ : Matroid α₁} {M₂ : Matroid α₂} {M₃ : Matroid α₃}
     (i : M₁ ≤i M₂) (e : M₂ ≂ M₃) : M₁ ≤i M₃ := by
@@ -305,13 +316,6 @@ def IsoMinor.trans_iso {α₁ α₂ α₃ : Type*} {M₁ : Matroid α₁} {M₂ 
   refine ⟨_, contract_delete_isMinor _ _ _, e'.trans ((e.contract C).delete D), fun ⟨x,hx⟩ ↦ ?_⟩
   simp only [comp_apply, ← h]
   rfl
-
-@[simps]
-def IsoMinor.strictIsoMinor_of_not_surjective (i : N ≤i M) (hi : ¬ Surjective i) : N <i M where
-  toFun := i.toFun
-  inj' := i.inj'
-  exists_isMinor' := i.exists_isMinor'
-  not_surj := hi
 
 /-- If `M₁ ≤i M₂` and `M₂ ≤m M₃` then `M₁ ≤i M₃`. -/
 def IsoMinor.trans_isMinor {M' : Matroid α} (i : N ≤i M) (hM : M ≤m M') : N ≤i M' where
@@ -341,11 +345,13 @@ Useful for computability and defeq.  -/
     simp only [comp_apply, ← h']
     rfl )
 
+@[simps!]
 def IsoMinor.trans_strictIsoMinor {α₁ α₂ α₃ : Type*} {M₁ : Matroid α₁} {M₂ : Matroid α₂}
     {M₃ : Matroid α₃} (i : M₁ ≤i M₂) (i' : M₂ <i M₃) : M₁ <i M₃ :=
   (i.trans i'.isoMinor).strictIsoMinor_of_not_surjective
     (fun h ↦ i'.not_surjective <| Surjective.of_comp h)
 
+@[simps!]
 def StrictIsoMinor.trans_isoMinor {α₁ α₂ α₃ : Type*} {M₁ : Matroid α₁} {M₂ : Matroid α₂}
     {M₃ : Matroid α₃} (i : M₁ <i M₂) (i' : M₂ ≤i M₃) : M₁ <i M₃ :=
   (i.isoMinor.trans i').strictIsoMinor_of_not_surjective
@@ -380,7 +386,75 @@ lemma StrictIsoMinor.encard_ground_lt (e : N <i M) (hN : N.Finite) : N.E.encard 
   rw [← encard_lt_top_iff, ← i.toEquiv.encard_eq, encard_lt_top_iff]
   exact N.ground_finite
 
--- theorem IsoMinor.dual (h : N ≤i M) : N✶ ≤i M✶ :=
+structure IsDeleteableSet (M : Matroid α) (N : Matroid β) (D : Set α) where
+  subset_ground : D ⊆ M.E
+  has_minor : Nonempty (N ≤i M ＼ D)
+
+structure IsContractibleSet (M : Matroid α) (N : Matroid β) (C : Set α) where
+  subset_ground : C ⊆ M.E
+  has_minor : Nonempty (N ≤i M ／ C)
+
+abbrev IsDeleteable (M : Matroid α) (N : Matroid β) (e : α) := M.IsDeleteableSet N {e}
+
+abbrev IsContractible (M : Matroid α) (N : Matroid β) (e : α) := M.IsContractibleSet N {e}
+
+lemma IsDeleteable.mem_ground (h : M.IsDeleteable N e) : e ∈ M.E := by
+  simpa using h.subset_ground
+
+lemma IsContractible.mem_ground (h : M.IsContractible N e) : e ∈ M.E := by
+  simpa using h.subset_ground
+
+attribute [aesop unsafe 20% (rule_sets := [Matroid])] IsDeleteableSet.subset_ground
+  IsContractibleSet.subset_ground IsDeleteable.mem_ground IsContractible.mem_ground
+
+lemma IsDeleteableSet.isContractibleSet_dual (h : M.IsDeleteableSet N X) :
+    M✶.IsContractibleSet N✶ X := by
+  obtain ⟨hE, ⟨e⟩⟩ := h
+  exact ⟨hE, ⟨e.dual.trans_iso <| Iso.ofEq (M.dual_delete ..)⟩⟩
+
+lemma IsContractibleSet.isDeleteableSet_dual (h : M.IsContractibleSet N X) :
+    M✶.IsDeleteableSet N✶ X := by
+  obtain ⟨hE, ⟨e⟩⟩ := h
+  exact ⟨hE, ⟨e.dual.trans_iso <| Iso.ofEq (M.dual_contract ..)⟩⟩
+
+lemma isDeleteableSet_dual_iff : M✶.IsDeleteableSet N X ↔ M.IsContractibleSet N✶ X :=
+  ⟨fun h ↦ M.dual_dual ▸ h.isContractibleSet_dual, fun h ↦ N.dual_dual ▸ h.isDeleteableSet_dual⟩
+
+lemma isContractibleSet_dual_iff : M✶.IsContractibleSet N X ↔ M.IsDeleteableSet N✶ X := by
+  rw [← M.dual_dual, isDeleteableSet_dual_iff, dual_dual, dual_dual]
+
+@[simp]
+lemma dual_isDeleteableSet_dual_iff : M✶.IsDeleteableSet N✶ X ↔ M.IsContractibleSet N X := by
+  rw [isDeleteableSet_dual_iff, dual_dual]
+
+@[simp]
+lemma dual_isContractibleSet_dual_iff : M✶.IsContractibleSet N✶ X ↔ M.IsDeleteableSet N X := by
+  rw [isContractibleSet_dual_iff, dual_dual]
+
+lemma isDeleteable_dual_iff : M✶.IsDeleteable N e ↔ M.IsContractible N✶ e :=
+  isDeleteableSet_dual_iff
+
+lemma isContractible_dual_iff : M✶.IsContractible N e ↔ M.IsDeleteable N✶ e :=
+  isContractibleSet_dual_iff
+
+@[simp]
+lemma dual_isDeleteable_dual_iff : M✶.IsDeleteable N✶ e ↔ M.IsContractible N e :=
+  dual_isDeleteableSet_dual_iff
+
+@[simp]
+lemma dual_isContractible_dual_iff : M✶.IsContractible N✶ e ↔ M.IsDeleteable N e :=
+  dual_isContractibleSet_dual_iff
+
+alias ⟨_, IsContractible.dual_isDeletable⟩ := dual_isContractible_dual_iff
+alias ⟨_, IsDeleteable.dual_isContractible⟩ := dual_isDeleteable_dual_iff
+
+lemma StrictIsoMinor.exists_isDeleteable_or_isContractible (i : N <i M) : ∃ e,
+    M.IsContractible N e ∨ M.IsDeleteable N e := by
+  obtain ⟨M₀, hm, φ, hφ⟩ := i.exists_iso
+  obtain ⟨e, he, hc | hd⟩ := hm.exists_isMinor_contractElem_or_deleteElem
+  · exact ⟨e, .inl ⟨by simpa, ⟨φ.isoMinor.trans hc.isoMinor⟩⟩⟩
+  exact ⟨e, .inr ⟨by simpa, ⟨φ.isoMinor.trans hd.isoMinor⟩⟩⟩
+
 
 
 
