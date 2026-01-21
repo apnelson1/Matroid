@@ -15,7 +15,7 @@ lemma Menger'sTheorem_aux [G.Finite] {S T : Set α} (hS : S ⊆ V(G)) (hT : T �
     (hconn : G.SetConnGE S T n) {A : G.SetEnsemble} (hA : A.between S T)
     (hAFin : A.paths.Finite) (hAcard : A.paths.encard < n) :
     ∃ B : G.SetEnsemble, B.between S T ∧
-    ∃ x ∉ last '' A.paths, insert x (last '' A.paths) = (last '' B.paths) := by
+    ∃ x ∉ last '' A.paths, insert x (last '' A.paths) = last '' B.paths := by
   classical
   have hTfin : T.Finite := G.vertexSet_finite.subset hT
   have : (V(G) \ T).Finite := G.vertexSet_finite.subset diff_subset

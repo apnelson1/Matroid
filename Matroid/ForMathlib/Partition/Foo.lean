@@ -62,8 +62,8 @@ lemma exists_rel (h : P.fuzzyRel r a b) : ∃ x y, r x y ∧ x ≤ a ∧ y ≤ b
 lemma symmetric (hr : Symmetric r) : Symmetric (P.fuzzyRel r) := by
   rintro a b ⟨haP, hbP, ⟨x, y, hrxy, hx, hy⟩⟩
   exact ⟨hbP, haP, ⟨y, x, hr hrxy, hy, hx⟩⟩
-instance [IsSymm α r] : IsSymm α (P.fuzzyRel r) where
-  symm := symmetric IsSymm.symm
+instance [Std.Symm α r] : Std.Symm α (P.fuzzyRel r) where
+  symm := symmetric Std.Symm.symm
 
 lemma eq_self : P.fuzzyRel r = r ↔ ∀ a b, r a b → a ∈ P ∧ b ∈ P := by
   refine ⟨fun hr a b hab ↦ ?_, fun h => ?_⟩

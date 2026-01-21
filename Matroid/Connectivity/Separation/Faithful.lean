@@ -321,7 +321,7 @@ lemma Faithful.nullity_le (h : P.Faithful N) (hNM : N ≤m M) (i : Bool) :
 
 lemma Faithful.indep_of_indep (hPN : P.Faithful N) (hNM : N ≤m M) (h : M.Indep (P i)) :
     N.Indep (P i ∩ N.E) := by
-  grw [← nullity_eq_zero, ← le_zero_iff, hPN.nullity_le hNM, h.nullity_eq]
+  grw [← nullity_eq_zero, ← nonpos_iff_eq_zero, hPN.nullity_le hNM, h.nullity_eq]
 
 lemma Faithful.coindep_of_coindep (hPN : P.Faithful N) (hNM : N ≤m M) (h : M.Coindep (P i)) :
     N.Coindep (P i ∩ N.E) :=

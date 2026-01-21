@@ -33,7 +33,7 @@ lemma cycle_cons_index [DecidableEq α] (huv : v ≠ u) (hCP : v ∈ cons u e (P
 
 ---- prefix / suffix lemmas
 
-lemma prefixUntilVertex_index [DecidableEq α] (hx : x ∈ w) (hle : w.idxOf y ≤ w.idxOf x) :
+lemma prefixUntilVertex_idxOf [DecidableEq α] (hx : x ∈ w) (hle : w.idxOf y ≤ w.idxOf x) :
     w.idxOf y = (w.prefixUntilVertex x).idxOf y := by
   simp only [prefixUntilVertex]
   fun_induction WList.prefixUntil with simp_all [idxOf_eq_zero_iff]
@@ -41,12 +41,9 @@ lemma prefixUntilVertex_index [DecidableEq α] (hx : x ∈ w) (hle : w.idxOf y �
     replace hx : x ∈ w := by tauto
     obtain rfl | hne' := em (u = y) <;> simp_all
 
-lemma prefixUntilVertex_concat_of_exists [DecidableEq α] (w : WList α β)
-    (h : v ∈ w) : (w.concat e x).prefixUntilVertex v = w.prefixUntilVertex v:= by
-  have hrw : (w.concat e x).prefixUntilVertex v = (w.concat e x).prefixUntil (· = v) := by exact rfl
-  have h : ∃ u ∈ w, (· = v) u := by use v
-  have hrw' : (w.prefixUntil fun x ↦ x = v) = w.prefixUntilVertex v := by exact rfl
-  rw [hrw, prefixUntil_concat_of_exists w (· = v) h, hrw' ]
+lemma prefixUntilVertex_concat_of_exists [DecidableEq α] (h : v ∈ w) :
+    (w.concat e x).prefixUntilVertex v = w.prefixUntilVertex v :=
+  prefixUntil_concat_of_exists w (· = v) (by use v)
 
 --No
 lemma prefixUntilVertex_last_eq_self [DecidableEq α] (w : WList α β) (hw : w.vertex.Nodup) :

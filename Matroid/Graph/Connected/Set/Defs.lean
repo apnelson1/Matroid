@@ -1,10 +1,11 @@
 import Matroid.Graph.Connected.Vertex.Defs
 import Matroid.ForMathlib.Partition.Set
+import Matroid.ForMathlib.Tactic.ENatToNat
 
 open Set Function Nat WList
 
 variable {α β ι : Type*} {G H K : Graph α β} {s t u v x x₁ x₂ y y₁ y₂ z : α} {n m : ℕ}
-  {e e' f g : β} {C U V S S' T T' X Y : Set α} {F F' R R': Set β} {W P Q : WList α β}
+  {e e' f g : β} {C C' U V S S' T T' X Y : Set α} {F F' R R': Set β} {W P Q : WList α β}
 
 namespace Graph
 
@@ -36,6 +37,19 @@ lemma SetConnected.subset (h : G.SetConnected S T) (hS : S ⊆ S') (hT : T ⊆ T
     G.SetConnected S' T' :=
   h.subset_left hS |>.subset_right hT
 
+lemma setConnected_refl (h : ¬ Disjoint V(G) S) : G.SetConnected S S := by
+  rw [not_disjoint_iff] at h
+  obtain ⟨x, hx, hxS⟩ := h
+  exact ⟨x, hxS, x, hxS, by simpa⟩
+
+@[symm]
+lemma SetConnected.symm (h : G.SetConnected S T) : G.SetConnected T S := by
+  obtain ⟨s, hs, t, ht, hst⟩ := h
+  exact ⟨t, ht, s, hs, hst.symm⟩
+
+lemma setConnected_comm : G.SetConnected S T ↔ G.SetConnected T S := by
+  refine ⟨SetConnected.symm, SetConnected.symm⟩
+
 lemma SetConnected.vertexSet_inter_left (h : G.SetConnected S T) : G.SetConnected (V(G) ∩ S) T := by
   obtain ⟨s, hs, t, ht, hst⟩ := h
   exact ⟨s, ⟨hst.left_mem, hs⟩, t, ht, hst.of_le (by simp)⟩
@@ -49,6 +63,22 @@ lemma SetConnected.vertexSet_inter (h : G.SetConnected S T) :
     G.SetConnected (V(G) ∩ S) (V(G) ∩ T) :=
   h.vertexSet_inter_left.vertexSet_inter_right
 
+@[simp]
+lemma setConnected_left_union_iff : G.SetConnected (S ∪ S') T ↔
+    G.SetConnected S T ∨ G.SetConnected S' T := by
+  refine ⟨fun ⟨s, hs, t, ht, hst⟩ ↦ hs.imp (⟨s, ·, t, ht, hst⟩) (⟨s, ·, t, ht, hst⟩), ?_⟩
+  rintro (⟨s, hs, t, ht, hst⟩ | ⟨s, hs, t, ht, hst⟩)
+  · exact ⟨s, Or.inl hs, t, ht, hst⟩
+  · exact ⟨s, Or.inr hs, t, ht, hst⟩
+
+@[simp]
+lemma setConnected_right_union_iff : G.SetConnected S (T ∪ T') ↔
+    G.SetConnected S T ∨ G.SetConnected S T' := by
+  refine ⟨fun ⟨s, hs, t, ht, hst⟩ ↦ ht.imp (⟨s, hs, t, ·, hst⟩) (⟨s, hs, t, ·, hst⟩), ?_⟩
+  rintro (⟨s, hs, t, ht, hst⟩ | ⟨s, hs, t, ht, hst⟩)
+  · exact ⟨s, hs, t, Or.inl ht, hst⟩
+  · exact ⟨s, hs, t, Or.inr ht, hst⟩
+
 lemma IsWalkFrom.SetConnected (hW : G.IsWalkFrom S T W) : G.SetConnected S T := by
   use W.first, hW.first_mem, W.last, hW.last_mem, W, hW.isWalk
 
@@ -58,6 +88,7 @@ lemma setConnected_iff_exists_isWalkFrom (S T : Set α) :
   · rintro ⟨_, _, _, _, w, hw, rfl, rfl⟩
     use w, hw
   · use W.first, hW.first_mem, W.last, hW.last_mem, W, hW.isWalk
+alias ⟨SetConnected.exists_isWalkFrom, _⟩ := setConnected_iff_exists_isWalkFrom
 
 lemma setConnected_iff_exists_isPathFrom (S T : Set α) :
     G.SetConnected S T ↔ ∃ P, G.IsPathFrom S T P := by
@@ -66,6 +97,7 @@ lemma setConnected_iff_exists_isPathFrom (S T : Set α) :
   rintro ⟨s, hs, t, ht, h⟩
   obtain ⟨P, hP, rfl, rfl⟩ := h.exists_isPath
   exact ⟨P.extractPathFrom S T, hP.extractPathFrom_isPathFrom hs ht⟩
+alias ⟨SetConnected.exists_isPathFrom, _⟩ := setConnected_iff_exists_isPathFrom
 
 lemma ConnBetween.neighbor_setConnected (h : G.ConnBetween s t) (hne : s ≠ t)
     (hadj : ¬ G.Adj s t) : (G - ({s, t} : Set α)).SetConnected (N(G, s) \ {s}) (N(G, t) \ {t}) := by
@@ -78,6 +110,7 @@ lemma ConnBetween.neighbor_setConnected (h : G.ConnBetween s t) (hne : s ≠ t)
 
 /-! ### Cut between two sets -/
 
+@[mk_iff]
 structure IsSetCut (G : Graph α β) (S T : Set α) (C : Set α) where
   subset_vertexSet : C ⊆ V(G)
   ST_disconnects : ¬ (G - C).SetConnected S T
@@ -102,6 +135,14 @@ lemma right_isSetCut (G : Graph α β) (S T : Set α) : G.IsSetCut S T (V(G) ∩
     have := by simpa using h.right_mem
     exact this.2 ht
 
+@[symm]
+lemma IsSetCut.symm (h : G.IsSetCut S T C) : G.IsSetCut T S C where
+  subset_vertexSet := h.subset_vertexSet
+  ST_disconnects hH := h.ST_disconnects <| hH.symm.subset_right (by simp)
+
+lemma isSetCut_comm : G.IsSetCut S T C ↔ G.IsSetCut T S C :=
+  ⟨IsSetCut.symm, IsSetCut.symm⟩
+
 lemma IsSetCut.of_le (h : G.IsSetCut S T C) (hle : H ≤ G) : H.IsSetCut S T (V(H) ∩ C) where
   subset_vertexSet := inter_subset_left
   ST_disconnects hH := by
@@ -118,6 +159,31 @@ lemma IsSetCut.subset_right (h : G.IsSetCut S T C) (hT : T' ⊆ T) : G.IsSetCut 
 
 lemma IsSetCut.subset (h : G.IsSetCut S T C) (hS : S' ⊆ S) (hT : T' ⊆ T) : G.IsSetCut S' T' C :=
   h.subset_left hS |>.subset_right hT
+
+lemma IsSetCut.left_union (h₁ : G.IsSetCut S T C) (h₂ : G.IsSetCut S' T C') :
+    G.IsSetCut (S ∪ S') T (C ∪ C') where
+  subset_vertexSet := by simp [union_subset_iff, h₁.subset_vertexSet, h₂.subset_vertexSet]
+  ST_disconnects := by
+    rw [setConnected_left_union_iff]
+    rintro (hST | hS'T)
+    · exact h₁.ST_disconnects <| hST.of_le <| G.vertexDelete_anti_right subset_union_left
+    · exact h₂.ST_disconnects <| hS'T.of_le <| G.vertexDelete_anti_right subset_union_right
+
+lemma IsSetCut.right_union (h₁ : G.IsSetCut S T C) (h₂ : G.IsSetCut S T' C') :
+    G.IsSetCut S (T ∪ T') (C ∪ C') :=
+  h₁.symm.left_union h₂.symm |>.symm
+
+lemma isSetCut_vertexSet_inter_left_iff : G.IsSetCut (V(G) ∩ S) T C ↔ G.IsSetCut S T C := by
+  refine ⟨fun h => ⟨h.subset_vertexSet, fun ⟨s, hs, t, ht, hcon⟩ ↦ ?_⟩, fun h => ?_⟩
+  · exact h.ST_disconnects ⟨s, ⟨hcon.left_mem.1, hs⟩, t, ht, hcon⟩
+  · exact h.subset_left inter_subset_right
+alias ⟨_, IsSetCut.vertexSet_inter_left⟩ := isSetCut_vertexSet_inter_left_iff
+
+lemma isSetCut_vertexSet_inter_right_iff : G.IsSetCut S (V(G) ∩ T) C ↔ G.IsSetCut S T C := by
+  refine ⟨fun h => ⟨h.subset_vertexSet, fun ⟨s, hs, t, ht, hcon⟩ ↦ ?_⟩, fun h => ?_⟩
+  · exact h.ST_disconnects ⟨s, hs, t, ⟨hcon.right_mem.1, ht⟩, hcon⟩
+  · exact h.subset_right inter_subset_right
+alias ⟨_, IsSetCut.vertexSet_inter_right⟩ := isSetCut_vertexSet_inter_right_iff
 
 lemma IsSetCut.of_vertexDelete (h : (G - X).IsSetCut S T C) : G.IsSetCut S T ((X ∩ V(G)) ∪ C) where
   subset_vertexSet := by
@@ -154,15 +220,43 @@ lemma IsWalkFrom.not_disjoint_isSetCut (hW : G.IsWalkFrom S T W) (hC : G.IsSetCu
   use W, hW.isWalk.vertexDelete hdisj
 
 lemma IsWalkFrom.exists_mem_isSetCut (hW : G.IsWalkFrom S T W) (hC : G.IsSetCut S T C) :
-    ∃ v ∈ V(W), v ∈ C := by
+    ∃ v ∈ W, v ∈ C := by
   have := hW.not_disjoint_isSetCut hC
   rwa [not_disjoint_iff] at this
+
+lemma IsSetCut.left_trans (h₁ : G.IsSetCut S T C) (h₂ : G.IsSetCut C T U) : G.IsSetCut S T U where
+  subset_vertexSet := h₂.subset_vertexSet
+  ST_disconnects h := by
+    obtain ⟨w, hw⟩ := h.exists_isWalkFrom
+    have hwG := hw.of_le vertexDelete_le
+    obtain ⟨v, hvw, hvC⟩ := hwG.exists_mem_isSetCut h₁
+    classical
+    have hw' : G.IsWalkFrom C T (w.suffixFromVertex v) := by
+      use hwG.isWalk.suffix (w.suffixFromVertex_isSuffix v)
+      · rwa [suffixFromVertex_first hvw]
+      rw [suffixFromVertex_last]
+      exact hwG.last_mem
+    obtain ⟨u, huw', huU⟩ := hw'.exists_mem_isSetCut h₂
+    exact hw.isWalk.vertexSet_subset (w.suffixFromVertex_isSuffix v |>.subset huw') |>.2 huU
+
+lemma IsSetCut.right_trans (h₁ : G.IsSetCut S T C) (h₂ : G.IsSetCut S C U) : G.IsSetCut S T U :=
+  h₁.symm.left_trans h₂.symm |>.symm
 
 lemma IsSetCut.inter_subset (hC : G.IsSetCut S T C) : V(G) ∩ S ∩ T ⊆ C := by
   rintro x ⟨⟨hx, hxS⟩, hxT⟩
   have hw : G.IsWalkFrom S T (nil x) := ⟨by simpa, hxS, hxT⟩
   obtain ⟨v, hv, hvC⟩ := hw.exists_mem_isSetCut hC
   simp_all
+
+lemma IsSetCut.subset_of_self (hC : G.IsSetCut S S U) : V(G) ∩ S ⊆ U := by
+  simpa [inter_assoc] using hC.inter_subset
+
+@[simp]
+lemma isSetCut_self_iff (hU : U ⊆ V(G)) : G.IsSetCut S S U ↔ V(G) ∩ S ⊆ U := by
+  refine ⟨fun h => h.subset_of_self, fun h => ⟨hU, ?_⟩⟩
+  rintro ⟨s, hsS, t, htS, hcon⟩
+  obtain ⟨hs, hsU⟩ := by simpa using hcon.left_mem
+  exact hsU <| h ⟨hs, hsS⟩
 
 lemma IsSepBetween.isSetCut (hC : G.IsSepBetween s t C) :
     G.IsSetCut (insert s C) (insert t C) C where
@@ -386,6 +480,29 @@ lemma SetConnGE_zero (G : Graph α β) (S T : Set α) : G.SetConnGE S T 0 := by
 lemma SetConnGE.anti_right (hle : n ≤ m) (h : G.SetConnGE S T m) : G.SetConnGE S T n :=
   fun _ hC ↦ le_trans (by norm_cast) (h hC)
 
+@[symm]
+lemma SetConnGE.symm (h : G.SetConnGE S T n) : G.SetConnGE T S n :=
+  fun _ hC => h hC.symm
+
+lemma setConnGE_comm : G.SetConnGE S T n ↔ G.SetConnGE T S n :=
+  ⟨SetConnGE.symm, SetConnGE.symm⟩
+
+lemma setConnGE_vertexSet_inter_left_iff : G.SetConnGE (V(G) ∩ S) T n ↔ G.SetConnGE S T n := by
+  refine ⟨fun h C hC => ?_, fun h C hC => ?_⟩
+  · rw [← isSetCut_vertexSet_inter_left_iff] at hC
+    exact h hC
+  · rw [isSetCut_vertexSet_inter_left_iff] at hC
+    exact h hC
+alias ⟨_, SetConnGE.vertexSet_inter_left⟩ := setConnGE_vertexSet_inter_left_iff
+
+lemma setConnGE_vertexSet_inter_right_iff : G.SetConnGE S (V(G) ∩ T) n ↔ G.SetConnGE S T n := by
+  refine ⟨fun h C hC => ?_, fun h C hC => ?_⟩
+  · rw [← isSetCut_vertexSet_inter_right_iff] at hC
+    exact h hC
+  · rw [isSetCut_vertexSet_inter_right_iff] at hC
+    exact h hC
+alias ⟨_, SetConnGE.vertexSet_inter_right⟩ := setConnGE_vertexSet_inter_right_iff
+
 @[simp]
 lemma setConnGE_one_iff : G.SetConnGE S T 1 ↔ G.SetConnected S T := by
   refine ⟨fun h => ?_, fun h C hC => ?_⟩
@@ -439,6 +556,41 @@ lemma SetConnGE.left_encard_le (h : G.SetConnGE S T n) : n ≤ (V(G) ∩ S).enca
 
 lemma SetConnGE.right_encard_le (h : G.SetConnGE S T n) : n ≤ (V(G) ∩ T).encard :=
   h (right_isSetCut G S T)
+
+lemma SetConnGE.subset_of_left_bound (h : G.SetConnGE S T S.ncard) (hS : S.Finite) : S ⊆ V(G) := by
+  simpa using (hS.inter_of_right _).eq_of_subset_of_encard_le inter_subset_right
+  <| hS.cast_ncard_eq ▸ h.left_encard_le
+
+lemma SetConnGE.subset_of_right_bound (h : G.SetConnGE S T T.ncard) (hT : T.Finite) : T ⊆ V(G) := by
+  simpa using (hT.inter_of_right _).eq_of_subset_of_encard_le inter_subset_right
+  <| hT.cast_ncard_eq ▸ h.right_encard_le
+
+lemma SetConnGE.left_bound_anti (hS : S.Finite) (h : G.SetConnGE S T S.ncard) (hU : U ⊆ S) :
+    G.SetConnGE U T U.ncard := by
+  intro C hC
+  obtain htop | hCFin := eq_or_ne C.encard ⊤
+  · simp [htop]
+  rw [encard_ne_top_iff] at hCFin
+  have hSG := h.subset_of_left_bound hS
+  have := G.left_isSetCut (S \ U) T |>.left_union hC
+  rw [diff_union_self, union_eq_left.mpr hU, inter_eq_right.mpr (diff_subset.trans hSG)] at this
+  replace h := h this |>.trans <| encard_union_le (S \ U) C
+  rw [add_comm, encard_diff hU (hS.subset hU)] at h
+  rw [← hCFin.cast_ncard_eq, ← hS.cast_ncard_eq, ← (hS.subset hU).cast_ncard_eq] at *
+  norm_cast at h ⊢
+  have := ncard_le_ncard hU hS
+  omega
+
+lemma SetConnGE.right_bound_anti (hT : T.Finite) (h : G.SetConnGE S T T.ncard) (hU : U ⊆ T) :
+    G.SetConnGE S U U.ncard :=
+  h.symm.left_bound_anti hT hU |>.symm
+
+lemma setConnGE_self (hS : S.Finite) (hsu : S ⊆ V(G)) : G.SetConnGE S S S.ncard := by
+  intro C hC
+  rw [hS.cast_ncard_eq]
+  have := hC.subset_of_self
+  rw [inter_eq_right.mpr hsu] at this
+  exact encard_le_encard this
 
 def EdgeSetConnGE (G : Graph α β) (S T : Set α) (n : ℕ) : Prop :=
   ∀ ⦃F : Set β⦄, G.IsEdgeSetCut S T F → n ≤ F.encard

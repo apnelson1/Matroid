@@ -7,9 +7,9 @@ open Set Function
 variable {α β γ ι : Type*} {a b c : α} {x y z : β} {u v w : γ} {f : β → α}
   {r r' : α → β → Prop} {s s' : β → γ → Prop} {t t' : α → γ → Prop}
 
-lemma not_symm_not {r : α → α → Prop} [IsSymm α r] : ¬ r a b → ¬ r b a := fun h ↦ h ∘ symm
+lemma not_symm_not {r : α → α → Prop} [Std.Symm r] : ¬ r a b → ¬ r b a := fun h ↦ h ∘ symm
 
-lemma not_comm_not {r : α → α → Prop} [IsSymm α r] : ¬ r a b ↔ ¬ r b a :=
+lemma not_comm_not {r : α → α → Prop} [Std.Symm r] : ¬ r a b ↔ ¬ r b a :=
   ⟨not_symm_not, not_symm_not⟩
 
 lemma trans' [Trans r s t] (hr : r a x) (hs : s x u) : t a u :=
@@ -376,10 +376,10 @@ lemma le_rightResidual {r : α → β → Prop} {s : β → γ → Prop} {t : α
 
 variable {r : α → α → Prop} {s s' : α → β → Prop} {t : β → α → Prop}
 
-lemma left_rw {a b : α} {c : β} {r : α → α → Prop} [IsSymm α r] (s : α → β → Prop) [Trans r s s]
+lemma left_rw {a b : α} {c : β} {r : α → α → Prop} [Std.Symm r] (s : α → β → Prop) [Trans r s s]
     (hr : r a b) : s a c ↔ s b c := ⟨trans' (symm hr), trans' hr⟩
 
-lemma right_rw {a : α} {b c : β} {r : β → β → Prop} [IsSymm β r] (s : α → β → Prop) [Trans s r s]
+lemma right_rw {a : α} {b c : β} {r : β → β → Prop} [Std.Symm r] (s : α → β → Prop) [Trans s r s]
     (hs : r b c) : s a b ↔ s a c := ⟨(trans' · hs), (trans' · (symm hs))⟩
 
 instance : Trans r (⊥ : α → β → Prop) (⊥ : α → β → Prop) where
@@ -419,25 +419,25 @@ lemma bot_comp {γ : Type*} (r : β → γ → Prop) : Comp (⊥ : α → β →
 
 variable {r s t : α → α → Prop}
 
-instance : IsRefl α ⊤ where
+instance : Std.Refl (⊤ : α → α → Prop) where
   refl := by simp
 
-instance : IsSymm α ⊤ where
+instance : Std.Symm (⊤ : α → α → Prop) where
   symm := by simp
 
 instance : IsTrans α ⊤ where
   trans := by simp
 
-instance : IsSymm α ⊥ where
+instance : Std.Symm (⊥ : α → α → Prop) where
   symm := by simp
 
 instance : IsTrans α ⊥ where
   trans := by simp
 
-instance [IsRefl α r] : IsRefl β (r on f) where
+instance [Std.Refl r] : Std.Refl (r on f) where
   refl a := refl (f a)
 
-instance [IsSymm α r] : IsSymm β (r on f) where
+instance [Std.Symm r] : Std.Symm (r on f) where
   symm a _ := symm (a := f a)
 
 instance [IsTrans α r] : IsTrans β (r on f) where
@@ -457,29 +457,29 @@ instance [IsTrans α r] [Dompeq r s] : Trans s r s where
     obtain ⟨d, hrae, e, hsde, hrdb⟩ := hs
     exact ⟨d, hrae, e, hsde, trans' hrdb hrbc⟩
 
-instance [IsSymm α r] [IsSymm α s] [Trans r s s]: Trans s r s where
+instance [Std.Symm r] [Std.Symm s] [Trans r s s]: Trans s r s where
   trans hs hr := symm <| trans' (symm hr) (symm hs)
 
-instance [IsSymm α r] [IsSymm α s] [Trans s r s]: Trans r s s where
+instance [Std.Symm r] [Std.Symm s] [Trans s r s]: Trans r s s where
   trans hs hr := symm <| trans' (symm hr) (symm hs)
 
-instance [IsSymm α r] [IsSymm α s] : IsSymm α (r ⊔ s) := by
+instance [Std.Symm r] [Std.Symm s] : Std.Symm (r ⊔ s) := by
   refine ⟨fun a b h ↦ ?_⟩
   obtain (h | h) := h <;> simp [symm h]
 
-instance [IsSymm α r] [IsSymm α s] : IsSymm α (r ⊓ s) :=
+instance [Std.Symm r] [Std.Symm s] : Std.Symm (r ⊓ s) :=
   ⟨fun a b ⟨hr, hs⟩ ↦ by simp [symm hr, symm hs]⟩
 
-instance [IsRefl α r] : IsRefl α rᵀ where
+instance [Std.Refl r] : Std.Refl rᵀ where
   refl := refl_of r
 
-instance [IsSymm α r] : IsSymm α rᵀ where
+instance [Std.Symm r] : Std.Symm rᵀ where
   symm _ _ := symm_of r
 
 instance [IsTrans α r] : IsTrans α rᵀ where
   trans _ _ _ := flip (trans_of r)
 
-instance [IsAntisymm α r] : IsAntisymm α rᵀ where
+instance [Std.Antisymm r] : Std.Antisymm rᵀ where
   antisymm _ _ := flip (antisymm_of r)
 
 instance [IsPreorder α r] : IsPreorder α rᵀ where
@@ -492,7 +492,7 @@ instance [IsPreorder α r] : IsPreorder α rᵀ where
 instance [IsLinearOrder α r] : IsLinearOrder α rᵀ where
   total a b := (total_of r b a)
 
-lemma sSup_symmtric {s : Set (α → α → Prop)} (hs : ∀ r ∈ s, IsSymm α r) : Symmetric (sSup s) := by
+lemma sSup_symmtric {s : Set (α → α → Prop)} (hs : ∀ r ∈ s, Std.Symm r) : Symmetric (sSup s) := by
   rintro a b h
   induction h with
   | intro w h =>
@@ -502,18 +502,18 @@ lemma sSup_symmtric {s : Set (α → α → Prop)} (hs : ∀ r ∈ s, IsSymm α 
     have := hs r hrs
     exact ⟨r, hrs, symm <| hrw.mpr hw⟩
 
-lemma sInf_symmtric {s : Set (α → α → Prop)} (hs : ∀ r ∈ s, IsSymm α r) : Symmetric (sInf s) := by
+lemma sInf_symmtric {s : Set (α → α → Prop)} (hs : ∀ r ∈ s, Std.Symm r) : Symmetric (sInf s) := by
   rintro a b
   simp_rw [binary_relation_sInf_iff s]
   exact fun h r hrs => let := hs r hrs; symm (h r hrs)
 
-instance {s : ι → α → α → Prop} [∀ i, IsSymm α (s i)] : IsSymm α (⨆ i, s i) where
+instance {s : ι → α → α → Prop} [∀ i, Std.Symm (s i)] : Std.Symm (⨆ i, s i) where
   symm a b h := by
     simp only [iSup_apply, iSup_Prop_eq] at h ⊢
     obtain ⟨i, h⟩ := h
     exact ⟨i, symm h⟩
 
-instance {s : ι → α → α → Prop} [∀ i, IsSymm α (s i)] : IsSymm α (⨅ i, s i) where
+instance {s : ι → α → α → Prop} [∀ i, Std.Symm (s i)] : Std.Symm (⨅ i, s i) where
   symm a b h := by
     simp only [iInf_apply, iInf_Prop_eq] at h ⊢
     exact fun i => symm (h i)
@@ -529,7 +529,7 @@ instance {s : ι → α → α → Prop} [∀ i, IsTrans α (s i)] : IsTrans α 
     simp only [iInf_apply, iInf_Prop_eq] at hab hbc ⊢
     exact fun i => trans' (hab i) (hbc i)
 
-lemma domain_eq_codomain (r : α → α → Prop) [IsSymm α r] : domain r = codomain r := by
+lemma domain_eq_codomain (r : α → α → Prop) [Std.Symm r] : domain r = codomain r := by
   ext a
   simp only [mem_domain_iff, mem_codomain_iff]
   exact ⟨fun ⟨b, hab⟩ => ⟨b, symm hab⟩, fun ⟨b, hba⟩ => ⟨b, symm hba⟩⟩
@@ -561,7 +561,7 @@ lemma symmClosure_apply (r : α → α → Prop) (a b : α) :
 lemma symmClosure_symmetric (r : α → α → Prop) : Symmetric (SymmClosure r) :=
   fun _ _ ↦ Or.symm
 
-instance : IsSymm α (SymmClosure r) where
+instance : Std.Symm (SymmClosure r) where
   symm := symmClosure_symmetric r
 
 lemma SymmClosure.symm (hr : SymmClosure r a b) : SymmClosure r b a :=
@@ -587,7 +587,7 @@ lemma symmClosure_codomain (r : α → α → Prop) :
   · exact ⟨y, Or.inl h⟩
 
 @[simp↓]
-lemma symmClosure_eq_self (r : α → α → Prop) [IsSymm α r] : SymmClosure r = r := by
+lemma symmClosure_eq_self (r : α → α → Prop) [Std.Symm r] : SymmClosure r = r := by
   ext a b
   simp only [symmClosure_apply, or_iff_left_iff_imp]
   exact symm_of r
@@ -610,7 +610,7 @@ instance : IsTrans α (TransClosure r) := by
   change IsTrans α (TransGen r)
   infer_instance
 
-instance [IsSymm α r] : IsSymm α (TransClosure r) := by
+instance [Std.Symm r] : Std.Symm (TransClosure r) := by
   refine ⟨fun a b h ↦ ?_⟩
   induction h with
   | single hr => exact TransGen.single (symm_of r hr)
@@ -683,12 +683,12 @@ lemma refl_of_left [foo <| flip r] (h : r a b) : r a a := by
   change rᵀ a a
   exact refl_of_right h
 
-instance [IsSymm α r] [IsTrans α r] : foo r where
+instance [Std.Symm r] [IsTrans α r] : foo r where
   isfoo _ _ hr := _root_.trans (symm_of r hr) hr
 
-instance [IsSymm α r] [foo r] : foo rᵀ where
+instance [Std.Symm r] [foo r] : foo rᵀ where
   isfoo _ _ h := by
-    rw [Symmetric.flip_eq IsSymm.symm] at h ⊢
+    rw [Symmetric.flip_eq Std.Symm.symm] at h ⊢
     exact refl_of_right h
 
 instance [foo r] [foo s] : foo (r ⊔ s) where
@@ -728,7 +728,7 @@ lemma transClosure_self_iff [foo r] : TransClosure r a a ↔ r a a := by
   · exact h
   exact refl_of_right h
 
-instance [IsSymm α r] [IsTrans α r] : Dompeq r r where
+instance [Std.Symm r] [IsTrans α r] : Dompeq r r where
   dompeq := by
     ext a b
     exact ⟨fun ⟨d, had, c, hcd, hcb⟩ => trans' had (trans' (symm hcd) hcb),
@@ -780,21 +780,21 @@ lemma comp_self (r : α → α → Prop) [IsTrans α r] [foo r] : Comp r r = r :
   ext x y
   exact ⟨fun ⟨u, hxu, huy⟩ => trans_of r hxu huy, fun h => ⟨y, h, refl_of_right h⟩⟩
 
-lemma domp_symm (r s : α → α → Prop) [IsSymm α r] [IsSymm α s] : Symmetric (Domp r s) := by
+lemma domp_symm (r s : α → α → Prop) [Std.Symm r] [Std.Symm s] : Symmetric (Domp r s) := by
   rintro a b ⟨d, had, c, hcd, hcb⟩
   exact ⟨c, symm hcb, d, symm hcd, symm had⟩
 
-instance [IsSymm α r] [IsSymm α s] : IsSymm α (Domp r s) where
+instance [Std.Symm r] [Std.Symm s] : Std.Symm (Domp r s) where
   symm := domp_symm r s
 
-lemma domp_transitive (r s : α → α → Prop) [IsSymm α r] [IsTrans α s] [H : Trans s r s] :
+lemma domp_transitive (r s : α → α → Prop) [Std.Symm r] [IsTrans α s] [H : Trans s r s] :
     Transitive (Domp r s) := by
   rintro a b c ⟨e, hae, d, hde, hdb⟩ ⟨f, hbf, e', he'f, he'c⟩
   use e, hae, e', ?_, he'c
   have := trans' (H.trans (H.trans he'f (symm hbf)) (symm hdb)) hde
   exact this
 
-instance [IsSymm α r] [IsTrans α s] [H : Trans s r s] : IsTrans α (Domp r s) where
+instance [Std.Symm r] [IsTrans α s] [H : Trans s r s] : IsTrans α (Domp r s) where
   trans := domp_transitive r s
 
 instance [IsTrans α r]: Trans r (Domp r s) (Domp r s) where
@@ -844,20 +844,20 @@ lemma restrict_le (r : α → α → Prop) (S : Set α) : restrict r S ≤ r :=
 lemma restrict_subset (r : α → α → Prop) {S T : Set α} (h : S ⊆ T) :
     restrict r S ≤ restrict r T := fun _ _ ⟨hr, hx, hy⟩ => ⟨hr, h hx, h hy⟩
 
-lemma restrict_symmetric (r : α → α → Prop) [IsSymm α r] (S : Set α) :
+lemma restrict_symmetric (r : α → α → Prop) [Std.Symm r] (S : Set α) :
     Symmetric (restrict r S) := fun _ _ ⟨hr, ha, hb⟩ => ⟨symm hr, hb, ha⟩
 
-instance [IsSymm α r] {S : Set α} : IsSymm α (restrict r S) where
+instance [Std.Symm r] {S : Set α} : Std.Symm (restrict r S) where
   symm := restrict_symmetric r S
 
-lemma restrict_eq_self (r : α → α → Prop) [IsSymm α r] {S : Set α} (hS : domain r ⊆ S) :
+lemma restrict_eq_self (r : α → α → Prop) [Std.Symm r] {S : Set α} (hS : domain r ⊆ S) :
     restrict r S = r := by
   ext x y
   simp only [restrict, and_iff_left_iff_imp]
   intro h
   use hS (show x ∈ domain r by use y), hS (show y ∈ domain r by use x, symm h)
 
-lemma restrict_eq_iff (r : α → α → Prop) [IsSymm α r] (S : Set α) :
+lemma restrict_eq_iff (r : α → α → Prop) [Std.Symm r] (S : Set α) :
     restrict r S = r ↔ domain r ⊆ S := by
   refine ⟨fun hr x hx => ?_, restrict_eq_self r⟩
   rw [← hr, mem_domain_iff] at hx
@@ -894,12 +894,12 @@ lemma restrict_singleton_of_not (r : α → α → Prop) (a : α) (hra : ¬ r a 
   exact hra hr
 
 @[simp]
-lemma restrict_singleton_of_refl (r : α → α → Prop) [IsRefl α r] (a : α) :
+lemma restrict_singleton_of_refl (r : α → α → Prop) [Std.Refl r] (a : α) :
     restrict r {a} = fun x y ↦ x = a ∧ y = a := by
   ext x y
   simp only [restrict, mem_singleton_iff, and_iff_right_iff_imp, and_imp]
   rintro rfl rfl
-  exact IsRefl.refl y
+  exact refl y
 
 -- def comply (r : PER α) (s : α → α → Prop) : α → α → Prop :=
 --   Comp (Comp r s) r

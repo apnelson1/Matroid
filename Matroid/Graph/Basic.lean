@@ -31,7 +31,7 @@ lemma IsNonloopAt.other_ne (h : G.IsNonloopAt e x) : h.inc.other ≠ x := by
 lemma Inc.other_mem (h : G.Inc e x) : h.other ∈ V(G) :=
   h.choose_spec.right_mem
 
-instance : IsSymm _ G.Adj where
+instance : Std.Symm G.Adj where
   symm _ _ := Adj.symm
 
 /- these two commands should be incorporated directly into the declarations
@@ -191,7 +191,7 @@ lemma parallel.symm (h : G.parallel e f) : G.parallel f e := by
   obtain ⟨he, hf, h⟩ := h
   exact ⟨hf, he, h.symm⟩
 
-instance : IsSymm _ G.parallel where
+instance : Std.Symm G.parallel where
   symm _ _ := parallel.symm
 
 lemma parallel_comm : G.parallel e f ↔ G.parallel f e := ⟨(·.symm), (·.symm)⟩

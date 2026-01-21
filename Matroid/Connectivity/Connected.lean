@@ -284,7 +284,7 @@ lemma cSet_inter_image_Iic {Cs : ℕ ↪ Set α} {e} {i : ℕ} {C} (heC : e 0 �
   · simpa [X, Set.Iic]
   simp only [X]
   specialize IH (cSet_antitone (by simp) hC)
-  have aux : ∀ n, Iic n = Finset.range (n+1) := by simp [Set.ext_iff, Nat.lt_add_one_iff]
+  have aux : ∀ n, Iic n = Finset.range (n+1) := by simp [Set.ext_iff]
   rw [aux] at IH ⊢
   rw [← IH, insert_inter_distrib, ← image_insert_eq, ← Finset.coe_insert, ← Finset.range_add_one]
   split_ifs with h'

@@ -544,7 +544,7 @@ theorem eq_of_le_not_disjoint {x r : α} (hx : x ∈ R) (hxs : b ≤ x) (hr : r 
   exact hndisj.symm.mono hxs hrs
 
 def disjParts (S : Set α) : Partition (Set α) :=
-  let A : IsSymm α ((¬ Disjoint · ·) : α → α → Prop) := by
+  let A : Std.Symm α ((¬ Disjoint · ·) : α → α → Prop) := by
     refine ⟨fun x y h => ?_⟩
     contrapose! h
     exact h.symm

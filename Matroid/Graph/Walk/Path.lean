@@ -355,6 +355,18 @@ lemma IsPathFrom.subset {S₀ T₀ : Set α} (hP : G.IsPathFrom S T P) (hS₀ : 
     (hx : P.first ∈ S₀) (hy : P.last ∈ T₀) : G.IsPathFrom S₀ T₀ P :=
   hP.subset_left hS₀ hx |>.subset_right hT₀ hy
 
+lemma isPathFrom_vertexSet_inter_left_iff : G.IsPathFrom (V(G) ∩ S) T P ↔ G.IsPathFrom S T P := by
+  refine ⟨fun h => ⟨h.1, inter_subset_right h.2, h.3, ?_, h.5⟩, fun h => ⟨h.1, ?_, h.3, ?_, h.5⟩⟩
+  · exact fun a b c ↦ h.4 b ⟨h.isPath.vertexSet_subset b, c⟩
+  · exact ⟨h.isPath.vertexSet_subset first_mem, h.2⟩
+  exact fun a b c ↦ h.4 b c.2
+
+lemma isPathFrom_vertexSet_inter_right_iff : G.IsPathFrom S (V(G) ∩ T) P ↔ G.IsPathFrom S T P := by
+  refine ⟨fun h => ⟨h.1, h.2, inter_subset_right h.3, h.4, ?_⟩, fun h => ⟨h.1, h.2, ?_, h.4, ?_⟩⟩
+  · exact fun a b c ↦ h.5 b ⟨h.isPath.vertexSet_subset b, c⟩
+  · exact ⟨h.isPath.vertexSet_subset last_mem, h.3⟩
+  exact fun a b c ↦ h.5 b c.2
+
 lemma IsPathFrom.diff_left_of_disjoint (hP : G.IsPathFrom S T P) (hdj : Disjoint V(P) X) :
     G.IsPathFrom (S \ X) (T) P where
   toIsPath := hP.isPath

@@ -3,7 +3,7 @@ import Matroid.Graph.WList.Sublist
 open Set Function List Nat WList
 
 variable {α β : Type*} {u v x y z : α} {e e' f g : β} {S T U: Set α}
-  {F F' : Set β} {w w₁ w₂ w₃ l l₁ l₂ l₃ : WList α β}
+  {F F' : Set β} {w w₀ w₁ w₂ w₃ l l₁ l₂ l₃ : WList α β}
 
 namespace WList
 
@@ -78,24 +78,22 @@ lemma prefixUntil_last_eq_iff_prop (h : ∃ u ∈ w, P u) :
   rintro rfl
   exact ⟨prefixUntil_prop_last h, last_mem⟩
 
-lemma prefixUntil_inter_eq_last (w : WList α β) (S : Set α) [DecidablePred (· ∈ S)]
-    (h : ∃ u ∈ w, u ∈ S) :
+lemma prefixUntil_inter_eq_last [DecidablePred (· ∈ S)] (h : ∃ u ∈ w, u ∈ S) :
     S ∩ V(w.prefixUntil (· ∈ S)) = {(w.prefixUntil (· ∈ S)).last} := by
   ext x
   simp only [Set.mem_inter_iff, mem_vertexSet_iff, mem_singleton_iff]
   rwa [eq_comm, w.prefixUntil_last_eq_iff_prop]
 
-lemma prefixUntil_eq_self_of_forall (w : WList α β) (P : α → Prop) [DecidablePred P]
-    (h : ∀ u ∈ w, ¬ P u) : w.prefixUntil P = w := by
+lemma prefixUntil_eq_self_of_forall {w : WList α β} (h : ∀ u ∈ w, ¬ P u) : w.prefixUntil P = w := by
   match w with
   | nil u => simp
   | cons u e w =>
     simp_all only [mem_cons_iff, forall_eq_or_imp, prefixUntil_cons, ↓reduceIte, cons.injEq,
       true_and]
-    exact prefixUntil_eq_self_of_forall w P h.2
+    exact prefixUntil_eq_self_of_forall h.2
 
-lemma prefixUntil_concat_of_exists (w : WList α β) (P : α → Prop) [DecidablePred P]
-    (h : ∃ u ∈ w, P u) : (w.concat e x).prefixUntil P = w.prefixUntil P := by
+lemma prefixUntil_concat_of_exists {w : WList α β} (h : ∃ u ∈ w, P u) :
+    (w.concat e x).prefixUntil P = w.prefixUntil P := by
   match w with
   | nil u => simp_all
   | cons u e w =>
@@ -103,23 +101,23 @@ lemma prefixUntil_concat_of_exists (w : WList α β) (P : α → Prop) [Decidabl
     · simp [hP]
     simp_all only [mem_cons_iff, exists_eq_or_imp, false_or, cons_concat, prefixUntil_cons,
       ↓reduceIte, cons.injEq, true_and]
-    exact prefixUntil_concat_of_exists w P h
+    exact prefixUntil_concat_of_exists h
 
-lemma prefixUntil_concat_of_forall (w : WList α β) (P : α → Prop) [DecidablePred P]
-    (h : ∀ u ∈ w, ¬ P u) : (w.concat e x).prefixUntil P = w.concat e x := by
+lemma prefixUntil_concat_of_forall {w : WList α β} (h : ∀ u ∈ w, ¬ P u) :
+    (w.concat e x).prefixUntil P = w.concat e x := by
   match w with
   | nil u => simp_all
   | cons u e w =>
     simp_all only [mem_cons_iff, forall_eq_or_imp, cons_concat, prefixUntil_cons, ↓reduceIte,
       cons.injEq, true_and]
-    exact prefixUntil_concat_of_forall w P h.2
+    exact prefixUntil_concat_of_forall h.2
 
 lemma prefixUntil_concat (w : WList α β) (P : α → Prop) [DecidablePred P] :
     (w.concat e x).prefixUntil P = if w.vertex.all (¬ P ·) then w.concat e x
     else w.prefixUntil P := by
   split_ifs with h
-  · exact prefixUntil_concat_of_forall w P (by simpa using h)
-  · exact prefixUntil_concat_of_exists w P (by simpa using h)
+  · exact prefixUntil_concat_of_forall (by simpa using h)
+  · exact prefixUntil_concat_of_exists (by simpa using h)
 
 /-- The prefix of `w` ending at a vertex `x`. Equal to `w` if `x ∉ w`. -/
 def prefixUntilVertex [DecidableEq α] (w : WList α β) (x : α) : WList α β := w.prefixUntil (· = x)
@@ -443,20 +441,18 @@ lemma suffixFromLast_first_eq_iff_prop (h : ∃ x ∈ w, P x) :
   rintro rfl
   exact ⟨suffixFromLast_prop_first h, first_mem⟩
 
-lemma suffixFromLast_inter_eq_first (w : WList α β) (S : Set α) [DecidablePred (· ∈ S)]
-    (h : ∃ u ∈ w, u ∈ S) :
+lemma suffixFromLast_inter_eq_first [DecidablePred (· ∈ S)] (h : ∃ u ∈ w, u ∈ S) :
     S ∩ V(w.suffixFromLast (· ∈ S)) = {(w.suffixFromLast (· ∈ S)).first} := by
   ext x
   simp only [mem_inter_iff, mem_vertexSet_iff, mem_singleton_iff]
   rw [eq_comm, suffixFromLast_first_eq_iff_prop h]
 
-lemma suffixFromLast_eq_self_of_forall (w : WList α β) (P : α → Prop) [DecidablePred P]
-    (h : ∀ x ∈ w, ¬ P x) : w.suffixFromLast P = w := by
-  rw [suffixFromLast, w.reverse.prefixUntil_eq_self_of_forall P (by simpa), reverse_reverse]
+lemma suffixFromLast_eq_self_of_forall {w : WList α β} (h : ∀ x ∈ w, ¬ P x) :
+    w.suffixFromLast P = w := by
+  rw [suffixFromLast, w.reverse.prefixUntil_eq_self_of_forall (by simpa), reverse_reverse]
 
 @[simp]
-lemma suffixFrom_isSuffix_suffixFromLast (w : WList α β) (P : α → Prop) [DecidablePred P]
-    (h : ∃ x ∈ w, P x) :
+lemma suffixFrom_isSuffix_suffixFromLast {w : WList α β} (h : ∃ x ∈ w, P x) :
     (w.suffixFromLast P).IsSuffix (w.suffixFrom P) := by
   match w with
   | nil x => simp [suffixFromLast]
@@ -470,7 +466,7 @@ lemma suffixFrom_isSuffix_suffixFromLast (w : WList α β) (P : α → Prop) [De
       simpa [hPw]
     · exact (w.suffixFromLast_isSuffix P).cons x e
     simp only [mem_cons_iff, exists_eq_or_imp, hPw, false_or] at h
-    exact suffixFrom_isSuffix_suffixFromLast w P h
+    exact suffixFrom_isSuffix_suffixFromLast h
 
 lemma suffixFrom_eq_suffixFromLast_of_nodup [DecidableEq α] (hnd : w.vertex.Nodup)
     (h : w.vertex.count x = 1) : w.suffixFrom (· = x) = w.suffixFromLast (· = x) := by
@@ -483,7 +479,7 @@ lemma suffixFrom_eq_suffixFromLast_of_nodup [DecidableEq α] (hnd : w.vertex.Nod
   rw [← List.nodup_reverse, ← reverse_vertex] at hnd
   exact prefixUntilLast_eq_prefixUntil_of_nodup hnd h
 
-lemma IsSublist.exists_append_append {w₀ : WList α β} (hw₀ : w₀.IsSublist w) (hw : w.vertex.Nodup) :
+lemma IsSublist.exists_append_append (hw₀ : w₀.IsSublist w) (hw : w.vertex.Nodup) :
     ∃ w₁ w₂, w₁.last = w₀.first ∧ w₀.last = w₂.first ∧ w = w₁ ++ w₀ ++ w₂ := by
   classical
   induction hw₀ with
@@ -509,8 +505,8 @@ lemma IsSublist.exists_append_append {w₀ : WList α β} (hw₀ : w₀.IsSublis
 
 /-- If `w₀` is a sublist `w` and `w` has no vertex repetitions,
 then `w₀` is a suffix of a prefix of `w`. -/
-lemma IsSublist.exists_isPrefix_isSuffix {w₀ : WList α β} (hw₀ : w₀.IsSublist w)
-    (hw : w.vertex.Nodup) : ∃ w', w'.IsPrefix w ∧ w₀.IsSuffix w' := by
+lemma IsSublist.exists_isPrefix_isSuffix (hw₀ : w₀.IsSublist w) (hw : w.vertex.Nodup) :
+    ∃ w', w'.IsPrefix w ∧ w₀.IsSuffix w' := by
   obtain ⟨w₁, w₂, h1, h2, rfl⟩ := hw₀.exists_append_append hw
   exact ⟨w₁ ++ w₀, isPrefix_append_right (by simpa), isSuffix_append_left ..⟩
 

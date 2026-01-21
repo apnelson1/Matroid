@@ -82,6 +82,14 @@ lemma between.right {T₀ : Set α} (hAST : A.between S T)
     (hA : Disjoint A.vertexSet (T ∆ T₀)) : A.between S T₀ :=
   fun _ hP ↦ (hAST hP).right_of_symmdiff_disjoint (hA.mono_left (A.subset_vertexSet_of_mem hP))
 
+lemma between_vertexSet_inter_left_iff : A.between (V(G) ∩ S) T ↔ A.between S T :=
+  ⟨fun h _ hC => isPathFrom_vertexSet_inter_left_iff.mp <| h hC,
+    fun h _ hC => isPathFrom_vertexSet_inter_left_iff.mpr <| h hC⟩
+
+lemma between_vertexSet_inter_right_iff : A.between S (V(G) ∩ T) ↔ A.between S T :=
+  ⟨fun h _ hC => isPathFrom_vertexSet_inter_right_iff.mp <| h hC,
+    fun h _ hC => isPathFrom_vertexSet_inter_right_iff.mpr <| h hC⟩
+
 /-- Given a vertex set disjoint from a SetEnsemble, the same set of paths form a valid SetEnsmeble
   for `G - X`. -/
 @[simps]
@@ -323,7 +331,7 @@ def extend_right_two (A : G.SetEnsemble) (hAST : A.between S T) (P : WList α β
     exact ⟨u, hup, by simpa using huA⟩
   have hinter : A.vertexSet ∩ V(P₀.reverse) = {P₀.reverse.first} := by
     simp only [reverse_vertexSet, reverse_first]
-    refine P.prefixUntil_inter_eq_last A.vertexSet ?_
+    refine P.prefixUntil_inter_eq_last ?_
     obtain ⟨u, hup, huA⟩ := (P.vertex.countP_pos_iff (p := (· ∈ A.vertexSet))).mp (by omega)
     exact ⟨u, hup, by simpa using huA⟩
   have hP : (P.breakAt fun x ↦ x ∈ A.vertexSet) = [P₀, (P.breakAt (· ∈ A.vertexSet))[1], P₂] := by
@@ -353,7 +361,7 @@ def extend_right_two (A : G.SetEnsemble) (hAST : A.between S T) (P : WList α β
     use (P.suffixFromLast_isSuffix _).subset.trans hPT, hdj.symm.mono_right diff_subset
   · simp only [extend_right_vertexSet, reverse_vertexSet, union_inter_distrib_right]
     rw [disjoint_iff_inter_eq_empty.mp hdj, union_empty]
-    exact P.suffixFromLast_inter_eq_first A.vertexSet hex
+    exact P.suffixFromLast_inter_eq_first hex
 
 lemma between.extend_right_two (hAST : A.between S T) (hPT : V(P) ⊆ T)
     [DecidablePred (· ∈ A.vertexSet)] (htwo : P.vertex.countP (· ∈ A.vertexSet) = 2)
@@ -386,10 +394,10 @@ lemma between.extend_right_two (hAST : A.between S T) (hPT : V(P) ⊆ T)
     rw [← hPf, ← hPl, pair_comm, diff_insert_of_notMem]
     exact hdj.notMem_of_mem_right last_mem
   have hP₀l : V(P₀) \ {P₀.last} = V(P₀) \ A.vertexSet := by
-    rw [diff_eq_diff_iff_inter_eq_inter, P.prefixUntil_inter_eq_last A.vertexSet hex, inter_eq_left]
+    rw [diff_eq_diff_iff_inter_eq_inter, P.prefixUntil_inter_eq_last hex, inter_eq_left]
     simp
   have hP₂f : V(P₂) \ {P₂.first} = V(P₂) \ A.vertexSet := by
-    rw [diff_eq_diff_iff_inter_eq_inter, P.suffixFromLast_inter_eq_first A.vertexSet hex,
+    rw [diff_eq_diff_iff_inter_eq_inter, P.suffixFromLast_inter_eq_first hex,
       inter_eq_left]
     simp
   have hP₂l : V(P₂) \ {P₂.last} = V(P₂) \ {P.first, P.last} := by

@@ -479,10 +479,10 @@ lemma disjoint_iff_rel_disjoint (P Q : Partition (Set α)) : Disjoint P Q ↔ Di
     (hpQ a b hpab).left_mem
 
 --
-instance {S : Set (Partition (Set α))} : IsSymm α (sSup <| (⇑) '' S) where
+instance {S : Set (Partition (Set α))} : Std.Symm α (sSup <| (⇑) '' S) where
   symm := sSup_symmtric (fun _ ⟨_, _, heq⟩ => heq ▸ inferInstance)
 
-instance {S : Set (Partition (Set α))} : IsSymm α (sInf <| (⇑) '' S) where
+instance {S : Set (Partition (Set α))} : Std.Symm α (sInf <| (⇑) '' S) where
   symm := sInf_symmtric (fun _ ⟨_, _, heq⟩ => heq ▸ inferInstance)
 
 instance {S : Set (Partition (Set α))} : IsTrans α (sInf <| (⇑) '' S) where

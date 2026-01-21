@@ -116,7 +116,7 @@ lemma rel_self_of_mem_supp (hx : x ∈ P.supp) : P x x := by
 lemma rel_symmectric (P : Partition (Set α)) : Symmetric P :=
   fun _ _ ⟨t, ht, ha, hb⟩ ↦ ⟨t, ht, hb, ha⟩
 
-instance (P : Partition (Set α)) : IsSymm α P where
+instance (P : Partition (Set α)) : Std.Symm P where
   symm := P.rel_symmectric
 
 lemma rel_transitive (P : Partition (Set α)) : Transitive P := by
@@ -227,17 +227,17 @@ lemma rel_le_of_subset (h : P ⊆ Q) : ⇑P ≤ ⇑Q :=
 
 /-- A transitive, symmetric Binary relation `r` induces a partition of the set of elements on
   which it is reflexive. -/
-@[simps] def ofRel (r : α → α → Prop) [IsTrans α r] [IsSymm α r] : Partition (Set α) where
+@[simps] def ofRel (r : α → α → Prop) [IsTrans α r] [Std.Symm r] : Partition (Set α) where
   parts := fibers r
   indep := PairwiseDisjoint.sSupIndep fibers_pairwiseDisjoint
   bot_not_mem := emptySet_notMem_fibers r
 
 @[simp]
-lemma ofRel_supp {r : α → α → Prop} [IsSymm α r] [IsTrans α r] : (ofRel r).supp = domain r :=
+lemma ofRel_supp {r : α → α → Prop} [Std.Symm r] [IsTrans α r] : (ofRel r).supp = domain r :=
   sUnion_fibers r
 
 @[simp]
-lemma rel_ofRel_eq {r : α → α → Prop} [IsTrans α r] [IsSymm α r] : ofRel r = r := by
+lemma rel_ofRel_eq {r : α → α → Prop} [IsTrans α r] [Std.Symm r] : ofRel r = r := by
   ext a b
   exact ⟨fun ⟨S, ⟨c, ⟨d, hdc⟩, heq⟩, haS, hbS⟩ => trans' (heq ▸ haS) (symm (heq ▸ hbS)),
     fun hab => ⟨fiber r b, fiber_mem_fibers hab, hab, refl_of_right hab⟩⟩

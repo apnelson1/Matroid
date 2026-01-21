@@ -76,7 +76,7 @@ end Rank
 section Finite
 
 @[simp] theorem cRank_eq_zero : M.cRank = 0 ↔ ∃ E, M = loopyOn E := by
-  rw [← le_zero_iff, cRank_le_iff]
+  rw [← nonpos_iff_eq_zero, cRank_le_iff]
   simp only [nonpos_iff_eq_zero, mk_eq_zero_iff, isEmpty_coe_sort, eq_loopyOn_iff,
     exists_and_right, exists_eq', true_and]
   refine ⟨fun h X hX hXi ↦ ?_, fun h B hB ↦ h _ hB.subset_ground hB.indep⟩

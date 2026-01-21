@@ -245,7 +245,7 @@ noncomputable def Bipartition.union (G H : Graph α β) (B₁ : G.Bipartition) (
     simp only [mem_insert_iff, mem_singleton_iff] at hi
     obtain rfl : i = H ＼ E(G) := hi.resolve_left h
     exact B₂.of_le edgeDelete_le) (by
-    rw [Set.pairwise_pair_of_symmetric IsSymm.symm]
+    rw [Set.pairwise_pair_of_symmetric Std.Symm.symm]
     exact fun _ ↦ hGH.anti_right edgeDelete_le)
 
 /-- Rather than switching the entire bipartition, we can switch the bipartition for the component

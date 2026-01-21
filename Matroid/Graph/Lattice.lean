@@ -393,7 +393,7 @@ lemma ofEdge_isLink (F : Set β) : (ofEdge G F).val.IsLink e x y ↔ e ∈ F ∧
   the edges and vertices that are not in the subgraph. See `compl_le_iff`.
   This complement is not well behaved in general order theoretically. See `inf_compl_eq_bot_iff`.
   However, it is useful for other purposes.-/
-instance : HasCompl G.Subgraph where
+instance : Compl G.Subgraph where
   compl H := by
     use G[V(G) \ V(H.val) ∪ V(G, E(G) \ E(H.val))] ＼ E(H.val)
     grw [edgeDelete_le, induce_le]

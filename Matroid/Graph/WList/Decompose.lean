@@ -149,13 +149,13 @@ lemma breakAt_aux_head (w : WList α β) (P : α → Prop) [DecidablePred P] (e'
     by_cases hPx : P x <;> by_cases hPw : w.vertex.all fun x ↦ !decide (P x) <;> simp [hPx, hPw, h]
     · simp only [suffixFromLast, reverse_reverse, prefixUntil_concat, reverse_vertex, decide_not,
       all_reverse, hPw, ↓reduceIte]
-      rw [WList.concat_eq_append, prefixUntil_eq_self_of_forall _ _ (by simpa using hPw)]
+      rw [WList.concat_eq_append, prefixUntil_eq_self_of_forall (by simpa using hPw)]
       simp
     · simp [suffixFromLast, prefixUntil_concat, hPw]
     · rw [breakAt_aux_head]
       simp only [decide_not, hPw, ↓reduceIte, suffixFromLast, reverse_reverse, prefixUntil_concat,
         reverse_vertex, all_reverse, WList.concat_append, reverse_last]
-      rw [prefixUntil_eq_self_of_forall _ _ (by simpa using hPw)]
+      rw [prefixUntil_eq_self_of_forall (by simpa using hPw)]
     rw [breakAt_aux_head]
     simp [hPw, suffixFromLast, prefixUntil_concat]
 
@@ -298,11 +298,11 @@ lemma breakAt_reverse_head (w : WList α β) (P : α → Prop) [DecidablePred P]
       simp only [ne_eq, breakAt_aux_ne_nil, not_false_eq_true, head_append_of_ne_nil,
         breakAt_aux_head, decide_not, suffixFromLast, reverse_reverse]
       by_cases hPw : w.vertex.all fun x ↦ !decide (P x) <;> simp [hPw, prefixUntil_concat]
-      simp [w.reverse.prefixUntil_eq_self_of_forall P (by simpa [mem_reverse] using hPw),
+      simp [w.reverse.prefixUntil_eq_self_of_forall (by simpa [mem_reverse] using hPw),
         WList.concat_eq_append]
     simp only [breakAt_aux_head, decide_not, suffixFromLast, reverse_reverse]
     by_cases hPw : w.vertex.all fun x ↦ !decide (P x) <;> simp [hPw, prefixUntil_concat]
-    simp [WList.concat_eq_append, w.reverse.prefixUntil_eq_self_of_forall P (by simpa using hPw)]
+    simp [WList.concat_eq_append, w.reverse.prefixUntil_eq_self_of_forall (by simpa using hPw)]
 
 @[simp]
 lemma breakAt_head (w : WList α β) (P : α → Prop) [DecidablePred P] :

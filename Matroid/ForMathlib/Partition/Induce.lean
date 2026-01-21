@@ -125,13 +125,13 @@ lemma isInducedSubpartition.eq_of_supp_le (hPQ : P ≤ip Q) (hQP : Q.supp ≤ P.
 lemma isInducedSubpartition_rfl : P ≤ip P := by
   simp [isInducedSubpartition]
 
-instance : IsRefl (Partition α) isInducedSubpartition where
+instance : Std.Refl (isInducedSubpartition : Partition α → Partition α → Prop) where
   refl _ := isInducedSubpartition_rfl
 
 lemma isInducedSubpartition.antisymm (hPQ : P ≤ip Q) (hQP : Q ≤ip P) : P = Q :=
   hPQ.eq_of_supp_le hQP.supp_le
 
-instance : IsAntisymm (Partition α) isInducedSubpartition where
+instance : Std.Antisymm (isInducedSubpartition : Partition α → Partition α → Prop) where
   antisymm _ _ := isInducedSubpartition.antisymm
 
 end Induce
@@ -340,14 +340,14 @@ lemma agree_of_subset_subset {P₀ Q₀ : Partition α} (hP : P₀ ⊆ P) (hQ : 
 @[simp]
 lemma Agree.rfl : P.Agree P := ⟨P, subset_rfl, subset_rfl⟩
 
-instance : IsRefl (Partition α) Agree where
+instance : Std.Refl (Agree : Partition α → Partition α → Prop) where
   refl _ := Agree.rfl
 
 lemma Agree.symm (h : P.Agree Q) : Q.Agree P := by
   obtain ⟨S, hPS, hQS⟩ := h
   exact ⟨S, hQS, hPS⟩
 
-instance : IsSymm (Partition α) Agree where
+instance : Std.Symm (Agree : Partition α → Partition α → Prop) where
   symm _ _ := Agree.symm
 
 lemma agree_comm : P.Agree Q ↔ Q.Agree P := ⟨Agree.symm, Agree.symm⟩

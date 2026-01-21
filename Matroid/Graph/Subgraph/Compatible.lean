@@ -14,7 +14,7 @@ lemma Option.elim_eq_const_of_isEmpty {α : Type*} [hα : IsEmpty α] (f : α �
   | none => rfl
   | some a => hα.elim a
 
-instance {ι α : Type*} {r : α → α → Prop} [IsRefl α r] {f : ι → α} : IsRefl ι (r on f) where
+instance {ι : Type*} {r : α → α → Prop} [Std.Refl r] {f : ι → α} : Std.Refl (r on f) where
   refl i := refl (f i)
 
 open scoped Sym2

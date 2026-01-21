@@ -12,49 +12,53 @@ namespace Graph
 /-- Cut-based strict gammoid independence with named fields.
 
 `subset_ground` + `finite` allow us to use `Set.ncard` for cardinalities of subsets.
-`setConnGE` states: for every `J ⊆ I`, every `J`–`T` vertex cut has size at least `|J|`. -/
+`fully_conn` states: every `I`–`T` vertex cut has size at least `|I|`. -/
 @[mk_iff]
 structure GammoidIndep (G : Graph α β) (T I : Set α) : Prop where
   subset_ground : I ⊆ V(G)
   finite : I.Finite
-  setConnGE : ∀ J ⊆ I, G.SetConnGE J T J.ncard
+  fully_conn : G.SetConnGE T I I.ncard
+
+lemma GammoidIndep.fully_conn_of_subset (h : G.GammoidIndep T I) (hJI : J ⊆ I) :
+    G.SetConnGE T J J.ncard :=
+  fun _ hKJ ↦ h.fully_conn.right_bound_anti h.finite hJI hKJ
 
 lemma gammoidIndep_empty (G : Graph α β) (T : Set α) : G.GammoidIndep T (∅ : Set α) := by
-  refine ⟨by simp, by simp, ?_⟩
-  intro J hJ
-  obtain rfl : J = ∅ := (subset_empty_iff).1 hJ
-  simp
+  constructor <;> simp
 
-lemma GammoidIndep.subset (h : G.GammoidIndep T I) (hJI : J ⊆ I) : G.GammoidIndep T J := by
-  refine ⟨hJI.trans h.subset_ground, h.finite.subset hJI, ?_⟩
-  intro K hKJ
-  exact h.setConnGE K (hKJ.trans hJI)
+lemma GammoidIndep.subset (h : G.GammoidIndep T I) (hJI : J ⊆ I) : G.GammoidIndep T J :=
+  ⟨hJI.trans h.subset_ground, h.finite.subset hJI,
+  fun _ hKJ ↦ h.fully_conn.right_bound_anti h.finite hJI hKJ⟩
 
 lemma GammoidIndep.eq_of_superset (h : G.GammoidIndep T I) (hIT : T ⊆ I) : T = I := by
-  have := h.setConnGE I (refl _) (C := T) <| by
-    have := G.right_isSetCut I T
+  have := h.fully_conn_of_subset (refl _) (C := T) <| by
+    have := G.left_isSetCut T I
     rwa [inter_eq_right.mpr (hIT.trans h.subset_ground)] at this
   rw [h.finite.cast_ncard_eq] at this
   exact (h.finite.subset hIT).eq_of_subset_of_encard_le hIT this
 
-lemma GammoidIndep.self (G : Graph α β) (hfin : T.Finite) : G.GammoidIndep T (V(G) ∩ T) where
+lemma gammoidIndep_self (G : Graph α β) (hfin : T.Finite) : G.GammoidIndep T (V(G) ∩ T) where
   subset_ground := inter_subset_left
   finite := hfin.subset inter_subset_right
-  setConnGE J hJ := by sorry
+  fully_conn := G.setConnGE_self (hfin.subset inter_subset_right) inter_subset_left
+    |>.subset inter_subset_right (refl _)
 
 /-! ### Bridging to Menger (internal, finite graphs) -/
 
-lemma GammoidIndep.exists_setEnsemble [G.Finite] (hT : T ⊆ V(G)) (h : G.GammoidIndep T I) :
+lemma GammoidIndep.exists_setEnsemble [G.Finite] (h : G.GammoidIndep T I) :
     ∃ A : G.SetEnsemble, A.between I T ∧ A.paths.encard = I.ncard := by
-  have hconn : G.SetConnGE I T I.ncard := h.setConnGE I subset_rfl
-  exact (Menger'sTheorem_set (G := G) (S := I) (T := T)
-    (hS := h.subset_ground) (hT := hT) (n := I.ncard)).1 hconn
+  have hconn := h.fully_conn.symm.vertexSet_inter_right
+  obtain ⟨A, hA, hAcard⟩ := (Menger'sTheorem_set h.subset_ground inter_subset_left I.ncard).1 hconn
+  rw [A.between_vertexSet_inter_right_iff] at hA
+  exact ⟨A, hA, hAcard⟩
 
-lemma setConnGE_of_exists_setEnsemble [G.Finite] (hT : T ⊆ V(G)) (hI : I ⊆ V(G))
+lemma setConnGE_of_exists_setEnsemble [G.Finite]
     (hA : ∃ A : G.SetEnsemble, A.between I T ∧ A.paths.encard = I.ncard) :
-    G.SetConnGE I T I.ncard :=
-  (Menger'sTheorem_set (G := G) (S := I) (T := T)
-    (hS := hI) (hT := hT) (n := I.ncard)).2 hA
+    G.SetConnGE I T I.ncard := by
+  obtain ⟨A, hA, hAcard⟩ := hA
+  rw [← A.between_vertexSet_inter_right_iff, ← A.between_vertexSet_inter_left_iff] at hA
+  have := (Menger'sTheorem_set inter_subset_left inter_subset_left I.ncard).2 ⟨A, hA, hAcard⟩
+  rwa [setConnGE_vertexSet_inter_left_iff, setConnGE_vertexSet_inter_right_iff] at this
 
 /-! ### Restricting a linkage by start vertices (internal helper) -/
 
@@ -91,15 +95,6 @@ lemma image_first_restrictFirst_eq (hI : I ⊆ first '' A.paths) :
 
 end SetEnsemble
 
-/-! ### Augmentation (uses Menger internally; proof TBD) -/
-
-lemma gammoidIndep_augment [G.Finite] (hT : T ⊆ V(G)) (hI : G.GammoidIndep T I)
-    (hJ : G.GammoidIndep T J) (hIJ : I.encard < J.encard) :
-    ∃ e ∈ J, e ∉ I ∧ G.GammoidIndep T (insert e I) := by
-  classical
-  -- TODO: implement using `Menger'sTheorem_aux` + `SetEnsemble.restrictFirst`, as in the plan.
-  sorry
-
 /-! ### The strict gammoid matroid (finite graph; axioms TBD) -/
 
 variable (G) in
@@ -113,6 +108,16 @@ def gammoidIndepMatroid (T : Set α) [G.Finite] : IndepMatroid α where
     intro I J hJ hIJ
     exact (Graph.GammoidIndep.subset (G := G) (T := T) hJ hIJ)
   indep_aug I B hTI hnMI hMB := by
+    have hconn := hMB.1.fully_conn.vertexSet_inter_left.vertexSet_inter_right
+    obtain ⟨A, hA, hAcard⟩ := hTI.exists_setEnsemble
+    have := G.Menger'sTheorem_aux inter_subset_left inter_subset_left hconn (A := A)
+
+    rw [maximal_iff] at hnMI hMB
+    obtain ⟨hTB, hMB⟩ := hMB
+    obtain ⟨J, hTJ, hIJ⟩ := (by simpa [hTI] using hnMI); clear hnMI
+    rw [← ssubset_iff_subset_ne] at hIJ
+    rw [gammoidIndep_iff] at hTI hTJ hTB
+
     /-
     ⊢ ∃ x ∈ B \ I, G.GammoidIndep T (insert x I)
     hMB : Maximal (fun I ↦ G.GammoidIndep T I) B

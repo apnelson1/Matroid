@@ -32,8 +32,8 @@ lemma parallel_iff :
     M.Parallel e f ↔ M.IsNonloop e ∧ M.IsNonloop f ∧ M.closure {e} = M.closure {f} := by
   simp [Parallel, parallelClasses, and_comm (a := _ ∈ M.E), isNonloop_iff_mem_compl_loops, loops]
 
-instance {M : Matroid α} : IsSymm α M.Parallel :=
-  inferInstanceAs <| IsSymm α M.parallelClasses
+instance {M : Matroid α} : Std.Symm M.Parallel :=
+  inferInstanceAs <| Std.Symm M.parallelClasses
 
 instance {M : Matroid α} : IsTrans α M.Parallel :=
   inferInstanceAs <| IsTrans α M.parallelClasses

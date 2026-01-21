@@ -231,7 +231,7 @@ structure StronglyDisjoint (G H : Graph α β) : Prop where
 lemma StronglyDisjoint.symm (h : G.StronglyDisjoint H) : H.StronglyDisjoint G :=
   ⟨h.1.symm, h.2.symm⟩
 
-instance : IsSymm (Graph α β) StronglyDisjoint where
+instance : Std.Symm (StronglyDisjoint : Graph α β → Graph α β → Prop) where
   symm _ _ := StronglyDisjoint.symm
 
 lemma StronglyDisjoint.anti_left (h : G.StronglyDisjoint H) (h₁ : H₁ ≤ G) :
@@ -276,9 +276,11 @@ lemma CompatibleAt.comm : CompatibleAt e G H ↔ CompatibleAt e H G :=
 
 lemma compatibleAt_self : CompatibleAt e G G := fun _ _ ↦ rfl
 
-instance {e : β} : IsRefl (Graph α β) (CompatibleAt e) := ⟨fun _ _ _ ↦ rfl⟩
+instance {e : β} : Std.Refl (CompatibleAt e : Graph α β → Graph α β → Prop) where
+  refl _ _ _ := rfl
 
-instance {e : β} : IsSymm (Graph α β) (CompatibleAt e) := ⟨fun _ _ ↦ CompatibleAt.symm⟩
+instance {e : β} : Std.Symm (CompatibleAt e : Graph α β → Graph α β → Prop) where
+  symm _ _ := CompatibleAt.symm
 
 
 /-- Two graphs are `Compatible` if the edges in their intersection agree on their ends -/
@@ -304,14 +306,14 @@ lemma Compatible.isLink_eq (h : G.Compatible H) (heG : e ∈ E(G)) (heH : e ∈ 
 lemma compatible_self (G : Graph α β) : G.Compatible G :=
   eqOn_refl ..
 
-instance : IsRefl (Graph α β) Compatible where
+instance : Std.Refl (Compatible : Graph α β → Graph α β → Prop) where
   refl G := G.compatible_self
 
 @[symm]
 lemma Compatible.symm (h : G.Compatible H) : H.Compatible G := by
   rwa [Compatible, inter_comm, eqOn_comm]
 
-instance : IsSymm (Graph α β) Compatible where
+instance : Std.Symm (Compatible : Graph α β → Graph α β → Prop) where
   symm _ _ := Compatible.symm
 
 lemma IsLink.of_compatible (h : G.IsLink e x y) (hGH : G.Compatible H) (heH : e ∈ E(H)) :

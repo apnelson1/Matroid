@@ -20,7 +20,7 @@ lemma ConnBetween.symm (h : G.ConnBetween x y) : G.ConnBetween y x := by
   obtain ⟨w, hw, hx, hy⟩ := h
   exact ⟨w.reverse, hw.reverse, by simpa, by simpa⟩
 
-instance : IsSymm _ G.ConnBetween where
+instance : Std.Symm G.ConnBetween where
   symm _ _ := ConnBetween.symm
 
 lemma connBetween_comm : G.ConnBetween x y ↔ G.ConnBetween y x :=
@@ -143,7 +143,7 @@ lemma IsSepBetween.symm (hX : G.IsSepBetween s t X) : G.IsSepBetween t s X := by
   refine ⟨hX.subset, hX.right_not_mem, hX.left_not_mem, ?_⟩
   simpa [connBetween_comm] using hX.not_connBetween
 
-instance : IsSymm _ (G.IsSepBetween · · X) where
+instance : Std.Symm (G.IsSepBetween · · X) where
   symm _ _ := IsSepBetween.symm
 
 lemma not_isSepBetween_self (hs : s ∈ V(G)) : ¬ G.IsSepBetween s s X := by
@@ -451,7 +451,7 @@ lemma ConnBetweenGE.anti_right (hle : n ≤ m) (h : G.ConnBetweenGE s t m) : G.C
 lemma ConnBetweenGE.symm (h : G.ConnBetweenGE s t n) : G.ConnBetweenGE t s n :=
   fun _ hC ↦ h (hC.symm)
 
-instance : IsSymm _ (G.ConnBetweenGE · · n) where
+instance : Std.Symm (G.ConnBetweenGE · · n) where
   symm _ _ := ConnBetweenGE.symm
 
 lemma connBetweenGE_comm : G.ConnBetweenGE s t n ↔ G.ConnBetweenGE t s n :=

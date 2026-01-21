@@ -6,9 +6,8 @@ namespace ENat
 
 variable {a b c x y m n : ℕ∞}
 
-instance : LinearOrderedCommMonoidWithZero ℕ∞ where
-  mul_le_mul_left _ _ := mul_le_mul_left
-  zero_le_one := zero_le_one' ℕ∞
+-- LinearOrderedCommMonoidWithZero ℕ∞ is not true anymore
+-- https://leanprover.zulipchat.com/#narrow/channel/116290-rss/topic/Recent.20Commits.20to.20mathlib4.3Amaster/near/566931076
 
 lemma le_one_iff_eq_zero_or_eq_one : a ≤ 1 ↔ a = 0 ∨ a = 1 := by
   cases a with simp [Nat.le_one_iff_eq_zero_or_eq_one]
