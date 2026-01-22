@@ -510,6 +510,11 @@ lemma IsSublist.exists_isPrefix_isSuffix (hw₀ : w₀.IsSublist w) (hw : w.vert
   obtain ⟨w₁, w₂, h1, h2, rfl⟩ := hw₀.exists_append_append hw
   exact ⟨w₁ ++ w₀, isPrefix_append_right (by simpa), isSuffix_append_left ..⟩
 
+lemma isSublist_iff_isInfix (hnd : w.vertex.Nodup) : w₀ ≤ w ↔ w₀.IsInfix w := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.isSublist⟩
+  obtain ⟨wL, wR, hL, hR, rfl⟩ := h.exists_append_append hnd
+  exact ⟨wL, wR, hL, hR, rfl⟩
+
 lemma exists_sublist_of_mem_mem (hx : x ∈ w) (hy : y ∈ w) : ∃ w₀ : WList α β,
     w₀.IsSublist w ∧ (x = w₀.first ∧ y = w₀.last ∨ x = w₀.last ∧ y = w₀.first) := by
   classical

@@ -111,7 +111,7 @@ def gammoidIndepMatroid (T : Set α) [G.Finite] : IndepMatroid α where
     have hconn := hMB.1.fully_conn.vertexSet_inter_left.vertexSet_inter_right
     obtain ⟨A, hA, hAcard⟩ := hTI.exists_setEnsemble
     have := G.Menger'sTheorem_aux inter_subset_left inter_subset_left hconn (A := A)
-
+    
     rw [maximal_iff] at hnMI hMB
     obtain ⟨hTB, hMB⟩ := hMB
     obtain ⟨J, hTJ, hIJ⟩ := (by simpa [hTI] using hnMI); clear hnMI

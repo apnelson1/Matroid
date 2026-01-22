@@ -51,13 +51,8 @@ lemma IsMatching.maxDegree_le_one [G.Loopless] (h : G.IsMatching M) : (G ↾ M).
 
 lemma IsMatching.of_le (hle : G ≤ H) (h : G.IsMatching M) : H.IsMatching M where
   subset := h.subset.trans (edgeSet_mono hle)
-  disjoint e f he hf hne := by
-    sorry
-
-lemma IsMatching.isMaxMatching_of_vertex_subset (hM : G.IsMatching M) (hsu : V(G) ⊆ V(G, M)) :
-    G.IsMaxMatching M where
-  toIsMatching := hM
-  max M' hM' := by
+  disjoint e f heM hfM hne := by
+    -- Consider `disjoint_iff_forall_notMem` and`inc_eq_of_le`
     sorry
 
 lemma IsMatching.encard_le (hM : G.IsMatching M) : M.encard ≤ ν(G) := by
@@ -67,6 +62,12 @@ lemma IsMaxMatching.encard (h : G.IsMaxMatching M) : M.encard = ν(G) := by
   sorry
 
 lemma IsMatching.isMaxMatching_of_encard_eq (hM : G.IsMatching M) (h : M.encard = ν(G)) :
+    G.IsMaxMatching M where
+  toIsMatching := hM
+  max M' hM' := by
+    sorry
+
+lemma IsMatching.isMaxMatching_of_vertex_subset (hM : G.IsMatching M) (hsu : V(G) ⊆ V(G, M)) :
     G.IsMaxMatching M where
   toIsMatching := hM
   max M' hM' := by
@@ -111,6 +112,8 @@ lemma isMaxMatching_iff_maximalFor : G.IsMaxMatching M ↔ MaximalFor G.IsMatchi
 
 lemma matchingNumber_mono (hle : G ≤ H) : ν(G) ≤ ν(H) := by
   sorry
+
+
 
 /-! ### Augmenting paths -/
 

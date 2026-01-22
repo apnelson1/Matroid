@@ -40,6 +40,14 @@ lemma IsCycleGraph.connected (hC : C.IsCycleGraph) : C.Connected := by
   obtain ⟨C', hC', hV, hE⟩ := by rwa [isCycleGraph_iff_toGraph_isCycle] at hC
   exact hC'.isWalk.toGraph_connected
 
+lemma IsPathGraph.finite (hP : G.IsPathGraph) : G.Finite where
+  vertexSet_finite := by
+    obtain ⟨P, hP, rfl⟩ := hP
+    simp
+  edgeSet_finite := by
+    obtain ⟨P, hP, rfl⟩ := hP
+    simp
+
 /-- If `v` and `w` are leaves of a connected graph `G` with maximum degree at most `2`,
 then `G` is a path from `v` to `w`. -/
 lemma Connected.exists_isPath_of_leaves [G.EdgeFinite] (hG : G.Connected) (hmax : G.MaxDegreeLE 2)

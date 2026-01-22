@@ -361,7 +361,7 @@ lemma Nonempty.first_ne_last_of_nodup (hne : w.Nonempty) (hv : w.vertex.Nodup) :
 
 /-- a `WList` is nontrivial if it has at least two edges. -/
 inductive Nontrivial : WList α β → Prop
-  | cons_cons (u e v f) (w : WList α β) : Nontrivial (cons u e (cons v f w))
+| cons_cons (u e v f) (w : WList α β) : Nontrivial (cons u e (cons v f w))
 
 attribute [simp] Nontrivial.cons_cons
 
@@ -392,6 +392,15 @@ lemma Nontrivial.second_ne_last_of_nodup (hnt : w.Nontrivial) (hv : w.vertex.Nod
   simp only [second_cons, first_cons, last_cons, ne_eq]
   rintro rfl
   exact hh.1 last_mem
+
+instance : Decidable w.Nontrivial := by
+  match w with
+  | nil _ =>
+    simp only [not_nontrivial_nil]
+    infer_instance
+  | cons _ _ w =>
+    simp only [cons_nontrivial_iff]
+    infer_instance
 
 /-! ### Length -/
 
@@ -596,6 +605,17 @@ lemma exists_right_edge (hxw : x ∈ w) (hx : x ≠ w.last) : ∃ e y, w.DInc e 
     · obtain ⟨f, x, h⟩ := IH hxw hx
       use f, x, Or.inr h
 
+instance {w : WList α β} {e : β} {x y : α} [DecidableEq α] [DecidableEq β] :
+    Decidable (w.DInc e x y) := by
+  match w with
+  | nil _ =>
+    simp only [not_nil_dInc]
+    infer_instance
+  | cons v f w =>
+    simp only [dInc_cons_iff]
+    have := instDecidableDIncOfDecidableEq (w := w) (e := e) (x := x) (y := y)
+    infer_instance
+
 /-- `w.IsLink e x y` means that `w` contains `[x,e,y]` or `[y,e,x]` as a contiguous sublist. -/
 protected inductive IsLink : WList α β → β → α → α → Prop
   | cons_left (x e w) : (cons x e w).IsLink e x w.first
@@ -686,9 +706,30 @@ lemma Nonempty.mem_iff_exists_isLink (hw : w.Nonempty) : x ∈ w ↔ ∃ y e, w.
       obtain ⟨y, e', h⟩ := ih (by simp) hxw
       exact ⟨y, e', IsLink.cons _ _ h⟩
 
+instance {w : WList α β} {e : β} {x y : α} [DecidableEq α] [DecidableEq β] :
+    Decidable (w.IsLink e x y) := by
+  match w with
+  | nil _ =>
+    simp only [IsLink.not_nil]
+    infer_instance
+  | cons v f w =>
+    rw [isLink_cons_iff']
+    have := instDecidableIsLinkOfDecidableEq (w := w) (e := e) (x := x) (y := y)
+    infer_instance
+
 /-- A `WList` is `WellFormed` if each edge appears only with the same ends. -/
 def WellFormed (w : WList α β) : Prop :=
   ∀ ⦃e x₁ x₂ y₁ y₂⦄, w.IsLink e x₁ x₂ → w.IsLink e y₁ y₂ → s(x₁, x₂) = s(y₁, y₂)
+
+@[simp]
+lemma nil_wellFormed : (nil x (β := β)).WellFormed := by
+  intro e x₁ x₂ y₁ y₂ h₁ h₂
+  simp at h₁
+
+lemma WellFormed.of_cons (hw : (cons u f w).WellFormed) : w.WellFormed := by
+  intro e x₁ x₂ y₁ y₂ h₁ h₂
+  have := @hw e x₁ x₂ y₁ y₂
+  simpa [isLink_cons_iff', h₁, h₂] using this
 
 /-- The set of ends of `e` in `w` -/
 def endsOf (w : WList α β) (e : β) : Set α := {x | ∃ y, w.IsLink e x y}

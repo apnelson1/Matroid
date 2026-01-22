@@ -493,6 +493,7 @@ lemma toGraph_edgeSet (w : WList α β) : E(w.toGraph) = E(w) := by
 lemma toGraph_vertexSet_nonempty (w : WList α β) : V(w.toGraph).Nonempty := by
   simp
 
+@[simp]
 lemma WellFormed.toGraph_isLink (h : w.WellFormed) : w.toGraph.IsLink = w.IsLink := by
   ext e x y
   induction w with
