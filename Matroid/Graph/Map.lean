@@ -123,12 +123,11 @@ lemma IsWalk.map (f : α → α') {w : WList α β} (hw : G.IsWalk w) : (f ''ᴳ
   · intro x hx
     have hx' : f x ∈ V(f ''ᴳ G) := by
       simpa [map_vertexSet] using Set.mem_image_of_mem f hx
-    simpa [WList.map] using Graph.IsWalk.nil (G := f ''ᴳ G) (x := f x) hx'
+    simpa [map] using IsWalk.nil hx'
   · intro x e w hw hlink ih
     have hlink' : (f ''ᴳ G).IsLink e (f x) (w.map f).first := by
-      simpa [WList.map_first] using IsLink.map hlink f
-    simpa [WList.map, WList.map_first] using
-      Graph.IsWalk.cons (G := f ''ᴳ G) (x := f x) (e := e) (w := w.map f) ih hlink'
+      simpa [map_first] using hlink.map f
+    simpa [map, map_first] using ih.cons hlink'
 
 lemma induce_map_isSpanningSubgraph : f ''ᴳ (G[X]) ≤s (f ''ᴳ G)[f '' X] where
   vertexSet_eq := by simp

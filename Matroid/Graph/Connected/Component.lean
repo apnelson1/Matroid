@@ -1,4 +1,3 @@
-import Matroid.ForMathlib.Lattice
 import Matroid.ForMathlib.Partition.Set
 import Matroid.Graph.Lattice
 import Matroid.Graph.Walk.Basic
@@ -278,7 +277,7 @@ def ClosedSubgraph.orderIso_set_components (G : Graph α β) :
 @[simp]
 lemma ClosedSubgraph.orderIso_set_components_sSup (H : G.ClosedSubgraph) :
     sSup (Subtype.val '' (ClosedSubgraph.orderIso_set_components G H)) = H :=
-  orderIsoSetOfAtoms_sSup H
+  CompleteAtomicBooleanAlgebra.toSetOfIsAtom.left_inv H
 
 lemma ClosedSubgraph.le_of_mem_orderIso_set_components (H H' : G.ClosedSubgraph) :
     H' ∈ Subtype.val '' (ClosedSubgraph.orderIso_set_components G H) → H' ≤ H := by

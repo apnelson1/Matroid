@@ -144,6 +144,20 @@ lemma IsWalk.reverse (hw : G.IsWalk w) : G.IsWalk w.reverse := by
 lemma isWalk_reverse_iff : G.IsWalk w.reverse ↔ G.IsWalk w :=
   ⟨fun h ↦ by simpa using h.reverse, IsWalk.reverse⟩
 
+lemma IsWalk.deloop [DecidableEq α] (h : G.IsWalk w) : G.IsWalk w.deloop :=
+  h.sublist w.deloop_isSublist
+
+lemma IsWalk.of_forall_isLink (h : G.IsWalk w) (he : ∀ ⦃e x y⦄, G.IsLink e x y → H.IsLink e x y)
+    (hne : w.Nonempty) : H.IsWalk w := by
+  induction h with
+  | nil hx => simp at hne
+  | cons hw h ih =>
+    rename_i w
+    simp only [cons_isWalk_iff, he h, true_and]
+    refine w.nil_or_nonempty.elim (fun hnil ↦ ?_) ih
+    rw [hnil.eq_nil_first]
+    simp [he h |>.right_mem]
+
 lemma IsWalk.of_le (h : H.IsWalk w) (hle : H ≤ G) : G.IsWalk w := by
   induction h with
   | nil hx => simp [vertexSet_mono hle hx]
@@ -300,6 +314,37 @@ lemma walk_isWalk (h : G.IsLink e u v) : G.IsWalk h.walk := by
 
 end IsLink
 
+lemma Isolated.eq_last_of_mem (hisol : G.Isolated x) {w} (hw : G.IsWalk w) (hx : x ∈ w) :
+    x = w.last := by
+  classical
+  obtain hw' | hw' := (w.suffixFromVertex x).nil_or_nonempty
+  · obtain heq := w.suffixFromVertex_first hx
+    rw [hw'.first_eq_last, suffixFromVertex_last] at heq
+    exact heq.symm
+  exfalso
+  obtain ⟨u, e, w', heq⟩ := hw'.exists_cons
+  obtain rfl := by simpa [heq] using w.suffixFromVertex_first hx
+  have := heq ▸ (hw.suffix <| w.suffixFromVertex_isSuffix u)
+  simp only [cons_isWalk_iff] at this
+  exact hisol.not_isLink this.1
+
+lemma Isolated.eq_first_of_mem (hisol : G.Isolated x) (hw : G.IsWalk w) (hx : x ∈ w) :
+    x = w.first := by
+  simpa using hisol.eq_last_of_mem (w := w.reverse) hw.reverse (by simpa)
+
+lemma Isolated.isWalk_nil_of_mem (hisol : G.Isolated x) (hw : G.IsWalk w) (hx : x ∈ w) :
+    w.Nil := by
+  match w with
+  | .nil u => simp
+  | .cons u e w =>
+    obtain rfl := by simpa using hisol.eq_first_of_mem hw hx
+    simp only [cons_isWalk_iff] at hw
+    exact (hisol.not_isLink hw.1).elim
+
+@[simp]
+lemma Isolated.eq_nil_of_mem (hisol : G.Isolated x) (hw : G.IsWalk w) (hx : x ∈ w) : w = nil x :=
+  hisol.isWalk_nil_of_mem hw hx |>.eq_nil_of_mem hx
+
 section Subgraph
 
 variable {X : Set α}
@@ -325,15 +370,29 @@ lemma isWalk_induce_iff' (hw : w.Nonempty) : G[X].IsWalk w ↔ G.IsWalk w ∧ V(
 
 /-- This is almost true without the `X ⊆ V(G)` assumption; the exception is where
 `w` is a nil walk on a vertex in `X \ V(G)`. -/
-lemma isWalk_induce_iff (hXV : X ⊆ V(G)) : G[X].IsWalk w ↔ G.IsWalk w ∧ V(w) ⊆ X :=
+lemma isWalk_induce_iff_of_subset (hXV : X ⊆ V(G)) : G[X].IsWalk w ↔ G.IsWalk w ∧ V(w) ⊆ X :=
   ⟨fun h ↦ ⟨h.of_le (G.induce_le hXV), h.vertexSet_subset⟩, fun h ↦ h.1.induce h.2⟩
+
+lemma isWalk_induce_iff : G[X].IsWalk w ↔ (∃ x ∈ X \ V(G), w = nil x) ∨ G.IsWalk w ∧ V(w) ⊆ X := by
+  have hile : G[V(G) ∩ X] ≤i G := induce_isInducedSubgraph inter_subset_left
+  have hileX : G[V(G) ∩ X] ≤i G[X] := G.induce_isInducedSubgraph_mono_right inter_subset_right
+  refine ⟨fun h ↦ ?_, ?_⟩; swap
+  · rintro (⟨x, hxX, rfl⟩ | ⟨hw, hwX⟩)
+    · simp [hxX.1]
+    exact hw.isWalk_isInducedSubgraph hile (by simp [hwX, hw.vertexSet_subset]) |>.of_le hileX.le
+  have hwX := by simpa using h.vertexSet_subset
+  refine (em (Disjoint V(w) (X \ V(G))) |>.symm).imp (fun h1 ↦ ?_) (fun hw ↦ ?_)
+  · obtain ⟨x, hxw, hxX⟩ := not_disjoint_iff.mp h1
+    exact ⟨x, hxX, (G.diff_subset_isolatedSet_induce X hxX).eq_nil_of_mem h hxw⟩
+  rw [disjoint_comm, disjoint_diff_iff, inter_eq_right.mpr <| by exact h.vertexSet_subset] at hw
+  exact ⟨h.isWalk_isInducedSubgraph hileX (by simp [hw, hwX]) |>.of_le hile.le, hwX⟩
 
 lemma IsWalk.vertexSet_subset_of_induce (hw : G[X].IsWalk w) : V(w) ⊆ X :=
   fun _ hxw => hw.vertex_mem_of_mem hxw
 
 @[simp]
 lemma isWalk_vertexDelete_iff : (G - X).IsWalk w ↔ G.IsWalk w ∧ Disjoint V(w) X := by
-  rw [vertexDelete_def, isWalk_induce_iff diff_subset, subset_diff, and_congr_right_iff,
+  rw [vertexDelete_def, isWalk_induce_iff_of_subset diff_subset, subset_diff, and_congr_right_iff,
     and_iff_right_iff_imp]
   exact fun h _ ↦ h.vertexSet_subset
 

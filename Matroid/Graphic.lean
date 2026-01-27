@@ -1,15 +1,18 @@
 import Matroid.Axioms.Circuit
+import Matroid.Minor.Contract
 import Matroid.Graph.Forest
+import Matroid.Graph.Minor.Defs
 
 variable {α β : Type*} {G H : Graph α β} {u v x x₁ x₂ y y₁ y₂ z : α} {e e' f g : β}
   {U V S T : Set α} {F F' R R': Set β} {C w P Q : WList α β}
 
-open Set WList
+open Set WList Matroid
 
 namespace Graph
 
 /-- The cycle matroid of a graph `G`. Its circuits are the edge sets of cycles of `G`,
 and its independent sets are the edge sets of forests. -/
+@[simps!]
 def cycleMatroid (G : Graph α β) : Matroid β :=
   FiniteCircuitMatroid.matroid <| FiniteCircuitMatroid.mk
     (E := E(G))
@@ -56,3 +59,57 @@ lemma cycleMatroid_indep : G.cycleMatroid.Indep = G.IsAcyclicSet := by
   ext I
   simp only [cycleMatroid, FiniteCircuitMatroid.matroid_indep_iff, IsCycleSet, IsAcyclicSet]
   aesop
+
+@[simp]
+lemma cycleMatroid_edgeRestrict (G : Graph α β) (F : Set β) :
+    (G ↾ F).cycleMatroid = G.cycleMatroid ↾ (E(G) ∩ F) := by
+  refine ext_isCircuit rfl fun I hI ↦ ?_
+  obtain ⟨hI, hIF⟩ := by simpa using hI
+  simp [restrict_isCircuit_iff, hI, hIF]
+
+@[simp]
+lemma cycleMatroid_edgeDelete (G : Graph α β) (F : Set β) :
+    (G ＼ F).cycleMatroid = G.cycleMatroid ＼ F :=
+  ext_isCircuit rfl fun I hI ↦ by simp
+
+-- lemma cycleMatroid_contract (G : Graph α β) (F : Set β) (φ : (G ↾ F).connPartition.RepFun) :
+--     (G /[φ, F]).cycleMatroid = G.cycleMatroid ／ F := by
+--   refine ext_isCircuit rfl fun I hI ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+--   · simp at h
+--     sorry
+--   obtain ⟨Cs, hCs, hICs, hCsIF⟩ := h.exists_subset_isCircuit_of_contract
+--   simp at hCs ⊢
+--   obtain ⟨C, hC, rfl⟩ := hCs
+--   sorry
+
+@[simp]
+lemma cycleMatroid_vertexDelete_isolatedSet (G : Graph α β) :
+    (G - I(G)).cycleMatroid = G.cycleMatroid := by
+  refine ext_isCircuit ?_ fun I hI ↦ ?_
+  · rw [cycleMatroid_E, cycleMatroid_E, vertexDelete_edgeSet_diff, setincEdges_isolatedSet,
+      diff_empty]
+  rw [cycleMatroid_isCircuit, cycleMatroid_isCircuit]
+  refine ⟨fun h ↦ h.of_isLink (fun e x y hxy ↦ ?_), fun h ↦ h.of_isLink (fun e x y hxy ↦ ?_)⟩
+  · exact hxy.1
+  simp [hxy, hxy.left_not_isolated, hxy.right_not_isolated]
+
+lemma cycleMatroid_isRestriction_of_isLink (hl : ∀ ⦃e x y⦄, G.IsLink e x y → H.IsLink e x y) :
+    G.cycleMatroid ≤r H.cycleMatroid := by
+  have hsu : E(G) ⊆ E(H) := by
+    intro e he
+    obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet he
+    exact (hl hxy).edge_mem
+  use E(G), hsu, ext_isCircuit rfl fun I hI ↦ ?_
+  rw [← inter_eq_right.mpr hsu, ← cycleMatroid_edgeRestrict]
+  simp only [cycleMatroid_isCircuit]
+  refine ⟨fun h ↦ h.of_isLink (fun e x y hxy ↦ (hl hxy).of_le_of_mem edgeRestrict_le ?_),
+    fun h ↦ h.of_isLink (fun e x y hxy ↦ ?_)⟩
+  · simp [hxy.edge_mem, (hl hxy).edge_mem]
+  obtain ⟨-, he⟩ := by simpa using hxy.edge_mem
+  obtain ⟨u, v, huv⟩ := G.exists_isLink_of_mem_edgeSet he
+  obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := hl huv |>.eq_and_eq_or_eq_and_eq (hxy.of_le edgeRestrict_le)
+  · exact huv
+  exact huv.symm
+
+lemma cycleMatroid_isRestriction_of_le (h : G ≤ H) : G.cycleMatroid ≤r H.cycleMatroid :=
+  cycleMatroid_isRestriction_of_isLink h.2

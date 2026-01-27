@@ -8,14 +8,6 @@ namespace Graph
 
 /-! ### Isolated vertices -/
 
-
-
-/-- An `Isolated` vertex is one that is incident with no edge. -/
-@[mk_iff]
-structure Isolated (G : Graph α β) (x : α) : Prop where
-  not_inc : ∀ ⦃e⦄, ¬ G.Inc e x
-  mem : x ∈ V(G)
-
 lemma Isolated.eDegree (h : G.Isolated x) : G.eDegree x = 0 := by
   simp [eDegree_eq_tsum_mem, h.not_inc]
 
@@ -30,62 +22,8 @@ lemma Isolated.degree (h : G.Isolated x) : G.degree x = 0 := by
 lemma isolated_iff_degree [G.LocallyFinite] (hx : x ∈ V(G)) : G.Isolated x ↔ G.degree x = 0 := by
   rw [← Nat.cast_inj (R := ℕ∞), natCast_degree_eq, isolated_iff_eDegree hx, Nat.cast_zero]
 
-@[simp]
-lemma Isolated.not_adj (h : G.Isolated x) : ¬ G.Adj x y :=
-  fun ⟨_, he⟩ ↦ h.not_inc he.inc_left
-
-@[simp]
-lemma Isolated.not_isLink (h : G.Isolated x) : ¬ G.IsLink e x y :=
-  fun he ↦ h.not_inc he.inc_left
-
-lemma isolated_or_exists_isLink (hx : x ∈ V(G)) : G.Isolated x ∨ ∃ e y, G.IsLink e x y := by
-  simp [isolated_iff, Inc, ← not_exists, hx, em']
-
-/-- If `H` is a subgraph of `G` containing all edges and isolated vertices of `G`, then `H = G`-/
-lemma eq_of_le_of_edgeSet_subset_of_isolated (hle : H ≤ G) (hE : E(G) ⊆ E(H))
-    (hV : ∀ ⦃v⦄, G.Isolated v → v ∈ V(H)) : H = G := by
-  refine ext_of_le_le hle le_rfl ((vertexSet_mono hle).antisymm ?_) ((edgeSet_mono hle).antisymm hE)
-  exact fun v hv ↦ (isolated_or_exists_isLink hv).elim (fun h ↦ hV h)
-    fun ⟨e, y, h⟩ ↦ (h.of_le_of_mem hle  (hE h.edge_mem)).left_mem
-
-lemma Isolated.eq_last_of_mem (hisol : G.Isolated x) {w} (hw : G.IsWalk w) (hx : x ∈ w) :
-    x = w.last := by
-  classical
-  obtain hw' | hw' := (w.suffixFromVertex x).nil_or_nonempty
-  · obtain heq := w.suffixFromVertex_first hx
-    rw [hw'.first_eq_last, suffixFromVertex_last] at heq
-    exact heq.symm
-  exfalso
-  obtain ⟨u, e, w', heq⟩ := hw'.exists_cons
-  obtain rfl := by simpa [heq] using w.suffixFromVertex_first hx
-  have := heq ▸ (hw.suffix <| w.suffixFromVertex_isSuffix u)
-  simp only [cons_isWalk_iff] at this
-  exact hisol.not_isLink this.1
-
-lemma Isolated.eq_first_of_mem (hisol : G.Isolated x) {w} (hw : G.IsWalk w) (hx : x ∈ w) :
-    x = w.first := by
-  simpa using hisol.eq_last_of_mem (w := w.reverse) hw.reverse (by simpa)
-
-lemma Isolated.isWalk_nil_of_mem (hisol : G.Isolated x) {w} (hw : G.IsWalk w) (hx : x ∈ w) :
-    w.Nil := by
-  match w with
-  | .nil u => simp
-  | .cons u e w =>
-    obtain rfl := by simpa using hisol.eq_first_of_mem hw hx
-    simp only [cons_isWalk_iff] at hw
-    exact (hisol.not_isLink hw.1).elim
 
 /-! ### Leaves -/
-
-/-- `G.IsPendant e x` means that `e` is a nonloop edge at `x`, and is also the only edge at `x`. -/
-@[mk_iff]
-structure IsPendant (G : Graph α β) (e : β) (x : α) : Prop where
-  isNonloopAt : G.IsNonloopAt e x
-  edge_unique : ∀ ⦃f⦄, G.Inc f x → f = e
-
-lemma IsPendant.not_isLoopAt (h : G.IsPendant e x) (f : β) : ¬ G.IsLoopAt f x := by
-  refine fun h' ↦ h.isNonloopAt.not_isLoopAt x ?_
-  rwa [← h.edge_unique h'.inc]
 
 lemma IsPendant.eDegree (h : G.IsPendant e x) : G.eDegree x = 1 := by
   have hrw : {e | G.IsNonloopAt e x} = {e} := by
@@ -146,12 +84,6 @@ lemma IsPendant.exists_eq_addEdge (h : G.IsPendant e x) :
   rw [h.edgeSet_delete_vertex_eq]
   simp
 
-/-- A leaf is a degree-one vertex. -/
-def IsLeaf (G : Graph α β) (v : α) : Prop := ∃ e, G.IsPendant e v
-
-lemma IsPendant.isLeaf (h : G.IsPendant e x) : G.IsLeaf x :=
-  ⟨e, h⟩
-
 @[simp]
 lemma eDegree_eq_one_iff : G.eDegree v = 1 ↔ G.IsLeaf v := by
   refine ⟨fun h ↦ ?_, fun ⟨e, h⟩ ↦ h.eDegree⟩
@@ -169,77 +101,28 @@ lemma IsLeaf.eDegree (h : G.IsLeaf v) : G.eDegree v = 1 := by
 lemma IsLeaf.degree (h : G.IsLeaf v) : G.degree v = 1 := by
   simpa
 
-lemma IsLeaf.mem (h : G.IsLeaf v) : v ∈ V(G) :=
-  h.choose_spec.isNonloopAt.vertex_mem
-
-lemma IsLeaf.vertexSet_nontrivial (h : G.IsLeaf v) : V(G).Nontrivial := by
-  obtain ⟨e, he⟩ := h
-  exact he.isNonloopAt.vertexSet_nontrivial
-
-/-- Maybe not needed with `IsPendant`. -/
-lemma IsLeaf.exists_unique_inc (h : G.IsLeaf x) : ∃! e, G.Inc e x :=
-  ⟨h.choose, h.choose_spec.isNonloopAt.inc, h.choose_spec.edge_unique⟩
-
-lemma IsLeaf.exists_unique_adj (h : G.IsLeaf x) : ∃! y, G.Adj x y := by
-  obtain ⟨e, ⟨y, he⟩, hunique⟩ := h.exists_unique_inc
-  refine ⟨y, he.adj, fun z ⟨f, hz⟩ ↦ ?_⟩
-  rw [hunique f hz.inc_left] at hz
-  exact hz.right_unique he
-
-lemma IsLeaf.eq_of_adj_adj (h : G.IsLeaf x) (hu : G.Adj x u) (hv : G.Adj x v) :
-    u = v := by
-  obtain ⟨y, hy, hun⟩ := h.exists_unique_adj
-  rw [hun u hu, hun v hv]
-
-lemma IsLeaf.eq_of_inc_inc (h : G.IsLeaf x) (he : G.Inc e x) (hf : G.Inc f x) :
-    e = f := by
-  obtain ⟨g, hg, hun⟩ := h.exists_unique_inc
-  rw [hun e he, hun f hf]
-
-lemma IsLeaf.not_adj_self (h : G.IsLeaf x) : ¬ G.Adj x x := by
-  rintro ⟨e, he : G.IsLoopAt e x⟩
-  obtain ⟨f, h⟩ := h
-  exact h.not_isLoopAt e he
-
-lemma IsLeaf.ne_of_adj (h : G.IsLeaf x) (hxy : G.Adj x y) : x ≠ y :=
-  fun h' ↦ h.not_adj_self <| h' ▸ hxy
-
-lemma IsLeaf.not_isLoopAt (h : G.IsLeaf x) (e) : ¬ G.IsLoopAt e x :=
-  fun h' ↦ h.not_adj_self h'.adj
-
-/-- A leaf edge is an edge incident with a degree-one vertex. -/
-def IsLeafEdge (G : Graph α β) (e : β) := ∃ x, G.IsPendant e x
-
-
-lemma IsPath.eq_first_or_last_of_degree_eq_one {P} (hP : G.IsPath P) (hx : x ∈ P)
+lemma IsTrail.eq_first_or_last_of_degree_eq_one {P} (hP : G.IsTrail P) (hx : x ∈ P)
     (hdeg : G.IsLeaf x) : x = P.first ∨ x = P.last := by
-  match P with
-  | nil u => simpa using hx
-  | .cons u e w =>
-    simp only [mem_cons_iff, first_cons, last_cons] at hx ⊢
-    refine hx.imp id fun hxw ↦ ?_
-    obtain rfl | rfl := hP.of_cons.eq_first_or_last_of_degree_eq_one hxw hdeg |>.symm
-    · rfl
-    rw [hP.of_cons.first_eq_last_iff]
-    by_contra! h
-    obtain ⟨x, e, w⟩ := h
-    simp_all only [cons_isPath_iff, first_cons, mem_cons_iff, not_or, or_false, or_true]
-    obtain ⟨⟨hw, hxwf, hxw⟩, hux, hne, huw⟩ := hP
-    obtain rfl := hdeg.eq_of_inc_inc hux.inc_right hxwf.inc_left
-    obtain rfl := hxwf.right_unique hux.symm
-    exact huw first_mem
+  by_contra! h
+  obtain ⟨e₁, y₁, h₁⟩ := exists_left_edge hx h.1
+  obtain ⟨e₂, y₂, h₂⟩ := exists_right_edge hx h.2
+  have hinc₁ : G.Inc e₁ x := (hP.isWalk.isLink_of_dInc h₁).inc_right
+  have hinc₂ : G.Inc e₂ x := (hP.isWalk.isLink_of_dInc h₂).inc_left
+  obtain rfl := hdeg.eq_of_inc_inc hinc₁ hinc₂
+  obtain ⟨rfl, rfl⟩ := (dInc_iff_eq_of_dInc_of_edge_nodup hP.edge_nodup h₁).mp h₂
+  exact hdeg.not_isLoopAt e₁ (hP.isWalk.isLink_of_dInc h₁)
 
-lemma IsPath.eq_first_or_last_of_eDegree_le_one {P} (hP : G.IsPath P) (hxP : x ∈ P)
+lemma IsTrail.eq_first_or_last_of_eDegree_le_one {P} (hP : G.IsTrail P) (hxP : x ∈ P)
     (hdeg : G.eDegree x ≤ 1) : x = P.first ∨ x = P.last := by
   have hx : x ∈ V(G) := hP.vertexSet_subset hxP
   simp only [le_iff_lt_or_eq, ENat.lt_one_iff_eq_zero, hx, ← isolated_iff_eDegree,
     eDegree_eq_one_iff] at hdeg
   obtain h | h := hdeg
-  · exact Or.inl <|h.eq_first_of_mem hP.isWalk hxP
+  · exact Or.inl <| h.eq_first_of_mem hP.isWalk hxP
   exact hP.eq_first_or_last_of_degree_eq_one hxP h
 
-lemma IsPath.disjoint_of_degree_le_one {w X} (hw : G.IsPath w) (hX : ∀ x ∈ X, G.eDegree x ≤ 1)
+lemma IsTrail.disjoint_of_degree_le_one {w X} (hw : G.IsTrail w) (hX : ∀ x ∈ X, G.eDegree x ≤ 1)
     (hf : w.first ∉ X) (hl : w.last ∉ X) : Disjoint V(w) X := by
   rw [disjoint_comm, disjoint_iff_forall_notMem]
   intro x hxX hxw
-  apply hw.eq_first_or_last_of_eDegree_le_one hxw (hX x hxX) |>.elim <;> rintro rfl <;> tauto
+  apply hw.eq_first_or_last_of_eDegree_le_one hxw (hX x hxX) |>.elim <;> grind

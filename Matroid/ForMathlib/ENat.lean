@@ -32,8 +32,8 @@ def recTopZeroCoe {C : ℕ∞ → Sort*} (top : C ⊤) (zero : C 0) (coe : (a : 
 protected theorem add_eq_top : x + y = ⊤ ↔ x = ⊤ ∨ y = ⊤ :=
   WithTop.add_eq_top
 
-protected theorem add_ne_top : x + y ≠ ⊤ ↔ x ≠ ⊤ ∧ y ≠ ⊤ :=
-  by simp
+protected theorem add_ne_top : x + y ≠ ⊤ ↔ x ≠ ⊤ ∧ y ≠ ⊤ := by
+  simp
 
 protected theorem top_mul_eq_ite (a : ℕ∞) : ⊤ * a = if a = 0 then 0 else ⊤ := by
   split_ifs with h

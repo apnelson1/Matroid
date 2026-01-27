@@ -84,7 +84,7 @@ def edgeDelete (G : Graph α β) (F : Set β) : Graph α β :=
     exact fun h _ ↦ h.edge_mem)
 
 /-- `G ＼ F` is the subgraph of `G` with the edges in `F` deleted. Vertices are not changed. -/
-scoped infixl:65 " ＼ "  => Graph.edgeDelete
+scoped infixl:75 " ＼ "  => Graph.edgeDelete
 
 lemma edgeDelete_eq_edgeRestrict (G : Graph α β) (F : Set β) :
     G ＼ F = G ↾ (E(G) \ F) := copy_eq_self ..
@@ -145,7 +145,7 @@ lemma induce_le_iff : G[X] ≤ G ↔ X ⊆ V(G) :=
 
 /-- This is too annoying to be a simp lemma. -/
 lemma induce_edgeSet (G : Graph α β) (X : Set α) :
-    E(G.induce X) = {e | ∃ x y, G.IsLink e x y ∧ x ∈ X ∧ y ∈ X} := rfl
+    E(G[X]) = {e | ∃ x y, G.IsLink e x y ∧ x ∈ X ∧ y ∈ X} := rfl
 
 @[simp]
 lemma induce_empty (G : Graph α β) : G[∅] = ⊥ := by

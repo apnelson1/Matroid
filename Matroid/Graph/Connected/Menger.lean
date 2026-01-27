@@ -341,7 +341,7 @@ theorem Menger'sTheorem [G.Finite] (hι : ENat.card ι = n) (hnt : V(G).Nontrivi
     simp [(A.of_le _).extend_singleEdge_of_ne hP hnei, A.of_linkEdges_edgeDelete] at hAi
 
 theorem Menger'sTheorem_mixed [G.Finite] (hs : s ∈ V(G)) (ht : t ∈ V(G)) (hι : ENat.card ι = n) :
-    (∀ X ⊆ V(G), s ∉ X ∧ t ∉ X → ∀ F ⊆ E(G), ¬ (G - X ＼ F).ConnBetween s t →
+    (∀ X ⊆ V(G), s ∉ X ∧ t ∉ X → ∀ F ⊆ E(G), ¬ ((G - X) ＼ F).ConnBetween s t →
     n ≤ X.encard + F.encard) ↔ ∃ A : G.VertexEnsemble s t ι, A.edgeDisjoint := by
   convert (L'(G)).Menger'sTheorem_vertex (by simpa : Sum.inl s ∈ _) (by simpa : Sum.inl t ∈ _) hι
   · refine ⟨fun h C hC ↦ ?_, fun h X hX ⟨hsX, htX⟩ F hF hXF ↦ ?_⟩

@@ -29,7 +29,7 @@ lemma connBetween_vertexDelete_iff_of_degree_le_one (hX : ∀ x ∈ X, G.eDegree
     (ht : t ∉ X) : (G - X).ConnBetween s t ↔ G.ConnBetween s t := by
   refine ⟨fun h ↦ h.of_le vertexDelete_le, fun h ↦ ?_⟩
   obtain ⟨w, hw, rfl, rfl⟩ := h.exists_isPath
-  use w, by simp [hw.isWalk, hw.disjoint_of_degree_le_one hX hs ht]
+  use w, by simp [hw.isWalk, hw.isTrail.disjoint_of_degree_le_one hX hs ht]
 
 instance (G : Graph α β) : Simple L'(G) where
   not_isLoopAt ab x h := by
@@ -396,7 +396,7 @@ lemma connBetween_mixedLineGraph_iff :
 
 lemma connBetween_mixedLineGraph_del_iff :
     (L'(G) - (Sum.inl '' X ∪ Sum.inr '' F)).ConnBetween (Sum.inl s) (Sum.inl t) ↔
-    (G - X ＼ F).ConnBetween s t := by
+    ((G - X) ＼ F).ConnBetween s t := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · rwa [← connBetween_vertexDelete_iff_of_degree_le_one (X := inr '' E(G, X)) ?_ (by simp)
     (by simp), ← vertexDelete_vertexDelete, vertexDelete_vertexDelete_comm,

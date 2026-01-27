@@ -156,14 +156,14 @@ lemma maximal_apply_mono_iff (hPQ : ∀ x, P x ↔ Q (f x)) (hf : ∀ ⦃y⦄, Q
 
 variable {α ι : Type*} {P : α → Prop} {i j : ι} {x y : α}
 
-lemma minimal_le [LinearOrder α] (h : Minimal P x) (hy : P y) : x ≤ y :=
+lemma Minimal.le [LinearOrder α] (h : Minimal P x) (hy : P y) : x ≤ y :=
   (le_total x y).elim id (h.2 hy)
 
-lemma minimalFor_le [LinearOrder α] {P : ι → Prop} (f : ι → α) (h : MinimalFor P f i) (hj : P j) :
+lemma MinimalFor.le [LinearOrder α] {P : ι → Prop} (f : ι → α) (h : MinimalFor P f i) (hj : P j) :
     f i ≤ f j := (le_total (f i) (f j)).elim id (h.2 hj)
 
-lemma maximal_le [LinearOrder α] (h : Maximal P x) (hy : P y) : y ≤ x :=
+lemma Maximal.le [LinearOrder α] (h : Maximal P x) (hy : P y) : y ≤ x :=
   (le_total y x).elim id (h.2 hy)
 
-lemma maximalFor_le [LinearOrder α] {P : ι → Prop} (f : ι → α) (h : MaximalFor P f i) (hj : P j) :
+lemma MaximalFor.le [LinearOrder α] {P : ι → Prop} (f : ι → α) (h : MaximalFor P f i) (hj : P j) :
     f j ≤ f i := (le_total (f j) (f i)).elim id (h.2 hj)

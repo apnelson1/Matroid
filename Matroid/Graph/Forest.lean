@@ -164,6 +164,37 @@ lemma IsForest.simple (hG : G.IsForest) : G.Simple where
 /-- `G.IsCycleSet C` means that `C` is the edge set of a cycle of `G`. -/
 def IsCycleSet (G : Graph α β) (C : Set β) : Prop := ∃ C₀, G.IsCycle C₀ ∧ E(C₀) = C
 
+@[simp]
+lemma edgeRestrict_isCycleSet_iff (C : Set β) :
+    (G ↾ F).IsCycleSet C ↔ G.IsCycleSet C ∧ C ⊆ F := by
+  refine ⟨fun ⟨C₀, hC₀, h⟩ ↦ ?_, fun ⟨⟨C₀, hC₀, hss⟩, hsF⟩ ↦
+    ⟨C₀, (G.edgeRestrict_isCycle_iff ..).mpr ⟨hC₀, hss ▸ hsF⟩, hss⟩⟩
+  rw [edgeRestrict_isCycle_iff] at hC₀
+  exact ⟨⟨C₀, hC₀.1, h ▸ rfl⟩, h ▸ hC₀.2⟩
+
+@[simp]
+lemma edgeDelete_isCycleSet_iff (C : Set β) :
+    (G ＼ F).IsCycleSet C ↔ G.IsCycleSet C ∧ Disjoint C F := by
+  refine ⟨fun ⟨C₀, hC₀, h⟩ ↦ ?_, fun ⟨⟨C₀, hC₀, hss⟩, hdisj⟩ ↦
+    ⟨C₀, (edgeDelete_isCycle_iff ..).mpr ⟨hC₀, hss ▸ hdisj⟩, hss⟩⟩
+  rw [edgeDelete_isCycle_iff] at hC₀
+  exact ⟨⟨C₀, hC₀.1, h⟩, h ▸ hC₀.2⟩
+
+@[simp]
+lemma induce_isCycleSet_iff (C : Set β) :
+    G[X].IsCycleSet C ↔ ∃ C₀, G.IsCycle C₀ ∧ V(C₀) ⊆ X ∧ E(C₀) = C := by
+  simp only [IsCycleSet, induce_isCycle_iff, and_assoc]
+
+@[simp]
+lemma vertexDelete_isCycleSet_iff (C : Set β) :
+    (G - X).IsCycleSet C ↔ ∃ C₀, G.IsCycle C₀ ∧ Disjoint V(C₀) X ∧ E(C₀) = C := by
+  simp only [IsCycleSet, vertexDelete_isCycle_iff, and_assoc]
+
+lemma IsCycleSet.of_isLink {C : Set β} (h : G.IsCycleSet C)
+    (he : ∀ ⦃e x y⦄, G.IsLink e x y → H.IsLink e x y) : H.IsCycleSet C := by
+  obtain ⟨C₀, hC₀, h⟩ := h
+  exact ⟨C₀, hC₀.of_forall_isLink he, h⟩
+
 /-- `G.IsAcyclicSet X` means that the subgraph `G ↾ X` is a forest. -/
 def IsAcyclicSet (G : Graph α β) (I : Set β) : Prop := I ⊆ E(G) ∧ ∀ C₀, G.IsCycle C₀ → ¬ (E(C₀) ⊆ I)
 

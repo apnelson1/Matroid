@@ -119,6 +119,26 @@ lemma ext_of_le_le {H₁ H₂ : Graph α β} (h₁ : H₁ ≤ G) (h₂ : H₂ �
   (le_of_le_le_subset_subset h₁ h₂ hV.subset hE.subset).antisymm <|
     (le_of_le_le_subset_subset h₂ h₁ hV.symm.subset hE.symm.subset)
 
+/-- If `H` is a subgraph of `G` containing all edges and isolated vertices of `G`, then `H = G`-/
+lemma eq_of_le_of_edgeSet_subset_of_isolated (hle : H ≤ G) (hE : E(G) ⊆ E(H))
+    (hV : ∀ ⦃v⦄, G.Isolated v → v ∈ V(H)) : H = G := by
+  refine ext_of_le_le hle le_rfl ((vertexSet_mono hle).antisymm ?_) ((edgeSet_mono hle).antisymm hE)
+  exact fun v hv ↦ (isolated_or_exists_isLink hv).elim (fun h ↦ hV h)
+    fun ⟨e, y, h⟩ ↦ (h.of_le_of_mem hle  (hE h.edge_mem)).left_mem
+
+lemma le_of_le_le_edgeSet_subset_of_isolated {H₁ H₂ : Graph α β} (h₁ : H₁ ≤ G) (h₂ : H₂ ≤ G)
+    (hE : E(H₁) ⊆ E(H₂)) (hV : ∀ ⦃v⦄, H₁.Isolated v → v ∈ V(H₂)) : H₁ ≤ H₂ := by
+  refine le_of_le_le_subset_subset h₁ h₂ ?_ hE
+  exact fun v hv ↦ (isolated_or_exists_isLink hv).elim (hV ·)
+    fun ⟨e, y, h⟩ ↦ h.of_le h₁ |>.of_le_of_mem h₂ (hE h.edge_mem) |>.left_mem
+
+lemma ext_of_le_le_of_isolated {H₁ H₂ : Graph α β} (h₁ : H₁ ≤ G) (h₂ : H₂ ≤ G) (hE : E(H₁) = E(H₂))
+    (h : I(H₁) = I(H₂)) : H₁ = H₂ := by
+  refine (le_of_le_le_edgeSet_subset_of_isolated h₁ h₂ hE.subset ?_).antisymm
+    (le_of_le_le_edgeSet_subset_of_isolated h₂ h₁ hE.superset ?_)
+  · exact fun v hv ↦ H₂.isolatedSet_subset (congrArg (v ∈ ·) h |>.mp hv)
+  · exact fun v hv ↦ H₁.isolatedSet_subset (congrArg (v ∈ ·) h.symm |>.mp hv)
+
 lemma isLink_eq_of_le (hle : H ≤ G) (he : e ∈ E(H)) : H.IsLink e = G.IsLink e := by
   ext x y
   exact ⟨fun h ↦ h.of_le hle, fun h ↦ h.of_le_of_mem hle he⟩

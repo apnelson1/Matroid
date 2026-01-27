@@ -163,6 +163,11 @@ lemma concat_isPath_iff : G.IsPath (P.concat e x) ↔ G.IsPath P ∧ G.IsLink e 
 lemma IsWalk.dedup_isPath [DecidableEq α] (h : G.IsWalk P) : G.IsPath P.dedup :=
   ⟨h.dedup, P.dedup_vertex_nodup⟩
 
+lemma IsPath.noloop [DecidableEq α] (h : G.IsPath P) : P.NoLoop := by
+  induction P with
+  | nil u => simp [NoLoop]
+  | cons x e w ih => exact ⟨fun heq ↦ by simpa [heq] using h.nodup, ih h.of_cons⟩
+
 lemma IsLink.walk_isPath (h : G.IsLink e u v) (hne : u ≠ v) : G.IsPath h.walk :=
   ⟨h.walk_isWalk, by simp [hne]⟩
 

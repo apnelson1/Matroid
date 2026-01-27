@@ -139,7 +139,7 @@ theorem exists_contract_connGE_three [G.Finite] (hG : G.ConnGE 3) (hV : 5 ≤ V(
       hG.exists_isSepSet_endpoints_of_not_connGE_contract_isLink hl hnV (hbad e x y hl); clear hnV
 
     -- Reduce the small separator `T` to a triple `{x, y, z}` (allowing repetitions).
-    norm_num at hTcard
+    norm_num1 at hTcard
     replace hTcard : T.encard = 3 := hTcard.antisymm <| hG.le_cut hTsep
     have hT'card : (T \ ({x, y} : Set α)).encard = 1 := by
       rw [← diff_singleton_diff_eq, encard_diff_singleton_of_mem (by simpa [hxy.symm]),
@@ -187,7 +187,7 @@ theorem exists_contract_connGE_three [G.Finite] (hG : G.ConnGE 3) (hV : 5 ≤ V(
   obtain ⟨T, hTsep, hTcard, hzT, hwT⟩ := this; clear hbad hV
 
   -- 3. Either `x` or `y` is not in `T`. WLOG, assume `x ∉ T`.
-  norm_num at hTcard
+  norm_num1 at hTcard
   replace hTcard : T.encard = 3 := hTcard.antisymm <| hG.le_cut hTsep
   have hTdiff : (T \ {w, z}).encard = 1 := by
     rw [← diff_singleton_diff_eq, encard_diff_singleton_of_mem (by simpa [hzwne] using hzT: z ∈ _),

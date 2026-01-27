@@ -42,7 +42,7 @@ def ENat.recTopZeroCoe {C : ℕ∞ → Sort*} (top : C ⊤) (zero : C 0) (coe : 
     (n : ℕ∞) : C n :=
   ENat.recTopCoe (n := n) top fun a ↦ a.recAux zero fun b _ ↦ coe b
 
-lemma ENat.le_one_iff : a ≤ 1 ↔ (a = 0) ∨ (a = 1) := by
+lemma ENat.le_one_iff : a ≤ 1 ↔ a = 0 ∨ a = 1 := by
   cases a using ENat.recTopCoe with
   | top => simp
   | coe a => simpa using Nat.le_one_iff_eq_zero_or_eq_one
@@ -104,15 +104,6 @@ lemma ENat.mul_eq_zero {m n : ℕ∞} : m * n = 0 ↔ m = 0 ∨ n = 0 := by
 --   lift n to ℕ using (hle.trans_lt (by simp)).ne
 --   norm_cast
 --   simp
-
-lemma ENat.toNat_mul (m n : ℕ∞) : (m * n).toNat = m.toNat * n.toNat := by
-  cases m using ENat.recTopCoe with
-  | top => simp +contextual [or_iff_not_imp_left]
-  | coe m =>
-  cases n using ENat.recTopCoe with
-  | top => simp +contextual [or_iff_not_imp_left]
-  | coe n =>
-  norm_cast
 
 @[simp]
 lemma ENat.toNat_prod {ι : Type*} (s : Finset ι) (f : ι → ℕ∞) :

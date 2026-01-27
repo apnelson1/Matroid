@@ -4,7 +4,7 @@ import Matroid.Graph.WList.Cycle
 variable {α β : Type*} {x y z u v : α} {e f : β} {G H : Graph α β}
   {w w₁ w₂ C C₁ C₂ : WList α β} {S T : Set α}
 
-open WList
+open Set WList
 
 lemma WList.WellFormed.rotate_toGraph (hw : w.WellFormed) (h_closed : w.IsClosed) (n : ℕ) :
     (w.rotate n).toGraph = w.toGraph := by
@@ -195,12 +195,69 @@ lemma IsCycle.encard_vxSet (h : G.IsCycle C) : V(C).encard = C.length := by
   rw [h.isClosed.eq, ← tail_last, mem_vertexSet_iff]
   exact last_mem
 
+lemma IsCycle.loop_or_noloop (h : G.IsCycle C) : (∃ x e, C = cons x e (nil x)) ∨ C.NoLoop := by
+  classical
+  cases h.nonempty with | cons x e w =>
+  obtain ⟨u, rfl⟩ | hne := w.exists_eq_nil_or_nonempty
+  · left
+    use x, e
+    simp [show x = u from h.isClosed]
+  cases hne with | cons y f w =>
+  refine Or.inr ⟨?_, h.tail_isPath.noloop⟩
+  rintro rfl
+  obtain rfl := by simpa using h.isClosed
+  simpa using h.nodup
+
 @[simp]
 lemma rotate_toGraph {n : ℕ} (hC : C.IsClosed) (hCwf : C.WellFormed) :
     (C.rotate n).toGraph = C.toGraph := by
   ext a b c
   · simp [hC.mem_rotate]
   simp [hCwf.toGraph_isLink, (hCwf.rotate hC n).toGraph_isLink, hC]
+
+@[simp]
+lemma edgeRestrict_isCycle_iff (F : Set β) (C : WList α β) :
+    (G ↾ F).IsCycle C ↔ G.IsCycle C ∧ E(C) ⊆ F := by
+  refine ⟨fun h ↦ ⟨h.of_le edgeRestrict_le, ?_⟩,
+    fun ⟨h, hss⟩ ↦ h.isCycle_of_le (by simp) (by simp [hss, h.isWalk.edgeSet_subset])⟩
+  have := by simpa using h.isWalk.edgeSet_subset
+  use this.2
+
+@[simp]
+lemma edgeDelete_isCycle_iff (F : Set β) (C : WList α β) :
+    (G ＼ F).IsCycle C ↔ G.IsCycle C ∧ Disjoint E(C) F := by
+  refine ⟨fun h ↦ ⟨h.of_le edgeDelete_le, ?_⟩,
+    fun ⟨h, hss⟩ ↦ h.isCycle_of_le (by simp) (by simp [subset_diff, hss, h.isWalk.edgeSet_subset])⟩
+  have := by simpa [subset_diff] using h.isWalk.edgeSet_subset
+  use this.2
+
+@[simp]
+lemma induce_isCycle_iff (X : Set α) (C : WList α β) :
+    (G[X]).IsCycle C ↔ G.IsCycle C ∧ V(C) ⊆ X := by
+  refine ⟨fun h ↦ ⟨?_, h.isWalk.vertexSet_subset⟩, fun ⟨h, hss⟩ ↦ ?_⟩
+  · refine ⟨⟨?_, h.edge_nodup⟩, h.nonempty, h.isClosed, h.nodup⟩
+    obtain ⟨x, hx, rfl⟩ | ⟨hC, hCX⟩ := by simpa [isWalk_induce_iff] using h.isWalk
+    · simpa using h.nonempty
+    exact hC
+  refine ⟨⟨?_, h.edge_nodup⟩, h.nonempty, h.isClosed, h.nodup⟩
+  simp [isWalk_induce_iff, h.isWalk, hss]
+
+@[simp]
+lemma vertexDelete_isCycle_iff (X : Set α) (C : WList α β) :
+    (G - X).IsCycle C ↔ G.IsCycle C ∧ Disjoint V(C) X := by
+  refine ⟨fun h ↦ ⟨⟨⟨?_, h.edge_nodup⟩, h.nonempty, h.isClosed, h.nodup⟩,
+    h.isWalk.disjoint_of_vertexDelete⟩, fun ⟨h, hdisj⟩ ↦
+    ⟨⟨by simp [h.isWalk, hdisj], h.edge_nodup⟩, h.nonempty, h.isClosed, h.nodup⟩⟩
+  have := by simpa using h.isWalk
+  exact this.1
+
+lemma IsCycle.of_forall_isLink (h : G.IsCycle C) (he : ∀ ⦃e x y⦄, G.IsLink e x y → H.IsLink e x y) :
+    H.IsCycle C where
+  isWalk := h.isWalk.of_forall_isLink he h.nonempty
+  edge_nodup := h.edge_nodup
+  nonempty := h.nonempty
+  isClosed := h.isClosed
+  nodup := h.nodup
 
 def IsCycleGraph (G : Graph α β) := ∃ C, G.IsCycle C ∧ V(G) ⊆ V(C) ∧ E(G) ⊆ E(C)
 

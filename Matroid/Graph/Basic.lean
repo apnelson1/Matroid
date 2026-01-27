@@ -323,3 +323,121 @@ lemma linkEdges_comm (G : Graph α β) (u v : α) : E(G, u, v) = E(G, v, u) := b
   simp [isLink_comm]
 
 end Neighborhood
+
+
+/-! ### Isolated vertices -/
+
+/-- An `Isolated` vertex is one that is incident with no edge. -/
+@[mk_iff]
+structure Isolated (G : Graph α β) (x : α) : Prop where
+  not_inc : ∀ ⦃e⦄, ¬ G.Inc e x
+  mem : x ∈ V(G)
+
+@[simp]
+lemma Isolated.not_adj (h : G.Isolated x) : ¬ G.Adj x y :=
+  fun ⟨_, he⟩ ↦ h.not_inc he.inc_left
+
+@[simp]
+lemma Isolated.not_isLink (h : G.Isolated x) : ¬ G.IsLink e x y :=
+  fun he ↦ h.not_inc he.inc_left
+
+lemma isolated_or_exists_isLink (hx : x ∈ V(G)) : G.Isolated x ∨ ∃ e y, G.IsLink e x y := by
+  simp [isolated_iff, Inc, ← not_exists, hx, em']
+
+def IsolatedSet (G : Graph α β) : Set α := {x | G.Isolated x}
+
+notation "I(" G ")" => IsolatedSet G
+
+@[simp]
+lemma mem_isolatedSet_iff (G : Graph α β) (x : α) : x ∈ I(G) ↔ G.Isolated x := Iff.rfl
+
+@[simp]
+lemma isolatedSet_subset (G : Graph α β) : I(G) ⊆ V(G) := by
+  rintro x ⟨h, hx⟩
+  exact hx
+
+@[simp]
+lemma setincEdges_isolatedSet (G : Graph α β) : E(G, I(G)) = ∅ := by
+  simp +contextual [Set.ext_iff, isolated_iff]
+
+@[simp]
+lemma not_isolated_iff (hv : v ∈ V(G)) : ¬ G.Isolated v ↔ ∃ e, G.Inc e v := by
+  simp [isolated_iff, hv]
+
+@[simp]
+lemma incEdges_empty_iff (hv : v ∈ V(G)) : E(G, v) = ∅ ↔ G.Isolated v := by
+  simp [IncEdges, isolated_iff, hv, eq_empty_iff_forall_notMem]
+
+@[simp]
+lemma SetIncEdges_empty_iff {S} (hS : S ⊆ V(G)) : E(G, S) = ∅ ↔ S ⊆ I(G) := by
+  simp only [SetIncEdges, eq_empty_iff_forall_notMem, mem_setOf_eq, not_exists, not_and]
+  refine ⟨fun h x hxS ↦ ?_, fun h e x hxS ↦ (h hxS |>.not_inc ·)⟩
+  simp only [mem_isolatedSet_iff, isolated_iff, hS hxS, and_true]
+  exact fun e ↦ h e x hxS
+
+@[simp]
+lemma IsLink.left_not_isolated (h : G.IsLink e x y) : ¬ G.Isolated x :=
+  fun h' ↦ h'.not_inc h.inc_left
+
+@[simp]
+lemma IsLink.right_not_isolated (h : G.IsLink e x y) : ¬ G.Isolated y :=
+  fun h' ↦ h'.not_inc h.inc_right
+
+/-! ### Leaves -/
+
+/-- `G.IsPendant e x` means that `e` is a nonloop edge at `x`, and is also the only edge at `x`. -/
+@[mk_iff]
+structure IsPendant (G : Graph α β) (e : β) (x : α) : Prop where
+  isNonloopAt : G.IsNonloopAt e x
+  edge_unique : ∀ ⦃f⦄, G.Inc f x → f = e
+
+lemma IsPendant.not_isLoopAt (h : G.IsPendant e x) (f : β) : ¬ G.IsLoopAt f x := by
+  refine fun h' ↦ h.isNonloopAt.not_isLoopAt x ?_
+  rwa [← h.edge_unique h'.inc]
+
+/-- A leaf is a degree-one vertex. -/
+def IsLeaf (G : Graph α β) (v : α) : Prop := ∃ e, G.IsPendant e v
+
+lemma IsPendant.isLeaf (h : G.IsPendant e x) : G.IsLeaf x :=
+  ⟨e, h⟩
+
+lemma IsLeaf.mem (h : G.IsLeaf v) : v ∈ V(G) :=
+  h.choose_spec.isNonloopAt.vertex_mem
+
+lemma IsLeaf.vertexSet_nontrivial (h : G.IsLeaf v) : V(G).Nontrivial := by
+  obtain ⟨e, he⟩ := h
+  exact he.isNonloopAt.vertexSet_nontrivial
+
+/-- Maybe not needed with `IsPendant`. -/
+lemma IsLeaf.exists_unique_inc (h : G.IsLeaf x) : ∃! e, G.Inc e x :=
+  ⟨h.choose, h.choose_spec.isNonloopAt.inc, h.choose_spec.edge_unique⟩
+
+lemma IsLeaf.exists_unique_adj (h : G.IsLeaf x) : ∃! y, G.Adj x y := by
+  obtain ⟨e, ⟨y, he⟩, hunique⟩ := h.exists_unique_inc
+  refine ⟨y, he.adj, fun z ⟨f, hz⟩ ↦ ?_⟩
+  rw [hunique f hz.inc_left] at hz
+  exact hz.right_unique he
+
+lemma IsLeaf.eq_of_adj_adj (h : G.IsLeaf x) (hu : G.Adj x u) (hv : G.Adj x v) :
+    u = v := by
+  obtain ⟨y, hy, hun⟩ := h.exists_unique_adj
+  rw [hun u hu, hun v hv]
+
+lemma IsLeaf.eq_of_inc_inc (h : G.IsLeaf x) (he : G.Inc e x) (hf : G.Inc f x) :
+    e = f := by
+  obtain ⟨g, hg, hun⟩ := h.exists_unique_inc
+  rw [hun e he, hun f hf]
+
+lemma IsLeaf.not_adj_self (h : G.IsLeaf x) : ¬ G.Adj x x := by
+  rintro ⟨e, he : G.IsLoopAt e x⟩
+  obtain ⟨f, h⟩ := h
+  exact h.not_isLoopAt e he
+
+lemma IsLeaf.ne_of_adj (h : G.IsLeaf x) (hxy : G.Adj x y) : x ≠ y :=
+  fun h' ↦ h.not_adj_self <| h' ▸ hxy
+
+lemma IsLeaf.not_isLoopAt (h : G.IsLeaf x) (e) : ¬ G.IsLoopAt e x :=
+  fun h' ↦ h.not_adj_self h'.adj
+
+/-- A leaf edge is an edge incident with a degree-one vertex. -/
+def IsLeafEdge (G : Graph α β) (e : β) := ∃ x, G.IsPendant e x

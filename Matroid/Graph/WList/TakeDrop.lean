@@ -1391,8 +1391,6 @@ lemma dedup_eq_self_iff : w.dedup = w ↔ w.vertex.Nodup :=
 
 end dedup
 
-
-
 /-- If a proposition `P` holds at the first vertex of `w` but not the last,
 then `w` has a directed edge `e` from `x` to `y` such that `x` satisfies `P` but `y` doesn't. -/
 lemma exists_dInc_prop_not_prop {P : α → Prop} (hfirst : P w.first) (hlast : ¬ P w.last) :
@@ -1423,120 +1421,101 @@ lemma exists_isLink_prop_not_prop {P : α → Prop} (hxw : x ∈ V(w)) (hT : P x
     rw [dInc_reverse_iff] at h
     exact (h.of_isSublist hsub).isLink.symm
 
--- end WList
--- open WList
+section deloop
 
--- lemma IsWListFrom.dedup [DecidableEq α] (h : G.IsWListFrom S T w) :
---  G.IsPathFrom S T w.dedup := by
---   obtain ⟨hVd, hfirst, hlast⟩ := h
---   refine hVd.dedup_isPath.isPathFrom ?_ ?_
---   · rwa [dedup_first]
---   · rwa [dedup_last]
+variable [DecidableEq α]
 
--- namespace WList
+/-- Remove loops from a `WList` by removing edges where the source equals the target. -/
+def deloop : WList α β → WList α β
+| nil x => nil x
+| cons x e w =>
+  if x = w.first then deloop w else cons x e (deloop w)
 
--- /- Properties of `prefixUntil` -/
--- variable {P : α → Prop} [DecidablePred P]
+@[simp]
+lemma deloop_nil (x : α) : (nil x (β := β)).deloop = nil x := by
+  simp [deloop]
 
--- @[simp]
--- lemma prefixUntil_nil : (nil x : WList α β).prefixUntil P = nil x := rfl
+@[grind =]
+lemma deloop_cons_eq_ite (x : α) (e : β) (w : WList α β) :
+    (cons x e w).deloop = if x = w.first then deloop w else cons x e w.deloop := by
+  simp [deloop]
 
+@[simp]
+lemma deloop_cons_of_eq_first (hxw : x = w.first) (e) :
+    (cons x e w).deloop = deloop w := by
+  simp [deloop, hxw]
 
--- @[simp]
--- lemma endIf_length {w : WList α β} (h : ∃ u ∈ w, P u) : (w.endIf h).length ≤ w.length := by
---   match w with
---   | .nil x => simp only [endIf, nil_length, le_refl]
---   | .cons x e w =>
---   rw [endIf]
---   split_ifs <;> simp [endIf_length]
+@[simp]
+lemma deloop_cons_of_ne_first (hxw : x ≠ w.first) (e) :
+    (cons x e w).deloop = cons x e (deloop w) := by
+  simp [deloop, hxw]
 
--- lemma endIf_sizeOf_le {w : WList α β} (h : ∃ u ∈ w, P u) : sizeOf (w.endIf h) ≤ sizeOf w := by
---   match w with
---   | .nil x => simp only [endIf, nil.sizeOf_spec, sizeOf_default, add_zero, le_refl]
---   | .cons x e w =>
---   rw [endIf]
---   split_ifs <;> simp [endIf_sizeOf_le]
+@[simp]
+lemma deloop_first (w : WList α β) : w.deloop.first = w.first := by
+  cases w with
+  | nil => simp
+  | cons u e w =>
+    simp only [deloop, apply_ite, first_cons, ite_eq_right_iff]
+    intro heq
+    rw [deloop_first, heq]
 
--- lemma ValidIn.endIf {w : WList α β} (hVd : w.ValidIn G) (h : ∃ u ∈ w, P u) :
---     (w.endIf h).ValidIn G := by
---   match w with
---   | .nil x => simpa only [endIf, nil_validIn]
---   | .cons x e w =>
---     simp only [WList.endIf]
---     split_ifs with hPx
---     · rw [nil_validIn]
---       simp only [cons_validIn] at hVd
---       exact hVd.1.left_mem
---     · rw [cons_validIn] at hVd ⊢
---       refine ⟨?_, hVd.2.endIf _ ⟩
---       convert hVd.1 using 1
---       simp only [mem_cons_iff, exists_eq_or_imp, hPx, false_or] at h
---       exact endIf_first h
+@[simp]
+lemma deloop_last (w : WList α β) : w.deloop.last = w.last := by
+  cases w with
+  | nil => simp
+  | cons u e w =>
+    simp only [last_cons]
+    by_cases heq : u = w.first
+    · rw [deloop_cons_of_eq_first heq, deloop_last]
+    rw [deloop_cons_of_ne_first heq, last_cons, deloop_last]
 
--- lemma endIf_vertex_sublist {w : WList α β} (h : ∃ u ∈ w, P u) :
---     (w.endIf h).vertex ⊆ w.vertex := by
---   match w with
---   | .nil x => simp only [endIf, nil_vertex, List.Subset.refl]
---   | .cons x e w =>
---     simp only [endIf, cons_vertex]
---     split_ifs with h
---     · simp only [nil_vertex, cons_subset, mem_cons, true_or, nil_subset, subset_cons_of_subset,
---         and_self]
---     · simp only [cons_vertex, cons_subset, mem_cons, true_or, true_and]
---       refine List.Subset.trans ?_ (List.subset_cons_self _ _)
---       apply endIf_vertex_sublist
+lemma deloop_isSublist (w : WList α β) : w.deloop.IsSublist w := by
+  cases w with
+  | nil => simp
+  | cons u e w =>
+    by_cases heq : u = w.first
+    · rw [deloop_cons_of_eq_first heq]
+      exact w.deloop_isSublist.trans (by simp)
+    rw [deloop_cons_of_ne_first heq]
+    exact (deloop_isSublist w).cons₂ _ _ (by simp)
 
--- lemma endIf_mem_vertex {w : WList α β} (h : ∃ u ∈ w, P u) (hv : v ∈ w.endIf h):
---     ¬ P v ∨ v = (w.endIf h).last := by
---   match w with
---   | .nil x => simp_all only [endIf_nil, mem_nil_iff, nil_last, or_true]
---   | .cons x e w =>
---     rw [endIf_cons]
---     split_ifs with hPx
---     · simp_all only [endIf_cons, dite_true, mem_nil_iff, not_true_eq_false, nil_last, or_true]
---     · simp_all only [endIf_cons, dite_false, mem_cons_iff, last_cons]
---       obtain rfl | hvmem := hv
---       · exact Or.inl hPx
---       · simp only [mem_cons_iff, exists_eq_or_imp, hPx, false_or] at h
---         exact endIf_mem_vertex h hvmem
+/-- A `WList` has no loops if no edge connects a vertex to the next vertex being itself. -/
+def NoLoop : WList α β → Prop
+  | nil _ => True
+  | cons x _ w => x ≠ w.first ∧ w.NoLoop
 
--- lemma endIf_exists_isLink_last {w : WList α β} (h : ∃ u ∈ w, P u) (hVd : w.ValidIn G)
---     (hNonempty : (w.endIf h).Nonempty) :
---     ∃ v ∈ (w.endIf h), ¬ P v ∧ ∃ e, G.IsLink e v (w.endIf h).last := by
---   match w with
---   | .nil x => simp_all only [endIf_nil, Nonempty.not_nil]
---   | .cons x e (nil y) =>
---     simp_all only [cons_validIn, nil_first, nil_validIn, endIf_cons, endIf_nil, dite_eq_ite]
---     split_ifs with hPx
---     · simp_all only [cons_vertex, nil_vertex, mem_cons, notMem_nil, or_false, exists_eq_or_imp,
---       exists_eq_left, true_or, ite_true, Nonempty.not_nil]
---     · simp_all only [mem_cons_iff, mem_nil_iff, exists_eq_or_imp, exists_eq_left, false_or,
---       ite_false, Nonempty.cons_true, last_cons, nil_last, not_false_eq_true, true_and,
---       not_true_eq_false, false_and, or_false]
---       use e
---       exact hVd.1
---   | .cons x e (cons y e' w) =>
---     unfold endIf
---     split_ifs with hPx
---     · simp_all only [cons_validIn, first_cons, endIf_cons, dite_true, Nonempty.not_nil]
---     · by_cases hPy : P y
---       · simp_all only [cons_validIn, first_cons, endIf_cons, dite_true, dite_eq_ite, ite_false,
---         Nonempty.cons_true, mem_cons_iff, mem_nil_iff, last_cons, nil_last,
---      exists_eq_or_imp, not_false_eq_true, true_and, exists_eq_left, not_true_eq_false, false_and,
---         or_false]
---         use e
---         exact hVd.1
---       · let w' := cons y e' w
---         rw [last_cons]
---         have h' : ∃ u ∈ w', P u := by
---           change ∃ u ∈ cons x e w', P u at h
---           simpa only [mem_cons_iff, exists_eq_or_imp, hPx, false_or] using h
---         have hNonempty' : (w'.endIf h').Nonempty := by
---           simp only [endIf_cons, hPy, ↓reduceDIte, Nonempty.cons_true, w']
---         obtain ⟨a, ha, hh⟩ := endIf_exists_isLink_last (w := w') h' hVd.2 hNonempty'
---         refine ⟨a, ?_, hh⟩
---         rw [mem_cons_iff]
---         right
---         exact ha
+omit [DecidableEq α] in
+@[simp]
+lemma noLoop_nil (x : α) : (nil x (β := β)).NoLoop := by
+  simp [NoLoop]
 
+omit [DecidableEq α] in
+@[simp]
+lemma noLoop_cons (x : α) (e : β) (w : WList α β) :
+    (cons x e w).NoLoop ↔ x ≠ w.first ∧ w.NoLoop := by
+  simp [NoLoop]
+
+lemma deloop_noLoop (w : WList α β) : w.deloop.NoLoop := by
+  cases w with
+  | nil => simp
+  | cons u e w =>
+    by_cases heq : u = w.first
+    · rw [deloop_cons_of_eq_first heq]
+      apply deloop_noLoop
+    simp only [deloop_cons_of_ne_first heq, noLoop_cons, deloop_first, ne_eq]
+    exact ⟨heq, w.deloop_noLoop⟩
+
+@[simp]
+lemma deloop_eq_self (hw : w.NoLoop) : w.deloop = w := by
+  induction w with
+  | nil => simp
+  | cons u e w ih =>
+    simp only [noLoop_cons] at hw
+    rw [deloop_cons_of_ne_first hw.1, ih hw.2]
+
+@[simp]
+lemma deloop_eq_self_iff : w.deloop = w ↔ w.NoLoop :=
+  ⟨fun h ↦ by rw [← h]; exact deloop_noLoop w, deloop_eq_self⟩
+
+end deloop
 end WList

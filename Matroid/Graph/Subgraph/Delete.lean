@@ -97,13 +97,13 @@ lemma edgeDelete_le_edgeDelete_iff (G : Graph α β) (F₁ F₂ : Set β) :
   exact h
 
 @[simp]
-lemma edgeRestrict_edgeDelete (G : Graph α β) (F₁ F₂ : Set β) : G ↾ F₁ ＼ F₂ = G ↾ (F₁ \ F₂) := by
+lemma edgeRestrict_edgeDelete (G : Graph α β) (F₁ F₂ : Set β) : (G ↾ F₁) ＼ F₂ = G ↾ F₁ \ F₂ := by
   rw [edgeDelete_eq_edgeRestrict, edgeRestrict_edgeRestrict, edgeRestrict_edgeSet, diff_eq,
     ← inter_assoc, inter_comm E(G), ← inter_assoc, inter_self, inter_comm F₁, inter_assoc,
     edgeRestrict_edgeSet_inter, diff_eq]
 
 lemma edgeRestrict_edgeDelete_comm (G : Graph α β) (F₁ F₂ : Set β) :
-    G ↾ F₁ ＼ F₂ = G ＼ F₂ ↾ F₁ := by
+    (G ↾ F₁) ＼ F₂ = G ＼ F₂ ↾ F₁ := by
   conv_rhs => rw [edgeDelete_eq_edgeRestrict, edgeRestrict_edgeRestrict,
     diff_inter_right_comm, ← edgeRestrict_edgeDelete, G.edgeRestrict_edgeSet_inter F₁]
 
@@ -202,7 +202,7 @@ lemma Adj.induce (h : G.Adj x y) (hx : x ∈ X) (hy : y ∈ X) : G[X].Adj x y :=
   induce_adj_iff.mpr ⟨h, hx, hy⟩
 
 @[simp]
-lemma induce_edgeSet_subset (G : Graph α β) (X : Set α) : E(G.induce X) ⊆ E(G) := by
+lemma induce_edgeSet_subset (G : Graph α β) (X : Set α) : E(G[X]) ⊆ E(G) := by
   rintro e ⟨x, y, h, -, -⟩
   exact h.edge_mem
 
@@ -267,6 +267,11 @@ lemma le_induce_self (h : H ≤ G) : H ≤ G[V(H)] :=
 lemma le_induce_iff (hX : X ⊆ V(G)) : H ≤ G[X] ↔ H ≤ G ∧ V(H) ⊆ X :=
   ⟨fun h ↦ ⟨h.trans (by simpa), vertexSet_mono h⟩, fun h ↦ le_induce_of_le_of_subset h.1 h.2⟩
 
+lemma diff_subset_isolatedSet_induce (G : Graph α β) (X : Set α) : X \ V(G) ⊆ I(G[X]) := by
+  intro x ⟨hxX, hx⟩
+  simp only [mem_isolatedSet_iff, isolated_iff, induce_vertexSet, hxX, and_true]
+  exact fun e he ↦ hx he.isLink_other.1.left_mem
+
 @[simp]
 lemma edgeRestrict_induce (G : Graph α β) (X : Set α) (F : Set β) : (G ↾ F)[X] = G[X] ↾ F := by
   refine Graph.ext (by simp) fun e x y ↦ ?_
@@ -283,10 +288,14 @@ lemma IsInducedSubgraph.induce_vertexSet_eq (h : H ≤i G) : G[V(H)] = H := by
   obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet h'
   exact ⟨x, y, hxy.of_le h.le, hxy.left_mem, hxy.right_mem⟩
 
+-- @[gcongr]
+lemma induce_isInducedSubgraph_mono_right (h : X ⊆ Y) : G[X] ≤i G[Y] :=
+  ⟨G.induce_mono_right h, by simp_all⟩
+
 @[simp]
 lemma induce_isInducedSubgraph_induce_iff (G : Graph α β) (X Y : Set α) :
     G[X] ≤i G[Y] ↔ X ⊆ Y := by
-  refine ⟨fun h ↦ ?_, fun h ↦ ⟨G.induce_mono_right h, by simp_all⟩⟩
+  refine ⟨fun h ↦ ?_, induce_isInducedSubgraph_mono_right⟩
   grw [← G.induce_vertexSet X, ← G.induce_vertexSet Y, h.le]
 
 @[gcongr]
@@ -413,6 +422,11 @@ lemma edgeDelete_vertexDelete (G : Graph α β) (F : Set β) (X : Set α) :
   rw [edgeDelete_eq_edgeRestrict, edgeRestrict_vertexDelete, ← edgeRestrict_inter_edgeSet,
     diff_inter_right_comm, inter_eq_right.mpr (edgeSet_mono vertexDelete_le),
     ← edgeDelete_eq_edgeRestrict]
+
+lemma vertexDelete_edgeDelete_incidentEdges (G : Graph α β) (X : Set α) :
+    G ＼ E(G, X) - X = G - X := by
+  rw [edgeDelete_vertexDelete, edgeDelete_eq_self_iff, vertexDelete_edgeSet_diff]
+  exact disjoint_sdiff_left
 
 lemma vertexDelete_vertexDelete (G : Graph α β) (X Y : Set α) : (G - X) - Y = G - (X ∪ Y) := by
   rw [G.vertexDelete_def, induce_vertexDelete, diff_diff, ← vertexDelete_def]

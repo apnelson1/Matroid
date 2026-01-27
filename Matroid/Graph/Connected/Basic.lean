@@ -449,7 +449,7 @@ lemma IsSep.of_edgeDelete_linkEdges (h : (G ＼ E(G, u, v)).IsSep S) :
     rw [vertexDelete_edgeSet_diff]
     exact disjoint_sdiff_left
 
-  have : ¬(G - S ＼ E(G - S, u, v)).Connected := by
+  have : ¬((G - S) ＼ E(G - S, u, v)).Connected := by
     have := h.not_connected
     rw [edgeDelete_vertexDelete] at this
     exact mt (Connected.of_isSpanningSubgraph ·
