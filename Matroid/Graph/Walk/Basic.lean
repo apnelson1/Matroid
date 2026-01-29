@@ -262,6 +262,12 @@ lemma IsWalk.eq_of_edge_eq_first_eq (h₁ : G.IsWalk w₁) (h₂ : G.IsWalk w₂
       rw [← h_edge.1, ← h_first, h.isLink_iff_eq] at h₂
       rw [h_edge.1, h_first, ih h₂.2 h₂.1.symm h_edge.2]
 
+lemma IsWalk.not_loopAt_of_noLoop (h : G.IsWalk w) (hloop : w.NoLoop) (he : e ∈ w.edge) :
+    ∀ x, ¬ G.IsLoopAt e x := by
+  rintro x hx
+  rw [IsLoopAt, ← h.isLink_iff_isLink_of_mem he] at hx
+  simp [hloop] at hx
+
 /-- `G.IsWalkFrom S T w` means that `w` is a walk of `G` with one end in `S` and the other in `T`.-/
 @[mk_iff]
 structure IsWalkFrom (G : Graph α β) (S T : Set α) (w : WList α β) : Prop where

@@ -82,6 +82,7 @@ import Matroid.Graph.Map
 -- import Matroid.Graph.Matching.Konigs
 -- import Matroid.Graph.Matching.TutteBerge
 import Matroid.Graph.Minor.Defs
+import Matroid.Graph.Minor.Walk
 import Matroid.Graph.Simple
 import Matroid.Graph.Subgraph.Basic
 import Matroid.Graph.Subgraph.Compatible

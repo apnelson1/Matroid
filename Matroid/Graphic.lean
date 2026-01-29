@@ -12,7 +12,7 @@ namespace Graph
 
 /-- The cycle matroid of a graph `G`. Its circuits are the edge sets of cycles of `G`,
 and its independent sets are the edge sets of forests. -/
-@[simps!]
+@[simps! E]
 def cycleMatroid (G : Graph α β) : Matroid β :=
   FiniteCircuitMatroid.matroid <| FiniteCircuitMatroid.mk
     (E := E(G))
@@ -72,15 +72,15 @@ lemma cycleMatroid_edgeDelete (G : Graph α β) (F : Set β) :
     (G ＼ F).cycleMatroid = G.cycleMatroid ＼ F :=
   ext_isCircuit rfl fun I hI ↦ by simp
 
--- lemma cycleMatroid_contract (G : Graph α β) (F : Set β) (φ : (G ↾ F).connPartition.RepFun) :
---     (G /[φ, F]).cycleMatroid = G.cycleMatroid ／ F := by
---   refine ext_isCircuit rfl fun I hI ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩
---   · simp at h
---     sorry
---   obtain ⟨Cs, hCs, hICs, hCsIF⟩ := h.exists_subset_isCircuit_of_contract
---   simp at hCs ⊢
---   obtain ⟨C, hC, rfl⟩ := hCs
---   sorry
+lemma cycleMatroid_contract (G : Graph α β) (F : Set β) (φ : (G ↾ F).connPartition.RepFun) :
+    (G /[φ, F]).cycleMatroid = G.cycleMatroid ／ F := by
+  refine ext_indep rfl fun I hI ↦ ?_
+  simp only [cycleMatroid_indep, isAcyclicSet_iff, contract_edgeSet]
+  refine ⟨fun ⟨hIsu, hC⟩ ↦ ?_, fun h ↦ ⟨by simpa using hI, ?_⟩⟩
+  · sorry
+  simp at hI
+  
+  sorry
 
 @[simp]
 lemma cycleMatroid_vertexDelete_isolatedSet (G : Graph α β) :

@@ -349,6 +349,10 @@ lemma Nonempty.firstEdge_eq_head (hw : w.Nonempty) :
 lemma Nonempty.edgeSet_nonempty (h : w.Nonempty) : E(w).Nonempty := by
   cases h with simp
 
+lemma nonempty_iff_exists_edge : w.Nonempty ↔ ∃ e, e ∈ w.edge := by
+  induction w with simp_all
+alias ⟨Nonempty.exists_edge, _⟩:= nonempty_iff_exists_edge
+
 lemma Nonempty.first_ne_last_of_nodup (hne : w.Nonempty) (hv : w.vertex.Nodup) :
     w.first ≠ w.last := by
   obtain ⟨x, e, w, rfl⟩ := hne.exists_cons

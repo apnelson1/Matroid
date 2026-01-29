@@ -1,8 +1,8 @@
 import Matroid.ForMathlib.Partition.Set
 import Matroid.Graph.Lattice
-import Matroid.Graph.Walk.Basic
+import Matroid.Graph.Connected.Vertex.Defs
 
-open Set Function Nat WList
+open Set Function Nat WList Partition
 
 variable {α β : Type*} {G H : Graph α β} {u v x x₁ x₂ y y₁ y₂ z : α} {e e' f g : β}
   {U V S T : Set α} {F F' R R': Set β} {C W P Q : WList α β}
@@ -60,10 +60,14 @@ lemma IsCompOf.of_isClosedSubgraph (hHcl : H ≤c G) (hH'co : H'.IsCompOf H) :
 
 
 def walkable (G : Graph α β) (u : α) : Graph α β :=
-  G[({x | ∃ W, G.IsWalk W ∧ W.first = u ∧ W.last = x} : Set α)]
+  G[({x | G.ConnBetween u x} : Set α)]
 
 lemma mem_walkable (hx : x ∈ V(G)) : x ∈ V(G.walkable x) :=
   ⟨.nil x, by simpa, rfl, rfl⟩
+
+@[simp]
+lemma mem_walkable_iff : x ∈ V(G.walkable u) ↔ G.ConnBetween u x := by
+  simp [walkable]
 
 lemma walkable_isClosedSubgraph : G.walkable u ≤c G := by
   refine ⟨induce_le fun x hx => ?_, ?_⟩
@@ -84,9 +88,9 @@ lemma mem_walkable_self_iff : x ∈ V(G.walkable x) ↔ x ∈ V(G) :=
 
 @[simp]
 lemma walkable_eq_bot (hx : x ∉ V(G)) : G.walkable x = ⊥ := by
-  rw [walkable, ← vertexSet_eq_empty_iff, induce_vertexSet, Set.eq_empty_iff_forall_notMem]
-  simp only [mem_setOf_eq, not_exists, not_and]
-  rintro y W hW rfl rfl
+  simp_rw [walkable, ← vertexSet_eq_empty_iff, induce_vertexSet, Set.eq_empty_iff_forall_notMem,
+    mem_setOf_eq]
+  rintro y ⟨W, hW, rfl, rfl⟩
   exact hx hW.first_mem
 
 lemma exists_isWalk_of_mem_mem (hx : x ∈ V(G.walkable u)) (hy : y ∈ V(G.walkable u)) :
@@ -113,6 +117,13 @@ lemma walkable_eq_walkable_of_mem (hx : x ∈ V(G.walkable u)) : G.walkable x = 
   rw [walkable_isClosedSubgraph.vertexSet_inj walkable_isClosedSubgraph]
   ext y
   exact ⟨fun h => mem_walkable_trans h hx, fun h => mem_walkable_trans h (mem_walkable_symm hx)⟩
+
+@[simp]
+lemma walkable_eq_walkable_iff_mem (hx : x ∈ V(G)) :
+    G.walkable x = G.walkable u ↔ x ∈ V(G.walkable u) := by
+  refine ⟨fun h => ?_, fun h => walkable_eq_walkable_of_mem h⟩
+  rw [← h]
+  exact mem_walkable hx
 
 lemma IsClosedSubgraph.walkable_le_of_mem (hcl : H ≤c G) (hx : x ∈ V(H)) : G.walkable x ≤ H := by
   rw [walkable_isClosedSubgraph.le_iff_vertexSet_subset hcl]
@@ -187,6 +198,10 @@ lemma mem_components_iff_isCompOf : H ∈ G.Components ↔ H.IsCompOf G := by
   simp [Components]
 
 @[simp]
+lemma mem_compPartition_iff_isCompOf {H : G.Subgraph} : H ∈ G.compPartition ↔ H.val.IsCompOf G := by
+  simp [compPartition]
+
+@[simp]
 lemma bot_notMem_components (G : Graph α β) : ⊥ ∉ G.Components := by
   simp [Components]
 
@@ -203,6 +218,16 @@ def connPartition (G : Graph α β) : Partition (Set α) where
     obtain rfl := IsCompOf.eq_of_not_disjoint hH hH₀co hne
     rfl
   bot_not_mem := by simp
+
+lemma mem_connPartition_iff_isCompOf :
+    S ∈ G.connPartition ↔ ∃ H : Graph α β, H.IsCompOf G ∧ V(H) = S := by
+  rw [← mem_parts]
+  simp
+
+@[simp]
+lemma IsCompOf.mem_connPartition (hHco : H.IsCompOf G) : V(H) ∈ G.connPartition := by
+  simp only [mem_connPartition_iff_isCompOf]
+  use H, hHco
 
 @[simp]
 lemma induce_connPartition_parts_eq_components (G : Graph α β) :

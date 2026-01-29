@@ -46,7 +46,7 @@ lemma IsSep.of_contract (φ : (G ↾ C).connPartition.RepFun) (hS : (G /[φ, C])
     simpa using hvx.right_mem
   not_connected hcon := by
     absurd hS.not_connected
-    have hsc : G.IsContractClosed (φ : α → α) C := IsContractClosed.of_connPartition_repFun φ
+    have hsc : G.IsContractClosed (φ : α → α) C := φ.of_connPartition_repFun
     have hmap : ((φ ''ᴳ G) - S).Connected := by
       simpa [map_vertexDelete_preimage] using hcon.map φ
     have hdel : (((φ ''ᴳ G) - S) ＼ C).Connected := by

@@ -186,85 +186,68 @@ lemma exists_le_map_comm {G} : (∃ f : α → α', G ≤ f ''ᴳ H) ↔ ∃ f H
   use f
   grw [hH']
 
-structure IsRetr (G : Graph α β) (f : α → α) where
-  mapsTo : Set.MapsTo f V(G) V(G)
-  isIdem : ∀ v ∈ V(G), f (f v) = f v
+/-! ### IsContractClosed predicate
 
-variable {f f' : α → α}
+Similar to how combining injecitivity and surjectivity gives a bijection,
+`IsContractClosed` is one half of predicate that ensures that `contract` is sound.
 
-namespace IsRetr
+`IsContractClosed G φ C` means that `φ` identifies the endpoints of every edge in `C`. So each fiber
+of `φ` is a closed subgraph of `G ↾ C`.
 
-@[simp]
-lemma vertexSet_subset (hf : G.IsRetr f) : V(f ''ᴳ G) ⊆ V(G) :=
-  hf.mapsTo.image_subset
+Notice that each fiber may not be the components of `G ↾ C`. However, it is sometime useful to
+use this half-predicate in proofs since it is well-behaved under subgraphs and subsets of `C`.
+-/
+def IsContractClosed (G : Graph α β) (φ : α → α') (C : Set β) : Prop :=
+  ∀ ⦃e u v⦄, e ∈ C → G.IsLink e u v → φ u = φ v
 
-lemma mem (hf : G.IsRetr f) (ha : a ∈ V(G)) : f a ∈ V(G) :=
-  hf.vertexSet_subset (by use a)
+namespace IsContractClosed
 
-@[simp]
-lemma idem (hf : G.IsRetr f) : f ''ᴳ (f ''ᴳ G) = f ''ᴳ G := by
-  ext a b c
-  · simp only [map_map, map_vertexSet, comp_apply, mem_image]
-    refine exists_congr fun x ↦ and_congr_right fun hx ↦ ?_
-    rw [hf.isIdem x hx]
-  simp only [map_map, map_isLink, comp_apply]
-  refine exists₂_congr fun x y ↦ and_congr_right fun hxy ↦ ?_
-  rw [hf.isIdem x hxy.left_mem, hf.isIdem y hxy.right_mem]
+variable {α' : Type*} {φ : α → α'} {C D : Set β}
 
-lemma eq_of_mem_range (hf : G.IsRetr f) (ha : a ∈ f '' V(G)) : f a = a := by
-  obtain ⟨b, hb, rfl⟩ := ha
-  exact hf.isIdem b hb
+lemma subset (hφ : G.IsContractClosed φ C) (hDC : D ⊆ C) : G.IsContractClosed φ D := by
+  intro e u v heD
+  exact hφ (hDC heD)
 
-lemma eqOn_of_image_eq (hf : G.IsRetr f) (hV : f '' V(G) = V(G)) : V(G).EqOn f id := by
-  rintro x hx
-  rw [← hV] at hx
-  obtain ⟨y, hy, rfl⟩ := hx
-  exact hf.isIdem y hy
+lemma of_le (hGH : G ≤ H) (hφ : H.IsContractClosed φ C) : G.IsContractClosed φ C := by
+  intro e u v heC huv
+  exact hφ heC (hGH.isLink_of_isLink huv)
 
-lemma image_eq_iff_eqOn (hf : G.IsRetr f) : f '' V(G) = V(G) ↔ V(G).EqOn f id :=
-  ⟨hf.eqOn_of_image_eq, fun h ↦ by simpa using h.image_eq⟩
+lemma isLoopAt_map_of_mem (hφ : G.IsContractClosed φ C) (heC : e ∈ C) (huv : G.IsLink e u v) :
+    (φ ''ᴳ G).IsLoopAt e (φ u) := by
+  -- build a self-link in the mapped graph, then use `isLink_self_iff`.
+  refine ⟨u, v, huv, rfl, ?_⟩
+  simpa using hφ heC huv
 
-lemma map_eq_self_iff (hf : G.IsRetr f) : f ''ᴳ G = G ↔ V(G).EqOn f id :=
-  ⟨fun h ↦ hf.eqOn_of_image_eq (congr_arg vertexSet h), (by simpa using map_congr_left_of_eqOn ·)⟩
+/-- Under `IsContractClosed`, every edge in `C` becomes a loop after mapping. -/
+lemma exists_isLoopAt_map_of_mem_edgeSet (hφ : G.IsContractClosed φ C) (he : e ∈ C ∩ E(G)) :
+    ∃ x, (φ ''ᴳ G).IsLoopAt e x := by
+  obtain ⟨heC, heG⟩ := he
+  obtain ⟨u, v, huv⟩ := G.exists_isLink_of_mem_edgeSet heG
+  exact ⟨φ u, hφ.isLoopAt_map_of_mem heC huv⟩
 
-lemma map_eq_of_le_map_le_map (hf : G.IsRetr f) (hf' : H.IsRetr f') (hGH : G ≤ f' ''ᴳ H)
-    (hHG : H ≤ f ''ᴳ G) : G = f' ''ᴳ H ∧ H = f ''ᴳ G := by
-  have hV : V(G) = V(H) := antisymm (vertexSet_mono hGH |>.trans hf'.mapsTo.image_subset)
-    (vertexSet_mono hHG |>.trans hf.mapsTo.image_subset)
-  have hFG : f '' V(G) = V(G) :=
-    hf.mapsTo.image_subset.antisymm <| by simpa [hV] using vertexSet_mono hHG
-  have hF'H : f' '' V(H) = V(H) :=
-    hf'.mapsTo.image_subset.antisymm <| by simpa [hV] using vertexSet_mono hGH
-  have hE : E(G) = E(H) := by
-    apply_fun edgeSet (α := α) (β := β) at hHG hGH using edgeSet_monotone (α := α) (β := β)
-    simp only [map_edgeSet, le_eq_subset] at hHG hGH
-    exact hGH.antisymm hHG
-  refine ⟨?_, ?_⟩
-  · exact ext_of_le_le hGH le_rfl (by simp [hF'H, hV]) (by simpa)
-  · exact ext_of_le_le hHG le_rfl (by simp [hFG, ← hV]) (by simp [hE])
+/-- A vertex-deletion-stable version: if `e ∈ C` and `e` survives deleting `S` from the mapped
+graph, then `e` is a loop in `((φ ''ᴳ G) - S)`. -/
+lemma exists_isLoopAt_map_vertexDelete_of_mem (hφ : G.IsContractClosed φ C) (S : Set α')
+    (he : e ∈ C ∩ E((φ ''ᴳ G) - S)) : ∃ x, ((φ ''ᴳ G) - S).IsLoopAt e x := by
+  obtain ⟨heC, heE⟩ := he
+  have heG : e ∈ E(G) := by simpa using (edgeSet_mono vertexDelete_le) heE
+  obtain ⟨u, v, huv⟩ := G.exists_isLink_of_mem_edgeSet heG
+  have hloop : (φ ''ᴳ G).IsLoopAt e (φ u) := hφ.isLoopAt_map_of_mem heC huv
+  have huS : (φ u) ∉ S := by
+    intro huS
+    exact (hloop.inc.not_mem_of_mem huS) heE
+  refine ⟨φ u, ((φ ''ᴳ G).vertexDelete_isLink_iff S).mpr ⟨hloop, huS, huS⟩⟩
 
-@[simp]
-lemma map_le_self_iff (hf : G.IsRetr f) : f ''ᴳ G ≤ G ↔ (f ''ᴳ G).IsLink = G.IsLink := by
-  refine ⟨fun hle ↦ ?_, fun heq ↦ ⟨hf.vertexSet_subset, ?_⟩⟩
-  · ext e u v
-    exact ⟨fun h ↦ h.of_le hle, fun h ↦ h.of_le_of_mem hle (by simp [h.edge_mem])⟩
-  simp_rw [heq]
-  tauto
+lemma disjoint_of_isWalk_noLoop (hφ : G.IsContractClosed φ C) {W : WList α' β}
+    (h : (φ ''ᴳ G).IsWalk W) (hloop : W.NoLoop) : Disjoint E(W) C := by
+  rw [disjoint_iff_forall_notMem]
+  rintro e heW heC
+  obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet <| h.edge_mem_of_mem heW
+  have hl := hφ.isLoopAt_map_of_mem heC hxy
+  rw [IsLoopAt, ← h.isLink_iff_isLink_of_mem heW] at hl
+  exact hloop.not_isLink e (φ x) hl
 
-lemma comp (hf : G.IsRetr f) (hf' : (f ''ᴳ G).IsRetr f') : G.IsRetr (f' ∘ f) where
-  mapsTo x hx := hf'.mapsTo.image_subset.trans hf.mapsTo.image_subset (by simp; use x)
-  isIdem x hx := by
-    simp only [comp_apply]
-    rw [hf.eq_of_mem_range (hf'.mem (by use x)), hf'.eq_of_mem_range]
-    use f x, (by use x)
-
-end IsRetr
-
-@[simp]
-lemma id_isRetr : G.IsRetr id where
-  mapsTo _ := id
-  isIdem _ _ := rfl
-
+end IsContractClosed
 
 
 

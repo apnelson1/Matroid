@@ -687,7 +687,7 @@ lemma IsCycle.isCycle_or_isCycle_of_union_of_subsingleton_inter (hC : (G ∪ H).
   · obtain (hG | hH) := aux (union_eq_union_edgeDelete .. ▸ hC) (hi.anti (by simp))
       (Compatible.of_disjoint_edgeSet disjoint_sdiff_right)
     · exact .inl hG
-    exact .inr <| hH.isCycle_of_ge <| by simp
+    exact .inr <| hH.of_le <| by simp
   -- If the cycle is a loop, this is easy.
   obtain ⟨x, e, rfl⟩ | hnt := hC.loop_or_nontrivial
   · obtain heG | heH := hC.isWalk.edge_mem_of_mem (e := e) (by simp)
@@ -734,8 +734,8 @@ lemma IsCycle.isCycle_or_isCycle_of_union_of_subsingleton_inter (hC : (G ∪ H).
 lemma Compatible.isCycle_union_iff_of_subsingleton_inter (hcompat : G.Compatible H)
     (hi : (V(G) ∩ V(H)).Subsingleton) : (G ∪ H).IsCycle C ↔ G.IsCycle C ∨ H.IsCycle C :=
   ⟨fun h ↦ h.isCycle_or_isCycle_of_union_of_subsingleton_inter hi,
-    fun h ↦ h.elim (fun h' ↦ h'.isCycle_of_ge (Graph.left_le_union ..))
-    (fun h' ↦ h'.isCycle_of_ge hcompat.right_le_union)⟩
+    fun h ↦ h.elim (fun h' ↦ h'.of_le (Graph.left_le_union ..))
+    (fun h' ↦ h'.of_le hcompat.right_le_union)⟩
 
 
 /-- Every connected subgraph of `G` is a subgraph of a component of `G`. -/

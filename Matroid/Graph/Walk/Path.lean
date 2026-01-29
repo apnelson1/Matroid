@@ -103,6 +103,15 @@ lemma IsTrail.dInc_iff_eq_of_dInc (hW : G.IsTrail W) (he : W.DInc e u v) :
     · simpa [h.edge_mem] using hW.edge_nodup
     exact IH hW.of_cons he h
 
+lemma IsTrail.first_eq_of_isLink (hT : G.IsTrail (cons x e w)) (hl : G.IsLink e x y) :
+    w.first = y := by
+  rw [cons_isTrail_iff] at hT
+  exact hT.2.1.right_unique hl
+
+@[simp]
+lemma IsLink.walk_isTrail (h : G.IsLink e u v) : G.IsTrail h.walk := by
+  simp [IsLink.walk, h, h.right_mem]
+
 /-! ### Paths -/
 
 /-- `G.IsPath P` means that `w` is a walk of `G` with no repeated vertices
@@ -163,10 +172,8 @@ lemma concat_isPath_iff : G.IsPath (P.concat e x) ↔ G.IsPath P ∧ G.IsLink e 
 lemma IsWalk.dedup_isPath [DecidableEq α] (h : G.IsWalk P) : G.IsPath P.dedup :=
   ⟨h.dedup, P.dedup_vertex_nodup⟩
 
-lemma IsPath.noloop [DecidableEq α] (h : G.IsPath P) : P.NoLoop := by
-  induction P with
-  | nil u => simp [NoLoop]
-  | cons x e w ih => exact ⟨fun heq ↦ by simpa [heq] using h.nodup, ih h.of_cons⟩
+lemma IsPath.noloop [DecidableEq α] (h : G.IsPath P) : P.NoLoop :=
+  noLoop_of_vertex_nodup h.nodup
 
 lemma IsLink.walk_isPath (h : G.IsLink e u v) (hne : u ≠ v) : G.IsPath h.walk :=
   ⟨h.walk_isWalk, by simp [hne]⟩
@@ -256,6 +263,13 @@ lemma IsPath.eq_firstEdge_of_isLink_first (hP : G.IsPath P) (heP : e ∈ P.edge)
   obtain ⟨z, hex⟩ := he
   rw [← hP.isWalk.isLink_iff_isLink_of_mem heP] at hex
   exact hex.eq_firstEdge_of_isLink_first hP.nodup
+
+lemma IsPath.first_eq_of_isLink_mem (hP : G.IsPath (cons x f w)) (heP : e ∈ (cons x f w).edge)
+    (hl : G.IsLink e x y) : e = f ∧ w.first = y := by
+  obtain ⟨hw, hl', hxw⟩ := by simpa using hP
+  obtain rfl | hew := by simpa using heP
+  · exact ⟨rfl, hP.isTrail.first_eq_of_isLink hl⟩
+  exact hxw (hw.isWalk.isLink_iff_isLink_of_mem hew |>.mpr hl |>.left_mem) |>.elim
 
 lemma IsPath.vertexSet_nontrivial_iff (hP : G.IsPath P) : V(P).Nontrivial ↔ P.Nonempty := by
   obtain u | ⟨u, e, P⟩ := P

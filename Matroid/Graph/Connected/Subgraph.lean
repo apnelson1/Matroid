@@ -34,6 +34,11 @@ lemma IsLink.isBridge_iff_not_connBetween (he : G.IsLink e x y) :
   rw [← hC.isWalk.isLink_iff_isLink_of_mem heC] at he
   exact hC.connBetween_deleteEdge_of_mem_of_mem _ he.left_mem he.right_mem
 
+lemma IsLink.isBridge_iff_isEdgeCutBetween (he : G.IsLink e x y) :
+    G.IsBridge e ↔ G.IsEdgeCutBetween {e} x y := by
+  rw [he.isBridge_iff_not_connBetween, isEdgeCutBetween_iff]
+  simp [he.edge_mem]
+
 lemma Connected.edgeDelete_singleton_connected (hG : G.Connected) (he : ¬ G.IsBridge e) :
     (G ＼ {e}).Connected := by
   obtain heE | heE := em' <| e ∈ E(G)
@@ -67,6 +72,13 @@ lemma Connected.edgeDelete_singleton_connected_iff (hG : G.Connected) :
 lemma Connected.isBridge_iff (hG : G.Connected) : G.IsBridge e ↔ ¬ (G ＼ {e}).Connected := by
   rw [hG.edgeDelete_singleton_connected_iff, not_not]
 
+lemma Connected.isBridge_iff_isEdgeSep (hG : G.Connected) (e : β) :
+    G.IsBridge e ↔ G.IsEdgeSep {e} := by
+  simp only [hG.isBridge_iff, isEdgeSep_iff, singleton_subset_iff, iff_and_self]
+  rintro hconn
+  contrapose! hG
+  rwa [edgeDelete_eq_self_of_disjoint (by simpa)] at hconn
+
 /-- Every edge of a path is a bridge -/
 lemma IsPath.isBridge_of_mem (hP : G.IsPath P) (heP : e ∈ P.edge) : P.toGraph.IsBridge e := by
   rw [hP.isWalk.toGraph_connected.isBridge_iff, hP.isWalk.toGraph_eq_induce_restrict]
@@ -85,6 +97,17 @@ lemma IsPath.isBridge_of_mem (hP : G.IsPath P) (heP : e ∈ P.edge) : P.toGraph.
   rw [← hP₂.isWalk.isLink_iff_isLink_of_mem hf] at hfxy
   exact List.disjoint_left.1 hdj hx hfxy.left_mem
 
+lemma IsPath.eq_of_isBridge_isLink (hP : G.IsPath P) (he : G.IsBridge e)
+    (hl : G.IsLink e P.first P.last) : P = hl.walk := by
+  obtain ⟨e, heP, rfl⟩ := hP.isWalk.exists_mem_isEdgeCutBetween
+  <| hl.isBridge_iff_isEdgeCutBetween.1 he
+  match P with
+  | nil u => simp at heP
+  | cons u f w =>
+    obtain ⟨hw, hl', huw⟩ := by simpa using hP
+    simp only [first_cons, last_cons, IsLink.walk, cons.injEq, true_and] at hl ⊢
+    obtain ⟨rfl, heq⟩ := hP.first_eq_of_isLink_mem heP hl
+    grind [hw.first_eq_last_iff.mp heq |>.eq_nil_last]
 
 /-! ### Staying Connected -/
 

@@ -214,58 +214,37 @@ def isSepBetween_of_vertexDelete (h : ¬ (G - X).ConnBetween s t) (hs : s ∉ X)
   refine ⟨inter_subset_left, by simp [hs], by simp [ht], ?_⟩
   simpa [vertexDelete_vertexSet_inter] using h
 
-structure EdgeCutBetween (G : Graph α β) (s t : α) where
-  carrier : Set β
-  carrier_subset : carrier ⊆ E(G)
-  not_connBetween' : ¬ (G ＼ carrier).ConnBetween s t
+@[mk_iff]
+structure IsEdgeCutBetween (G : Graph α β) (F : Set β) (s t : α) : Prop where
+  subset_edgeSet : F ⊆ E(G)
+  not_connBetween : ¬ (G ＼ F).ConnBetween s t
 
-instance : SetLike (G.EdgeCutBetween s t) β where
-  coe := (·.carrier)
-  coe_injective' C1 C2 h := by rwa [EdgeCutBetween.mk.injEq]
+attribute [simp] IsEdgeCutBetween.subset_edgeSet IsEdgeCutBetween.not_connBetween
 
-@[simp]
-lemma EdgeCutBetween.coe_subset (C : G.EdgeCutBetween s t) : (C : Set β) ⊆ E(G) := C.carrier_subset
-
-@[simp]
-lemma EdgeCutBetween.not_connBetween (C : G.EdgeCutBetween s t) :
-    ¬ (G ＼ C).ConnBetween s t :=
-  C.not_connBetween'
-
-@[simp]
-lemma isEmpty_edgeCutBetween_self (hs : s ∈ V(G)) : IsEmpty (G.EdgeCutBetween s s) := by
-  by_contra! h
-  obtain ⟨C, _, h⟩ := h
+lemma not_isEdgeCutBetween_self (hs : s ∈ V(G)) : ¬ G.IsEdgeCutBetween F s s := by
+  rintro ⟨-, h⟩
   simp [hs] at h
 
-def edgeCutBetween_empty (h : ¬ G.ConnBetween s t) : G.EdgeCutBetween s t where
-  carrier := ∅
-  carrier_subset := empty_subset _
-  not_connBetween' := by simpa
+def isEdgeCutBetween_empty (h : ¬ G.ConnBetween s t) : G.IsEdgeCutBetween ∅ s t where
+  subset_edgeSet := empty_subset _
+  not_connBetween := by simpa
 
-@[simp]
-lemma edgeCutBetween_empty_coe (h : ¬ G.ConnBetween s t) :
-    (edgeCutBetween_empty h : Set β) = ∅ := rfl
-
-def EdgeCutBetween.of_le (C : G.EdgeCutBetween s t) (hle : H ≤ G) : H.EdgeCutBetween s t where
-  carrier := E(H) ∩ C
-  carrier_subset := inter_subset_left
-  not_connBetween' := by
+lemma IsEdgeCutBetween.of_le (hF : G.IsEdgeCutBetween F s t) (hle : H ≤ G) :
+    H.IsEdgeCutBetween (E(H) ∩ F) s t where
+  subset_edgeSet := inter_subset_left
+  not_connBetween := by
     rw [edgeDelete_edgeSet_inter]
-    exact mt (ConnBetween.of_le · (by gcongr)) C.not_connBetween
+    exact mt (ConnBetween.of_le · (by gcongr)) hF.not_connBetween
 
-@[simp]
-lemma EdgeCutBetween.of_le_coe (C : G.EdgeCutBetween s t) (hle : H ≤ G) :
-    (C.of_le hle : Set β) = E(H) ∩ C := rfl
-
-lemma IsWalk.not_disjoint_edgeCutBetween (hW : G.IsWalk W) (C : G.EdgeCutBetween W.first W.last) :
-    ¬ Disjoint E(W) C := by
+lemma IsWalk.not_disjoint_isEdgeCutBetween (hW : G.IsWalk W)
+    (hF : G.IsEdgeCutBetween F W.first W.last) : ¬ Disjoint E(W) F := by
   intro hc
-  apply C.not_connBetween
+  apply hF.not_connBetween
   use W, hW.edgeDelete hc
 
-lemma IsWalk.exists_mem_edgeCutBetween (hW : G.IsWalk W) (C : G.EdgeCutBetween W.first W.last) :
-    ∃ e ∈ E(W), e ∈ C := by
-  have := hW.not_disjoint_edgeCutBetween C
+lemma IsWalk.exists_mem_isEdgeCutBetween (hW : G.IsWalk W)
+    (hF : G.IsEdgeCutBetween F W.first W.last) : ∃ e ∈ E(W), e ∈ F := by
+  have := hW.not_disjoint_isEdgeCutBetween hF
   rwa [not_disjoint_iff] at this
 
 /-! ### Ensemble of paths between two vertices -/
@@ -519,31 +498,32 @@ lemma connBetweenGE_le_encard (h : G.ConnBetweenGE s t n) (hne : s ≠ t) (hadj 
   (connBetweenGE_le_diff_encard h hne hadj).trans <| encard_le_encard diff_subset
 
 def EdgeConnBetweenGE (G : Graph α β) (s t : α) (n : ℕ) : Prop :=
-  ∀ C : G.EdgeCutBetween s t, n ≤ (↑C : Set β).encard
+  ∀ ⦃F : Set β⦄, G.IsEdgeCutBetween F s t → n ≤ F.encard
 
 @[simp]
-lemma EdgeConnBetweenGE_zero (G : Graph α β) (s t : α) : G.EdgeConnBetweenGE s t 0 := by
+lemma edgeConnBetweenGE_zero (G : Graph α β) (s t : α) : G.EdgeConnBetweenGE s t 0 := by
   simp [EdgeConnBetweenGE]
 
 lemma EdgeConnBetweenGE.anti_right (hle : n ≤ m) (h : G.EdgeConnBetweenGE s t m) :
     G.EdgeConnBetweenGE s t n :=
-  fun C ↦ le_trans (by norm_cast) (h C)
+  fun _ hF ↦ le_trans (by exact_mod_cast hle) (h hF)
 
 lemma edgeConnBetweenGE_one_iff : G.EdgeConnBetweenGE s t 1 ↔ G.ConnBetween s t := by
-  refine ⟨fun h => ?_, fun h C => ?_⟩
+  refine ⟨fun h => ?_, fun h F hF => ?_⟩
   · by_contra hc
-    simpa using h <| edgeCutBetween_empty hc
+    simpa using h (isEdgeCutBetween_empty hc)
   obtain ⟨w, hw, rfl, rfl⟩ := h
-  obtain ⟨x, hxw, hxC⟩ := hw.exists_mem_edgeCutBetween C
+  obtain ⟨x, hxw, hxF⟩ := hw.exists_mem_isEdgeCutBetween hF
   simp only [cast_one, one_le_encard_iff_nonempty]
-  use x, hxC
+  use x, hxF
 
 @[simp]
 lemma edgeConnBetweenGE_self (hs : s ∈ V(G)) (n : ℕ) : G.EdgeConnBetweenGE s s n :=
-  (isEmpty_edgeCutBetween_self hs).elim
+  fun _ hF => (not_isEdgeCutBetween_self hs hF).elim
 
 lemma EdgeConnBetweenGE.of_le (h : H.EdgeConnBetweenGE s t n) (hle : H ≤ G) :
     G.EdgeConnBetweenGE s t n := by
-  rintro C
-  have := by simpa using h (C.of_le hle)
+  intro F hF
+  have hF' : H.IsEdgeCutBetween (E(H) ∩ F) s t := hF.of_le hle
+  have := h hF'
   exact this.trans <| encard_le_encard inter_subset_right

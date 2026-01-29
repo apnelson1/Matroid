@@ -1479,23 +1479,79 @@ lemma deloop_isSublist (w : WList α β) : w.deloop.IsSublist w := by
     rw [deloop_cons_of_ne_first heq]
     exact (deloop_isSublist w).cons₂ _ _ (by simp)
 
+@[simp]
+lemma deloop_vertexSet (w : WList α β) : V(w.deloop) = V(w) := by
+  induction w with
+  | nil => simp
+  | cons u e w ih =>
+    simp only [deloop_cons_eq_ite, apply_ite, cons_vertexSet]
+    split_ifs with hu
+    · subst u
+      simpa
+    simp [ih]
+
+@[simp]
+lemma mem_deloop_iff : x ∈ w.deloop ↔ x ∈ w := by
+  rw [← mem_vertexSet_iff, deloop_vertexSet, mem_vertexSet_iff]
+
+@[gcongr]
+lemma deloop_isSublist_mono (h : w₁.IsSublist w₂) : w₁.deloop.IsSublist w₂.deloop := by
+  induction h with
+  | nil h => simpa
+  | cons x e h ih =>
+    rw [deloop_cons_eq_ite]
+    split_ifs with hx
+    · subst x
+      exact ih
+    exact ih.cons x e
+  | cons₂ x e h h_eq ih =>
+    rename_i w₁ w₂
+    simp_rw [deloop_cons_eq_ite]
+    obtain rfl | hx := eq_or_ne x w₁.first
+    · simpa [h_eq]
+    simp only [hx, ↓reduceIte, h_eq ▸ hx]
+    apply ih.cons₂ ..
+    simpa
+
+lemma dedup_isSublist_deloop (w : WList α β) : w.dedup.IsSublist w.deloop := by
+  match w with
+  | nil x => simp
+  | cons u e w' =>
+    by_cases huw : u ∈ w'
+    · have hle := (w'.suffixFromVertex_isSuffix u).length_le
+      rw [dedup_cons_of_mem huw, deloop_cons_eq_ite]
+      split_ifs with heq
+      · subst heq
+        exact (w'.suffixFromVertex w'.first).dedup_isSublist_deloop.trans
+          (deloop_isSublist_mono (w'.suffixFromVertex_isSuffix _).isSublist)
+      exact (w'.suffixFromVertex u).dedup_isSublist_deloop.trans
+      <| (deloop_isSublist_mono (w'.suffixFromVertex_isSuffix _).isSublist).cons ..
+    rw [dedup_cons_of_notMem huw, deloop_cons_eq_ite]
+    split_ifs with heq
+    · subst heq
+      exact absurd (w'.deloop_first ▸ first_mem : w'.first ∈ w'.deloop) (mt mem_deloop_iff.mp huw)
+    exact w'.dedup_isSublist_deloop.cons₂ _ _ (by simp)
+termination_by w.length
+
+end deloop
+
+section noLoop
+
 /-- A `WList` has no loops if no edge connects a vertex to the next vertex being itself. -/
 def NoLoop : WList α β → Prop
   | nil _ => True
   | cons x _ w => x ≠ w.first ∧ w.NoLoop
 
-omit [DecidableEq α] in
 @[simp]
 lemma noLoop_nil (x : α) : (nil x (β := β)).NoLoop := by
   simp [NoLoop]
 
-omit [DecidableEq α] in
 @[simp]
 lemma noLoop_cons (x : α) (e : β) (w : WList α β) :
     (cons x e w).NoLoop ↔ x ≠ w.first ∧ w.NoLoop := by
   simp [NoLoop]
 
-lemma deloop_noLoop (w : WList α β) : w.deloop.NoLoop := by
+lemma deloop_noLoop [DecidableEq α] (w : WList α β) : w.deloop.NoLoop := by
   cases w with
   | nil => simp
   | cons u e w =>
@@ -1506,7 +1562,7 @@ lemma deloop_noLoop (w : WList α β) : w.deloop.NoLoop := by
     exact ⟨heq, w.deloop_noLoop⟩
 
 @[simp]
-lemma deloop_eq_self (hw : w.NoLoop) : w.deloop = w := by
+lemma deloop_eq_self [DecidableEq α] (hw : w.NoLoop) : w.deloop = w := by
   induction w with
   | nil => simp
   | cons u e w ih =>
@@ -1514,8 +1570,55 @@ lemma deloop_eq_self (hw : w.NoLoop) : w.deloop = w := by
     rw [deloop_cons_of_ne_first hw.1, ih hw.2]
 
 @[simp]
-lemma deloop_eq_self_iff : w.deloop = w ↔ w.NoLoop :=
+lemma deloop_eq_self_iff [DecidableEq α] : w.deloop = w ↔ w.NoLoop :=
   ⟨fun h ↦ by rw [← h]; exact deloop_noLoop w, deloop_eq_self⟩
 
-end deloop
+@[simp]
+lemma noLoop_of_vertex_nodup (hw : w.vertex.Nodup) : w.NoLoop := by
+  induction w with
+  | nil => simp
+  | cons x e w ih =>
+    simp only [cons_vertex, nodup_cons] at hw
+    refine ⟨?_, ih hw.2⟩
+    rintro rfl
+    exact hw.1 w.first_mem
+
+lemma noLoop_iff_ne_of_dInc : w.NoLoop ↔ ∀ e x y, w.DInc e x y → x ≠ y := by
+  refine ⟨fun h e x y hex ↦ ?_, fun h ↦ ?_⟩
+  · induction hex with simp_all
+  induction w with
+  | nil u => simp
+  | cons u e w ih =>
+    simp only [noLoop_cons, ne_eq, h e u w.first (by simp), not_false_eq_true, true_and]
+    exact ih fun e x y hex ↦ h e x y (by simp [hex])
+
+lemma noLoop_iff_not_dInc : w.NoLoop ↔ ∀ e x, ¬ w.DInc e x x := by
+  rw [noLoop_iff_ne_of_dInc]
+  grind
+
+@[simp]
+lemma NoLoop.not_dInc (h : w.NoLoop) (e : β) (x : α) : ¬ w.DInc e x x := by
+  rw [noLoop_iff_not_dInc] at h
+  exact h e x
+
+lemma noLoop_iff_ne_of_isLink : w.NoLoop ↔ ∀ e x y, w.IsLink e x y → x ≠ y := by
+  refine ⟨fun h e x y hxy ↦ ?_, fun h ↦ ?_⟩
+  · induction hxy with simp_all [eq_comm]
+  induction w with
+  | nil u => simp
+  | cons u e w ih =>
+    simp only [noLoop_cons, ne_eq, h e u w.first (DInc.isLink <| by simp), not_false_eq_true,
+      true_and]
+    exact ih fun e x y hxy ↦ h e x y <| hxy.cons ..
+
+lemma noLoop_iff_not_isLink : w.NoLoop ↔ ∀ e x, ¬ w.IsLink e x x := by
+  rw [noLoop_iff_ne_of_isLink]
+  grind
+
+@[simp]
+lemma NoLoop.not_isLink (h : w.NoLoop) (e : β) (x : α) : ¬ w.IsLink e x x := by
+  rw [noLoop_iff_not_isLink] at h
+  exact h e x
+
+end noLoop
 end WList

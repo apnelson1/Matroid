@@ -35,12 +35,17 @@ lemma IsClosed.isWalk_rotate_iff (hc : w.IsClosed) {n} : G.IsWalk (w.rotate n) �
   rwa [← hc.intRotate_eq_rotate, hc.intRotate_intRotate, add_neg_cancel, intRotate_zero] at h'
 
 
-/-- `G.IsCycle C` means that `C` is a nonempty closed walk with no repeated vertices or edges. -/
+/-- `G.IsTour C` means that `C` is a nonempty closed walk with no repeated edges
+(but possibly repeated vertices). -/
 @[mk_iff]
-structure IsCycle (G : Graph α β) (C : WList α β) : Prop extends G.IsTrail C where
+structure IsTour (G : Graph α β) (C : WList α β) : Prop extends G.IsTrail C where
   nonempty : C.Nonempty
   /-- The start and end vertex are the same -/
   isClosed : C.IsClosed
+
+/-- `G.IsCycle C` means that `C` is a nonempty closed walk with no repeated vertices or edges. -/
+@[mk_iff]
+structure IsCycle (G : Graph α β) (C : WList α β) : Prop extends G.IsTour C where
   /-- There are no repeated vertices except for the first and last. -/
   nodup : C.tail.vertex.Nodup
 
@@ -66,6 +71,114 @@ lemma IsWalk.isCycle_of_closed_nodup (hC : G.IsWalk C) (hlen : 2 < C.length)
   nonempty := by cases C with simp_all
   isClosed := h_closed
   nodup := nodup
+
+lemma IsTour.isTrail (hC : G.IsTour C) : G.IsTrail C where
+  isWalk := hC.isWalk
+  edge_nodup := hC.edge_nodup
+
+@[simp]
+lemma not_isTour_nil (x : α) : ¬ G.IsTour (nil x : WList α β) :=
+  fun h ↦ by simpa using h.nonempty
+
+lemma IsTour.rotate (hC : G.IsTour C) (n : ℕ) : G.IsTour (C.rotate n) where
+  nonempty := by simpa using hC.nonempty
+  isWalk := hC.isWalk.rotate hC.isClosed n
+  edge_nodup := by simpa using hC.edge_nodup
+  isClosed := hC.isClosed.rotate n
+
+lemma IsTour.intRotate (hC : G.IsTour C) (n : ℤ) : G.IsTour (C.intRotate n) :=
+  hC.rotate ..
+
+lemma IsTour.reverse (hC : G.IsTour C) : G.IsTour C.reverse where
+  isWalk := hC.isWalk.reverse
+  edge_nodup := by simpa using hC.edge_nodup
+  nonempty := by simp [hC.nonempty]
+  isClosed := by simp [hC.isClosed]
+
+lemma IsTour.of_le (hC : H.IsTour C) (hle : H ≤ G) : G.IsTour C where
+  isWalk := hC.isWalk.of_le hle
+  edge_nodup := hC.edge_nodup
+  nonempty := hC.nonempty
+  isClosed := hC.isClosed
+
+lemma IsTour.of_le_of_subset (h : G.IsTour w) (hle : H ≤ G) (hE : E(w) ⊆ E(H)) :
+    H.IsTour w where
+  isWalk := h.isWalk.isWalk_le_of_nonempty hle hE h.nonempty
+  edge_nodup := h.edge_nodup
+  nonempty := h.nonempty
+  isClosed := h.isClosed
+
+lemma IsTour.isTour_toGraph (hC : G.IsTour C) : C.toGraph.IsTour C :=
+  hC.of_le_of_subset hC.isWalk.toGraph_le <| by simp
+
+lemma IsTour.of_forall_isLink (h : G.IsTour C) (he : ∀ ⦃e x y⦄, G.IsLink e x y → H.IsLink e x y) :
+    H.IsTour C where
+  isWalk := h.isWalk.of_forall_isLink he h.nonempty
+  edge_nodup := h.edge_nodup
+  nonempty := h.nonempty
+  isClosed := h.isClosed
+
+@[simp]
+lemma edgeRestrict_isTour_iff (F : Set β) (C : WList α β) :
+    (G ↾ F).IsTour C ↔ G.IsTour C ∧ E(C) ⊆ F := by
+  refine ⟨fun h ↦ ⟨h.of_le edgeRestrict_le, ?_⟩,
+    fun ⟨h, hss⟩ ↦ h.of_le_of_subset (by simp) (by simp [hss, h.isWalk.edgeSet_subset])⟩
+  have := by simpa using h.isWalk.edgeSet_subset
+  use this.2
+
+@[simp]
+lemma edgeDelete_isTour_iff (F : Set β) (C : WList α β) :
+    (G ＼ F).IsTour C ↔ G.IsTour C ∧ Disjoint E(C) F := by
+  refine ⟨fun h ↦ ⟨h.of_le edgeDelete_le, ?_⟩, fun ⟨h, hss⟩ ↦
+    h.of_le_of_subset (by simp) (by simp [subset_diff, hss, h.isWalk.edgeSet_subset])⟩
+  have := by simpa [subset_diff] using h.isWalk.edgeSet_subset
+  use this.2
+
+@[simp]
+lemma induce_isTour_iff (X : Set α) (C : WList α β) : (G[X]).IsTour C ↔ G.IsTour C ∧ V(C) ⊆ X := by
+  refine ⟨fun h ↦ ⟨?_, h.isWalk.vertexSet_subset⟩, fun ⟨h, hss⟩ ↦ ?_⟩
+  · refine ⟨⟨?_, h.edge_nodup⟩, h.nonempty, h.isClosed⟩
+    obtain ⟨x, hx, rfl⟩ | ⟨hC, hCX⟩ := by simpa [isWalk_induce_iff] using h.isWalk
+    · simpa using h.nonempty
+    exact hC
+  refine ⟨⟨?_, h.edge_nodup⟩, h.nonempty, h.isClosed⟩
+  simp [isWalk_induce_iff, h.isWalk, hss]
+
+@[simp]
+lemma vertexDelete_isTour_iff (X : Set α) (C : WList α β) :
+    (G - X).IsTour C ↔ G.IsTour C ∧ Disjoint V(C) X := by
+  refine ⟨fun h ↦ ⟨⟨⟨?_, h.edge_nodup⟩, h.nonempty, h.isClosed⟩,
+    h.isWalk.disjoint_of_vertexDelete⟩, fun ⟨h, hdisj⟩ ↦
+    ⟨⟨by simp [h.isWalk, hdisj], h.edge_nodup⟩, h.nonempty, h.isClosed⟩⟩
+  have := by simpa using h.isWalk
+  exact this.1
+
+/-- Dedup preserves being a trail (walk with distinct edges). -/
+lemma IsTrail.dedup [DecidableEq α] (hC : G.IsTrail C) : G.IsTrail C.dedup where
+  isWalk := hC.isWalk.dedup
+  edge_nodup := hC.edge_nodup.sublist C.dedup_isSublist.edge_sublist
+
+/-- Applying dedup to the tail of a tour gives a cycle. -/
+lemma IsTour.dedup_tail_isCycle [DecidableEq α] (hC : G.IsTour (cons x e w)) :
+    G.IsCycle (cons x e w.dedup) where
+  toIsTrail := hC.isTrail.sublist <| w.dedup_isSublist.cons₂ x e (by simp)
+  nonempty := by simp
+  isClosed := by
+    have := hC.isClosed
+    simp_all
+  nodup := w.dedup_vertex_nodup
+
+/-- Every tour contains a cycle as a sublist. -/
+lemma IsTour.exists_isCycle (hC : G.IsTour C) : ∃ C', G.IsCycle C' ∧ C'.IsSublist C := by
+  classical
+  obtain ⟨x, e, w, rfl⟩ := hC.nonempty.exists_cons
+  exact ⟨cons x e w.dedup, hC.dedup_tail_isCycle, w.dedup_isSublist.cons₂ x e <| by simp⟩
+
+lemma IsCycle.isTour (hC : G.IsCycle C) : G.IsTour C where
+  isWalk := hC.isWalk
+  edge_nodup := hC.edge_nodup
+  nonempty := hC.nonempty
+  isClosed := hC.isClosed
 
 lemma IsCycle.idxOf_get [DecidableEq α] (hC : G.IsCycle C) {n} (hn : n < C.length) :
     C.idxOf (C.get n) = n := hC.isClosed.idxOf_get hC.nodup hn
@@ -130,13 +243,6 @@ lemma IsCycle.of_le (hC : H.IsCycle C) (hle : H ≤ G) : G.IsCycle C where
   nonempty := hC.nonempty
   isClosed := hC.isClosed
   nodup := hC.nodup
-
-lemma IsCycle.isCycle_of_ge (h : H.IsCycle w) (hle : H ≤ G) : G.IsCycle w where
-  isWalk := h.isWalk.of_le hle
-  edge_nodup := h.edge_nodup
-  nonempty := h.nonempty
-  isClosed := h.isClosed
-  nodup := h.nodup
 
 lemma IsCycle.isCycle_of_le (h : G.IsCycle w) (hle : H ≤ G) (hE : E(w) ⊆ E(H)) :
     H.IsCycle w where
@@ -234,22 +340,14 @@ lemma edgeDelete_isCycle_iff (F : Set β) (C : WList α β) :
 @[simp]
 lemma induce_isCycle_iff (X : Set α) (C : WList α β) :
     (G[X]).IsCycle C ↔ G.IsCycle C ∧ V(C) ⊆ X := by
-  refine ⟨fun h ↦ ⟨?_, h.isWalk.vertexSet_subset⟩, fun ⟨h, hss⟩ ↦ ?_⟩
-  · refine ⟨⟨?_, h.edge_nodup⟩, h.nonempty, h.isClosed, h.nodup⟩
-    obtain ⟨x, hx, rfl⟩ | ⟨hC, hCX⟩ := by simpa [isWalk_induce_iff] using h.isWalk
-    · simpa using h.nonempty
-    exact hC
-  refine ⟨⟨?_, h.edge_nodup⟩, h.nonempty, h.isClosed, h.nodup⟩
-  simp [isWalk_induce_iff, h.isWalk, hss]
+  rw [isCycle_iff, isCycle_iff, induce_isTour_iff]
+  tauto
 
 @[simp]
 lemma vertexDelete_isCycle_iff (X : Set α) (C : WList α β) :
     (G - X).IsCycle C ↔ G.IsCycle C ∧ Disjoint V(C) X := by
-  refine ⟨fun h ↦ ⟨⟨⟨?_, h.edge_nodup⟩, h.nonempty, h.isClosed, h.nodup⟩,
-    h.isWalk.disjoint_of_vertexDelete⟩, fun ⟨h, hdisj⟩ ↦
-    ⟨⟨by simp [h.isWalk, hdisj], h.edge_nodup⟩, h.nonempty, h.isClosed, h.nodup⟩⟩
-  have := by simpa using h.isWalk
-  exact this.1
+  rw [isCycle_iff, isCycle_iff, vertexDelete_isTour_iff]
+  tauto
 
 lemma IsCycle.of_forall_isLink (h : G.IsCycle C) (he : ∀ ⦃e x y⦄, G.IsLink e x y → H.IsLink e x y) :
     H.IsCycle C where
