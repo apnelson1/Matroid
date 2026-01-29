@@ -56,8 +56,8 @@ lemma IsWalk.dedup_contract [DecidableEq α] (h : G.IsWalk P) (φ : (G ↾ C).co
 
 --   sorry
 
--- lemma IsAcyclicSet.of_contract {φ : (G ↾ C).connPartition.RepFun} (h : (G /[φ, C]).IsAcyclicSet F) :
---     G.IsAcyclicSet (F ∪ C) := by
+-- lemma IsAcyclicSet.of_contract {φ : (G ↾ C).connPartition.RepFun}
+--     (h : (G /[φ, C]).IsAcyclicSet F) : G.IsAcyclicSet (F ∪ C) := by
 
 --   sorry
 
