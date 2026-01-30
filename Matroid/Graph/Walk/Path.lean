@@ -112,6 +112,14 @@ lemma IsTrail.first_eq_of_isLink (hT : G.IsTrail (cons x e w)) (hl : G.IsLink e 
 lemma IsLink.walk_isTrail (h : G.IsLink e u v) : G.IsTrail h.walk := by
   simp [IsLink.walk, h, h.right_mem]
 
+lemma IsTrail.edgeRemove_of_forall_isLoopAt {F : Set β} [DecidablePred (· ∈ F)]
+    (hw : G.IsTrail w) (hF : ∀ e ∈ w.edge, e ∈ F → ∃ x, G.IsLoopAt e x) :
+    G.IsTrail (w.edgeRemove F) where
+  isWalk := hw.isWalk.edgeRemove hF
+  edge_nodup := by
+    rw [edgeRemove_edge]
+    exact hw.edge_nodup.filter _
+
 /-! ### Paths -/
 
 /-- `G.IsPath P` means that `w` is a walk of `G` with no repeated vertices

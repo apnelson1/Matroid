@@ -71,6 +71,9 @@ lemma IsLink.map (h : G.IsLink e u v) (f : α → α') : (f ''ᴳ G).IsLink e (f
   simp only [map_isLink]
   use u, v, h
 
+@[simp]
+lemma map_isLoopAt : (f ''ᴳ G).IsLoopAt e x ↔ ∃ u v, G.IsLink e u v ∧ x = f u ∧ x = f v := Iff.rfl
+
 @[gcongr]
 lemma map_congr_left_of_eqOn (h : EqOn f g V(G)) : (f ''ᴳ G) = (g ''ᴳ G) := by
   apply Graph.ext ?_ fun e x y ↦ ?_
@@ -246,6 +249,12 @@ lemma disjoint_of_isWalk_noLoop (hφ : G.IsContractClosed φ C) {W : WList α' �
   have hl := hφ.isLoopAt_map_of_mem heC hxy
   rw [IsLoopAt, ← h.isLink_iff_isLink_of_mem heW] at hl
   exact hloop.not_isLink e (φ x) hl
+
+lemma exists_isLoopAt_of_isWalk (hφ : G.IsContractClosed φ C) (hw : G.IsWalk W) :
+    ∀ e ∈ (W.map φ).edge, e ∈ C → ∃ x, (φ ''ᴳ G).IsLoopAt e x := by
+  rintro e heW heC
+  obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet <| hw.edge_mem_of_mem (by simpa using heW)
+  exact ⟨φ x, hφ.isLoopAt_map_of_mem heC hxy⟩
 
 end IsContractClosed
 

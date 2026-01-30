@@ -230,6 +230,15 @@ lemma contract_vertex_mono (φ : (H ↾ C).connPartition.RepFun) : V(H /[φ, C])
   refine vertexSet_mono edgeDelete_le |>.trans ?_
   simpa only [connPartition_supp, edgeRestrict_vertexSet] using φ.image_subset_self
 
+lemma isLoopAt_map_iff_connBetween (φ : (G ↾ C).connPartition.RepFun) : (φ ''ᴳ G).IsLoopAt e x ↔
+    ∃ u v, G.IsLink e u v ∧ (G ↾ C).ConnBetween u v ∧ φ u = x := by
+  rw [map_isLoopAt]
+  refine exists₂_congr (fun u v ↦ and_congr_right fun huv ↦ ⟨?_, ?_⟩)
+  · rintro ⟨rfl, heq⟩
+    use (by simpa using φ.rel_of_apply_eq_apply (by simp [huv.left_mem]) heq)
+  · rintro ⟨huv, rfl⟩
+    simp [φ.apply_eq_apply (by simpa)]
+
 lemma IsWalk.map_connBetween_foo {φ : (H ↾ C).connPartition.RepFun} {u} {W}
     (hw : ((φ ''ᴳ H) ＼ C ↾ F).IsWalk W) (hu : W.first = φ u) (hv : W.last = φ v) :
     (H ↾ (C ∪ F)).ConnBetween u v := by

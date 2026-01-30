@@ -147,6 +147,125 @@ lemma isWalk_reverse_iff : G.IsWalk w.reverse ↔ G.IsWalk w :=
 lemma IsWalk.deloop [DecidableEq α] (h : G.IsWalk w) : G.IsWalk w.deloop :=
   h.sublist w.deloop_isSublist
 
+lemma IsWalk.deloop_edge_eq_filter [DecidableEq α] [DecidablePred (∀ x, ¬ G.IsLoopAt · x)]
+    (h : G.IsWalk w) : w.deloop.edge = w.edge.filter (∀ x, ¬ G.IsLoopAt · x) := by
+  induction w with
+  | nil u => simp
+  | cons u e w ih =>
+    simp only [cons_isWalk_iff, deloop_cons_eq_ite, cons_edge] at h ⊢
+    specialize ih h.2
+    split_ifs with heq
+    · subst heq
+      rwa [List.filter_cons_of_neg]
+      simp only [decide_eq_true_eq, not_forall, not_not]
+      use w.first, h.1
+    rw [List.filter_cons_of_pos, WList.cons_edge, ih]
+    simp only [decide_eq_true_eq]
+    rintro x hex
+    obtain rfl := hex.eq_of_inc h.1.inc_left
+    exact heq <| hex.eq_of_inc h.1.inc_right
+
+@[simp]
+lemma IsWalk.mem_deloop_edge_iff [DecidableEq α] (h : G.IsWalk w) (e : β) :
+    e ∈ w.deloop.edge ↔ e ∈ w.edge ∧ ∀ x, ¬ G.IsLoopAt e x := by
+  classical
+  simp [h.deloop_edge_eq_filter]
+
+lemma edgeRemove_first (hF : ∀ e ∈ w.edge, e ∈ F → ∃ x, G.IsLoopAt e x)
+    [DecidablePred (· ∈ F)] (hw : G.IsWalk w) : (w.edgeRemove F).first = w.first := by
+  induction w with
+  | nil => simp
+  | cons u e w ih =>
+    simp only [cons_isWalk_iff, cons_edge, List.mem_cons] at hw hF
+    rw [edgeRemove_cons]
+    split_ifs with he; swap
+    · simp
+    obtain ⟨x, hex⟩ := hF e (.inl rfl) he
+    obtain rfl := hex.eq_of_inc hw.1.inc_left
+    obtain rfl := hex.eq_of_inc hw.1.inc_right
+    exact ih (fun f hf hfF ↦ hF f (.inr hf) hfF) hw.2
+
+lemma edgeRemove_isSublist (hF : ∀ e ∈ w.edge, e ∈ F → ∃ x, G.IsLoopAt e x)
+    [DecidablePred (· ∈ F)] (hw : G.IsWalk w) : (w.edgeRemove F).IsSublist w := by
+  induction w with
+  | nil => simp
+  | cons u e w ih =>
+    simp only [cons_isWalk_iff, cons_edge, List.mem_cons] at hw hF
+    rw [edgeRemove_cons]
+    split_ifs with he
+    · exact (ih (fun f hf hfF ↦ hF f (.inr hf) hfF) hw.2).trans (by simp)
+    · exact (ih (fun f hf hfF ↦ hF f (.inr hf) hfF) hw.2).cons₂ _ _
+        (edgeRemove_first (fun f hf hfF ↦ hF f (.inr hf) hfF) hw.2)
+
+@[simp]
+lemma mem_edgeRemove_iff (hF : ∀ e ∈ w.edge, e ∈ F → ∃ x, G.IsLoopAt e x)
+    [DecidablePred (· ∈ F)] (hw : G.IsWalk w) : x ∈ w.edgeRemove F ↔ x ∈ w := by
+  induction w with
+  | nil => simp
+  | cons u e w ih =>
+    simp only [cons_isWalk_iff, cons_edge, List.mem_cons, mem_cons_iff] at hw hF ⊢
+    rw [edgeRemove_cons]
+    split_ifs with he; swap
+    · simp [ih (fun f hf hfF ↦ hF f (.inr hf) hfF) hw.2]
+    obtain ⟨y, hey⟩ := hF e (.inl rfl) he
+    obtain rfl := hey.eq_of_inc hw.1.inc_left
+    obtain rfl := hey.eq_of_inc hw.1.inc_right
+    simp only [ih (fun f hf hfF ↦ hF f (.inr hf) hfF) hw.2, iff_or_self]
+    exact fun h ↦ h ▸ first_mem
+
+lemma IsWalk.edgeRemove [DecidablePred (· ∈ F)] (hw : G.IsWalk w)
+    (hF : ∀ e ∈ w.edge, e ∈ F → ∃ x, G.IsLoopAt e x) : G.IsWalk (w.edgeRemove F) := by
+  induction w with
+  | nil => simp_all
+  | cons u e w ih =>
+    simp only [cons_isWalk_iff, cons_edge, List.mem_cons] at hw hF
+    rw [edgeRemove_cons]
+    split_ifs with he
+    · exact ih hw.2 (fun f hf hfF ↦ hF f (.inr hf) hfF)
+    · refine cons_isWalk_iff.mpr ⟨?_, ih hw.2 (fun f hf hfF ↦ hF f (.inr hf) hfF)⟩
+      rw [edgeRemove_first (fun f hf hfF ↦ hF f (.inr hf) hfF) hw.2]
+      exact hw.1
+
+lemma deloop_isSublist_edgeRemove [DecidableEq α] [DecidablePred (· ∈ F)]
+    (hw : G.IsWalk w) (hF : ∀ e ∈ w.edge, e ∈ F → ∃ x, G.IsLoopAt e x) :
+    w.deloop.IsSublist (w.edgeRemove F) := by
+  induction w with
+  | nil => simp
+  | cons u e w ih =>
+    simp only [cons_isWalk_iff, cons_edge, List.mem_cons] at hw hF
+    rw [deloop_cons_eq_ite, edgeRemove_cons]
+    split_ifs with huwf heF heF
+    · exact ih hw.2 (fun f hf hfF ↦ hF f (.inr hf) hfF)
+    · subst u
+      exact (ih hw.2 (fun f hf hfF ↦ hF f (.inr hf) hfF)).cons ..
+    · obtain ⟨x, hex⟩ := hF e (.inl rfl) heF
+      obtain rfl := hex.eq_of_inc hw.1.inc_left
+      exact (huwf <| hex.eq_of_inc hw.1.inc_right).elim
+    apply (ih hw.2 (fun f hf hfF ↦ hF f (.inr hf) hfF)).cons₂
+    rw [edgeRemove_first (fun f hf hfF ↦ hF f (.inr hf) hfF) hw.2, deloop_first]
+
+lemma edgeRemove_eq_deloop [DecidableEq α] [DecidablePred (· ∈ F)]
+    (hw : G.IsWalk w) (hF : ∀ e ∈ w.edge, e ∈ F ↔ (∃ x, G.IsLoopAt e x)) :
+    w.edgeRemove F = w.deloop := by
+  induction w with
+  | nil => simp
+  | cons u e w ih =>
+    simp only [cons_isWalk_iff, cons_edge, List.mem_cons] at hw hF
+    rw [deloop_cons_eq_ite, edgeRemove_cons]
+    split_ifs with heF huwf huwf
+    on_goal 2 =>
+      obtain ⟨x, hex⟩ := hF e (.inl rfl) |>.mp heF
+      obtain rfl := hex.eq_of_inc hw.1.inc_left
+      exact (huwf <| hex.eq_of_inc hw.1.inc_right).elim
+    all_goals simp_all
+
+lemma edgeRemove_eq_self_of_noloop [DecidablePred (· ∈ F)] (hw : G.IsWalk w)
+    (hF : ∀ e ∈ w.edge, e ∈ F → ∃ x, G.IsLoopAt e x) (hnl : w.NoLoop) : w.edgeRemove F = w := by
+  classical
+  apply (edgeRemove_isSublist hF hw).antisymm
+  nth_rw 1 [← deloop_eq_self_iff.mpr hnl]
+  exact deloop_isSublist_edgeRemove hw hF
+
 lemma IsWalk.of_forall_isLink (h : G.IsWalk w) (he : ∀ ⦃e x y⦄, G.IsLink e x y → H.IsLink e x y)
     (hne : w.Nonempty) : H.IsWalk w := by
   induction h with

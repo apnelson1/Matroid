@@ -1621,4 +1621,86 @@ lemma NoLoop.not_isLink (h : w.NoLoop) (e : β) (x : α) : ¬ w.IsLink e x x := 
   exact h e x
 
 end noLoop
+
+section edgeRemove
+
+variable [DecidablePred (· ∈ F)]
+
+/-- Remove edges from a `WList` that belong to a given edge set `F`. -/
+def edgeRemove (F : Set β) [DecidablePred (· ∈ F)] : WList α β → WList α β
+  | nil x => nil x
+  | cons x e w => if e ∈ F then edgeRemove F w else cons x e (edgeRemove F w)
+
+@[simp]
+lemma edgeRemove_nil : (nil x (β := β)).edgeRemove F = nil x := rfl
+
+@[grind =]
+lemma edgeRemove_cons (x : α) (e : β) (w : WList α β) :
+    (cons x e w).edgeRemove F = if e ∈ F then edgeRemove F w else cons x e (w.edgeRemove F) :=
+  rfl
+
+@[simp]
+lemma edgeRemove_cons_of_mem (heF : e ∈ F) (x : α) (w : WList α β) :
+    (cons x e w).edgeRemove F = w.edgeRemove F := by
+  simp [edgeRemove_cons, heF]
+
+@[simp]
+lemma edgeRemove_cons_of_notMem (heF : e ∉ F) (x : α) (w : WList α β) :
+    (cons x e w).edgeRemove F = cons x e (w.edgeRemove F) := by
+  simp [edgeRemove_cons, heF]
+
+@[simp]
+lemma edgeRemove_empty (w : WList α β) : w.edgeRemove (∅ : Set β) = w := by
+  induction w with
+  | nil => simp
+  | cons u e w ih => simp [ih]
+
+lemma edgeRemove_notMem_edge (w : WList α β) (e : β) (he : e ∈ F) : e ∉ (w.edgeRemove F).edge := by
+  induction w with
+  | nil => simp
+  | cons u f w ih =>
+    by_cases hf : f ∈ F
+    · rwa [edgeRemove_cons_of_mem hf]
+    simp only [cons_edge, List.mem_cons, edgeRemove_cons_of_notMem hf]
+    rintro (rfl | hmem)
+    · exact hf he
+    · exact ih hmem
+
+@[simp]
+lemma edgeRemove_edgeRemove (F F' : Set β) [DecidablePred (· ∈ F)]
+    [DecidablePred (· ∈ F')] [DecidablePred (· ∈ F ∪ F')] (w : WList α β) :
+    (w.edgeRemove F).edgeRemove F' = w.edgeRemove (F ∪ F') := by
+  induction w with
+  | nil => simp
+  | cons u e w ih =>
+    simp only [edgeRemove_cons, Set.mem_union]
+    by_cases he : e ∈ F
+    · simp [he, ih]
+    by_cases he' : e ∈ F'
+    · simp [he, he', ih]
+    simp [he, he', ih]
+
+@[simp]
+lemma edgeRemove_last (w : WList α β) : (w.edgeRemove F).last = w.last := by
+  induction w with
+  | nil => simp
+  | cons u e w ih =>
+    rw [edgeRemove_cons]
+    split_ifs with he <;> simp [ih]
+
+@[simp]
+lemma edgeRemove_edge (w : WList α β) : (w.edgeRemove F).edge = w.edge.filter (· ∉ F) := by
+  induction w with
+  | nil => simp
+  | cons u e w ih =>
+    rw [edgeRemove_cons]
+    split_ifs with he <;> simp [ih, he]
+
+@[simp]
+lemma mem_edgeRemove_edge_iff : e ∈ (w.edgeRemove F).edge ↔ e ∈ w.edge ∧ e ∉ F := by
+  rw [edgeRemove_edge]
+  simp
+
+end edgeRemove
+
 end WList

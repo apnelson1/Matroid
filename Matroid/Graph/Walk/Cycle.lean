@@ -198,6 +198,20 @@ lemma IsCycle.rotate (hC : G.IsCycle C) (n : ℕ) : G.IsCycle (C.rotate n) where
 lemma not_isCycle_nil (x : α) : ¬ G.IsCycle (nil x : WList α β) :=
   fun h ↦ by simpa using h.nonempty
 
+lemma IsTour.edgeRemove_of_forall_isLoopAt {F : Set β} [DecidablePred (· ∈ F)] (hw : G.IsTour w)
+    (hF : ∀ e ∈ w.edge, e ∈ F → ∃ x, G.IsLoopAt e x) (hne : ∃ e, e ∈ w.edge ∧ e ∉ F) :
+    G.IsTour (w.edgeRemove F) where
+  toIsTrail := hw.toIsTrail.edgeRemove_of_forall_isLoopAt hF
+  nonempty := by
+    rw [nonempty_iff_exists_edge]
+    obtain ⟨e, he, heF⟩ := hne
+    use e
+    simp only [edgeRemove_edge, decide_not, List.mem_filter, he, heF, decide_false, Bool.not_false,
+      and_self]
+  isClosed := by
+    rw [IsClosed, edgeRemove_first hF hw.isWalk, edgeRemove_last]
+    exact hw.isClosed
+
 lemma IsCycle.intRotate (hC : G.IsCycle C) (n : ℤ) : G.IsCycle (C.intRotate n) :=
   hC.rotate ..
 
@@ -313,6 +327,11 @@ lemma IsCycle.loop_or_noloop (h : G.IsCycle C) : (∃ x e, C = cons x e (nil x))
   rintro rfl
   obtain rfl := by simpa using h.isClosed
   simpa using h.nodup
+
+lemma IsCycle.noloop_of_nontrivial (h : G.IsCycle C) (hnt : C.Nontrivial) : C.NoLoop := by
+  obtain ⟨x, e, rfl⟩ | h := h.loop_or_noloop
+  · simp at hnt
+  exact h
 
 @[simp]
 lemma rotate_toGraph {n : ℕ} (hC : C.IsClosed) (hCwf : C.WellFormed) :

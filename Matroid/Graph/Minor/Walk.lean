@@ -8,45 +8,59 @@ open Set Function WList
 
 namespace Graph
 
-lemma IsWalk.deloop_contract [DecidableEq α] (h : G.IsWalk w) (φ : (G ↾ C).connPartition.RepFun) :
-    (G /[φ, C]).IsWalk (w.map φ).deloop := by
+lemma IsWalk.edgeRemove_contract [DecidablePred (· ∈ C)] (h : G.IsWalk w)
+    (φ : (G ↾ C).connPartition.RepFun) : (G /[φ, C]).IsWalk <| (w.map φ).edgeRemove C := by
   induction w with
   | nil x =>
-    simp only [nil_isWalk_iff, map_nil, noLoop_nil, deloop_eq_self, contract_vertexSet,
-      mem_image] at h ⊢
+    simp only [nil_isWalk_iff, map_nil, edgeRemove_nil, contract_vertexSet, mem_image] at h ⊢
     grind
   | cons x e w ih =>
-    simp_all only [cons_isWalk_iff, map_cons, forall_const]
+    simp_all only [cons_isWalk_iff, map_cons, forall_const, edgeRemove_cons]
+    split_ifs with heC
+    · exact ih
     obtain ⟨hl, h⟩ := h
-    obtain heq | hne := eq_or_ne (φ x) (w.map φ).first
-    · simpa [heq]
-    simp only [deloop_cons_of_ne_first hne, cons_isWalk_iff, deloop_first, map_first,
-      contract_isLink, ih, and_true] at hne ⊢
-    refine ⟨?_, fun heC ↦ hne <| φ.of_connPartition_repFun.isLoopAt_map_of_mem heC hl
-    |>.right_unique (hl.map φ)⟩
-    grind
+    have := edgeRemove_first (φ.of_connPartition_repFun.exists_isLoopAt_of_isWalk h) (h.map φ)
+    simp only [cons_isWalk_iff, this, map_first, contract_isLink, heC, not_false_eq_true, and_true,
+      ih]
+    use x, w.first, hl
 
-lemma IsWalk.dedup_contract [DecidableEq α] (h : G.IsWalk P) (φ : (G ↾ C).connPartition.RepFun) :
-    (G /[φ, C]).IsPath (P.map φ).dedup := by
-  induction P with
-  | nil x =>
-    simp only [nil_isWalk_iff, map_nil, dedup_nil, nil_isPath_iff, contract_vertexSet,
-      mem_image] at h ⊢
-    grind
-  | cons x e w ih =>
-    simp_all only [cons_isWalk_iff, map_cons, dedup_cons_eq_ite, forall_const]
-    obtain ⟨he, hP⟩ := h
-    split_ifs with hxin
-    · refine ⟨hP.deloop_contract φ |>.sublist ?_, dedup_vertex_nodup ..⟩
-      refine (dedup_isSublist_deloop ..).trans ?_
-      exact deloop_isSublist_mono ((w.map φ).suffixFromVertex_isSuffix (φ x)).isSublist
-    simp only [cons_isPath_iff, ih, dedup_first, map_first, contract_isLink, true_and]
-    refine ⟨⟨?_, fun heC ↦ ?_⟩, mt (w.map φ).dedup_isSublist.mem hxin⟩
-    · grind
-    have := φ.apply_eq_apply <| by simpa using (he.of_le_of_mem edgeRestrict_le ⟨he.edge_mem, heC⟩
-    |>.connBetween)
-    rw [this, ← w.map_first φ] at hxin
-    exact hxin (w.map φ).first_mem
+-- lemma IsWalk.dedup_contract [DecidableEq α] (h : G.IsWalk P) (φ : (G ↾ C).connPartition.RepFun) :
+--     (G /[φ, C]).IsPath (P.map φ).dedup := by
+--   classical
+--   induction P with
+--   | nil x =>
+--     simp only [nil_isWalk_iff, map_nil, dedup_nil, nil_isPath_iff, contract_vertexSet,
+--       mem_image] at h ⊢
+--     grind
+--   | cons x e w ih =>
+--     simp_all only [cons_isWalk_iff, map_cons, dedup_cons_eq_ite, forall_const]
+--     obtain ⟨he, hP⟩ := h
+--     split_ifs with hxin
+--     · refine ⟨hP.edgeRemove_contract φ |>.sublist ?_, dedup_vertex_nodup ..⟩
+--       refine (dedup_isSublist_deloop ..).trans ?_
+--       exact deloop_isSublist_mono ((w.map φ).suffixFromVertex_isSuffix (φ x)).isSublist
+--     simp only [cons_isPath_iff, ih, dedup_first, map_first, contract_isLink, true_and]
+--     refine ⟨⟨?_, fun heC ↦ ?_⟩, mt (w.map φ).dedup_isSublist.mem hxin⟩
+--     · grind
+--     have := φ.apply_eq_apply
+--     <| by simpa using (he.of_le_of_mem edgeRestrict_le ⟨he.edge_mem, heC⟩
+--     |>.connBetween)
+--     rw [this, ← w.map_first φ] at hxin
+--     exact hxin (w.map φ).first_mem
+
+-- lemma IsCycle.edgeRemove_contract [DecidablePred (· ∈ C)] (h : G.IsCycle (cons x e w))
+--     (φ : (G ↾ C).connPartition.RepFun) : (G /[φ, C]).IsCycle <| (w.map φ).edgeRemove C where
+--   isWalk := h.isWalk.deloop_contract φ
+--   edge_nodup := by
+--     refine List.Nodup.sublist (w.map φ).deloop_isSublist.edge_sublist ?_
+--     simp [h.edge_nodup]
+--   nonempty := by
+--     sorry
+--   isClosed := by
+--     simp only [WList.IsClosed, deloop_first, map_first, deloop_last, map_last]
+--     exact congrArg φ h.isClosed
+--   nodup := by
+
 
 -- lemma IsForest.contract (φ : (G ↾ C).connPartition.RepFun) (hC : (G ↾ C).IsForest) :
 --     ((G /[φ, C]) ↾ F).IsForest ↔ (G ↾ (F ∪ C)).IsForest := by
