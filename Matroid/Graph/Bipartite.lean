@@ -423,7 +423,7 @@ lemma IsForest.bipartite {F : Graph α β} (hF : IsForest F) : F.Bipartite := by
   simp
 
 /-- A graph is bipartite if and only if all its cycles are even -/
-lemma bipartite_iff_forall_cycle_even : G.Bipartite ↔ ∀ C, G.IsCycle C → Even C.length := by
+lemma bipartite_iff_forall_cycle_even : G.Bipartite ↔ ∀ C, G.IsCyclicWalk C → Even C.length := by
   refine ⟨fun h C hC ↦ h.length_even_of_isWalk_isClosed hC.isWalk hC.isClosed, fun h ↦ ?_⟩
   wlog hG : G.Connected with aux
   · exact bipartite_iff_forall_component.2 <|
@@ -436,5 +436,5 @@ lemma bipartite_iff_forall_cycle_even : G.Bipartite ↔ ∀ C, G.IsCycle C → E
   rw [B.opp_iff_odd_dist hT.connected hxT hyT]
   obtain ⟨P, hP, rfl, rfl⟩ := (hT.connected.connBetween hxT hyT).exists_isShortestPath
   specialize h (cons P.last e P) ?_
-  · exact (hP.isPath.of_le hTG.le).cons_isCycle hexy <| mt hP.isPath.isWalk.edge_mem_of_mem he
+  · exact (hP.isPath.of_le hTG.le).cons_isCyclicWalk hexy <| mt hP.isPath.isWalk.edge_mem_of_mem he
   rwa [cons_length, Nat.even_add_one, Nat.not_even_iff_odd, hP.length_eq_dist] at h

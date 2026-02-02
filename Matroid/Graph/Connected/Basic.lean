@@ -472,7 +472,8 @@ lemma IsSep.of_edgeDelete_linkEdges (h : (G ＼ E(G, u, v)).IsSep S) :
     rw [← hpair, diff_union_self, eq_comm, union_eq_left]
     simpa using h.subset_vx
 
-lemma ConnGE.edgeDelete_linkEdges (h : G.ConnGE (n + 1)) (u v) : (G ＼ E(G, u, v)).ConnGE n where
+lemma ConnGE.edgeDelete_linkEdges (h : G.ConnGE (n + 1)) (u v : α) :
+    (G ＼ E(G, u, v)).ConnGE n where
   le_cut C hC := by
     by_contra! hcd
     obtain h1 | h2 | h3 | h4 := hC.of_edgeDelete_linkEdges
@@ -651,11 +652,31 @@ lemma union_not_connected_of_disjoint_vertexSet (hV : Disjoint V(G) V(H)) (hG : 
   obtain ⟨u, -, huG, huH⟩ := hW.exists_mem_mem_of_union first_mem last_mem hx hy
   exact hV.notMem_of_mem_left huG huH
 
+lemma IsPath.isPath_of_union_of_subsingleton_inter (hP : (G ∪ H).IsPath P)
+    (hi : (V(G) ∩ V(H)).Subsingleton) (hf : P.first ∈ V(G)) (hl : P.last ∈ V(G)) :
+    G.IsPath P := by
+  wlog hc : Compatible G H generalizing H with aux
+  · exact aux (union_eq_union_edgeDelete .. ▸ hP) (hi.anti (by simp))
+      (Compatible.of_disjoint_edgeSet disjoint_sdiff_right)
+  induction P with
+  | nil u => simpa [hf]
+  | cons u e w ih =>
+    obtain ⟨hw, heuwf, huw⟩ := cons_isPath_iff.mp hP
+    obtain heG | heH := by simpa using heuwf.edge_mem
+    · replace heuwf : G.IsLink e u w.first := heuwf.of_le_of_mem (Graph.left_le_union ..) heG
+      simp [ih heuwf.right_mem hl hw, heuwf, huw]
+    replace heH : H.IsLink e u w.first := heuwf.of_le_of_mem (hc.right_le_union ..) heH
+    rw [hc.union_comm] at hw
+    obtain ⟨z, hz, hzH, hzG⟩ := hw.isWalk.exists_mem_mem_of_union first_mem last_mem heH.right_mem
+      hl
+    obtain rfl := hi ⟨hf, heH.left_mem⟩ ⟨hzG, hzH⟩
+    exact huw hz |>.elim
+
 /-! ### Cycles -/
 
 /-- Two vertices of a cycle are connected after deleting any other vertex.  -/
-lemma IsCycle.connBetween_deleteVertex_of_mem_of_mem (hC : G.IsCycle C) (x : α) (hy₁ : y₁ ∈ C)
-    (hy₂ : y₂ ∈ C) (hne₁ : y₁ ≠ x) (hne₂ : y₂ ≠ x) :
+lemma IsCyclicWalk.connBetween_deleteVertex_of_mem_of_mem (hC : G.IsCyclicWalk C) (x : α)
+    (hy₁ : y₁ ∈ C) (hy₂ : y₂ ∈ C) (hne₁ : y₁ ≠ x) (hne₂ : y₂ ≠ x) :
     (G - ({x} : Set α)).ConnBetween y₁ y₂ := by
   obtain rfl | hne := eq_or_ne y₁ y₂
   · simpa [hC.vertexSet_subset hy₁]
@@ -669,7 +690,7 @@ lemma IsCycle.connBetween_deleteVertex_of_mem_of_mem (hC : G.IsCycle C) (x : α)
   exact IsWalk.connBetween_of_mem_of_mem (W := C) (by simp [hxC, hC.isWalk]) hy₁ hy₂
 
 /-- Two vertices of a cycle are connected after deleting any edge. -/
-lemma IsCycle.connBetween_deleteEdge_of_mem_of_mem (hC : G.IsCycle C) (e : β)
+lemma IsCyclicWalk.connBetween_deleteEdge_of_mem_of_mem (hC : G.IsCyclicWalk C) (e : β)
     (hx₁ : x₁ ∈ C) (hx₂ : x₂ ∈ C) : (G ＼ {e}).ConnBetween x₁ x₂ := by
   obtain heC | heC := em' <| e ∈ C.edge
   · exact IsWalk.connBetween_of_mem_of_mem (by simp [hC.isWalk, heC]) hx₁ hx₂
@@ -681,59 +702,33 @@ lemma IsCycle.connBetween_deleteEdge_of_mem_of_mem (hC : G.IsCycle C) (e : β)
 
 /-- If two graphs intersect in at most one vertex,
 then any cycle of their union is a cycle of one of the graphs. -/
-lemma IsCycle.isCycle_or_isCycle_of_union_of_subsingleton_inter (hC : (G ∪ H).IsCycle C)
-    (hi : (V(G) ∩ V(H)).Subsingleton) : G.IsCycle C ∨ H.IsCycle C := by
-  wlog hcompat : Compatible G H generalizing H with aux
+lemma IsCyclicWalk.isCyclicWalk_or_isCyclicWalk_of_union_of_subsingleton_inter
+    (hC : (G ∪ H).IsCyclicWalk C) (hi : (V(G) ∩ V(H)).Subsingleton) :
+    G.IsCyclicWalk C ∨ H.IsCyclicWalk C := by
+  wlog hc : Compatible G H generalizing H with aux
   · obtain (hG | hH) := aux (union_eq_union_edgeDelete .. ▸ hC) (hi.anti (by simp))
       (Compatible.of_disjoint_edgeSet disjoint_sdiff_right)
     · exact .inl hG
     exact .inr <| hH.of_le <| by simp
-  -- If the cycle is a loop, this is easy.
-  obtain ⟨x, e, rfl⟩ | hnt := hC.loop_or_nontrivial
-  · obtain heG | heH := hC.isWalk.edge_mem_of_mem (e := e) (by simp)
-    · exact .inl <| hC.isCycle_of_le (Graph.left_le_union ..) (by simpa)
-    exact .inr <| hC.isCycle_of_le hcompat.right_le_union (by simpa)
-  -- Every edge of `C` has distinct ends in `G` or in `H`.
-  have aux1 (e) (he : e ∈ E(C)) :
-      ∃ x y, x ≠ y ∧ x ∈ V(C) ∧ y ∈ V(C) ∧ (G.IsLink e x y ∨ H.IsLink e x y) := by
-    obtain ⟨x, y, hxy⟩ := C.exists_isLink_of_mem_edge he
-    exact ⟨x, y, hC.ne_of_isLink hnt hxy, hxy.left_mem, hxy.right_mem,
-      by simpa [hcompat.union_isLink_iff] using hC.isWalk.isLink_of_isLink hxy ⟩
-  -- If the vertices of `C` are contained in `G` or `H`, then `C` is contained in `G` or `H`.
-  by_cases hCG : V(C) ⊆ V(G)
-  · refine .inl <| hC.isCycle_of_le (Graph.left_le_union ..) fun e heC ↦ ?_
-    obtain ⟨x, y, hne, hxC, hyC, hxy | hxy⟩ := aux1 e heC
-    · exact hxy.edge_mem
-    exact False.elim <| hne <| hi ⟨hCG hxC, hxy.left_mem⟩ ⟨hCG hyC, hxy.right_mem⟩
-  by_cases hCH : V(C) ⊆ V(H)
-  · refine .inr <| hC.isCycle_of_le hcompat.right_le_union fun e heC ↦ ?_
-    obtain ⟨x, y, hne, hxC, hyC, hxy | hxy⟩ := aux1 e heC
-    · exact False.elim <| hne <| hi ⟨hxy.left_mem, hCH hxC⟩ ⟨hxy.right_mem, hCH hyC⟩
-    exact hxy.edge_mem
-  -- Take a path from a vertex `x` of `C ∩ (G \ H)` to a vertex `y` of `C ∩ (H \ G)`.
-  -- This path must intersect `V(G) ∩ V(H)` in a vertex `a`.
-  obtain ⟨x, hxC, hxH⟩ := not_subset.1 hCH
-  obtain ⟨y, hyC, hyG⟩ := not_subset.1 hCG
-  have hxG : x ∈ V(G) := by simpa [hxH] using hC.vertexSet_subset hxC
-  have hyH : y ∈ V(H) := by simpa [hyG] using hC.vertexSet_subset hyC
-  obtain ⟨W, hW, rfl, rfl⟩ := (hC.isWalk.connBetween_of_mem_of_mem hxC hyC)
-  obtain ⟨a, -, haG, haH⟩ := hW.exists_mem_mem_of_union first_mem last_mem hxG hyH
-  have hxa : W.first ≠ a := by rintro rfl; contradiction
-  have hya : W.last ≠ a := by rintro rfl; contradiction
-  -- Now take an `xy`-path in `C` that doesn't use `a`. This must intersect `V(G) ∩ V(H)`
-  -- in another vertex `b`, contradicting the fact that the intersection is a subsingleton.
-  obtain ⟨w', hW', h1', h2'⟩ :=
-    (hC.connBetween_deleteVertex_of_mem_of_mem a hxC hyC hxa hya)
-  rw [hcompat.vertexDelete_union] at hW'
-  obtain ⟨b, -, hbG, hbH⟩ :=
-    hW'.exists_mem_mem_of_union first_mem last_mem (by simp [h1', hxG, hxa])
-      (by simp [h2', hyH, hya])
-  rw [vertexDelete_vertexSet, mem_diff, mem_singleton_iff] at hbG hbH
-  refine False.elim <| hbG.2 (hi ?_ ?_) <;> simp_all
+  obtain ⟨u, e, w⟩ := hC.nonempty
+  wlog heG : e ∈ E(G) generalizing G H with aux
+  · obtain heH := by simpa using hC.isWalk.edge_mem_of_mem (e := e) (by simp) |>.resolve_left heG
+    rw [inter_comm] at hi
+    rw [hc.union_comm] at hC
+    exact aux hi hc.symm hC heH |>.symm
+  left
+  obtain rfl := by simpa using hC.isClosed
+  have he := cons_isWalk_iff.mp hC.isWalk |>.1
+  have hw := by simpa using hC.tail_isPath
+  refine hC.isCycle_of_le (Graph.left_le_union ..) ?_
+  replace he : G.IsLink e w.last w.first := he.of_le_of_mem (Graph.left_le_union ..) heG
+  replace hw : G.IsPath w := hw.isPath_of_union_of_subsingleton_inter hi he.right_mem he.left_mem
+  simp [he.edge_mem, insert_subset_iff, hw.isWalk.edgeSet_subset]
 
-lemma Compatible.isCycle_union_iff_of_subsingleton_inter (hcompat : G.Compatible H)
-    (hi : (V(G) ∩ V(H)).Subsingleton) : (G ∪ H).IsCycle C ↔ G.IsCycle C ∨ H.IsCycle C :=
-  ⟨fun h ↦ h.isCycle_or_isCycle_of_union_of_subsingleton_inter hi,
+lemma Compatible.isCyclicWalk_union_iff_of_subsingleton_inter (hcompat : G.Compatible H)
+    (hi : (V(G) ∩ V(H)).Subsingleton) :
+    (G ∪ H).IsCyclicWalk C ↔ G.IsCyclicWalk C ∨ H.IsCyclicWalk C :=
+  ⟨fun h ↦ h.isCyclicWalk_or_isCyclicWalk_of_union_of_subsingleton_inter hi,
     fun h ↦ h.elim (fun h' ↦ h'.of_le (Graph.left_le_union ..))
     (fun h' ↦ h'.of_le hcompat.right_le_union)⟩
 

@@ -280,6 +280,11 @@ lemma components_eq_empty_iff : G.Components = ∅ ↔ G = ⊥ := by
   ext H
   simp
 
+lemma exists_isCompOf_iff : (∃ H : Graph α β, H.IsCompOf G) ↔ V(G).Nonempty := by
+  rw [← not_iff_not]
+  simp [← components_eq_empty_iff, Set.ext_iff]
+alias ⟨_, exists_isCompOf⟩ := exists_isCompOf_iff
+
 lemma components_eq_walkable_image (G : Graph α β) : G.Components = G.walkable '' V(G) := by
   ext H
   rw [mem_components_iff_isCompOf, mem_image, isCompOf_iff_exists_walkable]

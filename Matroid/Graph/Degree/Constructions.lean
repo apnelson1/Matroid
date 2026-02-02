@@ -203,7 +203,7 @@ lemma IsPath.degree_toGraph_eq_two (hP : G.IsPath P) (hvP : v ∈ P) (hne_first 
 /-! ### Cycles -/
 
 /-- Cycles are two-regular. -/
-lemma IsCycle.toGraph_regular (hC : G.IsCycle C) : C.toGraph.Regular 2 := by
+lemma IsCyclicWalk.toGraph_regular (hC : G.IsCyclicWalk C) : C.toGraph.Regular 2 := by
   refine regular_iff.2 fun v hvC ↦ ?_
   obtain ⟨x, e, rfl⟩ | hCnt := hC.loop_or_nontrivial
   · rw [toGraph_cons, union_degree_eq (by simp), show v = x by simpa using hvC]
@@ -236,5 +236,5 @@ lemma IsCycle.toGraph_regular (hC : G.IsCycle C) : C.toGraph.Regular 2 := by
     huP'.1.degree_toGraph_eq_two hvP hvfirst hvlast]
 
 lemma IsCycleGraph.regular_two {C : Graph α β} (hC : C.IsCycleGraph) : C.Regular 2 := by
-  obtain ⟨C', hC', rfl⟩ := by simpa [isCycleGraph_iff_toGraph_isCycle] using hC
+  obtain ⟨C', hC', rfl⟩ := by simpa [isCycleGraph_iff_toGraph_isCyclicWalk] using hC
   exact hC'.toGraph_regular

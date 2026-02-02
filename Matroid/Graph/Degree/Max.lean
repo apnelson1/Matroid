@@ -37,7 +37,7 @@ lemma IsPathGraph.connected (hP : H.IsPathGraph) : H.Connected := by
   exact hP'.isWalk.toGraph_connected
 
 lemma IsCycleGraph.connected (hC : C.IsCycleGraph) : C.Connected := by
-  obtain ⟨C', hC', hV, hE⟩ := by rwa [isCycleGraph_iff_toGraph_isCycle] at hC
+  obtain ⟨C', hC', hV, hE⟩ := by rwa [isCycleGraph_iff_toGraph_isCyclicWalk] at hC
   exact hC'.isWalk.toGraph_connected
 
 lemma IsPathGraph.finite (hP : G.IsPathGraph) : G.Finite where
@@ -99,7 +99,7 @@ lemma Connected.isCycleGraph_of_regular [G.EdgeFinite] (hG : G.Connected) (hreg 
   by_cases hF : G.IsForest
   · obtain ⟨x, hx⟩ := hF.exists_isLeaf hE
     simpa [hx.degree] using hreg.degree hx.mem
-  obtain ⟨C, hC : G.IsCycle C⟩ := by simpa [IsForest] using hF
+  obtain ⟨C, hC : G.IsCyclicWalk C⟩ := by simpa [isForest_iff_not_isCyclicWalk] using hF
   rw [← hG.eq_of_le_of_forall_degree_ge hC.isWalk.toGraph_le (by simp) ?_]
   · exact hC.toGraph_isCycleGraph
   simp +contextual only [toGraph_vertexSet, mem_vertexSet_iff, hC.toGraph_regular.degree]

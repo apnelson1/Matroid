@@ -3,13 +3,14 @@ import Matroid.Graph.Forest
 
 variable {α β ι ι' : Type*} {x y z u v w : α} {e f : β} {G G₁ G₂ H H₁ H₂ I : Graph α β}
   {C D F F₁ F₂ : Set β} {X Y : Set α} {Gs Hs : Set (Graph α β)} {w w' P Q c : WList α β}
+  {φ : α → α}
 
 open Set Function WList
 
 namespace Graph
 
 lemma IsWalk.edgeRemove_contract [DecidablePred (· ∈ C)] (h : G.IsWalk w)
-    (φ : (G ↾ C).connPartition.RepFun) : (G /[φ, C]).IsWalk <| (w.map φ).edgeRemove C := by
+    (hφ : (G ↾ C).connPartition.IsRepFun φ) : (G /[φ, C]).IsWalk <| (w.map φ).edgeRemove C := by
   induction w with
   | nil x =>
     simp only [nil_isWalk_iff, map_nil, edgeRemove_nil, contract_vertexSet, mem_image] at h ⊢
@@ -19,7 +20,7 @@ lemma IsWalk.edgeRemove_contract [DecidablePred (· ∈ C)] (h : G.IsWalk w)
     split_ifs with heC
     · exact ih
     obtain ⟨hl, h⟩ := h
-    have := edgeRemove_first (φ.of_connPartition_repFun.exists_isLoopAt_of_isWalk h) (h.map φ)
+    have := edgeRemove_first (hφ.isContractClosed.exists_isLoopAt_of_isWalk h) (h.map φ)
     simp only [cons_isWalk_iff, this, map_first, contract_isLink, heC, not_false_eq_true, and_true,
       ih]
     use x, w.first, hl
@@ -48,26 +49,29 @@ lemma IsWalk.edgeRemove_contract [DecidablePred (· ∈ C)] (h : G.IsWalk w)
 --     rw [this, ← w.map_first φ] at hxin
 --     exact hxin (w.map φ).first_mem
 
--- lemma IsCycle.edgeRemove_contract [DecidablePred (· ∈ C)] (h : G.IsCycle (cons x e w))
---     (φ : (G ↾ C).connPartition.RepFun) : (G /[φ, C]).IsCycle <| (w.map φ).edgeRemove C where
---   isWalk := h.isWalk.deloop_contract φ
---   edge_nodup := by
---     refine List.Nodup.sublist (w.map φ).deloop_isSublist.edge_sublist ?_
---     simp [h.edge_nodup]
---   nonempty := by
---     sorry
---   isClosed := by
---     simp only [WList.IsClosed, deloop_first, map_first, deloop_last, map_last]
---     exact congrArg φ h.isClosed
---   nodup := by
+lemma IsTrail.edgeRemove_contract [DecidablePred (· ∈ C)] (h : G.IsTrail w)
+    (hφ : (G ↾ C).connPartition.IsRepFun φ) : (G /[φ, C]).IsTrail ((w.map φ).edgeRemove C) :=
+  ⟨h.isWalk.edgeRemove_contract hφ, h.edge_nodup.sublist <| by simp⟩
 
+lemma IsTour.edgeRemove_contract [DecidablePred (· ∈ C)] (h : G.IsTour w)
+    (hφ : (G ↾ C).connPartition.IsRepFun φ) (hne : ∃ e, e ∈ w.edge ∧ e ∉ C) :
+    (G /[φ, C]).IsTour ((w.map φ).edgeRemove C) := by
+  refine ⟨h.toIsTrail.edgeRemove_contract hφ, ?_, ?_⟩
+  · obtain ⟨e, he, heC⟩ := hne
+    rw [nonempty_iff_exists_edge]
+    use e
+    simp [he, heC]
+  have := edgeRemove_first (hφ.isContractClosed.exists_isLoopAt_of_isWalk h.isWalk)
+  <| h.isWalk.map φ
+  simp only [WList.IsClosed, this, map_first, edgeRemove_last, map_last]
+  exact congrArg φ h.isClosed
 
 -- lemma IsForest.contract (φ : (G ↾ C).connPartition.RepFun) (hC : (G ↾ C).IsForest) :
 --     ((G /[φ, C]) ↾ F).IsForest ↔ (G ↾ (F ∪ C)).IsForest := by
 --   classical
 --   rw [isForest_iff_isTrail_eq_eq, isForest_iff_isTrail_eq_eq]
---   sorry
-
+--   refine ⟨fun h P Q hP hQ hfirst hlast => ?_, fun h P Q hP hQ hfirst hlast => ?_⟩
+--   ·
 --   sorry
 
 -- lemma IsAcyclicSet.of_contract {φ : (G ↾ C).connPartition.RepFun}

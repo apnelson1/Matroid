@@ -74,7 +74,7 @@ import Matroid.Graph.Degree.Max
 import Matroid.Graph.Distance
 import Matroid.Graph.Finite
 import Matroid.Graph.Forest
--- import Matroid.Graph.Independent
+import Matroid.Graph.Independent
 import Matroid.Graph.Lattice
 import Matroid.Graph.Map
 -- import Matroid.Graph.Matching.AugmentingPath

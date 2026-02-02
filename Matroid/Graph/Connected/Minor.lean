@@ -4,7 +4,7 @@ import Matroid.Graph.Minor.Defs
 open Set Function Nat WList
 
 variable {α α' β : Type*} {G H : Graph α β} {u v x x₁ x₂ y y₁ y₂ z : α} {e e' f g : β}
-  {U V S T : Set α} {F F' R R' C : Set β} {W P Q : WList α β}
+  {U V S T : Set α} {F F' R R' C : Set β} {W P Q : WList α β} {φ : α → α}
 
 namespace Graph
 
@@ -38,15 +38,15 @@ lemma IsSep.of_map {f : α → α'} {S : Set α'} (hS : (f ''ᴳ G).IsSep S) :
     simpa [map_vertexDelete_preimage] using (Connected.map (G := G - (f ⁻¹' S)) f hcon')
   exact hS.not_connected this
 
-lemma IsSep.of_contract (φ : (G ↾ C).connPartition.RepFun) (hS : (G /[φ, C]).IsSep S) :
+lemma IsSep.of_contract (hφ : (G ↾ C).connPartition.IsRepFun φ) (hS : (G /[φ, C]).IsSep S) :
     G.IsSep (φ ⁻¹' S) where
   subset_vx v hvS := by
     obtain ⟨x, hx, hvx⟩ := by simpa using hS.subset_vx (mem_preimage.mp hvS)
-    rw [φ.apply_eq_apply_iff_rel (by simpa)] at hvx
+    rw [hφ.apply_eq_apply_iff_rel (by simpa)] at hvx
     simpa using hvx.right_mem
   not_connected hcon := by
     absurd hS.not_connected
-    have hsc : G.IsContractClosed (φ : α → α) C := φ.of_connPartition_repFun
+    have hsc : G.IsContractClosed (φ : α → α) C := hφ.isContractClosed
     have hmap : ((φ ''ᴳ G) - S).Connected := by
       simpa [map_vertexDelete_preimage] using hcon.map φ
     have hdel : (((φ ''ᴳ G) - S) ＼ C).Connected := by
@@ -58,7 +58,7 @@ lemma IsSep.of_contract (φ : (G ↾ C).connPartition.RepFun) (hS : (G /[φ, C])
 
 /-! ### Connectivity bounds under contracting a single edge -/
 
-private lemma IsLink.repFun_preimage_subset (hl : G.IsLink e x y) (S : Set α) :
+private lemma IsLink.repFun_preimage_subset (hl : G.IsLink e x y) (S : Set α) [DecidableEq α] :
     hl.repFun ⁻¹' S ⊆ insert y S := by
   intro v hv
   obtain rfl | hvy := eq_or_ne v y
@@ -67,9 +67,9 @@ private lemma IsLink.repFun_preimage_subset (hl : G.IsLink e x y) (S : Set α) :
   -- if `v ≠ y`, then `hl.repFun v = v`
   have : hl.repFun v ∈ S := by
     simpa [Set.mem_preimage] using hv
-  simpa [hl.repFun_apply_of_ne hvy] using this
+  exact hl.repFun_apply_of_ne hvy ▸ this
 
-private lemma IsLink.encard_preimage_le (hl : G.IsLink e x y) (S : Set α) :
+private lemma IsLink.encard_preimage_le (hl : G.IsLink e x y) (S : Set α) [DecidableEq α] :
     (hl.repFun ⁻¹' S).encard ≤ S.encard + 1 := by
   have hsub : (hl.repFun ⁻¹' S) ⊆ insert y S := hl.repFun_preimage_subset S
   calc
@@ -82,7 +82,7 @@ lemma ConnGE.contract_isLink {n : ℕ} (hG : G.ConnGE (n + 1)) (hl : G.IsLink e 
     hl.contract.ConnGE n where
   le_cut S hS := by
     classical
-    simpa using (hG.le_cut <| (hl.contract' ▸ hS).of_contract hl.repFun).trans
+    simpa using (hG.le_cut <| (hl.contract' ▸ hS).of_contract hl.isRepFun).trans
     <| hl.encard_preimage_le S
   le_card := by
     obtain h1 | h2 := hG.le_card
@@ -110,7 +110,7 @@ lemma ConnGE.exists_isSepSet_endpoints_of_not_connGE_contract_isLink {n : ℕ} (
     ∃ T, G.IsSep T ∧ T.encard ≤ (n + 1) ∧ x ∈ T ∧ y ∈ T := by
   classical
   obtain ⟨S, hSsep, hScard⟩ := exists_isSepSet_encard_le_of_not_connGE hnV hbad
-  have hTsep : G.IsSep (hl.repFun ⁻¹' S) := (hl.contract' ▸ hSsep).of_contract hl.repFun
+  have hTsep : G.IsSep (hl.repFun ⁻¹' S) := (hl.contract' ▸ hSsep).of_contract hl.isRepFun
   rw [hl.repFun_preimage] at hTsep
   split_ifs at hTsep with hxS; swap
   · simpa using hG.le_cut hTsep |>.trans (encard_le_encard diff_subset) |>.trans hScard

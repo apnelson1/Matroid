@@ -110,12 +110,12 @@ lemma exists_le_maximal_isPath [G.EdgeFinite] {p : WList α β} (hp : G.IsPath p
   obtain rfl : c = {p} := eq_singleton_of_forall_nil hch hcne hpc
   use p, (by simpa using hc), by simp
 
-lemma exists_le_maximal_isCycle [G.EdgeFinite] (hC : G.IsCycle C) :
-    ∃ m, C ≤ m ∧ Maximal G.IsCycle m := by
-  refine zorn_le_nonempty₀ {p | G.IsCycle p} (fun c hc hch p hpc ↦ ?_) C hC
+lemma exists_le_maximal_isCyclicWalk [G.EdgeFinite] (hC : G.IsCyclicWalk C) :
+    ∃ m, C ≤ m ∧ Maximal G.IsCyclicWalk m := by
+  refine zorn_le_nonempty₀ {p | G.IsCyclicWalk p} (fun c hc hch p hpc ↦ ?_) C hC
   by_cases hcne : ∃ p' ∈ c, p'.Nonempty
   · obtain ⟨p', hp'c, hp'ne⟩ := hcne
-    have hsu : c ∩ {P | P.Nonempty ∧ G.IsCycle P} ⊆ {p' | p'.Nonempty ∧ G.IsTrail p'} :=
+    have hsu : c ∩ {P | P.Nonempty ∧ G.IsCyclicWalk P} ⊆ {p' | p'.Nonempty ∧ G.IsTrail p'} :=
       fun _ ⟨hc, hne, hp⟩ ↦ ⟨hne, hp.isTrail⟩
     obtain ⟨ub, hub, hubmax⟩ := G.nonempty_isTrail_finite.subset hsu
       |>.exists_le_maximal ⟨hp'c, hp'ne, hc hp'c⟩
@@ -173,8 +173,8 @@ lemma isTrail_finite (G : Graph α β) [G.Finite] : {P | G.IsTrail P}.Finite := 
 lemma isPath_finite (G : Graph α β) [G.Finite] : {P | G.IsPath P}.Finite :=
   G.isTrail_finite.subset fun _ ↦ IsPath.isTrail
 
-lemma isCycle_finite (G : Graph α β) [G.Finite] : {C | G.IsCycle C}.Finite :=
-  G.isTrail_finite.subset fun _ ↦ IsCycle.isTrail
+lemma isCyclicWalk_finite (G : Graph α β) [G.Finite] : {C | G.IsCyclicWalk C}.Finite :=
+  G.isTrail_finite.subset fun _ ↦ IsCyclicWalk.isTrail
 
 /-- A finite graph has finitely many subgraphs. -/
 lemma finite_setOf_le (G : Graph α β) [G.Finite] : {H | H ≤ G}.Finite := by
@@ -214,7 +214,7 @@ instance (W : WList α β) : W.toGraph.Finite where
   edgeSet_finite := by simp
 
 lemma IsCycleGraph.finite (hC : H.IsCycleGraph) : H.Finite := by
-  rw [isCycleGraph_iff_toGraph_isCycle] at hC
+  rw [isCycleGraph_iff_toGraph_isCyclicWalk] at hC
   obtain ⟨C, hC, rfl⟩ := hC
   infer_instance
 

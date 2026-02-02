@@ -1,7 +1,7 @@
 import Mathlib.Combinatorics.Graph.Basic
 import Mathlib.Data.Set.Card.Arithmetic
 
-variable {α β : Type*} {x y z u v w : α} {e f : β} {G H : Graph α β} {F : Set β}
+variable {α β : Type*} {x y z u v w : α} {e f : β} {G H : Graph α β} {F : Set β} {S T X Y : Set α}
 
 open Set
 
@@ -30,6 +30,9 @@ lemma IsNonloopAt.other_ne (h : G.IsNonloopAt e x) : h.inc.other ≠ x := by
 @[simp]
 lemma Inc.other_mem (h : G.Inc e x) : h.other ∈ V(G) :=
   h.choose_spec.right_mem
+
+lemma IsLoopAt.eq_of_isLink (h : G.IsLoopAt e v) (h' : G.IsLink e x y) : v = x ∧ v = y :=
+  ⟨h.eq_of_inc h'.inc_left, h.eq_of_inc h'.inc_right⟩
 
 instance : Std.Symm G.Adj where
   symm _ _ := Adj.symm
@@ -321,6 +324,43 @@ lemma linkEdges_eq_empty_of_right_not_mem (u) (hv : v ∉ V(G)) : E(G, u, v) = �
 lemma linkEdges_comm (G : Graph α β) (u v : α) : E(G, u, v) = E(G, v, u) := by
   ext e
   simp [isLink_comm]
+
+def LinkEdgesSet (G : Graph α β) (S T : Set α) : Set β := {e | ∃ x ∈ S, ∃ y ∈ T, G.IsLink e x y}
+
+notation "E(" G ", " S ", " T ")" => LinkEdgesSet G S T
+
+@[simp]
+lemma mem_linkEdgesSet_iff (G : Graph α β) (S T : Set α) (e : β) :
+  e ∈ E(G, S, T) ↔ ∃ x ∈ S, ∃ y ∈ T, G.IsLink e x y := Iff.rfl
+
+lemma linkEdgesSet_subset (G : Graph α β) (S T : Set α) : E(G, S, T) ⊆ E(G) := by
+  rintro e ⟨x, hxS, y, hyT, he⟩
+  exact he.edge_mem
+
+lemma linkEdgesSet_mono_left (G : Graph α β) (hST : S ⊆ X) : E(G, S, T) ⊆ E(G, X, T) := by
+  rintro e ⟨x, hxS, y, hyT, he⟩
+  exact ⟨x, hST hxS, y, hyT, he⟩
+
+lemma linkEdgesSet_mono_right (G : Graph α β) (hST : T ⊆ Y) : E(G, S, T) ⊆ E(G, S, Y) := by
+  rintro e ⟨x, hxS, y, hyT, he⟩
+  exact ⟨x, hxS, y, hST hyT, he⟩
+
+lemma linkEdgesSet_comm (G : Graph α β) (S T : Set α) : E(G, S, T) = E(G, T, S) := by
+  ext e
+  exact ⟨fun ⟨x, hxS, y, hyT, hxy⟩ => ⟨y, hyT, x, hxS, hxy.symm⟩,
+    fun ⟨y, hyT, x, hxS, hxy⟩ => ⟨x, hxS, y, hyT, hxy.symm⟩⟩
+
+lemma linkEdgesSet_vertexSet_inter_left (G : Graph α β) (S T : Set α) :
+    E(G, V(G) ∩ S, T) = E(G, S, T) := by
+  ext e
+  exact ⟨fun ⟨x, ⟨hx, hxS⟩, y, hyT, hxy⟩ => ⟨x, hxS, y, hyT, hxy⟩,
+    fun ⟨x, hxS, y, hyT, hxy⟩ => ⟨x, ⟨hxy.left_mem, hxS⟩, y, hyT, hxy⟩⟩
+
+lemma linkEdgesSet_vertexSet_inter_right (G : Graph α β) (S T : Set α) :
+    E(G, S, V(G) ∩ T) = E(G, S, T) := by
+  ext e
+  exact ⟨fun ⟨x, hxS, y, ⟨hy, hyT⟩, hxy⟩ => ⟨x, hxS, y, hyT, hxy⟩,
+    fun ⟨x, hxS, y, hyT, hxy⟩ => ⟨x, hxS, y, ⟨hxy.right_mem, hyT⟩, hxy⟩⟩
 
 end Neighborhood
 

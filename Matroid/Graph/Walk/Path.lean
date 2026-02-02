@@ -112,7 +112,7 @@ lemma IsTrail.first_eq_of_isLink (hT : G.IsTrail (cons x e w)) (hl : G.IsLink e 
 lemma IsLink.walk_isTrail (h : G.IsLink e u v) : G.IsTrail h.walk := by
   simp [IsLink.walk, h, h.right_mem]
 
-lemma IsTrail.edgeRemove_of_forall_isLoopAt {F : Set β} [DecidablePred (· ∈ F)]
+lemma IsTrail.edgeRemove {F : Set β} [DecidablePred (· ∈ F)]
     (hw : G.IsTrail w) (hF : ∀ e ∈ w.edge, e ∈ F → ∃ x, G.IsLoopAt e x) :
     G.IsTrail (w.edgeRemove F) where
   isWalk := hw.isWalk.edgeRemove hF
@@ -254,6 +254,15 @@ lemma IsPath.append {P Q : WList α β} (hP : G.IsPath P) (hQ : G.IsPath Q) (hPQ
     refine ⟨hP.2.2, fun huQ ↦ ?_⟩
     rw [← h_inter.1 huQ] at hPQ
     exact hP.2.2 (by simp [← hPQ])
+
+lemma IsPath.of_append_left {P Q : WList α β} (hP : G.IsPath (P ++ Q)) (hPQ : P.last = Q.first) :
+    G.IsPath P := by
+  rw [isPath_iff] at hP ⊢
+  use hP.1.of_append_left hPQ, hP.2.sublist <| by simp [append_vertex' hPQ]
+
+lemma IsPath.of_append_right {P Q : WList α β} (hP : G.IsPath (P ++ Q)) : G.IsPath Q := by
+  rw [isPath_iff] at hP ⊢
+  use hP.1.of_append_right, hP.2.sublist <| by simp
 
 lemma IsPath.eq_append_cons_of_edge_mem (hP : G.IsPath P) (heP : e ∈ P.edge) :
     ∃ P₁ P₂, G.IsPath P₁ ∧ G.IsPath P₂ ∧ e ∉ P₁.edge ∧ e ∉ P₂.edge ∧

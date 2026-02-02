@@ -183,6 +183,10 @@ lemma Compatible.union_mono_left (h : H₂.Compatible G) (hle : H₁ ≤ H₂) :
   rw [h.union_comm, (h.mono_left hle).union_comm]
   exact union_mono_right hle
 
+lemma compatible_iff_exists_le_le (G H : Graph α β) : G.Compatible H ↔ ∃ I, G ≤ I ∧ H ≤ I :=
+  ⟨fun h => ⟨G ∪ H, G.left_le_union .., h.right_le_union ..⟩,
+    fun ⟨_, hGI, hHI⟩ ↦ compatible_of_le_le hGI hHI⟩
+
 lemma Compatible.union_mono (hleG : G₁ ≤ G₂) (hleH : H₁ ≤ H₂) (h : G₂.Compatible H₁) :
     G₁ ∪ H₁ ≤ G₂ ∪ H₂ := le_trans (h.union_mono_left hleG) (union_mono_right hleH)
 

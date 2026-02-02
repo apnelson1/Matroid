@@ -8,82 +8,158 @@ variable {α β : Type*} {G H : Graph α β} {u v x x₁ x₂ y y₁ y₂ z : α
 
 namespace Graph
 
+/-! ### Bonds -/
+
+/-- A bond is a subset of edges that separates the graph into two connected components -/
+def IsEdgeCut (G : Graph α β) (F : Set β) : Prop :=
+  ∃ S : Set α, E(G, S, V(G) \ S) = F
+
+lemma IsEdgeCut.mem_edgeSet (hF : G.IsEdgeCut F) : F ⊆ E(G) := by
+  obtain ⟨S, rfl⟩ := hF
+  exact linkEdgesSet_subset G S (V(G) \ S)
+
+lemma IsEdgeCut.not_isLoopAt (hF : G.IsEdgeCut F) (he : e ∈ F) : ¬ G.IsLoopAt e v := by
+  obtain ⟨S, rfl⟩ := hF
+  simp only [mem_linkEdgesSet_iff, mem_diff] at he
+  obtain ⟨x, hxS, y, ⟨hy, hyS⟩, hxy⟩ := he
+  rintro hev
+  obtain ⟨rfl, rfl⟩ := hev.eq_of_isLink hxy
+  tauto
+
+lemma IsEdgeCut.not_connBetween_of_isLink (hF : G.IsEdgeCut F) (he : G.IsLink e u v) (heF : e ∈ F) :
+    ¬ (G ＼ F).ConnBetween u v := by
+  obtain ⟨S, rfl⟩ := hF
+  simp only [mem_linkEdgesSet_iff, mem_diff] at heF
+  obtain ⟨x, hxS, y, ⟨hy, hyS⟩, hxy⟩ := heF
+  wlog hxyeq : u = x ∧ v = y
+  · obtain ⟨rfl, rfl⟩ := (he.isLink_iff.mp hxy).resolve_left hxyeq
+    exact fun h ↦ this he.symm S v hxS u hxy hy hyS (by tauto) h.symm
+  obtain ⟨rfl, rfl⟩ := hxyeq
+  rintro hcon
+  obtain ⟨P, hP, rfl, rfl⟩ := hcon.exists_isPath
+  obtain ⟨_, x, y, h, hxS, hyS⟩ := exists_dInc_prop_not_prop hxS hyS
+  have hy := by simpa using hP.isWalk.vertexSet_subset h.right_mem
+  replace h := hP.isWalk.isLink_of_dInc h
+  have := by simpa using h.edge_mem
+  exact this.2 x hxS y hy hyS h.1
+
+def IsBond (G : Graph α β) (F : Set β) : Prop :=
+  Minimal (fun F ↦ G.IsEdgeCut F ∧ F.Nonempty) F
+
 /-! ### Bridges -/
 
-/-- A bridge is an edge in no cycle-/
-@[mk_iff]
-structure IsBridge (G : Graph α β) (e : β) : Prop where
-  mem_edgeSet : e ∈ E(G)
-  notMem_cycle : ∀ ⦃C⦄, G.IsCycle C → e ∉ C.edge
+/-- A bridge is a singleton edge separation -/
+def IsBridge (G : Graph α β) (e : β) : Prop := G.IsEdgeCut {e}
 
-lemma not_isBridge (he : e ∈ E(G)) : ¬ G.IsBridge e ↔ ∃ C, G.IsCycle C ∧ e ∈ C.edge := by
-  simp [isBridge_iff, he]
+lemma IsBridge.mem_edgeSet (he : G.IsBridge e) : e ∈ E(G) := by
+  simpa using IsEdgeCut.mem_edgeSet he
 
-lemma IsCycle.not_isBridge_of_mem (hC : G.IsCycle C) (heC : e ∈ C.edge) : ¬ G.IsBridge e := by
-  rw [not_isBridge (hC.isWalk.edgeSet_subset heC)]
-  exact ⟨C, hC, heC⟩
-
+-- This lemma will be proved later using the equivalence with cycles
 lemma IsLink.isBridge_iff_not_connBetween (he : G.IsLink e x y) :
     G.IsBridge e ↔ ¬ (G ＼ {e}).ConnBetween x y := by
-  refine ⟨fun h hconn ↦ ?_, fun h ↦ ?_⟩
-  · obtain ⟨P, hP, rfl, rfl⟩ := hconn.exists_isPath
-    simp only [isPath_edgeDelete_iff, disjoint_singleton_right, mem_edgeSet_iff] at hP
-    exact (hP.1.cons_isCycle he hP.2).not_isBridge_of_mem (by simp) h
-  contrapose! h
-  obtain ⟨C, hC, heC⟩ := (not_isBridge he.edge_mem).1 h
-  rw [← hC.isWalk.isLink_iff_isLink_of_mem heC] at he
-  exact hC.connBetween_deleteEdge_of_mem_of_mem _ he.left_mem he.right_mem
+  refine ⟨fun h ↦ h.not_connBetween_of_isLink he rfl, fun h ↦ ?_⟩
+  use V((G ＼ {e}).walkable x)
+  ext f
+  simp only [mem_linkEdgesSet_iff, mem_walkable_iff, mem_diff, mem_singleton_iff]
+  refine ⟨fun ⟨u, hxu, v, ⟨hv, hxv⟩, hfuv⟩ ↦ ?_, ?_⟩
+  · by_contra! hfe
+    replace hfuv : (G ＼ {e}).IsLink f u v := by simpa [hfuv]
+    exact hxv <| hxu.trans hfuv.connBetween
+  rintro rfl
+  use x, (by simp [he.left_mem]), y, (by simpa [he.right_mem])
 
 lemma IsLink.isBridge_iff_isEdgeCutBetween (he : G.IsLink e x y) :
     G.IsBridge e ↔ G.IsEdgeCutBetween {e} x y := by
   rw [he.isBridge_iff_not_connBetween, isEdgeCutBetween_iff]
   simp [he.edge_mem]
 
+lemma IsBridge.anti_of_mem (he : G.IsBridge e) (hHG : H ≤ G) (heH : e ∈ E(H)) : H.IsBridge e := by
+  obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet heH
+  rw [hxy.isBridge_iff_not_connBetween]
+  rw [(hxy.of_le hHG).isBridge_iff_not_connBetween] at he
+  contrapose! he
+  exact he.of_le (by grw [hHG])
+
+lemma IsBridge.of_isClosedSubgraph (hcle : H ≤c G) (he : H.IsBridge e) : G.IsBridge e := by
+  obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet he.mem_edgeSet
+  rw [hxy.isBridge_iff_not_connBetween] at he
+  rw [(hxy.of_le hcle.le).isBridge_iff_not_connBetween]
+  contrapose! he
+  obtain ⟨P, hP, rfl, rfl⟩ := he
+  simp only [isWalk_edgeDelete_iff, disjoint_singleton_right, mem_edgeSet_iff] at hP
+  use P, ?_
+  simp only [isWalk_edgeDelete_iff, disjoint_singleton_right, mem_edgeSet_iff, hP.2,
+    not_false_eq_true, and_true]
+  exact hP.1.isWalk_isClosedSubgraph hcle ⟨P.first, first_mem, hxy.left_mem⟩
+
+lemma IsBridge.singleton_linkEdges (he : G.IsBridge e) (hl : G.IsLink e u v) :
+    E(G, u, v) = {e} := by
+  ext f
+  rw [mem_linkEdges_iff]
+  refine ⟨fun hf ↦ ?_, fun h ↦ h ▸ hl⟩
+  obtain ⟨S, hS⟩ := he
+  rw [← hS]
+  obtain ⟨x, hxS, y, ⟨hy, hyS⟩, hexy⟩ : e ∈ E(G, S, V(G) \ S) := hS ▸ rfl
+  obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := hexy.eq_and_eq_or_eq_and_eq hl
+  · use x, hxS, y, ⟨hy, hyS⟩, hf
+  use x, hxS, y, ⟨hy, hyS⟩, hf.symm
+
+lemma Preconnected.edgeDelete_singleton_preconnected (h : G.Preconnected) (he : ¬ G.IsBridge e) :
+    (G ＼ {e}).Preconnected := by
+  intro u v hu hv
+  rw [edgeDelete_vertexSet] at hu hv
+  by_contra! hecon
+  obtain ⟨P, hP, rfl, rfl⟩ := h u v hu hv |>.exists_isPath
+  have heP : e ∈ P.edge := by
+    contrapose! hecon
+    use P, by simpa [hP.isWalk]
+  apply hecon
+  obtain ⟨w, w', hw, hw', hew, hew', hVdj, hEdj, rfl⟩ := hP.eq_append_cons_of_edge_mem heP
+  have := by simpa using hP.of_append_right
+  rw [this.2.1.isBridge_iff_not_connBetween.not_left] at he
+  simp only [first_cons, append_first_of_eq, append_last, last_cons]
+  exact trans (trans (by use w; simpa [hw.isWalk]) he) (by use w'; simpa [hw'.isWalk])
+
 lemma Connected.edgeDelete_singleton_connected (hG : G.Connected) (he : ¬ G.IsBridge e) :
     (G ＼ {e}).Connected := by
-  obtain heE | heE := em' <| e ∈ E(G)
-  · rwa [edgeDelete_eq_self _ (by simpa)]
-  obtain ⟨C, hC, heC⟩ := (not_isBridge heE).1 he
-  rw [← (G ＼ {e}).induce_union_edgeDelete (X := V(C)) (by simp [hC.vertexSet_subset])]
-  refine Compatible.union_connected_of_forall (G.compatible_of_le_le ?_ (by simp)) ?_ ?_
-  · exact le_trans (induce_le (by simp [hC.vertexSet_subset])) edgeDelete_le
-  · obtain ⟨P, hP, hPC⟩ := hC.exists_isPath_toGraph_eq_delete_edge heC
-    refine (hP.isWalk.toGraph_connected.of_isSpanningSubgraph ⟨by simp [hPC], ?_⟩)
-    rw [hPC, edgeDelete_induce, hC.isWalk.toGraph_eq_induce_restrict]
-    exact edgeDelete_mono_left (by simp) _ |>.isLink_of_isLink
-  simp only [edgeDelete_induce, edgeDelete_edgeSet, edgeDelete_edgeDelete, union_diff_self,
-    singleton_union, edgeDelete_vertexSet, induce_vertexSet, mem_vertexSet_iff]
-  intro x hx
-  obtain ⟨y, hy, hconn⟩ := hG.pre.exists_connBetween_deleteEdge_set (X := V(C))
-    (by simp [inter_eq_self_of_subset_left hC.vertexSet_subset]) hx
-  refine ⟨y, hy, ?_⟩
-  rwa [insert_eq_of_mem (hC.isWalk.edgeSet_subset_induce_edgeSet heC )]
+  rw [connected_iff] at hG ⊢
+  use hG.1, hG.2.edgeDelete_singleton_preconnected he
+
+lemma Preconnected.edgeDelete_singleton_preconnected_iff (hG : G.Preconnected) :
+    (G ＼ {e}).Preconnected ↔ ¬ G.IsBridge e := by
+  refine ⟨fun h he => ?_, hG.edgeDelete_singleton_preconnected⟩
+  obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet he.mem_edgeSet
+  rw [hxy.isBridge_iff_not_connBetween] at he
+  exact he <| h _ _ hxy.left_mem hxy.right_mem
 
 lemma Connected.edgeDelete_singleton_connected_iff (hG : G.Connected) :
     (G ＼ {e}).Connected ↔ ¬ G.IsBridge e := by
-  obtain heE | heE := em' <| e ∈ E(G)
-  · simp [edgeDelete_eq_self G (F := {e}) (by simpa), hG, isBridge_iff, heE]
-  refine ⟨fun h hbr ↦ ?_, hG.edgeDelete_singleton_connected⟩
-  obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet heE
-  obtain ⟨P, hP, rfl, rfl⟩ := (h.connBetween hxy.left_mem hxy.right_mem).exists_isPath
-  simp only [isPath_edgeDelete_iff, disjoint_singleton_right, mem_edgeSet_iff] at hP
-  simpa using hbr.notMem_cycle <| hP.1.cons_isCycle hxy hP.2
+  refine ⟨fun h he => ?_, hG.edgeDelete_singleton_connected⟩
+  obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet he.mem_edgeSet
+  rw [hxy.isBridge_iff_not_connBetween] at he
+  exact he <| h.pre _ _ hxy.left_mem hxy.right_mem
 
-lemma Connected.isBridge_iff (hG : G.Connected) : G.IsBridge e ↔ ¬ (G ＼ {e}).Connected := by
-  rw [hG.edgeDelete_singleton_connected_iff, not_not]
+lemma Preconnected.isBridge_iff (hG : G.Preconnected) :
+    G.IsBridge e ↔ ¬ (G ＼ {e}).Preconnected := by
+  rw [hG.edgeDelete_singleton_preconnected_iff.symm.not_right]
+
+lemma Connected.isBridge_iff (hG : G.Connected) : G.IsBridge e ↔ ¬ (G ＼ {e}).Connected :=
+  hG.edgeDelete_singleton_connected_iff.symm.not_right
 
 lemma Connected.isBridge_iff_isEdgeSep (hG : G.Connected) (e : β) :
     G.IsBridge e ↔ G.IsEdgeSep {e} := by
-  simp only [hG.isBridge_iff, isEdgeSep_iff, singleton_subset_iff, iff_and_self]
-  rintro hconn
-  contrapose! hG
-  rwa [edgeDelete_eq_self_of_disjoint (by simpa)] at hconn
+  rw [hG.isBridge_iff, isEdgeSep_iff]
+  simp only [singleton_subset_iff, iff_and_self]
+  rintro hGe
+  by_contra! he
+  rw [edgeDelete_eq_self _ (by simpa)] at hGe
+  tauto
 
 /-- Every edge of a path is a bridge -/
 lemma IsPath.isBridge_of_mem (hP : G.IsPath P) (heP : e ∈ P.edge) : P.toGraph.IsBridge e := by
-  rw [hP.isWalk.toGraph_connected.isBridge_iff, hP.isWalk.toGraph_eq_induce_restrict]
+  rw [← hP.isWalk.toGraph_connected.edgeDelete_singleton_connected_iff.not_left]
   obtain ⟨P₁, P₂, hP₁, hP₂, heP₁, heP₂, hdj, hedj, rfl⟩ := hP.eq_append_cons_of_edge_mem heP
-  rw [append_vertexSet_of_eq (by simp)]
+  rw [hP.isWalk.toGraph_eq_induce_restrict, append_vertexSet_of_eq (by simp)]
   have := vertexSet_disjoint_iff.mpr hdj
   suffices ¬(G[V(P₁) ∪ V(P₂)] ↾ (E(P₁) ∪ E(P₂)) \ {e}).Connected by simpa
   rw [diff_singleton_eq_self (by simp [heP₁, heP₂]), ← edgeRestrict_induce, induce_union,
@@ -108,6 +184,49 @@ lemma IsPath.eq_of_isBridge_isLink (hP : G.IsPath P) (he : G.IsBridge e)
     simp only [first_cons, last_cons, IsLink.walk, cons.injEq, true_and] at hl ⊢
     obtain ⟨rfl, heq⟩ := hP.first_eq_of_isLink_mem heP hl
     grind [hw.first_eq_last_iff.mp heq |>.eq_nil_last]
+
+lemma exists_isCyclicWalk_of_not_isBridge (he : e ∈ E(G)) (hb : ¬ G.IsBridge e) :
+    ∃ C, G.IsCyclicWalk C ∧ e ∈ C.edge := by
+  obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet he
+  rw [hxy.isBridge_iff_not_connBetween, not_not] at hb
+  obtain ⟨P, hP, rfl, rfl⟩ := hb.exists_isPath
+  use cons P.last e P, ?_, by simp
+  have := by simpa [subset_diff] using hP.isWalk.edgeSet_subset
+  exact (hP.of_le edgeDelete_le).cons_isCyclicWalk hxy this.2
+
+lemma not_isBridge_of_exists_isCyclicWalk (hC : ∃ C, G.IsCyclicWalk C ∧ e ∈ C.edge) :
+    ¬ G.IsBridge e := by
+  obtain ⟨C, hC, heC⟩ := hC
+  obtain he := hC.isWalk.edge_mem_of_mem heC
+  obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet he
+  rw [hxy.isBridge_iff_not_connBetween, not_not]
+  obtain ⟨P, hP, hPC⟩ := hC.exists_isPath_toGraph_eq_delete_edge heC
+  have := hC.isWalk.isLink_iff_isLink_of_mem heC |>.mpr hxy
+  have hmem : ∀ z, z ∈ P ↔ z ∈ C := by
+    intro z
+    rw [← P.mem_vertexSet_iff, ← toGraph_vertexSet, hPC]
+    simp
+  apply ConnBetween.of_le (hP.isWalk.toGraph_connected.pre x y (by simp [hmem, this.left_mem])
+    (by simp [hmem, this.right_mem]))
+  simp [hP.isWalk.toGraph_le]
+  rw [← mem_edgeSet_iff, ← toGraph_edgeSet, hPC]
+  simp
+
+lemma IsCyclicWalk.not_isBridge_of_mem (hC : G.IsCyclicWalk C) (heC : e ∈ C.edge) :
+    ¬ G.IsBridge e :=
+  not_isBridge_of_exists_isCyclicWalk ⟨C, hC, heC⟩
+
+@[simp, push]
+lemma not_isBridge_iff_exists_isCyclicWalk (he : e ∈ E(G)) :
+    ¬ G.IsBridge e ↔ ∃ C, G.IsCyclicWalk C ∧ e ∈ C.edge :=
+  ⟨exists_isCyclicWalk_of_not_isBridge he, not_isBridge_of_exists_isCyclicWalk⟩
+
+lemma isBridge_iff_notMem_isCyclicWalk (he : e ∈ E(G)) :
+    G.IsBridge e ↔ ∀ C, G.IsCyclicWalk C → e ∉ C.edge := by
+  rw [← not_iff_not]
+  simp only [not_forall, not_not, exists_prop]
+  exact not_isBridge_iff_exists_isCyclicWalk he
+
 
 /-! ### Staying Connected -/
 

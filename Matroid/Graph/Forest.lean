@@ -9,7 +9,7 @@ namespace Graph
 
 /-- If `P` and `Q` are distinct paths with the same ends, their union contains a cycle. -/
 theorem twoPaths (hP : G.IsPath P) (hQ : G.IsPath Q) (hPQ : P ≠ Q) (h0 : P.first = Q.first)
-    (h1 : P.last = Q.last) : ∃ C, G.IsCycle C ∧ E(C) ⊆ E(P) ∪ E(Q) := by
+    (h1 : P.last = Q.last) : ∃ C, G.IsCyclicWalk C ∧ E(C) ⊆ E(P) ∪ E(Q) := by
   classical
   induction P generalizing Q with
   | nil u => cases Q with | _ => simp_all
@@ -44,26 +44,19 @@ theorem twoPaths (hP : G.IsPath P) (hQ : G.IsPath Q) (hPQ : P ≠ Q) (h0 : P.fir
       · simp [append_first_of_nonempty hne]
       exact (dedup_isSublist _).edge_subset.trans <| by simp
     obtain ⟨R, hR, heR, hfirst, hlast, hss⟩ := hR_ex
-    refine ⟨_, hR.concat_isCycle ?_ heR, ?_⟩
+    refine ⟨_, hR.concat_isCyclicWalk ?_ heR, ?_⟩
     · rw [hfirst, hlast]
       exact hP.2.1.symm
     simp only [concat_edgeSet, cons_edgeSet]
     rw [insert_union]
     exact insert_subset_insert hss
 
-def IsForest (G : Graph α β) : Prop := ∀ C, ¬ G.IsCycle C
-
-lemma isForest_iff_forall_isBridge : G.IsForest ↔ ∀ e ∈ E(G), G.IsBridge e := by
-  simp only [IsForest, isBridge_iff, forall_and, imp_self, true_and]
-  refine ⟨fun h _ _ C hC _ ↦ h C hC, fun h C hC ↦ ?_⟩
-  obtain ⟨e, he⟩ := hC.nonempty.edgeSet_nonempty
-  exact h e (hC.isWalk.edgeSet_subset he) hC he
+def IsForest (G : Graph α β) : Prop := ∀ ⦃e⦄, e ∈ E(G) → G.IsBridge e
 
 lemma IsForest.isEdgeSep (hG : G.IsForest) (he : e ∈ E(G)) : G.IsEdgeSep {e} where
   subset_edgeSet := by simpa
   not_connected h := by
-    rw [isForest_iff_forall_isBridge] at hG
-    have := hG e he
+    have := hG he
     rw [(h.of_isSpanningSubgraph edgeDelete_isSpanningSubgraph).isBridge_iff_isEdgeSep] at this
     exact this.not_connected h
 
@@ -71,71 +64,61 @@ lemma IsForest.isEdgeCutBetween (hG : G.IsForest) (hl : G.IsLink e x y) :
     G.IsEdgeCutBetween {e} x y where
   subset_edgeSet := by simp [hl.edge_mem]
   not_connBetween := by
-    rw [isForest_iff_forall_isBridge] at hG
-    exact (hl.isBridge_iff_isEdgeCutBetween.mp <| hG e hl.edge_mem).not_connBetween
-
-lemma IsForest.not_isTour (hG : G.IsForest) : ¬ G.IsTour P := by
-  intro h
-  obtain ⟨C, hC, -⟩ := h.exists_isCycle
-  exact hG C hC
+    exact (hl.isBridge_iff_isEdgeCutBetween.mp <| hG hl.edge_mem).not_connBetween
 
 lemma IsForest.mono (hG : G.IsForest) (hHG : H ≤ G) : H.IsForest :=
-  fun C hC ↦ hG C (hC.of_le hHG)
+  fun _ he ↦ hG (edgeSet_mono hHG he) |>.anti_of_mem hHG he
 
 /-- The union of two forests that intersect in at most one vertex is a forest.  -/
 lemma IsForest.union_isForest_of_subsingleton_inter (hG : G.IsForest) (hH : H.IsForest)
     (hi : (V(G) ∩ V(H)).Subsingleton) : (G ∪ H).IsForest := by
-  intro C hC
-  obtain hC | hC := hC.isCycle_or_isCycle_of_union_of_subsingleton_inter hi
-  · exact hG C hC
-  exact hH C hC
+  wlog hc : Compatible G H generalizing H with aux
+  · have := aux (hH.mono edgeDelete_le : (H ＼ E(G)).IsForest) (by simpa)
+      (Compatible.of_disjoint_edgeSet disjoint_sdiff_right)
+    rwa [Graph.union_eq_union_edgeDelete]
+  intro e he
+  wlog heG : e ∈ E(G) generalizing G H with aux
+  · obtain heH := by simpa using he
+    rw [inter_comm] at hi
+    have := aux hH hG hi hc.symm (by simpa [or_comm]) (heH.resolve_left heG)
+    rwa [hc.symm.union_comm] at this
+  obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet heG
+  have := hxy.isBridge_iff_not_connBetween.mp (hG (hxy.edge_mem))
+  rw [hxy.of_le (Graph.left_le_union ..) |>.isBridge_iff_not_connBetween]
+  contrapose! this
+  obtain ⟨P, hP, rfl, rfl⟩ := this.exists_isPath
+  use P, ?_
+  obtain ⟨hP, heP⟩ := by simpa using hP
+  simpa [hP.isPath_of_union_of_subsingleton_inter hi hxy.left_mem hxy.right_mem |>.isWalk]
+
+lemma IsForest.of_isCompOf_isForest (h : ∀ H : Graph α β, H.IsCompOf G → H.IsForest) :
+    G.IsForest := by
+  rintro e he
+  rw [G.eq_sUnion_components] at he
+  simp only [sUnion_edgeSet, mem_components_iff_isCompOf, mem_iUnion, exists_prop] at he
+  obtain ⟨H, hH, heH⟩ := he
+  exact h H hH heH |>.of_isClosedSubgraph hH.isClosedSubgraph
 
 lemma IsPath.toGraph_isForest (hG : G.IsPath P) : P.toGraph.IsForest := by
-  simp only [isForest_iff_forall_isBridge, WList.toGraph_edgeSet, WList.mem_edgeSet_iff]
+  simp only [IsForest, WList.toGraph_edgeSet, WList.mem_edgeSet_iff]
   exact fun _ ↦ hG.isBridge_of_mem
 
-lemma IsCycle.toGraph_not_isForest (hC : G.IsCycle C) : ¬ C.toGraph.IsForest :=
-  fun h ↦ h C hC.isCycle_toGraph
+lemma IsCyclicWalk.toGraph_not_isForest (hC : G.IsCyclicWalk C) : ¬ C.toGraph.IsForest := by
+  obtain ⟨u, e, P⟩ := hC.nonempty
+  obtain rfl := by simpa using hC.isClosed
+  simp only [IsForest, toGraph_edgeSet, cons_edgeSet, mem_insert_iff, mem_edgeSet_iff,
+    forall_eq_or_imp, not_and_or]
+  left
+  obtain ⟨hP, he, heP⟩ := by simpa using hC.isTrail
+  rw [(he.of_le_of_mem hC.isWalk.toGraph_le (by simp)).isBridge_iff_not_connBetween, not_not,
+    connBetween_comm]
+  use P, ?_
+  simp only [isWalk_edgeDelete_iff, disjoint_singleton_right, mem_edgeSet_iff, heP,
+    not_false_eq_true, and_true]
+  exact hP.isWalk.wellFormed.isWalk_toGraph.of_le (Graph.left_le_union ..)
 
-@[simp]
-lemma singleEdge_isForest (hxy : x ≠ y) (e : β) : (Graph.singleEdge x y e).IsForest := by
-  intro C hC
-  obtain ⟨u, f, rfl⟩ | hnt := hC.loop_or_nontrivial
-  · obtain ⟨z, z', h⟩ := WList.exists_dInc_of_mem_edge (e := f) (w := .cons u f (.nil u)) (by simp)
-    have h' := hC.isWalk.isLink_of_dInc h
-    aesop
-  refine hnt.firstEdge_ne_lastEdge hC.edge_nodup ?_
-  have h_const := hC.isWalk.edgeSet_subset
-  simp only [singleEdge_edgeSet, subset_singleton_iff, WList.mem_edgeSet_iff] at h_const
-  rw [h_const hnt.nonempty.firstEdge (by simp), h_const hnt.nonempty.lastEdge (by simp)]
-
-lemma IsForest.eq_of_isPath_eq_eq (hG : G.IsForest) (hP : G.IsPath P) (hQ : G.IsPath Q)
-    (hfirst : P.first = Q.first) (hlast : P.last = Q.last) : P = Q := by
-  by_contra hne
-  obtain ⟨C, hC, -⟩ := twoPaths hP hQ hne hfirst hlast
-  exact hG C hC
-
-lemma IsForest.isPath_of_isTrail (hG : G.IsForest) (hP : G.IsTrail P) : G.IsPath P where
-  isWalk := hP.isWalk
-  nodup := by
-    classical
-    induction P with
-    | nil u => simp
-    | cons u e w ih =>
-    obtain ⟨hw, hl, hew⟩ := by simpa using hP
-    simp only [cons_vertex, List.nodup_cons, mem_vertex, ih hw, and_true]
-    rintro huw
-    refine hG.not_isTour (P := cons u e <| w.prefixUntilVertex u) ⟨?_, by simp, by simp [huw]⟩
-    simp only [cons_isTrail_iff, prefixUntilVertex_first]
-    have hp := w.prefixUntilVertex_isPrefix u
-    exact ⟨hw.sublist hp.isSublist, hl, mt (hp.mem_edge) hew⟩
-
-lemma IsForest.eq_of_isTrail_eq_eq (hG : G.IsForest) (hP : G.IsTrail P) (hQ : G.IsTrail Q)
-    (hfirst : P.first = Q.first) (hlast : P.last = Q.last) : P = Q :=
-  hG.eq_of_isPath_eq_eq (hG.isPath_of_isTrail hP) (hG.isPath_of_isTrail hQ) hfirst hlast
-
-lemma IsCycle.toGraph_eq_of_le {C C₀ : WList α β} (hC : G.IsCycle C) (hC₀ : G.IsCycle C₀)
-    (hle : C₀.toGraph ≤ C.toGraph) : C₀.toGraph = C.toGraph := by
+lemma IsCyclicWalk.toGraph_eq_of_le {C C₀ : WList α β} (hC : G.IsCyclicWalk C)
+    (hC₀ : G.IsCyclicWalk C₀) (hle : C₀.toGraph ≤ C.toGraph) : C₀.toGraph = C.toGraph := by
   have hCE : E(C₀) ⊆ E(C) := by simpa using edgeSet_mono hle
   have hCV : V(C₀) ⊆ V(C) := by simpa using vertexSet_mono hle
   refine hle.antisymm <| G.le_of_le_le_subset_subset hC.isWalk.toGraph_le
@@ -164,17 +147,110 @@ lemma IsCycle.toGraph_eq_of_le {C C₀ : WList α β} (hC : G.IsCycle C) (hC₀ 
 
 lemma IsCycleGraph.eq_of_le (hG : G.IsCycleGraph) (hH : H.IsCycleGraph) (hle : G ≤ H) :
     G = H := by
-  obtain ⟨C', hC', rfl⟩ := by simpa [isCycleGraph_iff_toGraph_isCycle] using hG
-  obtain ⟨C'', hC'', rfl⟩ := by simpa [isCycleGraph_iff_toGraph_isCycle] using hH
+  obtain ⟨C', hC', rfl⟩ := by simpa [isCycleGraph_iff_toGraph_isCyclicWalk] using hG
+  obtain ⟨C'', hC'', rfl⟩ := by simpa [isCycleGraph_iff_toGraph_isCyclicWalk] using hH
   exact hC''.toGraph_eq_of_le (hC'.of_le hle) hle
 
-lemma IsCycleGraph.toGraph_of_isCycle {C : WList α β} (hG : G.IsCycleGraph)
-    (hC : G.IsCycle C) : C.toGraph = G := by
-  obtain ⟨C', hC', rfl⟩ := by simpa [isCycleGraph_iff_toGraph_isCycle] using hG
+lemma IsCycleGraph.toGraph_of_isCyclicWalk {C : WList α β} (hG : G.IsCycleGraph)
+    (hC : G.IsCyclicWalk C) : C.toGraph = G := by
+  obtain ⟨C', hC', rfl⟩ := by simpa [isCycleGraph_iff_toGraph_isCyclicWalk] using hG
   exact hC'.toGraph_eq_of_le hC <| hC.isWalk.toGraph_le
+
+lemma IsForest.not_isTour (hG : G.IsForest) : ¬ G.IsTour P := by
+  intro h
+  obtain ⟨C, hC, -⟩ := h.exists_isCyclicWalk
+  exact hC.toGraph_not_isForest <| hG.mono hC.isWalk.toGraph_le
+
+lemma isForest_iff_not_isCyclicWalk : G.IsForest ↔ ∀ C, ¬ G.IsCyclicWalk C := by
+  refine ⟨fun hG C hC ↦ hG.not_isTour hC.isTour, fun h ↦ ?_⟩
+  contrapose! h
+  obtain ⟨e, he, hb⟩ := by simpa [IsForest] using h
+  obtain ⟨C, hC, heC⟩ := exists_isCyclicWalk_of_not_isBridge he hb
+  use C
+
+
+def IsCycle (G : Graph α β) : Prop := Minimal (fun G ↦ ¬ G.IsForest) G
+
+lemma isCycle_iff : G.IsCycle ↔ Minimal (fun G : Graph α β ↦ ∃ e ∈ E(G), ¬ G.IsBridge e) G := by
+  simp [IsCycle, IsForest]
+
+lemma IsCycle.exists_isBridge (hG : G.IsCycle) : ∃ e ∈ E(G), ¬ G.IsBridge e :=
+  isCycle_iff.mp hG |>.prop
+
+lemma IsCycle.edgeSet_nonempty (hG : G.IsCycle) : E(G).Nonempty := by
+  obtain ⟨e, he, hb⟩ := hG.exists_isBridge
+  use e
+
+lemma IsCycle.nonempty (hG : G.IsCycle) : V(G).Nonempty := by
+  obtain ⟨e, he, hb⟩ := hG.exists_isBridge
+  obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet he
+  use x, hxy.left_mem
+
+lemma IsCycle.connected (hG : G.IsCycle) : G.Connected := by
+  obtain ⟨H, hHc, hHF⟩ := by simpa using mt IsForest.of_isCompOf_isForest hG.prop
+  obtain rfl := hG.eq_of_le hHF hHc.le
+  exact hHc.connected
+
+lemma IsCyclicWalk.toGraph_isCycle (hC : G.IsCyclicWalk C) : C.toGraph.IsCycle := by
+  refine ⟨hC.toGraph_not_isForest, fun H hH hle ↦ ?_⟩
+  obtain ⟨e, heC, hb⟩ := by simpa [IsForest] using hH
+  obtain ⟨C', hC', heC'⟩ := exists_isCyclicWalk_of_not_isBridge (by simpa) hb
+  convert hC'.isWalk.toGraph_le using 1
+  apply hC.toGraph_eq_of_le (hC'.of_le <| hle.trans hC.isWalk.toGraph_le) ?_ |>.symm
+  exact hC'.isWalk.toGraph_le.trans hle
+
+lemma IsCycle.exists_isCyclicWalk_eq (hG : G.IsCycle) : ∃ C, G.IsCyclicWalk C ∧ C.toGraph = G := by
+  obtain ⟨e, he, hb⟩ := hG.exists_isBridge
+  obtain ⟨C, hC, heC⟩ := exists_isCyclicWalk_of_not_isBridge he hb
+  use C, hC
+  have hle : C.toGraph ≤ G := hC.isWalk.toGraph_le
+  exact hG.eq_of_le hC.toGraph_not_isForest hle
+
+lemma isCycle_iff_exists_isCyclicWalk_eq : G.IsCycle ↔ ∃ C, G.IsCyclicWalk C ∧ C.toGraph = G :=
+  ⟨fun hG ↦ hG.exists_isCyclicWalk_eq, fun ⟨_, hC, hC_eq⟩ ↦ hC_eq ▸ hC.toGraph_isCycle⟩
+
+@[simp]
+lemma singleEdge_isForest (hxy : x ≠ y) (e : β) : (Graph.singleEdge x y e).IsForest := by
+  rw [isForest_iff_not_isCyclicWalk]
+  intro C hC
+  obtain ⟨u, f, rfl⟩ | hnt := hC.loop_or_nontrivial
+  · obtain ⟨z, z', h⟩ := WList.exists_dInc_of_mem_edge (e := f) (w := .cons u f (.nil u)) (by simp)
+    have h' := hC.isWalk.isLink_of_dInc h
+    aesop
+  refine hnt.firstEdge_ne_lastEdge hC.edge_nodup ?_
+  have h_const := hC.isWalk.edgeSet_subset
+  simp only [singleEdge_edgeSet, subset_singleton_iff, WList.mem_edgeSet_iff] at h_const
+  rw [h_const hnt.nonempty.firstEdge (by simp), h_const hnt.nonempty.lastEdge (by simp)]
+
+lemma IsForest.eq_of_isPath_eq_eq (hG : G.IsForest) (hP : G.IsPath P) (hQ : G.IsPath Q)
+    (hfirst : P.first = Q.first) (hlast : P.last = Q.last) : P = Q := by
+  by_contra hne
+  obtain ⟨C, hC, -⟩ := twoPaths hP hQ hne hfirst hlast
+  rw [isForest_iff_not_isCyclicWalk] at hG
+  exact hG C hC
+
+lemma IsForest.isPath_of_isTrail (hG : G.IsForest) (hP : G.IsTrail P) : G.IsPath P where
+  isWalk := hP.isWalk
+  nodup := by
+    classical
+    induction P with
+    | nil u => simp
+    | cons u e w ih =>
+    obtain ⟨hw, hl, hew⟩ := by simpa using hP
+    simp only [cons_vertex, List.nodup_cons, mem_vertex, ih hw, and_true]
+    rintro huw
+    refine hG.not_isTour (P := cons u e <| w.prefixUntilVertex u) ⟨?_, by simp, by simp [huw]⟩
+    simp only [cons_isTrail_iff, prefixUntilVertex_first]
+    have hp := w.prefixUntilVertex_isPrefix u
+    exact ⟨hw.sublist hp.isSublist, hl, mt (hp.mem_edge) hew⟩
+
+lemma IsForest.eq_of_isTrail_eq_eq (hG : G.IsForest) (hP : G.IsTrail P) (hQ : G.IsTrail Q)
+    (hfirst : P.first = Q.first) (hlast : P.last = Q.last) : P = Q :=
+  hG.eq_of_isPath_eq_eq (hG.isPath_of_isTrail hP) (hG.isPath_of_isTrail hQ) hfirst hlast
 
 lemma isForest_of_minimal_connected (hF : Minimal (fun F ↦ (G ↾ F).Connected) F) :
     (G ↾ F).IsForest := by
+  rw [isForest_iff_not_isCyclicWalk]
   intro C hC
   obtain ⟨e, he⟩ := hC.nonempty.edgeSet_nonempty
   refine hF.notMem_of_prop_diff_singleton (x := e) ?_ (hC.isWalk.edgeSet_subset he).2
@@ -189,14 +265,16 @@ lemma IsForest.isShortestPath_of_isPath (hG : G.IsForest) (hP : G.IsPath P) :
 lemma IsForest.loopless (hG : G.IsForest) : G.Loopless := by
   rw [loopless_iff_forall_ne_of_adj]
   rintro x _ ⟨e, he⟩ rfl
+  rw [isForest_iff_not_isCyclicWalk] at hG
   exact hG (WList.cons x e (nil x))
-  <| by simp [isCycle_iff, isTour_iff, he.left_mem, isLink_self_iff.1 he]
+  <| by simp [isCyclicWalk_iff, isTour_iff, he.left_mem, isLink_self_iff.1 he]
 
 lemma IsForest.simple (hG : G.IsForest) : G.Simple where
   not_isLoopAt := hG.loopless.not_isLoopAt
   eq_of_isLink e f x y he hf := by
     have := hG.loopless
-    simpa [isCycle_iff, isTour_iff, he.left_mem, hf.symm, he, he.adj.ne.symm] using
+    rw [isForest_iff_not_isCyclicWalk] at hG
+    simpa [isCyclicWalk_iff, isTour_iff, he.left_mem, hf.symm, he, he.adj.ne.symm] using
       hG (cons x e (cons y f (nil x)))
 
 lemma isForest_iff_isTrail_eq_eq : G.IsForest ↔ ∀ ⦃P Q⦄, G.IsTrail P → G.IsTrail Q →
@@ -205,9 +283,9 @@ lemma isForest_iff_isTrail_eq_eq : G.IsForest ↔ ∀ ⦃P Q⦄, G.IsTrail P →
   have hG : G.Loopless := ⟨fun e x hex ↦ by
     simpa using congrArg length
     <| h hex.walk_isTrail (Q := nil x) (by simp [hex.left_mem]) (by simp) (by simp)⟩
-  simp only [isForest_iff_forall_isBridge, isBridge_iff, forall_mem_and, imp_self, implies_true,
-    true_and]
-  intro e he C hC heC
+  intro e he
+  rw [isBridge_iff_notMem_isCyclicWalk he]
+  intro C hC heC
   obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet he
   have hCxy := hC.isWalk.isLink_iff_isLink_of_mem heC |>.mpr hxy
   obtain ⟨P, hP, hP_eq, rfl, rfl⟩ := hC.exists_isPath_toGraph_eq_delete_edge_of_isLink hCxy
@@ -219,33 +297,33 @@ lemma isForest_iff_isTrail_eq_eq : G.IsForest ↔ ∀ ⦃P Q⦄, G.IsTrail P →
 /-! ### Edge Sets -/
 
 /-- `G.IsCycleSet C` means that `C` is the edge set of a cycle of `G`. -/
-def IsCycleSet (G : Graph α β) (C : Set β) : Prop := ∃ C₀, G.IsCycle C₀ ∧ E(C₀) = C
+def IsCycleSet (G : Graph α β) (C : Set β) : Prop := ∃ C₀, G.IsCyclicWalk C₀ ∧ E(C₀) = C
 
 @[simp]
 lemma edgeRestrict_isCycleSet_iff (C : Set β) :
     (G ↾ F).IsCycleSet C ↔ G.IsCycleSet C ∧ C ⊆ F := by
   refine ⟨fun ⟨C₀, hC₀, h⟩ ↦ ?_, fun ⟨⟨C₀, hC₀, hss⟩, hsF⟩ ↦
-    ⟨C₀, (G.edgeRestrict_isCycle_iff ..).mpr ⟨hC₀, hss ▸ hsF⟩, hss⟩⟩
-  rw [edgeRestrict_isCycle_iff] at hC₀
+    ⟨C₀, (G.edgeRestrict_isCyclicWalk_iff ..).mpr ⟨hC₀, hss ▸ hsF⟩, hss⟩⟩
+  rw [edgeRestrict_isCyclicWalk_iff] at hC₀
   exact ⟨⟨C₀, hC₀.1, h ▸ rfl⟩, h ▸ hC₀.2⟩
 
 @[simp]
 lemma edgeDelete_isCycleSet_iff (C : Set β) :
     (G ＼ F).IsCycleSet C ↔ G.IsCycleSet C ∧ Disjoint C F := by
   refine ⟨fun ⟨C₀, hC₀, h⟩ ↦ ?_, fun ⟨⟨C₀, hC₀, hss⟩, hdisj⟩ ↦
-    ⟨C₀, (edgeDelete_isCycle_iff ..).mpr ⟨hC₀, hss ▸ hdisj⟩, hss⟩⟩
-  rw [edgeDelete_isCycle_iff] at hC₀
+    ⟨C₀, (edgeDelete_isCyclicWalk_iff ..).mpr ⟨hC₀, hss ▸ hdisj⟩, hss⟩⟩
+  rw [edgeDelete_isCyclicWalk_iff] at hC₀
   exact ⟨⟨C₀, hC₀.1, h⟩, h ▸ hC₀.2⟩
 
 @[simp]
 lemma induce_isCycleSet_iff (C : Set β) :
-    G[X].IsCycleSet C ↔ ∃ C₀, G.IsCycle C₀ ∧ V(C₀) ⊆ X ∧ E(C₀) = C := by
-  simp only [IsCycleSet, induce_isCycle_iff, and_assoc]
+    G[X].IsCycleSet C ↔ ∃ C₀, G.IsCyclicWalk C₀ ∧ V(C₀) ⊆ X ∧ E(C₀) = C := by
+  simp only [IsCycleSet, induce_isCyclicWalk_iff, and_assoc]
 
 @[simp]
 lemma vertexDelete_isCycleSet_iff (C : Set β) :
-    (G - X).IsCycleSet C ↔ ∃ C₀, G.IsCycle C₀ ∧ Disjoint V(C₀) X ∧ E(C₀) = C := by
-  simp only [IsCycleSet, vertexDelete_isCycle_iff, and_assoc]
+    (G - X).IsCycleSet C ↔ ∃ C₀, G.IsCyclicWalk C₀ ∧ Disjoint V(C₀) X ∧ E(C₀) = C := by
+  simp only [IsCycleSet, vertexDelete_isCyclicWalk_iff, and_assoc]
 
 lemma IsCycleSet.of_isLink {C : Set β} (h : G.IsCycleSet C)
     (he : ∀ ⦃e x y⦄, G.IsLink e x y → H.IsLink e x y) : H.IsCycleSet C := by
@@ -253,10 +331,12 @@ lemma IsCycleSet.of_isLink {C : Set β} (h : G.IsCycleSet C)
   exact ⟨C₀, hC₀.of_forall_isLink he, h⟩
 
 /-- `G.IsAcyclicSet X` means that the subgraph `G ↾ X` is a forest. -/
-def IsAcyclicSet (G : Graph α β) (I : Set β) : Prop := I ⊆ E(G) ∧ ∀ C₀, G.IsCycle C₀ → ¬ (E(C₀) ⊆ I)
+def IsAcyclicSet (G : Graph α β) (I : Set β) : Prop :=
+  I ⊆ E(G) ∧ ∀ C₀, G.IsCyclicWalk C₀ → ¬ (E(C₀) ⊆ I)
 
 lemma edgeRestrict_isForest_iff' :
-    (G ↾ F).IsForest ↔ ∀ (C : WList α β), E(C) ⊆ F → ¬ G.IsCycle C := by
+    (G ↾ F).IsForest ↔ ∀ (C : WList α β), E(C) ⊆ F → ¬ G.IsCyclicWalk C := by
+  rw [isForest_iff_not_isCyclicWalk]
   refine ⟨fun h C hCF hC ↦ h C ?_, fun h C hC ↦ h C ?_ (hC.of_le <| by simp)⟩
   · exact hC.isCycle_of_le (by simp) <| by simp [hCF, hC.isWalk.edgeSet_subset]
   exact hC.isWalk.edgeSet_subset.trans inter_subset_right
@@ -277,6 +357,7 @@ lemma IsForest.exists_isPendant [G.EdgeFinite] (hG : G.IsForest) (hne : E(G).Non
     ∃ e x, G.IsPendant e x := by
   classical
   have := hG.simple
+  rw [isForest_iff_not_isCyclicWalk] at hG
   obtain ⟨e₀, he₀⟩ := hne
   obtain ⟨x₀, y₀, he₀⟩ := exists_isLink_of_mem_edgeSet he₀
   obtain ⟨P, heP, hmax⟩ := exists_le_maximal_isPath (he₀.walk_isPath he₀.adj.ne)
@@ -289,7 +370,7 @@ lemma IsForest.exists_isPendant [G.EdgeFinite] (hG : G.IsForest) (hne : E(G).Non
   obtain rfl | hne := eq_or_ne w P.first
   · exact Simple.eq_of_isLink he hfuP
   have hP' := IsPath.prefix hmax.prop ((cons u f P).prefixUntilVertex_isPrefix w)
-  refine False.elim <| hG _ <| (hP'.cons_isCycle_of_nontrivial (e := e) ?_ ?_)
+  refine False.elim <| hG _ <| (hP'.cons_isCyclicWalk_of_nontrivial (e := e) ?_ ?_)
   · simpa only [prefixUntilVertex_first, first_cons, prefixUntilVertex_last hwP]
   rw [prefixUntilVertex_cons_of_ne _ he.adj.ne, cons_nontrivial_iff, ← not_nil_iff]
   contrapose! hne
