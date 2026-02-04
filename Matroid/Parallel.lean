@@ -135,6 +135,10 @@ lemma IsNonloop.parallel_iff_dep (he : M.IsNonloop e) (hf : M.IsNonloop f) (hef 
     M.Parallel e f ↔ M.Dep {e,f} := by
   rw [← hf.indep.mem_closure_iff_of_notMem hef, he.parallel_iff_mem_closure]
 
+lemma IsNonloop.not_parallel_iff (he : M.IsNonloop e) (hf : M.IsNonloop f) (hne : e ≠ f) :
+    ¬ M.Parallel e f ↔ M.Indep {e, f} := by
+  rw [he.parallel_iff_dep hf hne, not_dep_iff]
+
 lemma Parallel.eq_of_indep (h : M.Parallel e f) (hi : M.Indep {e,f}) : e = f := by
   by_contra hef
   exact ((h.isNonloop_left.parallel_iff_dep h.isNonloop_right hef).1 h).not_indep hi

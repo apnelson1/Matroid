@@ -174,6 +174,13 @@ lemma IsTutteSeparation.nontrivial (h : P.IsTutteSeparation) (hP : 1 ≤ P.eConn
     (P i).Nontrivial := by
   grw [← two_le_encard_iff_nontrivial, ← h.eConn_add_one_le i, ← hP, one_add_one_eq_two]
 
+lemma isTutteSeparation_iff_tutteWeight : P.IsTutteSeparation ↔ ∀ i, 0 < M.tutteWeight (P i) := by
+  simp [IsTutteSeparation, isPredSeparation_iff, ← tutteWeight_eq_zero, pos_iff_ne_zero]
+
+lemma IsTutteSeparation.tutteWeight_pos (h : P.IsTutteSeparation) (i : Bool) :
+    0 < M.tutteWeight (P i) :=
+  (isTutteSeparation_iff_tutteWeight.1 h) i
+
 @[simp]
 lemma isOffsetSeparation_zero : P.IsOffsetSeparation 0 ↔ P.IsTutteSeparation := by
   simp [IsOffsetSeparation, IsTutteSeparation, tutteDegen_eq]

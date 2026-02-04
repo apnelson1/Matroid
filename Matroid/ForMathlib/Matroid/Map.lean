@@ -163,5 +163,17 @@ lemma comap_dual {f : α → β} {N : Matroid β} (h_bij : BijOn f (f ⁻¹' N.E
   · rw [← (N.comap f).restrict_ground_eq_self, comapOn, comap_ground_eq]
   rw [← (N✶.comap f).restrict_ground_eq_self, comapOn, comap_ground_eq, dual_ground]
 
+lemma restrictSubtype_closure (M : Matroid α) (X : Set α) (Y : Set X)
+    (hX : X ⊆ M.E := by aesop_mat) :
+    (M.restrictSubtype X).closure Y = M.closure ((↑) '' Y) ∩ X := by
+  rw [restrictSubtype, comap_closure_eq, restrict_closure_eq _ _ hX, image_preimage_eq_inter_range,
+    Subtype.range_coe, inter_assoc, inter_self]
+  grw [image_subset_range, Subtype.range_coe]
+
+@[simp]
+lemma restrictSubtype_ground_closure (M : Matroid α) (Y : Set M.E) :
+    (M.restrictSubtype M.E).closure Y = M.closure ((↑) '' Y) := by
+  rw [M.restrictSubtype_closure M.E, inter_eq_self_of_subset_left <| M.closure_subset_ground ..]
+
 
 end Matroid

@@ -319,9 +319,16 @@ protected lemma map_eq_bot {β : Type*} {f : α → β} {U : M.ModularCut} (hf :
     iff_false, not_exists, not_and] at h_eq ⊢
   exact fun F hF hFU ↦ h_eq _ ⟨F, hF, rfl⟩ F hFU rfl
 
+@[simp]
+lemma principal_eq_top_iff : ModularCut.principal M F = ⊤ ↔ F ⊆ M.loops := by
+  rw [ModularCut.eq_top_iff, mem_principal_iff, ← closure_empty, and_iff_right (M.isFlat_closure ∅)]
+
+@[simp]
+lemma principal_eq_bot_iff : ModularCut.principal M F = ⊥ ↔ ¬ (F ⊆ M.E) := by
+  rw [ModularCut.eq_bot_iff, mem_principal_iff, and_iff_right M.ground_isFlat]
+
 lemma principal_ground_ne_top (M : Matroid α) [RankPos M] : ModularCut.principal M M.E ≠ ⊤ := by
-  simp only [Ne, ModularCut.eq_top_iff, ModularCut.mem_principal_iff, closure_isFlat, true_and,
-    loops]
+  simp only [ne_eq, principal_eq_top_iff, loops]
   obtain ⟨B, hB⟩ := M.exists_isBase
   obtain ⟨e, heB⟩ := hB.nonempty
   exact fun h ↦ (hB.indep.isNonloop_of_mem heB).not_isLoop <| h (hB.subset_ground heB)

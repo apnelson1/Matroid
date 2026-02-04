@@ -7,6 +7,13 @@ namespace Matroid
 
 open Set
 
+@[simp]
+lemma ground_not_subset_loops [M.RankPos] : ¬ M.E ⊆ M.loops := by
+  intro hE
+  have hlt := M.eRank_pos
+  grw [← eRk_ground, M.eRk_mono hE, eRk_loops] at hlt
+  simp at hlt
+
 section truncateTo
 
 /-- The `IndepMatroid` whose independent sets are the `M`-independent sets of size at most `k`. -/
@@ -118,10 +125,9 @@ def truncate (M : Matroid α) := Matroid.ofExistsMatroid
     refine ⟨M.projectBy (ModularCut.principal M M.E), rfl, fun I ↦ ?_⟩
     obtain (hM | hM) := M.eq_loopyOn_or_rankPos
     · rw [hM]; simp [ModularCut.eq_top_iff, loops]
-    suffices M.Indep I → (¬M.E ⊆ M.closure I ↔ M.IsBase I → I = ∅) by
-      simpa [ModularCut.principal_ground_ne_top]
+    suffices M.Indep I → (¬M.closure I = M.E ↔ M.IsBase I → I = ∅) by simpa
     refine fun hI ↦ ⟨fun h hIb ↦ by simp [hIb.closure_eq] at h, fun h hss ↦ ?_⟩
-    have hIb := hI.isBase_of_ground_subset_closure hss
+    have hIb := hI.isBase_of_ground_subset_closure hss.symm.subset
     exact hIb.nonempty.ne_empty (h hIb))
 
 @[simp] lemma truncate_ground_eq : M.truncate.E = M.E := rfl

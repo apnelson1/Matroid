@@ -1,8 +1,9 @@
 import Matroid.Connectivity.Separation.Basic
+import Matroid.Connectivity.Dual
 
 open Set Function
 
-variable {α : Type*} {M N : Matroid α} {j k : ℕ∞} {e f : α} {A B X X' Y Y' : Set α} {i : Bool}
+variable {α : Type*} {M N : Matroid α} {j k : ℕ∞} {e f : α} {A B X X' Y Y' : Set α} {i b : Bool}
   {P : M.Separation} {C D : Set α} {e f : α}
 
 namespace Matroid.Separation
@@ -134,7 +135,49 @@ abbrev contractDual (P : (M ／ C).Separation) : (M✶ ＼ C).Separation := P.du
 @[simps!]
 abbrev deleteDual (P : (M ＼ D).Separation) : (M✶ ／ D).Separation := P.dual.copy (by simp)
 
-/-- Extend a separation `P` of some matroid `N` to a matroid `M` with larger ground set by
+def remove (P : M.Separation) (X : Set α) (b : Bool) : (M.remove X b).Separation :=
+  P.induce ((M.remove_ground X b).trans_subset diff_subset)
+
+@[simp]
+lemma remove_true (P : M.Separation) (X : Set α) : P.remove X true = P.contract X := rfl
+
+@[simp]
+lemma remove_false (P : M.Separation) (X : Set α) : P.remove X false = P.delete X := rfl
+
+lemma remove_apply (P : M.Separation) (X : Set α) (b i : Bool) : P.remove X b i = P i \ X := by
+  cases b <;> simp
+
+lemma remove_dual (P : M.Separation) (b : Bool) :
+    (P.remove X b).dual = (P.dual.remove X (!b)).copy (by cases b <;> simp) :=
+  Separation.ext <| by simp [remove_apply]
+
+lemma remove_disjoint (P : M.Separation) {X : Set α} {b i} : Disjoint (P.remove X b i) X := by
+  cases b <;> simp [disjoint_sdiff_left]
+
+lemma remove_inter_ground (P : M.Separation) (X : Set α) (b : Bool) :
+    P.remove (X ∩ M.E) b = (P.remove X b).copy (by simp) := by
+  cases b
+  · simp [delete_inter_ground]
+  simp [contract_inter_ground]
+
+lemma remove_congr (P : M.Separation) {X₁ X₂ : Set α} (h : X₁ ∩ M.E = X₂ ∩ M.E) (b : Bool) :
+    P.remove X₁ b = (P.remove X₂ b).copy
+      (by rw [← M.remove_inter_ground, ← h, M.remove_inter_ground]) := by
+  cases b
+  · simp [P.delete_congr h]
+  simp [P.contract_congr h]
+
+abbrev removeDual (P : (M.remove X b).Separation) : (M✶.remove X (!b)).Separation :=
+  P.dual.copy (by simp)
+
+@[simp]
+lemma removeDual_true (P : (M.remove X true).Separation) : P.removeDual = P.contractDual := rfl
+
+@[simp]
+lemma removeDual_false (P : (M.remove X false).Separation) : P.removeDual = P.deleteDual := rfl
+
+/-- Extend a separation `P` of some matroid `N
+` to a matroid `M` with larger ground set by
 adding the extra elements to side `b` of `P`. `-/
 def ofGroundSubset (P : N.Separation) (hNM : N.E ⊆ M.E) (i : Bool) : M.Separation :=
   Bipartition.expand P hNM i
@@ -272,6 +315,50 @@ lemma contract_ofContract (P : M.Separation) (hC : C ⊆ P i) : (P.contract C).o
 
 lemma delete_ofDelete (P : M.Separation) (hD : D ⊆ P i) : (P.delete D).ofDelete i = P :=
   Separation.ext_bool (!i) <| by simp [(P.disjoint_bool i).symm.mono_right hD]
+
+/-- Extend a separation of `M.remove X b` to one of `M` by adding `X` to side `i`. -/
+def ofRemove {b} (P : (M.remove X b).Separation) (i : Bool) : M.Separation :=
+  ofGroundSubset P (by simp [diff_subset]) i
+
+@[simp]
+lemma ofRemove_false (P : (M.remove X false).Separation) : P.ofRemove = P.ofDelete := rfl
+
+@[simp]
+lemma ofRemove_true (P : (M.remove X true).Separation) : P.ofRemove = P.ofContract := rfl
+
+@[simp]
+lemma ofRemove_apply_self (P : (M.remove X b).Separation) (i : Bool)
+    (hX : X ⊆ M.E := by aesop_mat) : P.ofRemove i i = P i ∪ X := by
+  cases b
+  · simp [P.ofDelete_apply_self]
+  simp [P.ofContract_apply_self]
+
+@[simp]
+lemma ofRemove_apply_not (P : (M.remove X b).Separation) (i : Bool) :
+    P.ofRemove i (!i) = P (!i) := by
+  cases b <;> simp
+
+lemma ofRemove_of_eq_true (P : (M.remove X b).Separation) (hb : b = true) :
+    P.ofRemove i = (P.copy (M' := M ／ X) (by simp [hb])).ofContract i :=
+  Separation.ext_bool (!i) <| by simp
+
+lemma ofRemove_of_eq_false (P : (M.remove X b).Separation) (hb : b = false) :
+    P.ofRemove i = (P.copy (M' := M ＼ X) (by simp [hb])).ofDelete i :=
+  Separation.ext_bool (!i) <| by simp
+
+@[simp]
+lemma ofRemove_remove (P : (M.remove X b).Separation) : (P.ofRemove b).remove X b = P := by
+  cases b <;> simp
+
+lemma remove_ofRemove (P : M.Separation) (hX : X ⊆ P i) (b) : (P.remove X b).ofRemove i = P := by
+  cases b
+  · simp [P.delete_ofDelete hX]
+  simp [P.contract_ofContract hX]
+
+@[simp]
+lemma ofRemove_dual {b} (P : (M.remove X b).Separation) :
+    (P.ofRemove i).dual = P.removeDual.ofRemove i := by
+  cases b <;> simp
 
 lemma compl_delete (P : (M ＼ D).Separation) (hD : D ⊆ M.E := by aesop_mat) (i : Bool) :
     M.E \ P i = P (!i) ∪ D := by

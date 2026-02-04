@@ -1,9 +1,10 @@
 import Mathlib.Combinatorics.Matroid.Closure
 import Mathlib.Combinatorics.Matroid.Sum
+import Matroid.ForMathlib.Matroid.Map
 
 namespace Matroid
 
-open Set
+open Set Sum
 -- variable {M N : Matroid α}
 
 @[simp] lemma preimage_image_sigmaMk {ι : Type*} {α : ι → Type*} (i : ι) (s : Set (α i)) :
@@ -18,6 +19,35 @@ open Set
     simp [preimage_image_sigmaMk_of_ne hne]
   convert subset_iUnion _ i₀
   simp
+
+@[simp]
+lemma Sum.preimage_image_inl (α β : Type*) (X : Set α) : (inl : α → α ⊕ β) ⁻¹' (inl '' X) = X := by
+  rw [preimage_image_eq _ inl_injective]
+
+@[simp]
+lemma Sum.preimage_image_inr (α β : Type*) (X : Set β) : (inr : β → α ⊕ β) ⁻¹' (inr '' X) = X := by
+  rw [preimage_image_eq _ inr_injective]
+
+@[simp]
+lemma Sum.preimage_inl_insert_inl (α β : Type*) (X : Set (α ⊕ β)) (e : α) :
+    inl ⁻¹' (insert (inl e) X) = insert e (inl ⁻¹' X) := by
+  grind
+
+@[simp]
+lemma Sum.preimage_inr_insert_inr (α β : Type*) (X : Set (α ⊕ β)) (e : β) :
+    inr ⁻¹' (insert (inr e) X) = insert e (inr ⁻¹' X) := by
+  grind
+
+@[simp]
+lemma Sum.preimage_inl_insert_inr (α β : Type*) (X : Set (α ⊕ β)) (e : β) :
+    inl ⁻¹' (insert (inr e) X) = inl ⁻¹' X := by
+  grind
+
+@[simp]
+lemma Sum.preimage_inr_insert_inl (α β : Type*) (X : Set (α ⊕ β)) (e : α) :
+    inr ⁻¹' (insert (inl e) X) = inr ⁻¹' X := by
+  grind
+
 
 section sigma
 
@@ -165,6 +195,10 @@ lemma isRestriction_disjointSigma h (i : ι) : (M i).IsRestriction (Matroid.disj
   · apply hI.inter_right
   simp [((h hne).mono_left hI.subset_ground).inter_eq]
 
+lemma disjointSigma_closure h X :
+    (Matroid.disjointSigma M h).closure X = ⋃ i, (M i).closure (X ∩ (M i).E) := by
+  simp [Matroid.disjointSigma, mapEmbedding, Function.Embedding.sigmaSet, sigma_closure_eq,
+    image_iUnion, image_image, preimage_preimage, inter_comm _ X]
 
 end disjointSigma
 
@@ -241,3 +275,49 @@ lemma disjointSum_restrict_right (hMN : Disjoint M.E N.E) : (disjointSum M N hMN
   (isRestriction_disjointSum_right hMN).eq_restrict
 
 end disjointSum
+
+variable {α β : Type*} {M : Matroid α} {N : Matroid β}
+
+lemma sum_dep_iff (M : Matroid α) (N : Matroid β) (X : Set (α ⊕ β)) :
+    (M.sum N).Dep X ↔ (M.Dep (.inl ⁻¹' X) ∨ N.Dep (.inr ⁻¹' X))
+      ∧ .inl ⁻¹' X ⊆ M.E ∧ .inr ⁻¹' X ⊆ N.E := by
+  by_cases hXE : X ⊆ (M.sum N).E
+  · have hXM : inl ⁻¹' X ⊆ M.E := by grw [hXE]; simp
+    have hXN : inr ⁻¹' X ⊆ N.E := by grw [hXE]; simp
+    simp_rw [dep_iff, and_iff_left hXE, and_iff_left hXM, and_iff_left hXN, and_iff_left hXM,
+      sum_indep_iff, Classical.not_and_iff_not_or_not]
+  refine iff_of_false (mt Dep.subset_ground hXE) fun ⟨_, h⟩ ↦ hXE ?_
+  rintro (x | x) hx
+  · simp [h.1 hx]
+  simp [h.2 hx]
+
+lemma sum_closure_eq (M : Matroid α) (N : Matroid β) (X : Set (α ⊕ β)) :
+    (M.sum N).closure X = inl '' (M.closure (inl ⁻¹' X)) ∪ inr '' (N.closure (inr ⁻¹' X)) := by
+  wlog hX : (M.sum N).Indep X generalizing X with aux
+  · obtain ⟨I, hI⟩ := (M.sum N).exists_isBasis' X
+    have hI' := sum_isBasis_iff.1 hI.isBasis_inter_ground
+    rw [← hI.closure_eq_closure, aux _ hI.indep, hI'.1.closure_eq_closure,
+      hI'.2.closure_eq_closure, sum_ground]
+    simp [preimage_image_eq _ inl_injective, preimage_image_eq _ inr_injective]
+  have hX' := (sum_indep_iff ..).1 hX
+  ext e
+  simp [hX.mem_closure_iff, hX'.1.mem_closure_iff, hX'.2.mem_closure_iff, sum_dep_iff]
+  obtain e | e := e
+  · simp only [Sum.preimage_inl_insert_inl, Sum.preimage_inr_insert_inl, hX'.2.not_dep, or_false,
+      insert_subset_iff, hX'.1.subset_ground, and_true, hX'.2.subset_ground, inl.injEq]
+    rw [and_iff_left_of_imp (fun h ↦ h.subset_ground <| mem_insert ..)]
+    simp
+  simp only [Sum.preimage_inr_insert_inr, Sum.preimage_inl_insert_inr, hX'.1.not_dep, false_or,
+      insert_subset_iff, hX'.1.subset_ground, and_true, hX'.2.subset_ground, inr.injEq, true_and]
+  rw [and_iff_left_of_imp (fun h ↦ h.subset_ground <| mem_insert ..)]
+  simp
+
+@[simp]
+lemma inl_mem_sum_closure_iff {e : α} {X : Set (α ⊕ β)} :
+    inl e ∈ (M.sum N).closure X ↔ e ∈ M.closure (.inl ⁻¹' X) := by
+  grind [sum_closure_eq]
+
+@[simp]
+lemma inr_mem_sum_closure_iff {e : β} {X : Set (α ⊕ β)} :
+    inr e ∈ (M.sum N).closure X ↔ e ∈ N.closure (.inr ⁻¹' X) := by
+  grind [sum_closure_eq]
