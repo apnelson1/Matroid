@@ -59,6 +59,31 @@ lemma MinorSepDuo.removeSet_eq_pair (S : M.MinorSepDuo rem w f) (b : Bool) :
     S.removeSet = {S.pt b, S.pt !b} := by
   rw [MinorSepDuo.removeSet, Set.iUnion_bool' _ b, singleton_union]
 
+def MinorSepDuo.removeBoth (S : M.MinorSepDuo rem w f) :=
+    (M.remove {S.pt true} (rem true)).remove {S.pt false} (rem false)
+
+lemma MinorSepDuo.removeBoth_eq_remove (S : M.MinorSepDuo rem w f) (hrem : rem i = rem !i) :
+    S.removeBoth = M.remove S.removeSet (rem i) := by
+  cases i
+  · rw [S.removeSet_eq_pair false, removeBoth, hrem, Bool.not_false, remove_remove, union_singleton]
+  rw [S.removeSet_eq_pair true, removeBoth, hrem, Bool.not_true, remove_remove, singleton_union]
+
+/-- The separation formed from `S.removeSep i` by removing `pt !i` in the intended way. -/
+def MinorSepDuo.downSep (S : M.MinorSepDuo rem w f) (i : Bool) : S.removeBoth.Separation :=
+  ((S.removeSep i).remove {S.pt !i} (rem !i)).copy' (by
+    cases i <;> grind [remove_ground, diff_diff, union_singleton, removeBoth])
+
+lemma MinorSep.downSep_eq_copy (S : M.MinorSepDuo rem w f) (hi : S.pt i ≠ S.pt (!i)) :
+  S.downSep i = ((S.removeSep i).remove {S.pt !i} (rem !i)).copy
+    (by
+      cases i
+      · rw [MinorSepDuo.removeBoth, remove_comm _ (by simpa), Bool.not_false]
+      rw [MinorSepDuo.removeBoth, Bool.not_true]) := rfl
+
+lemma MinorSepDuo.downSep_apply (S : M.MinorSepDuo rem w f) (i j : Bool) :
+    S.downSep i j = S.removeSep i j \ {S.pt (!i)} := by
+  simp [downSep, Separation.copy', Bipartition.copy]
+
 -- def MinorSepDuo.minor (S : M.MinorSepDuo rem w f) (b : Bool) : Matroid α :=
 --   bif rem b then M ／ {S.pt b} else M ＼ {S.pt b}
 
