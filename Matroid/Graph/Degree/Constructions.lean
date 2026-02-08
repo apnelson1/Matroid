@@ -196,9 +196,9 @@ lemma IsPath.degree_toGraph_eq_two (hP : G.IsPath P) (hvP : v ∈ P) (hne_first 
     simp only [cons_isPath_iff] at hP
     rw [toGraph_cons, union_degree_eq (by simpa using hPe.1)]
     obtain rfl | hne1 := eq_or_ne v P.first
-    · rw [singleEdge_degree_right (Ne.symm hne_first), (hP.1.first_isLeaf_toGraph ?_).degree]
-      rwa [first_eq_last_iff hP.1, not_nil_iff] at hne_last
-    rw [ singleEdge_degree_of_ne _ hne_first hne1, ih hP.1 hvP hne1 hne_last]
+    · rw [singleEdge_degree_right (Ne.symm hne_first), (hP.2.1.first_isLeaf_toGraph ?_).degree]
+      rwa [first_eq_last_iff hP.2.1, not_nil_iff] at hne_last
+    rw [ singleEdge_degree_of_ne _ hne_first hne1, ih hP.2.1 hvP hne1 hne_last]
 
 /-! ### Cycles -/
 
@@ -225,15 +225,15 @@ lemma IsCyclicWalk.toGraph_regular (hC : G.IsCyclicWalk C) : C.toGraph.Regular 2
   · obtain rfl : v = z := by simpa [hvu] using hvC
     simp [singleEdge_degree_right hvu.symm]
   have h_ends : P.first ≠ P.last := by
-    rwa [Ne, first_eq_last_iff huP'.1.nodup, not_nil_iff]
+    rwa [Ne, first_eq_last_iff huP'.2.1.nodup, not_nil_iff]
   obtain rfl | hvlast := eq_or_ne v P.last
-  · rw [singleEdge_degree_right hvu.symm, (huP'.1.last_isLeaf_toGraph hne).degree,
+  · rw [singleEdge_degree_right hvu.symm, (huP'.2.1.last_isLeaf_toGraph hne).degree,
       singleEdge_degree_of_ne _ hvu h_ends.symm]
   obtain rfl | hvfirst := eq_or_ne v P.first
   · rw [singleEdge_degree_right hvu.symm, singleEdge_degree_of_ne _ hvu h_ends,
-      (huP'.1.first_isLeaf_toGraph hne).degree]
+      (huP'.2.1.first_isLeaf_toGraph hne).degree]
   rw [singleEdge_degree_of_ne _ hvu hvlast, singleEdge_degree_of_ne _ hvu hvfirst,
-    huP'.1.degree_toGraph_eq_two hvP hvfirst hvlast]
+    huP'.2.1.degree_toGraph_eq_two hvP hvfirst hvlast]
 
 lemma IsCycleGraph.regular_two {C : Graph α β} (hC : C.IsCycleGraph) : C.Regular 2 := by
   obtain ⟨C', hC', rfl⟩ := by simpa [isCycleGraph_iff_toGraph_isCyclicWalk] using hC

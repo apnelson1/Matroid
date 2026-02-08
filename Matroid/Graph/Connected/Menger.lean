@@ -313,7 +313,7 @@ theorem Menger'sTheorem [G.Finite] (hι : ENat.card ι = n) (hnt : V(G).Nontrivi
     intro i u e v hi
     obtain rfl := by simpa using hi ▸ (A.first_eq i)
     obtain rfl := by simpa using hi ▸ (A.last_eq i)
-    obtain ⟨-, huv, -⟩ := cons_isPath_iff.mp <| hi ▸ (A.isPath i)
+    obtain ⟨huv, -, -⟩ := cons_isPath_iff.mp <| hi ▸ (A.isPath i)
     simp only [first_cons, last_cons, nil_last, Set.ext_iff, mem_linkEdges_iff,
       mem_empty_iff_false, iff_false] at hem
     exact hem e huv

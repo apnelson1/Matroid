@@ -194,7 +194,7 @@ lemma IsPath.mixedLineGraph_walkMap {P} (hP : G.IsPath P) :
       cons_vertex, List.nodup_cons, List.mem_cons, reduceCtorEq, mem_vertex,
       inl_mem_mixedLineGraph_walkMap_iff, or_self, not_false_eq_true,
       inr_mem_mixedLineGraph_walkMap_iff, mem_edgeSet_iff]
-    use hP.1.mixedLineGraph_walkMap.nodup
+    use hP.2.1.mixedLineGraph_walkMap.nodup
 
 @[simp]
 lemma mixedLineGraph_walkMap_vertexSet :
@@ -369,7 +369,7 @@ lemma IsPath.WalkOfMixedLineGraph [DecidableEq α] {w : WList (α ⊕ β) (α ×
     simp only [cons_isPath_iff, mixedLineGraph_isLink, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq,
       Prod.swap_prod_mk, first_cons, inl.injEq, reduceCtorEq, and_false, or_false, mem_cons_iff,
       not_or, ne_eq] at h
-    obtain ⟨⟨hw, ⟨hdc, hh⟩, hbw⟩, ⟨hbs, rfl, rfl⟩, -, hsw⟩ := h
+    obtain ⟨⟨hbs, rfl, rfl⟩, ⟨⟨hdc, hh⟩, hw, hbw⟩, -, hsw⟩ := h
     simp only [first_cons, inl.injEq, reduceCtorEq, false_and, inr.injEq, false_or,
       Graph.WalkOfMixedLineGraph] at hf hh ⊢
     obtain ⟨hcw, rfl⟩ := hh

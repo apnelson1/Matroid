@@ -231,7 +231,7 @@ end RepFun
 
 section IsRepFun
 
-variable {a b : α} {s : Set α} {P : Partition (Set α)} {f g : α → α} {p : α → Prop}
+variable {a b : α} {s : Set α} {P P' : Partition (Set α)} {f g : α → α} {p : α → Prop}
 
 /-- A predicate characterizing when a function `f : α → α` is a representative function for a
 partition `P`. A representative function maps each element to a canonical representative in its
@@ -259,18 +259,32 @@ lemma apply_mem (hf : IsRepFun P f) (ha : a ∈ P.supp) : f a ∈ P.supp :=
 lemma apply_mem' (hf : IsRepFun P f) (hP : ∀ {x}, x ∈ P.supp ↔ p x) (ha : p a) : p (f a) :=
   hP.mp <| hf.apply_mem <| hP.mpr ha
 
-lemma image_subset_self (hf : IsRepFun P f) : f '' P.supp ⊆ P.supp := by
+lemma image_subset_supp (hf : IsRepFun P f) : f '' P.supp ⊆ P.supp := by
   rintro _ ⟨a, ha, rfl⟩
   exact hf.apply_mem ha
 
-lemma mapsTo (hf : IsRepFun P f) : Set.MapsTo f P.supp P.supp :=
+lemma image_subset {S : Set α} (hf : IsRepFun P f) (hS : P.supp ⊆ S) : f '' S ⊆ S := by
+  rintro _ ⟨a, haS, rfl⟩
+  by_cases ha : a ∈ P.supp
+  · exact hS <| hf.apply_mem ha
+  · exact (hf.apply_of_notMem ha).symm ▸ haS
+
+lemma mapsTo_supp (hf : IsRepFun P f) : Set.MapsTo f P.supp P.supp :=
   fun _ ↦ hf.apply_mem
+
+lemma mapsTo {S : Set α} (hf : IsRepFun P f) (hS : P.supp ⊆ S) : Set.MapsTo f S S :=
+  fun x h ↦ hf.image_subset hS ⟨x, h, rfl⟩
 
 @[simp]
 lemma apply_mem_iff (hf : IsRepFun P f) : f a ∈ P.supp ↔ a ∈ P.supp := by
   refine ⟨fun h ↦ ?_, hf.apply_mem⟩
   by_contra ha
   exact ha <| hf.apply_of_notMem ha ▸ h
+
+lemma apply_mem_iff_of_subset {S} (hf : IsRepFun P f) (hS : P.supp ⊆ S) : f a ∈ S ↔ a ∈ S := by
+  obtain haS | haS := em (a ∈ P.supp)
+  · simp [hS haS, hS <| hf.apply_mem haS]
+  rw [hf.apply_of_notMem haS]
 
 lemma rel_of_apply_eq_apply (hf : IsRepFun P f) (ha : a ∈ P.supp) (hab : f a = f b) : P a b := by
   refine (hf.rel_apply ha).trans ?_
@@ -290,6 +304,36 @@ lemma apply_eq_apply_iff_rel (hf : IsRepFun P f) (ha : a ∈ P.supp) : f a = f b
 
 lemma apply_eq_apply_iff_rel_of_ne (hf : IsRepFun P f) (hne : a ≠ b) : f a = f b ↔ P a b :=
   ⟨hf.rel_of_ne_of_apply_eq_apply hne, (hf.apply_eq_apply ·)⟩
+
+lemma apply_eq_apply_iff (hf : IsRepFun P f) : f a = f b ↔ a = b ∨ P a b := by
+  simp only [or_iff_not_imp_left, ← ne_eq]
+  refine ⟨fun hab hne ↦ hf.rel_of_ne_of_apply_eq_apply hne hab, fun h ↦ ?_⟩
+  obtain rfl | hne := eq_or_ne a b
+  · rfl
+  exact hf.apply_eq_apply (h hne)
+
+lemma forall_apply_eq_apply_iff (hf : IsRepFun P f) (a) :
+    (∀ (x : α), f a = f x ↔ a = x) ∨ (∀ (x : α), f a = f x ↔ P a x) := by
+  by_cases ha : a ∈ P.supp
+  · right
+    rintro b
+    rw [hf.apply_eq_apply_iff_rel ha]
+  left
+  intro b
+  rw [hf.apply_of_notMem ha]
+  constructor <;> rintro rfl
+  · rw [hf.apply_mem_iff] at ha
+    exact hf.apply_of_notMem ha
+  exact hf.apply_of_notMem ha |>.symm
+
+lemma apply_eq_apply_iff' (hf : IsRepFun P f) :
+    f a = f b ↔ (a = b ∧ ∀ c, f a = f c ↔ a = c) ∨ P a b := by
+  obtain h1 | h2 := hf.forall_apply_eq_apply_iff a
+  · refine ⟨by grind, ?_⟩
+    rintro (h | h)
+    · exact congrArg _ h.1
+    exact hf.apply_eq_apply h
+  grind
 
 @[simp]
 lemma idem (hf : IsRepFun P f) : f (f a) = f a := by
@@ -336,8 +380,8 @@ lemma nonempty (P : Partition (Set α)) : ∃ f, IsRepFun P f := by
   obtain ⟨f, hf, -⟩ := exists_extend_partial' P (t := ∅) (by simp)
   exact ⟨f, hf⟩
 
-@[simp] theorem isRepFun_isRepFun (hf : IsRepFun P f) (hg : IsRepFun P g) (x : α) :
-    f (g x) = f x := by
+@[simp]
+theorem isRepFun_isRepFun (hf : IsRepFun P f) (hg : IsRepFun P g) (x : α) : f (g x) = f x := by
   obtain (hx | hx) := em (x ∈ P.supp)
   · exact hf.apply_eq_apply (hg.rel_apply hx).symm
   rw [hg.apply_of_notMem hx, hf.apply_of_notMem hx]

@@ -32,11 +32,11 @@ instance [Repr α] [Repr β] : Repr (WList α β) where
 
 variable {w w₁ w₂ : WList α β}
 
-@[simp]
+@[simp, grind =]
 lemma nil_inj_iff : (nil x : WList α β) = nil y ↔ x = y := by
   rw [nil.injEq]
 
-@[simp]
+@[simp, grind =]
 lemma cons_inj_iff : cons x e w₁ = cons y f w₂ ↔ x = y ∧ e = f ∧ w₁ = w₂ := by
   induction w₁ with simp
 
@@ -47,29 +47,27 @@ def first : WList α β → α
   | nil x => x
   | cons x _ _ => x
 
-@[simp]
+@[simp, grind =]
 lemma nil_first : (nil x : WList α β).first = x := rfl
 
-@[simp]
+@[simp, grind =]
 lemma first_cons : (cons x e w).first = x := rfl
 
 def second : WList α β → α
 | nil x => x
 | cons _ _ w => w.first
 
-@[simp] lemma second_nil : (nil x : WList α β).second = x := rfl
-@[simp] lemma second_cons : (cons x e w).second = w.first := rfl
-lemma second_cons_cons : (cons x e (cons y f w)).second = y := rfl
+@[simp, grind =] lemma second_nil : (nil x : WList α β).second = x := rfl
+@[simp, grind =] lemma second_cons : (cons x e w).second = w.first := rfl
+@[simp, grind =] lemma second_cons_cons : (cons x e (cons y f w)).second = y := rfl
 
 def last : WList α β → α
   | nil x => x
   | cons _ _ w => w.last
 
-@[simp]
-lemma last_cons : (cons x e w).last = w.last := rfl
+@[simp, grind =] lemma last_cons : (cons x e w).last = w.last := rfl
 
-@[simp]
-lemma nil_last : (nil x : WList α β).last = x := rfl
+@[simp, grind =] lemma nil_last : (nil x : WList α β).last = x := rfl
 
 /-! ## Vertex/Edge Lists -/
 
@@ -78,27 +76,27 @@ def vertex : WList α β → List α
   | nil x => [x]
   | cons x _e w => x :: w.vertex
 
-@[simp]
+@[simp, grind .]
 lemma vertex_ne_nil : w.vertex ≠ [] := by
   cases w with simp [vertex]
 
-@[simp] lemma cons_vertex : (cons x e w).vertex = x :: w.vertex := rfl
+@[simp, grind =] lemma cons_vertex : (cons x e w).vertex = x :: w.vertex := rfl
 
-@[simp] lemma nil_vertex : (nil x : WList α β).vertex = [x] := rfl
+@[simp, grind =] lemma nil_vertex : (nil x : WList α β).vertex = [x] := rfl
 
-@[simp]
+@[simp, grind =]
 lemma vertex_head : w.vertex.head vertex_ne_nil = w.first := by
   cases w with rfl
 
-@[simp]
+@[simp, grind =]
 lemma vertex_getLast {w : WList α β} : w.vertex.getLast vertex_ne_nil = w.last := by
   induction w with simp_all
 
-@[simp]
+@[simp, grind .]
 lemma vertex_length_pos (w : WList α β) : 0 < w.vertex.length :=
   length_pos_of_ne_nil vertex_ne_nil
 
-@[simp]
+@[simp, grind =]
 lemma vertex_getElem_zero (w : WList α β) : w.vertex[0] = w.first := by
   cases w with simp
 
@@ -107,10 +105,10 @@ def edge : WList α β → List β
   | nil _ => []
   | cons _ e w => e :: w.edge
 
-@[simp]
+@[simp, grind =]
 lemma nil_edge (x : α) : (nil x : WList α β).edge = [] := rfl
 
-@[simp]
+@[simp, grind =]
 lemma cons_edge (x e) (w : WList α β) : (cons x e w).edge = e :: w.edge := rfl
 
 /-- Two `WLists` with the same vertex and edge lists arae equal. -/
@@ -137,14 +135,14 @@ lemma ext_vertex_edge {w₁ w₂ : WList α β} (h_vertex : w₁.vertex = w₂.v
 instance : Membership α (WList α β) where
   mem w x := x ∈ w.vertex
 
-@[simp]
+@[simp, grind =]
 lemma mem_vertex : (x ∈ w.vertex) = (x ∈ w) := rfl
 
-@[simp]
+@[simp, grind =]
 lemma mem_nil_iff : x ∈ (nil u : WList α β) ↔ x = u := by
   simp [← mem_vertex]
 
-@[simp]
+@[simp, grind =]
 lemma mem_cons_iff : x ∈ (cons u e w) ↔ x = u ∨ x ∈ w := by
   simp [← mem_vertex]
 
@@ -156,13 +154,13 @@ lemma eq_or_ne_mem_of_mem_cons (h : x ∈ cons u e w) : x = u ∨ (x ≠ u ∧ x
 instance [DecidableEq α] : Decidable (x ∈ w) :=
   inferInstanceAs <| Decidable (x ∈ w.vertex)
 
-@[simp] lemma first_mem : w.first ∈ w := by
+@[simp, grind .] lemma first_mem : w.first ∈ w := by
   cases w with simp
 
-@[simp] lemma second_mem : w.second ∈ w := by
+@[simp, grind .] lemma second_mem : w.second ∈ w := by
   cases w with simp
 
-@[simp] lemma last_mem {w : WList α β} : w.last ∈ w := by
+@[simp, grind .] lemma last_mem {w : WList α β} : w.last ∈ w := by
   induction w with simp_all
 
 /-- `w.UniqueMem x` means that `x : α` appears in `w` exactly once. -/
@@ -181,24 +179,24 @@ protected def edgeSet (w : WList α β) : Set β := {e | e ∈ w.edge}
 
 scoped notation "E(" w ")" => WList.edgeSet w
 
-@[simp]
+@[simp, grind =]
 lemma mem_vertexSet_iff : x ∈ V(w) ↔ x ∈ w := Iff.rfl
 
-@[simp]
+@[simp, grind =]
 lemma mem_edgeSet_iff : e ∈ E(w) ↔ e ∈ w.edge := Iff.rfl
 
-@[simp]
+@[simp, grind =]
 lemma nil_vertexSet : V((nil x : WList α β)) = {x} := by
   simp [WList.vertexSet]
 
-@[simp]
+@[simp, grind =]
 lemma nil_edgeSet : E((nil x : WList α β)) = ∅ := by
   simp [WList.edgeSet]
 
-@[simp] lemma cons_vertexSet : V(cons x e w) = insert x V(w) := by
+@[simp, grind =] lemma cons_vertexSet : V(cons x e w) = insert x V(w) := by
   simp [WList.vertexSet, mem_cons_iff, Set.ext_iff]
 
-@[simp] lemma cons_edgeSet : E(cons x e w) = insert e E(w) := by
+@[simp, grind =] lemma cons_edgeSet : E(cons x e w) = insert e E(w) := by
   simp only [WList.edgeSet, cons_edge, mem_cons]
   rfl
 
@@ -249,11 +247,11 @@ lemma edge_disjoint_iff : w₁.edge.Disjoint w₂.edge ↔ Disjoint E(w₁) E(w�
 inductive Nil : WList α β → Prop
   | nil (x : α) : Nil (nil x)
 
-@[simp]
+@[simp, grind .]
 lemma nil_nil : Nil (nil x (β := β)) :=
   Nil.nil ..
 
-@[simp]
+@[simp, grind .]
 lemma not_nil_cons (w : WList α β) (x) (e) : ¬ Nil (w.cons x e) := by
   rintro ⟨_⟩
 
@@ -279,11 +277,11 @@ lemma first_eq_last_iff (hnodup : w.vertex.Nodup) : w.first = w.last ↔ w.Nil :
 protected inductive Nonempty : WList α β → Prop
   | cons (x e) (w : WList α β) : WList.Nonempty (cons x e w)
 
-@[simp]
+@[simp, grind .]
 lemma cons_nonempty (x e) (w : WList α β) : (cons x e w).Nonempty := by
   apply Nonempty.cons
 
-@[simp]
+@[simp, grind .]
 lemma nil_not_nonempty : ¬ (nil x : WList α β).Nonempty := by
   rintro ⟨_, _, _⟩
 
@@ -291,7 +289,7 @@ lemma nil_injective : Injective (nil : α → WList α β) := by
   rintro x y h
   rwa [nil.injEq] at h
 
-@[simp,  push] protected lemma not_nonempty_iff : ¬ w.Nonempty ↔ w.Nil := by
+@[simp, push, grind =] protected lemma not_nonempty_iff : ¬ w.Nonempty ↔ w.Nil := by
   induction w with
   | nil u => simp
   | cons u e w ih =>
@@ -299,7 +297,7 @@ lemma nil_injective : Injective (nil : α → WList α β) := by
   rintro ⟨_⟩
 alias ⟨_, Nil.not_nonempty⟩ := not_nonempty_iff
 
-@[simp, push] lemma not_nil_iff : ¬ w.Nil ↔ w.Nonempty := by
+@[simp, push, grind =] lemma not_nil_iff : ¬ w.Nil ↔ w.Nonempty := by
   rw [← WList.not_nonempty_iff, not_not]
 alias ⟨_, Nonempty.not_nil⟩ := not_nil_iff
 
@@ -332,7 +330,7 @@ def Nonempty.firstEdge : (w : WList α β) → (hw : w.Nonempty) → β
   | nil x, hw => by simp at hw
   | .cons x e w, hw => e
 
-@[simp]
+@[simp, grind =]
 lemma Nonempty.firstEdge_cons (x e) (w : WList α β) : (cons_nonempty x e w).firstEdge = e := rfl
 
 @[simp]
@@ -346,12 +344,18 @@ lemma Nonempty.firstEdge_eq_head (hw : w.Nonempty) :
     hw.firstEdge = w.edge.head hw.edge_ne_nil := by
   cases hw with simp
 
+@[simp, grind .]
 lemma Nonempty.edgeSet_nonempty (h : w.Nonempty) : E(w).Nonempty := by
   cases h with simp
 
 lemma nonempty_iff_exists_edge : w.Nonempty ↔ ∃ e, e ∈ w.edge := by
   induction w with simp_all
 alias ⟨Nonempty.exists_edge, _⟩:= nonempty_iff_exists_edge
+
+lemma nil_iff_edge_nil : w.Nil ↔ w.edge = [] := by
+  match w with
+  | .nil u => simp
+  | .cons u e w => simp
 
 lemma Nonempty.first_ne_last_of_nodup (hne : w.Nonempty) (hv : w.vertex.Nodup) :
     w.first ≠ w.last := by

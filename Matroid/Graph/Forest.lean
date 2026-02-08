@@ -23,13 +23,13 @@ theorem twoPaths (hP : G.IsPath P) (hQ : G.IsPath Q) (hPQ : P ≠ Q) (h0 : P.fir
     -- If `e` is an edge of `Q`, then since `e` is incident to the first vertex of `cons u f Q`,
     -- it must be equal to `f`. So `P` and `Q` agree on their first edge; apply induction.
     by_cases heQ : e ∈ Q.edge
-    · obtain rfl : e = hne.firstEdge := hQ.eq_firstEdge_of_isLink_first heQ hP.2.1.inc_left
+    · obtain rfl : e = hne.firstEdge := hQ.eq_firstEdge_of_isLink_first heQ hP.1.inc_left
       cases hne with | cons u f Q =>
       have hfirst : P.first = Q.first := by
         simp only [Nonempty.firstEdge_cons, first_cons, cons_isPath_iff] at hP hQ
-        rw [hP.2.1.isLink_iff_eq] at hQ
-        exact hQ.2.1.symm
-      obtain ⟨C, hC, hCss⟩ := ih hP.1 hQ.of_cons (by simpa using hPQ) hfirst (by simpa using h1)
+        rw [hP.1.isLink_iff_eq] at hQ
+        exact hQ.1.symm
+      obtain ⟨C, hC, hCss⟩ := ih hP.2.1 hQ.of_cons (by simpa using hPQ) hfirst (by simpa using h1)
       refine ⟨C, hC, hCss.trans ?_⟩
       simp [show E(P) ⊆ insert f E(P) ∪ E(Q) from (subset_insert ..).trans subset_union_left]
     -- Otherwise, `e + P` and `Q` have different first edges. Now `P ∪ Q`
@@ -37,7 +37,7 @@ theorem twoPaths (hP : G.IsPath P) (hQ : G.IsPath Q) (hPQ : P ≠ Q) (h0 : P.fir
     have hR_ex : ∃ R, G.IsPath R ∧ e ∉ R.edge ∧
         R.first = Q.first ∧ R.last = P.first ∧ E(R) ⊆ E(P) ∪ E(Q) := by
       refine ⟨(Q ++ P.reverse).dedup, ?_, ?_, ?_, by simp, ?_⟩
-      · exact IsWalk.dedup_isPath (hQ.isWalk.append hP.1.isWalk.reverse (by simpa using h1.symm))
+      · exact IsWalk.dedup_isPath (hQ.isWalk.append hP.2.1.isWalk.reverse (by simpa using h1.symm))
       · rw [← mem_edgeSet_iff]
         refine notMem_subset (t := E(Q ++ P.reverse)) ((dedup_isSublist _).edge_subset) ?_
         simp [heQ, heP]
@@ -46,7 +46,7 @@ theorem twoPaths (hP : G.IsPath P) (hQ : G.IsPath Q) (hPQ : P ≠ Q) (h0 : P.fir
     obtain ⟨R, hR, heR, hfirst, hlast, hss⟩ := hR_ex
     refine ⟨_, hR.concat_isCyclicWalk ?_ heR, ?_⟩
     · rw [hfirst, hlast]
-      exact hP.2.1.symm
+      exact hP.1.symm
     simp only [concat_edgeSet, cons_edgeSet]
     rw [insert_union]
     exact insert_subset_insert hss
@@ -290,8 +290,7 @@ lemma isForest_iff_isTrail_eq_eq : G.IsForest ↔ ∀ ⦃P Q⦄, G.IsTrail P →
   have hCxy := hC.isWalk.isLink_iff_isLink_of_mem heC |>.mpr hxy
   obtain ⟨P, hP, hP_eq, rfl, rfl⟩ := hC.exists_isPath_toGraph_eq_delete_edge_of_isLink hCxy
   have hQ := hxy.walk_isPath hxy.adj.ne
-  have := h hP.isTrail hQ.isTrail (by simp) (by simp)
-  rw [this] at hP_eq
+  rw [h hP.isTrail hQ.isTrail (by simp) (by simp)] at hP_eq
   simpa using congrArg (fun x : Graph α β ↦ e ∈ E(x)) hP_eq
 
 /-! ### Edge Sets -/
@@ -363,7 +362,7 @@ lemma IsForest.exists_isPendant [G.EdgeFinite] (hG : G.IsForest) (hne : E(G).Non
   obtain ⟨P, heP, hmax⟩ := exists_le_maximal_isPath (he₀.walk_isPath he₀.adj.ne)
   simp only [IsLink.walk, le_iff_isSublist] at heP
   cases P with | nil => simp at heP | cons u f P =>
-  have ⟨hP, hfuP, huP⟩ : G.IsPath P ∧ G.IsLink f u P.first ∧ u ∉ P := by simpa using hmax.prop
+  have ⟨hfuP, hP, huP⟩ : G.IsLink f u P.first ∧ G.IsPath P ∧ u ∉ P := by simpa using hmax.prop
   refine ⟨f, u, hfuP.inc_left.isNonloopAt, fun e ⟨w, he⟩ ↦ ?_⟩
   have hwP := mem_of_adj_first_of_maximal_isPath hmax he.symm.adj
   have h_app := prefixUntilVertex_append_suffixFromVertex P w

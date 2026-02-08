@@ -10,8 +10,12 @@ import Matroid.Circuit
 import Matroid.Clone
 import Matroid.Closure
 import Matroid.Connectivity.Basic
+-- import Matroid.Connectivity.ConnSystem.Basic
+-- import Matroid.Connectivity.ConnSystem.Matroid
+-- import Matroid.Connectivity.ConnSystem.Tangle
 import Matroid.Connectivity.Connected
 import Matroid.Connectivity.Core
+-- import Matroid.Connectivity.Dual
 import Matroid.Connectivity.Extension
 import Matroid.Connectivity.Finitize
 -- import Matroid.Connectivity.Global
@@ -44,6 +48,7 @@ import Matroid.Extension.ProjectBy
 import Matroid.Extension.ProjectionBy
 import Matroid.Extension.Quotient
 import Matroid.Flat.Basic
+-- import Matroid.Flat.Covers
 import Matroid.Flat.Hyperplane
 import Matroid.Flat.Lattice
 import Matroid.Flat.LowRank
@@ -81,8 +86,9 @@ import Matroid.Graph.Map
 -- import Matroid.Graph.Matching.Defs
 -- import Matroid.Graph.Matching.Konigs
 -- import Matroid.Graph.Matching.TutteBerge
+import Matroid.Graph.Minor.Conn
 import Matroid.Graph.Minor.Defs
-import Matroid.Graph.Minor.Walk
+-- import Matroid.Graph.Plainarity.Drawing
 import Matroid.Graph.Simple
 import Matroid.Graph.Subgraph.Basic
 import Matroid.Graph.Subgraph.Compatible

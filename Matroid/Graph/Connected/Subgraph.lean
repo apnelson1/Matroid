@@ -116,7 +116,7 @@ lemma Preconnected.edgeDelete_singleton_preconnected (h : G.Preconnected) (he : 
   apply hecon
   obtain ⟨w, w', hw, hw', hew, hew', hVdj, hEdj, rfl⟩ := hP.eq_append_cons_of_edge_mem heP
   have := by simpa using hP.of_append_right
-  rw [this.2.1.isBridge_iff_not_connBetween.not_left] at he
+  rw [this.1.isBridge_iff_not_connBetween.not_left] at he
   simp only [first_cons, append_first_of_eq, append_last, last_cons]
   exact trans (trans (by use w; simpa [hw.isWalk]) he) (by use w'; simpa [hw'.isWalk])
 
@@ -152,7 +152,7 @@ lemma Connected.isBridge_iff_isEdgeSep (hG : G.Connected) (e : β) :
   simp only [singleton_subset_iff, iff_and_self]
   rintro hGe
   by_contra! he
-  rw [edgeDelete_eq_self _ (by simpa)] at hGe
+  rw [edgeDelete_eq _ (by simpa)] at hGe
   tauto
 
 /-- Every edge of a path is a bridge -/
@@ -180,7 +180,7 @@ lemma IsPath.eq_of_isBridge_isLink (hP : G.IsPath P) (he : G.IsBridge e)
   match P with
   | nil u => simp at heP
   | cons u f w =>
-    obtain ⟨hw, hl', huw⟩ := by simpa using hP
+    obtain ⟨hl', hw, huw⟩ := by simpa using hP
     simp only [first_cons, last_cons, IsLink.walk, cons.injEq, true_and] at hl ⊢
     obtain ⟨rfl, heq⟩ := hP.first_eq_of_isLink_mem heP hl
     grind [hw.first_eq_last_iff.mp heq |>.eq_nil_last]
@@ -216,7 +216,7 @@ lemma IsCyclicWalk.not_isBridge_of_mem (hC : G.IsCyclicWalk C) (heC : e ∈ C.ed
     ¬ G.IsBridge e :=
   not_isBridge_of_exists_isCyclicWalk ⟨C, hC, heC⟩
 
-@[simp, push]
+@[simp, push, grind =]
 lemma not_isBridge_iff_exists_isCyclicWalk (he : e ∈ E(G)) :
     ¬ G.IsBridge e ↔ ∃ C, G.IsCyclicWalk C ∧ e ∈ C.edge :=
   ⟨exists_isCyclicWalk_of_not_isBridge he, not_isBridge_of_exists_isCyclicWalk⟩
@@ -270,7 +270,7 @@ lemma Connected.delete_first_connected_of_maximal_isPath (hG : G.Connected) (hnt
     exact False.elim <| hne.symm <| by
       simpa [huy, huy.right_mem] using hP.eq_of_ge (y := cons u e (nil y))
   | cons u e P =>
-    have ⟨hP', he, huP⟩ : G.IsPath P ∧ G.IsLink e u P.first ∧ u ∉ P := by simpa using hP.prop
+    have ⟨he, hP', huP⟩ : G.IsLink e u P.first ∧ G.IsPath P ∧ u ∉ P := by simpa using hP.prop
     by_contra hcon
     simp only [first_cons] at hcon
     have hP'' : (G - u).IsPath P := by simp [isPath_vertexDelete_iff, huP, hP']

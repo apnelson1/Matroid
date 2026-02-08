@@ -116,12 +116,12 @@ lemma ConnBetween.exists_adj_eDist_eq_add_one (hconn : G.ConnBetween x y) (hne :
   · rw [cons_length, cast_add, cast_one, first_cons, last_cons, eDist_comm, eq_comm] at hl
     simp only [first_cons, last_cons, hl]
     rw [cons_isPath_iff] at hP
-    refine ⟨P.first, hP.2.1.adj.symm, ?_⟩
+    refine ⟨P.first, hP.1.adj.symm, ?_⟩
     rw [WithTop.add_right_inj (by simp), eDist_comm, le_antisymm_iff,
-      and_iff_left hP.1.isWalk.eDist_le_length]
+      and_iff_left hP.2.1.isWalk.eDist_le_length]
     have ht := G.eDist_triangle u P.first P.last
     rw [eDist_comm, hl] at ht
-    replace ht := ht.trans (add_le_add_left hP.2.1.adj.eDist_le_one _)
+    replace ht := ht.trans (add_le_add_left hP.1.adj.eDist_le_one _)
     rwa [add_comm, WithTop.add_le_add_iff_left (by simp)] at ht
 
 lemma exists_adj_of_eDist_eq_add_one {n : ℕ} (hxy : G.eDist x y = n + 1) :

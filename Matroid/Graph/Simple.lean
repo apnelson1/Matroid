@@ -119,12 +119,12 @@ lemma le_loopRemove [H.Loopless] (h : H ≤ G) : H ≤ loopRemove G where
     refine ⟨he.of_le h, he.ne⟩
 
 @[simp]
-lemma loopRemove_eq_self [G.Loopless] : loopRemove G = G :=
+lemma loopRemove_eq [G.Loopless] : loopRemove G = G :=
   (loopRemove_le G).antisymm (le_loopRemove le_rfl)
 
 @[simp]
-lemma loopRemove_eq_self_iff [G.Loopless] : loopRemove G = G ↔ G.Loopless :=
-  ⟨fun _ ↦ ‹G.Loopless›, fun _ ↦ loopRemove_eq_self⟩
+lemma loopRemove_eq_iff [G.Loopless] : loopRemove G = G ↔ G.Loopless :=
+  ⟨fun _ ↦ ‹G.Loopless›, fun _ ↦ loopRemove_eq⟩
 
 lemma IsPath.loopRemove (hP : G.IsPath P) : (loopRemove G).IsPath P := by
   induction P with
@@ -285,7 +285,7 @@ lemma IsPath.toGraph_simple {P : WList α β} (hP : G.IsPath P) : P.toGraph.Simp
       · simp_all
       obtain rfl | hne' := eq_or_ne y u
       · simp_all
-      exact ih hP.1 (by simpa [hne, hne'] using he) (by simpa [hne, hne'] using hf)
+      exact ih hP.2.1 (by simpa [hne, hne'] using he) (by simpa [hne, hne'] using hf)
 
 end Simple
 

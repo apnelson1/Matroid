@@ -45,8 +45,9 @@ protected lemma Adj.symm (h : G.Adj x y) : G.Adj y x :=
   ⟨_, h.choose_spec.symm⟩
 ```
 -/
-attribute [symm] Adj.symm
-attribute [symm] IsLink.symm
+attribute [grind →] IsLink.edge_mem IsLink.left_mem IsLink.right_mem Inc.edge_mem Inc.vertex_mem
+  IsNonloopAt.edge_mem IsNonloopAt.vertex_mem Adj.left_mem Adj.right_mem
+attribute [symm] Adj.symm IsLink.symm
 
 @[simp]
 lemma not_isLink_of_notMem_edgeSet (he : e ∉ E(G)) : ¬ G.IsLink e x y :=

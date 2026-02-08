@@ -30,7 +30,7 @@ lemma edgeRestrict_le {E₀ : Set β} : G ↾ E₀ ≤ G where
   isLink_of_isLink := by simp
 
 @[simp]
-lemma edgeRestrict_eq_self_iff (G : Graph α β) (E₀ : Set β) : G ↾ E₀ = G ↔ E(G) ⊆ E₀ :=
+lemma edgeRestrict_eq_iff (G : Graph α β) (E₀ : Set β) : G ↾ E₀ = G ↔ E(G) ⊆ E₀ :=
   ⟨fun h ↦ by simpa using edgeSet_mono h.ge,
     fun h ↦ ext_of_le_le edgeRestrict_le le_rfl (by simp) (by simpa)⟩
 
@@ -87,7 +87,7 @@ def edgeDelete (G : Graph α β) (F : Set β) : Graph α β :=
 scoped infixl:75 " ＼ "  => Graph.edgeDelete
 
 lemma edgeDelete_eq_edgeRestrict (G : Graph α β) (F : Set β) :
-    G ＼ F = G ↾ (E(G) \ F) := copy_eq_self ..
+    G ＼ F = G ↾ (E(G) \ F) := copy_eq ..
 
 @[simp]
 lemma edgeDelete_le : G ＼ F ≤ G := by

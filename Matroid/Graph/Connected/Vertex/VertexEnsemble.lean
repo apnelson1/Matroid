@@ -70,20 +70,20 @@ noncomputable def VertexEnsemble.ofSetEnsemble (x y : α) (hxy : x ≠ y)
     exact inter_subset_right hu))) (G.link y ⟨_, hl⟩) y
   isPath u := by
     simp only [cons_concat, cons_isPath_iff, concat_isPath_iff, concat_first, mem_concat, not_or]
-    generalize_proofs hu huf hv huN
+    generalize_proofs huN hu huf hv
     have := A.valid (A.of_vertex_mem_setEnsemble hu) |>.vertexSet_subset
     simp only [vertexDelete_vertexSet, subset_diff, disjoint_insert_right, mem_vertexSet_iff,
       disjoint_singleton_right] at this
-    refine ⟨⟨A.valid (A.of_vertex_mem_setEnsemble hu) |>.of_le vertexDelete_le, ?_, this.2.2⟩,
-      ?_, this.2.1, hxy⟩
-    · convert (link_isLink _).symm
-      rw [A.eq_of_vertex_mem hu huf.choose_spec.1]
-      convert first_mem
-      exact huf.choose_spec.2.symm
-    convert link_isLink _
-    obtain ⟨P, hP, hPu⟩ := huf
-    rw [← A.eq_of_vertex_mem hu hP (hPu ▸ first_mem)]
-    simpa
+    refine ⟨?_, ⟨A.valid (A.of_vertex_mem_setEnsemble hu) |>.of_le vertexDelete_le, ?_, this.2.2⟩,
+      this.2.1, hxy⟩
+    · convert link_isLink _
+      obtain ⟨P, hP, hPu⟩ := huf
+      rw [← A.eq_of_vertex_mem hu hP (hPu ▸ first_mem)]
+      simpa
+    convert (link_isLink _).symm
+    rw [A.eq_of_vertex_mem hu huf.choose_spec.1]
+    convert first_mem
+    exact huf.choose_spec.2.symm
   first_eq u := by simp
   last_eq u := by simp
   internallyDisjoint u v hne := by

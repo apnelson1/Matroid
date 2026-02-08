@@ -1,7 +1,7 @@
 import Matroid.Axioms.Circuit
 import Matroid.Minor.Contract
 import Matroid.Graph.Forest
-import Matroid.Graph.Minor.Defs
+import Matroid.Graph.Minor.Conn
 
 variable {α β : Type*} {G H : Graph α β} {u v x x₁ x₂ y y₁ y₂ z : α} {e e' f g : β}
   {U V S T : Set α} {F F' R R': Set β} {C w P Q : WList α β}
@@ -72,12 +72,17 @@ lemma cycleMatroid_edgeDelete (G : Graph α β) (F : Set β) :
     (G ＼ F).cycleMatroid = G.cycleMatroid ＼ F :=
   ext_isCircuit rfl fun I hI ↦ by simp
 
--- lemma cycleMatroid_contract (G : Graph α β) (F : Set β) (φ : (G ↾ F).connPartition.RepFun) :
---     (G /[φ, F]).cycleMatroid = G.cycleMatroid ／ F := by
+-- lemma cycleMatroid_contract {φ} (hφ : H.connPartition.IsRepFun φ) (hHG : H ≤ G) :
+--     (G /[φ, E(H)]).cycleMatroid = G.cycleMatroid ／ E(H) := by
 --   refine ext_isCircuit rfl fun C hC ↦ ?_
 --   rw [cycleMatroid_isCircuit]
---   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
---   · sorry
+--   refine ⟨?_, fun h ↦ ?_⟩
+--   · rintro ⟨Cw, hCw, rfl⟩
+--     simp only [cycleMatroid_E, contract_edgeSet] at hC
+--     obtain ⟨Cw', hCw', hCw'E⟩ := hCw.exists_isCyclicWalk_of_contract hφ hHG
+--     have hCw'cyc : G.cycleMatroid.IsCircuit E(Cw') := cycleMatroid_isCircuit ▸ ⟨Cw', hCw', rfl⟩
+--     have := hCw'cyc.contract_diff_isCircuit (K := E(Cw)) (by grind [hCw.nonempty]) (by grind)
+--     sorry
 --   obtain ⟨C', hC', hCC', hC'F⟩ := h.exists_subset_isCircuit_of_contract
 --   obtain ⟨w', hw', rfl⟩ := (by simpa using hC'); clear hC'
 --   use (w'.map φ)

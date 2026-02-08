@@ -147,7 +147,7 @@ lemma IsPath.first_eq_last_iff (h : G.IsPath P) : P.first = P.last ↔ P.Nil := 
     exact (this.1 last_mem).elim
 
 @[simp]
-lemma cons_isPath_iff : G.IsPath (cons x e P) ↔ G.IsPath P ∧ G.IsLink e x P.first ∧ x ∉ P := by
+lemma cons_isPath_iff : G.IsPath (cons x e P) ↔ G.IsLink e x P.first ∧ G.IsPath P ∧ x ∉ P := by
   simp only [isPath_iff, cons_isWalk_iff, cons_vertex, List.nodup_cons, mem_vertex]
   tauto
 
@@ -162,7 +162,7 @@ lemma IsPath.isTrail (h : G.IsPath P) : G.IsTrail P where
     | nil u => simp
     | cons u e w ih =>
       simp_all only [cons_isPath_iff, cons_edge, List.nodup_cons, and_true, forall_const]
-      exact fun he ↦ h.2.2 <| h.1.isWalk.vertex_mem_of_edge_mem he h.2.1.inc_left
+      exact fun he ↦ h.2.2 <| h.2.1.isWalk.vertex_mem_of_edge_mem he h.1.inc_left
 
 lemma IsPath.reverse (hp : G.IsPath P) : G.IsPath P.reverse where
   isWalk := hp.isWalk.reverse
@@ -283,7 +283,7 @@ lemma IsPath.eq_firstEdge_of_isLink_first (hP : G.IsPath P) (heP : e ∈ P.edge)
 
 lemma IsPath.first_eq_of_isLink_mem (hP : G.IsPath (cons x f w)) (heP : e ∈ (cons x f w).edge)
     (hl : G.IsLink e x y) : e = f ∧ w.first = y := by
-  obtain ⟨hw, hl', hxw⟩ := by simpa using hP
+  obtain ⟨hl', hw, hxw⟩ := by simpa using hP
   obtain rfl | hew := by simpa using heP
   · exact ⟨rfl, hP.isTrail.first_eq_of_isLink hl⟩
   exact hxw (hw.isWalk.isLink_iff_isLink_of_mem hew |>.mpr hl |>.left_mem) |>.elim
@@ -498,7 +498,7 @@ lemma isPathFrom_cons : G.IsPathFrom S T (cons x e P) ↔
     fun ⟨hxS, hxT, hinc, hdj, h⟩ ↦ ?_⟩
   · obtain rfl : x = P.last := h.eq_last_of_mem (y := x) (by simp) hxT
     simpa using h.isPath.nodup
-  · exact (cons_isPath_iff.1 h.isPath).2.1
+  · exact (cons_isPath_iff.1 h.isPath).1
   · obtain rfl : v = x := h.eq_first_of_mem (x := v) (by simp [mem_vertexSet_iff.1 hv]) hvS
     have hnd := h.isPath.nodup
     simp only [cons_vertex, List.nodup_cons, mem_vertex] at hnd
@@ -506,7 +506,7 @@ lemma isPathFrom_cons : G.IsPathFrom S T (cons x e P) ↔
   · refine IsPathFrom.mk (h.isPath.suffix (by simp)) rfl (by simpa using h.last_mem) (by simp) ?_
     exact fun y hyP hyT ↦ h.eq_last_of_mem (by simp [hyP]) hyT
   have hxP : x ∉ P := hdj.notMem_of_mem_left hxS
-  refine IsPathFrom.mk (cons_isPath_iff.2 ⟨h.isPath, hinc, hxP⟩) (by simpa) h.last_mem ?_ ?_
+  refine IsPathFrom.mk (cons_isPath_iff.2 ⟨hinc, h.isPath, hxP⟩) (by simpa) h.last_mem ?_ ?_
   · simp only [mem_cons_iff, first_cons, forall_eq_or_imp, implies_true, true_and]
     exact fun a haP haS ↦ (hdj.notMem_of_mem_left haS haP).elim
   simpa [hxT] using h.eq_last_of_mem

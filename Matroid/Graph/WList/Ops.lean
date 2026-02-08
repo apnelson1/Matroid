@@ -138,7 +138,7 @@ lemma append_assoc (w₁ w₂ w₃ : WList α β) : (w₁ ++ w₂) ++ w₃ = w�
 instance : Std.Associative (· ++ · : WList α β → WList α β → WList α β) where
   assoc := append_assoc
 
-@[simp]
+@[simp, grind =]
 lemma append_vertex : (w₁ ++ w₂).vertex = w₁.vertex.dropLast ++ w₂.vertex := by
   induction w₁ with
   | nil => simp
@@ -157,16 +157,16 @@ protected lemma concat_eq_append (w : WList α β) (e) (x) :
     w.concat e x = w ++ (cons w.last e (nil x)) := by
   induction w with simp_all
 
-@[simp]
+@[simp, grind =]
 protected lemma concat_append (w₁ w₂ : WList α β) (e) (x) :
     w₁.concat e x ++ w₂ = w₁ ++ cons w₁.last e w₂ := by
   rw [WList.concat_eq_append, append_assoc, cons_append, nil_append]
 
-@[simp]
+@[simp, grind =]
 lemma append_edge {w₁ w₂ : WList α β} : (w₁ ++ w₂).edge = w₁.edge ++ w₂.edge := by
   induction w₁ with simp_all
 
-@[simp]
+@[simp, grind =]
 lemma append_edgeSet (w₁ w₂ : WList α β) : E(w₁ ++ w₂) = E(w₁) ∪ E(w₂) := by
   ext; simp
 
@@ -542,6 +542,11 @@ lemma map_vertex (w : WList α β) (f : α → α') : (w.map f).vertex = w.verte
   induction w with
   | nil x => simp [map]
   | cons x e w ih => simp [map, ih]
+
+@[simp]
+lemma mem_map_iff (w : WList α β) (f : α → α') (x : α') : x ∈ w.map f ↔ ∃ y, y ∈ w ∧ f y = x := by
+  rw [← mem_vertex, map_vertex]
+  simp
 
 @[simp]
 lemma map_edge (w : WList α β) (f : α → α') : (w.map f).edge = w.edge := by

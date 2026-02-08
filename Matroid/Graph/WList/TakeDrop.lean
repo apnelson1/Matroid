@@ -1701,6 +1701,17 @@ lemma mem_edgeRemove_edge_iff : e ∈ (w.edgeRemove F).edge ↔ e ∈ w.edge ∧
   rw [edgeRemove_edge]
   simp
 
+@[simp]
+lemma edgeRemove_edgeSet (w : WList α β) : E(w.edgeRemove F) = E(w) \ F := by
+  ext e
+  simp
+
+lemma edgeRemove_append_eq_right (w₁ w₂ : WList α β) (hw₁ : E(w₁) ⊆ F) :
+    (w₁ ++ w₂).edgeRemove F = w₂.edgeRemove F := by
+  induction w₁ with
+  | nil => simp
+  | cons u e w ih => grind [cons_append, cons_edgeSet]
+
 end edgeRemove
 
 end WList

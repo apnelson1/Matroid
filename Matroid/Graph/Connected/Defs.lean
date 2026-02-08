@@ -562,7 +562,7 @@ lemma encard_le_preconnGE_of_not_isComplete (h : ¬ G.IsComplete) (hn : G.Precon
 -- lemma PreconnGE.edgeDelete_singleton_of_not_isComplete (h : G.PreconnGE n)
 --     (hne : ¬ G.IsComplete) (e : β) : (G ＼ {e}).PreconnGE (n - 1) := by
 --   obtain he | he := (em <| e ∈ E(G)).symm
---   · rw [edgeDelete_eq_self _ (by simpa)]
+--   · rw [edgeDelete_eq _ (by simpa)]
 --     exact h.anti_right (by omega)
 --   rintro s t hs ht
 

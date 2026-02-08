@@ -33,13 +33,13 @@ lemma edgeRestrict_eq_edgeRestrict_iff (G : Graph α β) (F₁ F₂ : Set β) :
   apply_fun edgeSet at h
   exact h
 
-@[simp]
+@[simp, grind =]
 lemma le_edgeRestrict_iff : H ≤ (G ↾ F) ↔ H ≤ G ∧ E(H) ⊆ F :=
   ⟨fun h ↦ ⟨h.trans (by simp), (edgeSet_mono h).trans (by simp)⟩,
     fun h ↦ le_of_le_le_subset_subset h.1 (by simp) (by simpa using vertexSet_mono h.1)
     <| subset_inter (edgeSet_mono h.1) h.2⟩
 
-@[simp]
+@[simp, grind .]
 lemma edgeRestrict_isSpanningSubgraph : G ↾ F ≤s G :=
   ⟨by simp, by simp⟩
 
@@ -115,15 +115,15 @@ lemma edgeDelete_edgeDelete_comm (G : Graph α β) (F₁ F₂ : Set β) :
     G ＼ F₁ ＼ F₂ = G ＼ F₂ ＼ F₁ := by
   rw [edgeDelete_edgeDelete, union_comm, ← edgeDelete_edgeDelete]
 
-lemma edgeDelete_eq_self (G : Graph α β) (hF : Disjoint E(G) F) : G ＼ F = G := by
+lemma edgeDelete_eq (G : Graph α β) (hF : Disjoint E(G) F) : G ＼ F = G := by
   simp [edgeDelete_eq_edgeRestrict, hF.sdiff_eq_left]
 
-lemma edgeDelete_eq_self_of_disjoint (hF : Disjoint E(G) F) : G ＼ F = G := by
+lemma edgeDelete_eq_of_disjoint (hF : Disjoint E(G) F) : G ＼ F = G := by
   rw [edgeDelete_eq_edgeRestrict]
   exact edgeRestrict_of_superset _ hF.sdiff_eq_left.symm.subset
 
-lemma edgeDelete_eq_self_iff (G : Graph α β) (F : Set β) : G ＼ F = G ↔ Disjoint E(G) F := by
-  refine ⟨fun h ↦ ?_, edgeDelete_eq_self_of_disjoint⟩
+lemma edgeDelete_eq_iff (G : Graph α β) (F : Set β) : G ＼ F = G ↔ Disjoint E(G) F := by
+  refine ⟨fun h ↦ ?_, edgeDelete_eq_of_disjoint⟩
   apply_fun edgeSet at h
   simpa using h
 
@@ -425,7 +425,7 @@ lemma edgeDelete_vertexDelete (G : Graph α β) (F : Set β) (X : Set α) :
 
 lemma vertexDelete_edgeDelete_incidentEdges (G : Graph α β) (X : Set α) :
     G ＼ E(G, X) - X = G - X := by
-  rw [edgeDelete_vertexDelete, edgeDelete_eq_self_iff, vertexDelete_edgeSet_diff]
+  rw [edgeDelete_vertexDelete, edgeDelete_eq_iff, vertexDelete_edgeSet_diff]
   exact disjoint_sdiff_left
 
 lemma vertexDelete_vertexDelete (G : Graph α β) (X Y : Set α) : (G - X) - Y = G - (X ∪ Y) := by

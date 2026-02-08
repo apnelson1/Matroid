@@ -12,6 +12,7 @@ namespace Graph
 def ConnBetween (G : Graph α β) (x y : α) : Prop :=
   ∃ w : WList α β, G.IsWalk w ∧ w.first = x ∧ w.last = y
 
+@[grind →]
 lemma ConnBetween.refl (hx : x ∈ V(G)) : G.ConnBetween x x :=
   ⟨nil x, by simpa, rfl, rfl⟩
 
@@ -26,10 +27,12 @@ instance : Std.Symm G.ConnBetween where
 lemma connBetween_comm : G.ConnBetween x y ↔ G.ConnBetween y x :=
   ⟨ConnBetween.symm, ConnBetween.symm⟩
 
+@[grind →]
 lemma ConnBetween.left_mem (hxy : G.ConnBetween x y) : x ∈ V(G) :=
   let ⟨_, hw, hx, _⟩ := hxy
   hx ▸ hw.first_mem
 
+@[grind →]
 lemma ConnBetween.right_mem (hxy : G.ConnBetween x y) : y ∈ V(G) :=
   hxy.symm.left_mem
 
@@ -62,6 +65,10 @@ lemma ConnBetween.exists_isPath (h : G.ConnBetween x y) :
   classical
   obtain ⟨W, hW, rfl, rfl⟩ := h
   exact ⟨W.dedup, by simp [hW.dedup_isPath]⟩
+
+lemma connBetween_iff_exists_isPath :
+    G.ConnBetween x y ↔ ∃ P, G.IsPath P ∧ P.first = x ∧ P.last = y :=
+  ⟨fun h ↦ h.exists_isPath, fun ⟨P, hP, hPf, hPl⟩ ↦ ⟨P, hP.isWalk, hPf, hPl⟩⟩
 
 @[simp]
 lemma not_connBetween_of_left_not_mem (hx : x ∉ V(G)) : ¬ G.ConnBetween x y := by
@@ -105,7 +112,7 @@ lemma connBetween_induce_iff {X : Set α} (hx : x ∈ V(G)) :
     apply IsWalk.connBetween_first_last
     rw [isWalk_induce_iff' (by simp)]
     simp_all only [cons_isPath_iff, first_cons, cons_vertexSet, cons_isWalk_iff, true_and, and_true]
-    exact h.1.isWalk
+    exact h.2.1.isWalk
 
 lemma IsComplete.connBetween (h : G.IsComplete) (hs : s ∈ V(G)) (ht : t ∈ V(G)) :
     G.ConnBetween s t := by
@@ -200,12 +207,12 @@ def isSepBetween_of_not_adj (hne : s ≠ t) (hnst : ¬ G.Adj s t) :
       vertexDelete_vertexSet, sdiff_sdiff_right_self, inf_eq_inter, mem_inter_iff, mem_insert_iff,
       mem_singleton_iff, or_true, and_true, nil_first, vertexDelete_isLink_iff, mem_diff, true_or,
       not_true_eq_false, and_false, not_false_eq_true, and_self, mem_nil_iff] at hW ⊢
-    use e, hW.2.1
+    use e, hW.1
   | cons u e (cons v f w) =>
     simp_all only [first_cons, last_cons, ne_eq, cons_isPath_iff, isPath_vertexDelete_iff,
       vertexDelete_isLink_iff, mem_diff, mem_insert_iff, mem_singleton_iff, not_or, not_and,
       not_not, or_false, not_true_eq_false, and_false, not_false_eq_true, true_and, mem_cons_iff]
-    obtain ⟨⟨⟨-, -⟩, ⟨-, hvwl, -⟩, -⟩, ⟨huv, -⟩, hne, -⟩ := hW
+    obtain ⟨⟨huv, -⟩, ⟨⟨-, hvwl, -⟩, ⟨-, -⟩, -⟩, hne, -⟩ := hW
     obtain rfl := hvwl huv.right_mem (hne ·.symm)
     use e
 
@@ -294,7 +301,7 @@ lemma VertexEnsemble.nontrivial_of_not_adj (P : G.VertexEnsemble s t ι) (hne : 
     obtain rfl := by simpa [hi] using P.first_eq i
     obtain rfl := by simpa [hi] using P.last_eq i
     have := by simpa [hi] using P.isPath i
-    exact hadj ⟨e, this.2.1⟩ |>.elim
+    exact hadj ⟨e, this.1⟩ |>.elim
   | .cons s e (cons x e' w) => simp
 
 @[simps]

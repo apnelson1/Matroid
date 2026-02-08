@@ -270,7 +270,7 @@ lemma Preconnected.exists_isPathFrom (hG : G.Preconnected) (hS : (S ∩ V(G)).No
     · exact ⟨nil x, by simp [hxS, hxT, h.left_mem]⟩
     use cons x e P₀
     simp only [isPathFrom_iff, cons_isPath_iff, first_cons, last_cons]
-    refine ⟨⟨hP₀.isPath, by rwa [h_eq], fun hxP₀ ↦ hPS ?_⟩, hxS, hP₀.last_mem, ?_, ?_⟩
+    refine ⟨⟨by rwa [h_eq], hP₀.isPath, fun hxP₀ ↦ hPS ?_⟩, hxS, hP₀.last_mem, ?_, ?_⟩
     · rwa [← h_eq, ← hP₀.eq_first_of_mem hxP₀ (by simp [hxS])]
     · simp only [mem_cons_iff, forall_eq_or_imp, implies_true, true_and]
       exact fun a haP haS ↦ hPS.elim <| by rwa [← h_eq, ← hP₀.eq_first_of_mem haP (by simp [haS])]
@@ -319,7 +319,7 @@ lemma edgeDelete_isLoopAt_isSep_iff (C) : (G ＼ E(G, u, u)).IsSep C ↔ G.IsSep
     exact h.not_connected <| hc.of_isSpanningSubgraph <| edgeDelete_isSpanningSubgraph ..
   have := h.not_connected
   by_cases huC : u ∈ C
-  · rw [edgeDelete_vertexDelete, edgeDelete_eq_self_of_disjoint] at this
+  · rw [edgeDelete_vertexDelete, edgeDelete_eq_of_disjoint] at this
     exact this hc
     rw [vertexDelete_edgeSet_diff]
     exact disjoint_sdiff_left.mono_right
@@ -382,7 +382,7 @@ lemma Preconnected.walkable_singleton_left_of_vertexDelete_connected (hG : G.Pre
   refine subset_antisymm ?_ (by simpa)
   have := (G ＼ E(G, u, v)).walkable_isClosedSubgraph (u := u) |>.vertexDelete {u}
   rw [edgeDelete_vertexDelete, ← vertexDelete_singleton, ← vertexDelete_singleton,
-    (G - u).edgeDelete_eq_self ?_] at this
+    (G - u).edgeDelete_eq ?_] at this
   have := mt (huconn.eq_of_isClosedSubgraph this) ?_
   simpa [vertexDelete_vertexSet, not_nonempty_iff_eq_empty, diff_eq_empty] using this
   · apply_fun vertexSet
@@ -435,7 +435,7 @@ lemma IsSep.of_edgeDelete_linkEdges (h : (G ＼ E(G, u, v)).IsSep S) :
   obtain huS | huS := em (u ∈ S)
   · refine Or.inl ⟨by simpa using h.subset_vx, ?_⟩
     have := h.not_connected
-    rwa [edgeDelete_vertexDelete, edgeDelete_eq_self_of_disjoint] at this
+    rwa [edgeDelete_vertexDelete, edgeDelete_eq_of_disjoint] at this
     apply Disjoint.mono_right <| (G.linkEdges_subset_incEdges_left u v).trans
     <| G.incEdge_subset_setIncEdges huS
     rw [vertexDelete_edgeSet_diff]
@@ -443,7 +443,7 @@ lemma IsSep.of_edgeDelete_linkEdges (h : (G ＼ E(G, u, v)).IsSep S) :
   obtain hvS | hvS := em (v ∈ S)
   · refine Or.inl ⟨by simpa using h.subset_vx, ?_⟩
     have := h.not_connected
-    rwa [edgeDelete_vertexDelete, edgeDelete_eq_self_of_disjoint] at this
+    rwa [edgeDelete_vertexDelete, edgeDelete_eq_of_disjoint] at this
     apply Disjoint.mono_right <| (G.linkEdges_subset_incEdges_right u v).trans
     <| G.incEdge_subset_setIncEdges hvS
     rw [vertexDelete_edgeSet_diff]
@@ -506,7 +506,7 @@ lemma Preconnected.exists_isLink_of_mem (h : G.Preconnected) (hV : V(G).Nontrivi
   rw [ne_comm, first_ne_last_iff hP.nodup] at hne
   obtain ⟨x, e, P⟩ := hne
   simp only [cons_isPath_iff] at hP
-  exact ⟨e, P.first, hP.2.1, mt (by simp +contextual [eq_comm]) hP.2.2⟩
+  exact ⟨e, P.first, hP.1, mt (by simp +contextual [eq_comm]) hP.2.2⟩
 
 lemma Connected.exists_isLink_of_mem (hG : G.Connected) (hV : V(G).Nontrivial) (hx : x ∈ V(G)) :
     ∃ e y, G.IsLink e x y ∧ y ≠ x := hG.pre.exists_isLink_of_mem hV hx
@@ -661,7 +661,7 @@ lemma IsPath.isPath_of_union_of_subsingleton_inter (hP : (G ∪ H).IsPath P)
   induction P with
   | nil u => simpa [hf]
   | cons u e w ih =>
-    obtain ⟨hw, heuwf, huw⟩ := cons_isPath_iff.mp hP
+    obtain ⟨heuwf, hw, huw⟩ := cons_isPath_iff.mp hP
     obtain heG | heH := by simpa using heuwf.edge_mem
     · replace heuwf : G.IsLink e u w.first := heuwf.of_le_of_mem (Graph.left_le_union ..) heG
       simp [ih heuwf.right_mem hl hw, heuwf, huw]

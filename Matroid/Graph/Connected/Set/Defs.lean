@@ -103,7 +103,7 @@ lemma ConnBetween.neighbor_setConnected (h : G.ConnBetween s t) (hne : s ≠ t)
     (hadj : ¬ G.Adj s t) : (G - ({s, t} : Set α)).SetConnected (N(G, s) \ {s}) (N(G, t) \ {t}) := by
   obtain ⟨w, hw, rfl, rfl⟩ := h.exists_isPath
   obtain ⟨x, e, w', f, y, rfl⟩ := (hw.isWalk.nontrivial_of_ne_not_adj hne hadj).exists_cons_concat
-  obtain ⟨⟨hw', hf, hyw'⟩, he, hxw', hxy⟩ := by simpa using hw
+  obtain ⟨he, ⟨hw', hf, hyw'⟩, hxw', hxy⟩ := by simpa using hw
   simp only [first_cons, last_cons, concat_last]
   use w'.first, ⟨⟨e, he⟩, (hxw' <| · ▸ first_mem)⟩, w'.last, ⟨⟨f, hf.symm⟩, (hyw' <| · ▸ last_mem)⟩,
     w', by simp [hw'.isWalk, hxw', hyw']
