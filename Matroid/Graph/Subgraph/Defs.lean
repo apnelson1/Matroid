@@ -21,10 +21,12 @@ def edgeRestrict (G : Graph α β) (E₀ : Set β) : Graph α β where
     fun ⟨x, y, h⟩ ↦ ⟨h.2.edge_mem, h.1⟩⟩
   left_mem_of_isLink _ _ _ h := h.2.left_mem
 
+attribute [grind =] edgeRestrict_vertexSet edgeRestrict_edgeSet edgeRestrict_isLink
+
 /-- `G ↾ F` is the subgraph of `G` restricted to the edges in `F`. Vertices are not changed. -/
 scoped infixl:65 " ↾ "  => Graph.edgeRestrict
 
-@[simp]
+@[simp, grind .]
 lemma edgeRestrict_le {E₀ : Set β} : G ↾ E₀ ≤ G where
   vertex_subset := rfl.le
   isLink_of_isLink := by simp
@@ -82,6 +84,8 @@ def edgeDelete (G : Graph α β) (F : Set β) : Graph α β :=
   (fun e x y ↦ by
     simp only [edgeRestrict_isLink, mem_diff, and_comm, and_congr_left_iff, and_iff_left_iff_imp]
     exact fun h _ ↦ h.edge_mem)
+
+attribute [grind =] edgeDelete_vertexSet edgeDelete_edgeSet edgeDelete_isLink
 
 /-- `G ＼ F` is the subgraph of `G` with the edges in `F` deleted. Vertices are not changed. -/
 scoped infixl:75 " ＼ "  => Graph.edgeDelete

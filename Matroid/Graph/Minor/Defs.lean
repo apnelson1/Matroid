@@ -173,6 +173,8 @@ variable {α' α'' : Type*}
 def contract (G : Graph α β) (φ : α → α') (C : Set β) : Graph α' β :=
   (φ ''ᴳ G) ＼ C
 
+attribute [grind =] contract_vertexSet contract_edgeSet contract_isLink
+
 notation:70 G " /["φ ", " C"] " => Graph.contract G φ C
 
 /- lemmas about Contract -/
@@ -206,6 +208,12 @@ lemma contract_isSpanningSubgraph (h : G ≤s H) : G /[φ, C] ≤s H /[φ, C] :=
 lemma contract_contract {φ' : α' → α''} : (G /[φ, C]) /[φ', C'] = G /[φ' ∘ φ, C ∪ C'] := by
   unfold contract
   rw [map_edgeDelete_comm, map_map, edgeDelete_edgeDelete]
+
+lemma contract_edgeRestrict_comm : H /[φ, E(G)] ↾ F = (H ↾ F) /[φ, E(G)] := by
+  ext x y <;> grind
+
+lemma contract_edgeDelete_comm : (H /[φ, E(G)]) ＼ F = (H ＼ F) /[φ, E(G)] := by
+  ext x y <;> grind
 
 lemma edgeSet_disjoint_of_le_contract {φ : α → α} (h : G ≤ G /[φ, C]) : Disjoint E(G) C := by
   apply_fun edgeSet (α := α) (β := β) at h using edgeSet_monotone (α := α) (β := β)

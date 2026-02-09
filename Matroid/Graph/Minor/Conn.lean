@@ -231,30 +231,45 @@ lemma IsCyclicWalk.exists_isCyclicWalk_of_contract (hφ : G.connPartition.IsRepF
   have hew' := hwP'.cons_isCyclicWalk (e := e) (by simp [hxy.symm]) he
   exact ⟨_, hew', by simp [insert_diff_of_notMem _ heG]⟩
 
+lemma contract_connBetween_iff (hφ : G.connPartition.IsRepFun φ) (hGH : G ≤ H) (u v) :
+    (H /[φ, E(G)]).ConnBetween (φ u) (φ v) ↔ H.ConnBetween u v := by
+  refine ⟨fun h => ?_, fun h => ?_⟩
+  · obtain ⟨W, hW, hWf, hWl⟩ := h
+    use hW.uncontract hφ hWf hWl, hW.uncontract_isWalk hφ hGH hWf hWl
+    simp
+  · obtain ⟨W, hW, rfl, rfl⟩ := h
+    classical
+    use (W.map φ).edgeRemove E(G), hW.edgeRemove_contract hGH hφ
+    rw [edgeRemove_first (hφ.isContractClosed_of_ge hGH |>.exists_isLoopAt_of_isWalk hW) (hW.map φ)]
+    simp
 
+@[simp]
+lemma contract_preconnected_iff (hφ : G.connPartition.IsRepFun φ) (hGH : G ≤ H) :
+    (H /[φ, E(G)]).Preconnected ↔ H.Preconnected := by
+  unfold Preconnected
+  refine ⟨fun h x y hx hy ↦ ?_, ?_⟩
+  · rw [← contract_connBetween_iff hφ hGH]
+    exact h _ _ (by use x) (by use y)
+  rintro h _ _ ⟨x, hx, rfl⟩ ⟨y, hy, rfl⟩
+  rw [contract_connBetween_iff hφ hGH]
+  exact h x y hx hy
 
--- @[simp]
--- lemma contract_connBetween (hφ : (H ↾ C).connPartition.IsRepFun φ) (u v) :
---     (H /[φ, C]).ConnBetween (φ u) (φ v) ↔ H.ConnBetween u v := by
---   convert contract_edgeRestrict_connBetween hφ univ u v using 2 <;> rw [eq_comm] <;> simp
+@[simp]
+lemma contract_connected_iff (hφ : G.connPartition.IsRepFun φ) (hGH : G ≤ H) :
+    (H /[φ, E(G)]).Connected ↔ H.Connected := by
+  simp [connected_iff, contract_preconnected_iff hφ hGH]
 
--- @[simp]
--- lemma contract_preconnected_iff (hφ : (H ↾ C).connPartition.IsRepFun φ) :
---     (H /[φ, C]).Preconnected ↔ H.Preconnected := by
---   refine ⟨fun h x y hx hy ↦ ?_, fun h x y hx hy ↦ ?_⟩
---   · rw [← contract_connBetween hφ]
---     exact h _ _ (by use x) (by use y)
---   obtain ⟨x, hx, rfl⟩ := hx
---   obtain ⟨y, hy, rfl⟩ := hy
---   rw [contract_connBetween hφ]
---   exact h x y hx hy
+lemma contract_isBridge_iff (hφ : G.connPartition.IsRepFun φ) (hGH : G ≤ H) (he : e ∈ E(H) \ E(G)) :
+    (H /[φ, E(G)]).IsBridge e ↔ H.IsBridge e := by
+  obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet he.1
+  have := contract_isLink H φ E(G) e (φ x) (φ y) |>.mpr ⟨by grind, he.2⟩
+  rw [hxy.isBridge_iff_not_connBetween, this.isBridge_iff_not_connBetween, contract_edgeDelete_comm,
+    not_iff_not, contract_connBetween_iff hφ (by simp [hGH, he.2])]
 
--- @[simp]
--- lemma contract_connected_iff (hφ : (H ↾ C).connPartition.IsRepFun φ) :
---     (H /[φ, C]).Connected ↔ H.Connected := by
---   simp [connected_iff, hφ]
-
--- lemma IsCycle.exists_isCycle_of_contract (hφ : (G ↾ C).connPartition.IsRepFun φ)
---    (hH : H.IsCycle) :
+lemma IsForest.contract (hφ : G.connPartition.IsRepFun φ) (hGH : G ≤ H) (hH : H.IsForest) :
+    (H /[φ, E(G)]).IsForest := by
+  rintro e he
+  rw [contract_isBridge_iff hφ hGH he]
+  exact hH he.1
 
 end Graph

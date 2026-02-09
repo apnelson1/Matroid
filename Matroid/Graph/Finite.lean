@@ -240,6 +240,14 @@ lemma encard_delete_edgeSet_lt [G.Finite] (hF : (E(G) ∩ F).Nonempty) :
   rw [edgeDelete_edgeSet]
   exact (G.edgeSet_finite.subset diff_subset).encard_lt_encard (by simpa)
 
+lemma of_not_exists_minimal {P : Graph α β → Prop} [G.Finite]
+    (h : ∀ H, H ≤ G → H.Finite → ¬ Minimal (¬ P ·) H) : P G := by
+  by_contra! hPG
+  let P' := fun (H : G.Subgraph) ↦ ¬ P H.val
+  obtain ⟨H, hH⟩ := exists_minimal_of_wellFoundedLT P' ⟨⟨G, le_refl _⟩, hPG⟩
+  refine h H H.prop (‹G.Finite›.mono H.prop) ⟨hH.prop, fun H' hH' hH'' ↦ ?_⟩
+  simpa [P', hH', hH''] using hH.2 (y := ⟨H', hH''.trans H.prop⟩)
+
 -- instance [G.Finite] : WellFoundedLT G.Subgraph := inferInstance
 
 -- instance [G.Finite] : WellFoundedLT G.ClosedSubgraph := inferInstance

@@ -194,12 +194,9 @@ Since no edge of M is incident at v, it follows that W' does not contain v. [cit
 So W' contains u and is a cover of G. [cite: 22]
 -/
 theorem Konig'sTheorem [H.Finite] (hB : H.Bipartite) : τ(H) = ν(H) := by
-  have hloopless := hB.loopless
-  by_contra! hne
-  let P := fun (G : H.Subgraph) ↦ G.val.Bipartite ∧ τ(G.val) ≠ ν(G.val)
-  obtain ⟨⟨G, hle⟩, ⟨hB, hne⟩, hMin⟩ := exists_minimal_of_wellFoundedLT P ⟨⟨H, le_refl _⟩, hB, hne⟩
-  simp only [Subgraph.le_mk_iff, Subgraph.mk_le_iff, and_imp, Subtype.forall, P] at hB hMin hne
-  have : G.Finite := finite_of_le hle
+  refine of_not_exists_minimal (P := fun H ↦ τ(H) = ν(H)) fun G hle _ hMin ↦ ?_
+  push_neg at hMin
+  replace hB := hB.of_le hle
   have hcon : G.Connected := by
     /- Otherwise, by def of `Connected`, there is a strictly smaller component of `G`.
     `τ` and `ν` are additive over the components so at least one component must have `τ` or `ν`

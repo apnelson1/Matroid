@@ -74,19 +74,10 @@ lemma cycleMatroid_edgeDelete (G : Graph α β) (F : Set β) :
 
 -- lemma cycleMatroid_contract {φ} (hφ : H.connPartition.IsRepFun φ) (hHG : H ≤ G) :
 --     (G /[φ, E(H)]).cycleMatroid = G.cycleMatroid ／ E(H) := by
---   refine ext_isCircuit rfl fun C hC ↦ ?_
---   rw [cycleMatroid_isCircuit]
---   refine ⟨?_, fun h ↦ ?_⟩
---   · rintro ⟨Cw, hCw, rfl⟩
---     simp only [cycleMatroid_E, contract_edgeSet] at hC
---     obtain ⟨Cw', hCw', hCw'E⟩ := hCw.exists_isCyclicWalk_of_contract hφ hHG
---     have hCw'cyc : G.cycleMatroid.IsCircuit E(Cw') := cycleMatroid_isCircuit ▸ ⟨Cw', hCw', rfl⟩
---     have := hCw'cyc.contract_diff_isCircuit (K := E(Cw)) (by grind [hCw.nonempty]) (by grind)
---     sorry
---   obtain ⟨C', hC', hCC', hC'F⟩ := h.exists_subset_isCircuit_of_contract
---   obtain ⟨w', hw', rfl⟩ := (by simpa using hC'); clear hC'
---   use (w'.map φ)
---   sorry
+--   refine ext_indep rfl fun I hI ↦ ?_
+--   simp only [cycleMatroid_E, contract_edgeSet, cycleMatroid_indep, isAcyclicSet_iff] at hI ⊢
+--   refine ⟨fun ⟨_, h⟩ => ?_, fun h => ?_⟩
+--   · rw [contract_edgeRestrict_comm] at h
 
 @[simp]
 lemma cycleMatroid_vertexDelete_isolatedSet (G : Graph α β) :
