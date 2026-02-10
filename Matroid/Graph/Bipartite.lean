@@ -18,7 +18,7 @@ structure Bipartition (G : Graph α β) where
 
 variable {B : G.Bipartition}
 
-@[simps]
+@[simps (attr := grind =)]
 def Bipartition.symm (B : G.Bipartition) : G.Bipartition where
   left := B.right
   right := B.left

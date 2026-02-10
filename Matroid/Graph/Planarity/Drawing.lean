@@ -202,7 +202,15 @@ structure Graph.orientation (G : Graph α β) where
   dInc : E(G) → V(G) × V(G)
   isLink_of_dInc : ∀ e, G.IsLink e.val (dInc e).1 (dInc e).2
 
-structure Graph.drawing (G : Graph α β) extends orientation G where
+@[simps (attr := grind =)]
+def Graph.orientation.anti {G H : Graph α β} (hH : H ≤ G) (D : Graph.orientation G) :
+    Graph.orientation H := by
+  refine ⟨fun e ↦ ?_, fun e ↦ ?_⟩ <;> let e' : E(G) := ⟨e, edgeSet_mono hH e.prop⟩ <;>
+    have := D.isLink_of_dInc e' |>.of_le_of_mem hH e.prop
+  · exact (⟨_, this.left_mem⟩, ⟨_, this.right_mem⟩)
+  exact this
+
+structure Graph.Drawing (G : Graph α β) extends orientation G where
   vertex : V(G) → EuclideanSpace ℝ (Fin 2)
   vertex_inj : Function.Injective vertex
   edge : ∀ e : E(G), Path (vertex (dInc e).1) (vertex (dInc e).2)
@@ -210,11 +218,38 @@ structure Graph.drawing (G : Graph α β) extends orientation G where
   edge_inter : ∀ e₁ e₂, e₁ ≠ e₂ → range (edge e₁) ∩ range (edge e₂) ⊆
     {vertex (dInc e₁).1, vertex (dInc e₁).2} ∩ {vertex (dInc e₂).1, vertex (dInc e₂).2}
 
-def Graph.IsPlanar (G : Graph α β) : Prop := Nonempty (Graph.drawing G)
+@[simps! (attr := grind =)]
+def Graph.Drawing.anti {G H : Graph α β} (hH : H ≤ G) (D : Graph.Drawing G) : Graph.Drawing H where
+  toorientation := D.toorientation.anti hH
+  vertex := fun v ↦ D.vertex ⟨v, vertexSet_mono hH v.prop⟩
+  vertex_inj _ _ hab := by simpa [Subtype.ext_iff] using D.vertex_inj hab
+  edge e := D.edge ⟨e, edgeSet_mono hH e.prop⟩
+  edge_vert_inter e := subset_trans (by grind) (D.edge_vert_inter ⟨e, edgeSet_mono hH e.prop⟩)
+  edge_inter e₁ e₂ hne := subset_trans (by grind) (D.edge_inter ⟨e₁, edgeSet_mono hH e₁.prop⟩
+    ⟨e₂, edgeSet_mono hH e₂.prop⟩ (by simpa [Subtype.ext_iff] using hne))
+
+def Graph.bot_Drawing : Graph.Drawing (⊥ : Graph α β) := by
+  refine ⟨⟨?_, ?_⟩, ?_, ?_, ?_, ?_, ?_⟩ <;> try rintro ⟨i, hi⟩ ; simp at hi
+
+def Graph.IsPlanar (G : Graph α β) : Prop := Nonempty (Drawing G)
+
+lemma Graph.IsPlanar.anti {G H : Graph α β} (hG : G.IsPlanar) (hH : H ≤ G) : H.IsPlanar :=
+  ⟨hG.some.anti hH⟩
+
+lemma Graph.bot_isPlanar : (⊥ : Graph α β).IsPlanar := ⟨Graph.bot_Drawing⟩
 
 lemma Graph.IsPlanar.exists_polygonal_drawing {G : Graph α β} [G.Finite] (hG : G.IsPlanar) :
-    ∃ (D : G.drawing) (L : E(G) → List (EuclideanSpace ℝ (Fin 2))),
+    ∃ (D : G.Drawing) (L : E(G) → List (EuclideanSpace ℝ (Fin 2))),
     ∀ e, D.edge e = (L e).toPath := by
-  obtain ⟨D, hD⟩ := hG
-  
+  obtain ⟨DG⟩ := hG
+  refine G.of_not_exists_minimal (P := fun G ↦ ∃ (D : G.Drawing) (L : E(G) → List _),
+    ∀ e, D.edge e = (L e).toPath) (fun H hle _ hMin ↦ ?_)
+  obtain ⟨e, he⟩ : E(H).Nonempty := by
+    by_contra! hE
+    refine hMin.prop ⟨DG.anti hle, ?_, ?_⟩ <;> rintro ⟨e, he⟩ <;> simp [hE] at he
+  have hlt : H ＼ {e} < H := by
+    apply lt_of_le_of_ne edgeDelete_le
+    rintro heq
+    simpa [he] using congrArg Graph.edgeSet heq
+  obtain ⟨D, L, h⟩ := not_not.mp <| hMin.not_prop_of_lt hlt
   sorry

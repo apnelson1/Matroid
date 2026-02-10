@@ -149,7 +149,7 @@ lemma connected_iff_of_edgeSet_empty (hE : E(G) = ∅) : G.Connected ↔ ∃ v, 
   rw [connected_iff, preconnected_iff_of_edgeSet_empty hE,
     exists_eq_singleton_iff_nonempty_subsingleton]
 
-@[simps]
+@[simps (attr := grind =)]
 def singleEdge_isEdgeSep (hne : u ≠ v) : (Graph.singleEdge u v e).IsEdgeSep {e} where
   subset_edgeSet := by simp
   not_connected h := by

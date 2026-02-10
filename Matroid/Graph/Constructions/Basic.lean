@@ -12,7 +12,7 @@ open scoped Sym2
 namespace Graph
 
 /-- The graph with vertex set `V` and no edges -/
-@[simps]
+@[simps (attr := grind =)]
 protected def noEdge (V : Set α) (β : Type*) : Graph α β where
   vertexSet := V
   edgeSet := ∅
@@ -67,7 +67,10 @@ instance : OrderBot (Graph α β) where
 lemma bot_vertexSet : V((⊥ : Graph α β)) = ∅ := rfl
 
 @[simp]
-lemma bot_edgeSet : V((⊥ : Graph α β)) = ∅ := rfl
+lemma bot_edgeSet : E((⊥ : Graph α β)) = ∅ := rfl
+
+instance : IsEmpty V((⊥ : Graph α β)) := isEmpty_coe_sort.mpr rfl
+instance : IsEmpty E((⊥ : Graph α β)) := isEmpty_coe_sort.mpr rfl
 
 @[simp]
 lemma bot_isClosedSubgraph (G : Graph α β) : ⊥ ≤c G where
@@ -111,7 +114,7 @@ instance : Inhabited (Graph α β) where
   default := ⊥
 
 /-- A graph with a single edge `e` from `u` to `v` -/
-@[simps]
+@[simps (attr := grind =)]
 protected def singleEdge (u v : α) (e : β) : Graph α β where
   vertexSet := {u,v}
   edgeSet := {e}
@@ -153,7 +156,7 @@ lemma singleEdge_le_iff : Graph.singleEdge u v e ≤ G ↔ G.IsLink e u v := by
 /-! ### Graphs with one vertex  -/
 
 /-- A graph with one vertex and loops at that vertex -/
-@[simps]
+@[simps (attr := grind =)]
 def bouquet (v : α) (F : Set β) : Graph α β where
   vertexSet := {v}
   edgeSet := F
@@ -231,7 +234,7 @@ lemma bouquet_le_iff_of_nonempty (v : α) (hF : F.Nonempty) :
 /-! ### Two vertices -/
 
 /-- A graph with exactly two vertices and no loops. -/
-@[simps]
+@[simps (attr := grind =)]
 def banana (a b : α) (F : Set β) : Graph α β where
   vertexSet := {a,b}
   edgeSet := F
@@ -295,7 +298,7 @@ lemma banana_incEdges_right : E(banana a b F, b) = F := by
 /-! ### Complete graphs -/
 
 /-- The complete graph on `n` vertices. -/
-@[simps]
+@[simps (attr := grind =)]
 def CompleteGraph (n : ℕ) : Graph ℕ (Sym2 ℕ) where
   vertexSet := Set.Iio n
   edgeSet := {s | (∀ i ∈ s, i < n) ∧ ¬ s.IsDiag}
@@ -362,7 +365,7 @@ lemma banana_isComplete_iff (a b : α) (F : Set β) :
   exact ⟨fun h ↦ ⟨_, h a (by simp) b (by simp) hne |>.choose_spec.edge_mem⟩, banana_isComplete a b⟩
 
 /-- The star graph with `n` leaves with center `v` -/
-@[simps]
+@[simps (attr := grind =)]
 def StarGraph (v : α) (f : β →. α) : Graph α β where
   vertexSet := {v} ∪ f.ran
   edgeSet := f.Dom
@@ -415,7 +418,7 @@ lemma starGraph_adj_iff (v : α) (f : β →. α) (x y : α) :
 
 /-- The graph with vertex set `S` and edges over `ℕ` between pairs of vertices according to the list
   `l`.-/
-@[simps]
+@[simps (attr := grind =)]
 def fromList (S : Set α) (l : List (α × α)) : Graph α ℕ where
   vertexSet := S ∪ {x | ∃ p ∈ l, x = p.1 ∨ x = p.2}
   edgeSet := Finset.range l.length
@@ -440,7 +443,7 @@ def fromList (S : Set α) (l : List (α × α)) : Graph α ℕ where
       rw [← Prod.swap_eq_iff_eq_swap] at hp
       exact List.mem_of_getElem? <| hp ▸ hep
 
-@[simps]
+@[simps (attr := grind =)]
 def OfSimpleGraph (G : SimpleGraph α) : Graph α (Sym2 α) where
   vertexSet := univ
   edgeSet := {s | ∃ x y, G.Adj x y ∧ s(x, y) = s}
@@ -451,7 +454,7 @@ def OfSimpleGraph (G : SimpleGraph α) : Graph α (Sym2 α) where
     tauto
   left_mem_of_isLink e x y h := by simp
 
-@[simps]
+@[simps (attr := grind =)]
 def OfSimpleGraphSet {S : Set α} (G : SimpleGraph S) : Graph α (Sym2 α) where
   vertexSet := S
   edgeSet := {s | ∃ x y, G.Adj x y ∧ s(x.val, y.val) = s}
@@ -468,13 +471,13 @@ def OfSimpleGraphSet {S : Set α} (G : SimpleGraph S) : Graph α (Sym2 α) where
   edge_mem_iff_exists_isLink e := ⟨fun ⟨a, b, hab, he⟩ ↦ ⟨a.val, b.val, a.prop, b.prop, hab, by
     assumption⟩, fun ⟨x, y, hx, hy, h, heq⟩ ↦ ⟨⟨x, hx⟩, ⟨y, hy⟩, h, heq⟩⟩
 
-@[simps!]
+@[simps! (attr := grind =)]
 def LineSimpleGraph (G : Graph α β) : SimpleGraph E(G) :=
   SimpleGraph.fromRel (fun e f ↦ ∃ x, G.Inc e x ∧ G.Inc f x)
 
 /-- The line graph of a graph `G` is the simple graph with the same vertices as `G` and edges
     given by the pairs of edges in `G` that have a common vertex. -/
-@[simps]
+@[simps (attr := grind =)]
 def LineGraph (G : Graph α β) : Graph β (Sym2 β) where
   vertexSet := E(G)
   edgeSet := Sym2.mk '' { (e, f) | (e ≠ f) ∧ ∃ x, G.Inc e x ∧ G.Inc f x }
@@ -531,7 +534,7 @@ lemma lineGraph_starGraph_isComplete (v : α) (f : β →. α) : L(StarGraph v f
   simp
 
 /-- Note: a loop becomes a leaf. -/
-@[simps]
+@[simps (attr := grind =)]
 def mixedLineGraph (G : Graph α β) : Graph (α ⊕ β) (α × β) where
   vertexSet := Sum.inl '' V(G) ∪ Sum.inr '' E(G)
   edgeSet := {(a, b) | G.Inc b a}

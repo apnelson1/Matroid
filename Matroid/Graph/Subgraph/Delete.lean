@@ -511,4 +511,18 @@ lemma IsClosedSubgraph.of_edgeDelete_iff (hclF : H ≤c G ＼ F) : H ≤c G ↔ 
       obtain rfl | rfl := he.eq_or_eq_of_isLink heuv <;> exact (‹x ∉ V(H)› hxH).elim
     exact hclF.closed (by simp [he, heF]) hxH
 
+@[gcongr, grind =>]
+lemma IsClosedSubgraph.edgeRestrict (h : H ≤c G) (F : Set β) : H ↾ F ≤c G ↾ F where
+  le := by grw [h.le]
+  closed e x hex hx := by
+    obtain ⟨heG, heF⟩ := by simpa using hex.edge_mem
+    exact ⟨h.closed (hex.of_le edgeRestrict_le) hx, heF⟩
+
+@[gcongr, grind =>]
+lemma IsClosedSubgraph.edgeDelete (h : H ≤c G) (F : Set β) : H ＼ F ≤c G ＼ F where
+  le := by grw [h.le]
+  closed e x hex hx := by
+    obtain ⟨heG, heF⟩ := by simpa using hex.edge_mem
+    exact ⟨h.closed (hex.of_le edgeDelete_le) hx, heF⟩
+
 end Graph

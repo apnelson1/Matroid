@@ -60,6 +60,11 @@ lemma cycleMatroid_indep : G.cycleMatroid.Indep = G.IsAcyclicSet := by
   simp only [cycleMatroid, FiniteCircuitMatroid.matroid_indep_iff, IsCycleSet, IsAcyclicSet]
   aesop
 
+-- @[simp]
+-- lemma cycleMatroid_isCocircuit : G.cycleMatroid.IsCocircuit = G.IsBond := by
+--   ext F
+--   rw?
+
 @[simp]
 lemma cycleMatroid_edgeRestrict (G : Graph α β) (F : Set β) :
     (G ↾ F).cycleMatroid = G.cycleMatroid ↾ (E(G) ∩ F) := by

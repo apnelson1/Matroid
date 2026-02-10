@@ -27,7 +27,7 @@ lemma Inc.isLink_of_inc_of_ne (h1 : G.Inc e x) (h2 : G.Inc e y) (hne : x ≠ y) 
 
 lemma connBetween_vertexDelete_iff_of_degree_le_one (hX : ∀ x ∈ X, G.eDegree x ≤ 1) (hs : s ∉ X)
     (ht : t ∉ X) : (G - X).ConnBetween s t ↔ G.ConnBetween s t := by
-  refine ⟨fun h ↦ h.of_le vertexDelete_le, fun h ↦ ?_⟩
+  refine ⟨fun h ↦ h.mono vertexDelete_le, fun h ↦ ?_⟩
   obtain ⟨w, hw, rfl, rfl⟩ := h.exists_isPath
   use w, by simp [hw.isWalk, hw.isTrail.disjoint_of_degree_le_one hX hs ht]
 
@@ -418,11 +418,11 @@ lemma connBetween_mixedLineGraph_del_iff :
     · simpa using h2 x hx
     rfl
   rw [← connBetween_mixedLineGraph_iff, mixedLineGraph_edgeDelete, mixedLineGraph_vertexDelete] at h
-  refine h.of_le ?_
+  refine h.mono ?_
   rw [← vertexDelete_vertexDelete, ← vertexDelete_vertexDelete, vertexDelete_vertexDelete_comm]
   exact vertexDelete_le
 
-@[simps]
+@[simps (attr := grind =)]
 def mixedLineOfEnsembleMap [DecidableEq α] (A : L'(G).VertexEnsemble (inl s) (inl t) ι) :
     G.VertexEnsemble s t ι where
   f i := WalkOfMixedLineGraph (A.f i) (A.isPath i).isWalk (A.first_eq i) (A.last_eq i)

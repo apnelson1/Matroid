@@ -23,15 +23,15 @@ lemma SetConnected_singleton (G : Graph α β) (s t : α) :
 
 lemma SetConnected.of_le (h : G.SetConnected S T) (hle : G ≤ H) : H.SetConnected S T := by
   obtain ⟨s, hs, t, ht, hst⟩ := h
-  exact ⟨s, hs, t, ht, hst.of_le hle⟩
+  exact ⟨s, hs, t, ht, hst.mono hle⟩
 
 lemma SetConnected.subset_left (h : G.SetConnected S T) (hS : S ⊆ S') : G.SetConnected S' T := by
   obtain ⟨s, hs, t, ht, hst⟩ := h
-  exact ⟨s, hS hs, t, ht, hst.of_le (by simp)⟩
+  exact ⟨s, hS hs, t, ht, hst.mono (by simp)⟩
 
 lemma SetConnected.subset_right (h : G.SetConnected S T) (hT : T ⊆ T') : G.SetConnected S T' := by
   obtain ⟨s, hs, t, ht, hst⟩ := h
-  exact ⟨s, hs, t, hT ht, hst.of_le (by simp)⟩
+  exact ⟨s, hs, t, hT ht, hst.mono (by simp)⟩
 
 lemma SetConnected.subset (h : G.SetConnected S T) (hS : S ⊆ S') (hT : T ⊆ T') :
     G.SetConnected S' T' :=
@@ -52,12 +52,12 @@ lemma setConnected_comm : G.SetConnected S T ↔ G.SetConnected T S := by
 
 lemma SetConnected.vertexSet_inter_left (h : G.SetConnected S T) : G.SetConnected (V(G) ∩ S) T := by
   obtain ⟨s, hs, t, ht, hst⟩ := h
-  exact ⟨s, ⟨hst.left_mem, hs⟩, t, ht, hst.of_le (by simp)⟩
+  exact ⟨s, ⟨hst.left_mem, hs⟩, t, ht, hst.mono (by simp)⟩
 
 lemma SetConnected.vertexSet_inter_right (h : G.SetConnected S T) :
     G.SetConnected S (V(G) ∩ T) := by
   obtain ⟨s, hs, t, ht, hst⟩ := h
-  exact ⟨s, hs, t, ⟨hst.right_mem, ht⟩, hst.of_le (by simp)⟩
+  exact ⟨s, hs, t, ⟨hst.right_mem, ht⟩, hst.mono (by simp)⟩
 
 lemma SetConnected.vertexSet_inter (h : G.SetConnected S T) :
     G.SetConnected (V(G) ∩ S) (V(G) ∩ T) :=
@@ -197,7 +197,7 @@ lemma IsSetCut.of_vertexDelete (h : (G - X).IsSetCut S T C) : G.IsSetCut S T ((X
     congr
     exact inter_eq_left.mpr <| h.subset_vertexSet.trans (by simp [diff_subset])
 
-@[simps]
+@[simps (attr := grind =)]
 lemma IsSetCut.of_vertexDelete' (hC : (G - X).IsSetCut S T C) :
     G.IsSetCut (S ∪ X) (T ∪ X) ((X ∩ V(G)) ∪ C) where
   subset_vertexSet := by
@@ -386,7 +386,7 @@ lemma image_last_subset (A : G.SetEnsemble) : last '' A.paths ⊆ A.vertexSet :=
   simp only [mem_vertexSet_iff]
   use P, hP, last_mem
 
-@[simps]
+@[simps (attr := grind =)]
 def empty (G : Graph α β) : G.SetEnsemble where
   paths := ∅
   disjoint := by simp

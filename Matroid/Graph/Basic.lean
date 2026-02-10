@@ -330,9 +330,19 @@ def LinkEdgesSet (G : Graph α β) (S T : Set α) : Set β := {e | ∃ x ∈ S, 
 
 notation "E(" G ", " S ", " T ")" => LinkEdgesSet G S T
 
-@[simp]
+notation "δ(" G ", " S ")" => LinkEdgesSet G S (V(G) \ S)
+
+@[grind =]
 lemma mem_linkEdgesSet_iff (G : Graph α β) (S T : Set α) (e : β) :
   e ∈ E(G, S, T) ↔ ∃ x ∈ S, ∃ y ∈ T, G.IsLink e x y := Iff.rfl
+
+lemma IsLink.mem_linkEdgesSet_iff (h : G.IsLink e x y) :
+    e ∈ E(G, S, T) ↔ x ∈ S ∧ y ∈ T ∨ x ∈ T ∧ y ∈ S := by
+  refine ⟨fun ⟨a, haS, b, hbT, hab⟩ => ?_, ?_⟩
+  · grind [h.eq_and_eq_or_eq_and_eq hab]
+  rintro (⟨hxS, hyT⟩ | ⟨hxT, hyS⟩) <;> simp only [G.mem_linkEdgesSet_iff]
+  · use x, hxS, y, hyT, h
+  use y, hyS, x, hxT, h.symm
 
 lemma linkEdgesSet_subset (G : Graph α β) (S T : Set α) : E(G, S, T) ⊆ E(G) := by
   rintro e ⟨x, hxS, y, hyT, he⟩

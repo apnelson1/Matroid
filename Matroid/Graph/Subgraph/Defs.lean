@@ -10,7 +10,7 @@ open Set Function
 namespace Graph
 
 /-- Restrict `G : Graph α β` to the edges in a set `E₀` without removing vertices -/
-@[simps]
+@[simps (attr := grind =)]
 def edgeRestrict (G : Graph α β) (E₀ : Set β) : Graph α β where
   vertexSet := V(G)
   edgeSet := E(G) ∩ E₀
@@ -76,7 +76,7 @@ lemma edgeRestrict_edgeRestrict (G : Graph α β) (F₁ F₂ : Set β) : (G ↾ 
 
 /-- Delete a set `F` of edges from `G`. This is a special case of `edgeRestrict`,
 but we define it with `copy` so that the edge set is definitionally equal to `E(G) \ F`. -/
-@[simps!]
+@[simps! (attr := grind =)]
 def edgeDelete (G : Graph α β) (F : Set β) : Graph α β :=
   (G.edgeRestrict (E(G) \ F)).copy (E := E(G) \ F)
   (IsLink := fun e x y ↦ G.IsLink e x y ∧ e ∉ F) rfl
@@ -129,7 +129,7 @@ lemma edgeDelete_edgeDelete (G : Graph α β) (F₁ F₂ : Set β) : G ＼ F₁ 
 The edges are the edges of `G` with both ends in `X`.
 (`X` is not required to be a subset of `V(G)` for this definition to work,
 even though this is the standard use case) -/
-@[simps! vertexSet isLink]
+@[simps! (attr := grind =) vertexSet isLink]
 protected def induce (G : Graph α β) (X : Set α) : Graph α β where
   vertexSet := X
   IsLink e x y := G.IsLink e x y ∧ x ∈ X ∧ y ∈ X
@@ -347,7 +347,7 @@ lemma singleEdge_compatible_iff :
 
 /-- The intersection of a nonempty family of pairwise compatible graphs.
   Remove any disagreeing edges. -/
-@[simps]
+@[simps (attr := grind =)]
 protected def iInter [Nonempty ι] (G : ι → Graph α β) : Graph α β where
   vertexSet := ⋂ i, V(G i)
   edgeSet := {e | ∃ x y, ∀ i, (G i).IsLink e x y}
@@ -374,7 +374,7 @@ lemma le_iInter_iff [Nonempty ι] {G : ι → Graph α β} :
   use x, y, fun i ↦ hbtw.of_le (h i)
 
 /-- The intersection of a nonempty set of pairwise compatible graphs. -/
-@[simps!]
+@[simps! (attr := grind =)]
 protected def sInter (s : Set (Graph α β)) (hne : s.Nonempty) : Graph α β :=
   @Graph.iInter _ _ _ hne.to_subtype (fun G : s ↦ G.1)
 
@@ -458,7 +458,7 @@ instance : SemilatticeInf (Graph α β) where
 --   left_mem_of_isLink := fun e x y ⟨⟨i, hi⟩,h⟩ ↦ mem_iUnion.2 ⟨i, hi.left_mem⟩
 
 /-- The union of an indexed family of pairwise compatible graphs. -/
-@[simps]
+@[simps (attr := grind =)]
 protected def iUnion (G : ι → Graph α β) (hG : Pairwise (Graph.Compatible on G)) : Graph α β where
   vertexSet := ⋃ i, V(G i)
   edgeSet := ⋃ i, E(G i)
@@ -483,7 +483,7 @@ protected lemma iUnion_le_iff {G : ι → Graph α β} (hG : Pairwise (Graph.Com
     fun h' ↦ ⟨by simp [fun i ↦ vertexSet_mono (h' i)], fun e x y ⟨i, h⟩ ↦ h.of_le (h' i)⟩⟩
 
 /-- The union of a set of pairwise compatible graphs. -/
-@[simps!]
+@[simps! (attr := grind =)]
 protected def sUnion (s : Set (Graph α β)) (hs : s.Pairwise Compatible) : Graph α β :=
   .iUnion (fun G : s ↦ G.1) <| (pairwise_subtype_iff_pairwise_set s Compatible).2 hs
 
@@ -567,7 +567,7 @@ lemma Compatible.union_le_iff {H₁ H₂ : Graph α β} (h_compat : H₁.Compati
 
 /-- Add a new edge `e` between vertices `a` and `b`. If `e` is already in the graph,
 its ends change to `a` and `b`. -/
-@[simps! edgeSet vertexSet]
+@[simps! (attr := grind =) edgeSet vertexSet]
 protected def addEdge (G : Graph α β) (e : β) (a b : α) : Graph α β :=
   Graph.singleEdge a b e ∪ G
 

@@ -10,7 +10,7 @@ open scoped Sym2
 
 namespace Graph
 
-@[simps]
+@[simps (attr := grind =)]
 def ofPFun (f : β →. Sym2 α) : Graph α β where
   vertexSet := {x | ∃ y e, f e = s(x, y)}
   edgeSet := f.Dom
@@ -31,7 +31,7 @@ def ofPFun (f : β →. Sym2 α) : Graph α β where
 /-- Map `G : Graph α β` to a `Graph α' β` with the same edge set
 by applying a function `f : α → α'` to each vertex.
 Edges between identified vertices become loops. -/
-@[simps]
+@[simps (attr := grind =)]
 def map {α' : Type*} (f : α → α') (G : Graph α β) : Graph α' β where
   vertexSet := f '' V(G)
   edgeSet := E(G)
@@ -260,7 +260,7 @@ end IsContractClosed
 
 
 
-@[simps]
+@[simps (attr := grind =)]
 noncomputable def edgePreimg {β' : Type*} (G : Graph α β) (σ : β' → β) : Graph α β' where
   vertexSet := V(G)
   edgeSet := σ ⁻¹' E(G)
@@ -285,7 +285,7 @@ lemma edgePreimg_inc : (G.edgePreimg σ).Inc e' u ↔ ∃ e, σ e' = e ∧ G.Inc
 
 variable {β' : Type*} {σ : β → β'} {e' : β'}
 
-@[simps]
+@[simps (attr := grind =)]
 def edgeMap (G : Graph α β) (σ : β → β')
     (hσ : ∀ e₁ ∈ E(G), ∀ e₂ ∈ E(G), σ e₁ = σ e₂ → G.IsLink e₁ = G.IsLink e₂) : Graph α β' where
   vertexSet := V(G)
@@ -311,7 +311,7 @@ lemma edgeMap_inc (hσ : ∀ e₁ ∈ E(G), ∀ e₂ ∈ E(G), σ e₁ = σ e₂
   simp only [Inc, edgeMap_isLink]
   tauto
 
--- @[simps! vertexSet edgeSet]
+-- @[simps! (attr := grind =) vertexSet edgeSet]
 -- def map (G : Graph α β) (f : α → α') (σ : β → β')
 --     (hσ : ∀ e₁ ∈ E(G), ∀ e₂ ∈ E(G), σ e₁ = σ e₂ → G.IsLink e₁ = G.IsLink e₂) : Graph α' β' :=
 --   f ''ᴳ G.edgeMap σ hσ

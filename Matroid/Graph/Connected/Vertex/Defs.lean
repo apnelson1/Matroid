@@ -49,14 +49,16 @@ instance : IsTrans _ G.ConnBetween where
 lemma connBetween_self : G.ConnBetween x x ↔ x ∈ V(G) :=
   ⟨ConnBetween.left_mem, ConnBetween.refl⟩
 
+@[grind →]
 lemma Adj.connBetween (h : G.Adj x y) : G.ConnBetween x y :=
   ⟨cons x h.choose (nil y), by simp [h.choose_spec, h.right_mem], by simp, by simp⟩
 
+@[grind →]
 lemma IsLink.connBetween (h : G.IsLink e x y) : G.ConnBetween x y :=
   h.adj.connBetween
 
-lemma ConnBetween.of_le (h : H.ConnBetween x y) (hle : H ≤ G) :
-    G.ConnBetween x y := by
+@[grind →]
+lemma ConnBetween.mono (h : H.ConnBetween x y) (hle : H ≤ G) : G.ConnBetween x y := by
   obtain ⟨W, hW, rfl, rfl⟩ := h
   use W, hW.of_le hle
 
@@ -70,15 +72,13 @@ lemma connBetween_iff_exists_isPath :
     G.ConnBetween x y ↔ ∃ P, G.IsPath P ∧ P.first = x ∧ P.last = y :=
   ⟨fun h ↦ h.exists_isPath, fun ⟨P, hP, hPf, hPl⟩ ↦ ⟨P, hP.isWalk, hPf, hPl⟩⟩
 
-@[simp]
-lemma not_connBetween_of_left_not_mem (hx : x ∉ V(G)) : ¬ G.ConnBetween x y := by
-  rintro h
-  exact hx h.left_mem
+@[simp, grind =>]
+lemma not_connBetween_of_left_not_mem (hx : x ∉ V(G)) : ¬ G.ConnBetween x y :=
+  (hx ·.left_mem)
 
-@[simp]
-lemma not_connBetween_of_right_not_mem (hy : y ∉ V(G)) : ¬ G.ConnBetween x y := by
-  rintro h
-  exact hy h.right_mem
+@[simp, grind =>]
+lemma not_connBetween_of_right_not_mem (hy : y ∉ V(G)) : ¬ G.ConnBetween x y :=
+  (hy ·.right_mem)
 
 lemma IsWalk.connBetween_of_mem_of_mem (hW : G.IsWalk W) (hx : x ∈ W) (hy : y ∈ W) :
     G.ConnBetween x y := by
@@ -173,7 +173,7 @@ lemma IsSepBetween.of_le (hX : G.IsSepBetween s t X) (hle : H ≤ G) :
     H.IsSepBetween s t (V(H) ∩ X) := by
   refine ⟨inter_subset_left, by simp [hX.left_not_mem], by simp [hX.right_not_mem], ?_⟩
   have : ¬ (H - X).ConnBetween s t :=
-    mt (ConnBetween.of_le · (by gcongr)) hX.not_connBetween
+    mt (ConnBetween.mono · (by gcongr)) hX.not_connBetween
   simpa [vertexDelete_vertexSet_inter] using this
 
 lemma IsWalk.not_disjoint_isSepBetween (hW : G.IsWalk W) (hX : G.IsSepBetween W.first W.last X) :
@@ -241,7 +241,7 @@ lemma IsEdgeCutBetween.of_le (hF : G.IsEdgeCutBetween F s t) (hle : H ≤ G) :
   subset_edgeSet := inter_subset_left
   not_connBetween := by
     rw [edgeDelete_edgeSet_inter]
-    exact mt (ConnBetween.of_le · (by gcongr)) hF.not_connBetween
+    exact mt (ConnBetween.mono · (by gcongr)) hF.not_connBetween
 
 lemma IsWalk.not_disjoint_isEdgeCutBetween (hW : G.IsWalk W)
     (hF : G.IsEdgeCutBetween F W.first W.last) : ¬ Disjoint E(W) F := by
@@ -304,7 +304,7 @@ lemma VertexEnsemble.nontrivial_of_not_adj (P : G.VertexEnsemble s t ι) (hne : 
     exact hadj ⟨e, this.1⟩ |>.elim
   | .cons s e (cons x e' w) => simp
 
-@[simps]
+@[simps (attr := grind =)]
 def vertexEnsemble_empty (G : Graph α β) (s t : α) (ι : Type*) [h : IsEmpty ι] :
     G.VertexEnsemble s t ι where
   f _ := nil s
@@ -318,7 +318,7 @@ lemma vertexEnsemble_empty_edgeDisjoint [h : IsEmpty ι] :
     (G.vertexEnsemble_empty s t ι).edgeDisjoint := by
   simp [VertexEnsemble.edgeDisjoint]
 
-@[simps]
+@[simps (attr := grind =)]
 def vertexEnsemble_nil (G : Graph α β) (h : s ∈ V(G)) (ι : Type*) : G.VertexEnsemble s s ι where
   f _ := nil s
   isPath i := by simpa
@@ -331,7 +331,7 @@ lemma vertexEnsemble_nil_edgeDisjoint (h : s ∈ V(G)) :
     (G.vertexEnsemble_nil h ι).edgeDisjoint :=
   fun _ _ _ ↦ by simp [vertexEnsemble_nil]
 
-@[simps]
+@[simps (attr := grind =)]
 def IsLink.vertexEnsemble (ι : Type*) (h : G.IsLink e s t) (hne : s ≠ t) :
     G.VertexEnsemble s t ι where
   f _ := cons s e (nil t)
@@ -340,7 +340,7 @@ def IsLink.vertexEnsemble (ι : Type*) (h : G.IsLink e s t) (hne : s ≠ t) :
   last_eq i := by simp
   internallyDisjoint i j h := by simp
 
-@[simps]
+@[simps (attr := grind =)]
 def IsPath.vertexEnsemble (h : G.IsPath P) : G.VertexEnsemble P.first P.last PUnit where
   f _ := P
   isPath i := h
@@ -352,7 +352,7 @@ def IsPath.vertexEnsemble (h : G.IsPath P) : G.VertexEnsemble P.first P.last PUn
 lemma IsPath.vertexEnsemble_edgeDisjoint (h : G.IsPath P) : (h.vertexEnsemble).edgeDisjoint :=
   fun _ _ hne ↦ (hne rfl).elim
 
-@[simps]
+@[simps (attr := grind =)]
 def VertexEnsemble.comp (P : G.VertexEnsemble s t ι) (f : ι' ↪ ι) : G.VertexEnsemble s t ι' where
   f := P.f ∘ f
   isPath i := P.isPath (f i)
@@ -367,7 +367,7 @@ lemma VertexEnsemble.comp_edgeDisjoint {P : G.VertexEnsemble s t ι} (hP : P.edg
   simp only [onFun, comp, comp_apply]
   exact hP (f.inj'.ne hne)
 
-@[simps]
+@[simps (attr := grind =)]
 def VertexEnsemble.of_le (P : H.VertexEnsemble s t ι) (hle : H ≤ G) : G.VertexEnsemble s t ι where
   f := P.f
   isPath i := P.isPath i |>.of_le hle
@@ -388,7 +388,7 @@ lemma VertexEnsemble.subset_vertexSet_of_mem (P : G.VertexEnsemble s t ι) (i : 
     V(P.f i) \ {s, t} ⊆ P.vertexSet :=
   diff_subset_diff_left <| subset_iUnion (fun i ↦ V(P.f i)) i
 
-@[simps]
+@[simps (attr := grind =)]
 def VertexEnsemble.sum (P : G.VertexEnsemble s t ι) (Q : G.VertexEnsemble s t ι')
     (h : Disjoint P.vertexSet Q.vertexSet) : G.VertexEnsemble s t (ι ⊕ ι') where
   f i := i.elim P.f Q.f

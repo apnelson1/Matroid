@@ -272,4 +272,9 @@ lemma IsForest.contract (hφ : G.connPartition.IsRepFun φ) (hGH : G ≤ H) (hH 
   rw [contract_isBridge_iff hφ hGH he]
   exact hH he.1
 
+-- lemma eq_contract_edgeDelete (hφ : G.connPartition.IsRepFun φ) (hGH : G ≤ H) :
+--     ∃ F ≤ G, F.IsForest ∧ H /[φ, E(G)] = (H ＼ (E(G) \ E(F))) /[φ, E(F)] := by
+--   have :=
+--   sorry
+
 end Graph

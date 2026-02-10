@@ -38,7 +38,7 @@ lemma connPartition_rel_iff (G : Graph α β) (x y : α): G.connPartition x y �
   refine ⟨fun ⟨S, ⟨H, hH, hSeq⟩, hx, hy⟩ => ?_, fun h =>
     ⟨V(G.walkable x), (by use G.walkable x, walkable_isCompOf h.left_mem), by simp [h.left_mem], h⟩⟩
   subst S
-  exact hH.preconnected x y hx hy |>.of_le hH.le
+  exact hH.preconnected x y hx hy |>.mono hH.le
 
 lemma components_eq_singleton_iff : (∃ H, G.Components = {H}) ↔ G.Connected := by
   refine ⟨?_, ?_⟩
@@ -185,7 +185,7 @@ lemma walkable_mono (hle : G ≤ H) (x : α) : G.walkable x ≤ H.walkable x := 
   have := (walkable_isCompOf <| vertexSet_mono hle hxG).isInducedSubgraph
   apply this.le_of_le_subset (walkable_isCompOf hxG |>.le.trans hle)
   intro v hv
-  exact ConnBetween.of_le hv hle
+  exact ConnBetween.mono hv hle
 
 lemma IsCompOf.of_vertexDelete (hH : H.IsCompOf G) (hS : Disjoint V(H) S) : H.IsCompOf (G - S) := by
   refine ⟨⟨hH.isClosedSubgraph.vertexDelete_of_disjoint hS, hH.1.2⟩, ?_⟩
@@ -293,7 +293,7 @@ lemma Preconnected.exists_connBetween_deleteEdge_set_set (hG : G.Preconnected)
 
 lemma loopRemove_preconnected_iff (G : Graph α β) :
     (G.loopRemove).Preconnected ↔ G.Preconnected := by
-  refine ⟨fun h s t hs ht ↦ h s t hs ht |>.of_le G.loopRemove_le, fun h s t hs ht ↦ ?_⟩
+  refine ⟨fun h s t hs ht ↦ h s t hs ht |>.mono G.loopRemove_le, fun h s t hs ht ↦ ?_⟩
   obtain ⟨P, hP, rfl, rfl⟩ := h s t hs ht |>.exists_isPath
   use P, hP.loopRemove.isWalk
 
@@ -335,7 +335,7 @@ lemma Preconnected.edgeDelete_linkEdges_connBetween_or (hG : G.Preconnected) (hx
     (G ＼ E(G, u, v)).ConnBetween x u ∨ (G ＼ E(G, u, v)).ConnBetween x v := by
   obtain ⟨w, (rfl | rfl), hw⟩ := hG.exists_connBetween_deleteEdge_set (X := {u, v})
     ⟨u, by simp, hu⟩ hx
-  <;> replace hw := hw.of_le <| G.edgeDelete_anti_right <| G.induce_pair_edgeSet _ _ <;> tauto
+  <;> replace hw := hw.mono <| G.edgeDelete_anti_right <| G.induce_pair_edgeSet _ _ <;> tauto
 
 lemma Preconnected.edgeDelete_linkEdges_not_connBetween (hG : G.Preconnected)
     (h' : ¬ (G ＼ E(G, u, v)).Preconnected) : ¬ (G ＼ E(G, u, v)).ConnBetween u v := by
@@ -624,9 +624,9 @@ lemma Compatible.union_connected_of_forall (h : G.Compatible H) (hG : G.Connecte
   obtain ⟨v, hv⟩ := hG.nonempty
   refine connected_of_vertex (u := v) (by simp [hv]) ?_
   rintro y (hy | hy)
-  · exact (hG.connBetween hy hv).of_le <| Graph.left_le_union ..
+  · exact (hG.connBetween hy hv).mono <| Graph.left_le_union ..
   obtain ⟨z, hzG, hyz⟩ := hH _ hy
-  exact (hyz.of_le h.right_le_union).trans <| (hG.connBetween hzG hv).of_le <|
+  exact (hyz.mono h.right_le_union).trans <| (hG.connBetween hzG hv).mono <|
     Graph.left_le_union ..
 
 lemma Compatible.union_connected_of_nonempty_inter (h : Compatible G H) (hG : G.Connected)
@@ -739,7 +739,7 @@ lemma Connected.exists_component_ge (hH : H.Connected) (hle : H ≤ G) :
   obtain ⟨x, hx⟩ := hH.nonempty
   refine ⟨_, walkable_isCompOf (vertexSet_mono hle hx), ?_⟩
   rw [walkable_eq_induce_setOf_connBetween]
-  refine le_induce_of_le_of_subset hle fun y hy ↦ (hH.connBetween hx hy).of_le hle
+  refine le_induce_of_le_of_subset hle fun y hy ↦ (hH.connBetween hx hy).mono hle
 
 lemma exists_IsCompOf_edge_mem (he : e ∈ E(G)) :
     ∃ (H : Graph α β), H.IsCompOf G ∧ e ∈ E(H) := by
@@ -759,7 +759,7 @@ lemma IsCompOf_iff_isClosedSubgraph_connected : H.IsCompOf G ↔ H ≤c G ∧ H.
   obtain ⟨e, x, hex, heH, hxH⟩ := hH.exists_inc_notMem_of_lt hlt hKG
   exact heH <| ((hex.of_le hHG.le).of_isClosedSubgraph_of_mem hK hxH).edge_mem
 
-lemma IsClosedSubgraph.IsCompOf_of_connected (h : H ≤c G) (hH : H.Connected) :
+lemma IsClosedSubgraph.isCompOf_of_connected (h : H ≤c G) (hH : H.Connected) :
     H.IsCompOf G := by
   refine IsCompOf_iff_isClosedSubgraph_connected.2 ⟨h, hH⟩
 
@@ -768,7 +768,7 @@ lemma Connected.IsCompOf_of_isClosedSubgraph (hH : H.Connected) (h : H ≤c G) :
   refine IsCompOf_iff_isClosedSubgraph_connected.2 ⟨h, hH⟩
 
 /-- For a proper component `H`, the separation with parts `V(H)` and `V(G) \ V(H)`. -/
-@[simps]
+@[simps (attr := grind =)]
 def IsCompOf.separation_of_ne (h : H.IsCompOf G) (hne : H ≠ G) : G.Separation where
   left := V(H)
   right := V(G) \ V(H)
@@ -800,7 +800,7 @@ lemma IsCompOf_sUnion_iff {s : Set (Graph α β)} (h : s.Pairwise Graph.Strongly
     have hex : ∃ H ∈ s, x ∈ V(H) := by simpa using vertexSet_mono hH.le hx
     obtain ⟨H', hH', hxH'⟩ := hex
     rwa [← (aux hH').eq_of_mem_mem hH hxH' hx]
-  exact fun H h' ↦ (isClosedSubgraph_sUnion_of_stronglyDisjoint s h h').IsCompOf_of_connected
+  exact fun H h' ↦ (isClosedSubgraph_sUnion_of_stronglyDisjoint s h h').isCompOf_of_connected
     (hs H h')
 
 /-- If `H` is a nonempty subgraph of a connected graph `G`, and each vertex degree in `H`

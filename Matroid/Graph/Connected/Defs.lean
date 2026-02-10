@@ -44,7 +44,7 @@ lemma left_subset (S : G.Separation) : S.left ⊆ V(G) := by
 lemma right_subset (S : G.Separation) : S.right ⊆ V(G) := by
   simp [← S.union_eq]
 
-@[simps]
+@[simps (attr := grind =)]
 def symm (S : G.Separation) : G.Separation where
   left := S.right
   right := S.left
@@ -177,7 +177,7 @@ lemma preconnected_of_vertexSet_subsingleton (hV : V(G).Subsingleton) : G.Precon
   exact S.vertexSet_nontrivial
 
 lemma Preconnected.isSpanningSubgraph (h : H.Preconnected) (hsle : H ≤s G) : G.Preconnected :=
-  fun s t hs ht ↦ (h s t (hsle.vertexSet_eq ▸ hs) (hsle.vertexSet_eq ▸ ht)).of_le hsle.le
+  fun s t hs ht ↦ (h s t (hsle.vertexSet_eq ▸ hs) (hsle.vertexSet_eq ▸ ht)).mono hsle.le
 
 @[simp]
 lemma IsComplete.preconnected (h : G.IsComplete) : G.Preconnected := by

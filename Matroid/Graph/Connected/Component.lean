@@ -177,7 +177,7 @@ def Components (G : Graph α β) : Set (Graph α β) := {H | H.IsCompOf G}
 noncomputable def NumberOfComponents (G : Graph α β) := G.Components.encard
 notation "c(" G ")" => NumberOfComponents G
 
-@[simps!]
+@[simps! (attr := grind =)]
 def compPartition (G : Graph α β) : Partition (G.Subgraph) := by
   refine Partition.ofPairwiseDisjoint' (parts := {H | H.val.IsCompOf G}) ?_ ?_
   · rintro H₁ hH₁ H₂ hH₂ hne
@@ -205,7 +205,7 @@ lemma mem_compPartition_iff_isCompOf {H : G.Subgraph} : H ∈ G.compPartition �
 lemma bot_notMem_components (G : Graph α β) : ⊥ ∉ G.Components := by
   simp [Components]
 
-@[simps]
+@[simps (attr := grind =)]
 def connPartition (G : Graph α β) : Partition (Set α) where
   parts := (fun x : Graph α β ↦ V(x)) '' G.Components
   indep := by

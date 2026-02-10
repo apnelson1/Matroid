@@ -7,7 +7,7 @@ variable {α β ι ι' : Type*} {G H : Graph α β} {s t u v x x₁ x₂ y y₁ 
 
 namespace Graph
 
-@[simps]
+@[simps (attr := grind =)]
 def IsSetCut.isSepBetween_of_neighbor (hC : (G - ({s, t} : Set α)).IsSetCut (N(G, s) \ {s})
     (N(G, t) \ {t}) C) (hne : s ≠ t) (hadj : ¬ G.Adj s t) : G.IsSepBetween s t C where
   subset := by
@@ -36,7 +36,7 @@ lemma connBetweenGE_iff_setConnGE (hne : s ≠ t) (hadj : ¬ G.Adj s t) :
   obtain ⟨a, ⟨hsa, hsane⟩, b, ⟨htb, htbne⟩, hab⟩ := hh
   have hsa' := (G.vertexDelete_adj_iff C).mpr ⟨hsa, hC.left_not_mem, hab.left_mem.2⟩
   have htb' := (G.vertexDelete_adj_iff C).mpr ⟨htb, hC.right_not_mem, hab.right_mem.2⟩
-  exact (hsa'.connBetween.trans ((G.vertexDelete_vertexDelete_comm _ _ ▸ hab).of_le
+  exact (hsa'.connBetween.trans ((G.vertexDelete_vertexDelete_comm _ _ ▸ hab).mono
     vertexDelete_le)).trans htb'.connBetween.symm
 
 lemma ConnBetweenGE.le_left_Neighbor_encard (hne : s ≠ t) (hadj : ¬ G.Adj s t)

@@ -88,7 +88,7 @@ import Matroid.Graph.Map
 -- import Matroid.Graph.Matching.TutteBerge
 import Matroid.Graph.Minor.Conn
 import Matroid.Graph.Minor.Defs
--- import Matroid.Graph.Plainarity.Drawing
+-- import Matroid.Graph.Planarity.Drawing
 import Matroid.Graph.Simple
 import Matroid.Graph.Subgraph.Basic
 import Matroid.Graph.Subgraph.Compatible

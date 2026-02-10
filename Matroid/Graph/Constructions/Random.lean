@@ -15,7 +15,7 @@ lemma Nat.testBit_self (n : ℕ) : n.testBit n = false := by
 namespace Graph
 
 /-- Construction of the random simple graph using binary numbers. -/
-@[simps]
+@[simps (attr := grind =)]
 def randomGraph : Graph ℕ (Sym2 ℕ) where
   vertexSet := univ
   edgeSet := {e | Nat.testBit e.sup e.inf}

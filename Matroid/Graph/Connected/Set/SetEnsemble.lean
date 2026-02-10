@@ -49,7 +49,7 @@ lemma last_injOn (A : G.SetEnsemble) : A.paths.InjOn WList.last := by
 
 /-! ### Operations on SetEnsembles -/
 
-@[simps]
+@[simps (attr := grind =)]
 def congr (A : G.SetEnsemble) (hG : G = H) : H.SetEnsemble where
   paths := A.paths
   disjoint := A.disjoint
@@ -61,7 +61,7 @@ lemma congr_vertexSet (A : G.SetEnsemble) (hG : G = H) :
   rw [vertexSet_eq_biUnion, congr_paths, ← vertexSet_eq_biUnion]
 
 /-- Attaches the same set of paths to a larger graph. -/
-@[simps]
+@[simps (attr := grind =)]
 def of_le (A : G.SetEnsemble) (hle : G ≤ H) : H.SetEnsemble where
   paths := A.paths
   disjoint := A.disjoint
@@ -92,7 +92,7 @@ lemma between_vertexSet_inter_right_iff : A.between S (V(G) ∩ T) ↔ A.between
 
 /-- Given a vertex set disjoint from a SetEnsemble, the same set of paths form a valid SetEnsmeble
   for `G - X`. -/
-@[simps]
+@[simps (attr := grind =)]
 def vertexDelete (A : G.SetEnsemble) (hA : Disjoint A.vertexSet X) : (G - X).SetEnsemble where
   paths := A.paths
   disjoint := A.disjoint
@@ -124,7 +124,7 @@ def between.diff_right (hAST : A.between S T) (hA : Disjoint A.vertexSet X):
     ((hA.mono_left (A.subset_vertexSet_of_mem hP))).notMem_of_mem_left last_mem⟩
 
 /-- Inserts a new disjoint path into a  -/
-@[simps]
+@[simps (attr := grind =)]
 def path_insert (A : G.SetEnsemble) (P : WList α β) (hP : G.IsPath P)
     (hdj : Disjoint A.vertexSet V(P)) : G.SetEnsemble where
   paths := insert P A.paths
@@ -152,7 +152,7 @@ lemma between.path_insert (hAST : A.between S T) (hP : G.IsPathFrom S T P)
   · exact hP
   exact hAST hQ |>.left_of_symmdiff_disjoint <| by simp
 
-@[simps]
+@[simps (attr := grind =)]
 def path_remove (A : G.SetEnsemble) (P : WList α β) : G.SetEnsemble where
   paths := A.paths \ {P}
   disjoint := A.disjoint.mono diff_subset
@@ -183,7 +183,7 @@ lemma path_remove_last (hP : P ∈ A.paths) :
 lemma between.path_remove (hAST : A.between S T) (P) : (A.path_remove P).between S T :=
   fun _ hQ ↦ hAST hQ.1
 
-@[simps!]
+@[simps! (attr := grind =)]
 def shorten (A : G.SetEnsemble) (P : WList α β) (hQ : Q.IsSublist P) (hP : P ∈ A.paths) :
     G.SetEnsemble :=
   A.path_remove P |>.path_insert Q (A.valid hP |>.sublist hQ)
@@ -228,7 +228,7 @@ lemma vertexSet_inter_pathr_eq_last_inter_pathr (hAST : A.between S T) (hPT : V(
   refine fun hx ↦ exists_congr fun P ↦ and_congr_right fun hP ↦ ?_
   simpa [eq_comm, hPT hx] using hAST hP |>.eq_last_iff_mem x |>.symm
 
-@[simps!]
+@[simps! (attr := grind =)]
 def extend_right (A : G.SetEnsemble) (hAST : A.between S T) (P : WList α β)
    (hPT : V(P) ⊆ T) (hPfirst : A.vertexSet ∩ V(P) = {P.first}) (hP : G.IsPath P) :
    G.SetEnsemble := by
@@ -319,7 +319,7 @@ lemma extend_right_last (A : G.SetEnsemble) (hAST : A.between S T) (hPT : V(P) �
 
 /-- Extends a SetEnsemble by a path in `P` when exactly two paths end somewhere in `P`.
   Send help. -/
-@[simps!]
+@[simps! (attr := grind =)]
 def extend_right_two (A : G.SetEnsemble) (hAST : A.between S T) (P : WList α β) (hPT : V(P) ⊆ T)
     [DecidablePred (· ∈ A.vertexSet)] (htwo : P.vertex.countP (· ∈ A.vertexSet) = 2)
     (hPP : G.IsPath P) : G.SetEnsemble := by
