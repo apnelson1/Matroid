@@ -31,7 +31,7 @@ lemma endSet_encard_le (G : Graph α β) (e : β) : (G.endSet e).encard ≤ 2 :=
   · obtain ⟨x, y, h⟩ := exists_isLink_of_mem_edgeSet heE
     rw [h.endSet_eq]
     exact encard_pair_le x y
-  simp [endSet_eq_of_notMem_edgeSet heE]
+  simp [endSet_eq_of_notMem heE]
 
 @[simp]
 lemma subsingleton_setOf_isLink (G : Graph α β) (e : β) (x : α) :

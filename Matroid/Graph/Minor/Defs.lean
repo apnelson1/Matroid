@@ -173,7 +173,7 @@ variable {α' α'' : Type*}
 def contract (G : Graph α β) (φ : α → α') (C : Set β) : Graph α' β :=
   (φ ''ᴳ G) ＼ C
 
-attribute [grind =] contract_vertexSet contract_edgeSet contract_isLink
+-- attribute [grind =] contract_vertexSet contract_edgeSet contract_isLink
 
 notation:70 G " /["φ ", " C"] " => Graph.contract G φ C
 
@@ -181,7 +181,7 @@ notation:70 G " /["φ ", " C"] " => Graph.contract G φ C
 
 variable {φ φ' τ : α → α'} {C C' D : Set β}
 
-@[simp]
+@[simp, grind =]
 lemma contract_inc {x : α'} : G /[φ, C].Inc e x ↔ e ∉ C ∧ ∃ v, G.Inc e v ∧ φ v = x := by
   simp +contextual only [contract, edgeDelete_inc_iff, map_inc, iff_def, not_false_eq_true,
     true_and, and_imp, forall_exists_index, and_true]
@@ -210,7 +210,8 @@ lemma contract_contract {φ' : α' → α''} : (G /[φ, C]) /[φ', C'] = G /[φ'
   rw [map_edgeDelete_comm, map_map, edgeDelete_edgeDelete]
 
 lemma contract_edgeRestrict_comm : H /[φ, E(G)] ↾ F = (H ↾ F) /[φ, E(G)] := by
-  ext x y <;> grind
+  rw [contract, ← edgeRestrict_edgeDelete_comm, ← map_edgeRestrict_comm]
+  rfl
 
 lemma contract_edgeDelete_comm : (H /[φ, E(G)]) ＼ F = (H ＼ F) /[φ, E(G)] := by
   ext x y <;> grind

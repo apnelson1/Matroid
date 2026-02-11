@@ -46,21 +46,21 @@ lemma edgeFinite_induce [G.EdgeFinite] (hX : X ⊆ V(G)) : (G[X]).EdgeFinite :=
 @[simp]
 lemma edgeSet_finite [G.EdgeFinite] : E(G).Finite := EdgeFinite.edgeSet_finite
 
-lemma endSetSet_finite (G : Graph α β) [G.EdgeFinite] (F : Set β) : V(G, F).Finite := by
-  rw [← endSetSet_inter_edgeSet, ← encard_lt_top_iff]
-  refine lt_of_le_of_lt (G.endSetSet_encard_le (F ∩ E(G)))
+lemma incVertexSet_finite (G : Graph α β) [G.EdgeFinite] (F : Set β) : V(G, F).Finite := by
+  rw [← incVertexSet_inter_edgeSet, ← encard_lt_top_iff]
+  refine lt_of_le_of_lt (G.incVertexSet_encard_le (F ∩ E(G)))
   <| WithTop.mul_lt_top (compareOfLessAndEq_eq_lt.mp rfl)
   <| encard_lt_top_iff.mpr G.edgeSet_finite |>.trans_le' (encard_le_encard inter_subset_right)
 
 lemma nonempty_isTrail_finite (G : Graph α β) [G.EdgeFinite] :
     {P | P.Nonempty ∧ G.IsTrail P}.Finite := by
-  have hVfin := G.endSetSet_finite E(G) |>.to_subtype
+  have hVfin := G.incVertexSet_finite E(G) |>.to_subtype
   have hEfin := G.edgeSet_finite.to_subtype
   have : Finite {L : List E(G) // L.Nodup} := finite_list_nodup E(G)
   let f (P : {P // P.Nonempty ∧ G.IsTrail P}) : V(G, E(G)) × {L : List E(G) // L.Nodup} :=
-    ⟨⟨P.1.first, ?endSetSet⟩,
+    ⟨⟨P.1.first, ?incVertexSet⟩,
     ⟨P.1.edge.attachWith _ (fun _ ↦ P.2.2.isWalk.edge_mem_of_mem), by simp [P.2.2.edge_nodup]⟩⟩
-  case endSetSet =>
+  case incVertexSet =>
     obtain ⟨v, e, w, hp⟩ := P.2.1.exists_cons
     obtain ⟨hl, hw⟩ := by simpa [hp] using P.2.2.isWalk
     exact hp ▸ ⟨e, hl.edge_mem, hl.inc_left⟩

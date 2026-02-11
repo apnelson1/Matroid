@@ -12,7 +12,7 @@ namespace Graph
 
 /-- The cycle matroid of a graph `G`. Its circuits are the edge sets of cycles of `G`,
 and its independent sets are the edge sets of forests. -/
-@[simps! E]
+@[simps! (attr := grind =) E]
 def cycleMatroid (G : Graph α β) : Matroid β :=
   FiniteCircuitMatroid.matroid <| FiniteCircuitMatroid.mk
     (E := E(G))
@@ -60,10 +60,9 @@ lemma cycleMatroid_indep : G.cycleMatroid.Indep = G.IsAcyclicSet := by
   simp only [cycleMatroid, FiniteCircuitMatroid.matroid_indep_iff, IsCycleSet, IsAcyclicSet]
   aesop
 
--- @[simp]
--- lemma cycleMatroid_isCocircuit : G.cycleMatroid.IsCocircuit = G.IsBond := by
---   ext F
---   rw?
+lemma exists_maximal_isAcyclicSet (G : Graph α β) : ∃ F, Maximal G.IsAcyclicSet F := by
+  have := (cycleMatroid G).exists_isBase
+  simpa [isBase_iff_maximal_indep] using this
 
 @[simp]
 lemma cycleMatroid_edgeRestrict (G : Graph α β) (F : Set β) :

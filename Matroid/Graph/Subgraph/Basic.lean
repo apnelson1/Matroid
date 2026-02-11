@@ -100,7 +100,6 @@ lemma edgeSet_monotone : Monotone (Graph.edgeSet (α := α) (β := β)) :=
 lemma le_iff : H ≤ G ↔ (V(H) ⊆ V(G)) ∧ ∀ ⦃e x y⦄, H.IsLink e x y → G.IsLink e x y :=
   ⟨fun h ↦ ⟨h.1, h.2⟩, fun h ↦ ⟨h.1, h.2⟩⟩
 
-@[grind =>]
 lemma isLink_iff_isLink_of_le_of_mem (hle : H ≤ G) (he : e ∈ E(H)) :
     G.IsLink e x y ↔ H.IsLink e x y :=
   ⟨fun h ↦ h.of_le_of_mem hle he, fun h ↦ h.of_le hle⟩
@@ -214,29 +213,29 @@ lemma endSet_eq_of_le (hle : G ≤ H) (he : e ∈ E(G)) : V(H, e) = V(G, e) := b
   exact isLink_eq_of_le hle he |>.symm
 
 @[gcongr]
-lemma endSetSet_mono (hle : G ≤ H) (F : Set β) : V(G, F) ⊆ V(H, F) :=
+lemma incVertexSet_mono (hle : G ≤ H) (F : Set β) : V(G, F) ⊆ V(H, F) :=
   fun _ ⟨e, he, hx⟩ ↦ ⟨e, he, hx.of_le hle⟩
 
-lemma endSetSet_subset_of_subset_of_le (hle : G ≤ H) (hF : F ⊆ E(G)) : V(H, F) ⊆ V(G) :=
+lemma incVertexSet_subset_of_subset_of_le (hle : G ≤ H) (hF : F ⊆ E(G)) : V(H, F) ⊆ V(G) :=
   fun _ ⟨_, he, hx⟩ ↦ hx.of_le_of_mem hle (hF he) |>.vertex_mem
 
 @[gcongr]
 lemma linkEdges_mono (hle : G ≤ H) (u v : α) : E(G, u, v) ⊆ E(H, u, v) :=
   fun _ he ↦ he.of_le hle
 
-lemma linkEdgesSet_mono (hle : G ≤ H) (S T : Set α) : E(G, S, T) ⊆ E(H, S, T) := by
+lemma setLinkEdges_mono (hle : G ≤ H) (S T : Set α) : E(G, S, T) ⊆ E(H, S, T) := by
   rintro e ⟨x, hxS, y, hyT, he⟩
   use x, hxS, y, hyT, he.of_le hle
 
 @[grind =>]
-lemma linkEdgesSet_eq_inter_of_le (hle : G ≤ H) (S T : Set α) : E(G, S, T) = E(G) ∩ E(H, S, T) := by
+lemma setLinkEdges_eq_inter_of_le (hle : G ≤ H) (S T : Set α) : E(G, S, T) = E(G) ∩ E(H, S, T) := by
   ext e
-  simp only [mem_linkEdgesSet_iff, mem_inter_iff]
-  grind [isLink_iff_isLink_and_mem_of_le]
+  simp only [mem_setLinkEdges_iff, mem_inter_iff]
+  grind
 
-lemma linkEdgesSet_eq_inter_of_le' (hle : G ≤ H) (S) : δ(G, S) = E(G) ∩ δ(H, S) := by
+lemma setLinkEdges_eq_inter_of_le' (hle : G ≤ H) (S) : δ(G, S) = E(G) ∩ δ(H, S) := by
   ext e
-  rw [linkEdgesSet_eq_inter_of_le hle]
+  rw [setLinkEdges_eq_inter_of_le hle]
   grind
 
 instance [Finite α] [Finite β] : WellFoundedLT (Graph α β) :=
@@ -400,22 +399,22 @@ lemma IsClosedSubgraph.mem_tfae_of_isLink (h : H ≤c G) (he : G.IsLink e x y) :
   tfae_have 3 → 1 := (he.of_le_of_mem h.le · |>.left_mem)
   tfae_finish
 
-lemma isClosedSubgraph_iff_le_and_linkEdgesSet_empty : H ≤c G ↔ (H ≤i G) ∧ δ(G, V(H)) = ∅ := by
+lemma isClosedSubgraph_iff_le_and_setLinkEdges_empty : H ≤c G ↔ (H ≤i G) ∧ δ(G, V(H)) = ∅ := by
   refine ⟨fun h ↦ ⟨h.isInducedSubgraph, ?_⟩,
     fun ⟨hle, hem⟩ ↦ ⟨hle.le, fun e x ⟨y, hxy⟩ hxH ↦ ?_⟩⟩
   · ext e
-    simp only [mem_linkEdgesSet_iff, mem_diff, mem_empty_iff_false, iff_false, not_exists, not_and,
+    simp only [mem_setLinkEdges_iff, mem_diff, mem_empty_iff_false, iff_false, not_exists, not_and,
       and_imp]
     rintro x hxH y hyG hyH hxy
     exact hyH <| hxy.of_isClosedSubgraph_of_mem h hxH |>.right_mem
   simp only [Set.ext_iff, mem_empty_iff_false, iff_false] at hem
   specialize hem e
-  simp only [hxy.mem_linkEdgesSet_iff, hxH, mem_diff, hxy.right_mem, true_and, not_true_eq_false,
+  simp only [hxy.mem_setLinkEdges_iff, hxH, mem_diff, hxy.right_mem, true_and, not_true_eq_false,
     and_false, false_and, or_false, not_not] at hem
   exact hle.isLink_of_mem_mem hxy hxH hem |>.edge_mem
 
-lemma IsClosedSubgraph.linkEdgesSet_empty (h : H ≤c G) : δ(G, V(H)) = ∅ := by
-  rw [isClosedSubgraph_iff_le_and_linkEdgesSet_empty] at h
+lemma IsClosedSubgraph.setLinkEdges_empty (h : H ≤c G) : δ(G, V(H)) = ∅ := by
+  rw [isClosedSubgraph_iff_le_and_setLinkEdges_empty] at h
   exact h.2
 
 lemma IsClosedSubgraph.adj_of_adj_of_mem (h : H ≤c G) (hx : x ∈ V(H)) (hxy : G.Adj x y) :

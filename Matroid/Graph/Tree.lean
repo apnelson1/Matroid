@@ -12,40 +12,22 @@ structure IsTree (T : Graph α β) : Prop where
   connected : T.Connected
 
 lemma IsForest.isTree_of_IsCompOf (hG : G.IsForest) (hT : T.IsCompOf G) : T.IsTree :=
-  ⟨hG.mono hT.le, hT.connected⟩
+  ⟨hG.anti hT.le, hT.connected⟩
 
 /-- If `G` is connected, then a maximally acylic subgraph of `G` is connected.
 The correct statement is that any two vertices connected in the big graph are
 connected in the small one.
-TODO : Write the proof completely in terms of `IsAcyclicSet`
 -/
 lemma Connected.isTree_of_maximal_isAcyclicSet (hG : G.Connected) (hF : Maximal G.IsAcyclicSet F) :
-    (G ↾ F).IsTree := by
-  rw [show G.IsAcyclicSet = fun X ↦ X ⊆ E(G) ∧ (G ↾ X).IsForest by
-    ext; exact isAcyclicSet_iff] at hF
-  refine ⟨hF.prop.2, by_contra fun hcon ↦ ?_⟩
-  obtain ⟨S, e, x, y, heF, hx, hy, hxy⟩ := hG.exists_of_edgeRestrict_not_connected hcon
-  have hne : x ≠ y := S.disjoint.ne_of_mem hx hy
-  have hx' : x ∉ S.right := S.disjoint.notMem_of_mem_left hx
-  have hy' : y ∉ S.left := S.disjoint.notMem_of_mem_right hy
-  have hFac : (G ↾ F).IsForest := hF.prop.2
-  have h_left : (G ↾ F)[S.left].IsForest := hFac.mono (induce_le S.left_subset)
-  have h_right : (G ↾ F)[S.right].IsForest := hFac.mono (induce_le S.right_subset)
-  have h_left' := h_left.union_isForest_of_subsingleton_inter (singleEdge_isForest hne e) ?_; swap
-  · rw [induce_vertexSet, singleEdge_vertexSet, pair_comm, inter_insert_of_notMem hy']
-    exact Subsingleton.inter_singleton
-  have h' := h_left'.union_isForest_of_subsingleton_inter h_right ?_; swap
-  · simp only [union_vertexSet, induce_vertexSet, singleEdge_vertexSet, union_insert,
-      union_singleton]
-    rw [insert_inter_of_notMem hx', insert_inter_of_mem hy, S.disjoint.inter_eq]
-    simp
-  have hins : insert e F ⊆ E(G) := insert_subset hxy.edge_mem hF.prop.1
-  refine heF <| hF.mem_of_prop_insert ⟨hins, h'.mono ?_⟩
-  rw [(Compatible.of_disjoint_edgeSet (by simp [heF])).union_comm (G := (G ↾ F)[S.left]),
-    Graph.union_assoc, ← S.eq_union]
-  refine le_of_le_le_subset_subset (G := G) (by simp) (Graph.union_le (by simpa) (by simp))
-    (by simp) ?_
-  simp [inter_eq_self_of_subset_right hins, inter_eq_self_of_subset_right hF.prop.1]
+    (G ↾ F).IsTree where
+  isForest := by
+    rw [show G.IsAcyclicSet = fun X ↦ X ⊆ E(G) ∧ (G ↾ X).IsForest by
+      ext; exact isAcyclicSet_iff] at hF
+    exact hF.prop.2
+  connected := by
+    refine connected_iff.mpr ⟨hG.nonempty, fun x y hx hy ↦ ?_⟩
+    rw [connBetween_iff_of_maximal_isAcyclicSet hF]
+    exact hG.pre x y hx hy
 
 /-- Every connected graph has a spanning tree -/
 lemma Connected.exists_isTree_spanningSubgraph (hG : G.Connected) : ∃ T, T.IsTree ∧ T ≤s G := by
@@ -57,10 +39,10 @@ lemma Connected.exists_isTree_spanningSubgraph (hG : G.Connected) : ∃ T, T.IsT
 lemma IsTree.exists_delete_vertex_isTree [T.Finite] (hT : T.IsTree)
     (hnt : V(T).Nontrivial) : ∃ v ∈ V(T), (T - v).IsTree := by
   obtain ⟨x, hxT, hconn⟩ := hT.connected.exists_delete_vertex_connected hnt
-  exact ⟨x, hxT, hT.isForest.mono vertexDelete_le, hconn⟩
+  exact ⟨x, hxT, hT.isForest.anti vertexDelete_le, hconn⟩
 
 lemma IsLeaf.delete_isTree (hT : T.IsTree) (hx : T.IsLeaf x) : (T - x).IsTree :=
-  ⟨hT.isForest.mono vertexDelete_le, hx.delete_connected hT.connected⟩
+  ⟨hT.isForest.anti vertexDelete_le, hx.delete_connected hT.connected⟩
 
 lemma IsTree.encard_vertexSet {T : Graph α β} (h : T.IsTree) : V(T).encard = E(T).encard + 1 := by
   have hsimp := h.isForest.simple

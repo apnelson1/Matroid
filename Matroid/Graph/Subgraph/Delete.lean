@@ -12,6 +12,53 @@ lemma edgeRestrict_isNonloopAt_iff : (G ↾ F).IsNonloopAt e x ↔ G.IsNonloopAt
   simp_rw [IsNonloopAt]
   aesop
 
+@[grind .]
+lemma neighbor_edgeRestrict_subset (G : Graph α β) (F : Set β) (x : α) :
+    N(G ↾ F, x) ⊆ N(G, x) :=
+  neighbor_mono edgeRestrict_le
+
+@[grind .]
+lemma setNeighbor_edgeRestrict_subset (G : Graph α β) (F : Set β) (S : Set α) :
+    N(G ↾ F, S) ⊆ N(G, S) :=
+  setNeighbor_mono edgeRestrict_le S
+
+@[simp, grind =]
+lemma incEdges_edgeRestrict (G : Graph α β) (F : Set β) (x : α) :
+    E(G ↾ F, x) = E(G, x) ∩ F := by
+  ext e
+  simp [mem_inter_iff]
+
+@[simp, grind =]
+lemma setIncEdges_edgeRestrict (G : Graph α β) (F : Set β) (S : Set α) :
+    E(G ↾ F, S) = E(G, S) ∩ F := by
+  ext e
+  grind
+
+@[grind =]
+lemma endSet_edgeRestrict (G : Graph α β) (F : Set β) [DecidablePred (· ∈ F)] (e : β) :
+    V(G ↾ F, e) = if e ∈ F then V(G, e) else ∅ := by
+  grind
+
+@[simp]
+lemma endSet_edgeRestrict_of_mem (G : Graph α β) (F : Set β) (he : e ∈ F) :
+    V(G ↾ F, e) = V(G, e) := by grind
+
+@[simp]
+lemma endSet_edgeRestrict_of_not_mem (G : Graph α β) (F : Set β) (he : e ∉ F) :
+    V(G ↾ F, e) = ∅ := by grind
+
+@[simp, grind =]
+lemma linkEdges_edgeRestrict (G : Graph α β) (F : Set β) (u v : α) :
+    E(G ↾ F, u, v) = E(G, u, v) ∩ F := by
+  ext e
+  simp [mem_inter_iff, and_comm]
+
+@[simp, grind =]
+lemma setLinkEdges_edgeRestrict (G : Graph α β) (F : Set β) (S T : Set α) :
+    E(G ↾ F, S, T) = E(G, S, T) ∩ F := by
+  ext e
+  grind
+
 @[gcongr]
 lemma edgeRestrict_le_edgeRestrict (h : E(G) ∩ F₁ ⊆ E(G) ∩ F₂) : G ↾ F₁ ≤ G ↾ F₂ :=
   le_of_le_le_subset_subset edgeRestrict_le edgeRestrict_le (by simp) h
@@ -72,6 +119,38 @@ lemma edgeDelete_isNonloopAt_iff : (G ＼ F).IsNonloopAt e x ↔ G.IsNonloopAt e
   simp only [edgeDelete_eq_edgeRestrict, edgeRestrict_isNonloopAt_iff, mem_diff,
     and_congr_right_iff, and_iff_right_iff_imp]
   exact fun h _ ↦ h.edge_mem
+
+@[grind .]
+lemma neighbor_edgeDelete_subset (G : Graph α β) (F : Set β) (x : α) : N(G ＼ F, x) ⊆ N(G, x) :=
+  neighbor_mono edgeDelete_le
+
+@[grind .]
+lemma setNeighbor_edgeDelete_subset (G : Graph α β) (F : Set β) (S : Set α) :
+    N(G ＼ F, S) ⊆ N(G, S) :=
+  setNeighbor_mono edgeDelete_le S
+
+@[simp, grind =]
+lemma incEdges_edgeDelete (G : Graph α β) (F : Set β) (x : α) : E(G ＼ F, x) = E(G, x) \ F := by
+  ext e
+  simp [mem_diff]
+
+@[simp, grind =]
+lemma setIncEdges_edgeDelete (G : Graph α β) (F : Set β) (S : Set α) :
+    E(G ＼ F, S) = E(G, S) \ F := by
+  ext e
+  grind
+
+@[simp, grind =]
+lemma endSet_edgeDelete_of_mem (G : Graph α β) (F : Set β) (e : β) (he : e ∈ F) :
+    V(G ＼ F, e) = ∅ := by grind
+
+@[simp, grind =]
+lemma endSet_edgeDelete_of_not_mem (G : Graph α β) (F : Set β) (e : β) (he : e ∉ F) :
+    V(G ＼ F, e) = V(G, e) := by grind
+
+@[simp, grind =]
+lemma linkEdges_edgeDelete (G : Graph α β) (F : Set β) (u v : α) :
+    E(G ＼ F, u, v) = E(G, u, v) \ F := by grind
 
 @[simp]
 lemma edgeDelete_inter_edgeSet : G ＼ (F ∩ E(G)) = G ＼ F := by
@@ -160,6 +239,10 @@ lemma IsLoopAt.isNonloopAt_delete (h : G.IsLoopAt e x) : (G ＼ {e}).IsNonloopAt
   simp [hne]
 
 @[simp]
+lemma setLinkEdges_edgeDelete (G : Graph α β) (F : Set β) (S T : Set α) :
+    E(G ＼ F, S, T) = E(G, S, T) \ F := by grind
+
+@[simp]
 lemma edgeDelete_isSpanningSubgraph : G ＼ F ≤s G where
   vertexSet_eq := by simp
   isLink_of_isLink := by simp +contextual
@@ -195,8 +278,42 @@ lemma edgeDelete_eq_noEdge (G : Graph α β) (hF : E(G) ⊆ F) : G ＼ F = Graph
 lemma IsLink.induce (h : G.IsLink e x y) (hx : x ∈ X) (hy : y ∈ X) : G[X].IsLink e x y :=
   ⟨h, hx, hy⟩
 
-@[simp]
+@[simp, grind =]
 lemma induce_adj_iff {X : Set α} : G[X].Adj x y ↔ G.Adj x y ∧ x ∈ X ∧ y ∈ X := by simp [Adj]
+
+@[grind .]
+lemma neighbor_induce (G : Graph α β) (X : Set α) [DecidablePred (· ∈ X)] (x : α) :
+    N(G[X], x) = if x ∈ X then N(G, x) ∩ X else ∅ := by grind
+
+@[simp]
+lemma neighbor_induce_of_notMem (G : Graph α β) (hx : x ∉ X) : N(G[X], x) = ∅ := by grind
+
+@[simp]
+lemma neighbor_induce_of_mem (G : Graph α β) (hx : x ∈ X) : N(G[X], x) = N(G, x) ∩ X := by grind
+
+@[simp, grind =]
+lemma setLinkEdges_induce (G : Graph α β) (X S T : Set α) :
+    E(G[X], S, T) = E(G, S ∩ X, T ∩ X) := by grind
+
+@[grind .]
+lemma linkEdges_induce (G : Graph α β) (X : Set α) [DecidablePred (· ∈ X)] (u v : α) :
+    E(G[X], u, v) = if u ∈ X ∧ v ∈ X then E(G, u, v) else ∅ := by grind
+
+@[simp]
+lemma linkEdges_induce_of_mem (G : Graph α β) (hu : u ∈ X) (hv : v ∈ X) :
+    E(G[X], u, v) = E(G, u, v) := by grind
+
+@[simp]
+lemma linkEdges_induce_of_left_not_mem (G : Graph α β) (X : Set α) (u v : α) (hu : u ∉ X) :
+    E(G[X], u, v) = ∅ := by
+  ext e
+  simp [hu]
+
+@[simp]
+lemma linkEdges_induce_of_right_not_mem (G : Graph α β) (X : Set α) (u v : α) (hv : v ∉ X) :
+    E(G[X], u, v) = ∅ := by
+  ext e
+  simp [hv]
 
 lemma Adj.induce (h : G.Adj x y) (hx : x ∈ X) (hy : y ∈ X) : G[X].Adj x y :=
   induce_adj_iff.mpr ⟨h, hx, hy⟩
@@ -317,7 +434,7 @@ lemma IsInducedSubgraph.eq_of_isSpanningSubgraph (hi : H ≤i G) (hs : H ≤s G)
 lemma induce_isInducedSubgraph_iff : G[X] ≤i G ↔ X ⊆ V(G) := by
   simp +contextual [isInducedSubgraph_iff]
 
-@[simp]
+@[simp, grind .]
 lemma vertexDelete_isInducedSubgraph (G : Graph α β) (X : Set α) : G - X ≤i G :=
   ⟨vertexDelete_le, by simp_all⟩
 
@@ -332,10 +449,21 @@ lemma vertexDelete_eq_bot_iff (G : Graph α β) (X : Set α) : G - X = ⊥ ↔ V
 lemma bot_vertexDelete : (⊥ : Graph α β) - X = ⊥ := by
   simp [vertexDelete_def]
 
-@[simp]
+@[simp, grind =]
 lemma vertexDelete_adj_iff (G : Graph α β) (X : Set α) :
     (G - X).Adj x y ↔ G.Adj x y ∧ x ∉ X ∧ y ∉ X := by
   simp [Adj]
+
+@[grind =]
+lemma neighbor_vertexDelete (G : Graph α β) (X : Set α) [DecidablePred (· ∈ X)] (x : α) :
+    N(G - X, x) = if x ∉ X then N(G, x) \ X else ∅ := by grind
+
+@[simp]
+lemma neighbor_vertexDelete_of_mem (G : Graph α β) (hx : x ∈ X) : N(G - X, x) = ∅ := by grind
+
+@[simp]
+lemma neighbor_vertexDelete_of_notMem (G : Graph α β) (hx : x ∉ X) :
+    N(G - X, x) = N(G, x) \ X := by grind
 
 @[simp]
 lemma vertexDelete_vertexSet_inter (G : Graph α β) (X : Set α) : G - (V(G) ∩ X) = G - X := by
@@ -371,13 +499,29 @@ lemma Inc.not_mem_incEdges (h : (G - X).Inc e x) : e ∉ E(G, X) :=
 lemma Inc.not_mem_of_vertexDelete (h : (G - X).Inc e x) : x ∉ X :=
   (h.choose_spec.of_le vertexDelete_le).mem_vertexDelete_iff.mp h.edge_mem |>.1
 
-@[simp]
+@[simp, grind .]
 lemma vertexDelete_inc_iff (G : Graph α β) (X : Set α) :
     (G - X).Inc e x ↔ G.Inc e x ∧ e ∉ E(G, X) := by
   refine ⟨fun h ↦ ⟨h.of_le vertexDelete_le, h.not_mem_incEdges⟩,
     fun ⟨hex, he⟩ ↦ hex.of_le_of_mem vertexDelete_le ?_⟩
   rw [vertexDelete_edgeSet_diff, mem_diff]
   exact ⟨hex.edge_mem, he⟩
+
+@[simp, grind =]
+lemma incEdges_vertexDelete (G : Graph α β) (X : Set α) (x : α) :
+    E(G - X, x) = E(G, x) \ E(G, X) := by grind
+
+@[simp, grind =]
+lemma setIncEdges_vertexDelete (G : Graph α β) (X S : Set α) :
+    E(G - X, S) = E(G, S) \ E(G, X) := by grind
+
+@[simp, grind =]
+lemma linkEdges_vertexDelete (G : Graph α β) (X : Set α) (u v : α) :
+    E(G - X, u, v) = E(G, u, v) \ E(G, X) := by grind
+
+@[simp, grind =]
+lemma setLinkEdges_vertexDelete (G : Graph α β) (X S T : Set α) :
+    E(G - X, S, T) = E(G, S, T) \ E(G, X) := by grind
 
 @[gcongr]
 lemma vertexDelete_mono_left (h : H ≤ G) (X : Set α) : H - X ≤ G - X :=
@@ -392,12 +536,6 @@ lemma vertexDelete_singleton_le_edgeDelete_linkEdges (G : Graph α β) (u v : α
   refine le_of_le_le_subset_subset vertexDelete_le edgeDelete_le (by simp) ?_
   rw [vertexDelete_singleton, vertexDelete_edgeSet_diff, edgeDelete_edgeSet, setIncEdges_singleton]
   exact diff_subset_diff_right <| G.linkEdges_subset_incEdges_left u v
-
-@[simp]
-lemma vertexDelete_linkEdges_of_not_mem (G : Graph α β) (hu : u ∉ X) (hv : v ∉ X) :
-    E(G - X, u, v) = E(G, u, v) := by
-  ext e
-  simp [hu, hv]
 
 lemma edgeRestrict_vertexDelete (G : Graph α β) (F : Set β) (D : Set α) :
     (G ↾ F) - D = (G - D) ↾ F := by

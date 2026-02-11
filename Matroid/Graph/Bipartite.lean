@@ -394,7 +394,7 @@ lemma IsForest.bipartite {F : Graph α β} (hF : IsForest F) : F.Bipartite := by
 
   wlog hFt : F.IsTree with aux
   · exact bipartite_iff_forall_component.2 fun H hH ↦
-      aux (hF.mono hH.le) ⟨hF.mono hH.le, hH.connected⟩
+      aux (hF.anti hH.le) ⟨hF.anti hH.le, hH.connected⟩
   have hlp := hF.loopless
   obtain ⟨r, hr⟩ := hFt.connected.nonempty
   apply bipartite_of_forall_parity_adj_swap (r := r)

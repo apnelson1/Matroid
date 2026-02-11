@@ -453,7 +453,7 @@ lemma IsSep.of_edgeDelete_linkEdges (h : (G ＼ E(G, u, v)).IsSep S) :
     have := h.not_connected
     rw [edgeDelete_vertexDelete] at this
     exact mt (Connected.of_isSpanningSubgraph ·
-    <| (G - S).edgeDelete_isSpanningSubgraph_anti_right <| by simp [huS, hvS]) this
+    <| (G - S).edgeDelete_isSpanningSubgraph_anti_right <| by grind) this
   obtain hnconn | hsepu | hsepv | hpair := (G - S).not_connected_or_singleton_isSep_or_pair
     this
   · exact Or.inl ⟨by simpa using h.subset_vx, hnconn⟩
@@ -540,7 +540,7 @@ lemma Preconnected.finite [G.EdgeFinite] (h : G.Preconnected) : G.Finite where
       obtain ⟨e, y, h, -⟩ := h.exists_isLink_of_mem hnt hx
       exact ⟨e, h.edge_mem, h.inc_left⟩
     rw [← this, ← encard_lt_top_iff]
-    exact lt_of_le_of_lt (endSetSet_encard_le G E(G))
+    exact lt_of_le_of_lt (incVertexSet_encard_le G E(G))
     <| WithTop.mul_lt_top (compareOfLessAndEq_eq_lt.mp rfl) (encard_lt_top_iff.mpr G.edgeSet_finite)
 
 lemma Connected.finite [G.EdgeFinite] (h : G.Connected) : G.Finite := h.pre.finite

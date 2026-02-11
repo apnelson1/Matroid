@@ -190,7 +190,7 @@ lemma _root_.Graph.Inc.isInc_iff_mem (hx : H₁.val.Inc e x) :
     H₂.val.Inc e x ↔ e ∈ E(H₂.val) :=
   ⟨fun h => h.edge_mem, fun h => hx.of_mem h⟩
 
-lemma endSetSet_subset_of_le_subset (H₁ : G.Subgraph) (hF : F ⊆ E(H₂.val)) :
+lemma incVertexSet_subset_of_le_subset (H₁ : G.Subgraph) (hF : F ⊆ E(H₂.val)) :
     V(H₁.val, F) ⊆ V(H₂.val, F) := by
   rintro x ⟨e, he, hx⟩
   exact ⟨e, he, hx.of_mem (hF he)⟩
@@ -368,9 +368,9 @@ def ofEdge (G : Graph α β) (F : Set β) : G.Subgraph where
   property := edgeRestrict_le.trans <| induce_le (by simp)
 
 @[simp]
-lemma induce_endSetSet_inter_eq (F : Set β) : E(G[V(G, F)]) ∩ F = E(G) ∩ F := by
+lemma induce_incVertexSet_inter_eq (F : Set β) : E(G[V(G, F)]) ∩ F = E(G) ∩ F := by
   ext e
-  simp only [induce_edgeSet, mem_endSetSet_iff, mem_inter_iff, mem_setOf_eq, and_congr_left_iff]
+  simp only [induce_edgeSet, mem_incVertexSet_iff, mem_inter_iff, mem_setOf_eq, and_congr_left_iff]
   refine fun he ↦ ⟨fun ⟨_, _, he, _⟩ => he.edge_mem, fun h => ?_⟩
   obtain ⟨x, y, h⟩ := exists_isLink_of_mem_edgeSet h
   exact ⟨x, y, h, ⟨e, he, h.inc_left⟩, ⟨e, he, h.inc_right⟩⟩
@@ -385,7 +385,7 @@ lemma ofEdge_edgeSet (F : Set β) : E((ofEdge G F).val) = E(G) ∩ F := by
 
 @[simp]
 lemma ofEdge_isLink (F : Set β) : (ofEdge G F).val.IsLink e x y ↔ e ∈ F ∧ G.IsLink e x y := by
-  simp only [ofEdge, edgeRestrict_isLink, induce_isLink, mem_endSetSet_iff, and_congr_right_iff,
+  simp only [ofEdge, edgeRestrict_isLink, induce_isLink, mem_incVertexSet_iff, and_congr_right_iff,
     and_iff_left_iff_imp]
   exact fun heF he ↦ ⟨⟨e, heF, he.inc_left⟩, e, heF, he.inc_right⟩
 
@@ -398,7 +398,7 @@ instance : Compl G.Subgraph where
     use G[V(G) \ V(H.val) ∪ V(G, E(G) \ E(H.val))] ＼ E(H.val)
     grw [edgeDelete_le, induce_le]
     rw [union_subset_iff]
-    refine ⟨?_, endSetSet_subset G _⟩
+    refine ⟨?_, incVertexSet_subset G _⟩
     grw [← vertexDelete_vertexSet, vertexSet_mono (vertexDelete_le)]
 
 lemma compl_vertexSet (H : G.Subgraph) : V(Hᶜ.val) = V(G) \ V(H.val) ∪ V(G, E(G) \ E(H.val)) := rfl
@@ -407,7 +407,7 @@ lemma compl_vertexSet (H : G.Subgraph) : V(Hᶜ.val) = V(G) \ V(H.val) ∪ V(G, 
 lemma compl_edgeSet (H : G.Subgraph) : E(Hᶜ.val) = E(G) \ E(H.val) := by
   change E(G[V(G) \ V(H.val) ∪ V(G, E(G) \ E(H.val))] ＼ E(H.val)) = _
   ext e
-  simp only [edgeDelete_edgeSet, induce_edgeSet, mem_union, mem_diff, mem_endSetSet_iff,
+  simp only [edgeDelete_edgeSet, induce_edgeSet, mem_union, mem_diff, mem_incVertexSet_iff,
     mem_setOf_eq, and_congr_left_iff]
   refine fun heH ↦ ⟨fun ⟨x, y, hxy, h⟩ => hxy.edge_mem, fun h => ?_⟩
   obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet h
@@ -440,8 +440,8 @@ lemma compl_le_iff : H₁ᶜ ≤ H₂ ↔ V(G) \ V(H₁.val) ⊆ V(H₂.val) ∧
   · grw [← h, compl_edgeSet]
   grw [le_iff_subset, compl_edgeSet, compl_vertexSet, union_subset_iff]
   use ⟨H1, ?_⟩, H2
-  have := coe_top ▸ endSetSet_subset_of_le_subset ⊤ H2
-  grw [this, endSetSet_subset]
+  have := coe_top ▸ incVertexSet_subset_of_le_subset ⊤ H2
+  grw [this, incVertexSet_subset]
 
 lemma ofEdge_diff_le_compl (H : G.Subgraph) : ofEdge G (E(G) \ E(H.val)) ≤ Hᶜ := by
   refine le_iff_subset.mpr ⟨?_, ?_⟩
@@ -457,7 +457,7 @@ lemma ofEdge_diff_le_compl (H : G.Subgraph) : ofEdge G (E(G) \ E(H.val)) ≤ H�
 --   ext x
 --   simp +contextual only [compl_vertexSet, compl_edgeSet, sdiff_sdiff_right_self,
 -- Set.inf_eq_inter,
---     mem_union, mem_diff, mem_endSetSet_iff, not_or, not_and, not_not, not_exists, and_imp,
+--     mem_union, mem_diff, mem_incVertexSet_iff, not_or, not_and, not_not, not_exists, and_imp,
 --     mem_inter_iff, iff_def, implies_true, true_and]
 --   refine ⟨fun h => ?_, fun h => ?_⟩
 --   · obtain ⟨h, h', h''⟩ | ⟨e, h, h'⟩ := h
@@ -486,7 +486,7 @@ lemma sep_eq_vertexSet_inter_compl : H₁.sep = V(H₁.val) ∩ V(H₁ᶜ.val) :
   ext x
   rw [compl_vertexSet, inter_union_distrib_left, mem_union]
   simp only [mem_sep_iff, mem_diff, inter_diff_self, mem_empty_iff_false, mem_inter_iff,
-    mem_endSetSet_iff, false_or]
+    mem_incVertexSet_iff, false_or]
 
 @[simp]
 lemma sep_subset_compl (H : G.Subgraph) : H.sep ⊆ V(Hᶜ.val) := by
@@ -502,8 +502,9 @@ lemma inf_compl_eq_bot_iff : H₁ ⊓ H₁ᶜ = ⊥ ↔ H₁.val ≤c G := by
   refine Subtype.ext ?_
   simp only [coe_inf, coe_bot, inter_eq_bot_iff, compl_vertexSet]
   ext x
-  simp +contextual only [mem_inter_iff, mem_union, mem_diff, mem_endSetSet_iff, mem_empty_iff_false,
-    iff_false, not_and, not_true_eq_false, and_false, false_or, not_exists, and_imp]
+  simp +contextual only [mem_inter_iff, mem_union, mem_diff, mem_incVertexSet_iff,
+    mem_empty_iff_false, iff_false, not_and, not_true_eq_false, and_false, false_or, not_exists,
+    and_imp]
   rintro hxH e he heH hex
   exact heH <| h.closed hex hxH
 
