@@ -80,3 +80,18 @@ lemma IsSuffix.eq_of_first_mem {α} {l₁ l₂ : List α} (h : l₁.IsSuffix l�
 lemma IsPrefix.eq_of_last_mem {α} {l₁ l₂ : List α} (h : l₁.IsPrefix l₂) (hnd : l₂.Nodup)
     (hne : l₂ ≠ []) (hl : l₂.getLast hne ∈ l₁) : l₁ = l₂ := by
   simpa using h.reverse.eq_of_first_mem (by simpa) (by simpa) (by simpa)
+
+lemma isChain_iff_all_zip_tail {α} (r : α → α → Prop) (l : List α) :
+    l.IsChain r ↔ ∀ x ∈ l.zip l.tail, r x.1 x.2 := by
+  induction l with | nil => simp | cons a l ih => cases l with | nil => simp | cons b t => simp [ih]
+
+@[simp]
+lemma isChain_and_iff {α} (r s : α → α → Prop) (l : List α) :
+    l.IsChain (fun x y ↦ r x y ∧ s x y) ↔ l.IsChain r ∧ l.IsChain s := by
+  match l with
+  | [] => simp
+  | [a] => simp
+  | a :: b :: as =>
+    simp only [isChain_cons_cons]
+    rw [isChain_and_iff]
+    tauto

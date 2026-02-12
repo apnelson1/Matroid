@@ -16,8 +16,7 @@ lemma IsForest.isTree_of_IsCompOf (hG : G.IsForest) (hT : T.IsCompOf G) : T.IsTr
 
 /-- If `G` is connected, then a maximally acylic subgraph of `G` is connected.
 The correct statement is that any two vertices connected in the big graph are
-connected in the small one.
--/
+connected in the small one. -/
 lemma Connected.isTree_of_maximal_isAcyclicSet (hG : G.Connected) (hF : Maximal G.IsAcyclicSet F) :
     (G ↾ F).IsTree where
   isForest := by
