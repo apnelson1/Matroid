@@ -55,7 +55,7 @@ lemma IsCover.nonempty [M.Nonempty] (h : M.IsCover k T) : T.Nonempty := by
   rintro rfl
   simp [isCover_iff, eq_comm, M.ground_nonempty.ne_empty] at h
 
-/-- The number of sets of rank at most `k` sets needed to cover a matroid `M`. -/
+/-- The number of sets of rank at most `k` needed to cover a matroid `M`. -/
 noncomputable def coverNumber (M : Matroid α) (k : ℕ∞) : ℕ∞ := sInf (encard '' {T | M.IsCover k T})
 
 lemma IsCover.coverNumber_le (h : M.IsCover k T) : M.coverNumber k ≤ T.encard :=
