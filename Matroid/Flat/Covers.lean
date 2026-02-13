@@ -37,7 +37,7 @@ lemma ground_isCover (M : Matroid α) : M.IsCover M.eRank {M.E} := by
 
 lemma setOf_point_isCover (M : Matroid α) [M.RankPos] : M.IsCover 1 {P | M.IsPoint P} := by
   refine ⟨subset_antisymm (sUnion_subset fun _ ↦ IsPoint.subset_ground) fun e he ↦ ?_,
-    by simp +contextual [mem_setOf_eq] ⟩
+    by simp +contextual [mem_setOf_eq, IsPoint] ⟩
   simp only [mem_sUnion, mem_setOf_eq]
   obtain hl | hnl := M.isLoop_or_isNonloop e
   · obtain ⟨f, hf⟩ := M.exists_isNonloop
@@ -47,7 +47,7 @@ lemma setOf_point_isCover (M : Matroid α) [M.RankPos] : M.IsCover 1 {P | M.IsPo
 lemma setOf_point_isCover' [hM : M.Loopless] : M.IsCover 1 {P | M.IsPoint P} := by
   obtain ⟨E, rfl⟩ | h := M.eq_loopyOn_or_rankPos'
   · obtain rfl : E = ∅ := by simpa using hM
-    constructor <;> simp
+    constructor <;> simp [IsPoint]
   exact M.setOf_point_isCover
 
 lemma IsCover.nonempty [M.Nonempty] (h : M.IsCover k T) : T.Nonempty := by
@@ -74,6 +74,14 @@ lemma coverNumber_top (M : Matroid α) [M.Nonempty] : M.coverNumber ⊤ = 1 := b
   nth_grw 1 [le_antisymm_iff, ENat.one_le_iff_ne_zero,
     (M.ground_isCover.mono (by simp)).coverNumber_le, encard_singleton, and_iff_right rfl.le]
   exact (M.coverNumber_pos _).ne.symm
+
+-- lemma foo (M : Matroid α) [RankPos M] : M.coverNumber 1 = M.simplification.E.encard := by
+
+--   rw [M.simplification_isSimplification.encard_ground_eq, le_antisymm_iff]
+--   refine ⟨M.setOf_point_isCover.coverNumber_le, ?_⟩
+--   rw [coverNumber, le_sInf_iff]
+--   simp
+
 
 -- lemma foo (M : Matroid α) (C : Set α)
 

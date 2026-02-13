@@ -5,7 +5,7 @@ variable {α : Type*} {M : Matroid α} {I F X Y F' F₀ F₁ F₂ P L H H₁ H�
 open Set
 namespace Matroid
 
-@[reducible] def IsPoint (M : Matroid α) (P : Set α) := M.IsFlat P ∧ M.eRk P = 1
+ def IsPoint (M : Matroid α) (P : Set α) := M.IsFlat P ∧ M.eRk P = 1
 
 lemma IsPoint.isFlat (hP : M.IsPoint P) : M.IsFlat P :=
   hP.1
@@ -25,7 +25,7 @@ lemma IsNonloop.closure_isPoint (he : M.IsNonloop e) : M.IsPoint (M.closure {e})
 
 lemma loops_covBy_iff : M.loops ⋖[M] P ↔ M.IsPoint P := by
   simp only [covBy_iff_eRelRk_eq_one, closure_isFlat, eRelRk_closure_left, eRelRk_empty_left,
-    true_and, and_congr_right_iff, and_iff_right_iff_imp, loops]
+    true_and, IsPoint, and_congr_right_iff, and_iff_right_iff_imp, loops]
   exact fun h _ ↦ h.closure_subset_of_subset (empty_subset _)
 
 lemma IsPoint.covBy (hP : M.IsPoint P) : M.loops ⋖[M] P := loops_covBy_iff.2 hP
@@ -86,7 +86,7 @@ lemma isPoint_contract_iff (hC : C ⊆ M.E := by aesop_mat) :
   rw [← h.closure]
   exact M.closure_subset_closure subset_union_right
 
-/-- IsPoints of `M ／ C` are equivalent to flats covering `M.closure C`. -/
+/-- Points of `M ／ C` are equivalent to flats covering `M.closure C`. -/
 @[simps] def isPointContractCovByEquiv (M : Matroid α) (C : Set α) :
     {P // (M ／ C).IsPoint P} ≃ {F // M.closure C ⋖[M] F} where
   toFun P := ⟨P ∪ M.closure C, by

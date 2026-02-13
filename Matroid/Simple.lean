@@ -525,6 +525,15 @@ lemma IsPoint.mem_simplification (he : M.IsPoint {e}) (hN : N.IsSimplification M
   rw [← hcl]
   exact hN.repFun_apply_mem_ground he.isNonloop
 
+lemma IsPoint.exists_unique_of_isSimplification (h : M.IsPoint P) (hNM : N.IsSimplification M) :
+    ∃! f ∈ P, f ∈ N.E := by
+  obtain ⟨e, he, rfl⟩ := h.exists_eq_closure_isNonloop
+  obtain ⟨f, ⟨hfN, hef⟩, h⟩ := hNM.exists_unique he
+  refine ⟨f, ⟨hef.symm.mem_closure, hfN⟩, fun y hy ↦ h y ⟨hy.2, ?_⟩⟩
+  rw [parallel_comm, IsNonloop.parallel_iff_mem_closure]
+  · exact hy.1
+  exact (hNM.simple.isNonloop_of_mem hy.2).of_isRestriction hNM.isRestriction
+
 lemma IsSimplification.delete (hN : N.IsSimplification M) (hD : D ⊆ N.E) :
     (N ＼ D).IsSimplification (M ＼ ⋃ e ∈ D, {f | M.Parallel e f}) := by
   rw [isSimplification_iff, and_iff_right (hN.simple.loopless.delete D)]
@@ -627,6 +636,35 @@ lemma IsSimplification.closure_pairwiseDisjoint [M.Loopless] (hNM : N.IsSimplifi
   rw [← (M.isNonloop_of_loopless).parallel_iff_mem_closure] at hax hay
   exact hne <| hNM.eq_of_parallel hx hy (hax.symm.trans hay)
 
+/-- The elements of a simplification of `M` correspond to the points of `M`. -/
+noncomputable def IsSimplification.pointEquiv {N : Matroid α} (h : N.IsSimplification M) :
+    N.E ≃ {P // M.IsPoint P} where
+  toFun e := ⟨M.closure {e.1},
+    (IsNonloop.of_isRestriction (h.simple.isNonloop_of_mem e.2) h.isRestriction).closure_isPoint⟩
+  invFun P := ⟨Set.Nonempty.some (s := N.E ∩ P)
+    (by
+      obtain ⟨f, hf, -⟩ := IsPoint.exists_unique_of_isSimplification P.2 h
+      exact ⟨f, hf.symm⟩),
+    (by generalize_proofs h; exact h.some_mem.1)⟩
+  left_inv := by
+    rintro ⟨e, he⟩
+    simp only [Subtype.mk.injEq]
+    generalize_proofs h'
+    have he' := ((h.simple.isNonloop_of_mem he).of_isRestriction h.isRestriction)
+    apply (he'.closure_isPoint.exists_unique_of_isSimplification h).unique
+    · rw [← mem_inter_iff, inter_comm]
+      exact h'.some_mem
+    exact ⟨he'.parallel_self.mem_closure, he⟩
+  right_inv := by
+    rintro ⟨P, hP⟩
+    simp only [Subtype.mk.injEq]
+    generalize_proofs h'
+    refine (hP.eq_closure_of_mem ?_ h'.some_mem.2).symm
+    exact (h.simple.isNonloop_of_mem h'.some_mem.1).of_isRestriction h.isRestriction
+
+lemma IsSimplification.encard_ground_eq (h : N.IsSimplification M) :
+    N.E.encard = {P | M.IsPoint P}.encard := by
+  exact h.pointEquiv.encard_eq
 
 end IsSimplification
 
