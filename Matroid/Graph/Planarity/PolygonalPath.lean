@@ -223,3 +223,9 @@ lemma JoinedIn.exists_polygonalPath_of_open (hX : IsOpen X) (h : JoinedIn X x y)
   obtain ⟨L, hL⟩ := P.exists_polygonalPath_of_thickening hδpos
   use L, hL.trans hδ
 
+
+lemma foo {x y : EuclideanSpace ℝ (Fin 2)} (P : PolygonalPath x y) :
+    ∃ (ε : ℝ) (R₀ R₁ : Set (EuclideanSpace ℝ (Fin 2))),
+    0 < ε ∧ Metric.thickening ε (range P.toPath) = R₀ ∪ R₁ ∧
+    IsPathConnected R₀ ∧ IsPathConnected R₁ :=
+  sorry

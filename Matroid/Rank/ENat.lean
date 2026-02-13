@@ -80,6 +80,10 @@ lemma eRank_pos (M : Matroid α) [M.RankPos] : 0 < M.eRank := by
 lemma eRank_ne_zero (M : Matroid α) [M.RankPos] : M.eRank ≠ 0 :=
   M.eRank_pos.ne.symm
 
+lemma eRank_ne_zero_iff (M : Matroid α) : M.eRank ≠ 0 ↔ M.RankPos := by
+  refine ⟨fun h ↦ (rankPos_iff _).2 fun hb ↦ ?_, fun h ↦ M.eRank_ne_zero⟩
+  simp [← hb.encard_eq_eRank] at h
+
 instance [M.RankInfinite] : M.RankPos where
   empty_not_isBase := fun h ↦ by simpa using h.infinite
 

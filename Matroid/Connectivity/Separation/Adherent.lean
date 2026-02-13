@@ -45,7 +45,7 @@ lemma adheresTo_self (M : Matroid α) : M.AdheresTo M :=
 
 private lemma num_aux {a b c d m n : ℕ∞} (h1 : n < max a b) (h2 : n < max c d) (h3 : m < max a c)
     (h4 : m < max b d) (h5 : a + d ≤ m + n + 1) (h6 : b + c ≤ m + n + 1) : False := by
-  enat_to_nat
+  enat_to_nat`
   simp only [lt_sup_iff, Nat.cast_lt] at h1 h2 h3 h4
   grind
 

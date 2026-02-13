@@ -112,10 +112,26 @@ protected lemma ext_iff_bool {P P' : M.Separation} (i : Bool) : P = P' ↔ P i =
   ⟨fun h ↦ by simp [h], fun h ↦ P.ext_bool i h⟩
 
 protected def symm (P : M.Separation) : M.Separation := Bipartition.symm P
-protected lemma symm_true (P : M.Separation) : P.symm true = P false := rfl
-protected lemma symm_false (P : M.Separation) : P.symm false = P true := rfl
+@[simp] protected lemma symm_true (P : M.Separation) : P.symm true = P false := rfl
+@[simp] protected lemma symm_false (P : M.Separation) : P.symm false = P true := rfl
 @[simp] protected lemma symm_apply (P : M.Separation) (i : Bool) : P.symm i = P !i := rfl
 @[simp] protected lemma symm_symm (P : M.Separation) : P.symm.symm = P := Separation.ext rfl
+
+protected def bSymm (P : M.Separation) (b : Bool) := bif b then P.symm else P
+
+@[simp]
+lemma bSymm_apply (P : M.Separation) (b i : Bool) : P.bSymm b i = P (i != b) := by
+  cases b <;> cases i <;> simp [Separation.bSymm]
+
+@[simp]
+lemma bSymm_false (P : M.Separation) : P.bSymm false = P := rfl
+
+@[simp]
+lemma bSymm_true (P : M.Separation) : P.bSymm true = P.symm := rfl
+
+@[simp]
+lemma bSymm_bSymm (P : M.Separation) (b c : Bool) : (P.bSymm b).bSymm c = P.bSymm (b != c) :=
+  Separation.ext_bool b <| by cases b <;> simp
 
 @[simp] protected lemma compl_true (P : M.Separation) : M.E \ (P true) = P false :=
   Bipartition.compl_true P
@@ -137,6 +153,18 @@ protected def copy {M' : Matroid α} (P : M.Separation) (h_eq : M = M') : M'.Sep
 
 @[simp]
 lemma copy_apply (P : M.Separation) (h_eq : M = N) (i : Bool) : P.copy h_eq i = P i := rfl
+
+@[simp]
+lemma copy_rfl (P : M.Separation) (h : M = M := rfl) : P.copy h = P := rfl
+
+@[simp]
+lemma bSymm_copy (P : M.Separation) (b : Bool) (h : M = N) :
+    (P.copy h).bSymm b = (P.bSymm b).copy h := by
+  subst h
+  simp
+
+@[simp]
+lemma symm_copy (P : M.Separation) (h : M = N) : (P.copy h).symm = P.symm.copy h := rfl
 
 /-- A version of `copy` where the ground sets are equal, but the matroids need not be.
 `copy` is preferred where possible, so that lemmas depending on matroid structure
@@ -228,6 +256,10 @@ noncomputable abbrev eConn (P : M.Separation) : ℕ∞ := M.eLocalConn (P true) 
 @[simp]
 lemma eConn_symm (P : M.Separation) : P.symm.eConn = P.eConn :=
   M.eLocalConn_comm ..
+
+@[simp]
+lemma eConn_bSymm (P : M.Separation) (b : Bool) : (P.bSymm b).eConn = P.eConn := by
+  cases b <;> simp
 
 @[simp]
 lemma eConn_copy {M' : Matroid α} (P : M.Separation) (h_eq : M = M') :
