@@ -352,6 +352,20 @@ lemma IsCycleSet.of_isLink {C : Set β} (h : G.IsCycleSet C)
 def IsAcyclicSet (G : Graph α β) (I : Set β) : Prop :=
   I ⊆ E(G) ∧ ∀ C₀, G.IsCyclicWalk C₀ → ¬ (E(C₀) ⊆ I)
 
+lemma IsAcyclicSet.subset (hF : G.IsAcyclicSet F) : F ⊆ E(G) := hF.1
+
+lemma IsAcyclicSet.mono (hGH : G ≤ H) (hF : G.IsAcyclicSet F) : H.IsAcyclicSet F := by
+  use hF.1.trans (edgeSet_mono hGH)
+  intro C₀ hC₀ heC₀
+  exact hF.2 _ (hC₀.isCycle_of_le hGH (heC₀.trans hF.1)) heC₀
+
+lemma IsAcyclicSet.anti (hGH : G ≤ H) (hF : H.IsAcyclicSet F) : G.IsAcyclicSet (E(G) ∩ F) := by
+  obtain ⟨hF, hF'⟩ := hF
+  use inter_subset_left
+  intro C hC heC
+  rw [subset_inter_iff] at heC
+  exact hF' C (hC.of_le hGH) heC.2
+
 lemma edgeRestrict_isForest_iff' :
     (G ↾ F).IsForest ↔ ∀ (C : WList α β), E(C) ⊆ F → ¬ G.IsCyclicWalk C := by
   rw [isForest_iff_not_isCyclicWalk]
