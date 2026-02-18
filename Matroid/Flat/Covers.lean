@@ -55,34 +55,12 @@ lemma IsCover.nonempty [M.Nonempty] (h : M.IsCover k T) : T.Nonempty := by
   rintro rfl
   simp [isCover_iff, eq_comm, M.ground_nonempty.ne_empty] at h
 
-
 --Do we want ⋃₀ T = M.E or M.E ⊆ ⋃₀ T?
-lemma IsCover.contract (h : (M／X).IsCover k T) (hX : X ⊆ M.E) (hXN : (M／ X).Nonempty) :
+lemma IsCover.contract (h : (M ／ X).IsCover k T) (hX : X ⊆ M.E) (hXN : (M ／ X).Nonempty) :
     M.IsCover (k + M.eRk X) ((· ∪ X) '' T) := by
-  refine ⟨?_, ?_⟩
-  · have := contract_ground M X
-    have hrw : ⋃₀ ((fun x ↦ x ∪ X) '' T) = ⋃₀ T ∪ X := by
-      simp only [sUnion_image]
-      rw[sUnion_distrib_union h.nonempty ]
-    rw[hrw]
-    have hrw2 : M.E = (M ／ X).E ∪ X := by
-      --diff_union_self
-      simp only [contract_ground, diff_union_self]
-      exact Eq.symm (union_eq_self_of_subset_right hX)
-    rw[hrw2]
-    apply union_eq_union_iff_right.2
-    refine ⟨?_, ?_ ⟩
-    · refine subset_union_of_subset_left ?_ X
-      rw[h.sUnion_eq]
-    rw[h.sUnion_eq]
-    exact subset_union_left
-  intro F hF
-  simp only [mem_image] at hF
-  obtain ⟨F', hF', hF'2⟩ := hF
-  have h1 := h.eRk_le F' hF'
-  rw[←eRelRk_eq_eRk_contract] at h1
-  rw[←hF'2, ←M.eRelRk_add_eRk_eq  ]
-  exact add_le_add_left h1 (M.eRk X)
+  suffices ∀ F ∈ T, M.eRk (F ∪ X) ≤ k + M.eRk X by
+    simpa [isCover_iff, ← biUnion_distrib_union _ h.nonempty, ← sUnion_eq_biUnion, h.sUnion_eq, hX]
+  exact fun F hFT ↦ by grw [← h.eRk_le F hFT, ← eRelRk_eq_eRk_contract, eRelRk_add_eRk_eq]
 
 /-- The number of sets of rank at most `k` needed to cover a matroid `M`. -/
 noncomputable def coverNumber (M : Matroid α) (k : ℕ∞) : ℕ∞ := sInf (encard '' {T | M.IsCover k T})
