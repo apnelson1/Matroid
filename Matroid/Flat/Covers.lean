@@ -55,6 +55,35 @@ lemma IsCover.nonempty [M.Nonempty] (h : M.IsCover k T) : T.Nonempty := by
   rintro rfl
   simp [isCover_iff, eq_comm, M.ground_nonempty.ne_empty] at h
 
+
+--Do we want ⋃₀ T = M.E or M.E ⊆ ⋃₀ T?
+lemma IsCover.contract (h : (M／X).IsCover k T) (hX : X ⊆ M.E) (hXN : (M／ X).Nonempty) :
+    M.IsCover (k + M.eRk X) ((· ∪ X) '' T) := by
+  refine ⟨?_, ?_⟩
+  · have := contract_ground M X
+    have hrw : ⋃₀ ((fun x ↦ x ∪ X) '' T) = ⋃₀ T ∪ X := by
+      simp only [sUnion_image]
+      rw[sUnion_distrib_union h.nonempty ]
+    rw[hrw]
+    have hrw2 : M.E = (M ／ X).E ∪ X := by
+      --diff_union_self
+      simp only [contract_ground, diff_union_self]
+      exact Eq.symm (union_eq_self_of_subset_right hX)
+    rw[hrw2]
+    apply union_eq_union_iff_right.2
+    refine ⟨?_, ?_ ⟩
+    · refine subset_union_of_subset_left ?_ X
+      rw[h.sUnion_eq]
+    rw[h.sUnion_eq]
+    exact subset_union_left
+  intro F hF
+  simp only [mem_image] at hF
+  obtain ⟨F', hF', hF'2⟩ := hF
+  have h1 := h.eRk_le F' hF'
+  rw[←eRelRk_eq_eRk_contract] at h1
+  rw[←hF'2, ←M.eRelRk_add_eRk_eq  ]
+  exact add_le_add_left h1 (M.eRk X)
+
 /-- The number of sets of rank at most `k` needed to cover a matroid `M`. -/
 noncomputable def coverNumber (M : Matroid α) (k : ℕ∞) : ℕ∞ := sInf (encard '' {T | M.IsCover k T})
 
@@ -74,6 +103,41 @@ lemma coverNumber_top (M : Matroid α) [M.Nonempty] : M.coverNumber ⊤ = 1 := b
   nth_grw 1 [le_antisymm_iff, ENat.one_le_iff_ne_zero,
     (M.ground_isCover.mono (by simp)).coverNumber_le, encard_singleton, and_iff_right rfl.le]
   exact (M.coverNumber_pos _).ne.symm
+
+lemma coverNumber_le {k k' : ℕ∞} (M : Matroid α) (hk : k ≤ k') : M.coverNumber k' ≤ M.coverNumber k
+    := by
+  refine ENat.forall_natCast_le_iff_le.mp ?_
+  intro a hak
+  unfold coverNumber at hak
+  simp only [le_sInf_iff, mem_image, mem_setOf_eq, forall_exists_index, and_imp,
+    forall_apply_eq_imp_iff₂] at hak
+  unfold coverNumber
+  simp only [le_sInf_iff, mem_image, mem_setOf_eq, forall_exists_index, and_imp,
+    forall_apply_eq_imp_iff₂]
+  exact fun T hT ↦ (hak T (hT.mono hk)  )
+
+lemma coverNumber_contract_one {a : ℕ∞} (he : e ∈ M.E) (hel : M.IsNonloop e)
+    (heN : (M／ {e}).Nonempty) :
+    M.coverNumber (a + 1) ≤ (M ／ {e}).coverNumber a := by
+  refine ENat.forall_natCast_le_iff_le.mp ?_
+  intro b hb
+  unfold coverNumber at hb
+  simp only [le_sInf_iff, mem_image, mem_setOf_eq, forall_exists_index, and_imp,
+    forall_apply_eq_imp_iff₂] at hb
+  unfold coverNumber
+  simp only [le_sInf_iff, mem_image, mem_setOf_eq, forall_exists_index, and_imp,
+    forall_apply_eq_imp_iff₂]
+  intro T hT
+  have h1 := hT.contract (singleton_subset_iff.mpr he ) heN
+  rw[IsNonloop.eRk_eq hel ] at h1
+  have h2 := hb ((· ∪ {e}) '' T) h1
+  grw[encard_image_le (fun x ↦ x ∪ {e}) T ] at h2
+  exact h2
+
+lemma coverNumber_contract {a : ℕ∞} (hX : X ⊆ M.E) :
+    M.coverNumber (a + M.eRk X) ≤ (M ／ X).coverNumber a := by
+  --Mathieu, do you want to do this one?
+  sorry
 
 -- lemma foo (M : Matroid α) [RankPos M] : M.coverNumber 1 = M.simplification.E.encard := by
 
@@ -122,55 +186,46 @@ lemma coverNumber_top (M : Matroid α) [M.Nonempty] : M.coverNumber ⊤ = 1 := b
 --     refine subset
 --   eRk_le' := _
 
-@[simp]
-lemma loopyOn.rank : M = loopyOn M.E ↔ M.eRank = 0 := by
-  refine ⟨ ?_, ?_ ⟩
-  · --exact fun h ↦ rank_eq_zero_iff.mpr h
-    intro h
-    rw[h]
-    exact eRank_loopyOn M.E
-  intro h
-  apply eq_loopyOn_iff.2
-  refine ⟨rfl, ?_ ⟩
-  intro X hX hXI
-  have : M.eRk X = 0 := by
-    have : M.eRk X ≤ 0 := by
-      grw [←h, eRk_le_eRank M X]
-    exact nonpos_iff_eq_zero.mp this
-  have h0 : X.encard = 0 := by
-    rw[←this]
-    exact (Indep.eRk_eq_encard hXI).symm
-  exact encard_eq_zero.mp h0
-
 
 -- lemma IsNonloop.contraction_points (he : M.IsNonloop e ) :
 --         M.simplification.E.encard = (∑ M.IsLine L ∧ e ∈ L, L.encard) + 1
 
 theorem kung_bound [RankFinite M]
-    (hNoUnif : ∀ N : Matroid α, N ≤m M → N = (unifOn (N.E ) 2 ) → N.E.encard < l + 2) :
+    (hNoUnif : NoUniformMinor M (l + 2) 2) :
+    --(hNoUnif : ∀ N : Matroid α, N ≤m M → N = (unifOn (N.E ) 2 ) → N.E.encard < l + 2) :
     --(hNoUnif : ¬ Nonempty ((unifOn (Set.univ : Set (Fin (l + 2))) 2) ≤i M)) :
-    {P : Set α | M.IsPoint P}.encard ≤ (l ^ (M.rank ) - 1)/(l - 1) := by
+    coverNumber M 1 ≤ ∑' i : {i : ℕ // i < M.eRank}, l^i.1  := by
     --M.simplification.E.encard ≤ (l ^ (M.rank ) - 1)/(l - 1) := by
-  suffices hn : ∀ n : ℕ, M.rank = n → {P : Set α | M.IsPoint P}.encard ≤ (l ^ n - 1)/(l - 1)
-  · exact hn M.rank rfl
-  intro n hn
-  induction n generalizing M with
-  | zero =>
-  -- We need a Thm that says that M has a non-loop element iff r(M)>0.
-  -- Apparently the matroid of all loops is the called loopyOn. So I added the Lemma
-  sorry
-  | succ n ih =>
-    have ⟨ e, he ⟩ : ∃ e, ¬ M.IsLoop e := by
-      -- use loopyOn_isLoop_iff
-      sorry
--- eq_unifOn_of_eRank_le_two will be useful
-    --have hsum : {P : Set α | M.IsPoint P}.encard = (∑ L ∈ {L : Set α | M.IsLine L ∧ e ∈ L}, (L.encard)) + 1 := by sorry
-
+  suffices hn : ∀ n : ℕ, M.rank = n → coverNumber M 1 ≤  ∑' i : {i : ℕ // i < n}, l^i.1
+  ·
     sorry
+  intro n hn
+  sorry
+  -- I think we just need to use coverNumber_contract_one
 
 
-def IsUniform_minor_free (M : Matroid α) ( a b : ℕ ) :=
-    ∀ N : Matroid α, N ≤m M → N = (unifOn (N.E ) (a + 1) ) → N.E.encard < b
+
+
+
+
+--   · exact hn M.rank rfl
+--   intro n hn
+--   induction n generalizing M with
+--   | zero =>
+--   -- We need a Thm that says that M has a non-loop element iff r(M)>0.
+--   -- Apparently the matroid of all loops is the called loopyOn. So I added the Lemma
+--   sorry
+--   | succ n ih =>
+--     have ⟨ e, he ⟩ : ∃ e, ¬ M.IsLoop e := by
+--       -- use loopyOn_isLoop_iff
+--       sorry
+-- -- eq_unifOn_of_eRank_le_two will be useful
+--     --have hsum : {P : Set α | M.IsPoint P}.encard = (∑ L ∈ {L : Set α | M.IsLine L ∧ e ∈ L}, (L.encard)) + 1 := by sorry
+
+
+
+-- def IsUniform_minor_free (M : Matroid α) ( a b : ℕ ) :=
+--     ∀ N : Matroid α, N ≤m M → N = (unifOn (N.E ) (a + 1) ) → N.E.encard < b
 
 def kung_infinite (hM : M.NoUniformMinor 2 (l + 2)) :
     M.simplification.E.encard ≤ ∑' i : {i : ℕ // i < M.eRank}, l ^ i.1 := by
