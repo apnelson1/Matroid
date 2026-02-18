@@ -369,4 +369,21 @@ lemma nullity_map_image {β : Type*} {f : α → β} (hf : InjOn f M.E) {X : Set
     ← image_diff_of_injOn (hf.mono hI.subset_ground) hI.subset,
     (hf.mono (diff_subset.trans hI.subset_ground)).encard_image]
 
+lemma Indep.exists_subset_supset_nullity_eq {k : ℕ∞} (hI : M.Indep I) (hIX : I ⊆ X)
+    (hk : k ≤ M.nullity X) : ∃ Y ⊆ X, I ⊆ Y ∧ M.nullity Y = k := by
+  obtain ⟨J, hJ, hIJ⟩ := hI.subset_isBasis'_of_subset hIX
+  rw [hJ.nullity_eq] at hk
+  obtain ⟨Z, hZ, rfl⟩ := exists_subset_encard_eq hk
+  refine ⟨J ∪ Z, union_subset hJ.subset (hZ.trans diff_subset), ?_⟩
+  rw [subset_diff] at hZ
+  grw [IsBasis'.nullity_eq (I := J), union_diff_cancel_left (by simp [hZ.2.symm.inter_eq]),
+    hIJ, and_iff_right subset_union_left]
+  grw [isBasis'_iff_isBasis_closure, and_iff_left subset_union_left,
+    closure_union_congr_left hJ.closure_eq_closure, union_eq_self_of_subset_right hZ.1]
+  exact hJ.isBasis_closure_right
+
+lemma exists_subset_nullity_eq {k : ℕ∞} (hk : k ≤ M.nullity X) : ∃ Y ⊆ X, M.nullity Y = k := by
+  obtain ⟨Y, hYX, -, rfl⟩ := M.empty_indep.exists_subset_supset_nullity_eq (empty_subset X) hk
+  exact ⟨_, hYX, rfl⟩
+
 end Matroid

@@ -37,13 +37,12 @@ lemma eConnSystem_unitary (M : Matroid α) : M.eConnSystem.Unitary :=
 
 lemma TutteConnected.Entangled (h : M.TutteConnected (k + 1)) : M.eConnSystem.Entangled k := by
   refine fun j hjk ↦
-  ⟨fun T T' ↦ ?_⟩
-  refine Tangle.ext fun X hX ↦ ?_
+  ⟨fun T T' ↦ Tangle.ext fun X hX ↦ ?_⟩
   have hle : M.eConn X ≤ j := hX.conn_le
   obtain ⟨b, h'⟩ := h.exists_encard_eq (P := M.ofSetSep X true hX.subset_ground)
     (by simp only [eConn_ofSetSep]; enat_to_nat!; lia)
   have hsmall (T₀ : Tangle M.eConnSystem j) : T₀.Small ((M.ofSetSep X true hX.subset_ground) b) :=
     T₀.small_of_encard_le (by simp) (by enat_to_nat!) (by cases b <;> simp_all) (by simp)
   cases b
-  · exact False.elim <| hX.compl_large.not_small (hsmall _)
+  · exact False.elim <| hX.compl_large.not_small <| hsmall _
   apply hsmall

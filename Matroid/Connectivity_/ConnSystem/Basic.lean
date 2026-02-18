@@ -27,8 +27,7 @@ instance : CoeFun (ConnSystem α R) (fun _ ↦ Set α → R) where
 
 attribute [coe] ConnSystem.toFun
 
-@[ext]
-protected lemma ext (μ ν : ConnSystem α R) (hE : μ.E = ν.E) (hf : ∀ X ⊆ μ.E, μ X = ν X) :
+protected lemma ext {μ ν : ConnSystem α R} (hE : μ.E = ν.E) (hf : ∀ X ⊆ μ.E, μ X = ν X) :
     μ = ν := by
   cases μ with
   | mk E f toFun_inter_ground toFun_compl toFun_submod =>
