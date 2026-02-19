@@ -43,20 +43,20 @@ protected lemma ext {μ ν : ConnSystem α R} (hE : μ.E = ν.E) (hf : ∀ X ⊆
 lemma toFun_eq_coe (μ : ConnSystem α R) (X : Set α) : μ.toFun X = μ X := rfl
 
 @[simp]
-lemma conn_inter_ground (μ : ConnSystem α R) (X : Set α) : μ (X ∩ μ.E) = μ X :=
+lemma apply_inter_ground (μ : ConnSystem α R) (X : Set α) : μ (X ∩ μ.E) = μ X :=
   μ.toFun_inter_ground X
 
 @[simp]
-lemma conn_compl (μ : ConnSystem α R) (X : Set α) : μ (μ.E \ X) = μ X := by
+lemma apply_compl (μ : ConnSystem α R) (X : Set α) : μ (μ.E \ X) = μ X := by
   simpa using μ.toFun_compl (X ∩ μ.E) inter_subset_right
 
 @[simp]
-lemma conn_compl' (μ : ConnSystem α R) (X : Set α) : μ Xᶜ = μ X := by
-  rw [← conn_inter_ground, ← diff_eq_compl_inter, conn_compl]
+lemma apply_compl' (μ : ConnSystem α R) (X : Set α) : μ Xᶜ = μ X := by
+  rw [← apply_inter_ground, ← diff_eq_compl_inter, apply_compl]
 
-lemma conn_submod (μ : ConnSystem α R) (X Y : Set α) : μ (X ∩ Y) + μ (X ∪ Y) ≤ μ X + μ Y := by
-  grw [← μ.conn_inter_ground, inter_inter_distrib_right, ← μ.conn_inter_ground (X ∪ Y),
-    union_inter_distrib_right, ← μ.conn_inter_ground X, ← μ.conn_inter_ground Y]
+lemma apply_submod (μ : ConnSystem α R) (X Y : Set α) : μ (X ∩ Y) + μ (X ∪ Y) ≤ μ X + μ Y := by
+  grw [← μ.apply_inter_ground, inter_inter_distrib_right, ← μ.apply_inter_ground (X ∪ Y),
+    union_inter_distrib_right, ← μ.apply_inter_ground X, ← μ.apply_inter_ground Y]
   exact μ.toFun_submod _ _ inter_subset_right inter_subset_right
 
 /-- A connectivity system assigns a connectivity to each bipartition of its ground set. -/
@@ -64,7 +64,7 @@ def pConn (μ : ConnSystem α R) (P : μ.E.Bipartition) : R := μ <| P true
 
 @[simp]
 lemma pConn_symm {μ : ConnSystem α R} (P : μ.E.Bipartition) : μ.pConn P.symm = μ.pConn P := by
-  rw [pConn, P.symm_true, ← P.compl_true, μ.conn_compl, pConn]
+  rw [pConn, P.symm_true, ← P.compl_true, μ.apply_compl, pConn]
 
 @[simp]
 lemma pConn_ofSubset (μ : ConnSystem α R) (X : Set α) (hX : X ⊆ μ.E) (i : Bool) :
@@ -72,9 +72,9 @@ lemma pConn_ofSubset (μ : ConnSystem α R) (X : Set α) (hX : X ⊆ μ.E) (i : 
   cases i <;> simp [pConn]
 
 @[simp]
-lemma conn_eq_pConn (P : μ.E.Bipartition) (i : Bool) : μ (P i) = μ.pConn P := by
+lemma apply_eq_pConn (P : μ.E.Bipartition) (i : Bool) : μ (P i) = μ.pConn P := by
   cases i
-  · rw [pConn, ← P.compl_true, μ.conn_compl]
+  · rw [pConn, ← P.compl_true, μ.apply_compl]
   rfl
 
 /-- Move a connectivity system to a larger ground set. -/
@@ -83,11 +83,11 @@ def induce (μ : ConnSystem α R) (hF : μ.E ⊆ F) : ConnSystem α R where
   E := F
   toFun := μ
   toFun_inter_ground X := by
-    rw [← μ.conn_inter_ground, inter_assoc, inter_eq_self_of_subset_right hF, μ.conn_inter_ground]
+    rw [← μ.apply_inter_ground, inter_assoc, inter_eq_self_of_subset_right hF, μ.apply_inter_ground]
   toFun_compl X hXF := by
-    rw [← μ.conn_inter_ground, ← inter_diff_right_comm, inter_eq_self_of_subset_right hF,
-      μ.conn_compl]
-  toFun_submod _ _ _ _ := μ.conn_submod ..
+    rw [← μ.apply_inter_ground, ← inter_diff_right_comm, inter_eq_self_of_subset_right hF,
+      μ.apply_compl]
+  toFun_submod _ _ _ _ := μ.apply_submod ..
 
 @[simp]
 lemma induce_pConn (μ : ConnSystem α R) (hF : μ.E ⊆ F) (P : F.Bipartition) :
@@ -101,10 +101,10 @@ variable [Zero R] {μ : ConnSystem α R}
 /-- A connectivity system is `Normal` if the empty set has connectivity zero . -/
 def Normal (μ : ConnSystem α R) : Prop := μ ∅ = 0
 
-lemma Normal.conn_empty (hμ : μ.Normal) : μ ∅ = 0 := hμ
+lemma Normal.apply_empty (hμ : μ.Normal) : μ ∅ = 0 := hμ
 
-lemma Normal.conn_ground (hμ : μ.Normal) : μ μ.E = 0 := by
-  rw [← μ.conn_compl, diff_self, hμ.conn_empty]
+lemma Normal.apply_ground (hμ : μ.Normal) : μ μ.E = 0 := by
+  rw [← μ.apply_compl, diff_self, hμ.apply_empty]
 
 end normal
 
@@ -116,21 +116,21 @@ variable [Zero R] [One R] {μ : ConnSystem α R}
 singletons to a connectivity of at most `1`. -/
 @[mk_iff]
 structure Unitary (μ : ConnSystem α R) : Prop where
-  conn_empty : μ ∅ = 0
-  conn_singleton_le : ∀ e, μ {e} ≤ 1
+  apply_empty : μ ∅ = 0
+  apply_singleton_le : ∀ e, μ {e} ≤ 1
 
 lemma Unitary.normal (hμ : μ.Unitary) : μ.Normal :=
   hμ.1
 
-lemma Unitary.conn_le_encard {μ : ConnSystem α ℕ∞} (hμ : μ.Unitary) (X : Set α) :
+lemma Unitary.apply_le_encard {μ : ConnSystem α ℕ∞} (hμ : μ.Unitary) (X : Set α) :
     μ X ≤ X.encard := by
   obtain hinf | hfin := X.finite_or_infinite.symm
   · simp [hinf.encard_eq]
   induction X, hfin using Finite.induction_on with
-  | empty => simp [hμ.conn_empty]
+  | empty => simp [hμ.apply_empty]
   | @insert e X heX hfin ih =>
-    have hsm := μ.conn_submod X {e}
-    grw [hμ.conn_singleton_le, ih, inter_singleton_eq_empty.2 heX, hμ.conn_empty, zero_add] at hsm
+    have hsm := μ.apply_submod X {e}
+    grw [hμ.apply_singleton_le, ih, inter_singleton_eq_empty.2 heX, hμ.apply_empty, zero_add] at hsm
     rwa [encard_insert_of_notMem heX, ← union_singleton]
 
 end Unitary
@@ -145,7 +145,7 @@ instance : PartialOrder (ConnSystem α R) where
 
 lemma subset_of_le (h : μ ≤ ν) : μ.E ⊆ ν.E := h.1
 
-lemma conn_le_of_le (h : μ ≤ ν) : μ X ≤ ν X := h.2 X
+lemma apply_le_of_le (h : μ ≤ ν) : μ X ≤ ν X := h.2 X
 
 @[simp]
 lemma le_induce (μ : ConnSystem α R) (hF : μ.E ⊆ F) : μ ≤ μ.induce hF :=
@@ -166,7 +166,7 @@ structure AdheresTo (ν μ : ConnSystem α R) : Prop where
 lemma AdheresTo.subset (h : ν.AdheresTo μ) : ν.E ⊆ μ.E :=
   h.1.1
 
-lemma AdheresTo.conn_le (h : ν.AdheresTo μ) (X : Set α) : ν X ≤ μ X :=
+lemma AdheresTo.apply_le (h : ν.AdheresTo μ) (X : Set α) : ν X ≤ μ X :=
   h.1.2 X
 
 end ConnSystem

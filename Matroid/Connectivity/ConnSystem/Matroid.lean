@@ -15,7 +15,6 @@ which we do as quickly as possible in terms of an auxiliary raw function `eConnA
 we prove that this function is self-dual and submodular, and then use it to define `eConn`
 as a package. -/
 
-
 /-- the connectivity function of a matroid as a pure function, rather than a `ConnSystem`.
 Just an implementation detail on the way to a `ConnSystem`; not intended for external use. -/
 private noncomputable abbrev eConnAux (M : Matroid α) (X : Set α) : ℕ∞ :=
@@ -114,7 +113,7 @@ lemma eConn_unitary (M : Matroid α) : M.eConn.Unitary :=
 
 @[simp]
 lemma eConn_empty (M : Matroid α) : M.eConn ∅ = 0 :=
-  M.eConn_unitary.conn_empty
+  M.eConn_unitary.apply_empty
 
 @[simp]
 lemma loopyOn_eConn (E X : Set α) : (loopyOn E).eConn X = 0 := by
@@ -126,8 +125,8 @@ lemma eConn_ground (M : Matroid α) : M.eConn M.E = 0 := by
 
 /-- Connectivity is self-dual. -/
 @[simp]
-lemma eConn_dual (M : Matroid α) (X : Set α) : M✶.eConn X = M.eConn X :=
-  M.eConnAux_dual X
+lemma eConn_dual (M : Matroid α) : M✶.eConn = M.eConn :=
+  ConnSystem.ext rfl fun X _ ↦ M.eConnAux_dual X
 
 lemma IsBasis'.eConn_eq (hIX : M.IsBasis' I X) (hJX : M.IsBasis' J (M.E \ X)) :
     M.eConn X = M.nullity (I ∪ J) := by
@@ -180,7 +179,7 @@ lemma eConn_corestrict_univ_eq (M : Matroid α) (X : Set α) : (M✶ ↾ univ)�
 
 @[simp]
 lemma eConn_compl (M : Matroid α) (X : Set α) : M.eConn (M.E \ X) = M.eConn X :=
-  M.eConn.conn_compl X
+  M.eConn.apply_compl X
 
 /-- A version of `eConn_compl` where `compl` really means complementation in the universe. -/
 @[simp]

@@ -55,22 +55,20 @@ lemma eConn_core (M : Matroid α) : M.eConn (M.core X) = M.eConn X := by
 @[simp]
 lemma core_core (M : Matroid α) (X : Set α) : M.core (M.core X) = M.core X := by
   rw [core_def, core_def]
-  tauto_set
+  grind
 
 @[simp]
 lemma core_union (M : Matroid α) (X Y : Set α) : M.core (X ∪ Y) = M.core X ∪ M.core Y := by
-  simp_rw [core_def]
-  tauto_set
+  grind [core_def]
 
 @[simp]
 lemma core_inter (M : Matroid α) (X Y : Set α) : M.core (X ∩ Y) = M.core X ∩ M.core Y := by
-  simp_rw [core_def]
-  tauto_set
+  grind [core_def]
+
 
 @[simp]
 lemma core_diff (M : Matroid α) (X Y : Set α) : M.core (X \ Y) = M.core X \ M.core Y := by
-  simp_rw [core_def]
-  tauto_set
+  grind [core_def]
 
 lemma core_subset_core (M : Matroid α) (hXY : X ⊆ Y) : M.core X ⊆ M.core Y := by
   rw [← diff_eq_empty, ← core_diff, diff_eq_empty.2 hXY, core_empty]

@@ -16,7 +16,8 @@ lemma bDual_true (M : Matroid α) : M.bDual true = M✶ := rfl
 lemma bDual_false (M : Matroid α) : M.bDual false = M := rfl
 
 @[simp, grind =]
-lemma bDual_ground (M : Matroid α) (b : Bool) : (M.bDual b).E = M.E := by cases b <;> simp
+lemma bDual_ground (M : Matroid α) (b : Bool) : (M.bDual b).E = M.E := by
+  cases b <;> rfl
 
 @[simp]
 lemma bDual_dual (M : Matroid α) (b : Bool) : M✶.bDual b = M.bDual !b := by
@@ -62,7 +63,7 @@ lemma bDual_remove (M : Matroid α) (X : Set α) (b c : Bool) :
 
 @[simp]
 lemma remove_ground (M : Matroid α) (X : Set α) (b : Bool) : (M.remove X b).E = M.E \ X := by
-  cases b <;> simp
+  cases b <;> rfl
 
 @[simp]
 lemma remove_remove (M : Matroid α) (X Y : Set α) (b : Bool) :
@@ -71,11 +72,13 @@ lemma remove_remove (M : Matroid α) (X Y : Set α) (b : Bool) :
 
 lemma remove_comm (M : Matroid α) (hXY : Disjoint X Y) (b c : Bool) :
     (M.remove X b).remove Y c = (M.remove Y c).remove X b := by
-  cases b <;> cases c <;> simp [union_comm, M.contract_delete_comm hXY.symm,
-    M.contract_delete_comm hXY]
+  cases b <;> cases c <;>
+  simp [union_comm, M.contract_delete_comm hXY.symm, M.contract_delete_comm hXY]
 
 lemma remove_isMinor (M : Matroid α) (X : Set α) (b : Bool) : M.remove X b ≤m M := by
-  cases b; apply delete_isMinor; apply contract_isMinor
+  cases b
+  · apply delete_isMinor
+  apply contract_isMinor
 
 @[simp]
 lemma remove_inter_ground (M : Matroid α) (X : Set α) (b : Bool) :

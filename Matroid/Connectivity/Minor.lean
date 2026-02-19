@@ -582,11 +582,13 @@ lemma eConn_contract_diff_eq_self_iff_skew_skew' (hconn : M.eConn X ≠ ⊤)
 
 lemma eConn_eq_eConn_delete_subset_add (M : Matroid α) (hDX : D ⊆ X) :
     M.eConn X = (M ＼ D).eConn (X \ D) + M✶.eLocalConn (M.E \ X) D := by
-  simp [← M.eConn_dual, M✶.eConn_eq_eConn_contract_subset_add hDX, ← (M✶ ／ D).eConn_dual]
+  rw [← M.eConn_dual, M✶.eConn_eq_eConn_contract_subset_add hDX, ← (M✶ ／ D).eConn_dual]
+  simp
 
 lemma eConn_eq_eConn_delete_disjoint_add (M : Matroid α) (hDX : Disjoint X D) :
     M.eConn X = (M ＼ D).eConn X + M✶.eLocalConn X D := by
-  simp [← M.eConn_dual, M✶.eConn_eq_eConn_contract_disjoint_add hDX, ← (M✶ ／ D).eConn_dual]
+  rw [← M.eConn_dual, M✶.eConn_eq_eConn_contract_disjoint_add hDX, ← (M✶ ／ D).eConn_dual]
+  simp
 
 lemma Coindep.delete_eConn_eq_union_iff' (hD : M.Coindep D) (hDX : Disjoint X D)
     (hX : (M ＼ D).eConn X ≠ ⊤) : (M ＼ D).eConn X = M.eConn (X ∪ D) ↔ D ⊆ M.closure X := by
@@ -682,12 +684,12 @@ lemma eConn_le_eConn_contract_add_eConn_of_disjoint (M : Matroid α) (hdj : Disj
 
 lemma eConn_le_eConn_delete_add_eConn_of_subset (M : Matroid α) (hDX : D ⊆ X) :
     M.eConn X ≤ (M ＼ D).eConn (X \ D) + M.eConn D := by
-  grw [← dual_contract_dual, eConn_dual, ← M.eConn_dual D,
+  grw [← dual_contract_dual, eConn_dual, ← M.eConn_dual,
     ← eConn_le_eConn_contract_add_eConn_of_subset _ hDX, eConn_dual]
 
 lemma eConn_le_eConn_delete_add_eConn_of_disjoint (M : Matroid α) (hdj : Disjoint X D) :
     M.eConn X ≤ (M ＼ D).eConn X + M.eConn D := by
-  grw [← dual_contract_dual, eConn_dual, ← M.eConn_dual D,
+  grw [← dual_contract_dual, eConn_dual, ← M.eConn_dual,
     ← eConn_le_eConn_contract_add_eConn_of_disjoint _ hdj, eConn_dual]
 
 lemma eConn_le_eConn_contract_add_eRk (M : Matroid α) (X C : Set α) :
