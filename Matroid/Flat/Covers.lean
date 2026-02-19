@@ -92,7 +92,7 @@ lemma coverNumber_le {k k' : ℕ∞} (M : Matroid α) (hk : k ≤ k') : M.coverN
   unfold coverNumber
   simp only [le_sInf_iff, mem_image, mem_setOf_eq, forall_exists_index, and_imp,
     forall_apply_eq_imp_iff₂]
-  exact fun T hT ↦ (hak T (hT.mono hk)  )
+  exact fun T hT ↦ (hak T (hT.mono hk))
 
 lemma coverNumber_contract_one {a : ℕ∞} (he : e ∈ M.E) (hel : M.IsNonloop e)
     (heN : (M／ {e}).Nonempty) :
@@ -116,6 +116,94 @@ lemma coverNumber_contract {a : ℕ∞} (hX : X ⊆ M.E) :
     M.coverNumber (a + M.eRk X) ≤ (M ／ X).coverNumber a := by
   --Mathieu, do you want to do this one?
   sorry
+
+lemma M.IsCover.cover_fun {a k : ℕ∞} (hcover : M.IsCover a T )
+    (f : {X // X ∈ T} → Set (Set α) )
+    (hfun : ∀ X : {X // X ∈ T}, (M ↾ X.1).IsCover k (f X)) :
+    M.IsCover k ( ⋃ X : {X // X ∈ T}, f X ) := by
+  refine ⟨ ?_, ?_ ⟩
+  · rw[←hcover.sUnion_eq]
+    refine ext ?_
+    intro e
+    refine ⟨ ?_, ?_ ⟩
+    · intro he
+      simp only [iUnion_coe_set, mem_sUnion, mem_iUnion] at he
+      obtain ⟨T', ⟨ X, ⟨hX, hT'X ⟩ ⟩, hee ⟩ := he
+      simp only [mem_sUnion]
+      refine ⟨X, ⟨hX, (mem_of_subset_of_mem (((hfun ⟨X, hX⟩ ).subset_ground hT'X)) hee ) ⟩⟩
+    intro he
+    simp only [mem_sUnion] at he
+    obtain ⟨X, hXT, heX⟩ := he
+    simp only [iUnion_coe_set, mem_sUnion, mem_iUnion]
+    have h1 : e ∈ (M ↾ ↑X).E := by exact mem_of_subset_of_mem (fun ⦃a⦄ a_1 ↦ a_1) heX
+    rw[←(hfun ⟨X, hXT⟩ ).sUnion_eq] at h1
+    simp only [mem_sUnion] at h1
+    obtain ⟨X', hX', heX' ⟩ := h1
+    refine ⟨ X', ⟨⟨X, ⟨hXT, hX'⟩ ⟩, heX'⟩ ⟩
+  intro F hF
+  simp only [iUnion_coe_set, mem_iUnion] at hF
+  obtain ⟨X, hXT, hF⟩ := hF
+  rw[←restrict_eRk_eq M (LE.le.subset ((hfun ⟨X, hXT⟩ ).subset_ground hF))]
+  exact (hfun ⟨X, hXT⟩ ).eRk_le F hF
+
+lemma coverNumber_lt {k l : ℕ∞} (hlt : M.coverNumber k < l) : ∃ T, M.IsCover k T ∧ T.encard < l :=
+    by
+obtain ⟨t, ⟨T, hT, hT1 ⟩, htl ⟩ := sInf_lt_iff.1 hlt
+refine ⟨T, ⟨hT , (lt_of_eq_of_lt hT1 htl ) ⟩⟩
+
+--As writen, it's false. Need to decide what to do with infi case
+lemma coverNumber_cover_of_covers {a k : ℕ∞} {l : ℕ}
+    (hflat : ∀ F, M.eRk F ≤ a → (M ↾ F).coverNumber k < l )
+    (hcover : M.IsCover a T ) (hTfin : (T.encard) < ⊤ ) :
+    M.coverNumber k < l * (T.encard) := by
+  --unfold coverNumber
+  have hf : ∀ X : {X // X ∈ T}, ∃ XT, (M ↾ X.1).IsCover k XT ∧ XT.encard < l := by
+    intro X
+    obtain ⟨t, ⟨XT, hXT, hXT1 ⟩, htl ⟩  := sInf_lt_iff.1 (hflat X (hcover.eRk_le X X.2))
+    refine ⟨ XT, ⟨  hXT,?_ ⟩⟩
+    rwa[hXT1]
+  choose f hfun using hf
+  have hiscov : M.IsCover k ( ⋃ X : {X // X ∈ T}, f X ) := by
+    refine ⟨ ?_, ?_ ⟩
+    · rw[←hcover.sUnion_eq]
+      refine ext ?_
+      intro e
+      refine ⟨ ?_, ?_ ⟩
+      · intro he
+        simp only [iUnion_coe_set, mem_sUnion, mem_iUnion] at he
+        obtain ⟨T', ⟨ X, ⟨hX, hT'X ⟩ ⟩, hee ⟩ := he
+        simp only [mem_sUnion]
+        refine ⟨X, ⟨hX, (mem_of_subset_of_mem (((hfun ⟨X, hX⟩ ).1.subset_ground hT'X)) hee ) ⟩⟩
+      intro he
+      simp only [mem_sUnion] at he
+      obtain ⟨X, hXT, heX⟩ := he
+      simp only [iUnion_coe_set, mem_sUnion, mem_iUnion]
+      have h1 : e ∈ (M ↾ ↑X).E := by exact mem_of_subset_of_mem (fun ⦃a⦄ a_1 ↦ a_1) heX
+      rw[←(hfun ⟨X, hXT⟩ ).1.sUnion_eq] at h1
+      simp only [mem_sUnion] at h1
+      obtain ⟨X', hX', heX' ⟩ := h1
+      refine ⟨ X', ⟨⟨X, ⟨hXT, hX'⟩ ⟩, heX'⟩ ⟩
+    intro F hF
+    simp only [iUnion_coe_set, mem_iUnion] at hF
+    obtain ⟨X, hXT, hF⟩ := hF
+    rw[←restrict_eRk_eq M (LE.le.subset ((hfun ⟨X, hXT⟩ ).1.subset_ground hF))]
+    exact (hfun ⟨X, hXT⟩ ).1.eRk_le F hF
+  have : ( ⋃ X : {X // X ∈ T}, f X ).encard < l * (T.encard) := by
+
+    --have :  (⋃ X, f X).encard = ∑ X : {X // X ∈ T}, (f X ).encard := by sorry
+
+    sorry
+  have : ( ⋃ X : {X // X ∈ T}, f X ).encard ∈ (encard '' {T | M.IsCover k T}) := by
+    exact mem_image_of_mem encard hiscov
+  apply sInf_lt_iff.2
+  use (( ⋃ X : {X // X ∈ T}, f X ).encard)
+
+lemma coverNumber_cover_of_cover_number {a k : ℕ∞} {l : ℕ}
+    (hflat : ∀ F, M.eRk F ≤ a → (M ↾ F).coverNumber k ≤ l) :
+    M.coverNumber k ≤ l * M.coverNumber a := by
+  sorry
+
+    --(hcovNum : M.coverNumber a ≤ )
 
 -- lemma foo (M : Matroid α) [RankPos M] : M.coverNumber 1 = M.simplification.E.encard := by
 
@@ -181,29 +269,6 @@ theorem kung_bound [RankFinite M]
   sorry
   -- I think we just need to use coverNumber_contract_one
 
-
-
-
-
-
---   · exact hn M.rank rfl
---   intro n hn
---   induction n generalizing M with
---   | zero =>
---   -- We need a Thm that says that M has a non-loop element iff r(M)>0.
---   -- Apparently the matroid of all loops is the called loopyOn. So I added the Lemma
---   sorry
---   | succ n ih =>
---     have ⟨ e, he ⟩ : ∃ e, ¬ M.IsLoop e := by
---       -- use loopyOn_isLoop_iff
---       sorry
--- -- eq_unifOn_of_eRank_le_two will be useful
---     --have hsum : {P : Set α | M.IsPoint P}.encard = (∑ L ∈ {L : Set α | M.IsLine L ∧ e ∈ L}, (L.encard)) + 1 := by sorry
-
-
-
--- def IsUniform_minor_free (M : Matroid α) ( a b : ℕ ) :=
---     ∀ N : Matroid α, N ≤m M → N = (unifOn (N.E ) (a + 1) ) → N.E.encard < b
 
 def kung_infinite (hM : M.NoUniformMinor 2 (l + 2)) :
     M.simplification.E.encard ≤ ∑' i : {i : ℕ // i < M.eRank}, l ^ i.1 := by
