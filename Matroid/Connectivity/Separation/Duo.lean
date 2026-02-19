@@ -2,9 +2,17 @@ import Matroid.Connectivity.Separation.Abstract
 
 variable {α ι : Type*} {M : Matroid α} {N : ι → Matroid α} {e f : α} {X C D : Set α}
 
+@[elab_as_elim]
+def Fin.rec2 {motive : Fin 2 → Sort*} (i : Fin 2) (zero : motive 0) (one : motive 1) :
+    motive i :=
+  match i with
+  | 1 => one
+  | 0 => zero
+
 open Set Matroid.Separation
 
 namespace Matroid
+
 
 /-- A vector of separations of minors of `M`. -/
 structure SepVec (M : Matroid α) (N : ι → Matroid α) where
@@ -82,35 +90,53 @@ lemma SepVec.disjoint_diff (S : M.SepVec N) (i : ι) (b : Bool) : Disjoint (S i 
   grw [(S i).subset, S.diff_eq]
   exact disjoint_sdiff_right
 
--- /-- A three-set generalization of the Bixby-Coullard inequality for `ℕ∞` -/
--- theorem eConn_inter_add_eConn_union_union_le (M : Matroid α) (hC : Disjoint C X)
---     (hD : Disjoint D X) :
---     M.eConn (C ∩ D) + M.eConn (X ∪ C ∪ D) ≤ (M ／ X).eConn C + (M ＼ X).eConn D + M.eConn X := by
--- -/
+def SepVec.downSep {N₀ : Matroid α} (S : M.SepVec N) (hN₀ : ∀ i, N₀.E ⊆ (N i).E) (i : ι) :
+    N₀.Separation :=
+  (S i).induce (hN₀ i)
 
--- Contraction/Deletion pairs
+-- lemma SepVec.ground_zero {N₀ N₁ : Matroid α} (S : M.SepVec ![N₀, N₁]) : S
+
+-- -- /-- A three-set generalization of the Bixby-Coullard inequality for `ℕ∞` -/
+-- -- theorem eConn_inter_add_eConn_union_union_le (M : Matroid α) (hC : Disjoint C X)
+-- --     (hD : Disjoint D X) :
+-- --     M.eConn (C ∩ D) + M.eConn (X ∪ C ∪ D) ≤ (M ／ X).eConn C + (M ＼ X).eConn D + M.eConn X := by
+-- -- -/
+
+-- -- Contraction/Deletion pairs
 
 variable {X Y : Set α}
 
-def SepVec.contractDeleteCopy (S : M.SepVec ![M ／ X, M ＼ Y]) :
+def SepVec.downSepRR {b c : Bool} (S : M.SepVec ![M.remove X b, M.remove Y c]) (i : Fin 2) :
+    ((M.remove X b).remove Y c).Separation :=
+  S.downSep (by simp [Fin.forall_fin_two, diff_subset, diff_subset_diff_left diff_subset]) i
+
+def SepVec.copyCD (S : M.SepVec ![M ／ X, M ＼ Y]) :
     M.SepVec ![M ／ (X ∩ M.E), M ＼ (Y ∩ M.E)] :=
-  S.copyMinor fun i ↦ by
-    match i with
-    | 0 => simp
-    | 1 => simp
+  S.copyMinor <| fun i ↦ i.rec2 (by simp) (by simp)
+
+def SepVec.downSepCD (S : M.SepVec ![M ／ X, M ＼ Y]) (i : Fin 2) : (M ／ X ＼ Y).Separation :=
+  S.downSep (fun i ↦ i.rec2 (by simp [diff_subset]) (by simp [diff_subset_diff_left diff_subset])) i
+
+@[simp]
+lemma SepVec.downSepCD_apply_zero (S : M.SepVec ![M ／ X, M ＼ Y]) (i : Bool) :
+    S.downSepCD 0 i = S 0 i \ Y := by
+  simp [downSepCD, downSep]
+
+@[simp]
+lemma SepVec.downSepCD_apply_one (S : M.SepVec ![M ／ X, M ＼ Y]) (i : Bool) :
+    S.downSepCD 1 i = S 1 i \ X := by
+  simp only [downSepCD, downSep, Nat.succ_eq_add_one, Nat.reduceAdd, Fin.isValue,
+    Matrix.cons_val_one, Matrix.cons_val_zero, induce_apply, delete_ground, contract_ground]
+  rw [diff_diff_comm, ← delete_ground, ← inter_diff_assoc, inter_eq_self_of_subset_left]
+  exact (S 1).subset
 
 lemma SepVec.diff_eq_of_contract_delete (S : M.SepVec ![M ／ X, M ＼ Y])
-    (hXE : X ⊆ M.E := by aesop_mat) (hYE : Y ⊆ M.E := by aesop_mat) : S.diff = ![X, Y] := by
-  refine funext fun i ↦ ?_
-  match i with
-  | 0 => simpa [S.diff_eq]
-  | 1 => simpa [S.diff_eq]
+    (hXE : X ⊆ M.E := by aesop_mat) (hYE : Y ⊆ M.E := by aesop_mat) : S.diff = ![X, Y] :=
+  funext fun i ↦ by induction i using Fin.rec2 with simpa [S.diff_eq]
 
 lemma SepVec.diff_eq_of_contract_delete_same' (S : M.SepVec ![M ／ X, M ＼ X])  (i : Fin 2) :
     S.diff i = X ∩ M.E := by
-  match i with
-  | 0 => simp [S.diff_eq, inter_comm]
-  | 1 => simp [S.diff_eq, inter_comm]
+  induction i using Fin.rec2 with simp [S.diff_eq, inter_comm]
 
 lemma SepVec.diff_eq_of_contract_delete_same (S : M.SepVec ![M ／ X, M ＼ X])
     (hXE : X ⊆ M.E := by aesop_mat) (i : Fin 2) : S.diff i = X := by
@@ -119,28 +145,14 @@ lemma SepVec.diff_eq_of_contract_delete_same (S : M.SepVec ![M ／ X, M ＼ X])
 lemma SepVec.disjoint_of_contract_delete (S : M.SepVec ![M ／ X, M ＼ X]) (i : Fin 2) (b : Bool) :
     Disjoint (S i b) X := by
   grw [(S i).subset, S.ground_eq, S.diff_eq]
-  match i with
-  | 0 => simp [disjoint_sdiff_left]
-  | 1 => simp [disjoint_sdiff_left]
-
-lemma SepVec.bixbyCoullard (S : M.SepVec ![M ／ X, M ＼ X]) :
-    ((S.upSep 0 false).inter (S.upSep 1 false)).eConn +
-    ((S.upSep 0 true).union (S.upSep 1 true)).eConn ≤
-      (S 0).eConn + (S 1).eConn + M.eConn X := by
-  wlog hXE : X ⊆ M.E generalizing S X with aux
-  · simpa [SepVec.contractDeleteCopy] using aux S.contractDeleteCopy inter_subset_right
-  convert M.eConn_inter_add_eConn_union_union_le (X := X) (C := S 0 true) (D := S 1 true)
-    (S.disjoint_of_contract_delete ..) (S.disjoint_of_contract_delete ..)
-  · simp [← Separation.eConn_eq _ true, S.upSep_apply]
-  simp [← Separation.eConn_eq _ true, S.upSep_apply, S.diff_eq_of_contract_delete hXE,
-    ← union_union_distrib_right, show S 0 true ∪ S 1 true ∪ X = X ∪ S 0 true ∪ S 1 true by grind]
+  induction i using Fin.rec2 with simp [disjoint_sdiff_left]
 
 lemma SepVec.bixbyCoullard' (S : M.SepVec ![M ／ X, M ＼ X]) (b c i j : Bool) :
     ((S.upSep 0 (!b)).cross (S.upSep 1 (!c)) b c i).eConn +
     ((S.upSep 0 b).cross (S.upSep 1 c) (!b) (!c) j).eConn ≤
-      (S 0).eConn + (S 1).eConn + M.eConn X := by
+    (S 0).eConn + (S 1).eConn + M.eConn X := by
   wlog hXE : X ⊆ M.E generalizing S X with aux
-  · simpa [SepVec.contractDeleteCopy] using aux S.contractDeleteCopy inter_subset_right
+  · simpa [SepVec.copyCD] using aux S.copyCD inter_subset_right
   convert M.eConn_inter_add_eConn_union_union_le (X := X) (C := S 0 b) (D := S 1 c)
     (S.disjoint_of_contract_delete ..) (S.disjoint_of_contract_delete ..)
   · simp [← Separation.eConn_eq _ i]
@@ -151,11 +163,21 @@ lemma SepVec.bixbyCoullard' (S : M.SepVec ![M ／ X, M ＼ X]) (b c i j : Bool) 
   rw [← Separation.eConn_eq _ c]
   rfl
 
+lemma SepVec.bixbyCoullard (S : M.SepVec ![M ／ X, M ＼ X]) :
+    ((S.upSep 0 false).inter (S.upSep 1 false)).eConn +
+    ((S.upSep 0 true).union (S.upSep 1 true)).eConn ≤
+      (S 0).eConn + (S 1).eConn + M.eConn X :=
+  S.bixbyCoullard' ..
 
 
-  -- obtain rfl : b = true := sorry
-  -- obtain rfl : c = true := sorry
-  -- obtain rfl : i = true := sorry
-  -- obtain rfl : j = false := sorry
-  -- simp
-  -- apply SepVec.bixbyCoullard
+-- Deletion/Deletion
+
+def SepVec.copyDD (S : M.SepVec ![M ＼ X, M ＼ Y]) :
+    M.SepVec ![M ＼ (X ∩ M.E), M ＼ (Y ∩ M.E)] :=
+  S.copyMinor <| fun i ↦ i.rec2 (by simp) (by simp)
+
+def SepVec.downSepDD (S : M.SepVec ![M ＼ X, M ＼ Y]) (i : Fin 2) : (M ＼ (X ∪ Y)).Separation :=
+  S.downSep (by simp [Fin.forall_fin_two, diff_subset_diff_right subset_union_left,
+      diff_subset_diff_right subset_union_right]) i
+
+-- lemma SepVec.fooDD (S : M.SepVec ![M ＼ X, M ＼ Y]) :

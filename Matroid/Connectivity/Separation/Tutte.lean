@@ -181,9 +181,9 @@ lemma IsTutteSeparation.tutteWeight_pos (h : P.IsTutteSeparation) (i : Bool) :
     0 < M.tutteWeight (P i) :=
   (isTutteSeparation_iff_tutteWeight.1 h) i
 
-@[simp]
-lemma isOffsetSeparation_zero : P.IsOffsetSeparation 0 ↔ P.IsTutteSeparation := by
-  simp [IsOffsetSeparation, IsTutteSeparation, tutteDegen_eq]
+-- @[simp]
+-- lemma isOffsetSeparation_zero : P.IsOffsetSeparation 0 ↔ P.IsTutteSeparation := by
+--   simp [IsOffsetSeparation, IsTutteSeparation, tutteDegen_eq]
 
 end Separation
 
@@ -507,33 +507,19 @@ lemma tutteConnected_iff_seqConnected' : M.TutteConnected k ↔
   obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one <;>
   simp [tutteConnected_iff_seqConnected]
 
-lemma TutteConnected.eConn_union_le_of_eConn_le_eConn_le_card_ge (hM : M.TutteConnected (k + 1))
+-- lemma NumConnected.eConn_union_le_of_eConn_le_eConn_le_ge {w : Matroid α → Set α → ℕ∞}
+--     (hw : ∀ M ⦃X Y⦄, X ⊆ Y → M.eConn X + w M X ≤ M.eConn Y + w M Y)
+--     (hM : M.NumConnected (fun M X ↦ w M X = 0) (k + 1)) {P Q : M.Separation} (hP : P.eConn ≤ k)
+--     (hQ : Q.eConn ≤ k) {b c j : Bool} (hwt : k ≤ (P.cross Q b c i).eConn + w M (P b ∩ Q c)) :
+--     (P.cross Q (!b) (!c) j).eConn ≤ k := by
+
+lemma TutteConnected.eConn_cross_le_of_eConn_le_eConn_le_card_ge (hM : M.TutteConnected (k + 1))
     {P Q : M.Separation} (hP : P.eConn ≤ k) (hQ : Q.eConn ≤ k) {b c : Bool}
-    (hcard : k ≤ (P b ∩ Q c).encard) : (P.union Q b c).eConn ≤ k := by
-  by_contra! hcon
-  have hk : k ≠ ⊤ := by enat_to_nat!
-  have hsm := P.eConn_inter_add_eConn_union_le Q b c
-  obtain hle | hlt := le_or_gt k (P.inter Q b c).eConn
-  · grw [hP, hQ, ← hle, ENat.add_le_add_iff_left hk] at hsm
-    exact hcon.not_ge hsm
-  refine hM.not_isTutteSeparation (Order.add_one_le_of_lt hlt) ?_
-  rw [isTutteSeparation_iff_add_one_le_encard (by enat_to_nat!)]
-  rintro (rfl | rfl)
-  · grw [Order.add_one_le_of_lt hlt, P.inter_apply_false,
-      ← show P (!b) ∩ Q (!c) ⊆ P (!b) ∪ Q !c by grind, ← P.union_apply_false,
-      ← M.eConn_le_encard, eConn_eq, hcon]
-  grw [Order.add_one_le_of_lt hlt, P.inter_apply_true, hcard]
-
-
-  -- cases k with
-  -- | top => simp
-  -- | coe k =>
-  --   have hsm := P.eConn_inter_add_eConn_union_le Q b c
-
-  --   grw [hP, hQ] at hsm
-  --   have := hM.not_isTutteSeparation (P := P.inter Q b c)
-
-
+    (hcard : k ≤ (P b ∩ Q c).encard) : (P.cross Q (!b) (!c) i).eConn ≤ k := by
+  rw [tutteConnected_iff_numConnected_tutteWeight_eq_zero] at hM
+  refine hM.eConn_union_le_of_eConn_le_eConn_le_ge (fun M X Y hXY hYE ↦ ?_) hP hQ (i := i) ?_
+  · grw [eConn_add_tutteWeight_eq _ (hXY.trans hYE), eConn_add_tutteWeight_eq _ hYE, hXY]
+  rwa [← eConn_eq _ i, cross_apply_self, eConn_add_tutteWeight_eq _]
 
 
 -- lemma tutteConnected_iff_biConnected :

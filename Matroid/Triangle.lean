@@ -1,4 +1,4 @@
-import Matroid.Connectivity.Dual
+import Matroid.Bool
 import Matroid.Connectivity.Separation.Tutte
 
 open Set

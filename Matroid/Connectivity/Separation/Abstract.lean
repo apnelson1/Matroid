@@ -257,7 +257,7 @@ lemma numConnected_of_subsingleton {dg} (h : M.E.Subsingleton) (k : ℕ∞) (hdg
 
 /-- An uncrossing lemma for an abstract connectivity notion. -/
 lemma NumConnected.eConn_union_le_of_eConn_le_eConn_le_ge {w : Matroid α → Set α → ℕ∞}
-    (hw : ∀ M ⦃X Y⦄, X ⊆ Y → M.eConn X + w M X ≤ M.eConn Y + w M Y)
+    (hw : ∀ M ⦃X Y⦄, X ⊆ Y → Y ⊆ M.E → M.eConn X + w M X ≤ M.eConn Y + w M Y)
     (hM : M.NumConnected (fun M X ↦ w M X = 0) (k + 1)) {P Q : M.Separation} (hP : P.eConn ≤ k)
     (hQ : Q.eConn ≤ k) {b c j : Bool} (hwt : k ≤ (P.cross Q b c i).eConn + w M (P b ∩ Q c)) :
     (P.cross Q (!b) (!c) j).eConn ≤ k := by
@@ -277,7 +277,7 @@ lemma NumConnected.eConn_union_le_of_eConn_le_eConn_le_ge {w : Matroid α → Se
   have hcon := hw M (show P (!b) ∩ Q (!c) ⊆ P (!b) ∪ Q (!c) by grind)
   grw [hdg, add_zero, ← P.cross_apply_not (i := i), eConn_eq, ← le_self_add,
     ← P.cross_apply_self (i := j), eConn_eq] at hcon
-  exact hlt.not_ge <| by grw [hcon, hlt']
+  exact hlt.not_ge <| by grw [hcon (Separation.subset_ground _), hlt']
 
 /-- A numerical notion of connectivity, simultaneously abstracting Tutte, Vertical and Internal
 connectivities.
