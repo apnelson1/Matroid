@@ -6,6 +6,7 @@ import Matroid.Axioms.Rank
 import Matroid.BasisDuo
 import Matroid.Binary.Crossing
 import Matroid.Binary.Representation
+import Matroid.Bool
 import Matroid.Circuit
 import Matroid.Clone
 import Matroid.Closure
@@ -17,7 +18,7 @@ import Matroid.Connectivity.Connected
 import Matroid.Connectivity.Core
 -- import Matroid.Connectivity.Dual
 import Matroid.Connectivity.Extension
-import Matroid.Connectivity.Finitize
+import Matroid.Finitize
 import Matroid.Connectivity.Minor
 import Matroid.Connectivity.Nat
 -- import Matroid.Connectivity.Separation.Abstract
@@ -31,7 +32,7 @@ import Matroid.Connectivity.Separation.Minor
 import Matroid.Connectivity.Separation.Tutte
 import Matroid.Connectivity.Separation.Vertical
 import Matroid.Connectivity.Skew
--- import Matroid.Connectivity.Triangle
+-- import Matroid.Triangle
 -- import Matroid.Connectivity.TutteTriangle
 import Matroid.Constructions.Matching
 import Matroid.Constructions.Project

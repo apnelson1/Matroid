@@ -7,6 +7,8 @@ open Set Matroid.Separation
 
 namespace Matroid
 
+
+
 @[simp]
 lemma freeOn_tutteConnected_top_iff {E : Set α} : (freeOn E).TutteConnected ⊤ ↔ E.Subsingleton := by
   rw [← top_add (a := 1), freeOn_tutteConnected_iff]

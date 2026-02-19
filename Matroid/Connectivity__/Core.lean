@@ -1,4 +1,4 @@
-import Matroid.Connectivity.Finitize
+import Matroid.Connectivity.ConnSystem.Matroid
 
 open Set Set.Notation Function
 

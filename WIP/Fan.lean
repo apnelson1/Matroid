@@ -1,4 +1,4 @@
-import Matroid.Connectivity.Triangle
+import Matroid.Triangle
 
 -- induction h with
 --   | of_empty b => sorry

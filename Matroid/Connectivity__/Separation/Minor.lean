@@ -1,5 +1,5 @@
 import Matroid.Connectivity.Separation.Basic
-import Matroid.Bool
+import Matroid.Connectivity.Dual
 
 open Set Function
 

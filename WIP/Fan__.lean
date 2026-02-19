@@ -1,4 +1,4 @@
-import Matroid.Connectivity.Triangle
+import Matroid.Triangle
 
 set_option linter.style.longLine false
 

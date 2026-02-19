@@ -1,6 +1,5 @@
 import Matroid.Connectivity.Dual
 import Matroid.Connectivity.Separation.Tutte
-import Mathlib.Tactic.NormNum.Core
 
 open Set
 

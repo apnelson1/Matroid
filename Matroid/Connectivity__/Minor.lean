@@ -1,4 +1,6 @@
-import Matroid.Connectivity_.Nat
+import Matroid.Finitize
+import Matroid.Connectivity.Nat
+import Matroid.Minor.Order
 
 open Set Function
 
@@ -92,11 +94,11 @@ lemma project_nullity_eq_nullity_add_eLocalConn (M : Matroid α) (X C : Set α) 
   have hKX := hK.subset
   obtain ⟨hJ'b, hCJ⟩ := hC.project_isBasis_iff.1 hJ
   have hb : M.IsBasis (C ∪ J) (C ∪ K) := by
-    exact hJ'b.isBasis_subset (by grind) (union_subset_union_right _ hK.subset)
+    exact hJ'b.isBasis_subset (by tauto_set) (union_subset_union_right _ hK.subset)
   rw [hK.eLocalConn_eq hC.isBasis_self, union_comm, hb.nullity_eq, hK.nullity_eq, hJ.nullity_eq,
-    ← encard_union_eq (by grind), ← encard_union_eq (by grind)]
+    ← encard_union_eq (by tauto_set), ← encard_union_eq (by tauto_set)]
   congr
-  grind
+  tauto_set
 
 /-- An explicit description of the slack term in the monotonicity of local connectivity -/
 lemma eLocalConn_add_project_eLocalConn_of_subset (M : Matroid α) {X Y : Set α} (hXY : X ⊆ Y)
@@ -262,13 +264,13 @@ lemma multiConn_project_add_disjoint (M : Matroid α) {C : Set α} (hCX : C ⊆ 
       closure_union_congr_left (hI i).closure_eq_closure, project_closure]
     simp only [union_diff_self, project_project, project_closure]
     convert rfl using 2
-    grind
+    tauto_set
   have hdjC (i) : Disjoint (I i) C := by
     rw [← inter_eq_self_of_subset_left (hI i).subset, disjoint_iff_inter_eq_empty, inter_assoc,
       ((hC.inter_left _).project_isBasis'_iff.1 (hI i)).2.symm.inter_eq]
   have hI' (i) := (hC.inter_left _).project_isBasis'_iff.1 (hI i)
   have hb (i) : M.IsBasis' ((C ∩ X i) ∪ I i) (X i) := by
-    convert ((hC.inter_left _).project_isBasis'_iff.1 (hI i)).1 using 2 <;> grind
+    convert ((hC.inter_left _).project_isBasis'_iff.1 (hI i)).1 using 2 <;> tauto_set
   have hsumrw (i) : (M.project (X i ∩ C)).eLocalConn (X i) C = (I i \ J i).encard := by
     rw [(hI i).eLocalConn_eq_of_disjoint' (h' i) (disjoint_sdiff_right.mono_left (hI i).subset),
       inter_comm, (hC.inter_right _).nullity_project_of_disjoint, union_comm (I i), ← union_assoc,
@@ -390,13 +392,13 @@ lemma eLocalConn_project_eq_eLocalConn_contract_diff (M : Matroid α) (X Y C : S
     (M.project C).eLocalConn X Y = (M ／ C).eLocalConn (X \ C) (Y \ C) := by
   rw [project, eLocalConn_restrict_eq, ← eLocalConn_inter_ground, eq_comm,
     ← eLocalConn_inter_ground, contract_ground]
-  convert rfl using 2 <;> grind
+  convert rfl using 2 <;> tauto_set
 
 lemma eLocalConn_project_eq_eLocalConn_contract (M : Matroid α) (X Y C : Set α) :
     (M.project C).eLocalConn X Y = (M ／ C).eLocalConn X Y := by
   rw [project, eLocalConn_restrict_eq, ← eLocalConn_inter_ground, eq_comm,
     ← eLocalConn_inter_ground, contract_ground]
-  convert rfl using 2 <;> grind
+  convert rfl using 2 <;> tauto_set
 
 lemma eLocalConn_le_eLocalConn_project_add_left (M : Matroid α) (X Y C : Set α) :
     M.eLocalConn X Y ≤ (M.project C).eLocalConn X Y + M.eLocalConn X C := by
@@ -422,22 +424,10 @@ lemma eLocalConn_project_le_add (M : Matroid α) (X Y C : Set α) :
     (M.project C).eLocalConn X Y ≤ M.eLocalConn X Y + M.eRk C := by
   grw [eLocalConn_project_eq_eLocalConn_contract, eLocalConn_contract_le_add]
 
-lemma eConn_restrict_le (M : Matroid α) (X R : Set α) : (M ↾ R).eConn X ≤ M.eConn X := by
-  rw [eConn_eq_eLocalConn, eLocalConn_restrict_eq, eConn_eq_eLocalConn, restrict_ground_eq,
-    ← eLocalConn_inter_ground_right]
-  exact M.eLocalConn_mono inter_subset_left (by grind)
-
-lemma eConn_delete_le (M : Matroid α) (X D : Set α) : (M ＼ D).eConn X ≤ M.eConn X := by
-  rw [delete_eq_restrict]
-  apply eConn_restrict_le
-
-lemma eConn_contract_le (M : Matroid α) (X C : Set α) : (M ／ C).eConn X ≤ M.eConn X := by
-  rw [← eConn_dual, dual_contract, ← M.eConn_dual]
-  apply eConn_delete_le
-
-lemma IsMinor.eConn_le {N : Matroid α} (hNM : N ≤m M) (X : Set α) : N.eConn X ≤ M.eConn X := by
-  obtain ⟨C, D, rfl⟩ := hNM
-  exact ((M ／ C).eConn_delete_le X D).trans <| M.eConn_contract_le X C
+-- lemma eLocalConn_le_eLocalConn_project_add (M : Matroid α) (X Y C : Set α) :
+--     M.eLocalConn X Y ≤ (M.project C).eLocalConn X Y + M.eRk C := by
+--   rw [eLocalConn_eq_multiConn, eLocalConn_eq_multiConn]
+--   have := M.multiConn_le_
 
 lemma eConn_delete_eq {X D : Set α} (hDX : D ⊆ X) (hX : X ⊆ M.closure (X \ D)) :
     (M ＼ D).eConn (X \ D) = M.eConn X := by
@@ -628,8 +618,8 @@ lemma eConn_le_eConn_contract_add_eLocalConn (M : Matroid α) (X C : Set α) :
     M.eConn X ≤ (M ／ C).eConn X + M.eLocalConn X C := by
   wlog hC : C ⊆ M.E generalizing C with aux
   · grw [← contract_inter_ground_eq, ← eLocalConn_inter_ground_right, aux _ inter_subset_right]
-  grw [eConn_eq_eLocalConn, eConn_eq_eLocalConn, ← eLocalConn_project_eq_eLocalConn_contract,
-    contract_ground, M.eLocalConn_le_eLocalConn_project_add_left X (M.E \ X) C, add_le_add_right,
+  grw [eConn, eConn, ← eLocalConn_project_eq_eLocalConn_contract, contract_ground,
+    M.eLocalConn_le_eLocalConn_project_add_left X (M.E \ X) C, add_le_add_right,
     ← eLocalConn_closure_right (Y := (_ \ _) \ _), project_closure_eq_project_closure_union,
     diff_diff_comm, diff_union_self, ← project_closure_eq_project_closure_union,
     eLocalConn_closure_right]
@@ -665,7 +655,7 @@ lemma eConn_le_eConn_delete_singleton_add_one (M : Matroid α) (X : Set α) (e :
     dual_contract_dual]
 
 /-- Note : the lemma below is true with either `C ⊆ X` or `Disjoint C X` as a hypothesis,
-but not with both hypotheses removed, even if we insist that `X, C ⊆ M.E`.
+but not with both hypotheses removed, even if we insist that `X,C ⊆ M.E`.
 A counterexample is the direct sum of two parallel pairs, where `C` is one pair,
 and `X` is a transversal of the two. The versions with cardinality and rank are
 true unconditionally. -/
@@ -673,12 +663,12 @@ lemma eConn_le_eConn_contract_add_eConn_of_subset (M : Matroid α) (hCX : C ⊆ 
     M.eConn X ≤ (M ／ C).eConn (X \ C) + M.eConn C := by
   grw [eConn_eq_eConn_contract_subset_add _ hCX, ← (M.delete_isMinor (X \ C)).eConn_le,
     (M ＼ _).eConn_eq_eLocalConn, delete_ground, diff_diff, diff_union_of_subset hCX,
-    eLocalConn_comm, eLocalConn_delete_eq_of_disjoint _ disjoint_sdiff_right (by grind)]
+    eLocalConn_comm, eLocalConn_delete_eq_of_disjoint _ disjoint_sdiff_right (by tauto_set)]
 
 lemma eConn_le_eConn_contract_add_eConn_of_disjoint (M : Matroid α) (hdj : Disjoint X C) :
     M.eConn X ≤ (M ／ C).eConn X + M.eConn C := by
   grw [eConn_eq_eConn_contract_disjoint_add _ hdj, M.eConn_eq_eLocalConn, eLocalConn_comm,
-  ← eLocalConn_inter_ground_right, eLocalConn_mono_right _ _ (show X ∩ M.E ⊆ M.E \ C by grind)]
+  ← eLocalConn_inter_ground_right, eLocalConn_mono_right _ _ (show X ∩ M.E ⊆ M.E \ C by tauto_set)]
 
 lemma eConn_le_eConn_delete_add_eConn_of_subset (M : Matroid α) (hDX : D ⊆ X) :
     M.eConn X ≤ (M ＼ D).eConn (X \ D) + M.eConn D := by
@@ -705,7 +695,7 @@ lemma eConn_le_eConn_delete_add_encard (M : Matroid α) (X D : Set α) :
 lemma eConn_delete_le_eConn_contract_add (M : Matroid α) (X Y : Set α) :
     (M ＼ Y).eConn X ≤ (M ／ Y).eConn X + M.eConn Y := by
   grw [← eConn_inter_ground, eConn_delete_le,
-    eConn_le_eConn_contract_add_eConn_of_disjoint (C := Y) _ (by rw [delete_ground]; grind),
+    eConn_le_eConn_contract_add_eConn_of_disjoint (C := Y) _ (by rw [delete_ground]; tauto_set),
     ← (M ／ Y).eConn_inter_ground X, delete_ground, contract_ground]
 
 lemma eConn_contract_le_eConn_delete_add (M : Matroid α) (X Y : Set α) :
@@ -743,16 +733,17 @@ private lemma monotone_rhs_aux {P Q X : Set α} :
     rw [contract_delete_contract']
     refine IsMinor.delete_isMinor_delete_of_subset ?_ inter_subset_right ?_
     · exact contract_isMinor_of_subset _ subset_union_right
-    grind [contract_ground]
-
+    simp_rw [contract_ground]
+    tauto_set
   have hmin2 : M ／ C ＼ D ＼ X ≤m M ＼ (X \ C) ／ (X ∩ C) := by
     rw [delete_delete, contract_delete_comm']
     refine IsMinor.contract_isMinor_contract_of_subset ?_ inter_subset_right ?_
-    · exact (delete_isRestriction_of_subset _ (by grind)).isMinor
-    grind [delete_ground]
+    · exact (delete_isRestriction_of_subset _ (by tauto_set)).isMinor
+    simp_rw [delete_ground]
+    tauto_set
   have hmin3 : M ／ C ＼ D ≤m M ／ (X ∩ C) ＼ (X ∩ D) :=
     (contract_isMinor_of_subset _ inter_subset_right).delete_isMinor_delete_of_subset
-       inter_subset_right (by grind [contract_ground])
+       inter_subset_right (by simp_rw [contract_ground]; tauto_set)
   grw [hmin1.eConn_le, hmin2.eConn_le, eConn_delete_le_eConn_contract_add,
     contract_contract, diff_union_inter, eConn_contract_le_eConn_delete_add _ _ (X ∩ C),
       delete_delete, diff_union_inter, hmin3.eConn_le, ← add_assoc,
@@ -763,11 +754,12 @@ private lemma monotone_rhs_aux {P Q X : Set α} :
   convert rfl
   rw [← diff_union_inter (X \ D) C, union_comm,
     eConn_union_eq_eConn_contract_add_eConn_delete _ disjoint_sdiff_inter.symm,
-    delete_delete, show (X \ D) ∩ C = X ∩ C by grind, show X ∩ D ∪ (X \ D) \ C = X \ C by grind,
-    add_comm, contract_delete_comm _ (by grind), ← eConn_inter_ground, eq_comm,
-    ← eConn_inter_ground, contract_ground, delete_ground]
+    delete_delete, show (X \ D) ∩ C = X ∩ C by tauto_set,
+    show X ∩ D ∪ (X \ D) \ C = X \ C by tauto_set, add_comm, contract_delete_comm _ (by tauto_set),
+    ← eConn_inter_ground, eq_comm, ← eConn_inter_ground, contract_ground,
+    delete_ground]
   convert rfl using 3
-  grind
+  tauto_set
 
 /-- A three-set generalization of the Bixby-Coullard inequality for `ℕ∞` -/
 theorem eConn_inter_add_eConn_union_union_le (M : Matroid α) (hC : Disjoint C X)
@@ -775,17 +767,26 @@ theorem eConn_inter_add_eConn_union_union_le (M : Matroid α) (hC : Disjoint C X
     M.eConn (C ∩ D) + M.eConn (X ∪ C ∪ D) ≤ (M ／ X).eConn C + (M ＼ X).eConn D + M.eConn X := by
   by_contra! hlt
   set g := fun (N : Matroid α) ↦ (N ／ X).eConn C + (N ＼ X).eConn D + N.eConn X with hg
-  obtain ⟨N, hNM, hNfin, hN⟩ := stronglyPreservable_eConn.exists_finite_counterexample_of_lt_sum M g
+  obtain ⟨N, hNM, hNfin, hN⟩ := M.exists_finite_counterexample_of_lt_sum_eConn g
     (monotone_rhs_aux ..) (fun b ↦ bif b then C ∩ D else X ∪ C ∪ D) (by simpa)
   simp only [Fintype.univ_bool, Finset.mem_singleton, Bool.true_eq_false, not_false_eq_true,
     Finset.sum_insert, cond_true, Finset.sum_singleton, cond_false, g, ← cast_conn_eq,
     ← Nat.cast_add, Nat.cast_lt] at hN
-  exact (N.nConn_inter_add_conn_union_union_le hC hD).not_gt hN
+  exact (N.conn_inter_add_conn_union_union_le hC hD).not_gt hN
+
+/-- Connectivity is submodular. -/
+lemma eConn_inter_add_eConn_union_le (M : Matroid α) (X Y : Set α) :
+    M.eConn (X ∩ Y) + M.eConn (X ∪ Y) ≤ M.eConn X + M.eConn Y := by
+  simpa using M.eConn_inter_add_eConn_union_union_le (disjoint_empty X) (disjoint_empty Y)
+
+alias eConn_submod := eConn_inter_add_eConn_union_le
 
 /-- The Bixby-Coullard inequality for `ℕ∞` -/
 theorem eConn_inter_add_eConn_insert_union_le (M : Matroid α) (heC : e ∉ C) (heD : e ∉ D) :
     M.eConn (C ∩ D) + M.eConn (insert e (C ∪ D)) ≤ (M ／ {e}).eConn C + (M ＼ {e}).eConn D + 1 := by
   grw [← singleton_union, ← union_assoc, M.eConn_inter_add_eConn_union_union_le (by simpa)
     (by simpa), eConn_le_encard _ {e}, encard_singleton]
+
+
 
 end Pair

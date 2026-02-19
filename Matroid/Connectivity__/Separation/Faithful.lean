@@ -1,5 +1,7 @@
 import Matroid.Connectivity.Separation.Minor
 
+set_option linter.style.longLine false
+
 open Set Function
 
 variable {α : Type*} {M N : Matroid α} {j k : ℕ∞} {e f : α} {A B X X' Y Y' : Set α} {i : Bool}

@@ -1,5 +1,5 @@
 import Mathlib.Combinatorics.Matroid.Minor.Order
-import Matroid.Connectivity.Triangle
+import Matroid.Triangle
 
 open Set Matroid Function Separation
 
