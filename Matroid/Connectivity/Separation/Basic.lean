@@ -514,6 +514,14 @@ lemma cross_apply_not (P Q : M.Separation) : P.cross Q b c i (!i) = P (!b) ∪ Q
 lemma cross_not_apply (P Q : M.Separation) : P.cross Q b c (!i) i = P (!b) ∪ Q !c := by
   simp [cross_apply]
 
+@[simp]
+lemma cross_apply_true_false (P Q : M.Separation) : P.cross Q b c true false = P (!b) ∪ Q (!c) :=
+  cross_apply_not ..
+
+@[simp]
+lemma cross_apply_false_true (P Q : M.Separation) : P.cross Q b c false true = P (!b) ∪ Q (!c) :=
+  cross_apply_not ..
+
 lemma cross_comm (P Q : M.Separation) (b c : Bool) : P.cross Q b c i = Q.cross P c b i :=
   Separation.ext_bool i <| by simp [Set.inter_comm]
 
@@ -550,6 +558,14 @@ protected lemma inter_comm (P Q : M.Separation) : P.inter Q = Q.inter P :=
 
 protected lemma union_comm (P Q : M.Separation) : P.union Q = Q.union P :=
   Bipartition.ext <| Set.union_comm ..
+
+lemma Nontrivial.cross_trivial_iff (hP : P.Nontrivial) (b c i : Bool) :
+    (P.cross Q b c i).Trivial ↔ P b ⊆ Q !c ∨ Q c ⊆ P !b :=
+  Bipartition.Nontrivial.cross_trivial_iff hP ..
+
+lemma cross_trivial_iff (P Q : M.Separation) (b c : Bool) :
+    (P.cross Q b c i).Trivial ↔ P b ⊆ Q !c ∨ Q c ⊆ P !b ∨ (P b = M.E ∧ Q c = M.E) :=
+  Bipartition.cross_trivial_iff ..
 
 lemma submod_cross (P Q : M.Separation) (b c i j : Bool) :
     (P.cross Q b c i).eConn + (P.cross Q (!b) (!c) j).eConn ≤ P.eConn + Q.eConn := by

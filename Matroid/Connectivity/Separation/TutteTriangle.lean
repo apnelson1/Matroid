@@ -1,5 +1,6 @@
 import Mathlib.Combinatorics.Matroid.Minor.Order
 import Matroid.Triangle
+import Matroid.Connectivity.Separation.Vertical
 
 open Set Matroid Function Separation
 
@@ -195,20 +196,19 @@ lemma foo (hM : M.TutteConnected 3) (hT : M.IsTriangle {e,f,g}) (hcard : 4 ≤ M
     grind
   -- let `Q₀` be the separation with `true` side equal to `Q false ∩ Q false`.
   -- This has connectivity at most `1` by a submodularity argument.
-  set Q₀ := (Q true).inter (Q false) false false with hQ₀_def
+  set Q₀ := (Q true).cross (Q false) false false true with hQ₀_def
   have hQ₀conn : Q₀.eConn ≤ 1 := by
-    have hQu : 1 ≤ ((Q true).union (Q false) false false).eConn := by
+    have hQu : 1 ≤ ((Q true).cross (Q false) true true false).eConn := by
       refine Nontrivial.one_le_eConn_of_connected ?_ hconn
-      rw [← Separation.not_trivial_iff, hQnt.union_trivial_iff, Bool.not_false, not_or,
-        hQf, hQf]
+      rw [← Separation.not_trivial_iff, hQnt.cross_trivial_iff, Bool.not_true, not_or, hQf, hQf]
       exact ⟨hnss true, hnss false⟩
-    have hsm := (Q true).eConn_inter_add_eConn_union_le (Q false) false false
-    grw [← hQu, hQconn, hQconn, ← hQ₀_def, ENat.add_one_le_add_one_iff] at hsm
+    have hsm := (Q true).submod_cross (Q false) false false true false
+    grw [Bool.not_false, ← hQu, hQconn, hQconn, ← hQ₀_def, ENat.add_one_le_add_one_iff] at hsm
     assumption
   -- `Q₀` also has connectivity equal to `Q₀.ofDelete false`, since its large side spans `{e,f}`.
   have hQ₀P : (Q₀.ofDelete false).eConn = Q₀.eConn := by
     refine eConn_ofDelete_eq_of_subset_closure _ _ ?_
-    rw [hQ₀_def, Separation.inter_apply_false, Bool.not_false, pair_subset_iff]
+    rw [hQ₀_def, cross_apply_, Bool.not_false, pair_subset_iff]
     nth_grw 1 [← subset_union_right, ← subset_union_left]
     exact ⟨hcl false, hcl true⟩
   -- Since `M` is `3`-connected, this means that the small side of `Q₀` is just `{g}`.

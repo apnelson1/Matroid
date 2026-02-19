@@ -9,6 +9,8 @@ def Fin.rec2 {motive : Fin 2 → Sort*} (i : Fin 2) (zero : motive 0) (one : mot
   | 1 => one
   | 0 => zero
 
+notation "b[" x "," y "]" => fun i ↦ bif i then x else y
+
 open Set Matroid.Separation
 
 namespace Matroid
@@ -106,29 +108,32 @@ def SepVec.downSep {N₀ : Matroid α} (S : M.SepVec N) (hN₀ : ∀ i, N₀.E �
 
 variable {X Y : Set α}
 
-def SepVec.downSepRR {b c : Bool} (S : M.SepVec ![M.remove X b, M.remove Y c]) (i : Fin 2) :
+def SepVec.downSepRR {b c : Bool} (S : M.SepVec b[M.remove X b, M.remove Y c]) (i : Bool) :
     ((M.remove X b).remove Y c).Separation :=
-  S.downSep (by simp [Fin.forall_fin_two, diff_subset, diff_subset_diff_left diff_subset]) i
+  S.downSep (by simp [diff_subset, diff_subset_diff_left diff_subset]) i
 
-def SepVec.copyCD (S : M.SepVec ![M ／ X, M ＼ Y]) :
-    M.SepVec ![M ／ (X ∩ M.E), M ＼ (Y ∩ M.E)] :=
-  S.copyMinor <| fun i ↦ i.rec2 (by simp) (by simp)
+def SepVec.copyCD (S : M.SepVec b[M ／ X, M ＼ Y]) : M.SepVec b[M ／ (X ∩ M.E), M ＼ (Y ∩ M.E)] :=
+  S.copyMinor <| fun i ↦ by cases i with simp
 
-def SepVec.downSepCD (S : M.SepVec ![M ／ X, M ＼ Y]) (i : Fin 2) : (M ／ X ＼ Y).Separation :=
-  S.downSep (fun i ↦ i.rec2 (by simp [diff_subset]) (by simp [diff_subset_diff_left diff_subset])) i
-
-@[simp]
-lemma SepVec.downSepCD_apply_zero (S : M.SepVec ![M ／ X, M ＼ Y]) (i : Bool) :
-    S.downSepCD 0 i = S 0 i \ Y := by
-  simp [downSepCD, downSep]
+def SepVec.downSepCD (S : M.SepVec b[M ／ X, M ＼ Y]) (i : Bool) : (M ／ X ＼ Y).Separation :=
+  S.downSep (fun i ↦ by cases i; simp [diff_subset_diff_left diff_subset]; simp [diff_subset] ) i
 
 @[simp]
-lemma SepVec.downSepCD_apply_one (S : M.SepVec ![M ／ X, M ＼ Y]) (i : Bool) :
-    S.downSepCD 1 i = S 1 i \ X := by
-  simp only [downSepCD, downSep, Nat.succ_eq_add_one, Nat.reduceAdd, Fin.isValue,
-    Matrix.cons_val_one, Matrix.cons_val_zero, induce_apply, delete_ground, contract_ground]
-  rw [diff_diff_comm, ← delete_ground, ← inter_diff_assoc, inter_eq_self_of_subset_left]
-  exact (S 1).subset
+lemma SepVec.downSepCD_apply_false (S : M.SepVec b[M ／ X, M ＼ Y]) (i : Bool) :
+    S.downSepCD false i = S false i \ X := by
+  have := (S false).subset (i := i)
+  simp only [cond_false, delete_ground] at this
+  simp only [downSepCD, downSep, cond_false, induce_apply, delete_ground, contract_ground]
+  grind
+
+
+@[simp]
+lemma SepVec.downSepCD_apply_one (S : M.SepVec b[M ／ X, M ＼ Y]) (i : Bool) :
+    S.downSepCD true i = S true i \ X := by
+  -- simp only [downSepCD, downSep, Nat.succ_eq_add_one, Nat.reduceAdd, Fin.isValue,
+  --   Matrix.cons_val_one, Matrix.cons_val_zero, induce_apply, delete_ground, contract_ground]
+  -- rw [diff_diff_comm, ← delete_ground, ← inter_diff_assoc, inter_eq_self_of_subset_left]
+  -- exact (S 1).subset
 
 lemma SepVec.diff_eq_of_contract_delete (S : M.SepVec ![M ／ X, M ＼ Y])
     (hXE : X ⊆ M.E := by aesop_mat) (hYE : Y ⊆ M.E := by aesop_mat) : S.diff = ![X, Y] :=
@@ -172,9 +177,9 @@ lemma SepVec.bixbyCoullard (S : M.SepVec ![M ／ X, M ＼ X]) :
 
 -- Deletion/Deletion
 
-def SepVec.copyDD (S : M.SepVec ![M ＼ X, M ＼ Y]) :
-    M.SepVec ![M ＼ (X ∩ M.E), M ＼ (Y ∩ M.E)] :=
-  S.copyMinor <| fun i ↦ i.rec2 (by simp) (by simp)
+def SepVec.copyDD (S : M.SepVec b[M ＼ X, M ＼ Y]) :
+    M.SepVec (fun b ↦ bif b then M ＼ (X ∩ M.E) else M ＼ (Y ∩ M.E)) :=
+  S.copyMinor <| fun i ↦ by cases i with simp
 
 def SepVec.downSepDD (S : M.SepVec ![M ＼ X, M ＼ Y]) (i : Fin 2) : (M ＼ (X ∪ Y)).Separation :=
   S.downSep (by simp [Fin.forall_fin_two, diff_subset_diff_right subset_union_left,

@@ -515,12 +515,16 @@ lemma tutteConnected_iff_seqConnected' : M.TutteConnected k ↔
 
 lemma TutteConnected.eConn_cross_le_of_eConn_le_eConn_le_card_ge (hM : M.TutteConnected (k + 1))
     {P Q : M.Separation} (hP : P.eConn ≤ k) (hQ : Q.eConn ≤ k) {b c : Bool}
-    (hcard : k ≤ (P b ∩ Q c).encard) : (P.cross Q (!b) (!c) i).eConn ≤ k := by
+    (hcard : k ≤ (P b ∩ Q c).encard) (i) : (P.cross Q (!b) (!c) i).eConn ≤ k := by
   rw [tutteConnected_iff_numConnected_tutteWeight_eq_zero] at hM
   refine hM.eConn_union_le_of_eConn_le_eConn_le_ge (fun M X Y hXY hYE ↦ ?_) hP hQ (i := i) ?_
   · grw [eConn_add_tutteWeight_eq _ (hXY.trans hYE), eConn_add_tutteWeight_eq _ hYE, hXY]
   rwa [← eConn_eq _ i, cross_apply_self, eConn_add_tutteWeight_eq _]
 
+lemma TutteConnected.eConn_cross_le_of_eConn_le_eConn_le_card_ge' (hM : M.TutteConnected (k + 1))
+    {P Q : M.Separation} (hP : P.eConn ≤ k) (hQ : Q.eConn ≤ k) {b c : Bool}
+    (hcard : k ≤ (P (!b) ∩ Q (!c)).encard) : (P.cross Q b c i).eConn ≤ k := by
+  simpa using hM.eConn_cross_le_of_eConn_le_eConn_le_card_ge hP hQ hcard i
 
 -- lemma tutteConnected_iff_biConnected :
 --     M.TutteConnected (k + 1) ↔ M.BiConnected (· + ·) (indicator {i | k < i + 1} ⊤) := by
