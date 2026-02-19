@@ -463,84 +463,190 @@ lemma exists_smallest_inter {β : Type*} [ConditionallyCompleteLinearOrder β] (
 
 section Cross
 
-variable {Q : M.Separation} {b c : Bool}
+variable {Q : M.Separation} {b c i j : Bool}
 
-/-- The separation whose `true` side is `P b ∩ Q c` and whose `false` side is `P !b ∪ Q !c`. -/
-protected def inter (P Q : M.Separation) (b c : Bool) : M.Separation := Bipartition.inter P Q b c
+/-- The separation of `M` whose `i` side is `(P b ∩ Q c)` and whose `!i` side is `(P !b ∪ Q !c)`. -/
+protected def cross (P Q : M.Separation) (b c i : Bool) : M.Separation :=
+  Bipartition.cross P Q b c i
 
-protected lemma inter_apply (P Q : M.Separation) :
-    P.inter Q b c i = bif i then P b ∩ Q c else P (!b) ∪ Q !c := rfl
-@[simp]
-protected lemma inter_apply_true (P Q : M.Separation) : P.inter Q b c true = P b ∩ Q c := rfl
-@[simp]
-protected lemma inter_apply_false (P Q : M.Separation) : P.inter Q b c false = P (!b) ∪ Q !c := rfl
-
-protected lemma inter_comm (P Q : M.Separation) (b c : Bool) : P.inter Q b c = Q.inter P c b :=
-  Bipartition.inter_comm ..
-
-/-- The bipartition whose `true` side is `P b ∪ Q c` and whose `false` side is `P !b ∩ Q !c`. -/
-protected def union (P Q : M.Separation) (b c : Bool) : M.Separation := Bipartition.union P Q b c
-
-protected lemma union_apply (P Q : M.Separation) :
-    P.union Q b c i = bif i then P b ∪ Q c else P (!b) ∩ Q !c := Bipartition.union_apply ..
+lemma cross_apply (P Q : M.Separation) :
+    P.cross Q b c i j = bif (j == i) then P b ∩ Q c else P (!b) ∪ Q !c := rfl
 
 @[simp]
-protected lemma union_apply_true (P Q : M.Separation) : P.union Q b c true = P b ∪ Q c :=
-  Bipartition.union_apply_true ..
+lemma cross_symm (P Q : M.Separation) (b c i : Bool) :
+    (P.cross Q b c i).symm = P.cross Q b c !i :=
+  Separation.ext <| by simp [cross_apply]
 
 @[simp]
-protected lemma union_apply_false (P Q : M.Separation) : P.union Q b c false = P (!b) ∩ Q !c := rfl
-
-lemma inter_symm (P Q : M.Separation) (b c : Bool) : (P.inter Q b c).symm = P.union Q (!b) (!c) :=
-  Bipartition.inter_symm ..
-
-lemma union_symm (P Q : M.Separation) (b c : Bool) : (P.union Q b c).symm = P.inter Q (!b) (!c) :=
-  Bipartition.union_symm ..
+lemma cross_symm_left (P Q : M.Separation) (b c i : Bool) :
+    P.symm.cross Q b c i = P.cross Q (!b) c i :=
+  Bipartition.cross_symm_left ..
 
 @[simp]
-lemma union_not_symm (P Q : M.Separation) (b c : Bool) :
-    (P.union Q (!b) (!c)).symm = P.inter Q b c := by
-  simp [union_symm]
+lemma cross_symm_right (P Q : M.Separation) (b c i : Bool) :
+    P.cross Q.symm b c i = P.cross Q b (!c) i :=
+  Bipartition.cross_symm_right ..
 
 @[simp]
-lemma inter_not_symm (P Q : M.Separation) (b c : Bool) :
-    (P.inter Q (!b) (!c)).symm = P.union Q b c := by
-  simp [inter_symm]
+lemma cross_bSymm_left (P Q : M.Separation) (b b' c i : Bool) :
+    (P.bSymm b').cross Q b c i = P.cross Q (b != b') c i := by
+  cases b' <;> simp
 
-protected lemma union_comm (P Q : M.Separation) (b c : Bool) : P.union Q b c = Q.union P c b :=
-  Bipartition.union_comm ..
+@[simp]
+lemma cross_bSymm_right (P Q : M.Separation) (b c c' i : Bool) :
+    P.cross (Q.bSymm c') b c i = P.cross Q b (c != c') i := by
+  cases c' <;> simp
 
-lemma Nontrivial.inter_trivial_iff (hP : P.Nontrivial) (b c : Bool) :
-    (P.inter Q b c).Trivial ↔ P b ⊆ Q !c ∨ Q c ⊆ P !b :=
-  Bipartition.Nontrivial.inter_trivial_iff hP ..
+@[simp]
+lemma cross_bSymm (P Q : M.Separation) (b c i j : Bool) :
+    (P.cross Q b c i).bSymm j = P.cross Q b c (i != j) := by
+  cases j <;> simp
 
-lemma Nontrivial.union_trivial_iff (hP : P.Nontrivial) (b c : Bool) :
-    (P.union Q b c).Trivial ↔ P (!b) ⊆ Q c ∨ Q (!c) ⊆ P b :=
-  Bipartition.Nontrivial.union_trivial_iff hP ..
+@[simp]
+lemma cross_apply_self (P Q : M.Separation) : P.cross Q b c i i = P b ∩ Q c := by
+  simp [cross_apply]
 
-lemma inter_trivial_iff (P Q : M.Separation) (b c : Bool) :
-    (P.inter Q b c).Trivial ↔ P b ⊆ Q !c ∨ Q c ⊆ P !b ∨ (P b = M.E ∧ Q c = M.E) :=
-  Bipartition.inter_trivial_iff ..
+@[simp]
+lemma cross_apply_not (P Q : M.Separation) : P.cross Q b c i (!i) = P (!b) ∪ Q !c := by
+  simp [cross_apply]
 
-lemma union_trivial_iff (P Q : M.Separation) (b c : Bool) :
-    (P.union Q b c).Trivial ↔ P (!b) ⊆ Q c ∨ Q (!c) ⊆ P b ∨ (P b = ∅ ∧ Q c = ∅) :=
-  Bipartition.union_trivial_iff ..
+@[simp]
+lemma cross_not_apply (P Q : M.Separation) : P.cross Q b c (!i) i = P (!b) ∪ Q !c := by
+  simp [cross_apply]
 
-protected lemma eConn_inter_add_eConn_union_le (P Q : M.Separation) (b c : Bool) :
-    (P.inter Q b c).eConn + (P.union Q b c).eConn ≤ P.eConn + Q.eConn := by
-  simp_rw [← P.eConn_eq b, ← Q.eConn_eq c, ← Separation.eConn_eq _ true, P.union_apply_true,
-    P.inter_apply_true]
-  exact M.eConn_inter_add_eConn_union_le ..
+lemma cross_comm (P Q : M.Separation) (b c : Bool) : P.cross Q b c i = Q.cross P c b i :=
+  Separation.ext_bool i <| by simp [Set.inter_comm]
 
-protected lemma eConn_union_add_eConn_union_le (P Q : M.Separation) (b c : Bool) :
-    (P.union Q b c).eConn + (P.union Q (!b) (!c)).eConn ≤ P.eConn + Q.eConn := by
-  grw [← P.eConn_inter_add_eConn_union_le Q (!b) (!c), ← P.union_not_symm, eConn_symm,
-    Bool.not_not, Bool.not_not]
+/-- The bipartition whose `true` side is `P true ∩ Q true` and whose `false` side is
+`P false ∪ Q false` -/
+protected def inter (P Q : M.Separation) : M.Separation := P.cross Q true true true
 
-protected lemma eConn_inter_add_eConn_inter_le (P Q : M.Separation) (b c : Bool) :
-    (P.inter Q b c).eConn + (P.inter Q (!b) (!c)).eConn ≤ P.eConn + Q.eConn := by
-  grw [← Separation.union_not_symm, ← Separation.union_not_symm, Bool.not_not, Bool.not_not,
-    eConn_symm, eConn_symm, add_comm, P.eConn_union_add_eConn_union_le Q]
+/-- The bipartition whose `true` side is `P true ∪ Q true` and whose `false` side is
+`P false ∩ Q false` -/
+protected def union (P Q : M.Separation) : M.Separation := P.cross Q false false false
+
+@[simp]
+lemma inter_apply_true (P Q : M.Separation) : (P.inter Q) true = P true ∩ Q true := rfl
+
+@[simp]
+lemma inter_apply_false (P Q : M.Separation) : (P.inter Q) false = P false ∪ Q false := rfl
+
+@[simp]
+lemma union_apply_true (P Q : M.Separation) : (P.union Q) true = P true ∪ Q true := rfl
+
+@[simp]
+lemma union_apply_false (P Q : M.Separation) : (P.union Q) false = P false ∩ Q false := rfl
+
+@[simp]
+lemma union_symm (P Q : M.Separation) : (P.union Q).symm = P.symm.inter Q.symm :=
+  Bipartition.ext rfl
+
+@[simp]
+lemma inter_symm (P Q : M.Separation) : (P.inter Q).symm = P.symm.union Q.symm :=
+  Bipartition.ext rfl
+
+protected lemma inter_comm (P Q : M.Separation) : P.inter Q = Q.inter P :=
+  Bipartition.ext <| Set.inter_comm ..
+
+protected lemma union_comm (P Q : M.Separation) : P.union Q = Q.union P :=
+  Bipartition.ext <| Set.union_comm ..
+
+lemma submod_cross (P Q : M.Separation) (b c i j : Bool) :
+    (P.cross Q b c i).eConn + (P.cross Q (!b) (!c) j).eConn ≤ P.eConn + Q.eConn := by
+  grw [← Separation.eConn_eq _ i, ← Separation.eConn_eq _ (!j), cross_apply_self, cross_apply_not,
+    Bool.not_not, Bool.not_not, ← Separation.eConn_eq _ b, ← Separation.eConn_eq _ c, eConn_submod]
+
+lemma submod_cross' (P Q : M.Separation) (b c i j : Bool) :
+    (P.cross Q b (!c) i).eConn + (P.cross Q (!b) c j).eConn ≤ P.eConn + Q.eConn := by
+  grw [← P.submod_cross Q b (!c) i j, Bool.not_not]
+
+lemma submod_inter_union (P Q : M.Separation) :
+    (P.inter Q).eConn + (P.union Q).eConn ≤ P.eConn + Q.eConn :=
+  submod_cross ..
+
+
+  -- have := M.eConn_submod (bif b then )
+  -- wlog hb : b = true generalizing b with aux
+
+  -- · obtain rfl : b = false := by grind
+
+
+-- /-- The separation whose `true` side is `P b ∩ Q c` and whose `false` side is `P !b ∪ Q !c`. -/
+-- protected def inter (P Q : M.Separation) : M.Separation := Bipartition.inter P Q
+
+-- protected lemma inter_apply (P Q : M.Separation) :
+--     P.inter Q b c i = bif i then P b ∩ Q c else P (!b) ∪ Q !c := rfl
+-- @[simp]
+-- protected lemma inter_apply_true (P Q : M.Separation) : P.inter Q b c true = P b ∩ Q c := rfl
+-- @[simp]
+-- protected lemma inter_apply_false (P Q : M.Separation) : P.inter Q b c false = P (!b) ∪ Q !c :=
+
+-- protected lemma inter_comm (P Q : M.Separation) (b c : Bool) : P.inter Q b c = Q.inter P c b :=
+--   Bipartition.inter_comm ..
+
+-- /-- The bipartition whose `true` side is `P b ∪ Q c` and whose `false` side is `P !b ∩ Q !c`. -/
+-- protected def union (P Q : M.Separation) (b c : Bool) : M.Separation := Bipartition.union P Q b c
+
+-- protected lemma union_apply (P Q : M.Separation) :
+--     P.union Q b c i = bif i then P b ∪ Q c else P (!b) ∩ Q !c := Bipartition.union_apply ..
+
+-- @[simp]
+-- protected lemma union_apply_true (P Q : M.Separation) : P.union Q b c true = P b ∪ Q c :=
+--   Bipartition.union_apply_true ..
+
+-- @[simp]
+-- protected lemma union_apply_false (P Q : M.Separation) : P.union Q b c false = P (!b) ∩ Q !c :=
+
+-- lemma inter_symm (P Q : M.Separation) (b c : Bool) : (P.inter Q b c).symm = P.union Q (!b) (!c)
+--   Bipartition.inter_symm ..
+
+-- lemma union_symm (P Q : M.Separation) (b c : Bool) : (P.union Q b c).symm = P.inter Q (!b) (!c)
+--   Bipartition.union_symm ..
+
+-- @[simp]
+-- lemma union_not_symm (P Q : M.Separation) (b c : Bool) :
+--     (P.union Q (!b) (!c)).symm = P.inter Q b c := by
+--   simp [union_symm]
+
+-- @[simp]
+-- lemma inter_not_symm (P Q : M.Separation) (b c : Bool) :
+--     (P.inter Q (!b) (!c)).symm = P.union Q b c := by
+--   simp [inter_symm]
+
+-- protected lemma union_comm (P Q : M.Separation) (b c : Bool) : P.union Q b c = Q.union P c b :=
+--   Bipartition.union_comm ..
+
+-- lemma Nontrivial.inter_trivial_iff (hP : P.Nontrivial) (b c : Bool) :
+--     (P.inter Q b c).Trivial ↔ P b ⊆ Q !c ∨ Q c ⊆ P !b :=
+--   Bipartition.Nontrivial.inter_trivial_iff hP ..
+
+-- lemma Nontrivial.union_trivial_iff (hP : P.Nontrivial) (b c : Bool) :
+--     (P.union Q b c).Trivial ↔ P (!b) ⊆ Q c ∨ Q (!c) ⊆ P b :=
+--   Bipartition.Nontrivial.union_trivial_iff hP ..
+
+-- lemma inter_trivial_iff (P Q : M.Separation) (b c : Bool) :
+--     (P.inter Q b c).Trivial ↔ P b ⊆ Q !c ∨ Q c ⊆ P !b ∨ (P b = M.E ∧ Q c = M.E) :=
+--   Bipartition.inter_trivial_iff ..
+
+-- lemma union_trivial_iff (P Q : M.Separation) (b c : Bool) :
+--     (P.union Q b c).Trivial ↔ P (!b) ⊆ Q c ∨ Q (!c) ⊆ P b ∨ (P b = ∅ ∧ Q c = ∅) :=
+--   Bipartition.union_trivial_iff ..
+
+-- protected lemma eConn_inter_add_eConn_union_le (P Q : M.Separation) (b c : Bool) :
+--     (P.inter Q b c).eConn + (P.union Q b c).eConn ≤ P.eConn + Q.eConn := by
+--   simp_rw [← P.eConn_eq b, ← Q.eConn_eq c, ← Separation.eConn_eq _ true, P.union_apply_true,
+--     P.inter_apply_true]
+--   exact M.eConn_inter_add_eConn_union_le ..
+
+-- protected lemma eConn_union_add_eConn_union_le (P Q : M.Separation) (b c : Bool) :
+--     (P.union Q b c).eConn + (P.union Q (!b) (!c)).eConn ≤ P.eConn + Q.eConn := by
+--   grw [← P.eConn_inter_add_eConn_union_le Q (!b) (!c), ← P.union_not_symm, eConn_symm,
+--     Bool.not_not, Bool.not_not]
+
+-- protected lemma eConn_inter_add_eConn_inter_le (P Q : M.Separation) (b c : Bool) :
+--     (P.inter Q b c).eConn + (P.inter Q (!b) (!c)).eConn ≤ P.eConn + Q.eConn := by
+--   grw [← Separation.union_not_symm, ← Separation.union_not_symm, Bool.not_not, Bool.not_not,
+--     eConn_symm, eConn_symm, add_comm, P.eConn_union_add_eConn_union_le Q]
 
 @[simp]
 lemma disjoint_inter_right (P : M.Separation) : Disjoint (P true ∩ X) (P false ∩ Y) :=

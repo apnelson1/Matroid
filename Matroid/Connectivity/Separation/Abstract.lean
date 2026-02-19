@@ -77,25 +77,7 @@ lemma IsPredSeparation.nontrivial (h : P.IsPredSeparation dg) (hdg : ∀ i, dg i
     P.Nontrivial := by
   simp [P.nontrivial_def, h.nonempty hdg]
 
-def IsOffsetSeparation (P : M.Separation) (f : ℕ∞ → ℕ∞) :=
-  P.IsPredSeparation (fun _ M X ↦ M.nullity X + M✶.nullity X ≤ f (M.eConn X))
-
-lemma IsOffsetSeparation_mono {f g : ℕ∞ → ℕ∞} (h : P.IsOffsetSeparation f) (hfg : ∀ n, g n ≤ f n) :
-    P.IsOffsetSeparation g :=
-  fun i h' ↦ h i (h'.trans (hfg _))
-
-lemma IsOffsetSeparation.dual (h : P.IsOffsetSeparation f) : P.dual.IsOffsetSeparation f :=
-  IsPredSeparation.dual (by simp [add_comm]) h
-
-lemma IsOffsetSeparation.of_dual {P : M✶.Separation} (h : P.IsOffsetSeparation f) :
-    P.ofDual.IsOffsetSeparation f :=
-  IsPredSeparation.of_dual (by simp [add_comm]) h
-
-lemma isOffsetSeparation_dual_iff : P.dual.IsOffsetSeparation f ↔ P.IsOffsetSeparation f :=
-  isPredSeparation_dual_iff (by simp [add_comm])
-
 end Separation
-
 
 variable {dg dg' : Bool → ℕ∞ → Matroid α → Set α → Prop}
 
@@ -277,24 +259,25 @@ lemma numConnected_of_subsingleton {dg} (h : M.E.Subsingleton) (k : ℕ∞) (hdg
 lemma NumConnected.eConn_union_le_of_eConn_le_eConn_le_ge {w : Matroid α → Set α → ℕ∞}
     (hw : ∀ M ⦃X Y⦄, X ⊆ Y → M.eConn X + w M X ≤ M.eConn Y + w M Y)
     (hM : M.NumConnected (fun M X ↦ w M X = 0) (k + 1)) {P Q : M.Separation} (hP : P.eConn ≤ k)
-    (hQ : Q.eConn ≤ k) {b c : Bool} (hwt : k ≤ (P.inter Q b c).eConn + w M (P b ∩ Q c)) :
-    (P.union Q b c).eConn ≤ k := by
+    (hQ : Q.eConn ≤ k) {b c j : Bool} (hwt : k ≤ (P.cross Q b c i).eConn + w M (P b ∩ Q c)) :
+    (P.cross Q (!b) (!c) j).eConn ≤ k := by
   by_contra! hlt
   have hk : k ≠ ⊤ := by enat_to_nat!
-  have hsm := P.eConn_inter_add_eConn_union_le Q b c
+  have hsm := P.submod_cross Q b c i j
   grw [hP, hQ] at hsm
-  obtain hle | hlt' := le_or_gt k (P.inter Q b c).eConn
+  obtain hle | hlt' := le_or_gt k (P.cross Q b c i).eConn
   · grw [← hle, ENat.add_le_add_iff_left hk] at hsm
     exact hlt.not_ge hsm
   refine hM.not_isPredSeparation_of_eConn (Order.add_one_le_of_lt hlt') <| isPredSeparation_iff.2 ?_
-  rintro (rfl | rfl) hdg
-  · grw [P.inter_apply_false] at hdg
-    have hcon := hw M (show P (!b) ∩ Q (!c) ⊆ P (!b) ∪ Q (!c) by grind)
-    grw [hdg, add_zero, ← P.inter_apply_false, eConn_eq, ← le_self_add, ← P.union_apply_false,
-      eConn_eq] at hcon
-    exact hlt.not_ge <| by grw [hcon, hlt']
-  grw [hwt, ← P.inter_apply_true, hdg, add_zero] at hlt'
-  simp at hlt'
+  intro a hdg
+  obtain rfl | rfl := a.eq_or_eq_not i
+  · grw [hwt, ← P.cross_apply_self, hdg, add_zero] at hlt'
+    simp at hlt'
+  grw [P.cross_apply_not] at hdg
+  have hcon := hw M (show P (!b) ∩ Q (!c) ⊆ P (!b) ∪ Q (!c) by grind)
+  grw [hdg, add_zero, ← P.cross_apply_not (i := i), eConn_eq, ← le_self_add,
+    ← P.cross_apply_self (i := j), eConn_eq] at hcon
+  exact hlt.not_ge <| by grw [hcon, hlt']
 
 /-- A numerical notion of connectivity, simultaneously abstracting Tutte, Vertical and Internal
 connectivities.
