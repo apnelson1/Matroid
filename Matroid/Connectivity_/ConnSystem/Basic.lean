@@ -50,6 +50,10 @@ lemma conn_inter_ground (μ : ConnSystem α R) (X : Set α) : μ (X ∩ μ.E) = 
 lemma conn_compl (μ : ConnSystem α R) (X : Set α) : μ (μ.E \ X) = μ X := by
   simpa using μ.toFun_compl (X ∩ μ.E) inter_subset_right
 
+@[simp]
+lemma conn_compl' (μ : ConnSystem α R) (X : Set α) : μ Xᶜ = μ X := by
+  rw [← conn_inter_ground, ← diff_eq_compl_inter, conn_compl]
+
 lemma conn_submod (μ : ConnSystem α R) (X Y : Set α) : μ (X ∩ Y) + μ (X ∪ Y) ≤ μ X + μ Y := by
   grw [← μ.conn_inter_ground, inter_inter_distrib_right, ← μ.conn_inter_ground (X ∪ Y),
     union_inter_distrib_right, ← μ.conn_inter_ground X, ← μ.conn_inter_ground Y]

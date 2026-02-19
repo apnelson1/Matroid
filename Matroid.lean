@@ -21,7 +21,7 @@ import Matroid.Connectivity.Finitize
 import Matroid.Connectivity.Minor
 import Matroid.Connectivity.Nat
 -- import Matroid.Connectivity.Separation.Abstract
-import Matroid.Connectivity.Separation.Adherent
+-- import Matroid.Connectivity.Separation.Adherent
 import Matroid.Connectivity.Separation.Basic
 -- import Matroid.Connectivity.Separation.Faithful
 import Matroid.Connectivity.Separation.Infinite
@@ -88,7 +88,7 @@ import Matroid.Graph.Map
 import Matroid.Graph.Minor.Conn
 import Matroid.Graph.Minor.Defs
 -- import Matroid.Graph.Planarity.Drawing
-import Matroid.Graph.Planarity.PolygonalPath
+-- import Matroid.Graph.Planarity.PolygonalPath
 import Matroid.Graph.Simple
 import Matroid.Graph.Subgraph.Basic
 import Matroid.Graph.Subgraph.Compatible

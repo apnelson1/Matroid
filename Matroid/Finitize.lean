@@ -1,4 +1,4 @@
-import Matroid.Connectivity_.Basic
+import Matroid.Rank.Skew
 
 variable {α ι : Type*} {M : Matroid α} {A B C X Y I J : Set α} {e f : α} {k : ℕ∞}
   {μ : Matroid α → Set α → ℕ∞}

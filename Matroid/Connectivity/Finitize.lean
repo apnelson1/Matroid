@@ -8,55 +8,6 @@ open Set Function
 
 namespace Matroid
 
-lemma Indep.exists_subset_supset_nullity_eq (hI : M.Indep I) (hIX : I ⊆ X) (hk : k ≤ M.nullity X) :
-    ∃ Y ⊆ X, I ⊆ Y ∧ M.nullity Y = k := by
-  obtain ⟨J, hJ, hIJ⟩ := hI.subset_isBasis'_of_subset hIX
-  rw [hJ.nullity_eq] at hk
-  obtain ⟨Z, hZ, rfl⟩ := exists_subset_encard_eq hk
-  refine ⟨J ∪ Z, union_subset hJ.subset (hZ.trans diff_subset), ?_⟩
-  rw [subset_diff] at hZ
-  grw [IsBasis'.nullity_eq (I := J), union_diff_cancel_left (by simp [hZ.2.symm.inter_eq]),
-    hIJ, and_iff_right subset_union_left]
-  grw [isBasis'_iff_isBasis_closure, and_iff_left subset_union_left,
-    closure_union_congr_left hJ.closure_eq_closure, union_eq_self_of_subset_right hZ.1]
-  exact hJ.isBasis_closure_right
-
-lemma exists_subset_nullity_eq {k : ℕ∞} (hk : k ≤ M.nullity X) : ∃ Y ⊆ X, M.nullity Y = k := by
-  obtain ⟨Y, hYX, -, rfl⟩ := M.empty_indep.exists_subset_supset_nullity_eq (empty_subset X) hk
-  exact ⟨_, hYX, rfl⟩
-
-lemma IsBase.exists_restrict_multiConn_eq' {B : Set α} {X : ι → Set α} {k : ℕ∞} (hB : M.IsBase B)
-    (hdj : Pairwise (Disjoint on X)) (hX : ⋃ i, X i = M.E) (hkX : k ≤ M.multiConn X) :
-    ∃ R ⊆ M.E, B ⊆ R ∧ (R \ B).encard = k ∧ (M ↾ R).multiConn (fun i ↦ (X i ∩ R)) = k := by
-  have hXE (i) : X i ⊆ M.E := by simp [← hX, subset_iUnion]
-  choose I hI using fun i ↦ (hB.indep.inter_right (X i)).subset_isBasis_of_subset inter_subset_right
-  obtain ⟨hIb, hIX⟩ := forall_and.1 hI
-  have hIE : ⋃ i, I i ⊆ M.E := iUnion_subset fun i ↦ (hIb i).indep.subset_ground
-  have hBI : B ⊆ ⋃ i, I i := by
-    rw [← inter_eq_self_of_subset_left hB.subset_ground, ← hX, inter_iUnion]
-    exact iUnion_mono hIX
-  have hdjI : Pairwise (Disjoint on I) :=
-    hdj.mono fun i j ↦ Disjoint.mono (hIb i).subset (hIb j).subset
-  rw [multiConn_eq_nullity_iUnion hdjI hIb] at hkX
-  obtain ⟨K, hK, hBK, rfl⟩ := hB.indep.exists_subset_supset_nullity_eq hBI hkX
-  have hXK (i) : X i ∩ K = I i ∩ K := by
-    grw [subset_antisymm_iff, and_iff_left (inter_subset_inter_left _ (hIb i).subset),
-      subset_inter_iff, and_iff_left inter_subset_right]
-    nth_grw 1 [hK, inter_iUnion, iUnion_subset_iff]
-    intro j
-    obtain rfl | hne := eq_or_ne i j
-    · exact inter_subset_right
-    simp [((hdj hne).mono_right (hIb j).subset).inter_eq]
-  refine ⟨K, (hK.trans hIE), hBK, (IsBasis.nullity_eq ?_).symm, ?_⟩
-  · exact hB.isBasis_of_subset (hK.trans hIE) hBK
-  rw [multiConn_restrict_of_subset _ (fun i ↦ inter_subset_right),
-    multiConn_eq_nullity_iUnion (I := fun i ↦ I i ∩ K), ← iUnion_inter,
-    inter_eq_self_of_subset_right hK]
-  · exact hdj.mono fun i j ↦ Disjoint.mono (inter_subset_left.trans (hIb i).subset)
-      (inter_subset_left.trans (hIb j).subset)
-  simp_rw [hXK, isBasis_self_iff_indep]
-  exact fun i ↦ (hIb i).indep.inter_right K
-
 lemma IsBase.exists_preserve_eConn_delete (hB : M.IsBase B) (hk : k ≤ M.eConn X) :
     ∃ V ⊆ M.E, Disjoint V B ∧ V.encard = k ∧ (M ＼ ((M.E \ B) \ V)).eConn X = k := by
   have h1 := hB.exists_restrict_multiConn_eq'

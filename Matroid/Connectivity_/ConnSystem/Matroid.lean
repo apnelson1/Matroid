@@ -1,6 +1,6 @@
 import Matroid.Connectivity_.Basic
 import Matroid.Connectivity_.ConnSystem.Basic
-import Matroid.Connectivity_.Finitize
+import Matroid.Finitize
 
 open Set
 
@@ -8,14 +8,24 @@ namespace Matroid
 
 variable {α : Type*} {M : Matroid α} {B B' I I' J J' K X : Set α} {ι : Type*}
 
+/- Our goal here is to define `Matroid.eConn` as a term of type `ConnSystem α`: that is, a
+bundled symmetric, submodular function on `Set α`.
+Proving submodularity requires a nontrivial amount of work,
+which we do as quickly as possible in terms of an auxiliary raw function `eConnAux`;
+we prove that this function is self-dual and submodular, and then use it to define `eConn`
+as a package. -/
 
+
+/-- the connectivity function of a matroid as a pure function, rather than a `ConnSystem`.
+Just an implementation detail on the way to a `ConnSystem`; not intended for external use. -/
 private noncomputable abbrev eConnAux (M : Matroid α) (X : Set α) : ℕ∞ :=
   M.eLocalConn X (M.E \ X)
 
-lemma eConnAux_inter_ground (M : Matroid α) (X : Set α) : M.eConnAux (X ∩ M.E) = M.eConnAux X := by
+private lemma eConnAux_inter_ground (M : Matroid α) (X : Set α) :
+    M.eConnAux (X ∩ M.E) = M.eConnAux X := by
   rw [eConnAux, diff_inter_self_eq_diff, eLocalConn_inter_ground_left]
 
-lemma eConnAux_dual (M : Matroid α) (X : Set α) : M✶.eConnAux X = M.eConnAux X := by
+private lemma eConnAux_dual (M : Matroid α) (X : Set α) : M✶.eConnAux X = M.eConnAux X := by
   wlog hXE : X ⊆ M.E generalizing X with aux
   · rw [eq_comm, ← eConnAux_inter_ground, ← aux _ inter_subset_right, ← dual_ground,
       eConnAux_inter_ground]
@@ -39,7 +49,8 @@ lemma eConnAux_dual (M : Matroid α) (X : Set α) : M✶.eConnAux X = M.eConnAux
     (hB'.compl_isBase_dual.isBasis_ground.isBasis_subset (by grind) (by grind)).nullity_eq]
   exact congr_arg _ <| by grind
 
-lemma eConnAux_delete_le (M : Matroid α) (X D : Set α) : (M ＼ D).eConnAux X ≤ M.eConnAux X := by
+private lemma eConnAux_delete_le (M : Matroid α) (X D : Set α) :
+    (M ＼ D).eConnAux X ≤ M.eConnAux X := by
   grw [eConnAux, eLocalConn_delete_eq, eConnAux, delete_ground]
   exact M.eLocalConn_mono diff_subset <| by grind
 
@@ -60,39 +71,50 @@ lemma stronglyPreservable_eConnAux : StronglyPreservable (α := α) Matroid.eCon
     eLocalConn_inter_ground_left, restrict_ground_eq] at hconnk
   rwa [union_diff_cancel hBR]
 
+private lemma eConnAux_submod (M : Matroid α) (X Y : Set α) :
+    M.eConnAux (X ∩ Y) + M.eConnAux (X ∪ Y) ≤ M.eConnAux X + M.eConnAux Y := by
+  by_contra! hlt
+  obtain ⟨N, -, hN, hlt'⟩ :=
+    stronglyPreservable_eConnAux.exists_finite_counterexample_of_sum_lt_sum M
+    (fun i ↦ bif i then X else Y) (fun i ↦ bif i then (X ∩ Y) else (X ∪ Y)) (by simpa)
+  replace hlt' : N.eConnAux X + N.eConnAux Y < N.eConnAux (X ∩ Y) + N.eConnAux (X ∪ Y) :=
+    by simpa using hlt'
+  have hsm1 := N.eRk_submod X Y
+  have hsm2 := N.eRk_submod (N.E \ X) (N.E \ Y)
+  rw [← diff_inter, diff_inter_diff] at hsm2
+  have h1 := N.eRk_add_eRk_eq_eRk_union_add_eLocalConn X (N.E \ X)
+  have h2 := N.eRk_add_eRk_eq_eRk_union_add_eLocalConn Y (N.E \ Y)
+  have hi := N.eRk_add_eRk_eq_eRk_union_add_eLocalConn (X ∩ Y) (N.E \ (X ∩ Y))
+  have hu := N.eRk_add_eRk_eq_eRk_union_add_eLocalConn (X ∪ Y) (N.E \ (X ∪ Y))
+  rw [union_diff_self, eRk_eq_eRank subset_union_right, ← eConnAux] at h1 h2 hu hi
+  simp_rw [← cast_rk_eq] at *
+  clear hlt
+  enat_to_nat!
+  lia
+
+/-- The connectivity function of a matroid, given as a `ConnSystem`. -/
 noncomputable def eConn (M : Matroid α) : ConnSystem α ℕ∞ where
   E := M.E
   toFun := M.eConnAux
   toFun_inter_ground := by simp
   toFun_compl X hX := by rw [eConnAux, diff_diff_cancel_left hX, eLocalConn_comm]
-  toFun_submod X Y hX hY := by
-    by_contra! hlt
-    obtain ⟨N, -, hN, hlt'⟩ :=
-      stronglyPreservable_eConnAux.exists_finite_counterexample_of_sum_lt_sum M
-      (fun i ↦ bif i then X else Y) (fun i ↦ bif i then (X ∩ Y) else (X ∪ Y)) (by simpa)
-    replace hlt' : N.eConnAux X + N.eConnAux Y < N.eConnAux (X ∩ Y) + N.eConnAux (X ∪ Y) :=
-      by simpa using hlt'
-    have hsm1 := N.eRk_submod X Y
-    have hsm2 := N.eRk_submod (N.E \ X) (N.E \ Y)
-    rw [← diff_inter, diff_inter_diff] at hsm2
-    have h1 := N.eRk_add_eRk_eq_eRk_union_add_eLocalConn X (N.E \ X)
-    have h2 := N.eRk_add_eRk_eq_eRk_union_add_eLocalConn Y (N.E \ Y)
-    have hi := N.eRk_add_eRk_eq_eRk_union_add_eLocalConn (X ∩ Y) (N.E \ (X ∩ Y))
-    have hu := N.eRk_add_eRk_eq_eRk_union_add_eLocalConn (X ∪ Y) (N.E \ (X ∪ Y))
-    rw [union_diff_self, eRk_eq_eRank subset_union_right, ← eConnAux] at h1 h2 hu hi
-    simp_rw [← cast_rk_eq] at *
-    clear hlt
-    enat_to_nat!
-    lia
+  toFun_submod X Y _ _ := M.eConnAux_submod X Y
 
 lemma eConn_eq_eLocalConn (M : Matroid α) (X : Set α) : M.eConn X = M.eLocalConn X (M.E \ X) := rfl
+
+@[simp]
+lemma eConn_ground_eq (M : Matroid α) : M.eConn.E = M.E := rfl
 
 @[simp] lemma eConn_inter_ground (M : Matroid α) (X : Set α) :  M.eConn (X ∩ M.E) = M.eConn X :=
   M.eConnAux_inter_ground X
 
+lemma eConn_unitary (M : Matroid α) : M.eConn.Unitary :=
+  ⟨by simp [eConn_eq_eLocalConn],
+    fun e ↦ by grw [eConn_eq_eLocalConn, eLocalConn_le_eRk_left, eRk_singleton_le]⟩
+
 @[simp]
-lemma eConn_empty (M : Matroid α) : M.eConn ∅ = 0 := by
-  simp [eConn]
+lemma eConn_empty (M : Matroid α) : M.eConn ∅ = 0 :=
+  M.eConn_unitary.conn_empty
 
 @[simp]
 lemma loopyOn_eConn (E X : Set α) : (loopyOn E).eConn X = 0 := by
@@ -101,6 +123,11 @@ lemma loopyOn_eConn (E X : Set α) : (loopyOn E).eConn X = 0 := by
 @[simp]
 lemma eConn_ground (M : Matroid α) : M.eConn M.E = 0 := by
   simp [eConn]
+
+/-- Connectivity is self-dual. -/
+@[simp]
+lemma eConn_dual (M : Matroid α) (X : Set α) : M✶.eConn X = M.eConn X :=
+  M.eConnAux_dual X
 
 lemma IsBasis'.eConn_eq (hIX : M.IsBasis' I X) (hJX : M.IsBasis' J (M.E \ X)) :
     M.eConn X = M.nullity (I ∪ J) := by
@@ -149,25 +176,11 @@ lemma eConn_restrict_univ_eq (M : Matroid α) (X : Set α) : (M ↾ univ).eConn 
 
 @[simp]
 lemma eConn_corestrict_univ_eq (M : Matroid α) (X : Set α) : (M✶ ↾ univ)✶.eConn X = M.eConn X := by
-  obtain ⟨I, hI⟩ := M.exists_isBasis' X
-  obtain ⟨J, hJ⟩ := M.exists_isBasis (M.E \ X)
-  have hJ' : (M✶ ↾ univ)✶.IsBasis (J ∪ (Xᶜ \ M.E)) ((M✶ ↾ univ)✶.E \ X) := by
-    rwa [dual_ground, restrict_ground_eq, ← compl_eq_univ_diff, corestrict_univ_isBasis_iff,
-      union_subset_iff, and_iff_left subset_union_right, and_iff_left diff_subset,
-      and_iff_left <| hJ.subset.trans <| diff_subset_compl .., ← diff_eq_compl_inter,
-      union_inter_distrib_right, disjoint_sdiff_left.inter_eq, union_empty,
-      inter_eq_self_of_subset_left hJ.indep.subset_ground]
-  rw [hI.corestrict_univ_isBasis.isBasis'.eConn_eq hJ'.isBasis', hI.eConn_eq hJ.isBasis',
-    nullity_corestrict_univ_eq_nullity_inter, union_right_comm, union_assoc, union_assoc,
-    ← union_diff_distrib, ← union_assoc, union_inter_distrib_right, disjoint_sdiff_left.inter_eq,
-    union_empty,
-    inter_eq_self_of_subset_left (union_subset hI.indep.subset_ground hJ.indep.subset_ground)]
+  rw [eConn_dual, eConn_restrict_univ_eq, eConn_dual]
 
 @[simp]
-lemma eConn_compl (M : Matroid α) (X : Set α) : M.eConn (M.E \ X) = M.eConn X := by
-  rw [eq_comm, ← eConn_inter_ground, eConn_eq_eLocalConn, diff_inter_self_eq_diff,
-    eConn_eq_eLocalConn, eLocalConn_comm, inter_comm]
-  simp
+lemma eConn_compl (M : Matroid α) (X : Set α) : M.eConn (M.E \ X) = M.eConn X :=
+  M.eConn.conn_compl X
 
 /-- A version of `eConn_compl` where `compl` really means complementation in the universe. -/
 @[simp]
@@ -183,29 +196,6 @@ lemma IsBasis'.eConn_eq_nullity_contract (hI : M.IsBasis' I X) : M.eConn X =
 lemma IsBasis.eConn_eq_nullity_contract (hI : M.IsBasis I X) : M.eConn X =
     (M ／ (M.E \ X)).nullity I :=
   hI.isBasis'.eConn_eq_nullity_contract
-
-/-- Connectivity is self-dual. -/
-@[simp]
-lemma eConn_dual (M : Matroid α) (X : Set α) : M✶.eConn X = M.eConn X := by
-  wlog h : OnUniv M with aux
-  · rw [← eConn_corestrict_univ_eq, dual_dual, eq_comm, ← eConn_restrict_univ_eq, aux _ _ ⟨rfl⟩]
-  obtain ⟨I, hI⟩ := M.exists_isBasis X
-  obtain ⟨J, hJ⟩ := M.exists_isBasis (M.E \ X)
-  obtain ⟨B, hB, rfl⟩ := hI.exists_isBasis_inter_eq_of_superset <| subset_union_left (t := J)
-  have hsp : M.Spanning (X ∪ J) := by
-    simp [spanning_iff_closure_eq, closure_union_congr_right hJ.closure_eq_closure]
-  have hBdual := (hB.isBase_of_spanning hsp).compl_inter_isBasis_of_inter_isBasis hI
-  rw [diff_inter_diff, union_comm, ← diff_diff] at hBdual
-  obtain ⟨B', hB', rfl⟩ := hJ.exists_isBase
-  have hB'dual : M✶.IsBasis (B'ᶜ ∩ X) X := by
-    simpa [← compl_eq_univ_diff] using hB'.compl_inter_isBasis_of_inter_isBasis hJ
-  have hBss := hB.subset
-  have hgd := OnUniv.ground_diff_eq M X
-  rw [ hB'dual.eConn_eq hBdual, hI.eConn_eq hJ, OnUniv.ground_diff_eq,
-    (hB.isBasis_subset (by tauto_set) (by tauto_set)).nullity_eq,
-    (hB'.compl_isBase_dual.isBasis_ground.isBasis_subset (by tauto_set) (by simp)).nullity_eq,
-    OnUniv.ground_diff_eq]
-  exact congr_arg _ <| by tauto_set
 
 lemma eConn_union_of_subset_coloops {L : Set α} (hL : L ⊆ M.coloops) :
     M.eConn (X ∪ L) = M.eConn X := by
@@ -498,22 +488,12 @@ lemma eConn_singleton_eq_zero_iff {e : α} (heM : e ∈ M.E) :
   rw [he.indep.eConn_eq_zero_iff, singleton_subset_iff] at h
   exact .inr h
 
--- the next four lemmas can't go in `Minor`, since they are needed in `Finitize`.
-lemma eConn_restrict_le (M : Matroid α) (X R : Set α) : (M ↾ R).eConn X ≤ M.eConn X := by
-  rw [eConn_eq_eLocalConn, eLocalConn_restrict_eq, eConn_eq_eLocalConn, restrict_ground_eq,
-    ← eLocalConn_inter_ground_right]
-  exact M.eLocalConn_mono inter_subset_left (by tauto_set)
+/-- Connectivity is submodular -/
+lemma eConn_inter_add_eConn_union_le (M : Matroid α) (X Y : Set α) :
+    M.eConn (X ∩ Y) + M.eConn (X ∪ Y) ≤ M.eConn X + M.eConn Y :=
+  M.eConnAux_submod X Y
 
-lemma eConn_delete_le (M : Matroid α) (X D : Set α) : (M ＼ D).eConn X ≤ M.eConn X := by
-  rw [delete_eq_restrict]
-  apply eConn_restrict_le
+alias eConn_submod := eConn_inter_add_eConn_union_le
 
-lemma eConn_contract_le (M : Matroid α) (X C : Set α) : (M ／ C).eConn X ≤ M.eConn X := by
-  rw [← eConn_dual, dual_contract, ← M.eConn_dual]
-  apply eConn_delete_le
-
-lemma IsMinor.eConn_le {N : Matroid α} (hNM : N ≤m M) (X : Set α) : N.eConn X ≤ M.eConn X := by
-  obtain ⟨C, D, rfl⟩ := hNM
-  exact ((M ／ C).eConn_delete_le X D).trans <| M.eConn_contract_le X C
-
-end Global
+lemma stronglyPreservable_eConn : StronglyPreservable (α := α) (fun M X ↦ M.eConn X) :=
+  stronglyPreservable_eConnAux
