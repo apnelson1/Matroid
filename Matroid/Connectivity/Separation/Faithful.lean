@@ -171,7 +171,7 @@ lemma Faithful.eConn_delete_eq (hP : P.Faithful (M ＼ D)) : (P.delete D).eConn 
 lemma Faithful.eConn_contract_eq (hP : P.Faithful (M ／ C)) : (P.contract C).eConn = P.eConn := by
   rw [← hP.eConn_induce_eq (contract_isMinor ..), induce_eq_contract]
 
-lemma faithful_iff_eConn_induce_eq {hNM : N ≤m M} (hConn : (P.induce hNM.subset).eConn ≠ ⊤) :
+lemma faithful_iff_eConn_induce_eq (hNM : N ≤m M) (hConn : (P.induce hNM.subset).eConn ≠ ⊤) :
     P.Faithful N ↔ (P.induce hNM.subset).eConn = P.eConn := by
   refine ⟨fun h ↦ h.eConn_induce_eq hNM, fun h ↦ ?_⟩
   suffices aux (N' M' : Matroid α) (C : Set α) (P' : M'.Separation) (hC : C ⊆ M'.E)
@@ -191,6 +191,13 @@ lemma faithful_iff_eConn_induce_eq {hNM : N ≤m M} (hConn : (P.induce hNM.subse
   rw [eConn_le_eConn_contract_iff_forall_skew _] at hPconn
   · apply hPconn
   grw [← lt_top_iff_ne_top, eConn_contract_le]
+  assumption
+
+lemma faithful_of_eConn_induce_ge (hP : P.eConn ≠ ⊤) (hNM : N ≤m M)
+    (hconn : P.eConn ≤ (P.induce hNM.subset).eConn) : P.Faithful N := by
+  grw [faithful_iff_eConn_induce_eq hNM, le_antisymm_iff, and_iff_left hconn,
+    eConn_induce_le_of_isMinor _ hNM]
+  grw [← lt_top_iff_ne_top, eConn_induce_le_of_isMinor _ hNM, lt_top_iff_ne_top]
   assumption
 
 lemma Faithful.isModularPair (h : P.Faithful N) (hND : N ≤m M ＼ D) (i : Bool) :
