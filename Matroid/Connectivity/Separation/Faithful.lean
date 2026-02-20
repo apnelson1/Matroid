@@ -1,6 +1,6 @@
 import Matroid.Connectivity.Separation.Minor
 
-open Set Function
+open Set Function Bool
 
 variable {α : Type*} {M N : Matroid α} {j k : ℕ∞} {e f : α} {A B X X' Y Y' : Set α} {i : Bool}
   {P : M.Separation} {C D : Set α} {e f : α}
@@ -43,12 +43,15 @@ lemma Faithful.dual (hP : P.Faithful N) : P.dual.Faithful N✶ := by
 @[simp] lemma faithful_dual_iff : P.dual.Faithful N ↔ P.Faithful N✶ :=
   ⟨fun h ↦ by simpa [P.dual_dual] using h.dual, fun h ↦ by simpa using h.dual⟩
 
+lemma faithful_dual_iff' {P : M.Separation} : P.dual.Faithful N✶ ↔ P.Faithful N := by
+  simp
+
 lemma Faithful.ofDual {P : M✶.Separation} (hP : P.Faithful N) : P.ofDual.Faithful N✶ := by
   rwa [← faithful_dual_iff, ofDual_dual]
 
 @[simp]
 lemma faithful_symm_iff : P.symm.Faithful N ↔ P.Faithful N := by
-  simp [faithful_iff, and_comm]
+  simp [faithful_iff, _root_.and_comm]
 
 lemma faithful_of_forall_eq (h : ∀ C D, C ⊆ M.E → D ⊆ M.E → N = M ／ C ＼ D →
     ∀ i, (M.Skew (P i) (C \ P i) ∧ M✶.Skew (P i) (D \ P i))) : P.Faithful N := by
@@ -135,6 +138,13 @@ lemma faithful_delete_iff_subset_closure_of_subset (hD : M.Coindep D) (hDP : D �
   rw [faithful_delete_iff_forall_subset_closure hD, Bool.forall_bool' i,
     inter_eq_self_of_subset_right hDP, ← D.inter_comm, ← P.diff_eq_inter_bool _,
     diff_eq_empty.2 hDP, and_iff_left (empty_subset ..)]
+
+lemma faithful_delete_of_subset_closure (hD : D ⊆ P i) (hDcl : D ⊆ M.closure (P i \ D)) :
+    P.Faithful (M ＼ D) := by
+  have hDE : D ⊆ M.E := hD.trans P.subset
+  have hDi : M.Coindep D := by
+    grw [coindep_iff_subset_closure_compl, ← diff_subset_diff_left (P.subset (i := i)), ← hDcl]
+  rwa [faithful_delete_iff_subset_closure_of_subset hDi hD]
 
 lemma faithful_delete_iff_forall_restrict_coindep (hD : M.Coindep D) :
     P.Faithful (M ＼ D) ↔ ∀ i, (M ↾ P i).Coindep (D ∩ P i) := by
@@ -228,6 +238,37 @@ lemma Faithful.spanning_of_spanning (hPN : P.Faithful N) (hNM : N ≤m M) (h : M
   rw [spanning_iff_compl_coindep, diff_inter_self_eq_diff, P.diff_eq_inter_bool _ hNM.subset,
     Set.inter_comm]
   exact hPN.coindep_of_coindep hNM <| P.compl_eq _ ▸ h.compl_coindep
+
+lemma faithful_ofDelete_iff (P : (M ＼ D).Separation) (hD : D ⊆ M.E) (i : Bool) :
+    (P.ofDelete i).Faithful (M ＼ D) ↔ M✶.Skew (P !i) (D \ P !i) := by
+  rw [faithful_delete_iff hD]
+  have hss {j} : P j ∪ D ⊆ M✶.E := union_subset (P.subset.trans diff_subset) hD
+  cases i <;> simp [ofDelete, inter_eq_self_of_subset_right hD, ← diff_diff, skew_empty hss]
+
+lemma faithful_ofContract_iff (P : (M ／ C).Separation) (hC : C ⊆ M.E) (i : Bool) :
+    (P.ofContract i).Faithful (M ／ C) ↔ M.Skew (P !i) (C \ P !i) := by
+  rw [← faithful_dual_iff', Matroid.dual_contract, P.ofContract_dual, faithful_ofDelete_iff]
+  · simp
+  simpa
+
+lemma faithful_ofDelete_of_subset_closure (P : (M ＼ D).Separation) (hD : D ⊆ M.closure (P i)) :
+    (P.ofDelete i).Faithful (M ＼ D) := by
+  apply faithful_delete_of_subset_closure (i := i)
+  · grw [ofDelete_apply_self, ← subset_union_right]
+  rwa [ofDelete_apply_self, union_diff_cancel_right]
+  grw [P.subset]
+  simp
+
+lemma faithful_ofDelete_iff_of_coindep (P : (M ＼ D).Separation) (hD : M.Coindep D) (i : Bool) :
+    (P.ofDelete i).Faithful (M ＼ D) ↔ D ⊆ M.closure (P i) := by
+  rw [faithful_delete_iff_forall_subset_closure hD, Bool.forall_bool' i, ofDelete_apply_self,
+    ofDelete_apply_not, inter_eq_self_of_subset_right subset_union_right,
+    union_diff_cancel_right (P.disjoint_delete _).inter_eq.subset,
+    (P.disjoint_delete _).inter_eq, and_iff_left <| empty_subset _]
+
+lemma faithful_ofContract_of_subset_closure_dual (P : (M ／ C).Separation)
+    (hD : C ⊆ M✶.closure (P i)) : (P.ofContract i).Faithful (M ／ C) := by
+  simpa using (P.contractDual.faithful_ofDelete_of_subset_closure (by simpa using hD)).ofDual
 
 end Faithful
 

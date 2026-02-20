@@ -654,5 +654,25 @@ lemma TutteConnected.deleteElem (h : M.TutteConnected (k + 1)) (hnt : 2 * k < M.
     (e : α) : (M ＼ {e}).TutteConnected k := by
   simpa using (h.dual.contractElem hnt e).dual
 
+lemma TutteConnected.removeElem (h : M.TutteConnected (k + 1)) (hnt : 2 * k < M.E.encard + 1)
+    (b : Bool) (e : α) : (M.remove b {e}).TutteConnected k := by
+  cases b
+  · exact h.deleteElem hnt e
+  exact h.contractElem hnt e
+
+lemma TutteConnected.of_isMinor {t : ℕ∞} (h : M.TutteConnected (k + t + 1)) (hNM : N ≤m M)
+    (hNT : (M.E \ N.E).encard ≤ t) (hk : 2 * (k + t) < M.E.encard + 1) :
+    N.TutteConnected (k + 1) := by
+  obtain ⟨C, D, hC, hD, hCD, rfl⟩ := hNM.exists_eq_contract_delete_disjoint
+  rw [delete_ground, contract_ground, diff_diff, diff_diff_cancel_left (by grind),
+    encard_union_eq hCD] at hNT
+  have hle : k + (M ／ C)✶.eRk D + M.eRk C ≤ k + t := by
+    grw [eRk_le_encard, eRk_le_encard, add_right_comm k, add_assoc k, hNT]
+  refine ((h.mono (by grw [hle])).contract (C := C) ?_).delete (D := D) ?_
+  · grw [hle]
+    assumption
+  grw [eRk_le_encard, contract_ground]
+  rw [← encard_diff_add_encard_of_subset hC] at hk
+  enat_to_nat!; lia
 
 end Matroid

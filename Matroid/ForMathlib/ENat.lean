@@ -18,6 +18,7 @@ lemma eq_zero_or_exists_eq_add_one (a : ℕ∞) : a = 0 ∨ ∃ i, a = i + 1 := 
   · exact .inl rfl
   exact .inr ⟨a, rfl⟩
 
+@[elab_as_elim]
 def recTopZeroCoe {C : ℕ∞ → Sort*} (top : C ⊤) (zero : C 0) (coe : (a : ℕ) → C ↑(a + 1)) (n : ℕ∞) :
     C n := by
   cases n with
@@ -26,6 +27,12 @@ def recTopZeroCoe {C : ℕ∞ → Sort*} (top : C ⊤) (zero : C 0) (coe : (a : 
   · cases n with
   | zero => assumption
   | succ n => exact coe n
+
+@[elab_as_elim]
+def recZeroSucc {C : ℕ∞ → Prop} (zero : C 0) (coe : (a : ℕ∞) → C (a + 1)) (n : ℕ∞) : C n := by
+  obtain rfl | ⟨k, rfl⟩ := n.eq_zero_or_exists_eq_add_one
+  · assumption
+  exact coe k
 
 -- this won't fire as `simp` without an explicit `ENat` version.
 @[simp]

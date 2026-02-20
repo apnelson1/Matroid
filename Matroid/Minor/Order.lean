@@ -13,7 +13,7 @@ section IsMinor
 
 variable {M₀ M₁ M₂ : Matroid α}
 
-
+attribute [grind =] contract_ground delete_ground restrict_ground_eq dual_ground dual_dual
 
 /-- The scum theorem : we can always realize a minor by contracting an independent set and deleting
 a coindependent set/ -/
