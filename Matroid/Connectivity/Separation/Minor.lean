@@ -176,16 +176,15 @@ lemma removeDual_true (P : (M.remove true X).Separation) : P.removeDual = P.cont
 @[simp]
 lemma removeDual_false (P : (M.remove false X).Separation) : P.removeDual = P.deleteDual := rfl
 
-/-- Extend a separation `P` of some matroid `N
-` to a matroid `M` with larger ground set by
+/-- Extend a separation `P` of some matroid `N` to a matroid `M` with larger ground set by
 adding the extra elements to side `b` of `P`. `-/
 def ofGroundSubset (P : N.Separation) (hNM : N.E ⊆ M.E) (i : Bool) : M.Separation :=
-  Bipartition.expand P hNM i
+  IndexedPartition.expand P hNM i
 
 @[simp, simp↓]
 lemma ofGroundSubset_apply (P : N.Separation) (hNM : N.E ⊆ M.E) (i j : Bool) :
     P.ofGroundSubset hNM j i = bif (i == j) then P i ∪ (M.E \ N.E) else P i := by
-  simp [ofGroundSubset, Bipartition.expand_apply ..]
+  simp [ofGroundSubset, IndexedPartition.expand_apply ..]
 
 lemma ofGroundSubset_symm (P : N.Separation) (hNM : N.E ⊆ M.E) (i : Bool) :
     (P.ofGroundSubset hNM i).symm = P.symm.ofGroundSubset hNM (!i) :=

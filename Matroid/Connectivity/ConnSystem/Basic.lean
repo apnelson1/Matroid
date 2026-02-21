@@ -60,19 +60,20 @@ lemma apply_submod (μ : ConnSystem α R) (X Y : Set α) : μ (X ∩ Y) + μ (X 
   exact μ.toFun_submod _ _ inter_subset_right inter_subset_right
 
 /-- A connectivity system assigns a connectivity to each bipartition of its ground set. -/
-def pConn (μ : ConnSystem α R) (P : μ.E.Bipartition) : R := μ <| P true
+def pConn (μ : ConnSystem α R) (P : μ.E.IndexedPartition Bool) : R := μ <| P true
 
 @[simp]
-lemma pConn_symm {μ : ConnSystem α R} (P : μ.E.Bipartition) : μ.pConn P.symm = μ.pConn P := by
+lemma pConn_symm {μ : ConnSystem α R} (P : μ.E.IndexedPartition Bool) :
+    μ.pConn P.symm = μ.pConn P := by
   rw [pConn, P.symm_true, ← P.compl_true, μ.apply_compl, pConn]
 
 @[simp]
 lemma pConn_ofSubset (μ : ConnSystem α R) (X : Set α) (hX : X ⊆ μ.E) (i : Bool) :
-    μ.pConn (Bipartition.ofSubset hX i) = μ X := by
+    μ.pConn (IndexedPartition.ofSubset hX i) = μ X := by
   cases i <;> simp [pConn]
 
 @[simp]
-lemma apply_eq_pConn (P : μ.E.Bipartition) (i : Bool) : μ (P i) = μ.pConn P := by
+lemma apply_eq_pConn (P : μ.E.IndexedPartition Bool) (i : Bool) : μ (P i) = μ.pConn P := by
   cases i
   · rw [pConn, ← P.compl_true, μ.apply_compl]
   rfl
@@ -90,7 +91,7 @@ def induce (μ : ConnSystem α R) (hF : μ.E ⊆ F) : ConnSystem α R where
   toFun_submod _ _ _ _ := μ.apply_submod ..
 
 @[simp]
-lemma induce_pConn (μ : ConnSystem α R) (hF : μ.E ⊆ F) (P : F.Bipartition) :
+lemma induce_pConn (μ : ConnSystem α R) (hF : μ.E ⊆ F) (P : F.IndexedPartition Bool) :
     (μ.induce hF).pConn P = μ.pConn (P.induce hF) := by
   simp [pConn]
 
@@ -154,14 +155,14 @@ lemma le_induce (μ : ConnSystem α R) (hF : μ.E ⊆ F) : μ ≤ μ.induce hF :
 /-- If `μ, ν` are connectivity systems, and `P` is a bipartition of `ν.E`, then we say that
 `SplitsIn P μ` if one side of `P` has a bipartition into two parts, each of which has connectivity
 at most the connectivity of `P` in `ν`. -/
-def SplitsIn (P : ν.E.Bipartition) (μ : ConnSystem α R) : Prop :=
-    ∃ (i : Bool) (P₀ : (P i).Bipartition), ∀ j, μ (P₀ j) ≤ ν.pConn P
+def SplitsIn (P : ν.E.IndexedPartition Bool) (μ : ConnSystem α R) : Prop :=
+    ∃ (i : Bool) (P₀ : (P i).IndexedPartition Bool), ∀ j, μ (P₀ j) ≤ ν.pConn P
 
 /-- If `μ` and `ν` are connectivity systems with `μ` dominating `ν`, then `ν` adheres to `μ`
 if each partition of `ν.E` splits in `μ`.  -/
 structure AdheresTo (ν μ : ConnSystem α R) : Prop where
   le : ν ≤ μ
-  forall_splits : ∀ (P : ν.E.Bipartition), SplitsIn P μ
+  forall_splits : ∀ (P : ν.E.IndexedPartition Bool), SplitsIn P μ
 
 lemma AdheresTo.subset (h : ν.AdheresTo μ) : ν.E ⊆ μ.E :=
   h.1.1

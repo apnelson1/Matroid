@@ -181,11 +181,11 @@ lemma faithful_iff_eConn_induce_eq (hNM : N ≤m M) (hConn : (P.induce hNM.subse
     refine ⟨fun C hC hNC i ↦ ?_, fun D hD hND i ↦ ?_⟩
     · refine aux N M C P hC hNC hPtop ?_ i
       have hrw : (P.induce hNM.subset) = (P.contract C).induce hNC.subset :=
-        induce_eq_contract _ _ ▸ (Bipartition.induce_induce ..).symm
+        induce_eq_contract _ _ ▸ (IndexedPartition.induce_induce ..).symm
       grw [← h, hrw, eConn_induce_le_of_isMinor _ hNC]
     apply aux N✶ M✶ D P.dual hD (by rwa [← M.dual_delete, dual_isMinor_iff]) (by simpa)
     have hrw : (P.induce hNM.subset) = (P.delete D).induce hND.subset :=
-      induce_eq_delete _ _ ▸ (Bipartition.induce_induce ..).symm
+      induce_eq_delete _ _ ▸ (IndexedPartition.induce_induce ..).symm
     grw [dual_contract, eConn_copy, eConn_dual, eConn_dual, ← h, hrw,
       eConn_induce_le_of_isMinor _ hND]
   rw [eConn_le_eConn_contract_iff_forall_skew _] at hPconn
