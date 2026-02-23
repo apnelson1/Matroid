@@ -479,7 +479,8 @@ protected def cross (P Q : M.Separation) (b c i : Bool) : M.Separation :=
   IndexedPartition.cross P Q b c i
 
 lemma cross_apply (P Q : M.Separation) :
-    P.cross Q b c i j = bif (j == i) then P b ∩ Q c else P (!b) ∪ Q !c := rfl
+    P.cross Q b c i j = bif (j == i) then P b ∩ Q c else P (!b) ∪ Q !c :=
+  IndexedPartition.cross_apply ..
 
 @[simp]
 lemma cross_symm (P Q : M.Separation) (b c i : Bool) :
@@ -543,33 +544,34 @@ protected def interCross (P Q : M.Separation) : M.Separation := P.cross Q true t
 protected def unionCross (P Q : M.Separation) : M.Separation := P.cross Q false false false
 
 @[simp]
-lemma interCross_apply_true (P Q : M.Separation) : (P.interCross Q) true = P true ∩ Q true := rfl
+lemma interCross_apply_true (P Q : M.Separation) : (P.interCross Q) true = P true ∩ Q true :=
+  IndexedPartition.interCross_apply_true ..
 
 @[simp]
 lemma interCross_apply_false (P Q : M.Separation) : (P.interCross Q) false = P false ∪ Q false :=
-  rfl
+  IndexedPartition.interCross_apply_false ..
 
 @[simp]
 lemma unionCross_apply_true (P Q : M.Separation) : (P.unionCross Q) true = P true ∪ Q true :=
-  rfl
+  IndexedPartition.unionCross_apply_true ..
 
 @[simp]
 lemma unionCross_apply_false (P Q : M.Separation) : (P.unionCross Q) false = P false ∩ Q false :=
-  rfl
+  IndexedPartition.unionCross_apply_false ..
 
 @[simp]
 lemma unionCross_symm (P Q : M.Separation) : (P.unionCross Q).symm = P.symm.interCross Q.symm :=
-  IndexedPartition.ext_bool rfl
+  IndexedPartition.unionCross_symm ..
 
 @[simp]
 lemma interCross_symm (P Q : M.Separation) : (P.interCross Q).symm = P.symm.unionCross Q.symm :=
-  IndexedPartition.ext_bool rfl
+  IndexedPartition.interCross_symm ..
 
 protected lemma interCross_comm (P Q : M.Separation) : P.interCross Q = Q.interCross P :=
-  IndexedPartition.ext_bool <| Set.inter_comm ..
+  IndexedPartition.interCross_comm ..
 
 protected lemma unionCross_comm (P Q : M.Separation) : P.unionCross Q = Q.unionCross P :=
-  IndexedPartition.ext_bool <| Set.union_comm ..
+  IndexedPartition.unionCross_comm ..
 
 lemma Nontrivial.cross_trivial_iff (hP : P.Nontrivial) (b c i : Bool) :
     (P.cross Q b c i).Trivial ↔ P b ⊆ Q !c ∨ Q c ⊆ P !b :=
