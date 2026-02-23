@@ -4,6 +4,8 @@ import Matroid.ForMathlib.Data.Set.Subsingleton
 import Matroid.ForMathlib.Set
 -- import Mathlib.Tactic.DepRewrite
 import Mathlib.Tactic.NthRewrite
+import Batteries.CodeAction.Basic
+import Batteries.CodeAction.Misc
 
 set_option linter.style.longLine false
 
@@ -13,6 +15,18 @@ variable {α : Type*} {r s t : Set α}
 
 namespace Set
 
+-- For mathlib
+lemma iUnion_eq_single_of_forall_subset {ι : Sort*} {s : ι → Set α} {a : ι}
+    (hi : ∀ i ≠ a, s i ⊆ s a) : ⋃ i, s i = s a := by
+  refine (subset_iUnion ..).antisymm' <| iUnion_subset fun i ↦ ?_
+  obtain rfl | hne := eq_or_ne i a
+  · rfl
+  exact hi i hne
+
+lemma iUnion_eq_single {ι : Sort*} (s : ι → Set α) {a : ι} (hi : ∀ i ≠ a, s i = ∅) :
+    ⋃ i, s i = s a :=
+  iUnion_eq_single_of_forall_subset fun i hia ↦ by grw [hi i hia, empty_subset]
+
 protected structure IndexedPartition {α : Type*} (s : Set α) (ι : Type*) where
   toFun : ι → Set α
   pairwise_disjoint' : Pairwise (Disjoint on toFun)
@@ -20,11 +34,13 @@ protected structure IndexedPartition {α : Type*} (s : Set α) (ι : Type*) wher
 
 namespace IndexedPartition
 
-variable {ι : Type*} {i j : ι} {P : s.IndexedPartition ι}
+variable {ι η : Type*} {i j : ι} {P : s.IndexedPartition ι} {Q : t.IndexedPartition ι}
 
 instance : FunLike (s.IndexedPartition ι) ι (Set α) where
   coe := IndexedPartition.toFun
   coe_injective' := by rintro ⟨f,h⟩ ⟨f', h'⟩; simp
+
+initialize_simps_projections Set.IndexedPartition (toFun → apply)
 
 @[simp]
 protected lemma toFun_eq_coe (P : s.IndexedPartition ι) : P.toFun = P := rfl
@@ -45,10 +61,18 @@ protected lemma pairwise_disjoint (P : s.IndexedPartition ι) : Pairwise (Disjoi
 protected lemma iUnion_eq (P : s.IndexedPartition ι) : ⋃ i, P i = s :=
   P.iUnion_eq'
 
-@[simp]
+@[simp, grind! .]
 protected lemma subset (P : s.IndexedPartition ι) {i : ι} : P i ⊆ s := by
   simp_rw [← P.iUnion_eq]
   exact subset_iUnion ..
+
+@[simp]
+lemma inter_ground_left (P : s.IndexedPartition ι) (i : ι) : (P i) ∩ s = P i :=
+  inter_eq_self_of_subset_left P.subset
+
+@[simp]
+lemma inter_ground_right (P : s.IndexedPartition ι) (i : ι) : s ∩ (P i) = P i :=
+  inter_eq_self_of_subset_right P.subset
 
 protected lemma exists_mem (P : s.IndexedPartition ι) {a : α} (ha : a ∈ s) :
     ∃ i, a ∈ P i := by
@@ -105,6 +129,45 @@ lemma induce_induce (P : s.IndexedPartition ι) (hts : t ⊆ s) (hrt : r ⊆ t) 
     (P.induce hts).induce hrt = P.induce (hrt.trans hts) :=
   IndexedPartition.ext fun i ↦ by simp [inter_assoc, inter_eq_self_of_subset_right hrt]
 
+@[simp]
+lemma induce_rfl (P : s.IndexedPartition ι) (h : s ⊆ s := rfl.subset) : P.induce h = P :=
+  IndexedPartition.ext fun i ↦ by simp
+
+/-- `IndexedPartition.LE P Q`, written `P ≤ Q`, means that every cell of `P` is contained in the corresponding cell of `Q`. -/
+protected def LE (P : s.IndexedPartition ι) (Q : t.IndexedPartition ι) : Prop := ∀ i, P i ⊆ Q i
+
+scoped infixl:50 " ≤ " => IndexedPartition.LE
+
+lemma le_iff : P ≤ Q ↔ ∀ i, P i ⊆ Q i := Iff.rfl
+
+protected lemma LE.trans {P : r.IndexedPartition ι} {Q : s.IndexedPartition ι}
+    (R : t.IndexedPartition ι) (hPQ : P ≤ Q) (hQR : Q ≤ R) : P ≤ R :=
+  fun i ↦ (hPQ i).trans (hQR i)
+
+protected lemma LE.subset (hPQ : P ≤ Q) : s ⊆ t := by
+  grw [← P.iUnion_eq, ← Q.iUnion_eq, iUnion_mono hPQ]
+
+protected lemma LE.disjoint_of_ne (hPQ : P ≤ Q) (hij : i ≠ j) : Disjoint (P i) (Q j) := by
+  grw [hPQ i]
+  exact Q.pairwise_disjoint hij
+
+protected lemma LE.eq_induce {Q : t.IndexedPartition ι} (hPQ : P ≤ Q) : P = Q.induce hPQ.subset := by
+  refine IndexedPartition.ext fun i ↦ ?_
+  simp_rw [Q.induce_apply, ← P.iUnion_eq]
+  rw [inter_iUnion, iUnion_eq_single (a := i), inter_eq_self_of_subset_right (hPQ i)]
+  intro j hji
+  rw [inter_comm, (hPQ.disjoint_of_ne hji).inter_eq]
+
+protected lemma LE.eq {P Q : s.IndexedPartition ι} (hPQ : P ≤ Q) : P = Q := by
+  rw [hPQ.eq_induce, induce_rfl]
+
+@[simp]
+protected lemma le_refl (P : s.IndexedPartition ι) : P ≤ P :=
+  fun _ ↦ rfl.subset
+
+lemma induce_le (P : s.IndexedPartition ι) (hts : t ⊆ s) : P.induce hts ≤ P :=
+  fun i ↦ by simp
+
 protected def union (P : s.IndexedPartition ι) (Q : t.IndexedPartition ι) (hdj : Disjoint s t) :
     (s ∪ t).IndexedPartition ι where
   toFun i := P i ∪ Q i
@@ -134,6 +197,8 @@ protected lemma single_apply_of_ne [DecidableEq ι] (s : Set α) (hne : j ≠ i)
     IndexedPartition.single s i j = ∅ := by
   simp [IndexedPartition.single, hne]
 
+/-- Turn a partition of `s` into a partition of `t` by intersecting each part with `t`,
+then adding the elements of `t \ s` into part `i`. -/
 protected def shift [DecidableEq ι] (P : s.IndexedPartition ι) (t : Set α) (i : ι) :
     t.IndexedPartition ι :=
   ((P.induce inter_subset_right).union (IndexedPartition.single (t \ s) i)
@@ -199,6 +264,21 @@ lemma copy_expand [DecidableEq ι] (P : s.IndexedPartition ι) {s' : Set α} (h 
     (hst : s' ⊆ t) (i : ι) : (P.copy h).expand hst i = P.expand (h.trans_subset hst) i :=
   P.copy_shift ..
 
+@[simp]
+lemma expand_induce [DecidableEq ι] (P : s.IndexedPartition ι) (h : s ⊆ t) (i : ι) :
+    (P.expand h i).induce h = P := by
+  refine IndexedPartition.ext fun j ↦ ?_
+  obtain rfl | hne := eq_or_ne j i
+  · simp only [IndexedPartition.induce_apply, ↓expand_apply_self]
+    grind
+  simp [expand_apply_of_ne _ _ hne]
+
+lemma le_expand [DecidableEq ι] (P : s.IndexedPartition ι) (h : s ⊆ t) (i : ι) :
+    P ≤ P.expand h i := by
+  nth_rw 1 [← P.expand_induce h i]
+  apply induce_le
+
+/-- Remove the elements of `t` from each cell of a partition of `s` to get a partition of `s \ t`.-/
 protected def diff (P : s.IndexedPartition ι) (t : Set α) : (s \ t).IndexedPartition ι :=
   P.induce diff_subset
 
@@ -215,7 +295,7 @@ lemma subset_of_diff (P : (s \ t).IndexedPartition ι) (i : ι) : P i ⊆ s :=
 lemma disjoint_of_diff (P : (s \ t).IndexedPartition ι) (i : ι) : Disjoint (P i) t :=
   (subset_diff.1 P.subset).2
 
-/-- A partition is `Trivial` if it has exactly one nonempty cell. -/
+/-- A partition is `Trivial` if it has at most one nonempty cell. -/
 protected def Trivial (P : s.IndexedPartition ι) : Prop := ∃ i, P i = s
 
 lemma trivial_def : P.Trivial ↔ ∃ i, P i = s := Iff.rfl
@@ -235,7 +315,8 @@ lemma trivial_of_subsingleton [Nonempty ι] (P : s.IndexedPartition ι) (h : s.S
   have hs : s = ∅ := by simp [← P.iUnion_eq, hi']
   exact hcon (Classical.arbitrary ι) <| by simp [hs, hi']
 
-/-- A partition is nontrivial if all cells are nonempty -/
+/-- A partition is nontrivial if all cells are nonempty. If there are at least three indices,
+this is not the negation of `Partition.Trivial`. Better name?  -/
 @[mk_iff]
 protected structure Nontrivial (P : s.IndexedPartition ι) : Prop where
   nonempty : ∀ i, (P i).Nonempty
@@ -245,6 +326,45 @@ lemma Nontrivial.ssubset [Nontrivial ι] (h : P.Nontrivial) {i : ι} : P i ⊂ s
   refine ssubset_of_subset_of_ssubset ?_ <| diff_ssubset (P.subset (i := j)) (h.nonempty j)
   rw [subset_diff, and_iff_right P.subset]
   exact P.pairwise_disjoint hne.symm
+
+@[simps]
+protected def prod {ι η : Type} (P : s.IndexedPartition ι) (Q : s.IndexedPartition η) :
+    s.IndexedPartition (ι × η) where
+  toFun i := P i.1 ∩ Q i.2
+  pairwise_disjoint' := by
+    rintro ⟨i, j⟩ ⟨i', j'⟩ hne
+    simp only [onFun]
+    obtain rfl | hne' := eq_or_ne i i'
+    · grw [inter_subset_right, inter_subset_right]
+      exact Q.pairwise_disjoint (by simpa using hne)
+    grw [inter_subset_left, inter_subset_left]
+    exact P.pairwise_disjoint hne'
+  iUnion_eq' := by
+    simp_rw [← P.iUnion_eq, iUnion_prod']
+    exact iUnion_congr fun i ↦ by
+      rw [← inter_iUnion, Q.iUnion_eq, inter_eq_self_of_subset_left P.subset]
+
+@[simps]
+protected def comp (P : s.IndexedPartition ι) (f : ι → η) : s.IndexedPartition η where
+  toFun i := ⋃ (j : ι) (_ : f j = i), P j
+  pairwise_disjoint' := by
+    intro j j' hne
+    simp only [disjoint_iUnion_right, disjoint_iUnion_left]
+    rintro i rfl i' rfl
+    exact P.pairwise_disjoint <| by grind
+  iUnion_eq' := by simp [iUnion_comm, P.iUnion_eq]
+
+lemma comp_comp {η ξ : Type*} (P : s.IndexedPartition ι) (f : ι → η) (g : η → ξ) :
+    (P.comp f).comp g = P.comp (g ∘ f) := by
+  refine IndexedPartition.ext fun i ↦ ?_
+  simp_rw [comp_apply]
+  rw [iUnion_congr fun _ ↦ iUnion_comm .., iUnion_comm,
+    iUnion_congr fun _ ↦ iUnion_congr fun _ ↦ iUnion_comm ..]
+  simp
+
+lemma comp_apply_equiv (P : s.IndexedPartition ι) (f : ι ≃ η) (i : η) :
+    P.comp f i = P (f.symm i) := by
+  simp [f.apply_eq_iff_eq_symm_apply]
 
 section Bool
 
@@ -313,18 +433,15 @@ protected lemma mem_or_mem (P : s.IndexedPartition Bool) {a : α} (ha : a ∈ s)
     a ∈ P true ∨ a ∈ P false := by
   simpa [or_comm] using IndexedPartition.exists_mem P ha
 
-@[simps]
+@[simps!]
 protected def symm (P : s.IndexedPartition Bool) : s.IndexedPartition Bool where
-  toFun b := P.toFun !b
+  toFun b := P !b
   pairwise_disjoint' := P.pairwise_disjoint.comp_of_injective fun _ _ ↦ by simp
   iUnion_eq' := by simp
 
 protected lemma symm_true (P : s.IndexedPartition Bool) : P.symm true = P false := rfl
 
 protected lemma symm_false (P : s.IndexedPartition Bool) : P.symm false = P true := rfl
-
-@[simp]
-protected lemma symm_apply (P : s.IndexedPartition Bool) (b : Bool) : P.symm b = P !b := rfl
 
 @[simp]
 protected lemma symm_symm (P : s.IndexedPartition Bool) : P.symm.symm = P :=
@@ -422,7 +539,7 @@ lemma Nontrivial.symm (h : P.Nontrivial) : P.symm.Nontrivial := by
   simpa [← P.symm.not_trivial_iff]
 
 @[simp]
-lemma nonttrivial_symm_iff : P.symm.Nontrivial ↔ P.Nontrivial :=
+lemma nontrivial_symm_iff : P.symm.Nontrivial ↔ P.Nontrivial :=
   ⟨fun h ↦ by simpa using h.symm, Nontrivial.symm⟩
 
 @[simp, simp↓]
@@ -453,7 +570,6 @@ lemma expand_true_false (P : s.IndexedPartition Bool) (h : s ⊆ t) :
 protected lemma expand_symm (P : s.IndexedPartition Bool) (h : s ⊆ t) (i : Bool) :
     (P.expand h i).symm = P.symm.expand h !i :=
   IndexedPartition.ext_bool' i <| by simp
-
 
 /-- The bipartition of `t` with a subset `s` on side `i`, and `t \ s` on side `!i`. -/
 protected def ofSubset (hst : s ⊆ t) (i : Bool) : t.IndexedPartition Bool where
@@ -493,22 +609,34 @@ protected lemma ofSubset_copy (hst : s ⊆ t) (htr : t = r) :
     (IndexedPartition.ofSubset hst i).copy htr = IndexedPartition.ofSubset (hst.trans_eq htr) i :=
   IndexedPartition.ext_bool' i <| by simp
 
+-- /-- Given partitions of sets -/
+-- def crossInduce (P : s.IndexedPartition Bool) (Q : t.IndexedPartition Bool) (hrs : r ⊆ s)
+--     (hrt : r ⊆ t) (b c i : Bool) : r.IndexedPartition Bool :=
+--   _
+
+
 /-- The bipartition whose `i` side is `P b ∩ Q c` and whose `(!i)` side is `P !b ∪ Q !c`.
 Varying `b, c` and `i` give the eight possible bipartitions arising from the 2x2 grid given
 by `P` and `Q`. -/
-def cross (P Q : s.IndexedPartition Bool) (b c i : Bool) : s.IndexedPartition Bool where
-  toFun j := bif (j == i) then P b ∩ Q c else P (!b) ∪ Q !c
-  pairwise_disjoint' := by
-    rw [pairwise_disjoint_on_bool'' i, BEq.rfl, cond_true, Bool.not_beq_self, cond_false,
-      disjoint_union_right]
-    exact ⟨(P.disjoint_bool b).mono_left inter_subset_left,
-      (Q.disjoint_bool c).mono_left inter_subset_right⟩
-  iUnion_eq' := by
-    rw [iUnion_bool' (b := i), BEq.rfl, cond_true, Bool.not_beq_self, cond_false]
-    grind [P.union_bool_eq b, Q.union_bool_eq c]
+def cross (P Q : s.IndexedPartition Bool) (b c i : Bool) : s.IndexedPartition Bool :=
+  (((P.bSymm b).prod (Q.bSymm c)).comp (fun p ↦ p.1 || p.2)).bSymm i
+
+@[simp]
+lemma cross_apply_self (P Q : s.IndexedPartition Bool) : P.cross Q b c i i = P b ∩ Q c := by
+  simp [cross, iUnion_prod']
+
+@[simp]
+lemma cross_apply_not (P Q : s.IndexedPartition Bool) : P.cross Q b c i (!i) = P (!b) ∪ Q (!c) := by
+  rw [← IndexedPartition.compl_not_eq, Bool.not_not, cross_apply_self,
+    ← IndexedPartition.compl_eq, ← IndexedPartition.compl_eq, ← diff_inter]
+
+@[simp]
+lemma cross_not_apply (P Q : s.IndexedPartition Bool) : P.cross Q b c (!i) i = P (!b) ∪ Q (!c) := by
+  rw [← P.cross_apply_not (i := !i), Bool.not_not]
 
 lemma cross_apply (P Q : s.IndexedPartition Bool) :
-    P.cross Q b c i j = bif (j == i) then P b ∩ Q c else P (!b) ∪ Q !c := rfl
+    P.cross Q b c i j = bif (j == i) then P b ∩ Q c else P (!b) ∪ Q !c := by
+  obtain rfl | rfl := j.eq_or_eq_not i <;> simp
 
 @[simp]
 lemma cross_symm (P Q : s.IndexedPartition Bool) (b c i : Bool) :
@@ -518,12 +646,12 @@ lemma cross_symm (P Q : s.IndexedPartition Bool) (b c i : Bool) :
 @[simp]
 lemma cross_symm_left (P Q : s.IndexedPartition Bool) (b c i : Bool) :
     P.symm.cross Q b c i = P.cross Q (!b) c i :=
-  IndexedPartition.ext_bool rfl
+  IndexedPartition.ext_bool <| by simp [cross_apply]
 
 @[simp]
 lemma cross_symm_right (P Q : s.IndexedPartition Bool) (b c i : Bool) :
     P.cross Q.symm b c i = P.cross Q b (!c) i :=
-  IndexedPartition.ext_bool rfl
+  IndexedPartition.ext_bool <| by simp [cross_apply]
 
 @[simp]
 lemma cross_bSymm_left (P Q : s.IndexedPartition Bool) (b b' c i : Bool) :
@@ -539,18 +667,6 @@ lemma cross_bSymm_right (P Q : s.IndexedPartition Bool) (b c c' i : Bool) :
 lemma cross_bSymm (P Q : s.IndexedPartition Bool) (b c i j : Bool) :
     (P.cross Q b c i).bSymm j = P.cross Q b c (i != j) := by
   cases j <;> simp
-
-@[simp]
-lemma cross_apply_self (P Q : s.IndexedPartition Bool) : P.cross Q b c i i = P b ∩ Q c := by
-  simp [cross_apply]
-
-@[simp]
-lemma cross_apply_not (P Q : s.IndexedPartition Bool) : P.cross Q b c i (!i) = P (!b) ∪ Q !c := by
-  simp [cross_apply]
-
-@[simp]
-lemma cross_apply_not' (P Q : s.IndexedPartition Bool) : P.cross Q b c (!i) i = P (!b) ∪ Q !c := by
-  simp [cross_apply]
 
 lemma cross_comm (P Q : s.IndexedPartition Bool) (b c : Bool) : P.cross Q b c i = Q.cross P c b i :=
   IndexedPartition.ext_bool' i <| by simp [Set.inter_comm]
@@ -581,46 +697,49 @@ lemma cross_trivial_iff (P Q : s.IndexedPartition Bool) (b c : Bool) :
 
 /-- The bipartition whose `true` side is `P true ∩ Q true` and whose `false` side is
 `P false ∪ Q false` -/
-protected def interCross (P Q : s.IndexedPartition Bool) : s.IndexedPartition Bool :=
+def interCross (P Q : s.IndexedPartition Bool) : s.IndexedPartition Bool :=
   P.cross Q true true true
 
 /-- The bipartition whose `true` side is `P true ∪ Q true` and whose `false` side is
 `P false ∩ Q false` -/
-protected def unionCross (P Q : s.IndexedPartition Bool) :
+def unionCross (P Q : s.IndexedPartition Bool) :
   s.IndexedPartition Bool := P.cross Q false false false
 
 @[simp]
 lemma interCross_apply_true (P Q : s.IndexedPartition Bool) :
-  (P.interCross Q) true = P true ∩ Q true := rfl
+    (P.interCross Q) true = P true ∩ Q true := by
+  simp [interCross]
 
 @[simp]
 lemma interCross_apply_false (P Q : s.IndexedPartition Bool) :
-  (P.interCross Q) false = P false ∪ Q false := rfl
+    (P.interCross Q) false = P false ∪ Q false := by
+  simp [interCross, cross_apply]
 
 @[simp]
 lemma unionCross_apply_true (P Q : s.IndexedPartition Bool) :
-  (P.unionCross Q) true = P true ∪ Q true := rfl
+    (P.unionCross Q) true = P true ∪ Q true := by
+  simp [unionCross, cross_apply]
 
 @[simp]
 lemma unionCross_apply_false (P Q : s.IndexedPartition Bool) :
-  (P.unionCross Q) false = P false ∩ Q false := rfl
+    (P.unionCross Q) false = P false ∩ Q false := by
+  simp [unionCross]
 
 @[simp]
 lemma unionCross_symm (P Q : s.IndexedPartition Bool) :
   (P.unionCross Q).symm = P.symm.interCross Q.symm :=
-  IndexedPartition.ext_bool rfl
+  IndexedPartition.ext_bool <| by simp
 
 @[simp]
 lemma interCross_symm (P Q : s.IndexedPartition Bool) :
   (P.interCross Q).symm = P.symm.unionCross Q.symm :=
   IndexedPartition.ext_bool rfl
 
-protected lemma interCross_comm (P Q : s.IndexedPartition Bool) : P.interCross Q = Q.interCross P :=
-  IndexedPartition.ext_bool <| Set.inter_comm ..
+lemma interCross_comm (P Q : s.IndexedPartition Bool) : P.interCross Q = Q.interCross P :=
+  IndexedPartition.ext_bool <| by simp [Set.inter_comm ..]
 
-protected lemma unionCross_comm (P Q : s.IndexedPartition Bool) : P.unionCross Q = Q.unionCross P :=
-  IndexedPartition.ext_bool <| Set.union_comm ..
-
+lemma unionCross_comm (P Q : s.IndexedPartition Bool) : P.unionCross Q = Q.unionCross P :=
+  IndexedPartition.ext_bool <| by simp [Set.union_comm ..]
 
 @[simp]
 lemma disjoint_inter_right (P : s.IndexedPartition Bool) : Disjoint (P true ∩ t) (P false ∩ r) :=
@@ -673,237 +792,3 @@ lemma union_inter_left (P : s.IndexedPartition Bool) (h : t ⊆ s) (b : Bool) :
 end Bool
 
 end IndexedPartition
-
--- #exit
-
--- def Bipartition (s : Set α) := s.IndexedPartition Bool
-
--- namespace Bipartition
-
--- instance : FunLike s.IndexedPartition Bool Bool (Set α) where
---   coe := IndexedPartition.toFun
---   coe_injective' := by rintro ⟨f,h⟩ ⟨f', h'⟩; simp [Bipartition]
-
--- variable {P : s.IndexedPartition Bool} {i j : Bool}
-
--- @[simp]
--- protected lemma toFun_eq_coe (P : s.IndexedPartition Bool) : P.toFun = P := rfl
-
--- @[simp]
--- protected lemma mk_apply (f : Bool → Set α) (dj) (hu : ⋃ i, f i = s) (i : Bool) :
---     IndexedPartition.mk f dj hu i = f i := rfl
-
--- @[simp]
--- protected lemma union_eq' : P false ∪ P true = s := by
---   simp [← P.iUnion_eq, union_comm]
-
--- @[simp]
--- protected lemma union_eq : P true ∪ P false = s := by
---   simp [← P.iUnion_eq]
-
--- @[simp]
--- protected lemma union_bool_eq (b : Bool) : P b ∪ P (!b) = s := by
---   cases b <;> simp
-
--- @[simp]
--- protected lemma union_bool_eq' (b : Bool) : P (!b) ∪ P b = s := by
---   cases b <;> simp
-
--- @[simp]
--- protected lemma disjoint_true_false : Disjoint (P true) (P false) := by
---   rw [← pairwise_disjoint_on_bool']
---   apply P.pairwise_disjoint
-
--- @[simp]
--- protected lemma disjoint_false_true : Disjoint (P false) (P true) :=
---   P.disjoint_true_false.symm
-
--- @[simp]
--- protected lemma disjoint_bool (b : Bool) : Disjoint (P b) (P (!b)) := by
---   cases b <;> simp
-
--- @[simp]
--- protected lemma compl_eq (P : s.IndexedPartition Bool) (b : Bool) : s \ (P b) = P (!b) := by
---   simp_rw [← P.union_bool_eq b, union_diff_cancel_left (P.disjoint_bool b).inter_eq.subset]
-
--- protected lemma compl_not_eq (P : s.IndexedPartition Bool) (b : Bool) : s \ (P (!b)) = P b := by
---   rw [P.compl_eq, Bool.not_not]
-
--- protected def _root_.Set.Disjoint.toBipartition (disjoint : Disjoint r s) (union_eq : r ∪ s = t) :
---     t.IndexedPartition Bool where
---   toFun b := bif b then r else s
---   pairwise_disjoint' := by rwa [pairwise_disjoint_on_bool']
---   iUnion_eq' := by simpa
-
--- @[simp]
--- protected lemma _root_.Set.Disjoint.toBipartition_true {disjoint : Disjoint r s}
---     {union_eq : r ∪ s = t} : disjoint.toBipartition union_eq true = r := rfl
-
--- @[simp]
--- protected lemma _root_.Set.Disjoint.toBipartition_false {disjoint : Disjoint r s}
---     {union_eq : r ∪ s = t} : disjoint.toBipartition union_eq false = s := rfl
-
--- protected lemma eq_of_mem_of_mem {a : α} (hi : a ∈ P i) (hj : a ∈ P j) : i = j :=
---   P.pairwise_disjoint.eq fun h ↦ disjoint_left.1 h hi hj
-
--- protected lemma mem_or_mem (P : s.IndexedPartition Bool) {a : α} (ha : a ∈ s) : a ∈ P true ∨ a ∈ P false := by
---   simpa [or_comm] using IndexedPartition.exists_mem P ha
-
--- @[simps]
--- protected def symm (P : s.IndexedPartition Bool) : s.IndexedPartition Bool where
---   toFun b := P.toFun !b
---   pairwise_disjoint' := P.pairwise_disjoint.comp_of_injective fun _ _ ↦ by simp
---   iUnion_eq' := by simp [← P.iUnion_eq, union_comm]
-
--- protected lemma symm_true (P : s.IndexedPartition Bool) : P.symm true = P false := rfl
-
--- protected lemma symm_false (P : s.IndexedPartition Bool) : P.symm false = P true := rfl
-
--- @[simp]
--- protected lemma symm_apply (P : s.IndexedPartition Bool) (b : Bool) : P.symm b = P !b := rfl
-
--- @[simp]
--- protected lemma symm_symm (P : s.IndexedPartition Bool) : P.symm.symm = P := IndexedPartition.ext rfl
-
--- protected lemma compl_true (P : s.IndexedPartition Bool) : s \ (P true) = P false := by
---   rw [← Bool.not_false, P.compl_not_eq]
-
--- @[simp]
--- protected lemma compl_false (P : s.IndexedPartition Bool) : s \ (P false) = P true := by
---   rw [← Bool.not_true, P.compl_not_eq]
-
--- /-- A partition is trivial if one side is empty. -/
--- protected def Trivial (P : s.IndexedPartition Bool) : Prop := IndexedPartition.Trivial P
-
--- lemma apply_eq_iff : P i = s ↔ P (!i) = ∅ := by
---   rw [← P.compl_eq, diff_eq_empty, subset_antisymm_iff, and_iff_right P.subset]
-
--- /-- A bipartition is trivial if both sides are nonempty -/
--- protected def Nontrivial (P : s.IndexedPartition Bool) : Prop := ∀ i, (P i).Nonempty
-
--- lemma Nontrivial.nonempty (h : P.Nontrivial) {i : Bool} : (P i).Nonempty := h i
-
--- lemma Nontrivial.ssubset (h : P.Nontrivial) {i : Bool} : P i ⊂ s := by
---   rw [← P.not_trivial_iff, P.trivial_def_bool' i, not_or] at h
---   exact P.subset.ssubset_of_ne h.1
-
-
--- -- /-- Intersect a partition with a smaller set -/
--- -- def induce (P : s.IndexedPartition Bool) (h : t ⊆ s) : t.IndexedPartition Bool := IndexedPartition.induce P h
-
--- -- @[simp, simp↓]
--- -- lemma induce_apply (P : s.IndexedPartition Bool) (h : t ⊆ s) (b) : P.induce h b = (P b) ∩ t := rfl
-
--- -- @[simp, simp↓]
--- -- lemma induce_induce (P : s.IndexedPartition Bool) (hts : t ⊆ s) (hrt : r ⊆ t) :
--- --     (P.induce hts).induce hrt = P.induce (hrt.trans hts) :=
--- --   IndexedPartition.induce_induce ..
-
-
---   -- IndexedPartition.ext <| by simp [inter_assoc, inter_eq_self_of_subset_right hrt]
-
-
--- protected def single (s : Set α) (i : Bool) := IndexedPartition.single s i
-
--- @[simp, simp↓]
--- protected lemma single_apply (s : Set α) (i j : Bool) :
---     IndexedPartition.single s i j = bif j == i then s else ∅ := by
---   simp [IndexedPartition.single, IndexedPartition.single]
-
-
--- -- /-- Move a partition of `s` to a partition of a superset `t`.
--- -- The elements of `t \ s` go on side `i`. -/
--- -- protected def expand (P : s.IndexedPartition Bool) (h : s ⊆ t) (i : Bool) :
--- --     t.IndexedPartition Bool := IndexedPartition.expand P h i
-
--- -- @[simp, simp↓]
--- -- protected lemma expand_apply (P : s.IndexedPartition Bool) (h : s ⊆ t) (i : Bool) :
--- --     P.expand h i j = bif j == i then P j ∪ (t \ s) else P j := by
--- --   simp [IndexedPartition.expand, IndexedPartition.expand_apply_eq_ite _ h]
-
--- -- protected lemma expand_apply_self (P : s.IndexedPartition Bool) (h : s ⊆ t) (i : Bool) :
--- --     P.expand h i i = P i ∪ (t \ s) := by
--- --   simp
-
--- -- protected lemma expand_apply_of_ne (P : s.IndexedPartition Bool) (h : s ⊆ t) (hne : j ≠ i) :
--- --     P.expand h i j = P j :=
--- --   IndexedPartition.expand_apply_of_ne P h hne
-
-
--- -- @[simp, simp↓]
--- -- protected lemma expand_copy (P : s.IndexedPartition Bool) {t' : Set α} (hst : s ⊆ t) (h : t = t') :
--- --     (P.expand hst i).copy h = P.expand (hst.trans_eq h) i :=
--- --   IndexedPartition.expand_copy P hst h i
-
--- -- @[simp, simp↓]
--- -- protected lemma copy_expand (P : s.IndexedPartition Bool) {s' : Set α} (h : s = s') (hst : s' ⊆ t)
--- --     (i : Bool) : (P.copy h).expand hst i = P.expand (h.trans_subset hst) i :=
--- --   IndexedPartition.copy_expand P h hst i
-
-
--- section Cross
-
--- variable {Q : s.IndexedPartition Bool} {b c i j : Bool}
-
-
-
--- -- protected lemma cross_apply (P Q : s.IndexedPartition Bool) : P.cross Q b c b = P b ∩ Q c := rfl
-
-
--- -- @[simp, simp↓]
--- -- protected lemma cross_apply (P Q : s.IndexedPartition Bool) (i j : Bool) :
--- --     (P.cross Q i) j = bif (j == i) then P j ∩ Q j else P j ∪ Q j := rfl
-
--- -- protected lemma cross_apply_not (P Q : s.IndexedPartition Bool) (b : Bool) :
--- --     (P.cross Q b) (!b) = P (!b) ∪ Q !b := by
--- --   rw [IndexedPartition.cross, IndexedPartition.mk_apply]
--- --   simp
-
--- -- protected lemma cross_not_apply (P Q : s.IndexedPartition Bool) (b : Bool) :
--- --     (P.cross Q !b) b = P b ∪ Q b := by
--- --   rw [IndexedPartition.cross, IndexedPartition.mk_apply]
--- --   simp
-
--- -- protected lemma cross_true_false (P Q : s.IndexedPartition Bool) :
--- --     (P.cross Q true) false = P false ∪ Q false :=
--- --   P.cross_apply_not Q true
-
--- -- protected lemma cross_false_true (P Q : s.IndexedPartition Bool) :
--- -- (P.cross Q false) true = P true ∪ Q true :=
--- --   P.cross_apply_not Q false
-
--- -- protected lemma cross_symm (P Q : s.IndexedPartition Bool) (b : Bool) :
--- --     (P.cross Q b c).symm = P.symm.cross Q.symm !b :=
--- --   IndexedPartition.ext_bool (i := b) <| by simp
-
-
--- -- /-- Cross two partitions by intersecting the left sets. -/
--- -- def inter (P Q : s.IndexedPartition Bool) : s.IndexedPartition Bool := P.cross Q true
-
--- -- @[simp, simp↓]
--- -- lemma inter_true (P Q : s.IndexedPartition Bool) : (P.inter Q) true = P true ∩ Q true := rfl
-
--- -- @[simp, simp↓]
--- -- lemma inter_false (P Q : s.IndexedPartition Bool) : (P.inter Q) false = P false ∪ Q false := rfl
-
--- -- /-- Cross two partitions by intersecting the right sets. -/
--- -- def union (P Q : s.IndexedPartition Bool) : s.IndexedPartition Bool := (P.symm.inter Q.symm).symm
-
--- -- @[simp, simp↓]
--- -- lemma union_true (P Q : s.IndexedPartition Bool) : (P.union Q) true = P true ∪ Q true := rfl
-
--- -- @[simp, simp↓]
--- -- lemma union_false (P Q : s.IndexedPartition Bool) : (P.union Q) false = P false ∩ Q false := rfl
-
--- -- @[simp, simp↓]
--- -- lemma inter_symm (P Q : s.IndexedPartition Bool) : (P.inter Q).symm = P.symm.union Q.symm := by
--- --   simp [inter, union]
-
--- -- @[simp, simp↓]
--- -- lemma union_symm (P Q : s.IndexedPartition Bool) : (P.union Q).symm = P.symm.inter Q.symm :=
--- --   IndexedPartition.ext rfl
-
-
--- end Cross
-
--- end Bipartition
