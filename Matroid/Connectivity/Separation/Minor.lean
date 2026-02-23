@@ -167,6 +167,10 @@ lemma remove_congr (P : M.Separation) {X₁ X₂ : Set α} (h : X₁ ∩ M.E = X
   · simp [P.delete_congr h]
   simp [P.contract_congr h]
 
+@[simp]
+lemma induce_eq_remove (P : M.Separation) (b : Bool) (X : Set α) :
+    P.induce (M.remove_isMinor X b).subset = P.remove b X := rfl
+
 abbrev removeDual (P : (M.remove b X).Separation) : (M✶.remove (!b) X).Separation :=
   P.dual.copy (by simp)
 
@@ -346,7 +350,7 @@ lemma ofRemove_of_eq_false (P : (M.remove b X).Separation) (hb : b = false) :
   Separation.ext_bool (!i) <| by simp
 
 @[simp]
-lemma ofRemove_remove (P : (M.remove b X).Separation) : (P.ofRemove b).remove b X = P := by
+lemma ofRemove_remove (P : (M.remove b X).Separation) : (P.ofRemove i).remove b X = P := by
   cases b <;> simp
 
 lemma remove_ofRemove (P : M.Separation) (hX : X ⊆ P i) (b) : (P.remove b X).ofRemove i = P := by
@@ -409,6 +413,12 @@ lemma eConn_ofDelete_ge (P : (M ＼ D).Separation) (i : Bool) :
     P.eConn ≤ (P.ofDelete i).eConn := by
   simp [eConn_ofDelete]
 
+lemma eConn_ofRemove {b} (P : (M.remove b X).Separation) (i : Bool) :
+    (P.ofRemove i).eConn = P.eConn + (M.bDual (!b)).eLocalConn (P (!i)) X := by
+  cases b
+  · simp [P.eConn_ofDelete]
+  simp [P.eConn_ofContract]
+
 lemma eConn_ofDelete_le_eConn_add_eRelRk (P : (M ＼ D).Separation) (i : Bool) :
     (P.ofDelete i).eConn ≤ P.eConn + M.eRelRk (P i) (P i ∪ D) := by
   rw [P.eConn_eq_eLocalConn_of_isRestriction (delete_isRestriction M D) i,
@@ -429,11 +439,6 @@ lemma eConn_ofDelete_le_self_iff_of_coindep {P : (M ＼ D).Separation} (hPconn :
     (hD : M.Coindep D) : (P.ofDelete i).eConn ≤ P.eConn ↔ D ⊆ M.closure (P i) := by
   rw [← eConn_ofDelete_eq_self_iff_of_coindep hPconn hD, eConn_ofDelete]
   simp
-
-lemma eConn_induce_le_of_isMinor (P : M.Separation) (hNM : N ≤m M) :
-    (P.induce hNM.subset).eConn ≤ P.eConn := by
-  rw [← eConn_eq _ true, induce_apply, ← eConn_eq _ true, eConn_inter_ground]
-  exact hNM.eConn_le _
 
 lemma eConn_contract_le (P : M.Separation) (C : Set α) : (P.contract C).eConn ≤ P.eConn :=
   eConn_induce_le_of_isMinor P <| contract_isMinor ..

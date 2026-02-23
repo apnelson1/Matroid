@@ -117,123 +117,345 @@ lemma tutte_triangle (hM : M.TutteConnected 3) (hT : M.IsTriangle {e,f,g}) (hcar
 
 
 
-
-
-
-
-
-
-lemma foo (hM : M.TutteConnected 3) (hT : M.IsTriangle {e,f,g}) (hcard : 4 ≤ M.E.encard)
-    (he : ¬ (M ＼ {e}).TutteConnected 3) (hf : ¬ (M ＼ {f}).TutteConnected 3)
-    (hconn : (M ＼ {e,f}).Connected) : ∃ K, M.IsTriad K ∧ e ∈ K := by
-  rw [show (3 : ℕ∞) = 1 + 1 + 1 from rfl] at *
-  -- define `x` to abstract the common properties of `e` and `f`.
-  set x := fun b ↦ bif b then e else f with hx_def
-  have hxsep {b} : ¬ (M ＼ {x b}).TutteConnected (1 + 1 + 1) := by grind
-  clear he hf
-  have hxE {b} : x b ∈ M.E := by grind [hT.mem_ground₁, hT.mem_ground₂]
-  have hxne {b} : x b ≠ x !b := by grind [hT.ne₁₂]
+lemma baz (hM : M.TutteConnected (1 + 1 + 1)) {x : Bool → α}
+    (hT : M.IsTriangle {x true, x false, g}) (hcard : 4 ≤ M.E.encard)
+    (P : ∀ i, (M ＼ {x i}).Separation)
+    (hPconn : ∀ {b}, (P b).eConn = 1) (hmem : ∀ {b}, x (!b) ∈ P b true)
+    (hPsep : ∀ {b}, (P b).IsTutteSeparation) (hdd : (M ＼ range x).TutteConnected (1 + 1)) :
+    ∃ K, M.IsTriad K ∧ x true ∈ K := by
+  have hTx {b} : M.IsTriangle {x b, x !b, g} := by
+    convert hT using 1
+    cases b <;> grind
+  have hdnt {b} : (M ＼ {x b}).E.Nontrivial := by
+    grw [← (P b).union_eq, ← two_le_encard_iff_nontrivial, encard_union_eq (P b).disjoint_true_false,
+      ← one_le_encard_iff_nonempty.2 (hPsep.nonempty _),
+      ← one_le_encard_iff_nonempty.2 (hPsep.nonempty _), one_add_one_eq_two]
   have hxdel {b} : (M ＼ {x b}).TutteConnected (1 + 1) :=
     hM.deleteElem (by grw [← hcard]; norm_num) (x b)
-  have hdel {b} : (M ＼ {x b}) ＼ {x !b} = M ＼ {e,f} := by
-    rw [delete_delete, singleton_union]; grind [pair_comm]
-  have hgx {b} : x b ≠ g := by grind [hT.ne₁₃, hT.ne₂₃]
-  have hclx {b} : x b ∈ M.closure {x !b, g} := by grind [hT.mem_closure₁, hT.mem_closure₂]
-  -- For each `b`, there is an exact `2`-separation of `M ＼ {x b}` with `x !b` on the `true` side.
-  have aux (b : Bool) : ∃ (P : (M ＼ {x b}).Separation), P.eConn = 1 ∧ P.IsTutteSeparation
-      ∧ x (!b) ∈ P true := by
-    obtain ⟨P', hP'conn, hP'⟩ :=
-      exists_of_tutteConnected_of_not_tutteConnected_add_one (hxdel (b := b)) hxsep
-    obtain ht | hf := P'.mem_or_mem (a := x !b) ⟨hxE, hxne.symm⟩
-    · exact ⟨P', by simpa using hP'conn, hP', ht⟩
-    exact ⟨P'.symm, by simpa using hP'conn, by simpa, hf⟩
-  choose P hP using aux
-  have hPconn {b} : (P b).eConn = 1 := (hP b).1
-  have hPsep {b} : (P b).IsTutteSeparation := (hP b).2.1
-  have hPmem {b} : x (!b) ∈ P b true := (hP b).2.2
-  clear hP
-  -- Neither side of `P b` spans `x b`, since otherwise `P b` would induce a `2`-separation of `M`.
-  have hxncl (b c) : x b ∉ M.closure (P b c) := by
-    intro hx
-    have hConn' : ((P b).ofDelete c).eConn = 1 := by
-      rw [eConn_ofDelete_eq_of_subset_closure (P b) c (by simpa), hPconn]
-    refine hM.not_isTutteSeparation (P := (P b).ofDelete c) (by simp [hConn']) ?_
-    refine isTutteSeparation_of_lt_encard fun i ↦ ?_
-    grw [hConn', ← ofDelete_apply_superset, ← hPsep.eConn_add_one_le, hPconn]
-    norm_num
-  -- and therefore `g` is on the `false` side of `P b`.
+  have hxncl (b c) : x b ∉ M.closure (P b c) :=
+    hM.notMem_closure_of_separation_deleteElem (by simp [hPconn]) hPsep _
   have hPg {b} : g ∈ P b false := by
-    obtain ht | hf := (P b).mem_or_mem ⟨hT.mem_ground₃, hgx.symm⟩
-    · exfalso
-      exact hxncl b true <| mem_of_mem_of_subset hclx <| M.closure_subset_closure <| by grind
-    exact hf
-  -- let `Q b` be the separation of `M ＼ {e,f}` obtained by deleting `x !b` from `P b`.
-  set Q := fun b ↦ ((P b).delete {x !b}).copy hdel with hQ_def
-  have hQf {b} : Q b false = P b false := by
-    suffices (x !b) ∉ (P b) false by simpa [Q]
-    exact (P b).disjoint_true_false.notMem_of_mem_left hPmem
-  have hQt {b} : Q b true = P b true \ {x !b} := by simp [hQ_def]
+    rw [← (P b).compl_true, delete_ground, mem_diff, mem_diff_singleton,
+      and_iff_right hT.mem_ground₃, and_iff_right hTx.ne₁₃.symm]
+    exact fun hg ↦ hxncl b true <| mem_of_mem_of_subset hTx.mem_closure₁ <|
+      M.closure_subset_closure <| pair_subset hmem hg
+  have hrw {b} : (M ＼ {x b}) ＼ {x !b} = M ＼ range x := sorry
+  /- Since `M ＼ {x b}` and `M ＼ {x b, x !b}` are both `2`-connected, and `P b` has connectivity 1,
+  `P b` is faithful for the deletion. -/
+  have hQP {b} : (P b).Faithful (M ＼ range x) := by
+    rw [← hrw (b := b)]
+    refine (hxdel).faithful_of_tutteConnected_delete (hrw ▸ hdd) _ hPconn.le fun i ↦ ?_
+    grw [← two_le_encard_iff_nontrivial.2 ((hPsep (b := b)).nontrivial hPconn.symm.le i)]
+    norm_num
+  /- Because of this faithfulness, we know that `x !b` is spanned by the rest of `P b true`. -/
+  have hcl (b) : x (!b) ∈ M.closure ((P b).delete {x !b} true) := by
+    refine mem_of_mem_of_subset ((hrw ▸ hQP).mem_closure_of_deleteElem hmem ?_) ?_
+    · grw [delete_apply, (delete_isRestriction ..).closure_subset_closure]
+    refine fun hcl ↦ hcl.not_connected hdnt <| hxdel.connected' ?_ rfl.le
+    exact (ground_nonempty_iff ..).1 hdnt.nonempty
+  set Q : Bool → (M ＼ range x).Separation := fun b ↦ ((P b).delete {x !b}).copy hrw
+  have hle {b} : Q b ≼ P b := fun i ↦ by simp [Q]
   have hQnt {b} : (Q b).Nontrivial := by
-    simp only [hQ_def, Separation.nontrivial_iff_forall, copy_apply, ↓delete_apply]
+    simp only [Q, Separation.nontrivial_iff_forall, copy_apply, ↓delete_apply]
     exact fun i ↦ (hPsep.nontrivial (by grw [hPconn]) i).diff_singleton_nonempty (x !b)
-  have hQg {b} : g ∈ Q b false := by simp [hQf, hPg]
-  -- `Q b` has connectivity `1` by the connectedness of `M ＼ {e,f}`.
-  have hQconn {b} : (Q b).eConn = 1 := by
-    refine (hQnt.one_le_eConn_of_connected hconn).antisymm' ?_
-    grw [hQ_def, eConn_copy, (P b).eConn_delete_le, hPconn]
-  -- Since `Q b` and `P b` have the same connectivity, the `true` side of `Q b` spans `x !b`.
-  have hcl (b): x (!b) ∈ M.closure (Q b true) := by
-    specialize hQconn (b := b)
-    rw [← hPconn (b := b), hQ_def, eConn_copy,
-      eConn_delete_eq_eConn_iff_of_coindep (by simp [hPconn]) sorry] at hQconn
-    specialize hQconn true
-    rw [inter_eq_self_of_subset_left (by simpa using hPmem)] at hQconn
-    nth_grw 1 [hQt, ← singleton_subset_iff, hQconn,
-      (delete_isRestriction ..).closure_subset_closure]
-  have hnss (b) : ¬ Q b true ⊆ P (!b) false := by
-    intro hss
-    have := M.closure_subset_closure hss (hcl _)
-    grind
-  -- let `Q₀` be the separation with `true` side equal to `Q false ∩ Q false`.
-  -- This has connectivity at most `1` by a submodularity argument.
-  set Q₀ := (Q true).cross (Q false) false false true with hQ₀_def
-  have hQ₀conn : Q₀.eConn ≤ 1 := by
-    have hQu : 1 ≤ ((Q true).cross (Q false) true true false).eConn := by
-      refine Nontrivial.one_le_eConn_of_connected ?_ hconn
-      rw [← Separation.not_trivial_iff, hQnt.cross_trivial_iff, Bool.not_true, not_or, hQf, hQf]
-      exact ⟨hnss true, hnss false⟩
-    have hsm := (Q true).submod_cross (Q false) false false true false
-    grw [Bool.not_false, ← hQu, hQconn, hQconn, ← hQ₀_def, ENat.add_one_le_add_one_iff] at hsm
-    assumption
-  -- `Q₀` also has connectivity equal to `Q₀.ofDelete false`, since its large side spans `{e,f}`.
-  have hQ₀P : (Q₀.ofDelete false).eConn = Q₀.eConn := by
-    refine eConn_ofDelete_eq_of_subset_closure _ _ ?_
-    rw [hQ₀_def, cross_apply_, Bool.not_false, pair_subset_iff]
-    nth_grw 1 [← subset_union_right, ← subset_union_left]
-    exact ⟨hcl false, hcl true⟩
-  -- Since `M` is `3`-connected, this means that the small side of `Q₀` is just `{g}`.
-  have hQg : Q true false ∩ Q false false = {g} := by
-    obtain ⟨rfl | rfl, hi⟩ := hM.exists_subsingleton_of_isTutteSeparation (hQ₀P.trans_le hQ₀conn)
-    · grw [ofDelete_apply_self, ← encard_le_one_iff_subsingleton, ← subset_union_right,
-        encard_pair hT.ne₁₂] at hi
-      simp at hi
-    rw [Q₀.ofDelete_apply, Bool.cond_eq_ite, if_neg (by simp), hQ₀_def,
-      Separation.inter_apply_true] at hi
-    exact hi.eq_singleton_of_mem <| by grind
+  have hQdef {b i} : Q b i = ((P b).delete {x !b}) i := rfl
+  /- something here -/
+  have hnss (b) : ¬ (Q b true ⊆ P (!b) false) :=
+    fun hss ↦ hxncl _ _ <| M.closure_subset_closure hss (hcl _)
+  have hnss' (b) : ¬ (Q b true ⊆ Q (!b) false) := sorry
+    -- fun hss ↦ hxncl _ _ <| M.closure_subset_closure hss (hcl _)
 
-  have hsm' := (Q true).eConn_union_add_eConn_union_le (Q false) true false
+  set Q₀ : (M ＼ range x).Separation := (Q true).cross (Q false) false false true with hQ₀
+  set Q₁ : (M ＼ range x).Separation := (Q true).cross (Q false) true true true with hQ₁
+  have hsm : Q₀.eConn + Q₁.eConn ≤ (Q true).eConn + (Q false).eConn := submod_cross ..
 
-  grw [hQconn, hQconn, Bool.not_true, Bool.not_false, ← eConn_ofDelete_eq_of_subset_closure _ true,
-    ← eConn_ofDelete_eq_of_subset_closure _ true] at hsm'
-  · sorry
-  rw [Separation.union_apply_true, pair_subset_iff]
+  /- the union (false) side of `Q₀` spans both `e` and `f`. -/
+  have hQcl (b) : x b ∈ M.closure (Q₀ false)
+  · rw [← b.not_not]
+    refine mem_of_mem_of_subset (hcl _) <| M.closure_subset_closure ?_
+    simp only [↓delete_apply, Bool.not_not, hQ₀, cross_apply_true_false, Bool.not_false,
+      diff_singleton_subset_iff, Q, copy_apply, ↓delete_apply]
+    cases b <;> grind
 
-  -- simp [hQt, hQf]
-  -- have foo (b) : x b ∈ M.closure (P !b)
+  /- And therefore adding them back to the false side gives a faithful separation of `M`. -/
+  have hQ' : (Q₀.ofDelete false).Faithful (M ＼ range x) :=
+    faithful_ofDelete_of_subset_closure Q₀ <| by simpa [pair_subset_iff] using hQcl
+
+  have hQ₁conn : 1 ≤ Q₁.eConn := by
+    refine Nontrivial.one_le_eConn_of_connected ?_ ?_
+    · grw [← Separation.not_trivial_iff, hQnt.cross_trivial_iff, not_or]
+      exact ⟨hnss' true, hnss' false⟩
+    refine hdd.connected' ?_ rfl.le
+    grw [← ground_nonempty_iff, ← one_le_encard_iff_nonempty]
+    sorry
+
+  grw [← hQ₁conn, hQP.eConn_eq_of_le (delete_isRestriction_of_subset _ (by simp)).isMinor hle,
+    hQP.eConn_eq_of_le (delete_isRestriction_of_subset _ (by simp)).isMinor hle, hPconn, hPconn,
+    ENat.add_one_le_add_one_iff] at hsm
+
+
+  have hg : P true false ∩ P false false = {g} := by
+    obtain ⟨rfl | rfl, hss⟩ := hM.exists_subsingleton_of_isTutteSeparation (P := Q₀.ofDelete false)
+      (by grw [hQ'.eConn_ofDelete_eq, hsm])
+    · have := hss.anti (s := range x)
+      -- simp [hQ₀, ofDelete] at hss
+
+
+      -- (by grw [hQ'.eConn_ofRemove_eq, ])
 
 
 
-  -- set Q₁ := (Q true).inter (Q false) true false with hQ₁_def
-  -- set Q₂ := (Q true).union (Q false) true false with hQ₁_def
-  -- have hQconn' : Q₁.eConn
-  sorry
+-- #exit
+
+-- lemma bar (hM : M.TutteConnected (2 + 1)) {x : Bool → α} (hT : M.IsTriangle {x true, x false, g})
+--     (hcard : 4 ≤ M.E.encard) (hd : ∀ i, ¬ (M ＼ {x i}).TutteConnected (2 + 1))
+--     (hdd : (M ＼ range x).TutteConnected 2) : ∃ K, M.IsTriad K ∧ x true ∈ K := by
+--   -- rw [show (3 : ℕ∞) = 1 + 1 + 1 from rfl] at *
+--   -- define `x` to abstract the common properties of `e` and `f`.
+--   -- set x := fun b ↦ bif b then e else f with hx_def
+--   have hTx {b} : M.IsTriangle {x b, x !b, g} := by
+--     convert hT using 1
+--     cases b <;> grind
+--   -- have hxsep {b} : ¬ (M ＼ {x b}).TutteConnected (1 + 1 + 1) := by grind
+--   -- clear he hf
+--   have hxE {b} : x b ∈ M.E := hTx.mem_ground₁
+--   have hxne {b} : x b ≠ x !b := hTx.ne₁₂
+--   have hxdel {b} : (M ＼ {x b}).TutteConnected (1 + 1) :=
+--     hM.deleteElem (by grw [← hcard]; norm_num) (x b)
+--   -- have hdel {b} : (M ＼ {x b}) ＼ {x !b} = M ＼ {e,f} := by
+--   --   rw [delete_delete, singleton_union]; grind [pair_comm]
+--   have hgx {b} : x b ≠ g := hTx.ne₁₃
+--   have hclx {b} : x b ∈ M.closure {x !b, g} := hTx.mem_closure₁
+--   -- For each `b`, there is an exact `2`-separation of `M ＼ {x b}` with `x !b` on the `true` side.
+--   have hdnt {b} : (M ＼ {x b}).E.Nontrivial := by
+--     grw [← two_le_encard_iff_nontrivial, delete_ground, ← ENat.add_one_le_add_one_iff,
+--       encard_diff_singleton_add_one hxE, ← hcard]
+--     norm_num
+
+--   have aux (b : Bool) : ∃ (P : (M ＼ {x b}).Separation), P.eConn = 1 ∧ P.IsTutteSeparation
+--       ∧ x (!b) ∈ P true := by
+--     obtain ⟨P', hP'conn, hP'⟩ := (hxdel (b := b)).exists_of_not_tutteConnected_add_one (hd b)
+--     obtain ht | hf := P'.mem_or_mem (a := x !b) ⟨hxE, hxne.symm⟩
+--     · exact ⟨P', by simpa using hP'conn, hP', ht⟩
+--     exact ⟨P'.symm, by simpa using hP'conn, by simpa, hf⟩
+--   choose P hP using aux
+--   have hPconn {b} : (P b).eConn = 1 := (hP b).1
+--   have hPsep {b} : (P b).IsTutteSeparation := (hP b).2.1
+--   have hPmem {b} : x (!b) ∈ P b true := (hP b).2.2
+--   clear hP
+--   -- neither side of `P b` spans `x b` in `M`.
+--   have hxncl (b c) : x b ∉ M.closure (P b c) :=
+--     hM.notMem_closure_of_separation_deleteElem (by simp [hPconn]) hPsep _
+--   -- `g` is on the `false` side, since otherwise the `true` side would span `x b`.
+--   have hPg {b} : g ∈ P b false := by
+--     rw [← (P b).compl_true, delete_ground, mem_diff, mem_diff_singleton,
+--       and_iff_right hT.mem_ground₃, and_iff_right hgx.symm]
+--     exact fun hg ↦ hxncl b true <| mem_of_mem_of_subset hTx.mem_closure₁ <|
+--       M.closure_subset_closure <| pair_subset hPmem hg
+--   /- Since `M ＼ {x b}` and `M ＼ {x b, x !b}` are both `2`-connected, and `P b` has connectivity 1,
+--   `P b` is faithful for the deletion. -/
+--   have hQP {b} : (P b).Faithful (M ＼ {x b} ＼ {x !b}) := by
+--     refine hxdel.faithful_of_tutteConnected_delete
+--       (by simp [hdel, hconn.tutteConnected_one_add_one]) _ (by simp [hPconn]) fun i ↦ ?_
+--     grw [← two_le_encard_iff_nontrivial.2 ((hPsep (b := b)).nontrivial hPconn.symm.le i)]
+--     norm_num
+--   /- Because of this faithfulness, we know that `x !b` is spanned by the rest of `P b true`. -/
+--   have hcl (b) : x (!b) ∈ M.closure ((P b).delete {x !b} true) := by
+--     refine mem_of_mem_of_subset (hQP.mem_closure_of_deleteElem hPmem ?_) ?_
+--     · refine fun hcl ↦ hcl.not_connected hdnt <| hxdel.connected' ?_ rfl.le
+--       exact (ground_nonempty_iff ..).1 hdnt.nonempty
+--     grw [delete_apply, (delete_isRestriction ..).closure_subset_closure]
+--   /- something here -/
+--   have hnss (b) : ¬ (((P b).delete {x !b}) true ⊆ P (!b) false) := by
+--     exact fun hss ↦ hxncl _ _ <| M.closure_subset_closure hss (hcl _)
+
+--   set Q : (M ＼ {e, f}).Separation :=
+--     (((P false).delete _).copy hdel).cross (((P true).delete _).copy hdel) false false true with hQ
+
+--   /- the union (false) side of `Q` spans both `e` and `f`. -/
+--   have hQcl (b) : x b ∈ M.closure (Q false)
+--   · rw [← b.not_not]
+--     refine mem_of_mem_of_subset (hcl _) <| M.closure_subset_closure ?_
+--     simp only [↓delete_apply, hQ, cross_apply_true_false, copy_apply, diff_singleton_subset_iff]
+--     cases b <;> grind
+
+--   /- And therefore adding them back to the false side gives a faithful separation of `M`. -/
+--   have hQ' : (Q.ofDelete false).Faithful (M ＼ {e, f}) :=
+--     faithful_ofDelete_of_subset_closure Q <| pair_subset (hQcl true) (hQcl false)
+
+--   have hg : P true false ∩ P false false = {g} := by
+--     have := hM.exists_subsingleton_of_isTutteSeparation (P := Q.ofDelete false)
+--       (by grw [hQ'.eConn_ofRemove_eq, ])
+
+
+
+-- lemma foo (hM : M.TutteConnected 3) (hT : M.IsTriangle {e,f,g}) (hcard : 4 ≤ M.E.encard)
+--     (he : ¬ (M ＼ {e}).TutteConnected 3) (hf : ¬ (M ＼ {f}).TutteConnected 3)
+--     (hconn : (M ＼ {e,f}).Connected) : ∃ K, M.IsTriad K ∧ e ∈ K := by
+--   rw [show (3 : ℕ∞) = 1 + 1 + 1 from rfl] at *
+--   -- define `x` to abstract the common properties of `e` and `f`.
+--   set x := fun b ↦ bif b then e else f with hx_def
+--   have hTx {b} : M.IsTriangle {x b, x !b, g} := by convert hT using 1; grind
+--   have hxsep {b} : ¬ (M ＼ {x b}).TutteConnected (1 + 1 + 1) := by grind
+--   clear he hf
+--   have hxE {b} : x b ∈ M.E := by grind [hT.mem_ground₁, hT.mem_ground₂]
+--   have hxne {b} : x b ≠ x !b := by grind [hT.ne₁₂]
+--   have hxdel {b} : (M ＼ {x b}).TutteConnected (1 + 1) :=
+--     hM.deleteElem (by grw [← hcard]; norm_num) (x b)
+--   have hdel {b} : (M ＼ {x b}) ＼ {x !b} = M ＼ {e,f} := by
+--     rw [delete_delete, singleton_union]; grind [pair_comm]
+--   have hgx {b} : x b ≠ g := by grind [hT.ne₁₃, hT.ne₂₃]
+--   have hclx {b} : x b ∈ M.closure {x !b, g} := by grind [hT.mem_closure₁, hT.mem_closure₂]
+--   -- For each `b`, there is an exact `2`-separation of `M ＼ {x b}` with `x !b` on the `true` side.
+--   have hdnt {b} : (M ＼ {x b}).E.Nontrivial := by
+--     grw [← two_le_encard_iff_nontrivial, delete_ground, ← ENat.add_one_le_add_one_iff,
+--       encard_diff_singleton_add_one hxE, ← hcard]
+--     norm_num
+
+--   have aux (b : Bool) : ∃ (P : (M ＼ {x b}).Separation), P.eConn = 1 ∧ P.IsTutteSeparation
+--       ∧ x (!b) ∈ P true := by
+--     obtain ⟨P', hP'conn, hP'⟩ := (hxdel (b := b)).exists_of_not_tutteConnected_add_one hxsep
+--     obtain ht | hf := P'.mem_or_mem (a := x !b) ⟨hxE, hxne.symm⟩
+--     · exact ⟨P', by simpa using hP'conn, hP', ht⟩
+--     exact ⟨P'.symm, by simpa using hP'conn, by simpa, hf⟩
+--   choose P hP using aux
+--   have hPconn {b} : (P b).eConn = 1 := (hP b).1
+--   have hPsep {b} : (P b).IsTutteSeparation := (hP b).2.1
+--   have hPmem {b} : x (!b) ∈ P b true := (hP b).2.2
+--   clear hP
+--   -- neither side of `P b` spans `x b` in `M`.
+--   have hxncl (b c) : x b ∉ M.closure (P b c) :=
+--     hM.notMem_closure_of_separation_deleteElem (by simp [hPconn]) hPsep _
+--   -- `g` is on the `false` side, since otherwise the `true` side would span `x b`.
+--   have hPg {b} : g ∈ P b false := by
+--     rw [← (P b).compl_true, delete_ground, mem_diff, mem_diff_singleton,
+--       and_iff_right hT.mem_ground₃, and_iff_right hgx.symm]
+--     exact fun hg ↦ hxncl b true <| mem_of_mem_of_subset hTx.mem_closure₁ <|
+--       M.closure_subset_closure <| pair_subset hPmem hg
+--   /- Since `M ＼ {x b}` and `M ＼ {x b, x !b}` are both `2`-connected, and `P b` has connectivity 1,
+--   `P b` is faithful for the deletion. -/
+--   have hQP {b} : (P b).Faithful (M ＼ {x b} ＼ {x !b}) := by
+--     refine hxdel.faithful_of_tutteConnected_delete
+--       (by simp [hdel, hconn.tutteConnected_one_add_one]) _ (by simp [hPconn]) fun i ↦ ?_
+--     grw [← two_le_encard_iff_nontrivial.2 ((hPsep (b := b)).nontrivial hPconn.symm.le i)]
+--     norm_num
+--   /- Because of this faithfulness, we know that `x !b` is spanned by the rest of `P b true`. -/
+--   have hcl (b) : x (!b) ∈ M.closure ((P b).delete {x !b} true) := by
+--     refine mem_of_mem_of_subset (hQP.mem_closure_of_deleteElem hPmem ?_) ?_
+--     · refine fun hcl ↦ hcl.not_connected hdnt <| hxdel.connected' ?_ rfl.le
+--       exact (ground_nonempty_iff ..).1 hdnt.nonempty
+--     grw [delete_apply, (delete_isRestriction ..).closure_subset_closure]
+--   /- something here -/
+--   have hnss (b) : ¬ (((P b).delete {x !b}) true ⊆ P (!b) false) := by
+--     exact fun hss ↦ hxncl _ _ <| M.closure_subset_closure hss (hcl _)
+
+--   set Q : (M ＼ {e, f}).Separation :=
+--     (((P false).delete _).copy hdel).cross (((P true).delete _).copy hdel) false false true with hQ
+
+--   /- the union (false) side of `Q` spans both `e` and `f`. -/
+--   have hQcl (b) : x b ∈ M.closure (Q false)
+--   · rw [← b.not_not]
+--     refine mem_of_mem_of_subset (hcl _) <| M.closure_subset_closure ?_
+--     simp only [↓delete_apply, hQ, cross_apply_true_false, copy_apply, diff_singleton_subset_iff]
+--     cases b <;> grind
+
+--   /- And therefore adding them back to the false side gives a faithful separation of `M`. -/
+--   have hQ' : (Q.ofDelete false).Faithful (M ＼ {e, f}) :=
+--     faithful_ofDelete_of_subset_closure Q <| pair_subset (hQcl true) (hQcl false)
+
+--   have hg : P true false ∩ P false false = {g} := by
+--     have := hM.exists_subsingleton_of_isTutteSeparation (P := Q.ofDelete false)
+--       (by grw [hQ'.eConn_ofRemove_eq, ])
+
+
+--   #exit
+
+--     -- intro hss
+--     -- have := M.closure_subset_closure hss (hcl _)
+--     -- grind
+
+--     -- grw [((hPsep (b := b)).nontrivial hPconn.symm.le i)]
+
+
+--     -- rw [← hdel (b := b)]
+--     -- refine faithful_of_eConn_induce_ge (by simp [hPconn]) (delete_isMinor ..) ?_
+--     -- grw [hPconn, ← Nontrivial.one_le_eConn_of_connected _ (by simpa [hdel])]
+--     -- simp_rw [Separation.nontrivial_iff_forall, induce_eq_delete, delete_apply]
+--     -- exact fun i ↦ (hPsep.nontrivial (by grw [hPconn]) i).diff_singleton_nonempty (x !b)
+
+
+
+--   -- let `Q b` be the separation of `M ＼ {e,f}` obtained by deleting `x !b` from `P b`.
+--   set Q := fun b ↦ ((P b).delete {x !b}).copy hdel with hQ_def
+--   have hQf {b} : Q b false = P b false := by
+--     suffices (x !b) ∉ (P b) false by simpa [Q]
+--     exact (P b).disjoint_true_false.notMem_of_mem_left hPmem
+--   have hQt {b} : Q b true = P b true \ {x !b} := by simp [hQ_def]
+--   have hQnt {b} : (Q b).Nontrivial := by
+--     simp only [hQ_def, Separation.nontrivial_iff_forall, copy_apply, ↓delete_apply]
+--     exact fun i ↦ (hPsep.nontrivial (by grw [hPconn]) i).diff_singleton_nonempty (x !b)
+--   have hQg {b} : g ∈ Q b false := by simp [hQf, hPg]
+--   -- `Q b` has connectivity `1` by the connectedness of `M ＼ {e,f}`.
+--   have hQconn {b} : (Q b).eConn = 1 := by
+--     refine (hQnt.one_le_eConn_of_connected hconn).antisymm' ?_
+--     grw [hQ_def, eConn_copy, (P b).eConn_delete_le, hPconn]
+--   -- Since `Q b` and `P b` have the same connectivity, the `true` side of `Q b` spans `x !b`.
+
+
+--   #exit
+
+--   have hcl (b): x (!b) ∈ M.closure (Q b true) := by
+--     specialize hQconn (b := b)
+--     rw [← hPconn (b := b), hQ_def, eConn_copy,
+--       eConn_delete_eq_eConn_iff_of_coindep (by simp [hPconn]) sorry] at hQconn
+--     specialize hQconn true
+--     rw [inter_eq_self_of_subset_left (by simpa using hPmem)] at hQconn
+--     nth_grw 1 [hQt, ← singleton_subset_iff, hQconn,
+--       (delete_isRestriction ..).closure_subset_closure]
+--   have hnss (b) : ¬ Q b true ⊆ P (!b) false := by
+--     intro hss
+--     have := M.closure_subset_closure hss (hcl _)
+--     grind
+--   -- let `Q₀` be the separation with `true` side equal to `Q false ∩ Q false`.
+--   -- This has connectivity at most `1` by a submodularity argument.
+--   set Q₀ := (Q true).cross (Q false) false false true with hQ₀_def
+--   have hQ₀conn : Q₀.eConn ≤ 1 := by
+--     have hQu : 1 ≤ ((Q true).cross (Q false) true true false).eConn := by
+--       refine Nontrivial.one_le_eConn_of_connected ?_ hconn
+--       rw [← Separation.not_trivial_iff, hQnt.cross_trivial_iff, Bool.not_true, not_or, hQf, hQf]
+--       exact ⟨hnss true, hnss false⟩
+--     have hsm := (Q true).submod_cross (Q false) false false true false
+--     grw [Bool.not_false, ← hQu, hQconn, hQconn, ← hQ₀_def, ENat.add_one_le_add_one_iff] at hsm
+--     assumption
+--   -- `Q₀` also has connectivity equal to `Q₀.ofDelete false`, since its large side spans `{e,f}`.
+--   have hQ₀P : (Q₀.ofDelete false).eConn = Q₀.eConn := by
+--     refine eConn_ofDelete_eq_of_subset_closure _ _ ?_
+--     rw [hQ₀_def, cross_apply_, Bool.not_false, pair_subset_iff]
+--     nth_grw 1 [← subset_union_right, ← subset_union_left]
+--     exact ⟨hcl false, hcl true⟩
+--   -- Since `M` is `3`-connected, this means that the small side of `Q₀` is just `{g}`.
+--   have hQg : Q true false ∩ Q false false = {g} := by
+--     obtain ⟨rfl | rfl, hi⟩ := hM.exists_subsingleton_of_isTutteSeparation (hQ₀P.trans_le hQ₀conn)
+--     · grw [ofDelete_apply_self, ← encard_le_one_iff_subsingleton, ← subset_union_right,
+--         encard_pair hT.ne₁₂] at hi
+--       simp at hi
+--     rw [Q₀.ofDelete_apply, Bool.cond_eq_ite, if_neg (by simp), hQ₀_def,
+--       Separation.inter_apply_true] at hi
+--     exact hi.eq_singleton_of_mem <| by grind
+
+--   have hsm' := (Q true).eConn_union_add_eConn_union_le (Q false) true false
+
+--   grw [hQconn, hQconn, Bool.not_true, Bool.not_false, ← eConn_ofDelete_eq_of_subset_closure _ true,
+--     ← eConn_ofDelete_eq_of_subset_closure _ true] at hsm'
+--   · sorry
+--   rw [Separation.union_apply_true, pair_subset_iff]
+
+--   -- simp [hQt, hQf]
+--   -- have foo (b) : x b ∈ M.closure (P !b)
+
+
+
+--   -- set Q₁ := (Q true).inter (Q false) true false with hQ₁_def
+--   -- set Q₂ := (Q true).union (Q false) true false with hQ₁_def
+--   -- have hQconn' : Q₁.eConn
+--   sorry

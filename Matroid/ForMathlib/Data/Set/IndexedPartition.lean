@@ -58,6 +58,9 @@ protected lemma ext {P Q : s.IndexedPartition ι} (h : ∀ i, P i = Q i) : P = Q
 protected lemma pairwise_disjoint (P : s.IndexedPartition ι) : Pairwise (Disjoint on P) :=
   P.pairwise_disjoint'
 
+protected lemma disjoint (P : s.IndexedPartition ι) (hij : i ≠ j) : Disjoint (P i) (P j) :=
+  P.pairwise_disjoint hij
+
 protected lemma iUnion_eq (P : s.IndexedPartition ι) : ⋃ i, P i = s :=
   P.iUnion_eq'
 
@@ -84,7 +87,7 @@ protected lemma eq_of_mem_of_mem {a : α} (hi : a ∈ P i) (hj : a ∈ P j) : i 
 lemma single_eq_diff_iUnion (P : s.IndexedPartition ι) (i : ι) : P i = s \ (⋃ j ≠ i, P j) := by
   simp only [subset_antisymm_iff, subset_diff, P.subset, disjoint_iUnion_right, true_and,
     diff_subset_iff]
-  refine ⟨fun j hj ↦ (P.pairwise_disjoint hj).symm, ?_⟩
+  refine ⟨fun j hj ↦ (P.disjoint hj).symm, ?_⟩
   simp_rw [← P.iUnion_eq, iUnion_subset_iff]
   intro j
   obtain rfl | hne := eq_or_ne j i
@@ -149,7 +152,7 @@ protected lemma LE.subset (hPQ : P ≤ Q) : s ⊆ t := by
 
 protected lemma LE.disjoint_of_ne (hPQ : P ≤ Q) (hij : i ≠ j) : Disjoint (P i) (Q j) := by
   grw [hPQ i]
-  exact Q.pairwise_disjoint hij
+  exact Q.disjoint hij
 
 protected lemma LE.eq_induce {Q : t.IndexedPartition ι} (hPQ : P ≤ Q) : P = Q.induce hPQ.subset := by
   refine IndexedPartition.ext fun i ↦ ?_
@@ -168,14 +171,13 @@ protected lemma le_refl (P : s.IndexedPartition ι) : P ≤ P :=
 lemma induce_le (P : s.IndexedPartition ι) (hts : t ⊆ s) : P.induce hts ≤ P :=
   fun i ↦ by simp
 
-protected def union (P : s.IndexedPartition ι) (Q : t.IndexedPartition ι) (hdj : Disjoint s t) :
+protected def union (P : s.IndexedPartition ι) (Q : t.IndexedPartition ι) (h : Disjoint s t) :
     (s ∪ t).IndexedPartition ι where
   toFun i := P i ∪ Q i
   pairwise_disjoint' := by
-    refine fun i j hne ↦ ?_
+    refine fun i j h' ↦ ?_
     simp only [disjoint_union_right, disjoint_union_left]
-    exact ⟨⟨P.pairwise_disjoint hne, hdj.symm.mono Q.subset P.subset⟩,
-      hdj.mono P.subset Q.subset, Q.pairwise_disjoint hne⟩
+    exact ⟨⟨P.disjoint h', h.symm.mono Q.subset P.subset⟩, h.mono P.subset Q.subset, Q.disjoint h'⟩
   iUnion_eq' := by simp_rw [← P.iUnion_eq, ← Q.iUnion_eq, iUnion_union_distrib]
 
 @[simp]
@@ -608,12 +610,6 @@ protected lemma ofSubset_false_true (hst : s ⊆ t) :
 protected lemma ofSubset_copy (hst : s ⊆ t) (htr : t = r) :
     (IndexedPartition.ofSubset hst i).copy htr = IndexedPartition.ofSubset (hst.trans_eq htr) i :=
   IndexedPartition.ext_bool' i <| by simp
-
--- /-- Given partitions of sets -/
--- def crossInduce (P : s.IndexedPartition Bool) (Q : t.IndexedPartition Bool) (hrs : r ⊆ s)
---     (hrt : r ⊆ t) (b c i : Bool) : r.IndexedPartition Bool :=
---   _
-
 
 /-- The bipartition whose `i` side is `P b ∩ Q c` and whose `(!i)` side is `P !b ∪ Q !c`.
 Varying `b, c` and `i` give the eight possible bipartitions arising from the 2x2 grid given

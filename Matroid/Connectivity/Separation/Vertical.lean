@@ -2,7 +2,7 @@ import Matroid.Connectivity.Separation.Tutte
 
 
 variable {α : Type*} {M N : Matroid α} {j k : ℕ∞} {d k : ℕ∞} {A X Y : Set α} {P : M.Separation}
-  {b : Bool}
+  {b : Bool} {e f : α}
 
 
 open Set Matroid Matroid.Separation
@@ -674,5 +674,104 @@ lemma TutteConnected.of_isMinor {t : ℕ∞} (h : M.TutteConnected (k + t + 1)) 
   grw [eRk_le_encard, contract_ground]
   rw [← encard_diff_add_encard_of_subset hC] at hk
   enat_to_nat!; lia
+
+-- lemma TutteConnected.exists_of_not_tutteConnected_remove_elem {e : α}
+--     (h : M.TutteConnected (k + 1 + 1)) {b : Bool}
+--     (he : ¬ (M.remove b {e}).TutteConnected (k + 1 + 1)) (hnt : 2 * k + 1 < M.E.encard) :
+--     ∃ (P : (M.remove b {e}).Separation), P.eConn = k ∧ P.IsTutteSeparation ∧
+--       ∀ j, e ∉ (M.bDual b).closure (P j) := by
+--   have hconn : (M.remove b {e}).TutteConnected (k + 1) := h.removeElem (by enat_to_nat!; lia) b e
+--   obtain ⟨P, hPconn, hP⟩ := hconn.exists_of_not_tutteConnected_add_one he
+--   simp only [ne_eq, ENat.one_ne_top, not_false_eq_true, add_left_inj_of_ne_top] at hPconn
+--   refine ⟨P, hPconn, hP, fun j hcl ↦ ?_⟩
+--   have hf := faithful_ofRemove_of_subset_closure (P := P) (X := {e}) (i := j) (by simpa using
+-- hcl)
+--   exact h.not_isTutteSeparation (by simp [← hf.eConn_remove_eq, hPconn])
+--     <| hf.isTutteSeparation_of_remove (by simpa)
+
+-- lemma TutteConnected.exists_of_not_tutteConnected_delete_elem {e : α}
+--     (h : M.TutteConnected (k + 1 + 1)) (he : ¬ (M ＼ {e}).TutteConnected (k + 1 + 1))
+--     (hnt : 2 * k + 1 < M.E.encard) :
+--     ∃ (P : (M ＼ {e}).Separation), P.eConn = k ∧ P.IsTutteSeparation ∧ ∀ j, e ∉ M.closure (P j) :=
+--   h.exists_of_not_tutteConnected_remove_elem (b := false) he hnt
+
+-- lemma TutteConnected.exists_of_not_tutteConnected_contract_elem {e : α}
+--     (h : M.TutteConnected (k + 1 + 1)) (he : ¬ (M ／ {e}).TutteConnected (k + 1 + 1))
+--     (hnt : 2 * k + 1 < M.E.encard) :
+--     ∃ (P : (M ／ {e}).Separation), P.eConn = k ∧ P.IsTutteSeparation ∧
+  -- ∀ j, e ∉ M✶.closure (P j) :=
+--   h.exists_of_not_tutteConnected_remove_elem (b := true) he hnt
+
+lemma TutteConnected.notMem_closure_dual_of_separation_contractElem (h : M.TutteConnected (k + 1))
+    {P : (M ／ {e}).Separation} (hPk : P.eConn + 1 ≤ k) (hP : P.IsTutteSeparation) (i : Bool) :
+    e ∉ M✶.closure (P i) := by
+  intro hcl
+  have hf := faithful_ofContract_of_subset_closure_dual P (i := i) (by simpa)
+  exact h.not_isTutteSeparation (by rwa [← hf.eConn_contract_eq, ofContract_contract])
+    <| hf.isTutteSeparation_of_contract (by simpa)
+
+lemma TutteConnected.mem_closure_of_separation_contractElem (h : M.TutteConnected (k + 1))
+    {P : (M ／ {e}).Separation} (hPk : P.eConn + 1 ≤ k) (hP : P.IsTutteSeparation) (i : Bool) :
+    e ∈ M.closure (P i) := by
+  have heE : e ∈ M.E := by_contra fun he ↦ h.not_isTutteSeparation
+      (P := P.copy (contractElem_eq_self he)) (by simpa) <| IsPredSeparation.copy hP _
+  have he := h.notMem_closure_dual_of_separation_contractElem hPk hP (!i)
+  rwa [mem_dual_closure_iff_notMem_closure_compl (notMem_subset P.subset <| by simp),
+    not_not, diff_diff_comm, ← contract_ground, P.compl_not_eq] at he
+
+/-- If `M` is a `(k + 1)`-connected matroid, and `P` is a `k`-separation in a single removal of `M`,
+then we know which sides of `P` span the removed element in `M`, both in the primal and the dual. -/
+lemma TutteConnected.mem_closure_bDual_iff_of_separation_removeElem (h : M.TutteConnected (k + 1))
+    {b c : Bool} {P : (M.remove b {e}).Separation} (hPk : P.eConn + 1 ≤ k)
+    (hP : P.IsTutteSeparation) (i : Bool) : e ∈ (M.bDual c).closure (P i) ↔ b != c := by
+  suffices e ∉ (M.bDual b).closure (P i) ∧ e ∈ (M.bDual !b).closure (P i) by
+    revert c; simpa [- Bool.forall_bool, Bool.forall_bool' b]
+  constructor
+  · simpa using (h.bDual (!b)).notMem_closure_dual_of_separation_contractElem (e := e)
+      (P := (P.bDual (!b)).copy (by simp)) (by simpa) (by simpa) i
+  exact (h.bDual !b).mem_closure_of_separation_contractElem (P := (P.bDual !b).copy (by simp))
+    (by simpa) (by simpa) i
+
+lemma TutteConnected.mem_closure_dual_of_separation_deleteElem (h : M.TutteConnected (k + 1))
+    {P : (M ＼ {e}).Separation} (hPk : P.eConn + 1 ≤ k) (hP : P.IsTutteSeparation) (i : Bool) :
+    e ∈ M✶.closure (P i) := by
+  rw [← bDual_true, h.mem_closure_bDual_iff_of_separation_removeElem (b := false) hPk hP]
+  decide
+
+lemma TutteConnected.notMem_closure_of_separation_deleteElem (h : M.TutteConnected (k + 1))
+    {P : (M ＼ {e}).Separation} (hPk : P.eConn + 1 ≤ k) (hP : P.IsTutteSeparation) (i : Bool) :
+    e ∉ M.closure (P i) := by
+  change e ∉ (M.bDual false).closure (P i)
+  rw [h.mem_closure_bDual_iff_of_separation_removeElem (b := false) hPk hP]
+  decide
+
+lemma TutteConnected.faithful_of_tutteConnected_remove (h : M.TutteConnected (k + 1))
+    (hN : (M.remove b {e}).TutteConnected (k + 1)) (P : M.Separation) (hP : P.eConn ≤ k)
+    (hP' : ∀ i, k < (P i).encard) : P.Faithful (M.remove b {e}) := by
+  have hP'' := Bool.forall_bool.1 hP'
+  refine faithful_of_eConn_induce_ge (by enat_to_nat!) (remove_isMinor ..) ?_
+  grw [hP, induce_eq_remove]
+  by_contra! hlt
+  refine hN.not_isTutteSeparation (P := P.remove b {e}) (Order.add_one_le_of_lt hlt) ?_
+  rw [isTutteSeparation_iff_lt_encard (by enat_to_nat!)]
+  refine fun i ↦ hlt.trans_le ?_
+  grw [remove_apply, ← ENat.add_one_le_add_one_iff, Order.add_one_le_of_lt (hP' i),
+    encard_le_encard_diff_add_encard _ {e}, encard_singleton]
+
+/-- If `M` and `M ＼ {e}` are `(k + 1)`-connected, then every `k`-separation of `M` with sides
+of size greater than `k` is faithful to `M ＼ {e}`. -/
+lemma TutteConnected.faithful_of_tutteConnected_delete (h : M.TutteConnected (k + 1))
+    (hN : (M ＼ {e}).TutteConnected (k + 1)) (P : M.Separation) (hP : P.eConn ≤ k)
+    (hP' : ∀ i, k < (P i).encard) : P.Faithful (M ＼ {e}) :=
+  h.faithful_of_tutteConnected_remove (b := false) hN P hP hP'
+
+/-- If `M` and `M ／ {e}` are `(k + 1)`-connected, then every `k`-separation of `M` with sides
+of size greater than `k` is faithful to `M ／ {e}`. -/
+lemma TutteConnected.faithful_of_tutteConnected_contract (h : M.TutteConnected (k + 1))
+    (hN : (M ／ {e}).TutteConnected (k + 1)) (P : M.Separation) (hP : P.eConn ≤ k)
+    (hP' : ∀ i, k < (P i).encard) : P.Faithful (M ／ {e}) :=
+  h.faithful_of_tutteConnected_remove (b := true) hN P hP hP'
+
+
 
 end Matroid

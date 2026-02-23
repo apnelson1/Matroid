@@ -9,32 +9,6 @@ namespace Matroid
 
 variable {dg dg' dg_l dg_r : Bool → Matroid α → Set α → Prop}
 
-@[mk_iff]
-structure TutteDegen (M : Matroid α) (X : Set α) : Prop where
-  indep : M.Indep X
-  coindep : M.Coindep X
-
-lemma tutteDegen_eq : TutteDegen (α := α) = fun M X ↦ M.Indep X ∧ M.Coindep X := by
-  ext M X
-  rw [M.tutteDegen_iff]
-
-@[simp]
-lemma tutteDegen_dual : M✶.TutteDegen X ↔ M.TutteDegen X := by
-  simp [tutteDegen_iff, and_comm]
-
-@[simp]
-lemma tutteDegen_empty (M : Matroid α) : M.TutteDegen ∅ := by
-  simp [tutteDegen_iff]
-
-lemma TutteDegen.antitone : Antitone M.TutteDegen :=
-  fun _ _ hYX h ↦ ⟨h.indep.subset hYX, h.coindep.subset hYX⟩
-
-lemma TutteDegen.subset (h : M.TutteDegen X) (hYX : Y ⊆ X) : M.TutteDegen Y :=
-  h.antitone hYX
-
-@[simp]
-lemma tutteWeight_eq_zero : M.tutteWeight X = 0 ↔ M.TutteDegen X := by
-  simp [tutteWeight_def, tutteDegen_iff]
 
 lemma SeqConnected.exists_encard_le {f} (h : M.SeqConnected Matroid.tutteWeight f)
     (P : M.Separation) : ∃ i, (P i).encard ≤ P.eConn + f P.eConn := by
@@ -44,14 +18,14 @@ lemma SeqConnected.exists_encard_le {f} (h : M.SeqConnected Matroid.tutteWeight 
 lemma seqConnected_tutteWeight_iff {f} (hf : f ⊤ = ⊤) :
     M.SeqConnected Matroid.tutteWeight f ↔
     ∀ (P : M.Separation), ∃ i, (P i).encard ≤ P.eConn + f P.eConn := by
-  refine ⟨SeqConnected.exists_encard_le, fun h P ↦ (?_ : ∃ i, _ ≤ _)⟩
+  refine ⟨SeqConnected.exists_encard_le, fun h P ↦ (?_ : ∃ i, M.tutteWeight (P i) ≤ f P.eConn)⟩
   obtain ⟨i, hi⟩ := h P
   obtain htop | htop := eq_or_ne P.eConn ⊤
   · simp [htop, hf]
   exact ⟨i, by rwa [← ENat.add_le_add_iff_left htop, ← P.eConn_eq i,
     M.eConn_add_tutteWeight_eq, P.eConn_eq]⟩
 
-alias ⟨_, TutteDegen.dual⟩ := tutteDegen_dual
+
 
 namespace Separation
 
@@ -79,6 +53,21 @@ alias ⟨IsTutteSeparation.of_dual, IsTutteSeparation.dual⟩ := isTutteSeparati
 lemma isTutteSeparation_ofDual_iff {P : M✶.Separation} :
     P.ofDual.IsTutteSeparation ↔ P.IsTutteSeparation :=
   isPredSeparation_ofDual_iff <| by simp
+
+@[simp]
+lemma isTutteSeparation_bDual_iff {b} : (P.bDual b).IsTutteSeparation ↔ P.IsTutteSeparation :=
+  isPredSeparation_bDual_iff <| by simp
+
+lemma IsTutteSeparation.bDual (h : P.IsTutteSeparation) (b : Bool) :
+    (P.bDual b).IsTutteSeparation := by
+  simpa
+
+@[simp]
+lemma isTutteSeparation_ofbDual_iff {b} {P : (M.bDual b).Separation} :
+    P.ofbDual.IsTutteSeparation ↔ P.IsTutteSeparation :=
+  isPredSeparation_ofbDual_iff <| by simp
+
+alias ⟨IsTutteSeparation.of_ofbDual, IsTutteSeparation.of_bDual⟩ := isTutteSeparation_ofbDual_iff
 
 @[simp]
 lemma isTutteSeparation_symm_iff : P.symm.IsTutteSeparation ↔ P.IsTutteSeparation :=
@@ -181,9 +170,21 @@ lemma IsTutteSeparation.tutteWeight_pos (h : P.IsTutteSeparation) (i : Bool) :
     0 < M.tutteWeight (P i) :=
   (isTutteSeparation_iff_tutteWeight.1 h) i
 
--- @[simp]
--- lemma isOffsetSeparation_zero : P.IsOffsetSeparation 0 ↔ P.IsTutteSeparation := by
---   simp [IsOffsetSeparation, IsTutteSeparation, tutteDegen_eq]
+lemma Faithful.isTutteSeparation_of_induce (h : P.Faithful N) (hNM : N ≤m M)
+    (hP : (P.induce hNM.subset).IsTutteSeparation) : P.IsTutteSeparation :=
+  h.isPredSeparation_of_induce hNM isLawfulDG_tutteDegen hP
+
+lemma Faithful.isTutteSeparation_of_delete {D : Set α} (h : P.Faithful (M ＼ D))
+    (hP : (P.delete D).IsTutteSeparation) : P.IsTutteSeparation :=
+  h.isTutteSeparation_of_induce (delete_isMinor ..) hP
+
+lemma Faithful.isTutteSeparation_of_contract {C : Set α} (h : P.Faithful (M ／ C))
+    (hP : (P.contract C).IsTutteSeparation) : P.IsTutteSeparation :=
+  h.isTutteSeparation_of_induce (contract_isMinor ..) hP
+
+lemma Faithful.isTutteSeparation_of_remove {b} (h : P.Faithful (M.remove b X))
+    (hP : (P.remove b X).IsTutteSeparation) : P.IsTutteSeparation :=
+  h.isTutteSeparation_of_induce (remove_isMinor ..) hP
 
 end Separation
 
@@ -249,6 +250,23 @@ lemma TutteConnected.dual (h : M.TutteConnected k) : M✶.TutteConnected k :=
 lemma TutteConnected.of_dual (h : M✶.TutteConnected k) : M.TutteConnected k :=
   M.dual_dual ▸ h.dual
 
+lemma TutteConnected.bDual (h : M.TutteConnected k) (b : Bool) : (M.bDual b).TutteConnected k := by
+  cases b; exact h; exact h.dual
+
+@[simp]
+lemma tutteConnected_dual_iff : M✶.TutteConnected = M.TutteConnected := by
+  ext k
+  exact ⟨TutteConnected.of_dual, TutteConnected.dual⟩
+
+@[simp]
+lemma tutteConnected_bDual_iff {b} : (M.bDual b).TutteConnected k ↔ M.TutteConnected k := by
+  cases b
+  · simp
+  simp
+
+lemma TutteConnected.of_bDual {b} (h : (M.bDual b).TutteConnected k) : M.TutteConnected k := by
+  simpa using h
+
 lemma TutteConnected.mono (h : M.TutteConnected k) (hjk : j ≤ k) : M.TutteConnected j :=
   NumConnected.mono h hjk
 
@@ -269,10 +287,6 @@ lemma tutteConnected_of_le_one (M : Matroid α) (hk : k ≤ 1) : M.TutteConnecte
   · simp
   simp
 
-@[simp]
-lemma tutteConnected_dual_iff : M✶.TutteConnected = M.TutteConnected := by
-  ext k
-  exact ⟨TutteConnected.of_dual, TutteConnected.dual⟩
 
 lemma Separation.IsTutteSeparation.not_tutteConnected (hP : P.IsTutteSeparation) :
     ¬ M.TutteConnected (P.eConn + 1 + 1) := by
@@ -362,7 +376,11 @@ lemma TutteConnected.connected [M.Nonempty] (hM : M.TutteConnected k) (hk : 2 �
     M.Connected :=
   tutteConnected_two_iff.1 (hM.mono hk)
 
-lemma exists_of_tutteConnected_of_not_tutteConnected_add_one (hM : M.TutteConnected k)
+lemma TutteConnected.connected' (h : M.TutteConnected (k + 1)) (hne : M.Nonempty)
+    (hk : 1 ≤ k) : M.Connected :=
+  h.connected (by grw [← hk, one_add_one_eq_two])
+
+lemma TutteConnected.exists_of_not_tutteConnected_add_one (hM : M.TutteConnected k)
     (hM' : ¬ M.TutteConnected (k + 1)) :
     ∃ (P : M.Separation), P.eConn + 1 = k ∧ P.IsTutteSeparation := by
   obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one
@@ -415,8 +433,7 @@ lemma TutteConnected.girth_ge_of_exists_eConn_ge (h : M.TutteConnected (k + 1))
   grw [← encard_diff_add_encard_of_subset (P.subset_ground (i := true)), P.compl_true, hP,
     ← M.eConn_le_encard, ← M.eConn_le_encard, P.eConn_eq, P.eConn_eq, two_mul]
 
-
-/-- `U₃,₈` (for example) is `(3 + 1)`-connected with rank `3`, but not infinitely connected;
+/-- `U₃,₈` (for example) is `(3 + 1)`-connected with rank `3`, but not `(4 + 1)` connected;
 hence the bound is tight. -/
 lemma TutteConnected.tutteConnected_top_of_eRank_add_one_le
     (h : M.TutteConnected (k + 1)) (hle : M.eRank + 1 ≤ k) : M.TutteConnected ⊤ := by
@@ -424,20 +441,20 @@ lemma TutteConnected.tutteConnected_top_of_eRank_add_one_le
   refine fun P hP ↦ h.not_isTutteSeparation ?_ hP
   grw [← P.eConn_eq true, eConn_le_eRk, eRk_le_eRank, hle]
 
-/-- `U₅,₈` (for example) is `(3 + 1)`-connected with corank `3`, but not infinitely connected.
+/-- `U₅,₈` (for example) is `(3 + 1)`-connected with corank `3`, but not `(4 + 1)` connected.
 hence the bound is tight. -/
 lemma TutteConnected.tutteConnected_top_of_eRank_dual_add_one_le
     (h : M.TutteConnected (k + 1)) (hle : M✶.eRank + 1 ≤ k) : M.TutteConnected ⊤ := by
   simpa using h.dual.tutteConnected_top_of_eRank_add_one_le hle
 
 lemma TutteConnected.tutteConnected_top_of_encard_add_one_le
-    (h : M.TutteConnected (k + 1)) (hlt : M.E.encard + 1 ≤ 2 * k) : M.TutteConnected ⊤ := by
+    (h : M.TutteConnected (k + 1)) (hlt : M.E.encard + (1 : ℕ∞) ≤ 2 * k) : M.TutteConnected ⊤ := by
   wlog hle : M.eRank ≤ M✶.eRank generalizing M with aux
   · simpa using aux h.dual (by simpa) (by simpa using (not_le.1 hle).le)
   obtain hle | hlt' := le_or_gt (M.eRank + 1) k
   · exact h.tutteConnected_top_of_eRank_add_one_le hle
   grw [← M.eRank_add_eRank_dual] at hlt
-  eomega
+  enat_to_nat! <;> lia
 
 lemma TutteConnected.girth_ge_of_not_tutteConnected_top (h : M.TutteConnected k)
     (h_top : ¬ M.TutteConnected ⊤) : k ≤ M.girth := by

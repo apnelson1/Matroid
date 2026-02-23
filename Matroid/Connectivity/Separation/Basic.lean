@@ -1,6 +1,7 @@
 import Matroid.Connectivity.Connected
 import Matroid.Connectivity.Minor
 import Matroid.ForMathlib.Data.Set.IndexedPartition
+import Matroid.Bool
 
 open Set Function
 
@@ -20,7 +21,7 @@ namespace Matroid
 
 section separation
 
-variable {α : Type*} {M N : Matroid α} {j k : ℕ∞} {e f : α} {A B X X' Y Y' : Set α} {i : Bool}
+variable {α : Type*} {M N : Matroid α} {j k : ℕ∞} {e f : α} {A B X X' Y Y' : Set α} {i j : Bool}
 
 /-- A bipartition of the ground set of a matroid,
 implicitly including the data of the actual matroid. -/
@@ -32,7 +33,7 @@ instance : FunLike M.Separation Bool (Set α) where
 
 -- protected def Separation.mk ()
 
-variable {P : M.Separation}
+variable {P : M.Separation} {Q : N.Separation}
 
 namespace Separation
 
@@ -50,22 +51,30 @@ protected lemma toFun_eq_coe (P : M.Separation) : P.toFun = P := rfl
 protected lemma pairwise_disjoint (P : M.Separation) : Pairwise (Disjoint on P) :=
   P.pairwise_disjoint'
 
+@[grind .]
+protected lemma disjoint (P : M.Separation) (hij : i ≠ j) : Disjoint (P i) (P j) :=
+  P.pairwise_disjoint hij
+
+@[grind .]
+protected lemma subset (P : M.Separation) {i : Bool} : P i ⊆ M.E :=
+  IndexedPartition.subset P
+
 protected lemma iUnion_eq (P : M.Separation) : ⋃ i, P i = M.E :=
   P.iUnion_eq'
 
-@[simp] protected lemma union_eq : P true ∪ P false = M.E := IndexedPartition.union_eq
+@[simp, grind =] protected lemma union_eq : P true ∪ P false = M.E := IndexedPartition.union_eq
 @[simp] protected lemma union_eq' : P false ∪ P true = M.E := IndexedPartition.union_eq'
-@[simp] protected lemma union_bool_eq (i : Bool) : P i ∪ P (!i) = M.E :=
+@[simp, grind =] protected lemma union_bool_eq (i : Bool) : P i ∪ P (!i) = M.E :=
   IndexedPartition.union_bool_eq i
 @[simp] protected lemma union_bool_eq' (i : Bool) : P (!i) ∪ P i = M.E :=
   IndexedPartition.union_bool_eq' i
-@[simp] protected lemma disjoint_true_false : Disjoint (P true) (P false) :=
+@[simp, grind .] protected lemma disjoint_true_false : Disjoint (P true) (P false) :=
   IndexedPartition.disjoint_true_false
 @[simp] protected lemma disjoint_false_true : Disjoint (P false) (P true) :=
   IndexedPartition.disjoint_false_true
-@[simp] protected lemma disjoint_bool (i : Bool) : Disjoint (P i) (P (!i)) :=
+@[simp, grind .] protected lemma disjoint_bool (i : Bool) : Disjoint (P i) (P (!i)) :=
   IndexedPartition.disjoint_bool i
-@[simp] protected lemma compl_eq (P : M.Separation) (i : Bool) : M.E \ (P i) = P (!i) :=
+@[simp, grind =] protected lemma compl_eq (P : M.Separation) (i : Bool) : M.E \ (P i) = P (!i) :=
   IndexedPartition.compl_eq P i
 @[simp] protected lemma compl_not_eq (P : M.Separation) (i : Bool) : M.E \ (P (!i)) = P i :=
   IndexedPartition.compl_not_eq P i
@@ -190,6 +199,30 @@ lemma dual_dual (P : M.Separation) : P.dual.dual = P.copy M.dual_dual.symm := rf
   left_inv P := by simp
   right_inv P := by simp
 
+protected def bDual (P : M.Separation) (b : Bool) : (M.bDual b).Separation :=
+  P.copy' <| by simp
+
+@[simp]
+lemma bDual_apply (P : M.Separation) (b i : Bool) : P.bDual b i = P i := rfl
+
+@[simp]
+lemma bDual_false (P : M.Separation) : P.bDual false = P.copy rfl := rfl
+
+@[simp]
+lemma bDual_true (P : M.Separation) : P.bDual true = P.dual.copy rfl := rfl
+
+protected def ofbDual {b : Bool} (P : (M.bDual b).Separation) : M.Separation :=
+  P.copy' <| by simp
+
+@[simp]
+lemma ofbDual_apply {b : Bool} (P : (M.bDual b).Separation) (i : Bool) : P.ofbDual i = P i := rfl
+
+@[simp]
+lemma ofbDual_bDual {b : Bool} (P : (M.bDual b).Separation) : P.ofbDual.bDual b = P := rfl
+
+@[simp]
+lemma bDual_ofbDual {b : Bool} (P : M.Separation) : (P.bDual b).ofbDual = P := rfl
+
 /-- A separation is trivial if one side is empty. -/
 protected def Trivial (P : M.Separation) : Prop := IndexedPartition.Trivial P
 
@@ -296,6 +329,14 @@ lemma eConn_dual (P : M.Separation) : P.dual.eConn = P.eConn := by
 lemma eConn_ofDual (P : M✶.Separation) : P.ofDual.eConn = P.eConn := by
   rw [← P.dual_ofDual, ← eConn_dual]
   simp
+
+@[simp]
+lemma eConn_bDual (P : M.Separation) (b : Bool) : (P.bDual b).eConn = P.eConn := by
+  cases b <;> simp
+
+@[simp]
+lemma eConn_ofbDual {b} (P : (M.bDual b).Separation) : P.ofbDual.eConn = P.eConn := by
+  rw [← P.ofbDual.eConn_bDual b, ofbDual_bDual]
 
 lemma Trivial.eConn (h : P.Trivial) : P.eConn = 0 := by
   obtain ⟨i, hb⟩ := h
@@ -426,6 +467,7 @@ lemma Trivial.exists_eq (h : P.Trivial) : ∃ i, P = M.ofSetSep ∅ i := by
   obtain ⟨i, hb⟩ := h
   refine ⟨!i, Separation.ext_bool i (by simpa)⟩
 
+
 /-- Intersect a separation with the ground set of a smaller matroid -/
 def induce (P : M.Separation) (hN : N.E ⊆ M.E) : N.Separation := IndexedPartition.induce P hN
 
@@ -436,10 +478,45 @@ lemma induce_apply (P : M.Separation) (hN : N.E ⊆ M.E) (i) : P.induce hN i = (
 lemma induce_symm (P : M.Separation) (hN : N.E ⊆ M.E) : (P.induce hN).symm = P.symm.induce hN :=
   Separation.ext rfl
 
-lemma IsMinor.eConn_induce_le (P : M.Separation) (hNM : N ≤m M) :
+lemma eConn_induce_le_of_isMinor (P : M.Separation) (hNM : N ≤m M) :
     (P.induce hNM.subset).eConn ≤ P.eConn := by
   grw [← P.eConn_eq true, ← Separation.eConn_eq _ true, induce_apply, eConn_inter_ground,
     hNM.eConn_le]
+
+/-- `Separation.LE P Q`, written `P ≤ Q`, means that every cell of `P` is contained in the
+corresponding cell of `Q`. -/
+protected def LE (P : M.Separation) (Q : N.Separation) : Prop := ∀ i, P i ⊆ Q i
+
+scoped infixl:50 " ≼ " => Separation.LE
+
+lemma le_iff : P ≼ Q ↔ ∀ i, P i ⊆ Q i := Iff.rfl
+
+protected lemma LE.trans {L M N : Matroid α} {P : L.Separation} {Q : M.Separation}
+    (R : N.Separation) (hPQ : P ≼ Q) (hQR : Q ≼ R) : P ≼ R :=
+  fun i ↦ (hPQ i).trans (hQR i)
+
+protected lemma LE.ground_subset (hPQ : P ≼ Q) : M.E ⊆ N.E := by
+  grw [← P.iUnion_eq, ← Q.iUnion_eq, iUnion_mono hPQ]
+
+protected lemma LE.disjoint_of_ne (hPQ : P ≼ Q) (hij : i ≠ j) : Disjoint (P i) (Q j) := by
+  grw [hPQ i]
+  exact Q.disjoint hij
+
+protected lemma LE.eq_induce (hPQ : P ≼ Q) : P = Q.induce hPQ.ground_subset :=
+  IndexedPartition.LE.eq_induce hPQ
+
+protected lemma LE.eq {P Q : M.Separation} (hPQ : P ≼ Q) : P = Q :=
+  IndexedPartition.LE.eq hPQ
+
+@[simp]
+protected lemma le_refl (P : M.Separation) : P ≼ P :=
+  fun _ ↦ rfl.subset
+
+lemma induce_le (P : M.Separation) (h : N.E ⊆ M.E) : P.induce h ≼ P :=
+  IndexedPartition.induce_le P h
+
+lemma IsMinor.eConn_le_of_le (hMN : M ≤m N) (hPQ : P ≼ Q) : P.eConn ≤ Q.eConn := by
+  grw [hPQ.eq_induce, Q.eConn_induce_le_of_isMinor hMN]
 
 /-- Every separation has a larger side for a given numerical notion of 'large' -/
 lemma exists_larger_side {β : Type*} [ConditionallyCompleteLinearOrder β] (P : M.Separation)

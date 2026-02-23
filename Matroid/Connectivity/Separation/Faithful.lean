@@ -7,7 +7,6 @@ variable {α : Type*} {M N : Matroid α} {j k : ℕ∞} {e f : α} {A B X X' Y Y
 
 namespace Matroid.Separation
 
-
 section Faithful
 
 /-- A separation `P` of `M` is faithful for a minor `N` if, for each `C` such that
@@ -50,8 +49,25 @@ lemma Faithful.ofDual {P : M✶.Separation} (hP : P.Faithful N) : P.ofDual.Faith
   rwa [← faithful_dual_iff, ofDual_dual]
 
 @[simp]
+lemma faithful_ofDual_iff {P : M✶.Separation} : P.ofDual.Faithful N ↔ P.Faithful N✶ := by
+  rw [← faithful_dual_iff', ofDual_dual]
+
+@[simp]
+lemma faithful_bDual_iff {P : M.Separation} {b : Bool} :
+    (P.bDual b).Faithful N ↔ P.Faithful (N.bDual b) := by
+  cases b <;> simp
+
+@[simp]
+lemma faithful_ofbDual_iff {b} {P : (M.bDual b).Separation} :
+    P.ofbDual.Faithful N ↔ P.Faithful (N.bDual b) := by
+  rw [← faithful_bDual_iff, ← N.bDual_bDual_self b, ← faithful_bDual_iff, ofbDual_bDual,
+    N.bDual_bDual_self, faithful_bDual_iff]
+
+@[simp]
 lemma faithful_symm_iff : P.symm.Faithful N ↔ P.Faithful N := by
   simp [faithful_iff, _root_.and_comm]
+
+alias ⟨_, Faithful.symm⟩ := faithful_symm_iff
 
 lemma faithful_of_forall_eq (h : ∀ C D, C ⊆ M.E → D ⊆ M.E → N = M ／ C ＼ D →
     ∀ i, (M.Skew (P i) (C \ P i) ∧ M✶.Skew (P i) (D \ P i))) : P.Faithful N := by
@@ -146,6 +162,24 @@ lemma faithful_delete_of_subset_closure (hD : D ⊆ P i) (hDcl : D ⊆ M.closure
     grw [coindep_iff_subset_closure_compl, ← diff_subset_diff_left (P.subset (i := i)), ← hDcl]
   rwa [faithful_delete_iff_subset_closure_of_subset hDi hD]
 
+lemma faithful_remove_iff (hX : X ⊆ M.E) {b : Bool} :
+    P.Faithful (M.remove b X) ↔ ∀ i, (M.bDual (!b)).Skew (P i) (X \ P i) := by
+  cases b
+  · simp [faithful_delete_iff hX]
+  simp [faithful_contract_iff hX]
+
+lemma faithful_remove_iff_of_subset {b : Bool} (hX : X ⊆ P i) :
+    P.Faithful (M.remove b X) ↔ (M.bDual (!b)).Skew (P (!i)) X := by
+  rw [faithful_remove_iff (hX.trans P.subset), forall_bool' i, diff_eq_empty.2 hX,
+    and_iff_right ((M.bDual _).skew_empty (by simp)), P.diff_eq_inter_bool, i.not_not,
+    inter_eq_self_of_subset_left hX]
+
+lemma faithful_remove_of_subset_closure {b : Bool} (hX : X ⊆ P i)
+    (hXcl : X ⊆ (M.bDual b).closure (P i \ X)) : P.Faithful (M.remove b X) := by
+  cases b
+  · exact faithful_delete_of_subset_closure hX hXcl
+  simpa using (P.dual.faithful_delete_of_subset_closure hX (by simpa using hXcl)).ofDual
+
 lemma faithful_delete_iff_forall_restrict_coindep (hD : M.Coindep D) :
     P.Faithful (M ＼ D) ↔ ∀ i, (M ↾ P i).Coindep (D ∩ P i) := by
   convert faithful_delete_iff_forall_subset_closure hD using 2 with i
@@ -165,11 +199,21 @@ lemma Faithful.eConn_induce_eq (hP : P.Faithful N) (hNM : N ≤m M) :
   exact (hP.skew_dual_of_delete hD.subset_ground (contract_delete_isMinor_delete _ hCD) i).mono
     diff_subset <| by grind
 
+lemma Faithful.eConn_eq_of_le (hP : P.Faithful N) (hNM : N ≤m M) {Q : N.Separation} (hQ : Q ≼ P) :
+    Q.eConn = P.eConn := by
+  grw [hQ.eq_induce, hP.eConn_induce_eq hNM]
+
 lemma Faithful.eConn_delete_eq (hP : P.Faithful (M ＼ D)) : (P.delete D).eConn = P.eConn := by
   rw [← hP.eConn_induce_eq (delete_isMinor ..), induce_eq_delete]
 
 lemma Faithful.eConn_contract_eq (hP : P.Faithful (M ／ C)) : (P.contract C).eConn = P.eConn := by
   rw [← hP.eConn_induce_eq (contract_isMinor ..), induce_eq_contract]
+
+lemma Faithful.eConn_remove_eq {b} (hP : P.Faithful (M.remove b X)) :
+    (P.remove b X).eConn = P.eConn := by
+  cases b
+  · exact hP.eConn_delete_eq
+  exact hP.eConn_contract_eq
 
 lemma faithful_iff_eConn_induce_eq (hNM : N ≤m M) (hConn : (P.induce hNM.subset).eConn ≠ ⊤) :
     P.Faithful N ↔ (P.induce hNM.subset).eConn = P.eConn := by
@@ -200,6 +244,15 @@ lemma faithful_of_eConn_induce_ge (hP : P.eConn ≠ ⊤) (hNM : N ≤m M)
   grw [← lt_top_iff_ne_top, eConn_induce_le_of_isMinor _ hNM, lt_top_iff_ne_top]
   assumption
 
+/-- This should be true without the `⊤` assumption. -/
+lemma faithful_trans {N₀ : Matroid α} (hP : P.Faithful N) (hconn : P.eConn ≠ ⊤) (hNM : N ≤m M)
+    (hN₀ : N₀ ≤m N) (hP' : (P.induce hNM.subset).Faithful N₀) : P.Faithful N₀ := by
+  refine faithful_of_eConn_induce_ge hconn (hN₀.trans hNM) ?_
+  grw [← hP.eConn_induce_eq hNM, ← hP'.eConn_induce_eq hN₀]
+  convert rfl.le using 2
+  refine Separation.ext ?_
+  simp [inter_assoc, inter_eq_self_of_subset_right hN₀.subset]
+
 lemma Faithful.isModularPair (h : P.Faithful N) (hND : N ≤m M ＼ D) (i : Bool) :
     M.IsModularPair (P i) (M.E \ (D ∩ P i)) := by
   wlog hD : D ⊆ M.E generalizing D with aux
@@ -219,6 +272,16 @@ lemma Faithful.subset_closure_diff_of_coindep (h : P.Faithful N) (hND : N ≤m M
   have hmod := h.isModularPair hND i
   rw [isModularPair_comm, (hD.subset inter_subset_left).compl_spanning.isModularPair_iff] at hmod
   exact hmod.trans <| M.closure_subset_closure <| by grind
+
+lemma Faithful.mem_closure_of_deleteElem {e} (hP : P.Faithful (M ＼ {e})) (hei : e ∈ P i)
+    (he : ¬ M.IsColoop e) : e ∈ M.closure (P i \ {e}) := by
+  refine mem_of_mem_of_subset hei <| hP.subset_closure_diff_of_coindep IsMinor.refl ?_ _
+  simp only [indep_singleton]
+  rwa [← not_isLoop_iff]
+
+lemma Faithful.notMem_closure_of_contractElem {e} (hP : P.Faithful (M ／ {e})) (hei : e ∈ P i)
+    (he : M.IsNonloop e) : e ∉ M.closure (P !i) := by
+  rwa [faithful_contract_iff_of_subset (by rwa [singleton_subset_iff]), he.skew_right_iff] at hP
 
 lemma Faithful.nullity_le (h : P.Faithful N) (hNM : N ≤m M) (i : Bool) :
     N.nullity (P i ∩ N.E) ≤ M.nullity (P i) := by
@@ -258,13 +321,27 @@ lemma faithful_ofContract_iff (P : (M ／ C).Separation) (hC : C ⊆ M.E) (i : B
   · simp
   simpa
 
-lemma faithful_ofDelete_of_subset_closure (P : (M ＼ D).Separation) (hD : D ⊆ M.closure (P i)) :
-    (P.ofDelete i).Faithful (M ＼ D) := by
-  apply faithful_delete_of_subset_closure (i := i)
-  · grw [ofDelete_apply_self, ← subset_union_right]
-  rwa [ofDelete_apply_self, union_diff_cancel_right]
+lemma faithful_ofRemove_iff {b} (P : (M.remove b X).Separation) (hX : X ⊆ M.E) (i : Bool) :
+    (P.ofRemove i).Faithful (M.remove b X) ↔ (M.bDual (!b)).Skew (P !i) (X \ P !i) := by
+  cases b
+  · simp [faithful_ofDelete_iff _ hX]
+  simp [faithful_ofContract_iff _ hX]
+
+lemma faithful_ofRemove_of_subset_closure {b} (P : (M.remove b X).Separation)
+    (hX : X ⊆ (M.bDual b).closure (P i)) : (P.ofRemove i).Faithful (M.remove b X) := by
+  have hXE : X ⊆ M.E := by simpa using hX.trans ((M.bDual b).closure_subset_ground (P i))
+  apply faithful_remove_of_subset_closure (by grw [ofRemove_apply_self, ← subset_union_right])
+  grw [ofRemove_apply_self, union_diff_cancel_right, ← hX]
   grw [P.subset]
   simp
+
+lemma faithful_ofDelete_of_subset_closure (P : (M ＼ D).Separation) (hD : D ⊆ M.closure (P i)) :
+    (P.ofDelete i).Faithful (M ＼ D) :=
+  faithful_ofRemove_of_subset_closure (b := false) P hD
+
+lemma faithful_ofContract_of_subset_closure_dual (P : (M ／ C).Separation)
+    (hC : C ⊆ M✶.closure (P i)) : (P.ofContract i).Faithful (M ／ C) :=
+  faithful_ofRemove_of_subset_closure (b := true) P hC
 
 lemma faithful_ofDelete_iff_of_coindep (P : (M ＼ D).Separation) (hD : M.Coindep D) (i : Bool) :
     (P.ofDelete i).Faithful (M ＼ D) ↔ D ⊆ M.closure (P i) := by
@@ -273,13 +350,47 @@ lemma faithful_ofDelete_iff_of_coindep (P : (M ＼ D).Separation) (hD : M.Coinde
     union_diff_cancel_right (P.disjoint_delete _).inter_eq.subset,
     (P.disjoint_delete _).inter_eq, and_iff_left <| empty_subset _]
 
-lemma faithful_ofContract_of_subset_closure_dual (P : (M ／ C).Separation)
-    (hD : C ⊆ M✶.closure (P i)) : (P.ofContract i).Faithful (M ／ C) := by
-  simpa using (P.contractDual.faithful_ofDelete_of_subset_closure (by simpa using hD)).ofDual
+lemma Faithful.eConn_ofRemove_eq {b} {P : (M.remove b X).Separation}
+    (h : (P.ofRemove i).Faithful (M.remove b X)) : (P.ofRemove i).eConn = P.eConn := by
+  rw [← h.eConn_remove_eq, ofRemove_remove]
+
+lemma Faithful.eConn_ofDelete_eq {P : (M ＼ D).Separation}
+    (h : (P.ofDelete i).Faithful (M ＼ D)) : (P.ofDelete i).eConn = P.eConn :=
+  h.eConn_ofRemove_eq (b := false)
+
+lemma Faithful.eConn_ofContract_eq {P : (M ／ C).Separation}
+    (h : (P.ofContract i).Faithful (M.contract C)) : (P.ofContract i).eConn = P.eConn :=
+  h.eConn_ofRemove_eq (b := true)
 
 end Faithful
 
 end Separation
+
+
+@[mk_iff]
+structure TutteDegen (M : Matroid α) (X : Set α) : Prop where
+  indep : M.Indep X
+  coindep : M.Coindep X
+
+lemma tutteDegen_eq : TutteDegen (α := α) = fun M X ↦ M.Indep X ∧ M.Coindep X := by
+  ext M X
+  rw [M.tutteDegen_iff]
+
+@[simp]
+lemma tutteDegen_dual : M✶.TutteDegen X ↔ M.TutteDegen X := by
+  simp [tutteDegen_iff,_root_.and_comm]
+
+@[simp]
+lemma tutteDegen_empty (M : Matroid α) : M.TutteDegen ∅ := by
+  simp [tutteDegen_iff]
+
+lemma TutteDegen.antitone : Antitone M.TutteDegen :=
+  fun _ _ hYX h ↦ ⟨h.indep.subset hYX, h.coindep.subset hYX⟩
+
+lemma TutteDegen.subset (h : M.TutteDegen X) (hYX : Y ⊆ X) : M.TutteDegen Y :=
+  h.antitone hYX
+
+alias ⟨_, TutteDegen.dual⟩ := tutteDegen_dual
 
 /-- The sum of the nullity and conullity of a set in `M`.
 Also the difference between the cardinality and the connectivity; see `eConn_add_tutteWeight_eq`. -/
@@ -309,9 +420,56 @@ lemma eConn_add_tutteWeight_eq (M : Matroid α) (hXE : X ⊆ M.E := by aesop_mat
     M.eConn X + M.tutteWeight X = X.encard := by
   rw [← M.eConn_add_nullity_add_nullity_dual X, add_assoc, tutteWeight_def]
 
+@[simp]
+lemma tutteWeight_eq_zero : M.tutteWeight X = 0 ↔ M.TutteDegen X := by
+  simp [tutteWeight_def, tutteDegen_iff]
+
+/-- A notion of degeneracy `IsLawfulDG` if, for each separation `P` of a matroid `M`,
+and each minor `N` of `M` that is faithful to `P`,
+Each degenerate side of `P` induces a degenerate side of the corresponding separation of `N`.
+Examples include being spanning and being independent, or having bounded tutte-weight. -/
+def IsLawfulDG (dg : Matroid α → Set α → Prop) : Prop := ∀ ⦃N M : Matroid α⦄ (_ : N ≤m M)
+    ⦃P : M.Separation⦄, P.Faithful N → ∀ i, dg M (P i) → dg N (P i ∩ N.E)
+
+@[simp]
+lemma isLawfulDG_indep : IsLawfulDG (α := α) Matroid.Indep :=
+  fun _ _ hNM _ hPN _ ↦ hPN.indep_of_indep hNM
+
+@[simp]
+lemma isLawfulDG_spanning : IsLawfulDG (α := α) Matroid.Spanning :=
+  fun _ _ hNM _ hPN _ ↦ hPN.spanning_of_spanning hNM
+
+@[simp]
+lemma isLawfulDG_tutteDegen : IsLawfulDG (α := α) Matroid.TutteDegen :=
+  fun _ _ hNM _ hPN _ h ↦ ⟨hPN.indep_of_indep hNM h.1, hPN.coindep_of_coindep hNM h.2⟩
+
+lemma IsLawfulDG.dual {dg} (h : IsLawfulDG (α := α) dg) : IsLawfulDG fun M X ↦ dg M✶ X :=
+  fun _ _ hNM _ hP ↦ h hNM.dual hP.dual
+
+lemma IsLawfulDG.compl {dg} (h : IsLawfulDG (α := α) dg) : IsLawfulDG fun M X ↦ dg M (M.E \ X) := by
+  refine fun N M hNM P hP i hi ↦ ?_
+  simp only [Separation.compl_eq] at hi
+  have hwin := h hNM hP.symm i (by simpa using hi)
+  rwa [diff_inter_self_eq_diff, P.diff_eq_inter_bool _ hNM.subset, inter_comm]
+
+lemma Separation.Faithful.remove_of_isLawfulDG {dg b} (h : P.Faithful (M.remove b X))
+    (hdg : IsLawfulDG dg) (hi : dg M (P i)) : dg (M.remove b X) (P i \ X) := by
+  convert hdg (remove_isMinor ..) h i hi using 1
+  rw [remove_ground, ← inter_diff_assoc, P.inter_ground_eq]
+
+lemma Separation.Faithful.delete_of_isLawfulDG {dg} (h : P.Faithful (M ＼ D)) (hdg : IsLawfulDG dg)
+    (hi : dg M (P i)) : dg (M ＼ D) (P i \ D) :=
+  h.remove_of_isLawfulDG (b := false) hdg hi
+
+lemma Separation.Faithful.contract_of_isLawfulDG {dg} (h : P.Faithful (M ／ C)) (hdg : IsLawfulDG dg)
+    (hi : dg M (P i)) : dg (M ／ C) (P i \ C) :=
+  h.remove_of_isLawfulDG (b := true) hdg hi
+
+
 /-- An `ℕ∞`-valued matroid parameter on sets `IsFaithfulMono` if, when applied to one side of a
 separation `P`, its value does not increase when taking a minor that is faithful to `P`.
-Examples include rank, corank, nullity and tutte weight.  -/
+This is the numerical version of `IsLawfulDG`;
+examples include rank, corank, nullity and tutte weight.  -/
 def IsFaithfulMono (w : Matroid α → Set α → ℕ∞) : Prop := ∀ ⦃M N : Matroid α⦄ ⦃P : M.Separation⦄
     (i : Bool), N ≤m M → P.Faithful N → w N (P i ∩ N.E) ≤ w M (P i)
 
@@ -336,5 +494,11 @@ lemma isFaithfulMono_nullity : IsFaithfulMono (α := α) Matroid.nullity :=
 
 lemma isFaithfulMono_tutteWeight : IsFaithfulMono (α := α) Matroid.tutteWeight :=
   isFaithfulMono_nullity.add isFaithfulMono_nullity.dual
+
+lemma IsFaithfulMono.isLawfulDG {w} (h : IsFaithfulMono (α := α) w) {t : ℕ∞ → ℕ∞} :
+    IsLawfulDG fun M X ↦ w M X ≤ t (M.eConn X) := by
+  intro N M hNM P hP i hle
+  grw [h i hNM hP, hle, P.eConn_eq, ← hP.eConn_induce_eq hNM, ← Separation.eConn_eq _ i,
+    Separation.induce_apply]
 
 end Matroid

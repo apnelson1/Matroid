@@ -45,6 +45,9 @@ lemma bDual_coindep_iff : (M.bDual b).Coindep X ↔ (M.bDual (!b)).Indep X := by
 lemma bDual_bDual {c} : (M.bDual b).bDual c = M.bDual (b != c) := by
   cases b <;> simp [bDual]
 
+lemma bDual_bDual_self (M : Matroid α) (b : Bool) : (M.bDual b).bDual b = M := by
+  simp
+
 /-- If `b` is false, then `M ＼ X`, and if `b` is true, then `M ／ X`. Used in self-dual settings. -/
 def remove (M : Matroid α) (b : Bool) (X : Set α) := bif b then M ／ X else M ＼ X
 
@@ -61,6 +64,7 @@ lemma remove_dual (M : Matroid α) (X : Set α) (b : Bool) : (M.remove b X)✶ =
 lemma dual_remove (M : Matroid α) (X : Set α) (b : Bool) : M✶.remove b X = (M.remove (!b) X)✶ := by
   rw [remove_dual, Bool.not_not]
 
+@[simp]
 lemma bDual_remove (M : Matroid α) (X : Set α) (b c : Bool) :
     (M.remove c X).bDual b = (M.bDual b).remove (b != c) X := by
   cases c <;> cases b <;> simp

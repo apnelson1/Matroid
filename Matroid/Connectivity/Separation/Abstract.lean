@@ -1,7 +1,6 @@
 import Matroid.Connectivity.Separation.Faithful
 import Matroid.ForMathlib.Matroid.Constructions
 import Matroid.ForMathlib.Data.Set.Subsingleton
-import Matroid.ForMathlib.Tactic.ENatToNat
 
 open Set Matroid.Separation Function
 
@@ -50,6 +49,17 @@ lemma isPredSeparation_ofDual_iff {P : M✶.Separation}
     P.ofDual.IsPredSeparation dg ↔ P.IsPredSeparation dg := by
   rw [← isPredSeparation_dual_iff hdg, ofDual_dual]
 
+lemma isPredSeparation_bDual_iff (hdg : ∀ ⦃M X i⦄, X ⊆ M.E → dg i M X → dg i M✶ X) {b} :
+    (P.bDual b).IsPredSeparation dg ↔ P.IsPredSeparation dg := by
+  cases b
+  · simp
+  simp [isPredSeparation_dual_iff hdg]
+
+lemma isPredSeparation_ofbDual_iff {b} {P : (M.bDual b).Separation}
+    (hdg : ∀ ⦃M X i⦄, X ⊆ M.E → dg i M X → dg i M✶ X) :
+    P.ofbDual.IsPredSeparation dg ↔ P.IsPredSeparation dg := by
+  rw [← isPredSeparation_bDual_iff hdg (b := b), ofbDual_bDual]
+
 lemma IsPredSeparation.symm (hP : P.IsPredSeparation dg) :
     P.symm.IsPredSeparation (fun i ↦ dg !i) :=
   fun i ↦ hP !i
@@ -76,6 +86,20 @@ lemma IsPredSeparation.nonempty (h : P.IsPredSeparation dg) (hdg : ∀ i, dg i M
 lemma IsPredSeparation.nontrivial (h : P.IsPredSeparation dg) (hdg : ∀ i, dg i M ∅) :
     P.Nontrivial := by
   simp [P.nontrivial_def, h.nonempty hdg]
+
+lemma Faithful.isPredSeparation_of_induce {dg : Matroid α → Set α → Prop} {N : Matroid α}
+    (hP : P.Faithful N) (hNM : N ≤m M) (hdg : IsLawfulDG dg)
+    (h : (P.induce hNM.subset).IsPredSeparation fun _ ↦ dg) : P.IsPredSeparation (fun _ ↦ dg) :=
+  fun i hi ↦ h i <| hdg hNM hP i hi
+
+lemma IsPredSeparation.copy {M' : Matroid α} (h : P.IsPredSeparation dg) (hMM' : M = M') :
+    (P.copy hMM').IsPredSeparation dg := by
+  simpa [IsPredSeparation, hMM'] using h
+
+@[simp]
+lemma isPredSeparation_copy_iff {M' : Matroid α} (hMM' : M = M') :
+    (P.copy hMM').IsPredSeparation dg ↔ P.IsPredSeparation dg := by
+  simp [IsPredSeparation, hMM']
 
 end Separation
 
@@ -136,7 +160,6 @@ lemma PredConnected.dual_compl (hdg : ∀ ⦃i k M X⦄, X ⊆ M.E → dg i k M 
 lemma PredConnected.dual (hdegen : ∀ ⦃i k M X⦄, X ⊆ M.E → dg i k M X → dg' i k M✶ X)
     (h : M.PredConnected dg) : M✶.PredConnected dg' :=
   h.dual' fun i k N X hX h' ↦ by simp [hdegen hX h']
-
 
 section Monotone
 
