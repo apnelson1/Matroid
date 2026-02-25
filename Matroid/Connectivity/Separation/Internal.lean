@@ -57,18 +57,6 @@ lemma InternallyConnected.exists_indep_coindep_of_eConn_lt (h : M.InternallyConn
   obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp at hP
   exact h.tutteConnected.exists_indep_coindep (P := P) (Order.le_of_lt_add_one hP)
 
--- lemma InternallyConnected.foo (hk : k ≠ ⊤) : M.InternallyConnected (k + 1) ↔
---     M.TutteConnected k ∧ ∀ (P : M.Separation), P.eConn + 1 = k → P.IsTutteSeparation →
---     ∃ i, M.IsCircuit (P i) ∨ M.IsCocircuit (P i) := by
---   obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
---   have hktop : k ≠ ⊤ := by simpa using hk
-
---   refine ⟨fun h ↦ ⟨h.tutteConnected, fun P hPconn hP ↦ ?_⟩, fun h ↦ ?_⟩
---   · obtain rfl : P.eConn = k := by simpa using hPconn
---     obtain ⟨i, hi⟩ := BiConnected.exists_encard_le h P
---     have hle : (P i).encard ≤ P.eConn + 1 := by simpa [hktop] using hi
---     clear hi h hPconn hk
-
 /-- If `P` is a separation of connectivity `k - 1` in an internally `(k + 1)`-connected matroid,
 then one side of `P` is either an independent, coindependent `(k - 1)`-set,
 or a `k`-set that is a circuit or cocircuit. -/
@@ -91,7 +79,7 @@ lemma InternallyConnected.exists_of_eConn_eq (hconn : M.InternallyConnected (k +
   clear hle hi hk
   wlog h0 : M✶.nullity (P i) = 0 generalizing M P with aux
   · have h0' : M.nullity (P i) = 0 := by enat_to_nat!; lia
-    simpa [or_comm] using aux (P := P.dual) (by simpa) (by simpa) (by simpa [add_comm])
+    simpa [or_comm] using aux (P := P.induce M✶) (by simpa) (by simpa) (by simpa [add_comm])
       (by simpa using h0')
   have hrw : (P i).encard = P.eConn + 1 := by
     rw [← M.eConn_add_nullity_add_nullity_dual (P i), add_assoc, h, P.eConn_eq]

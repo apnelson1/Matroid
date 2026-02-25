@@ -220,6 +220,12 @@ protected lemma shift_apply_of_ne [DecidableEq ι] (P : s.IndexedPartition ι) {
     IndexedPartition.induce_apply, IndexedPartition.single_apply_of_ne _ hne, union_empty]
   rw [← inter_assoc, inter_right_comm, inter_eq_self_of_subset_left P.subset]
 
+protected lemma shift_apply_eq_ite [DecidableEq ι] (P : s.IndexedPartition ι) (t : Set α) (i : ι) :
+    P.shift t i j = if j = i then (P j ∩ t) ∪ (t \ s) else (P j ∩ t)  := by
+  obtain rfl | hne := eq_or_ne j i
+  · simp
+  simp [P.shift_apply_of_ne hne, hne]
+
 @[simp]
 protected lemma shift_copy [DecidableEq ι] (P : s.IndexedPartition ι) {t' : Set α} (h : t = t')
     (i : ι) : (P.shift t i).copy h = P.shift t' i := by

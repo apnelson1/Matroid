@@ -29,36 +29,35 @@ lemma not_isPredSeparation_iff {dg} : ¬ P.IsPredSeparation dg ↔ ∃ i, dg i M
 
 lemma IsPredSeparation.dual {dg dg' : Bool → Matroid α → Set α → Prop}
     (hdg : ∀ ⦃M X i⦄, X ⊆ M.E → dg' i M X → dg i M✶ X) (hP : P.IsPredSeparation dg) :
-    P.dual.IsPredSeparation dg' :=
+    (P.induce M✶).IsPredSeparation dg' :=
   fun i h ↦ hP i <| by simpa using hdg (by simp) h
 
 lemma IsPredSeparation.dual_compl (hdg : ∀ ⦃M X i⦄, X ⊆ M.E → dg' i M X → dg (!i) M✶ (M.E \ X))
-    (hP : P.IsPredSeparation dg) : P.dual.IsPredSeparation dg' :=
+    (hP : P.IsPredSeparation dg) : (P.induce M✶).IsPredSeparation dg' :=
   fun i h ↦ hP (!i) <| by simpa using hdg (by simp) h
 
 lemma IsPredSeparation.of_dual (hdg : ∀ ⦃M X i⦄, X ⊆ M.E → dg' i M X → dg i M✶ X)
-    (hP : P.dual.IsPredSeparation dg) : P.IsPredSeparation dg' :=
-  fun i h ↦ hP i <| hdg (by simp) h
+    (hP : (P.induce M✶).IsPredSeparation dg) : P.IsPredSeparation dg' :=
+  fun i h ↦ hP i <| hdg (by simp) (by simpa using h)
 
 lemma isPredSeparation_dual_iff (hdg : ∀ ⦃M X i⦄, X ⊆ M.E → dg i M X → dg i M✶ X) :
-    P.dual.IsPredSeparation dg ↔ P.IsPredSeparation dg :=
+    (P.induce M✶).IsPredSeparation dg ↔ P.IsPredSeparation dg :=
   ⟨IsPredSeparation.of_dual hdg, IsPredSeparation.dual hdg⟩
 
 lemma isPredSeparation_ofDual_iff {P : M✶.Separation}
     (hdg : ∀ ⦃M X i⦄, X ⊆ M.E → dg i M X → dg i M✶ X) :
-    P.ofDual.IsPredSeparation dg ↔ P.IsPredSeparation dg := by
-  rw [← isPredSeparation_dual_iff hdg, ofDual_dual]
+    (P.induce M).IsPredSeparation dg ↔ P.IsPredSeparation dg := by
+  rw [← isPredSeparation_dual_iff hdg, induce_induce_dual, induce_self]
 
 lemma isPredSeparation_bDual_iff (hdg : ∀ ⦃M X i⦄, X ⊆ M.E → dg i M X → dg i M✶ X) {b} :
-    (P.bDual b).IsPredSeparation dg ↔ P.IsPredSeparation dg := by
-  cases b
-  · simp
-  simp [isPredSeparation_dual_iff hdg]
+    (P.induce (M.bDual b)).IsPredSeparation dg ↔ P.IsPredSeparation dg := by
+  cases b <;> simp [isPredSeparation_dual_iff hdg]
 
 lemma isPredSeparation_ofbDual_iff {b} {P : (M.bDual b).Separation}
     (hdg : ∀ ⦃M X i⦄, X ⊆ M.E → dg i M X → dg i M✶ X) :
-    P.ofbDual.IsPredSeparation dg ↔ P.IsPredSeparation dg := by
-  rw [← isPredSeparation_bDual_iff hdg (b := b), ofbDual_bDual]
+    (P.induce M).IsPredSeparation dg ↔ P.IsPredSeparation dg := by
+  rw [← isPredSeparation_bDual_iff hdg (b := b)]
+  simp
 
 lemma IsPredSeparation.symm (hP : P.IsPredSeparation dg) :
     P.symm.IsPredSeparation (fun i ↦ dg !i) :=
@@ -88,9 +87,9 @@ lemma IsPredSeparation.nontrivial (h : P.IsPredSeparation dg) (hdg : ∀ i, dg i
   simp [P.nontrivial_def, h.nonempty hdg]
 
 lemma Faithful.isPredSeparation_of_induce {dg : Matroid α → Set α → Prop} {N : Matroid α}
-    (hP : P.Faithful N) (hNM : N ≤m M) (hdg : IsLawfulDG dg)
-    (h : (P.induce hNM.subset).IsPredSeparation fun _ ↦ dg) : P.IsPredSeparation (fun _ ↦ dg) :=
-  fun i hi ↦ h i <| hdg hNM hP i hi
+    (hP : P.Faithful N) (hdg : IsLawfulDG dg) (h : (P.induce N).IsPredSeparation fun _ ↦ dg) :
+    P.IsPredSeparation (fun _ ↦ dg) :=
+  fun i hi ↦ h i <| by simpa [induce_apply_subset _ hP.isMinor.subset] using hdg hP i hi
 
 lemma IsPredSeparation.copy {M' : Matroid α} (h : P.IsPredSeparation dg) (hMM' : M = M') :
     (P.copy hMM').IsPredSeparation dg := by
@@ -149,7 +148,7 @@ lemma PredConnected.dual' (hdegen : ∀ ⦃i k M X⦄, X ⊆ M.E → dg i k M X 
     (dg' i k M✶ X ∨ dg' (!i) k M✶ (M.E \ X))) (h : M.PredConnected dg) :
     M✶.PredConnected dg' := by
   intro P
-  obtain ⟨i, hb⟩ := h.mono' (dg' := fun i k N Y ↦ dg' i k N✶ Y) (P := P.ofDual)
+  obtain ⟨i, hb⟩ := h.mono' (dg' := fun i k N Y ↦ dg' i k N✶ Y) (P := P.induce M)
     (fun _ _ _ _ hX h ↦ hdegen hX h)
   exact ⟨i, by simpa using hb⟩
 
@@ -161,14 +160,6 @@ lemma PredConnected.dual (hdegen : ∀ ⦃i k M X⦄, X ⊆ M.E → dg i k M X �
     (h : M.PredConnected dg) : M✶.PredConnected dg' :=
   h.dual' fun i k N X hX h' ↦ by simp [hdegen hX h']
 
-section Monotone
-
-structure DeleteMonotone (dg : Matroid α → Set α → Prop) : Prop where
-  mono_subset : ∀ ⦃M X Y⦄, dg M Y → X ⊆ Y → dg M X
-  mono_del : ∀ ⦃M : Matroid α⦄ ⦃D : Set α⦄ ⦃P : M.Separation⦄, M.Coindep D →
-    (P.delete D).IsPredSeparation (fun _ ↦ dg) → P.IsPredSeparation (fun _ ↦ dg)
-
-end Monotone
 /-- A slightly more concrete notion of connectivity that still abstracts Tutte, vertical and cyclic
 connectivity. `M.numConnected dg (k+1)` means that every separation of connectivity less than `k`
 has a degenerate side in the of a specified `dg`.
@@ -264,7 +255,7 @@ lemma NumConnected.congr_degen {dg dg'} (hdg : ∀ ⦃X⦄, X ⊆ M.E → (dg M 
 lemma NumConnected.dual {dg} (h : M.NumConnected dg k) : M✶.NumConnected (fun M X ↦ dg M✶ X) k := by
   obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
   simp_rw [numConnected_iff_forall, not_isPredSeparation_iff] at h ⊢
-  exact fun P hP ↦ by simpa using h P.ofDual (by simpa)
+  exact fun P hP ↦ by simpa using h (P.induce M) (by simpa)
 
 lemma NumConnected.of_dual {dg} (h : M✶.NumConnected dg k) :
     M.NumConnected (fun M X ↦ dg M✶ X) k := by
@@ -329,7 +320,7 @@ lemma seqConnected_iff_exists {w } : M.SeqConnected w f ↔
 lemma SeqConnected.dual {w} (h : M.SeqConnected w f) : M✶.SeqConnected (fun M X ↦ w M✶ X) f := by
   simp_rw [seqConnected_iff_exists, dual_dual]
   rw [seqConnected_iff_exists] at h
-  convert fun (P : M✶.Separation) ↦ h P.ofDual using 3
+  convert fun (P : M✶.Separation) ↦ h (P.induce M) using 3
   simp
 
 lemma seqConnected_dual_iff {w} : M✶.SeqConnected w f ↔ M.SeqConnected (fun M X ↦ w M✶ X) f :=

@@ -44,30 +44,31 @@ lemma isTutteSeparation_iff' (i : Bool) : P.IsTutteSeparation ↔
   rw [isTutteSeparation_iff i, nonspanning_not_iff, ← codep_not_iff]
 
 @[simp]
-lemma isTutteSeparation_dual_iff : P.dual.IsTutteSeparation ↔ P.IsTutteSeparation :=
+lemma isTutteSeparation_dual_iff : (P.induce M✶).IsTutteSeparation ↔ P.IsTutteSeparation :=
   isPredSeparation_dual_iff <| by simp
 
 alias ⟨IsTutteSeparation.of_dual, IsTutteSeparation.dual⟩ := isTutteSeparation_dual_iff
 
 @[simp]
-lemma isTutteSeparation_ofDual_iff {P : M✶.Separation} :
-    P.ofDual.IsTutteSeparation ↔ P.IsTutteSeparation :=
+lemma isTutteSeparation_of_dual_iff {P : M✶.Separation} :
+    (P.induce M).IsTutteSeparation ↔ P.IsTutteSeparation :=
   isPredSeparation_ofDual_iff <| by simp
 
 @[simp]
-lemma isTutteSeparation_bDual_iff {b} : (P.bDual b).IsTutteSeparation ↔ P.IsTutteSeparation :=
+lemma isTutteSeparation_bDual_iff {b} :
+    (P.induce (M.bDual b)).IsTutteSeparation ↔ P.IsTutteSeparation :=
   isPredSeparation_bDual_iff <| by simp
 
 lemma IsTutteSeparation.bDual (h : P.IsTutteSeparation) (b : Bool) :
-    (P.bDual b).IsTutteSeparation := by
+    (P.induce (M.bDual b)).IsTutteSeparation := by
   simpa
 
 @[simp]
-lemma isTutteSeparation_ofbDual_iff {b} {P : (M.bDual b).Separation} :
-    P.ofbDual.IsTutteSeparation ↔ P.IsTutteSeparation :=
+lemma isTutteSeparation_of_bDual_iff {b} {P : (M.bDual b).Separation} :
+    (P.induce M).IsTutteSeparation ↔ P.IsTutteSeparation :=
   isPredSeparation_ofbDual_iff <| by simp
 
-alias ⟨IsTutteSeparation.of_ofbDual, IsTutteSeparation.of_bDual⟩ := isTutteSeparation_ofbDual_iff
+alias ⟨IsTutteSeparation.of_ofbDual, IsTutteSeparation.of_bDual⟩ := isTutteSeparation_of_bDual_iff
 
 @[simp]
 lemma isTutteSeparation_symm_iff : P.symm.IsTutteSeparation ↔ P.IsTutteSeparation :=
@@ -75,6 +76,11 @@ lemma isTutteSeparation_symm_iff : P.symm.IsTutteSeparation ↔ P.IsTutteSeparat
 
 lemma IsTutteSeparation.symm (h : P.IsTutteSeparation) : P.symm.IsTutteSeparation :=
   IsPredSeparation.symm h
+
+@[simp]
+lemma isTutteSeparation_copy_iff (hMN : M = N) :
+    (P.copy hMN).IsTutteSeparation ↔ P.IsTutteSeparation :=
+  isPredSeparation_copy_iff hMN
 
 lemma IsTutteSeparation.codep_of_indep (hP : P.IsTutteSeparation) (hi : M.Indep (P i)) :
     M.Codep (P i) := by
@@ -170,21 +176,21 @@ lemma IsTutteSeparation.tutteWeight_pos (h : P.IsTutteSeparation) (i : Bool) :
     0 < M.tutteWeight (P i) :=
   (isTutteSeparation_iff_tutteWeight.1 h) i
 
-lemma Faithful.isTutteSeparation_of_induce (h : P.Faithful N) (hNM : N ≤m M)
-    (hP : (P.induce hNM.subset).IsTutteSeparation) : P.IsTutteSeparation :=
-  h.isPredSeparation_of_induce hNM isLawfulDG_tutteDegen hP
+lemma Faithful.isTutteSeparation_of_induce (h : P.Faithful N)
+    (hP : (P.induce N).IsTutteSeparation) : P.IsTutteSeparation :=
+  h.isPredSeparation_of_induce isLawfulDG_tutteDegen hP
 
 lemma Faithful.isTutteSeparation_of_delete {D : Set α} (h : P.Faithful (M ＼ D))
-    (hP : (P.delete D).IsTutteSeparation) : P.IsTutteSeparation :=
-  h.isTutteSeparation_of_induce (delete_isMinor ..) hP
+    (hP : (P.induce (M ＼ D)).IsTutteSeparation) : P.IsTutteSeparation :=
+  h.isTutteSeparation_of_induce hP
 
 lemma Faithful.isTutteSeparation_of_contract {C : Set α} (h : P.Faithful (M ／ C))
-    (hP : (P.contract C).IsTutteSeparation) : P.IsTutteSeparation :=
-  h.isTutteSeparation_of_induce (contract_isMinor ..) hP
+    (hP : (P.induce (M ／ C)).IsTutteSeparation) : P.IsTutteSeparation :=
+  h.isTutteSeparation_of_induce hP
 
 lemma Faithful.isTutteSeparation_of_remove {b} (h : P.Faithful (M.remove b X))
-    (hP : (P.remove b X).IsTutteSeparation) : P.IsTutteSeparation :=
-  h.isTutteSeparation_of_induce (remove_isMinor ..) hP
+    (hP : (P.induce (M.remove b X)).IsTutteSeparation) : P.IsTutteSeparation :=
+  h.isTutteSeparation_of_induce hP
 
 end Separation
 

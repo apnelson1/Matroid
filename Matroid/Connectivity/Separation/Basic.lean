@@ -177,51 +177,157 @@ protected def copy' {M' : Matroid α} (P : M.Separation) (h_eq : M.E = M'.E) :=
 @[simp]
 lemma copy'_apply (P : M.Separation) (h_eq : M.E = N.E) (i : Bool) : P.copy' h_eq i = P i := rfl
 
-protected def dual (P : M.Separation) : M✶.Separation := P.copy' rfl
 
-protected def ofDual (P : M✶.Separation) : M.Separation := P.copy' rfl
+/-- Transfer a separation from `M` to another matroid `N`, putting any new elements on side `i`.
+If `N.E ⊆ M.E`, the value of `i` does not matter, so we allow a default value of `false`,
+and state lemmas where `N.E ⊆ M.E` only in terms of `P.induce N`.
+In the more general case (for example, if `M = N ＼ D`), then both values of `i` are potentially
+relevant, so we give lemmas more generally in terms of `P.induce N i`. -/
+def induce (P : M.Separation) (N : Matroid α) (i : Bool := false) : N.Separation :=
+  IndexedPartition.shift P N.E i
 
-@[simp, simp↓]
-protected lemma dual_apply (P : M.Separation) (i : Bool) : P.dual i = P i := rfl
-
-@[simp, simp↓]
-protected lemma ofDual_apply (P : M✶.Separation) (i : Bool) : P.ofDual i = P i := rfl
-
-@[simp] lemma dual_ofDual (P : M.Separation) : P.dual.ofDual = P := rfl
-
-@[simp] lemma ofDual_dual (P : M✶.Separation) : P.ofDual.dual = P := rfl
-
-lemma dual_dual (P : M.Separation) : P.dual.dual = P.copy M.dual_dual.symm := rfl
-
-@[simps] def dualEquiv (M : Matroid α) : M.Separation ≃ M✶.Separation where
-  toFun := Separation.dual
-  invFun := Separation.ofDual
-  left_inv P := by simp
-  right_inv P := by simp
-
-protected def bDual (P : M.Separation) (b : Bool) : (M.bDual b).Separation :=
-  P.copy' <| by simp
+lemma induce_apply_eq_cond (P : M.Separation) (N : Matroid α) (i : Bool) :
+    P.induce N i j = bif j == i then P j ∩ N.E ∪ (N.E \ M.E) else P j ∩ N.E := by
+  rw [induce, IndexedPartition.shift_apply_eq_ite]
+  simp
 
 @[simp]
-lemma bDual_apply (P : M.Separation) (b i : Bool) : P.bDual b i = P i := rfl
+lemma induce_apply_not (P : M.Separation) (N : Matroid α) (i : Bool) :
+    P.induce N i (!i) = P (!i) ∩ N.E := by
+  simp [induce_apply_eq_cond]
 
 @[simp]
-lemma bDual_false (P : M.Separation) : P.bDual false = P.copy rfl := rfl
+lemma induce_not_apply (P : M.Separation) (N : Matroid α) (i : Bool) :
+    P.induce N (!i) i = P i ∩ N.E := by
+  simp [induce_apply_eq_cond]
 
 @[simp]
-lemma bDual_true (P : M.Separation) : P.bDual true = P.dual.copy rfl := rfl
-
-protected def ofbDual {b : Bool} (P : (M.bDual b).Separation) : M.Separation :=
-  P.copy' <| by simp
+lemma induce_true_false : P.induce N true false = P false ∩ N.E :=
+  induce_not_apply P N false
 
 @[simp]
-lemma ofbDual_apply {b : Bool} (P : (M.bDual b).Separation) (i : Bool) : P.ofbDual i = P i := rfl
+lemma induce_false_true : P.induce N false true = P true ∩ N.E :=
+  induce_not_apply P N true
+
+lemma induce_apply_self : P.induce N i i = N.E \ P (!i) := by
+  rw [induce_apply_eq_cond, BEq.refl, cond_true, ← P.union_bool_eq i]
+  grind [P.disjoint_bool i]
+
+lemma induce_apply_subset (P : M.Separation) (hNM : N.E ⊆ M.E) (i j : Bool) :
+    P.induce N i j = P j ∩ N.E := by
+  rw [induce_apply_eq_cond, diff_eq_empty.2 hNM, union_empty, Bool.cond_self]
+
+lemma induce_eq_induce_of_subset (P : M.Separation) (hNM : N.E ⊆ M.E) :
+    P.induce N i = P.induce N :=
+  Separation.ext_bool false <| by simp [induce_apply_eq_cond, diff_eq_empty.2 hNM]
+
+-- @[simp]
+-- lemma induce_dual_eq_dual (P : M.Separation) (i : Bool) : P.induce M✶ i = P.dual :=
+--   Separation.ext_bool i <| by simp [induce_apply_self]
+
+-- @[simp]
+-- lemma dual_induce (P : M.Separation) (N : Matroid α) (i : Bool) :
+--     P.dual.induce N i = P.induce N i :=
+--   Separation.ext_bool (!i) <| by simp
+
+-- @[simp]
+-- lemma induce_dual (P : M.Separation) (N : Matroid α) (i : Bool) :
+--     (P.induce N i).dual = P.induce N✶ i :=
+--   Separation.ext_bool (!i) <| by simp
+
+lemma induce_eq_copy (P : M.Separation) (hMN : M = N) : P.induce N i = P.copy hMN :=
+  Separation.ext_bool (!i) <| by simp [hMN.symm]
 
 @[simp]
-lemma ofbDual_bDual {b : Bool} (P : (M.bDual b).Separation) : P.ofbDual.bDual b = P := rfl
+lemma copy_induce {M'} (P : M.Separation) (hM' : M = M') (N : Matroid α) (i : Bool) :
+    (P.copy hM').induce N i = P.induce N i :=
+  Separation.ext_bool (!i) <| by simp
+
+/-- This looks like it should be a simp lemma, but simp will 'forget' that `N = N'`
+with annoying consequences. -/
+lemma induce_copy {N'} (P : M.Separation) (hN : N = N') (i : Bool) :
+    (P.induce N i).copy hN  = P.induce N' i := by
+  subst hN
+  simp
+
+lemma induce_symm (P : M.Separation) (N : Matroid α) (i : Bool) :
+    (P.induce N i).symm = P.symm.induce N (!i) :=
+  Separation.ext_bool (!i) <| by simp [induce_apply_self]
+
+lemma induce_symm_of_subset (P : M.Separation) (hNM : N.E ⊆ M.E) :
+    (P.induce N).symm = P.symm.induce N := by
+  rw [induce_symm, induce_eq_induce_of_subset _ hNM]
+
+lemma induce_induce {N' : Matroid α} (P : M.Separation) (hN' : N'.E ⊆ N.E) :
+    (P.induce N i).induce N' = P.induce N' i := by
+  refine Separation.ext_bool (!i) ?_
+  simp [induce_apply_eq_cond, inter_assoc, inter_eq_self_of_subset_right hN', diff_eq_empty.2 hN']
+
+lemma induce_induce_of_subset {N' : Matroid α} (P : M.Separation) {i} (hss : M.E ⊆ N.E) :
+    (P.induce N i).induce N' i = P.induce N' i := by
+  refine Separation.ext_bool (!i) ?_
+  simp only [induce_apply_eq_cond, Bool.not_beq_self, cond_false]
+  rw [inter_eq_self_of_subset_left (P.subset.trans hss)]
 
 @[simp]
-lemma bDual_ofbDual {b : Bool} (P : M.Separation) : (P.bDual b).ofbDual = P := rfl
+lemma induce_self (P : M.Separation) : P.induce M i = P :=
+  Separation.ext_bool (!i) <| by simp
+
+lemma induce_induce_eq_self (P : M.Separation) (hss : M.E ⊆ N.E) (i : Bool) :
+    (P.induce N i).induce M = P :=
+  Separation.ext_bool (!i) <| by rw [P.induce_induce hss, induce_apply_not, P.inter_ground_left]
+
+lemma induce_induce_eq_self_of_subset_union (P : M.Separation) (hN : N.E ⊆ M.E) {i : Bool}
+    (hi : P (!i) ⊆ N.E) : (P.induce N).induce M i = P :=
+  Separation.ext_bool (!i) <| by
+    simpa [induce_apply_eq_cond, diff_eq_empty.2 hN, inter_assoc, inter_eq_self_of_subset_left hN]
+
+
+-- protected def dual (P : M.Separation) : M✶.Separation := P.copy' rfl
+
+-- protected def ofDual (P : M✶.Separation) : M.Separation := P.copy' rfl
+
+-- @[simp, simp↓]
+-- protected lemma dual_apply (P : M.Separation) (i : Bool) : P.dual i = P i := rfl
+
+-- @[simp, simp↓]
+-- protected lemma ofDual_apply (P : M✶.Separation) (i : Bool) : P.ofDual i = P i := rfl
+
+-- @[simp] lemma dual_ofDual (P : M.Separation) : P.dual.ofDual = P := rfl
+
+-- @[simp] lemma ofDual_dual (P : M✶.Separation) : P.ofDual.dual = P := rfl
+
+-- lemma dual_dual (P : M.Separation) : P.dual.dual = P.copy M.dual_dual.symm := rfl
+
+-- @[simps] def dualEquiv (M : Matroid α) : M.Separation ≃ M✶.Separation where
+--   toFun := Separation.dual
+--   invFun := Separation.ofDual
+--   left_inv P := by simp
+--   right_inv P := by simp
+
+-- protected def bDual (P : M.Separation) (b : Bool) : (M.bDual b).Separation :=
+--   P.copy' <| by simp
+
+-- @[simp]
+-- lemma bDual_apply (P : M.Separation) (b i : Bool) : P.bDual b i = P i := rfl
+
+-- @[simp]
+-- lemma bDual_false (P : M.Separation) : P.bDual false = P.copy rfl := rfl
+
+-- @[simp]
+-- lemma bDual_true (P : M.Separation) : P.bDual true = P.dual.copy rfl := rfl
+
+-- protected def ofbDual {b : Bool} (P : (M.bDual b).Separation) : M.Separation :=
+--   P.copy' <| by simp
+
+-- @[simp]
+-- lemma ofbDual_apply {b : Bool} (P : (M.bDual b).Separation) (i : Bool) : P.ofbDual i = P i := rfl
+
+-- @[simp]
+-- lemma ofbDual_bDual {b : Bool} (P : (M.bDual b).Separation) : P.ofbDual.bDual b = P := rfl
+
+-- @[simp]
+-- lemma bDual_ofbDual {b : Bool} (P : M.Separation) : (P.bDual b).ofbDual = P := rfl
 
 /-- A separation is trivial if one side is empty. -/
 protected def Trivial (P : M.Separation) : Prop := IndexedPartition.Trivial P
@@ -322,21 +428,57 @@ lemma eConn_eq_eLocalConn_of_isRestriction (P : N.Separation) (hNM : N ≤r M) (
   rw [eConn_eq_eLocalConn _ i, hNM.eLocalConn_eq_of_subset]
 
 @[simp]
-lemma eConn_dual (P : M.Separation) : P.dual.eConn = P.eConn := by
-  rw [← P.dual.eConn_eq true, M.eConn_dual, P.dual_apply, P.eConn_eq]
+lemma induce_dual_apply (P : M.Separation) (i) : (P.induce M✶) i = P i := by
+  simp [induce_apply_eq_cond]
 
 @[simp]
-lemma eConn_ofDual (P : M✶.Separation) : P.ofDual.eConn = P.eConn := by
-  rw [← P.dual_ofDual, ← eConn_dual]
+lemma induce_of_dual_apply (P : M✶.Separation) (i) : (P.induce M) i = P i := by
+  simpa [induce_apply_eq_cond] using P.subset
+
+@[simp]
+lemma induce_induce_dual (P : M.Separation) (N) i : (P.induce N i).induce N✶ = P.induce N✶ i :=
+  induce_induce _ <| by simp
+
+@[simp]
+lemma induce_dual_induce_self (P : M.Separation) (N) i : (P.induce N✶ i).induce N = P.induce N i :=
+  induce_induce _ <| by simp
+
+@[simp]
+lemma induce_induce_bDual (P : M.Separation) (N) i b :
+    (P.induce N i).induce (N.bDual b) = P.induce (N.bDual b) i :=
+  induce_induce _ <| by simp
+
+@[simp]
+lemma induce_bDual_induce (P : M.Separation) (N) i b :
+    (P.induce (N.bDual b) i).induce N = P.induce N i :=
+  Separation.ext_bool (!i) <| by simp [induce_apply_eq_cond]
+
+@[simp]
+lemma induce_bDual_apply (P : M.Separation) (b i) : (P.induce (M.bDual b)) i = P i := by
+  simp [induce_apply_eq_cond]
+
+@[simp]
+lemma eConn_induce_dual (P : M.Separation) : (P.induce M✶).eConn = P.eConn := by
+  rw [← eConn_eq _ true, ← eConn_eq _ true,  M.eConn_dual, P.induce_dual_apply, P.eConn_eq]
+
+@[simp]
+lemma eConn_induce_of_dual (P : M✶.Separation) : (P.induce M).eConn = P.eConn := by
+  rw [← P.eConn_induce_dual]
+  convert rfl
   simp
 
 @[simp]
-lemma eConn_bDual (P : M.Separation) (b : Bool) : (P.bDual b).eConn = P.eConn := by
-  cases b <;> simp
+lemma induce_dual_eConn (P : M.Separation) (N) : (P.induce N✶ i).eConn = (P.induce N i).eConn := by
+  rw [← Separation.eConn_eq _ (!i), eConn_dual, induce_apply_not, dual_ground, ← induce_apply_not,
+    Separation.eConn_eq]
 
 @[simp]
-lemma eConn_ofbDual {b} (P : (M.bDual b).Separation) : P.ofbDual.eConn = P.eConn := by
-  rw [← P.ofbDual.eConn_bDual b, ofbDual_bDual]
+lemma induce_dual_induce (P : M.Separation) (N i) : (P.induce M✶).induce N i = P.induce N i :=
+  Separation.ext_bool (!i) <| by simp
+
+@[simp]
+lemma eConn_induce_bDual (P : M.Separation) (b) : (P.induce (M.bDual b)).eConn = P.eConn := by
+  cases b <;> simp
 
 lemma Trivial.eConn (h : P.Trivial) : P.eConn = 0 := by
   obtain ⟨i, hb⟩ := h
@@ -457,9 +599,6 @@ lemma ofSetSep_false_true (hA : A ⊆ M.E) : (M.ofSetSep A false hA true) = M.E 
 lemma eConn_ofSetSep (hA : A ⊆ M.E) : (M.ofSetSep A i hA).eConn = M.eConn A := by
   rw [← Separation.eConn_eq _ i, M.ofSetSep_apply_self]
 
-@[simp]
-lemma ofSetSep_dual (hA : A ⊆ M.E) :
-  M✶.ofSetSep A i hA = (M.ofSetSep A i hA).dual := rfl
 
 namespace Separation
 
@@ -468,55 +607,21 @@ lemma Trivial.exists_eq (h : P.Trivial) : ∃ i, P = M.ofSetSep ∅ i := by
   refine ⟨!i, Separation.ext_bool i (by simpa)⟩
 
 
-/-- Intersect a separation with the ground set of a smaller matroid -/
-def induce (P : M.Separation) (hN : N.E ⊆ M.E) : N.Separation := IndexedPartition.induce P hN
+-- /-- Intersect a separation with the ground set of a smaller matroid -/
+-- def induce (P : M.Separation) (hN : N.E ⊆ M.E) : N.Separation := IndexedPartition.induce P hN
 
-@[simp]
-lemma induce_apply (P : M.Separation) (hN : N.E ⊆ M.E) (i) : P.induce hN i = (P i) ∩ N.E := rfl
+-- @[simp]
+-- lemma induce_apply (P : M.Separation) (hN : N.E ⊆ M.E) (i) : P.induce hN i = (P i) ∩ N.E := rfl
 
-@[simp]
-lemma induce_symm (P : M.Separation) (hN : N.E ⊆ M.E) : (P.induce hN).symm = P.symm.induce hN :=
-  Separation.ext rfl
+-- @[simp]
+-- lemma induce_symm (P : M.Separation) (hN : N.E ⊆ M.E) : (P.induce hN).symm = P.symm.induce hN :=
+--   Separation.ext rfl
 
-lemma eConn_induce_le_of_isMinor (P : M.Separation) (hNM : N ≤m M) :
-    (P.induce hNM.subset).eConn ≤ P.eConn := by
-  grw [← P.eConn_eq true, ← Separation.eConn_eq _ true, induce_apply, eConn_inter_ground,
-    hNM.eConn_le]
+-- lemma eConn_induce_le_of_isMinor (P : M.Separation) (hNM : N ≤m M) :
+--     (P.induce hNM.subset).eConn ≤ P.eConn := by
+--   grw [← P.eConn_eq true, ← Separation.eConn_eq _ true, induce_apply, eConn_inter_ground,
+--     hNM.eConn_le]
 
-/-- `Separation.LE P Q`, written `P ≤ Q`, means that every cell of `P` is contained in the
-corresponding cell of `Q`. -/
-protected def LE (P : M.Separation) (Q : N.Separation) : Prop := ∀ i, P i ⊆ Q i
-
-scoped infixl:50 " ≼ " => Separation.LE
-
-lemma le_iff : P ≼ Q ↔ ∀ i, P i ⊆ Q i := Iff.rfl
-
-protected lemma LE.trans {L M N : Matroid α} {P : L.Separation} {Q : M.Separation}
-    (R : N.Separation) (hPQ : P ≼ Q) (hQR : Q ≼ R) : P ≼ R :=
-  fun i ↦ (hPQ i).trans (hQR i)
-
-protected lemma LE.ground_subset (hPQ : P ≼ Q) : M.E ⊆ N.E := by
-  grw [← P.iUnion_eq, ← Q.iUnion_eq, iUnion_mono hPQ]
-
-protected lemma LE.disjoint_of_ne (hPQ : P ≼ Q) (hij : i ≠ j) : Disjoint (P i) (Q j) := by
-  grw [hPQ i]
-  exact Q.disjoint hij
-
-protected lemma LE.eq_induce (hPQ : P ≼ Q) : P = Q.induce hPQ.ground_subset :=
-  IndexedPartition.LE.eq_induce hPQ
-
-protected lemma LE.eq {P Q : M.Separation} (hPQ : P ≼ Q) : P = Q :=
-  IndexedPartition.LE.eq hPQ
-
-@[simp]
-protected lemma le_refl (P : M.Separation) : P ≼ P :=
-  fun _ ↦ rfl.subset
-
-lemma induce_le (P : M.Separation) (h : N.E ⊆ M.E) : P.induce h ≼ P :=
-  IndexedPartition.induce_le P h
-
-lemma IsMinor.eConn_le_of_le (hMN : M ≤m N) (hPQ : P ≼ Q) : P.eConn ≤ Q.eConn := by
-  grw [hPQ.eq_induce, Q.eConn_induce_le_of_isMinor hMN]
 
 /-- Every separation has a larger side for a given numerical notion of 'large' -/
 lemma exists_larger_side {β : Type*} [ConditionallyCompleteLinearOrder β] (P : M.Separation)
@@ -612,6 +717,13 @@ lemma cross_apply_false_true (P Q : M.Separation) : P.cross Q b c false true = P
 lemma cross_comm (P Q : M.Separation) (b c : Bool) : P.cross Q b c i = Q.cross P c b i :=
   Separation.ext_bool i <| by simp [Set.inter_comm]
 
+lemma induce_cross (P Q : M.Separation) (b c i j : Bool) (hNM : N.E ⊆ M.E) :
+    (P.cross Q b c i).induce N = (P.induce N).cross (Q.induce N) b c i := by
+  refine Separation.ext_bool (!j) ?_
+  obtain rfl | rfl := i.eq_or_eq_not j
+  · simp [induce_apply_subset _ hNM, union_inter_distrib_right]
+  simp [induce_apply_subset _ hNM, ← inter_inter_distrib_right]
+
 /-- The bipartition whose `true` side is `P true ∩ Q true` and whose `false` side is
 `P false ∪ Q false` -/
 protected def interCross (P Q : M.Separation) : M.Separation := P.cross Q true true true
@@ -670,6 +782,9 @@ lemma submod_cross' (P Q : M.Separation) (b c i j : Bool) :
 lemma submod_interCross_unionCross (P Q : M.Separation) :
     (P.interCross Q).eConn + (P.unionCross Q).eConn ≤ P.eConn + Q.eConn :=
   submod_cross ..
+
+/-# Inducing -/
+
 
 
   -- have := M.eConn_submod (bif b then )

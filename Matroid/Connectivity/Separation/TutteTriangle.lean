@@ -21,25 +21,31 @@ lemma tutte_triangle_disconnected_case (hM : M.TutteConnected 3) (hT : M.IsTrian
   -- rw [P.not_trivial_iff] at hPnt
   -- let `j` be the side of `P` containing `g`.
   obtain ⟨j, hgj⟩ : ∃ j, g ∈ P j := by rwa [← P.iUnion_eq, mem_iUnion] at hgE'
-  have hconn : (P.ofDelete j).eConn ≤ 1 := by
-    grw [Separation.eConn_eq_eLocalConn _ j, ofDelete_apply_self, ofDelete_apply_not,
-      show P j ∪ {e,f} = insert f (insert e (P j)) by grind, ← eLocalConn_closure_left,
-      closure_insert_eq_of_mem_closure, eLocalConn_closure_left, eLocalConn_insert_left_le,
-      ← P.eConn_eq_eLocalConn_of_isRestriction (by simp), hP0, zero_add]
-    exact mem_of_mem_of_subset (hT.isCircuit.mem_closure_diff_singleton_of_mem (by simp))
-      <| M.closure_subset_closure <| by grind
+  -- have hconn : (P.induce M j).eConn ≤ 1 := by
+  --   grw [Separation.eConn_eq_eConn_induce_delete_add (D := {e, f}) (i := j),
+  --     induce_induce_delete_eq_self, hP0, zero_add, P.induce_apply_of_delete_not]
+  have hconn : (P.induce M j).eConn ≤ 1 := by
+    grw [Separation.eConn_eq_eLocalConn _ j, induce_apply_of_delete_not,
+      induce_apply_of_delete_self, eLocalConn_le_add_eRelRk_left _ subset_union_left,
+      ← P.eConn_eq_eLocalConn_of_isRestriction (by simp), hP0, zero_add,
+      show P j ∪ {e,f} = insert f (insert e (P j)) by grind, ← eRelRk_closure_right,
+      closure_insert_eq_of_mem_closure, eRelRk_closure_right, eRelRk_insert_le]
+    exact mem_of_mem_of_subset hT.mem_closure₂ <| M.closure_subset_closure <| by grind
+
   rw [show (3 : ℕ∞) = 1 + 1 + 1 from rfl] at hM
-  have hnotsep : ¬ (P.ofDelete j).IsTutteSeparation :=
-    hM.not_isTutteSeparation (P := P.ofDelete j) (by grw [hconn])
+  have hnotsep : ¬ (P.induce M j).IsTutteSeparation :=
+    hM.not_isTutteSeparation (P := P.induce M j) (by grw [hconn])
   rw [isTutteSeparation_iff_lt_encard (by enat_to_nat!), not_forall] at hnotsep
   -- rw [isTutteSeparation_iff_add_one_le_encard (by enat_to_nat!), not_forall] at hnotsep
   obtain ⟨i, hi⟩ := hnotsep
   grw [hconn, not_lt] at hi
   obtain rfl | rfl := (i.eq_or_eq_not j)
-  · grw [ofDelete_apply_self, ← encard_le_encard subset_union_right, encard_pair hT.ne₁₂] at hi
+  · grw [induce_apply_of_delete_self, ← encard_le_encard subset_union_right,
+      encard_pair hT.ne₁₂] at hi
     simp at hi
-  rw [ENat.le_one_iff_eq_zero_or_eq_one, ofDelete_apply_not, encard_eq_zero,
-    ← not_nonempty_iff_eq_empty, ← imp_iff_not_or, imp_iff_right (hPnt _), encard_eq_one] at hi
+  rw [ENat.le_one_iff_eq_zero_or_eq_one, induce_apply_of_delete_not, encard_eq_zero,
+    ← not_nonempty_iff_eq_empty, ← imp_iff_not_or, imp_iff_right (hPnt.nonempty _),
+    encard_eq_one] at hi
   obtain ⟨x, hPx⟩ := hi
   have hxE : x ∈ (M ＼ {e, f}).E := by grw [← singleton_subset_iff, ← hPx, P.subset_ground]
   obtain ⟨hxE' : x ∈ M.E, hxe : x ≠ e, hxf : x ≠ f⟩ := by simpa using hxE
@@ -110,12 +116,6 @@ lemma tutte_triangle (hM : M.TutteConnected 3) (hT : M.IsTriangle {e,f,g}) (hcar
     fun ⟨hf, hg⟩ ↦ hne <| Finite.eq_of_subset_of_encard_le (by simp) (by grind)
     (by rw [hK.three_elements, hT.three_elements])
   grind
-
-
-
-
-
-
 
 lemma baz (hM : M.TutteConnected (1 + 1 + 1)) {x : Bool → α}
     (hT : M.IsTriangle {x true, x false, g}) (hcard : 4 ≤ M.E.encard)

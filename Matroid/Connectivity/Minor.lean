@@ -734,6 +734,20 @@ lemma eLocalConn_contract_skew_union {C : Set α} (h : M.Skew (X ∪ Y) C) :
     h.symm.contract_restrict_eq,
     eLocalConn_restrict_of_subset _ subset_union_left subset_union_right]
 
+lemma eLocalConn_le_dual_eRelRk (M : Matroid α) (hXY : Disjoint X Y) :
+    M.eLocalConn X Y ≤ M✶.eRelRk (M.E \ (X ∪ Y)) (M.E \ Y) := by
+  wlog hXE : X ⊆ M.E ∧ Y ⊆ M.E generalizing X Y with aux
+  · grw [← M.eLocalConn_inter_ground, aux (by grind) (by grind)]
+    convert rfl.le using 2 <;> grind
+  set D := M.E \ (X ∪ Y) with hD
+  have hY : Y = (M ＼ D).E \ X := by grind
+  have hD' : M.E \ D = X ∪ Y := by grind
+  nth_rw 1 [eRelRk_eq_eRk_diff_contract,
+    ← eLocalConn_delete_eq_of_disjoint (D := D) _ (by grind) (by grind), hY,
+    ← eConn_eq_eLocalConn, ← eConn_dual, dual_delete, diff_diff_comm, hY, delete_ground,
+     diff_diff_cancel_left (by grind)]
+  grw [eConn_le_eRk ..]
+
 /-- The right-hand side of the generalized Bixby-Coullard inequality is minor monotone.
 Required to reduce the proof to the finite case. -/
 private lemma monotone_rhs_aux {P Q X : Set α} :
