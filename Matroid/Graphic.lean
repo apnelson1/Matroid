@@ -2,6 +2,7 @@ import Matroid.Axioms.Circuit
 import Matroid.Minor.Contract
 import Matroid.Graph.Forest
 import Matroid.Graph.Minor.Conn
+import Matroid.Graph.Subgraph.Delete
 
 variable {α β : Type*} {G H : Graph α β} {u v x x₁ x₂ y y₁ y₂ z : α} {e e' f g : β}
   {U V S T : Set α} {F F' R R': Set β} {C w P Q : WList α β}
@@ -147,3 +148,22 @@ lemma cycleMatroid_isRestriction_of_isLink (hl : ∀ ⦃e x y⦄, G.IsLink e x y
 
 lemma cycleMatroid_isRestriction_of_le (h : G ≤ H) : G.cycleMatroid ≤r H.cycleMatroid :=
   cycleMatroid_isRestriction_of_isLink h.2
+
+-- lemma cycleMatroid_IsBasis_connected {G : Graph α β} {I : Set β}{F : Set β} {V : Set α }
+--     (hI : G.cycleMatroid.IsBasis I F) :
+--     ((G ↾ F)[V]).IsCompOf (G ↾ F) ↔ ((G ↾ I)[V]).IsCompOf (G ↾ I) := by
+--   refine ⟨?_, ?_ ⟩
+--   · intro h
+--     refine Connected.IsCompOf_of_isClosedSubgraph ?_ ?_
+--     ·
+--       sorry
+--     sorry
+--   sorry
+
+lemma cycleMatroid_isFlat (hFE : F ⊆ E(G) )
+    (hF : ∀ H : Graph α β, H.IsCompOf (G ↾ F) → H ≤i G ) :
+    G.cycleMatroid.IsFlat F  := by
+  refine { subset_of_isBasis_of_isBasis := ?_, subset_ground := hFE }
+  intro I X hIF hIX e he
+
+  sorry
