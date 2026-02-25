@@ -36,6 +36,9 @@ lemma encard_pair_iff (e f : α) : encard {e,f} = 2 ↔ e ≠ f := by
 lemma two_le_encard_iff_nontrivial : 2 ≤ s.encard ↔ s.Nontrivial := by
   rw [← s.one_lt_encard_iff_nontrivial, ← one_add_one_eq_two, ENat.add_one_le_iff (by simp)]
 
+lemma encard_le_encard_diff_singleton_add_one (s : Set α) x : s.encard ≤ (s \ {x}).encard + 1 := by
+  grw [← encard_singleton x, ← encard_union_le, diff_union_self, ← subset_union_left]
+
 theorem Set.Infinite.exists_finite_subset_encard_gt (hs : s.Infinite) (b : ℕ) :
     ∃ t ⊆ s, b < t.encard ∧ t.Finite := by
   obtain ⟨t, hts, hcard⟩ := hs.exists_subset_card_eq (b + 1)

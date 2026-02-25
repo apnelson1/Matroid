@@ -49,6 +49,18 @@ lemma compl_contract_not (P : (M ／ C).Separation) (hC : C ⊆ M.E := by aesop_
   simpa using P.compl_contract hC !i
 
 @[simp]
+lemma apply_inter_ground_of_delete (P : (M ＼ D).Separation) (i : Bool) : P i ∩ M.E = P i :=
+  inter_eq_self_of_subset_left <| P.subset.trans diff_subset
+
+@[simp]
+lemma apply_inter_ground_of_contract (P : (M ／ C).Separation) (i : Bool) : P i ∩ M.E = P i :=
+  inter_eq_self_of_subset_left <| P.subset.trans diff_subset
+
+@[simp]
+lemma apply_inter_ground_of_remove (P : (M.remove b X).Separation) (i : Bool) : P i ∩ M.E = P i :=
+  inter_eq_self_of_subset_left <| P.subset.trans <| by simp [diff_subset]
+
+@[simp]
 lemma compl_union_contract (P : (M ／ C).Separation) (i : Bool) : M.E \ (P i ∪ C) = P !i := by
   rw [← P.compl_eq, Set.union_comm, contract_ground, diff_diff]
 
@@ -88,15 +100,29 @@ lemma induce_apply_remove (P : M.Separation) (X : Set α) (b i j : Bool) :
   grw [induce_apply_subset _ (by simp [diff_subset]), remove_ground, ← inter_diff_assoc,
     P.inter_ground_left]
 
+lemma induce_apply_remove_of_remove (P : (M.remove b X).Separation) (hXY : X ⊆ Y) (i j : Bool) :
+    P.induce (M.remove b Y) i j = P j \ Y := by
+  rw [induce_apply_subset _ (by grind), remove_ground, ← inter_diff_assoc,
+    inter_eq_self_of_subset_left]
+  grw [P.subset, remove_ground, diff_subset]
+
 @[simp]
 lemma induce_apply_delete (P : M.Separation) (D : Set α) (i j : Bool) :
     P.induce (M ＼ D) i j = P j \ D :=
   P.induce_apply_remove D false i j
 
+lemma induce_apply_delete_of_delete (P : (M ＼ X).Separation) (hXY : X ⊆ Y) (i j : Bool) :
+    P.induce (M ＼ Y) i j = P j \ Y :=
+  induce_apply_remove_of_remove (b := false) P hXY i j
+
 @[simp]
 lemma induce_apply_contract (P : M.Separation) (C : Set α) (i j : Bool) :
     P.induce (M ／ C) i j = P j \ C :=
   P.induce_apply_remove C true i j
+
+lemma induce_apply_contract_of_contract (P : (M ／ X).Separation) (hXY : X ⊆ Y) (i j : Bool) :
+    P.induce (M ／ Y) i j = P j \ Y :=
+  induce_apply_remove_of_remove (b := true) P hXY i j
 
 @[simp]
 lemma induce_apply_contract_delete (P : M.Separation) (C D : Set α) (i j : Bool) :
@@ -111,17 +137,6 @@ lemma induce_apply_of_remove_eq_cond {b} (P : (M.remove b X).Separation) (i j : 
   grw [P.subset, remove_ground, diff_subset]
 
 @[simp]
-lemma induce_apply_of_remove_not {b} (P : (M.remove b X).Separation) (i : Bool) :
-    P.induce M i (!i) = P (!i) := by
-  suffices P (!i) ⊆ M.E by simpa [P.induce_apply_eq_cond]
-  grw [P.subset, remove_ground, diff_subset]
-
-@[simp]
-lemma induce_apply_of_not_remove {b} (P : (M.remove b X).Separation) (i : Bool) :
-    P.induce M (!i) i = P i := by
-  simpa using P.induce_apply_of_remove_not !i
-
-@[simp]
 lemma induce_apply_of_remove_self {b} (P : (M.remove b X).Separation) (i : Bool)
     (hX : X ⊆ M.E := by aesop_mat) : P.induce M i i = P i ∪ X := by
   simp [induce_apply_of_remove_eq_cond P _ _ hX]
@@ -132,16 +147,6 @@ lemma induce_apply_of_delete_eq_cond {D} (P : (M ＼ D).Separation) (i : Bool)
   P.induce_apply_of_remove_eq_cond (b := false) i j hD
 
 @[simp]
-lemma induce_apply_of_delete_not (P : (M ＼ X).Separation) (i : Bool) :
-    P.induce M i (!i) = P (!i) :=
-  P.induce_apply_of_remove_not (b := false) i
-
-@[simp]
-lemma induce_apply_of_not_delete (P : (M ＼ X).Separation) (i : Bool) :
-    P.induce M (!i) i = P i :=
-  P.induce_apply_of_not_remove (b := false) i
-
-@[simp]
 lemma induce_apply_of_delete_self (P : (M ＼ X).Separation) (i : Bool)
     (hX : X ⊆ M.E := by aesop_mat) : P.induce M i i = P i ∪ X :=
   P.induce_apply_of_remove_self (b := false) i hX
@@ -150,16 +155,6 @@ lemma induce_apply_of_contract_eq_cond (P : (M ／ X).Separation) (i : Bool)
     (hX : X ⊆ M.E := by aesop_mat) :
     P.induce M i j = bif j == i then P j ∪ X else P j :=
   P.induce_apply_of_remove_eq_cond (b := true) i j hX
-
-@[simp]
-lemma induce_apply_of_contract_not (P : (M ／ X).Separation) (i : Bool) :
-    P.induce M i (!i) = P (!i) :=
-  P.induce_apply_of_remove_not (b := true) i
-
-@[simp]
-lemma induce_apply_of_not_contract (P : (M ／ X).Separation) (i : Bool) :
-    P.induce M (!i) i = P i :=
-  P.induce_apply_of_not_remove (b := true) i
 
 @[simp]
 lemma induce_apply_of_contract_self (P : (M ／ X).Separation) (i : Bool)

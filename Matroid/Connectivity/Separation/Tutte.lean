@@ -386,6 +386,17 @@ lemma TutteConnected.connected' (h : M.TutteConnected (k + 1)) (hne : M.Nonempty
     (hk : 1 ≤ k) : M.Connected :=
   h.connected (by grw [← hk, one_add_one_eq_two])
 
+lemma TutteConnected.loopless (h : M.TutteConnected k) (hk : 2 ≤ k) (hnt : M.E.Nontrivial) :
+    M.Loopless := by
+  have : M.Nonempty := ⟨hnt.nonempty⟩
+  exact (h.connected hk).loopless hnt
+
+lemma Separation.Nontrivial.one_le_eConn_of_tutteConnected (hP : P.Nontrivial)
+    (hM : M.TutteConnected 2) : 1 ≤ P.eConn := by
+  have hne : M.Nonempty := ⟨⟨(hP.nonempty true).some, P.subset (hP.nonempty true).some_mem⟩⟩
+  rw [tutteConnected_two_iff] at hM
+  exact hP.one_le_eConn_of_connected hM
+
 lemma TutteConnected.exists_of_not_tutteConnected_add_one (hM : M.TutteConnected k)
     (hM' : ¬ M.TutteConnected (k + 1)) :
     ∃ (P : M.Separation), P.eConn + 1 = k ∧ P.IsTutteSeparation := by
@@ -431,6 +442,10 @@ lemma TutteConnected.girth_ge (h : M.TutteConnected (k + 1)) (hlt : 2 * k ≤ M.
   grw [← encard_diff_add_encard_of_subset hC.subset_ground] at hlt
   have := M.eConn_le_encard C
   enat_to_nat! <;> lia
+
+lemma TutteConnected.simple (h : M.TutteConnected 3) (hM : 4 ≤ M.E.encard) : M.Simple := by
+  grw [← three_le_girth_iff, ← (show M.TutteConnected (2 + 1) from h).girth_ge (by simpa),
+    show (3 : ℕ∞) = 2 + 1 from rfl]
 
 lemma TutteConnected.girth_ge_of_exists_eConn_ge (h : M.TutteConnected (k + 1))
     (hP : ∃ (P : M.Separation), k ≤ P.eConn) : k + 1 ≤ M.girth := by

@@ -567,8 +567,8 @@ lemma VerticallyConnected.contract {C : Set α} (h : M.VerticallyConnected (k + 
   refine verticallyConnected_iff_forall.2 fun P hPconn hP ↦ ?_
   refine h.not_isVerticalSeparation (P := P.induce M true) ?_ ?_
   · grw [eConn_induce_of_contract, eLocalConn_le_eRk_right, add_right_comm, hPconn]
-  rw [isVerticalSeparation_iff_forall_nonspanning, Bool.forall_bool, ← Bool.not_true,
-    induce_apply_of_contract_not, induce_apply_of_contract_self, Bool.not_true]
+  rw [isVerticalSeparation_iff_forall_nonspanning, Bool.forall_bool, induce_true_false,
+    P.apply_inter_ground_of_contract, induce_apply_of_contract_self]
   rw [isVerticalSeparation_iff_forall_nonspanning, Bool.forall_bool, contract_nonspanning_iff,
     contract_nonspanning_iff] at hP
   exact ⟨hP.1.1.subset subset_union_left, hP.2.1⟩

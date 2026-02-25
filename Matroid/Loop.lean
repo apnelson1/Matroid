@@ -18,6 +18,13 @@ open scoped symmDiff
 
 namespace Matroid
 
+/-- a version of `isNonloop_of_loopless` that works with dot notation -/
+lemma Loopless.isNonloop_of_mem (h : M.Loopless) (he : e ∈ M.E) : M.IsNonloop e :=
+  isNonloop_of_loopless he
+
+lemma Loopless.not_isLoop (h : M.Loopless) (e) : ¬ M.IsLoop e :=
+  M.not_isLoop e
+
 lemma removeLoops_ground_eq_diff : M.removeLoops.E = M.E \ M.loops := by
   ext x
   simp only [removeLoops_ground_eq, isNonloop_iff, mem_setOf_eq, mem_diff]

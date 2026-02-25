@@ -277,7 +277,6 @@ lemma Faithful.trans {N₀ : Matroid α} (hP : P.Faithful N)
   refine faithful_of_eConn_induce_ge hconn (hP'.isMinor.trans hP.isMinor) ?_
   grw [← hP.eConn_induce_eq, ← hP'.eConn_induce_eq, induce_induce _ hP'.isMinor.subset]
 
-
 lemma Faithful.isModularPair (h : P.Faithful N) (hND : N ≤m M ＼ D) (i : Bool) :
     M.IsModularPair (P i) (M.E \ (D ∩ P i)) := by
   wlog hD : D ⊆ M.E generalizing D with aux
@@ -298,11 +297,25 @@ lemma Faithful.subset_closure_diff_of_coindep (h : P.Faithful N) (hND : N ≤m M
   rw [isModularPair_comm, (hD.subset inter_subset_left).compl_spanning.isModularPair_iff] at hmod
   exact hmod.trans <| M.closure_subset_closure <| by grind
 
+lemma Faithful.mem_closure_of_delete {e} (hP : P.Faithful (M ＼ D)) (hD : M.Coindep D)
+    (hei : e ∈ P i) : e ∈ M.closure (P i \ D) :=
+  mem_of_mem_of_subset hei <| hP.subset_closure_diff_of_coindep IsMinor.refl hD _
+
+lemma Faithful.mem_closure_delete_of_delete {e D'} {P : (M ＼ D).Separation}
+    (hP : P.Faithful (M ＼ D')) (hDD' : D ⊆ D') (hei : e ∈ P i) (hD : M.Coindep D') :
+    e ∈ M.closure (P i \ D') := by
+  have h := hP.subset_closure_diff_of_coindep (D := (D' \ D)) ?_ ?_ i hei
+  · rw [delete_closure_eq_of_disjoint _ ((P.disjoint_delete _).mono_left diff_subset),
+      diff_diff_right, (P.disjoint_delete _).inter_eq, union_empty, mem_diff] at h
+    exact h.1
+  · rw [delete_delete, union_diff_cancel hDD']
+    exact IsMinor.refl
+  rwa [(hD.subset hDD').delete_coindep_iff, and_iff_left disjoint_sdiff_left,
+    diff_union_of_subset hDD']
+
 lemma Faithful.mem_closure_of_deleteElem {e} (hP : P.Faithful (M ＼ {e})) (hei : e ∈ P i)
-    (he : ¬ M.IsColoop e) : e ∈ M.closure (P i \ {e}) := by
-  refine mem_of_mem_of_subset hei <| hP.subset_closure_diff_of_coindep IsMinor.refl ?_ _
-  simp only [indep_singleton]
-  rwa [← not_isLoop_iff]
+    (he : ¬ M.IsColoop e) : e ∈ M.closure (P i \ {e}) :=
+  hP.mem_closure_of_delete (by rwa [coindep_def, indep_singleton, ← not_isLoop_iff]) hei
 
 lemma Faithful.notMem_closure_of_contractElem {e} (hP : P.Faithful (M ／ {e})) (hei : e ∈ P i)
     (he : M.IsNonloop e) : e ∉ M.closure (P !i) := by
@@ -377,8 +390,8 @@ lemma faithful_iff_of_coindep_of_delete (P : (M ＼ D).Separation) (hD : M.Coind
     (P.induce M i).Faithful (M ＼ D) ↔ D ⊆ M.closure (P i) := by
   rw [faithful_delete_iff_forall_subset_closure hD, Bool.forall_bool' i,
     induce_apply_of_delete_self, union_diff_cancel_right (P.disjoint_delete _).inter_eq.subset,
-    inter_eq_self_of_subset_right subset_union_right, induce_apply_of_delete_not,
-    (P.disjoint_delete _).inter_eq, and_iff_left (empty_subset ..)]
+    inter_eq_self_of_subset_right subset_union_right, induce_apply_not,
+    P.apply_inter_ground_of_delete, (P.disjoint_delete _).inter_eq, and_iff_left (empty_subset ..)]
 
 lemma Faithful.eConn_eq_of_remove {b} {P : (M.remove b X).Separation}
     (h : (P.induce M i).Faithful (M.remove b X)) : (P.induce M i).eConn = P.eConn := by

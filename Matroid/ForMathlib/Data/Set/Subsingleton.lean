@@ -34,3 +34,8 @@ lemma Subsingleton.eq_or_eq_of_subset (h : s.Subsingleton) (hts : t ⊆ s) : t =
 lemma Subsingleton.exists_eq_of_singleton_of_nonempty (h : s.Subsingleton) (hne : s.Nonempty) :
     ∃ x, s = {x} := by
   exact ⟨_, h.eq_singleton_of_mem hne.some_mem⟩
+
+@[simp]
+lemma insert_subsingleton_iff : (insert x s).Subsingleton ↔ s ⊆ {x} :=
+  ⟨fun h _ hys ↦ h (mem_insert_of_mem _ hys) (mem_insert ..),
+    fun h ↦ subsingleton_singleton.anti <| insert_subset rfl h⟩

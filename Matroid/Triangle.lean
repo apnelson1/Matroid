@@ -77,10 +77,20 @@ lemma dual_isTriad_iff : M✶.IsTriad T ↔ M.IsTriangle T := by
 lemma dual_isTriangle_iff : M✶.IsTriangle T ↔ M.IsTriad T := by
   simp [isTriangle_iff]
 
-
 lemma bDual_isTriad_iff : (M.bDual b).IsTriad X ↔ (M.bDual (!b)).IsTriangle X := by
   simp [← dual_isTriad_iff]
 
+lemma IsTriangle.nonempty (h : M.IsTriangle T) : T.Nonempty := by
+  grw [← one_le_encard_iff_nonempty, h.three_elements]
+  simp
+
+lemma IsTriangle.nontrivial_diff_singleton (h : M.IsTriangle T) (e) : (T \ {e}).Nontrivial := by
+  grw [← two_le_encard_iff_nontrivial, ← ENat.add_one_le_add_one_iff,
+    ← encard_le_encard_diff_singleton_add_one, h.three_elements]
+  rfl
+
+lemma IsTriangle.nontrivial (h : M.IsTriangle T) : T.Nontrivial :=
+  (h.nontrivial_diff_singleton h.nonempty.some).mono diff_subset
 
 -- the lemmas ahead allow one to comfortably work with terms of the form `IsTriangle {e, f, g}`
 -- rather than `IsTriangle T`.
