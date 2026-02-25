@@ -90,16 +90,18 @@ lemma not_large_subsingleton (hX : X.Subsingleton) : ¬ T.Large X := by
   · exact T.empty_not_large
   exact T.singleton_not_large e
 
-lemma small_bnot_iff {P : μ.E.Bipartition} {i : Bool} : T.Small (P (!i)) ↔ T.Large (P i) := by
+lemma small_bnot_iff {P : μ.E.IndexedPartition Bool} {i : Bool} :
+    T.Small (P (!i)) ↔ T.Large (P i) := by
   rw [large_iff, P.compl_eq, and_iff_left P.subset]
 
-lemma large_bnot_iff {P : μ.E.Bipartition} {i : Bool} : T.Large (P (!i)) ↔ T.Small (P i) := by
+lemma large_bnot_iff {P : μ.E.IndexedPartition Bool} {i : Bool} :
+    T.Large (P (!i)) ↔ T.Small (P i) := by
   rw [← small_bnot_iff, Bool.not_not]
 
-lemma small_false_iff {P : μ.E.Bipartition} : T.Small (P false) ↔ T.Large (P true) :=
+lemma small_false_iff {P : μ.E.IndexedPartition Bool} : T.Small (P false) ↔ T.Large (P true) :=
   small_bnot_iff (i := true)
 
-lemma large_false_iff {P : μ.E.Bipartition} : T.Large (P false) ↔ T.Small (P true) :=
+lemma large_false_iff {P : μ.E.IndexedPartition Bool} : T.Large (P false) ↔ T.Small (P true) :=
   large_bnot_iff (i := true)
 
 lemma small_compl_iff (hXE : X ⊆ μ.E) : T.Small (μ.E \ X) ↔ T.Large X := by
@@ -126,7 +128,7 @@ lemma Large.inter_large (hX : T.Large X) (hY : T.Large Y) (hXY : μ (X ∩ Y) �
     T.Large (X ∩ Y) := by
   rw [← small_compl_iff <| inter_subset_left.trans hX.subset_ground]
   have h := hX.compl_small.union_small hY.compl_small
-  rwa [← diff_inter, conn_compl, imp_iff_right hXY] at h
+  rwa [← diff_inter, apply_compl, imp_iff_right hXY] at h
 
 /-- Obtain a tangle of order `k' ≤ k` from a tangle `T` of order `k` by taking the `T`-small sets of
 connectivity at most `k'`. -/
@@ -148,10 +150,10 @@ def induce {μ ν : ConnSystem α R} (T : Tangle ν k) (h_le : ν ≤ μ) : Tang
     grind [ν.subset_of_le h_le]
   conn_le_of_small := by simp +contextual
   small_or_small_compl X hXE hXk := by
-    rw [and_iff_right hXE, and_iff_right diff_subset, μ.conn_compl, and_iff_right hXk,
+    rw [and_iff_right hXE, and_iff_right diff_subset, μ.apply_compl, and_iff_right hXk,
       and_iff_right hXk, inter_comm (_ \ _), ← inter_diff_assoc,
       inter_eq_self_of_subset_left h_le.1, ← diff_inter_self_eq_diff]
-    exact T.small_or_small_compl inter_subset_right <| by grw [ν.conn_inter_ground, h_le.2, hXk]
+    exact T.small_or_small_compl inter_subset_right <| by grw [ν.apply_inter_ground, h_le.2, hXk]
   union_union_ssubset X Y Z hX hY hZ := by
     grind [ν.subset_of_le h_le, T.union_union_ssubset hX.2.2 hY.2.2 hZ.2.2]
 
@@ -170,7 +172,7 @@ lemma induce_large_iff {T : Tangle ν k} {hle : ν ≤ μ} :
   · by_cases hX : μ X ≤ k
     · rw [← not_small_iff hX hXE, induce_small, ← not_small_iff _ inter_subset_right]
       · tauto
-      grw [ConnSystem.conn_inter_ground, ← hX, conn_le_of_le hle]
+      grw [ConnSystem.apply_inter_ground, ← hX, apply_le_of_le hle]
     exact iff_of_false (fun h ↦ hX h.conn_le) (by grind)
   exact iff_of_false (fun h ↦ hXE h.subset_ground) (fun h ↦ hXE h.1)
 
@@ -195,7 +197,7 @@ lemma exists_of_ne {T' : Tangle μ k} (h_ne : T ≠ T') :
   exact h_ne Y hY.subset_ground hY.conn_le hY
 
 lemma exists_bipartition_bool_of_ne {T' : Tangle μ k} (h_ne : T ≠ T') (b : Bool) :
-    ∃ (P : μ.E.Bipartition), μ.pConn P ≤ k ∧ T.Small (P b) ∧
+    ∃ (P : μ.E.IndexedPartition Bool), μ.pConn P ≤ k ∧ T.Small (P b) ∧
       ∀ i, T.Small (P i) ↔ T'.Large (P i) := by
   obtain ⟨X, hXE, hXk, hX, hX'⟩ := exists_of_ne h_ne
   refine ⟨Bipartition.ofSubset hXE b, by simpa, by simpa, fun i ↦ ?_⟩
@@ -205,7 +207,7 @@ lemma exists_bipartition_bool_of_ne {T' : Tangle μ k} (h_ne : T ≠ T') (b : Bo
   exact iff_of_false hX.compl_large.not_small hX'.compl_small.not_large
 
 lemma exists_bipartition_of_ne {T' : Tangle μ k} (h_ne : T ≠ T') :
-    ∃ (P : μ.E.Bipartition), μ.pConn P ≤ k ∧ T.Small (P false) ∧ T'.Small (P true) := by
+    ∃ (P : μ.E.IndexedPartition Bool), μ.pConn P ≤ k ∧ T.Small (P false) ∧ T'.Small (P true) := by
   obtain ⟨X, hXE, hXk, hX, hX'⟩ := exists_of_ne h_ne
   exact ⟨Bipartition.ofSubset hXE false, by simp [hXk, hX, hX'.compl_small]⟩
 

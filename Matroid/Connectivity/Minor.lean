@@ -382,9 +382,22 @@ section Pair
 
 variable {X Y I J}
 
+@[simp]
+lemma eConn_dual_contract (M : Matroid α) (X Y) : (M✶ ／ X).eConn Y = (M ＼ X).eConn Y := by
+  rw [← eConn_dual, dual_contract_dual]
+
+@[simp]
+lemma eConn_dual_delete (M : Matroid α) (X Y) : (M✶ ＼ X).eConn Y = (M ／ X).eConn Y := by
+  rw [← eConn_dual, dual_delete_dual]
+
 lemma eLocalConn_delete_le (M : Matroid α) : (M ＼ D).eLocalConn X Y ≤ M.eLocalConn X Y := by
   rw [eLocalConn_delete_eq]
   exact M.eLocalConn_mono diff_subset diff_subset
+
+lemma eLocalConn_eq_eConn_restrict (M : Matroid α) (hXY : Disjoint X Y) :
+    M.eLocalConn X Y = (M ↾ (X ∪ Y)).eConn X := by
+  rw [eConn_eq_eLocalConn, eLocalConn_restrict_of_subset _ subset_union_left (by grind)]
+  simp [hXY.sdiff_eq_right]
 
 lemma eLocalConn_project_eq_eLocalConn_contract_diff (M : Matroid α) (X Y C : Set α) :
     (M.project C).eLocalConn X Y = (M ／ C).eLocalConn (X \ C) (Y \ C) := by

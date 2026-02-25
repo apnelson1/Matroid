@@ -18,20 +18,15 @@ lemma tutte_triangle_disconnected_case (hM : M.TutteConnected 3) (hT : M.IsTrian
   have hgE' : g ∈ (M ＼ {e,f}).E := ⟨hT.mem_ground₃, by simp [hT.ne₁₃.symm, hT.ne₂₃.symm]⟩
   have hne : (M ＼ {e,f}).Nonempty := by rw [← ground_nonempty_iff]; use g
   obtain ⟨P, hP0, hPnt⟩ := exists_separation_of_not_connected hdisc
-  -- rw [P.not_trivial_iff] at hPnt
   -- let `j` be the side of `P` containing `g`.
   obtain ⟨j, hgj⟩ : ∃ j, g ∈ P j := by rwa [← P.iUnion_eq, mem_iUnion] at hgE'
-  -- have hconn : (P.induce M j).eConn ≤ 1 := by
-  --   grw [Separation.eConn_eq_eConn_induce_delete_add (D := {e, f}) (i := j),
-  --     induce_induce_delete_eq_self, hP0, zero_add, P.induce_apply_of_delete_not]
   have hconn : (P.induce M j).eConn ≤ 1 := by
     grw [Separation.eConn_eq_eLocalConn _ j, induce_apply_of_delete_not,
-      induce_apply_of_delete_self, eLocalConn_le_add_eRelRk_left _ subset_union_left,
+      induce_apply_of_delete_self, eLocalConn_union_left_le,
       ← P.eConn_eq_eLocalConn_of_isRestriction (by simp), hP0, zero_add,
       show P j ∪ {e,f} = insert f (insert e (P j)) by grind, ← eRelRk_closure_right,
       closure_insert_eq_of_mem_closure, eRelRk_closure_right, eRelRk_insert_le]
     exact mem_of_mem_of_subset hT.mem_closure₂ <| M.closure_subset_closure <| by grind
-
   rw [show (3 : ℕ∞) = 1 + 1 + 1 from rfl] at hM
   have hnotsep : ¬ (P.induce M j).IsTutteSeparation :=
     hM.not_isTutteSeparation (P := P.induce M j) (by grw [hconn])
@@ -40,13 +35,10 @@ lemma tutte_triangle_disconnected_case (hM : M.TutteConnected 3) (hT : M.IsTrian
   obtain ⟨i, hi⟩ := hnotsep
   grw [hconn, not_lt] at hi
   obtain rfl | rfl := (i.eq_or_eq_not j)
-  · grw [induce_apply_of_delete_self, ← encard_le_encard subset_union_right,
-      encard_pair hT.ne₁₂] at hi
+  · grw [induce_apply_of_delete_self, ← subset_union_right, encard_pair hT.ne₁₂] at hi
     simp at hi
-  rw [ENat.le_one_iff_eq_zero_or_eq_one, induce_apply_of_delete_not, encard_eq_zero,
-    ← not_nonempty_iff_eq_empty, ← imp_iff_not_or, imp_iff_right (hPnt.nonempty _),
-    encard_eq_one] at hi
-  obtain ⟨x, hPx⟩ := hi
+  rw [induce_apply_of_delete_not, encard_le_one_iff_subsingleton] at hi
+  obtain ⟨x, hPx⟩ := hi.exists_eq_of_singleton_of_nonempty <| hPnt.nonempty _
   have hxE : x ∈ (M ＼ {e, f}).E := by grw [← singleton_subset_iff, ← hPx, P.subset_ground]
   obtain ⟨hxE' : x ∈ M.E, hxe : x ≠ e, hxf : x ≠ f⟩ := by simpa using hxE
   -- Now we have that `x` is a loop or coloop of `M ＼ {e,f}`.
@@ -55,10 +47,12 @@ lemma tutte_triangle_disconnected_case (hM : M.TutteConnected 3) (hT : M.IsTrian
     rintro rfl
     exact (P.disjoint_bool j).notMem_of_mem_left hgj <| by simp [hPx]
   have hcard : 4 ≤ M.E.encard := by
-    grw [show (4 : ℕ∞) = 2 + 1 + 1 from rfl, ← encard_le_encard (s := {x, e, f, g}) (by aesop_mat),
-      encard_insert_of_notMem hxT, encard_insert_of_notMem, encard_pair hT.ne₂₃]
-    simp [hT.ne₁₂, hT.ne₁₃]
+    grw [show (4 : ℕ∞) = 3 + 1 from rfl, ← insert_subset hxE' hT.subset_ground,
+      encard_insert_of_notMem hxT, hT.three_elements]
+  have hne : M.Nonempty := ⟨⟨x, hxE'⟩⟩
   rw [← P.eConn_eq !j, hPx, eConn_singleton_eq_zero_iff hxE] at hP0
+  rw [delete_isLoop_iff] at hP0
+  have := (hM.connected (by norm_num))
   obtain hxl | hxcl := hP0
   · -- the loop case doesn't happen, because this would mean that `x` is a loop of the
     -- three-connected matroid `M`.

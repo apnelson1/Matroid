@@ -178,6 +178,12 @@ lemma Indep.eRelRk_of_subset (hI : M.Indep I) (hJ : J ⊆ I) : M.eRelRk J I = (I
   rw [inter_eq_self_of_subset_right hJ]
   exact (hI.subset hJ).isBasis_self
 
+lemma IsBasis'.eRelRk_eq_encard_diff_of_subset_isBasis' (hI : M.IsBasis' I X) (hJ : M.IsBasis' J Y)
+    (hIJ : I ⊆ J) : M.eRelRk X Y = (J \ I).encard := by
+  rw [← eRelRk_closure_left, ← hI.closure_eq_closure, eRelRk_closure_left,
+    ← eRelRk_closure_right, ← hJ.closure_eq_closure,
+    eRelRk_closure_right, hJ.indep.eRelRk_of_subset hIJ]
+
 lemma IsBasis.eRelRk_eq_encard_diff_of_subset_isBasis (hI : M.IsBasis I X) (hJ : M.IsBasis J Y)
     (hIJ : I ⊆ J) : M.eRelRk X Y = (J \ I).encard := by
   rw [← eRelRk_closure_left, ← hI.closure_eq_closure, eRelRk_closure_left,
@@ -206,6 +212,18 @@ lemma eRelRk_add_eRk_of_subset (M : Matroid α) (hXY : X ⊆ Y) :
 lemma eRelRk_add_eRk_eq (M : Matroid α) (C X : Set α) : M.eRelRk C X + M.eRk C = M.eRk (X ∪ C) := by
   rw [eRelRk_eq_eRelRk_union, eRelRk_add_eRk_of_subset]
   exact subset_union_right
+
+lemma eRelRk_union_add_eRk_inter_le (M : Matroid α) (X Y : Set α) :
+    M.eRelRk X (X ∪ Y) + M.eRk (X ∩ Y) ≤ M.eRk Y := by
+  obtain ⟨I, hI⟩ := M.exists_isBasis' (X ∩ Y)
+  obtain ⟨J, hJ, rfl⟩ := hI.exists_isBasis'_inter_eq_of_superset inter_subset_left
+  obtain ⟨K, hK, rfl⟩ := hJ.exists_isBasis'_inter_eq_of_superset (Y := X ∪ Y) subset_union_left
+  grw [hJ.eRelRk_eq_encard_diff_of_subset_isBasis' hK inter_subset_left, hI.eRk_eq_encard,
+    inter_assoc, inter_eq_self_of_subset_right inter_subset_left, diff_self_inter,
+    ← encard_union_eq (by grind), ← (hK.indep.subset (by grind)).eRk_eq_encard]
+  apply eRk_mono
+  simp only [le_eq_subset, union_subset_iff]
+  grind [hK.subset]
 
 lemma IsRkFinite.eRelRk_eq_sub (hY : M.IsRkFinite X) (hXY : X ⊆ Y) :
     M.eRelRk X Y = M.eRk Y - M.eRk X := by

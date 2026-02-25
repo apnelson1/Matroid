@@ -814,21 +814,20 @@ lemma eLocalConn_le_add_eRelRk_right (M : Matroid α) (hXY : X ⊆ Y) (Z : Set �
   grw [eLocalConn_comm, eLocalConn_le_add_eRelRk_left _ hXY, eLocalConn_comm]
 
 lemma eLocalConn_union_left_le (M : Matroid α) (X Y A : Set α) :
-    M.eLocalConn (X ∪ A) Y ≤ M.eLocalConn X Y + M.eRk A := by
-  grw [M.eLocalConn_le_add_eRelRk_left subset_union_left, union_comm, ← eRelRk_eq_union_right,
-    eRelRk_le_eRk]
+    M.eLocalConn (X ∪ A) Y ≤ M.eLocalConn X Y + M.eRelRk X (X ∪ A) := by
+  grw [M.eLocalConn_le_add_eRelRk_left subset_union_left, union_comm]
 
 lemma eLocalConn_union_right_le (M : Matroid α) (X Y A : Set α) :
-    M.eLocalConn X (Y ∪ A) ≤ M.eLocalConn X Y + M.eRk A := by
+    M.eLocalConn X (Y ∪ A) ≤ M.eLocalConn X Y + M.eRelRk Y (Y ∪ A) := by
   grw [eLocalConn_comm, eLocalConn_union_left_le, eLocalConn_comm]
 
 lemma eLocalConn_insert_left_le (M : Matroid α) (X Y : Set α) (e : α) :
     M.eLocalConn (insert e X) Y ≤ M.eLocalConn X Y + 1 := by
-  grw [← union_singleton, eLocalConn_union_left_le, eRk_le_encard, encard_singleton]
+  grw [← union_singleton, eLocalConn_union_left_le, union_singleton, eRelRk_insert_le]
 
 lemma eLocalConn_insert_right_le (M : Matroid α) (X Y : Set α) (e : α) :
     M.eLocalConn X (insert e Y) ≤ M.eLocalConn X Y + 1 := by
-  grw [← union_singleton, eLocalConn_union_right_le, eRk_le_encard, encard_singleton]
+  grw [← union_singleton, eLocalConn_union_right_le, union_singleton, eRelRk_insert_le]
 
 @[simp]
 lemma removeLoops_eLocalConn (M : Matroid α) : M.removeLoops.eLocalConn = M.eLocalConn := by

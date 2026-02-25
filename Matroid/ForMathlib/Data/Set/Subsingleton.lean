@@ -30,3 +30,7 @@ lemma Subsingleton.eq_or_eq_of_subset (h : s.Subsingleton) (hts : t ⊆ s) : t =
   obtain rfl | ⟨x, rfl⟩ := (h.anti hts).eq_empty_or_singleton
   · simp
   simp [h.eq_singleton_of_mem (by simpa using hts)]
+
+lemma Subsingleton.exists_eq_of_singleton_of_nonempty (h : s.Subsingleton) (hne : s.Nonempty) :
+    ∃ x, s = {x} := by
+  exact ⟨_, h.eq_singleton_of_mem hne.some_mem⟩
