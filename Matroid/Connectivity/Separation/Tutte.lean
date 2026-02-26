@@ -78,6 +78,10 @@ lemma IsTutteSeparation.symm (h : P.IsTutteSeparation) : P.symm.IsTutteSeparatio
   IsPredSeparation.symm h
 
 @[simp]
+lemma isTutteSeparation_bSymm_iff : (P.bSymm i).IsTutteSeparation ↔ P.IsTutteSeparation := by
+  cases i <;> simp
+
+@[simp]
 lemma isTutteSeparation_copy_iff (hMN : M = N) :
     (P.copy hMN).IsTutteSeparation ↔ P.IsTutteSeparation :=
   isPredSeparation_copy_iff hMN
@@ -241,6 +245,14 @@ lemma tutteConnected_iff_numConnected_tutteWeight_eq_zero : M.TutteConnected k �
 lemma not_tutteConnected_iff_exists : ¬ M.TutteConnected (k + 1) ↔
     ∃ P : M.Separation, P.eConn + 1 ≤ k ∧ P.IsTutteSeparation :=
   not_numConnected_iff_exists
+
+-- generalize this further.
+lemma not_tutteConnected_iff_exists_mem {e} (he : e ∈ M.E) (i : Bool) : ¬ M.TutteConnected (k+1) ↔
+    ∃ (P : M.Separation), P.eConn + 1 ≤ k ∧ P.IsTutteSeparation ∧ e ∈ P i := by
+  rw [not_tutteConnected_iff_exists]
+  refine ⟨fun ⟨P, hPk, hP⟩ ↦ ?_, fun ⟨P, hPk, hP⟩ ↦ ⟨P, hPk, hP.1⟩⟩
+  obtain ⟨j, hj⟩ : ∃ j, e ∈ P j := by rwa [Bool.exists_bool, ← mem_union, P.union_eq']
+  exact ⟨P.bSymm (i != j), by simpa, by simpa, by simpa⟩
 
 lemma tutteConnected_iff_forall : M.TutteConnected (k + 1) ↔
     ∀ (P : M.Separation), P.eConn + 1 ≤ k → ¬ P.IsTutteSeparation :=

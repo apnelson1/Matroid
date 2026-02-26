@@ -112,6 +112,12 @@ lemma three_le_girth_iff : 3 ≤ M.girth ↔ M.Simple := by
   have hcon := (h _ (hef.isCircuit_of_ne hne)).trans_eq (encard_pair hne)
   norm_num at hcon
 
+lemma three_le_girth (M : Matroid α) [M.Simple] : 3 ≤ M.girth := by
+  rwa [three_le_girth_iff]
+
+lemma Simple.three_le_girth (hM : M.Simple) : 3 ≤ M.girth := by
+  rwa [three_le_girth_iff]
+
 lemma simple_iff_forall_isCircuit : M.Simple ↔ ∀ C, M.IsCircuit C → 2 < C.encard := by
   simp_rw [← ENat.add_one_le_iff (show 2 ≠ ⊤ by norm_num), show (2 : ℕ∞) + 1 = 3 from rfl,
     ← three_le_girth_iff, le_girth_iff]

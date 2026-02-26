@@ -225,6 +225,11 @@ lemma IsTriangle.eRk (hT : M.IsTriangle T) : M.eRk T = 2 := by
 lemma IsTriad.eRk_dual (hT : M.IsTriad T) : M✶.eRk T = 2 :=
   hT.dual_isTriangle.eRk
 
+lemma IsTriangle.eRelRk (hT : M.IsTriangle T) (he : e ∈ T) : M.eRelRk {e} T = 1 := by
+  have aux := M.eRelRk_add_eRk_eq {e} T
+  rwa [union_eq_self_of_subset_right (by simpa), hT.eRk, (hT.isNonloop_of_mem he).eRk_eq,
+    ← one_add_one_eq_two, ENat.add_one_eq_add_one_iff] at aux
+
 /-- If `M` is a `3`-connected matroid and `T` is both a triangle and triad, then `M ≃ U₂,₄`. -/
 lemma IsTriangle.eq_unifOn_two_four_of_isTriad_of_tutteConnected (hT : M.IsTriangle T)
     (hT' : M.IsTriad T) (hM : M.TutteConnected 3) :
@@ -282,3 +287,34 @@ lemma IsTriangle.eq_of_isTriad {x y : α} (h : M.IsTriangle {e, f, g}) (h' : M.I
     f = x ∨ f = y ∨ g = x ∨ g = y := by
   have h1 := h.reverse.mem_iff_mem_of_isCocircuit h'.isCocircuit
   grind [h.ne₁₃.symm, h.ne₁₂.symm]
+
+/-- If `P` is a Tutte separation in a deletion of a `3`-connected matroid, and one side is
+small enough, then we can find a triad. -/
+lemma TutteConnected.union_isTriad_of_separation_delete {D} (hM : M.TutteConnected 3)
+    (hcard : 4 ≤ M.E.encard) {P : (M ＼ D).Separation} (hP : P.IsTutteSeparation)
+    (hDE : D ⊆ M.E) (hD : D.Nonempty)
+    (hPD : (P i).encard + D.encard ≤ 3) : M.IsTriad (P i ∪ D) := by
+  have h1 := hM.simple hcard
+  have h2 := hM.dual.simple hcard
+  refine isTriangle_of_dep_of_encard_le ?_ <| by grw [encard_union_le, hPD]
+  have hd := hP.codep_of_indep (i := i) ?_
+  · rw [Coindep.delete_codep_iff] at hd
+    · exact hd.1
+    refine indep_of_card_lt_girth ?_ hDE
+    grw [← three_le_girth]
+    have := (hP.nonempty i).encard_pos
+    enat_to_nat! <;> lia
+  rw [delete_indep_iff, and_iff_left (P.disjoint_delete i)]
+  refine indep_of_card_lt_girth ?_
+  grw [← three_le_girth]
+  have hD' := hD.encard_pos
+  enat_to_nat! <;> lia
+
+/-- If `P` is a Tutte separation in a contraction of a `3`-connected matroid, and one side is
+small enough, then we can find a triangle. -/
+lemma TutteConnected.union_isTriangle_of_separation_contract {C} (hM : M.TutteConnected 3)
+    (hcard : 4 ≤ M.E.encard) {P : (M ／ C).Separation} (hP : P.IsTutteSeparation)
+    (hCE : C ⊆ M.E) (hC : C.Nonempty) (hPC : (P i).encard + C.encard ≤ 3) :
+    M.IsTriangle (P i ∪ C) := by
+  simpa using hM.dual.union_isTriad_of_separation_delete (i := i) hcard
+    (P := P.induce _) (by simpa) hCE hC (by simpa)
