@@ -1,5 +1,7 @@
-import Mathlib.Combinatorics.Matroid.Minor.Order
 import Mathlib.Data.Set.Defs
+import Mathlib.Logic.Equiv.Basic
+import Mathlib.Combinatorics.Matroid.Minor.Order
+import Mathlib.Combinatorics.Matroid.Map
 import Matroid.ForMathlib.Set
 import Matroid.Triangle
 
@@ -109,15 +111,63 @@ lemma IsMinor.isMinor_contractElem_smallside_of_eConn_eq_zero {N : Matroid α} (
       (by simpa) (by grind) (by simpa)
   rwa [← dual_contract, dual_isMinor_iff] at aux
 
+lemma Separation.disjoint_true_iff_subset_false (hX : X ⊆ M.E) :
+    Disjoint X (P i) ↔ X ⊆ (P !i) := by
+  constructor
+  · intro h
+    rw [← P.compl_eq, subset_diff]
+    grind
+  · intro h
+    refine disjoint_of_subset (h) (show (P i) ⊆ (P i) by simp) (?_)
+    nth_rw 2 [← Bool.not_not i]
+    refine P.disjoint_bool (!i)
+
 lemma Separation.indep_sets_of_eConn_eq_one (hPconn : P.eConn = 1) (hX : X ⊆ M.E) :
     M.Indep X ↔ (M.Indep (X ∩ P i)) ∧ (M.Indep (X ∩ P !i)) ∧
-    (M.Skew (P i) (X ∩ (P !i)) ∨ M.Skew (P !i) (X ∩ (P i))) := by
-  sorry
+    ((M ／ (P i)).Indep (X ∩ (P !i)) ∨ (M ／ (P !i)).Indep (X ∩ (P i))) := by
+  constructor
+  · intro h₁
+    simp only [Indep.subset (h₁) (show (X ∩ P i) ⊆ X by simp),
+      Indep.subset (h₁) (show (X ∩ P ! i) ⊆ X by simp), true_and]
+    sorry
+  · intro h
+    rcases h with ⟨h₁, h₂, h₃⟩
+    by_contra! hc
+    rw [not_indep_iff, dep_iff_superset_isCircuit] at hc
+    obtain ⟨C, hc₁, hc₂⟩ := hc
+    have h : ∀ j : Bool, ¬Disjoint C (P j) := by
+      by_contra! hc
+      obtain ⟨j, hcj⟩ := hc
+      rw [Separation.disjoint_true_iff_subset_false] at hcj
+      · have : C ⊆ X ∩ (P !j) := by grind
+        have : M.Dep (X ∩ (P !j)) := by
+          rw [dep_iff_superset_isCircuit (show X ∩ (P !j) ⊆ M.E by grind)]
+          use C
+        by_cases hi : i = j
+        rw [← hi, dep_iff] at this
+        grind
+        rw [← Bool.not_not j, Bool.not_eq_not] at hi
+        rw [← hi, dep_iff] at this
+        grind
+      · refine subset_trans (hc₁) (hX)
+
+      -- rw [indep_iff_forall_subset_not_isCircuit] at h₁
+      -- have h₄ : ∃ C ⊆ X ∩ P !j, M.IsCircuit C := by
+      --   use C
+      --   simp [hc₁, hc₂]
+      --   rw [← Bool.not_not (j), ← Separation.compl_eq] at hcj
+      -- sorry
+      -- sorry
+      -- sorry
+    sorry
+
+variable [DecidableEq α]
 
 lemma IsMinor.contract_max_skew_of_eConn_eq_one (hPconn : P.eConn = 1)
-    (hX : X ⊆ P i) (hx : x ∈ (P i) \ X) (hXmax : Maximal (M.Skew (P !i)) X)
-    (hY : Y ⊆ P i) (hy : y ∈ (P i) \ Y) (hYmax : Maximal (M.Skew (P !i)) Y) :
-    Nonempty ((M ／ X ＼ ((P i ) \ (X ∪ {x}))) ≂ (M ／ Y ＼ ((P i ) \ (Y ∪ {y})))) := by
+    (hX : (M ／ (P !i)).IsBase X) (hx : x ∈ (P i) \ X)
+    (hY : (M ／ (P !i)).IsBase Y) (hy : y ∈ (P i) \ Y) :
+    M ／ Y ＼ ((P i) \ (insert y Y))
+    = mapEquiv (M ／ X ＼ ((P i) \ (insert x X))) (Equiv.swap x y) := by
   sorry
 
 lemma splitter_no_triangle (hM : M.TutteConnected 3) (hN : N.TutteConnected 3) (fNM : N <i M)
