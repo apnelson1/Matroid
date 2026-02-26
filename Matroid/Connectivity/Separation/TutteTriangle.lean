@@ -109,7 +109,6 @@ protected lemma Q_apply' (Δ : M.TriangleDeletePair) {b i} : Δ.Q b i = Δ.P b i
 protected lemma Q_apply (Δ : M.TriangleDeletePair) {b i} : Δ.Q b i = Δ.P b i \ {Δ.x (!b)} := by
   rw [Δ.Q_apply', Bool.range_bool _ b, ← union_singleton, ← diff_diff, sdiff_eq_left.2 (by simp)]
 
-
 protected lemma g_mem_false_Q (Δ : M.TriangleDeletePair) {b} : Δ.g ∈ Δ.Q b false := by
   rw [Δ.Q_apply, mem_diff_singleton, and_iff_right Δ.g_mem_false]
   exact Δ.triangle.ne₁₃
@@ -130,7 +129,12 @@ protected lemma Q_nontrivial (Δ : M.TriangleDeletePair) {b} : (Δ.Q b).Nontrivi
   simp_rw [Separation.nontrivial_iff_forall, Δ.Q_apply]
   exact fun i ↦ Δ.P_apply_nontrivial.diff_singleton_nonempty _
 
-/-- Each separation `P b` is faithful to `M ＼ {e,f}`, since otherwise its connectivity
+protected lemma Q_inter_eq (Δ : M.TriangleDeletePair) (i j) :
+    Δ.Q true i ∩ Δ.Q false j = Δ.P true i ∩ Δ.P false j := by
+  rw [Δ.Q_apply', Δ.Q_apply', diff_inter_diff_right, sdiff_eq_left.2 (by simp)]
+
+/-- For the next few lemmas, we assume that `M ＼ {e,f}` is connected.
+We first show that each `P b` is faithful to `M ＼ {e,f}`, since otherwise its connectivity
 would drop from `1` to `0` on deletion, contradicting connectedness of `M ＼ {e,f}`. -/
 protected lemma faithful_delete (Δ : M.TriangleDeletePair) (hc : (M ＼ range Δ.x).TutteConnected 2)
     {b} : (Δ.P b).Faithful (M ＼ range Δ.x) := by
@@ -146,13 +150,17 @@ protected lemma mem_closure (Δ : M.TriangleDeletePair)
   rw [Δ.Q_apply']
   exact (Δ.faithful_delete hc).mem_closure_delete_of_delete (by simp) Δ.mem' Δ.coindep_range
 
-/-- Since `Q b false` does not span `x b`, it cannot contain `Q b true`.
-This is equivalent to saying that the `true` sides of the separation have nonempty intersection. -/
-protected lemma not_subset (Δ : M.TriangleDeletePair)
-    (hc : (M ＼ range Δ.x).TutteConnected 2) {b} : (¬ Δ.Q b true ⊆ Δ.Q (!b) false) := by
-  refine fun hss ↦ Δ.notMem_closure (b := !b) (c := false) <|
-    mem_of_mem_of_subset (Δ.mem_closure hc) ?_
-  grw [b.not_not, hss, Δ.Q_apply, diff_subset]
+/-- Since `Q true false` does not span `x true`, but `Q false true` does,
+the set `Q true true ∩ Q false true` is nonempty.  -/
+protected lemma inter_true_true_nonempty (Δ : M.TriangleDeletePair)
+    (hc : (M ＼ range Δ.x).TutteConnected 2) : (Δ.P true true ∩ Δ.P false true).Nonempty := by
+  rw [← Δ.Q_inter_eq]
+  by_contra! hcon
+  have hss : Δ.Q false true ⊆ Δ.Q true false := by
+    grind [(Δ.Q true).union_inter_right (Δ.Q false true) (Δ.Q false).subset true]
+  have h1 := Δ.mem_closure hc (b := true)
+  grw [Bool.not_true, hss, Δ.Q_apply, diff_subset] at h1
+  exact Δ.notMem_closure true false h1
 
 /-- Using the fact that `Q b false` always contains `g`, and `Q b true` always spans `x !b`,
 we can conclude that `Q true b ∪ Q false c` always spans both `x true` and `x false`,
@@ -182,23 +190,14 @@ protected lemma cross_induce_faithful (Δ : M.TriangleDeletePair)
   refine fun i ↦ mem_of_mem_of_subset (aux false i) <| M.closure_subset_closure ?_
   simp [insert_subset_iff, Δ.g_mem_false_Q]
 
-protected lemma eConn_Q_eq (Δ : M.TriangleDeletePair)
-    (hc : (M ＼ range Δ.x).TutteConnected 2) {b} : (Δ.Q b).eConn = 1 := by
+protected lemma eConn_Q_eq (Δ : M.TriangleDeletePair) (hc : (M ＼ range Δ.x).TutteConnected 2) {b} :
+    (Δ.Q b).eConn = 1 := by
   convert (Δ.faithful_delete hc (b := b)).eConn_induce_eq using 1
   simp
 
-protected lemma cross_nontrivial (Δ : M.TriangleDeletePair)
-    (hc : (M ＼ range Δ.x).TutteConnected 2) :
-    ((Δ.Q true).cross (Δ.Q false) true true true).Nontrivial := by
-  rw [← Separation.not_trivial_iff, Δ.Q_nontrivial.cross_trivial_iff, not_or]
-  exact ⟨Δ.not_subset hc, Δ.not_subset hc⟩
-
-protected lemma Q_inter_eq (Δ : M.TriangleDeletePair) (i j) :
-    Δ.Q true i ∩ Δ.Q false j = Δ.P true i ∩ Δ.P false j := by
-  rw [Δ.Q_apply', Δ.Q_apply', diff_inter_diff_right, sdiff_eq_left.2 (by simp)]
-
 /-- By an uncrossing argument with submodularity, it follows that if `b` or `c` is `true`
-and `P true b ∩ P false c` is nonempty, then the opposite intersection is small. -/
+and `P true b ∩ P false c` is nonempty, then the opposite intersection `P true !b ∩ P false !b`
+is small. -/
 protected lemma inter_subsingleton (Δ : M.TriangleDeletePair)
     (hc : (M ＼ range Δ.x).TutteConnected 2) (b c : Bool) (hbc : b || c)
     (hcc' : (Δ.P true b ∩ Δ.P false c).Nonempty) :
@@ -215,33 +214,25 @@ protected lemma inter_subsingleton (Δ : M.TriangleDeletePair)
     Bool.not_not, cross_apply_self, Bool.not_not, Bool.not_not, Δ.Q_inter_eq, and_iff_left hcc']
   exact (Δ.Q_nontrivial.nonempty _).mono subset_union_left
 
-/-- Applying this when `b` and `c` are both true gives that the intersection of the `false`
-sides is a subsingleton containing `g`, and therefore is equal to `{g}`. -/
-protected lemma inter_false_eq (Δ : M.TriangleDeletePair)
-    (hc : (M ＼ range Δ.x).TutteConnected 2) : Δ.P true false ∩ Δ.P false false = {Δ.g} := by
-  refine Subsingleton.eq_singleton_of_mem ?_ ⟨Δ.g_mem_false, Δ.g_mem_false⟩
-  refine Δ.inter_subsingleton hc true true (by simp) <| ?_
-  grw [← Δ.Q_inter_eq, ← (Δ.Q false).compl_false, ← inter_diff_assoc, Separation.inter_ground_eq,
-    diff_nonempty]
-  exact Δ.not_subset hc
-
 /-- Now by reasoning about cardinalities, we can prove that `Δ P true` has a side with at most
 two elements. -/
 protected lemma exists_encard_le_two (Δ : M.TriangleDeletePair)
     (hc : (M ＼ range Δ.x).TutteConnected 2) : ∃ i, (Δ.P true i).encard ≤ 2 := by
+  have hss0 := Δ.inter_subsingleton hc _ _ (by decide) (Δ.inter_true_true_nonempty hc)
+  simp only [Bool.not_true] at hss0
   by_contra! hcon
   have hcon1 := hcon false
-  rw [← encard_diff_add_encard_inter (t := Δ.P false false), Δ.inter_false_eq hc,
-    encard_singleton, (Δ.P false).diff_eq_inter_bool _ _] at hcon1
+  grw [← encard_diff_add_encard_inter (t := Δ.P false false),
+    encard_le_one_iff_subsingleton.2 hss0, (Δ.P false).diff_eq_inter_bool _ _] at hcon1
   · replace hcon1 := Order.add_one_le_of_lt hcon1
     rw [ENat.add_one_le_add_one_iff, two_le_encard_iff_nontrivial, Bool.not_false] at hcon1
     obtain h_emp : (Δ.P true true ∩ Δ.P false false) = ∅ := by
       by_contra! hcon
       exact (Δ.inter_subsingleton hc _ _ (by decide) hcon).not_nontrivial <| by simpa
     have h' := (Δ.Q true).union_inter_right (X := Δ.Q false false) (Separation.subset _) false
-    rw [Bool.not_false, Δ.Q_inter_eq, Δ.Q_inter_eq, h_emp, Δ.inter_false_eq hc, union_empty,
-      Δ.Q_apply, sdiff_eq_left.2] at h'
-    · exact (h' ▸ Δ.P_apply_nontrivial).not_subsingleton <| by simp
+    rw [Bool.not_false, Δ.Q_inter_eq, Δ.Q_inter_eq, h_emp, union_empty, Δ.Q_apply,
+      sdiff_eq_left.2] at h'
+    · exact Δ.P_apply_nontrivial.not_subsingleton <| h' ▸ hss0
     simp [← Separation.compl_true, show Δ.x true ∈ Δ.P false true from Δ.mem' (b := true)]
   nth_grw 1 [delete_ground, subset_diff_singleton_iff, (Δ.P true).subset, delete_ground,
     and_iff_right diff_subset]
@@ -260,7 +251,7 @@ protected lemma eConn_le_one (Δ : M.TriangleDeletePair) (R : (M ＼ range Δ.x)
   rw [union_comm, Bool.range_eq, singleton_union]
   exact Δ.triangle
 
-/-- Since this is not a Tutte separataion of `M`, the side not containing `g` is tiny.  -/
+/-- Since this is not a Tutte separation of `M`, the side not containing `g` is tiny.  -/
 protected lemma subsingleton_true (Δ : M.TriangleDeletePair) (R : (M ＼ range Δ.x).Separation)
     (hR : R.eConn = 0) (hgR : Δ.g ∈ R false) : (R true).Subsingleton := by
   have hconn := Δ.eConn_le_one R hR hgR
@@ -333,7 +324,7 @@ theorem tutte_triangle (hM : M.TutteConnected 3) (hT : M.IsTriangle {e, f, g})
     have heg := hT.ne₁₃
     have hfg := hT.ne₂₃
     obtain ⟨hxe : x ≠ e, hxf : x ≠ f, hxg : x ≠ g⟩ := by simpa using hxT
-    refine ⟨{e, f, x}, ?_, by grind⟩
+    refine ⟨{e, f, x}, ?_, by grind [hT.ne₁₂, hT.ne₁₃, hT.ne₂₃]⟩
     rw [isTriad_iff, encard_insert_of_notMem (by grind), encard_pair hxf.symm,
       and_iff_left (by rfl), isCocircuit_def, unifOn_dual_eq' (j := 2) (by enat_to_nat! <;> lia), unifOn_isCircuit_iff, encard_insert_of_notMem (by grind), encard_pair hxf.symm]
     grind [hT.mem_ground₁, hT.mem_ground₂]
