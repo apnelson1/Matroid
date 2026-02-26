@@ -146,120 +146,6 @@ lemma TriangleDeletePair.not_subset (Δ : M.TriangleDeletePair)
     mem_of_mem_of_subset (Δ.mem_closure hc) ?_
   grw [b.not_not, hss, Q_apply, diff_subset]
 
-def TriangleDeletePair.Q₁ (Δ : M.TriangleDeletePair) (b c : Bool) : M.Separation :=
-  (((Δ.Q true).cross (Δ.Q false) b c true).induce M false).toggle
-    (bif b && c then {Δ.x true} else ∅)
-
-@[simp]
-lemma TriangleDeletePair.Q₁_induce (Δ : M.TriangleDeletePair) {b c : Bool} :
-    (Δ.Q₁ b c).induce (M ＼ range Δ.x) = (Δ.Q true).cross (Δ.Q false) b c true := by
-  rw [TriangleDeletePair.Q₁, toggle_induce _ _, ← toggle_inter_ground, Disjoint.inter_eq,
-    toggle_empty, induce_induce_delete_eq_self]
-  · grind
-  grind [Δ.mem_ground]
-
-lemma TriangleDeletePair.mem_closure_union_Q (Δ : M.TriangleDeletePair)
-    (hc : (M ＼ range Δ.x).TutteConnected 2) (b c : Bool) (hbc : (b || c)) :
-    Δ.x i ∈ M.closure (Δ.Q true b ∪ Δ.Q false c) := by
-  cases b
-  · grw [show c = true by simpa using hbc, ← singleton_subset_iff.2 Δ.g_mem_false_Q,
-        ← closure_union_closure_right_eq, ← Bool.not_true,
-        ← singleton_subset_iff.2 (Δ.mem_closure hc), singleton_union]
-    cases i
-    · exact Δ.true_false_triangle.mem_closure₃
-    exact M.mem_closure_of_mem' (by simp) Δ.mem_ground
-  cases c
-  · nth_grw 1 [← singleton_subset_iff.2 Δ.g_mem_false_Q, ← closure_union_closure_left_eq,
-      ← Bool.not_false, ← singleton_subset_iff.2 (Δ.mem_closure hc), singleton_union]
-    cases i
-    · exact M.mem_closure_of_mem' (by simp) Δ.mem_ground
-    exact pair_comm _ _ ▸ Δ.true_false_triangle.mem_closure₂
-  nth_grw 1 [← iUnion_bool (s := fun j ↦ (Δ.Q j true)), ← closure_iUnion_closure_eq_closure_iUnion,
-    ← subset_iUnion _ (!i), closure_closure]
-  exact Δ.mem_closure hc
-
-
-
-
-
-    -- cases c
-    -- · rw [← iUnion_bool (s := fun j ↦ Δ.Q j false)]
-
-lemma TriangleDeletePair.faithful_Q₁ (Δ : M.TriangleDeletePair)
-    (hc : (M ＼ range Δ.x).TutteConnected 2) (b c : Bool) :
-    (Δ.Q₁ b c).Faithful (M ＼ range Δ.x) := by
-  obtain hbc | hbc := (b && c).eq_false_or_eq_true
-
-  · rw [show b = true by grind, show c = true by grind, Q₁, Bool.true_and, cond_true]
-    refine faithful_delete_of_forall_subset_closure fun i ↦ ?_
-
-    cases i
-    · rw [toggle_apply_eq_diff]
-      ·
-        grw [diff_inter_right_comm, inter_subset_right, Δ.range_diff, diff_diff,
-          union_eq_self_of_subset_left (by simp), induce_apply_of_delete_self,
-          cross_apply_true_false, union_diff_right, sdiff_eq_left.2,
-          singleton_subset_iff]
-        · refine Δ.mem_closure_union_Q hc _ _ ?_
-
-        grw [Separation.subset, Separation.subset, union_self]
-        exact disjoint_sdiff_left
-
-
-      simp [induce_apply_of_delete_self _ _ Δ.range_subset_ground]
-
-
-
-
-  simp only [Q₁, hbc, cond_false, toggle_empty]
-  refine faithful_of_subset_closure_of_delete _ <| range_subset_iff.2 fun i ↦ ?_
-  rw [cross_apply_true_false]
-  exact Δ.mem_closure_union_Q hc _ _ <| by grind
-    --   sorry
-    -- rw [Q₁, Bool.not_true, Bool.and_false, Bool.cond_false, toggle_empty]
-    -- refine faithful_of_subset_closure_of_delete _ <| range_subset_iff.2 fun i ↦ ?_
-    -- rw [cross_apply_true_false, Bool.not_false, Bool.not_true]
-
-
-    -- rw [Q₁, Bool.false_and, cond_false, toggle_empty]
-    -- refine faithful_of_subset_closure_of_delete _ <| range_subset_iff.2 fun i ↦ ?_
-    -- rw [cross_apply_true_false]
-    -- cases i
-    -- · grw [← subset_union_left]
-    --   simpa using Δ.mem_closure hc (b := false)
-    -- cases c
-    -- · sorry
-
-
-  --   rw [Q₁, cond_false, faithful_delete_iff_forall_subset_closure sorry]
-  --   intro i
-  --   grw [toggle_apply_eq_diff, ← inter_diff_right_comm, inter_subset_right, Δ.range_diff,
-  --     singleton_subset_iff, diff_diff, union_eq_self_of_subset_left (by simp)]
-  --   cases i
-  --   · grw [induce_apply_of_delete_self, cross_apply_true_false, ← subset_union_left,
-  --       ← subset_union_left, sdiff_eq_left.2 ((Δ.Q true).disjoint_delete _)]
-  --     have := Δ.mem_closure (b := true)
-  --   -- · grw [inter_diff_distrib_right, inter_diff_assoc, diff_inter_self_eq_diff, Δ.range_diff,
-  --   --     inter_subset_right, induce_apply_of_delete_self]
-  --   -- · simp [induce_apply_eq_cond]
-  --   -- simp [induce_apply_eq_cond]
-
-  -- obtain rfl | rfl := b.eq_or_eq_not c
-  -- ·
-  --   rw [Q₁, bne_self_eq_false, cond_false]
-  --   -- simp only [Q₁, BEq.rfl, cond_true, toggle_empty, show b = false by simpa using hbc]
-  --   rw [faithful_delete_iff_forall_subset_closure sorry, Bool.forall_bool,
-  --     toggle_apply_eq_diff]
-  --   sorry
-  --   rw [singleton_subset_iff, induce_apply_of_delete_self, cross_apply_true_false]
-  --   -- simp at hbc
-  --   refine mem_of_mem_of_subset Δ.mem' ?_
-  --   intro i
-
-
-    -- rw [cross_apply_true_false, Bool.not_false, ← iUnion_bool_eq]
-
-
 lemma TriangleDeletePair.cross_induce_faithful (Δ : M.TriangleDeletePair)
     (hc : (M ＼ range Δ.x).TutteConnected 2) (b c : Bool) (hbc : (b && c) = false) {d} :
     (((Δ.Q true).cross (Δ.Q false) b c d).induce M (!d)).Faithful (M ＼ range Δ.x) := by
@@ -282,12 +168,6 @@ lemma TriangleDeletePair.cross_induce_faithful (Δ : M.TriangleDeletePair)
   refine fun i ↦ mem_of_mem_of_subset (aux false i) <| M.closure_subset_closure ?_
   simp [insert_subset_iff, Δ.g_mem_false_Q]
 
-
--- lemma TriangleDeletePair.R_faithful (Δ : M.TriangleDeletePair)
---     (hc : (M ＼ range Δ.x).TutteConnected 2) : Δ.R.Faithful (M ＼ range Δ.x) := by
---   _
-
-
 lemma TriangleDeletePair.eConn_Q_eq (Δ : M.TriangleDeletePair)
     (hc : (M ＼ range Δ.x).TutteConnected 2) {b} : (Δ.Q b).eConn = 1 := by
   convert (Δ.faithful_delete hc (b := b)).eConn_induce_eq using 1
@@ -302,24 +182,6 @@ lemma TriangleDeletePair.cross_nontrivial (Δ : M.TriangleDeletePair)
 lemma TriangleDeletePair.Q_inter_eq (Δ : M.TriangleDeletePair) (i j) :
     Δ.Q true i ∩ Δ.Q false j = Δ.P true i ∩ Δ.P false j := by
   rw [Q_apply', Q_apply', diff_inter_diff_right, sdiff_eq_left.2 (by simp)]
-
-def TriangleDeletePair.R (Δ : M.TriangleDeletePair) (b : Bool) : M.Separation :=
-  (((Δ.Q true).cross (Δ.Q false) b (!b) b).induce (M ＼ {Δ.x b}) b).induce M (!b)
-
-lemma foo (Δ : M.TriangleDeletePair) (b : Bool) :
-    Δ.R b b = insert (Δ.x (!b)) (Δ.P true b ∩ Δ.P false (!b)) := by
-  simp [TriangleDeletePair.R]
-  rw [induce_apply_self, cross_apply_not, Bool.not_not, Separation.union_apply_eq_diff_inter,
-    diff_diff_right, delete_ground, delete_ground, diff_diff_right, diff_eq_empty.2 diff_subset,
-      empty_union, diff_inter_right_comm, inter_eq_self_of_subset_right Δ.range_subset_ground,
-      Bool.not_not, ← Δ.Q_inter_eq, inter_eq_self_of_subset_right, ← singleton_union]
-  · convert rfl
-    rw [Bool.range_bool _ b, insert_diff_self_of_notMem (by simp [Δ.triangle.ne₂₃])]
-  grw [inter_subset_left, Separation.subset, delete_ground, diff_subset_diff_right]
-  simp
-
-
-
 
 lemma TriangleDeletePair.inter_subsingleton (Δ : M.TriangleDeletePair)
     (hc : (M ＼ range Δ.x).TutteConnected 2) (b c : Bool) (hbc : b || c)
@@ -345,73 +207,103 @@ lemma TriangleDeletePair.inter_false_eq (Δ : M.TriangleDeletePair)
     diff_nonempty]
   exact Δ.not_subset hc
 
-lemma TriangleDeletePair.foo (Δ : M.TriangleDeletePair) (hc : (M ＼ range Δ.x).TutteConnected 2) :
-    ∃ i, (Δ.P true i).encard ≤ 2 := by
-  -- simp_rw [show (2 : ℕ∞) = 1 + 1 from rfl, ENat.add_one_le_iff (m := 1) (by simp),
-  --   ← not_le, encard_le_one_iff_subsingleton]
+lemma TriangleDeletePair.exists_encard_le_two (Δ : M.TriangleDeletePair)
+    (hc : (M ＼ range Δ.x).TutteConnected 2) : ∃ i, (Δ.P true i).encard ≤ 2 := by
   by_contra! hcon
   have hcon1 := hcon false
   rw [← encard_diff_add_encard_inter (t := Δ.P false false), Δ.inter_false_eq hc,
     encard_singleton, (Δ.P false).diff_eq_inter_bool _ _] at hcon1
-  ·
-    replace hcon1 := Order.add_one_le_of_lt hcon1
+  · replace hcon1 := Order.add_one_le_of_lt hcon1
     rw [ENat.add_one_le_add_one_iff, two_le_encard_iff_nontrivial, Bool.not_false] at hcon1
-    have hss := Δ.inter_subsingleton hc _ _ (by decide) hcon1.nonempty
-    obtain h_emp | ⟨y, hy⟩ := hss.eq_empty_or_singleton
-    ·
-
+    obtain h_emp : (Δ.P true true ∩ Δ.P false false) = ∅ := by
+      by_contra! hcon
+      exact (Δ.inter_subsingleton hc _ _ (by decide) hcon).not_nontrivial <| by simpa
+    have h' := (Δ.Q true).union_inter_right (X := Δ.Q false false) (Separation.subset _) false
+    rw [Bool.not_false, Δ.Q_inter_eq, Δ.Q_inter_eq, h_emp, Δ.inter_false_eq hc, union_empty,
+      Δ.Q_apply, sdiff_eq_left.2] at h'
+    · exact (h' ▸ Δ.P_apply_nontrivial).not_subsingleton <| by simp
+    simp [← Separation.compl_true, show Δ.x true ∈ Δ.P false true from Δ.mem' (b := true)]
   nth_grw 1 [delete_ground, subset_diff_singleton_iff, (Δ.P true).subset, delete_ground,
     and_iff_right diff_subset]
   exact (Δ.P true).disjoint_false_true.notMem_of_mem_right <| Δ.mem
 
+lemma TriangleDeletePair.exists_triad_mem (Δ : M.TriangleDeletePair)
+    (hc : (M ＼ range Δ.x).TutteConnected 2) : ∃ K, M.IsTriad K ∧ Δ.x true ∈ K := by
+  have hs := (Δ.three_connected.simple Δ.card_ge)
+  have hs' := (Δ.three_connected.dual.simple Δ.card_ge)
+  obtain ⟨i, hi⟩ := Δ.exists_encard_le_two hc
+  have hd := ((Δ.sep (b := true)).codep_of_indep (i := i) ?_)
+  · refine ⟨insert (Δ.x true) (Δ.P true i), isTriangle_of_dep_of_encard_le ?_ ?_, by simp⟩
+    · rw [Coindep.delete_codep_iff, union_singleton] at hd
+      · exact hd.1
+      simpa using hs'.isNonloop_of_mem Δ.mem_ground
+    grw [encard_insert_le, hi]
+    exact rfl.le
+  grw [delete_indep_iff, and_iff_right (indep_of_encard_le_two hi), Separation.subset]
+  simp
 
 
-  -- obtain rfl | rfl := b.eq_or_eq_not c
-  -- · obtain rfl : b = false := by simpa using hbc
-  --   simp [Δ.inter_false_eq hc]
-  -- nth_rw 2 [← c.not_not]
-  -- refine Δ.inter_subsingleton hc _ _ (by simp) ?_
-  -- have := (Δ.sep (b := c)).nontrivial (by simp) false
-  -- rw [← Separation.inter_ground_eq] at this
-  -- -- have := (Δ.faithful_delete hc (b := c)).isTutteSeparation_of_induce
+lemma TriangleDeletePair.foo (Δ : M.TriangleDeletePair) (R : (M ＼ range Δ.x).Separation)
+    (hR : R.eConn = 0) (hnt : R.Nontrivial) (hgR : Δ.g ∈ R false) :
+    (R.induce M).eConn ≤ 1 := by
+  grw [Separation.eConn_eq_eLocalConn _ false, induce_apply_of_delete_self,
+    induce_apply_not, apply_inter_ground_of_delete, Bool.not_false,
 
-  -- #exit
-  -- have aux {X} (hX : X ⊆ (M ＼ range Δ.x).E) (b) : X = (X ∩ (Δ.Q b true)) ∪ (X ∩ Δ.Q b false) := sorry
-  -- rw [← Δ.Q_inter_eq]
-  -- cases c
-  -- ·
-  -- cases c
-  -- · rw [← Δ.Q_inter_eq, Bool.not_false]
-  -- rw [← Δ.Q_inter_eq, ← (Δ.Q false).inter_ground_left, ← inter_assoc]
-  -- simp_rw [← (Δ.Q true).union_bool_eq c]
+    eLocalConn_union_left_le, ← Bool.not_false, ← R.eConn_eq_eLocalConn_of_isRestriction (by simp),
+    hR, zero_add, union_comm, ← eRelRk_eq_union_right, eRelRk_eq_eRk_contract,
+    ]
 
+  -- have := Δ.eConn_eq (b := true)
 
-  -- suffices aux : (((Δ.P true) !b) ∩ (Δ.P false) !c).Nonempty by
-  --   simpa using Δ.inter_subsingleton hc (!b) (!c) (by simpa using hbc) aux
-  -- -- rw [← Δ.Q_inter_eq, ← (Δ.Q false).diff_eq_inter_bool _ (Δ.Q true).subset, ← diff_inter_self_eq_diff,
-  -- --   diff_nonempty]
-  -- -- rw [nonempty_iff_ne_empty]
-  -- -- rintro he
-  -- cases b
-  -- · cases c
-  --   · simp
-  --   rw [← Δ.Q_inter_eq, Bool.not_false]
-
-  --   refine ((((Δ.sep (b := false)).nontrivial (by simp)) (!c)).diff_singleton_nonempty Δ.g).mono ?_
-
-
-
-
-  -- have hsm := (Δ.Q true).submod_cross (Δ.Q false) false false true true
-  -- grw [Bool.not_false, Δ.eConn_Q_eq hc, Δ.eConn_Q_eq hc,
-  --   ← (Δ.cross_nontrivial hc).one_le_eConn_of_tutteConnected hc, ENat.add_one_le_add_one_iff,
-  --   ← (Δ.cross_induce_faithful hc).eConn_eq_of_delete] at hsm
-  -- obtain ⟨rfl | rfl, hss⟩ := Δ.three_connected.exists_subsingleton_of_isTutteSeparation hsm
-  -- · simp [induce_apply_of_delete_self _ _ Δ.range_subset_ground, Δ.true_false_triangle.ne₂₃] at hss
-  -- rwa [induce_false_true, apply_inter_ground_of_delete, cross_apply_self, Q_apply',
-  --   Q_apply', ← diff_inter_distrib_right, sdiff_eq_left.2 (by simp)] at hss
-
-
+lemma tutte_triangle_disconnected_case (hM : M.TutteConnected 3) (hT : M.IsTriangle {e,f,g})
+    (hdisc : ¬(M ＼ {e,f}).Connected) : ∃ K, M.IsTriad K ∧ e ∈ K := by
+  sorry
+  -- have hgE' : g ∈ (M ＼ {e,f}).E := ⟨hT.mem_ground₃, by simp [hT.ne₁₃.symm, hT.ne₂₃.symm]⟩
+  -- have hne : (M ＼ {e,f}).Nonempty := by rw [← ground_nonempty_iff]; use g
+  -- obtain ⟨P, hP0, hPnt⟩ := exists_separation_of_not_connected hdisc
+  -- -- let `j` be the side of `P` containing `g`.
+  -- obtain ⟨j, hgj⟩ : ∃ j, g ∈ P j := by rwa [← P.iUnion_eq, mem_iUnion] at hgE'
+  -- have hconn : (P.induce M j).eConn ≤ 1 := by
+  --   grw [Separation.eConn_eq_eLocalConn _ j, induce_apply_of_delete_not,
+  --     induce_apply_of_delete_self, eLocalConn_union_left_le,
+  --     ← P.eConn_eq_eLocalConn_of_isRestriction (by simp), hP0, zero_add,
+  --     show P j ∪ {e,f} = insert f (insert e (P j)) by grind, ← eRelRk_closure_right,
+  --     closure_insert_eq_of_mem_closure, eRelRk_closure_right, eRelRk_insert_le]
+  --   exact mem_of_mem_of_subset hT.mem_closure₂ <| M.closure_subset_closure <| by grind
+  -- rw [show (3 : ℕ∞) = 1 + 1 + 1 from rfl] at hM
+  -- have hnotsep : ¬ (P.induce M j).IsTutteSeparation :=
+  --   hM.not_isTutteSeparation (P := P.induce M j) (by grw [hconn])
+  -- rw [isTutteSeparation_iff_lt_encard (by enat_to_nat!), not_forall] at hnotsep
+  -- -- rw [isTutteSeparation_iff_add_one_le_encard (by enat_to_nat!), not_forall] at hnotsep
+  -- obtain ⟨i, hi⟩ := hnotsep
+  -- grw [hconn, not_lt] at hi
+  -- obtain rfl | rfl := (i.eq_or_eq_not j)
+  -- · grw [induce_apply_of_delete_self, ← subset_union_right, encard_pair hT.ne₁₂] at hi
+  --   simp at hi
+  -- rw [induce_apply_of_delete_not, encard_le_one_iff_subsingleton] at hi
+  -- obtain ⟨x, hPx⟩ := hi.exists_eq_of_singleton_of_nonempty <| hPnt.nonempty _
+  -- have hxE : x ∈ (M ＼ {e, f}).E := by grw [← singleton_subset_iff, ← hPx, P.subset_ground]
+  -- obtain ⟨hxE' : x ∈ M.E, hxe : x ≠ e, hxf : x ≠ f⟩ := by simpa using hxE
+  -- -- Now we have that `x` is a loop or coloop of `M ＼ {e,f}`.
+  -- have hxT : x ∉ ({e, f, g} : Set α) := by
+  --   simp only [mem_insert_iff, hxe, hxf, mem_singleton_iff, false_or]
+  --   rintro rfl
+  --   exact (P.disjoint_bool j).notMem_of_mem_left hgj <| by simp [hPx]
+  -- have hcard : 4 ≤ M.E.encard := by
+  --   grw [show (4 : ℕ∞) = 3 + 1 from rfl, ← insert_subset hxE' hT.subset_ground,
+  --     encard_insert_of_notMem hxT, hT.three_elements]
+  -- have hlp : M.Simple := hM.simple hcard
+  -- rw [← P.eConn_eq !j, hPx, eConn_singleton_eq_zero_iff hxE,
+  --   delete_isLoop_iff, iff_false_intro (M.not_isLoop _), false_and, false_or,
+  --   delete_isColoop_iff, diff_diff, union_singleton] at hP0
+  -- have hcard : encard {x,e,f} = 3 := by
+  --   rw [encard_insert_of_notMem (by simp [hxe, hxf]), encard_pair hT.ne₁₂, two_add_one_eq_three]
+  -- refine ⟨{x,e,f}, ⟨?_, hcard⟩, by simp⟩
+  -- refine Dep.isCircuit_of_encard_lt_girth_add_one ?_ ?_
+  -- · rw [dep_dual_iff, ← nonspanning_compl_iff, nonspanning_iff, and_iff_left diff_subset]
+  --   exact fun hsp ↦ hP0.1 <| by simpa [hsp.closure_eq] using hP0.2.1
+  -- grw [← hM.dual.girth_ge (by simpa), hcard]
+  -- norm_num
 
 
 

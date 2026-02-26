@@ -474,6 +474,14 @@ lemma IsMinor.rank_le (h : N ≤m M) [RankFinite M] : N.rank ≤ M.rank := by
   rw [← M.cast_rank_eq, ← N.cast_rank_eq] at hle
   exact WithTop.coe_le_coe.1 hle
 
+lemma eRk_delete_le_eRk (M : Matroid α) (X : Set α) : (M ＼ D).eRk X ≤ M.eRk X := by
+  rw [delete_eRk_eq']
+  exact M.eRk_mono diff_subset
+
+lemma IsMinor.eRk_le (h : N ≤m M) (X : Set α) : N.eRk X ≤ M.eRk X := by
+  obtain ⟨C, D, -, -, -, rfl⟩ := h
+  grw [eRk_delete_le_eRk, eRk_contract_le_eRk]
+
 lemma eRelRk_contract_le (M : Matroid α) (C X Y : Set α) :
     (M ／ C).eRelRk X Y ≤ M.eRelRk X Y := by
   rw [eRelRk_eq_eRk_contract, eRelRk_eq_eRk_contract, contract_contract,

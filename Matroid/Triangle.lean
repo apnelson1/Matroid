@@ -235,6 +235,13 @@ lemma IsTriangle.eq_unifOn_two_four_of_isTriad_of_tutteConnected (hT : M.IsTrian
   obtain rfl : r = 2 := ENat.coe_inj.1 hr
   use E, hE
 
+lemma isTriangle_of_dep_of_encard_le [h : M.Simple] (hT : M.Dep T) (hcard : T.encard ≤ 3) :
+    M.IsTriangle T := by
+  rw [← three_le_girth_iff] at h
+  refine ⟨hT.isCircuit_of_encard_le_girth ?_ (hcard.trans h),
+      hcard.antisymm (h.trans hT.girth_le_card)⟩
+  grw [← encard_lt_top_iff]; enat_to_nat!
+
 @[mk_iff]
 structure Triadular (M : Matroid α) : Prop where
   three_connected : M.TutteConnected (2 + 1)

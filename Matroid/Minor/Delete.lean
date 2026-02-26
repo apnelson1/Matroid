@@ -119,6 +119,11 @@ lemma Coindep.delete_coindep_iff (hD : M.Coindep D) :
   rw [coindep_iff_compl_spanning, coindep_iff_compl_spanning, hD.delete_spanning_iff, delete_ground,
     diff_diff, union_comm, and_iff_left hX'.2, and_iff_left (by grind)]
 
+lemma Coindep.delete_codep_iff (hD : M.Coindep D) :
+    (M ＼ D).Codep X ↔ M.Codep (X ∪ D) ∧ Disjoint X D := by
+  rw [codep_iff, hD.delete_coindep_iff, codep_iff, delete_ground]
+  grind [hD.subset_ground]
+
 lemma girth_le_girth_delete (M : Matroid α) (D : Set α) : M.girth ≤ (M ＼ D).girth :=
     (delete_isRestriction ..).girth_ge
 
