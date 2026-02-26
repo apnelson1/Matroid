@@ -84,6 +84,18 @@ protected lemma iUnion_eq (P : M.Separation) : ⋃ i, P i = M.E :=
 @[simp] lemma compl_dual_not_eq (P : M✶.Separation) (i : Bool) : M.E \ P (!i) = P i :=
   IndexedPartition.compl_not_eq P i
 
+lemma disjoint_iff_subset_not {P : M.Separation} (hX : X ⊆ M.E := by aesop_mat) :
+    Disjoint X (P i) ↔ X ⊆ P !i := by
+  rw [← P.compl_eq, subset_diff, and_iff_right hX]
+
+lemma disjoint_not_iff_subset {P : M.Separation} (hX : X ⊆ M.E := by aesop_mat) :
+    Disjoint X (P !i) ↔ X ⊆ P i := by
+  rw [disjoint_iff_subset_not, i.not_not]
+
+lemma not_mem_iff_mem_not {P : M.Separation} {x} (hx : x ∈ M.E := by aesop_mat) :
+    x ∉ P i ↔ x ∈ P !i := by
+  rw [← P.compl_eq, mem_diff, and_iff_right hx]
+
 protected def mk (f : Bool → Set α) (dj : Pairwise (Disjoint on f)) (iUnion_eq : ⋃ i, f i = M.E) :
     M.Separation :=
   IndexedPartition.mk f dj iUnion_eq

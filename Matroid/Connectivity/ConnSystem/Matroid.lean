@@ -464,6 +464,10 @@ lemma eConn_disjointSum_right_eq {M₁ M₂ : Matroid α} (hdj : Disjoint M₁.E
   rw [disjointSum_comm]
   simp
 
+lemma eConn_eq_zero_iff_skew_compl (hX : X ⊆ M.E := by aesop_mat) :
+    M.eConn X = 0 ↔ M.Skew X (M.E \ X) := by
+  rw [eConn_eq_eLocalConn, eLocalConn_eq_zero]
+
 lemma eConn_eq_zero_of_subset_loops {L : Set α} (hL : L ⊆ M.loops) : M.eConn L = 0 := by
   rw [eConn_eq_eLocalConn, ← eLocalConn_diff_left_of_subset_loops hL]
   simp

@@ -817,4 +817,25 @@ theorem eConn_inter_add_eConn_insert_union_le (M : Matroid α) (heC : e ∉ C) (
   grw [← singleton_union, ← union_assoc, M.eConn_inter_add_eConn_union_union_le (by simpa)
     (by simpa), eConn_le_encard _ {e}, encard_singleton]
 
+lemma IsMinor.isRestriction_of_eConn_eq_zero {N} (hN : N ≤m M) (hN0 : M.eConn N.E = 0) :
+    N ≤r M := by
+  rw [eConn_eq_zero_iff_skew_compl hN.subset] at hN0
+  obtain ⟨C, D, hC, hD, hCD, rfl⟩ := hN.exists_eq_contract_delete_disjoint
+  rw [contract_delete_comm _ hCD, (contract_eq_delete_iff_skew_compl _).2]
+  · simp
+  · suffices M.Skew C ((M.E \ C) \ D) by simpa [delete_ground, diff_diff_comm, skew_delete_iff,
+      hCD, disjoint_sdiff_left, and_self, and_true]
+    exact hN0.symm.mono (by grind) <| by grind
+  grind
+
+/-- If `X` is separating, and `N.E ⊆ X ⊆ N'.E` for minors `N` and `N'` of `M`, then `N ≤m N'`. -/
+lemma IsMinor.isMinor_of_eConn_eq_zero {N N' : Matroid α} (hNM : N ≤m M) (hN'M : N' ≤m M)
+    (hN : N.E ⊆ X) (hN' : X ⊆ N'.E) (hX : M.eConn X = 0) : N ≤m N' := by
+  obtain ⟨N₁, hNN₁, hN₁M, hN₁E⟩ := hNM.exists_isMinor_of_subset_subset hN (hN'.trans hN'M.subset)
+  have hN₁ : N₁ ≤r M := hN₁M.isRestriction_of_eConn_eq_zero (by simpa [hN₁E])
+  have hN₁' := ((N'.restrict_isRestriction X).isMinor.trans hN'M).isRestriction_of_eConn_eq_zero
+    (by simpa)
+  rw [hN₁.eq_of_isRestriction_of_ground_eq hN₁' (by simpa)] at hNN₁
+  exact hNN₁.trans <| restrict_isMinor _ hN'
+
 end Pair

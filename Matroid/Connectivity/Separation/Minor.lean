@@ -277,6 +277,22 @@ lemma induce_induce_delete_of_subset {X i} (P : M.Separation) (hX : X ⊆ P i) :
   P.induce_induce_remove_of_subset (b := false) hX
 
 @[simp]
+lemma restrict_eq_delete (P : M.Separation) (i : Bool) : M ↾ (P !i) = M ＼ P i := by
+  rw [← delete_compl, P.compl_not_eq]
+
+@[simp]
+lemma delete_eq_restrict (P : M.Separation) (i : Bool) : M ＼ (P !i) = M ↾ P i := by
+  rw [← delete_compl, P.compl_eq]
+
+lemma contract_eq_delete_of_eConn_eq_zero (hP : P.eConn = 0) (i : Bool) :
+    M ／ P i = M ＼ P i := by
+ rwa [contract_eq_delete_iff_skew_compl, P.compl_eq, ← eConn_eq_zero_iff_skew]
+
+lemma contract_eq_restrict_of_eConn_eq_zero (hP : P.eConn = 0) (i : Bool) :
+    M ／ P i = M ↾ P (!i) := by
+  simp [contract_eq_delete_of_eConn_eq_zero hP]
+
+@[simp]
 lemma eConn_induce_dual_contract (P : M.Separation) (X : Set α) :
     (P.induce (M✶ ／ X)).eConn = (P.induce (M ＼ X)).eConn := by
   rw [← induce_dual_eConn]

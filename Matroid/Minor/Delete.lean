@@ -146,4 +146,12 @@ lemma delete_isSpanningRestriction_iff (hX : X ⊆ M.E := by aesop_mat) :
   rw [← diff_diff_cancel_left hX]
   exact h.spanning.compl_coindep
 
+lemma IsRestriction.eq_delete (h : N ≤r M) : N = M ＼ (M.E \ N.E) := by
+  obtain ⟨R, hR, rfl⟩ := h.exists_eq_restrict
+  rw [restrict_ground_eq, delete_compl]
+
+lemma IsRestriction.eq_of_isRestriction_of_ground_eq {N'} (h : N ≤r M) (h' : N' ≤r M)
+    (hE : N.E = N'.E) : N = N' := by
+  rw [← h.eq_restrict, ← h'.eq_restrict, hE]
+
 end Delete
