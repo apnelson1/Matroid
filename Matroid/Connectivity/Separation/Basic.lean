@@ -4,6 +4,7 @@ import Matroid.ForMathlib.Data.Set.IndexedPartition
 import Matroid.Bool
 
 open Set Function
+open scoped symmDiff
 
 lemma pairwise_on_bool' {α : Type*} {r : α → α → Prop} {f : Bool → α} (i : Bool) :
     Pairwise (r on f) ↔ r (f i) (f !i) ∧ r (f !i) (f i) := by
@@ -328,6 +329,9 @@ lemma induce_induce_eq_self_of_subset_union (P : M.Separation) (hN : N.E ⊆ M.E
 
 -- @[simp]
 -- lemma bDual_ofbDual {b : Bool} (P : M.Separation) : (P.bDual b).ofbDual = P := rfl
+
+
+
 
 /-- A separation is trivial if one side is empty. -/
 protected def Trivial (P : M.Separation) : Prop := IndexedPartition.Trivial P
@@ -927,6 +931,55 @@ lemma diff_eq_inter_bool (P : M.Separation) (i : Bool) (hX : X ⊆ M.E := by aes
   grind
 
 end Cross
+
+
+def toggle (P : M.Separation) (X : Set α) : M.Separation where
+  toFun i := (P i) ∆ (X ∩ M.E)
+  pairwise_disjoint' := by
+    simp only [symmDiff_def, _root_.pairwise_disjoint_on_bool' true,
+      P.diff_eq_inter_bool _ inter_subset_right, sup_eq_union]
+    grind [P.disjoint_true_false]
+  iUnion_eq' := by
+    simp only [symmDiff_def, P.diff_eq_inter_bool _ inter_subset_right, sup_eq_union, iUnion_bool]
+    grind [P.union_eq]
+
+lemma toggle_apply' (P : M.Separation) (X : Set α) (i : Bool) :
+    P.toggle X i = P i ∆ (X ∩ M.E) := rfl
+
+lemma toggle_apply (P : M.Separation) (hX : X ⊆ M.E := by aesop_mat) (i : Bool) :
+    P.toggle X i = P i ∆ X := by
+  rw [toggle_apply', inter_eq_self_of_subset_left hX]
+
+@[simp]
+lemma toggle_inter_ground (P : M.Separation) (X : Set α) : P.toggle (X ∩ M.E) = P.toggle X := by
+  refine Separation.ext (?_ : (P true) ∆ _ = _)
+  rw [inter_assoc, inter_self]
+  rfl
+
+lemma toggle_apply_eq_diff (P : M.Separation) (hX : X ⊆ P i) : P.toggle X i = P i \ X := by
+  rw [toggle_apply, symmDiff_of_ge hX]
+
+lemma toggle_apply_eq_union (P : M.Separation) (hX : X ⊆ P (!i)) : P.toggle X i = P i ∪ X := by
+  rw [toggle_apply, (symmDiff_eq_sup ..).2 <| (P.disjoint_bool i).mono_right hX]
+  rfl
+
+@[simp]
+lemma toggle_empty (P : M.Separation) : P.toggle ∅ = P :=
+  Separation.ext <| by simp [P.toggle_apply]
+
+lemma toggle_induce_of_inter_subset (P : M.Separation) (hX : X ∩ N.E ⊆ M.E) :
+    (P.toggle X).induce N i = (P.induce N i).toggle X := by
+  refine Separation.ext_bool (!i) ?_
+  rw [toggle_apply', induce_apply_not, toggle_apply', induce_apply_not,
+    inter_symmDiff_distrib_right, inter_right_comm, inter_eq_self_of_subset_left hX]
+
+lemma toggle_induce_of_ground_subset (P : M.Separation) (hN : N.E ⊆ M.E) :
+    (P.toggle X).induce N = (P.induce N).toggle X :=
+  P.toggle_induce_of_inter_subset <| by grw [inter_subset_right, hN]
+
+lemma toggle_induce (P : M.Separation) (hX : X ⊆ M.E := by aesop_mat) :
+    (P.toggle X).induce N i = (P.induce N i).toggle X :=
+  P.toggle_induce_of_inter_subset <| by grw [inter_subset_left, hX]
 
 lemma eConn_eq_zero_iff_skew {P : M.Separation} {i : Bool} : P.eConn = 0 ↔ M.Skew (P i) (P !i) := by
   rw [← M.eLocalConn_eq_zero P.subset_ground P.subset_ground, Separation.eConn]

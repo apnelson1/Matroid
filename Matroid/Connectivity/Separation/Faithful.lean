@@ -196,6 +196,19 @@ lemma faithful_delete_of_subset_closure (hD : D ⊆ P i) (hDcl : D ⊆ M.closure
     grw [coindep_iff_subset_closure_compl, ← diff_subset_diff_left (P.subset (i := i)), ← hDcl]
   rwa [faithful_delete_iff_subset_closure_of_subset hDi hD]
 
+lemma faithful_delete_of_forall_subset_closure (hDcl : ∀ i, P i ∩ D ⊆ M.closure (P i \ D)) :
+    P.Faithful (M ＼ D) := by
+  wlog hD : D ⊆ M.E generalizing D with aux
+  · rw [← delete_inter_ground_eq]
+    refine aux (fun i ↦ ?_) inter_subset_right
+    grw [← inter_assoc, inter_right_comm, P.inter_ground_left, hDcl, diff_inter,
+      diff_eq_empty.2 P.subset, union_empty]
+  have hD : M.Coindep D := by
+    grw [coindep_iff_subset_closure_compl, ← P.union_eq, union_diff_distrib,
+      ← closure_closure_union_closure_eq_closure_union, ← hDcl, ← hDcl, ← union_inter_distrib_right,
+      P.union_eq, inter_eq_self_of_subset_right hD, ← M.subset_closure D hD]
+  rwa [faithful_delete_iff_forall_subset_closure hD]
+
 lemma faithful_remove_iff (hX : X ⊆ M.E) {b : Bool} :
     P.Faithful (M.remove b X) ↔ ∀ i, (M.bDual (!b)).Skew (P i) (X \ P i) := by
   cases b

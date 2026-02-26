@@ -108,7 +108,7 @@ import Matroid.Graph.WList.TakeDrop
 import Matroid.Graph.Walk.Basic
 import Matroid.Graph.Walk.Cycle
 import Matroid.Graph.Walk.Path
-import Matroid.Graphic
+-- import Matroid.Graphic
 -- import Matroid.Induction
 import Matroid.Intersection
 import Matroid.Loop

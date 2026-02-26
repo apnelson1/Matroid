@@ -22,8 +22,9 @@ namespace Matroid
 
 variable {i : Bool} {α : Type*} {e f g : α} {C K T X : Set α} {M : Matroid α} {P : M.Separation}
 
-lemma Separation.union_apply_eq_diff_inter (P Q : M.Separation) (b c : Bool) :
-    P b ∪ Q c = M.E \ (P (!b) ∩ Q (!c)) := sorry
+-- lemma Separation.union_apply_eq_diff_inter (P Q : M.Separation) (b c : Bool) :
+--     P b ∪ Q c = M.E \ (P (!b) ∩ Q (!c)) := by
+--   _
 
 structure TriangleDeletePair (M : Matroid α) where
   card_ge : 4 ≤ M.E.encard
@@ -44,6 +45,10 @@ lemma TriangleDeletePair.triangle (Δ : M.TriangleDeletePair) {b} :
   cases b
   · exact pair_comm _ _ ▸ Δ.true_false_triangle
   exact Δ.true_false_triangle
+
+@[simp]
+lemma TriangleDeletePair.mem_ground (Δ : M.TriangleDeletePair) {b} : Δ.x b ∈ M.E :=
+  Δ.triangle.mem_ground₂
 
 @[simp]
 lemma TriangleDeletePair.notMem (Δ : M.TriangleDeletePair) {b c} : Δ.x b ∉ Δ.P b c :=
@@ -97,6 +102,10 @@ lemma TriangleDeletePair.Q_apply (Δ : M.TriangleDeletePair) {b i} :
     Δ.Q b i = Δ.P b i \ {Δ.x (!b)} := by
   rw [Δ.Q_apply', Bool.range_bool _ b, ← union_singleton, ← diff_diff, sdiff_eq_left.2 (by simp)]
 
+@[simp]
+lemma TriangleDeletePair.range_diff (Δ : M.TriangleDeletePair) {b} :
+    range Δ.x \ {Δ.x b} = {Δ.x !b} := sorry
+
 lemma TriangleDeletePair.g_mem_false_Q (Δ : M.TriangleDeletePair) {b} : Δ.g ∈ Δ.Q b false := by
   rw [Q_apply, mem_diff_singleton, and_iff_right Δ.g_mem_false]
   exact Δ.triangle.ne₁₃
@@ -137,6 +146,120 @@ lemma TriangleDeletePair.not_subset (Δ : M.TriangleDeletePair)
     mem_of_mem_of_subset (Δ.mem_closure hc) ?_
   grw [b.not_not, hss, Q_apply, diff_subset]
 
+def TriangleDeletePair.Q₁ (Δ : M.TriangleDeletePair) (b c : Bool) : M.Separation :=
+  (((Δ.Q true).cross (Δ.Q false) b c true).induce M false).toggle
+    (bif b && c then {Δ.x true} else ∅)
+
+@[simp]
+lemma TriangleDeletePair.Q₁_induce (Δ : M.TriangleDeletePair) {b c : Bool} :
+    (Δ.Q₁ b c).induce (M ＼ range Δ.x) = (Δ.Q true).cross (Δ.Q false) b c true := by
+  rw [TriangleDeletePair.Q₁, toggle_induce _ _, ← toggle_inter_ground, Disjoint.inter_eq,
+    toggle_empty, induce_induce_delete_eq_self]
+  · grind
+  grind [Δ.mem_ground]
+
+lemma TriangleDeletePair.mem_closure_union_Q (Δ : M.TriangleDeletePair)
+    (hc : (M ＼ range Δ.x).TutteConnected 2) (b c : Bool) (hbc : (b || c)) :
+    Δ.x i ∈ M.closure (Δ.Q true b ∪ Δ.Q false c) := by
+  cases b
+  · grw [show c = true by simpa using hbc, ← singleton_subset_iff.2 Δ.g_mem_false_Q,
+        ← closure_union_closure_right_eq, ← Bool.not_true,
+        ← singleton_subset_iff.2 (Δ.mem_closure hc), singleton_union]
+    cases i
+    · exact Δ.true_false_triangle.mem_closure₃
+    exact M.mem_closure_of_mem' (by simp) Δ.mem_ground
+  cases c
+  · nth_grw 1 [← singleton_subset_iff.2 Δ.g_mem_false_Q, ← closure_union_closure_left_eq,
+      ← Bool.not_false, ← singleton_subset_iff.2 (Δ.mem_closure hc), singleton_union]
+    cases i
+    · exact M.mem_closure_of_mem' (by simp) Δ.mem_ground
+    exact pair_comm _ _ ▸ Δ.true_false_triangle.mem_closure₂
+  nth_grw 1 [← iUnion_bool (s := fun j ↦ (Δ.Q j true)), ← closure_iUnion_closure_eq_closure_iUnion,
+    ← subset_iUnion _ (!i), closure_closure]
+  exact Δ.mem_closure hc
+
+
+
+
+
+    -- cases c
+    -- · rw [← iUnion_bool (s := fun j ↦ Δ.Q j false)]
+
+lemma TriangleDeletePair.faithful_Q₁ (Δ : M.TriangleDeletePair)
+    (hc : (M ＼ range Δ.x).TutteConnected 2) (b c : Bool) :
+    (Δ.Q₁ b c).Faithful (M ＼ range Δ.x) := by
+  obtain hbc | hbc := (b && c).eq_false_or_eq_true
+
+  · rw [show b = true by grind, show c = true by grind, Q₁, Bool.true_and, cond_true]
+    refine faithful_delete_of_forall_subset_closure fun i ↦ ?_
+
+    cases i
+    · rw [toggle_apply_eq_diff]
+      ·
+        grw [diff_inter_right_comm, inter_subset_right, Δ.range_diff, diff_diff,
+          union_eq_self_of_subset_left (by simp), induce_apply_of_delete_self,
+          cross_apply_true_false, union_diff_right, sdiff_eq_left.2,
+          singleton_subset_iff]
+        · refine Δ.mem_closure_union_Q hc _ _ ?_
+
+        grw [Separation.subset, Separation.subset, union_self]
+        exact disjoint_sdiff_left
+
+
+      simp [induce_apply_of_delete_self _ _ Δ.range_subset_ground]
+
+
+
+
+  simp only [Q₁, hbc, cond_false, toggle_empty]
+  refine faithful_of_subset_closure_of_delete _ <| range_subset_iff.2 fun i ↦ ?_
+  rw [cross_apply_true_false]
+  exact Δ.mem_closure_union_Q hc _ _ <| by grind
+    --   sorry
+    -- rw [Q₁, Bool.not_true, Bool.and_false, Bool.cond_false, toggle_empty]
+    -- refine faithful_of_subset_closure_of_delete _ <| range_subset_iff.2 fun i ↦ ?_
+    -- rw [cross_apply_true_false, Bool.not_false, Bool.not_true]
+
+
+    -- rw [Q₁, Bool.false_and, cond_false, toggle_empty]
+    -- refine faithful_of_subset_closure_of_delete _ <| range_subset_iff.2 fun i ↦ ?_
+    -- rw [cross_apply_true_false]
+    -- cases i
+    -- · grw [← subset_union_left]
+    --   simpa using Δ.mem_closure hc (b := false)
+    -- cases c
+    -- · sorry
+
+
+  --   rw [Q₁, cond_false, faithful_delete_iff_forall_subset_closure sorry]
+  --   intro i
+  --   grw [toggle_apply_eq_diff, ← inter_diff_right_comm, inter_subset_right, Δ.range_diff,
+  --     singleton_subset_iff, diff_diff, union_eq_self_of_subset_left (by simp)]
+  --   cases i
+  --   · grw [induce_apply_of_delete_self, cross_apply_true_false, ← subset_union_left,
+  --       ← subset_union_left, sdiff_eq_left.2 ((Δ.Q true).disjoint_delete _)]
+  --     have := Δ.mem_closure (b := true)
+  --   -- · grw [inter_diff_distrib_right, inter_diff_assoc, diff_inter_self_eq_diff, Δ.range_diff,
+  --   --     inter_subset_right, induce_apply_of_delete_self]
+  --   -- · simp [induce_apply_eq_cond]
+  --   -- simp [induce_apply_eq_cond]
+
+  -- obtain rfl | rfl := b.eq_or_eq_not c
+  -- ·
+  --   rw [Q₁, bne_self_eq_false, cond_false]
+  --   -- simp only [Q₁, BEq.rfl, cond_true, toggle_empty, show b = false by simpa using hbc]
+  --   rw [faithful_delete_iff_forall_subset_closure sorry, Bool.forall_bool,
+  --     toggle_apply_eq_diff]
+  --   sorry
+  --   rw [singleton_subset_iff, induce_apply_of_delete_self, cross_apply_true_false]
+  --   -- simp at hbc
+  --   refine mem_of_mem_of_subset Δ.mem' ?_
+  --   intro i
+
+
+    -- rw [cross_apply_true_false, Bool.not_false, ← iUnion_bool_eq]
+
+
 lemma TriangleDeletePair.cross_induce_faithful (Δ : M.TriangleDeletePair)
     (hc : (M ＼ range Δ.x).TutteConnected 2) (b c : Bool) (hbc : (b && c) = false) {d} :
     (((Δ.Q true).cross (Δ.Q false) b c d).induce M (!d)).Faithful (M ＼ range Δ.x) := by
@@ -160,9 +283,9 @@ lemma TriangleDeletePair.cross_induce_faithful (Δ : M.TriangleDeletePair)
   simp [insert_subset_iff, Δ.g_mem_false_Q]
 
 
-lemma TriangleDeletePair.R_faithful (Δ : M.TriangleDeletePair)
-    (hc : (M ＼ range Δ.x).TutteConnected 2) : Δ.R.Faithful (M ＼ range Δ.x) := by
-  _
+-- lemma TriangleDeletePair.R_faithful (Δ : M.TriangleDeletePair)
+--     (hc : (M ＼ range Δ.x).TutteConnected 2) : Δ.R.Faithful (M ＼ range Δ.x) := by
+--   _
 
 
 lemma TriangleDeletePair.eConn_Q_eq (Δ : M.TriangleDeletePair)
