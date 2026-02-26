@@ -5,6 +5,7 @@ import Matroid.Minor.Iso
 import Mathlib.Tactic.Linarith
 import Matroid.Flat.LowRank
 import Matroid.ForMathlib.Topology.ENat
+import Mathlib.Data.Set.Card.Arithmetic
 
 set_option linter.style.longLine false
 
@@ -54,6 +55,35 @@ lemma exists_cover'_bounded (M : Matroid α) {l : ℕ} {P : Set α → Prop} (hn
   --simpa using csInf_mem <| hn.image encard
 
 lemma IsCover'.cover_fun (P' : Set α → Prop) (hcover : M.IsCover' P T )
+    (f : Set α → Set (Set α) )
+    (hfun : ∀ X ∈ T, (M ↾ X).IsCover' P' (f X)) :
+    M.IsCover' P' ( ⋃ X ∈ T, f X ):= by
+  refine ⟨ ?_, ?_ ⟩
+  · rw[←hcover.sUnion_eq]
+    refine ext ?_
+    intro e
+    refine ⟨ ?_, ?_ ⟩
+    · intro he
+      simp only [ mem_sUnion, mem_iUnion] at he
+      obtain ⟨T', ⟨ X, ⟨hX, hT'X ⟩ ⟩, hee ⟩ := he
+      simp only [mem_sUnion]
+      refine ⟨ X ,⟨ hX , mem_of_subset_of_mem ((hfun X hX).subset_ground hT'X ) hee  ⟩ ⟩
+    intro he
+    simp only [mem_sUnion] at he
+    obtain ⟨X, hXT, heX⟩ := he
+    simp only [mem_sUnion, mem_iUnion]
+    have h1 : e ∈ (M ↾ ↑X).E := by exact mem_of_subset_of_mem (fun ⦃a⦄ a_1 ↦ a_1) heX
+    rw[←(hfun X hXT ).sUnion_eq] at h1
+    simp only [mem_sUnion] at h1
+    obtain ⟨X', hX', heX' ⟩ := h1
+    refine ⟨ X', ⟨⟨X, ⟨hXT, hX'⟩ ⟩, heX'⟩ ⟩
+  intro F hF
+  simp only [ mem_iUnion] at hF
+  obtain ⟨X, hXT, hF⟩ := hF
+  exact (hfun X hXT ).pProp F hF
+
+
+lemma IsCover'.cover_typset (P' : Set α → Prop) (hcover : M.IsCover' P T )
     (f : {X // X ∈ T} → Set (Set α) )
     (hfun : ∀ X : {X // X ∈ T}, (M ↾ X.1).IsCover' P' (f X)) :
     M.IsCover' P' ( ⋃ X : {X // X ∈ T}, f X ):= by
@@ -82,10 +112,17 @@ lemma IsCover'.cover_fun (P' : Set α → Prop) (hcover : M.IsCover' P T )
   --rw[←restrict_eRk_eq M (LE.le.subset ((hfun ⟨X, hXT⟩ ).subset_ground hF))]
   exact (hfun ⟨X, hXT⟩ ).pProp F hF
 
-lemma coverNumber_cover_of_covers {P' : Set α → Prop} {l : ℕ}
+-- lemma Fintype.sum_equiv_le {ι : Type u_1} {κ : Type u_2} [Fintype ι] [Fintype κ]
+--     (e : ι ≃ κ) (f : ι → ℕ∞) (g : κ → ℕ∞) (h : ∀ (x : ι), f x ≤ g (e x)) :
+--     ∑ x : ι, f x ≤ ∑ x : κ, g x := by
+--   sorry
+
+
+lemma coverNumber_cover_of_covers [DecidablePred fun (x : Set α) => x ∈ T] [DecidableEq (Set α)]
+    {P' : Set α → Prop} {l : ℕ} {hl : l ≠ 0}
     (hflat : ∀ F, P F → (M ↾ F).coverNumber' P' ≤ l )
     (hcover : M.IsCover' P T ) :
-    M.coverNumber' P' ≤ l * (T.encard) := by
+    M.coverNumber' P' ≤ (T.encard) * l := by
   rw[coverNumber'_eq_iInf]
   have hf : ∀ X : {X // X ∈ T}, ∃ XT, (M ↾ X.1).IsCover' P' XT ∧ XT.encard ≤ l := by
     intro X
@@ -93,69 +130,42 @@ lemma coverNumber_cover_of_covers {P' : Set α → Prop} {l : ℕ}
     refine ⟨ XT, ⟨ hXres ,?_ ⟩⟩
     rw[hencard]
     exact (hflat X (hcover.pProp X X.2))
+
   choose f hfunco hfunca using hf
-  have hcover := IsCover'.cover_fun P' hcover f hfunco
+  have hcover := IsCover'.cover_typset P' hcover f hfunco
   refine iInf₂_le_of_le (⋃ X, f X) (mem_setOf.mpr hcover ) ?_
+
   by_cases hs : T.Finite
-  · have : Fintype {X // X ∈ T} := by
+  · have hs' : Fintype {X // X ∈ T} := by
       exact hs.fintype
-    apply Set.encard_iUnion_le_of_fintype
-    sorry
 
+    grw [Set.encard_iUnion_le_of_fintype ]
 
-  --simp only [iUnion_coe_set]
+    change (∑ i : ↥T, (f i).encard ≤ T.encard * ↑l)
+    set f' : ↥T → ℕ∞ := fun i ↦ (f i).encard with hf'
+    rw[hf']
+    set g : Set α → ℕ∞ :=
+      fun X => if hX : X ∈ T then (f ⟨X, hX⟩).encard
+                else 0
+      with hg
+    have h4 : ∑ i, (f i).encard = ∑ i : ↑T, g ↑i := by
+      rw[hg]
+      simp only [Subtype.coe_prop, ↓reduceDIte, Subtype.coe_eta]
+    rw[h4, Finset.sum_set_coe T]
+    have h5 : ∀ i ∈ T.toFinset, g i ≤ l := by
+      intro X hX
+      simp only [mem_toFinset] at hX
+      have : g X = (f ⟨X, hX⟩).encard := by exact dif_pos hX
+      rw[this]
+      exact hfunca ⟨X, hX⟩
+    grw[Finset.sum_le_sum h5 ]
+    simp only [Finset.sum_const, toFinset_card, nsmul_eq_mul, coe_fintypeCard, ge_iff_le]
+    exact ENat.forall_natCast_le_iff_le.mp fun a a_1 ↦ a_1
 
-
-
-
-
-
-  --   sorry
-
-    --refine ⟨ XT, ⟨  hXT,?_ ⟩⟩
-    --rwa[hXT1]
-  sorry
-  --unfold coverNumber
-  -- have hf : ∀ X : {X // X ∈ T}, ∃ XT, (M ↾ X.1).IsCover k XT ∧ XT.encard < l := by
-  --   intro X
-  --   obtain ⟨t, ⟨XT, hXT, hXT1 ⟩, htl ⟩  := sInf_lt_iff.1 (hflat X (hcover.eRk_le X X.2))
-  --   refine ⟨ XT, ⟨  hXT,?_ ⟩⟩
-  --   rwa[hXT1]
-  -- choose f hfun using hf
-  -- have hiscov : M.IsCover k ( ⋃ X : {X // X ∈ T}, f X ) := by
-  --   refine ⟨ ?_, ?_ ⟩
-  --   · rw[←hcover.sUnion_eq]
-  --     refine ext ?_
-  --     intro e
-  --     refine ⟨ ?_, ?_ ⟩
-  --     · intro he
-  --       simp only [iUnion_coe_set, mem_sUnion, mem_iUnion] at he
-  --       obtain ⟨T', ⟨ X, ⟨hX, hT'X ⟩ ⟩, hee ⟩ := he
-  --       simp only [mem_sUnion]
-  --       refine ⟨X, ⟨hX, (mem_of_subset_of_mem (((hfun ⟨X, hX⟩ ).1.subset_ground hT'X)) hee ) ⟩⟩
-  --     intro he
-  --     simp only [mem_sUnion] at he
-  --     obtain ⟨X, hXT, heX⟩ := he
-  --     simp only [iUnion_coe_set, mem_sUnion, mem_iUnion]
-  --     have h1 : e ∈ (M ↾ ↑X).E := by exact mem_of_subset_of_mem (fun ⦃a⦄ a_1 ↦ a_1) heX
-  --     rw[←(hfun ⟨X, hXT⟩ ).1.sUnion_eq] at h1
-  --     simp only [mem_sUnion] at h1
-  --     obtain ⟨X', hX', heX' ⟩ := h1
-  --     refine ⟨ X', ⟨⟨X, ⟨hXT, hX'⟩ ⟩, heX'⟩ ⟩
-  --   intro F hF
-  --   simp only [iUnion_coe_set, mem_iUnion] at hF
-  --   obtain ⟨X, hXT, hF⟩ := hF
-  --   rw[←restrict_eRk_eq M (LE.le.subset ((hfun ⟨X, hXT⟩ ).1.subset_ground hF))]
-  --   exact (hfun ⟨X, hXT⟩ ).1.eRk_le F hF
-  -- have : ( ⋃ X : {X // X ∈ T}, f X ).encard < l * (T.encard) := by
-
-  --   --have :  (⋃ X, f X).encard = ∑ X : {X // X ∈ T}, (f X ).encard := by sorry
-
-  --   sorry
-  -- have : ( ⋃ X : {X // X ∈ T}, f X ).encard ∈ (encard '' {T | M.IsCover k T}) := by
-  --   exact mem_image_of_mem encard hiscov
-  -- apply sInf_lt_iff.2
-  -- use (( ⋃ X : {X // X ∈ T}, f X ).encard)
+  simp only [Set.not_finite] at hs
+  have : T.encard = ⊤ := by exact encard_eq_top_iff.mpr hs
+  rw[encard_eq_top_iff.mpr hs, ENat.top_mul (Nat.cast_ne_zero.mpr hl ) ]
+  exact OrderTop.le_top (⋃ X, f X).encard
 
 
 -- lemma IsCover.isCover_closure (h : M.IsCover' P T) : M.IsCover' P (M.closure '' T) := by
