@@ -21,7 +21,7 @@ def Codep (M : Matroid α) (D : Set α) : Prop := M✶.Dep D
 lemma Coindep.not_codep (hD : M.Coindep D) : ¬ M.Codep D :=
   Indep.not_dep hD
 
-@[aesop unsafe 20% (rule_sets := [Matroid])]
+@[aesop unsafe 20% (rule_sets := [Matroid]), grind ->]
 lemma Codep.subset_ground (h : M.Codep D) : D ⊆ M.E :=
   Dep.subset_ground (M := M✶) h
 

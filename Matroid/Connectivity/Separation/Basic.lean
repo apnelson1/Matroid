@@ -60,20 +60,24 @@ protected lemma disjoint (P : M.Separation) (hij : i ≠ j) : Disjoint (P i) (P 
 protected lemma subset (P : M.Separation) {i : Bool} : P i ⊆ M.E :=
   IndexedPartition.subset P
 
+/-- A version of `Separation.subset` with an explicit argument. -/
+protected lemma subset' (P : M.Separation) (i : Bool) : P i ⊆ M.E :=
+  IndexedPartition.subset P
+
 protected lemma iUnion_eq (P : M.Separation) : ⋃ i, P i = M.E :=
   P.iUnion_eq'
 
-@[simp, grind =] protected lemma union_eq : P true ∪ P false = M.E := IndexedPartition.union_eq
+@[simp, grind .] protected lemma union_eq : P true ∪ P false = M.E := IndexedPartition.union_eq
 @[simp] protected lemma union_eq' : P false ∪ P true = M.E := IndexedPartition.union_eq'
-@[simp, grind =] protected lemma union_bool_eq (i : Bool) : P i ∪ P (!i) = M.E :=
+@[simp, grind .] protected lemma union_bool_eq (i : Bool) : P i ∪ P (!i) = M.E :=
   IndexedPartition.union_bool_eq i
 @[simp] protected lemma union_bool_eq' (i : Bool) : P (!i) ∪ P i = M.E :=
   IndexedPartition.union_bool_eq' i
-@[simp, grind .] protected lemma disjoint_true_false : Disjoint (P true) (P false) :=
+@[simp, grind! .] protected lemma disjoint_true_false : Disjoint (P true) (P false) :=
   IndexedPartition.disjoint_true_false
 @[simp] protected lemma disjoint_false_true : Disjoint (P false) (P true) :=
   IndexedPartition.disjoint_false_true
-@[simp, grind .] protected lemma disjoint_bool (i : Bool) : Disjoint (P i) (P (!i)) :=
+@[simp, grind! .] protected lemma disjoint_bool (i : Bool) : Disjoint (P i) (P (!i)) :=
   IndexedPartition.disjoint_bool i
 @[simp, grind =] protected lemma compl_eq (P : M.Separation) (i : Bool) : M.E \ (P i) = P (!i) :=
   IndexedPartition.compl_eq P i

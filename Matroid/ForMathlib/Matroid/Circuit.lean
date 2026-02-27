@@ -7,6 +7,8 @@ open Set
 
 variable {α : Type*} {M : Matroid α} {D C X : Set α} {e : α}
 
+attribute [grind ->] IsCircuit.subset_ground IsCocircuit.subset_ground
+
 lemma Codep.exists_isCocircuit_subset (h : M.Codep D) : ∃ C ⊆ D, M.IsCocircuit C :=
   h.dep_dual.exists_isCircuit_subset
 

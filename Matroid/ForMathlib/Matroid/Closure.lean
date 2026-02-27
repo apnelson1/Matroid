@@ -6,7 +6,8 @@ namespace Matroid
 open Set
 
 variable {α : Type*} {M : Matroid α} {X Y : Set α} {e : α}
-
+attribute [grind! .] subset_closure closure_subset_ground
+attribute [grind ->] Spanning.subset_ground
 
 lemma compl_bijOn_coindep : BijOn (M.E \ ·) {S | M.Spanning S} {I | M.Coindep I} := by
   refine ⟨fun S ↦ Spanning.compl_coindep, ?_, fun I hI ↦ ⟨M.E \ I, Coindep.compl_spanning hI, ?_⟩⟩
@@ -30,7 +31,7 @@ structure Nonspanning (M : Matroid α) (X : Set α) : Prop where
   not_spanning : ¬ M.Spanning X
   subset_ground : X ⊆ M.E
 
-attribute [aesop unsafe 20% (rule_sets := [Matroid])] Nonspanning.subset_ground
+attribute [aesop unsafe 20% (rule_sets := [Matroid]), grind ->] Nonspanning.subset_ground
 
 lemma nonspanning_dual_iff (hXE : X ⊆ M.E := by aesop_mat) :
     M✶.Nonspanning X ↔ M.Dep (M.E \ X) := by

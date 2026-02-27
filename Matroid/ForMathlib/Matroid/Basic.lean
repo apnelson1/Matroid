@@ -6,6 +6,17 @@ open Set
 variable {α : Type*} {M : Matroid α}
 namespace Matroid
 
+attribute [grind ->] Indep.subset_ground IsBase.subset_ground IsBasis.subset_ground
+  Dep.subset_ground
+
+@[grind ->]
+lemma IsBasis.subset_ground_left {I X} (h : M.IsBasis I X) : I ⊆ M.E :=
+  h.indep.subset_ground
+
+@[grind ->]
+lemma IsBasis'.subset_ground_left {I X} (h : M.IsBasis' I X) : I ⊆ M.E :=
+  h.indep.subset_ground
+
 lemma isBasis_restrict_univ_iff {I X : Set α} : (M ↾ univ).IsBasis I X ↔ M.IsBasis' I X := by
   rw [isBasis_restrict_iff', isBasis'_iff_isBasis_inter_ground, and_iff_left (subset_univ _)]
 

@@ -145,34 +145,41 @@ lemma IsMinor.indep_iff_indep {I : Set α} (hX : (M ／ (P i)).IsBase X) (hY : (
       (hY.indep.of_isMinor (contract_isMinor_of_subset _ hI))
   exact iff_of_false (fun h ↦ hIi h.of_contract) (fun h ↦ hIi h.of_contract)
 
+
+-- lemma g1 (P : M.Separation) (i : Bool) : Disjoint (P i) (P !i) := sorry
+-- @[grind! .]
+-- lemma g1' (P : M.Separation) {i : Bool} : Disjoint (P i) (P !i) := sorry
+-- @[grind! =>]
+-- lemma g2 (P : M.Separation) : ∀ i, P i ⊆ M.E := sorry
+-- @[grind! =>]
+-- lemma g3 (P : M.Separation) (i : Bool) (he : e ∈ M.E) : e ∈ P i ↔ e ∉ P !i := sorry
+-- @[grind! =>]
+-- lemma g4 (P : M.Separation) (i : Bool) (he : e ∈ M.E) : e ∉ P i ↔ e ∈ P !i := sorry
+-- @[grind! =>]
+-- lemma g5 (P : M.Separation) (i : Bool) (he : e ∈ P i) : e ∉ P !i := sorry
+-- @[grind! =>]
+-- lemma g6 (P : M.Separation) (i : Bool) (he : e ∈ P i) : e ∉ P !i := sorry
+
+
+-- attribute [grind ->] IsBase.subset_ground
+
+
 lemma IsMinor.contract_insert_indep_iff (hPconn : P.eConn = 1) {I : Set α}
     (hX : (M ／ (P i)).IsBase X) (he : e ∈ (P !i)) (heX : e ∉ M.closure X)
     (hY : (M ／ (P i)).IsBase Y) (hf : f ∈ (P !i)) (hfY : f ∉ M.closure Y) (hI : I ⊆ P i) :
     (M ／ X).Indep (insert e I) ↔ (M ／ Y).Indep (insert f I) := by
   wlog hi : (M ／ X).Indep (insert e I) generalizing X Y e f with aux
-  · refine iff_of_false hi fun h ↦ hi <| (aux hY hf hfY hX he heX h).1 h
+  · exact iff_of_false hi fun h ↦ hi <| (aux hY hf hfY hX he heX h).1 h
   refine iff_of_true hi ?_
-  have hfi : f ∉ P i := by rwa [P.not_mem_iff_mem_not]
-  have hei : e ∉ P i := by rwa [P.not_mem_iff_mem_not]
-  have hYE := hY.indep.of_contract.subset_ground
-  have hXE := hX.indep.of_contract.subset_ground
-  have hfY' : f ∉ Y := notMem_subset (M.subset_closure Y) hfY
-  have heX' : e ∉ X := notMem_subset (M.subset_closure X) heX
-  have hX' : X ⊆ P !i := hX.subset_ground.trans <| by simp
-  have hY' : Y ⊆ P !i := hY.subset_ground.trans <| by simp
-  have hIi' : Disjoint I (P (!i)) := by rwa [P.disjoint_not_iff_subset]
-  have hYi : Disjoint Y (P i) := by rwa [P.disjoint_iff_subset_not]
-  have hPE (i) : P i ⊆ M.E := P.subset
   rw [hX.indep.of_contract.contract_indep_iff] at hi
   obtain ⟨j, hj⟩ := hi.2.exists_indep_contract_inter_of_eConn_le_one hPconn.le
   obtain rfl | rfl := j.eq_or_eq_not i
   · grind [hX.eq_of_subset_indep hj (by grind)]
-  rw [hY.indep.of_contract.contract_indep_iff, disjoint_insert_left, and_iff_right hfY',
+  rw [hY.indep.of_contract.contract_indep_iff, disjoint_insert_left,
     and_iff_right (by grind [P.disjoint_bool i])]
-  refine Separation.indep_of_contract (P := P) (i := !i) (by grind) ?_ (hj.subset (by grind))
+  refine P.indep_of_contract (i := !i) (by grind [P.subset' i]) ?_ (hj.subset (by grind))
   suffices h : M.Indep (insert f Y) from h.subset <| by grind
-  rwa [hY.indep.of_contract.insert_indep_iff, or_iff_left hfY', mem_diff,
-    and_iff_right (P.subset hf)]
+  grind [hY.indep.of_contract.insert_indep_iff]
 
 lemma IsMinor.eq_mapEquiv [DecidableEq α] (hPconn : P.eConn = 1)
     (hX : (M ／ (P i)).IsBase X) (hx : x ∈ (P !i)) (hxX : x ∉ M.closure X)
