@@ -25,14 +25,16 @@ structure IsCover' (M : Matroid α) (P : Set α → Prop) (T : Set (Set α)) : P
 lemma IsCover'.subset_ground (h : M.IsCover' P T) (hX : X ∈ T) : X ⊆ M.E := by
   grw [← h.sUnion_eq, ← subset_sUnion_of_mem hX]
 
+def PCover (P : Set α → Prop) : Prop := ∀ M : Matroid α, {T | M.IsCover' P T}.Nonempty
+
 -- lemma isCover'_iff : M.IsCover P T ↔ ⋃₀ T = M.E ∧ ∀ F ∈ T, P F :=
 --   ⟨fun h ↦ ⟨h.sUnion_eq, fun _ ↦ h.eRk_le⟩,
 --     fun h ↦ ⟨by rw [← sUnion_eq_iUnion, h.1], by simpa using h.2⟩⟩
 
--- lemma IsCover'.nonempty [M.Nonempty] (h : M.IsCover' P T) : T.Nonempty := by
---   rw [nonempty_iff_empty_ne]
---   rintro rfl
---   simp [isCover'_iff, eq_comm, M.ground_nonempty.ne_empty] at h
+lemma IsCover'.nonempty [M.Nonempty] (h : M.IsCover' P T) : T.Nonempty := by
+  rw [nonempty_iff_empty_ne]
+  rintro rfl
+  simp [isCover'_iff, eq_comm, M.ground_nonempty.ne_empty] at h
 
 -- -- almost follows from `setOf_point_isCover` - handle the rank-zero case.
 -- lemma setOf_cover_nonempty (M : Matroid α) : {T | M.IsCover' P T}.Nonempty := by
@@ -49,6 +51,10 @@ lemma coverNumber'_eq_iInf (M : Matroid α) (P : Set α → Prop) :
 lemma exists_cover' (M : Matroid α) {P : Set α → Prop} (hn : {T | M.IsCover' P T}.Nonempty)  :
     ∃ T, M.IsCover' P T ∧ T.encard = M.coverNumber' P := by
   simpa using csInf_mem <| hn.image encard
+
+lemma exists_cover_PCover' (M : Matroid α) {P : Set α → Prop} (hP : PCover P ) :
+    ∃ T, M.IsCover' P T ∧ T.encard = M.coverNumber' P := by
+  simpa using csInf_mem <| (hP M).image encard
 
 lemma exists_cover'_bounded (M : Matroid α) {l : ℕ} {P : Set α → Prop} (hn : M.coverNumber' P ≤ l ) :
     ∃ T, M.IsCover' P T ∧ T.encard = M.coverNumber' P := by sorry
@@ -118,7 +124,8 @@ lemma IsCover'.cover_typset (P' : Set α → Prop) (hcover : M.IsCover' P T )
 --   sorry
 
 
-lemma coverNumber_cover_of_covers [DecidablePred fun (x : Set α) => x ∈ T] [DecidableEq (Set α)]
+lemma coverNumber_cover_of_covers_bound [DecidablePred fun (x : Set α) => x ∈ T]
+    [DecidableEq (Set α)]
     {P' : Set α → Prop} {l : ℕ} {hl : l ≠ 0}
     (hflat : ∀ F, P F → (M ↾ F).coverNumber' P' ≤ l )
     (hcover : M.IsCover' P T ) :
@@ -138,10 +145,8 @@ lemma coverNumber_cover_of_covers [DecidablePred fun (x : Set α) => x ∈ T] [D
   by_cases hs : T.Finite
   · have hs' : Fintype {X // X ∈ T} := by
       exact hs.fintype
-
     grw [Set.encard_iUnion_le_of_fintype ]
-
-    change (∑ i : ↥T, (f i).encard ≤ T.encard * ↑l)
+    --change (∑ i : ↥T, (f i).encard ≤ T.encard * ↑l)
     set f' : ↥T → ℕ∞ := fun i ↦ (f i).encard with hf'
     rw[hf']
     set g : Set α → ℕ∞ :=
@@ -166,6 +171,27 @@ lemma coverNumber_cover_of_covers [DecidablePred fun (x : Set α) => x ∈ T] [D
   have : T.encard = ⊤ := by exact encard_eq_top_iff.mpr hs
   rw[encard_eq_top_iff.mpr hs, ENat.top_mul (Nat.cast_ne_zero.mpr hl ) ]
   exact OrderTop.le_top (⋃ X, f X).encard
+
+lemma coverNumber_cover_of_covers' [DecidablePred fun (x : Set α) => x ∈ T]
+    [DecidableEq (Set α)]
+    {P' : Set α → Prop } (hP' : PCover P')
+    (hcover : M.IsCover' P T ) (hfin : T.Finite):
+    M.coverNumber' P' ≤ ∑' X : {X // X ∈ T} , (M ↾ X.1).coverNumber' P' := by
+
+  have hf : ∀ X : {X // X ∈ T}, ∃ XT, (M ↾ X.1).IsCover' P' XT ∧ XT.encard = (M ↾ X.1).coverNumber' P' := by
+    intro X
+    obtain ⟨XT, ⟨hXres, hencard ⟩ ⟩ := (M ↾ X).exists_cover_PCover' hP'
+    refine ⟨ XT, ⟨ hXres ,?_ ⟩⟩
+    rw[hencard]
+  choose f hfunco hfunca using hf
+  have hcover := IsCover'.cover_typset P' hcover f hfunco
+  rw[coverNumber'_eq_iInf]
+  refine iInf₂_le_of_le (⋃ X, f X) (mem_setOf.mpr hcover ) ?_
+  have hs' : Fintype {X // X ∈ T} := by
+      exact hfin.fintype
+  grw [Set.encard_iUnion_le_of_fintype,
+    Fintype.sum_congr (fun a ↦ (f a).encard) (fun a ↦ (M ↾ ↑a).coverNumber' P') hfunca ]
+  exact ENat.sum_le_tsum Finset.univ
 
 
 -- lemma IsCover.isCover_closure (h : M.IsCover' P T) : M.IsCover' P (M.closure '' T) := by
