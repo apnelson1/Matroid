@@ -15,6 +15,8 @@ variable {M₀ M₁ M₂ : Matroid α}
 
 attribute [grind =] contract_ground delete_ground restrict_ground_eq dual_ground dual_dual
 
+attribute [grind →] IsMinor.subset
+
 lemma contract_delete_ground (M : Matroid α) (C D : Set α) : (M ／ C ＼ D).E = M.E \ (C ∪ D) := by
   simp [diff_diff]
 

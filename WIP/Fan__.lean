@@ -46,7 +46,7 @@ lemma List.alt_cons_true (L : List α) (x : α) : (x :: L).alt true = x :: L.alt
 lemma List.alt_cons_false (L : List α) (x : α) : (x :: L).alt false = L.alt true := rfl
 
 lemma List.alt_cons (L : List α) (x : α) (b : Bool) :
-    (x :: L).alt b = bif b then x :: L.alt (!b) else L.alt (!b) := by
+    (x :: F).alt b = bif b then x :: L.alt (!b) else L.alt (!b) := by
   cases b <;> simp
 
 lemma List.alt_length_add (L : List α) : (L.alt true).length + (L.alt false).length = L.length := by
@@ -80,21 +80,21 @@ lemma List.alt_head_cons_cons (L : List α) : ((e :: f :: L).alt d).head (by cas
   cases d <;> simp
 
 lemma List.alt_head_cons (L : List α) {h : ((e :: L).alt d) ≠ []} : ((e :: L).alt d).head h =
-    d.dcond (fun _ ↦ e) (fun hd ↦ L.head (fun hL ↦ by simp [hL, hd] at h)) := by
+    d.dcond (fun _ ↦ e) (fun hd ↦ L.head (fun hF ↦ by simp [hF, hd] at h)) := by
   cases L with | _ => cases d <;> simp_all [Bool.dcond]
 
-lemma List.alt_head {L : List α} {hL : L.alt d ≠ []} :
-    (L.alt d).head hL = d.dcond (fun _ ↦ L.head (by rintro rfl; simp at hL))
+lemma List.alt_head {L : List α} {hF : L.alt d ≠ []} :
+    (L.alt d).head hF = d.dcond (fun _ ↦ L.head (by rintro rfl; simp at hF))
       (fun hd ↦ L[1]'(by
         subst hd
         match L with
-        | [] => simp at hL
-        | [x] => simp at hL
-        | _ :: _ :: L => simp)) := by
+        | [] => simp at hF
+        | [x] => simp at hF
+        | _ :: _ :: F => simp)) := by
   match L with
-  | [] => simp at hL
-  | e :: L =>
-    rw [L.alt_head_cons]
+  | [] => simp at hF
+  | e :: F =>
+    rw [F.alt_head_cons]
     cases d <;>
     simp [Bool.dcond, getElem_zero]
 
@@ -113,8 +113,8 @@ lemma List.alt_sublist (L : List α) (b : Bool) : (L.alt b) <+ L := by
     · exact (ih true).trans <| sublist_cons_self ..
     simpa using ih false
 
-lemma List.Nodup.alt_disjoint (hL : L.Nodup) : Disjoint (L.alt false) (L.alt true) := by
-  induction hL with
+lemma List.Nodup.alt_disjoint (hF : L.Nodup) : Disjoint (L.alt false) (L.alt true) := by
+  induction hF with
   | nil => simp
   | @cons a L h1 h2 hdj =>
     simp [show a ∉ L.alt true from fun hmem ↦ h1 a ((L.alt_sublist true).mem hmem) rfl, hdj.symm]
@@ -124,7 +124,7 @@ lemma List.alt_concat (L : List α) (x : α) (b : Bool) :
   induction L generalizing b with cases b <;> simp_all [Bool.apply_cond]
 
 lemma List.alt_reverse (L : List α) (b : Bool) :
-    (L.alt b).reverse = L.reverse.alt (bif L.length.bodd then b else !b) := by
+    (L.alt b).reverse = L.reverse.alt (b == L.length.bodd) := by
   induction L generalizing b with cases b <;> simp_all [← List.concat_eq_append, List.alt_concat]
 
 lemma List.reverse_alt (L : List α) (b : Bool) :
@@ -133,117 +133,137 @@ lemma List.reverse_alt (L : List α) (b : Bool) :
 
 namespace Matroid
 
-variable {J : Bool → List α}
+-- variable {J : Bool → List α}
 
 
-variable {L : List α} {b c : Bool}
+variable {F J L : List α} {b c : Bool}
 
-/-- A fan of a matroid `M` is a sequence `[e₀, f₀, e₁, f₁, ...]` of distinct elements of `M`,
-where consecutive triples alternate between being triangles and being triads.
+/-- A fan of a matroid `M` is a sequence `[e₀, f₀, e₁, f₁, ...]` of at least three
+distinct elements of `M`, where consecutive triples alternate between being triangles and triads.
 The fan may start and end with either triangles or triads;
 if each pair of consecutive `eᵢ` belongs to a common triangle,
 then the `eᵢ` are the 'joints' of the fan, and the `fᵢ` are 'cojoints'.
 
-Formally, if `J : Bool → List α` and `b c : Bool`, the predicate `M.IsFan J b c` means that
-`J false` is the list of joints, `J true` is the list of cojoints, and `b c` indicate respectively
-whether the first element is a cojoint, and whether the last element is a cojoint.
+Formally, the predicate `M.IsFan J b c` means that `J` is the list of elements, and `b c` are
+boolean variables indicating whether the fan respectively starts and ends with a triangle.
+We have `b = c` if and only if `J` had odd length.
 
 For example, if `{e,f,g}` is a triangle of `M`, then the fan `e, f, g` corresponds to the
-statement `M.IsFan J false false`, with `J false = [e, g]` and `J true = [g]`.
+statement `M.IsFan [e, f, g] false false`.
 (The `false false` means that the fan begins and ends on joints.)
 
 If, additionally, `{f,g,h}` is a triad of `M`, then the fan `e, f, g, h` corresponds to the
-statement `M.IsFan J false true`, with `J false = [e,g]` and `J true = [h,f]`. -/
+statement `M.IsFan [e, f, g, h] false true`. -/
 inductive IsFan : Matroid α → List α → Bool → Bool → Prop
-  | of_isTriangle (M e f g) (h : M.IsTriangle {e, f, g}) : IsFan M [e, f, g] false false
-  | of_dual' (M L b) (h : IsFan M✶ L false (!b)) : IsFan M L true b
-  | cons_triangle (M e x y J b) (h : IsFan M (x :: y :: J) true b) (heJ : e ∉ J)
-      (hT : M.IsTriangle {e, x, y}) : IsFan M (e :: x :: y :: J) false b
+  | of_isTriangle (M b e f g) (h : (M.bDual b).IsTriangle {e, f, g}) : IsFan M [e, f, g] b b
+  | cons_triangle (M e x y F b c) (h : IsFan M (x :: y :: F) b c) (heF : e ∉ F)
+      (hT : (M.bDual (!b)).IsTriangle {e, x, y}) : IsFan M (e :: x :: y :: F) (!b) c
 
-lemma IsFan.dual (h : M.IsFan L b c) : M✶.IsFan L (!b) !c := by
-  induction h with
-  | of_isTriangle M e f g h => exact IsFan.of_dual' _ _ _ <| by simpa using of_isTriangle _ _ _ _ h
-  | of_dual' => simpa
-  | cons_triangle M e x y J b h heJ hT ih =>
-    exact IsFan.of_dual' _ _ _
-      <| by simpa using IsFan.cons_triangle M e x y J _ (IsFan.of_dual' _ _ _ ih) heJ hT
+lemma IsTriangle.isFan_of_bDual (h : (M.bDual b).IsTriangle {e, f, g}) : M.IsFan [e, f, g] b b :=
+  IsFan.of_isTriangle M b e f g h
 
 lemma IsTriangle.isFan (h : M.IsTriangle {e, f, g}) : M.IsFan [e, f, g] false false :=
-    IsFan.of_isTriangle  _ _ _ _ h
+  IsFan.of_isTriangle M false e f g h
+
+lemma IsFan.cons (h : M.IsFan (x :: y :: F) b c) (heF : e ∉ F)
+    (hT : (M.bDual (!b)).IsTriangle {e, x, y}) : M.IsFan (e :: x :: y :: F) (!b) c := by
+  apply IsFan.cons_triangle <;> assumption
+
+lemma IsFan.cons_not (h : M.IsFan (x :: y :: F) (!b) c) (heF : e ∉ F)
+    (hT : (M.bDual b).IsTriangle {e, x, y}) : M.IsFan (e :: x :: y :: F) b c := by
+  simpa using h.cons heF (by simpa)
+
+lemma IsFan.dual (h : M.IsFan F b c) : M✶.IsFan F (!b) (!c) := by
+  induction h with
+  | of_isTriangle b e f g h => exact IsTriangle.isFan_of_bDual <| by simpa
+  | cons_triangle e x y F b c h heF hT ih => exact ih.cons heF <| by simpa
+
+lemma IsFan.of_dual (h : M✶.IsFan F b c) : M.IsFan F (!b) (!c) := by
+  simpa using h.dual
 
 @[simp]
-lemma isFan_dual_iff : M✶.IsFan L b c ↔ M.IsFan L (!b) !c :=
-  ⟨fun h ↦ M.dual_dual ▸ h.dual, fun h ↦ b.not_not ▸ c.not_not ▸ h.dual⟩
+lemma isFan_dual_iff : M✶.IsFan F b c ↔ M.IsFan F (!b) (!c) :=
+  ⟨fun h ↦ by simpa using h.dual, fun h ↦ by simpa using h.dual⟩
 
-lemma isFan_dual_bnot_iff : M✶.IsFan L (!b) (!c) ↔ M.IsFan L b c := by
+lemma isFan_dual_bnot_iff : M✶.IsFan F (!b) (!c) ↔ M.IsFan F b c := by
   simp
 
-lemma IsFan.of_dual (h : M✶.IsFan L b c) : M.IsFan L (!b) (!c) :=
-  isFan_dual_iff.1 h
-
 @[simp]
-lemma isFan_bDual_iff : (M.bDual d).IsFan L b c ↔ M.IsFan L (b != d) (c != d) := by
+lemma isFan_bDual_iff : (M.bDual d).IsFan F b c ↔ M.IsFan F (b != d) (c != d) := by
   cases d with simp
 
 alias ⟨IsFan.of_bDual, _⟩ := isFan_bDual_iff
 
-lemma IsFan.three_le_length (h : M.IsFan L b c) : 3 ≤ L.length := by
+lemma IsFan.three_le_length (h : M.IsFan F b c) : 3 ≤ F.length := by
   induction h with simp_all
 
-lemma IsFan.ne_nil (h : M.IsFan L b c) : L ≠ [] := by
+lemma IsFan.ne_nil (h : M.IsFan F b c) : F ≠ [] := by
   grind [h.three_le_length]
 
-lemma IsFan.alt_ne_nil (h : M.IsFan L b c) {d} : L.alt d ≠ [] := by
-  cases d <;> grind [L.alt_true_length_eq, h.three_le_length, L.alt_length_add]
+lemma IsFan.alt_ne_nil (h : M.IsFan F b c) {d} : F.alt d ≠ [] := by
+  cases d <;> grind [F.alt_true_length_eq, h.three_le_length, F.alt_length_add]
 
-lemma IsFan.cons {x y : α} (h : M.IsFan (x :: y :: L) b c) (hT : (M.bDual !b).IsTriangle {e, x, y})
-    (heL : e ∉ L) : M.IsFan (e :: x :: y :: L) (!b) c := by
-  cases b
-  · simpa using (IsFan.cons_triangle _ _ _ _ _ _ h.dual heL (by simpa using hT)).dual
-  exact IsFan.cons_triangle _ _ _ _ _ _ h heL (by simpa using hT)
-
-lemma IsFan.cons' (h : M.IsFan L b c) (hT : (M.bDual !b).IsTriangle
-    {e, L.head h.ne_nil, L.tail.head (by grind [length_tail, h.three_le_length])}) (heL : e ∉ L) :
-    M.IsFan (e :: L) (!b) c := by
-  match L with
-  | nil => simpa using h.ne_nil
-  | [x] => simpa using h.three_le_length
-  | x :: y :: L => exact h.cons hT (by grind)
-
-lemma IsFan.concat (h : M.IsFan L b c) (hT : (M.bDual (!c)).IsTriangle
-    {L.dropLast.getLast (by grind [length_dropLast, h.three_le_length]), (L.getLast h.ne_nil), e})
-    (heL : e ∉ L) : M.IsFan (L.concat e) b !c := by
+/-- An induction principle for fans that involves verifying a primal case and self-duality. -/
+@[elab_as_elim]
+def IsFan.recTriangle
+    {motive : (M : Matroid α) → (F : List α) → (b c : Bool) → M.IsFan F b c → Prop}
+    (of_isTriangle : ∀ (M : Matroid α) (e f g : α)
+      (h : M.IsTriangle {e, f, g}), motive M [e, f, g] false false h.isFan)
+    (of_dual : ∀ M F b h, motive M✶ F false (!b) h → motive M F true b (by simpa using h.dual))
+    (cons_triangle : ∀ M e x y F b (h : M.IsFan (x :: y :: F) true b) (heF : e ∉ F)
+      (hT : M.IsTriangle {e, x, y}), motive M (x :: y :: F) true b h →
+        motive M (e :: x :: y :: F) false b (h.cons heF hT)) (h : M.IsFan F b c) :
+    motive M F b c h := by
   induction h with
-  | of_isTriangle M e' f g h =>
-    simpa using ((IsFan.of_isTriangle _ _ _ _ hT).cons (by simpa) (by grind)).dual
-  | of_dual' => simp_all
-  | cons_triangle M e' x y J b h heJ hT' ih => exact (ih hT (by grind)).cons hT' (by grind)
+  | of_isTriangle b e f g h =>
+    cases b
+    · exact of_isTriangle _ _ _ _ h
+    exact of_dual M [e, f, g] true (by simpa using h.isFan) (of_isTriangle _ _ _ _ h)
+  | cons_triangle e x y F b c h heF hT ih =>
+    cases b
+    · refine of_dual M (e :: x :: y :: F) c (h.cons heF hT).dual ?_
+      refine cons_triangle M✶ e x y F (!c) h.dual heF hT ?_
+      exact of_dual M✶ (x :: y :: F) (!c) (by simpa) (by simpa)
+    exact cons_triangle _ _ _ _ _ _ _ heF hT ih
 
-lemma IsFan.nodup (h : M.IsFan L b c) : L.Nodup := by
+lemma IsFan.cons' (h : M.IsFan F b c) (heF : e ∉ F)  (hT : (M.bDual !b).IsTriangle
+    {e, F.head h.ne_nil, F.tail.head (by grind [length_tail, h.three_le_length])}) :
+    M.IsFan (e :: F) (!b) c := by
+  cases h with
+  | of_isTriangle b e' f g h => exact h.isFan_of_bDual.cons (by grind) hT
+  | cons_triangle e' x y F' b c h he'F hT' =>
+    simpa using (h.cons he'F hT').cons (by grind) (by simpa using hT)
+
+lemma IsFan.concat (h : M.IsFan F b c) (hT : (M.bDual (!c)).IsTriangle
+    {F.dropLast.getLast (by grind [length_dropLast, h.three_le_length]), (F.getLast h.ne_nil), e})
+    (heL : e ∉ F) : M.IsFan (F.concat e) b !c := by
   induction h with
-  | of_isTriangle M e f g h => simp [h.ne₁₂, h.ne₁₃, h.ne₂₃]
-  | of_dual' => assumption
-  | cons_triangle M e x y J c h heJ hT ih => simp_all [hT.ne₁₂, hT.ne₁₃, hT.ne₂₃]
+  | of_isTriangle b e' f g h => simpa using hT.isFan.cons (by grind) (by simpa)
+  | cons_triangle => grind [IsFan.cons]
 
-lemma IsFan.reverse (h : M.IsFan L b c) : M.IsFan L.reverse c b := by
+lemma IsFan.nodup (h : M.IsFan F b c) : F.Nodup := by
+  induction h with grind
+
+lemma IsFan.reverse (h : M.IsFan F b c) : M.IsFan F.reverse c b := by
   induction h with
-  | of_isTriangle M e f g h => exact h.reverse.isFan
-  | of_dual' M L b h ih => simpa using ih.of_dual
-  | cons_triangle M e x y J b h heJ hT ih =>
-    convert ih.concat (e := e) (by simpa using hT.reverse) (by simp [heJ, hT.ne₁₃, hT.ne₁₂])
-    simp
+  | of_isTriangle b e f g h => exact h.reverse.isFan_of_bDual
+  | cons_triangle e x y F b c h heF hT ih =>
+      simpa using ih.concat (by simpa using hT.reverse) (by grind)
 
-lemma IsFan.tail (h : M.IsFan L b c) (hle : 4 ≤ L.length) : M.IsFan L.tail (!b) c := by
+@[simp]
+lemma isFan_reverse_iff : M.IsFan F.reverse b c ↔ M.IsFan F c b :=
+  ⟨fun h ↦ by simpa using h.reverse, IsFan.reverse⟩
+
+lemma IsFan.tail (h : M.IsFan F b c) (hle : 4 ≤ F.length) : M.IsFan F.tail (!b) c := by
   induction h with
   | of_isTriangle => simp at hle
-  | of_dual' M L b h ih => simpa using (ih hle).of_dual
   | cons_triangle => simpa
 
-lemma IsFan.dropLast (h : M.IsFan L b c) (hle : 4 ≤ L.length) : M.IsFan L.dropLast b (!c) := by
+lemma IsFan.dropLast (h : M.IsFan F b c) (hle : 4 ≤ F.length) : M.IsFan F.dropLast b (!c) := by
   simpa using (h.reverse.tail (by simpa)).reverse
 
-lemma IsFan.drop {k} (h : M.IsFan L b c) (hk : k + 3 ≤ L.length) :
-    M.IsFan (L.drop k) (if Even k then b else !b) c := by
+lemma IsFan.drop {k} (h : M.IsFan F b c) (hk : k + 3 ≤ F.length) :
+    M.IsFan (F.drop k) (if Even k then b else !b) c := by
   induction k with
   | zero => simpa
   | succ k ih =>
@@ -251,101 +271,123 @@ lemma IsFan.drop {k} (h : M.IsFan L b c) (hk : k + 3 ≤ L.length) :
     · simp
     grind
 
-lemma IsFan.right_eq (h : M.IsFan L b c) : c = (if Odd L.length then b else !b) := by
+lemma IsFan.right_eq (h : M.IsFan F b c) : c = (if Odd F.length then b else !b) := by
   induction h with grind
 
-lemma IsFan.take {k} (h : M.IsFan L b c) (hk : 3 ≤ k) (hkle : k ≤ L.length) :
-    M.IsFan (L.take k) b (if Odd k then b else !b) := by
-  convert (h.reverse.drop (k := L.length - k) (by grind)).reverse using 1
+lemma IsFan.take {k} (h : M.IsFan F b c) (hk : 3 ≤ k) (hkle : k ≤ F.length) :
+    M.IsFan (F.take k) b (if Odd k then b else !b) := by
+  convert (h.reverse.drop (k := F.length - k) (by grind)).reverse using 1
   · grind [List.drop_reverse]
   obtain ⟨d, h_eq⟩ := exists_add_of_le hkle
   simp only [h_eq, add_tsub_cancel_left, h.right_eq, Nat.odd_add]
   split_ifs <;> grind
 
-lemma IsFan.isNonloop_bDual (h : M.IsFan L b c) (heL : e ∈ L) (d : Bool) :
+lemma IsFan.isNonloop_bDual (h : M.IsFan F b c) (heF : e ∈ F) (d : Bool) :
     (M.bDual d).IsNonloop e := by
-  induction h generalizing d with
-  | of_isTriangle M x f g h => exact h.isNonloop_bDual_of_mem <| by simpa using heL
-  | of_dual' M L b h ih => simpa using ih heL (!d)
-  | cons_triangle M e' x y J b h heJ hT' ih =>
-    obtain rfl | heL := mem_cons.1 heL
-    · exact hT'.isNonloop_bDual_of_mem <| by simp
-    exact ih heL d
-
-lemma IsFan.isNonloop (h : M.IsFan L b c) (heL : e ∈ L) : M.IsNonloop e :=
-  h.isNonloop_bDual heL false
-
-lemma IsFan.length_bodd_eq (h : M.IsFan L b c) : L.length.bodd = (b == c) := by
-  induction h with simp_all
-
-lemma IsFan.isTriangle_bDual (h : M.IsFan L b c) : (M.bDual b).IsTriangle
-    {L[0]'(by grind [h.three_le_length]), L[1]'(by grind [h.three_le_length]),
-    L[2]'(by grind [h.three_le_length])} := by
   induction h with
-  | of_dual' M L b h ih => simpa using ih
-  | _ => simpa
+  | of_isTriangle b a f g h =>
+      simpa using h.isNonloop_bDual_of_mem (by simpa using heF) (b := b != d)
+  | cons_triangle a x y F b c h haF hT ih =>
+      obtain rfl | hne := mem_cons.1 heF
+      · simpa using hT.isNonloop_bDual₁ (b := !(b != d))
+      exact ih (by grind)
 
-lemma isFan_cons_iff : M.IsFan (x :: L) b c ↔
-    ∃ e f L₀, L = e :: f :: L₀ ∧ (M.bDual b).IsTriangle {x, e, f} ∧ x ∉ L₀ ∧
-    ((L₀ = [] ∧ b = c) ∨ M.IsFan L (!b) c) := by
-  match L with
-  | [] => exact iff_of_false (fun h ↦ by grind [h.three_le_length]) <| by grind
-  | [_] => exact iff_of_false (fun h ↦ by grind [h.three_le_length]) <| by grind
-  | e :: f :: L₀ =>
-  simp only [cons.injEq, ↓existsAndEq, and_true, exists_eq_left']
-  refine ⟨fun h ↦ ⟨by simpa using h.isTriangle_bDual, by grind [h.nodup], ?_⟩, fun h ↦ ?_⟩
-  · cases L₀ with
-    | nil => simp [show b = c by simpa using h.length_bodd_eq]
-    | cons g L₀ => simpa using h.tail (by grind)
-  obtain ⟨hT, hx, ⟨rfl, rfl⟩ | hf⟩ := h
-  · simpa using hT.isFan
-  simpa using hf.cons (e := x) (by simpa) hx
+lemma IsFan.isNonloop (h : M.IsFan F b c) (heF : e ∈ F) : M.IsNonloop e :=
+  h.isNonloop_bDual heF false
 
-lemma IsFan.recBool {motive : (M : Matroid α) → (L : List α) → (b c : Bool) → M.IsFan L b c → Prop}
-    (of_isTriangle : ∀ M e f g d (h : (M.bDual d).IsTriangle {e, f, g}),
-      motive M [e, f, g] d d (by simpa using h.isFan))
-    (cons : ∀ M e x y L d c (hL : M.IsFan (x :: y :: L) (!d) c)
-      (hT : (M.bDual d).IsTriangle {e, x, y}) (hne : e ∉ L), motive M (x :: y :: L) _ _ hL →
-      motive M (e :: x :: y :: L) d c (by simpa using hL.cons (by simpa using hT) hne))
-    (h : M.IsFan L b c) : motive M L b c h := by
-  induction hL : L.length generalizing b L with
-  | zero => grind [h.three_le_length]
-  | succ n ih =>
-    cases L with
-    | nil => simp at hL
-    | cons x L =>
-      obtain ⟨e, f, L₀, rfl, hT, hX, ⟨rfl, rfl⟩ | h'⟩ := isFan_cons_iff.1 h
-      · apply of_isTriangle
-        simpa using h.isTriangle_bDual
-      apply cons _ _ _ _ _ _ _ h' (by simpa) hX
-      cases L₀ with
-      | nil => grind [h'.three_le_length]
-      | cons g L₀ => apply ih; simp_all
+lemma IsFan.length_bodd_eq (h : M.IsFan F b c) : F.length.bodd = (b == c) := by
+  induction h with
+  | of_isTriangle => simp
+  | cons_triangle e x y F b => cases b with simp_all
 
-lemma IsFan.isTriangle_get (h : M.IsFan L b c) (i) (hi : i + 2 < L.length) :
-    (M.bDual (b != i.bodd)).IsTriangle {L[i], L[i + 1], L[i + 2]} := by
-  induction h using IsFan.recBool generalizing i with
+lemma IsFan.isTriangle_bDual (h : M.IsFan F b c) : (M.bDual b).IsTriangle
+    {F[0]'(by grind [h.three_le_length]), F[1]'(by grind [h.three_le_length]),
+    F[2]'(by grind [h.three_le_length])} := by
+  induction h with simpa
+
+lemma isFan_cons_iff : M.IsFan (x :: F) b c ↔
+    ∃ e f F₀, F = e :: f :: F₀ ∧ (M.bDual b).IsTriangle {x, e, f} ∧ x ∉ F₀ ∧
+    ((F₀ = [] ∧ b = c) ∨ M.IsFan F (!b) c) := by
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · cases h with
+    | of_isTriangle => simpa
+    | cons_triangle e x y F b c h heF hT => simp [hT, heF, h]
+  rintro ⟨e, f, F₀, rfl, hT, hx, ⟨rfl, rfl⟩ | hF⟩
+  · exact hT.isFan_of_bDual
+  simpa using hF.cons hx (by simpa)
+
+lemma IsFan.of_cons (hF : M.IsFan (x :: F) b c) (h : 2 ≤ F.length) : M.IsFan F (!b) c := by
+  rw [isFan_cons_iff] at hF
+
+
+lemma IsFan.isTriangle_get (h : M.IsFan F b c) (i) (hi : i + 2 < F.length) :
+    (M.bDual (b != i.bodd)).IsTriangle {F[i], F[i + 1], F[i + 2]} := by
+  induction h generalizing i with
   | of_isTriangle => simpa [show i = 0 by grind]
-  | cons M e x y L d c hL hT hne ih =>
+  | cons_triangle e x y F b c h heF hT ih =>
     obtain rfl | i := i
     · simpa
     simpa using ih (i := i) (by simpa using hi)
 
+lemma IsFan.recBool₂ {motive : (M : Matroid α) → (F : List α) → (b c : Bool) → M.IsFan F b c → Prop}
+    (of_isTriangle : ∀ M e f g d (h : (M.bDual d).IsTriangle {e, f, g}),
+      motive M [e, f, g] d d h.isFan_of_bDual)
+    (of_quad : ∀ M e f g x d (hT : (M.bDual (!d)).IsTriangle {f, g, x})
+      (hT' : (M.bDual d).IsTriangle {e, f, g}) (hex : e ≠ x),
+      motive M [e, f, g, x] d (!d)
+      (by simpa using hT.isFan.of_bDual.cons (by simpa) (by simpa)))
+    (cons_cons : ∀ M e f x y F c d (h : M.IsFan (x :: y :: F) c d)
+      (hT : (M.bDual (!c)).IsTriangle {f, x, y}) (hf : f ∉ F)
+      (hT' : (M.bDual c).IsTriangle {e, f, x}) (he : e ∉ F) (hey : e ≠ y),
+      motive M _ _ _ h → motive M _ c d ((h.cons hf hT).cons_not (by grind) hT'))
+    (h : M.IsFan F b c) : motive M F b c h := by
+  obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_le h.three_le_length
+  induction k using Nat.twoStepInduction generalizing F b with
+  | zero =>
+      obtain ⟨e, f, g, rfl⟩ := length_eq_three.1 <| (add_zero (M := ℕ) _ ▸ hk)
+      convert of_isTriangle M e f g b h.isTriangle_bDual
+      simp [h.right_eq, show Odd 3 by decide]
+  | one =>
+      obtain ⟨x, e, f, g, rfl⟩ := length_eq_four.1 <| (add_zero (M := ℕ) _ ▸ hk)
+      convert of_quad M x e f g b ?_ h.isTriangle_bDual (by grind [h.nodup])
+      · simp [h.right_eq, show Even 4 by decide]
+      simpa using h.isTriangle_get 1 (by simp)
+  | more n ih _ =>
+      obtain ⟨e, F, rfl⟩ := F.exists_cons_of_length_pos (by grind)
+      obtain ⟨f, F, rfl⟩ := F.exists_cons_of_length_pos (by grind)
+
+      have hF : M.IsFan F := by simpa using (h.tail (by simp)).tail (by simp)
+      -- have hF : F.length = 3 + n := by grind
+
+      -- have aux : F.tail.tail.length = 3 + n := by rw [length_tail, length_tail]; lia
+      -- have := cons_cons M (ih ((h.tail (by lia)).tail (by grind)) aux)
+      -- rw [← length_tail_add_one, ← length_tail_add_one] at hk
+      -- ·
+  -- induction hF : F.length using Nat.strong_induction_on generalizing F with
+  -- | h n ih =>
+  --   _
+  -- | of_isTriangle b e f g h => exact of_isTriangle _ _ _ _ _ h
+  -- | cons_triangle e x y F b c h heF hT ih =>
+  --   induction
+
+#exit
+
+
 /-- Induct by stripping two layers off the front of a fan to get a fan of the same type. -/
-lemma IsFan.recBool₂ {motive : (M : Matroid α) → (L : List α) → (b c : Bool) → M.IsFan L b c → Prop}
+lemma IsFan.recBool₂ {motive : (M : Matroid α) → (L : List α) → (b c : Bool) → M.IsFan F b c → Prop}
     (of_isTriangle : ∀ M e f g d (h : (M.bDual d).IsTriangle {e, f, g}),
       motive M [e, f, g] d d (by simpa using h.isFan))
     (of_quad : ∀ M e f g x d (hT : (M.bDual (!d)).IsTriangle {f, g, x})
       (hT' : (M.bDual d).IsTriangle {e, f, g}) (hex : e ≠ x),
       motive M [e, f, g, x] d (!d)
       (by simpa using hT.isFan.of_bDual.cons (by simpa using hT') (by simpa)))
-    (cons_cons : ∀ M e f x y L c d (h : M.IsFan (x :: y :: L) c d)
+    (cons_cons : ∀ M e f x y L c d (h : M.IsFan (x :: y :: F) c d)
       (hT : (M.bDual (!c)).IsTriangle {f, x, y}) (hf : f ∉ L)
       (hT' : (M.bDual c).IsTriangle {e, f, x}) (he : e ∉ L) (hey : e ≠ y),
-      motive M _ _ _ h → motive M (e :: f :: x :: y :: L) c d
+      motive M _ _ _ h → motive M (e :: f :: x :: y :: F) c d
         (by simpa using (h.cons hT hf).cons (by simpa) (by grind)))
-    (h : M.IsFan L b c) : motive M L b c h := by
-  induction hL : L.length using Nat.strong_induction_on generalizing L with
+    (h : M.IsFan F b c) : motive M L b c h := by
+  induction hF : F.length using Nat.strong_induction_on generalizing L with
   | h n ih =>
   match L with
   | [] => grind [h.three_le_length]
@@ -358,17 +400,17 @@ lemma IsFan.recBool₂ {motive : (M : Matroid α) → (L : List α) → (b c : B
     obtain rfl : c = !b := by cases b <;> simpa using h.length_bodd_eq
     refine of_quad _ _ _ _ _ _ ?_ h.isTriangle_bDual (by grind [h.nodup])
     simpa using h.isTriangle_get 1 (by simp)
-  | e :: f :: x :: y :: z :: L =>
-  have hL' : M.IsFan (x :: y :: z :: L) b c := by simpa using (h.tail (by simp)).tail (by simp)
-  refine cons_cons _ _ _ _ _ _ _ _ hL' ?_ ?_ ?_ ?_ ?_ ?_
+  | e :: f :: x :: y :: z :: F =>
+  have hF' : M.IsFan (x :: y :: z :: F) b c := by simpa using (h.tail (by simp)).tail (by simp)
+  refine cons_cons _ _ _ _ _ _ _ _ hF' ?_ ?_ ?_ ?_ ?_ ?_
   · simpa using h.isTriangle_get 1 (by simp)
   · grind [h.nodup]
   · exact h.isTriangle_bDual
   · grind [h.nodup]
   · grind [h.nodup]
-  exact ih _ (by grind) hL' rfl
+  exact ih _ (by grind) hF' rfl
 
-lemma IsFan.eq_of_parallel_of_bnot (h : M.IsFan L b (!b)) (hL : 5 ≤ L.length) (he : e ∈ L)
+lemma IsFan.eq_of_parallel_of_bnot (h : M.IsFan F b (!b)) (hF : 5 ≤ F.length) (he : e ∈ L)
     (hf : f ∈ L) (hef : (M.bDual d).Parallel e f) : e = f := by
   wlog hd : d = false generalizing d b M with aux
   · obtain rfl : d = true := by simpa using hd
@@ -383,6 +425,9 @@ lemma IsFan.eq_of_parallel_of_bnot (h : M.IsFan L b (!b)) (hL : 5 ≤ L.length) 
   · grind [aux j hj i hi hef.symm]
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_lt hij
   by_contra hne
+  sorry
+
+#exit
 
   obtain rfl | i := i
   · have h_eq :=
@@ -403,9 +448,9 @@ lemma IsFan.eq_of_parallel_of_bnot (h : M.IsFan L b (!b)) (hL : 5 ≤ L.length) 
 
 
 
-lemma IsFan.indep_alt (h : M.IsFan L b c) (d : Bool)
-    (h_ind : (M.bDual d).Indep {(L.alt d).head h.alt_ne_nil, (L.alt d).getLast h.alt_ne_nil}) :
-    (M.bDual d).Indep {x | x ∈ L.alt d} := by
+lemma IsFan.indep_alt (h : M.IsFan F b c) (d : Bool)
+    (h_ind : (M.bDual d).Indep {(F.alt d).head h.alt_ne_nil, (F.alt d).getLast h.alt_ne_nil}) :
+    (M.bDual d).Indep {x | x ∈ F.alt d} := by
   wlog hd : d = false generalizing d M b c with aux
   · obtain rfl : d = true := by grind
     simp at h_ind
@@ -440,28 +485,28 @@ attribute [coe] Fan.toList
 @[ext]
 protected lemma ext {F₁ F₂ : M.Fan} (h : (F₁ : List α) = F₂) (hb₀ : F₁.b₀ = F₂.b₀) :
     F₁ = F₂ := by
-  obtain ⟨b₀, b₁, L, hL⟩ := F₁
-  obtain ⟨b₀', b₁', L', hL'⟩ := F₂
+  obtain ⟨b₀, b₁, L, hF⟩ := F₁
+  obtain ⟨b₀', b₁', L', hF'⟩ := F₂
   obtain rfl : L' = L := h.symm
   obtain rfl : b₀' = b₀ := hb₀.symm
-  simp [hL.right_eq, hL'.right_eq]
+  simp [hF.right_eq, hF'.right_eq]
 
 @[simp]
 lemma toList_eq_coe (F : M.Fan) : F.toList = F := rfl
 
 protected def fst (F : M.Fan) := (F : List α).head F.isFan.ne_nil
 
-@[simp] lemma fst_mk (L b) (h : M.IsFan L b c) :
-  (Fan.mk b c L h).fst = L.head h.ne_nil := rfl
+@[simp] lemma fst_mk (L b) (h : M.IsFan F b c) :
+  (Fan.mk b c L h).fst = F.head h.ne_nil := rfl
 
 protected def snd (F : M.Fan) := (F : List α)[1]'(by grind [F.isFan.three_le_length])
 
-@[simp] lemma snd_mk (L b) (h : M.IsFan L b c) :
+@[simp] lemma snd_mk (L b) (h : M.IsFan F b c) :
     (Fan.mk b c L h).snd = L[1]'(by grind [h.three_le_length]) := rfl
 
 protected def thd (F : M.Fan) := (F : List α)[2]'(by grind [F.isFan.three_le_length])
 
-@[simp] lemma thd_mk (L b) (h : M.IsFan L b c) :
+@[simp] lemma thd_mk (L b) (h : M.IsFan F b c) :
     (Fan.mk b c L h).thd = L[2]'(by grind [h.three_le_length]) := rfl
 
 protected def last (F : M.Fan) := (F : List α).getLast F.isFan.ne_nil
@@ -470,7 +515,7 @@ protected def last (F : M.Fan) := (F : List α).getLast F.isFan.ne_nil
 protected def joints (F : M.Fan) (b : Bool) := (F : List α).alt (b == F.b₀)
 
 @[simp]
-lemma mk_joints (h : M.IsFan L b c) : (Fan.mk b c L h).joints = fun d ↦ L.alt (d == b) := rfl
+lemma mk_joints (h : M.IsFan F b c) : (Fan.mk b c L h).joints = fun d ↦ F.alt (d == b) := rfl
 
 lemma fst_mem_joints (F : M.Fan) : F.fst ∈ F.joints F.b₀ := by
   obtain ⟨b₀, -, L, h⟩ := F
@@ -491,7 +536,7 @@ protected def dual (F : M.Fan) : M✶.Fan where
   isFan := by simpa using F.isFan
 
 @[simp]
-lemma mk_dual (h : M.IsFan L b c) : (Fan.mk b c L h).dual = (Fan.mk _ _ L h.dual) := rfl
+lemma mk_dual (h : M.IsFan F b c) : (Fan.mk b c L h).dual = (Fan.mk _ _ L h.dual) := rfl
 
 @[simps]
 protected def copy {N : Matroid α} (F : M.Fan) (hMN : M = N) : N.Fan where
@@ -630,14 +675,14 @@ lemma foo (F : M.Fan) (hlen : 4 ≤ (F : List α).length) {C : Set α} (hC : (M.
 
   --   ∨ (∃ (p q : ℕ) (hpq : p < q) (hq : q < (F.joints d).length),
   --     C = {x | x ∈ F.circuitSublist d hpq hq}) ∨ C = {x | x ∈ F.joints !d} := by
-  -- obtain ⟨b, c, L, hL⟩ := F
+  -- obtain ⟨b, c, L, hF⟩ := F
   -- simp only [fst_mk, mk_joints]
   -- induction hlen' : F.toList.length using
-  -- induction hL using IsFan.recBool with
+  -- induction hF using IsFan.recBool with
   -- | of_isTriangle => simp at hlen
-  -- | cons M e x' y' L d' c hL hT hne _ =>
+  -- | cons M e x' y' L d' c hF hT hne _ =>
   --   simp_all
-  -- induction hL with
+  -- induction hF with
   -- | of_isTriangle M e f g h => sorry
   -- | of_dual' M L b h ih => sorry
   -- | cons_triangle M e x y J b h heJ hT ih => sorry
@@ -696,9 +741,9 @@ lemma Fan.indep_bDual  (F : M.Fan) (d : Bool) (hd : ¬ (F.b₀ = F.b₁ ∧ F.b�
 
       --   toList := F.toList.tail
       --   toFanAux := by
-      --     obtain ⟨b, L, hL⟩ := F
+      --     obtain ⟨b, L, hF⟩ := F
       --     simp only
-      --     induction hL with
+      --     induction hF with
       --     | of_isTriangle M e f g h =>
       --       simp at h
       --     | of_dual' M L h ih =>
@@ -746,9 +791,9 @@ lemma Fan.indep_bDual  (F : M.Fan) (d : Bool) (hd : ¬ (F.b₀ = F.b₁ ∧ F.b�
 
 --   toList := F.toList.tail
 --   toFanAux := by
---     obtain ⟨b, L, hL⟩ := F
+--     obtain ⟨b, L, hF⟩ := F
 --     simp only
---     induction hL with
+--     induction hF with
 --     | of_isTriangle M e f g h =>
 --       simp at h
 --     | of_dual' M L h ih =>

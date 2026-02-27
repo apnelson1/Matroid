@@ -7,7 +7,7 @@ variable {α : Type*} {M : Matroid α}
 namespace Matroid
 
 attribute [grind ->] Indep.subset_ground IsBase.subset_ground IsBasis.subset_ground
-  Dep.subset_ground
+  Dep.subset_ground IsBasis.subset IsBasis'.subset
 
 @[grind ->]
 lemma IsBasis.subset_ground_left {I X} (h : M.IsBasis I X) : I ⊆ M.E :=

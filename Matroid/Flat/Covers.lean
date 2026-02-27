@@ -10,7 +10,8 @@ import Mathlib.Data.Set.Card.Arithmetic
 set_option linter.style.longLine false
 
 variable {α : Type*} {M N M' : Matroid α} {I F X Y F' F₀ F₁ F₂ P L H H₁ H₂ H' B C D K : Set α}
-  {e f : α} {l r : ℕ} {a k : ℕ∞} {T : Set (Set α)} {ι : Type*} {i j : ι} {P : Set α → Prop}
+  {e f : α} {l r : ℕ} {a k : ℕ∞} {T : Set (Set α)} {ι : Type*} {i j : ι}
+  {P : Matroid α → Set α → Prop}
 
 open Set
 namespace Matroid
@@ -18,14 +19,15 @@ namespace Matroid
 section General
 
 @[mk_iff]
-structure IsCover' (M : Matroid α) (P : Set α → Prop) (T : Set (Set α)) : Prop where
+structure IsCover' (M : Matroid α) (P : Matroid α → Set α → Prop) (T : Set (Set α)) : Prop where
   sUnion_eq : ⋃₀ T = M.E
-  pProp : ∀ F ∈ T, P F
+  pProp : ∀ F ∈ T, P M F
 
 lemma IsCover'.subset_ground (h : M.IsCover' P T) (hX : X ∈ T) : X ⊆ M.E := by
   grw [← h.sUnion_eq, ← subset_sUnion_of_mem hX]
 
-def PCover (P : Set α → Prop) : Prop := ∀ M : Matroid α, {T | M.IsCover' P T}.Nonempty
+def PCover (P : Matroid α → Set α → Prop) : Prop :=
+    ∀ M : Matroid α, {T | M.IsCover' P T}.Nonempty
 
 -- lemma isCover'_iff : M.IsCover P T ↔ ⋃₀ T = M.E ∧ ∀ F ∈ T, P F :=
 --   ⟨fun h ↦ ⟨h.sUnion_eq, fun _ ↦ h.eRk_le⟩,
@@ -42,25 +44,33 @@ lemma IsCover'.nonempty [M.Nonempty] (h : M.IsCover' P T) : T.Nonempty := by
 --   · sorry
 --   exact ⟨_, M.setOf_point_isCover.mono hk⟩
 
-noncomputable def coverNumber' (M : Matroid α) (P : Set α → Prop) : ℕ∞ := sInf (encard '' {T | M.IsCover' P T})
+noncomputable def coverNumber' (M : Matroid α) (P : Matroid α → Set α → Prop) : ℕ∞ :=
+    sInf (encard '' {T | M.IsCover' P T})
 
-lemma coverNumber'_eq_iInf (M : Matroid α) (P : Set α → Prop) :
+lemma coverNumber'_eq_iInf (M : Matroid α) (P : Matroid α → Set α → Prop) :
     M.coverNumber' P = ⨅ T ∈ {T | M.IsCover' P T}, T.encard := by
   exact sInf_image
 
-lemma exists_cover' (M : Matroid α) {P : Set α → Prop} (hn : {T | M.IsCover' P T}.Nonempty)  :
+lemma IsCover'.coverNumber_le {T} (h : M.IsCover' P T) : M.coverNumber' P ≤ T.encard := by
+  grw [coverNumber'_eq_iInf]
+  exact biInf_le encard h
+
+lemma exists_cover' (M : Matroid α) (hn : {T | M.IsCover' P T}.Nonempty)  :
     ∃ T, M.IsCover' P T ∧ T.encard = M.coverNumber' P := by
   simpa using csInf_mem <| hn.image encard
 
-lemma exists_cover_PCover' (M : Matroid α) {P : Set α → Prop} (hP : PCover P ) :
+lemma exists_cover_PCover' (M : Matroid α) (hP : PCover P) :
     ∃ T, M.IsCover' P T ∧ T.encard = M.coverNumber' P := by
   simpa using csInf_mem <| (hP M).image encard
 
-lemma exists_cover'_bounded (M : Matroid α) {l : ℕ} {P : Set α → Prop} (hn : M.coverNumber' P ≤ l ) :
-    ∃ T, M.IsCover' P T ∧ T.encard = M.coverNumber' P := by sorry
-  --simpa using csInf_mem <| hn.image encard
+lemma exists_cover (M : Matroid α) (P : Matroid α → Set α → Prop) :
+    M.coverNumber' P = ⊤ ∨ ∃ T, M.IsCover' P T ∧ T.encard = M.coverNumber' P := by
+  obtain h0 | h := {T | M.IsCover' P T}.eq_empty_or_nonempty
+  · simp [coverNumber'_eq_iInf, h0]
+  right
+  simpa using csInf_mem <| h.image encard
 
-lemma IsCover'.cover_fun (P' : Set α → Prop) (hcover : M.IsCover' P T )
+lemma IsCover'.cover_fun (P' : Matroid α → Set α → Prop) (hcover : M.IsCover' P T)
     (f : Set α → Set (Set α) )
     (hfun : ∀ X ∈ T, (M ↾ X).IsCover' P' (f X)) :
     M.IsCover' P' ( ⋃ X ∈ T, f X ):= by
@@ -89,10 +99,10 @@ lemma IsCover'.cover_fun (P' : Set α → Prop) (hcover : M.IsCover' P T )
   exact (hfun X hXT ).pProp F hF
 
 
-lemma IsCover'.cover_typset (P' : Set α → Prop) (hcover : M.IsCover' P T )
-    (f : {X // X ∈ T} → Set (Set α) )
-    (hfun : ∀ X : {X // X ∈ T}, (M ↾ X.1).IsCover' P' (f X)) :
-    M.IsCover' P' ( ⋃ X : {X // X ∈ T}, f X ):= by
+lemma IsCover'.cover_typset (P' : Matroid α → Set α → Prop) (hcover : M.IsCover' P T )
+    (f : T → Set (Set α) )
+    (hfun : ∀ X : T, (M ↾ X.1).IsCover' P' (f X)) :
+    M.IsCover' P' (⋃ X : T, f X ):= by
   refine ⟨ ?_, ?_ ⟩
   · rw[←hcover.sUnion_eq]
     refine ext ?_
@@ -116,82 +126,37 @@ lemma IsCover'.cover_typset (P' : Set α → Prop) (hcover : M.IsCover' P T )
   simp only [iUnion_coe_set, mem_iUnion] at hF
   obtain ⟨X, hXT, hF⟩ := hF
   --rw[←restrict_eRk_eq M (LE.le.subset ((hfun ⟨X, hXT⟩ ).subset_ground hF))]
-  exact (hfun ⟨X, hXT⟩ ).pProp F hF
+
+  have := (hfun ⟨X, hXT⟩ ).pProp F hF
 
 -- lemma Fintype.sum_equiv_le {ι : Type u_1} {κ : Type u_2} [Fintype ι] [Fintype κ]
 --     (e : ι ≃ κ) (f : ι → ℕ∞) (g : κ → ℕ∞) (h : ∀ (x : ι), f x ≤ g (e x)) :
 --     ∑ x : ι, f x ≤ ∑ x : κ, g x := by
 --   sorry
 
-
-lemma coverNumber_cover_of_covers_bound [DecidablePred fun (x : Set α) => x ∈ T]
-    [DecidableEq (Set α)]
-    {P' : Set α → Prop} {l : ℕ} {hl : l ≠ 0}
-    (hflat : ∀ F, P F → (M ↾ F).coverNumber' P' ≤ l )
-    (hcover : M.IsCover' P T ) :
-    M.coverNumber' P' ≤ (T.encard) * l := by
-  rw[coverNumber'_eq_iInf]
-  have hf : ∀ X : {X // X ∈ T}, ∃ XT, (M ↾ X.1).IsCover' P' XT ∧ XT.encard ≤ l := by
+lemma coverNumber_cover_of_covers' {P' : Set α → Prop} (hcover : M.IsCover' P T) :
+    M.coverNumber' P' ≤ ∑' X : T, (M ↾ X.1).coverNumber' P' := by
+  obtain (h0 | h1) := exists_or_forall_not (fun X : T ↦ (M ↾ X).coverNumber' P' = ⊤)
+  · simp [ENat.tsum_eq_top_of_eq_top h0]
+  have hf : ∀ X : T, ∃ XT, (M ↾ X.1).IsCover' P' XT ∧
+    XT.encard = (M ↾ X.1).coverNumber' P' := by
     intro X
-    obtain ⟨XT, ⟨hXres, hencard ⟩ ⟩ := (M ↾ X).exists_cover'_bounded (hflat X (hcover.pProp X X.2))
-    refine ⟨ XT, ⟨ hXres ,?_ ⟩⟩
-    rw[hencard]
-    exact (hflat X (hcover.pProp X X.2))
-
+    obtain (h | ⟨XT, hXres, hencard⟩) := (M ↾ X).exists_cover P'
+    · simp [h1 _ h]
+    exact ⟨XT, hXres, hencard⟩
   choose f hfunco hfunca using hf
   have hcover := IsCover'.cover_typset P' hcover f hfunco
-  refine iInf₂_le_of_le (⋃ X, f X) (mem_setOf.mpr hcover ) ?_
+  grw [hcover.coverNumber_le, ENat.encard_iUnion_le_tsum_encard, tsum_congr hfunca]
 
-  by_cases hs : T.Finite
-  · have hs' : Fintype {X // X ∈ T} := by
-      exact hs.fintype
-    grw [Set.encard_iUnion_le_of_fintype ]
-    --change (∑ i : ↥T, (f i).encard ≤ T.encard * ↑l)
-    set f' : ↥T → ℕ∞ := fun i ↦ (f i).encard with hf'
-    rw[hf']
-    set g : Set α → ℕ∞ :=
-      fun X => if hX : X ∈ T then (f ⟨X, hX⟩).encard
-                else 0
-      with hg
-    have h4 : ∑ i, (f i).encard = ∑ i : ↑T, g ↑i := by
-      rw[hg]
-      simp only [Subtype.coe_prop, ↓reduceDIte, Subtype.coe_eta]
-    rw[h4, Finset.sum_set_coe T]
-    have h5 : ∀ i ∈ T.toFinset, g i ≤ l := by
-      intro X hX
-      simp only [mem_toFinset] at hX
-      have : g X = (f ⟨X, hX⟩).encard := by exact dif_pos hX
-      rw[this]
-      exact hfunca ⟨X, hX⟩
-    grw[Finset.sum_le_sum h5 ]
-    simp only [Finset.sum_const, toFinset_card, nsmul_eq_mul, coe_fintypeCard, ge_iff_le]
-    exact ENat.forall_natCast_le_iff_le.mp fun a a_1 ↦ a_1
+lemma coverNumber_cover_of_covers_bound {P' : Set α → Prop} {k : ℕ∞}
+    (hcover : M.IsCover' P T) (hflat : ∀ F, P F → (M ↾ F).coverNumber' P' ≤ k) :
+    M.coverNumber' P' ≤ (T.encard) * k := by
+  grw [coverNumber_cover_of_covers' hcover, ENat.tsum_le_tsum (g := fun _ ↦ k),
+    ENat.tsum_subtype_const, mul_comm]
+  intro F
+  simp [hflat _ <| hcover.pProp F F.2 ]
 
-  simp only [Set.not_finite] at hs
-  have : T.encard = ⊤ := by exact encard_eq_top_iff.mpr hs
-  rw[encard_eq_top_iff.mpr hs, ENat.top_mul (Nat.cast_ne_zero.mpr hl ) ]
-  exact OrderTop.le_top (⋃ X, f X).encard
 
-lemma coverNumber_cover_of_covers' [DecidablePred fun (x : Set α) => x ∈ T]
-    [DecidableEq (Set α)]
-    {P' : Set α → Prop } (hP' : PCover P')
-    (hcover : M.IsCover' P T ) (hfin : T.Finite):
-    M.coverNumber' P' ≤ ∑' X : {X // X ∈ T} , (M ↾ X.1).coverNumber' P' := by
-
-  have hf : ∀ X : {X // X ∈ T}, ∃ XT, (M ↾ X.1).IsCover' P' XT ∧ XT.encard = (M ↾ X.1).coverNumber' P' := by
-    intro X
-    obtain ⟨XT, ⟨hXres, hencard ⟩ ⟩ := (M ↾ X).exists_cover_PCover' hP'
-    refine ⟨ XT, ⟨ hXres ,?_ ⟩⟩
-    rw[hencard]
-  choose f hfunco hfunca using hf
-  have hcover := IsCover'.cover_typset P' hcover f hfunco
-  rw[coverNumber'_eq_iInf]
-  refine iInf₂_le_of_le (⋃ X, f X) (mem_setOf.mpr hcover ) ?_
-  have hs' : Fintype {X // X ∈ T} := by
-      exact hfin.fintype
-  grw [Set.encard_iUnion_le_of_fintype,
-    Fintype.sum_congr (fun a ↦ (f a).encard) (fun a ↦ (M ↾ ↑a).coverNumber' P') hfunca ]
-  exact ENat.sum_le_tsum Finset.univ
 
 
 -- lemma IsCover.isCover_closure (h : M.IsCover' P T) : M.IsCover' P (M.closure '' T) := by

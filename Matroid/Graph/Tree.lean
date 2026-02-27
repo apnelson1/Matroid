@@ -28,6 +28,13 @@ lemma Connected.isTree_of_maximal_isAcyclicSet (hG : G.Connected) (hF : Maximal 
     rw [connBetween_iff_of_maximal_isAcyclicSet hF]
     exact hG.pre x y hx hy
 
+-- lemma Connected.isBase_cycleMatroid_iff (hG : G.Connected) {T} :
+--     G.cycleMatroid.IsBase T ↔ (G ↾ T).IsTree := by
+--   rw [Matroid.isBase_iff_maximal_indep, cycleMatroid_indep]
+--   refine ⟨fun h ↦ hG.isTree_of_maximal_isAcyclicSet h, fun h ↦ ?_⟩
+
+  -- have := h.
+
 /-- Every connected graph has a spanning tree -/
 lemma Connected.exists_isTree_spanningSubgraph (hG : G.Connected) : ∃ T, T.IsTree ∧ T ≤s G := by
   obtain ⟨B, hB⟩ := G.cycleMatroid.exists_isBase

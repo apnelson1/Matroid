@@ -48,8 +48,6 @@ structure IsTriangle (M : Matroid α) (T : Set α) : Prop where
   three_elements : T.encard = 3
 
 abbrev IsTriad (M : Matroid α) (T : Set α) := M✶.IsTriangle T
-  -- isCocircuit : M.IsCocircuit T
-  -- three_elements : T.encard = 3
 
 lemma isTriad_iff : M.IsTriad T ↔ M.IsCocircuit T ∧ T.encard = 3 :=
   isTriangle_iff (M := M✶) (T := T)
@@ -57,10 +55,10 @@ lemma isTriad_iff : M.IsTriad T ↔ M.IsCocircuit T ∧ T.encard = 3 :=
 lemma IsTriad.isCocircuit (h : M.IsTriad T) : M.IsCocircuit T :=
   h.1
 
-@[aesop unsafe 20% (rule_sets := [Matroid])]
+@[aesop unsafe 20% (rule_sets := [Matroid]), grind →]
 lemma IsTriangle.subset_ground (hT : M.IsTriangle T) : T ⊆ M.E := hT.isCircuit.subset_ground
 
-@[aesop unsafe 20% (rule_sets := [Matroid])]
+@[aesop unsafe 20% (rule_sets := [Matroid]), grind →]
 lemma IsTriad.subset_ground (hT : M.IsTriad T) : T ⊆ M.E := hT.isCocircuit.subset_ground
 
 lemma IsTriangle.dual_isTriad (h : M.IsTriangle T) : M✶.IsTriad T := by
@@ -95,19 +93,26 @@ lemma IsTriangle.nontrivial (h : M.IsTriangle T) : T.Nontrivial :=
 -- the lemmas ahead allow one to comfortably work with terms of the form `IsTriangle {e, f, g}`
 -- rather than `IsTriangle T`.
 
+@[grind .]
 lemma IsTriangle.ne₁₂ (h : M.IsTriangle {e, f, g}) : e ≠ f := by
   rintro rfl
   have hcard : encard {e,g} = 3 := by simpa using h.three_elements
   have hcon := hcard ▸ encard_pair_le e g
   norm_num at hcon
 
+@[grind .]
 lemma IsTriangle.ne₁₃ (h : M.IsTriangle {e, f, g}) : e ≠ g := by
   rw [pair_comm] at h
   exact h.ne₁₂
 
+@[grind .]
 lemma IsTriangle.ne₂₃ (h : M.IsTriangle {e, f, g}) : f ≠ g := by
   refine IsTriangle.ne₁₂ (M := M) (g := e) ?_
   convert h using 1
+  grind
+
+@[grind →]
+lemma IsTriangle.nodup (h : M.IsTriangle {e, f, g}) : [e, f, g].Nodup := by
   grind
 
 lemma IsTriangle.swap_right (h : M.IsTriangle {e, f, g}) : M.IsTriangle {e,g,f} := by
@@ -248,16 +253,16 @@ lemma isTriangle_of_dep_of_encard_le [h : M.Simple] (hT : M.Dep T) (hcard : T.en
   grw [← encard_lt_top_iff]; enat_to_nat!
 
 @[mk_iff]
-structure Triadular (M : Matroid α) : Prop where
+structure Triassic (M : Matroid α) : Prop where
   three_connected : M.TutteConnected (2 + 1)
   forall_mem_triangle : ∀ e ∈ M.E, ∃ T, M.IsTriangle T ∧ e ∈ T
   forall_mem_triad : ∀ e ∈ M.E, ∃ T, M.IsTriad T ∧ e ∈ T
 
 @[simp]
-lemma triadular_dual_iff : M✶.Triadular ↔ M.Triadular := by
-  simp [triadular_iff, and_comm]
+lemma triassic_dual_iff : M✶.Triassic ↔ M.Triassic := by
+  simp [triassic_iff, and_comm]
 
-alias ⟨_, Triadular.dual⟩ := triadular_dual_iff
+alias ⟨_, Triassic.dual⟩ := triassic_dual_iff
 
 lemma IsTriangle.mem_iff_mem_of_isCocircuit (h : M.IsTriangle {e, f, g}) (hK : M.IsCocircuit K)
     (heK : e ∉ K) : f ∈ K ↔ g ∈ K := by

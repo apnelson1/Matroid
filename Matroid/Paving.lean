@@ -142,8 +142,8 @@ def Paving.contract (hM : M.Paving) (C : Set α) : (M ／ C).Paving := by
   rw [Paving, truncate_contract]
   exact hM.truncate_uniform.contract C
 
-def Paving.minor (hM : M.Paving) (hNM : N ≤m M) : N.Paving := by
-  rw [hNM.eq_con_del]
+def Paving.isMinor (hM : M.Paving) (hNM : N ≤m M) : N.Paving := by
+  obtain ⟨C, D, -, -, -, rfl⟩ := hNM
   exact (hM.contract _).delete _
 
 lemma Paving.exists_diff_indep_of_nonspanning (hM : M✶.Paving) (hXs : M.Nonspanning X)
@@ -205,7 +205,7 @@ lemma dual_sparsePaving_iff : M✶.SparsePaving ↔ M.SparsePaving :=
   ⟨fun h ↦ by simpa using h.dual, SparsePaving.dual⟩
 
 theorem SparsePaving.minor (h : M.SparsePaving) (hNM : N ≤m M) : N.SparsePaving :=
-  ⟨h.1.minor hNM, h.dual.1.minor hNM.dual⟩
+  ⟨h.1.isMinor hNM, h.dual.1.isMinor hNM.dual⟩
 
 /-- This probably can be golfed with a nullity / relative rank argument. -/
 lemma SparsePaving.isCircuit_of_dep_of_nonspanning (hM : M.SparsePaving) (hC : M.Dep C)
@@ -283,9 +283,5 @@ theorem sparsePaving_iff_forall_indep_or_spanning_or_isCircuit_isHyperplane :
   rw [← spanning_iff_closure_eq] at hcl
   exact .inr ⟨e, he.1, hcl⟩
 
-lemma IsUniform.sparsePaving (h : M.IsUniform) : M.SparsePaving := by
-  rw [sparsePaving_iff_forall_indep_or_spanning_or_isCircuit_isHyperplane]
-  rw [isUniform_iff] at h
-  grind
-
-section exp
+lemma IsUniform.sparsePaving (h : M.IsUniform) : M.SparsePaving :=
+  ⟨h.truncate, h.dual.truncate⟩

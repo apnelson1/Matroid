@@ -70,7 +70,9 @@ lemma iff_of_imp_iff {A B C : Prop} (h1 : A → C) (h2 : B → C) (h3 : C → (A
 
 lemma cycleMatroid_coindep : G.cycleMatroid.Coindep F ↔
     F ⊆ E(G) ∧ (∀ x y, G.ConnBetween x y ↔ (G ＼ F).ConnBetween x y) := by
-  refine iff_of_imp_iff (·.subset_ground) (·.1) fun hFE ↦ ?_
+  wlog hFE : F ⊆ E(G) generalizing F with aux
+  · grind
+  rw [← cycleMatroid_E] at hFE
   simp only [coindep_iff_exists hFE, isBase_iff_maximal_indep, cycleMatroid_indep, cycleMatroid_E,
     (show F ⊆ E(G) from hFE), true_and]
   refine ⟨fun ⟨B, hB, hBF⟩ x y ↦ ⟨fun hxy ↦ ?_, fun hxy ↦ hxy.mono edgeDelete_le⟩, fun h ↦ ?_⟩
@@ -149,21 +151,15 @@ lemma cycleMatroid_isRestriction_of_isLink (hl : ∀ ⦃e x y⦄, G.IsLink e x y
 lemma cycleMatroid_isRestriction_of_le (h : G ≤ H) : G.cycleMatroid ≤r H.cycleMatroid :=
   cycleMatroid_isRestriction_of_isLink h.2
 
--- lemma cycleMatroid_IsBasis_connected {G : Graph α β} {I : Set β}{F : Set β} {V : Set α }
---     (hI : G.cycleMatroid.IsBasis I F) :
---     ((G ↾ F)[V]).IsCompOf (G ↾ F) ↔ ((G ↾ I)[V]).IsCompOf (G ↾ I) := by
---   refine ⟨?_, ?_ ⟩
---   · intro h
---     refine Connected.IsCompOf_of_isClosedSubgraph ?_ ?_
---     ·
---       sorry
---     sorry
+
+
+-- lemma cycleMatroid_isFlat (hFE : F ⊆ E(G))
+--     (hF : ∀ H : Graph α β, H.IsCompOf (G ↾ F) → H ≤i G) :
+--     G.cycleMatroid.IsFlat F  := by
+--  proof goes here.
 --   sorry
+    -- try using `IsCyclicWalk.exists_isPath_toGraph_eq_delete_edge`
+  -- refine { subset_of_isBasis_of_isBasis := ?_, subset_ground := hFE }
+  -- intro I X hIF hIX e he
 
-lemma cycleMatroid_isFlat (hFE : F ⊆ E(G) )
-    (hF : ∀ H : Graph α β, H.IsCompOf (G ↾ F) → H ≤i G ) :
-    G.cycleMatroid.IsFlat F  := by
-  refine { subset_of_isBasis_of_isBasis := ?_, subset_ground := hFE }
-  intro I X hIF hIX e he
-
-  sorry
+  -- sorry
