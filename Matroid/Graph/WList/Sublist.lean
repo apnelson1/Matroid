@@ -490,8 +490,12 @@ lemma reverse (h : w₁.IsInfix w₂) : w₁.reverse.IsInfix w₂.reverse := by
 end IsInfix
 
 @[simp]
-lemma reverse_iff : w₁.reverse.IsInfix w₂.reverse ↔ w₁.IsInfix w₂ :=
+lemma reverse_infix_reverse_iff : w₁.reverse.IsInfix w₂.reverse ↔ w₁.IsInfix w₂ :=
   ⟨fun h ↦ by simpa using h.reverse, fun h ↦ h.reverse⟩
+
+lemma reverse_infix_iff : w₁.reverse.IsInfix w₂ ↔ w₁.IsInfix w₂.reverse := by
+  nth_rw 2 [← w₁.reverse_reverse]
+  rw [reverse_infix_reverse_iff]
 
 @[simp]
 lemma isInfix_nil_iff : w.IsInfix (nil x) ↔ w = nil x :=

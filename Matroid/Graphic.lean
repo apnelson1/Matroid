@@ -2,12 +2,12 @@ import Matroid.Axioms.Circuit
 import Matroid.Minor.Contract
 import Matroid.Graph.Forest
 import Matroid.Graph.Minor.Conn
-import Matroid.Graph.Subgraph.Delete
+import Matroid.Graph.Connected.Minor
 
 variable {α β : Type*} {G H : Graph α β} {u v x x₁ x₂ y y₁ y₂ z : α} {e e' f g : β}
   {U V S T : Set α} {F F' R R': Set β} {C w P Q : WList α β}
 
-open Set WList Matroid
+open Set WList Matroid Function
 
 namespace Graph
 
@@ -65,9 +65,6 @@ lemma exists_maximal_isAcyclicSet (G : Graph α β) : ∃ F, Maximal G.IsAcyclic
   have := (cycleMatroid G).exists_isBase
   simpa [isBase_iff_maximal_indep] using this
 
-lemma iff_of_imp_iff {A B C : Prop} (h1 : A → C) (h2 : B → C) (h3 : C → (A ↔ B)) : A ↔ B := by
-  tauto
-
 lemma cycleMatroid_coindep : G.cycleMatroid.Coindep F ↔
     F ⊆ E(G) ∧ (∀ x y, G.ConnBetween x y ↔ (G ＼ F).ConnBetween x y) := by
   refine iff_of_imp_iff (·.subset_ground) (·.1) fun hFE ↦ ?_
@@ -83,11 +80,35 @@ lemma cycleMatroid_coindep : G.cycleMatroid.Coindep F ↔
   by_contra! hRB
   obtain ⟨e, heR, heB⟩ := not_subset.mp hRB
   obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet (hR.subset heR)
-  refine hR.isBridge heR |>.not_connBetween_of_isLink ⟨heR, hxy⟩ rfl ?_
-  rw [edgeRestrict_edgeDelete]
+  have hRexy : ¬((G ↾ R) ＼ {e}).ConnBetween x y := hR.isBridge heR |>.not_connBetween_of_isLink
+    ⟨heR, hxy⟩ rfl
+  rw [edgeRestrict_edgeDelete] at hRexy
   have := (connBetween_iff_of_maximal_isAcyclicSet hB).mpr <| (h x y).mp hxy.connBetween
   simp only [edgeDelete_edgeRestrict, hBF.2.sdiff_eq_left] at this
-  exact this.mono <| edgeRestrict_mono_right _ <| by simpa [subset_diff, heB]
+  exact hRexy <| this.mono <| edgeRestrict_mono_right _ <| by simpa [subset_diff, heB]
+
+lemma cycleMatroid_cocircuit (G : Graph α β) (C : Set β) :
+    G.cycleMatroid.IsCocircuit C ↔ G.IsBond C := by
+  refine iff_of_imp_iff (·.subset_ground) (·.subset_edgeSet) (fun hCE ↦ ?_)
+  rw [← dual_dual G.cycleMatroid, dual_isCocircuit_iff, isCircuit_iff_minimal_not_indep (by simpa)]
+  simp [← dual_coindep_iff]
+  simp_rw [dual_dual, cycleMatroid_coindep]
+  simp only [not_and, not_forall]
+  refine ⟨fun h => ?_, fun h => ?_⟩
+  · obtain ⟨x, y, hxy⟩ := h.1 hCE
+    rw [iff_def, and_comm, not_and, _root_.not_imp] at hxy
+    obtain ⟨hxy, hCxy⟩ := hxy <| ConnBetween.mono edgeDelete_le
+    obtain ⟨B, hBC, hB, hBxy⟩ := exists_isBond_subset_of_not_connBetween hxy hCxy
+    have hBiff : B ⊆ E(G) → ∃ x x_1, ¬(G.ConnBetween x x_1 ↔ (G ＼ B).ConnBetween x x_1) :=
+      fun _ ↦ ⟨x, y, by simp [hxy, hBxy]⟩
+    rwa [← h.eq_of_subset hBiff hBC]
+  obtain ⟨x, y, hxy, hnxy⟩ := h.exists_minimal_not_connBetween
+  refine ⟨fun _ ↦ ⟨x, y, by simp [hxy, hnxy.1]⟩, fun B hB hBC ↦ ?_⟩
+  obtain ⟨u, v, huv⟩ := hB (hBC.trans h.subset_edgeSet)
+  rw [iff_comm, iff_def, not_and, _root_.not_imp] at huv
+  obtain ⟨huv, hnuv⟩ := huv (ConnBetween.mono edgeDelete_le)
+  obtain ⟨F, hF, hFB, hFne, hFuv⟩ := isEdgeCut_subset_of_not_connBetween huv hnuv
+  exact h.2 ⟨hF, hFne⟩ (hFB.trans hBC) |>.trans hFB
 
 @[simp]
 lemma cycleMatroid_edgeRestrict (G : Graph α β) (F : Set β) :
@@ -149,6 +170,53 @@ lemma cycleMatroid_isRestriction_of_isLink (hl : ∀ ⦃e x y⦄, G.IsLink e x y
 lemma cycleMatroid_isRestriction_of_le (h : G ≤ H) : G.cycleMatroid ≤r H.cycleMatroid :=
   cycleMatroid_isRestriction_of_isLink h.2
 
+-- lemma exists_connected_eq_cycleMatroid (G : Graph α β) :
+--     ∃ H : Graph α β, H.Preconnected ∧ H.cycleMatroid = G.cycleMatroid := by
+--   obtain rfl | hG := G.eq_bot_or_vertexSet_nonempty
+--   · use ⊥
+--     simp
+--   let f1 : G.Components → α := fun H ↦ H.prop.nonempty.some
+--   have hf1 : Injective f1 := by
+--     intro H₁ H₂ hH
+--     have := mt <| G.components_pairwise_disjoint H₁.prop H₂.prop
+--     rw [disjoint_iff_vertexSet_disjoint, ne_eq, not_not, ← Subtype.ext_iff,
+--       not_disjoint_iff] at this
+--     exact this ⟨f1 H₁, H₁.prop.nonempty.some_mem, hH ▸ H₂.prop.nonempty.some_mem⟩
+--   let x := f1 ⟨G.components_nonempty hG |>.some, G.components_nonempty hG |>.some_mem⟩
+--   classical
+--   let f : α → α := fun v ↦ if v ∈ range f1 then x else v
+--   use f ''ᴳ G, ?_, ext_isCircuit (by simp) fun I hI ↦ ?_
+--   · rintro _ _ ⟨a, ha, rfl⟩ ⟨b, hb, rfl⟩
+--     refine ConnBetween.trans (y := x) ?_ ?_
+--     · let Ca : G.Components := ⟨G.walkable a, G.walkable_isCompOf ha⟩
+--       have hx : f (f1 Ca) = x := by
+--         convert ite_true _ _
+--         simp
+--       rw [← hx]
+--       exact Ca.prop.nonempty.some_mem.map f
+--     let Cb : G.Components := ⟨G.walkable b, G.walkable_isCompOf hb⟩
+--     have hy : f (f1 Cb) = x := by
+--       convert ite_true _ _
+--       simp
+--     rw [← hy]
+--     exact Cb.prop.nonempty.some_mem.map f |>.symm
+--   simp_rw [cycleMatroid_isCircuit, IsCycleSet]
+--   constructor <;> rintro ⟨C, hC, rfl⟩ <;> rw [cycleMatroid_E, map_edgeSet] at hI
+--   · sorry
+--   use C.map f, hC.map (fun a ha b hb hfab ↦ ?_), by simp
+--   unfold f at hfab
+--   split_ifs at hfab with hfa hfb hfb
+--   · obtain ⟨Ca, rfl⟩ := hfa
+--     obtain ⟨Cb, rfl⟩ := hfb
+--     rw [hf1.eq_iff, ← Subtype.coe_inj]
+--     apply Ca.prop.eq_of_mem_mem Cb.prop (x := f1 Ca) Ca.prop.nonempty.some_mem
+--     rw [Cb.prop.eq_walkable_of_mem_walkable Cb.prop.nonempty.some_mem]
+--     exact hC.isWalk.connBetween_of_mem_of_mem hb ha
+--   all_goals subst hfab
+--   · simp [x] at hfb
+--   · simp [x] at hfa
+--   rfl
+
 -- lemma cycleMatroid_IsBasis_connected {G : Graph α β} {I : Set β}{F : Set β} {V : Set α }
 --     (hI : G.cycleMatroid.IsBasis I F) :
 --     ((G ↾ F)[V]).IsCompOf (G ↾ F) ↔ ((G ↾ I)[V]).IsCompOf (G ↾ I) := by
@@ -167,3 +235,5 @@ lemma cycleMatroid_isFlat (hFE : F ⊆ E(G) )
   intro I X hIF hIX e he
 
   sorry
+
+end Graph

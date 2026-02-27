@@ -11,6 +11,88 @@ def concat : WList α β → β → α → WList α β
 | nil x, e, y => cons x e (nil y)
 | cons x e w, f, y => cons x e (w.concat f y)
 
+@[simp]
+lemma concat_length : (w.concat e v).length = w.length + 1 := by
+  induction w with | nil => rfl | cons => simpa [concat]
+
+
+inductive TsiLw (α β : Type*) where
+| nil (u : α) : TsiLw α β
+| concat (w : TsiLw α β) (e : β) (u : α) : TsiLw α β
+
+@[simp]
+def toWList : TsiLw α β → WList α β
+| .nil u => nil u
+| .concat w e u => concat (toWList w) e u
+
+@[simp]
+def TsiLw.cons : α → β → TsiLw α β → TsiLw α β
+| x, e, .nil u => .concat (nil x) e u
+| x, e, .concat w e' u => (cons x e w).concat e' u
+
+@[simp]
+def fromWList : WList α β → TsiLw α β
+| nil u => .nil u
+| cons x e w => TsiLw.cons x e (fromWList w)
+
+@[simp]
+lemma concat_fromWList : fromWList (concat w e u) = (fromWList w).concat e u := by
+  fun_induction fromWList with
+  | case1 v => simp only [concat, fromWList, TsiLw.cons]
+  | case2 x e w ih => simp [ih, TsiLw.cons, fromWList, concat]
+
+@[simp]
+lemma cons_toWList {w : TsiLw α β} : toWList (TsiLw.cons x e w) = cons x e (toWList w) := by
+  fun_induction toWList with
+  | case1 u => simp [TsiLw.cons, toWList, concat]
+  | case2 w e u ih => simp [ih, TsiLw.cons, toWList, concat]
+
+def TsiLw_equiv : TsiLw α β ≃ WList α β where
+  toFun w := toWList w
+  invFun w := fromWList w
+  left_inv w := by
+    induction w with
+    | nil u => simp
+    | concat w e u ih => simp [ih]
+  right_inv w := by
+    induction w with
+    | nil u => simp
+    | cons w e u ih => simp [ih]
+
+@[simp]
+def TsiLw.length : TsiLw α β → Nat
+| .nil _ => 0
+| .concat w _ _ => w.length + 1
+
+@[simp]
+lemma TsiLw.length_cons {w : TsiLw α β} : (TsiLw.cons x e w).length = w.length + 1 := by
+  induction w with
+  | nil u => simp [TsiLw.cons]
+  | concat w e u ih => simp [ih, TsiLw.cons, length]
+
+@[simp]
+lemma TsiLw.length_fromWList : (fromWList w).length = w.length := by
+  induction w with
+  | nil u => rfl
+  | cons u e w ih => simp [fromWList, cons_length, ih]
+
+@[simp]
+lemma TsiLw.length_toWList {w : TsiLw α β} : (toWList w).length = w.length := by
+  induction w with
+  | nil u => rfl
+  | concat w e u ih => simp [ih, TsiLw.length]
+
+-- set_option linter.unusedVariables false in
+-- def append' (w1 w2 : WList α β) : WList α β :=
+--   match h1 : fromWList w1 with
+--   | .nil _ => w2
+--   | .concat w e u => cons u e (append' (toWList w) w2)
+--   termination_by w1.length
+--   decreasing_by
+--     apply_fun TsiLw.length at h1
+--     simp only [TsiLw.length_fromWList, TsiLw.length] at h1
+--     simp [h1]
+
 /-- Glue two wLists `w₁, w₂` together. The last vertex of `w₁` is ignored,
 so this is most reasonable if `w₁.last = w₂.first` -/
 def append : WList α β → WList α β → WList α β
@@ -47,9 +129,6 @@ lemma concat_edge : (w.concat e v).edge = w.edge ++ [e] := by
 lemma concat_edgeSet : E(w.concat e v) = insert e E(w)  := by
   simp [Set.ext_iff, or_comm]
 
-@[simp]
-lemma concat_length : (w.concat e v).length = w.length + 1 := by
-  induction w with | nil => rfl | cons => simpa [concat]
 
 @[simp]
 lemma mem_concat : x ∈ w.concat e y ↔ x ∈ w ∨ x = y := by
@@ -564,6 +643,10 @@ lemma map_length (w : WList α β) (f : α → α') : (w.map f).length = w.lengt
   induction w with
   | nil x => simp [map]
   | cons x e w ih => simp [map, ih]
+
+@[simp]
+lemma map_nonempty (w : WList α β) (f : α → α') : (w.map f).Nonempty ↔ w.Nonempty := by
+  simp [nonempty_iff_exists_edge]
 
 variable {β' : Type*}
 

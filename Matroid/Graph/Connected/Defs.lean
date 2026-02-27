@@ -191,15 +191,10 @@ lemma preconnected_of_exists_connBetween (h : ∃ x, ∀ y ∈ V(G), G.ConnBetwe
   obtain ⟨x, hx⟩ := h
   exact fun s t hs ht ↦ (hx s hs).symm.trans <| hx t ht
 
-lemma preconnected_iff_exists_connBetween (hG : V(G).Nonempty) :
-    G.Preconnected ↔ ∃ x, ∀ y ∈ V(G), G.ConnBetween x y := by
-  refine ⟨fun h => ⟨hG.some, fun y hy ↦ h hG.some y hG.some_mem hy⟩, fun ⟨x, hx⟩ => ?_⟩
+lemma preconnected_iff_exists_connBetween (hx : x ∈ V(G)) :
+    G.Preconnected ↔ ∀ y ∈ V(G), G.ConnBetween x y := by
+  refine ⟨fun h => fun y hy ↦ h x y hx hy, fun hx => ?_⟩
   exact fun s t hs ht ↦ (hx s hs).symm.trans <| hx t ht
-
-lemma exists_not_connBetween_of_not_preconnected (h : ¬ G.Preconnected) (hx : x ∈ V(G)) :
-    ∃ y ∈ V(G), ¬ G.ConnBetween x y := by
-  simp only [preconnected_iff_exists_connBetween ⟨x, hx⟩, not_exists, not_forall, exists_prop] at h
-  exact h x
 
 /- ### Connectedness -/
 
@@ -296,6 +291,23 @@ lemma connected_iff : G.Connected ↔ V(G).Nonempty ∧ G.Preconnected :=
 lemma preconnected_iff : G.Preconnected ↔ G = ⊥ ∨ G.Connected := by
   rw [connected_iff]
   obtain h | h := G.eq_bot_or_vertexSet_nonempty <;> simp [h, G.ne_bot_iff]
+
+lemma preconnected_iff_of_mem (hx : x ∈ V(G)) : G.Preconnected ↔ G.Connected := by
+  simp [connected_iff, (show V(G).Nonempty from ⟨x, hx⟩)]
+
+lemma connected_of_exists_connBetween (h : ∃ x ∈ V(G), ∀ y ∈ V(G), G.ConnBetween x y) :
+    G.Connected := by
+  obtain ⟨x, hx, h⟩ := h
+  rw [connected_iff]
+  exact ⟨⟨x, hx⟩, preconnected_of_exists_connBetween ⟨x, h⟩⟩
+
+lemma connected_iff_exists_connBetween (hx : x ∈ V(G)) :
+    G.Connected ↔ ∀ y ∈ V(G), G.ConnBetween x y := by
+  rw [← preconnected_iff_of_mem hx, preconnected_iff_exists_connBetween hx]
+
+lemma exists_not_connBetween_of_not_connected (h : ¬ G.Connected) (hx : x ∈ V(G)) :
+    ∃ y ∈ V(G), ¬ G.ConnBetween x y := by
+  simpa [connected_iff_exists_connBetween hx, not_forall] using h
 
 lemma nonempty_separation_of_not_connected (hne : V(G).Nonempty) (hG : ¬ G.Connected) :
     Nonempty G.Separation := by

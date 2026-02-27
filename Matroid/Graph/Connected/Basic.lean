@@ -185,7 +185,7 @@ lemma walkable_mono (hle : G ≤ H) (x : α) : G.walkable x ≤ H.walkable x := 
   have := (walkable_isCompOf <| vertexSet_mono hle hxG).isInducedSubgraph
   apply this.le_of_le_subset (walkable_isCompOf hxG |>.le.trans hle)
   intro v hv
-  exact ConnBetween.mono hv hle
+  exact hv.mono hle
 
 lemma IsCompOf.of_vertexDelete (hH : H.IsCompOf G) (hS : Disjoint V(H) S) : H.IsCompOf (G - S) := by
   refine ⟨⟨hH.isClosedSubgraph.vertexDelete_of_disjoint hS, hH.1.2⟩, ?_⟩

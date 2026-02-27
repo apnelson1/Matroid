@@ -72,6 +72,20 @@ lemma prefixUntil_isPrefix (w : WList α β) (P : α → Prop) [DecidablePred P]
     · simp [hP]
     simpa [hP] using ih.cons u e
 
+lemma prefixUntil_isPrefix_of_prop {w' : WList α β} (hw' : w'.IsPrefix w) (h : ∃ u ∈ w', P u) :
+    (w.prefixUntil P).IsPrefix w' := by
+  induction hw' with
+  | nil w =>
+    simp only [mem_nil_iff, exists_eq_left] at h
+    simp [prefixUntil_eq_nil h]
+  | cons x e w₁ w₂ h ih =>
+    simp only [mem_cons_iff, exists_eq_or_imp] at h
+    obtain hPx | hPx := em (P x)
+    · simp [hPx]
+    replace h := h.resolve_left hPx
+    simp only [prefixUntil_cons, hPx, ↓reduceIte]
+    exact (ih h).cons ..
+
 lemma prefixUntil_last_eq_iff_prop (h : ∃ u ∈ w, P u) :
     P v ∧ v ∈ w.prefixUntil P ↔ (w.prefixUntil P).last = v := by
   refine ⟨fun ⟨hvP, hv⟩ ↦ prefixUntil_last_eq_of_prop hv hvP, ?_⟩
@@ -118,6 +132,13 @@ lemma prefixUntil_concat (w : WList α β) (P : α → Prop) [DecidablePred P] :
   split_ifs with h
   · exact prefixUntil_concat_of_forall (by simpa using h)
   · exact prefixUntil_concat_of_exists (by simpa using h)
+
+lemma prefixUntil_eq_of_prefix {w' : WList α β} (hP : ∃ u ∈ w, P u)
+    (h : w'.IsPrefix (w.prefixUntil P)) (hl : (w.prefixUntil P).last ∈ w') :
+    w.prefixUntil P = w' := by
+  refine IsPrefix.antisymm ?_ h
+  refine prefixUntil_isPrefix_of_prop (h.trans (prefixUntil_isPrefix ..)) ?_
+  use (w.prefixUntil P).last, hl, prefixUntil_prop_last hP
 
 /-- The prefix of `w` ending at a vertex `x`. Equal to `w` if `x ∉ w`. -/
 def prefixUntilVertex [DecidableEq α] (w : WList α β) (x : α) : WList α β := w.prefixUntil (· = x)
@@ -545,10 +566,10 @@ def tail : WList α β → WList α β
   | nil x => nil x
   | cons _ _ w => w
 
-@[simp]
+@[simp, grind =]
 lemma tail_nil (x : α) : (nil x (β := β)).tail = nil x := rfl
 
-@[simp]
+@[simp, grind =]
 lemma tail_cons (x e) (w : WList α β) : (cons x e w).tail = w := rfl
 
 @[simp]

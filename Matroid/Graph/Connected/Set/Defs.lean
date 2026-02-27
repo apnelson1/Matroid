@@ -224,6 +224,22 @@ lemma IsWalkFrom.exists_mem_isSetCut (hW : G.IsWalkFrom S T W) (hC : G.IsSetCut 
   have := hW.not_disjoint_isSetCut hC
   rwa [not_disjoint_iff] at this
 
+lemma IsSetCut.not_disjoint_of_mem (hW : G.IsWalk W) (hu : u ∈ V(W) ∩ S) (hv : v ∈ V(W) ∩ T)
+    (hC : G.IsSetCut S T C) : ¬ Disjoint V(W) C := by
+  obtain ⟨w, hw, hwW⟩ := hW.of_mem_mem hu hv
+  replace hwW : V(w) ⊆ V(W) := by
+    obtain (h | h) := hwW
+    · exact h.subset
+    simpa [reverse_vertexSet] using h.subset
+  have := hw.not_disjoint_isSetCut hC
+  contrapose! this
+  exact this.mono_left hwW
+
+lemma IsSetCut.exists_mem_of_mem (hW : G.IsWalk W) (hu : u ∈ V(W) ∩ S) (hv : v ∈ V(W) ∩ T)
+    (hC : G.IsSetCut S T C) : ∃ v ∈ W, v ∈ C := by
+  have := hC.not_disjoint_of_mem hW hu hv
+  rwa [not_disjoint_iff] at this
+
 lemma IsSetCut.left_trans (h₁ : G.IsSetCut S T C) (h₂ : G.IsSetCut C T U) : G.IsSetCut S T U where
   subset_vertexSet := h₂.subset_vertexSet
   ST_disconnects h := by
@@ -271,6 +287,53 @@ lemma IsSepBetween.isSetCut (hC : G.IsSepBetween s t C) :
     have := h.vertexSet_inter.subset hs ht
     rw [SetConnected_singleton] at this
     exact hC.not_connBetween this
+
+lemma IsSetCut.left_diff (hC : G.IsSetCut S T C) : G.IsSetCut (S \ C) T C :=
+  ⟨hC.subset_vertexSet.trans (by simp), fun ⟨s, hs, t, ht, hcon⟩ ↦ hC.ST_disconnects
+    ⟨s, hs.1, t, ht, hcon⟩⟩
+
+lemma IsSetCut.right_diff (hC : G.IsSetCut S T C) : G.IsSetCut S (T \ C) C :=
+  ⟨hC.subset_vertexSet.trans (by simp), fun ⟨s, hs, t, ht, hcon⟩ ↦ hC.ST_disconnects
+    ⟨s, hs, t, ht.1, hcon⟩⟩
+
+lemma IsSetCut.prefixUntil_disjoint [DecidablePred (· ∈ C)] (hP : G.IsWalk P) (hPf : P.first ∈ S)
+    (hPl : P.last ∈ T) (hC : G.IsSetCut S T C) : Disjoint V(P.prefixUntil (· ∈ C)) (T \ C) := by
+  classical
+  have hexPC : ∃ u ∈ P, u ∈ C := hC.exists_mem_of_mem hP ⟨first_mem, hPf⟩ ⟨last_mem, hPl⟩
+  let PC := P.prefixUntil (· ∈ C)
+  have hPC : G.IsWalkFrom S C PC := by
+    use hP.prefix (P.prefixUntil_isPrefix (· ∈ C)), ?_, prefixUntil_prop_last hexPC
+    simpa [PC]
+  rw [disjoint_iff_forall_notMem]
+  rintro x hxPC ⟨hxT, hxC⟩
+  change x ∈ PC at hxPC
+  let Px := PC.prefixUntilVertex x
+  have hPx : G.IsWalkFrom S T Px := by
+    use hPC.isWalk.prefix (PC.prefixUntilVertex_isPrefix x), ?_, prefixUntilVertex_last hxPC ▸ hxT
+    simp [Px, hPC.first_mem]
+  obtain ⟨v, hvPx, hvC⟩ := hPx.exists_mem_isSetCut hC
+  obtain rfl := prefixUntil_last_eq_of_prop ((PC.prefixUntil_isPrefix _).mem hvPx) hvC
+  rw [prefixUntil_eq_of_prefix hexPC (PC.prefixUntilVertex_isPrefix _) hvPx,
+    PC.prefixUntilVertex_last hxPC] at hvC
+  exact hxC hvC
+
+lemma IsSetCut.suffixFrom_disjoint [DecidablePred (· ∈ C)] (hP : G.IsWalk P) (hPf : P.first ∈ S)
+    (hPl : P.last ∈ T) (hC : G.IsSetCut S T C) : Disjoint V(P.suffixFromLast (· ∈ C)) (S \ C) := by
+  unfold suffixFromLast
+  rw [reverse_vertexSet]
+  exact hC.symm.prefixUntil_disjoint hP.reverse (by simpa using hPl) (by simpa using hPf)
+
+lemma IsSetCut.prefixUntil_isWalk_vertexDelete [DecidablePred (· ∈ C)] (hP : G.IsWalk P)
+    (hPf : P.first ∈ S) (hPl : P.last ∈ T) (hC : G.IsSetCut S T C) :
+    (G - (T \ C)).IsWalk (P.prefixUntil (· ∈ C)) := by
+  rw [isWalk_vertexDelete_iff]
+  use hP.prefix (P.prefixUntil_isPrefix (· ∈ C)), hC.prefixUntil_disjoint hP hPf hPl
+
+lemma IsSetCut.suffixFrom_isWalk_vertexDelete [DecidablePred (· ∈ C)] (hP : G.IsWalk P)
+    (hPf : P.first ∈ S) (hPl : P.last ∈ T) (hC : G.IsSetCut S T C) :
+    (G - (S \ C)).IsWalk (P.suffixFromLast (· ∈ C)) := by
+  rw [isWalk_vertexDelete_iff]
+  use hP.suffix (suffixFromLast_isSuffix P (· ∈ C)), hC.suffixFrom_disjoint hP hPf hPl
 
 structure IsEdgeSetCut (G : Graph α β) (S T : Set α) (C : Set β) where
   subset_edgeSet : C ⊆ E(G)

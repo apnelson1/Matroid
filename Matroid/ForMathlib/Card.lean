@@ -39,6 +39,14 @@ lemma two_le_encard_iff_nontrivial : 2 ≤ s.encard ↔ s.Nontrivial := by
 lemma encard_le_encard_diff_singleton_add_one (s : Set α) x : s.encard ≤ (s \ {x}).encard + 1 := by
   grw [← encard_singleton x, ← encard_union_le, diff_union_self, ← subset_union_left]
 
+lemma succ_le_encard_iff {n : ℕ∞} : (n + 1) ≤ s.encard ↔ ∃ x ∈ s, n ≤ (s \ {x}).encard := by
+  refine ⟨fun h ↦ ?_, fun ⟨x, hx, hn⟩ ↦ ?_⟩
+  · obtain ⟨t, hts⟩ := one_le_encard_iff_nonempty.mp (le_trans (by simp) h)
+    use t, hts
+    rw [← add_le_add_iff_left_of_ne_top (by simp : (1 : ℕ∞) ≠ ⊤)]
+    exact encard_diff_singleton_add_one hts ▸ h
+  rwa [← encard_diff_singleton_add_one hx, add_le_add_iff_left_of_ne_top (by simp)]
+
 theorem Set.Infinite.exists_finite_subset_encard_gt (hs : s.Infinite) (b : ℕ) :
     ∃ t ⊆ s, b < t.encard ∧ t.Finite := by
   obtain ⟨t, hts, hcard⟩ := hs.exists_subset_card_eq (b + 1)

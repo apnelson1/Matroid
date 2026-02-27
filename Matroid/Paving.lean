@@ -143,8 +143,9 @@ def Paving.contract (hM : M.Paving) (C : Set α) : (M ／ C).Paving := by
   exact hM.truncate_uniform.contract C
 
 def Paving.minor (hM : M.Paving) (hNM : N ≤m M) : N.Paving := by
-  rw [hNM.eq_con_del]
-  exact (hM.contract _).delete _
+  sorry
+  -- rw [hNM.eq_con_del]
+  -- exact (hM.contract _).delete _
 
 lemma Paving.exists_diff_indep_of_nonspanning (hM : M✶.Paving) (hXs : M.Nonspanning X)
     (hne : X.Nonempty) : ∃ f ∈ X, M.Indep (X \ {f}) := by

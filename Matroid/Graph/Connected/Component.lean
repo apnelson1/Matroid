@@ -280,6 +280,11 @@ lemma components_eq_empty_iff : G.Components = ∅ ↔ G = ⊥ := by
   ext H
   simp
 
+lemma components_nonempty_iff : G.Components.Nonempty ↔ V(G).Nonempty := by
+  have := G.components_eq_empty_iff.not
+  rwa [← ne_eq, ← ne_eq, ← nonempty_iff_ne_empty, ne_bot_iff] at this
+alias ⟨_, components_nonempty⟩ := components_nonempty_iff
+
 lemma exists_isCompOf_iff : (∃ H : Graph α β, H.IsCompOf G) ↔ V(G).Nonempty := by
   rw [← not_iff_not]
   simp [← components_eq_empty_iff, Set.ext_iff]
