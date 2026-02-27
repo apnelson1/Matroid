@@ -200,15 +200,10 @@ lemma IsTriangle.isNonloop_bDual₂ (h : M.IsTriangle {e, f, g}) : (M.bDual b).I
 lemma IsTriangle.isNonloop_bDual₃ (h : M.IsTriangle {e, f, g}) : (M.bDual b).IsNonloop g :=
   h.isNonloop_bDual_of_mem (by simp)
 
-
--- lemma IsTriad.ne₁₂ (h : M.IsTriad {e, f, g}) : e ≠ f :=
---   h.dual_isTriangle.ne₁₂
-
--- lemma IsTriad.ne₁₃ (h : M.IsTriad {e, f, g}) : e ≠ g :=
---   h.dual_isTriangle.ne₁₃
-
--- lemma IsTriad.ne₂₃ (h : M.IsTriad {e, f, g}) : f ≠ g :=
---   h.dual_isTriangle.ne₂₃
+lemma IsTriangle.restrict_simple (hT : M.IsTriangle T) : (M ↾ T).Simple := by
+  have hC := hT.isCircuit.restrict_eq_circuitOn
+  rw [circuitOn_eq_unifOn (n := 2) (by grind [hT.three_elements])] at hC
+  simp [hC, unifOn_simple_iff]
 
 @[aesop unsafe 20% (rule_sets := [Matroid])]
 lemma IsTriad.mem_ground₁ (h : M.IsTriad {e, f, g}) : e ∈ M.E :=

@@ -19,7 +19,15 @@ lemma Bool.cond_self_right {α : Sort*} {i : Bool} {a b c : α} :
     (bif i then a else (bif i then b else c) : α) = bif i then a else c := by
   grind
 
-#check Bool.dcond
+lemma Nat.bodd_eq_odd (n : ℕ) : n.bodd = Odd n := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    simp only [bodd_succ, Bool.not_eq_eq_eq_not, Bool.not_true, eq_iff_iff]
+    grind
+
+lemma Nat.bodd_eq_ite (n : ℕ) : n.bodd = if Odd n then true else false := by
+  simp [← n.bodd_eq_odd]
 
 @[simp]
 lemma Bool.dcond_true {α : Sort*} (x : true = true → α) (y : true = false → α) :
@@ -46,7 +54,7 @@ lemma List.alt_cons_true (L : List α) (x : α) : (x :: L).alt true = x :: L.alt
 lemma List.alt_cons_false (L : List α) (x : α) : (x :: L).alt false = L.alt true := rfl
 
 lemma List.alt_cons (L : List α) (x : α) (b : Bool) :
-    (x :: F).alt b = bif b then x :: L.alt (!b) else L.alt (!b) := by
+    (x :: L).alt b = bif b then x :: L.alt (!b) else L.alt (!b) := by
   cases b <;> simp
 
 lemma List.alt_length_add (L : List α) : (L.alt true).length + (L.alt false).length = L.length := by
@@ -300,6 +308,11 @@ lemma IsFan.length_bodd_eq (h : M.IsFan F b c) : F.length.bodd = (b == c) := by
   | of_isTriangle => simp
   | cons_triangle e x y F b => cases b with simp_all
 
+lemma IsFan.length_even (h : M.IsFan F b !b) : Even F.length := by
+  have := h.length_bodd_eq
+  simp at this
+  rw [Nat.bodd_eq_odd] at this
+
 lemma IsFan.isTriangle_bDual (h : M.IsFan F b c) : (M.bDual b).IsTriangle
     {F[0]'(by grind [h.three_le_length]), F[1]'(by grind [h.three_le_length]),
     F[2]'(by grind [h.three_le_length])} := by
@@ -316,9 +329,14 @@ lemma isFan_cons_iff : M.IsFan (x :: F) b c ↔
   · exact hT.isFan_of_bDual
   simpa using hF.cons hx (by simpa)
 
-lemma IsFan.of_cons (hF : M.IsFan (x :: F) b c) (h : 2 ≤ F.length) : M.IsFan F (!b) c := by
-  rw [isFan_cons_iff] at hF
+lemma IsFan.of_cons (hF : M.IsFan (x :: F) b c) (h : 3 ≤ F.length) : M.IsFan F (!b) c := by
+  obtain ⟨e, f, F₀, rfl, hT, hxF₀, ⟨rfl, rfl⟩ | h⟩ := isFan_cons_iff.1 hF
+  · simp at h
+  assumption
 
+lemma IsFan.exists_cons (hF : M.IsFan F b c) (h : 4 ≤ F.length) :
+    ∃ e F₀, F = e :: F₀ ∧ M.IsFan F₀ (!b) c := by
+  cases hF with grind
 
 lemma IsFan.isTriangle_get (h : M.IsFan F b c) (i) (hi : i + 2 < F.length) :
     (M.bDual (b != i.bodd)).IsTriangle {F[i], F[i + 1], F[i + 2]} := by
@@ -329,7 +347,10 @@ lemma IsFan.isTriangle_get (h : M.IsFan F b c) (i) (hi : i + 2 < F.length) :
     · simpa
     simpa using ih (i := i) (by simpa using hi)
 
-lemma IsFan.recBool₂ {motive : (M : Matroid α) → (F : List α) → (b c : Bool) → M.IsFan F b c → Prop}
+/-- Induct by stripping two layers off the front of a fan to get a fan of the same type. -/
+@[elab_as_elim]
+lemma IsFan.induction₂
+    {motive : (M : Matroid α) → (F : List α) → (b c : Bool) → M.IsFan F b c → Prop}
     (of_isTriangle : ∀ M e f g d (h : (M.bDual d).IsTriangle {e, f, g}),
       motive M [e, f, g] d d h.isFan_of_bDual)
     (of_quad : ∀ M e f g x d (hT : (M.bDual (!d)).IsTriangle {f, g, x})
@@ -353,79 +374,109 @@ lemma IsFan.recBool₂ {motive : (M : Matroid α) → (F : List α) → (b c : B
       · simp [h.right_eq, show Even 4 by decide]
       simpa using h.isTriangle_get 1 (by simp)
   | more n ih _ =>
-      obtain ⟨e, F, rfl⟩ := F.exists_cons_of_length_pos (by grind)
-      obtain ⟨f, F, rfl⟩ := F.exists_cons_of_length_pos (by grind)
+      obtain ⟨e, F, rfl, h1⟩ := h.exists_cons (by grind)
+      obtain ⟨f, F, rfl, h2⟩ := h1.exists_cons (by grind)
+      obtain ⟨x, F, rfl⟩ := F.exists_cons_of_length_pos (by grind)
+      obtain ⟨y, F, rfl⟩ := F.exists_cons_of_length_pos (by grind)
+      have hnd := h.nodup
+      exact cons_cons M e f x y F _ _ (by simpa using h2) h1.isTriangle_bDual (by grind)
+        h.isTriangle_bDual (by grind) (by grind) <| ih (by simpa using h2) (by grind)
 
-      have hF : M.IsFan F := by simpa using (h.tail (by simp)).tail (by simp)
-      -- have hF : F.length = 3 + n := by grind
+/-- An induction principle about fans of even length. -/
+@[elab_as_elim]
+lemma IsFan.induction₂_even
+   {motive : (M : Matroid α) → (F : List α) → (b : Bool) → M.IsFan F b (!b) → Prop}
+    (of_quad : ∀ M e f g x b (hT : (M.bDual (!b)).IsTriangle {f, g, x})
+      (hT' : (M.bDual b).IsTriangle {e, f, g}) (hex : e ≠ x), motive M [e, f, g, x] b
+      (by simpa using hT.isFan.of_bDual.cons (by simpa) (by simpa)))
+    (cons_cons : ∀ M e f x y F b (h : M.IsFan (x :: y :: F) b !b)
+      (hT : (M.bDual (!b)).IsTriangle {f, x, y}) (hf : f ∉ F)
+      (hT' : (M.bDual b).IsTriangle {e, f, x}) (he : e ∉ F) (hey : e ≠ y),
+      motive M _ _ h → motive M _ b ((h.cons hf hT).cons_not (by grind) hT'))
+    (h : M.IsFan F b !b) : motive M F b h := by
+  generalize hbc : (!b) = c
+  have h' : M.IsFan F b c := by rwa [← hbc]
+  induction h' using IsFan.induction₂ with
+  | of_isTriangle => simp at hbc
+  | of_quad M => apply of_quad <;> assumption
+  | cons_cons => grind
 
-      -- have aux : F.tail.tail.length = 3 + n := by rw [length_tail, length_tail]; lia
-      -- have := cons_cons M (ih ((h.tail (by lia)).tail (by grind)) aux)
-      -- rw [← length_tail_add_one, ← length_tail_add_one] at hk
-      -- ·
-  -- induction hF : F.length using Nat.strong_induction_on generalizing F with
-  -- | h n ih =>
-  --   _
-  -- | of_isTriangle b e f g h => exact of_isTriangle _ _ _ _ _ h
-  -- | cons_triangle e x y F b c h heF hT ih =>
-  --   induction
+@[elab_as_elim]
+lemma IsFan.induction₂_odd
+   {motive : (M : Matroid α) → (F : List α) → (b : Bool) → M.IsFan F b b → Prop}
+    (of_triangle : ∀ M e f g b (hT : (M.bDual b).IsTriangle {e, f, g}),
+      motive M [e, f, g] b hT.isFan_of_bDual)
+    (cons_cons : ∀ M e f x y F b (h : M.IsFan (x :: y :: F) b b)
+      (hT : (M.bDual (!b)).IsTriangle {f, x, y}) (hf : f ∉ F)
+      (hT' : (M.bDual b).IsTriangle {e, f, x}) (he : e ∉ F) (hey : e ≠ y),
+      motive M _ _ h → motive M _ b ((h.cons hf hT).cons_not (by grind) hT'))
+    (h : M.IsFan F b b) : motive M F b h := by
+  obtain ⟨c, hcb, h'⟩ : ∃ c, c = b ∧ M.IsFan F b c := ⟨b, rfl, h⟩
+  induction h' using IsFan.induction₂ with grind
 
-#exit
+lemma IsFan.eq_of_parallel (h : M.IsFan F b c) (hF : 5 ≤ F.length) (he : e ∈ F) (hf : f ∈ F)
+    (hef : (M.bDual d).Parallel e f) :
+      e = f ∨ (b = c ∧ c = d ∧ ({e, f} : Set α) = {F.head (by grind), F.getLast (by grind)}) := by
+  obtain ⟨i, hi, rfl⟩ := getElem_of_mem he
+  obtain ⟨j, hj, rfl⟩ := getElem_of_mem hf
+  wlog hij : i < j generalizing i j with aux; grind [hef.symm]
+  obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_lt hij
+  by_contra! hcon
+  have hC := hef.isCircuit_of_ne hcon.1
+  rw [← d.not_not] at hC
+  by_cases
+  have foo (a : ℕ) (ha : a.bodd = (b == d)) (hlt : a + 2 < F.length) : False := by
+    have := h.isTriangle_get a hlt
+    rw [ha, show (b != (b == d)) = !d by grind] at this
+    have := this.mem_iff_mem_of_isCircuit_bDual hC
+    simp at this
+
+  obtain rfl | i := i
+  ·
+    -- rw [zero_add, Nat.lt_iff_add_one_le] at hj
+    -- obtain hj' | hlt := hj.eq_or_lt
+    -- · refine
+  -- · obtain rfl | d := d
+  --   · have :=
 
 
-/-- Induct by stripping two layers off the front of a fan to get a fan of the same type. -/
-lemma IsFan.recBool₂ {motive : (M : Matroid α) → (L : List α) → (b c : Bool) → M.IsFan F b c → Prop}
-    (of_isTriangle : ∀ M e f g d (h : (M.bDual d).IsTriangle {e, f, g}),
-      motive M [e, f, g] d d (by simpa using h.isFan))
-    (of_quad : ∀ M e f g x d (hT : (M.bDual (!d)).IsTriangle {f, g, x})
-      (hT' : (M.bDual d).IsTriangle {e, f, g}) (hex : e ≠ x),
-      motive M [e, f, g, x] d (!d)
-      (by simpa using hT.isFan.of_bDual.cons (by simpa using hT') (by simpa)))
-    (cons_cons : ∀ M e f x y L c d (h : M.IsFan (x :: y :: F) c d)
-      (hT : (M.bDual (!c)).IsTriangle {f, x, y}) (hf : f ∉ L)
-      (hT' : (M.bDual c).IsTriangle {e, f, x}) (he : e ∉ L) (hey : e ≠ y),
-      motive M _ _ _ h → motive M (e :: f :: x :: y :: F) c d
-        (by simpa using (h.cons hT hf).cons (by simpa) (by grind)))
-    (h : M.IsFan F b c) : motive M L b c h := by
-  induction hF : F.length using Nat.strong_induction_on generalizing L with
-  | h n ih =>
-  match L with
-  | [] => grind [h.three_le_length]
-  | [e] => grind [h.three_le_length]
-  | [e, f] => grind [h.three_le_length]
-  | [e, f, g] =>
-    obtain rfl : b = c := by simpa using h.length_bodd_eq
-    exact of_isTriangle _ _ _ _ _ <| by simpa using h.isTriangle_bDual
-  | [e, f, g, x] =>
-    obtain rfl : c = !b := by cases b <;> simpa using h.length_bodd_eq
-    refine of_quad _ _ _ _ _ _ ?_ h.isTriangle_bDual (by grind [h.nodup])
-    simpa using h.isTriangle_get 1 (by simp)
-  | e :: f :: x :: y :: z :: F =>
-  have hF' : M.IsFan (x :: y :: z :: F) b c := by simpa using (h.tail (by simp)).tail (by simp)
-  refine cons_cons _ _ _ _ _ _ _ _ hF' ?_ ?_ ?_ ?_ ?_ ?_
-  · simpa using h.isTriangle_get 1 (by simp)
-  · grind [h.nodup]
-  · exact h.isTriangle_bDual
-  · grind [h.nodup]
-  · grind [h.nodup]
-  exact ih _ (by grind) hF' rfl
+  -- have aux (T) : (M.bDual b).IsTriangle T → e ∈ T → f ∈ T → (M.bDual b).
+  -- induction h using IsFan.induction₂_odd with
+  -- | of_triangle M p q g b hT =>
+  --     exact hT.restrict_simple.eq_of_parallel_of_mem (by simpa using he) (by simpa using hf) hef
+  -- | cons_cons M p q x y F b h hT hf hT' he hey ih =>
+  --     by_c
 
-lemma IsFan.eq_of_parallel_of_bnot (h : M.IsFan F b (!b)) (hF : 5 ≤ F.length) (he : e ∈ L)
-    (hf : f ∈ L) (hef : (M.bDual d).Parallel e f) : e = f := by
-  wlog hd : d = false generalizing d b M with aux
-  · obtain rfl : d = true := by simpa using hd
-    exact aux (M := M✶) (b := !b) (by simpa using h.dual) (by simpa) rfl
-  wlog hb : b = true generalizing b L with aux
-  · grind [h.reverse]
-  subst hb hd
-  rw [mem_iff_getElem] at he hf
-  obtain ⟨i, hi, rfl⟩ := he
-  obtain ⟨j, hj, rfl⟩ := hf
-  wlog hij : i < j generalizing i j with aux
-  · grind [aux j hj i hi hef.symm]
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_lt hij
-  by_contra hne
-  sorry
+
+
+lemma IsFan.eq_of_parallel_of_bnot (h : M.IsFan F b (!b)) (hF : 5 ≤ F.length) (he : e ∈ F)
+    (hf : f ∈ F) (hef : (M.bDual d).Parallel e f) : e = f := by
+  induction h using IsFan.induction₂_not with
+  | of_quad => simp at hF
+  | cons_cons M p q x y F b h hT hq hT' hp hey ih =>
+    rw [mem_cons, mem_cons] at he hf
+
+    -- obtain ⟨e', F, rfl⟩ := F.exists_cons_of_length_pos (by grind)
+    match F with
+    | [] => simp at hF
+    | [e'] => simpa using h.length_bodd_eq
+    | [e', f'] =>
+      sorry
+    | e' :: f' :: F => sorry
+  -- wlog hd : d = false generalizing d b M with aux
+  -- · obtain rfl : d = true := by simpa using hd
+  --   exact aux (M := M✶) (b := !b) (by simpa using h.dual) (by simpa) rfl
+  -- wlog hb : b = true generalizing b L with aux
+  -- · grind [h.reverse]
+  -- subst hb hd
+  -- rw [mem_iff_getElem] at he hf
+  -- obtain ⟨i, hi, rfl⟩ := he
+  -- obtain ⟨j, hj, rfl⟩ := hf
+  -- wlog hij : i < j generalizing i j with aux
+  -- · grind [aux j hj i hi hef.symm]
+  -- obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_lt hij
+  -- by_contra hne
+  -- sorry
 
 #exit
 

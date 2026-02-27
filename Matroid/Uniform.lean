@@ -198,6 +198,10 @@ instance unifOn_simple (E : Set α) : Simple (unifOn E (k+2)) := by
   · rwa [← encard_diff_singleton_add_one heC, WithTop.add_lt_add_iff_right (by simp)] at hlt
   rwa [← encard_diff_singleton_add_one heC, WithTop.add_right_inj (by simp)] at h
 
+lemma circuitOn_eq_unifOn {n : ℕ} (hn : n + 1 = C.encard) : circuitOn C = unifOn C n := by
+  rw [← dual_inj, circuitOn_dual, unifOn_dual_eq' (j := 1)]
+  simp [hn]
+
 lemma unifOn_coindep_iff' {n : ℕ} (hIE : I ⊆ E) :
     (unifOn E n).Coindep I ↔ (n ≤ (E \ I).encard ∨ I = ∅) := by
   rw [coindep_iff_compl_spanning, unifOn_spanning_iff', unifOn_ground_eq, and_iff_left diff_subset,
