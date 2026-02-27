@@ -1,5 +1,6 @@
 import Mathlib.Combinatorics.Graph.Basic
 import Mathlib.Data.Set.Card.Arithmetic
+import Matroid.ForMathlib.Logic
 
 /-!
 # Basic Graph Theory

@@ -1,5 +1,5 @@
 import Matroid.Graph.Subgraph.Delete
-import Matroid.Graph.Walk.Basic
+import Matroid.Graph.Walk.Cycle
 
 variable {α β : Type*} {x y z u v w a b : α} {e f : β} {G H : Graph α β} {F F₁ F₂ : Set β}
   {X Y : Set α} {W : WList α β}
@@ -55,6 +55,7 @@ def map {α' : Type*} (f : α → α') (G : Graph α β) : Graph α' β where
 scoped infix:51 " ''ᴳ " => map
 
 variable {α' α'' : Type*} {f g : α → α'} {f' g' : α' → α} {x y z : α'} {G' H' : Graph α' β}
+  {w : WList α β}
 
 /-- `Map` has the expected incidence predicate. -/
 @[simp]
@@ -121,7 +122,7 @@ lemma map_edgeDelete_comm : f ''ᴳ (G ＼ F) = (f ''ᴳ G) ＼ F := by
   tauto
 
 @[simp]
-lemma IsWalk.map (f : α → α') {w : WList α β} (hw : G.IsWalk w) : (f ''ᴳ G).IsWalk (w.map f) := by
+lemma IsWalk.map (f : α → α') (hw : G.IsWalk w) : (f ''ᴳ G).IsWalk (w.map f) := by
   refine hw.recOn ?hnil ?hcons
   · intro x hx
     have hx' : f x ∈ V(f ''ᴳ G) := by
@@ -131,6 +132,38 @@ lemma IsWalk.map (f : α → α') {w : WList α β} (hw : G.IsWalk w) : (f ''ᴳ
     have hlink' : (f ''ᴳ G).IsLink e (f x) (w.map f).first := by
       simpa [map_first] using hlink.map f
     simpa [map, map_first] using ih.cons hlink'
+
+@[simp]
+lemma IsTrail.map (f : α → α') (hw : G.IsTrail w) : (f ''ᴳ G).IsTrail (w.map f) where
+  isWalk := hw.isWalk.map f
+  edge_nodup := by simpa using hw.edge_nodup
+
+@[simp]
+lemma IsTour.map (f : α → α') (hw : G.IsTour w) : (f ''ᴳ G).IsTour (w.map f) where
+  toIsTrail := hw.isTrail.map f
+  nonempty := by simpa using hw.nonempty
+  isClosed := by
+    simp only [IsClosed, map_first, map_last]
+    rw [hw.isClosed]
+
+@[simp]
+lemma IsPath.map (hf : InjOn f V(w)) (hw : G.IsPath w) : (f ''ᴳ G).IsPath (w.map f) where
+  isWalk := hw.isWalk.map f
+  nodup := by
+    rw [map_vertex]
+    exact (List.nodup_map_iff_inj_on hw.nodup).mpr hf
+
+@[simp]
+lemma IsCyclicWalk.map (hf : InjOn f V(w)) (hw : G.IsCyclicWalk w) :
+    (f ''ᴳ G).IsCyclicWalk (w.map f) where
+  toIsTour := hw.isTour.map f
+  nodup := by
+    match w with
+    | .nil u => simp
+    | .cons u e w =>
+    simp only [map_cons, tail_cons, map_vertex]
+    refine (List.nodup_map_iff_inj_on hw.nodup).mpr ?_
+    grind [InjOn]
 
 lemma induce_map_isSpanningSubgraph : f ''ᴳ (G[X]) ≤s (f ''ᴳ G)[f '' X] where
   vertexSet_eq := by simp

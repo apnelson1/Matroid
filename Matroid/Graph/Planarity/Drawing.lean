@@ -1,4 +1,3 @@
-import Mathlib.Geometry.Euclidean.Angle.Oriented.Affine
 import Mathlib.Geometry.Polygon.Basic
 import Matroid.Graph.Planarity.PolygonalPath
 import Matroid.Graph.Finite
@@ -7,49 +6,6 @@ variable {α β : Type*} {x y z w : EuclideanSpace ℝ (Fin 2)} {C L : List (Euc
   {X Y : Set (EuclideanSpace ℝ (Fin 2))} {N : ℕ}
 
 open Set Function TopologicalSpace Topology List Metric
-
-lemma exists_angle_fst_ne (S : Set (EuclideanSpace ℝ (Fin 2))) (hS : S.Finite) :
-    let A := EuclideanSpace.instFactEqNatFinrankFin 2
-    let B := A.out ▸ (stdOrthonormalBasis ℝ (EuclideanSpace ℝ (Fin 2))).toBasis.orientation
-    ∃ θ : Real.Angle, S.InjOn (B.rotation θ · 0) := by
-  intro A B
-  -- 1. Define the set of bad angles for a pair (u, v)
-  let bad_angles (u v : EuclideanSpace ℝ (Fin 2)) : Set Real.Angle :=
-    { θ | (B.rotation θ u) 0 = (B.rotation θ v) 0 }
-
-  -- 2. Show bad_angles is finite for distinct u, v
-  have h_finite_pair (u v : EuclideanSpace ℝ (Fin 2)) (h : u ≠ v) : (bad_angles u v).Finite := by
-    -- Use orthogonality arguments in 2D Euclidean space
-    sorry
-
-  -- 3. Define the set of all bad angles
-  let all_bad_angles := ⋃ (u ∈ S) (v ∈ S) (_ : u ≠ v), bad_angles u v
-
-  -- 4. Show the union is finite
-  have h_finite_all : all_bad_angles.Finite := by
-    apply Set.Finite.biUnion hS
-    intro u _
-    apply Set.Finite.biUnion hS
-    intro v _
-    simp only [finite_iUnion_of_subsingleton]
-    intro h_ne
-    exact h_finite_pair u v h_ne
-
-  -- 5. Conclude existence
-  have h_infinite : (Set.univ : Set Real.Angle).Infinite := by
-    have : Fact (0 < 2 * Real.pi) := ⟨by positivity⟩
-    rw [infinite_univ_iff, Real.Angle, (AddCircle.equivIco _ 0).infinite_iff]
-    apply Set.Ico.infinite
-    positivity
-  obtain ⟨θ, hθ⟩ := (h_infinite.diff h_finite_all).nonempty
-  use θ
-  intro x hxS y hyS hxy
-  by_contra! hne
-  have hθ1 : θ ∈ bad_angles x y := hxy
-  have hθ2 : θ ∈ all_bad_angles := by
-    simp [all_bad_angles]
-    use x, hxS, y
-  exact hθ.2 hθ2
 
 -- Define a vertical ray starting at (c, y0) and going upwards.
 -- It is the set of points where x = c and y ≥ y0.

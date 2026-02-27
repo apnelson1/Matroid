@@ -402,6 +402,42 @@ lemma IsWalkFrom.reverse (h : G.IsWalkFrom S T w) : G.IsWalkFrom T S w.reverse w
   first_mem := by simp [h.last_mem]
   last_mem := by simp [h.first_mem]
 
+lemma IsWalk.of_mem_mem (h : G.IsWalk w) (hu : u ∈ V(w) ∩ S) (hv : v ∈ V(w) ∩ T) :
+    ∃ W : WList α β, G.IsWalkFrom S T W ∧ (W.IsInfix w ∨ W.reverse.IsInfix w) := by
+  classical
+  have huw : u ∈ w := hu.1
+  have hvw : v ∈ w := hv.1
+  let wL : WList α β := w.prefixUntilVertex u
+  let wR : WList α β := w.suffixFromVertex u
+  wlog hvR : v ∈ wR
+  · have := this (w := w.reverse) (S := S) h.reverse (by simpa) (by simpa) (by simpa) (by simpa) ?_
+    · simpa [← reverse_infix_iff, or_comm] using this
+    rw [← WList.mem_reverse]
+    have hw_decomp : wL ++ wR = w := by
+      simp [wL, wR, w.prefixUntilVertex_append_suffixFromVertex u]
+    rw [← hw_decomp] at hvw
+    exact w.prefixUntil_isPrefix_prefixUntilLast (· = u) (by simpa) |>.mem
+    <| mem_of_mem_append hvw |>.resolve_right hvR
+  have hw_decomp : wL ++ wR = w := by
+    simp [wL, wR, w.prefixUntilVertex_append_suffixFromVertex u]
+  have hLR : wL.last = wR.first := by
+    simp [wL, wR, huw]
+
+  -- `v` occurs at/after the first occurrence of `u` in `w`.
+  let W : WList α β := wR.prefixUntilVertex v
+  have hWpref : W.IsPrefix wR := by
+    simpa [W] using (wR.prefixUntilVertex_isPrefix v)
+  rcases hWpref.exists_eq_append with ⟨wR', hWlast, hWappend⟩
+  have hWinfix : W.IsInfix w := by
+    refine ⟨wL, wR', ?_, hWlast, ?_⟩
+    · simp [wL, wR, W, huw]
+    · rw [append_assoc, hWappend, hw_decomp]
+  refine ⟨W, ⟨h.sublist hWinfix.isSublist, ?_, ?_⟩, Or.inl hWinfix⟩
+  · have : W.first = u := by simp [W, wR, huw]
+    simpa [this] using hu.2
+  · have : W.last = v := by simp [W, hvR]
+    simpa [this] using hv.2
+
 /-- The walk corresponding to an incidence `G.IsLink e u v`. -/
 def IsLink.walk (_h : G.IsLink e u v) : WList α β := cons u e (nil v)
 

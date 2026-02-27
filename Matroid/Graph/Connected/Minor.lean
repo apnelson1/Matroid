@@ -219,14 +219,12 @@ theorem exists_contract_connGE_three [G.Finite] (hG : G.ConnGE 3) (hV : 5 ≤ V(
     toIsSep := hTsep
     minimal A hA := hTcard ▸ (hG.le_cut hA)}
   -- 5. There is some `v` in `G - T` that is not connected to `x` and therefore `y`.
-  have := hTsep.not_connected
-  rw [connected_iff, not_and] at this
-  obtain ⟨v, hv, hvx⟩ := exists_not_connBetween_of_not_preconnected (this ⟨x, hxy.left_mem, hxnT⟩)
+  obtain ⟨v, hv, hvx⟩ := exists_not_connBetween_of_not_connected hTsep.not_connected
     ⟨hxy.left_mem, hxnT⟩
   -- 6. In the component containing `v`, there is some `u` that is adjacent to `w`.
   obtain ⟨u, huv, hwuadj⟩ := hTsep.exists_adj_of_isCompOf_vertexDelete (walkable_isCompOf hv)
     (by simp : w ∈ _) (vertexSet_finite.subset hTsep.subset_vx)
-  clear this hTcard hv
+  clear hTcard hv
   -- 7. `u ∈ C` since `w ∈ C`, `G.Adj w u`, `u ∉ T` and `u ∉ {x, y, z}`.
   have huT := (by exact huv : (G - ({w, z, w'} : Set α)).ConnBetween v u).right_mem
   have hxuconn : ¬ (G - ({w, z, w'} : Set α)).ConnBetween x u :=

@@ -58,7 +58,7 @@ lemma IsLink.connBetween (h : G.IsLink e x y) : G.ConnBetween x y :=
   h.adj.connBetween
 
 @[grind →]
-lemma ConnBetween.mono (h : H.ConnBetween x y) (hle : H ≤ G) : G.ConnBetween x y := by
+lemma ConnBetween.mono (hle : H ≤ G) (h : H.ConnBetween x y) : G.ConnBetween x y := by
   obtain ⟨W, hW, rfl, rfl⟩ := h
   use W, hW.of_le hle
 
@@ -173,7 +173,7 @@ lemma IsSepBetween.of_le (hX : G.IsSepBetween s t X) (hle : H ≤ G) :
     H.IsSepBetween s t (V(H) ∩ X) := by
   refine ⟨inter_subset_left, by simp [hX.left_not_mem], by simp [hX.right_not_mem], ?_⟩
   have : ¬ (H - X).ConnBetween s t :=
-    mt (ConnBetween.mono · (by gcongr)) hX.not_connBetween
+    mt (ConnBetween.mono (by gcongr)) hX.not_connBetween
   simpa [vertexDelete_vertexSet_inter] using this
 
 lemma IsWalk.not_disjoint_isSepBetween (hW : G.IsWalk W) (hX : G.IsSepBetween W.first W.last X) :
@@ -241,7 +241,7 @@ lemma IsEdgeCutBetween.of_le (hF : G.IsEdgeCutBetween F s t) (hle : H ≤ G) :
   subset_edgeSet := inter_subset_left
   not_connBetween := by
     rw [edgeDelete_edgeSet_inter]
-    exact mt (ConnBetween.mono · (by gcongr)) hF.not_connBetween
+    exact mt (ConnBetween.mono (by gcongr)) hF.not_connBetween
 
 lemma IsWalk.not_disjoint_isEdgeCutBetween (hW : G.IsWalk W)
     (hF : G.IsEdgeCutBetween F W.first W.last) : ¬ Disjoint E(W) F := by
