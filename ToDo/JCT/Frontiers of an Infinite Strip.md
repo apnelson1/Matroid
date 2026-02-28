@@ -1,0 +1,4 @@
+- Consider two points and a direction vector.
+- If the two points are in the direction away from each other, then their half rays are subset of another and there are no intersection in the difference.
+- Otherwise, the segment between them, and two parallel half rays coming off each of them bounds an infinitely long strip, intersection of 3 open half-spaces.
+- The frontier of the strip is exactly the 2 half rays and the segment (somehow).

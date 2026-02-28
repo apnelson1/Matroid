@@ -1,0 +1,2 @@
+- Diff of the points must be a scalar multiple of the the direction. 
+- There are two vectors with norm 1 that is a scalar multiple of a vector

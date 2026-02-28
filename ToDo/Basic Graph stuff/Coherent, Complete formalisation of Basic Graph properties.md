@@ -1,0 +1,3 @@
+- [[Simplify function]]
+- 
+#idea #Goal 

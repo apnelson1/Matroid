@@ -1,0 +1,3 @@
+- There is some point in the hyperplane that is still in the set.
+- Including this point to either half-space is connected.
+- Then, union of the extended set are each connected and has nonempty inter so connected.

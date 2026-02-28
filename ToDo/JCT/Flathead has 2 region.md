@@ -1,0 +1,3 @@
+- Half spaces are two regions after removing the hyperplane
+- Restriction onto an open ball has at least 2 region as each half space has intersection.
+- It has at most 2 region as intersection of ball and half space is convex and therefore connected.
