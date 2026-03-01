@@ -1,5 +1,5 @@
 import Mathlib.Data.Finset.Card
-import Mathlib.Data.List.Cycle
+import Mathlib.Data.List.Flatten
 import Mathlib.Data.List.SplitBy
 
 namespace List

@@ -1,8 +1,5 @@
 import Mathlib.LinearAlgebra.Finsupp.Pi
-import Mathlib.LinearAlgebra.Basis.Basic
-import Mathlib.LinearAlgebra.DirectSum.Finsupp
 import Mathlib.LinearAlgebra.Finsupp.VectorSpace
-import Mathlib.LinearAlgebra.FreeModule.Basic
 
 variable {ι ι' : Type*} {R : Type*} {K : Type*} {s : Set ι} {M M' V : Type*} {v : ι → M}
 

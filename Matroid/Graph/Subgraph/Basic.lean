@@ -1,5 +1,4 @@
 import Matroid.Graph.Basic
-import Mathlib.Data.Set.Card
 
 variable {α β : Type*} {x y z u v w : α} {e f : β} {G H K : Graph α β} {F F₁ F₂ : Set β}
     {X Y : Set α}
@@ -134,7 +133,7 @@ lemma le_of_le_le_edgeSet_subset_of_isolated {H₁ H₂ : Graph α β} (h₁ : H
     fun ⟨e, y, h⟩ ↦ h.of_le h₁ |>.of_le_of_mem h₂ (hE h.edge_mem) |>.left_mem
 
 lemma ext_of_le_le_of_isolated {H₁ H₂ : Graph α β} (h₁ : H₁ ≤ G) (h₂ : H₂ ≤ G) (hE : E(H₁) = E(H₂))
-    (h : I(H₁) = I(H₂)) : H₁ = H₂ := by
+    (h : Isol(H₁) = Isol(H₂)) : H₁ = H₂ := by
   refine (le_of_le_le_edgeSet_subset_of_isolated h₁ h₂ hE.subset ?_).antisymm
     (le_of_le_le_edgeSet_subset_of_isolated h₂ h₁ hE.superset ?_)
   · exact fun v hv ↦ H₂.isolatedSet_subset (congrArg (v ∈ ·) h |>.mp hv)

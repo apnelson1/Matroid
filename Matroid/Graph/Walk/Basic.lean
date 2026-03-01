@@ -664,8 +664,6 @@ lemma IsWalk.nontrivial_of_ne_not_adj (h : G.IsWalk w) (hne : w.first ≠ w.last
     exact (hadj ⟨e, h.1⟩).elim
   | .cons u e (.cons v f w) => simp
 
-
-
 -- lemma _root_.Graph.IsPath.IsSuffix (hPf : w₁.IsSuffix w) (hP : G.IsPath w) : G.IsPath w₁ := by
 --   simpa using hP.reverse.IsPrefix <| reverse_isPrefix_reverse_iff.2 hPf
 
@@ -675,32 +673,22 @@ namespace WList
 
 /-- Turn `w : WList α β` into a `Graph α β`. If the list is not well-formed
 (i.e. it contains an edge appearing twice with different ends),
-then the first occurence of the edge determines its ends in `w.toGraph`. -/
+then the last occurence of the edge determines its ends in `w.toGraph`. -/
 protected def toGraph : WList α β → Graph α β
   | nil u => Graph.noEdge {u} β
   | cons u e w => w.toGraph ∪ (Graph.singleEdge u w.first e)
 
-@[simp]
+@[simp, grind =]
 lemma toGraph_nil : (WList.nil u (β := β)).toGraph = Graph.noEdge {u} β := rfl
 
+@[simp, grind =]
 lemma toGraph_cons : (w.cons u e).toGraph = w.toGraph ∪ (Graph.singleEdge u w.first e) := rfl
 
 lemma toGraph_concat (w : WList α β) (e u) :
     (w.concat e u).toGraph = (Graph.singleEdge u w.last e) ∪ w.toGraph := by
   induction w with
-  | nil v =>
-    refine Graph.ext (by simp [toGraph_cons, pair_comm]) fun f x y ↦ ?_
-    simp only [nil_concat, toGraph_cons, toGraph_nil, nil_first, union_isLink_iff, noEdge_edgeSet,
-      mem_empty_iff_false, not_false_eq_true, not_isLink_of_notMem_edgeSet, singleEdge_isLink,
-      and_true, false_or, nil_last, singleEdge_edgeSet, mem_singleton_iff, false_and, or_false,
-      and_congr_right_iff]
-    tauto
-  | cons v f w ih =>
-    ext a x y <;>
-    · simp only [cons_concat, toGraph_cons, ih, concat_first, union_vertexSet, union_isLink_iff,
-      singleEdge_isLink, singleEdge_vertexSet, union_insert, union_singleton, mem_insert_iff,
-      mem_union, singleEdge_edgeSet, union_edgeSet, singleton_union, mem_singleton_iff]
-      tauto
+  | nil v => refine Graph.ext (by simp [toGraph_cons, pair_comm]) fun f x y ↦ by grind
+  | cons v f w ih => ext a x y <;> grind
 
 @[simp]
 lemma toGraph_vertexSet (w : WList α β) : V(w.toGraph) = V(w) := by

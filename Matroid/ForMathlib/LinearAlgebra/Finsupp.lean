@@ -1,5 +1,4 @@
 import Mathlib.LinearAlgebra.Dimension.Constructions
-import Mathlib.LinearAlgebra.Dual.Defs
 
 variable {α R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M] {s : Set α}
 

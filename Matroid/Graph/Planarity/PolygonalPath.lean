@@ -3,7 +3,6 @@ import Mathlib.Topology.UniformSpace.Path
 import Mathlib.Topology.Separation.Connected
 import Mathlib.Geometry.Polygon.Basic
 import Matroid.ForMathlib.List
-import Matroid.ForMathlib.Logic
 
 universe u
 variable {α β : Type u} {a b c x y z w : α} {C L : List α} {X Y : Set α} {N : ℕ}
@@ -462,7 +461,8 @@ variable {P : PolygonalPath x x}
 def closedSimple (P : PolygonalPath x x) : Prop := InjOn P.toPath (Ico 0 1)
 
 lemma closedSimple_iff_injOn_ioc : P.closedSimple ↔ InjOn P.toPath (Ioc 0 1) := by
-  refine iff_of_imp_iff (·.mono Ioo_subset_Ico_self) (·.mono Ioo_subset_Ioc_self) fun hoo ↦ ?_
+  wlog hoo : InjOn P.toPath (Ioo 0 1)
+  · exact iff_of_false (hoo <| ·.mono Ioo_subset_Ico_self) (hoo <| ·.mono Ioo_subset_Ioc_self)
   refine ⟨fun h s hs t ht hst ↦ ?_, fun h s hs t ht hst ↦ ?_⟩
   · obtain rfl | hs1 := eq_or_ne s 1 <;> obtain rfl | ht1 := eq_or_ne t 1
     · rfl
@@ -537,20 +537,18 @@ lemma closedSimple.cons_simple (h : P.closedSimple) :
   | .direct x _ => simp at h
   | .cons a b as =>
   let half : I := ⟨1/2, by constructor <;> linarith⟩
-  refine ⟨b, as, rfl, ?_, ?_⟩
-  · rw [closedSimple_iff_injOn_ioc] at h
-    intro i j hij
-    simp at h
-    have hh : InjOn (⇑(cons a b as).toPath) (Icc half 1) := by
-      apply h.mono
-      intro i ⟨hi1, hi2⟩
-      change 1 / 2 ≤ i.val at hi1
-      change i.val ≤ 1 at hi2
-      change 0 < i.val ∧ i.val ≤ 1
-      constructor <;> linarith
-
-
-    sorry
+  -- refine ⟨b, as, rfl, ?_, ?_⟩
+  -- · rw [closedSimple_iff_injOn_ioc] at h
+  --   intro i j hij
+  --   simp at h
+  --   have hh : InjOn (⇑(cons a b as).toPath) (Icc half 1) := by
+  --     apply h.mono
+  --     intro i ⟨hi1, hi2⟩
+  --     change 1 / 2 ≤ i.val at hi1
+  --     change i.val ≤ 1 at hi2
+  --     change 0 < i.val ∧ i.val ≤ 1
+  --     constructor <;> linarith
+  --   sorry
   sorry
 
 lemma closedSimple_iff_cons_simple (P : PolygonalPath x x) : P.closedSimple ↔ ∃ b P',

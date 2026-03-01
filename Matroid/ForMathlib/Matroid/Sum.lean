@@ -1,4 +1,3 @@
-import Mathlib.Combinatorics.Matroid.Closure
 import Mathlib.Combinatorics.Matroid.Sum
 import Matroid.ForMathlib.Matroid.Map
 

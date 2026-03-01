@@ -9,6 +9,8 @@ variable {α β : Type*} {G H : Graph α β} {u v x x₁ x₂ y y₁ y₂ z : α
 
 open Set WList Matroid Function
 
+attribute [grind →] IsCocircuit.subset_ground
+
 namespace Graph
 
 /-- The cycle matroid of a graph `G`. Its circuits are the edge sets of cycles of `G`,
@@ -51,11 +53,11 @@ def cycleMatroid (G : Graph α β) : Matroid β :=
       rintro _ ⟨C, hC, rfl⟩
       simpa using edgeSet_mono hC.isWalk.toGraph_le )
 
-@[simp]
+@[simp, grind =]
 lemma cycleMatroid_isCircuit : G.cycleMatroid.IsCircuit = G.IsCycleSet := by
   simp [cycleMatroid]
 
-@[simp]
+@[simp, grind =]
 lemma cycleMatroid_indep : G.cycleMatroid.Indep = G.IsAcyclicSet := by
   ext I
   simp only [cycleMatroid, FiniteCircuitMatroid.matroid_indep_iff, IsCycleSet, IsAcyclicSet]
@@ -67,9 +69,8 @@ lemma exists_maximal_isAcyclicSet (G : Graph α β) : ∃ F, Maximal G.IsAcyclic
 
 lemma cycleMatroid_coindep : G.cycleMatroid.Coindep F ↔
     F ⊆ E(G) ∧ (∀ x y, G.ConnBetween x y ↔ (G ＼ F).ConnBetween x y) := by
-  wlog hFE : F ⊆ E(G) generalizing F with aux
+  wlog hFE : F ⊆ G.cycleMatroid.E
   · grind
-  rw [← cycleMatroid_E] at hFE
   simp only [coindep_iff_exists hFE, isBase_iff_maximal_indep, cycleMatroid_indep, cycleMatroid_E,
     (show F ⊆ E(G) from hFE), true_and]
   refine ⟨fun ⟨B, hB, hBF⟩ x y ↦ ⟨fun hxy ↦ ?_, fun hxy ↦ hxy.mono edgeDelete_le⟩, fun h ↦ ?_⟩
@@ -89,12 +90,13 @@ lemma cycleMatroid_coindep : G.cycleMatroid.Coindep F ↔
   simp only [edgeDelete_edgeRestrict, hBF.2.sdiff_eq_left] at this
   exact hRexy <| this.mono <| edgeRestrict_mono_right _ <| by simpa [subset_diff, heB]
 
+@[simp, grind =]
 lemma cycleMatroid_cocircuit (G : Graph α β) (C : Set β) :
     G.cycleMatroid.IsCocircuit C ↔ G.IsBond C := by
-  refine iff_of_imp_iff (·.subset_ground) (·.subset_edgeSet) (fun hCE ↦ ?_)
+  wlog hCE : C ⊆ G.cycleMatroid.E
+  · grind
   rw [← dual_dual G.cycleMatroid, dual_isCocircuit_iff, isCircuit_iff_minimal_not_indep (by simpa)]
-  simp [← dual_coindep_iff]
-  simp_rw [dual_dual, cycleMatroid_coindep]
+  conv in (G.cycleMatroid✶).Indep _ => rw [← dual_coindep_iff, dual_dual, cycleMatroid_coindep]
   simp only [not_and, not_forall]
   refine ⟨fun h => ?_, fun h => ?_⟩
   · obtain ⟨x, y, hxy⟩ := h.1 hCE
@@ -132,17 +134,18 @@ lemma cycleMatroid_contract {φ} (hφ : H.connPartition.IsRepFun φ) (hHG : H �
   have hHGI : H ≤ G ＼ I := by simpa [hI.2.symm]
   simp only [← coindep_def, cycleMatroid_coindep, contract_edgeSet, subset_diff, hI.1, hI.2,
     and_self, true_and, dual_contract, delete_indep_iff, and_true]
-  refine ⟨fun h x y ↦ ?_, fun h x y ↦ iff_of_imp_iff (C := x ∈ φ '' V(G) ∧ y ∈ φ '' V(G))
-    (fun h ↦ ⟨h.left_mem, h.right_mem⟩) (fun h ↦ ⟨h.left_mem, h.right_mem⟩) ?_⟩
+  refine ⟨fun h x y ↦ ?_, fun h x y ↦ ?_⟩
   · rw [← contract_connBetween_iff hφ hHG, h, contract_edgeDelete_comm,
       contract_connBetween_iff hφ hHGI]
-  rintro ⟨⟨x, hx, rfl⟩, ⟨y, hy, rfl⟩⟩
+  wlog h : x ∈ φ '' V(G) ∧ y ∈ φ '' V(G)
+  · grind
+  obtain ⟨⟨x, hx, rfl⟩, ⟨y, hy, rfl⟩⟩ := h
   rw [contract_connBetween_iff hφ hHG, h, contract_edgeDelete_comm,
     contract_connBetween_iff hφ hHGI]
 
 @[simp]
 lemma cycleMatroid_vertexDelete_isolatedSet (G : Graph α β) :
-    (G - I(G)).cycleMatroid = G.cycleMatroid := by
+    (G - Isol(G)).cycleMatroid = G.cycleMatroid := by
   refine ext_isCircuit ?_ fun I hI ↦ ?_
   · rw [cycleMatroid_E, cycleMatroid_E, vertexDelete_edgeSet_diff, setincEdges_isolatedSet,
       diff_empty]
@@ -171,6 +174,13 @@ lemma cycleMatroid_isRestriction_of_isLink (hl : ∀ ⦃e x y⦄, G.IsLink e x y
 
 lemma cycleMatroid_isRestriction_of_le (h : G ≤ H) : G.cycleMatroid ≤r H.cycleMatroid :=
   cycleMatroid_isRestriction_of_isLink h.2
+
+lemma StronglyDisjoint.cycleMatroid_union (h : StronglyDisjoint G H) :
+    (G ∪ H).cycleMatroid = G.cycleMatroid.disjointSum H.cycleMatroid (by simp [h.edge]) := by
+  refine ext_isCircuit (by simp) fun C hC ↦ ?_
+  simp only [cycleMatroid_isCircuit, disjointSum_isCircuit_iff]
+  
+  sorry
 
 -- lemma exists_connected_eq_cycleMatroid (G : Graph α β) :
 --     ∃ H : Graph α β, H.Preconnected ∧ H.cycleMatroid = G.cycleMatroid := by
@@ -219,15 +229,9 @@ lemma cycleMatroid_isRestriction_of_le (h : G ≤ H) : G.cycleMatroid ≤r H.cyc
 --   · simp [x] at hfa
 --   rfl
 
-
-
--- lemma cycleMatroid_isFlat (hFE : F ⊆ E(G))
---     (hF : ∀ H : Graph α β, H.IsCompOf (G ↾ F) → H ≤i G) :
---     G.cycleMatroid.IsFlat F  := by
---  proof goes here.
---   sorry
-    -- try using `IsCyclicWalk.exists_isPath_toGraph_eq_delete_edge`
+lemma cycleMatroid_isFlat (hFE : F ⊆ E(G)) (hF : ∀ H : Graph α β, H.IsCompOf (G ↾ F) → H ≤i G) :
+    G.cycleMatroid.IsFlat F := by
+  sorry
+  -- try using `IsCyclicWalk.exists_isPath_toGraph_eq_delete_edge`
   -- refine { subset_of_isBasis_of_isBasis := ?_, subset_ground := hFE }
   -- intro I X hIF hIX e he
-
-  sorry

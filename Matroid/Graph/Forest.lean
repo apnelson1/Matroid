@@ -1,5 +1,6 @@
 import Matroid.Graph.Distance
 import Matroid.Graph.Connected.Subgraph
+import Matroid.Graph.Connected.Bond
 
 variable {α β : Type*} {G H T : Graph α β} {u v x y z : α} {e e' f g : β} {X : Set α} {F F' : Set β}
 {P C Q : WList α β}
@@ -317,6 +318,14 @@ lemma isForest_iff_not_isCycle : G.IsForest ↔ ∀ H ≤ G, ¬ H.IsCycle := by
 /-- `G.IsCycleSet C` means that `C` is the edge set of a cycle of `G`. -/
 def IsCycleSet (G : Graph α β) (C : Set β) : Prop := ∃ C₀, G.IsCyclicWalk C₀ ∧ E(C₀) = C
 
+lemma isCycleSet_iff {C' : Set β} : G.IsCycleSet C' ↔ ∃ C ≤ G, C.IsCycle ∧ C' = E(C) := by
+  simp_rw [isCycle_iff_exists_isCyclicWalk_eq]
+  refine ⟨fun ⟨C₀, hC₀, h⟩ ↦ ?_, ?_⟩
+  · use C₀.toGraph, hC₀.isWalk.toGraph_le, ?_, by simp [h.symm]
+    use C₀, hC₀.isCyclicWalk_toGraph
+  rintro ⟨_, hCG, ⟨C, hCC, rfl⟩, rfl⟩
+  use C, hCC.of_le hCG, by simp
+
 @[simp]
 lemma edgeRestrict_isCycleSet_iff (C : Set β) :
     (G ↾ F).IsCycleSet C ↔ G.IsCycleSet C ∧ C ⊆ F := by
@@ -347,6 +356,16 @@ lemma IsCycleSet.of_isLink {C : Set β} (h : G.IsCycleSet C)
     (he : ∀ ⦃e x y⦄, G.IsLink e x y → H.IsLink e x y) : H.IsCycleSet C := by
   obtain ⟨C₀, hC₀, h⟩ := h
   exact ⟨C₀, hC₀.of_forall_isLink he, h⟩
+
+lemma IsClosedSubgraph.isCycleSet {C : Set β} (hC : G.IsCycleSet C) (hHG : H ≤c G) :
+    H.IsCycleSet C ∨ (G - V(H)).IsCycleSet C := by
+  simp_rw [isCycleSet_iff] at hC ⊢
+  obtain ⟨C, hCG, hC, rfl⟩ := hC
+  obtain h | h := hHG.le_or_le_of_preconnected hC.connected.pre hCG
+  · left
+    use C
+  right
+  use C
 
 /-- `G.IsAcyclicSet X` means that the subgraph `G ↾ X` is a forest. -/
 def IsAcyclicSet (G : Graph α β) (I : Set β) : Prop :=

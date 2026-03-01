@@ -1,4 +1,4 @@
-import Mathlib.LinearAlgebra.Projectivization.Basic
+import Mathlib.LinearAlgebra.Projectivization.Basic -- inefficient import
 import Matroid.Representation.Minor
 import Matroid.ForMathlib.LinearAlgebra.Finsupp
 

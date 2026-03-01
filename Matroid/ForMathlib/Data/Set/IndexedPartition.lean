@@ -1,5 +1,3 @@
-import Mathlib.Data.Set.Lattice
-import Mathlib.Logic.Pairwise
 import Matroid.ForMathlib.Data.Set.Subsingleton
 import Matroid.ForMathlib.Set
 -- import Mathlib.Tactic.DepRewrite

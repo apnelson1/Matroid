@@ -384,7 +384,7 @@ lemma le_induce_self (h : H ≤ G) : H ≤ G[V(H)] :=
 lemma le_induce_iff (hX : X ⊆ V(G)) : H ≤ G[X] ↔ H ≤ G ∧ V(H) ⊆ X :=
   ⟨fun h ↦ ⟨h.trans (by simpa), vertexSet_mono h⟩, fun h ↦ le_induce_of_le_of_subset h.1 h.2⟩
 
-lemma diff_subset_isolatedSet_induce (G : Graph α β) (X : Set α) : X \ V(G) ⊆ I(G[X]) := by
+lemma diff_subset_isolatedSet_induce (G : Graph α β) (X : Set α) : X \ V(G) ⊆ Isol(G[X]) := by
   intro x ⟨hxX, hx⟩
   simp only [mem_isolatedSet_iff, isolated_iff, induce_vertexSet, hxX, and_true]
   exact fun e he ↦ hx he.isLink_other.1.left_mem

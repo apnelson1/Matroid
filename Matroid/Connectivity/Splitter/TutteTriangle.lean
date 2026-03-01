@@ -1,4 +1,3 @@
-import Mathlib.Combinatorics.Matroid.Minor.Order
 import Matroid.Triangle
 import Matroid.Connectivity.Separation.Vertical
 

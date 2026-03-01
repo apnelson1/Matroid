@@ -1,6 +1,16 @@
-# Matroid import updater
+# Scripts
 
-This small utility keeps `Matroid.lean` synchronized with the `.lean` modules under the `Matroid/` directory.
+This folder contains utility scripts for the Matroid project:
+
+1. **update_matroid_imports.py** - Synchronizes `Matroid.lean` with module files
+2. **detect_inefficient_imports.py** - Identifies inefficient Mathlib imports
+3. **canvas_to_pdf.py** - Converts Obsidian canvas files to PDF visualizations
+
+---
+
+## 1. Matroid Import Updater (`update_matroid_imports.py`)
+
+Keeps `Matroid.lean` synchronized with the `.lean` modules under the `Matroid/` directory.
 
 What it does:
 - Scans `Matroid/` recursively for all `.lean` files and computes their module names `Matroid.<path.with.dots>`.
@@ -8,15 +18,15 @@ What it does:
 - Adds missing modules as active `import Matroid.xxx` lines.
 - Rewrites `Matroid.lean` as a sorted list by module name, preserving any pre-existing comment markers (i.e. lines starting with `-- import`).
 
-## Usage
+### Usage
 
 From the repo root:
 
 ```bash
-python3 scripts/update_matroid_imports.py --dry-run
-python3 scripts/update_matroid_imports.py
-python3 scripts/update_matroid_imports.py --comment
-python3 scripts/update_matroid_imports.py --all --dry-run
+uv run scripts/update_matroid_imports.py --dry-run
+uv run scripts/update_matroid_imports.py
+uv run scripts/update_matroid_imports.py --comment
+uv run scripts/update_matroid_imports.py --all --dry-run
 ```
 
 Options:
@@ -47,3 +57,65 @@ Example patterns:
 # Ignore any module with 'scratch' in the path
 scratch
 ```
+
+---
+
+## 2. Inefficient Import Detector (`detect_inefficient_imports.py`)
+
+Detects and marks inefficient Mathlib imports that could be replaced with more direct imports.
+
+What it does:
+- Scans all `.lean` files in the project (excluding `.lake` and hidden directories).
+- For each Mathlib import, checks if the file still compiles when the import is replaced with its transitive imports.
+- If compilation succeeds, the import is inefficient (more direct imports are available).
+- Marks inefficient imports with a `-- inefficient import` comment.
+
+### Usage
+
+From the repo root:
+
+```bash
+uv run scripts/detect_inefficient_imports.py
+```
+
+Configuration:
+- `MATHLIB_PATH`: Path to mathlib (defaults to `.lake/packages/mathlib`).
+- `TARGET_DIR`: Directory to scan for `.lean` files (defaults to `.`).
+
+Notes:
+- The script modifies files in place, adding `-- inefficient import` comments to imports that can be improved.
+- Already marked imports (containing `-- inefficient`) are skipped.
+- The script compiles each test case using `lake env lean` to verify changes.
+
+---
+
+## 3. Canvas to PDF Converter (`canvas_to_pdf.py`)
+
+Converts Obsidian canvas files (`.canvas`) to PDF visualizations.
+
+What it does:
+- Reads `.canvas` files (JSON format) from the `ToDo/` directory.
+- Generates PDF visualizations showing node layouts and connections.
+- Preserves node colors, text content, and edge relationships.
+- Uses landscape A4 format with automatic scaling to fit content.
+
+### Usage
+
+From the repo root:
+
+```bash
+cd scripts && uv run canvas_to_pdf.py
+```
+
+Requirements:
+- `reportlab` library (`uv` handles dependencies automatically via `pyproject.toml`)
+
+Output:
+- For each `.canvas` file in `ToDo/`, creates a corresponding `.pdf` file in the same directory.
+- Example: `ToDo/DiGraph.canvas` → `ToDo/DiGraph.pdf`
+
+Notes:
+- Node colors are preserved from the Obsidian canvas (red, orange, yellow, green, blue, purple).
+- Both file nodes and text nodes are rendered with their content.
+- Edges are drawn with arrows indicating direction.
+- Content is automatically scaled to fit on the page.

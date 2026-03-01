@@ -522,16 +522,17 @@ protected def union (G H : Graph α β) := Graph.copy (V := V(G) ∪ V(H)) (E :=
 
 instance : Union (Graph α β) where union := Graph.union
 
-@[simp]
+@[simp, grind =]
 lemma union_vertexSet (G H : Graph α β) : V(G ∪ H) = V(G) ∪ V(H) := rfl
 
-@[simp]
+@[simp, grind =]
 lemma union_edgeSet (G H : Graph α β) : E(G ∪ H) = E(G) ∪ E(H) := rfl
 
 lemma union_eq_sUnion (G H : Graph α β) : G ∪ H = Graph.sUnion {G, H ＼ E(G)} (by simp) := by
   simp_rw [Union.union, Graph.union, Graph.copy]
   ext <;> simp
 
+@[grind =]
 lemma union_isLink_iff : (G ∪ H).IsLink e x y ↔ G.IsLink e x y ∨ (H.IsLink e x y ∧ e ∉ E(G)) := by
   simp [union_eq_sUnion]
 
@@ -586,6 +587,11 @@ its ends change to `a` and `b`. -/
 protected def addEdge (G : Graph α β) (e : β) (a b : α) : Graph α β :=
   Graph.singleEdge a b e ∪ G
 
+@[grind =]
+lemma addEdge_isLink_iff [DecidableEq β] {a b : α} :
+    (G.addEdge e a b).IsLink f x y ↔ if f = e then s(a,b) = s(x,y) else G.IsLink f x y := by
+  grind [Graph.addEdge]
+
 lemma addEdge_isLink (G : Graph α β) (e : β) (a b : α) : (G.addEdge e a b).IsLink e a b := by
   simp [Graph.addEdge, union_isLink_iff]
 
@@ -593,7 +599,7 @@ lemma addEdge_isLink_of_ne (hf : G.IsLink f x y) (hne : f ≠ e) (a b : α) :
     (G.addEdge e a b).IsLink f x y := by
   simpa [Graph.addEdge, union_isLink_iff, hne]
 
-lemma addEdge_isLink_iff {a b : α} (he : e ∉ E(G)) :
+lemma addEdge_isLink_iff_of_notMem {a b : α} (he : e ∉ E(G)) :
     (G.addEdge e a b).IsLink f x y ↔ (f = e ∧ s(a,b) = s(x,y)) ∨ G.IsLink f x y := by
   have hc : Compatible (Graph.singleEdge x y e) G := by simp [he]
   simp only [Graph.addEdge, union_isLink_iff, singleEdge_isLink, singleEdge_edgeSet,
@@ -603,6 +609,10 @@ lemma addEdge_isLink_iff {a b : α} (he : e ∉ E(G)) :
     simp only [true_and, not_true_eq_false, hl, and_self, or_false]
     tauto
   simp [hne.symm]
+
+@[grind =]
+lemma addEdge_comm (G : Graph α β) (e : β) (a b : α) : G.addEdge e a b = G.addEdge e b a := by
+  simp [Graph.addEdge, singleEdge_comm]
 
 lemma addEdge_le (hle : H ≤ G) (he : G.IsLink e x y) : H.addEdge e x y ≤ G :=
   Graph.union_le (by simpa) hle
