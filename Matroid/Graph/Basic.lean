@@ -1,5 +1,6 @@
 import Mathlib.Combinatorics.Graph.Basic
 import Mathlib.Data.Set.Card.Arithmetic
+import Matroid.ForMathlib.Partition.Set
 
 /-!
 # Basic Graph Theory
@@ -235,6 +236,18 @@ lemma parallel.trans {g : β} (h : G.parallel e f) (h' : G.parallel f g) : G.par
 
 instance : IsTrans _ G.parallel where
   trans _ _ _ := parallel.trans
+
+def parallelClasses (G : Graph α β) : Partition (Set β) :=
+  Partition.ofRel G.parallel
+
+@[simp]
+lemma parallelClasses_supp (G : Graph α β) : G.parallelClasses.supp = E(G) := by
+  ext e
+  simp only [parallelClasses, Partition.ofRel_supp, Relation.mem_domain_iff]
+  refine ⟨fun ⟨x, hx⟩ ↦ ?_, fun he ↦ ?_⟩
+  · exact hx.left_mem
+  use e
+  exact parallel_refl he
 
 end parallel
 
