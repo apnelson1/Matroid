@@ -307,14 +307,18 @@ lemma IsPath.eq_of_isBridge_isLink (hP : G.IsPath P) (he : G.IsBridge e)
     obtain ⟨rfl, heq⟩ := hP.first_eq_of_isLink_mem heP hl
     grind [hw.first_eq_last_iff.mp heq |>.eq_nil_last]
 
+lemma IsLink.exists_cons_isCyclicWalk_of_not_isBridge (hb : ¬ G.IsBridge e) (hxy : G.IsLink e x y) :
+    ∃ C, G.IsCyclicWalk (cons x e C) ∧ C.first = y := by
+  rw [hxy.symm.isBridge_iff_not_connBetween, not_not] at hb
+  obtain ⟨P, hP, rfl, rfl⟩ := hb.exists_isPath
+  have := by simpa [subset_diff] using hP.isWalk.edgeSet_subset
+  use P, (hP.of_le edgeDelete_le).cons_isCyclicWalk hxy.symm this.2
+
 lemma exists_isCyclicWalk_of_not_isBridge (he : e ∈ E(G)) (hb : ¬ G.IsBridge e) :
     ∃ C, G.IsCyclicWalk C ∧ e ∈ C.edge := by
   obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet he
-  rw [hxy.isBridge_iff_not_connBetween, not_not] at hb
-  obtain ⟨P, hP, rfl, rfl⟩ := hb.exists_isPath
-  use cons P.last e P, ?_, by simp
-  have := by simpa [subset_diff] using hP.isWalk.edgeSet_subset
-  exact (hP.of_le edgeDelete_le).cons_isCyclicWalk hxy this.2
+  obtain ⟨C, hC, heC⟩ := hxy.exists_cons_isCyclicWalk_of_not_isBridge hb
+  use (cons x e C), hC, by simp
 
 lemma not_isBridge_of_exists_isCyclicWalk (hC : ∃ C, G.IsCyclicWalk C ∧ e ∈ C.edge) :
     ¬ G.IsBridge e := by

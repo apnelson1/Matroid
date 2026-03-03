@@ -1,11 +1,13 @@
 import Matroid.Axioms.Circuit
 import Matroid.Minor.Contract
-import Matroid.Graph.Forest
+import Matroid.Graph.Spanning
 import Matroid.Graph.Minor.Conn
 import Matroid.Graph.Connected.Minor
+import Matroid.Connectivity.Skew
+import Matroid.Connectivity.ConnSystem.Matroid
 
 variable {α β : Type*} {G H : Graph α β} {u v x x₁ x₂ y y₁ y₂ z : α} {e e' f g : β}
-  {U V S T : Set α} {F F' R R': Set β} {C w P Q : WList α β}
+  {U V S T : Set α} {B F F' R R': Set β} {C w P Q : WList α β}
 
 open Set WList Matroid Function
 
@@ -63,9 +65,13 @@ lemma cycleMatroid_indep : G.cycleMatroid.Indep = G.IsAcyclicSet := by
   simp only [cycleMatroid, FiniteCircuitMatroid.matroid_indep_iff, IsCycleSet, IsAcyclicSet]
   aesop
 
-lemma exists_maximal_isAcyclicSet (G : Graph α β) : ∃ F, Maximal G.IsAcyclicSet F := by
-  have := (cycleMatroid G).exists_isBase
-  simpa [isBase_iff_maximal_indep] using this
+lemma cycleMatroid_isBase : G.cycleMatroid.IsBase = G.IsMaximalAcyclicSet := by
+  ext B
+  rw [isBase_iff_maximal_indep, cycleMatroid_indep]
+  rfl
+
+lemma IsMaximalAcyclicSet.exists (G : Graph α β) : ∃ F, G.IsMaximalAcyclicSet F := by
+  simpa [cycleMatroid_isBase] using (cycleMatroid G).exists_isBase
 
 lemma cycleMatroid_coindep : G.cycleMatroid.Coindep F ↔
     F ⊆ E(G) ∧ (∀ x y, G.ConnBetween x y ↔ (G ＼ F).ConnBetween x y) := by
@@ -74,10 +80,10 @@ lemma cycleMatroid_coindep : G.cycleMatroid.Coindep F ↔
   simp only [coindep_iff_exists hFE, isBase_iff_maximal_indep, cycleMatroid_indep, cycleMatroid_E,
     (show F ⊆ E(G) from hFE), true_and]
   refine ⟨fun ⟨B, hB, hBF⟩ x y ↦ ⟨fun hxy ↦ ?_, fun hxy ↦ hxy.mono edgeDelete_le⟩, fun h ↦ ?_⟩
-  · rw [← connBetween_iff_of_maximal_isAcyclicSet hB] at hxy
+  · rw [← IsMaximalAcyclicSet.connBetween_iff hB] at hxy
     rw [subset_diff] at hBF
     exact hxy.mono <| by simp [inter_eq_right.mpr hBF.1, hBF.2]
-  obtain ⟨B, hB⟩ := (G ＼ F).exists_maximal_isAcyclicSet
+  obtain ⟨B, hB⟩ := IsMaximalAcyclicSet.exists (G ＼ F)
   have hBF := by simpa [subset_diff] using hB.prop.subset
   use B, ⟨hB.prop.mono edgeDelete_le, fun R hR hBR ↦ ?_⟩, hB.prop.1
   by_contra! hRB
@@ -86,7 +92,7 @@ lemma cycleMatroid_coindep : G.cycleMatroid.Coindep F ↔
   have hRexy : ¬((G ↾ R) ＼ {e}).ConnBetween x y := hR.isBridge heR |>.not_connBetween_of_isLink
     ⟨heR, hxy⟩ rfl
   rw [edgeRestrict_edgeDelete] at hRexy
-  have := (connBetween_iff_of_maximal_isAcyclicSet hB).mpr <| (h x y).mp hxy.connBetween
+  have := (IsMaximalAcyclicSet.connBetween_iff hB).mpr <| (h x y).mp hxy.connBetween
   simp only [edgeDelete_edgeRestrict, hBF.2.sdiff_eq_left] at this
   exact hRexy <| this.mono <| edgeRestrict_mono_right _ <| by simpa [subset_diff, heB]
 
@@ -175,12 +181,20 @@ lemma cycleMatroid_isRestriction_of_isLink (hl : ∀ ⦃e x y⦄, G.IsLink e x y
 lemma cycleMatroid_isRestriction_of_le (h : G ≤ H) : G.cycleMatroid ≤r H.cycleMatroid :=
   cycleMatroid_isRestriction_of_isLink h.2
 
-lemma StronglyDisjoint.cycleMatroid_union (h : StronglyDisjoint G H) :
-    (G ∪ H).cycleMatroid = G.cycleMatroid.disjointSum H.cycleMatroid (by simp [h.edge]) := by
-  refine ext_isCircuit (by simp) fun C hC ↦ ?_
-  simp only [cycleMatroid_isCircuit, disjointSum_isCircuit_iff]
-  
-  sorry
+lemma cycleMatroid_isBasis :
+    G.cycleMatroid.IsBasis B F ↔ F ⊆ E(G) ∧ (G ↾ F).IsMaximalAcyclicSet B := by
+  wlog hFE : F ⊆ E(G)
+  · grind
+  simp only [hFE, true_and]
+  rw [← isBase_restrict_iff, ← cycleMatroid_isBase, cycleMatroid_edgeRestrict,
+    inter_eq_right.mpr hFE]
+
+def edgeBasedVertexSep (G : Graph α β) (F : Set β) : Set α := V(G, F) ∩ V(G, E(G) \ F)
+
+-- lemma IsClosedSubgraph.cycleMatroid_skew (h : H ≤c G) :
+--     G.cycleMatroid.Skew E(H) (E(G) \ E(H)) := by
+--   rw [skew_iff_exist_isBases, union_diff_cancel h.edgeSet_mono]
+--   sorry
 
 -- lemma exists_connected_eq_cycleMatroid (G : Graph α β) :
 --     ∃ H : Graph α β, H.Preconnected ∧ H.cycleMatroid = G.cycleMatroid := by
@@ -232,6 +246,18 @@ lemma StronglyDisjoint.cycleMatroid_union (h : StronglyDisjoint G H) :
 lemma cycleMatroid_isFlat (hFE : F ⊆ E(G)) (hF : ∀ H : Graph α β, H.IsCompOf (G ↾ F) → H ≤i G) :
     G.cycleMatroid.IsFlat F := by
   sorry
-  -- try using `IsCyclicWalk.exists_isPath_toGraph_eq_delete_edge`
-  -- refine { subset_of_isBasis_of_isBasis := ?_, subset_ground := hFE }
-  -- intro I X hIF hIX e he
+/-
+From Flat
+- flat iff cycle almost included is included
+- take a compOf G \upr F
+- this is clearly a subgraph so why is it induced?
+- induced is defined as any edge, e, between x and y s.t. x and y are in the subgraph then e must also be in the subgraph.
+- Suppose there is an edge e that is not in F and between x and y belonging to some connected component of G \upr F. Then, since connected, there is some path between x and y inside F.
+- Together with e, we have a cycle which is almost included in F, so e is in F. contradiction
+
+To Flat
+- Take a cycle that is almost included in F.
+- Every vertex of this cycle must be in some connected component of G \upr F.
+- So the only edge possibly not included in F, e, is between two vertices in the component.
+- This component is an induced subgraph so e is included in F.
+-/

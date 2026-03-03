@@ -214,6 +214,15 @@ lemma IsCycle.not_isBridge (hG : G.IsCycle) : ¬ G.IsBridge e := by
   obtain ⟨C, hC, rfl⟩ := hG
   exact not_isBridge_of_exists_isCyclicWalk ⟨C, hC, by simpa using he⟩
 
+/-- Given a cycle and the 'orientation to traverse the cycle' in the form of a link, there exists a
+cyclic walk that starts with `x, y`. -/
+lemma IsLink.exists_cons_isCyclicWalk_eq_of_IsCycle (hG : G.IsCycle) (hxy : G.IsLink e x y) :
+    ∃ C, G.IsCyclicWalk (cons x e C) ∧ C.first = y ∧ (cons x e C).toGraph = G := by
+  obtain ⟨C, hC, rfl⟩ := hxy.exists_cons_isCyclicWalk_of_not_isBridge hG.not_isBridge
+  use C, hC, rfl
+  have hle : WList.toGraph _ ≤ G := hC.isWalk.toGraph_le
+  exact hG.eq_of_le hC.toGraph_not_isForest hle
+
 lemma IsCycle.finite (hG : G.IsCycle) : G.Finite := by
   rw [isCycle_iff_exists_isCyclicWalk_eq] at hG
   obtain ⟨C, hC, rfl⟩ := hG
@@ -313,6 +322,15 @@ lemma isForest_iff_not_isCycle : G.IsForest ↔ ∀ H ≤ G, ¬ H.IsCycle := by
   rw [not_isForest_iff_exists_isCycle.not_right]
   grind
 
+lemma IsForest.of_edgeDelete_singleton (he : G.IsBridge e) (hG : (G ＼ {e}).IsForest) :
+    G.IsForest := by
+  by_contra! h
+  rw [not_isForest_iff_exists_isCycle] at h
+  obtain ⟨H, hH, hHle⟩ := h
+  have hHGe : H ≤ G ＼ {e} := by simpa [hHle] using (hH.not_isBridge <| he.anti_of_mem hHle ·)
+  rw [isForest_iff_not_isCycle] at hG
+  exact hG H hHGe hH
+
 /-! ### Edge Sets -/
 
 /-- `G.IsCycleSet C` means that `C` is the edge set of a cycle of `G`. -/
@@ -405,6 +423,20 @@ lemma IsAcyclicSet.isBridge (hF : G.IsAcyclicSet F) (he : e ∈ F) : (G ↾ F).I
   rw [isAcyclicSet_iff] at hF
   exact hF.2 ⟨hF.1 he, he⟩
 
+lemma IsAcyclicSet.of_edgeDelete_isBond {B} (hB : G.IsBond B) (hF : (G ＼ B).IsAcyclicSet F)
+    (he : e ∈ B) : G.IsAcyclicSet (insert e F) := by
+  have hFE := hF.1.trans diff_subset
+  simp only [isAcyclicSet_iff, edgeDelete_edgeSet, subset_diff, hFE, true_and,
+    edgeDelete_edgeRestrict, insert_subset_iff, hB.subset_edgeSet he, and_self] at hF ⊢
+  obtain ⟨hFB, hFf⟩ := hF
+  replace hFf : ((G ↾ insert e F) ＼ {e}).IsForest := by
+    rw [hFB.sdiff_eq_left] at hFf
+    simpa [hFB.mono_right (by simpa : {e} ⊆ B) |>.sdiff_eq_left]
+  apply hFf.of_edgeDelete_singleton ?_
+  have := by simpa using hB.prop.1.anti (edgeRestrict_le (E₀ := insert e F))
+  rwa [(inter_eq_right (s := E(G))).mpr (by simpa [hB.subset_edgeSet he, insert_subset_iff]),
+    insert_inter_of_mem he, hFB.inter_eq, insert_empty_eq] at this
+
 /-! ### Leaves -/
 
 /-- Every forest with at least one edge has a pendant. -/
@@ -437,97 +469,3 @@ lemma IsForest.exists_isLeaf [G.EdgeFinite] (hG : G.IsForest) (hne : E(G).Nonemp
     ∃ x, G.IsLeaf x := by
   obtain ⟨e, x, h⟩ := hG.exists_isPendant hne
   exact ⟨x, h.isLeaf⟩
-
-lemma IsForest.of_edgeDelete_singleton (he : G.IsBridge e) (hG : (G ＼ {e}).IsForest) :
-    G.IsForest := by
-  by_contra! h
-  rw [not_isForest_iff_exists_isCycle] at h
-  obtain ⟨H, hH, hHle⟩ := h
-  have hHGe : H ≤ G ＼ {e} := by simpa [hHle] using (hH.not_isBridge <| he.anti_of_mem hHle ·)
-  rw [isForest_iff_not_isCycle] at hG
-  exact hG H hHGe hH
-
-lemma IsAcyclicSet.of_edgeDelete_isBond {B} (hB : G.IsBond B) (hF : (G ＼ B).IsAcyclicSet F)
-    (he : e ∈ B) : G.IsAcyclicSet (insert e F) := by
-  have hFE := hF.1.trans diff_subset
-  simp only [isAcyclicSet_iff, edgeDelete_edgeSet, subset_diff, hFE, true_and,
-    edgeDelete_edgeRestrict, insert_subset_iff, hB.subset_edgeSet he, and_self] at hF ⊢
-  obtain ⟨hFB, hFf⟩ := hF
-  replace hFf : ((G ↾ insert e F) ＼ {e}).IsForest := by
-    rw [hFB.sdiff_eq_left] at hFf
-    simpa [hFB.mono_right (by simpa : {e} ⊆ B) |>.sdiff_eq_left]
-  apply hFf.of_edgeDelete_singleton ?_
-  have := by simpa using hB.prop.1.anti (edgeRestrict_le (E₀ := insert e F))
-  rwa [(inter_eq_right (s := E(G))).mpr (by simpa [hB.subset_edgeSet he, insert_subset_iff]),
-    insert_inter_of_mem he, hFB.inter_eq, insert_empty_eq] at this
-
-lemma not_isBridge_of_maximal_isAcyclicSet (hF : Maximal G.IsAcyclicSet F) (he : e ∈ E(G) \ F) :
-    ¬ (G ↾ insert e F).IsBridge e := by
-  intro hb
-  have hef : G.IsAcyclicSet (insert e F) := by
-    rw [isAcyclicSet_iff]
-    simp only [insert_subset_iff, he.1, hF.prop.1, and_self, true_and]
-    refine IsForest.of_edgeDelete_singleton hb ?_
-    simp only [edgeRestrict_edgeDelete, mem_singleton_iff, insert_diff_of_mem, he.2,
-      not_false_eq_true, diff_singleton_eq_self]
-    exact isAcyclicSet_iff.mp hF.prop |>.2
-  exact he.2 <| insert_eq_self.mp (hF.eq_of_subset hef (by grind)).symm
-
-lemma IsBond.not_disjoint_of_maximal_isAcyclicSet {B} (hF : Maximal G.IsAcyclicSet F)
-    (hB : G.IsBond B) : ¬ Disjoint F B := by
-  rintro hdj
-  have : ∀ ⦃x : β⦄, x ∈ B → x ∉ F := by rwa [disjoint_comm, disjoint_iff_forall_notMem] at hdj
-  obtain ⟨e, heB⟩ := hB.prop.2
-  have he := hB.subset_edgeSet heB
-  apply not_isBridge_of_maximal_isAcyclicSet hF ⟨he, this heB⟩
-  have := by simpa using hB.prop.1.anti (edgeRestrict_le (E₀ := insert e F))
-  rwa [(inter_eq_right (s := E(G))).mpr (by simp [hF.prop.1, insert_subset_iff, he]),
-    insert_inter_of_mem heB, hdj.inter_eq, insert_empty_eq] at this
-
-lemma connBetween_iff_of_maximal_isAcyclicSet (hF : Maximal G.IsAcyclicSet F) :
-    (G ↾ F).ConnBetween x y ↔ G.ConnBetween x y := by
-  refine ⟨fun h ↦ h.mono edgeRestrict_le, ?_⟩
-  rintro ⟨w, hw, rfl, rfl⟩
-  by_contra h'
-  let S := V((G ↾ F).walkable w.first)
-  obtain ⟨e, heS, x, hxS, y, ⟨hy, hyS⟩, hxy⟩ :=
-    hw.inter_setLinkEdges_nonempty ((G ↾ F).mem_walkable hw.first_mem) h'
-  have heF : e ∉ F := by
-    contrapose! hyS
-    exact ConnBetween.trans hxS (IsLink.connBetween ⟨hyS, hxy⟩)
-  have := not_isBridge_of_maximal_isAcyclicSet hF ⟨hxy.edge_mem, heF⟩
-  rw [IsLink.isBridge_iff_not_connBetween (by simpa), not_not] at this
-  simp only [edgeRestrict_edgeDelete, mem_singleton_iff, insert_diff_of_mem, heF, not_false_eq_true,
-    diff_singleton_eq_self] at this
-  exact hyS (ConnBetween.trans hxS this)
-
-lemma isForest_of_maximal_isAcyclicSet (hF : Maximal G.IsAcyclicSet F) : (G ↾ F).IsForest := by
-  rw [show G.IsAcyclicSet = fun X ↦ X ⊆ E(G) ∧ (G ↾ X).IsForest by
-    ext; exact isAcyclicSet_iff] at hF
-  exact hF.prop.2
-
-lemma IsAcyclicSet.eq_of_connBetween_iff {R} (hRF : R ⊆ F)
-    (hR : ∀ x y, G.ConnBetween x y ↔ (G ↾ R).ConnBetween x y) (hF : G.IsAcyclicSet F) : R = F := by
-  by_contra! h
-  obtain ⟨e, heF, heR⟩ := ssubset_iff_of_subset hRF |>.mp <| hRF.ssubset_of_ne h
-  obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet <| hF.1 heF
-  have hxyF : (G ↾ F).IsLink e x y := ⟨heF, hxy⟩
-  apply hxyF.isBridge_iff_not_connBetween.mp <| hF.isBridge heF
-  refine hR x y |>.mp hxy.connBetween |>.mono ?_
-  rw [edgeRestrict_edgeDelete]
-  exact edgeRestrict_mono_right _ <| by simpa [subset_diff, heR]
-
-lemma maximal_isAcyclicSet_iff_minimal_connBetween : Maximal G.IsAcyclicSet F ↔
-    Minimal (fun F ↦ ∀ x y, G.ConnBetween x y ↔ (G ↾ F).ConnBetween x y) F := by
-  refine ⟨fun hF ↦ ⟨fun _ _ ↦ connBetween_iff_of_maximal_isAcyclicSet hF |>.symm,
-    fun R hR hRF ↦ hF.prop.eq_of_connBetween_iff hRF hR |>.ge⟩, fun hF ↦ ⟨?_,
-      fun R hR hRF ↦ hR.eq_of_connBetween_iff hRF hF.prop |>.ge⟩⟩
-  have hFE := by simpa [hF.prop] using hF.2 (y := E(G) ∩ F)
-  rw [isAcyclicSet_iff]
-  refine ⟨hFE, fun e ⟨he, heF⟩ ↦ ?_⟩
-  by_contra! hb
-  have h : ∀ x y, G.ConnBetween x y ↔ (G ↾ (F \ {e})).ConnBetween x y := by
-    refine fun x y ↦ ⟨fun h ↦ ?_, fun h ↦ h.mono edgeRestrict_le⟩
-    rw [← edgeRestrict_edgeDelete]
-    exact (hF.prop x y |>.mp h).edgeDelete_singleton_connBetween hb
-  simpa [heF, subset_diff_singleton_iff] using hF.2 h
