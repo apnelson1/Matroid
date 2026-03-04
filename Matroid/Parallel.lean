@@ -159,6 +159,27 @@ lemma Parallel.mem_closure_iff_mem_closure (h : M.Parallel e f) {X : Set α} :
       (M.closure_subset_closure_of_subset_closure (by simpa))
   exact mem_of_mem_of_subset h.mem_closure (M.closure_subset_closure_of_subset_closure (by simpa))
 
+lemma IsNonloop.parallel_iff_forall_mem_of_mem_of_isCocircuit
+    (henl : M.IsNonloop e) (hf : f ∈ M.E) :
+    M.Parallel e f ↔ ∀ C, M.IsCocircuit C → e ∈ C → f ∈ C := by
+  obtain rfl | hne := eq_or_ne e f
+  · exact iff_of_true henl.parallel_self <| by simp
+  refine ⟨fun h C hC heC ↦ ?_, fun h ↦ ?_⟩
+  · grind [(h.isCircuit_of_ne hne).inter_isCocircuit_ne_singleton (e := e) hC]
+  obtain ⟨K, hK, heK⟩ := henl.exists_mem_isCocircuit
+  have hf : M.IsNonloop f := hK.isNonloop_of_mem (e := f) (h K hK heK)
+  rw [henl.parallel_iff_dep hf hne, ← not_indep_iff (by grind)]
+  intro hindep
+  obtain ⟨B, hB, hefB⟩ := hindep.exists_isBase_superset
+  refine (h _ (hB.compl_closure_diff_singleton_isCocircuit (e := e) (by grind)) ?_).2 ?_
+  · exact ⟨henl.mem_ground, hB.indep.notMem_closure_diff_of_mem (by grind)⟩
+  grw [← subset_closure _ _ (by grind)]
+  grind
+
+lemma parallel_dual_iff_forall_circuit (henl : M✶.IsNonloop e) (hf : f ∈ M.E) :
+    M✶.Parallel e f ↔ ∀ C, M.IsCircuit C → e ∈ C → f ∈ C := by
+  simp [henl.parallel_iff_forall_mem_of_mem_of_isCocircuit hf]
+
 lemma Parallel.isLoop_contractElem (hef : M.Parallel e f) (hne : e ≠ f) : (M ／ {e}).IsLoop f := by
   rw [isLoop_iff, contract_loops_eq, mem_diff]
   exact ⟨hef.symm.mem_closure, hne.symm⟩

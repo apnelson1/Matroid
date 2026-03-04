@@ -218,3 +218,20 @@ lemma ENat.card_coe_setOf_ne (a : α) : ENat.card {i | i ≠ a} = ENat.card α -
   convert rfl using 2
   ext
   simp
+
+lemma List.encard_toSet_le (L : List α) : {x | x ∈ L}.encard ≤ L.length := by
+  classical
+  have hle := (Nat.cast_le (α := ℕ∞)).2 L.toFinset_card_le
+  rwa [← encard_coe_eq_coe_finsetCard, coe_toFinset] at hle
+
+lemma List.Nodup.encard_toSet_eq {L : List α} (hL : L.Nodup) : {x | x ∈ L}.encard = L.length := by
+  classical
+  have h_eq := L.card_toFinset
+  rwa [hL.dedup, ← Nat.cast_inj (R := ℕ∞), ← encard_coe_eq_coe_finsetCard, coe_toFinset] at h_eq
+
+
+  -- induction L with
+  -- | nil => simp
+  -- | cons a L ih =>
+  --   simp only [mem_cons, setOf_or, setOf_eq_eq_singleton, singleton_union, length_cons,
+  --     Nat.cast_add, Nat.cast_one]

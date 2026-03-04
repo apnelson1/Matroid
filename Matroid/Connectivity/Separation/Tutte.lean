@@ -305,7 +305,6 @@ lemma tutteConnected_of_le_one (M : Matroid α) (hk : k ≤ 1) : M.TutteConnecte
   · simp
   simp
 
-
 lemma Separation.IsTutteSeparation.not_tutteConnected (hP : P.IsTutteSeparation) :
     ¬ M.TutteConnected (P.eConn + 1 + 1) := by
   rw [not_tutteConnected_iff_exists]
@@ -397,6 +396,11 @@ lemma TutteConnected.connected [M.Nonempty] (hM : M.TutteConnected k) (hk : 2 �
 lemma TutteConnected.connected' (h : M.TutteConnected (k + 1)) (hne : M.Nonempty)
     (hk : 1 ≤ k) : M.Connected :=
   h.connected (by grw [← hk, one_add_one_eq_two])
+
+lemma TutteConnected.connectedTo (hM : M.TutteConnected k) (hk : 2 ≤ k) {e f}
+    (he : e ∈ M.E) (hf : f ∈ M.E) : M.ConnectedTo e f := by
+  have : M.Nonempty := ⟨⟨e, he⟩⟩
+  exact (hM.connected hk).forall_connectedTo he hf
 
 lemma TutteConnected.loopless (h : M.TutteConnected k) (hk : 2 ≤ k) (hnt : M.E.Nontrivial) :
     M.Loopless := by

@@ -90,4 +90,14 @@ lemma erase_inter_distrib (s : Finset α) (t : Finset α) (a : α) :
     (s : Set α).Nontrivial ↔ s.Nontrivial := by
   rfl
 
+lemma subset_range_two {P : Finset ℕ} (hP : P ⊆ Finset.range 2) :
+    P = ∅ ∨ P = {0} ∨ P = {1} ∨ P = {0, 1} := by
+  rw [Finset.range_add_one, Finset.range_one] at hP
+  grind
+
+
 end Finset
+
+lemma List.toFinset_subset [DecidableEq α] {a b : List α} (hab : a ⊆ b) :
+    a.toFinset ⊆ b.toFinset :=
+  fun i hi ↦ by simpa using hab <| by simpa using hi

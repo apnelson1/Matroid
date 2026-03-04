@@ -655,6 +655,19 @@ lemma TutteConnected.deleteElem (h : M.TutteConnected (k + 1)) (hnt : 2 * k < M.
     (e : α) : (M ＼ {e}).TutteConnected k := by
   simpa using (h.dual.contractElem hnt e).dual
 
+lemma TutteConnected.connected_deleteElem (h : M.TutteConnected (2 + 1)) (h4 : 4 ≤ M.E.encard)
+    (e : α) : (M ＼ {e}).Connected := by
+  have hne : (M ＼ {e}).Nonempty := by
+    grw [← ground_nonempty_iff, ← one_le_encard_iff_nonempty, ← ENat.add_one_le_add_one_iff,
+      delete_ground, ← encard_le_encard_diff_singleton_add_one, ← h4]
+    norm_num
+  rw [← tutteConnected_two_iff]
+  exact h.deleteElem (by enat_to_nat!; lia) e
+
+lemma TutteConnected.connected_contractElem (h : M.TutteConnected (2 + 1)) (h4 : 4 ≤ M.E.encard)
+    (e : α) : (M ／ {e}).Connected := by
+  simpa using connected_dual_iff.2 <| (h.dual.connected_deleteElem (by simpa) e)
+
 lemma TutteConnected.removeElem (h : M.TutteConnected (k + 1)) (hnt : 2 * k < M.E.encard + 1)
     (b : Bool) (e : α) : (M.remove b {e}).TutteConnected k := by
   cases b
