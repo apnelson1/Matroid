@@ -127,6 +127,10 @@ lemma cycleMatroid_edgeRestrict (G : Graph α β) (F : Set β) :
   obtain ⟨hI, hIF⟩ := by simpa using hI
   simp [restrict_isCircuit_iff, hI, hIF]
 
+lemma cycleMatroid_restrict (hF : F ⊆ E(G)) :
+    G.cycleMatroid ↾ F = (G ↾ F).cycleMatroid := by
+  rw [cycleMatroid_edgeRestrict, inter_eq_right.mpr hF]
+
 @[simp]
 lemma cycleMatroid_edgeDelete (G : Graph α β) (F : Set β) :
     (G ＼ F).cycleMatroid = G.cycleMatroid ＼ F :=
@@ -189,6 +193,11 @@ lemma cycleMatroid_isBasis :
   rw [← isBase_restrict_iff, ← cycleMatroid_isBase, cycleMatroid_edgeRestrict,
     inter_eq_right.mpr hFE]
 
+lemma cycleMatroid_loops : G.cycleMatroid.loops = ⋃ x, G.loopSet x := by
+  ext e
+  rw [← isLoop_iff, ← singleton_isCircuit, cycleMatroid_isCircuit, isCycleSet_singleton_iff]
+  simp
+
 -- def edgeBasedVertexSep (G : Graph α β) (F : Set β) : Set α := V(G, F) ∩ V(G, E(G) \ F)
 
 lemma IsClosedSubgraph.cycleMatroid_skew (h : H ≤c G) : G.cycleMatroid.Skew E(H) (E(G) \ E(H)) := by
@@ -204,6 +213,32 @@ lemma IsClosedSubgraph.cycleMatroid_skew (h : H ≤c G) : G.cycleMatroid.Skew E(
   have hJindep := hJ.indep
   rw [cycleMatroid_indep] at hIindep hJindep ⊢
   exact h.isAcyclicSet_union hIindep hJindep hIH hJH
+
+lemma Compatible.cycleMatroid_union_skew (h : (V(G) ∩ V(H)).Subsingleton)
+    (hcompat : G.Compatible H) : (G ∪ H).cycleMatroid.Skew E(G) E(H) := by
+  have hinter : E(G) ∩ E(H) ⊆ (G ∪ H).cycleMatroid.loops := by
+    obtain h_empty | ⟨x, hx⟩ := h.eq_empty_or_singleton
+    · rw [← disjoint_iff_inter_eq_empty] at h_empty
+      rw [(hcompat.edgeSet_disjoint_of_vertexSet_disjoint h_empty).inter_eq]
+      exact empty_subset _
+    · rw [cycleMatroid_loops]
+      exact hcompat.edgeSet_inter_subset_loopSet_union hx |>.trans <| subset_iUnion ..
+  rw [skew_iff_forall_isCircuit_of_inter_subset_loops hinter]
+  rintro C hC hC_sub
+  simp only [cycleMatroid_isCircuit, IsCycleSet] at hC hC_sub
+  obtain ⟨W, hW, rfl⟩ := hC
+  obtain (hW_G | hW_H) := hW.isCyclicWalk_or_isCyclicWalk_of_union_of_subsingleton_inter h
+  · exact Or.inl (hW_G.isWalk.edgeSet_subset)
+  · exact Or.inr (hW_H.isWalk.edgeSet_subset)
+
+lemma cycleMatroid_disjointSum (h : (V(G) ∩ V(H)).Subsingleton) (hdj : Disjoint E(G) E(H)) :
+    (G ∪ H).cycleMatroid = G.cycleMatroid.disjointSum H.cycleMatroid hdj := by
+  have hc := Compatible.of_disjoint_edgeSet hdj
+  have := (skew_iff_restrict_union_eq (by simp) (by simp) hdj).mp <| hc.cycleMatroid_union_skew h
+  rw [restrict_eq_self_iff.mpr (by simp)] at this
+  convert this
+  · exact (cycleMatroid_isRestriction_of_le (G.left_le_union H)).eq_restrict.symm
+  · exact (cycleMatroid_isRestriction_of_le hc.right_le_union).eq_restrict.symm
 
 -- lemma exists_connected_eq_cycleMatroid (G : Graph α β) :
 --     ∃ H : Graph α β, H.Preconnected ∧ H.cycleMatroid = G.cycleMatroid := by

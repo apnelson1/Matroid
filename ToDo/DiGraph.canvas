@@ -1,37 +1,243 @@
 {
-	"nodes":[
-		{"id":"0509527941de6fed","type":"file","file":"JCT/Frontiers of an Infinite Strip.md","x":-240,"y":-1004,"width":600,"height":330,"color":"3"},
-		{"id":"1373479f32591a40","type":"file","file":"JCT/There are two directions between two points.md","x":-240,"y":-644,"width":600,"height":120,"color":"3"},
-		{"id":"4b2b298cea87a759","type":"file","file":"JCT/There are even number of crossings.md","x":-240,"y":-498,"width":600,"height":520,"color":"3"},
-		{"id":"426a528358fa1b38","type":"file","file":"JCT/Flathead has 2 region.md","x":-240,"y":44,"width":600,"height":200,"color":"3"},
-		{"id":"c6af0c381f0e763b","type":"file","file":"JCT/Dial has 1 region.md","x":-240,"y":276,"width":600,"height":193,"color":"3"},
-		{"id":"438a38d741c24ce1","type":"file","file":"JCT/Every point on the segment in a clock bounds the same regions.md","x":-240,"y":496,"width":600,"height":295,"color":"3"},
-		{"id":"d563baf7511ead3f","type":"file","file":"Stitching/Basis.md","x":-960,"y":-2177,"width":400,"height":171,"color":"1"},
-		{"id":"54b244074d6747ab","type":"file","file":"Stitching/Parallel.md","x":-960,"y":-1104,"width":400,"height":100,"color":"1"},
-		{"id":"0e1856e84b40a570","type":"file","file":"Stitching/Direct Sum.md","x":-960,"y":-1964,"width":400,"height":153,"color":"1"},
-		{"id":"5d6bbe787625c8d7","type":"file","file":"Stitching/Flat.md","x":-960,"y":-1769,"width":600,"height":605,"color":"1"},
-		{"id":"3942f3d7e24be08a","type":"file","file":"Stitching/Stitching Matroid and Graphs together.md","x":-1500,"y":-1624,"width":400,"height":237,"color":"1"},
-		{"id":"a2e35a7f24d8bae3","type":"file","file":"Basic Graph stuff/Simplify function.md","x":400,"y":-1535,"width":400,"height":209,"color":"2"},
-		{"id":"fc74b0735bfb3ea0","type":"file","file":"Basic Graph stuff/Coherent, Complete formalisation of Basic Graph properties.md","x":-140,"y":-1804,"width":400,"height":200,"color":"2"},
-		{"id":"87efd5bc55a923ab","type":"file","file":"Matching/Konig's Theorem.md","x":-140,"y":-1505,"width":400,"height":149,"color":"2"},
-		{"id":"098d13fa4a7044cc","type":"file","file":"JCT/AtLeastTwoRegions.md","x":-860,"y":-356,"width":400,"height":146,"color":"3"},
-		{"id":"7854ce495c2a2fad","type":"file","file":"JCT/AtMostTwoRegions.md","x":-860,"y":-88,"width":400,"height":132,"color":"3"},
-		{"id":"6511368d23093135","type":"file","file":"JCT/Polygonal JCT.md","x":-1400,"y":-356,"width":400,"height":400,"color":"3"}
-	],
-	"edges":[
-		{"id":"8bffa387ce7723ea","fromNode":"a2e35a7f24d8bae3","fromSide":"left","toNode":"87efd5bc55a923ab","toSide":"right"},
-		{"id":"f77e553126a5a88d","fromNode":"7854ce495c2a2fad","fromSide":"left","toNode":"6511368d23093135","toSide":"right"},
-		{"id":"e6f0d39d5051dced","fromNode":"098d13fa4a7044cc","fromSide":"left","toNode":"6511368d23093135","toSide":"right"},
-		{"id":"abacf265224f0a35","fromNode":"5d6bbe787625c8d7","fromSide":"left","toNode":"3942f3d7e24be08a","toSide":"right"},
-		{"id":"a264e71d1a864a3c","fromNode":"0e1856e84b40a570","fromSide":"left","toNode":"3942f3d7e24be08a","toSide":"right"},
-		{"id":"9f5e2e8773ae866b","fromNode":"d563baf7511ead3f","fromSide":"left","toNode":"3942f3d7e24be08a","toSide":"right"},
-		{"id":"23c5c91e964eafa1","fromNode":"54b244074d6747ab","fromSide":"left","toNode":"3942f3d7e24be08a","toSide":"right"},
-		{"id":"5e9221ac1a0bc2b1","fromNode":"a2e35a7f24d8bae3","fromSide":"left","toNode":"fc74b0735bfb3ea0","toSide":"right"},
-		{"id":"75cd15959b9d6fb2","fromNode":"1373479f32591a40","fromSide":"left","toNode":"098d13fa4a7044cc","toSide":"right"},
-		{"id":"4717abc8c0c34c8b","fromNode":"4b2b298cea87a759","fromSide":"left","toNode":"098d13fa4a7044cc","toSide":"right"},
-		{"id":"c5b0817e1553f35b","fromNode":"0509527941de6fed","fromSide":"left","toNode":"098d13fa4a7044cc","toSide":"right"},
-		{"id":"ac18799f50c912d1","fromNode":"426a528358fa1b38","fromSide":"left","toNode":"7854ce495c2a2fad","toSide":"right"},
-		{"id":"c41cd29c901ad3b9","fromNode":"c6af0c381f0e763b","fromSide":"left","toNode":"7854ce495c2a2fad","toSide":"right"},
-		{"id":"0dcf487bc43809ed","fromNode":"438a38d741c24ce1","fromSide":"left","toNode":"7854ce495c2a2fad","toSide":"right"}
-	]
+  "nodes": [
+    {
+      "type": "file",
+      "id": "0509527941de6fed",
+      "x": -240,
+      "y": -1004,
+      "width": 600,
+      "height": 330,
+      "color": "3",
+      "file": "JCT/Frontiers of an Infinite Strip.md"
+    },
+    {
+      "type": "file",
+      "id": "1373479f32591a40",
+      "x": -240,
+      "y": -644,
+      "width": 600,
+      "height": 120,
+      "color": "3",
+      "file": "JCT/There are two directions between two points.md"
+    },
+    {
+      "type": "file",
+      "id": "4b2b298cea87a759",
+      "x": -240,
+      "y": -498,
+      "width": 600,
+      "height": 520,
+      "color": "3",
+      "file": "JCT/There are even number of crossings.md"
+    },
+    {
+      "type": "file",
+      "id": "426a528358fa1b38",
+      "x": -240,
+      "y": 44,
+      "width": 600,
+      "height": 200,
+      "color": "3",
+      "file": "JCT/Flathead has 2 region.md"
+    },
+    {
+      "type": "file",
+      "id": "c6af0c381f0e763b",
+      "x": -240,
+      "y": 276,
+      "width": 600,
+      "height": 193,
+      "color": "3",
+      "file": "JCT/Dial has 1 region.md"
+    },
+    {
+      "type": "file",
+      "id": "438a38d741c24ce1",
+      "x": -240,
+      "y": 496,
+      "width": 600,
+      "height": 295,
+      "color": "3",
+      "file": "JCT/Every point on the segment in a clock bounds the same regions.md"
+    },
+    {
+      "type": "file",
+      "id": "a2e35a7f24d8bae3",
+      "x": 400,
+      "y": -1535,
+      "width": 400,
+      "height": 209,
+      "color": "2",
+      "file": "Basic Graph stuff/Simplify function.md"
+    },
+    {
+      "type": "file",
+      "id": "fc74b0735bfb3ea0",
+      "x": -140,
+      "y": -1804,
+      "width": 400,
+      "height": 200,
+      "color": "2",
+      "file": "Basic Graph stuff/Coherent, Complete formalisation of Basic Graph properties.md"
+    },
+    {
+      "type": "file",
+      "id": "87efd5bc55a923ab",
+      "x": -140,
+      "y": -1505,
+      "width": 400,
+      "height": 149,
+      "color": "2",
+      "file": "Matching/Konig's Theorem.md"
+    },
+    {
+      "type": "file",
+      "id": "098d13fa4a7044cc",
+      "x": -860,
+      "y": -356,
+      "width": 400,
+      "height": 146,
+      "color": "3",
+      "file": "JCT/AtLeastTwoRegions.md"
+    },
+    {
+      "type": "file",
+      "id": "7854ce495c2a2fad",
+      "x": -860,
+      "y": -88,
+      "width": 400,
+      "height": 132,
+      "color": "3",
+      "file": "JCT/AtMostTwoRegions.md"
+    },
+    {
+      "type": "file",
+      "id": "6511368d23093135",
+      "x": -1400,
+      "y": -356,
+      "width": 400,
+      "height": 400,
+      "color": "3",
+      "file": "JCT/Polygonal JCT.md"
+    },
+    {
+      "type": "group",
+      "id": "0c5bb6c4-8894-400d-b77b-5270732003cf",
+      "x": -1660,
+      "y": -1840,
+      "width": 1320,
+      "height": 740,
+      "color": "1",
+      "label": "Stitching"
+    },
+    {
+      "type": "text",
+      "id": "bf1fcbe7-2850-4ea4-a18e-81f542fca71b",
+      "x": -1620,
+      "y": -1800,
+      "width": 400,
+      "height": 660,
+      "text": "# Flat\nFrom Flat\n- flat iff cycle almost included is included\n- take a compOf G \\upr F\n- this is clearly a subgraph so why is it induced?\n- induced is defined as any edge, e, between x and y s.t. x and y are in the subgraph then e must also be in the subgraph.\n- Suppose there is an edge e that is not in F and between x and y belonging to some connected component of G \\upr F. Then, since connected, there is some path between x and y inside F.\n- Together with e, we have a cycle which is almost included in F, so e is in F. contradiction\n\nTo Flat\n- Take a cycle that is almost included in F.\n- Every vertex of this cycle must be in some connected component of G \\upr F.\n- So the only edge possibly not included in F, e, is between two vertices in the component.\n- This component is an induced subgraph so e is included in F."
+    },
+    {
+      "type": "text",
+      "id": "4e1616e0-5bd4-4958-965a-1f56e95bcfda",
+      "x": -1199.9999999999998,
+      "y": -1799.9999999999995,
+      "width": 400,
+      "height": 80,
+      "text": "# Parallel\n"
+    },
+    {
+      "type": "text",
+      "id": "4f6512d1-5ba1-420b-b7ba-797923baa931",
+      "x": -780,
+      "y": -1800,
+      "width": 400,
+      "height": 80,
+      "text": "# Spanning?"
+    }
+  ],
+  "edges": [
+    {
+      "id": "8bffa387ce7723ea",
+      "fromNode": "a2e35a7f24d8bae3",
+      "fromSide": "left",
+      "toNode": "87efd5bc55a923ab",
+      "toSide": "right",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "f77e553126a5a88d",
+      "fromNode": "7854ce495c2a2fad",
+      "fromSide": "left",
+      "toNode": "6511368d23093135",
+      "toSide": "right",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e6f0d39d5051dced",
+      "fromNode": "098d13fa4a7044cc",
+      "fromSide": "left",
+      "toNode": "6511368d23093135",
+      "toSide": "right",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "5e9221ac1a0bc2b1",
+      "fromNode": "a2e35a7f24d8bae3",
+      "fromSide": "left",
+      "toNode": "fc74b0735bfb3ea0",
+      "toSide": "right",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "75cd15959b9d6fb2",
+      "fromNode": "1373479f32591a40",
+      "fromSide": "left",
+      "toNode": "098d13fa4a7044cc",
+      "toSide": "right",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "4717abc8c0c34c8b",
+      "fromNode": "4b2b298cea87a759",
+      "fromSide": "left",
+      "toNode": "098d13fa4a7044cc",
+      "toSide": "right",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "c5b0817e1553f35b",
+      "fromNode": "0509527941de6fed",
+      "fromSide": "left",
+      "toNode": "098d13fa4a7044cc",
+      "toSide": "right",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "ac18799f50c912d1",
+      "fromNode": "426a528358fa1b38",
+      "fromSide": "left",
+      "toNode": "7854ce495c2a2fad",
+      "toSide": "right",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "c41cd29c901ad3b9",
+      "fromNode": "c6af0c381f0e763b",
+      "fromSide": "left",
+      "toNode": "7854ce495c2a2fad",
+      "toSide": "right",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "0dcf487bc43809ed",
+      "fromNode": "438a38d741c24ce1",
+      "fromSide": "left",
+      "toNode": "7854ce495c2a2fad",
+      "toSide": "right",
+      "toEnd": "arrow"
+    }
+  ]
 }
