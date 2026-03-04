@@ -189,12 +189,21 @@ lemma cycleMatroid_isBasis :
   rw [← isBase_restrict_iff, ← cycleMatroid_isBase, cycleMatroid_edgeRestrict,
     inter_eq_right.mpr hFE]
 
-def edgeBasedVertexSep (G : Graph α β) (F : Set β) : Set α := V(G, F) ∩ V(G, E(G) \ F)
+-- def edgeBasedVertexSep (G : Graph α β) (F : Set β) : Set α := V(G, F) ∩ V(G, E(G) \ F)
 
--- lemma IsClosedSubgraph.cycleMatroid_skew (h : H ≤c G) :
---     G.cycleMatroid.Skew E(H) (E(G) \ E(H)) := by
---   rw [skew_iff_exist_isBases, union_diff_cancel h.edgeSet_mono]
---   sorry
+lemma IsClosedSubgraph.cycleMatroid_skew (h : H ≤c G) : G.cycleMatroid.Skew E(H) (E(G) \ E(H)) := by
+  rw [skew_iff_exist_isBases, union_diff_cancel h.edgeSet_mono]
+  obtain ⟨I, hI⟩ := exists_isBasis G.cycleMatroid E(H) h.edgeSet_mono
+  obtain ⟨J, hJ⟩ := exists_isBasis G.cycleMatroid (E(G) \ E(H)) diff_subset
+  use I, J, disjoint_sdiff_right.mono hI.subset hJ.subset, ?_
+  rw [← union_diff_cancel h.edgeSet_mono]
+  refine hI.union_isBasis_union hJ ?_
+  have hIH : I ⊆ E(H) := by simpa using hI.subset
+  have hJH : J ⊆ E(G) \ E(H) := by simpa using hJ.subset
+  have hIindep := hI.indep
+  have hJindep := hJ.indep
+  rw [cycleMatroid_indep] at hIindep hJindep ⊢
+  exact h.isAcyclicSet_union hIindep hJindep hIH hJH
 
 -- lemma exists_connected_eq_cycleMatroid (G : Graph α β) :
 --     ∃ H : Graph α β, H.Preconnected ∧ H.cycleMatroid = G.cycleMatroid := by

@@ -2,8 +2,8 @@ import Matroid.Graph.Distance
 import Matroid.Graph.Connected.Subgraph
 import Matroid.Graph.Connected.Bond
 
-variable {α β : Type*} {G H T : Graph α β} {u v x y z : α} {e e' f g : β} {X : Set α} {F F' : Set β}
-{P C Q : WList α β}
+variable {α β : Type*} {G H T : Graph α β} {u v x y z : α} {e e' f g : β} {X : Set α}
+  {F F' I J : Set β} {P C Q : WList α β}
 open Set WList
 
 namespace Graph
@@ -436,6 +436,26 @@ lemma IsAcyclicSet.of_edgeDelete_isBond {B} (hB : G.IsBond B) (hF : (G ＼ B).Is
   have := by simpa using hB.prop.1.anti (edgeRestrict_le (E₀ := insert e F))
   rwa [(inter_eq_right (s := E(G))).mpr (by simpa [hB.subset_edgeSet he, insert_subset_iff]),
     insert_inter_of_mem he, hFB.inter_eq, insert_empty_eq] at this
+
+lemma IsClosedSubgraph.isAcyclicSet_union (hI : G.IsAcyclicSet I) (hJ : G.IsAcyclicSet J)
+    (hIH : I ⊆ E(H)) (hJH : J ⊆ E(G) \ E(H)) (h : H ≤c G): G.IsAcyclicSet (I ∪ J) := by
+  simp only [isAcyclicSet_iff, hI.subset, IsForest,
+    edgeRestrict_edgeSet, mem_inter_iff, and_imp, true_and, hJ.subset,
+    union_subset_iff, and_self, mem_union] at hI hJ ⊢
+  rintro e he heIJ
+  wlog heI : e ∈ I
+  · rw [or_comm] at heIJ
+    rw [union_comm]
+    refine this (H := G - V(H)) (I := J) (J := I) ?_ ?_ h.compl hJ hI he heIJ
+      (heIJ.resolve_right heI) <;> simpa [h.compl_edgeSet, diff_diff_cancel_left h.edgeSet_mono]
+  refine hI he heI |>.anti_of_mem (edgeRestrict_mono_left h.le I) (by simp [heI, hIH heI])
+  |>.of_isClosedSubgraph ?_
+  convert h.inter_le edgeRestrict_le
+  refine ext_of_le_le edgeRestrict_le H.inter_le_left (by simp [h.vertexSet_mono]) ?_
+  have hcompat : Compatible H (G ↾ (I ∪ J)) := compatible_of_le_le h.le edgeRestrict_le
+  rw [subset_diff, disjoint_comm] at hJH
+  simp [hcompat.inter_edgeSet, inter_union_distrib_left, ← inter_assoc, hJH.2.inter_eq,
+    inter_eq_left.mpr h.edgeSet_mono]
 
 /-! ### Leaves -/
 

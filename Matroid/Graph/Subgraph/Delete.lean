@@ -631,8 +631,25 @@ lemma IsClosedSubgraph.diff {H₁ H₂ : Graph α β} (h₁ : H₁ ≤c G) (h₂
     refine ⟨x, y, hexy.of_isClosedSubgraph_of_mem h₁ hx.1, hx.2, fun hy ↦ hx.2 ?_⟩
     refine (hexy.symm.of_isClosedSubgraph_of_mem h₂ hy).right_mem
 
+lemma IsClosedSubgraph.diff_edgeSet {H₁ H₂ : Graph α β} (h₁ : H₁ ≤c G) (h₂ : H₂ ≤c G) :
+    E(H₁ - V(H₂)) = E(H₁) \ E(H₂) := by
+  ext e
+  wlog heH₁ : e ∈ E(H₁)
+  · grind
+  simp only [vertexDelete_edgeSet, mem_setOf_eq, mem_diff, heH₁, true_and]
+  refine ⟨fun ⟨x, y, hexy, hx, hy⟩ heH₂ ↦ hx (hexy.of_le h₁.le |>.of_le_of_mem h₂.le heH₂
+  |>.left_mem), fun heH₂ ↦ ?_⟩
+  obtain ⟨x, y, hexy⟩ := exists_isLink_of_mem_edgeSet heH₁
+  have hexy' := hexy.of_le h₁.le
+  use x, y, hexy, ?_, ?_ <;> contrapose! heH₂
+  · exact hexy'.of_isClosedSubgraph_of_mem h₂ heH₂ |>.edge_mem
+  exact hexy'.symm.of_isClosedSubgraph_of_mem h₂ heH₂ |>.edge_mem
+
 lemma IsClosedSubgraph.compl (h : H ≤c G) : G - V(H) ≤c G :=
   G.isClosedSubgraph_self.diff h
+
+lemma IsClosedSubgraph.compl_edgeSet (h : H ≤c G) : E(G - V(H)) = E(G) \ E(H) :=
+  G.isClosedSubgraph_self.diff_edgeSet h
 
 lemma IsClosedSubgraph.of_edgeDelete_iff (hclF : H ≤c G ＼ F) : H ≤c G ↔ E(G) ∩ F ⊆ E(G - V(H)) := by
   rw [vertexDelete_edgeSet]
