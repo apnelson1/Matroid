@@ -1,0 +1,3 @@
+- Consider extending the segments so that we have 4 quadrants.
+- One of the quadrant is a region. Closure of it is convex so there is a straight path to the frontier.
+- Consider the opposite quadrant (open). Every point in the last two quadrants has straight line path to somewhere in this quadrant. From this quadrant, there is a straight line path to every point in the two segments that divides the clock.

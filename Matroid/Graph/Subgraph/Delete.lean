@@ -384,7 +384,7 @@ lemma le_induce_self (h : H ≤ G) : H ≤ G[V(H)] :=
 lemma le_induce_iff (hX : X ⊆ V(G)) : H ≤ G[X] ↔ H ≤ G ∧ V(H) ⊆ X :=
   ⟨fun h ↦ ⟨h.trans (by simpa), vertexSet_mono h⟩, fun h ↦ le_induce_of_le_of_subset h.1 h.2⟩
 
-lemma diff_subset_isolatedSet_induce (G : Graph α β) (X : Set α) : X \ V(G) ⊆ I(G[X]) := by
+lemma diff_subset_isolatedSet_induce (G : Graph α β) (X : Set α) : X \ V(G) ⊆ Isol(G[X]) := by
   intro x ⟨hxX, hx⟩
   simp only [mem_isolatedSet_iff, isolated_iff, induce_vertexSet, hxX, and_true]
   exact fun e he ↦ hx he.isLink_other.1.left_mem
@@ -631,8 +631,25 @@ lemma IsClosedSubgraph.diff {H₁ H₂ : Graph α β} (h₁ : H₁ ≤c G) (h₂
     refine ⟨x, y, hexy.of_isClosedSubgraph_of_mem h₁ hx.1, hx.2, fun hy ↦ hx.2 ?_⟩
     refine (hexy.symm.of_isClosedSubgraph_of_mem h₂ hy).right_mem
 
+lemma IsClosedSubgraph.diff_edgeSet {H₁ H₂ : Graph α β} (h₁ : H₁ ≤c G) (h₂ : H₂ ≤c G) :
+    E(H₁ - V(H₂)) = E(H₁) \ E(H₂) := by
+  ext e
+  wlog heH₁ : e ∈ E(H₁)
+  · grind
+  simp only [vertexDelete_edgeSet, mem_setOf_eq, mem_diff, heH₁, true_and]
+  refine ⟨fun ⟨x, y, hexy, hx, hy⟩ heH₂ ↦ hx (hexy.of_le h₁.le |>.of_le_of_mem h₂.le heH₂
+  |>.left_mem), fun heH₂ ↦ ?_⟩
+  obtain ⟨x, y, hexy⟩ := exists_isLink_of_mem_edgeSet heH₁
+  have hexy' := hexy.of_le h₁.le
+  use x, y, hexy, ?_, ?_ <;> contrapose! heH₂
+  · exact hexy'.of_isClosedSubgraph_of_mem h₂ heH₂ |>.edge_mem
+  exact hexy'.symm.of_isClosedSubgraph_of_mem h₂ heH₂ |>.edge_mem
+
 lemma IsClosedSubgraph.compl (h : H ≤c G) : G - V(H) ≤c G :=
   G.isClosedSubgraph_self.diff h
+
+lemma IsClosedSubgraph.compl_edgeSet (h : H ≤c G) : E(G - V(H)) = E(G) \ E(H) :=
+  G.isClosedSubgraph_self.diff_edgeSet h
 
 lemma IsClosedSubgraph.of_edgeDelete_iff (hclF : H ≤c G ＼ F) : H ≤c G ↔ E(G) ∩ F ⊆ E(G - V(H)) := by
   rw [vertexDelete_edgeSet]

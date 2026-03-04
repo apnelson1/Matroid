@@ -1,10 +1,8 @@
 import Matroid.ForMathlib.Card
-import Mathlib.Combinatorics.Matroid.Circuit -- inefficient import
 import Mathlib.Combinatorics.Matroid.Rank.ENat
 import Matroid.ForMathlib.Matroid.Basic
 import Matroid.ForMathlib.Matroid.Sum
 import Matroid.ForMathlib.Set
-import Mathlib.Data.Set.Subset
 import Batteries.CodeAction.Basic
 import Batteries.CodeAction.Misc
 

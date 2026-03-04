@@ -1,7 +1,7 @@
-import Mathlib.Geometry.Polygon.Basic
-import Mathlib.Analysis.InnerProductSpace.l2Space
-import Mathlib.Geometry.Euclidean.Angle.Oriented.Affine
-import Mathlib.Geometry.Convex.Cone.Basic
+import Mathlib.Geometry.Polygon.Basic -- inefficient import
+import Mathlib.Analysis.InnerProductSpace.l2Space -- inefficient import
+import Mathlib.Geometry.Euclidean.Angle.Oriented.Affine -- inefficient import
+import Mathlib.Geometry.Convex.Cone.Basic -- inefficient import
 
 open Set RealInnerProductSpace Metric
 

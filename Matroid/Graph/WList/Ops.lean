@@ -103,32 +103,31 @@ instance instAppend : Append (WList α β) where
   append := append
 
 /-- Properties of concat operation -/
-@[simp]
+@[simp, grind =]
 lemma nil_concat : (nil x).concat e y = cons x e (nil y) := rfl
 
-@[simp]
+@[simp, grind =]
 lemma cons_concat : (cons x e w).concat f y = cons x e (w.concat f y) := rfl
 
-@[simp]
+@[simp, grind =]
 lemma concat_first : (w.concat e v).first = w.first := by
   cases w with simp [concat]
 
-@[simp]
+@[simp, grind =]
 lemma concat_last : (w.concat e v).last = v := by
   induction w with | nil => rfl | cons => simpa [concat]
 
-@[simp]
+@[simp, grind =]
 lemma concat_vertex : (w.concat e v).vertex = w.vertex ++ [v] := by
   induction w with | nil => rfl | cons => simpa [concat]
 
-@[simp]
+@[simp, grind =]
 lemma concat_edge : (w.concat e v).edge = w.edge ++ [e] := by
   induction w with | nil => rfl | cons => simpa [concat]
 
-@[simp]
+@[simp, grind =]
 lemma concat_edgeSet : E(w.concat e v) = insert e E(w)  := by
   simp [Set.ext_iff, or_comm]
-
 
 @[simp]
 lemma mem_concat : x ∈ w.concat e y ↔ x ∈ w ∨ x = y := by
@@ -138,7 +137,7 @@ lemma mem_concat : x ∈ w.concat e y ↔ x ∈ w ∨ x = y := by
 lemma concat_nonempty (w : WList α β) (e x) : (w.concat e x).Nonempty := by
   induction w with simp_all
 
-@[simp]
+@[simp, grind =]
 lemma concat_vertexSet_eq (w : WList α β) (e x) : V(w.concat e x) = insert x V(w) := by
   induction w with | nil => simp [pair_comm] | cons _ _ _ ih => simp [ih, insert_comm]
 

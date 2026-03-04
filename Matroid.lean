@@ -26,10 +26,9 @@ import Matroid.Connectivity.Separation.Infinite
 import Matroid.Connectivity.Separation.Internal
 import Matroid.Connectivity.Separation.Minor
 import Matroid.Connectivity.Separation.Tutte
--- import Matroid.Connectivity.Separation.TutteTriangle
 import Matroid.Connectivity.Separation.Vertical
 import Matroid.Connectivity.Skew
-import Matroid.Triangle
+-- import Matroid.Connectivity.Splitter.Cretaceous
 import Matroid.Connectivity.Splitter.TutteTriangle
 import Matroid.Constructions.Matching
 import Matroid.Constructions.Project
@@ -53,6 +52,7 @@ import Matroid.Flat.LowRank
 import Matroid.Graph.Basic
 -- import Matroid.Graph.Bipartite
 import Matroid.Graph.Connected.Basic
+import Matroid.Graph.Connected.Bond
 import Matroid.Graph.Connected.Component
 import Matroid.Graph.Connected.Construction
 import Matroid.Graph.Connected.Defs
@@ -86,6 +86,7 @@ import Matroid.Graph.Map
 -- import Matroid.Graph.Matching.TutteBerge
 import Matroid.Graph.Minor.Conn
 import Matroid.Graph.Minor.Defs
+-- import Matroid.Graph.Planarity.Cut
 -- import Matroid.Graph.Planarity.Drawing
 -- import Matroid.Graph.Planarity.JCT
 -- import Matroid.Graph.Planarity.Plane

@@ -1,5 +1,6 @@
 import Matroid.Graph.Subgraph.Union
 import Matroid.Graph.Walk.Path
+import Matroid.ForMathlib.Partition.Rep
 
 variable {α β : Type*} {x y z u v w a b : α} {e f : β} {G H : Graph α β} {F F₁ F₂ : Set β}
     {X Y : Set α} {G H : Graph α β} {P : WList α β}
@@ -79,6 +80,7 @@ instance Loopless.union [G.Loopless] [H.Loopless] : (G ∪ H).Loopless where
   not_isLoopAt := by simp [union_isLoopAt_iff]
 
 /-- Maximally loopless subgraph of `G`. -/
+@[simps! vertexSet]
 def loopRemove (G : Graph α β) : Graph α β := G ↾ {e | ∀ x, ¬ G.IsLoopAt e x}
 
 instance : (loopRemove G).Loopless where
@@ -91,15 +93,22 @@ lemma loopRemove_le (G : Graph α β) : loopRemove G ≤ G := edgeRestrict_le
 lemma loopRemove_isSpanningSubgraph (G : Graph α β) : loopRemove G ≤s G :=
   edgeRestrict_isSpanningSubgraph
 
-@[simp]
-lemma loopRemove_vertexSet : V(loopRemove G) = V(G) := by
-  simp only [loopRemove, edgeRestrict_vertexSet]
+lemma loopRemove_edgeDelete (G : Graph α β) : loopRemove G = G ＼ ⋃ x ∈ V(G), G.loopSet x := by
+  rw [loopRemove, ← edgeRestrict_inter_edgeSet, edgeDelete_eq_edgeRestrict, inter_comm]
+  apply congrArg
+  ext e
+  simp only [mem_inter_iff, mem_setOf_eq, mem_diff, mem_iUnion, mem_loopSet, exists_prop,
+    not_exists, not_and, and_congr_right_iff]
+  exact fun he ↦ ⟨fun h v hv ↦ h v, fun h v hv ↦ h v hv.left_mem hv⟩
 
 @[simp]
 lemma loopRemove_edgeSet : E(loopRemove G) = {e ∈ E(G) | ∀ x, ¬ G.IsLoopAt e x} := by
   simp only [loopRemove, edgeRestrict_edgeSet]
   rw [setOf_and]
   rfl
+
+lemma loopRemove_edgeSet_diff : E(loopRemove G) = E(G) \ (⋃ x ∈ V(G), G.loopSet x) := by
+  rw [loopRemove_edgeDelete, edgeDelete_edgeSet]
 
 @[simp]
 lemma loopRemove_isLink : (loopRemove G).IsLink e x y ↔ G.IsLink e x y ∧ x ≠ y := by
@@ -341,3 +350,53 @@ instance mixedLineGraph_simple : L'(G).Simple where
     rw [mixedLineGraph_isLink] at h1 h2
     rw [← h1.2] at h2
     simp_all
+
+section Simplify
+
+variable {φ : β → β}
+
+@[simps! vertexSet]
+def simplify (G : Graph α β) (φ : β → β) : Graph α β := G.loopRemove ↾ (φ '' E(G))
+
+lemma simplify_isSpanningSubgraph : G.simplify φ ≤s G :=
+  edgeRestrict_isSpanningSubgraph.trans G.loopRemove_isSpanningSubgraph
+
+lemma simplify_le : G.simplify φ ≤ G := simplify_isSpanningSubgraph.le
+
+lemma simplify_edgeSet_diff (hφ : G.parallelClasses.IsRepFun φ) :
+    E(G.simplify φ) = φ '' E(G) \ ⋃ x ∈ V(G), G.loopSet x := by
+  simp only [simplify, edgeRestrict_edgeSet, loopRemove_edgeSet_diff]
+  ext e
+  simp only [mem_inter_iff, mem_diff, mem_iUnion, mem_loopSet, exists_prop, and_comm, not_exists,
+    not_and, mem_image, and_congr_right_iff, and_iff_right_iff_imp, forall_exists_index, and_imp]
+  rintro f rfl hf h
+  simpa using hφ.apply_mem (by simpa using hf)
+
+lemma simplify_edgeSet (hφ : G.parallelClasses.IsRepFun φ) :
+    E(G.simplify φ) = φ '' (E(G) \ (⋃ x ∈ V(G), G.loopSet x)) := by
+  ext e
+  rw [simplify_edgeSet_diff hφ]
+  simp only [mem_diff, mem_image, and_comm, mem_iUnion, mem_loopSet, exists_prop, not_exists,
+    not_and]
+  refine ⟨?_, ?_⟩
+  · rintro ⟨⟨f, rfl, hf⟩, h⟩
+    use f, rfl, hf
+    have hfφ := by simpa [hf] using hφ.rel_apply (a := f)
+    simp only [parallelClasses, Partition.rel_ofRel_eq] at hfφ
+    simp_rw [IsLoopAt, hfφ.isLink_eq]
+    exact h
+  rintro ⟨f, rfl, hf, h⟩
+  use ⟨f, rfl, hf⟩
+  have hfφ := by simpa [hf] using hφ.rel_apply (a := f)
+  simp only [parallelClasses, Partition.rel_ofRel_eq] at hfφ
+  simp_rw [IsLoopAt, ← hfφ.isLink_eq]
+  exact h
+
+lemma simplify_eq_edgeRestrict (hφ : G.parallelClasses.IsRepFun φ) :
+    G.simplify φ = G ↾ φ '' (E(G) \ (⋃ x ∈ V(G), G.loopSet x)) := by
+  apply G.ext_of_le_le (edgeRestrict_le.trans <| loopRemove_le G) edgeRestrict_le rfl
+  convert simplify_edgeSet hφ
+  simp only [edgeRestrict_edgeSet, inter_eq_right, image_subset_iff]
+  refine fun e he ↦ ?_
+  simp only [mem_preimage]
+  simpa using hφ.apply_mem <| by simpa using he.1

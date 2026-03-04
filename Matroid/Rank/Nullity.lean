@@ -1,4 +1,3 @@
-import Mathlib.Tactic.Ring
 import Matroid.Rank.ENat
 import Matroid.Constructions.Project
 import Matroid.Minor.Contract

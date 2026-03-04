@@ -1,6 +1,6 @@
 import Mathlib.Combinatorics.Graph.Basic
 import Mathlib.Data.Set.Card.Arithmetic
-import Matroid.ForMathlib.Logic
+import Matroid.ForMathlib.Partition.Set
 
 /-!
 # Basic Graph Theory
@@ -237,6 +237,18 @@ lemma parallel.trans {g : β} (h : G.parallel e f) (h' : G.parallel f g) : G.par
 instance : IsTrans _ G.parallel where
   trans _ _ _ := parallel.trans
 
+def parallelClasses (G : Graph α β) : Partition (Set β) :=
+  Partition.ofRel G.parallel
+
+@[simp]
+lemma parallelClasses_supp (G : Graph α β) : G.parallelClasses.supp = E(G) := by
+  ext e
+  simp only [parallelClasses, Partition.ofRel_supp, Relation.mem_domain_iff]
+  refine ⟨fun ⟨x, hx⟩ ↦ ?_, fun he ↦ ?_⟩
+  · exact hx.left_mem
+  use e
+  exact parallel_refl he
+
 end parallel
 
 section Neighborhood
@@ -453,18 +465,18 @@ lemma isolated_or_exists_isLink (hx : x ∈ V(G)) : G.Isolated x ∨ ∃ e y, G.
 @[grind]
 def IsolatedSet (G : Graph α β) : Set α := {x | G.Isolated x}
 
-notation "I(" G ")" => IsolatedSet G
+scoped notation "Isol(" G ")" => IsolatedSet G
 
 @[simp]
-lemma mem_isolatedSet_iff (G : Graph α β) (x : α) : x ∈ I(G) ↔ G.Isolated x := Iff.rfl
+lemma mem_isolatedSet_iff (G : Graph α β) (x : α) : x ∈ Isol(G) ↔ G.Isolated x := Iff.rfl
 
 @[simp]
-lemma isolatedSet_subset (G : Graph α β) : I(G) ⊆ V(G) := by
+lemma isolatedSet_subset (G : Graph α β) : Isol(G) ⊆ V(G) := by
   rintro x ⟨h, hx⟩
   exact hx
 
 @[simp]
-lemma setincEdges_isolatedSet (G : Graph α β) : E(G, I(G)) = ∅ := by
+lemma setincEdges_isolatedSet (G : Graph α β) : E(G, Isol(G)) = ∅ := by
   simp +contextual [Set.ext_iff, isolated_iff]
 
 @[simp]
@@ -476,7 +488,7 @@ lemma incEdges_empty_iff (hv : v ∈ V(G)) : E(G, v) = ∅ ↔ G.Isolated v := b
   simp [IncEdges, isolated_iff, hv, eq_empty_iff_forall_notMem]
 
 @[simp]
-lemma SetIncEdges_empty_iff {S} (hS : S ⊆ V(G)) : E(G, S) = ∅ ↔ S ⊆ I(G) := by
+lemma SetIncEdges_empty_iff {S} (hS : S ⊆ V(G)) : E(G, S) = ∅ ↔ S ⊆ Isol(G) := by
   simp only [SetIncEdges, eq_empty_iff_forall_notMem, mem_setOf_eq, not_exists, not_and]
   refine ⟨fun h x hxS ↦ ?_, fun h e x hxS ↦ (h hxS |>.not_inc ·)⟩
   simp only [mem_isolatedSet_iff, isolated_iff, hS hxS, and_true]

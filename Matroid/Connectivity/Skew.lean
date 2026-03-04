@@ -1,4 +1,3 @@
-import Mathlib.Algebra.BigOperators.Ring.Finset
 import Matroid.Modular.Basic
 import Matroid.Order.Quotient
 import Matroid.Constructions.Project

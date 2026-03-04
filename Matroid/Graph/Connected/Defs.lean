@@ -24,6 +24,157 @@ lemma ConnBetween.walkable_eq_walkable (h : G.ConnBetween x y) : G.walkable x = 
 
 /-! ### Connectivity on a graph -/
 
+/-- A graph is preconnected if for every pair of vertices, there is a path between them. -/
+def Preconnected (G : Graph α β) : Prop :=
+  ∀ x y, x ∈ V(G) → y ∈ V(G) → G.ConnBetween x y
+
+lemma Preconnected.isSpanningSubgraph (h : H.Preconnected) (hsle : H ≤s G) : G.Preconnected :=
+  fun s t hs ht ↦ (h s t (hsle.vertexSet_eq ▸ hs) (hsle.vertexSet_eq ▸ ht)).mono hsle.le
+
+@[simp]
+lemma IsComplete.preconnected (h : G.IsComplete) : G.Preconnected := by
+  intro s t hs ht
+  obtain rfl | hne := eq_or_ne s t
+  · simpa
+  exact h s hs t ht hne |>.connBetween
+
+lemma preconnected_of_exists_connBetween (h : ∃ x, ∀ y ∈ V(G), G.ConnBetween x y) :
+    G.Preconnected := by
+  obtain ⟨x, hx⟩ := h
+  exact fun s t hs ht ↦ (hx s hs).symm.trans <| hx t ht
+
+lemma preconnected_iff_exists_connBetween (hx : x ∈ V(G)) :
+    G.Preconnected ↔ ∀ y ∈ V(G), G.ConnBetween x y := by
+  refine ⟨fun h => fun y hy ↦ h x y hx hy, fun hx => ?_⟩
+  exact fun s t hs ht ↦ (hx s hs).symm.trans <| hx t ht
+
+/- ### Connectedness -/
+
+/-- A graph is connected if it is a minimal closed subgraph of itself -/
+protected def Connected (G : Graph α β) : Prop := G.IsCompOf G
+
+lemma Connected.nonempty (hG : G.Connected) : V(G).Nonempty := by
+  rw [Graph.Connected, IsCompOf] at hG
+  exact hG.prop.2
+
+@[simp]
+lemma bot_not_connected : ¬ (⊥ : Graph α β).Connected := by
+  rintro h
+  simpa using h.nonempty
+
+lemma Connected.ne_bot (hG : G.Connected) : G ≠ ⊥ := by
+  rintro rfl
+  exact bot_not_connected hG
+
+lemma connected_iff_forall_closed (hG : V(G).Nonempty) :
+    G.Connected ↔ ∀ ⦃H⦄, H ≤c G → V(H).Nonempty → H = G := by
+  refine ⟨fun h H hHG hHne ↦ ?_, fun h ↦ ⟨by simpa, fun H ⟨hle, hH⟩ _ ↦ (h hle hH).symm.le⟩⟩
+  rw [Graph.Connected, IsCompOf] at h
+  exact h.eq_of_le ⟨hHG, hHne⟩ hHG.le
+
+lemma connected_iff_forall_closed_ge (hG : V(G).Nonempty) :
+    G.Connected ↔ ∀ ⦃H⦄, H ≤c G → V(H).Nonempty → G ≤ H := by
+  rw [connected_iff_forall_closed hG]
+  exact ⟨fun h H hle hne ↦ (h hle hne).symm.le, fun h H hle hne ↦ (h hle hne).antisymm' hle.le⟩
+
+lemma Connected.eq_of_isClosedSubgraph (hG : G.Connected) (hH : H ≤c G) (hne : V(H).Nonempty) :
+    H = G := by
+  rw [connected_iff_forall_closed (hne.mono (vertexSet_mono hH.le))] at hG
+  exact hG hH hne
+
+lemma Connected.isSimpleOrder (hG : G.Connected) (hnonempty : G ≠ ⊥) :
+    IsSimpleOrder G.ClosedSubgraph where
+  exists_pair_ne := by
+    use ⊥, ⊤
+    apply_fun Subtype.val
+    exact hnonempty.symm
+  eq_bot_or_eq_top H := by
+    refine (eq_empty_or_nonempty V(H.val)).imp (by simp) ?_
+    convert hG.eq_of_isClosedSubgraph H.prop
+    exact Iff.symm (StrictMono.apply_eq_top_iff fun ⦃a b⦄ a ↦ a)
+
+lemma IsClosedSubgraph.disjoint_or_subset_of_isCompOf (h : H ≤c G) (hK : K.IsCompOf G) :
+    K.IsCompOf H ∨ K.StronglyDisjoint H := by
+  rw [or_iff_not_imp_right, StronglyDisjoint_iff_of_le_le hK.le h.le,
+    not_disjoint_iff_nonempty_inter, inter_comm]
+  intro hne
+  have h_eq := hK.eq_of_le ⟨h.inter hK.isClosedSubgraph, by simpa⟩ Graph.inter_le_right
+  rw [← h_eq] at hK ⊢
+  refine ⟨⟨hK.isClosedSubgraph.of_le_of_le Graph.inter_le_left h.le, by simpa⟩, ?_⟩
+  intro P ⟨hPH, hP⟩ hle
+  rw [hK.eq_of_le ⟨?_, hP⟩ hle]
+  exact (hPH.of_le_of_le hle Graph.inter_le_left).trans hK.isClosedSubgraph
+
+lemma IsCompOf.of_le_le (h : K.IsCompOf G) (hKH : K ≤ H) (hHG : H ≤ G) : K.IsCompOf H := by
+  refine ⟨⟨h.isClosedSubgraph.of_le_of_le hKH hHG, h.nonempty⟩, fun K' ⟨hK'H, hK'ne⟩ hK'K ↦ ?_⟩
+  exact h.le_of_le ⟨(hK'H.of_le_of_le hK'K hKH).trans h.isClosedSubgraph, hK'ne⟩ hK'K
+
+lemma ConnBetween.mem_walkable (h : G.ConnBetween x y) : y ∈ V(G.walkable x) := h
+
+/-- If `G` has one vertex connected to all others, then `G` is connected. -/
+lemma connected_of_vertex (hu : u ∈ V(G)) (h : ∀ y ∈ V(G), G.ConnBetween y u) :
+    G.Connected := by
+  have hco := walkable_isCompOf hu
+  rwa [walkable_isClosedSubgraph.eq_ambient_of_subset_vertexSet (h · · |>.symm)] at hco
+
+lemma connBetween_iff_mem_walkable_of_mem :
+    G.ConnBetween x y ↔ y ∈ V(G.walkable x) := Iff.rfl
+
+lemma Connected.connBetween (h : G.Connected) (hx : x ∈ V(G)) (hy : y ∈ V(G)) :
+    G.ConnBetween x y := by
+  rwa [connBetween_iff_mem_walkable_of_mem, ← h.eq_walkable_of_mem_walkable hx]
+
+lemma Connected.pre (h : G.Connected) : G.Preconnected :=
+  fun _ _ ↦ h.connBetween
+
+lemma connected_iff : G.Connected ↔ V(G).Nonempty ∧ G.Preconnected :=
+  ⟨fun h => ⟨h.nonempty, h.pre⟩,
+    fun ⟨hne, h⟩ => connected_of_vertex hne.some_mem (fun _ b => h _ _ b hne.some_mem)⟩
+
+lemma preconnected_iff : G.Preconnected ↔ G = ⊥ ∨ G.Connected := by
+  rw [connected_iff]
+  obtain h | h := G.eq_bot_or_vertexSet_nonempty <;> simp [h, G.ne_bot_iff]
+
+lemma preconnected_iff_of_mem (hx : x ∈ V(G)) : G.Preconnected ↔ G.Connected := by
+  simp [connected_iff, (show V(G).Nonempty from ⟨x, hx⟩)]
+
+lemma connected_of_exists_connBetween (h : ∃ x ∈ V(G), ∀ y ∈ V(G), G.ConnBetween x y) :
+    G.Connected := by
+  obtain ⟨x, hx, h⟩ := h
+  rw [connected_iff]
+  exact ⟨⟨x, hx⟩, preconnected_of_exists_connBetween ⟨x, h⟩⟩
+
+lemma connected_iff_exists_connBetween (hx : x ∈ V(G)) :
+    G.Connected ↔ ∀ y ∈ V(G), G.ConnBetween x y := by
+  rw [← preconnected_iff_of_mem hx, preconnected_iff_exists_connBetween hx]
+
+lemma exists_not_connBetween_of_not_connected (h : ¬ G.Connected) (hx : x ∈ V(G)) :
+    ∃ y ∈ V(G), ¬ G.ConnBetween x y := by
+  simpa [connected_iff_exists_connBetween hx, not_forall] using h
+
+lemma Connected.of_isSpanningSubgraph (h : H.Connected) (hsle : H ≤s G) : G.Connected := by
+  rw [connected_iff] at h ⊢
+  exact ⟨hsle.vertexSet_eq ▸ h.1, h.2.isSpanningSubgraph hsle⟩
+
+@[simp]
+lemma IsComplete.connected_iff (h : G.IsComplete) : G.Connected ↔ V(G).Nonempty := by
+  simp [h, Graph.connected_iff]
+
+lemma Preconnected.eq_of_isClosedSubgraph (hG : G.Preconnected) (hH : H ≤c G) (hne : V(H).Nonempty):
+    H = G := by
+  refine Connected.eq_of_isClosedSubgraph ?_ hH hne
+  rw [connected_iff]
+  use (by use hne.some, hH.vertexSet_mono hne.some_mem)
+
+lemma not_preconnected_of_ne_of_isClosedSubgraph {H₁ H₂ : Graph α β} (h₁ : H₁ ≤c G)
+    (hV₁ : V(H₁).Nonempty) (h₂ : H₂ ≤c G) (hV₂ : V(H₂).Nonempty) (hdj : H₁ ≠ H₂) :
+    ¬ G.Preconnected := by
+  contrapose! hdj
+  obtain rfl := hdj.eq_of_isClosedSubgraph h₂ hV₂
+  exact hdj.eq_of_isClosedSubgraph h₁ hV₁
+
+/-! ### Cut -/
+
 /-- A partition of `G.V` into two parts with no edge between them. -/
 structure Separation (G : Graph α β) where
   left : Set α
@@ -147,11 +298,6 @@ lemma exists_mem_left_of_nonempty_separation (h : Nonempty G.Separation) (hx : x
   · exact ⟨S, hxS⟩
   · exact ⟨S.symm, by simpa using hxS⟩
 
-
-/-- A graph is preconnected if for every pair of vertices, there is a path between them. -/
-def Preconnected (G : Graph α β) : Prop :=
-  ∀ x y, x ∈ V(G) → y ∈ V(G) → G.ConnBetween x y
-
 lemma exists_separation_of_not_connBetween (hxV : x ∈ V(G)) (hyV : y ∈ V(G))
     (hxy : ¬ G.ConnBetween x y) : ∃ S : G.Separation, x ∈ S.left ∧ y ∈ S.right :=
   ⟨⟨{w ∈ V(G) | G.ConnBetween x w}, {w ∈ V(G) | ¬ G.ConnBetween x w}, ⟨x, by simpa⟩,
@@ -176,105 +322,6 @@ lemma preconnected_of_vertexSet_subsingleton (hV : V(G).Subsingleton) : G.Precon
   obtain ⟨S⟩ := by simpa only [Preconnected, not_isEmpty_iff] using hV
   exact S.vertexSet_nontrivial
 
-lemma Preconnected.isSpanningSubgraph (h : H.Preconnected) (hsle : H ≤s G) : G.Preconnected :=
-  fun s t hs ht ↦ (h s t (hsle.vertexSet_eq ▸ hs) (hsle.vertexSet_eq ▸ ht)).mono hsle.le
-
-@[simp]
-lemma IsComplete.preconnected (h : G.IsComplete) : G.Preconnected := by
-  intro s t hs ht
-  obtain rfl | hne := eq_or_ne s t
-  · simpa
-  exact h s hs t ht hne |>.connBetween
-
-lemma preconnected_of_exists_connBetween (h : ∃ x, ∀ y ∈ V(G), G.ConnBetween x y) :
-    G.Preconnected := by
-  obtain ⟨x, hx⟩ := h
-  exact fun s t hs ht ↦ (hx s hs).symm.trans <| hx t ht
-
-lemma preconnected_iff_exists_connBetween (hx : x ∈ V(G)) :
-    G.Preconnected ↔ ∀ y ∈ V(G), G.ConnBetween x y := by
-  refine ⟨fun h => fun y hy ↦ h x y hx hy, fun hx => ?_⟩
-  exact fun s t hs ht ↦ (hx s hs).symm.trans <| hx t ht
-
-/- ### Connectedness -/
-
-/-- A graph is connected if it is a minimal closed subgraph of itself -/
-protected def Connected (G : Graph α β) : Prop := G.IsCompOf G
-
-lemma Connected.nonempty (hG : G.Connected) : V(G).Nonempty := by
-  rw [Graph.Connected, IsCompOf] at hG
-  exact hG.prop.2
-
-@[simp]
-lemma bot_not_connected : ¬ (⊥ : Graph α β).Connected := by
-  rintro h
-  simpa using h.nonempty
-
-lemma Connected.ne_bot (hG : G.Connected) : G ≠ ⊥ := by
-  rintro rfl
-  exact bot_not_connected hG
-
-lemma connected_iff_forall_closed (hG : V(G).Nonempty) :
-    G.Connected ↔ ∀ ⦃H⦄, H ≤c G → V(H).Nonempty → H = G := by
-  refine ⟨fun h H hHG hHne ↦ ?_, fun h ↦ ⟨by simpa, fun H ⟨hle, hH⟩ _ ↦ (h hle hH).symm.le⟩⟩
-  rw [Graph.Connected, IsCompOf] at h
-  exact h.eq_of_le ⟨hHG, hHne⟩ hHG.le
-
-lemma connected_iff_forall_closed_ge (hG : V(G).Nonempty) :
-    G.Connected ↔ ∀ ⦃H⦄, H ≤c G → V(H).Nonempty → G ≤ H := by
-  rw [connected_iff_forall_closed hG]
-  exact ⟨fun h H hle hne ↦ (h hle hne).symm.le, fun h H hle hne ↦ (h hle hne).antisymm' hle.le⟩
-
-lemma Connected.eq_of_isClosedSubgraph (hG : G.Connected) (hH : H ≤c G) (hne : V(H).Nonempty) :
-    H = G := by
-  rw [connected_iff_forall_closed (hne.mono (vertexSet_mono hH.le))] at hG
-  exact hG hH hne
-
-lemma Connected.isSimpleOrder (hG : G.Connected) (hnonempty : G ≠ ⊥) :
-    IsSimpleOrder G.ClosedSubgraph where
-  exists_pair_ne := by
-    use ⊥, ⊤
-    apply_fun Subtype.val
-    exact hnonempty.symm
-  eq_bot_or_eq_top H := by
-    refine (eq_empty_or_nonempty V(H.val)).imp (by simp) ?_
-    convert hG.eq_of_isClosedSubgraph H.prop
-    exact Iff.symm (StrictMono.apply_eq_top_iff fun ⦃a b⦄ a ↦ a)
-
-lemma IsClosedSubgraph.disjoint_or_subset_of_isCompOf (h : H ≤c G) (hK : K.IsCompOf G) :
-    K.IsCompOf H ∨ K.StronglyDisjoint H := by
-  rw [or_iff_not_imp_right, StronglyDisjoint_iff_of_le_le hK.le h.le,
-    not_disjoint_iff_nonempty_inter, inter_comm]
-  intro hne
-  have h_eq := hK.eq_of_le ⟨h.inter hK.isClosedSubgraph, by simpa⟩ Graph.inter_le_right
-  rw [← h_eq] at hK ⊢
-  refine ⟨⟨hK.isClosedSubgraph.of_le_of_le Graph.inter_le_left h.le, by simpa⟩, ?_⟩
-  intro P ⟨hPH, hP⟩ hle
-  rw [hK.eq_of_le ⟨?_, hP⟩ hle]
-  exact (hPH.of_le_of_le hle Graph.inter_le_left).trans hK.isClosedSubgraph
-
-lemma IsCompOf.of_le_le (h : K.IsCompOf G) (hKH : K ≤ H) (hHG : H ≤ G) : K.IsCompOf H := by
-  refine ⟨⟨h.isClosedSubgraph.of_le_of_le hKH hHG, h.nonempty⟩, fun K' ⟨hK'H, hK'ne⟩ hK'K ↦ ?_⟩
-  exact h.le_of_le ⟨(hK'H.of_le_of_le hK'K hKH).trans h.isClosedSubgraph, hK'ne⟩ hK'K
-
-lemma ConnBetween.mem_walkable (h : G.ConnBetween x y) : y ∈ V(G.walkable x) := h
-
-/-- If `G` has one vertex connected to all others, then `G` is connected. -/
-lemma connected_of_vertex (hu : u ∈ V(G)) (h : ∀ y ∈ V(G), G.ConnBetween y u) :
-    G.Connected := by
-  have hco := walkable_isCompOf hu
-  rwa [walkable_isClosedSubgraph.eq_ambient_of_subset_vertexSet (h · · |>.symm)] at hco
-
-lemma connBetween_iff_mem_walkable_of_mem :
-    G.ConnBetween x y ↔ y ∈ V(G.walkable x) := Iff.rfl
-
-lemma Connected.connBetween (h : G.Connected) (hx : x ∈ V(G)) (hy : y ∈ V(G)) :
-    G.ConnBetween x y := by
-  rwa [connBetween_iff_mem_walkable_of_mem, ← h.eq_walkable_of_mem_walkable hx]
-
-lemma Connected.pre (h : G.Connected) : G.Preconnected :=
-  fun _ _ ↦ h.connBetween
-
 lemma Separation.not_connected (S : G.Separation) : ¬ G.Connected := by
   obtain ⟨x, hx⟩ := S.nonempty_left
   obtain ⟨y, hy⟩ := S.nonempty_right
@@ -283,31 +330,6 @@ lemma Separation.not_connected (S : G.Separation) : ¬ G.Connected := by
 
 lemma Connected.isEmpty_separation (hG : G.Connected) : IsEmpty G.Separation :=
   isEmpty_iff.2 fun S ↦ S.not_connected hG
-
-lemma connected_iff : G.Connected ↔ V(G).Nonempty ∧ G.Preconnected :=
-  ⟨fun h => ⟨h.nonempty, h.pre⟩,
-    fun ⟨hne, h⟩ => connected_of_vertex hne.some_mem (fun _ b => h _ _ b hne.some_mem)⟩
-
-lemma preconnected_iff : G.Preconnected ↔ G = ⊥ ∨ G.Connected := by
-  rw [connected_iff]
-  obtain h | h := G.eq_bot_or_vertexSet_nonempty <;> simp [h, G.ne_bot_iff]
-
-lemma preconnected_iff_of_mem (hx : x ∈ V(G)) : G.Preconnected ↔ G.Connected := by
-  simp [connected_iff, (show V(G).Nonempty from ⟨x, hx⟩)]
-
-lemma connected_of_exists_connBetween (h : ∃ x ∈ V(G), ∀ y ∈ V(G), G.ConnBetween x y) :
-    G.Connected := by
-  obtain ⟨x, hx, h⟩ := h
-  rw [connected_iff]
-  exact ⟨⟨x, hx⟩, preconnected_of_exists_connBetween ⟨x, h⟩⟩
-
-lemma connected_iff_exists_connBetween (hx : x ∈ V(G)) :
-    G.Connected ↔ ∀ y ∈ V(G), G.ConnBetween x y := by
-  rw [← preconnected_iff_of_mem hx, preconnected_iff_exists_connBetween hx]
-
-lemma exists_not_connBetween_of_not_connected (h : ¬ G.Connected) (hx : x ∈ V(G)) :
-    ∃ y ∈ V(G), ¬ G.ConnBetween x y := by
-  simpa [connected_iff_exists_connBetween hx, not_forall] using h
 
 lemma nonempty_separation_of_not_connected (hne : V(G).Nonempty) (hG : ¬ G.Connected) :
     Nonempty G.Separation := by
@@ -319,29 +341,6 @@ lemma not_connected_iff_nonempty_separation :
     V(G).Nonempty ∧ ¬ G.Connected ↔ Nonempty G.Separation :=
   ⟨fun ⟨hV, hconn⟩ ↦ nonempty_separation_of_not_connected hV hconn,
   fun ⟨S⟩ => ⟨S.vertexSet_nontrivial.nonempty, S.not_connected⟩⟩
-
-lemma Connected.of_isSpanningSubgraph (h : H.Connected) (hsle : H ≤s G) : G.Connected := by
-  rw [connected_iff] at h ⊢
-  exact ⟨hsle.vertexSet_eq ▸ h.1, h.2.isSpanningSubgraph hsle⟩
-
-@[simp]
-lemma IsComplete.connected_iff (h : G.IsComplete) : G.Connected ↔ V(G).Nonempty := by
-  simp [h, Graph.connected_iff]
-
-lemma Preconnected.eq_of_isClosedSubgraph (hG : G.Preconnected) (hH : H ≤c G) (hne : V(H).Nonempty):
-    H = G := by
-  refine Connected.eq_of_isClosedSubgraph ?_ hH hne
-  rw [connected_iff]
-  use (by use hne.some, hH.vertexSet_mono hne.some_mem)
-
-lemma not_preconnected_of_ne_of_isClosedSubgraph {H₁ H₂ : Graph α β} (h₁ : H₁ ≤c G)
-    (hV₁ : V(H₁).Nonempty) (h₂ : H₂ ≤c G) (hV₂ : V(H₂).Nonempty) (hdj : H₁ ≠ H₂) :
-    ¬ G.Preconnected := by
-  contrapose! hdj
-  obtain rfl := hdj.eq_of_isClosedSubgraph h₂ hV₂
-  exact hdj.eq_of_isClosedSubgraph h₁ hV₁
-
-/-! ### Cut -/
 
 @[mk_iff]
 structure IsSep (G : Graph α β) (S : Set α) : Prop where

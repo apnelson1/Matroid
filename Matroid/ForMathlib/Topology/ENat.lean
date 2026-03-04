@@ -2,7 +2,6 @@ import Mathlib.Topology.Instances.ENat
 import Mathlib.Topology.Algebra.InfiniteSum.Constructions
 import Mathlib.Topology.Order.T5
 import Mathlib.Topology.Algebra.InfiniteSum.Order
-import Mathlib.Tactic.ENatToNat
 import Matroid.ForMathlib.ENat
 import Matroid.ForMathlib.Card
 

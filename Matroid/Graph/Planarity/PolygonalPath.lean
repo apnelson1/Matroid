@@ -1,131 +1,14 @@
-import Mathlib.Analysis.InnerProductSpace.PiL2
+import Mathlib.Analysis.InnerProductSpace.PiL2 -- inefficient import
 import Mathlib.Topology.UniformSpace.Path
 import Mathlib.Topology.Separation.Connected
-import Mathlib.Geometry.Polygon.Basic
+import Mathlib.Geometry.Polygon.Basic -- inefficient import
 import Matroid.ForMathlib.List
-import Matroid.ForMathlib.Logic
+import Matroid.Graph.Planarity.Path
 
 universe u
 variable {α β : Type u} {a b c x y z w : α} {C L : List α} {X Y : Set α} {N : ℕ}
 
 open Set Function TopologicalSpace Topology Metric Nat unitInterval
-
-@[simp]
-lemma Path.refl_not_injective [AddCommGroup α] [Module ℝ α] [TopologicalSpace α] [ContinuousAdd α]
-    [ContinuousSMul ℝ α] (x : α) : ¬ Injective (Path.refl x) := by
-  intro h
-  simpa using h (a₁ := 0) (a₂ := 1) (by simp)
-
-@[simp]
-lemma Path.segment_injective [AddCommGroup α] [Module ℝ α] [TopologicalSpace α] [ContinuousAdd α]
-    [ContinuousSMul ℝ α] (x y : α) : Injective (Path.segment x y) ↔ x ≠ y := by
-  refine ⟨fun h => ?_, fun h s t hst => ?_⟩
-  · rintro rfl
-    simp at h
-  simpa [h, Subtype.val_inj] using hst
-
-@[simp]
-lemma Path.eq_zero_iff_of_injective [TopologicalSpace α] {P : Path x y} (h : Injective P) (t : I) :
-    P t = x ↔ t = 0 := by
-  nth_rw 3 [← P.source]
-  rw [h.eq_iff]
-
-@[simp]
-lemma Path.eq_one_iff_of_injective [TopologicalSpace α] {P : Path x y} (h : Injective P) (t : I) :
-    P t = y ↔ t = 1 := by
-  nth_rw 3 [← P.target]
-  rw [h.eq_iff]
-
-lemma Path.trans_injective_iff [TopologicalSpace α] {P : Path x y} {Q : Path y z} :
-    Injective (P.trans Q) ↔ Injective P ∧ Injective Q ∧ Disjoint (range P \ {y}) (range Q) := by
-  -- Affine reparametrizations of the unit interval used to read off `P` and `Q`
-  -- from the concatenation `P.trans Q`.
-  let half : I → I := fun t =>
-    ⟨(t : ℝ) / 2, by constructor <;> nlinarith [t.2.1, t.2.2]⟩
-  let shift : I → I := fun t =>
-    ⟨((t : ℝ) + 1) / 2, by constructor <;> nlinarith [t.2.1, t.2.2]⟩
-  have trans_half : ∀ t : I, (P.trans Q) (half t) = P t := by
-    intro t
-    have ht : t / 2 ≤ (2 : ℝ)⁻¹ := by linarith [t.2.2]
-    simp only [trans, one_div, coe_mk', ContinuousMap.coe_mk, comp_apply, ht, ↓reduceIte, half]
-    rw [mul_div_cancel₀ _ (by simp)]
-    exact extend_extends' P t
-  have trans_shift : ∀ t : I, (P.trans Q) (shift t) = Q t := by
-    intro t
-    obtain rfl | ht0 := eq_or_ne t 0
-    · simp [shift, trans]
-    replace ht0 : t.val ≠ 0 := coe_ne_zero.mpr ht0
-    have ht : ¬ ((↑t + 1) / 2 ≤ (2 : ℝ)⁻¹) := by
-      rw [← lt_iff_not_ge, ← mul_lt_mul_iff_of_pos_left (a := 2) (by simp),
-        mul_div_cancel₀ _ (by simp), mul_inv_cancel₀ (by simp)]
-      linarith [t.prop.1.lt_of_ne' ht0]
-    simp only [trans, one_div, coe_mk', ContinuousMap.coe_mk, comp_apply, ht, ↓reduceIte, shift]
-    rw [mul_div_cancel₀ _ (by simp), add_sub_cancel_right]
-    exact extend_extends' Q t
-
-  refine ⟨fun h => ⟨fun s t hst ↦ ?_, fun s t hst ↦ ?_, ?_⟩, fun ⟨hP, hQ, hdj⟩ => ?_⟩
-  · simpa [half, Subtype.val_inj] using h (a₁ := half s) (a₂ := half t) (by simpa [trans_half])
-  · simpa [shift, Subtype.val_inj] using h (a₁ := shift s) (a₂ := shift t) (by simpa [trans_shift])
-  · by_contra! hdj
-    rw [not_disjoint_iff] at hdj
-    obtain ⟨a, ⟨⟨t1, hPQ⟩, hay⟩, t2, rfl⟩ := hdj
-    rw [← trans_shift t2, ← trans_half t1] at hPQ
-    replace hPQ := by simpa [half, shift] using h hPQ
-    obtain rfl : t2 = 0 := by
-      apply Subtype.ext
-      change t2.val = 0
-      linarith [hPQ ▸ t1.prop.2, t2.prop.1]
-    simp at hay
-  intro t₁ t₂ ht
-  by_cases ht₁ : (t₁ : ℝ) ≤ 2⁻¹ <;> by_cases ht₂ : (t₂ : ℝ) ≤ 2⁻¹ <;> simp only [trans_apply,
-    one_div, ht₁, ↓reduceDIte, ht₂] at ht
-  · simpa [Subtype.val_inj] using hP ht
-  on_goal 3 => simpa [Subtype.val_inj] using hQ ht
-  all_goals
-  · have := ht ▸ (hdj.notMem_of_mem_right (a := Q _) (by simp))
-    simp only [mem_diff, mem_range, exists_apply_eq_apply, mem_singleton_iff,
-      Path.eq_one_iff_of_injective hP, Subtype.ext_iff, Icc.coe_one, true_and,
-      Decidable.not_not] at this
-    simp only [this, Icc.mk_one, Path.target, eq_comm (a := y), Q.eq_zero_iff_of_injective hQ,
-      Subtype.ext_iff, Icc.coe_zero] at ht
-    linarith
-
-lemma IsOpen.sSup_notMem {α : Type*} [CompleteLinearOrder α] [TopologicalSpace α] [OrderTopology α]
-    [DenselyOrdered α] {s : Set α} (hs : ∃ x, sSup s < x) (h : IsOpen s) : sSup s ∉ s := by
-  intro m
-  obtain ⟨ub, hub, hubs⟩ := exists_Ico_subset_of_mem_nhds (mem_nhds h m) hs
-  obtain ⟨x, hssx, hxub⟩ := exists_between hub
-  exact (le_sSup <| hubs ⟨hssx.le, hxub⟩).not_gt hssx
-
-lemma IsOpen.sInf_notMem {α : Type*} [CompleteLinearOrder α] [TopologicalSpace α] [OrderTopology α]
-    [DenselyOrdered α] {s : Set α} (hs : ∃ x, x < sInf s) (h : IsOpen s) : sInf s ∉ s := by
-  intro m
-  obtain ⟨lb, lbl, hbls⟩ := exists_Ioc_subset_of_mem_nhds (mem_nhds h m) hs
-  obtain ⟨x, hxlb, hxbls⟩ := exists_between lbl
-  exact (sInf_le <| hbls ⟨hxlb, hxbls.le⟩).not_gt hxbls
-
-@[simp] lemma unitInterval_one_le (t : I) : 1 ≤ t ↔ t = 1 := top_le_iff
-@[simp] lemma unitInterval_le_zero (t : I) : t ≤ 0 ↔ t = 0 := le_bot_iff
-
-lemma Path.sSup_notMem {α : Type*} [TopologicalSpace α] {S : Set α} {x y : α} (P : Path x y)
-    (hS : IsOpen S) (hy : y ∉ S) : P (sSup (P ⁻¹' S)) ∉ S := by
-  by_cases h : sSup (P ⁻¹' S) = 1
-  · simpa [h]
-  replace h : sSup (P ⁻¹' S) < 1 := by
-    by_contra! h'
-    rw [unitInterval_one_le] at h'
-    exact h h'
-  simpa [h] using (P.continuous.isOpen_preimage _ hS).sSup_notMem ⟨1, h⟩
-
-lemma Path.sInf_notMem {α : Type*} [TopologicalSpace α] {S : Set α} {x y : α} (P : Path x y)
-    (hS : IsOpen S) (hx : x ∉ S) : P (sInf (P ⁻¹' S)) ∉ S := by
-  by_cases h : sInf (P ⁻¹' S) = 0
-  · simpa [h]
-  replace h : 0 < sInf (P ⁻¹' S) := by
-    by_contra! h'
-    rw [unitInterval_le_zero] at h'
-    exact h h'
-  simpa [h] using (P.continuous.isOpen_preimage _ hS).sInf_notMem ⟨0, h⟩
 
 lemma segment_union_eq_segment {𝕜 E : Type*} [Field 𝕜] [LinearOrder 𝕜]
     [IsStrictOrderedRing 𝕜] [AddCommGroup E] [Module 𝕜 E] {x y z : E}
@@ -144,6 +27,14 @@ lemma segment_union_eq_segment {𝕜 E : Type*} [Field 𝕜] [LinearOrder 𝕜]
   simp only [zero_mul, one_mul, image_add_const_Icc, zero_add, sub_add_cancel, ← image_union]
   congr
   exact Icc_union_Icc_eq_Icc ht.1 ht.2
+
+lemma segment_diff_endpoints {𝕜 : Type*} {E : Type*} [Ring 𝕜] [LinearOrder 𝕜]
+    [IsStrictOrderedRing 𝕜] [AddCommGroup E] [Module 𝕜 E] {x y : E} [DenselyOrdered 𝕜]
+    [Module.IsTorsionFree 𝕜 E] (hxy : x ≠ y) : segment 𝕜 x y \ {x, y} = openSegment 𝕜 x y := by
+  ext z
+  simp only [mem_diff, mem_insert_iff, mem_singleton_iff, not_or, ← ne_eq]
+  refine ⟨fun ⟨h, hzx, hzy⟩ ↦ mem_openSegment_of_ne_left_right hzx.symm hzy.symm h, fun h ↦ ?_⟩
+  use openSegment_subset_segment _ _ _ h, ?_, ?_ <;> rintro rfl <;> simp [hxy] at h
 
 lemma frontier_connectedComponentIn {α : Type*} [TopologicalSpace α] [LocallyConnectedSpace α]
     {S : Set α} {a : α} (hS : IsClosed S) (ha : a ∉ S) :
@@ -231,6 +122,18 @@ lemma vertices_eq_concat : P.vertices = P.vertices.dropLast ++ [y] := by
   | cons a b as ih =>
     rwa [vertices, List.dropLast_cons_of_ne_nil (by simp), List.cons_append, List.cons_inj_right]
 
+def vPairs : ∀ {x y : α}, PolygonalPath x y → List (α × α)
+  | _, _, direct a b => [(a, b)]
+  | _, _, cons a b as => (a, b) :: as.vPairs
+
+lemma vPairs_eq_zip : P.vPairs = P.vertices.zip P.vertices.tail := by
+  induction P with
+  | direct x y => simp [vPairs]
+  | cons a b as ih =>
+    simp only [vPairs, ih, vertices, tail_cons]
+    nth_rw 4 [vertices_eq_cons]
+    rw [zip_cons_cons]
+
 -- Get the list of internal vertices (excluding start and end)
 @[simp]
 def internal : ∀ {x y : α}, PolygonalPath x y → List α
@@ -310,13 +213,13 @@ noncomputable def toPath : ∀ {x y : α}, PolygonalPath x y → Path x y
 
 def toSet : Set α := Set.range (P.toPath)
 
-lemma toSet_eq_biUnion : P.toSet = ⋃ s ∈ P.vertices.zip P.vertices.tail, segment ℝ s.1 s.2 := by
+lemma toSet_eq_biUnion : P.toSet = ⋃ s ∈ P.vPairs, segment ℝ s.1 s.2 := by
   unfold toSet
   induction P with
-  | direct x y => simp [toPath]
+  | direct x y => simp [toPath, vPairs_eq_zip]
   | cons x w as ih =>
     simp only [toPath, Path.trans_range, Path.range_segment, ih, ← internal_concat, internal,
-      cons_append]
+      cons_append, vPairs_eq_zip]
     simp
 
 @[simp]
@@ -329,7 +232,7 @@ lemma toSet_cons : (cons a x P).toSet = segment ℝ a x ∪ P.toSet := by
 
 lemma toSet_compact [IsTopologicalAddGroup α] : IsCompact (P.toSet) := by
   simp only [toSet_eq_biUnion]
-  induction P.vertices.zip P.vertices.tail with
+  induction P.vPairs with
   | nil => simp
   | cons head tail ih =>
     simp only [mem_cons, iUnion_iUnion_eq_or_left]
@@ -380,7 +283,7 @@ lemma break_toSet (P : PolygonalPath x y) {a} (ha : a ∈ P.toSet) :
   induction P with
   | direct _ _ =>
     simp only [toSet_eq_biUnion, vertices, tail_cons, zip_cons_cons, zip_nil_right, mem_cons,
-      not_mem_nil, or_false, iUnion_iUnion_eq_left, breakAt] at ha ⊢
+      not_mem_nil, or_false, iUnion_iUnion_eq_left, breakAt, vPairs_eq_zip] at ha ⊢
     exact segment_union_eq_segment ha
   | cons x v vs ih =>
     simp only [toSet_cons, mem_union] at ha
@@ -410,6 +313,9 @@ lemma simple.of_cons (h : (cons a x P).simple) : P.simple := by
 lemma simple.ne (h : P.simple) : x ≠ y := by
   simpa using mt <| h (a₁ := 0) (a₂ := 1)
 
+lemma simple.ne' (h : P.simple) : y ≠ x := by
+  simpa using mt <| h (a₁ := 1) (a₂ := 0)
+
 variable {P : PolygonalPath x y}
 
 lemma simple.vertex_nodup (h : P.simple) : P.vertices.Nodup := by
@@ -423,22 +329,22 @@ lemma simple.vertex_nodup (h : P.simple) : P.vertices.Nodup := by
     exact as.vertices_subset_toSet this
 
 lemma simple.unique_segment (h : P.simple) (ha : a ∈ P.toSet) (hav : a ∉ P.vertices) :
-    ∃! s ∈ P.vertices.zip P.vertices.tail, a ∈ segment ℝ s.1 s.2 := by
+    ∃! s ∈ P.vPairs, a ∈ segment ℝ s.1 s.2 := by
   induction P with
   | direct x y =>
-    simp only [toSet_direct, vertices, tail_cons, zip_cons_cons, zip_nil_right, mem_cons,
-      not_mem_nil, or_false] at ha ⊢
+    simp only [toSet_direct, vPairs_eq_zip, vertices, tail_cons, zip_cons_cons, zip_nil_right,
+      mem_cons, not_mem_nil, or_false] at ha ⊢
     use (x, y)
     simpa
   | cons u v vs ih =>
-    simp only [toSet_cons, mem_union, vertices, mem_cons, not_or, ← ne_eq, cons_iff,
+    simp only [toSet_cons, mem_union, vertices, mem_cons, not_or, ← ne_eq, cons_iff, vPairs_eq_zip,
       tail_cons] at ha hav h ⊢
     obtain ⟨huvne, hvssimple, hdj⟩ := h
     obtain ⟨haune, havsv⟩ := hav
     replace ih := (ih hvssimple · havsv)
     simp_rw [← vs.cons_internal_concat]
     simp only [internal_concat, zip_cons_cons, mem_cons]
-    rw [← vs.vertices_eq_cons]
+    rw [← vs.vertices_eq_cons, ← vs.vPairs_eq_zip]
     by_cases havs : a ∈ vs.toSet
     · obtain ⟨h1, ⟨h21, h22⟩, h3⟩ := ih havs
       refine ⟨h1, ⟨Or.inr h21, h22⟩, ?_⟩
@@ -460,28 +366,6 @@ section ClosedSimple
 variable {P : PolygonalPath x x}
 
 def closedSimple (P : PolygonalPath x x) : Prop := InjOn P.toPath (Ico 0 1)
-
-lemma closedSimple_iff_injOn_ioc : P.closedSimple ↔ InjOn P.toPath (Ioc 0 1) := by
-  refine iff_of_imp_iff (·.mono Ioo_subset_Ico_self) (·.mono Ioo_subset_Ioc_self) fun hoo ↦ ?_
-  refine ⟨fun h s hs t ht hst ↦ ?_, fun h s hs t ht hst ↦ ?_⟩
-  · obtain rfl | hs1 := eq_or_ne s 1 <;> obtain rfl | ht1 := eq_or_ne t 1
-    · rfl
-    · rw [Path.target] at hst
-      have := by simpa [hst] using h (by simp : (0 : I) ∈ _) ⟨ht.1.le, lt_of_le_of_ne ht.2 ht1⟩
-      exact ht.1.ne this |>.elim
-    · rw [Path.target] at hst
-      have := by simpa [hst] using h ⟨hs.1.le, lt_of_le_of_ne hs.2 hs1⟩ (by simp : (0 : I) ∈ _)
-      exact hs.1.ne' this |>.elim
-    exact hoo ⟨hs.1, lt_of_le_of_ne hs.2 hs1⟩ ⟨ht.1, lt_of_le_of_ne ht.2 ht1⟩ hst
-  obtain rfl | hs0 := eq_or_ne s 0 <;> obtain rfl | ht0 := eq_or_ne t 0
-  · rfl
-  · simp only [Path.source] at hst
-    have := by simpa [hst] using h (by simp : (1 : I) ∈ _) ⟨ht.1.lt_of_ne' ht0, ht.2.le⟩
-    exact ht.2.ne' this |>.elim
-  · simp only [Path.source] at hst
-    have := by simpa [hst] using h ⟨hs.1.lt_of_ne' hs0, hs.2.le⟩ (by simp : (1 : I) ∈ _)
-    exact hs.2.ne this |>.elim
-  exact hoo ⟨lt_of_le_of_ne' hs.1 hs0, hs.2⟩ ⟨lt_of_le_of_ne' ht.1 ht0, ht.2⟩ hst
 
 @[simp]
 lemma closedSimple.not_direct : ¬ (direct x x).closedSimple := by
@@ -536,22 +420,15 @@ lemma closedSimple.cons_simple (h : P.closedSimple) :
   match P with
   | .direct x _ => simp at h
   | .cons a b as =>
-  let half : I := ⟨1/2, by constructor <;> linarith⟩
-  refine ⟨b, as, rfl, ?_, ?_⟩
-  · rw [closedSimple_iff_injOn_ioc] at h
-    intro i j hij
-    simp at h
-    have hh : InjOn (⇑(cons a b as).toPath) (Icc half 1) := by
-      apply h.mono
-      intro i ⟨hi1, hi2⟩
-      change 1 / 2 ≤ i.val at hi1
-      change i.val ≤ 1 at hi2
-      change 0 < i.val ∧ i.val ≤ 1
-      constructor <;> linarith
-
-
-    sorry
-  sorry
+  have has : as.simple := by
+    rw [closedSimple, toPath, Path.injOn_ico_iff_injOn_ioc] at h
+    refine (Path.segment a b).injective_right_iff_trans_injOn as.toPath |>.mp ?_
+    exact h.mono <| (Icc_subset_Ioc_iff le_one').mpr ⟨zero_lt_half, le_one'⟩
+  refine ⟨b, as, rfl, has, ?_⟩
+  rw [closedSimple, toPath, Path.trans_injOn_ico_iff] at h
+  obtain ⟨hP, hQ, hdj⟩ := h
+  simp only [Path.range_segment] at hdj
+  rwa [← disjoint_sdiff_comm, diff_diff, union_singleton, segment_diff_endpoints has.ne.symm] at hdj
 
 lemma closedSimple_iff_cons_simple (P : PolygonalPath x x) : P.closedSimple ↔ ∃ b P',
     P = cons x b P' ∧ P'.simple ∧ Disjoint (openSegment ℝ x b) P'.toSet ∧
@@ -561,20 +438,24 @@ lemma closedSimple_iff_cons_simple (P : PolygonalPath x x) : P.closedSimple ↔ 
   exact ⟨b, P', rfl, hP', hdj, h⟩
 
 lemma closedSimple.unique_segment (h : P.closedSimple) (ha : a ∈ P.toSet) (hav : a ∉ P.vertices) :
-    ∃! s ∈ P.vertices.zip P.vertices.tail, a ∈ segment ℝ s.1 s.2 := by
+    ∃! s ∈ P.vPairs, a ∈ segment ℝ s.1 s.2 := by
   obtain ⟨b, P', rfl, hP', hdj⟩ := h.cons_simple
+  obtain ⟨hax, haP'⟩ := by simpa [← ne_eq] using hav
+  obtain ⟨hab, -⟩ := by
+    rw [P'.vertices_eq_cons] at haP'
+    simpa [← ne_eq] using haP'
   obtain ha | ha := by simpa using ha
-  · refine ⟨(x, b), ⟨?_, ha⟩, ?_⟩
-    · simp only [vertices, tail_cons]
-      rw [P'.vertices_eq_cons]
-      simp
-    rintro s' ⟨hs', hs'h⟩
-    sorry
-  simp at hav
-  obtain ⟨c, ⟨hcP, hac⟩, hc⟩ := hP'.unique_segment ha hav.2
-  refine ⟨c, ⟨?_, hac⟩, ?_⟩
-  · sorry
-  sorry
+  · refine ⟨(x, b), ⟨by simp [vPairs], ha⟩, fun s' ⟨hs', hs'h⟩ ↦ ?_⟩
+    simp only [vPairs, mem_cons] at hs'
+    refine hs'.resolve_right fun hs' ↦ hdj.notMem_of_mem_left (mem_openSegment_of_ne_left_right
+      hax.symm hab.symm ha) ?_
+    simp only [mem_iUnion, toSet_eq_biUnion]
+    use s'
+  obtain ⟨c, ⟨hcP, hac⟩, hc⟩ := hP'.unique_segment ha haP'
+  refine ⟨c, ⟨by simp [vPairs, hcP], hac⟩, fun y ⟨hy, hay⟩ ↦ ?_⟩
+  obtain rfl | hyP' := by simpa only [vPairs, mem_cons] using hy
+  · exact hdj.notMem_of_mem_left (mem_openSegment_of_ne_left_right hax.symm hab.symm hay) ha |>.elim
+  · exact hc y ⟨hyP', hay⟩
 
 lemma closedSimple.two_segments (h : P.closedSimple) (hb : b ∈ P.vertices) : ∃ a c,
     (a, b) ∈ P.vertices.zip P.vertices.tail ∧ (b, c) ∈ P.vertices.zip P.vertices.tail ∧
@@ -695,7 +576,8 @@ lemma Path.exists_polygonalPath_of_thickening (P : Path x y) {δ : ℝ} (hδ : 0
   have hLtail : L.tail = L.tail.dropLast ++ [y] := by
     rw [hxLy]
     simp
-  simp only [toSet_eq_biUnion, ofList_vertices, ← hxLy, iUnion_subset_iff, Prod.forall]
+  simp only [toSet_eq_biUnion, vPairs_eq_zip, ofList_vertices, ← hxLy, iUnion_subset_iff,
+    Prod.forall]
   refine fun a b hab x hx ↦ mem_thickening_iff.mpr ⟨b, ?_, ?_⟩
   · simp only [Set.mem_range, Subtype.exists, mem_Icc]
     obtain ⟨i, hi, -, hhi⟩ := by simpa [L] using List.mem_of_mem_tail (List.of_mem_zip hab |>.2)
@@ -885,7 +767,7 @@ lemma exists_crossings [T1Space α] (hfin : (range P ∩ frontier U).Finite) (hx
     hV'W_disjoint.notMem_of_mem_left htz_mem_closure_V
   have htz_lt_one : tz < 1 := by
     by_contra! h
-    exact hV'W_disjoint.ne_of_mem htz_mem_closure_V h1inW <| (unitInterval_one_le _).mp h
+    exact hV'W_disjoint.ne_of_mem htz_mem_closure_V h1inW <| (one_le _).mp h
   have htz_notMem_V : tz ∉ V := hV_open.sSup_notMem ⟨1, htz_lt_one⟩
   refine ⟨z, ?_, ?_⟩
   · rw [mem_closure_iff_nhds]

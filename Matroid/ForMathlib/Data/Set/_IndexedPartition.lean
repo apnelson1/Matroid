@@ -1,9 +1,8 @@
-import Mathlib.Data.Set.Lattice
-import Mathlib.Logic.Pairwise
+
 import Matroid.ForMathlib.Data.Set.Subsingleton
 import Matroid.ForMathlib.Set
 -- import Mathlib.Tactic.DepRewrite
-import Mathlib.Tactic.NthRewrite
+import Mathlib.Tactic.NthRewrite -- inefficient import
 
 open Set Function
 
