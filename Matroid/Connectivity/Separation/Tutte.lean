@@ -1,4 +1,5 @@
 import Matroid.Connectivity.Separation.Abstract
+import Matroid.Triangle
 
 open Set Matroid.Separation Function
 
@@ -516,41 +517,76 @@ lemma TutteConnected.isUniform_of_encard_le (h : M.TutteConnected (k + 1))
   refine h.not_isTutteSeparation (P := M.ofSetSep X true) (by simpa) ?_
   simp [isTutteSeparation_iff' true, hnot.1, hnot.2]
 
+/-- If a `(k + 1)`-connected matroid `M` has a finite `(k + 1)`-element circuit/cocircuit,
+then `M` is a self-dual uniform matroid of rank `k`. -/
+lemma IsCircuit.isFiniteRankUniform_of_isCocircuit_of_tutteConnected {C : Set α} {k : ℕ}
+    (hC : M.IsCircuit C) (hC' : M.IsCocircuit C) (hCk : C.encard = k + 1)
+    (hM : M.TutteConnected (k + 1)) : M.IsFiniteRankUniform k (2 * k) := by
+  wlog hr : M.eRank ≤ M✶.eRank generalizing M with aux
+  · exact (aux (by simpa) (by simpa) (by simpa) (by simpa using le_of_not_ge hr)).of_dual_self
+  obtain rfl | k := k
+  · simpa [← one_le_encard_iff_nonempty, hCk, ← two_le_encard_iff_nontrivial]
+      using hC.isCocircuit_inter_nontrivial hC'
+  have hConn : M.eConn C = k := by
+    simpa [← M.eConn_add_nullity_add_nullity_dual C, hC.nullity_eq, hC'.nullity_eq] using hCk
+  have hcard : (M.E \ C).encard = k := by
+    simpa [hCk, hConn, add_assoc] using hM.encard_eq_or_encard_compl_eq (X := C) (by simp [hConn])
+  have hE : M.E.encard = 2 * (k + 1) := by
+    rw [← encard_diff_add_encard_of_subset hC.subset_ground, hCk, hcard, mul_add]
+    simp [add_assoc, two_mul, one_add_one_eq_two]
+  refine ⟨hE, ?_, hM.isUniform_of_encard_le (by simp [hE])⟩
+  nth_grw 1 [le_antisymm_iff, and_comm, ← eRk_le_eRank M C, ← ENat.add_one_le_add_one_iff,
+    hC.eRk_add_one_eq, hCk, and_iff_right (by simp)]
+  have hle := M.eRank_add_eRank_dual ▸ hE.le
+  grw [← M✶.eRk_le_eRank C, ← ENat.add_one_le_add_one_iff, add_assoc, hC'.eRk_add_one_eq,
+    hCk] at hle
+  enat_to_nat! <;> lia
+
 /-- If a `(k + 1)`-connected matroid `M` has a finite circuit/cocircuit of size `k + 1`,
 then `M` is a self-dual uniform matroid of rank `k`. -/
-lemma IsCircuit.exists_eq_unifOn_of_isCocircuit_of_tutteConnected {C : Set α} (hC : M.IsCircuit C)
-    (hC' : M.IsCocircuit C) (hCk : C.encard = k + 1) (hk : k ≠ ⊤) (hM : M.TutteConnected (k + 1)) :
-    ∃ (E : Set α) (r : ℕ), r = k ∧ E.encard = 2 * k ∧ M = unifOn E r := by
-  obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one
-  · obtain ⟨e, rfl⟩ := encard_eq_one.1 (show C.encard = 1 by simpa using hCk)
-    simp only [singleton_isCircuit, dual_isLoop_iff_isColoop] at hC hC'
-    exact False.elim <| hC.not_isColoop hC'
-  obtain hCconn : M.eConn C = k := by
-    rw [← ENat.add_one_eq_add_one_iff, hC.eConn_add_one_eq, ← ENat.add_one_eq_add_one_iff,
-      hC'.eRk_add_one_eq, hCk]
-  have hcard := hM.encard_eq_or_encard_compl_eq (X := C) (by simp [hCconn])
-  have hfin : M✶.IsRkFinite C := by grw [← eRk_lt_top_iff, eRk_le_encard]; enat_to_nat!
-  rw [← ENat.add_one_eq_add_one_iff, hC.eConn_add_one_eq, ← ENat.add_one_eq_add_one_iff,
-    ← hC'.eRk_add_one_eq, or_iff_right (by simpa [add_assoc]), hCconn] at hcard
-  have hEcard : M.E.encard = 2 * (k + 1) := by
-    rw [← encard_diff_add_encard_of_subset hC.subset_ground, hCk, hcard]
-    enat_to_nat; lia
-  have hgirth : k + 1 < M.girth := by
-    grw [← hM.girth_ge (by simp [hEcard])]
-    enat_to_nat; lia
-  have hgirth_dual : k + 1 < M✶.girth := by
-    grw [← hM.dual.girth_ge (by simp [hEcard])]
-    enat_to_nat; lia
-  have hrank : M.eRank = k + 1 := by
-    rw [← Coindep.delete_eRank_eq (X := M.E \ C), delete_compl, eRank_restrict,
-      ← ENat.add_one_eq_add_one_iff, ← hCk, hC.eRk_add_one_eq]
-    exact indep_of_card_lt_girth (by enat_to_nat! <;> lia) diff_subset
-  have hfin : M.Finite := by
-    rw [finite_iff, ← encard_lt_top_iff]
-    enat_to_nat!
-  obtain ⟨E, r, hrE, rfl, hr⟩ := (M.isUniform_of_eRank_lt_girth (hrank ▸ hgirth)).exists_eq_unifOn
-  refine ⟨E, r, ?_, by simpa using hEcard, rfl⟩
-  rwa [unifOn_eRank_eq' hrE] at hrank
+lemma IsCircuit.exists_isFiniteRankUniform_of_isCocircuit_of_tutteConnected {C : Set α}
+    (hC : M.IsCircuit C) (hC' : M.IsCocircuit C) (hCk : C.encard = k + 1) (hk : k ≠ ⊤)
+    (hM : M.TutteConnected (k + 1)) : ∃ k₀ : ℕ, k = k₀ ∧ M.IsFiniteRankUniform k₀ (2 * k₀) := by
+  lift k to ℕ using hk
+  exact ⟨k, rfl, hC.isFiniteRankUniform_of_isCocircuit_of_tutteConnected hC' hCk hM⟩
+
+/-- If `M` is a `3`-connected matroid and `T` is both a triangle and triad, then `M ≃ U₂,₄`. -/
+lemma IsTriangle.isFiniteRankUniform_two_four_of_isTriad {T} (hT : M.IsTriangle T)
+    (hT' : M.IsTriad T) (hM : M.TutteConnected 3) : M.IsFiniteRankUniform 2 4 :=
+  hT.isCircuit.isFiniteRankUniform_of_isCocircuit_of_tutteConnected hT'.isCircuit (k := 2)
+    hT.three_elements hM
+
+/-- If `P` is a Tutte separation in a deletion of a `3`-connected matroid, and one side is
+small enough, then we can find a triad. -/
+lemma TutteConnected.union_isTriad_of_separation_delete {D} (hM : M.TutteConnected 3)
+    (hcard : 4 ≤ M.E.encard) {P : (M ＼ D).Separation} (hP : P.IsTutteSeparation)
+    (hDE : D ⊆ M.E) (hD : D.Nonempty) (hPD : (P i).encard + D.encard ≤ 3) :
+    M.IsTriad (P i ∪ D) := by
+  have h1 := hM.simple hcard
+  have h2 := hM.dual.simple hcard
+  refine isTriangle_of_dep_of_encard_le ?_ <| by grw [encard_union_le, hPD]
+  have hd := hP.codep_of_indep (i := i) ?_
+  · rw [Coindep.delete_codep_iff] at hd
+    · exact hd.1
+    refine indep_of_card_lt_girth ?_ hDE
+    grw [← three_le_girth]
+    have := (hP.nonempty i).encard_pos
+    enat_to_nat! <;> lia
+  rw [delete_indep_iff, and_iff_left (P.disjoint_delete i)]
+  refine indep_of_card_lt_girth ?_
+  grw [← three_le_girth]
+  have hD' := hD.encard_pos
+  enat_to_nat! <;> lia
+
+/-- If `P` is a Tutte separation in a contraction of a `3`-connected matroid, and one side is
+small enough, then we can find a triangle. -/
+lemma TutteConnected.union_isTriangle_of_separation_contract {C} (hM : M.TutteConnected 3)
+    (hcard : 4 ≤ M.E.encard) {P : (M ／ C).Separation} (hP : P.IsTutteSeparation)
+    (hCE : C ⊆ M.E) (hC : C.Nonempty) (hPC : (P i).encard + C.encard ≤ 3) :
+    M.IsTriangle (P i ∪ C) := by
+  simpa using hM.dual.union_isTriad_of_separation_delete (i := i) hcard
+    (P := P.induce _) (by simpa) hCE hC (by simpa)
+
 
 lemma tutteConnected_iff_seqConnected : M.TutteConnected (k + 1) ↔
     M.SeqConnected Matroid.tutteWeight (indicator {i | k < i + 1} ⊤) := by
@@ -579,6 +615,7 @@ lemma TutteConnected.eConn_cross_le_of_eConn_le_eConn_le_card_ge' (hM : M.TutteC
     {P Q : M.Separation} (hP : P.eConn ≤ k) (hQ : Q.eConn ≤ k) {b c : Bool}
     (hcard : k ≤ (P (!b) ∩ Q (!c)).encard) : (P.cross Q b c i).eConn ≤ k := by
   simpa using hM.eConn_cross_le_of_eConn_le_eConn_le_card_ge hP hQ hcard i
+
 
 -- lemma tutteConnected_iff_biConnected :
 --     M.TutteConnected (k + 1) ↔ M.BiConnected (· + ·) (indicator {i | k < i + 1} ⊤) := by

@@ -1,4 +1,5 @@
 import Matroid.Connectivity.Nat
+import Matroid.Order.Quotient
 
 open Set Function
 
@@ -837,5 +838,25 @@ lemma IsMinor.isMinor_of_eConn_eq_zero {N N' : Matroid α} (hNM : N ≤m M) (hN'
     (by simpa)
   rw [hN₁.eq_of_isRestriction_of_ground_eq hN₁' (by simpa)] at hNN₁
   exact hNN₁.trans <| restrict_isMinor _ hN'
+
+lemma eConn_eq_zero_of_contract_eq_delete (h : M ／ X = M ＼ X) : M.eConn X = 0 := by
+  wlog hXE : X ⊆ M.E generalizing X with aux
+  · rw [← eConn_inter_ground, aux (by simpa) inter_subset_right]
+  rw [contract_eq_delete_iff_skew_compl] at h
+  rw [M.eConn_eq_eLocalConn, h.eLocalConn]
+
+lemma IsRkFinite.eConn_eq_zero_of_eRk_delete_le_eRk_contract (h : M.IsRkFinite (M.E \ X))
+    (hr : (M ＼ X).eRank ≤ (M ／ X).eRank) : M.eConn X = 0 := by
+  have hfin : (M ＼ X).RankFinite := by
+    rw [← eRank_lt_top_iff, ← eRk_ground, delete_ground, delete_eRk_eq _ disjoint_sdiff_left]
+    exact h.eRk_lt_top
+  exact M.eConn_eq_zero_of_contract_eq_delete <| (M.contract_quotient_delete X).eq_of_eRank_ge' hr
+
+lemma IsRankFinite.eConn_eq_zero_of_eRk_dual_le_dual_restrict_eRank (hX : M✶.IsRkFinite X)
+    (h : M✶.eRk X ≤ (M ↾ X)✶.eRank) (hXE : X ⊆ M.E := by aesop_mat) : M.eConn X = 0 := by
+  rw [← eRank_restrict, ← delete_compl, ← delete_compl, dual_delete, dual_ground] at h
+  have hc := IsRkFinite.eConn_eq_zero_of_eRk_delete_le_eRk_contract ?_ h
+  · simpa using hc
+  simpa [inter_eq_self_of_subset_right hXE]
 
 end Pair

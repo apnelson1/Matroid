@@ -544,6 +544,15 @@ lemma toFinset_range (n : ℕ) : (range n).toFinset = Finset.range n := by
   ext
   simp
 
+lemma setOf_two {a b : α} : {x | x ∈ [a, b]} = {a, b} := by
+  ext; simp
+
+lemma setOf_three {a b c : α} : {x | x ∈ [a, b, c]} = {a, b, c} := by
+  ext; simp
+
+lemma setOf_four {a b c d : α} : {x | x ∈ [a, b, c, d]} = {a, b, c, d} := by
+  ext; simp
+
 -- #check List.idx
 
 variable [DecidableEq α] {P : ℕ → Bool}
@@ -657,6 +666,7 @@ lemma Nodup.getFinset_card (hnd : L.Nodup) {F : Finset ℕ}
     rw [getFinset_finset_insert _ hF.1, Finset.card_insert_of_notMem has,
       Finset.card_insert_of_notMem, ih hF.2]
     grind [hnd.getElem_inj_iff, mem_getFinset_iff]
+
 
 -- @[simp]
 -- lemma Nodup.getFinset_inter (hL : L.Nodup) (F G : Finset ℕ) :

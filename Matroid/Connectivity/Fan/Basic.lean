@@ -1,4 +1,4 @@
-import Matroid.Triangle
+import Matroid.Connectivity.Separation.Tutte
 import Matroid.ForMathlib.List
 import Matroid.ForMathlib.Parity
 
@@ -199,6 +199,9 @@ lemma IsFan.isNonloop (h : M.IsFan F b c) (heF : e ∈ F) : M.IsNonloop e :=
 lemma IsFan.subset_ground (h : M.IsFan F b c) : {x | x ∈ F} ⊆ M.E :=
   fun _ heF ↦ IsNonloop.mem_ground <| h.isNonloop heF
 
+lemma IsFan.range_get_subset_ground (h : M.IsFan F b c) : range F.get ⊆ M.E := by
+  grind [h.subset_ground]
+
 @[simp, grind →]
 lemma IsFan.get_mem_ground (h : M.IsFan F b c) {hi : i < F.length} : F[i] ∈ M.E :=
   h.subset_ground (by simp)
@@ -212,6 +215,12 @@ lemma IsFan.length_bodd_eq (h : M.IsFan F b c) : F.length.bodd = (b == c) := by
   induction h with
   | of_pair => simp
   | cons_triangle e x y F b => cases b with simp_all
+
+lemma IsFan.bool_right_eq (h : M.IsFan F b c) : c = (b == F.length.bodd) := by
+  simp [h.length_bodd_eq]
+
+lemma IsFan.bool_left_eq (h : M.IsFan F b c) : b = (c == F.length.bodd) := by
+  cases b with simp [h.length_bodd_eq]
 
 lemma IsFan.length_even (h : M.IsFan F b !b) : Even F.length := by
   have := h.length_bodd_eq
@@ -263,6 +272,51 @@ lemma IsFan.isTriangle_image_get (h : M.IsFan F b c) (hF : F.length = n + 2) (i 
         {i.castSucc.castSucc, i.succ.castSucc, i.succ.succ} := by
   convert h.isTriangle_getElem i.1 (by grind)
   simp [image_insert_eq]
+
+lemma isFan_of_forall_triangle (hF : 3 ≤ F.length) (hnd : F.Nodup)
+    (hT : ∀ i (hi : i + 2 < F.length),
+    (M.bDual (b != i.bodd)).IsTriangle {F[i], F[i + 1], F[i + 2]}) :
+    M.IsFan F b (b == F.length.bodd) := by
+  match F with
+  | [] => simp at hF
+  | [_] => simp at hF
+  | [_, _] => simp at hF
+  | e :: f :: g :: F =>
+    induction F generalizing e f g b with
+    | nil => simpa using (hT 0 (by simp)).isFan_of_bDual
+    | cons a F ih =>
+      have hwin := (ih f g a (b := !b) (by simp) (by grind) ?_).cons_not (e := e) (by grind) ?_
+      · cases b with simpa using hwin
+      · exact fun i hi ↦ by simpa using hT (i + 1) (by grind)
+      simpa using hT 0 (by simp)
+
+lemma isFan_of_eq_of_forall_triangle (hF : 3 ≤ F.length) (hnd : F.Nodup)
+    (hbc : (b == c) = F.length.bodd) (hT : ∀ i (hi : i + 2 < F.length),
+      (M.bDual (b != i.bodd)).IsTriangle {F[i], F[i + 1], F[i + 2]}) : M.IsFan F b c := by
+  convert isFan_of_forall_triangle hF hnd (b := b) hT
+  cases b with cases c with grind
+
+lemma isFan_iff_forall (hF : 3 ≤ F.length) :
+    M.IsFan F b c ↔ (b == c) = F.length.bodd ∧ F.Nodup ∧ ∀ i (hi : i + 2 < F.length),
+    (M.bDual (b != i.bodd)).IsTriangle {F[i], F[i + 1], F[i + 2]} := by
+  refine ⟨fun h ↦ ⟨h.length_bodd_eq.symm, h.nodup, h.isTriangle_getElem⟩, fun ⟨hbc, hnd, h⟩ ↦ ?_⟩
+  convert isFan_of_forall_triangle hF hnd h
+  cases b with cases c with grind
+
+@[simp]
+lemma isFan_three_iff : M.IsFan [e, f, g] b c ↔ b = c ∧ (M.bDual b).IsTriangle {e, f, g} := by
+  refine ⟨fun h ↦ ⟨by simpa using h.length_bodd_eq, h.isTriangle_bDual rfl.le⟩, fun h ↦ ?_⟩
+  rw [← h.1]
+  exact h.2.isFan_of_bDual
+
+lemma isFan_four_iff : M.IsFan [x, e, f, g] b c ↔ c = !b ∧
+    (M.bDual (!b)).IsTriangle {e, f, g} ∧ (M.bDual b).IsTriangle {x, e, f} ∧ x ≠ g := by
+  refine ⟨fun h ↦ ⟨?_, ?_, ?_, ?_⟩, fun ⟨hcb, hT, hT', hxg⟩ ↦ ?_⟩
+  · cases b with simpa using h.length_bodd_eq
+  · simpa using h.isTriangle_getElem 1 (by simp)
+  · exact h.isTriangle_bDual (by simp)
+  · grind [h.nodup]
+  simpa [hcb] using hT.isFan.cons (by simpa using hxg) (by simpa)
 
 /-- Induct by stripping two layers off the front of a fan to get a fan of the same type. -/
 @[elab_as_elim]
@@ -329,32 +383,117 @@ lemma IsFan.induction₂_odd
   obtain ⟨c, hcb, h'⟩ : ∃ c, c = b ∧ M.IsFan F b c := ⟨b, rfl, h⟩
   induction h' using IsFan.induction₂ with grind
 
-lemma isFan_of_forall_triangle (hF : 3 ≤ F.length) (hnd : F.Nodup)
-    (hT : ∀ i (hi : i + 2 < F.length),
-    (M.bDual (b != i.bodd)).IsTriangle {F[i], F[i + 1], F[i + 2]}) :
-    M.IsFan F b (b == F.length.bodd) := by
-  match F with
-  | [] => simp at hF
-  | [_] => simp at hF
-  | [_, _] => simp at hF
-  | e :: f :: g :: F =>
-    induction F generalizing e f g b with
-    | nil => simpa using (hT 0 (by simp)).isFan_of_bDual
-    | cons a F ih =>
-      have hwin := (ih f g a (b := !b) (by simp) (by grind) ?_).cons_not (e := e) (by grind) ?_
-      · cases b with simpa using hwin
-      · exact fun i hi ↦ by simpa using hT (i + 1) (by grind)
-      simpa using hT 0 (by simp)
+lemma IsFan.eRk_le (h : M.IsFan F b c) (hlen : 3 ≤ F.length) :
+    2 * M.eRk {e | e ∈ F} ≤ F.length + 1 + b.toNat + c.toNat := by
+  induction h with
+  | of_pair => simp at hlen
+  | cons_triangle e x y F b c h heF hT ih =>
+    cases F with
+    | nil =>
+      cases b
+      · grw [eRk_le_encard, setOf_three, hT.three_elements, h.bool_right_eq]
+        rfl
+      grw [setOf_three, IsTriangle.eRk (by simpa using hT), h.bool_right_eq]
+      rfl
+    | cons p F =>
+      simp_rw [List.mem_cons (b := e), setOf_or, setOf_eq_eq_singleton, singleton_union]
+      cases b
+      · grw [eRk_insert_le_add_one, mul_add, ih (by grind)]
+        simp [h.bool_right_eq]
+        enat_to_nat! <;> lia
+      grw [← eRk_closure_eq, closure_insert_eq_of_mem_closure, eRk_closure_eq, ih (by grind)]
+      · simp [h.bool_right_eq]
+      exact mem_of_mem_of_subset hT.mem_closure₁ <| M.closure_subset_closure <| by grind
 
-lemma isFan_of_eq_of_forall_triangle (hF : 3 ≤ F.length) (hnd : F.Nodup)
-    (hbc : (b == c) = F.length.bodd) (hT : ∀ i (hi : i + 2 < F.length),
-      (M.bDual (b != i.bodd)).IsTriangle {F[i], F[i + 1], F[i + 2]}) : M.IsFan F b c := by
-  convert isFan_of_forall_triangle hF hnd (b := b) hT
-  cases b with cases c with grind
+lemma IsFiniteRankUniform.exists_isFan (h : M.IsFiniteRankUniform 2 4) (b : Bool) :
+    ∃ F, M.IsFan F b (!b) ∧ {e | e ∈ F} = M.E := by
+  obtain ⟨x, y, z, w, hxy, hxz, hxw, hyz, hyw, hzw, hE⟩ := encard_eq_four.1 h.encard_eq
+  refine ⟨[x, y, z, w], ?_, by simp [hE, Set.ext_iff]⟩
+  grind [encard_eq_three, isFan_four_iff, h.bDual_eq_self, h.isTriangle_iff]
 
-lemma isFan_iff_forall (hF : 3 ≤ F.length) :
-    M.IsFan F b c ↔ (b == c) = F.length.bodd ∧ F.Nodup ∧ ∀ i (hi : i + 2 < F.length),
-    (M.bDual (b != i.bodd)).IsTriangle {F[i], F[i + 1], F[i + 2]} := by
-  refine ⟨fun h ↦ ⟨h.length_bodd_eq.symm, h.nodup, h.isTriangle_getElem⟩, fun ⟨hbc, hnd, h⟩ ↦ ?_⟩
-  convert isFan_of_forall_triangle hF hnd h
-  cases b with cases c with grind
+-- lemma Triassic.exists_fan (hM : M.Triassic) (hfin : M.Finite) (hne : M.Nonempty)
+--     (hconn : M.TutteConnected 3) : ∃ F c, M.IsFan F false c ∧ {e | e ∈ F} = M.E := by
+--   by_cases hU : M.IsFiniteRankUniform 2 4
+--   · grind [hU.exists_isFan false]
+--   suffices aux : ∀ (n : ℕ), n ≤ M.E.encard → ∃ F b, M.IsFan F b false ∧ n ≤ F.length
+--   · have hcard := hfin.ground_finite.encard_eq_coe_toFinset_card
+--     obtain ⟨F, b, hF, hle⟩ := aux _ hcard.symm.le
+--     refine ⟨F.reverse, b, hF.reverse, ?_⟩
+--     refine Finite.eq_of_subset_of_encard_le (by simp) hF.reverse.subset_ground ?_
+--     simp only [mem_reverse]
+--     rwa [hF.nodup.encard_toSet_eq, hcard, Nat.cast_le]
+--   intro n hle
+--   induction n with
+--   | zero =>
+--     obtain ⟨e, he⟩ := hne.ground_nonempty
+--     obtain ⟨f, g, hefg⟩ := hM.exists_triangle_bDual he false
+--     refine ⟨[e, f, g], false, hefg.isFan, by simp⟩
+--   | succ n ih =>
+--     obtain ⟨F, b, hF, hnF⟩ := ih (by grw [← hle]; simp)
+--     generalize hc : false = c at hF
+--     cases hF with
+--     | of_pair b e f he hf hne =>
+--       obtain ⟨x, y, hexy⟩ := hM.exists_triangle_bDual (he false).mem_ground (!b)
+--       exact ⟨[e, x, y], (!b), hexy.isFan_of_bDual, by grind⟩
+--     | cons_triangle e x y F b c h heF hT =>
+--       subst hc
+--       obtain ⟨p, q, hepq⟩ := hM.exists_triangle_bDual (by simpa using hT.mem_ground₁) b
+--       have hmem := hepq.mem_or_mem_of_isCircuit_bDual hT.isCircuit (by simp)
+--       wlog hp : p = x ∨ p = y generalizing p q with aux
+--       · exact aux q p hepq.swap_right (by grind [hepq.ne₁₂]) (by grind [hepq.ne₁₂])
+--       by_cases hq : q = x ∨ q = y
+--       · have h_eq : ({e, p, q} : Set α) = {e, x, y} := by grind [hepq.ne₂₃]
+--         contrapose! hU
+--         exact (hepq.isFiniteRankUniform_two_four_of_isTriad (by simpa [h_eq])
+--           (by simpa)).of_bDual_self
+--       have := h.cons heF hT
+--       obtain rfl | rfl := hp
+--       · by_cases hqF : q ∈ F
+--         · sorry
+--         have hF' := (h.cons heF hT).cons (e := q) (by grind) <|
+--           by simpa using hepq.reverse.swap_right
+--         exact ⟨_, _, hF', by grind⟩
+--       sorry
+
+
+--       _
+
+
+
+
+
+
+
+
+
+
+
+
+--           -- obtain ⟨E, hE4, hME⟩ := hepq.swap_right.eq_unifOn_two_four_of_isTriad_of_tutteConnected
+--         obtain rfl | rfl := hp
+--         · sorry
+--         cases F with
+--         | nil =>
+--           obtain rfl | hne := eq_or_ne x q
+--           · obtain ⟨E, hE4, hME⟩ := hepq.swap_right.eq_unifOn_two_four_of_isTriad_of_tutteConnected
+--               (by simpa [IsTriad] using hT) (by simpa)
+--             obtain ⟨F, hF, hFE⟩ := unifOn_two_four_isFan hE4 b
+--             have hF : F.length = 4 := by
+--               rw [← Nat.cast_inj (R := ℕ∞), ← hF.nodup.encard_toSet_eq, hFE, hE4, Nat.cast_ofNat]
+--             apply_fun (Matroid.bDual · b) at hME
+--             simp only [bDual_bDual, bne_self_eq_false, bDual_false] at hME
+--             exact ⟨F.reverse, true, by simpa [hME], by grind⟩
+--           have hF : M.IsFan [x, e, p, q] (!b) b := by simpa using
+--             (hepq.isFan.cons (e := x) (by grind) (by simpa using hT.swap_left)).bDual b
+--           cases b
+--           · exact ⟨_, _, hF, by grind⟩
+--           exact ⟨_, _, hF.reverse, by grind⟩
+--         | cons z F =>
+--           have := h.isTriangle_bDual sorry
+--           simp at this
+
+
+--     -- have := hM.exists_triangle_bDual
+
+--     --  hfin.ground_finite.toFinset.card
+--     --   (by simp [hfin.ground_finite.encard_eq_coe_toFinset_card])

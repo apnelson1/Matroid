@@ -21,8 +21,9 @@ variable {α ι : Type*} {M N : Matroid α} {I B X X' Y Y' Z R : Set α} {n : �
 
 section Basic
 
--- lemma IsRkFinite.eRk_ne_top (h : M.IsRkFinite X) : M.eRk X ≠ ⊤ :=
---   h.eRk_lt_top.ne
+@[gcongr]
+lemma eRk_subset_le (M : Matroid α) (hXY : X ⊆ Y) : M.eRk X ≤ M.eRk Y :=
+  M.eRk_mono hXY
 
 lemma spanning_iff_eRk' [RankFinite M] : M.Spanning X ↔ M.eRank ≤ M.eRk X ∧ X ⊆ M.E := by
   refine ⟨fun h ↦ ⟨h.eRk_eq.symm.le, h.subset_ground⟩, fun ⟨h, hX⟩ ↦ ?_⟩

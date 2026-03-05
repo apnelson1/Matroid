@@ -1,4 +1,3 @@
-import Matroid.Triangle
 import Matroid.Connectivity.Separation.Vertical
 
 open Set Matroid Function Separation
@@ -311,22 +310,16 @@ theorem tutte_triangle (hM : M.TutteConnected 3) (hT : M.IsTriangle {e, f, g})
     ∃ K, M.IsTriad K ∧ e ∈ K ∧ ((f ∈ K ∧ g ∉ K) ∨ (f ∉ K ∧ g ∈ K)) := by
   obtain ⟨K, hK, heK⟩ := tutte_triangle_weak hM hT hcard he hf
   -- If `K = {e,f,g}`, then `M` is `U₂,₄`, and we have some easy bookkeeping to do.
-  obtain rfl | hne := eq_or_ne {e,f,g} K
-  · obtain ⟨E, hE4, rfl⟩ := hT.eq_unifOn_two_four_of_isTriad_of_tutteConnected hK hM
-    obtain ⟨x, hxE : x ∈ E, hxT⟩ : ∃ x ∈ (unifOn E 2).E, x ∉ ({e, f, g} : Set α)
-    · refine exists_of_ssubset (hT.subset_ground.ssubset_of_ne ?_)
-      rintro (rfl : {e,f,g} = E)
-      replace hE4 := hE4.symm.le
-      grw [encard_insert_le, encard_pair_le] at hE4
-      norm_num at hE4
-    have hef := hT.ne₁₂
-    have heg := hT.ne₁₃
-    have hfg := hT.ne₂₃
-    obtain ⟨hxe : x ≠ e, hxf : x ≠ f, hxg : x ≠ g⟩ := by simpa using hxT
-    refine ⟨{e, f, x}, ?_, by grind [hT.ne₁₂, hT.ne₁₃, hT.ne₂₃]⟩
-    rw [isTriad_iff, encard_insert_of_notMem (by grind), encard_pair hxf.symm,
-      and_iff_left (by rfl), isCocircuit_def, unifOn_dual_eq' (j := 2) (by enat_to_nat! <;> lia), unifOn_isCircuit_iff, encard_insert_of_notMem (by grind), encard_pair hxf.symm]
-    grind [hT.mem_ground₁, hT.mem_ground₂]
+  obtain rfl | hne := eq_or_ne {e, f, g} K
+  · have hfin := hT.isFiniteRankUniform_two_four_of_isTriad hK hM
+    simp only [IsTriad, hfin.dual_self, isTriangle_iff, hfin.isCircuit_iff,
+      show (2 : ℕ) + (1 : ℕ∞) = 3 from rfl, encard_eq_three]
+    obtain ⟨x, hxE, hxe, hxf, hxg⟩ : ∃ x ∈ M.E, x ≠ e ∧ x ≠ f ∧ x ≠ g := by
+      suffices M.E ≠ {e, f, g} by grind [hK.subset_ground]
+      apply_fun encard
+      simp [hK.three_elements, hfin.encard_eq]
+    use ({e, f, x} : Set α)
+    grind
   refine ⟨K, hK, heK, ?_⟩
   have hnt := hT.isCircuit.isCocircuit_inter_nontrivial hK.isCocircuit (by use e; simp_all)
   obtain ⟨x, ⟨hxT, hxK⟩, hxe⟩ := hnt.exists_ne e

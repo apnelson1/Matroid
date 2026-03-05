@@ -1036,6 +1036,14 @@ lemma _root_.Matroid.Connected.trivial_of_eConn_eq_zero (h : M.Connected) (hP : 
   have := h.nonempty
   exact connected_iff_forall_separation.1 h P hP
 
+lemma _root_.Matroid.Connected.eq_ground_of_eConn_eq_zero (hM : M.Connected) (hX : M.eConn X = 0)
+    (hne : X.Nonempty) (hXE : X ⊆ M.E := by aesop_mat) : X = M.E := by
+  obtain ⟨b | b, hb⟩ :=
+    (hM.trivial_of_eConn_eq_zero (P := M.ofSetSep X true) (by simpa)).exists_eq_ground
+  · rw [← hb] at hXE
+    simp [subset_diff, hne.ne_empty] at hXE
+  simpa using hb
+
 lemma Nontrivial.one_le_eConn_of_connected (hP : P.Nontrivial) (hM : M.Connected) :
     1 ≤ P.eConn := by
   contrapose! hP

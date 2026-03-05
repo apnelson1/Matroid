@@ -283,6 +283,20 @@ lemma Quotient.eq_of_closure_indep [Finitary M₂] (h : M₂ ≤q M₁) (hcl : M
     and_iff_right (closure_subset_ground ..), ← h.ground_eq]
   exact hi.subset_ground
 
+lemma Quotient.eq_of_eRank_ge [M₂.RankFinite] (h : M₂ ≤q M₁) (hge : M₁.eRank ≤ M₂.eRank) :
+    M₂ = M₁ := by
+  obtain ⟨B, hB⟩ := M₂.exists_isBase
+  obtain ⟨B', hB', hBB'⟩ := (h.weakLE.indep_of_indep hB.indep).exists_isBase_superset
+  obtain rfl := hB.finite.eq_of_subset_of_encard_le hBB'
+    (by rwa [hB.encard_eq_eRank, hB'.encard_eq_eRank])
+  exact h.eq_of_isBase_indep hB' hB.indep
+
+lemma Quotient.eq_of_eRank_ge' [M₁.RankFinite] (h : M₂ ≤q M₁) (hge : M₁.eRank ≤ M₂.eRank) :
+    M₂ = M₁ := by
+  suffices h' : M₂.RankFinite from h.eq_of_eRank_ge hge
+  grw [← eRank_lt_top_iff, h.weakLE.eRank_le, eRank_lt_top_iff]
+  assumption
+
 lemma Quotient.map {β : Type*} {f : α → β} (hQ : M₂ ≤q M₁) (hf : InjOn f M₂.E) :
     (M₂.map f hf) ≤q (M₁.map f (by rwa [← hQ.ground_eq])) := by
   simp only [quotient_iff, map_ground, hQ.ground_eq, and_true]

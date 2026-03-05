@@ -95,4 +95,11 @@ lemma WeakLE.exists_isBase_subset_isBase (h : N ≤w M) :
   rw [← h.ground_eq, isBasis_ground_iff] at hI
   exact ⟨I, J, hI, hJ, hIJ⟩
 
+lemma WeakLE.eRk_le (h : N ≤w M) (X : Set α) : N.eRk X ≤ M.eRk X := by
+  obtain ⟨I, hI⟩ := N.exists_isBasis' X
+  grw [← hI.encard_eq_eRk, ← M.eRk_mono hI.subset, (h.indep_of_indep hI.indep).eRk_eq_encard]
+
+lemma WeakLE.eRank_le (h : N ≤w M) : N.eRank ≤ M.eRank := by
+  grw [← eRk_ground, ← eRk_ground, h.ground_eq, h.eRk_le]
+
 end Weak

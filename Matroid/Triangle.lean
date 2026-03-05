@@ -1,5 +1,8 @@
 import Matroid.Bool
-import Matroid.Connectivity.Separation.Tutte
+import Matroid.Simple
+import Matroid.Uniform
+import Matroid.ForMathlib.ENat
+-- import Matroid.Connectivity.Separation.Tutte
 
 open Set
 
@@ -75,6 +78,7 @@ lemma dual_isTriad_iff : M✶.IsTriad T ↔ M.IsTriangle T := by
 lemma dual_isTriangle_iff : M✶.IsTriangle T ↔ M.IsTriad T := by
   simp [isTriangle_iff]
 
+@[simp]
 lemma bDual_isTriad_iff : (M.bDual b).IsTriad X ↔ (M.bDual (!b)).IsTriangle X := by
   simp [← dual_isTriad_iff]
 
@@ -89,6 +93,9 @@ lemma IsTriangle.nontrivial_diff_singleton (h : M.IsTriangle T) (e) : (T \ {e}).
 
 lemma IsTriangle.nontrivial (h : M.IsTriangle T) : T.Nontrivial :=
   (h.nontrivial_diff_singleton h.nonempty.some).mono diff_subset
+
+lemma IsTriangle.finite (h : M.IsTriangle T) : T.Finite := by
+  simpa [← encard_lt_top_iff, h.three_elements] using ENat.coe_lt_top 3
 
 -- the lemmas ahead allow one to comfortably work with terms of the form `IsTriangle {e, f, g}`
 -- rather than `IsTriangle T`.
@@ -115,16 +122,19 @@ lemma IsTriangle.ne₂₃ (h : M.IsTriangle {e, f, g}) : f ≠ g := by
 lemma IsTriangle.nodup (h : M.IsTriangle {e, f, g}) : [e, f, g].Nodup := by
   grind
 
-lemma IsTriangle.swap_right (h : M.IsTriangle {e, f, g}) : M.IsTriangle {e,g,f} := by
+lemma IsTriangle.swap_right (h : M.IsTriangle {e, f, g}) : M.IsTriangle {e, g, f} := by
   rwa [pair_comm]
 
-lemma IsTriangle.rotate_left (h : M.IsTriangle {e, f, g}) : M.IsTriangle {f,g,e} := by
+lemma IsTriangle.rotate (h : M.IsTriangle {e, f, g}) : M.IsTriangle {g, e, f} := by
   convert h using 1; grind
 
-lemma IsTriangle.swap_left (h : M.IsTriangle {e, f, g}) : M.IsTriangle {f,e,g} :=
+lemma IsTriangle.rotate_left (h : M.IsTriangle {e, f, g}) : M.IsTriangle {f, g, e} := by
+  convert h using 1; grind
+
+lemma IsTriangle.swap_left (h : M.IsTriangle {e, f, g}) : M.IsTriangle {f, e, g} :=
   h.rotate_left.swap_right
 
-lemma IsTriangle.reverse (h : M.IsTriangle {e, f, g}) : M.IsTriangle {g,f,e} :=
+lemma IsTriangle.reverse (h : M.IsTriangle {e, f, g}) : M.IsTriangle {g, f, e} :=
   h.rotate_left.swap_left
 
 lemma IsTriangle.indep₁₂ (h : M.IsTriangle {e, f, g}) : M.Indep {e,f} :=
@@ -230,15 +240,14 @@ lemma IsTriangle.eRelRk (hT : M.IsTriangle T) (he : e ∈ T) : M.eRelRk {e} T = 
   rwa [union_eq_self_of_subset_right (by simpa), hT.eRk, (hT.isNonloop_of_mem he).eRk_eq,
     ← one_add_one_eq_two, ENat.add_one_eq_add_one_iff] at aux
 
-/-- If `M` is a `3`-connected matroid and `T` is both a triangle and triad, then `M ≃ U₂,₄`. -/
-lemma IsTriangle.eq_unifOn_two_four_of_isTriad_of_tutteConnected (hT : M.IsTriangle T)
-    (hT' : M.IsTriad T) (hM : M.TutteConnected 3) :
-    ∃ (E : Set α), E.encard = 4 ∧ M = unifOn E 2 := by
-  obtain ⟨E, r, hr, hE, rfl⟩ :=
-    hT.isCircuit.exists_eq_unifOn_of_isCocircuit_of_tutteConnected hT'.isCocircuit (k := 2)
-    (by rw [hT.three_elements]; norm_num) (by simp) hM
-  obtain rfl : r = 2 := ENat.coe_inj.1 hr
-  use E, hE
+lemma IsTriangle.eRk_union_le (hT : M.IsTriangle T) (hTX : (X ∩ T).Nonempty) :
+    M.eRk (T ∪ X) ≤ M.eRk X + 1 := by
+  obtain ⟨e, he⟩ := hTX
+  obtain ⟨f, g, -, -, -, rfl⟩ := exists_eq_of_encard_eq_three_of_mem hT.three_elements he.2
+  grw [← M.eRk_insert_le_add_one f X, ← M.eRk_closure_eq (insert f X),
+    ← closure_insert_eq_of_mem_closure (e := g), M.eRk_closure_eq]
+  · exact M.eRk_mono <| union_subset (by grind) (by grind)
+  exact mem_of_mem_of_subset hT.mem_closure₃ <| M.closure_subset_closure (by grind)
 
 lemma isTriangle_of_dep_of_encard_le [h : M.Simple] (hT : M.Dep T) (hcard : T.encard ≤ 3) :
     M.IsTriangle T := by
@@ -249,7 +258,7 @@ lemma isTriangle_of_dep_of_encard_le [h : M.Simple] (hT : M.Dep T) (hcard : T.en
 
 @[mk_iff]
 structure Triassic (M : Matroid α) : Prop where
-  three_connected : M.TutteConnected (2 + 1)
+  -- three_connected : M.TutteConnected (2 + 1)
   forall_mem_triangle : ∀ e ∈ M.E, ∃ T, M.IsTriangle T ∧ e ∈ T
   forall_mem_triad : ∀ e ∈ M.E, ∃ T, M.IsTriad T ∧ e ∈ T
 
@@ -258,6 +267,18 @@ lemma triassic_dual_iff : M✶.Triassic ↔ M.Triassic := by
   simp [triassic_iff, and_comm]
 
 alias ⟨_, Triassic.dual⟩ := triassic_dual_iff
+
+lemma Triassic.mem_triangle_bDual (hM : M.Triassic) (he : e ∈ M.E) (b : Bool) :
+    ∃ T, (M.bDual b).IsTriangle T ∧ e ∈ T := by
+  cases b
+  · exact hM.forall_mem_triangle e he
+  exact hM.forall_mem_triad e he
+
+lemma Triassic.exists_triangle_bDual (hM : M.Triassic) (he : e ∈ M.E) (b : Bool) :
+    ∃ x y, (M.bDual b).IsTriangle {e, x, y} := by
+  obtain ⟨T, hT⟩ := hM.mem_triangle_bDual he b
+  obtain ⟨y, z, -, -, -, rfl⟩ := exists_eq_of_encard_eq_three_of_mem hT.1.three_elements hT.2
+  exact ⟨y, z, hT.1⟩
 
 lemma IsTriangle.mem_iff_mem_of_isCocircuit (h : M.IsTriangle {e, f, g}) (hK : M.IsCocircuit K)
     (heK : e ∉ K) : f ∈ K ↔ g ∈ K := by
@@ -275,6 +296,11 @@ lemma IsTriangle.mem_or_mem_of_isCocircuit (h : M.IsTriangle {e, f, g}) (hK : M.
   by_contra! hcon
   exact h.isCircuit.inter_isCocircuit_ne_singleton hK (e := e) <| by grind
 
+lemma IsTriangle.mem_of_mem_of_notMem_of_is_Cocircuit (h : M.IsTriangle {e, f, g})
+    (hK : M.IsCocircuit K) (heK : e ∈ K) (hfK : f ∉ K) : g ∈ K := by
+  by_contra! hcon
+  exact h.isCircuit.inter_isCocircuit_ne_singleton hK (e := e) <| by grind
+
 lemma IsTriangle.mem_or_mem_of_isCircuit_bDual (h : (M.bDual b).IsTriangle {e, f, g})
     (hK : (M.bDual !b).IsCircuit K) (heK : e ∈ K) : f ∈ K ∨ g ∈ K := by
   cases b <;> exact h.mem_or_mem_of_isCocircuit (by simpa using hK.isCocircuit) heK
@@ -283,38 +309,16 @@ lemma IsTriangle.mem_iff_mem_of_isCircuit_bDual (h : (M.bDual b).IsTriangle {e, 
     (hK : (M.bDual !b).IsCircuit K) (heK : e ∉ K) : f ∈ K ↔ g ∈ K := by
   cases b <;> exact h.mem_iff_mem_of_isCocircuit (by simpa using hK.isCocircuit) heK
 
+lemma IsTriangle.mem_of_mem_of_notMem_of_isCircuit_bDual {b} (h : (M.bDual b).IsTriangle {e, f, g})
+    (hK : (M.bDual (!b)).IsCircuit K) (heK : e ∈ K) (hfK : f ∉ K) : g ∈ K := by
+  by_contra! hcon
+  exact h.isCircuit.inter_isCocircuit_ne_singleton (by simpa using hK) (e := e) <| by grind
+
 lemma IsTriangle.eq_of_isTriad {x y : α} (h : M.IsTriangle {e, f, g}) (h' : M.IsTriad {e, x, y}) :
     f = x ∨ f = y ∨ g = x ∨ g = y := by
   have h1 := h.reverse.mem_iff_mem_of_isCocircuit h'.isCocircuit
   grind [h.ne₁₃.symm, h.ne₁₂.symm]
 
-/-- If `P` is a Tutte separation in a deletion of a `3`-connected matroid, and one side is
-small enough, then we can find a triad. -/
-lemma TutteConnected.union_isTriad_of_separation_delete {D} (hM : M.TutteConnected 3)
-    (hcard : 4 ≤ M.E.encard) {P : (M ＼ D).Separation} (hP : P.IsTutteSeparation)
-    (hDE : D ⊆ M.E) (hD : D.Nonempty)
-    (hPD : (P i).encard + D.encard ≤ 3) : M.IsTriad (P i ∪ D) := by
-  have h1 := hM.simple hcard
-  have h2 := hM.dual.simple hcard
-  refine isTriangle_of_dep_of_encard_le ?_ <| by grw [encard_union_le, hPD]
-  have hd := hP.codep_of_indep (i := i) ?_
-  · rw [Coindep.delete_codep_iff] at hd
-    · exact hd.1
-    refine indep_of_card_lt_girth ?_ hDE
-    grw [← three_le_girth]
-    have := (hP.nonempty i).encard_pos
-    enat_to_nat! <;> lia
-  rw [delete_indep_iff, and_iff_left (P.disjoint_delete i)]
-  refine indep_of_card_lt_girth ?_
-  grw [← three_le_girth]
-  have hD' := hD.encard_pos
-  enat_to_nat! <;> lia
-
-/-- If `P` is a Tutte separation in a contraction of a `3`-connected matroid, and one side is
-small enough, then we can find a triangle. -/
-lemma TutteConnected.union_isTriangle_of_separation_contract {C} (hM : M.TutteConnected 3)
-    (hcard : 4 ≤ M.E.encard) {P : (M ／ C).Separation} (hP : P.IsTutteSeparation)
-    (hCE : C ⊆ M.E) (hC : C.Nonempty) (hPC : (P i).encard + C.encard ≤ 3) :
-    M.IsTriangle (P i ∪ C) := by
-  simpa using hM.dual.union_isTriad_of_separation_delete (i := i) hcard
-    (P := P.induce _) (by simpa) hCE hC (by simpa)
+lemma IsFiniteRankUniform.isTriangle_iff {b : ℕ∞} (hM : M.IsFiniteRankUniform 2 b) :
+    M.IsTriangle C ↔ C.encard = 3 ∧ C ⊆ M.E := by
+  grind [Matroid.isTriangle_iff, hM.isCircuit_iff]

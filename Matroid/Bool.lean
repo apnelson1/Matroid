@@ -48,6 +48,9 @@ lemma bDual_bDual {c} : (M.bDual b).bDual c = M.bDual (b != c) := by
 lemma bDual_bDual_self (M : Matroid α) (b : Bool) : (M.bDual b).bDual b = M := by
   simp
 
+lemma eq_bDual_iff_bDual_eq (M N : Matroid α) (d : Bool) : M.bDual d = N ↔ M = N.bDual d := by
+  cases d with simp [eq_dual_iff_dual_eq]
+
 /-- If `b` is false, then `M ＼ X`, and if `b` is true, then `M ／ X`. Used in self-dual settings. -/
 def remove (M : Matroid α) (b : Bool) (X : Set α) := bif b then M ／ X else M ＼ X
 
