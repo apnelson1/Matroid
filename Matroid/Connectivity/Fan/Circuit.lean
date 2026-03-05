@@ -14,6 +14,10 @@ variable {α : Type*} {M : Matroid α} {X Y C K T : Set α} {e f g x y : α} {b 
 def List.valsBetween (L : List α) (p q : ℕ) (b : Bool) : Set α :=
     {x | ∃ (i : ℕ) (hi : i < L.length), p ≤ i ∧ i ≤ q ∧ i.bodd = b ∧ L[i] = x}
 
+lemma List.valsBetween_subset_iff (L : List α) p q b : L.valsBetween p q b ⊆ X ↔
+    ∀ i (hi : i < L.length), p ≤ i → i ≤ q → i.bodd = b → L[i] ∈ X := by
+  grind [List.valsBetween]
+
 lemma List.valsBetween_subset (L : List α) p q b : L.valsBetween p q b ⊆ {e | e ∈ L} := by
   grind [List.valsBetween]
 
@@ -30,6 +34,20 @@ lemma valsBetween_add_two (L : List α) {p q : ℕ} (hpq : p ≤ q) (hq : q.bodd
     · exact .inr ⟨i, by grind⟩
     grind [show i ≠ (q + 2) by rintro rfl; simp at hq]
   grind [List.valsBetween]
+
+lemma valsBetween_insert_drop_two {L : List α} {p q : ℕ} (hpq : p ≤ q + 1)
+    (hplt : p + 1 < L.length) (hp : p.bodd = !b) :
+    insert L[p + 1] ((L.drop 2).valsBetween p q b) = L.valsBetween p (q + 2) b := by
+  simp only [valsBetween, getElem_drop, length_drop, exists_and_left, Set.ext_iff,
+    Set.mem_insert_iff, mem_setOf_eq, iff_def, forall_exists_index, and_imp]
+  refine fun i ↦ ⟨?_, ?_⟩
+  · rintro (rfl | ⟨i, hpi, hiq, rfl, hilt, rfl⟩)
+    · exact ⟨p + 1, by lia, by lia, by simpa, by lia, rfl⟩
+    exact ⟨2 + i, by lia, by lia, by simp, by lia, rfl⟩
+  rintro i hpi hiq rfl hlt rfl
+  by_contra! hcon
+  obtain rfl | rfl | i := i; grind; grind
+  exact hcon.2 i (by lia) (by lia) (by simp) (by lia) (by grind)
 
 def List.fanCircuit (L : List α) (p q : ℕ) : Set α :=
     L.get '' {i : Fin L.length | i = p ∨ i = q ∨ p < i ∧ i < q ∧ (i : ℕ).bodd != p.bodd}
@@ -125,41 +143,189 @@ lemma IsFan.getElem_mem_valsBetween_iff {p q d} (hF : M.IsFan F b c) {hi : i < F
   simp only [valsBetween, exists_and_left, mem_setOf_eq]
   grind [hF.getElem_inj_iff]
 
-lemma IsFan.eq_first_last_of_parallel (hF : M.IsFan F b c) (h4 : 5 ≤ F.length) (hij : i < j)
-    (hj : j < F.length) (hp : M.Parallel F[i] F[j]) :
-    i = 0 ∧ j + 1 = F.length ∧ b = false ∧ c = false := by
-  have hc := hp.isCircuit_of_ne (by simpa [hF.nodup.getElem_inj_iff] using hij.ne)
-  obtain rfl | j := j; simp at hij
-  induction h : F.length generalizing F i j b c with
-  | zero => lia
-  | succ n ih =>
-    obtain rfl := hF.bool_right_eq
-    suffices i = 0 ∧ j + 1 = n ∧ b = false ∧ b = n.bodd by simpa [h]
-    obtain hjn | hjlt := ((show j + 2 ≤ F.length by grind).eq_or_lt).symm
-    · have hcon := ih (hF.dropLast (by lia)) ?_ _ hij (by grind) (by simpa) (by simpa) (by grind)
-      · simp only [h, Nat.bodd_succ, Bool.not_eq_eq_eq_not, Bool.not_false, beq_iff_eq] at hcon
-        obtain ⟨rfl, rfl, rfl, hbn⟩ := hcon
-        have hwin := (hF.isTriad_getElem_of_eq j (by lia)
-          (by simp [hbn])).swap_left.mem_or_mem_of_isCocircuit hc.isCocircuit (by simp)
-        simp [hF.nodup.getElem_inj_iff, show j ≠ 0 by grind] at hwin
+lemma IsFan.baz (hF : M.IsFan F false false)
+    (h_para : ¬ M.Parallel (F.head hF.ne_nil) (F.getLast hF.ne_nil)) :
+    M.IsCircuit (insert (F.head hF.ne_nil) (insert (F.getLast hF.ne_nil)
+      (F.valsBetween 0 (F.length - 1) true))) := by
+  obtain ⟨n, hnF⟩ := Nat.exists_eq_add_of_le' hF.two_le_length
+  induction n using Nat.twoStepInduction generalizing F with
+  | zero => simpa [hnF] using hF.length_bodd_eq
+  | one =>
+    rw [hnF, show 1 + 2 - 1 = 0 + 2 from rfl, valsBetween_add_two _ rfl.le rfl (by lia),
+      valsBetween_self_eq_empty rfl, head_eq_getElem, getLast_eq_getElem]
+    simpa [hnF] using (hF.isTriangle_bDual (by grind)).swap_right.isCircuit
+  | more n ih0 ih1 =>
 
-      obtain rfl | rfl | j := j
-      · obtain rfl : i = 0 := by grind
-        cases b
-        · have hT := (hF.isTriangle_getElem_of_eq 0 (by grind) rfl)
-          simpa [hF.nodup.getElem_inj_iff] using
-            hT.restrict_simple.eq_of_parallel_of_mem (e := F[0]) (f := F[1]) (by simp) (by simp) hp
+    obtain rfl | n := n; sorry
+    have hn_odd: n.bodd = false := sorry
+    clear ih1
+    have hF' : M.IsFan (List.drop 2 F) false false := by simpa using (hF.drop (k := 2) (by lia))
+    specialize ih0 hF'
+    simp only [head_eq_getElem, getElem_drop, add_comm 2, zero_add, getLast_eq_getElem, length_drop,
+      hnF, add_assoc, Nat.reduceAdd, Nat.reduceSubDiff, Nat.add_one_sub_one, forall_const]
+      at ih0 ⊢ h_para
+    have h_even : n.bodd = false := by simpa [hnF] using hF.bool_right_eq
+    specialize ih0 ?_
+    · intro hpara
+      have hp := (hF.isTriad_getElem_of_eq 1 (by lia) rfl).isCocircuit.mem_iff_mem_of_parallel hpara
+      simp [hF.nodup.getElem_inj_iff] at hp
 
-        sorry
+    have helim := ih0.strong_elimination (hF.isTriangle_getElem_of_eq 0 (by lia) rfl).isCircuit
+      (e := F[2]) (f := F[n + 4]) (by simp) (by simp) (by simp) (by simp [hF.nodup.getElem_inj_iff])
 
-      -- have hi : i ≤ 2 := by grind
-      -- cases b
-      -- ·
-      --   have := (hF.isTriangle_getElem_of_eq 0 (by grind) rfl).restrict_simple.eq_of_parallel_of_mem
-      --     (e := F[i]) (f := F[j + 1])
+    simp only [zero_add, union_insert, union_singleton, insert_comm (b := F[2]), Set.mem_insert_iff,
+      true_or, insert_eq_of_mem, mem_singleton_iff, insert_diff_of_mem] at helim
+    obtain ⟨C, hCss, hC, hnC⟩ := helim
+    rw [insert_comm (F[1]), valsBetween_insert_drop_two (by lia) _ rfl] at hCss
+    simp_rw [add_assoc, two_add_two_eq_four] at hCss
 
-      sorry
+
+    have aux (d : ℕ) (hd : d ≤ n + 3) (hd_odd : d.bodd = true) : F[d] ∈ C ↔ F[1] ∈ C := by
+      induction d using Nat.twoStepInduction with
+      | zero => simp at hd_odd
+      | one => rfl
+      | more d ih ih1 =>
+        obtain rfl | d := d; simp at hd_odd
+        replace hd_odd : d.bodd = false := by simpa using hd_odd
+        rw [← ih (by lia) (by simpa), (hF.isTriad_getElem_of_eq (d + 1) (by lia)
+          (by simpa using hd_odd)).swap_left.mem_iff_mem_of_isCocircuit (by simpa)]
+        refine notMem_subset hCss ?_
+        simp [hF.getElem_mem_valsBetween_iff, hd_odd, hF.nodup.getElem_inj_iff,
+          show d ≠ n + 2 by grind]
+
+    obtain h1 | h1 := em' <| F[1] ∈ C
+    · contrapose h_para
+      rw [(hF.isNonloop (by simp)).parallel_iff_dep (hF.isNonloop (by simp))
+        (by simp [hF.nodup.getElem_inj_iff])]
+      refine hC.dep.superset ?_ (by grind [hF.get_mem_ground])
+      intro x hxC
+      suffices h' : x ∉ (F.drop 2).valsBetween 0 (n + 2) true by grind
+      contrapose h1
+      simp only [valsBetween, zero_le, getElem_drop, true_and, length_drop, exists_and_left,
+        mem_setOf_eq] at h1
+      obtain ⟨i, hin, hiodd, hilt, rfl⟩ := h1
+      rwa [← aux (2 + i) _ (by simpa using hiodd)]
+      grind [show i ≠ n + 2 by rintro rfl; simp [hn_odd] at hiodd]
+    by_cases h0C : F[0] ∈ C
+    · convert hC
+      refine (hCss.trans diff_subset).antisymm' <| insert_subset h0C <| insert_subset hnC ?_
+      simp only [valsBetween_subset_iff, zero_le, forall_const]
+      intro i hi hile hiodd
+      rwa [aux _ _ (by lia)]
+      grind [show i ≠ n + 4 by rintro rfl; simp [hn_odd] at hiodd]
+
+
+
+
+
+
+      -- simp only [valsBetween, zero_le, getElem_drop, true_and, length_drop, exists_and_left,
+      --   mem_diff, Set.mem_insert_iff, mem_setOf_eq, mem_singleton_iff] at this
+      -- simp [eq_comm (b := x)] at this
+
+
+
+
+
+
+
+
+
+    --   _
+
+
     sorry
+
+  -- generalize hb : false = b at hF
+
+  -- induction hF using IsFan.induction₂_odd with
+  -- | of_triangle M e f g b hT =>
+  --   simp only [head_cons, ne_eq, reduceCtorEq, not_false_eq_true, getLast_cons, cons_ne_self,
+  --     getLast_singleton, length_cons, length_nil, zero_add, Nat.reduceAdd]
+  --   rw [valsBetween_add_two _ (by simp) rfl (by simp), valsBetween_self_eq_empty rfl]
+  --   simpa [← hb] using hT.swap_right.isCircuit
+  -- | cons_cons M e f x y F b h hT hf hT' he hey ih =>
+  --   subst hb
+  --   have hFne : F ≠ [] := by rintro rfl; simpa using h.bool_right_eq
+  --   simp only [head_cons, ne_eq, reduceCtorEq, not_false_eq_true, getLast_cons, getLast_cons hFne,
+  --     length_cons, add_tsub_cancel_right, forall_const] at *
+  --   set u := F.getLast hFne with hu
+  --   have hnp : ¬ M.Parallel x u := by
+  --     intro hp
+  --     grind [h.nodup, ((IsTriad.isCocircuit hT).mem_iff_mem_of_parallel hp).1 (by simp)]
+  --   -- by the inductive hypothesis, the set `{x, u} ∪ K` is a circuit, where `K` is the set of
+  --   -- cojoints between `x` and `u`. Apply strong elimination to this circuit and `{e, f, x}`
+  --   -- to find a circuit `C` with `u ∈ C ⊆ {u, f} ∪ K`.
+  --   obtain ⟨C, hCss, hC, heC⟩ := (ih hnp).strong_elimination hT'.isCircuit
+  --     (e := x) (f := u) (by simp) (by simp) (by simp) (by grind [h.nodup])
+  --   have aux (d : ℕ) (hd : d + 1 < (e :: f :: x :: y :: F).length) (hd_odd : d.bodd = false) :
+  --       (e :: f :: x :: y :: F)[d + 1] ∈ C ↔ f ∈ C := by
+  --     induction d using Nat.twoStepInduction with
+  --     | one => simp at hd_odd
+  --     | zero => simp
+  --     | more n ih0 =>
+  --       simp only [Nat.bodd_succ, Bool.not_not] at hd_odd
+  --       rw [← ih0 (by grind) (by simpa using hd_odd)]
+  --       have hK := ((h.cons hf hT).cons_not (e := e) (by grind) hT').isTriad_getElem_of_eq
+  --         (i := n + 1) (by grind) (by simpa)
+  --       simp_rw [add_right_comm]
+  --       rw [hK.swap_left.mem_iff_mem_of_isCocircuit (K := C) (by simpa)]
+  --       refine notMem_subset hCss ?_
+  --       simp [h.getElem_mem_valsBetween_iff, hd_odd]
+  --       suffices aux : (x :: y :: F)[n]'(by grind) ≠ u by grind
+  --       rw [hu, ← getLast_cons (a := y), ← getLast_cons (a := x), getLast_eq_getElem,
+  --         Ne, h.nodup.getElem_inj_iff]
+  --       grind
+  --   obtain hfC | hfC := em' <| f ∈ C
+  --   · have hCss' : C ⊆ {e, u} := by
+  --       intro z hzC
+  --       simp only [union_insert, union_singleton, Set.mem_insert_iff, true_or,
+  --         insert_eq_of_mem] at hCss
+  --       have hzx : z ≠ x := by grind
+  --       suffices z ∉ ((x :: y :: F).valsBetween 0 (F.length + 1) true) by grind
+  --       simp only [valsBetween, zero_le, true_and, length_cons, Order.lt_add_one_iff,
+  --         exists_and_left, mem_setOf_eq, not_exists, not_and]
+  --       rintro (rfl | i) hi hi_odd hile rfl
+  --       · simp at hi_odd
+  --       rw [aux] at hzC
+
+
+
+-- lemma IsFan.eq_first_last_of_parallel (hF : M.IsFan F b c) (h4 : 5 ≤ F.length) (hij : i < j)
+--     (hj : j < F.length) (hp : M.Parallel F[i] F[j]) :
+--     i = 0 ∧ j + 1 = F.length ∧ b = false ∧ c = false := by
+--   have hc := hp.isCircuit_of_ne (by simpa [hF.nodup.getElem_inj_iff] using hij.ne)
+--   obtain rfl | j := j; simp at hij
+--   induction h : F.length generalizing F i j b c with
+--   | zero => lia
+--   | succ n ih =>
+--     obtain rfl := hF.bool_right_eq
+--     suffices i = 0 ∧ j + 1 = n ∧ b = false ∧ b = n.bodd by simpa [h]
+--     obtain hjn | hjlt := ((show j + 2 ≤ F.length by grind).eq_or_lt).symm
+--     · have hcon := ih (hF.dropLast (by lia)) ?_ _ hij (by grind) (by simpa) (by simpa) (by grind)
+--       · simp only [h, Nat.bodd_succ, Bool.not_eq_eq_eq_not, Bool.not_false, beq_iff_eq] at hcon
+--         obtain ⟨rfl, rfl, rfl, hbn⟩ := hcon
+--         have hwin := (hF.isTriad_getElem_of_eq j (by lia)
+--           (by simp [hbn])).swap_left.mem_or_mem_of_isCocircuit hc.isCocircuit (by simp)
+--         simp [hF.nodup.getElem_inj_iff, show j ≠ 0 by grind] at hwin
+
+--       obtain rfl | rfl | j := j
+--       · obtain rfl : i = 0 := by grind
+--         cases b
+--         · have hT := (hF.isTriangle_getElem_of_eq 0 (by grind) rfl)
+--           simpa [hF.nodup.getElem_inj_iff] using
+--             hT.restrict_simple.eq_of_parallel_of_mem (e := F[0]) (f := F[1]) (by simp) (by simp) hp
+
+--         sorry
+
+--       -- have hi : i ≤ 2 := by grind
+--       -- cases b
+--       -- ·
+--       --   have := (hF.isTriangle_getElem_of_eq 0 (by grind) rfl).restrict_simple.eq_of_parallel_of_mem
+--       --     (e := F[i]) (f := F[j + 1])
+
+--       sorry
+--     sorry
 
 
 

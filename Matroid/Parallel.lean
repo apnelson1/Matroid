@@ -176,6 +176,14 @@ lemma IsNonloop.parallel_iff_forall_mem_of_mem_of_isCocircuit
   grw [← subset_closure _ _ (by grind)]
   grind
 
+lemma IsCocircuit.mem_iff_mem_of_parallel {K} (hK : M.IsCocircuit K) (hef : M.Parallel e f) :
+    e ∈ K ↔ f ∈ K := by
+  wlog heK : e ∈ K generalizing e f with aux
+  · exact iff_of_false heK fun hfK ↦ heK <| (aux hef.symm hfK).1 hfK
+  exact iff_of_true heK <|
+    (hef.isNonloop_left.parallel_iff_forall_mem_of_mem_of_isCocircuit hef.mem_ground_right).1
+    hef K hK heK
+
 lemma parallel_dual_iff_forall_circuit (henl : M✶.IsNonloop e) (hf : f ∈ M.E) :
     M✶.Parallel e f ↔ ∀ C, M.IsCircuit C → e ∈ C → f ∈ C := by
   simp [henl.parallel_iff_forall_mem_of_mem_of_isCocircuit hf]
