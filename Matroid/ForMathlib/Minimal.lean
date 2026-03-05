@@ -1,4 +1,4 @@
-import Mathlib.Data.Set.Image -- inefficient import
+import Mathlib.Order.Minimal -- inefficient import
 
 open Set
 
@@ -156,14 +156,11 @@ lemma maximal_apply_mono_iff (hPQ : ∀ x, P x ↔ Q (f x)) (hf : ∀ ⦃y⦄, Q
 
 variable {α ι : Type*} {P : α → Prop} {i j : ι} {x y : α}
 
-lemma Minimal.le [LinearOrder α] (h : Minimal P x) (hy : P y) : x ≤ y :=
-  (le_total x y).elim id (h.2 hy)
 
-lemma MinimalFor.le [LinearOrder α] {P : ι → Prop} (f : ι → α) (h : MinimalFor P f i) (hj : P j) :
-    f i ≤ f j := (le_total (f i) (f j)).elim id (h.2 hj)
+lemma MinimalFor.eq_of_le [PartialOrder α] {P : ι → Prop} {f : ι → α} (h : MinimalFor P f i)
+    (hj : P j) (hji : f j ≤ f i) : f j = f i :=
+  hji.antisymm <| h.le_of_le hj hji
 
-lemma Maximal.le [LinearOrder α] (h : Maximal P x) (hy : P y) : y ≤ x :=
-  (le_total y x).elim id (h.2 hy)
-
-lemma MaximalFor.le [LinearOrder α] {P : ι → Prop} (f : ι → α) (h : MaximalFor P f i) (hj : P j) :
-    f j ≤ f i := (le_total (f j) (f i)).elim id (h.2 hj)
+lemma MaximalFor.eq_of_ge [PartialOrder α] {P : ι → Prop} {f : ι → α} (h : MaximalFor P f i)
+    (hj : P j) (hij : f i ≤ f j) : f j = f i :=
+  hij.antisymm' <| h.le_of_le hj hij

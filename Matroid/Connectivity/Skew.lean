@@ -567,6 +567,14 @@ lemma skew_iff_exist_isBases {X Y : Set α} :
   exact ⟨fun ⟨Is, h1, h2, h3⟩ ↦ ⟨Is true, Is false, h1, h2, h3.symm⟩,
     fun ⟨I, J, h1, h2, h3X, h3Y⟩ ↦ ⟨fun i ↦ bif i then I else J, h1, h2, by simpa, by simpa⟩⟩
 
+lemma Skew.eRelRk_eq_right (h : M.Skew X Y) : M.eRelRk X (X ∪ Y) = M.eRk Y := by
+  obtain ⟨I, J, hdj, hIJ, hI, hJ⟩ := skew_iff_exist_isBases.1 h
+  rw [hI.eRelRk_eq_encard_diff_of_subset_isBasis hIJ subset_union_left,
+    union_diff_cancel_left hdj.inter_eq.subset, hJ.encard_eq_eRk]
+
+lemma Skew.eRelRk_eq_left (h : M.Skew X Y) : M.eRelRk Y (X ∪ Y) = M.eRk X := by
+  rw [← h.symm.eRelRk_eq_right, union_comm]
+
 lemma Skew.closure_skew (h : M.Skew X Y) : M.Skew (M.closure X) (M.closure Y) := by
   have h' := IsSkewFamily.cls_isSkewFamily h
   simp_rw [Bool.cond_eq_ite, apply_ite, ← Bool.cond_eq_ite] at h'
@@ -638,6 +646,37 @@ lemma isModularPair_dual_iff (hXY : X ∪ Y = M.E) :
   rw [← dual_ground, skew_dual_iff, dual_ground, ← hXY, diff_diff_cancel_left subset_union_left,
     diff_diff_cancel_left subset_union_right]
   rw [dual_ground, disjoint_iff_inter_eq_empty, diff_inter_diff, hXY, diff_self]
+
+
+lemma foo {C₁ C₂ : Set α} (hC₁ : M.IsCircuit C₁) (hC₂ : M.IsCircuit C₂) (hne : C₁ ≠ C₂)
+    (hmod : M.IsModularPair C₁ C₂) : M.IsCircuit ((C₁ ∪ C₂) \ (C₁ ∩ C₂)) := by
+  wlog hME : M.E = C₁ ∪ C₂ generalizing M with aux
+  · refine ((aux (M := M ↾ (C₁ ∪ C₂)) (hC₁.isCircuit_restrict_of_subset (by simp))
+      (hC₂.isCircuit_restrict_of_subset (by simp))
+      (IsModularFamily.restrict hmod (by grind)) rfl)).of_isRestriction ?_
+    exact restrict_isRestriction _ _ (by grind)
+  rw [← M.dual_dual, isModularPair_dual_iff (by simpa using hME.symm), dual_ground] at hmod
+
+
+  have hr := hmod.eRelRk_eq_left.ge
+  grw [eRelRk_mono_right _ _ (union_subset diff_subset diff_subset), ← dual_ground,
+    hC₂.isCocircuit.compl_isHyperplane.eRelRk_eq_one] at hr
+  have hH₁ := hC₁.isCocircuit.compl_isHyperplane
+  have hH₂ := hC₁.isCocircuit.compl_isHyperplane
+  obtain h0 | h1 := hr.eq_or_lt
+  · sorry
+  rw [ENat.lt_one_iff_eq_zero, eRk_eq_zero_iff diff_subset, ← closure_empty] at h1
+  have h1_eq := h1.antisymm' (hH₁.isFlat.closure_subset_of_subset (empty_subset _))
+  have h2' := hH₁.eRelRk_eq_one
+  rw [← ]
+
+
+  have := h1.antisymm (hC₂.isCocircuit.compl_isHyperplane.isFlat.closure_subset_of_subset (empty_subset _))
+
+  -- have hrM := hC₂.isCocircuit.compl_isHyperplane.eRk_add_one_eq
+
+  -- rw [skew_iff_exist_isBases] at hmod
+
 
 lemma Coindep.skew_dual_iff (hX : M.Coindep X) (hXY : Disjoint X Y)
     (hYE : Y ⊆ M.E := by aesop_mat) : M✶.Skew X Y ↔ X ⊆ M.closure (M.E \ (X ∪ Y)) := by

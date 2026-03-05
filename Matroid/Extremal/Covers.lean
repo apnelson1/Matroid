@@ -6,6 +6,7 @@ import Mathlib.Tactic.Linarith
 import Mathlib.Data.Finset.Powerset
 import Matroid.Flat.LowRank
 import Matroid.ForMathlib.Topology.ENat
+import Matroid.ForMathlib.Minimal
 import Mathlib.Data.Set.Card.Arithmetic
 
 set_option linter.style.longLine false
@@ -232,7 +233,7 @@ noncomputable def SetsingletonEmbedding ( A : Set α ) : Function.Embedding
 
 lemma IsCover_singleton_Prop (hP : ∀ e ∈ M.E, P M (singleton e)) :
     M.coverNumber' P ≤ M.E.encard := by
-  have hcover : M.IsCover' P ({singleton e | e ∈ M.E}) := by
+  have hcover : M.IsCover' P (singleton '' M.E) := by
     refine ⟨ ?_, ?_ ⟩
     · refine Eq.symm (ext ?_)
       intro x
@@ -451,6 +452,54 @@ def ranksubsets_Map (a : ℕ) (b : ℕ) (hx : X.Finite ) (hX : X ⊆ M.E) (hF : 
 
 --   --choose f hf hf1 using h1
 --   sorry
+lemma baseCase {a b : ℕ} (hM : NoUniformMinor M a (b + 1)) (hr : M.eRank = a + 1) :
+    M.coverNumber' (fun M X ↦ M.eRk X ≤ a) ≤ Nat.choose b a := by
+  by_contra! hcon
+  obtain ⟨B, hB⟩ := M.exists_isBase
+  have hne : {X | (M ↾ X).IsFiniteRankUniform (a + 1) X.encard}.Nonempty := by
+    refine ⟨B, rfl, ?_, ?_⟩
+    · rwa [eRank_restrict, hB.eRk_eq_eRank]
+    rw [hB.indep.restrict_eq_freeOn]
+    exact freeOn_uniform B
+  have hcard : (encard '' {X | (M ↾ X).IsFiniteRankUniform (a + 1) X.encard}).Finite := by
+    refine ENat.finite_of_sSup_lt_top ?_
+    refine lt_of_le_of_lt ?_ <| WithTop.natCast_lt_top (b.choose a)
+    sorry
+
+  obtain ⟨X, hX⟩ := Finite.exists_maximalFor' encard _ hcard hne
+  have := hX.prop
+  sorry
+
+lemma foo {a b : ℕ} (X : Set α) (hX : X.encard = b) :
+    {Y | Y ⊆ X ∧ Y.encard = a}.encard = b.choose a := by
+  have hXfin : X.Finite := by simp [← encard_lt_top_iff, hX]
+  set X' := hXfin.toFinset with hX'
+  have := (Nat.cast_inj (R := ℕ∞)).2 <| X'.card_powersetCard a
+  convert (Nat.cast_inj (R := ℕ∞)).2 <| X'.card_powersetCard a
+  · rw [← encard_coe_eq_coe_finsetCard, ← Finset.coe_injective.encard_image (β := Set α)]
+    convert rfl
+    ext S
+    simp only [mem_image, SetLike.mem_coe, Finset.mem_powersetCard, mem_setOf_eq,
+      hX', Finite.subset_toFinset]
+    constructor
+    · rintro ⟨T, ⟨hTX, rfl⟩, rfl⟩
+      simpa
+    intro ⟨hSX, hSa⟩
+    refine ⟨Finite.toFinset (s := S) ?_, ?_⟩
+    · simp [← encard_lt_top_iff, hSa]
+    simp_rw [← Nat.cast_inj (R := ℕ∞), ← hSa, ← Finite.encard_eq_coe_toFinset_card]
+    simpa
+  rw [← Nat.cast_inj (R := ℕ∞), ← hX, eq_comm, hXfin.encard_eq_coe_toFinset_card]
+
+
+
+  -- have := hX.
+
+
+
+
+    -- grw [← WithTop.natCast_lt_top (n := b.choose a)]
+    -- refine lt_of_le ?_
 
 
 lemma coverNumber_Bound {a b : ℕ} (ha : 1 ≤ a) (hb : a < b) (hM : NoUniformMinor M a b)
