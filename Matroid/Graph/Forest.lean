@@ -385,6 +385,26 @@ lemma IsClosedSubgraph.isCycleSet {C : Set β} (hC : G.IsCycleSet C) (hHG : H �
   right
   use C
 
+lemma IsLoopAt.isCycleSet (h : G.IsLoopAt e x) : G.IsCycleSet {e} := by
+  refine ⟨.cons x e (.nil x), ⟨⟨⟨h.walk_isWalk, ?_⟩, ?_, ?_⟩, ?_⟩, ?_⟩ <;> simp
+
+lemma isCycleSet_singleton_iff : G.IsCycleSet {e} ↔ ∃ x, G.IsLoopAt e x := by
+  refine ⟨fun ⟨C, hC, hCe⟩ ↦ ?_, fun ⟨x, hx⟩ ↦ hx.isCycleSet⟩
+  match C with
+  | .nil u => simp at hCe
+  | .cons u e (nil v) =>
+    obtain rfl := by simpa using hCe
+    obtain ⟨hv, rfl⟩ := by simpa [isTour_iff] using hC.isTour
+    use u, hv.2
+  | .cons u f1 (cons v f2 w) =>
+    exfalso
+    have := by simpa using hC.isTrail
+    obtain ⟨h', heuv, hf12, hf1w⟩ := this
+    simp only [cons_edgeSet] at hCe
+    obtain rfl := hCe ▸ (show f1 ∈ insert f1 (insert f2 E(w)) by simp)
+    obtain rfl := hCe ▸ (show f2 ∈ insert f1 (insert f2 E(w)) by simp)
+    simp only [not_true_eq_false] at hf12
+
 /-- `G.IsAcyclicSet X` means that the subgraph `G ↾ X` is a forest. -/
 def IsAcyclicSet (G : Graph α β) (I : Set β) : Prop :=
   I ⊆ E(G) ∧ ∀ C₀, G.IsCyclicWalk C₀ → ¬ (E(C₀) ⊆ I)

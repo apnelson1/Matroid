@@ -732,7 +732,6 @@ lemma Compatible.isCyclicWalk_union_iff_of_subsingleton_inter (hcompat : G.Compa
     fun h ↦ h.elim (fun h' ↦ h'.of_le (Graph.left_le_union ..))
     (fun h' ↦ h'.of_le hcompat.right_le_union)⟩
 
-
 /-- Every connected subgraph of `G` is a subgraph of a component of `G`. -/
 lemma Connected.exists_component_ge (hH : H.Connected) (hle : H ≤ G) :
     ∃ G₁, G₁.IsCompOf G ∧ H ≤ G₁ := by

@@ -278,6 +278,25 @@ protected lemma iUnion_sum [Nonempty ι] [Nonempty ι'] {G : ι → Graph α β}
   · exact le_trans (Graph.le_iUnion hGH.sum_right i)
       (Compatible.right_le_union (Compatible.sum_compatible hGH))
 
+lemma Compatible.edgeSet_inter_eq_loopSet_of_inter_eq_singleton (hcompat : G.Compatible H)
+    (hi : V(G) ∩ V(H) = {x}) : E(G) ∩ E(H) = G.loopSet x ∩ E(H) := by
+  ext e
+  simp only [mem_inter_iff, mem_loopSet]
+  refine ⟨fun ⟨heG, heH⟩ ↦ ⟨?_, heH⟩, fun ⟨hG, heH⟩ ↦ ⟨hG.edge_mem, heH⟩⟩
+  obtain ⟨u, v, huv⟩ := G.exists_isLink_of_mem_edgeSet heG
+  have heq : G.IsLink e = H.IsLink e := hcompat.isLink_eq heG heH
+  have hu : u ∈ V(G) ∩ V(H) := ⟨huv.left_mem, (heq ▸ huv).left_mem⟩
+  have hv : v ∈ V(G) ∩ V(H) := ⟨huv.right_mem, (heq ▸ huv).right_mem⟩
+  rw [hi, mem_singleton_iff] at hu hv
+  subst hu hv
+  exact huv
+
+lemma Compatible.edgeSet_inter_subset_loopSet_union (hcompat : G.Compatible H)
+    (hx : V(G) ∩ V(H) = {x}) : E(G) ∩ E(H) ⊆ (G ∪ H).loopSet x := by
+  rw [hcompat.edgeSet_inter_eq_loopSet_of_inter_eq_singleton hx]
+  rintro e ⟨heG, heH⟩
+  exact heG.of_le (Graph.left_le_union ..)
+
 section Subgraph
 
 /-! ### Subgraphs -/

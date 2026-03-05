@@ -1137,6 +1137,24 @@ lemma Indep.skew_compl_iff_subset_coloops (hI : M.Indep I) :
   rw [← dual_loops, ← hI.coindep.skew_compl_iff_subset_loops, ← contract_eq_delete_iff_skew_compl,
     ← contract_eq_delete_iff_skew_compl, ← dual_inj, dual_contract, dual_delete, eq_comm]
 
+lemma skew_iff_forall_isCircuit_of_inter_subset_loops (hX : X ⊆ M.E := by aesop_mat)
+    (hY : Y ⊆ M.E := by aesop_mat) :
+    M.Skew X Y ↔ X ∩ Y ⊆ M.loops ∧ ∀ C, M.IsCircuit C → C ⊆ X ∪ Y → C ⊆ X ∨ C ⊆ Y := by
+  refine ⟨fun h ↦ ⟨h.inter_subset_loops, fun _ ↦ h.subset_or_subset_of_isCircuit⟩, ?_⟩
+  rintro ⟨hinter, h⟩
+  rw [skew_iff_isModularPair_inter_subset_loops]
+  refine ⟨?_, hinter⟩
+  suffices M.Skew (X \ Y) Y by
+    have h_mod := this.isModularPair_union_union_of_subset (Z := X ∩ Y) (by grind)
+    rwa [diff_union_inter, union_eq_self_of_subset_right inter_subset_right] at h_mod
+  rw [skew_iff_forall_isCircuit disjoint_sdiff_left (diff_subset.trans hX) hY, diff_union_self]
+  intro C hC hC_sub
+  by_cases hdj : Disjoint C (X ∩ Y)
+  · exact (h C hC hC_sub).imp (by grind) id
+  · obtain ⟨e, heC, heXY⟩ := not_disjoint_iff.mp hdj
+    obtain rfl : C = {e} := IsLoop.eq_of_isCircuit_mem (hinter heXY) hC heC
+    exact Or.inr (singleton_subset_iff.mpr heXY.2)
+
 section ModularCompl
 
 variable {F₀ F₁ F F' : Set α}

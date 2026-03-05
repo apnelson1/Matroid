@@ -49,6 +49,9 @@ lemma IsTrail.of_le (hw : G.IsTrail w) (hle : G ≤ H) : H.IsTrail w :=
 lemma IsTrail.vertexSet_subset (hw : G.IsTrail w) : V(w) ⊆ V(G) :=
   hw.isWalk.vertexSet_subset
 
+lemma IsTrail.edgeSet_subset (hw : G.IsTrail w) : E(w) ⊆ E(G) :=
+  hw.isWalk.edgeSet_subset
+
 lemma IsTrail.induce (hw : G.IsTrail w) (hX : V(w) ⊆ X) : G[X].IsTrail w :=
   ⟨hw.isWalk.induce hX, hw.edge_nodup⟩
 

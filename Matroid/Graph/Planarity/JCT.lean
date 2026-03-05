@@ -7,10 +7,10 @@ open Set EuclideanSpace RealInnerProductSpace Metric Plane
 variable {x y z a b c u v : ℝ²} {S : Set ℝ²} {P : PolygonalPath x x}
 
 lemma PolygonalPath.simple.epsilon_inter_subset_segment {P : PolygonalPath x y} (hbP : b ∈ P.toSet)
-    (hbv : b ∉ P.vertices) (hP : P.simple) : ∃ ε > 0, ∃ s ∈ P.vertices.zip P.vertices.tail,
+    (hbv : b ∉ P.vertices) (hP : P.simple) : ∃ ε > 0, ∃ s ∈ P.vPairs,
     b ∈ segment ℝ s.1 s.2 ∧ ball b ε ∩ P.toSet = ball b ε ∩ segment ℝ s.1 s.2 := by
   obtain ⟨⟨a, c⟩, ⟨hacP, hac⟩, hacUnique⟩ := hP.unique_segment hbP hbv
-  let g := ⋃ s ∈ {s | s ∈ P.vertices.zip P.vertices.tail} \ {(a, c)}, segment ℝ s.1 s.2
+  let g := ⋃ s ∈ {s | s ∈ P.vPairs} \ {(a, c)}, segment ℝ s.1 s.2
   have hgcl : IsClosed g := by apply Finite.isClosed_biUnion <;> simp
   have hb : b ∈ gᶜ := by
     simp only [mem_diff, mem_setOf_eq, mem_singleton_iff, ← ne_eq, compl_iUnion, mem_iInter,
@@ -26,11 +26,11 @@ lemma PolygonalPath.simple.epsilon_inter_subset_segment {P : PolygonalPath x y} 
   rw [hPg, inter_union_distrib_left, hε.symm.inter_eq, empty_union]
 
 lemma PolygonalPath.closedSimple.epsilon_inter_subset_segment (hbP : b ∈ P.toSet)
-    (hbv : b ∉ P.vertices) (hP : P.closedSimple) : ∃ ε > 0, ∃ s ∈ P.vertices.zip P.vertices.tail,
+    (hbv : b ∉ P.vertices) (hP : P.closedSimple) : ∃ ε > 0, ∃ s ∈ P.vPairs,
     b ∈ openSegment ℝ s.1 s.2 ∧ s.1 ∉ ball b ε ∧ s.2 ∉ ball b ε ∧
     ball b ε ∩ P.toSet = ball b ε ∩ segment ℝ s.1 s.2 := by
   obtain ⟨⟨a, c⟩, ⟨hacP, hac⟩, hacUnique⟩ := hP.unique_segment hbP hbv
-  let g := ⋃ s ∈ {s | s ∈ P.vertices.zip P.vertices.tail} \ {(a, c)}, segment ℝ s.1 s.2
+  let g := ⋃ s ∈ {s | s ∈ P.vPairs} \ {(a, c)}, segment ℝ s.1 s.2
   have hgcl : IsClosed g := by apply Finite.isClosed_biUnion <;> simp
   have hb : b ∈ gᶜ := by
     simp only [mem_diff, mem_setOf_eq, mem_singleton_iff, ← ne_eq, compl_iUnion, mem_iInter,
@@ -106,5 +106,5 @@ lemma JCT_le_two (hP : P.closedSimple) (ha : a ∉ P.toSet) (hb : b ∉ P.toSet)
   obtain ⟨y, Py, rfl, hPy, hdj⟩ := hP.cons_simple
   let half : unitInterval := ⟨1/2, by constructor <;> linarith⟩
   let Pd := Path.segment x y half
-  
+
   sorry

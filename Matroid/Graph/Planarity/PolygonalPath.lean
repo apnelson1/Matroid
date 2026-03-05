@@ -458,9 +458,27 @@ lemma closedSimple.unique_segment (h : P.closedSimple) (ha : a ∈ P.toSet) (hav
   · exact hc y ⟨hyP', hay⟩
 
 lemma closedSimple.two_segments (h : P.closedSimple) (hb : b ∈ P.vertices) : ∃ a c,
-    (a, b) ∈ P.vertices.zip P.vertices.tail ∧ (b, c) ∈ P.vertices.zip P.vertices.tail ∧
-    b ∉ ⋃ s ∈ {s | s ∈ P.vertices.zip P.vertices.tail} \ {(a, b), (b, c)}, segment ℝ s.1 s.2 := by
-  sorry
+    (a, b) ∈ P.vPairs ∧ (b, c) ∈ P.vPairs ∧ b ∉ ⋃ s ∈ {s | s ∈ P.vPairs} \ {(a, b), (b, c)},
+    segment ℝ s.1 s.2 := by
+  obtain ⟨d, P', rfl, hP', hdj⟩ := h.cons_simple
+  simp only [vertices, mem_cons] at hb
+  match P' with
+  | .direct _ _ =>
+    simp only [vertices, mem_cons, not_mem_nil, or_comm, false_or, or_self_left] at hb
+    obtain rfl | rfl := hb
+    · have hvP : (cons b d (direct d b)).vPairs = [(b, d), (d, b)] := by simp [vPairs]
+      rw [hvP]
+      use d, d, by simp, by simp, ?_
+      have h : {s | s ∈ [(b, d), (d, b)]} \ {(d, b), (b, d)} = ∅ := by grind
+      rw [h]
+      simp
+    have hvP : (cons x b (direct b x)).vPairs = [(x, b), (b, x)] := by simp [vPairs]
+    rw [hvP]
+    use x, x, by simp, by simp, ?_
+    have h : {s | s ∈ [(x, b), (b, x)]} \ {(x, b), (b, x)} = ∅ := by grind
+    rw [h]
+    simp
+  | .cons a c as => sorry
 
 end ClosedSimple
 

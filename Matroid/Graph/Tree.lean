@@ -25,7 +25,7 @@ lemma Connected.isTree_of_maximal_isAcyclicSet (hG : G.Connected) (hF : Maximal 
     exact hF.prop.2
   connected := by
     refine connected_iff.mpr ⟨hG.nonempty, fun x y hx hy ↦ ?_⟩
-    rw [connBetween_iff_of_maximal_isAcyclicSet hF]
+    rw [IsMaximalAcyclicSet.connBetween_iff hF]
     exact hG.pre x y hx hy
 
 -- lemma Connected.isBase_cycleMatroid_iff (hG : G.Connected) {T} :

@@ -3,7 +3,7 @@ import Mathlib.Analysis.InnerProductSpace.l2Space -- inefficient import
 import Mathlib.Geometry.Euclidean.Angle.Oriented.Affine -- inefficient import
 import Mathlib.Geometry.Convex.Cone.Basic -- inefficient import
 
-open Set RealInnerProductSpace Metric
+open Set RealInnerProductSpace Metric Topology
 
 section RealAffineSpace
 
@@ -35,7 +35,7 @@ end RealAffineSpace
 
 section RealVectorSpace
 
-variable {α : Type*} [NormedAddCommGroup α] [InnerProductSpace ℝ α] {x y n : α} {r : ℝ}
+variable {α : Type*} [NormedAddCommGroup α] [InnerProductSpace ℝ α] {x y n : α} {r : ℝ} {S : Set α}
 
 @[simp]
 lemma segment_isClosed (x y : α) : IsClosed (segment ℝ x y) := by
@@ -116,14 +116,25 @@ lemma halfSpace_disjoint_halfSpace_neg (n : α) (r : ℝ) :
   simp only [halfSpace, mem_setOf_eq, inner_neg_left, neg_lt_neg_iff] at hz₁ hz₂
   linarith
 
-lemma ball_diff_hyperplane_two_regions (n x : α) (r : ℝ) :
-    connectedComponentIn (ball x r \ hyperplane n ⟪n, x⟫) '' (ball x r \ hyperplane n ⟪n, x⟫) =
-    {ball x r ∩ halfSpace n ⟪n, x⟫, ball x r ∩ halfSpace (-n) (-⟪n, x⟫)} := by
-  sorry
+-- lemma ball_diff_hyperplane_two_regions (n x : α) (r : ℝ) :
+--     connectedComponentIn (ball x r \ hyperplane n ⟪n, x⟫) '' (ball x r \ hyperplane n ⟪n, x⟫) =
+--     {ball x r ∩ halfSpace n ⟪n, x⟫, ball x r ∩ halfSpace (-n) (-⟪n, x⟫)} := by
+--   sorry
 
-lemma ball_diff_hyperplane_frontier (n x : α) (r : ℝ) :
-    ball x r ∩ hyperplane n ⟪n, x⟫ ⊆ frontier (ball x r ∩ halfSpace n ⟪n, x⟫) := by
-  sorry
+-- lemma ball_diff_hyperplane_frontier (n x : α) (r : ℝ) :
+--     ball x r ∩ hyperplane n ⟪n, x⟫ ⊆ frontier (ball x r ∩ halfSpace n ⟪n, x⟫) := by
+--   sorry
+
+lemma mem_closure_halfSpace_inter_ball (hn : n ≠ 0) {p : α} (hp : p ∈ hyperplane n ⟪n, x⟫)
+    (hpB : p ∈ ball x r) : p ∈ closure (ball x r ∩ halfSpace n ⟪n, x⟫) :=
+  isOpen_ball.inter_closure ⟨hpB, halfSpace_closure hn _ ▸ (le_of_eq hp)⟩
+
+lemma mem_closure_halfSpace_neg_inter_ball (hn : n ≠ 0) {p : α} (hp : p ∈ hyperplane n ⟪n, x⟫)
+    (hpB : p ∈ ball x r) : p ∈ closure (ball x r ∩ halfSpace (-n) (-⟪n, x⟫)) := by
+  have hp' : p ∈ hyperplane (-n) ⟪-n, x⟫ := by
+    simpa [hyperplane, mem_setOf_eq, inner_neg_left, neg_inj] using hp
+  rw [← inner_neg_left]
+  exact mem_closure_halfSpace_inter_ball (neg_ne_zero.mpr hn) hp' hpB
 
 /-- The unit vector pointing from `x` to `y` along the segment. -/
 noncomputable def segmentTangent (x y : α) : α :=
@@ -179,6 +190,47 @@ lemma ball_inter_segment_eq_inter_halfRay (hr : r ≤ ‖y - x‖) :
     segmentTangent_norm hxy, mul_one] at hz
   simp [ht, hz.le.trans hr]
 
+lemma isPreconnected_ball_diff_subset_hyperplane (hn : n ≠ 0) (hS_sub : S ⊆ hyperplane n ⟪n, x⟫)
+    (hS_strict : S ∩ ball x r ⊂ hyperplane n ⟪n, x⟫ ∩ ball x r) :
+    IsPreconnected (ball x r \ S) := by
+  obtain ⟨p, hp, hpS⟩ := Set.exists_of_ssubset hS_strict
+  have hpB : p ∈ ball x r := hp.2
+  have hp_hyper : p ∈ hyperplane n ⟪n, x⟫ := hp.1
+  have hp_not_S : p ∉ S := fun h ↦ hpS ⟨h, hpB⟩
+
+  let B1 := ball x r ∩ halfSpace n ⟪n, x⟫
+  let B2 := ball x r ∩ halfSpace (-n) (-⟪n, x⟫)
+
+  have h1 : IsPreconnected (B1 ∪ {p}) := by
+    refine (convex_ball x r).inter (halfSpace_convex ..) |>.isPreconnected.subset_closure
+      subset_union_left <| union_subset subset_closure ?_
+    rintro _ rfl
+    exact mem_closure_halfSpace_inter_ball hn hp_hyper hpB
+  have h2 : IsPreconnected (B2 ∪ {p}) := by
+    refine (convex_ball x r).inter (halfSpace_convex ..) |>.isPreconnected.subset_closure
+      subset_union_left <| union_subset subset_closure ?_
+    rintro _ rfl
+    exact mem_closure_halfSpace_neg_inter_ball hn hp_hyper hpB
+
+  have U_conn : IsPreconnected (B1 ∪ B2 ∪ {p}) := by
+    convert h1.union p (Or.inr rfl) (Or.inr rfl) h2 using 1
+    grind
+  have h_dense : ball x r ⊆ closure (B1 ∪ B2 ∪ {p}) := by
+    intro q hq
+    have hq_univ : q ∈ (univ : Set α) := mem_univ q
+    rw [← halfSpace_cover n ⟪n, x⟫] at hq_univ
+    rcases hq_univ with (hq1 | hq_hyper) | hq2
+    · exact subset_closure (Or.inl (Or.inl ⟨hq, hq1⟩))
+    · exact closure_mono (subset_union_of_subset_left subset_union_left _)
+      <| mem_closure_halfSpace_inter_ball hn hq_hyper hq
+    · exact subset_closure (Or.inl (Or.inr ⟨hq, hq2⟩))
+  have h_sub : B1 ∪ B2 ∪ {p} ⊆ ball x r \ S := by
+    rintro q ((hq1 | hq2) | rfl)
+    · exact ⟨hq1.1, fun hS ↦ halfSpace_disjoint_hyperplane n ⟪n, x⟫ |>.le_bot ⟨hq1.2, hS_sub hS⟩⟩
+    · exact ⟨hq2.1, (hyperplane_disjoint_halfSpace_neg n ⟪n, x⟫ |>.symm.le_bot ⟨hq2.2, hS_sub ·⟩)⟩
+    · exact ⟨hpB, hp_not_S⟩
+  exact U_conn.subset_closure h_sub (diff_subset.trans h_dense)
+
 end RealVectorSpace
 
 namespace Plane
@@ -187,32 +239,82 @@ scoped notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 
 variable {x y : ℝ²} {S T : Set ℝ²}
 
-noncomputable def segmentNormal (x y : ℝ²) : ℝ² :=
-  !₂[- (segmentTangent x y) 1, (segmentTangent x y) 0]
+def normalVector (u : ℝ²) : ℝ² := !₂[-u 1, u 0]
 
-lemma segmentNormal_norm (hxy : x ≠ y) : ‖segmentNormal x y‖ = 1 := by
-  have hsq : ‖segmentNormal x y‖ ^ 2 = ‖segmentTangent x y‖ ^ 2 := by
-    simp [segmentNormal, EuclideanSpace.norm_sq_eq, Fin.sum_univ_two, add_comm]
-  rw [segmentTangent_norm hxy, one_pow 2, sq_eq_one_iff] at hsq
-  grind [norm_nonneg (segmentNormal x y)]
+@[simp]
+lemma normalVector_norm (u : ℝ²) : ‖normalVector u‖ = ‖u‖ := by
+  simp only [norm, OfNat.ofNat_ne_zero, ↓reduceIte, ENNReal.ofNat_ne_top, normalVector, Fin.isValue,
+    ENNReal.toReal_ofNat, Real.rpow_ofNat, sq_abs, Fin.sum_univ_two, Matrix.cons_val_zero, even_two,
+    Even.neg_pow, Matrix.cons_val_one, Matrix.cons_val_fin_one, one_div]
+  ring_nf
 
-lemma segmentNormal_orthogonal (x y : ℝ²) : ⟪segmentNormal x y, segmentTangent x y⟫ = 0 := by
-  simp only [segmentNormal, Fin.isValue, PiLp.inner_apply, RCLike.inner_apply, conj_trivial,
+@[simp]
+lemma normalVector_orthogonal (u : ℝ²) : ⟪normalVector u, u⟫ = 0 := by
+  simp only [normalVector, Fin.isValue, PiLp.inner_apply, RCLike.inner_apply, conj_trivial,
     Fin.sum_univ_two, Matrix.cons_val_zero, mul_neg, Matrix.cons_val_one, Matrix.cons_val_fin_one]
   ring
 
-lemma segmentNormal_flip (x y : ℝ²) : segmentNormal y x = -segmentNormal x y := by
-  ext i
-  fin_cases i <;> simp [segmentNormal, segmentTangent_flip x]
+@[simp]
+lemma normalVector_ne_zero_iff (u : ℝ²) : normalVector u ≠ 0 ↔ u ≠ 0 := by
+  simp [normalVector, PiLp.ext_iff, and_comm]
 
-lemma segment_subset_hyperplane (x y : ℝ²) :
-    segment ℝ x y ⊆ hyperplane (segmentNormal x y) ⟪segmentNormal x y, x⟫ := by
-  intro z hzxy
-  rw [segment_eq_segmentTangent] at hzxy
-  simp only [vadd_eq_add, mem_image, mem_Icc] at hzxy
-  obtain ⟨t, ht, rfl⟩ := hzxy
-  simp only [hyperplane, mem_setOf_eq, inner_add_right, inner_smul_right, segmentNormal_orthogonal,
-    mul_zero, zero_add]
+-- noncomputable def segmentNormal (x y : ℝ²) : ℝ² :=
+--   !₂[- (segmentTangent x y) 1, (segmentTangent x y) 0]
+
+-- lemma segmentNormal_norm (hxy : x ≠ y) : ‖segmentNormal x y‖ = 1 := by
+--   have hsq : ‖segmentNormal x y‖ ^ 2 = ‖segmentTangent x y‖ ^ 2 := by
+--     simp [segmentNormal, EuclideanSpace.norm_sq_eq, Fin.sum_univ_two, add_comm]
+--   rw [segmentTangent_norm hxy, one_pow 2, sq_eq_one_iff] at hsq
+--   grind [norm_nonneg (segmentNormal x y)]
+
+-- lemma segmentNormal_ne_zero (hxy : x ≠ y) : segmentNormal x y ≠ 0 := by
+--   apply_fun norm
+--   simp [segmentNormal_norm hxy]
+
+-- lemma segmentNormal_orthogonal (x y : ℝ²) : ⟪segmentNormal x y, segmentTangent x y⟫ = 0 := by
+--   simp only [segmentNormal, Fin.isValue, PiLp.inner_apply, RCLike.inner_apply, conj_trivial,
+--     Fin.sum_univ_two, Matrix.cons_val_zero, mul_neg, Matrix.cons_val_one, Matrix.cons_val_fin_one]
+--   ring
+
+-- lemma segmentNormal_flip (x y : ℝ²) : segmentNormal y x = -segmentNormal x y := by
+--   ext i
+--   fin_cases i <;> simp [segmentNormal, segmentTangent_flip x]
+
+-- lemma segment_subset_hyperplane (x y : ℝ²) :
+--     segment ℝ x y ⊆ hyperplane (segmentNormal x y) ⟪segmentNormal x y, x⟫ := by
+--   intro z hzxy
+--   rw [segment_eq_segmentTangent] at hzxy
+--   simp only [vadd_eq_add, mem_image, mem_Icc] at hzxy
+--   obtain ⟨t, ht, rfl⟩ := hzxy
+--   simp only [hyperplane, mem_setOf_eq, inner_add_right, inner_smul_right, segmentNormal_orthogonal,
+--     mul_zero, zero_add]
+
+lemma isPreconnected_dial (x u : ℝ²) (r : ℝ) : IsPreconnected (ball x r \ halfRay u x) := by
+  obtain rfl | hu := eq_or_ne u 0
+  · obtain hr | hr := le_or_gt r 0
+    · rw [← Metric.ball_eq_empty (x := x)] at hr
+      simp [isPreconnected_empty, hr]
+    simp only [halfRay_zero]
+    refine isPreconnected_ball_diff_subset_hyperplane (n := !₂[1, 0]) (by simp)
+      (by simp [hyperplane]) ?_
+    rw [inter_eq_left.mpr (by simpa)]
+    simp only [hyperplane, inner, RCLike.inner_apply, conj_trivial, Fin.sum_univ_two, Fin.isValue,
+      Matrix.cons_val_zero, mul_one, Matrix.cons_val_one, Matrix.cons_val_fin_one, mul_zero,
+      add_zero, ssubset_def, subset_inter_iff, singleton_subset_iff, mem_setOf_eq, mem_ball,
+      dist_self, hr, and_self, subset_singleton_iff, mem_inter_iff, and_imp, not_forall, true_and]
+    use !₂[x 0, x 1 + r / 2], by simp, ?_, ?_
+    · simp [dist_eq_norm, norm]
+      rw [← Real.rpow_natCast, (show ↑(2 : ℕ) = (2 : ℝ) by rfl),
+        (r / 2).rpow_rpow_inv (by positivity) (by positivity)]
+      linarith
+    simp [PiLp.ext_iff, (show r ≠ 0 by positivity)]
+  rw [← diff_inter_self_eq_diff]
+  refine isPreconnected_ball_diff_subset_hyperplane ((normalVector_ne_zero_iff u).mpr hu) ?_ ?_
+  · refine subset_trans inter_subset_left ?_
+    rintro z ⟨t, ht, rfl⟩
+    simp [hyperplane, inner_add_right, inner_smul_right]
+  rw [inter_eq_left.mpr inter_subset_right]
+  sorry
 
 lemma clock_frontier {x u v : ℝ²} {r : ℝ} (hy : y ∈ (ball x r \ halfRay u x) \ halfRay v x) :
     ball x r ∩ (halfRay u x ∪ halfRay v x) ⊆ frontier (connectedComponentIn
@@ -242,7 +344,7 @@ lemma exists_angle_fst_ne {S : Set ℝ²} (hS : S.Finite) :
   have h_finite_pair {u v : ℝ²} (h : u ≠ v) : (bad_angles u v).Finite := by
     rw [hb u v]
     simp only [Fin.isValue, map_sub, PiLp.add_apply, PiLp.smul_apply, PiLp.sub_apply, smul_eq_mul]
-    
+
     sorry
 
   -- 3. Define the set of all bad angles
