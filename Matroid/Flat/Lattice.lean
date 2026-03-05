@@ -378,6 +378,12 @@ lemma IsFlat.covBy_iff_rk_eq_add_one [RankFinite M] (hF₀ : M.IsFlat F₀) (hF 
 lemma CovBy.eRelRk_eq_one (h : F₀ ⋖[M] F₁) : M.eRelRk F₀ F₁ = 1 :=
   ((h.isFlat_left.covBy_iff_eRelRk_eq_one h.isFlat_right).1 h).2
 
+lemma CovBy.eRelRk_eq_eRelRk (h : F₀ ⋖[M] F) (h' : F₁ ⋖[M] F) : M.eRelRk F₀ F = M.eRelRk F₁ F := by
+  rw [h.eRelRk_eq_one, h'.eRelRk_eq_one]
+
+lemma CovBy.eRk_eq_eRk (h : F₀ ⋖[M] F) (h' : F₁ ⋖[M] F) : M.eRk F₀ = M.eRk F₁ := by
+  nth_rw 1 [← ENat.add_one_eq_add_one_iff, ← h.eRk_eq, ← h'.eRk_eq]
+
 lemma covBy_iff_eRelRk_eq_one :
     F₀ ⋖[M] F₁ ↔ M.IsFlat F₀ ∧ M.IsFlat F₁ ∧ F₀ ⊆ F₁ ∧ M.eRelRk F₀ F₁ = 1 :=
   ⟨fun h ↦ ⟨h.isFlat_left, h.isFlat_right, h.subset, h.eRelRk_eq_one⟩,

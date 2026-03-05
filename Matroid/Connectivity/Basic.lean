@@ -765,6 +765,52 @@ lemma IsCircuit.eLocalConn_subset_compl {C : Set α} (hC : M.IsCircuit C) (hI : 
     disjoint_sdiff_right.inter_eq, encard_empty, zero_add, union_diff_cancel hIC.subset,
     hC.nullity_eq]
 
+
+-- lemma IsCircuit.union_isCircuit_of_inter_eq_singleton {C₁ C₂ : Set α} {e : α} (hC₁ : M.IsCircuit C₁)
+--     (hC₂ : M.IsCircuit C₂) (hne : C₁ ≠ C₂) (heC : C₁ ∩ C₂ = {e}) (hc : M.eLocalConn C₁ C₂ ≤ 1) :
+--     M.IsCircuit ((C₁ ∪ C₂) \ {e}) := by
+--   suffices aux : ∀ f ∈ C₁ ∪ C₂, f ≠ e → f ∈ M.closure ((C₁ ∪ C₂ \ {e}) \ {f}) by
+--     obtain ⟨C, hCss, hC⟩ := hC₁.elimination hC₂ hne e
+--     rw [(hC₁.diff_singleton_isBasis (e := e) (by grind)).eLocalConn_eq
+--       (hC₂.diff_singleton_isBasis (e := e) (by grind)), Disjoint.inter_eq (by grind), encard_empty,
+--       zero_add, ← union_diff_distrib] at hc
+--     convert hC
+--     refine hCss.antisymm' fun f hf ↦ by_contra fun hfC ↦ ?_
+--     specialize aux f hf.1 hf.2
+--     have hn := nullity_union_eq_nullity_add_encard_diff (singleton_subset_iff.2 aux)
+--     rw [diff_union_self, union_eq_self_of_subset_right (by grind), diff_eq_left] at hn
+
+
+
+--   grind
+
+  -- wlog hME : M.E = C₁ ∪ C₂ generalizing M with aux
+  -- · refine ((aux (M := M ↾ (C₁ ∪ C₂)) (hC₁.isCircuit_restrict_of_subset (by simp))
+  --     (hC₂.isCircuit_restrict_of_subset (by simp))
+  --     (IsModularFamily.restrict hmod (by grind)) rfl)).of_isRestriction ?_
+  --   exact restrict_isRestriction _ _ (by grind)
+  -- rw [← M.dual_dual, isModularPair_dual_iff (by simpa using hME.symm), dual_ground] at hmod
+
+
+  -- have hr := hmod.eRelRk_eq_left.ge
+  -- grw [eRelRk_mono_right _ _ (union_subset diff_subset diff_subset), ← dual_ground,
+  --   hC₂.isCocircuit.compl_isHyperplane.eRelRk_eq_one] at hr
+  -- have hH₁ := hC₁.isCocircuit.compl_isHyperplane
+  -- have hH₂ := hC₂.isCocircuit.compl_isHyperplane
+  -- obtain h1 | h0 := hr.eq_or_lt
+  -- · rw [← hME, ← M.dual_dual, M✶.dual_ground, ← isCocircuit_def,
+  --     isCocircuit_compl_iff_isHyperplane _ _]
+  --   sorry
+
+  -- have h1l : M✶.E \ C₁ = M✶.loops := by
+  --   rwa [ENat.lt_one_iff_eq_zero, hH₁.isFlat.eRk_eq_zero_iff] at h0
+  -- have h2l : M✶.E \ C₂ = M✶.loops := by
+  --   rwa [← hH₂.isFlat.eRk_eq_zero_iff, ← hH₁.eRk_eq_eRk hH₂, hH₁.isFlat.eRk_eq_zero_iff]
+  -- rw [← diff_diff_cancel_left hC₁.subset_ground] at hne
+  -- grind
+
+
+
 lemma IsRkFinite.isModularPair_iff_eLocalConn_eq_eRk_inter (hX : M.IsRkFinite X) (Y : Set α)
     (hXE : X ⊆ M.E := by aesop_mat) (hYE : Y ⊆ M.E := by aesop_mat) :
     M.IsModularPair X Y ↔ M.eLocalConn X Y = M.eRk (X ∩ Y) := by

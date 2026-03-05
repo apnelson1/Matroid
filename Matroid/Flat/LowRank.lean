@@ -5,6 +5,10 @@ variable {α : Type*} {M : Matroid α} {I F X Y F' F₀ F₁ F₂ P L H H₁ H�
 open Set
 namespace Matroid
 
+lemma IsFlat.eRk_eq_zero_iff (hF : M.IsFlat F) : M.eRk F = 0 ↔ F = M.loops := by
+  rw [Matroid.eRk_eq_zero_iff, subset_antisymm_iff, iff_self_and]
+  exact fun _ ↦ hF.closure_subset_of_subset (empty_subset _)
+
  def IsPoint (M : Matroid α) (P : Set α) := M.IsFlat P ∧ M.eRk P = 1
 
 lemma IsPoint.isFlat (hP : M.IsPoint P) : M.IsFlat P :=
