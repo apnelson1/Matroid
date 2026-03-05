@@ -223,8 +223,8 @@ lemma Compatible.cycleMatroid_union_skew (h : (V(G) ∩ V(H)).Subsingleton)
       exact empty_subset _
     · rw [cycleMatroid_loops]
       exact hcompat.edgeSet_inter_subset_loopSet_union hx |>.trans <| subset_iUnion ..
-  rw [skew_iff_forall_isCircuit_of_inter_subset_loops hinter]
-  rintro C hC hC_sub
+  rw [skew_iff_forall_isCircuit_of_inter_subset_loops]
+  use hinter, fun C hC hC_sub ↦ ?_
   simp only [cycleMatroid_isCircuit, IsCycleSet] at hC hC_sub
   obtain ⟨W, hW, rfl⟩ := hC
   obtain (hW_G | hW_H) := hW.isCyclicWalk_or_isCyclicWalk_of_union_of_subsingleton_inter h
@@ -239,53 +239,6 @@ lemma cycleMatroid_disjointSum (h : (V(G) ∩ V(H)).Subsingleton) (hdj : Disjoin
   convert this
   · exact (cycleMatroid_isRestriction_of_le (G.left_le_union H)).eq_restrict.symm
   · exact (cycleMatroid_isRestriction_of_le hc.right_le_union).eq_restrict.symm
-
--- lemma exists_connected_eq_cycleMatroid (G : Graph α β) :
---     ∃ H : Graph α β, H.Preconnected ∧ H.cycleMatroid = G.cycleMatroid := by
---   obtain rfl | hG := G.eq_bot_or_vertexSet_nonempty
---   · use ⊥
---     simp
---   let f1 : G.Components → α := fun H ↦ H.prop.nonempty.some
---   have hf1 : Injective f1 := by
---     intro H₁ H₂ hH
---     have := mt <| G.components_pairwise_disjoint H₁.prop H₂.prop
---     rw [disjoint_iff_vertexSet_disjoint, ne_eq, not_not, ← Subtype.ext_iff,
---       not_disjoint_iff] at this
---     exact this ⟨f1 H₁, H₁.prop.nonempty.some_mem, hH ▸ H₂.prop.nonempty.some_mem⟩
---   let x := f1 ⟨G.components_nonempty hG |>.some, G.components_nonempty hG |>.some_mem⟩
---   classical
---   let f : α → α := fun v ↦ if v ∈ range f1 then x else v
---   use f ''ᴳ G, ?_, ext_isCircuit (by simp) fun I hI ↦ ?_
---   · rintro _ _ ⟨a, ha, rfl⟩ ⟨b, hb, rfl⟩
---     refine ConnBetween.trans (y := x) ?_ ?_
---     · let Ca : G.Components := ⟨G.walkable a, G.walkable_isCompOf ha⟩
---       have hx : f (f1 Ca) = x := by
---         convert ite_true _ _
---         simp
---       rw [← hx]
---       exact Ca.prop.nonempty.some_mem.map f
---     let Cb : G.Components := ⟨G.walkable b, G.walkable_isCompOf hb⟩
---     have hy : f (f1 Cb) = x := by
---       convert ite_true _ _
---       simp
---     rw [← hy]
---     exact Cb.prop.nonempty.some_mem.map f |>.symm
---   simp_rw [cycleMatroid_isCircuit, IsCycleSet]
---   constructor <;> rintro ⟨C, hC, rfl⟩ <;> rw [cycleMatroid_E, map_edgeSet] at hI
---   · sorry
---   use C.map f, hC.map (fun a ha b hb hfab ↦ ?_), by simp
---   unfold f at hfab
---   split_ifs at hfab with hfa hfb hfb
---   · obtain ⟨Ca, rfl⟩ := hfa
---     obtain ⟨Cb, rfl⟩ := hfb
---     rw [hf1.eq_iff, ← Subtype.coe_inj]
---     apply Ca.prop.eq_of_mem_mem Cb.prop (x := f1 Ca) Ca.prop.nonempty.some_mem
---     rw [Cb.prop.eq_walkable_of_mem_walkable Cb.prop.nonempty.some_mem]
---     exact hC.isWalk.connBetween_of_mem_of_mem hb ha
---   all_goals subst hfab
---   · simp [x] at hfb
---   · simp [x] at hfa
---   rfl
 
 lemma cycleMatroid_isFlat (hFE : F ⊆ E(G)) (hF : ∀ H : Graph α β, H.IsCompOf (G ↾ F) → H ≤i G) :
     G.cycleMatroid.IsFlat F := by

@@ -1137,10 +1137,11 @@ lemma Indep.skew_compl_iff_subset_coloops (hI : M.Indep I) :
   rw [← dual_loops, ← hI.coindep.skew_compl_iff_subset_loops, ← contract_eq_delete_iff_skew_compl,
     ← contract_eq_delete_iff_skew_compl, ← dual_inj, dual_contract, dual_delete, eq_comm]
 
-lemma skew_iff_forall_isCircuit_of_inter_subset_loops (hinter : X ∩ Y ⊆ M.loops)
-    (hX : X ⊆ M.E := by aesop_mat) (hY : Y ⊆ M.E := by aesop_mat) :
-    M.Skew X Y ↔ ∀ C, M.IsCircuit C → C ⊆ X ∪ Y → C ⊆ X ∨ C ⊆ Y := by
-  refine ⟨fun h _ ↦ h.subset_or_subset_of_isCircuit, fun h ↦ ?_⟩
+lemma skew_iff_forall_isCircuit_of_inter_subset_loops (hX : X ⊆ M.E := by aesop_mat)
+    (hY : Y ⊆ M.E := by aesop_mat) :
+    M.Skew X Y ↔ X ∩ Y ⊆ M.loops ∧ ∀ C, M.IsCircuit C → C ⊆ X ∪ Y → C ⊆ X ∨ C ⊆ Y := by
+  refine ⟨fun h ↦ ⟨h.inter_subset_loops, fun _ ↦ h.subset_or_subset_of_isCircuit⟩, ?_⟩
+  rintro ⟨hinter, h⟩
   rw [skew_iff_isModularPair_inter_subset_loops]
   refine ⟨?_, hinter⟩
   suffices M.Skew (X \ Y) Y by

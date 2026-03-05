@@ -530,3 +530,14 @@ lemma IsEdgeCut.disjoint_union_isBond {F} (hfin : F.Finite) (hF : G.IsEdgeCut F)
   obtain rfl := by simpa using hdj.mono_right <| subset_sUnion_of_mem hBS
   simpa using hB.prop.2
 termination_by F.encard
+
+-- lemma edgeConnGE_iff_isEdgeCut (n : ℕ) :
+--     G.EdgeConnGE n ↔ ∀ F, G.IsEdgeCut F → n ≤ F.encard := by
+--   refine ⟨fun h F hF => ?_, fun h s t hs ht F ⟨hF, hst⟩ => ?_⟩
+--   · obtain ⟨x, y, hxy, hFxy⟩ := hF.exists_not_connBetween hFne
+--     have := h hxy.left_mem hxy.right_mem (F := E(G) ∩ F) ⟨inter_subset_left, sorry⟩
+--     exact this.trans <| encard_le_encard inter_subset_right
+--   have := isEdgeCut_subset_of_not_connBetween
+--   have := h F
+
+-- lemma edgeConnGE_iff_isBond (n : ℕ) : G.EdgeConnGE n ↔ ∀ b, G.IsBond b → n ≤ b.encard := by

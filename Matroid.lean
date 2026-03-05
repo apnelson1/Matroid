@@ -17,6 +17,10 @@ import Matroid.Connectivity.ConnSystem.Matroid
 import Matroid.Connectivity.Connected
 import Matroid.Connectivity.Core
 import Matroid.Connectivity.Extension
+-- import Matroid.Connectivity.Fan.Basic
+-- import Matroid.Connectivity.Fan.Circuit
+-- import Matroid.Connectivity.Fan.Circuit_
+-- import Matroid.Connectivity.Fan.Circuit__
 import Matroid.Connectivity.Minor
 import Matroid.Connectivity.Nat
 -- import Matroid.Connectivity.Separation.Abstract
@@ -87,11 +91,14 @@ import Matroid.Graph.Map
 import Matroid.Graph.Minor.Conn
 import Matroid.Graph.Minor.Defs
 -- import Matroid.Graph.Planarity.Cut
+-- import Matroid.Graph.Planarity.Defs
 -- import Matroid.Graph.Planarity.Drawing
 -- import Matroid.Graph.Planarity.JCT
+-- import Matroid.Graph.Planarity.Path
 -- import Matroid.Graph.Planarity.Plane
 -- import Matroid.Graph.Planarity.PolygonalPath
 import Matroid.Graph.Simple
+-- import Matroid.Graph.Spanning
 import Matroid.Graph.Subgraph.Basic
 import Matroid.Graph.Subgraph.Compatible
 import Matroid.Graph.Subgraph.Defs
@@ -152,3 +159,4 @@ import Matroid.Spikes
 import Matroid.Tame
 -- import Matroid.Triangle
 import Matroid.Uniform
+-- import Matroid.girth
