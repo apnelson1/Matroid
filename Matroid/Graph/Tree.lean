@@ -1,3 +1,4 @@
+import Matroid.Graph.AcyclicSet
 import Matroid.Graphic
 
 variable {α β : Type*} {G H T : Graph α β} {u v x y z : α} {e e' f g : β} {X : Set α} {F : Set β}
@@ -5,14 +6,6 @@ variable {α β : Type*} {G H T : Graph α β} {u v x y z : α} {e e' f g : β} 
 open Set WList
 
 namespace Graph
-
-@[mk_iff]
-structure IsTree (T : Graph α β) : Prop where
-  isForest : T.IsForest
-  connected : T.Connected
-
-lemma IsForest.isTree_of_IsCompOf (hG : G.IsForest) (hT : T.IsCompOf G) : T.IsTree :=
-  ⟨hG.anti hT.le, hT.connected⟩
 
 /-- If `G` is connected, then a maximally acylic subgraph of `G` is connected.
 The correct statement is that any two vertices connected in the big graph are
@@ -41,67 +34,6 @@ lemma Connected.exists_isTree_spanningSubgraph (hG : G.Connected) : ∃ T, T.IsT
   refine ⟨G ↾ B, ?_, by simp⟩
   rw [Matroid.isBase_iff_maximal_indep, cycleMatroid_indep] at hB
   exact hG.isTree_of_maximal_isAcyclicSet hB
-
-lemma IsTree.exists_delete_vertex_isTree [T.Finite] (hT : T.IsTree)
-    (hnt : V(T).Nontrivial) : ∃ v ∈ V(T), (T - v).IsTree := by
-  obtain ⟨x, hxT, hconn⟩ := hT.connected.exists_delete_vertex_connected hnt
-  exact ⟨x, hxT, hT.isForest.anti vertexDelete_le, hconn⟩
-
-lemma IsLeaf.delete_isTree (hT : T.IsTree) (hx : T.IsLeaf x) : (T - x).IsTree :=
-  ⟨hT.isForest.anti vertexDelete_le, hx.delete_connected hT.connected⟩
-
-lemma IsTree.encard_vertexSet {T : Graph α β} (h : T.IsTree) : V(T).encard = E(T).encard + 1 := by
-  have hsimp := h.isForest.simple
-  obtain (rfl | ⟨x, rfl⟩ | hnt) := T.eq_noEdge_or_vertexSet_nontrivial
-  · simpa using h.connected.nonempty
-  · simp
-  obtain hinf | hfin := em' T.Finite
-  · rw [encard_eq_top_iff.2, encard_eq_top_iff.2, top_add]
-    · rwa [Set.Infinite, (h.connected.degreePos hnt).edgeSet_finite_iff]
-    simpa [Set.Infinite]
-  obtain ⟨e, x, he⟩ := h.isForest.exists_isPendant (h.connected.edgeSet_nonempty hnt)
-  have hxV := he.isNonloopAt.vertex_mem
-  have hlt := encard_delete_vertex_lt hxV
-  have := he.isLeaf.delete_isTree h
-  rw [← encard_diff_singleton_add_one hxV, ← vertexDelete_vertexSet, ← vertexDelete_singleton,
-    (he.isLeaf.delete_isTree h).encard_vertexSet, he.edgeSet_delete_vertex_eq,
-    encard_diff_singleton_add_one he.isNonloopAt.edge_mem]
-termination_by V(T).encard
-
-lemma IsTree.ncard_vertexSet [T.Finite] (h : T.IsTree) : V(T).ncard = E(T).ncard + 1 := by
-  rw [← Nat.cast_inj (R := ℕ∞), T.vertexSet_finite.cast_ncard_eq, h.encard_vertexSet,
-    Nat.cast_add, T.edgeSet_finite.cast_ncard_eq, Nat.cast_one]
-
-lemma IsForest.encard_vertexSet (hG : G.IsForest) :
-    V(G).encard = E(G).encard + {C : Graph α β | C.IsCompOf G}.encard := by
-  rw [G.eq_sUnion_components, sUnion_vertexSet, ← ENat.tsum_encard_eq_encard_biUnion,
-    tsum_congr (β := G.Components) (f := fun C ↦ V(C.1).encard)
-      (g := fun C ↦ E(C.1).encard + 1), sUnion_edgeSet, ← ENat.tsum_encard_eq_encard_biUnion,
-    ← ENat.tsum_one, ENat.tsum_add, ← G.eq_sUnion_components, Components]
-  · exact G.components_pairwise_stronglyDisjoint.mono' <| by simp [Pi.le_def, stronglyDisjoint_iff]
-  · simp only [Subtype.forall, mem_components_iff_isCompOf]
-    exact fun H hle ↦ (hG.isTree_of_IsCompOf hle).encard_vertexSet
-  exact G.components_pairwise_stronglyDisjoint.mono' <| by
-    simp +contextual [Pi.le_def, stronglyDisjoint_iff]
-
-lemma IsForest.ncard_vertexSet [G.Finite] (hG : G.IsForest) :
-    V(G).ncard = E(G).ncard + {C : Graph α β | C.IsCompOf G}.ncard := by
-  rw [← @Nat.cast_inj ℕ∞, G.vertexSet_finite.cast_ncard_eq, hG.encard_vertexSet, Nat.cast_add,
-    G.edgeSet_finite.cast_ncard_eq, Finite.cast_ncard_eq]
-  exact G.finite_setOf_le.subset fun C hC ↦ hC.le
-
-lemma IsForest.encard_edgeSet_add_one_le (hG : G.IsForest) (hne : V(G).Nonempty) :
-    E(G).encard + 1 ≤ V(G).encard := by
-  rw [hG.encard_vertexSet]
-  gcongr
-  simp only [one_le_encard_iff_nonempty]
-  exact ⟨_, (G.exists_IsCompOf hne).choose_spec⟩
-
-lemma IsForest.ncard_edgeSet_lt [G.Finite] (hG : G.IsForest) (hne : V(G).Nonempty) :
-    E(G).ncard < V(G).ncard := by
-  rw [Nat.lt_iff_add_one_le, ← @Nat.cast_le ℕ∞, Nat.cast_add, G.vertexSet_finite.cast_ncard_eq,
-    G.edgeSet_finite.cast_ncard_eq]
-  exact hG.encard_edgeSet_add_one_le hne
 
 lemma Connected.encard_vertexSet_le (hG : G.Connected) : V(G).encard ≤ E(G).encard + 1 := by
   obtain ⟨T, hT, hTG⟩ := hG.exists_isTree_spanningSubgraph

@@ -835,3 +835,5 @@ lemma maxDegreeLE_iff_forall_component {d : ℕ} :
   intro v H hH hvH
   rw [← G.eq_sUnion_components, ← hH.isClosedSubgraph.eDegree_eq hvH]
   exact h H hH v
+
+

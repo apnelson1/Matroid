@@ -436,6 +436,16 @@ lemma setLinkEdges_subset_setIncEdges_right (G : Graph α β) (S T : Set α) :
   rintro e ⟨x, hxS, y, hyT, hxy⟩
   exact ⟨y, hyT, hxy.inc_right⟩
 
+lemma setLinkEdges_singleton_eq_setOf_isNonloopAt (v : α) :
+    δ(G, {v}) = {e | G.IsNonloopAt e v} := by
+  ext e
+  simp only [mem_setLinkEdges_iff, mem_singleton_iff, mem_diff, IsNonloopAt, ne_eq, mem_setOf_eq]
+  constructor
+  · rintro ⟨x, rfl, y, ⟨_, hy_ne⟩, hlink⟩
+    exact ⟨y, hy_ne, hlink⟩
+  · rintro ⟨y, hy_ne, hlink⟩
+    exact ⟨v, rfl, y, ⟨hlink.right_mem, hy_ne⟩, hlink⟩
+
 end Neighborhood
 
 
