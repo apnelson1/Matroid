@@ -765,51 +765,51 @@ lemma IsCircuit.eLocalConn_subset_compl {C : Set α} (hC : M.IsCircuit C) (hI : 
     disjoint_sdiff_right.inter_eq, encard_empty, zero_add, union_diff_cancel hIC.subset,
     hC.nullity_eq]
 
+/-- If two circuits intersect in an element `e` and have connectivity at most one,
+then their symmetric difference is a circuit. -/
+lemma IsCircuit.union_isCircuit_of_inter_eq_singleton {C₁ C₂ : Set α} {e : α} (hC₁ : M.IsCircuit C₁)
+    (hC₂ : M.IsCircuit C₂) (hne : C₁ ≠ C₂) (heC₁ : e ∈ C₁) (heC₂ : e ∈ C₂)
+    (hc : M.eLocalConn C₁ C₂ ≤ 1) :  M.IsCircuit ((C₁ ∪ C₂) \ {e}) := by
+  suffices aux : ∀ f ∈ C₁ ∪ C₂, f ≠ e → f ∈ M.closure (((C₁ ∪ C₂) \ {e}) \ {f}) by
+    obtain ⟨C, hCss, hC⟩ := hC₁.elimination hC₂ hne e
+    grw [(hC₁.diff_singleton_isBasis (e := e) (by grind)).eLocalConn_eq
+      (hC₂.diff_singleton_isBasis (e := e) (by grind)), ← union_diff_distrib, ← le_add_self] at hc
+    convert hC
+    refine hCss.antisymm' fun f hf ↦ by_contra fun hfC ↦ ?_
+    specialize aux f hf.1 hf.2
+    have hn := (nullity_union_eq_nullity_add_encard_diff (singleton_subset_iff.2 aux)).ge
+    grw [diff_union_self, disjoint_sdiff_right.sdiff_eq_left,
+      union_eq_self_of_subset_right (singleton_subset_iff.2 hf), hc, encard_singleton,
+      ← nullity_le_of_subset (X := C) _ (by grind), hC.nullity_eq] at hn
+    norm_num at hn
+  rintro f hf hfe
+  wlog hfC : f ∈ C₁ generalizing C₁ C₂ with aux
+  · exact union_comm _ _ ▸ aux hC₂ hC₁ hne.symm heC₂ heC₁ (by rwa [eLocalConn_comm])
+      (by rwa [union_comm]) (by grind)
+  grw [← closure_insert_eq_of_mem_closure (e := e), diff_diff_comm,
+    insert_diff_self_of_mem (by grind), ← subset_union_left, hC₁.closure_diff_singleton_eq,
+    ← M.subset_closure C₁]
+  · assumption
+  grw [← subset_union_right, diff_singleton_eq_self (a := f), ← hC₂.subset_closure_diff_singleton]
+  · exact heC₂
+  rintro ⟨hfC₂, -⟩
+  grw [← eRk_inter_le_eLocalConn, ← pair_subset (a := e) (b := f) (s := C₁ ∩ C₂)
+    (by grind) (by grind), Indep.eRk_eq_encard, encard_pair hfe.symm] at hc
+  · norm_num at hc
+  refine hC₁.ssubset_indep <| ssubset_of_subset_of_ne (by grind) ?_
+  rintro rfl
+  exact hne <| hC₁.eq_of_subset_isCircuit hC₂ (by grind)
 
--- lemma IsCircuit.union_isCircuit_of_inter_eq_singleton {C₁ C₂ : Set α} {e : α} (hC₁ : M.IsCircuit C₁)
---     (hC₂ : M.IsCircuit C₂) (hne : C₁ ≠ C₂) (heC : C₁ ∩ C₂ = {e}) (hc : M.eLocalConn C₁ C₂ ≤ 1) :
---     M.IsCircuit ((C₁ ∪ C₂) \ {e}) := by
---   suffices aux : ∀ f ∈ C₁ ∪ C₂, f ≠ e → f ∈ M.closure ((C₁ ∪ C₂ \ {e}) \ {f}) by
---     obtain ⟨C, hCss, hC⟩ := hC₁.elimination hC₂ hne e
---     rw [(hC₁.diff_singleton_isBasis (e := e) (by grind)).eLocalConn_eq
---       (hC₂.diff_singleton_isBasis (e := e) (by grind)), Disjoint.inter_eq (by grind), encard_empty,
---       zero_add, ← union_diff_distrib] at hc
---     convert hC
---     refine hCss.antisymm' fun f hf ↦ by_contra fun hfC ↦ ?_
---     specialize aux f hf.1 hf.2
---     have hn := nullity_union_eq_nullity_add_encard_diff (singleton_subset_iff.2 aux)
---     rw [diff_union_self, union_eq_self_of_subset_right (by grind), diff_eq_left] at hn
-
-
-
---   grind
-
-  -- wlog hME : M.E = C₁ ∪ C₂ generalizing M with aux
-  -- · refine ((aux (M := M ↾ (C₁ ∪ C₂)) (hC₁.isCircuit_restrict_of_subset (by simp))
-  --     (hC₂.isCircuit_restrict_of_subset (by simp))
-  --     (IsModularFamily.restrict hmod (by grind)) rfl)).of_isRestriction ?_
-  --   exact restrict_isRestriction _ _ (by grind)
-  -- rw [← M.dual_dual, isModularPair_dual_iff (by simpa using hME.symm), dual_ground] at hmod
-
-
-  -- have hr := hmod.eRelRk_eq_left.ge
-  -- grw [eRelRk_mono_right _ _ (union_subset diff_subset diff_subset), ← dual_ground,
-  --   hC₂.isCocircuit.compl_isHyperplane.eRelRk_eq_one] at hr
-  -- have hH₁ := hC₁.isCocircuit.compl_isHyperplane
-  -- have hH₂ := hC₂.isCocircuit.compl_isHyperplane
-  -- obtain h1 | h0 := hr.eq_or_lt
-  -- · rw [← hME, ← M.dual_dual, M✶.dual_ground, ← isCocircuit_def,
-  --     isCocircuit_compl_iff_isHyperplane _ _]
-  --   sorry
-
-  -- have h1l : M✶.E \ C₁ = M✶.loops := by
-  --   rwa [ENat.lt_one_iff_eq_zero, hH₁.isFlat.eRk_eq_zero_iff] at h0
-  -- have h2l : M✶.E \ C₂ = M✶.loops := by
-  --   rwa [← hH₂.isFlat.eRk_eq_zero_iff, ← hH₁.eRk_eq_eRk hH₂, hH₁.isFlat.eRk_eq_zero_iff]
-  -- rw [← diff_diff_cancel_left hC₁.subset_ground] at hne
-  -- grind
-
-
+lemma IsCircuit.union_isCircuit_of_inter_nonempty {C₁ C₂ : Set α} (hC₁ : M.IsCircuit C₁)
+    (hC₂ : M.IsCircuit C₂) (hne : C₁ ≠ C₂) (h_inter : (C₁ ∩ C₂).Nonempty)
+    (hc : M.eLocalConn C₁ C₂ ≤ 1) : M.IsCircuit ((C₁ ∪ C₂) \ (C₁ ∩ C₂)) := by
+  obtain ⟨e, he⟩ | hnt := h_inter.exists_eq_singleton_or_nontrivial
+  · obtain ⟨heC₁, heC₂⟩ := he.symm.subset rfl
+    exact he ▸ hC₁.union_isCircuit_of_inter_eq_singleton hC₂ hne heC₁ heC₂ hc
+  grw [← eRk_inter_le_eLocalConn, Indep.eRk_eq_encard, ← two_le_encard_iff_nontrivial.2 hnt] at hc
+  · norm_num at hc
+  exact hC₁.ssubset_indep <| inter_ssubset_left_iff.2 fun hss ↦ hne <| Eq.symm <|
+    hC₂.eq_of_superset_isCircuit hC₁ hss
 
 lemma IsRkFinite.isModularPair_iff_eLocalConn_eq_eRk_inter (hX : M.IsRkFinite X) (Y : Set α)
     (hXE : X ⊆ M.E := by aesop_mat) (hYE : Y ⊆ M.E := by aesop_mat) :

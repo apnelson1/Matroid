@@ -266,27 +266,58 @@ lemma IsCyclicFan.isFan_rotate [NeZero n] {J} (h : M.IsCyclicFan n J) (b : Bool)
   · simp
   cases hv : v.bodd with simp [hv, add_comm, add_assoc]
 
-lemma IsCyclicFan.isCircuit (h : M.IsCyclicFan n J) {d : ℕ} (hd : d + 2 < n) (i : ZMod n) :
+lemma IsCyclicFan.isCircuit (h : M.IsCyclicFan n J) {d : ℕ} (hd : d + 1 < n) (i : ZMod n) :
     M.IsCircuit <| insert (J false i) <| insert (J false (i + d + 1)) <|
       ((fun (x : ℕ) ↦ J true (i + x)) '' Iic d) := by
   have hn : NeZero n := ⟨by lia⟩
-  wlog hi : i = 0 generalizing i J with aux
-  · convert aux (h.add i) 0 rfl using 4 with a
-    · simp
-    · simp [add_assoc, add_comm i]
-    simp [add_comm i]
-  subst hi
-  convert (h.isFan_rotate true (-1)).isCircuit_interval (i := 1) (j := 2 * d + 3) (by simp)
-    (by simp) (by grind) rfl (by simp)
+  convert (h.isFan_rotate true (i.val - 1)).isCircuit_interval (i := 1) (j := 2 * d + 3)
+    (by simp) (by lia) (by grind) rfl (by simp)
   · simp
-  · simp
-  ext j
-  simp only [zero_add, mem_image, mem_Iic, List.valsBetween, Bool.not_true, Bool.bne_true,
-    Bool.toNat_true, Nat.div2_succ, Nat.succ_eq_add_one, List.getElem_map, List.getElem_range,
-    List.length_map, List.length_range, exists_and_left, exists_prop, mem_setOf_eq]
-  refine ⟨fun h' ↦ ?_, fun h' ↦ ?_⟩
-  · obtain ⟨x, hxd, rfl⟩ := h'
-    exact ⟨2 * x + 2, by lia, by lia, by simp, by grind, by simp⟩
-  obtain ⟨i, h1i, hid, hi', hin, rfl⟩ := h'
-  obtain rfl | rfl | i := i; lia; simp at hi'
-  exact ⟨i.div2, by grind [i.bodd_add_div2], by simp [show i.bodd = false by simpa using hi']⟩
+  · simp [add_assoc i d 1]
+  ext e
+  simp only [mem_image, mem_Iic, List.altBetween, Bool.not_true, Bool.bne_true, ZMod.natCast_val,
+    ZMod.cast_id', id_eq, Bool.toNat_true, Nat.div2_succ, Nat.succ_eq_add_one, List.getElem_map,
+    List.getElem_range, List.length_map, List.length_range, exists_and_left, exists_prop,
+    mem_setOf_eq]
+  constructor
+  · rintro ⟨j, hjd, rfl⟩
+    exact ⟨2 * j + 2, by lia, by lia, by simp, by lia, by simp⟩
+  rintro ⟨rfl | rfl | i, hi1, hilt, hib, hin, rfl⟩
+  · lia
+  · simp at hib
+  exact ⟨i.div2, by grind, by simp [show i.bodd = false by simpa using hib]⟩
+
+
+
+
+
+
+
+  -- · simp
+  -- · simp
+  -- ext j
+  -- simp only [zero_add, mem_image, mem_Iic, List.valsBetween, Bool.not_true, Bool.bne_true,
+  --   Bool.toNat_true, Nat.div2_succ, Nat.succ_eq_add_one, List.getElem_map, List.getElem_range,
+  --   List.length_map, List.length_range, exists_and_left, exists_prop, mem_setOf_eq]
+  -- refine ⟨fun h' ↦ ?_, fun h' ↦ ?_⟩
+  -- · obtain ⟨x, hxd, rfl⟩ := h'
+  --   exact ⟨2 * x + 2, by lia, by lia, by simp, by grind, by simp⟩
+  -- obtain ⟨i, h1i, hid, hi', hin, rfl⟩ := h'
+  -- obtain rfl | rfl | i := i; lia; simp at hi'
+  -- exact ⟨i.div2, by grind [i.bodd_add_div2], by simp [show i.bodd = false by simpa using hi']⟩
+  -- simp
+
+-- lemma IsCyclicFan.eq_of_isCircuit (h : M.IsCyclicFan n J) {d : ℕ} (hC : M.IsCircuit C)
+--     (hCJ : C ⊆ ⋃ b, Set.range (J b)) : C = Set.range (J false) ∨
+--     ∃ (i : ZMod n) (d : ℕ), d + 1 < n ∧
+--       C = insert (J false i) (insert (J false (i + d + 1)) ({J true (i + x) | x ∈ Iic d})) := by
+--   obtain ⟨i₀, hi₀C⟩ | nojoint := exists_or_forall_not (fun i ↦ J false i ∈ C)
+--   ·
+
+
+
+
+
+-- (hd : d + 1 < n) (i : ZMod n) :
+--     M.IsCircuit <| insert (J false i) <| insert (J false (i + d + 1)) <|
+--       ((fun (x : ℕ) ↦ J true (i + x)) '' Iic d) := by

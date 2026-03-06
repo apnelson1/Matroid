@@ -35,3 +35,7 @@ lemma Bool.toNat_le_one (b : Bool) : b.toNat ≤ 1 := by
 @[simp, grind =]
 lemma Bool.toNat_bodd (b : Bool) : b.toNat.bodd = b := by
   cases b with rfl
+
+@[grind! .]
+lemma Nat.bodd_toNat_le (n : ℕ) : n.bodd.toNat ≤ n := by
+  cases n with grind
