@@ -188,6 +188,14 @@ lemma parallel_dual_iff_forall_circuit (henl : M✶.IsNonloop e) (hf : f ∈ M.E
     M✶.Parallel e f ↔ ∀ C, M.IsCircuit C → e ∈ C → f ∈ C := by
   simp [henl.parallel_iff_forall_mem_of_mem_of_isCocircuit hf]
 
+lemma IsNonloop.exists_isCircuit_mem_notMem (henl : M✶.IsNonloop e) (hnp : ¬ M✶.Parallel e f) :
+    ∃ C, M.IsCircuit C ∧ e ∈ C ∧ f ∉ C := by
+  by_cases hf : f ∈ M.E
+  · rw [parallel_dual_iff_forall_circuit henl hf] at hnp
+    simpa using hnp
+  obtain ⟨C, hC, heC⟩ := henl.exists_mem_isCocircuit
+  exact ⟨C, by simpa using hC, heC, notMem_subset hC.subset_ground hf⟩
+
 lemma Parallel.isLoop_contractElem (hef : M.Parallel e f) (hne : e ≠ f) : (M ／ {e}).IsLoop f := by
   rw [isLoop_iff, contract_loops_eq, mem_diff]
   exact ⟨hef.symm.mem_closure, hne.symm⟩

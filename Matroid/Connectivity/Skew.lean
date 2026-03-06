@@ -1163,6 +1163,39 @@ lemma skew_iff_forall_isCircuit_of_inter_subset_loops (hX : X ⊆ M.E := by aeso
     obtain rfl : C = {e} := IsLoop.eq_of_isCircuit_mem (hinter heXY) hC heC
     exact Or.inr (singleton_subset_iff.mpr heXY.2)
 
+lemma Skew.isCircuit_contract {C} (hXC : M.Skew X C) (hC : M.IsCircuit C) (hdj : Disjoint X C) :
+    (M ／ X).IsCircuit C := by
+  rwa [isCircuit_iff_restr_eq_circuitOn hC.nonempty _, hXC.contract_restrict_eq,
+    ← isCircuit_iff_restr_eq_circuitOn hC.nonempty]
+  grind
+
+lemma Skew.isCircuit_contract_of_nontrivial {C} (hXC : M.Skew X C) (hC : M.IsCircuit C)
+    (hCnt : C.Nontrivial) : (M ／ X).IsCircuit C := by
+  refine hXC.isCircuit_contract hC <| disjoint_left.2 fun e heX heC ↦ ?_
+  have he : M.IsLoop e := hXC.inter_subset_loops ⟨heX, heC⟩
+  have heC := he.isCircuit.eq_of_subset_isCircuit (by simpa) (by simpa)
+  simp [← heC] at hCnt
+
+/-- If a circuit `C` is not skew to a set `X`, then we can find a circuit contained in `C ∪ X`
+that intersects `X`, and also contains an arbitrary element of `C`. -/
+lemma IsCircuit.exists_isCircuit_mem_subset_union_of_not_skew {C} (hC : M.IsCircuit C)
+    (hdj : Disjoint C X) (hXC : ¬ M.Skew C X) (he : e ∈ C) (hX : X ⊆ M.E := by aesop_mat) :
+    ∃ C', M.IsCircuit C' ∧ C' ⊆ C ∪ X ∧ e ∈ C' ∧ (C' ∩ X).Nonempty := by
+  simp only [skew_iff_forall_isCircuit hdj, not_forall, not_or, exists_prop] at hXC
+  obtain ⟨C', hC', hC'ss, hnss, hcss'⟩ := hXC
+  by_cases heC' : e ∈ C'
+  · exact ⟨C', hC', hC'ss, heC', not_disjoint_iff_nonempty_inter.1 (by grind)⟩
+  obtain ⟨f, hfC, hfC'⟩ : (C ∩ C').Nonempty := not_disjoint_iff_nonempty_inter.1 (by grind)
+  obtain ⟨C'', hC''ss, hC'', heC''⟩ := hC.strong_elimination hC' hfC hfC' he heC'
+  refine ⟨C'', hC'', by grind, heC'', not_disjoint_iff_nonempty_inter.1 fun hdj ↦ ?_⟩
+  obtain rfl : C = C'' := hC.eq_of_superset_isCircuit hC'' (by grind)
+  grind
+
+
+
+  -- have := hC.strong_elimination hC' (e := e) (f := )
+
+
 section ModularCompl
 
 variable {F₀ F₁ F F' : Set α}

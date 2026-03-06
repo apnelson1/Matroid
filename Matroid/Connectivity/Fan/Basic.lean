@@ -90,39 +90,13 @@ lemma IsFan.bDual (h : M.IsFan F b c) (d : Bool) : (M.bDual d).IsFan F (b != d) 
 lemma IsFan.two_le_length (h : M.IsFan F b c) : 2 ≤ F.length := by
   induction h with simp_all
 
+macro_rules | `(tactic| get_elem_tactic_extensible) => `(tactic| grind[IsFan.two_le_length])
+
 lemma IsFan.ne_nil (h : M.IsFan F b c) : F ≠ [] := by
   grind [h.two_le_length]
 
 lemma IsFan.alt_ne_nil (h : M.IsFan F b c) {d} : F.alt d ≠ [] := by
   cases d <;> grind [F.alt_true_length_eq, h.two_le_length, F.alt_length_add]
-
-
-
--- /-- An induction principle for fans that involves verifying a primal case and self-duality. -/
--- @[elab_as_elim]
--- def IsFan.recTriangle
---     {motive : (M : Matroid α) → (F : List α) → (b c : Bool) → M.IsFan F b c → Prop}
---     (of_pair : ∀ (M : Matroid α) (e f : α) (h : M✶.Indep {e, f}) (hef : e ≠ f),
---       motive M [e, f] false true (h.isFan_pair_of_ne (b := true) hef))
---     (of_dual : ∀ M F b h, motive M✶ F false (!b) h → motive M F true b (by simpa using h.dual))
---     (cons_triangle : ∀ M e x y F b (h : M.IsFan (x :: y :: F) true b) (heF : e ∉ F)
---       (hT : M.IsTriangle {e, x, y}), motive M (x :: y :: F) true b h →
---         motive M (e :: x :: y :: F) false b (h.cons heF hT)) (h : M.IsFan F b c) :
---     motive M F b c h := by
---   induction h with
---   | of_pair b e f h hne =>
---     cases b
---     · exact of_pair _ _ _ h hne
---     exact of_dual M [e, f] true (by simpa using h.isFan_pair_of_ne hne) (of_pair _ _ _ h hne)
---   | cons_triangle e x y F b c h heF hT ih =>
---     cases b
---     ·
-
---     exact cons_triangle _ _ _ _ _ _ _ heF hT ih
---       -- refine of_dual M (e :: x :: y :: F) c ?_ ?_
---       -- refine cons_triangle M✶ e x y F (!c) h.dual heF hT ?_
---       -- exact of_dual M✶ (x :: y :: F) (!c) (by simpa) (by simpa)
---     exact cons_triangle _ _ _ _ _ _ _ heF hT ih
 
 lemma IsFan.cons' (h : M.IsFan F b c) (heF : e ∉ F)  (hT : (M.bDual !b).IsTriangle
     {e, F.head h.ne_nil, F.tail.head (by grind [length_tail, h.two_le_length])}) :
@@ -410,6 +384,123 @@ lemma IsFiniteRankUniform.exists_isFan (h : M.IsFiniteRankUniform 2 4) (b : Bool
   obtain ⟨x, y, z, w, hxy, hxz, hxw, hyz, hyw, hzw, hE⟩ := encard_eq_four.1 h.encard_eq
   refine ⟨[x, y, z, w], ?_, by simp [hE, Set.ext_iff]⟩
   grind [encard_eq_three, isFan_four_iff, h.bDual_eq_self, h.isTriangle_iff]
+
+lemma IsFan.contract_disjoint_aux (hF : M.IsFan F false c) (h4 : 4 ≤ F.length)
+    (hX : Disjoint {e | e ∈ F} X) (hb : F[0] ∉ M.closure X) (hXE : X ⊆ M.E):
+    (M ／ X).IsTriangle {F[0], F[1], F[2]} := by
+  have hT := hF.isTriangle_getElem_of_eq 0 (by lia) rfl
+  have hdj : Disjoint {F[0], F[1], F[2]} X := hX.mono_left <| (show _ ⊆ {e | e ∈ F} by grind)
+  rw [isTriangle_iff, and_iff_left hT.three_elements]
+  refine Skew.isCircuit_contract (by_contra fun hsk ↦ hb ?_) hT.isCircuit hdj.symm
+  rw [skew_comm] at hsk
+  obtain ⟨C, hC, hCss, h0C, hCX⟩ :=
+    hT.isCircuit.exists_isCircuit_mem_subset_union_of_not_skew hdj hsk (e := F[0]) (by simp)
+  have hT' := hF.isTriad_getElem_of_eq 1 (by lia) (by simp)
+  have h21 := hT'.reverse.mem_iff_mem_of_isCocircuit (K := C) (by simpa) (by grind)
+  by_cases h1 : F[1] ∈ C
+  · simp [← hT.isCircuit.eq_of_subset_isCircuit hC (by grind), hdj.inter_eq] at hCX
+  grw [← diff_subset_iff.2 hCss, ← union_singleton, ← diff_diff, Disjoint.sdiff_eq_left (a := C)
+    (by grind), hC.closure_diff_singleton_eq]
+  exact M.mem_closure_of_mem h0C
+
+/- Contractions preserve the property of being a fan, unless one of the ends is a joint
+spanned by the contract-set. -/
+lemma IsFan.contract_disjoint (hF : M.IsFan F b c) (h4 : 4 ≤ F.length) (hX : Disjoint {e | e ∈ F} X)
+    (hb : b = false → F[0] ∉ M.closure X) (hc : c = false → F[F.length - 1] ∉ M.closure X) :
+    (M ／ X).IsFan F b c := by
+  wlog hXE : X ⊆ M.E generalizing X with aux
+  · grind [M.closure_inter_ground X, M.contract_inter_ground_eq X]
+  rw [isFan_iff_forall (by lia), hF.length_bodd_eq, and_iff_right rfl, and_iff_right hF.nodup]
+  rintro i hi
+  rw [isTriangle_iff, and_iff_left (hF.isTriangle_getElem i hi).three_elements]
+  obtain rfl | rfl := b.eq_or_eq_not !i.bodd
+  · simp only [Bool.not_bne, bne_self_eq_false, Bool.not_false, bDual_true, dual_contract,
+      delete_isCircuit_iff, disjoint_insert_left, disjoint_singleton_left,
+      (hF.isTriad_getElem_of_eq i hi (by simp)).isCircuit]
+    grind
+  obtain rfl | i := i
+  · simp only [Nat.bodd_zero, Bool.not_false, Bool.not_true, forall_const] at hb
+    simpa using (hF.contract_disjoint_aux h4 hX hb hXE).isCircuit
+  obtain heq | hlt := (show i + 4 ≤ F.length from hi).eq_or_lt
+  · obtain rfl : c = false := by simpa [← heq] using hF.bool_right_eq
+    have hT := (hF.reverse.contract_disjoint_aux (by simpa) (by simpa)
+      (by simpa using hc) hXE).reverse
+    simpa [← heq] using hT.isCircuit
+  simp only [Nat.bodd_succ, Bool.not_not, bne_self_eq_false, bDual_false]
+  have hT := hF.isTriangle_getElem_of_eq (i + 1) (by lia) (by simp)
+  have hTdj : Disjoint {F[i + 1], F[i + 1 + 1], F[i + 1 + 2]} X := by grind
+  refine Skew.isCircuit_contract (by_contra fun hsk ↦ ?_) hT.isCircuit hTdj.symm
+  rw [skew_comm] at hsk
+  obtain ⟨C, hC, hCss, hCi, hCX⟩ := hT.isCircuit.exists_isCircuit_mem_subset_union_of_not_skew hTdj
+    (e := F[i + 2]) hsk (by simp) hXE
+  have hi1C : F[i + 1] ∈ C:= (hF.isTriad_getElem_of_eq i (by lia)
+    (by simp)).reverse.swap_right.mem_of_mem_of_notMem_of_is_Cocircuit (by simpa) hCi
+    (by grind [hF.nodup.getElem_inj_iff])
+  have hi3C : F[i + 3] ∈ C := (hF.isTriad_getElem_of_eq (i + 2) (by lia)
+    (by simp)).swap_right.mem_of_mem_of_notMem_of_is_Cocircuit (by simpa) hCi
+    (by grind [hF.nodup.getElem_inj_iff])
+  simp [← hT.isCircuit.eq_of_subset_isCircuit hC (by grind), hTdj.inter_eq] at hCX
+
+/-- If `N` is a minor of `M`, and `F` is a fan of `M` contained in `E(N)`, whose (co)joint ends are
+are not (co)loops of `N`, then `F` is also a fan of `N`.  -/
+lemma IsFan.minor {N : Matroid α} (hF : M.IsFan F b c) (h4 : 4 ≤ F.length) (hNM : N ≤m M)
+    (hFN : {e | e ∈ F} ⊆ N.E) (h_first : (N.bDual b).IsNonloop F[0])
+    (h_last : (N.bDual c).IsNonloop F[F.length - 1]) : N.IsFan F b c := by
+  obtain ⟨C, D, hC, hD, hCD, rfl⟩ := hNM.exists_eq_contract_delete_disjoint
+  have hCF := hF.contract_disjoint h4 (X := C) (by grind) ?_ ?_
+  · have hwin := (hCF.dual.contract_disjoint (X := D) h4 (by grind) ?_ ?_).dual
+    · simpa using hwin
+    · simp only [Bool.not_eq_eq_eq_not, Bool.not_false, dual_contract, delete_closure_eq, mem_diff,
+        not_and, not_not, hCD.sdiff_eq_right]
+      rintro rfl hcl
+      refine False.elim <| h_first.not_isLoop ?_
+      grind [bDual_true, dual_delete, dual_contract, contract_isLoop_iff_mem_closure,
+        delete_closure_eq, hCD.sdiff_eq_right]
+    simp only [Bool.not_eq_eq_eq_not, Bool.not_false, dual_contract, delete_closure_eq, mem_diff]
+    rintro rfl hcl
+    refine h_last.not_isLoop ?_
+    grind [bDual_true, dual_delete, dual_contract, contract_isLoop_iff_mem_closure,
+      delete_closure_eq]
+  · rintro rfl hcl
+    grind [bDual_false, delete_isLoop_iff, contract_isLoop_iff_mem_closure, h_first.not_isLoop]
+  rintro rfl hcl
+  grind [h_last.not_isLoop, bDual_false, delete_isLoop_iff, contract_isLoop_iff_mem_closure]
+
+
+
+
+-- (hX : Disjoint {e | e ∈ F} X)
+--     (hb : b = false → F[0] ∉ M.closure X) (hc : c = false → F[F.length - 1] ∉ M.closure X) :
+
+    -- by_cases h1 : F[1] ∈ C; grind
+
+  -- have h_or' : F[i+1] ∈ C ∨ F[i+2] ∈ C := by
+  --   contra
+
+
+  -- -- rw [skew_iff_forall_isCircuit (by grind) hXE (by grind [hF.get_mem_ground])]
+  -- intro C hC hCXu
+
+
+    -- by_cases h1 : F[1] ∈ C
+    -- · by_cases h0C : F[0] ∈ C
+    --   . rw [← hT.isCircuit.eq_of_subset_isCircuit hC (by grind)]
+    --     simp
+    --   obtain ⟨C', hC'ss, hC', h0C'⟩ :=
+    --     hT.isCircuit.strong_elimination hC (f := F[0]) (by simp) h1 (by simp) h0C
+
+
+
+
+
+
+
+  --   sorry
+
+
+
+
+
 
 -- lemma Triassic.exists_fan (hM : M.Triassic) (hfin : M.Finite) (hne : M.Nonempty)
 --     (hconn : M.TutteConnected 3) : ∃ F c, M.IsFan F false c ∧ {e | e ∈ F} = M.E := by
