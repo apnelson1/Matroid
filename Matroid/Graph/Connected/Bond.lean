@@ -61,7 +61,7 @@ lemma IsEdgeCut.exists_of_isLink (he : G.IsLink e u v) (heF : e ∈ F) (hF : G.I
   simp only [sdiff_sdiff_right_self, Set.inf_eq_inter]
   exact setLinkEdges_vertexSet_inter_left G S (V(G) \ S)
 
-lemma IsEdgeCut.subset_edgeSet (hF : G.IsEdgeCut F) : F ⊆ E(G) := by
+lemma IsEdgeCut.subset (hF : G.IsEdgeCut F) : F ⊆ E(G) := by
   obtain ⟨S, rfl⟩ := hF
   exact setLinkEdges_subset G S (V(G) \ S)
 
@@ -159,7 +159,7 @@ lemma IsBridge.isEdgeCut (he : G.IsBridge e) : G.IsEdgeCut {e} := he
 
 @[grind .]
 lemma IsBridge.mem_edgeSet (he : G.IsBridge e) : e ∈ E(G) := by
-  simpa using IsEdgeCut.subset_edgeSet he
+  simpa using IsEdgeCut.subset he
 
 lemma IsLink.isBridge_iff_not_connBetween (he : G.IsLink e x y) :
     G.IsBridge e ↔ ¬ (G ＼ {e}).ConnBetween x y := by
@@ -358,9 +358,9 @@ def IsBond (G : Graph α β) (F : Set β) : Prop :=
   Minimal (fun F ↦ G.IsEdgeCut F ∧ F.Nonempty) F
 
 @[grind →]
-lemma IsBond.subset_edgeSet (hB : G.IsBond B) : B ⊆ E(G) := by
+lemma IsBond.subset (hB : G.IsBond B) : B ⊆ E(G) := by
   obtain ⟨h, -⟩ := hB.prop
-  exact h.subset_edgeSet
+  exact h.subset
 
 lemma IsBond.isEdgeCut (hB : G.IsBond B) : G.IsEdgeCut B := hB.prop.1
 
@@ -375,13 +375,13 @@ lemma IsBridge.isBond (he : G.IsBridge e) : G.IsBond {e} := by
 
 lemma IsBond.isBridge (heB : e ∈ B) (hB : G.IsBond B) : (G ＼ (B \ {e})).IsBridge e := by
   have := hB.prop.1.anti (edgeDelete_le (F := B \ {e}))
-  rw [edgeDelete_edgeSet, inter_comm, inter_diff_distrib_left, inter_eq_left.mpr hB.subset_edgeSet,
+  rw [edgeDelete_edgeSet, inter_comm, inter_diff_distrib_left, inter_eq_left.mpr hB.subset,
     inter_eq_right.mpr diff_subset] at this
   simpa [heB] using this
 
 lemma IsBond.of_isClosedSubgraph (hGH : G ≤c H) (hB : G.IsBond B) : H.IsBond B := by
   refine ⟨⟨hB.isEdgeCut.of_isClosedSubgraph hGH, hB.nonempty⟩, fun C ⟨hC, e, heC⟩ hCB ↦ ?_⟩
-  exact hB.2 ⟨hC.anti hGH.le, e, hB.subset_edgeSet (hCB heC), heC⟩ (inter_subset_right
+  exact hB.2 ⟨hC.anti hGH.le, e, hB.subset (hCB heC), heC⟩ (inter_subset_right
   |>.trans hCB) |>.trans inter_subset_right
 
 lemma IsBond.exists_minimal_not_connBetween (hB : G.IsBond B) :
@@ -409,7 +409,7 @@ lemma isBond_of_conn (hS : S ⊆ V(G)) (hScon : G[S].Preconnected) (hS'con : (G 
     apply le_of_le_le_subset_subset vertexDelete_le edgeDelete_le (by grind)
     rw [vertexDelete_edgeSet_diff]
     simp only [edgeDelete_edgeSet, subset_diff, diff_subset, disjoint_comm, le_eq_subset,
-      hF.1.subset_edgeSet, setIncEdges_subset, disjoint_sdiff_iff_le, true_and]
+      hF.1.subset, setIncEdges_subset, disjoint_sdiff_iff_le, true_and]
     exact hFδ.trans <| setLinkEdges_subset_setIncEdges_left ..
   clear hS hFδ
   obtain ⟨huS, hvS⟩ | h1 := em (u ∈ S ∧ v ∈ S)
@@ -531,13 +531,37 @@ lemma IsEdgeCut.disjoint_union_isBond {F} (hfin : F.Finite) (hF : G.IsEdgeCut F)
   simpa using hB.prop.2
 termination_by F.encard
 
--- lemma edgeConnGE_iff_isEdgeCut (n : ℕ) :
---     G.EdgeConnGE n ↔ ∀ F, G.IsEdgeCut F → n ≤ F.encard := by
---   refine ⟨fun h F hF => ?_, fun h s t hs ht F ⟨hF, hst⟩ => ?_⟩
---   · obtain ⟨x, y, hxy, hFxy⟩ := hF.exists_not_connBetween hFne
---     have := h hxy.left_mem hxy.right_mem (F := E(G) ∩ F) ⟨inter_subset_left, sorry⟩
---     exact this.trans <| encard_le_encard inter_subset_right
---   have := isEdgeCut_subset_of_not_connBetween
---   have := h F
+lemma edgeConnGE_iff_isEdgeCut {n : ℕ} (hn : 1 ≤ n) :
+    G.EdgeConnGE n ↔ G.Preconnected ∧ ∀ F, G.IsEdgeCut F → F.Nonempty → n ≤ F.encard := by
+  refine ⟨fun h => ⟨?_, fun F hF hFne => ?_⟩, fun h s t hs ht F ⟨hF, hst⟩ => ?_⟩
+  · exact edgeConnGE_one_iff.mp <| h.anti_right hn
+  · obtain ⟨x, y, hxy, hFxy⟩ := hF.exists_not_connBetween hFne
+    exact h hxy.left_mem hxy.right_mem (F := E(G) ∩ F) ⟨inter_subset_left, by
+      rwa [inter_comm, edgeDelete_inter_edgeSet]⟩ |>.trans <| encard_le_encard inter_subset_right
+  obtain ⟨F', hF', hF'F, hF'ne, hF'st⟩ := G.isEdgeCut_subset_of_not_connBetween (h.1 s t hs ht) hst
+  exact h.2 F' hF' hF'ne |>.trans (encard_le_encard hF'F)
 
--- lemma edgeConnGE_iff_isBond (n : ℕ) : G.EdgeConnGE n ↔ ∀ b, G.IsBond b → n ≤ b.encard := by
+lemma edgeConnGE_iff_isBond {n : ℕ} (hn : 1 ≤ n) :
+    G.EdgeConnGE n ↔ G.Preconnected ∧ ∀ b, G.IsBond b → n ≤ b.encard := by
+  rw [edgeConnGE_iff_isEdgeCut hn, and_congr_right_iff]
+  refine fun hpre ↦ ⟨fun h F hF => h F hF.isEdgeCut hF.nonempty, fun h F hF hFne => ?_⟩
+  obtain ⟨B, hBF, hB⟩ := hF.exists_isBond_of_nonempty hFne
+  exact h B hB |>.trans (encard_le_encard hBF)
+
+lemma EdgeConnGE.minDegreeGE {n : ℕ} (hN : V(G).Nontrivial) (hn : G.EdgeConnGE n) :
+    G.MinDegreeGE n := by
+  match n with
+  | 0 => exact fun _ _ ↦ zero_le _
+  | n + 1 =>
+    intro v hv
+    have hFne : δ(G, {v}).Nonempty := by
+      obtain ⟨u, hu, huv⟩ := hN.exists_ne v
+      have hcon : G.ConnBetween v u := (edgeConnGE_iff_isEdgeCut (by omega)).mp hn |>.1 v u hv hu
+      by_contra! hc
+      have hnot := G.edgeDelete_setLinkEdge_not_connBetween (S := {v}) (x := v) (y := u) rfl huv
+      rw [hc, edgeDelete_empty] at hnot
+      exact hnot hcon
+    have hle := (edgeConnGE_iff_isEdgeCut (by omega)).mp hn |>.2 _ ⟨{v}, rfl⟩ hFne
+    rw [setLinkEdges_singleton_eq_setOf_isNonloopAt] at hle
+    rw [G.eDegree_eq_encard_add_encard v]
+    exact hle.trans le_add_self

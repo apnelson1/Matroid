@@ -19,8 +19,10 @@ import Matroid.Connectivity.Core
 import Matroid.Connectivity.Extension
 -- import Matroid.Connectivity.Fan.Basic
 -- import Matroid.Connectivity.Fan.Circuit
+-- import Matroid.Connectivity.Fan.CircuitIndex
 -- import Matroid.Connectivity.Fan.Circuit_
 -- import Matroid.Connectivity.Fan.Circuit__
+-- import Matroid.Connectivity.Fan.Cyclic
 import Matroid.Connectivity.Minor
 import Matroid.Connectivity.Nat
 -- import Matroid.Connectivity.Separation.Abstract
@@ -47,12 +49,14 @@ import Matroid.Extension.Parallel
 import Matroid.Extension.ProjectBy
 import Matroid.Extension.ProjectionBy
 import Matroid.Extension.Quotient
+-- import Matroid.Extremal.Covers
 import Matroid.Finitize
 import Matroid.Flat.Basic
 -- import Matroid.Flat.Covers
 import Matroid.Flat.Hyperplane
 import Matroid.Flat.Lattice
 import Matroid.Flat.LowRank
+-- import Matroid.Graph.AcyclicSet
 import Matroid.Graph.Basic
 -- import Matroid.Graph.Bipartite
 import Matroid.Graph.Connected.Basic
@@ -116,6 +120,7 @@ import Matroid.Graph.WList.TakeDrop
 import Matroid.Graph.Walk.Basic
 import Matroid.Graph.Walk.Cycle
 import Matroid.Graph.Walk.Path
+-- import Matroid.Graph.girth
 -- import Matroid.Graphic
 -- import Matroid.Induction
 import Matroid.Intersection

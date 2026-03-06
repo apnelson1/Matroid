@@ -89,6 +89,32 @@ lemma maxDegreeLE_zero_iff : G.MaxDegreeLE 0 ↔ G = Graph.noEdge V(G) β := by
   simp only [MaxDegreeLE, Nat.cast_zero]
   exact fun v ↦ (eDegree_le_two_mul_encard_setOf_inc _ _).trans <| by simp
 
+/-- `G.MinDegreeGE d` means that `G` has minimum degree at least `d`. -/
+def MinDegreeGE (G : Graph α β) (d : ℕ) : Prop := ∀ v ∈ V(G), d ≤ G.eDegree v
+
+lemma MinDegreeGE.le_degree [G.LocallyFinite] (h : G.MinDegreeGE d) (v : α) (hv : v ∈ V(G)) :
+    d ≤ G.degree v := by
+  have := h v hv
+  rwa [← @Nat.cast_le ℕ∞, natCast_degree_eq]
+
+lemma MinDegreeGE.mono (h : G.MinDegreeGE d) (hle : G ≤ H) (hV : V(H) ⊆ V(G)) : H.MinDegreeGE d :=
+  fun v hv ↦ (h v (hV hv)).trans <| eDegree_mono hle _
+
+lemma minDegreeGE_iff' : G.MinDegreeGE d ↔ ∀ v ∈ V(G), d ≤ G.eDegree v := Iff.rfl
+
+lemma minDegreeGE_iff [G.LocallyFinite] : G.MinDegreeGE d ↔ ∀ v ∈ V(G), d ≤ G.degree v := by
+  simp_rw [minDegreeGE_iff', ← @Nat.cast_le ℕ∞, natCast_degree_eq]
+
+lemma MinDegreeGE.le_encard_edgeSet (h : G.MinDegreeGE d) : d * V(G).encard ≤ 2 * E(G).encard := by
+  rw [← handshake_eDegree_subtype, ← ENat.tsum_one, ENat.mul_tsum]
+  exact ENat.tsum_le_tsum fun x ↦ (h x.1 x.2).trans_eq' (by simp)
+
+lemma MinDegreeGE.le_ncard_edgeSet [G.Finite] (h : G.MinDegreeGE d) :
+    d * V(G).ncard ≤ 2 * E(G).ncard := by
+  simp_rw [← Nat.cast_le (α := ℕ∞), Nat.cast_mul, Nat.cast_ofNat]
+  rw [G.edgeSet_finite.cast_ncard_eq, G.vertexSet_finite.cast_ncard_eq]
+  exact h.le_encard_edgeSet
+
 /-- `G.Regular d` means that every vertex has degree `d`. -/
 protected def Regular (G : Graph α β) (d : ℕ) : Prop := ∀ ⦃v⦄, v ∈ V(G) → G.eDegree v = d
 
