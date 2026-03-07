@@ -219,17 +219,17 @@ lemma IsCover'.isCover_closure (hP : IsCCProp P) (h : M.IsCover' P T) :
   fun F hF ↦ (hP M F (h.pProp F hF)) ⟩
 
 --Singleton section
-noncomputable def SetsingletonEmbedding ( A : Set α ) : Function.Embedding
-    {X : Set α // ∃ e ∈ A, {e} = X} {e // e ∈ A} :=
-{ toFun := fun x => ⟨Classical.choose x.2, (Classical.choose_spec x.2).1 ⟩
-  inj' := by
-    intro x y hxy
-    simp only [Subtype.mk.injEq] at hxy
-    have heq : x.1 = y.1 := by
-      rw [←(Classical.choose_spec x.2).2, ←(Classical.choose_spec y.2).2]
-      exact singleton_eq_singleton_iff.mpr hxy
-    exact Subtype.ext heq
-    }
+-- noncomputable def SetsingletonEmbedding ( A : Set α ) : Function.Embedding
+--     {X : Set α // ∃ e ∈ A, {e} = X} {e // e ∈ A} :=
+-- { toFun := fun x => ⟨Classical.choose x.2, (Classical.choose_spec x.2).1 ⟩
+--   inj' := by
+--     intro x y hxy
+--     simp only [Subtype.mk.injEq] at hxy
+--     have heq : x.1 = y.1 := by
+--       rw [←(Classical.choose_spec x.2).2, ←(Classical.choose_spec y.2).2]
+--       exact singleton_eq_singleton_iff.mpr hxy
+--     exact Subtype.ext heq
+--     }
 
 lemma IsCover_singleton_Prop (hP : ∀ e ∈ M.E, P M (singleton e)) :
     M.coverNumber' P ≤ M.E.encard := by
@@ -242,22 +242,16 @@ lemma IsCover_singleton_Prop (hP : ∀ e ∈ M.E, P M (singleton e)) :
         refine mem_sUnion.mpr ⟨{x} , ⟨ ?_ , mem_singleton x ⟩ ⟩
         use x
       intro hc
-      simp only [mem_sUnion, mem_setOf_eq, exists_exists_and_eq_and, mem_singleton_iff,
-        exists_eq_right'] at hc
+      simp only [sUnion_image, biUnion_of_singleton] at hc
       exact mem_of_subset_of_mem (fun ⦃a⦄ a_1 ↦ a_1) hc
     intro F hF
-    simp only [mem_setOf_eq] at hF
     obtain ⟨e, heE, heF ⟩ := hF
     rw[←heF]
     exact hP e heE
   grw [hcover.coverNumber_le ]
   set Sing : Set (Set α ) := { singleton e | e ∈ M.E} with hs
-  have hsi : ∀ X : Sing, ∃ e, e ∈ M.E ∧ singleton e = X.1 := by
-    intro X
-    have := Classical.choose_spec X.2
-    exact (mem_image singleton M.E X.1).mp X.2
-  choose f hfE hfeq using hsi
-  refine Function.Embedding.encard_le (SetsingletonEmbedding M.E)
+  exact encard_image_le singleton M.E
+
 
 lemma IsCover'.mono_prop (h : M.IsCover' P T) (hPP' : ∀ X ∈ T, P M X → P' M X) : M.IsCover' P' T :=
   (M.isCover'_iff P' T).2 ⟨h.sUnion_eq, fun F hF ↦ hPP' F hF (h.pProp F hF)⟩
@@ -362,113 +356,62 @@ lemma coverNumber_contract_one {a : ℕ∞} (he : e ∈ M.E) (hel : M.IsNonloop 
 --   obtain ⟨Y, hY ⟩ := (mem_image ((M ↾ F).closure) ({ Y | Y ⊆ X ∧ M.eRk Y = a}) Y.1  ).1 Y.2
 --   sorry
 
-def IsFlat.restriction_clo (hF : M.IsFlat F) (hY : Y ⊆ F) : M.closure Y = (M ↾ F).closure Y :=
-    by
-  sorry
+-- def IsFlat.restriction_clo (hF : M.IsFlat F) (hY : Y ⊆ F) : M.closure Y = (M ↾ F).closure Y :=
+--     by
+--   sorry
 
 
 
+--Dont need
+-- def closZ (a : ℕ)
+--     (Z : (M ↾ F).closure '' { Y | Y ⊆ X ∧ M.eRk Y = a} )
+--     : ∃ Y :  { Y | Y ⊆ X ∧ M.eRk Y = a}, (M ↾ F).closure Y.1 = Z.1 := by
+--   --have := (mem_image ((M ↾ F).closure) ({ Y | Y ⊆ X ∧ M.eRk Y = a}) Y.1  ).1 Y.2
+--   obtain ⟨Y, hY, h ⟩ := (mem_image ((M ↾ F).closure) ({ Y | Y ⊆ X ∧ M.eRk Y = a}) Z.1  ).1 Z.2
+--   use ⟨Y, hY⟩
 
-def closZ (a : ℕ)
-    (Z : (M ↾ F).closure '' { Y | Y ⊆ X ∧ M.eRk Y = a} )
-    : ∃ Y :  { Y | Y ⊆ X ∧ M.eRk Y = a}, (M ↾ F).closure Y.1 = Z.1 := by
-  --have := (mem_image ((M ↾ F).closure) ({ Y | Y ⊆ X ∧ M.eRk Y = a}) Y.1  ).1 Y.2
-  obtain ⟨Y, hY, h ⟩ := (mem_image ((M ↾ F).closure) ({ Y | Y ⊆ X ∧ M.eRk Y = a}) Z.1  ).1 Z.2
-  use ⟨Y, hY⟩
+-- def getI (a : ℕ) (hX : X ⊆ M.E)
+--     (Y : { Y | Y ⊆ X ∧ M.eRk Y = a} )
+--     : ∃ I : {Y | Y ⊆ X ∧ Y.encard = a}, I.1 ⊆ X ∧ (M.IsBasis I Y.1) ∧ I.1.encard = a := by
+--   --have : Y ⊆ M.E := by sorry
+--   obtain ⟨I, hIB, hc ⟩ := (M.eq_eRk_iff.1 Y.2.2)
+--   have h' :  I ∈ {Y | Y ⊆ X ∧ Y.encard = ↑a} := by
+--     refine ⟨LE.le.subset fun ⦃a⦄ a_2 ↦ (Y.2.1 ) (IsBasis.subset hIB  a_2) , hc ⟩
+--   use ⟨ I, h' ⟩
+--   refine ⟨h'.1, hIB , hc ⟩
 
-def getI (a : ℕ) (hX : X ⊆ M.E)
-    (Y : { Y | Y ⊆ X ∧ M.eRk Y = a} )
-    : ∃ I : {Y | Y ⊆ X ∧ Y.encard = a}, I.1 ⊆ X ∧ (M.IsBasis I Y.1) ∧ I.1.encard = a := by
-  --have : Y ⊆ M.E := by sorry
-  obtain ⟨I, hIB, hc ⟩ := (M.eq_eRk_iff.1 Y.2.2)
-  have h' :  I ∈ {Y | Y ⊆ X ∧ Y.encard = ↑a} := by
-    refine ⟨LE.le.subset fun ⦃a⦄ a_2 ↦ (Y.2.1 ) (IsBasis.subset hIB  a_2) , hc ⟩
-  use ⟨ I, h' ⟩
-  refine ⟨h'.1, hIB , hc ⟩
-
-def ranksubsets_Map (a : ℕ) (b : ℕ) (hx : X.Finite ) (hX : X ⊆ M.E) (hF : M.IsFlat F) (hXF : X ⊆ F)
-    : Function.Embedding
-    ((M ↾ F).closure '' { Y | Y ⊆ X ∧ M.eRk Y = a}) {Y | Y ⊆ X ∧ Y.encard = a} :=
---have := LE.le.subset fun ⦃a⦄ a_1 ↦ hX (hY.1 a_1)
-{ toFun := fun Z =>
-    ⟨ (Classical.choose (getI a hX (Classical.choose (closZ a Z ))) ).1 ,
-    (Classical.choose (getI a hX (Classical.choose (closZ a Z ))) ).2 ⟩
-  inj' := by
-    intro x y hxy
-    simp only [Subtype.mk.injEq] at hxy
-    have heq : x.1 = y.1 := by
-      rw[ ←(Classical.choose_spec (closZ a x )), ←(Classical.choose_spec (closZ a y )) ]
-      --simp only [mem_setOf_eq, coe_setOf ]
-      rw[←hF.restriction_clo ?_, ←hF.restriction_clo ?_,
-      ←((Classical.choose_spec (getI a hX (Classical.choose (closZ a x ))) ).2.1).closure_eq_closure,
-      ←((Classical.choose_spec (getI a hX (Classical.choose (closZ a y ))) ).2.1).closure_eq_closure,
-      hxy ]
-      --simp only [restrict_closure_eq']
-      --have := (Classical.choose_spec (getI a hX (Classical.choose (closZ a x ))) ).1
-      have := (Classical.choose (closZ a x )).2.1
-      --exact LE.le.subset fun ⦃b⦄ b_2 ↦ hXF (this b_2)
-      --grw[hXF] at this
-      --intro Y hY
-
-      --simp only [mem_setOf_eq, coe_setOf] at this
-
-      sorry
-      · sorry
-    exact SetCoe.ext heq
-    --rw[ ] at hxy
-
-    }
-
-
---(Finset.powersetCard a hx.toFinset)
--- def ranksubsets_Map (a : ℕ) (b : ℕ) (hx : X.Finite ) (hX : X ⊆ M.E) : Function.Embedding
---     { Y | Y ⊆ X ∧ M.eRk Y = a} {Y | Y ⊆ X ∧ Y.encard = a} :=
+-- def ranksubsets_Map (a : ℕ) (b : ℕ) (hx : X.Finite ) (hX : X ⊆ M.E) (hF : M.IsFlat F) (hXF : X ⊆ F)
+--     : Function.Embedding
+--     ((M ↾ F).closure '' { Y | Y ⊆ X ∧ M.eRk Y = a}) {Y | Y ⊆ X ∧ Y.encard = a} :=
 -- --have := LE.le.subset fun ⦃a⦄ a_1 ↦ hX (hY.1 a_1)
--- { toFun := fun Y =>
---     ⟨Classical.choose (M.eq_eRk_iff.1 Y.2.2) ,
---     ⟨LE.le.subset fun ⦃a⦄ a_1 ↦ Y.2.1
---     (IsBasis.subset (Classical.choose_spec
---     ((M.eq_eRk_iff (LE.le.subset fun ⦃a⦄ a_1 ↦ hX (Y.2.1 a_1)) ).1 Y.2.2)).1 a_1),
---     (Classical.choose_spec (M.eq_eRk_iff.1 Y.2.2)).2⟩ ⟩
+-- { toFun := fun Z =>
+--     ⟨ (Classical.choose (getI a hX (Classical.choose (closZ a Z ))) ).1 ,
+--     (Classical.choose (getI a hX (Classical.choose (closZ a Z ))) ).2 ⟩
 --   inj' := by
 --     intro x y hxy
 --     simp only [Subtype.mk.injEq] at hxy
---     sorry
+--     have heq : x.1 = y.1 := by
+--       rw[ ←(Classical.choose_spec (closZ a x )), ←(Classical.choose_spec (closZ a y )) ]
+--       --simp only [mem_setOf_eq, coe_setOf ]
+--       rw[←hF.restriction_clo ?_, ←hF.restriction_clo ?_,
+--       ←((Classical.choose_spec (getI a hX (Classical.choose (closZ a x ))) ).2.1).closure_eq_closure,
+--       ←((Classical.choose_spec (getI a hX (Classical.choose (closZ a y ))) ).2.1).closure_eq_closure,
+--       hxy ]
+--       --simp only [restrict_closure_eq']
+--       --have := (Classical.choose_spec (getI a hX (Classical.choose (closZ a x ))) ).1
+--       have := (Classical.choose (closZ a x )).2.1
+--       --exact LE.le.subset fun ⦃b⦄ b_2 ↦ hXF (this b_2)
+--       --grw[hXF] at this
+--       --intro Y hY
+
+--       --simp only [mem_setOf_eq, coe_setOf] at this
+
+--       sorry
+--       · sorry
+--     exact SetCoe.ext heq
+--     --rw[ ] at hxy
+
 --     }
-
--- lemma ranksubsets_to_binom (a : ℕ) (hX : M.eRk X = a + 1 ) (h : X.Finite ) (hX : X ⊆ M.E)  :
---     ({ Y | Y ⊆ X ∧ M.eRk Y = a}).encard = (Nat.choose ( (X.ncard) - 1) a) := by
-
---   have h1 : ∀ Y ∈ { Y | Y ⊆ X ∧ M.eRk Y = a}, ∃I, I ⊆ X ∧ I.encard = a := by
---     intro Y hY
---     have : Y ⊆ M.E := by
---       have := hY.1
---       exact LE.le.subset fun ⦃a⦄ a_1 ↦ hX (hY.1 a_1)
---     obtain ⟨I, hI, hII ⟩ := (M.eq_eRk_iff.1 hY.2)
---     refine ⟨I, ?_, hII ⟩
---     have : I ⊆ Y := by exact IsBasis.subset hI
---     have := hY.1
---     exact LE.le.subset fun ⦃a⦄ a_1 ↦ hY.1 (IsBasis.subset hI a_1)
-
---   --choose f hf hf1 using h1
---   sorry
-lemma baseCase {a b : ℕ} (hM : NoUniformMinor M a (b + 1)) (hr : M.eRank = a + 1) :
-    M.coverNumber' (fun M X ↦ M.eRk X ≤ a) ≤ Nat.choose b a := by
-  by_contra! hcon
-  obtain ⟨B, hB⟩ := M.exists_isBase
-  have hne : {X | (M ↾ X).IsFiniteRankUniform (a + 1) X.encard}.Nonempty := by
-    refine ⟨B, rfl, ?_, ?_⟩
-    · rwa [eRank_restrict, hB.eRk_eq_eRank]
-    rw [hB.indep.restrict_eq_freeOn]
-    exact freeOn_uniform B
-  have hcard : (encard '' {X | (M ↾ X).IsFiniteRankUniform (a + 1) X.encard}).Finite := by
-    refine ENat.finite_of_sSup_lt_top ?_
-    refine lt_of_le_of_lt ?_ <| WithTop.natCast_lt_top (b.choose a)
-    sorry
-
-  obtain ⟨X, hX⟩ := Finite.exists_maximalFor' encard _ hcard hne
-  have := hX.prop
-  sorry
 
 lemma foo {a b : ℕ} (X : Set α) (hX : X.encard = b) :
     {Y | Y ⊆ X ∧ Y.encard = a}.encard = b.choose a := by
@@ -491,153 +434,148 @@ lemma foo {a b : ℕ} (X : Set α) (hX : X.encard = b) :
     simpa
   rw [← Nat.cast_inj (R := ℕ∞), ← hX, eq_comm, hXfin.encard_eq_coe_toFinset_card]
 
-
-
-  -- have := hX.
-
-
-
-
-    -- grw [← WithTop.natCast_lt_top (n := b.choose a)]
-    -- refine lt_of_le ?_
-
-
-lemma coverNumber_Bound {a b : ℕ} (ha : 1 ≤ a) (hb : a < b) (hM : NoUniformMinor M a b)
-    (hC : C ⊆ M.E) :
-    M.coverNumber' (fun M X ↦ M.eRk X ≤ a) ≤ (Nat.choose (b - 1) a)^(M.eRank - a) := by
-  by_cases h : M.eRank = ⊤
-  · rw[h]
-    simp only [ENat.top_sub_coe]
+lemma baseCase {a b : ℕ} (ha : 1 ≤ a) (hM : NoUniformMinor M (a + 1) (b + 1)) (hr : M.eRank = a + 1) :
+    M.coverNumber' (fun M X ↦ M.eRk X ≤ a) ≤ Nat.choose b a := by
+  have : M.RankFinite := by sorry
+  by_contra! hcon
+  obtain ⟨B, hB⟩ := M.exists_isBase
+  have hne : {X | X ⊆ M.E ∧ (M ↾ X).IsFiniteRankUniform (a + 1) X.encard}.Nonempty := by
+    refine ⟨B, (IsBase.subset_ground hB), rfl, ?_, ?_⟩
+    · rwa [eRank_restrict, hB.eRk_eq_eRank]
+    rw [hB.indep.restrict_eq_freeOn]
+    exact freeOn_uniform B
+  have hcard : (encard '' {X | X ⊆ M.E ∧ (M ↾ X).IsFiniteRankUniform (a + 1) X.encard}).Finite := by
+    refine ENat.finite_of_sSup_lt_top ?_
+    refine lt_of_le_of_lt ?_ <| WithTop.natCast_lt_top (b.choose a)
+    simp only [sSup_le_iff, mem_image, mem_setOf_eq, forall_exists_index, and_imp]
+    intro A hA
     sorry
-  have : M.RankFinite := by exact (eRank_ne_top_iff M).mp h
-  have hFa1 : ∀ F, M.IsFlat F → M.eRk F = a + 1 →
-      (M ↾ F).coverNumber' (fun M X ↦ M.eRk X ≤ a) ≤ (Nat.choose (b - 1) a) := by
-    intro F hFlat hF
-    --have hFE : F ⊆ M.E := by exact hFlat.subset_ground
-    obtain ⟨ B ,hB ⟩ := M.exists_isBasis F
-    have hBne' : B ∈ {X : Set α | X ⊆ F ∧ ((M ↾ X) = (unifOn X (a + 1))) } := by
-      refine ⟨ IsBasis.subset hB, ?_ ⟩
-      apply eq_unifOn_iff.2
-      refine ⟨restrict_ground_eq, ?_⟩
-      intro I
-      refine ⟨?_,
-        fun hI ↦ (Indep.indep_restrict_of_subset (IsBasis.indep hB ) fun ⦃a⦄ a_1 ↦ a_1).subset hI.2 ⟩
-      · intro hI
-        refine ⟨?_, (Indep.subset_ground hI )⟩
-        have := hB.eRk_eq_encard
-        rw[hF] at this
-        exact le_of_le_of_eq (le_of_eq_of_le rfl (encard_le_encard (Indep.subset_ground hI )))
-          (id (Eq.symm this))
-    have hBne : {X : Set α | X ⊆ F ∧ ((M ↾ X) = (unifOn X (a + 1))) }.Nonempty := by
-      exact nonempty_of_mem hBne'
-    have hXFin : ((encard ) '' {X : Set α | X ⊆ F ∧ ((M ↾ X) = (unifOn X (a + 1))) }).Finite := by
-      sorry
-    obtain ⟨X, ⟨hXF, hunif ⟩, hXu ⟩ := hXFin.exists_maximalFor' _ _ hBne
-    simp only [mem_setOf_eq, and_imp] at hXu
-    have hXb : X.encard < b := by sorry
-    set Subsets : Set (Set α) := { Y | Y ⊆ X ∧ M.eRk Y = a} with h_sub
-    have hiC : (M ↾ F).IsCover' (fun M X ↦ M.eRk X ≤ a) ((M ↾ F).closure '' Subsets) := by
-      refine ⟨?_, ?_ ⟩
-      · simp only [restrict_ground_eq]
-        refine ext ?_
-        intro e
-        refine ⟨ ?_, ?_ ⟩
-        · intro ⟨Y, ⟨Y', hY', h ⟩, heY ⟩
-          rw[←h] at heY
-          --obtain ⟨Y, ⟨Y', hY', rfl ⟩, heY ⟩ := he
-          exact mem_of_subset_of_mem (LE.le.subset (closure_subset_ground (M ↾ F) Y' ) ) heY
-        intro heF
-        by_cases heX : e ∈ X
-        ·
+  obtain ⟨X, hX⟩ := Finite.exists_maximalFor' encard _ hcard hne
+  have hunif := hX.prop.2.isUniform
+  have hXb : X.encard < b + 1 := by
+    by_contra hc
+    simp only [not_lt] at hc
+    exact Ne.elim (fun a ↦ (not_noUniformMinor_iff.2 ⟨((hX.prop.2).unif_isoMinor
+      (le_of_eq_of_le rfl hc)).some.trans ((restrict_isMinor M hX.prop.1).isoMinor)⟩) hM) hr
+  have hXrank := hX.prop.2.2
+  set Subsets : Set (Set α) := { Y | Y ⊆ X ∧ Y.encard = a} with h_sub
+  have hiC : M.IsCover' (fun M X ↦ M.eRk X ≤ a) (M.closure '' Subsets) := by
+    refine ⟨?_, ?_ ⟩
+    · refine ext ?_
+      intro e
+      refine ⟨ ?_, ?_ ⟩
+      · intro ⟨Y, ⟨Y', hY', h ⟩, heY ⟩
+        rw[←h] at heY
+        exact mem_of_subset_of_mem (LE.le.subset (closure_subset_ground M Y' ) ) heY
+      intro heF
+      by_contra hc
+      have hMeq : (M ↾ (insert e X)).IsFiniteRankUniform (a + 1) (insert e X).encard := by
+        have hindep : ∀ Y ⊆ X, Y.encard ≤ a → M.eRk Y = Y.encard := by
+          intro Y hY hYr
+          have hIndepR : (M ↾ X).Indep Y := by
+            apply hunif.indep_of_nonspanning
+            by_contra hc
+            have h1 : (M ↾ X).eRank ≤ (M ↾ X).eRk Y :=
+              (spanning_iff_eRk_le hY).mp ((not_nonspanning_iff hY).mp hc )
+            grw[hXrank, eRk_le_encard (M ↾ X) Y , hYr ] at h1
+            simp only [Nat.cast_add, Nat.cast_one, ENat.add_le_left_iff, ENat.coe_ne_top,
+              one_ne_zero, or_self] at h1
+          exact indep_iff_eRk_eq_encard.mp hIndepR.of_restrict
+        have hRankin : (M ↾ insert e X).eRank = (a + 1) := by
+          simp only [eRank_restrict]
+          simp only [eRank_restrict, Nat.cast_add, Nat.cast_one] at hXrank
+          have : M.eRk X ≤ M.eRk (insert e X) := eRk_subset_le M (subset_insert e X )
+          rw[hXrank] at this
+          have : M.eRk (insert e X) ≤ M.eRank := eRk_le_eRank M (insert e X)
+          rw [hr] at this
           sorry
-        by_contra hc
-        simp only [ sUnion_image, mem_iUnion, exists_prop, not_exists, not_and] at hc
-        have hMeq :  M ↾ (insert e X) = unifOn (insert e X) (a + 1) := by
-          apply eq_unifOn_iff.2
-          refine ⟨ restrict_ground_eq , ?_ ⟩
-          intro I
-          refine ⟨ ?_, ?_ ⟩
-          · intro hI
-            refine ⟨ ?_, hI.2 ⟩
-            -- have : I ⊆ F := by
-            --   exact LE.le.subset fun ⦃a⦄ a_1 ↦ (insert_subset heF hXF ) ((LE.le.subset (Indep.subset_ground hI )) a_1)
-            rw[Eq.symm (restrict_restrict_eq M (insert_subset heF hXF )) ] at hI
-            exact le_of_le_of_eq (Indep.encard_le_eRank (hI.of_restrict)) hF
-          -- I think here I can do a wlog I.encard = a + 1
-          --wlog heq : I.encard = a + 1 generalizing I with aux
-          --sorry
-          intro ⟨hle, hsub ⟩
-          wlog heq : I.encard = a + 1 generalizing I with aux
-          · have ⟨J, hIJ, hJX, hequ ⟩: ∃ J, I ⊆ J ∧ J ⊆ insert e X ∧ J.encard = a + 1 := by
-              have : a + 1 ≤ (insert e X).encard := by
-                have : a + 1 ≤ X.encard := by
-
-                  sorry
-
-                --grw[M.eRk_le_encard]
-
-                sorry
-              exact exists_superset_subset_encard_eq hsub hle this
-            have h1 : J.encard ≤ a + 1 := by
-              rw[hequ]
-            have := aux J h1 hJX hequ
-            exact Indep.subset (aux J h1 hJX hequ) hIJ
-          rw[eq_unifOn_iff ] at hunif
-          simp only [restrict_ground_eq, restrict_indep_iff, Nat.cast_add, Nat.cast_one,
-            and_congr_left_iff, true_and] at hunif
-          obtain h0 | ⟨h11, h12⟩ := subset_insert_iff.1 hsub
-          · exact ((hunif I h0).2 hle).indep_restrict_of_subset hsub
-          have hcard' : (I \ {e}).encard = a := by
-            sorry
-          have hcard : (I \ {e}).encard ≤ a := by sorry
-            --refine ENat.lt_coe_add_one_iff.mp ?_
-            --rw[←ENat.lt_coe_add_one_iff, ←(encard_diff_singleton_add_one h11) ] at hle
-            --simp only [Nat.cast_add, Nat.cast_one, ne_eq, ENat.one_ne_top, not_false_eq_true,
-            --  add_lt_add_iff_left_of_ne_top] at hle
-
-            --exact hle
-          --obtain hlt | heq := lt_or_eq_of_le hcard
-          --·
-            --sorry
-          have hIs : I \ {e} ∈ Subsets := by
-            refine ⟨ h12, ?_ ⟩
-            rw[ indep_iff_eRk_eq_encard.1 ((hunif (I \ {e}) h12).2 (le_add_right hcard))  ]
-            sorry
-            --exact heq
-          rw[←(restrict_restrict_eq M (insert_subset heF hXF ))]
-          apply Indep.indep_restrict_of_subset ?_ hsub
-          rw[← diff_union_of_subset (singleton_subset_iff.mpr h11 ) ]
-          have hei : (M ↾ F).Indep ({e}) := by
+          --rw[←hXrank ]
+          --grind
+        refine ⟨?_, hRankin, ?_⟩
+        · simp only [restrict_ground_eq]
+        intro I hI
+        simp only [restrict_ground_eq] at hI
+        obtain h0 | ⟨h11, h12⟩ := subset_insert_iff.1 hI
+        · obtain h1 | h2 := (hunif.indep_or_spanning I )
+          · exact Or.symm (Or.inr ((h1.of_restrict).indep_restrict_of_subset hI  ))
+          right
+          apply (spanning_iff_eRk_le hI).2
+          rw [hRankin,restrict_eRk_eq _ hI, ←restrict_eRk_eq _ h0  ]
+          exact le_of_eq_of_le (id (Eq.symm hXrank)) ((spanning_iff_eRk_le h0).mp h2 )
+        obtain hlt | heq := lt_or_eq_of_le (le_of_le_of_eq (eRk_le_eRank (M ↾ X) (I \ {e}) ) hXrank)
+        · left
+          have hlea : (I \ {e}).encard ≤ a := by
+            have hIeindep : (M ↾ X).Indep (I \ {e}) := by
+              apply hunif.indep_of_nonspanning
+              by_contra hc
+              grw[←hXrank, ((spanning_iff_eRk_le h12).mp ((not_nonspanning_iff h12).mp hc ))] at hlt
+              simp only [restrict_eRk_eq', lt_self_iff_false] at hlt
+            rw[←indep_iff_eRk_eq_encard.1 hIeindep ]
+            exact ENat.lt_coe_add_one_iff.mp hlt
+          have ⟨J, hJI, hJX, hJen ⟩ : ∃ J, (I \ {e}) ⊆ J ∧ J ⊆ X ∧ J.encard = a := by
+            have hh : a ≤ X.encard := by
+              simp only [eRank_restrict, Nat.cast_add, Nat.cast_one] at hXrank
+              grw[←eRk_le_encard M X, hXrank ]
+              exact le_self_add
+            exact exists_superset_subset_encard_eq h12 hlea hh
+          simp only [sUnion_image, mem_iUnion, exists_prop, not_exists, not_and] at hc
+          have hei : M.Indep ({e}) := by
             refine IsNonloop.indep ?_
             by_contra hcc
-            exact (hc ( I \ {e}) hIs  ) (((M ↾ F).not_isNonloop_iff.1 hcc).mem_closure (I \ {e}))
-          apply (Indep.union_indep_iff_forall_notMem_closure_right (Indep.indep_restrict_of_subset
-              ((hunif (I \ {e}) h12).2 (le_add_right hcard)) (LE.le.subset fun ⦃a⦄ a_1 ↦ hXF (h12 a_1) )) hei).2
-          intro x hx
-          simp only [mem_diff, mem_singleton_iff, not_and, not_not] at hx
-          rw[hx.1]
-          simp only [sdiff_self, bot_eq_empty, union_empty]
-          exact hc ( I \ {e}) hIs
-        have hc1 : X.encard < (insert e X).encard := by
-          refine Finite.encard_lt_encard ?_ ?_
-          · sorry
-          refine ssubset_insert heX
-        grw[hXu (insert_subset heF hXF  ) hMeq (encard_le_encard (subset_insert e X) )] at hc1
-        exact (lt_self_iff_false X.encard).mp hc1
-      intro T ⟨T', hT', hr ⟩
-      rw[←hr,eRk_closure_eq,←hT'.2]
-      refine IsMinor.eRk_le (restrict_isMinor M (hFlat.subset_ground) ) T'
-    grw [hiC.coverNumber_le ]
-    --Set.encard_image_le
-    rw[eq_unifOn_iff ] at hunif
-    simp only [restrict_ground_eq, restrict_indep_iff, Nat.cast_add, Nat.cast_one,
-      and_congr_left_iff, true_and] at hunif
-    have foo : ∀ z ∈ ((M ↾ F).closure '' Subsets), ∃ y ∈ Subsets, z = (M ↾ F).closure y := by
-      intro z hz
-      simp only [ mem_image] at hz
-      sorry
-    --(Finset.toSet '' Finset.powersetCard a X.toFinset )
-    sorry
+            exact (hc J ((mem_sep hJX hJen )) ) ((M.not_isNonloop_iff.1 hcc).mem_closure J)
+          have hJeInd : M.Indep (J ∪ {e}) := by
+            apply (Indep.union_indep_iff_forall_notMem_closure_right
+              (Indep.of_restrict (Indep.indep_restrict_of_subset (indep_iff_eRk_eq_encard.mpr
+              (hindep J hJX (ge_of_eq (id (Eq.symm hJen)))) ) hJX )) hei).2
+            simp only [mem_diff, mem_singleton_iff, and_imp, forall_eq, sdiff_self, bot_eq_empty,
+              union_empty]
+            intro _
+            exact hc J (mem_sep hJX hJen )
+          have hIind : I ⊆ J ∪ {e} := by grind
+          exact (Indep.subset hJeInd hIind ).indep_restrict_of_subset hI
+        right
+        apply (spanning_iff_eRk_le hI).2
+        rw[hRankin, restrict_eRk_eq M hI]
+        rw[restrict_eRk_eq M h12] at heq
+        exact le_of_eq_of_le (Eq.symm heq) (eRk_subset_le M (diff_subset ) )
+      --insert_subset heF ( hX.prop.1)
+      --have hh : (insert e X) ∈ {X | (M ↾ X).IsFiniteRankUniform (a + 1) X.encard} := by exact mem_setOf.mpr hMeq
+      --have := hX.eq_of_ge hh (encard_le_encard (subset_insert e X))
+      have heX : e ∈ X := by
+        by_contra hc
+        have : X.encard < (insert e X).encard := by
+          refine Finite.encard_lt_encard ?_ (ssubset_insert hc )
+          sorry
+        rw[hX.eq_of_ge (⟨insert_subset heF ( hX.prop.1), mem_setOf.mpr hMeq⟩ ) (encard_le_encard (subset_insert e X))] at this
+        exact (lt_self_iff_false X.encard).mp this
+      have ⟨ J, hJ, hhJ1, hhJ2 ⟩ : ∃ J, e ∈ J ∧ J ⊆ X ∧ J.encard = a := by
+        have hh : a ≤ X.encard := by
+          simp only [eRank_restrict, Nat.cast_add, Nat.cast_one] at hXrank
+          grw[←eRk_le_encard M X, hXrank ]
+          exact le_self_add
+        have ⟨ J, hJ, hhJ1, hhJ2 ⟩ := exists_superset_subset_encard_eq (singleton_subset_iff.mpr heX ) ?_ hh
+        · refine ⟨J, (mem_of_subset_of_mem hJ rfl ), hhJ1, hhJ2 ⟩
+        simp only [encard_singleton, Nat.one_le_cast, ha]
+      have : e ∈ ⋃₀ (M.closure '' Subsets) := by
+        simp only [sUnion_image, mem_iUnion, exists_prop]
+        refine ⟨J, mem_sep hhJ1 hhJ2, mem_closure_of_mem' M hJ heF ⟩
+      exact hc this
+    intro F hF
+    obtain ⟨Y ,hY, rfl ⟩ := hF
+    grw[eRk_closure_eq M Y, eRk_le_encard M Y ]
+    exact ge_of_eq (Eq.symm hY.2)
+  have hrw : {Y | Y ⊆ X ∧ Y.encard = a}.encard = (X.ncard).choose a := foo X ?_
+  grw [hiC.coverNumber_le, Set.encard_image_le, h_sub, hrw ] at hcon
+  have : (X.ncard.choose a) ≤ (b.choose a) := by sorry
+
+  sorry
+  sorry
+
+
+
+lemma coverNumber_Bound [M.RankFinite] {a b : ℕ} (ha : 1 ≤ a) (hb : a ≤ b)
+    (hM : NoUniformMinor M ( a + 1 ) (b + 1)) :
+    M.coverNumber' (fun M X ↦ M.eRk X ≤ a) ≤ (Nat.choose b a)^(M.eRank - a) := by
   sorry
 
 end Rank
