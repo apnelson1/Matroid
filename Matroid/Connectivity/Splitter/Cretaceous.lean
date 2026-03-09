@@ -210,33 +210,22 @@ lemma Dep.of_minor_disjoint {N : Matroid α} (hNM : N ≤m M) (hX : X ⊆ N.E) :
   apply Dep.delete_of_disjoint (h₂) (by grind)
 
 lemma Separation.contract_exists_disjoint_base_of_eConn_eq_one {N : Matroid α}
-    (hNM : N ≤m M) (hN : Loopless N✶) (hPi: (N.E ∩ (P !i)).Subsingleton) :
+    (hNM : N ≤m M) (hN : Loopless N✶) (hPi : (N.E ∩ (P !i)).Subsingleton) :
     ∃ X, (M ／ (P i)).IsBase X ∧ Disjoint X N.E := by
-  by_cases he : Disjoint N.E (P !i)
-  · have hX : ∃ X, (M ／ (P i)).IsBase X := exists_isBase (M ／ (P i))
-    obtain ⟨X, hX⟩ := hX
-    use X
-    grind
-  · rw [disjoint_iff_inter_eq_empty, ← not_nonempty_iff_eq_empty, not_not, nonempty_def] at he
-    obtain ⟨e, he⟩ := he
-    rw [subsingleton_iff_singleton (he)] at hPi
-    clear he
-    by_contra! hc
-    simp_rw [disjoint_iff_inter_eq_empty] at hc
-    have h₁ : ∀ X, (M ／ P i).IsBase X → e ∈ X := by
-      intro X hX₁
-      have hX₂ := hX₁
-      apply IsBase.subset_ground at hX₁
-      rw [contract_ground, P.compl_dual_eq] at hX₁
-      apply hc at hX₂
-      have : X ∩ N.E ⊆ {e} := by grind
-      grind
-    have h₂ : (M ／ P i).IsCocircuit {e} := by grind [((M ／ P i).isColoop_tfae e).out 3 2]
-    rw [contract_isCocircuit_iff, isCocircuit_def, isCircuit_iff] at h₂
-    have h₃ := Dep.of_minor_disjoint (hNM.dual) (by grind) (h₂.1.1)
-    rw [singleton_dep] at h₃
-    apply Loopless.not_isLoop (hN) (e)
-    tauto
+  -- showing that there exists a disjoint base amounts to showing coindependence.
+  -- Possibly this is how the lemma should be stated.
+  suffices aux : (M ／ (P i)).Coindep (N.E ∩ P (!i)) by
+    obtain ⟨B, hB, hBss⟩ := aux.exists_isBase_subset_compl
+    exact ⟨B, hB, by grind⟩
+  -- a subsingleton set is either empty or a singleton; the empty case is easy.
+  obtain h0 | ⟨e, he⟩ := hPi.eq_empty_or_singleton
+  · simp [h0]
+  -- otherwise, coindependence of the singleton in `M ／ (P i)` is equivalent to being
+  -- a nonoop in `M` and disjoint from `P i`. We get the disjointness for free.
+  rw [coindep_contract_iff, and_iff_left (by grind), he, Coindep, indep_singleton]
+  -- `e` is a non-coloop of `N`, and therefore a non-coloop of the major `M`.
+  have hNe := hN.isNonloop_of_mem <| show e ∈ N.E by grind [he.symm.subset]
+  simpa [he] using hNe.of_isMinor hNM.dual
 
 lemma IsMinor.contract_disjoint_base_of_eConn_eq_one {N : Matroid α} (hPconn : P.eConn ≤ 1)
     (hN : N.TutteConnected 3) (hNM : N ≤m M) (hPi: (N.E ∩ (P !i)).Subsingleton)

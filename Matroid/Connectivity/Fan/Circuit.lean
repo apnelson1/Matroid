@@ -32,6 +32,12 @@ lemma altBetween_mono {p q p' q'} (L : List α) (hpp' : p ≤ p') (hqq' : q' ≤
     L.altBetween p' q' b ⊆ L.altBetween p q b := by
   grind [altBetween]
 
+lemma altBetween_eq_of_length_le (L : List α) (hj : L.length ≤ j) :
+    L.altBetween i j b = L.altBetween i L.length b := by
+  refine subset_antisymm ?_ (altBetween_mono _ rfl.le hj _)
+  rintro e ⟨x, hx, hix, hxj, rfl, rfl⟩
+  use x, hx, hix, hx
+
 lemma altBetween_add_one_eq_self (p : ℕ) (hq : q.bodd = !b) :
     L.altBetween p (q + 1) b = L.altBetween p q b := by
   refine (altBetween_mono _ rfl.le (by lia) _).antisymm' ?_
@@ -410,6 +416,40 @@ lemma IsFan.joints_indep'' (hF : M.IsFan F b c)
   convert hF.joints_indep h_pair
   grind [subset_antisymm_iff, altBetween]
 
+lemma IsFan.altBetween_indep (hF : M.IsFan F b c)
+    (hij : b = false → c = false → i = 0 → F.length ≤ j + 1 → ¬ M.Parallel F[0] F[F.length - 1]) :
+    M.Indep (F.altBetween i (j + 1) b) := by
+  wlog hj : j + 1 ≤ F.length generalizing j with aux
+  · rw [altBetween_eq_of_length_le _ (by lia),
+      show F.length = (F.length - 1) + 1 by grind [hF.two_le_length]]
+    exact aux (by grind) <| by grind
+
+
+  obtain rfl | i := i
+  · have := hF.joints_indep'' ?_
+    · sorry
+    rintro rfl rfl
+    -- obtain h_eq | hlt := hj.eq_or_lt
+    -- ·
+    -- have := hF.joints_indep'' ?_
+    -- · sorry
+    -- rintr
+    -- ob
+    -- tain hle | hlt := le_or_gt F.length (j + 1)
+    -- · rw [altBetween_eq_of_length_le]
+    --refine (hF.joints_indep'' (by grind)).subset <| altBetween_mono _ ?_ ?_ _
+
+  -- cases hF with
+  -- | of_pair b e f he hf hne =>
+  --   cases b
+  --   · rw [altBetween_]
+  -- | cons_triangle e x y F b c h heF hT => sorry
+  -- obtain rfl | i := i
+
+  -- · sorry
+  -- obtain
+  -- have := hF.tail.joints_indep''
+
 /-- Probably this should be proved by reverse induction instead. TODO -/
 lemma IsFan.contract_head (hF : M.IsFan F false c) (h3 : 3 ≤ F.length)
     (h_pair : c = false → ¬ M.Parallel F[0] F[F.length - 1]) :
@@ -484,200 +524,16 @@ lemma IsFan.contract_head_three (hF : M.IsFan F b c) (h3 : F.length = 3)
     simp [baz, IsTriad.mem_ground₃ hT]
   simpa [hT.ne₁₃.symm] using hT.isNonloop_bDual₃ (b := !b)
 
--- lemma IsFan.contract_head' (hF : M.IsFan F b c) (h4 : 4 ≤ F.length)
---     (h_pair : b = false → c = false → ¬ M.Parallel F[0] F[F.length - 1])
---     (hnp₀₁ : b = true → ¬ M.Parallel F[0] F[1]) : (M ／ {F[0]}).IsFan F.tail (!b) c := by
---   obtain ⟨e, F, rfl⟩ := F.exists_cons_of_length_pos (by lia)
---   rw [isFan_iff_forall (by grind), hF.bool_right_eq,
---     show ∀ c, ((!b) == (b == c)) = !c by cases b with simp]
---   have hF' : M.IsFan F (!b) c := sorry
---   simp only [length_cons, Nat.bodd_succ, Bool.not_not, tail_cons, hF'.nodup, getElem_cons_zero,
---     Bool.not_bne, true_and]
---   intro i hi
---   obtain rfl | rfl := b.eq_or_eq_not i.bodd
---   · simp only [bne_self_eq_false, Bool.not_false, bDual_true, dual_contract,
---       isTriangle_delete_iff, dual_isTriangle_iff]
---     grind [hF'.isTriad_getElem_of_eq i (by lia) (by simp), hF.nodup]
---   simp only [Bool.not_bne, bne_self_eq_false, Bool.not_false, Bool.not_true, bDual_false]
---   have hT := hF'.isTriangle_getElem_of_eq i (by lia) (by simp)
---   rw [isTriangle_iff, and_iff_left hT.three_elements]
---   refine Skew.isCircuit_contract_of_nontrivial ?_ hT.isCircuit hT.nontrivial
---   obtain (h | h) := i.bodd.eq_false_or_eq_true
---   · suffices aux : M.Skew {e} {F[i], F[i + 2]}
---       from aux.closure_skew_right.mono_right <| by grind [hT.mem_closure₂]
---     rw [Indep.skew_iff_disjoint]
---     · grind [hF.nodup]
---     refine (hF.joints_indep'' (by simpa [h] using h_pair)).subset ?_
---     rw [h, Bool.not_true, length_cons, altBetween_cons_false, singleton_union]
---     simp [insert_subset_iff, hF'.nodup.getElem_mem_altBetween_iff, h, hi,
---       show i < F.length by lia]
---   rw [skew_comm]
---   by_contra hcon
---   have h_exC := hT.isCircuit.exists_isCircuit_mem_subset_union_of_not_skew (X := {e})
---     (e := F[i + 1]) (by grind [hF.nodup]) hcon (by simp) (by grind [hF.subset_ground])
---   obtain ⟨C, hC, hCss, hiC, heC⟩ := h_exC
---   have h01 : F[0] ∈ C ∨ F[1] ∈ C :=
---     hF.mem_or_mem₁₂ (i := 0) (C := C) (by lia) (by simpa [h]) (by simpa using heC)
---   obtain rfl : i = 0 := by grind [hF'.nodup.getElem_inj_iff, hF.nodup]
-
-
-  -- | i + 2 => grind [hF'.nodup.getElem_inj_iff, hF.nodup]
-  -- | 1 => simp at h
-  -- | 0 =>
-
-    -- by_cases h1 :
-    -- obtain hilt | hin := (show i + 3 ≤ F.length from hi).lt_or_eq
-    -- ·
-
-    -- simp [h]
-    -- by_cases h3 : F.length = 3
-    -- · sorry
-    -- have h12 := hF'.mem_iff_mem₀₁ (i := i + 1) (C := C) (by lia) ?_
-    -- sorry
-
-
-    -- by_cases hi1C : F[i + 1] ∈ C
-    -- · rw [← hT.isCircuit.eq_of_subset_isCircuit hC ?_] at heC
-    --   · simp only [inter_singleton_nonempty, Set.mem_insert_iff, mem_singleton_iff] at heC
-    --     grind [hF.nodup]
-    --   have := hF'.mem_iff_mem₀₂ (i := i) (C := C) (by lia)
-    --   rw [insert_subset_iff, and_iff_right hiC]
-
-    -- -- rw [skew_iff_forall_isCircuit _ _ _]
-    -- ·
-
-
-      -- have hsk := h_ind.subset_skew_diff (J := )
-      -- simp only [length_cons, Order.lt_add_one_iff, h, Bool.not_true, getElem_cons_zero,
-      --   add_tsub_cancel_right, forall_const, Bool.false_eq_true, getElem_cons_succ,
-      --   IsEmpty.forall_iff, Nat.reduceEqDiff, implies_true,
-      --   Bool.not_false] at *
-
-        -- simp only [getElem_cons_zero, tail_cons, length_cons, Nat.bodd_succ]
-            -- intro i hi
-            -- have hT := hF.isTriangle_getElem (i + 1) (by grind)
-            -- simp only [Nat.bodd_succ, Bool.bne_not, Bool.false_bne, getElem_cons_succ] at hT
-            -- cases h : i.bodd
-            -- · simp only [Bool.not_false, bDual_true, dual_contract, isTriangle_delete_iff,
-            --     dual_isTriangle_iff, disjoint_singleton_right]
-            --   suffices M.IsTriad {F[i], F[i + 1], F[i + 2]} by grind [hF.nodup]
-            --   simpa [h] using hT
-            -- rw [Bool.not_true, bDual_false, isTriangle_iff, and_iff_left hT.three_elements]
-            -- have hF' := hF.tail (by grind)
-            -- simp only [tail_cons, Bool.not_false, length_cons, Nat.bodd_succ, Bool.false_beq,
-            --   Bool.not_not] at hF'
-            -- refine Skew.isCircuit_contract_of_nontrivial ?_ (by simpa [h] using hT.isCircuit) hT.nontrivial
-            -- have hsk := (hF.joints_indep'' (by simpa using h_pair)).subset_skew_diff (J := {e})
-            --   (by grind [altBetween])
-            -- refine hsk.closure_skew_right.mono_right ?_
-            -- simp only [length_cons, altBetween_cons_false]
-            -- grw [insert_diff_self_of_notMem (by grind [altBetween_subset, hF.nodup]),
-            --   ← altBetween_mono _ (p' := i) (q' := i + 3) (by lia) (by lia),
-            --   ← hF'.extract_subset_closure_altBetween (by simpa) (by simpa) (by lia)]
-            -- grind [insert_subset_iff, hF'.nodup.getElem_mem_extract_iff]
 
 
 
 
-              -- obtain rfl | rfl := b.eq_or_eq_not c
-              -- · obtain rfl | rfl := b
-              --   · exact hT.parallel_contract₁.isNonloop_left
-              --   simp only [bDual_true, dual_contract, delete_isNonloop_iff, mem_singleton_iff, hT.ne₁₂.symm]
-              --   exact ⟨hT.isNonloop₂, by simp⟩
-              -- obtain rfl | rfl := c
-              -- · simp at hT
-              --   simp_all
-              -- simp_all
-              -- have := hF.isNon
-              -- sorry
-            --   -- hF.isTriangle_getElem_of_eq 0 (by lia) (by simpa)
-            -- refine IsFan.of_pair _ _ _ _ ?_ ?_ (by grind [hF.nodup])
-            -- · rw [Bool.forall_bool, bDual_false, bDual_true, dual_contract, delete_isNonloop_iff]
-            --   exact ⟨hT.parallel_contract₁.isNonloop_left, hT.isNonloop_bDual₂ (b := true), hT.ne₁₂.symm⟩
-            -- rw [Bool.forall_bool, bDual_false, bDual_true, dual_contract, delete_isNonloop_iff]
-            -- exact ⟨hT.parallel_contract₁.isNonloop_right, hT.isNonloop_bDual₃ (b := true), hT.ne₁₃.symm⟩
-          -- rw [isFan_iff_forall]
-
-
-        -- lemma IsClosedFan.bDual (h : M.IsClosedFan F b c) (d : Bool) :
-        --     (M.bDual d).IsClosedFan F (c != d) (b != d) := by
-        --   cases h with
-        --   | of_parallel hF h => exact (hF.bDual d).isClosedFan_of_parallel <| by cases d <;> simpa
-        --   | of_triangle hF h =>
-        --     cases d
-        --     simp
-        --     refine IsFan.isClosedFan_of_triangle_not ?_ ?_
-        --   -- cases h with
-        --   -- | of_parallel hF h =>
-
-
-
-    -- simp only [getElem_cons_zero, tail_cons, length_cons, Nat.bodd_succ]
-    -- intro i hi
-    -- have hT := hF.isTriangle_getElem (i + 1) (by grind)
-    -- simp only [Nat.bodd_succ, Bool.bne_not, Bool.false_bne, getElem_cons_succ] at hT
-    -- cases h : i.bodd
-    -- · simp only [Bool.not_false, bDual_true, dual_contract, isTriangle_delete_iff,
-    --     dual_isTriangle_iff, disjoint_singleton_right]
-    --   suffices M.IsTriad {F[i], F[i + 1], F[i + 2]} by grind [hF.nodup]
-    --   simpa [h] using hT
-    -- rw [Bool.not_true, bDual_false, isTriangle_iff, and_iff_left hT.three_elements]
-    -- have hF' := hF.tail (by grind)
-    -- simp only [tail_cons, Bool.not_false, length_cons, Nat.bodd_succ, Bool.false_beq,
-    --   Bool.not_not] at hF'
-    -- refine Skew.isCircuit_contract_of_nontrivial ?_ (by simpa [h] using hT.isCircuit) hT.nontrivial
-    -- have hsk := (hF.joints_indep'' (by simpa using h_pair)).subset_skew_diff (J := {e})
-    --   (by grind [altBetween])
-    -- refine hsk.closure_skew_right.mono_right ?_
-    -- simp only [length_cons, altBetween_cons_false]
-    -- grw [insert_diff_self_of_notMem (by grind [altBetween_subset, hF.nodup]),
-    --   ← altBetween_mono _ (p' := i) (q' := i + 3) (by lia) (by lia),
-    --   ← hF'.extract_subset_closure_altBetween (by simpa) (by simpa) (by lia)]
-    -- grind [insert_subset_iff, hF'.nodup.getElem_mem_extract_iff]
-
-
-
-
-      -- obtain rfl | rfl := b.eq_or_eq_not c
-      -- · obtain rfl | rfl := b
-      --   · exact hT.parallel_contract₁.isNonloop_left
-      --   simp only [bDual_true, dual_contract, delete_isNonloop_iff, mem_singleton_iff, hT.ne₁₂.symm]
-      --   exact ⟨hT.isNonloop₂, by simp⟩
-      -- obtain rfl | rfl := c
-      -- · simp at hT
-      --   simp_all
-      -- simp_all
-      -- have := hF.isNon
-      -- sorry
-    --   -- hF.isTriangle_getElem_of_eq 0 (by lia) (by simpa)
-    -- refine IsFan.of_pair _ _ _ _ ?_ ?_ (by grind [hF.nodup])
-    -- · rw [Bool.forall_bool, bDual_false, bDual_true, dual_contract, delete_isNonloop_iff]
-    --   exact ⟨hT.parallel_contract₁.isNonloop_left, hT.isNonloop_bDual₂ (b := true), hT.ne₁₂.symm⟩
-    -- rw [Bool.forall_bool, bDual_false, bDual_true, dual_contract, delete_isNonloop_iff]
-    -- exact ⟨hT.parallel_contract₁.isNonloop_right, hT.isNonloop_bDual₃ (b := true), hT.ne₁₃.symm⟩
-  -- rw [isFan_iff_forall]
-
-
--- lemma IsClosedFan.bDual (h : M.IsClosedFan F b c) (d : Bool) :
---     (M.bDual d).IsClosedFan F (c != d) (b != d) := by
---   cases h with
---   | of_parallel hF h => exact (hF.bDual d).isClosedFan_of_parallel <| by cases d <;> simpa
---   | of_triangle hF h =>
---     cases d
---     simp
---     refine IsFan.isClosedFan_of_triangle_not ?_ ?_
---   -- cases h with
---   -- | of_parallel hF h =>
-
-
-
-
-/-- Let `F` be a fan whose first and last elements are not parallel joints.
-If `i` and `j` are joints with `i < j`, and `K` is the set of cojoints between `i` and `j`,
-then `{i, j} ∪ K` is a circuit -/
-lemma IsFan.isCircuit_interval (hF : M.IsFan F b c)
-    (hp : b = false → c = false → ¬ M.Parallel F[0] F[F.length - 1])
-    (hij : i < j) (hjF : j < F.length) (hib : i.bodd = b) (hjb : j.bodd = b) :
+/-- Let `F[i]` and `F[j]` be joints of a fan, and `K` be the set of cojoints between `i` and `j`.
+If `F[i]` and `F[j]` are not parallel and at the beginning and the end of the fan,
+then `{F[i], F[j]} ∪ K` is a circuit -/
+lemma IsFan.isCircuit_interval (hF : M.IsFan F b c) (hij : i < j) (hjF : j < F.length)
+    (hib : i.bodd = b) (hjb : j.bodd = b)
+    (hp : b = false → c = false → i = 0 → j + 1 = F.length → ¬ M.Parallel F[0] F[F.length - 1]) :
     M.IsCircuit <| insert F[i] (insert F[j] (F.altBetween i j (!b))) := by
   subst hib
   obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_lt hij
@@ -693,7 +549,7 @@ lemma IsFan.isCircuit_interval (hF : M.IsFan F b c)
   | succ d ih =>
     simp only [mul_add, mul_one, add_assoc, Nat.reduceAdd] at ⊢ ih
     simp_rw [← add_assoc] at ih
-    specialize ih (by lia) (by lia) <| by cases h : i.bodd with simp [h, Nat.bodd_two]
+    specialize ih (by lia) (by lia) (by simp [Nat.bodd_two]) (by grind)
     have hT := hF.isTriangle_getElem_of_eq (i + 2 * d + 2) (by lia) (by simp)
     convert ih.union_isCircuit_of_inter_eq_singleton hT.isCircuit (e := F[i + 2 * d + 2]) ?_
       (by simp) (by simp) ?_ using 1
@@ -708,6 +564,7 @@ lemma IsFan.isCircuit_interval (hF : M.IsFan F b c)
     set X1 := F.altBetween i.bodd.toNat (i + 2 * d + 3) i.bodd with hX1
     set X2 := F.altBetween (i + 2 * d + 2) (i + 2 * d + 5) i.bodd with hX2
     have hmod : M.IsModularPair X1 X2 := by
+      have := hF.joints_indep'' (fun hi hc ↦ hp hi hc ?_)
       refine Indep.isModularPair_of_union <| (hF.joints_indep'' hp).subset ?_
       apply union_subset <;> apply altBetween_mono <;> lia
     have hXconn : M.eLocalConn X1 X2 ≤ 1 := by
