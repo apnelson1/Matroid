@@ -265,6 +265,8 @@ section Rank
 def RankProp (α) (k : ℕ∞) : Matroid α → Set α → Prop :=
     fun M X ↦ M.eRk X ≤ k
 
+def Matroid.rankLE (M : Matroid α) (X : Set α) (k : ℕ∞) : Prop := M.eRk X ≤ k
+
 lemma RankProp_IsCCProp (α) (k : ℕ∞) : IsCCProp (RankProp α k) := by
   intro M F hF
   unfold RankProp
@@ -277,7 +279,7 @@ lemma RankProp_IsCCProp (α) (k : ℕ∞) : IsCCProp (RankProp α k) := by
 --     sorry
 
 def IsRankCover' (M : Matroid α) (k : ℕ∞) (T : Set (Set α )) : Prop :=
-    M.IsCover' (fun M X ↦ M.eRk X ≤ k ) T
+    M.IsCover' Matroid.rankLE T
 
 lemma IsRankCover'_iff_def (M : Matroid α) (k : ℕ∞) (T : Set (Set α )) :
     M.IsRankCover' k T ↔ M.IsCover' (fun M X ↦ M.eRk X ≤ k ) T
@@ -456,6 +458,7 @@ lemma baseCase {a b : ℕ} (ha : 1 ≤ a) (hM : NoUniformMinor M (a + 1) (b + 1)
     intro X hX
     by_contra hc
     simp only [not_lt] at hc
+    simp at hX
     -- Mathieu, try this exact. I know it's solved but I think it's a fun one
     exact Ne.elim (fun a ↦ (not_noUniformMinor_iff.2 ⟨((hX.2).unif_isoMinor
       (le_of_eq_of_le rfl hc)).some.trans ((restrict_isMinor M hX.1).isoMinor)⟩) hM) hr

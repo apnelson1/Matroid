@@ -174,6 +174,11 @@ lemma IsFan.isNonloop (h : M.IsFan F b c) (heF : e ∈ F) : M.IsNonloop e :=
 lemma IsFan.subset_ground (h : M.IsFan F b c) : {x | x ∈ F} ⊆ M.E :=
   fun _ heF ↦ IsNonloop.mem_ground <| h.isNonloop heF
 
+lemma IsFan.ground_nontrivial (h : M.IsFan F b c) : M.E.Nontrivial := by
+  grw [← two_le_encard_iff_nontrivial, ← h.subset_ground, h.nodup.encard_toSet_eq,
+    ← h.two_le_length]
+  rfl
+
 lemma IsFan.range_get_subset_ground (h : M.IsFan F b c) : range F.get ⊆ M.E := by
   grind [h.subset_ground]
 

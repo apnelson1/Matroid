@@ -412,17 +412,14 @@ theorem unif_isoMinor_unif_iff' {a₁ a₂ b₁ b₂ : ℕ} (h₁ : a₁ ≤ b�
   obtain ⟨d₂, rfl⟩ := Nat.exists_eq_add_of_le h₂
   rw [add_tsub_cancel_left, add_tsub_cancel_left, unif_isoMinor_unif_iff]
 
-lemma unifOn_isoMinor_unif {a : ℕ} (hbb : b ≤ E.encard ):
-    Nonempty ( unif a b ≤ir (unifOn E a ) ) := by
-  obtain ⟨ E', hE'E, hen ⟩ := exists_subset_encard_eq hbb
-  have henb : ((unifOn E' a).E).encard = b := by
-    simp only [unifOn_ground_eq]
-    exact hen
-  exact Nonempty.intro ((((nonempty_iso_unif_iff'.2
-    ⟨Matroid.ext rfl rfl rfl, henb ⟩).some.symm.trans
-    (unifOn_isoMinor_unifOn (k := a) hE'E ).some).isoRestr).trans
-    (restrict_isRestriction (unifOn E a) E' hE'E ).isoRestr)
-
+lemma unif_isoRestr_unifOn {a : ℕ} (hbb : b ≤ E.encard) :
+    Nonempty (unif a b ≤ir (unifOn E a)) := by
+  have hle : (unif a b).E.encard ≤ E.encard := by simpa
+  obtain ⟨φ⟩ := (Finite.encard_le_iff_nonempty_embedding (by simp)).1 hle
+  refine ⟨⟨φ, φ.injective, fun I ↦ ?_⟩⟩
+  simp only [unif_ground_eq, unif_indep_iff, unifOn_ground_eq, unifOn_indep_iff, image_subset_iff,
+    Subtype.coe_preimage_self, subset_univ, and_true, Subtype.val_injective.encard_image]
+  rw [Function.Injective.encard_image (by exact φ.injective)]
 
 section Infinite
 
@@ -650,13 +647,11 @@ lemma IsFiniteRankUniform.spanning_iff {b : ℕ∞} (hM : M.IsFiniteRankUniform 
   simp_rw [spanning_iff_exists_isBase_subset hXE, hM.isBase_iff, and_iff_left hXE]
   exact ⟨fun ⟨B, hB, hBX⟩ ↦ by grw [← hB.1, hBX], fun h ↦ by grind [exists_subset_encard_eq h]⟩
 
-lemma IsFiniteRankUniform.unif_isoMinor {b : ℕ∞}
-    (hM : M.IsFiniteRankUniform a b) (h : b' ≤ b) :
-    Nonempty (unif a b' ≤i M) := by
-  obtain ⟨E, hEb, hUnif ⟩ := IsFiniteRankUniform.exists_eq_unifOn hM
-  rw[←hEb] at h
-  rw[hUnif]
-  exact Nonempty.intro ((unifOn_isoMinor_unif h ).some.isoMinor )
+lemma IsFiniteRankUniform.unif_isoRestr {b : ℕ∞} (hM : M.IsFiniteRankUniform a b) (h : b' ≤ b) :
+    Nonempty (unif a b' ≤ir M) := by
+  obtain ⟨E, hEb, rfl⟩ := IsFiniteRankUniform.exists_eq_unifOn hM
+  apply unif_isoRestr_unifOn
+  grw [h, hEb]
 
 /-- A finite-rank uniform matroid is one of the obvious ones. -/
 lemma IsUniform.isFiniteRankUniform [M.RankFinite] (hM : M.IsUniform) :
@@ -971,13 +966,19 @@ lemma no_line_minor_iff_of_eRank_le_two (hM : M.eRank ≤ 2) :
       he, ← not_iff_not, ← not_noUniformMinor_iff, not_not, not_not,
     unifOn_noUniformMinor_iff, unifOn_ground_eq]
 
-lemma NoUniformMinor.le_minor {a b b' : ℕ} (hM : M.NoUniformMinor a b) (ha : a ≤ b) (hb' : b ≤ b' ):
+lemma NoUniformMinor.le_minor {a b b' : ℕ} (hM : M.NoUniformMinor a b) (ha : a ≤ b) (hb' : b ≤ b') :
     M.NoUniformMinor a b' := by
   contrapose! hM
   simp only [not_noUniformMinor_iff] at hM ⊢
   exact ⟨((unif_isoMinor_unif_iff' ha (Nat.le_trans ha hb')).2 ⟨ Nat.le_refl a,
       Nat.sub_le_sub_right hb' a ⟩).some.trans hM.some⟩
 
+lemma NoUniformMinor.lt_of_isoMinor {N : Matroid α} {a b : ℕ} {b' : ℕ∞} (h : M.NoUniformMinor a b)
+    (hNM : N ≤i M) (hN : N.IsFiniteRankUniform a b') : b' < b := by
+  by_contra! hle
+  obtain ⟨E, rfl, rfl⟩ := hN.exists_eq_unifOn
+  obtain ⟨φ⟩ := unif_isoRestr_unifOn (a := a) hle
+  exact h.elim (IsoMinor.trans φ.isoMinor hNM)
 
 end IsoMinor
 

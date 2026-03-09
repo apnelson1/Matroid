@@ -450,6 +450,11 @@ lemma Indep.eLocalConn_eq (hI : M.Indep I) (hJ : M.Indep J) :
     M.eLocalConn I J = (I ∩ J).encard + M.nullity (I ∪ J) :=
   hI.isBasis_self.eLocalConn_eq hJ.isBasis_self
 
+lemma Indep.eLocalConn_eq_encard_inter (hI : M.Indep (I ∪ J)) :
+    M.eLocalConn I J = (I ∩ J).encard := by
+  rw [(hI.subset subset_union_left).eLocalConn_eq (hI.subset subset_union_right),
+    hI.nullity_eq, add_zero]
+
 lemma IsBasis'.eLocalConn_eq_of_disjoint' (hI : M.IsBasis' I X) (hJ : M.IsBasis' J Y)
     (hIJ : Disjoint I J) : M.eLocalConn X Y = M.nullity (I ∪ J) := by
   rw [hI.eLocalConn_eq hJ, hIJ.inter_eq, encard_empty, zero_add]
