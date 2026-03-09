@@ -15,16 +15,16 @@ open Set Function
 and the legs are the pairs `{⟨i,true⟩, ⟨i, false⟩}` for `i : ι`.
 The bases are precisely the sets that differ from a transversal of the legs by a single exchange. -/
 
-def freeLift (M : Matroid α ) : Matroid α := M✶.truncate✶
+-- def freeLift (M : Matroid α ) : Matroid α := M✶.truncate✶
 
 lemma freeLift_def (M : Matroid α ) : M✶.truncate✶ = M.freeLift := rfl
 
-lemma freeLift_def_dual (M : Matroid α ) : M.truncate✶ = M✶.freeLift := by
-  have h1 : M = M✶✶ := eq_dual_comm.mp rfl
-  nth_rw 1 [h1, freeLift_def M✶]
+-- lemma freeLift_def_dual (M : Matroid α ) : M.truncate✶ = M✶.freeLift := by
+--   have h1 : M = M✶✶ := eq_dual_comm.mp rfl
+--   nth_rw 1 [h1, freeLift_def M✶]
 
-@[simp]
-lemma freeLift_ground (M : Matroid α ) : M.freeLift.E = M.E := rfl
+-- @[simp]
+-- lemma freeLift_ground (M : Matroid α ) : M.freeLift.E = M.E := rfl
 
 lemma basis_freeLift_iff (M : Matroid α) [M✶.RankPos] (hB' : B ⊆ M.E := by aesop_mat) :
     M.freeLift.IsBase B ↔ ∃ e ∈ B, M.IsBase (B \ {e}) := by
@@ -289,7 +289,7 @@ lemma freeSpike_self_dual (ι : Type*) :
   have : (preFreeSpike ι Bool)✶.RankPos := by
     simp [rankPos_iff, preFreeSpikeBool_isBase_iff]
   have h1 : (preFreeSpike ι Bool)✶.truncate✶✶ = (preFreeSpike ι Bool).freeLift✶ := by rfl
-  rw [freeLift_def_dual ((preFreeSpike ι Bool).freeLift), ←h1 ]
+  rw [truncate_dual ((preFreeSpike ι Bool).freeLift), ←h1 ]
   nth_rewrite 2 [pre_free_Bool_self_dual]
   simp only [dual_dual]
   rw[←truncate_freeLift_comm ]
