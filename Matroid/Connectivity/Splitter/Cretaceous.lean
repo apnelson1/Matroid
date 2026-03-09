@@ -3,6 +3,7 @@ import Mathlib.Logic.Equiv.Basic
 import Mathlib.Combinatorics.Matroid.Minor.Order
 import Mathlib.Combinatorics.Matroid.Map
 import Matroid.ForMathlib.Set
+import Matroid.Connectivity.Separation.Tutte
 import Matroid.Triangle
 
 open Set Matroid Function Separation
@@ -15,7 +16,7 @@ open Set Matroid Function Separation
 
 namespace Matroid
 
-variable {α β : Type*} {e f x y: α} {i j : Bool} {k : ℕ∞} {X Y : Set α}
+variable {α β : Type*} {e f x y : α} {X Y : Set α} {i j : Bool} {k : ℕ∞}
     {M : Matroid α} {N : Matroid β} {P : M.Separation}
 
 theorem splitter_theorem (hM : M.TutteConnected 3) (hN : N.TutteConnected 3) (fNM : N <i M)
@@ -25,19 +26,19 @@ theorem splitter_theorem (hM : M.TutteConnected 3) (hN : N.TutteConnected 3) (fN
 
 lemma IsMinor.exists_smallside_of_separation {N : Matroid α} (hNM : N ≤m M)
     (hN : N.TutteConnected (k + 2)) (hPconn : P.eConn = k) : ∃ i, (P i ∩ N.E).encard ≤ k := by
-  by_contra! hc
+  by_contra! hc₁
   have htop : k ≠ ⊤ := by
-    by_contra! hcc
-    rw [hcc] at hc
-    simp [not_top_lt] at hc
+    by_contra! hc₂
+    rw [hc₂] at hc₁
+    simp [not_top_lt] at hc₁
   rw [show k+2 = k+1+1 by grind, tutteConnected_iff_forall] at hN
-  specialize hN (P:= P.induce N)
+  specialize hN (P := P.induce N)
   refine hN (?_) (?_)
   · grw [eConn_induce_le_of_isMinor P hNM, hPconn]
   · rw [isTutteSeparation_iff_lt_encard]
     · intro i
       rw [induce_apply_subset _ hNM.subset]
-      specialize hc (i:= i)
+      specialize hc₁ (i := i)
       grw [eConn_induce_le_of_isMinor P hNM]
       grind
     · rw [← lt_top_iff_ne_top]
@@ -45,7 +46,7 @@ lemma IsMinor.exists_smallside_of_separation {N : Matroid α} (hNM : N ≤m M)
       rwa [lt_top_iff_ne_top]
 
 lemma IsMinor.delete_subset_separator (hPconn : P.eConn = 0) (hX : X ⊆ P i) :
-    (M ＼ (P i \ X)) ／ X = M ＼ (P i):= by
+    (M ＼ (P i \ X)) ／ X = M ＼ (P i) := by
   have h₁ : X ⊆ (M ＼ (P i \ X)).E := by
     rw [delete_ground, subset_diff, disjoint_comm, disjoint_diff_iff,
     inter_eq_self_of_subset_right]
@@ -189,9 +190,6 @@ lemma IsMinor.eq_mapEquiv [DecidableEq α] (hPconn : P.eConn ≤ 1)
   rw [Equiv.swap_image_eq_self (iff_of_false hxI hyI), and_iff_left (by grind),
     IsMinor.indep_iff_indep hX.indep hY.indep (by grind)]
 
-
-
-
 /-
 Let `N` be a `3`-connected minor of `M` and `P` be a `(1 + 1)`-separation of `M`,
 where `(N.E \ P i).Subsingleton`. (i.e. `N` is mostly contained in `P i`).
@@ -199,19 +197,50 @@ Say `P i \ N.E = {e}`.
 Then there is a minor `N'` with ground set `insert e (P i)` such that `N ≤m N' ≤m M`.
 This should be useful, and can be found with the lemma
 `IsMinor.exists_isMinor_of_subset_subset`.
-
 -/
+-- = mapEquiv (M ／ X ＼ ((P i) \ (insert x X))) (Equiv.swap x y) := by
 
+lemma Dep.of_minor_disjoint {N : Matroid α} (hNM : N ≤m M) (hX : X ⊆ N.E) :
+    M.Dep X → N.Dep X := by
+  apply IsMinor.exists_contract_indep_delete_coindep at hNM
+  obtain ⟨C, D, hC, hD, hCD, hCDN⟩ := hNM
+  subst hCDN
+  intro h₁
+  have h₂ : (M ／ C).Dep X := Dep.contract_of_disjoint (h₁) (by grind)
+  apply Dep.delete_of_disjoint (h₂) (by grind)
 
+lemma Separation.contract_exists_disjoint_base_of_eConn_eq_one {N : Matroid α}
+    (hNM : N ≤m M) (hN : Loopless N✶) (hPi: (N.E ∩ (P !i)).Subsingleton) :
+    ∃ X, (M ／ (P i)).IsBase X ∧ Disjoint X N.E := by
+  by_cases he : Disjoint N.E (P !i)
+  · have hX : ∃ X, (M ／ (P i)).IsBase X := exists_isBase (M ／ (P i))
+    obtain ⟨X, hX⟩ := hX
+    use X
+    grind
+  · rw [disjoint_iff_inter_eq_empty, ← not_nonempty_iff_eq_empty, not_not, nonempty_def] at he
+    obtain ⟨e, he⟩ := he
+    rw [subsingleton_iff_singleton (he)] at hPi
+    clear he
+    by_contra! hc
+    simp_rw [disjoint_iff_inter_eq_empty] at hc
+    have h₁ : ∀ X, (M ／ P i).IsBase X → e ∈ X := by
+      intro X hX₁
+      have hX₂ := hX₁
+      apply IsBase.subset_ground at hX₁
+      rw [contract_ground, P.compl_dual_eq] at hX₁
+      apply hc at hX₂
+      have : X ∩ N.E ⊆ {e} := by grind
+      grind
+    have h₂ : (M ／ P i).IsCocircuit {e} := by grind [((M ／ P i).isColoop_tfae e).out 3 2]
+    rw [contract_isCocircuit_iff, isCocircuit_def, isCircuit_iff] at h₂
+    have h₃ := Dep.of_minor_disjoint (hNM.dual) (by grind) (h₂.1.1)
+    rw [singleton_dep] at h₃
+    apply Loopless.not_isLoop (hN) (e)
+    tauto
 
-
-    -- = mapEquiv (M ／ X ＼ ((P i) \ (insert x X))) (Equiv.swap x y) := by
-
-lemma IsMinor.contract_max_skew_of_eConn_eq_one [DecidableEq α] (hPconn : P.eConn = 1)
-    (hX : (M ／ (P !i)).IsBase X) (hx : x ∈ (P i) \ X)
-    (hY : (M ／ (P !i)).IsBase Y) (hy : y ∈ (P i) \ Y) :
-    M ／ Y ＼ ((P i) \ (insert y Y))
-    = mapEquiv (M ／ X ＼ ((P i) \ (insert x X))) (Equiv.swap x y) := by
+lemma IsMinor.contract_disjoint_base_of_eConn_eq_one {N : Matroid α} (hPconn : P.eConn ≤ 1)
+    (hN : N.TutteConnected 3) (hNM : N ≤m M) (hPi: (N.E ∩ (P !i)).Subsingleton)
+    (hX : (M ／ (P i)).IsBase X) :  Disjoint X N.E → N ≤m (M ／ X) := by
   sorry
 
 lemma splitter_no_triangle (hM : M.TutteConnected 3) (hN : N.TutteConnected 3) (fNM : N <i M)
