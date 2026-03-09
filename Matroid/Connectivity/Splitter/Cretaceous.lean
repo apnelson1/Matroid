@@ -221,7 +221,7 @@ lemma Separation.contract_exists_disjoint_base_of_eConn_eq_one {N : Matroid α}
   obtain h0 | ⟨e, he⟩ := hPi.eq_empty_or_singleton
   · simp [h0]
   -- otherwise, coindependence of the singleton in `M ／ (P i)` is equivalent to being
-  -- a nonoop in `M` and disjoint from `P i`. We get the disjointness for free.
+  -- a noncoloop in `M` and disjoint from `P i`. We get the disjointness for free.
   rw [coindep_contract_iff, and_iff_left (by grind), he, Coindep, indep_singleton]
   -- `e` is a non-coloop of `N`, and therefore a non-coloop of the major `M`.
   have hNe := hN.isNonloop_of_mem <| show e ∈ N.E by grind [he.symm.subset]
