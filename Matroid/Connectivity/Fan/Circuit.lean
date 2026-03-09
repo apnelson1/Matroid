@@ -552,6 +552,12 @@ lemma IsFan.contract_head_three (hF : M.IsFan F b c) (h3 : F.length = 3)
   simpa [hT.ne₁₃.symm] using hT.isNonloop_bDual₃ (b := !b)
 
 
+-- lemma IsFan.contract_head' (hF : M.IsFan F true c) (h4 : 4 ≤ F.length)
+--     (h01 : ¬ M.Parallel F[0] F[1]) : (M ／ {F[0]}).IsFan F.tail false c := by
+--   obtain h4 | h5 := h4.eq_or_lt
+--   · sorry
+--   refine (hF.tail (by lia)).contract_disjoint (by grind) ?_ ?_ ?_
+
 
 
 
@@ -807,13 +813,14 @@ lemma foo {M : Matroid α} {F : List α} (hF : M.IsFan F true false)
       (by lia) (by lia) rfl (by simp) hC.1 hC.2 h1C h1
     simp only [zero_add, altBetween, Bool.not_true, exists_and_left, Set.mem_insert_iff] at hxC
     grind
-  have := hF.dual.joints_indep'' (by simp)
-  -- have hnp : ¬M.Parallel F[1] F[2 * n + 3] := by
-  --   intro hC
-  --   simpa [hF.nodup.getElem_inj_iff] using hT.isCocircuit.mem_iff_mem_of_parallel hC
-  -- rw [pair_comm, insert_comm, isTriangle_iff_parallel_contract hnp]
-  -- by_contra hcon
-  -- have := (hF.tail (by lia)).contract_disjoint (X := {F[0]})
+  have hnp : ¬M.Parallel F[1] F[2 * n + 3] := by
+    intro hC
+    simpa [hF.nodup.getElem_inj_iff] using hT.isCocircuit.mem_iff_mem_of_parallel hC
+  rw [pair_comm, insert_comm, isTriangle_iff_parallel_contract hnp]
+  by_contra hcon
+
+  have := (hF.dual.contract_head (by lia) (by simp)).dual
+  simp at this
   -- by_cases hpara : (M ／ {F[0]}).Parallel F[2 * n + 3] F[1]
   -- · rw [parallel_iff_isCircuit (by simp [hF.nodup.getElem_inj_iff])] at hpara
 

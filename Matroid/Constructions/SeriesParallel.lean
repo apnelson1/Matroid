@@ -70,60 +70,75 @@ lemma seriesParallelDuo_indep_iff (hdj : Disjoint S P) (hS : S.Nonempty) (hP : P
   · simp
   have : (loopyOn P)✶.RankPos := by simpa
   have : (loopyOn P).Nonempty := ⟨hP⟩
-  -- have : (freeOn S)✶.RankPos := by
-  --   simp
   rw [seriesParallelDuo_nonempty_eq hS hP, truncate_indep_iff, freeLift_indep_iff,
     freeLift_isBase_iff]
   simp only [hne, disjointSum_ground_eq, freeOn_ground, loopyOn_ground, mem_inter_iff, mem_union,
     disjointSum_indep_iff, diff_inter_right_comm, freeOn_indep_iff, diff_singleton_subset_iff,
     loopyOn_indep_iff, diff_eq_empty, subset_singleton_iff, and_imp, forall_const,
     disjointSum_isBase_iff, freeOn_isBase_iff, loopyOn_isBase_iff, not_and, forall_exists_index]
+  refine ⟨fun ⟨⟨e, he, hdj, hI⟩, h2⟩ ↦ ?_, fun ⟨hIss, hIP, hss⟩ ↦ ⟨?_, by grind⟩⟩
+  · have hISP : I ⊆ S ∪ P := by grind
+    have hss : (I ∩ P).Subsingleton := fun a ↦ by grind
+    refine ⟨by grind, hss, fun h ↦ h.antisymm fun f hf ↦ by_contra fun hfS ↦ ?_⟩
+    simp_rw [inter_eq_self_of_subset_right h] at h2
+    exact h2 f hf (by grind) (by grind) (by grind) (by grind)
+  obtain hIP | ⟨x, hIPx⟩ := hIP.eq_empty_or_singleton
+  · rw [← disjoint_iff_inter_eq_empty] at hIP
+    exact Exists.imp (by grind) hne
+  simp only [Set.ext_iff, mem_inter_iff, mem_singleton_iff] at hIPx
+  use x; grind
 
-  refine ⟨fun ⟨⟨e, he, hdj, hI⟩, h2⟩ ↦ ⟨by grind, ?_, by grind⟩, fun ⟨hIss, hIP, hss⟩ ↦ ⟨?_, ?_⟩⟩
-  ·
-    exact subsingleton_singleton.anti hdj
-  ·
-    by_cases hSI : S ⊆ I
-    · obtain rfl := hss hSI
-      obtain ⟨f, hf⟩ := hne
-      grind
-    obtain hIP | ⟨f, hf⟩ := hIP.eq_empty_or_singleton
-    · simp [diff_inter_right_comm, hIP]
-      obtain ⟨x, hx⟩ := hne
-      grind
+lemma seriesParallelDuo_indep_insert_ssubset (hdj : Disjoint S P) (hI1 : I ⊂ S) (he : e ∈ P) :
+    (seriesParallelDuo S P hdj).Indep (insert e I) := by
+  grw [seriesParallelDuo_indep_iff hdj (nonempty_iff_ne_empty.2 (by grind)) ⟨e, he⟩,
+    and_iff_right (by grind), insert_inter_of_mem he, (hdj.mono_left hI1.subset).inter_eq,
+    and_iff_right (by simp), subset_insert_iff_of_notMem (by grind)]
+  simp [hI1.not_subset]
 
-    refine ⟨f, ?_, ?_⟩
-    obtain ⟨f, hfS, hfI⟩ := not_subset.1 hSI
+-- lemma seriesParallelDuo_loopless (hdj : Disjoint S P) (seriesParallelDuo S P hdj).Parallel e f := by
 
-
-
-    -- have := h2 f hfI
-
-  -- refine ⟨fun h hISP hIP hSI ↦ ?_, fun h ↦ ⟨?_, ?_⟩⟩
-  -- · obtain ⟨⟨e, ⟨heI, heS | heP⟩, hdj, hxI⟩, hI⟩ := h
-  --   · obtain rfl | hssu := hSI.eq_or_ssubset
-  --     · rfl
-  --     obtain ⟨f, hfI, hfS⟩ := exists_of_ssubset hssu
-  --     grind
-  --   grind
-  -- ·
-
-  -- obtain rfl | hPne := P.eq_empty_or_nonempty
-  -- · simp only [seriesParallelDuo_empty_right, union_empty, inter_empty, subsingleton_empty,
-  --     true_and, and_imp]
-  --   obtain rfl | hSne := S.eq_empty_or_nonempty
-  --   · sorry
-  --   simp only [circuitOn_indep_iff hSne, ssubset_iff_subset_ne, ne_eq, ← and_imp,
-  --     ← subset_antisymm_iff, eq_comm (a := I), imp_self, iff_true]
-  --   refine ⟨fun h hIS hSI ↦ ?_, fun h ↦ ?_⟩
-  --   ·
-
-      -- rw [circuitOn_indep_iff h]
+-- lemma seriesParallelDuo_parallel (hdj : Disjoint S P) (he : e ∈ P) (hf : f ∈ P) :
+--     (seriesParallelDuo S P hdj).Parallel e f := by
+--   obtain rfl | hS := S.eq_empty_or_nonempty
+--   · simp only [seriesParallelDuo_empty_left]
+--     obtain rfl | hne := eq_or_ne e f
+--     · rw [parallel_self_iff, ← indep_singleton, unifOn_indep_iff]
+--       simpa
+--     rw [parallel_iff_isCircuit hne, unifOn_isCircuit_iff, encard_pair hne]
+--     grind
+--   rw [parallel]
+  -- rw [seriesParallelDuo_nonempty_eq hS ⟨e, he⟩ hdj]
+  -- grw [seriesParallelDuo_indep_iff hdj (nonempty_iff_ne_empty.2 (by grind)) ⟨e, he⟩,
+  --   and_iff_right (by grind), insert_inter_of_mem he, (hdj.mono_left hI1.subset).inter_eq,
+  --   and_iff_right (by simp), subset_insert_iff_of_notMem (by grind)]
+  -- simp [hI1.not_subset]
 
 lemma seriesParallelDuo_isCircuit_iff (hS : S.Nonempty) (hP : P.Nonempty) (hdj : Disjoint S P)
-    (C : Set α) : (seriesParallelDuo S P hdj).IsCircuit C ↔
-        ∃ e ∈ P, C = insert e S ∨ (∃ e ∈ P, ∃ f ∈ P, e ≠ f ∧ C = {e, f}) := by
-  rw [isCircuit_iff_dep_forall_diff_singleton_indep]
+    (C : Set α) (hCSP : C ⊆ S ∪ P) : (seriesParallelDuo S P hdj).IsCircuit C ↔
+        (∃ e ∈ P, C = insert e S) ∨ (∃ e ∈ P, ∃ f ∈ P, e ≠ f ∧ C = {e, f}) := by
+
+  obtain hss | hnt := (C ∩ P).subsingleton_or_nontrivial
+  ·
+    obtain he | ⟨x, hCPX⟩ := hss.eq_empty_or_singleton
+    · refine iff_of_false (fun hC ↦ hC.not_indep ?_) ?_
+      · refine Indep.subset (J := S) ?_ (by tauto_set)
+        rw [seriesParallelDuo_indep_iff hdj hS hP]
+        simp [hdj.inter_eq]
+      rw [← disjoint_iff_inter_eq_empty] at he
+      grind
+    obtain rfl | hssu := (show C \ {x} ⊆ S by grind).eq_or_ssubset
+    · sorry
+
+
+
+  simp only [isCircuit_iff_dep_forall_diff_singleton_indep, dep_iff,
+    seriesParallelDuo_indep_iff hdj hS hP, not_and, Classical.not_imp, seriesParallelDuo_E,
+    diff_singleton_subset_iff, forall_mem_and, ne_eq]
+  refine ⟨fun ⟨h1, h2, h3, h4⟩ ↦ ?_, fun h ↦ ?_⟩
+  · obtain hss | hnt := (C ∩ P).subsingleton_or_nontrivial
+    · obtain he | ⟨x, hCPX⟩ := hss.eq_empty_or_singleton
+      ·
+
 
 -- lemma seriesParallelDuo_two_two {a b c d : α} (hab : a ≠ b) (hcd : c ≠ d)
 --     (hdj : Disjoint {a, b} {c, d}) {I : Set α} : (seriesParallelDuo {a, b} {c, d} hdj).Indep I
