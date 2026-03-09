@@ -221,6 +221,21 @@ lemma IsTriangle.parallel_contract₂ (h : M.IsTriangle {e, f, g}) : (M ／ {f})
 lemma IsTriangle.parallel_contract₃ (h : M.IsTriangle {e, f, g}) : (M ／ {g}).Parallel e f :=
   h.swap_right.parallel_contract₂
 
+lemma isTriangle_iff_parallel_contract {x : α} (hef : ¬ M.Parallel e f) :
+      M.IsTriangle {e, f, x} ↔ (M ／ {x}).Parallel e f := by
+    refine ⟨fun h ↦ h.parallel_contract₃, fun h ↦ ?_⟩
+    obtain he | he := em' <| (M ／ {x}).IsNonloop e
+    · exact False.elim <| he <| h.isNonloop_left
+    obtain rfl | hne := eq_or_ne e f
+    · exact False.elim <| hef he.of_contract.parallel_self
+    rw [parallel_iff_isCircuit hne] at h hef
+    obtain ⟨C, hC, hefC, hC'ss⟩ := h.exists_subset_isCircuit_of_contract
+    by_cases hx : x ∈ C
+    · rwa [isTriangle_iff, encard_insert_of_notMem (by grind), encard_pair (by grind),
+        and_iff_left two_add_one_eq_three, show {e, f, x} = C by grind]
+    rw [show {e, f} = C by grind] at hef
+    contradiction
+
 lemma IsTriangle.restrict_simple (hT : M.IsTriangle T) : (M ↾ T).Simple := by
   have hC := hT.isCircuit.restrict_eq_circuitOn
   rw [circuitOn_eq_unifOn (n := 2) (by grind [hT.three_elements])] at hC
@@ -347,7 +362,6 @@ lemma isTriangle_delete_iff {D} : (M ＼ D).IsTriangle T ↔ M.IsTriangle T ∧ 
 @[simp]
 lemma isTriad_contract_iff {C} : (M ／ C).IsTriad T ↔ M.IsTriad T ∧ Disjoint T C := by
   grind [isTriad_iff, contract_isCocircuit_iff]
-
 
 
 -- lemma IsTriangle.isFiniteRankUniform_two_four_of_isTriangle_not_parallel {a b c d : α}
