@@ -465,6 +465,19 @@ lemma Parallel'.eq_mapEquiv_swap (h : M.Parallel' e f) [DecidableEq α] :
       ← h.symm.indep_substitute_iff hfI heI]
   rw [Equiv.swap_image_eq_self (by simp [hfI, heI])]
 
+lemma Parallel'.contract_delete_comm (hef : M.Parallel' e f) :
+    M ／ {e} ＼ {f} = M ／ {f} ＼ {e} := by
+  obtain ⟨he, hf⟩ | hef := hef.isLoop_or_parallel
+  · rw [contract_eq_delete_of_subset_loops (by simpa),
+      contract_eq_delete_of_subset_loops (by simpa), delete_comm]
+  obtain rfl | hne := eq_or_ne e f; simp
+  refine ext_indep (by simp [diff_diff_comm]) fun I hI ↦ ?_
+  suffices M.Indep (insert e I) ↔ M.Indep (insert f I) by
+    simpa [hef.isNonloop_left.contractElem_indep_iff, hef.isNonloop_right.contractElem_indep_iff,
+      show e ∉ I by grind, show f ∉ I by grind]
+  rw [hef.parallel'.indep_substitute_iff (by simp) (by grind), insert_diff_self_of_notMem
+    (by grind)]
+
 end Swap
 
 section Subtype

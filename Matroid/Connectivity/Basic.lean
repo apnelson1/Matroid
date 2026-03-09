@@ -2,6 +2,7 @@ import Matroid.Rank.Skew
 import Matroid.ForMathlib.Matroid.Map
 import Matroid.ForMathlib.ENat
 import Matroid.Uniform
+import Matroid.Triangle
 
 open Set Function
 
@@ -799,6 +800,26 @@ lemma IsCircuit.union_isCircuit_of_inter_eq_singleton {C₁ C₂ : Set α} {e : 
   refine hC₁.ssubset_indep <| ssubset_of_subset_of_ne (by grind) ?_
   rintro rfl
   exact hne <| hC₁.eq_of_subset_isCircuit hC₂ (by grind)
+
+lemma IsTriangle.union_diff_singleton_isCircuit {e f e' f' x} (hT : M.IsTriangle {e, f, x})
+    (hT' : M.IsTriangle {e', f', x}) (hee' : e ≠ e') (h_indep : M.Indep {e, e', x}) :
+    M.IsCircuit {e, f, e', f'} := by
+  obtain rfl | hne := eq_or_ne e f'
+  · simpa using hT'.swap_left.isCircuit.dep.not_indep h_indep
+  have hne : ({e, f, x} : Set α) ≠ {e', f', x} := by apply_fun (e ∈ ·); grind
+  convert hT.isCircuit.union_isCircuit_of_inter_eq_singleton hT'.isCircuit (e := x)
+    hne (by simp) (by simp) ?_ using 1
+  · grind
+  have hr := (M.eRk_add_eRk_eq_eRk_union_add_eLocalConn {e, f, x} {e', f', x}).ge
+  grw [hT.eRk, hT'.eRk, ← eRk_closure_eq, insert_comm, insert_comm e',
+    ← closure_closure_union_closure_eq_closure_union,
+    closure_insert_eq_of_mem_closure hT.mem_closure₂,
+    closure_insert_eq_of_mem_closure hT'.mem_closure₂,
+    closure_closure_union_closure_eq_closure_union, eRk_closure_eq,
+    show ({e, x} : Set α) ∪ {e', x} =  {e, e', x} by grind, h_indep.eRk_eq_encard,
+    encard_insert_of_notMem (by grind), encard_pair (by grind), insert_comm,
+    insert_comm f'] at hr
+  enat_to_nat!; lia
 
 lemma IsCircuit.union_isCircuit_of_inter_nonempty {C₁ C₂ : Set α} (hC₁ : M.IsCircuit C₁)
     (hC₂ : M.IsCircuit C₂) (hne : C₁ ≠ C₂) (h_inter : (C₁ ∩ C₂).Nonempty)

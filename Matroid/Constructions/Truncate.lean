@@ -113,6 +113,7 @@ theorem truncateTo_eRk_eq (M : Matroid α) (k : ℕ∞) (X : Set α) :
     (min_le_of_left_le (b := k) hI.encard_eq_eRk.symm.le)
   exact ⟨_, hI₀.trans hI.subset, ⟨hI.indep.subset hI₀, hI₀ss.trans_le (min_le_right _ _)⟩, hI₀ss⟩
 
+
 end truncateTo
 
 section truncate
@@ -144,6 +145,8 @@ lemma truncate_indep_iff' : M.truncate.Indep I ↔ M.Indep I ∧ (M.IsBase I →
 @[simp] lemma truncate_emptyOn_eq (α : Type*) : (emptyOn α).truncate = emptyOn α := by
   rw [← ground_eq_empty_iff]
   rfl
+
+instance {M : Matroid α} [M.Nonempty] : M.truncate.Nonempty := ⟨M.ground_nonempty⟩
 
 @[simp] lemma truncate_isBase_iff [M.RankPos] :
     M.truncate.IsBase B ↔ ∃ e ∉ B, M.IsBase (insert e B) := by
@@ -267,7 +270,118 @@ instance (M : Matroid α) [M.Nonempty] : M.truncate✶.RankPos := by
     not_exists, not_and]
   exact fun x hx hB ↦ hx <| hB.subset_ground (mem_insert ..)
 
+lemma truncate_eRank_add_one [M.RankPos] : M.truncate.eRank + 1 = M.eRank := by
+  obtain ⟨B, hB⟩ := M.truncate.exists_isBase
+  rw [← hB.encard_eq_eRank]
+  obtain ⟨e, heB, hB'⟩ := truncate_isBase_iff.1 hB
+  rw [← hB'.encard_eq_eRank, encard_insert_of_notMem heB]
+
+@[simp]
+lemma truncate_rankPos_iff : M.truncate.RankPos ↔ 2 ≤ M.eRank := by
+  obtain ⟨E, rfl⟩ | hM := M.exists_eq_loopyOn_or_rankPos
+  · simp [← eRank_ne_zero_iff]
+  rw [← eRank_ne_zero_iff, ← ENat.one_le_iff_ne_zero, ← M.truncate_eRank_add_one]
+  simp [← one_add_one_eq_two]
+
+lemma truncateTo_truncate (M : Matroid α) (k : ℕ) (hk : k + 1 ≤ M.eRank) :
+    (M.truncateTo (k + 1 : ℕ)).truncate = M.truncateTo k := by
+  refine ext_indep rfl fun I hI ↦ ?_
+  simp only [truncate_indep_iff', truncateTo_indep_iff, truncateTo_isBase_iff hk]
+  simp only [Nat.cast_add, Nat.cast_one, and_imp]
+  refine ⟨fun h ↦ ⟨h.1.1, ?_⟩, fun h ↦ ?_⟩
+  · obtain h_eq | hlt := h.1.2.eq_or_lt
+    · simp [h.2 h.1.1 h_eq]
+    exact Order.le_of_lt_add_one hlt
+  refine ⟨⟨h.1, h.2.trans le_self_add⟩, fun hI hIk ↦ ?_⟩
+  simp [hIk] at h
+
 end truncate
+
+def freeLift (M : Matroid α) : Matroid α := M✶.truncate✶
+
+@[simp]
+lemma freeLift_ground (M : Matroid α) : M.freeLift.E = M.E := rfl
+
+@[simp]
+lemma freeLift_freeOn (E : Set α) : (freeOn E).freeLift = freeOn E := by
+  simp [freeLift]
+
+@[simp]
+lemma freeLift_emptyOn (α : Type*) : (emptyOn α).freeLift = emptyOn α := by
+  simp [freeLift]
+
+lemma freeLift_isBase_iff [M✶.RankPos] :
+    M.freeLift.IsBase B ↔ (∃ e ∈ B, M.IsBase (B \ {e})) ∧ B ⊆ M.E := by
+  wlog hBE : B ⊆ M.E; grind [freeLift_ground]
+  rw [freeLift, dual_isBase_iff', truncate_ground_eq, dual_ground, truncate_isBase_iff]
+  simp only [mem_diff, not_and, not_not, ← union_singleton, dual_isBase_iff', ← diff_diff,
+    diff_diff_cancel_left hBE, union_subset_iff, singleton_subset_iff, hBE]
+  grind
+
+@[simp]
+lemma freeLift_dual (M : Matroid α) : M.freeLift✶ = M✶.truncate := by
+  simp [freeLift]
+
+@[simp]
+lemma truncate_dual (M : Matroid α) : M.truncate✶ = M✶.freeLift := by
+  simp [freeLift]
+
+instance [M.Nonempty] : (freeLift M).RankPos := by
+  obtain ⟨E, rfl⟩ | h := M.exists_eq_freeOn_or_rankPos_dual
+  · simp only [freeLift_freeOn, rankPos_iff, freeOn_isBase_iff]
+    exact (freeOn E).ground_nonempty.ne_empty.symm
+  simp [rankPos_iff, freeLift_isBase_iff]
+
+@[simp]
+lemma eRank_freeLift_eq [M✶.RankPos] : (freeLift M).eRank = M.eRank + 1 := by
+  obtain ⟨B, hB⟩ := (freeLift M).exists_isBase
+  rw [← hB.encard_eq_eRank]
+  rw [freeLift_isBase_iff] at hB
+  obtain ⟨⟨e, heB, hB⟩, hBE⟩ := hB
+  rw [← encard_diff_singleton_add_one heB, hB.encard_eq_eRank]
+
+lemma freeLift_indep_iff :
+    M.freeLift.Indep I ↔ (I.Nonempty → ∃ e ∈ I ∩ M.E, M.Indep (I \ {e})) := by
+  obtain rfl | hne := I.eq_empty_or_nonempty; simp
+  obtain ⟨E, rfl⟩ | h := M.exists_eq_freeOn_or_rankPos_dual
+  · simp only [freeLift_freeOn, freeOn_indep_iff, hne, freeOn_ground, mem_inter_iff,
+      diff_singleton_subset_iff, forall_const]
+    obtain ⟨f, hf⟩ := hne
+    exact ⟨fun h ↦ ⟨f, by grind⟩, fun ⟨e, he⟩ ↦ by grind⟩
+  simp only [indep_iff, freeLift_isBase_iff, hne, mem_inter_iff, diff_singleton_subset_iff,
+    forall_const]
+  refine ⟨fun ⟨B, ⟨⟨e, heB, hBe⟩, hBE⟩, hIB⟩ ↦ ?_,
+    fun ⟨e, he, B, hB, hIB⟩ ↦ ?_⟩
+  · by_cases heI : e ∈ I
+    · exact ⟨e, by grind, _, hBe, by grind⟩
+    obtain ⟨f, hf⟩ := hne
+    exact ⟨f, by grind, _, hBe, by grind⟩
+  by_cases heB : e ∈ B
+  · obtain ⟨f, hfE, hfB⟩ := exists_of_ssubset hB.ssubset_ground
+    refine ⟨insert f B, ⟨⟨f, by grind, ?_⟩, by grind⟩, by grind⟩
+    rwa [insert_diff_self_of_notMem hfB]
+  exact ⟨insert e B, ⟨⟨⟨e, by simp, by rwa [insert_diff_self_of_notMem heB]⟩, by grind⟩, hIB⟩⟩
+
+lemma truncate_freeLift (M : Matroid α) [M.RankPos] [M✶.RankPos] :
+    M.truncate.freeLift = M.freeLift.truncate := by
+  refine ext_isBase rfl fun B hB ↦ ?_
+  simp only [freeLift_isBase_iff, truncate_isBase_iff, mem_diff, mem_singleton_iff, not_and,
+    not_not, truncate_ground_eq, show B ⊆ M.E from hB, and_true, mem_insert_iff, exists_eq_or_imp,
+    insert_diff_of_mem, insert_subset_iff]
+  refine ⟨fun ⟨f, hfB, e, he, hB⟩ ↦ ?_, ?_⟩
+  · obtain rfl | hne := eq_or_ne e f
+    · rw [insert_diff_self_of_mem hfB] at hB
+      obtain ⟨x, hxE, hxB⟩ := exists_of_ssubset hB.ssubset_ground
+      refine ⟨x, hxB, .inl ?_, hxE⟩
+      rwa [diff_singleton_eq_self hxB]
+    refine ⟨e, by grind, .inr ⟨f, hfB, ?_⟩, hB.subset_ground (by grind)⟩
+    rwa [← insert_diff_singleton_comm hne]
+  rintro ⟨e, heB, h | ⟨f, hfB, hB'⟩, heE⟩
+  · rw [diff_singleton_eq_self heB] at h
+    obtain ⟨f, hfB⟩ := h.nonempty
+    exact ⟨f, hfB, f, by simp, by rwa [insert_diff_self_of_mem hfB]⟩
+  refine ⟨f, hfB, e, by simp [heB], ?_⟩
+  rwa [insert_diff_singleton_comm (by rintro rfl; contradiction)]
 
 section circuitOn
 
@@ -276,6 +390,9 @@ variable {C : Set α}
 /-- The matroid on `E` whose ground set is a circuit. Empty if `E = ∅`. -/
 def circuitOn (C : Set α) := (freeOn C).truncate
 
+@[simp]
+lemma freeOn_truncate (C : Set α) : (freeOn C).truncate = circuitOn C := rfl
+
 @[simp] lemma circuitOn_ground : (circuitOn C).E = C := rfl
 
 @[simp] lemma circuitOn_empty (α : Type*) : circuitOn (∅ : Set α) = emptyOn α := by
@@ -283,7 +400,8 @@ def circuitOn (C : Set α) := (freeOn C).truncate
 
 lemma circuitOn_indep_iff (hC : C.Nonempty) : (circuitOn C).Indep I ↔ I ⊂ C := by
   have := freeOn_rankPos hC
-  simp [circuitOn, truncate_indep_iff, ssubset_iff_subset_ne]
+  rw [circuitOn, truncate_indep_iff, ssubset_iff_subset_ne]
+  simp
 
 lemma circuitOn_dep_iff (hC : C.Nonempty) {D : Set α} : (circuitOn C).Dep D ↔ D = C := by
   simp only [Dep, circuitOn_indep_iff hC, ssubset_iff_subset_ne, ne_eq, not_and, not_not,
@@ -292,7 +410,7 @@ lemma circuitOn_dep_iff (hC : C.Nonempty) {D : Set α} : (circuitOn C).Dep D ↔
 
 lemma circuitOn_isBase_iff (hC : C.Nonempty) :
     (circuitOn C).IsBase B ↔ ∃ e ∉ B, insert e B = C := by
-  have _ := freeOn_rankPos hC; simp [circuitOn, truncate_isBase_iff]
+  have _ := freeOn_rankPos hC; simp [circuitOn, -freeOn_truncate, truncate_isBase_iff]
 
 lemma circuitOn_ground_isCircuit (hC : C.Nonempty) : (circuitOn C).IsCircuit C := by
   simp [isCircuit_iff_forall_ssubset, circuitOn_dep_iff hC, circuitOn_indep_iff hC]
@@ -336,6 +454,17 @@ lemma isCircuit_iff_restr_eq_circuitOn (hCne : C.Nonempty) (hC : C ⊆ M.E := by
 
 lemma IsCircuit.restrict_eq_circuitOn (hC : M.IsCircuit C) : M ↾ C = circuitOn C := by
   rwa [← isCircuit_iff_restr_eq_circuitOn hC.nonempty]
+
+@[simp]
+lemma circuitOn_freeLift (C : Set α) : (circuitOn C).freeLift = freeOn C := by
+  obtain rfl | hne := C.eq_empty_or_nonempty; simp
+  refine ext_indep rfl fun I (hIE : I ⊆ C) ↦ ?_
+  obtain rfl | hIne := I.eq_empty_or_nonempty; simp
+  simp only [freeLift_indep_iff, hIne, circuitOn_ground, mem_inter_iff, circuitOn_indep_iff hne,
+    ssubset_iff_subset_ne, diff_singleton_subset_iff, ne_eq, forall_const, freeOn_indep_iff]
+  refine ⟨by grind, fun h ↦ ?_⟩
+  obtain ⟨f, hfI⟩ := hIne
+  exact ⟨f, by grind⟩
 
 end circuitOn
 

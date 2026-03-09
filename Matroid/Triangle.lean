@@ -210,10 +210,27 @@ lemma IsTriangle.isNonloop_bDual₂ (h : M.IsTriangle {e, f, g}) : (M.bDual b).I
 lemma IsTriangle.isNonloop_bDual₃ (h : M.IsTriangle {e, f, g}) : (M.bDual b).IsNonloop g :=
   h.isNonloop_bDual_of_mem (by simp)
 
+lemma IsTriangle.parallel_contract₁ (h : M.IsTriangle {e, f, g}) : (M ／ {e}).Parallel f g := by
+  rw [parallel_iff_isCircuit h.ne₂₃]
+  convert h.isCircuit.contract_isCircuit (C := {e}) (by grind) using 1
+  grind
+
+lemma IsTriangle.parallel_contract₂ (h : M.IsTriangle {e, f, g}) : (M ／ {f}).Parallel e g :=
+  h.swap_left.parallel_contract₁
+
+lemma IsTriangle.parallel_contract₃ (h : M.IsTriangle {e, f, g}) : (M ／ {g}).Parallel e f :=
+  h.swap_right.parallel_contract₂
+
 lemma IsTriangle.restrict_simple (hT : M.IsTriangle T) : (M ↾ T).Simple := by
   have hC := hT.isCircuit.restrict_eq_circuitOn
   rw [circuitOn_eq_unifOn (n := 2) (by grind [hT.three_elements])] at hC
   simp [hC, unifOn_simple_iff]
+
+@[simp]
+lemma not_isTriangle_pair (M : Matroid α) (e f : α) : ¬ M.IsTriangle {e, f} := by
+  intro h
+  have hcon := h.three_elements.symm.le.trans <| encard_pair_le ..
+  norm_num at hcon
 
 @[aesop unsafe 20% (rule_sets := [Matroid])]
 lemma IsTriad.mem_ground₁ (h : M.IsTriad {e, f, g}) : e ∈ M.E :=
@@ -322,3 +339,74 @@ lemma IsTriangle.eq_of_isTriad {x y : α} (h : M.IsTriangle {e, f, g}) (h' : M.I
 lemma IsFiniteRankUniform.isTriangle_iff {b : ℕ∞} (hM : M.IsFiniteRankUniform 2 b) :
     M.IsTriangle C ↔ C.encard = 3 ∧ C ⊆ M.E := by
   grind [Matroid.isTriangle_iff, hM.isCircuit_iff]
+
+@[simp]
+lemma isTriangle_delete_iff {D} : (M ＼ D).IsTriangle T ↔ M.IsTriangle T ∧ Disjoint T D := by
+  grind [isTriangle_iff, delete_isCircuit_iff]
+
+@[simp]
+lemma isTriad_contract_iff {C} : (M ／ C).IsTriad T ↔ M.IsTriad T ∧ Disjoint T C := by
+  grind [isTriad_iff, contract_isCocircuit_iff]
+
+
+
+-- lemma IsTriangle.isFiniteRankUniform_two_four_of_isTriangle_not_parallel {a b c d : α}
+--     (habc : M.IsTriangle {a, b, c}) (habd : M.IsTriangle {a, b, d}) (hcd : ¬ M.Parallel c d) :
+--     (M ↾ {a, b, c, d}).IsFiniteRankUniform 2 4 := by
+--   suffices hM : (M ↾ {a, b, c, d}) = unifOn {a, b, c, d} 2 by
+--     rw [hM]
+--     convert unifOn_isFiniteRank_uniform (a := 2) ?_
+--     sorry
+--     sorry
+--   refine ext_isCircuit_not_indep rfl ?_ ?_
+--   · simp
+--   obtain rfl | hne := eq_or_ne c d
+--   · simp [habc.isNonloop₃] at hcd
+--   rw [habc.isNonloop₃.not_parallel_iff habd.isNonloop₃ hne] at hcd
+
+--   have hs : (M ↾ {a, b, c, d}).Simple := by
+--     rw [simple_iff_forall_pair_indep]
+--     rintro e f (rfl | rfl | rfl | rfl) (rfl | rfl | rfl | rfl)
+--     · simp
+--       grind [restrict_indep_iff, indep_singleton, IsTriangle.indep₁₂, IsTriangle.indep₂₃,
+--       IsTriangle.indep₁₃, IsTriangle.isNonloop₁, IsTriangle.isNonloop₂, IsTriangle.isNonloop₃,
+--       Indep.isNonloop_of_mem, pair_comm, insert_eq_of_mem, IsTriangle.subset_ground]
+--     simp [restrict_indep_iff, insert_subset_iff]
+--     grind [restrict_indep_iff, indep_singleton, IsTriangle.indep₁₂, IsTriangle.indep₂₃,
+--       IsTriangle.indep₁₃, IsTriangle.isNonloop₁, IsTriangle.isNonloop₂, IsTriangle.isNonloop₃,
+--       Indep.isNonloop_of_mem, pair_comm, insert_eq_of_mem, IsTriangle.subset_ground]
+
+--     all_goals sorry
+--     -- grind [restrict_indep_iff, indep_singleton, IsTriangle.indep₁₂, IsTriangle.indep₂₃,
+--     --   IsTriangle.indep₁₃, IsTriangle.isNonloop₁, IsTriangle.isNonloop₂, IsTriangle.isNonloop₃,
+--     --   Indep.isNonloop_of_mem, pair_comm, insert_eq_of_mem, IsTriangle.subset_ground]
+--     -- grind [restrict_indep_iff, indep_singleton, IsTriangle.indep₁₂, IsTriangle.indep₂₃,
+--     --   IsTriangle.indep₁₃, IsTriangle.isNonloop₁, IsTriangle.isNonloop₂, IsTriangle.isNonloop₃,
+--     --   Indep.isNonloop_of_mem, pair_comm, insert_eq_of_mem, IsTriangle.subset_ground]
+--     -- grind [restrict_indep_iff, indep_singleton, IsTriangle.indep₁₂, IsTriangle.indep₂₃,
+--     --   IsTriangle.indep₁₃, IsTriangle.isNonloop₁, IsTriangle.isNonloop₂, IsTriangle.isNonloop₃,
+--     --   Indep.isNonloop_of_mem, pair_comm, insert_eq_of_mem, IsTriangle.subset_ground]
+--     -- grind [restrict_indep_iff, indep_singleton, IsTriangle.indep₁₂, IsTriangle.indep₂₃,
+--     --   IsTriangle.indep₁₃, IsTriangle.isNonloop₁, IsTriangle.isNonloop₂, IsTriangle.isNonloop₃,
+--     --   Indep.isNonloop_of_mem, pair_comm, insert_eq_of_mem, IsTriangle.subset_ground]
+--     -- grind [restrict_indep_iff, indep_singleton, IsTriangle.indep₁₂, IsTriangle.indep₂₃,
+--     --   IsTriangle.indep₁₃, IsTriangle.isNonloop₁, IsTriangle.isNonloop₂, IsTriangle.isNonloop₃,
+--     --   Indep.isNonloop_of_mem, pair_comm, insert_eq_of_mem, IsTriangle.subset_ground]
+--     -- grind [restrict_indep_iff, indep_singleton, IsTriangle.indep₁₂, IsTriangle.indep₂₃,
+--     --   IsTriangle.indep₁₃, IsTriangle.isNonloop₁, IsTriangle.isNonloop₂, IsTriangle.isNonloop₃,
+--     --   Indep.isNonloop_of_mem, pair_comm, insert_eq_of_mem, IsTriangle.subset_ground]
+--     -- grind [restrict_indep_iff, indep_singleton, IsTriangle.indep₁₂, IsTriangle.indep₂₃,
+--     --   IsTriangle.indep₁₃, IsTriangle.isNonloop₁, IsTriangle.isNonloop₂, IsTriangle.isNonloop₃,
+--     --   Indep.isNonloop_of_mem, pair_comm, insert_eq_of_mem, IsTriangle.subset_ground]
+--     -- grind [restrict_indep_iff, indep_singleton, IsTriangle.indep₁₂, IsTriangle.indep₂₃,
+--     --   IsTriangle.indep₁₃, IsTriangle.isNonloop₁, IsTriangle.isNonloop₂, IsTriangle.isNonloop₃,
+--     --   Indep.isNonloop_of_mem, pair_comm, insert_eq_of_mem, IsTriangle.subset_ground]
+--     -- grind [restrict_indep_iff, indep_singleton, IsTriangle.indep₁₂, IsTriangle.indep₂₃,
+--     --   IsTriangle.indep₁₃, IsTriangle.isNonloop₁, IsTriangle.isNonloop₂, IsTriangle.isNonloop₃,
+--     --   Indep.isNonloop_of_mem, pair_comm, insert_eq_of_mem, IsTriangle.subset_ground]
+--     -- grind [restrict_indep_iff, indep_singleton, IsTriangle.indep₁₂, IsTriangle.indep₂₃,
+--     --   IsTriangle.indep₁₃, IsTriangle.isNonloop₁, IsTriangle.isNonloop₂, IsTriangle.isNonloop₃,
+--     --   Indep.isNonloop_of_mem, pair_comm, insert_eq_of_mem, IsTriangle.subset_ground]
+--     -- grind [restrict_indep_iff, indep_singleton, IsTriangle.indep₁₂, IsTriangle.indep₂₃,
+--     --   IsTriangle.indep₁₃, IsTriangle.isNonloop₁, IsTriangle.isNonloop₂, IsTriangle.isNonloop₃,
+--     --   Indep.isNonloop_of_mem, pair_comm, insert_eq_of_mem, IsTriangle.subset_ground]

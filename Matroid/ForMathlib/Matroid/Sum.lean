@@ -273,6 +273,39 @@ lemma disjointSum_restrict_left (hMN : Disjoint M.E N.E) : (disjointSum M N hMN)
 lemma disjointSum_restrict_right (hMN : Disjoint M.E N.E) : (disjointSum M N hMN) ↾ N.E = N :=
   (isRestriction_disjointSum_right hMN).eq_restrict
 
+@[simp]
+lemma emptyOn_disjointSum : disjointSum M (emptyOn α) (by simp) = M :=
+  ext_indep (by simp) <| by simp +contextual [inter_eq_self_of_subset_left]
+
+@[simp]
+lemma disjointSum_emptyOn : disjointSum (emptyOn α) M (by simp) = M :=
+  ext_indep (by simp) <| by simp +contextual [inter_eq_self_of_subset_left]
+
+instance disjointSum_nonempty_left [M.Nonempty] (hMN : Disjoint M.E N.E) :
+    (M.disjointSum N hMN).Nonempty := by
+  simp [← ground_nonempty_iff, M.ground_nonempty]
+
+instance disjointSum_nonempty_right [N.Nonempty] (hMN : Disjoint M.E N.E) :
+    (M.disjointSum N hMN).Nonempty := by
+  simp [← ground_nonempty_iff, N.ground_nonempty]
+
+instance disjointSum_rankPos_left [M.RankPos] (hMN : Disjoint M.E N.E) :
+    (M.disjointSum N hMN).RankPos := by
+  simp [rankPos_iff, M.empty_not_isBase]
+
+instance disjointSum_rankPos_right [N.RankPos] (hMN : Disjoint M.E N.E) :
+    (M.disjointSum N hMN).RankPos := by
+  simp [rankPos_iff, N.empty_not_isBase]
+
+instance disjointSum_dual_rankPos_left [M✶.RankPos] (hMN : Disjoint M.E N.E) :
+    (M.disjointSum N hMN)✶.RankPos := by
+  simp [rankPos_iff, M.ground_not_isBase]
+
+instance disjointSum_dual_rankPos_right [N✶.RankPos] (hMN : Disjoint M.E N.E) :
+    (M.disjointSum N hMN)✶.RankPos := by
+  simp [rankPos_iff, N.ground_not_isBase]
+
+
 end disjointSum
 
 variable {α β : Type*} {M : Matroid α} {N : Matroid β}

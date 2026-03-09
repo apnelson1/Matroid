@@ -36,6 +36,31 @@ def unifOn {α : Type*} (E : Set α) (k : ℕ) : Matroid α := (freeOn E).trunca
 @[simp] theorem unifOn_empty (α : Type*) (a : ℕ) : unifOn ∅ a = emptyOn α := by
   simp [unifOn]
 
+lemma unifOn_truncate (E : Set α) (k : ℕ) (hk : k + 1 ≤ E.encard) :
+    (unifOn E (k + 1)).truncate = unifOn E k := by
+  rw [unifOn, truncateTo_truncate _ _ (by simpa), unifOn]
+
+@[simp]
+lemma unifOn_one_truncate (E : Set α) : (unifOn E 1).truncate = loopyOn E := by
+  obtain rfl | hne := E.eq_empty_or_nonempty
+  · simp
+  rw [unifOn_truncate, unifOn_zero]
+  exact one_le_encard_iff_nonempty.2 hne
+
+@[simp]
+lemma unifOn_freeLift (E : Set α) (k : ℕ) : (unifOn E k).freeLift = unifOn E (k + 1) := by
+  refine ext_indep rfl fun I (hIE : I ⊆ E) ↦ ?_
+  obtain rfl | hne := I.eq_empty_or_nonempty
+  · simp
+  simp only [freeLift_indep_iff, hne, unifOn_ground_eq, mem_inter_iff, unifOn_indep_iff,
+    diff_singleton_subset_iff, forall_const, Nat.cast_add, Nat.cast_one]
+  refine ⟨fun ⟨e, ⟨heI, heE⟩, hIe, hIE⟩ ↦ ?_, fun h ↦ ?_⟩
+  · grw [← hIe, ← encard_le_encard_diff_singleton_add_one]
+    grind
+  obtain ⟨f, hf⟩ := hne
+  refine ⟨f, by grind, ?_, by grind⟩
+  grw [← ENat.add_one_le_add_one_iff, ← h.1, encard_diff_singleton_add_one hf]
+
 theorem unifOn_eq_of_le (h : E.encard ≤ k) : unifOn E k = freeOn E := by
   rw [unifOn, truncate_eq_self_of_rank_le (by rwa [eRank_freeOn])]
 
@@ -59,6 +84,10 @@ theorem unifOn_eRank_eq' (hle : k ≤ E.encard) : (unifOn E k).eRank = k := by
 
 theorem unifOn_rank_eq (hk : (k : ℕ∞) ≤ E.encard) : (unifOn E k).rank = k := by
   rw [rank, unifOn_eRank_eq, min_eq_right hk, ENat.toNat_coe]
+
+@[simp]
+theorem unifOn_rankPos_iff : (unifOn E k).RankPos ↔ 1 ≤ k ∧ E.Nonempty := by
+  simp [← eRank_ne_zero_iff, unifOn_eRank_eq, ← ENat.one_le_iff_ne_zero, and_comm]
 
 instance {k : ℕ} {E : Set α} : RankFinite (unifOn E k) := by
   rw [← isRkFinite_ground_iff_rankFinite, ← eRk_lt_top_iff,
@@ -165,10 +194,6 @@ theorem unifOn_insert_contractElem (he : e ∉ E) :
   rw [unifOn_contractElem (mem_insert ..), insert_diff_of_mem _ (by simp),
     diff_singleton_eq_self he]
 
--- @[simp] theorem unifOn_contract_eq {k : ℕ} :
---     ((unifOn E k) ／ C) = unifOn (E \ C) (k - (E ∩ C).encard) :=
---   unifOn_contract_eq' E C WithTop.coe_ne_top
-
 instance unifOn_isLoopless (E : Set α) : Loopless (unifOn E (k+1)) := by
   simp_rw [loopless_iff_forall_isNonloop, ← indep_singleton, unifOn_indep_iff]
   simp
@@ -178,18 +203,7 @@ instance unifOn_simple (E : Set α) : Simple (unifOn E (k+2)) := by
   exact fun {e f} he hf ↦ ⟨(encard_pair_le e f).trans (by simp), he, hf⟩
 
 @[simp] lemma circuitOn_dual (E : Set α) : (circuitOn E)✶ = unifOn E 1 := by
-  obtain rfl | ⟨f, hf⟩ := E.eq_empty_or_nonempty
-  · simp
-  refine ext_indep rfl fun I (hIE : I ⊆ E) ↦ ?_
-  rw [← coindep_def, coindep_iff_compl_spanning, circuitOn_spanning_iff ⟨f, hf⟩, unifOn_indep_iff,
-    and_iff_left hIE, circuitOn_ground, Nat.cast_one, encard_le_one_iff_subsingleton]
-  simp_rw [subset_antisymm_iff, insert_subset_iff, and_iff_left diff_subset,
-    ← diff_singleton_subset_iff]
-  refine ⟨fun ⟨e, heE, he⟩ ↦ subsingleton_of_subset_singleton (a := e) ?_, fun h ↦ ?_⟩
-  · rwa [Set.diff_subset_diff_iff_subset (by simpa using heE) hIE] at he
-  obtain rfl | ⟨e, rfl⟩ := h.eq_empty_or_singleton
-  · exact ⟨f, hf, by simp⟩
-  exact ⟨e, by simpa using hIE, rfl.subset⟩
+  rw [← freeOn_truncate, truncate_dual, freeOn_dual_eq, ← unifOn_zero, unifOn_freeLift]
 
 @[simp] lemma unifOn_isCircuit_iff {n : ℕ} :
     (unifOn E n).IsCircuit C ↔ C.encard = n + 1 ∧ C ⊆ E := by
@@ -824,6 +838,7 @@ lemma isFiniteRankUniform_of_eRank_le_two [M.Simple] (hM : M.eRank ≤ 2) (hnt :
   obtain ⟨E, rfl⟩ := eq_unifOn_of_eRank_le_two hM
   exact ⟨E.encard, unifOn_isFiniteRank_uniform <| two_le_encard_iff_nontrivial.2 hnt⟩
 
+@[simp]
 lemma unifOn_one_dual (E : Set α) : (unifOn E 1)✶ = circuitOn E := by
   rw [← circuitOn_dual, dual_dual]
 

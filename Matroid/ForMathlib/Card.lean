@@ -36,6 +36,18 @@ lemma encard_pair_iff (e f : α) : encard {e,f} = 2 ↔ e ≠ f := by
 lemma two_le_encard_iff_nontrivial : 2 ≤ s.encard ↔ s.Nontrivial := by
   rw [← s.one_lt_encard_iff_nontrivial, ← one_add_one_eq_two, ENat.add_one_le_iff (by simp)]
 
+@[grind →]
+lemma Nonempty.one_le_encard (hs : s.Nonempty) : 1 ≤ s.encard :=
+  one_le_encard_iff_nonempty.2 hs
+
+@[grind →]
+lemma Nontrivial.two_le_encard (hs : s.Nontrivial) : 2 ≤ s.encard :=
+  two_le_encard_iff_nontrivial.2 hs
+
+@[grind →]
+lemma Subsingleton.encard_le_one (hs : s.Subsingleton) : s.encard ≤ 1 :=
+  encard_le_one_iff_subsingleton.2 hs
+
 lemma encard_le_encard_diff_singleton_add_one (s : Set α) x : s.encard ≤ (s \ {x}).encard + 1 := by
   grw [← encard_singleton x, ← encard_union_le, diff_union_self, ← subset_union_left]
 

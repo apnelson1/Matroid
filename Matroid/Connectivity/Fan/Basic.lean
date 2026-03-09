@@ -469,38 +469,6 @@ lemma IsFan.minor {N : Matroid α} (hF : M.IsFan F b c) (h4 : 4 ≤ F.length) (h
 
 
 
--- (hX : Disjoint {e | e ∈ F} X)
---     (hb : b = false → F[0] ∉ M.closure X) (hc : c = false → F[F.length - 1] ∉ M.closure X) :
-
-    -- by_cases h1 : F[1] ∈ C; grind
-
-  -- have h_or' : F[i+1] ∈ C ∨ F[i+2] ∈ C := by
-  --   contra
-
-
-  -- -- rw [skew_iff_forall_isCircuit (by grind) hXE (by grind [hF.get_mem_ground])]
-  -- intro C hC hCXu
-
-
-    -- by_cases h1 : F[1] ∈ C
-    -- · by_cases h0C : F[0] ∈ C
-    --   . rw [← hT.isCircuit.eq_of_subset_isCircuit hC (by grind)]
-    --     simp
-    --   obtain ⟨C', hC'ss, hC', h0C'⟩ :=
-    --     hT.isCircuit.strong_elimination hC (f := F[0]) (by simp) h1 (by simp) h0C
-
-
-
-
-
-
-
-  --   sorry
-
-
-
-
-
 
 -- lemma Triassic.exists_fan (hM : M.Triassic) (hfin : M.Finite) (hne : M.Nonempty)
 --     (hconn : M.TutteConnected 3) : ∃ F c, M.IsFan F false c ∧ {e | e ∈ F} = M.E := by
