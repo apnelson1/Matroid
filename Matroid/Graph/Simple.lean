@@ -351,6 +351,13 @@ instance mixedLineGraph_simple : L'(G).Simple where
     rw [← h1.2] at h2
     simp_all
 
+instance completeBipartiteGraph_simple (m n : ℕ) : (CompleteBipartiteGraph m n).Simple where
+  not_isLoopAt e x := by
+    rintro ⟨_, _, ⟨rfl, h⟩ | ⟨rfl, h⟩⟩ <;> cases h
+  eq_of_isLink := by
+    rintro e f x y ⟨_, _, ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩⟩ ⟨_, _, ⟨h, h'⟩ | ⟨h, h'⟩⟩ <;>
+      simp_all [Prod.ext_iff]
+
 section Simplify
 
 variable {φ : β → β}

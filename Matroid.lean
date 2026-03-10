@@ -18,6 +18,7 @@ import Matroid.Connectivity.Connected
 import Matroid.Connectivity.Core
 import Matroid.Connectivity.Extension
 -- import Matroid.Connectivity.Fan.Basic
+-- import Matroid.Connectivity.Fan.Basic_
 -- import Matroid.Connectivity.Fan.Circuit
 -- import Matroid.Connectivity.Fan.CircuitIndex
 -- import Matroid.Connectivity.Fan.Circuit_
@@ -36,9 +37,11 @@ import Matroid.Connectivity.Separation.Vertical
 import Matroid.Connectivity.Skew
 -- import Matroid.Connectivity.Splitter.Cretaceous
 import Matroid.Connectivity.Splitter.TutteTriangle
+-- import Matroid.Connectivity.Triangle
 import Matroid.Constructions.Matching
 import Matroid.Constructions.Project
 import Matroid.Constructions.Relax
+-- import Matroid.Constructions.SeriesParallel
 import Matroid.Constructions.Truncate
 import Matroid.Equiv
 import Matroid.Extension.ExtendBy
@@ -92,6 +95,7 @@ import Matroid.Graph.Map
 -- import Matroid.Graph.Matching.Defs
 -- import Matroid.Graph.Matching.Konigs
 -- import Matroid.Graph.Matching.TutteBerge
+-- import Matroid.Graph.Matrix
 import Matroid.Graph.Minor.Conn
 import Matroid.Graph.Minor.Defs
 -- import Matroid.Graph.Planarity.Cut
@@ -102,7 +106,6 @@ import Matroid.Graph.Minor.Defs
 -- import Matroid.Graph.Planarity.Plane
 -- import Matroid.Graph.Planarity.PolygonalPath
 import Matroid.Graph.Simple
--- import Matroid.Graph.Spanning
 import Matroid.Graph.Subgraph.Basic
 import Matroid.Graph.Subgraph.Compatible
 import Matroid.Graph.Subgraph.Defs
@@ -120,7 +123,6 @@ import Matroid.Graph.WList.TakeDrop
 import Matroid.Graph.Walk.Basic
 import Matroid.Graph.Walk.Cycle
 import Matroid.Graph.Walk.Path
--- import Matroid.Graph.girth
 -- import Matroid.Graphic
 -- import Matroid.Induction
 import Matroid.Intersection
@@ -164,4 +166,3 @@ import Matroid.Spikes
 import Matroid.Tame
 -- import Matroid.Triangle
 import Matroid.Uniform
--- import Matroid.girth

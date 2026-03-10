@@ -85,12 +85,12 @@ lemma IsMatching.symmDiff_maxDegree_le_two (hM : G.IsMatching M) (hM' : G.IsMatc
   sorry
 
 lemma IsMatching.disjoint_inter_of_isCycleGraph_symmDiff (hM : G.IsMatching M)
-    (hM' : G.IsMatching M') (hC : C.IsCycleGraph) (hCG : C ≤ hM.restrict₂ hM') :
+    (hM' : G.IsMatching M') (hC : C.IsCycle) (hCG : C ≤ hM.restrict₂ hM') :
     Disjoint (E(C) ∩ M) (E(C) ∩ M') := by
   sorry
 
 lemma IsMatching.inter_encard_eq_of_isCycleGraph_isCompOf_symmDiff (hM : G.IsMatching M)
-    (hM' : G.IsMatching M') (hC : C.IsCycleGraph) (hCG : C.IsCompOf (hM.restrict₂ hM')) :
+    (hM' : G.IsMatching M') (hC : C.IsCycle) (hCG : C.IsCompOf (hM.restrict₂ hM')) :
     (E(C) ∩ M).encard = (E(C) ∩ M').encard := by
   sorry
 

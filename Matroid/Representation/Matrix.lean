@@ -1,5 +1,5 @@
 import Matroid.Representation.StandardRep
-import Matroid.ForMathlib.LinearAlgebra.Matrix
+import Mathlib.LinearAlgebra.Matrix.Rank
 
 variable {α β ι W W' 𝔽 R : Type*} {e f x : α} {I B X Y : Set α} {M : Matroid α} [Field 𝔽]
   [AddCommGroup W] [Module 𝔽 W] [AddCommGroup W'] [Module 𝔽 W']
@@ -86,22 +86,22 @@ theorem linearIndepOn_image_injOn_iff' {ι ι' R M : Type*} [Ring R] [AddCommGro
   right_inv x := rfl
 
 lemma aux' {B : Set α} [Fintype B] [DecidableEq B] (P : Matrix B α 𝔽) (X : Set B)
-    (hB : ∀ i : B, P.colFun i = Pi.single i 1) (Y : Set α) (hdj : Disjoint ((↑) '' X) Y) :
-    LinearIndepOn 𝔽 P.colFun (((↑) '' X) ∪ Y) ↔
-    LinearIndependent 𝔽 (P.submatrix (fun i : ↥Xᶜ ↦ i.1) (fun i : Y ↦ i.1)).colFun := by
+    (hB : ∀ i : B, P.col i = Pi.single i 1) (Y : Set α) (hdj : Disjoint ((↑) '' X) Y) :
+    LinearIndepOn 𝔽 P.col (((↑) '' X) ∪ Y) ↔
+    LinearIndependent 𝔽 (P.submatrix (fun i : ↥Xᶜ ↦ i.1) (fun i : Y ↦ i.1)).col := by
   classical
   let c := (↑) '' X ∪ Y
   -- have := foo (t := c) subset_union_left
   let Q := P.submatrix id (fun j : c ↦ j.1)
-  change LinearIndependent 𝔽 Q.colFun ↔ LinearIndependent 𝔽
-    (Q.submatrix (fun i : ↥Xᶜ ↦ i.1) (fun j : Y ↦ ⟨j, .inr j.2⟩)).colFun
+  change LinearIndependent 𝔽 Q.col ↔ LinearIndependent 𝔽
+    (Q.submatrix (fun i : ↥Xᶜ ↦ i.1) (fun j : Y ↦ ⟨j, .inr j.2⟩)).col
 
 
   let Q := P.submatrix id (fun j : ↥(((↑) '' X) ∪ Y) ↦ j.1)
   have hQB : ∀ i j {h'}, ⟨j.1, h'⟩ ∈ X → Q i j = if i.1 = j.1 then 1 else 0 := by
     rintro i ⟨j, (hj | hj)⟩ h' hjX
     · simp only [submatrix_apply, id_eq, Q]
-      rw [← P.colFun_apply, hB ⟨j, h'⟩, Pi.single_apply]
+      rw [← P.col_apply, hB ⟨j, h'⟩, Pi.single_apply]
       simp_rw [← Subtype.val_inj]
     exact hdj.notMem_of_mem_left (a := j) (by simpa [h'] using hjX) hj |>.elim
 

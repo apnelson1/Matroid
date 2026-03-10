@@ -189,7 +189,7 @@
       "type": "text",
       "id": "063e0ab2-3442-4373-a515-7af2b7c57228",
       "x": -140,
-      "y": -1280,
+      "y": -1300,
       "width": 400,
       "height": 120,
       "text": "# Edge Conn le deg\nAssuming Loopless"
@@ -212,6 +212,33 @@
       "width": 400,
       "height": 120,
       "text": "2 =< (2/k + 2/g -1)m"
+    },
+    {
+      "type": "text",
+      "id": "9289a715-21ad-470e-91f1-5f82040b4502",
+      "x": -140,
+      "y": -1160,
+      "width": 400,
+      "height": 120,
+      "text": "# Cycle Space\nEdge Restr is even graph\ndisj union of circuits"
+    },
+    {
+      "type": "text",
+      "id": "8ed74bd4-4f96-43ff-b0d1-14cc1086623e",
+      "x": -140,
+      "y": -1020,
+      "width": 400,
+      "height": 120,
+      "text": "# Inc Matrix\nBinary Matroid"
+    },
+    {
+      "type": "text",
+      "id": "888af7d1-2397-4e5f-a7dd-9083334be340",
+      "x": -140,
+      "y": -880,
+      "width": 400,
+      "height": 120,
+      "text": "# Fundamental Circuits\nMatroid prop?"
     }
   ],
   "edges": [
