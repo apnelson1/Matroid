@@ -364,6 +364,36 @@ lemma banana_isComplete_iff (a b : α) (F : Set β) :
   simp only [hne, false_or]
   exact ⟨fun h ↦ ⟨_, h a (by simp) b (by simp) hne |>.choose_spec.edge_mem⟩, banana_isComplete a b⟩
 
+/-- The complete bipartite graph with left part `{0, ..., m - 1}`
+and right part `{0, ..., n - 1}`. -/
+@[simps (attr := grind =)]
+def CompleteBipartiteGraph (m n : ℕ) : Graph (ℕ ⊕ ℕ) (ℕ × ℕ) where
+  vertexSet := {x | match x with | Sum.inl i => i < m | Sum.inr j => j < n}
+  edgeSet := {e | e.1 < m ∧ e.2 < n}
+  IsLink e x y :=
+    e.1 < m ∧ e.2 < n ∧
+      ((x = Sum.inl e.1 ∧ y = Sum.inr e.2) ∨ (x = Sum.inr e.2 ∧ y = Sum.inl e.1))
+  isLink_symm e he x y h := by
+    rcases h.2.2 with hxy | hxy
+    · exact ⟨h.1, h.2.1, Or.inr ⟨hxy.2, hxy.1⟩⟩
+    · exact ⟨h.1, h.2.1, Or.inl ⟨hxy.2, hxy.1⟩⟩
+  eq_or_eq_of_isLink_of_isLink := by
+    rintro e x y z w ⟨_, _, hxy | hxy⟩ ⟨_, _, hzw | hzw⟩ <;> aesop
+  edge_mem_iff_exists_isLink e := by
+    refine ⟨fun he ↦ ?_, fun ⟨x, y, hxy⟩ ↦ ⟨hxy.1, hxy.2.1⟩⟩
+    exact ⟨Sum.inl e.1, Sum.inr e.2, ⟨he.1, he.2, Or.inl ⟨rfl, rfl⟩⟩⟩
+  left_mem_of_isLink := by
+    rintro e x y ⟨he1, he2, hxy | hxy⟩
+    · simpa [hxy.1] using he1
+    · simpa [hxy.1] using he2
+
+@[simp]
+lemma completeBipartiteGraph_adj_iff (m n : ℕ) (x y : ℕ ⊕ ℕ) :
+    (CompleteBipartiteGraph m n).Adj x y ↔
+      (∃ i < m, ∃ j < n, x = Sum.inl i ∧ y = Sum.inr j) ∨
+      (∃ i < m, ∃ j < n, x = Sum.inr j ∧ y = Sum.inl i) := by
+  cases x <;> cases y <;> simp [Adj, CompleteBipartiteGraph]
+
 /-- The star graph with `n` leaves with center `v` -/
 @[simps (attr := grind =)]
 def StarGraph (v : α) (f : β →. α) : Graph α β where

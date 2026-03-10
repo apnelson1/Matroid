@@ -438,3 +438,26 @@ lemma bipartite_iff_forall_cycle_even : G.Bipartite ↔ ∀ C, G.IsCyclicWalk C 
   specialize h (cons P.last e P) ?_
   · exact (hP.isPath.of_le hTG.le).cons_isCyclicWalk hexy <| mt hP.isPath.isWalk.edge_mem_of_mem he
   rwa [cons_length, Nat.even_add_one, Nat.not_even_iff_odd, hP.length_eq_dist] at h
+
+/-- The obvious bipartition of a complete bipartite graph. -/
+@[simps]
+def CompleteBipartiteGraph.bipartition (m n : ℕ) :
+    (CompleteBipartiteGraph m n).Bipartition where
+  left := Sum.inl '' Set.Iio m
+  right := Sum.inr '' Set.Iio n
+  union_eq := by
+    ext x
+    cases x <;> simp [CompleteBipartiteGraph]
+  disjoint := by
+    rw [Set.disjoint_left]
+    rintro x ⟨i, hi, rfl⟩ ⟨j, hj, h⟩
+    cases h
+  forall_edge e he := by
+    have he' : e.1 < m ∧ e.2 < n := by
+      simpa [CompleteBipartiteGraph] using he
+    exact ⟨Sum.inl e.1, by simp [he'.1], Sum.inr e.2, by simp [he'.2],
+      by simp [CompleteBipartiteGraph, he']⟩
+
+@[simp]
+lemma completeBipartiteGraph_bipartite (m n : ℕ) : (CompleteBipartiteGraph m n).Bipartite :=
+  ⟨CompleteBipartiteGraph.bipartition m n⟩

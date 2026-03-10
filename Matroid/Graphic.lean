@@ -5,6 +5,8 @@ import Matroid.Graph.Minor.Conn
 import Matroid.Graph.Connected.Minor
 import Matroid.Connectivity.Skew
 import Matroid.Connectivity.ConnSystem.Matroid
+import Matroid.Graph.Matrix
+import Matroid.Binary.Representation
 
 variable {α β : Type*} {G H : Graph α β} {u v x x₁ x₂ y y₁ y₂ z : α} {e e' f g : β}
   {U V S T : Set α} {B F F' R R': Set β} {C w P Q : WList α β}
@@ -337,15 +339,22 @@ lemma cycleMatroid_isFlat (hFE : F ⊆ E(G)) (hF : ∀ H : Graph α β, H.IsComp
 /-
 From Flat
 - flat iff cycle almost included is included
-- take a compOf G \upr F
+- take a compOf G ↾ F
 - this is clearly a subgraph so why is it induced?
-- induced is defined as any edge, e, between x and y s.t. x and y are in the subgraph then e must also be in the subgraph.
-- Suppose there is an edge e that is not in F and between x and y belonging to some connected component of G \upr F. Then, since connected, there is some path between x and y inside F.
+- induced is defined as any edge, e, between x and y s.t. x and y are in the subgraph then e must
+  also be in the subgraph.
+- Suppose there is an edge e that is not in F and between x and y belonging to some connected
+  component of G ↾ F. Then, since connected, there is some path between x and y inside F.
 - Together with e, we have a cycle which is almost included in F, so e is in F. contradiction
 
 To Flat
 - Take a cycle that is almost included in F.
-- Every vertex of this cycle must be in some connected component of G \upr F.
+- Every vertex of this cycle must be in some connected component of G ↾ F.
 - So the only edge possibly not included in F, e, is between two vertices in the component.
 - This component is an induced subgraph so e is included in F.
 -/
+
+lemma cycleMatroid_representable (G : Graph α β) (𝔽 : Type*) [Field 𝔽] :
+    G.cycleMatroid.Representable 𝔽 := by
+  sorry
+

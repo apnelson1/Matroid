@@ -343,6 +343,11 @@ lemma vertexSet_finite_iff [G.LocallyFinite] : V(G).Finite ↔ G.Finite := by
 --   contrapose! h
 --   exact minimal_exist h
 
-end Graph
+instance completeBipartiteGraph_finite (m n : ℕ) : (CompleteBipartiteGraph m n).Finite :=
+  finite_of_vertexSet_finite (G := CompleteBipartiteGraph m n) <| by
+    rw [show V(CompleteBipartiteGraph m n) = Sum.inl '' Set.Iio m ∪ Sum.inr '' Set.Iio n by
+      ext x
+      cases x <;> simp [CompleteBipartiteGraph]]
+    exact (finite_lt_nat m).image Sum.inl |>.union <| (finite_lt_nat n).image Sum.inr
 
--- lemma IsForest.exists_isLeaf [G.Finite] (hG : )
+end Graph
