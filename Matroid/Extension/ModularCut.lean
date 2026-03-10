@@ -415,8 +415,7 @@ lemma mem_delete_iff (U : M.ModularCut) {D : Set α}  :
 
 lemma mem_delete_elem_iff :
     F ∈ U.delete {e} ↔ (e ∉ F) ∧ (F ∈ U ∨ (insert e F ∈ U ∧ e ∈ M.closure F)) := by
-  rw [ModularCut.delete, ModularCut.restrict, ModularCut.mem_mk_iff, mem_setOf_eq,
-    ← delete_eq_restrict, deleteElem_isFlat_iff]
+  simp only [mem_delete_iff, deleteElem_isFlat_iff]
   constructor
   rintro ⟨⟨heF, (hF | hF)⟩, hFU⟩
   · rw [hF.closure] at hFU

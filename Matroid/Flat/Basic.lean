@@ -128,7 +128,7 @@ lemma IsFlat.eRk_insert_eq_add_one (hF : M.IsFlat F) (he : e ∈ M.E \ F) :
 
 lemma IsFlat.rk_insert_eq_add_one (hF : M.IsFlat F) (hfin : M.IsRkFinite F) (he : e ∈ M.E \ F) :
     M.rk (insert e F) = M.rk F + 1 := by
-  rw [← Nat.cast_inj (R := ℕ∞), (hfin.insert _).cast_rk_eq, hF.eRk_insert_eq_add_one he,
+  rw [← ENat.coe_inj, (hfin.insert _).cast_rk_eq, hF.eRk_insert_eq_add_one he,
     Nat.cast_add, hfin.cast_rk_eq, Nat.cast_one]
 
 lemma IsFlat.rk_lt_of_superset (hF : M.IsFlat F) (hFX : F ⊂ X) (hfin : M.IsRkFinite X)

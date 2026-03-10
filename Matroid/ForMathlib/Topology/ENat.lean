@@ -82,10 +82,13 @@ protected theorem tsum_singleton_add_tsum_ne {a : α} :
   rw [eq_comm, ← tsum_univ, show univ = insert a {a}ᶜ by ext; simp [em]]
   exact ENat.tsum_insert (by simp)
 
-protected theorem tsum_sub (hfin : ∑' a, g a ≠ ⊤) (h : g ≤ f) :
-    ∑' a, (f a - g a) = ∑' a, f a - ∑' a, g a := by
-  rw [← WithTop.add_right_inj hfin, ← ENat.tsum_add,
-    tsum_congr (fun i ↦ tsub_add_cancel_of_le (h i)), tsub_add_cancel_of_le (ENat.tsum_le_tsum h)]
+-- protected theorem tsum_sub (hfin : ∑' a, g a ≠ ⊤) (h : g ≤ f) :
+--     ∑' a, (f a - g a) = ∑' a, f a - ∑' a, g a := by
+--   rw [← (ENat.add_right_injective_of_ne_top hfin).eq_iff, ← ENat.tsum_add]
+--   rw [ENat.sub]
+
+    -- tsum_congr ,
+    --   tsub_add_cancel_of_le (ENat.tsum_le_tsum h)]
 
 protected theorem mul_tsum (c : ℕ∞) : c * ∑' a, f a = ∑' a, c * f a := by
   simp_rw [ENat.tsum_eq_iSup_sum, ENat.mul_iSup, Finset.mul_sum]

@@ -178,13 +178,20 @@ noncomputable def isoMap (M : Matroid α) (f : α → β) (hf : M.E.InjOn f) : M
   toEquiv := Equiv.Set.imageOfInjOn _ _ hf
   indep_image_iff' := by
     intro I
-    simp only [Equiv.Set.imageOfInjOn, map_ground, Equiv.coe_fn_mk, image_val_image_val_eq]
-    rw [map_image_indep_iff <| Subtype.coe_image_subset M.E I]
+    rw [← map_image_indep_iff (hf := hf) <| Subtype.coe_image_subset M.E I, image_image]
+    convert Iff.rfl
+    rw [image_image]
+    rfl
 
 @[simps]
 noncomputable def isoMapEquiv (M : Matroid α) (f : α ≃ β) : M ≂ (M.mapEquiv f) where
   toEquiv := Equiv.Set.image f _ f.injective
-  indep_image_iff' I := by simp
+  indep_image_iff' I := by
+    simp only [mapEquiv_ground_eq, image_image, mapEquiv_indep_iff]
+    convert Iff.rfl with p q
+    obtain ⟨p, hp⟩ := p
+    rw [Equiv.symm_apply_eq]
+    rfl
 
 noncomputable def isoComapOn (M : Matroid β) (f : α → β) {E : Set α} (hf : BijOn f E M.E) :
     (M.comapOn E f) ≂ M where
@@ -193,19 +200,42 @@ noncomputable def isoComapOn (M : Matroid β) (f : α → β) {E : Set α} (hf :
     rw [comapOn_indep_iff, and_iff_right (hf.injOn.mono <| Subtype.coe_image_subset _ I),
       image_image, image_image]
     simp [BijOn.equiv]
+    rw [and_iff_left]
+    · convert Iff.rfl
+      aesop
+    exact subset_univ I
 
 noncomputable def isoComap (M : Matroid β) (f : α → β) (hf : BijOn f (f ⁻¹' M.E) M.E) :
     M.comap f ≂ M :=
   (Iso.ofEq <| (comapOn_preimage_eq M f).symm).trans (isoComapOn M f hf)
 
-noncomputable def isoMapSetEmbedding (M : Matroid α) (f : M.E ↪ β) : M ≂ M.mapSetEmbedding f where
-  toEquiv := (Equiv.ofInjective f f.injective)
-  indep_image_iff' I := by simp [preimage_image_eq _ f.injective, image_image]
+-- noncomputable def isoMapSetEmbedding (M : Matroid α) (f : M.E ↪ β) : M ≂ M.mapSetEmbedding f
+-- where
+--   toEquiv := (Equiv.ofInjective f f.injective)
+--   indep_image_iff' I := by
+--     rw [mapSetEmbedding_indep_iff, and_iff_left]
+--     · convert Iff.rfl
+--       ext ⟨x, hx⟩
+--       refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+--       · simp only [mapSetEmbedding_ground, mem_preimage, mem_image, Subtype.exists, mem_range,
+--         exists_and_right, exists_eq_right, EmbeddingLike.apply_eq_iff_eq, Subtype.mk.injEq,
+--         exists_prop] at h
 
-noncomputable def isoMapSetEquiv (M : Matroid α) {E : Set β} (f : M.E ≃ E) :
-    M ≂ M.mapSetEquiv f where
-  toEquiv := f
-  indep_image_iff' := by simp
+
+
+
+--       -- change f ⁻¹' ((Equiv.ofInjective f f.injective) '' I) = _
+--       -- simp [Equiv.ofInjective, Equiv.ofLeftInverse]
+
+
+--     simp only [mapSetEmbedding_ground, image_subset_iff]
+--     intro x
+--     simp
+
+-- noncomputable def isoMapSetEquiv (M : Matroid α) {E : Set β} (f : M.E ≃ E) :
+--     M ≂ M.mapSetEquiv f where
+--   toEquiv := f
+--   indep_image_iff' := by simp
 
 /-- If `M` and `N` are isomorphic and `α → β` is nonempty, then `N` is a map of `M`.
 Useful for getting out of subtype hell. -/
@@ -298,7 +328,10 @@ def Iso.restrict (e : M ≂ N) {R : Set α} {S : Set β} (hR : R ⊆ M.E) (hS : 
     simp only [restrict_ground_eq, restrict_indep_iff, image_subset_iff, Subtype.coe_preimage_self,
       subset_univ, and_true]
     intro I
-    convert e.indep_image_iff (I := (embeddingOfSubset _ _ hR) '' I) using 2 <;> simp
+    convert e.indep_image_iff (I := (embeddingOfSubset _ _ hR) '' I) using 2
+    · simp
+    simp only [image_image, embeddingOfSubset_coeFun]
+    rfl
 
 end restrict
 
@@ -369,5 +402,8 @@ lemma Iso.spanning_iff (i : M ≂ N) (X : Set M.E) :
   · simp [coindep_def]
   rw [coindep_def]
   convert Iff.rfl
-  rw [i.dual_image' Xᶜ, image_compl_eq (show Function.Bijective i from i.toEquiv.bijective)]
+  have hwin := i.dual_image' Xᶜ
+  apply_fun (image Subtype.val) at hwin
+  convert hwin
+  rw [image_compl_eq (show Function.Bijective i from i.toEquiv.bijective)]
   simp

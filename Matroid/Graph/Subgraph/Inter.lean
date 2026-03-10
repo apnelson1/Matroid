@@ -198,7 +198,7 @@ alias ⟨Disjoint.vertex_disjoint, _⟩ := disjoint_iff_vertexSet_disjoint
 
 lemma Compatible.inter_edgeSet (h : G.Compatible H) : E(G ∩ H) = E(G) ∩ E(H) := by
   rw [Graph.inter_edgeSet]
-  exact le_antisymm (fun e he ↦ he.1) fun e he ↦ ⟨he, h he⟩
+  exact le_antisymm (fun e he ↦ he.1) fun e he ↦ ⟨he, h.eqOn he⟩
 
 lemma inter_eq_iInter : G ∩ H = Graph.iInter (fun b ↦ bif b then G else H) :=
   Graph.ext (by simp [Bool.apply_cond]) (by simp [and_comm])

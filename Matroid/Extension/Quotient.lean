@@ -168,7 +168,7 @@ lemma Quotient.exists_eq_contract_eq_delete_of_discrepancy_finite' (hQ : N ≤q 
       rw [← hQ.encard_isBase_diff_eq_discrepancy_ground hI hK (hIJ.trans hJK.subset),
         encard_insert_of_notMem haX] at h_discr
       obtain ⟨x, hxK, hxJ⟩ := exists_of_ssubset hJK
-      grw [← WithTop.add_le_add_iff_right (z := 1) (by simp), ← h_discr,
+      grw [← ENat.add_le_add_iff_right (k := 1) (by simp), ← h_discr,
         ← encard_insert_of_notMem (show x ∉ J \ I from notMem_subset diff_subset hxJ)]
       exact encard_le_encard
         (insert_subset ⟨hxK, notMem_subset hIJ hxJ⟩ (diff_subset_diff_left hJK.subset))

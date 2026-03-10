@@ -45,7 +45,7 @@ lemma ModularCut.eRk_insert_le_eRk_add_one (U : M.ModularCut) :
 
 lemma ModularCut.rk_insert_le_rk_add_one [RankFinite M] {e : α} (U : M.ModularCut) :
     (M.extendBy e U).rk (insert e X) ≤ M.rk X + 1 := by
-  rw [← Nat.cast_le (α := ℕ∞), cast_rk_eq, Nat.cast_add, cast_rk_eq, Nat.cast_one]
+  rw [← ENat.coe_le_coe, cast_rk_eq, Nat.cast_add, cast_rk_eq, Nat.cast_one]
   exact U.eRk_insert_le_eRk_add_one
 
 lemma ModularCut.eRk_le_extendBy_eRk_insert {e : α} (U : M.ModularCut) :

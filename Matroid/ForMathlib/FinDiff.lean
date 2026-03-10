@@ -1,9 +1,12 @@
 import Mathlib.Data.Set.Card
 import Mathlib.Tactic.Linarith
+import Matroid.ForMathlib.ENat
 
 variable {α : Type*} {X Y : Set α} {e f : α}
 
-open Set
+set_option linter.style.longLine false
+
+open Set Insert Set.Notation
 
 @[mk_iff]
 structure FinDiff (X Y : Set α) : Prop where
@@ -47,11 +50,77 @@ lemma finDiff_insert_insert {e f : α} (he : e ∉ X) (hf : f ∉ X) :
   rw [sdiff_eq_left.2 (by simpa), sdiff_eq_left.2 (by simpa using hne.symm)]
   simp
 
+lemma FinDiff.insert {e f : α} (hXY : FinDiff X Y) (heX : e ∉ X) (heY : e ∉ Y)
+    (hfX : f ∉ X) (hfY : f ∉ Y) : FinDiff (insert e X) (insert f Y) := by
+  obtain rfl | hne := eq_or_ne e f
+  . rw [finDiff_iff, insert_diff_of_mem _ (by simp),
+      and_iff_right (hXY.diff_left_finite.subset (by grind)), diff_insert_of_notMem heX,
+      insert_diff_of_mem _ (by simp), diff_insert_of_notMem heY, hXY.encard_diff_eq]
+  rwa [finDiff_iff, insert_diff_of_notMem _ (by grind), insert_diff_of_notMem _ (by grind),
+    diff_insert_of_notMem hfX, diff_insert_of_notMem heY, encard_insert_of_notMem (by grind),
+      encard_insert_of_notMem (by grind), ENat.add_one_eq_add_one_iff, finite_insert,
+      ← finDiff_iff]
+
 lemma finDiff_singleton_singleton (e f : α) : FinDiff {e} {f} := by
   convert finDiff_insert_insert (X := ∅) (e := e) (f := f) (by simp) (by simp) <;> simp
 
+@[elab_as_elim]
+protected lemma FinDiff.induction {motive : (X : Set α) → (Y : Set α) → FinDiff X Y → Prop}
+    -- the base case; the required proposition holds for a set and itself
+    (h0 : ∀ X, motive X X (finDiff_refl X))
+    -- induction; if the proposition holds for `X, Y`, it should hold for `X + e, Y + f`
+    -- for distinct new elements `e, f`.
+    (h_int : ∀ (X Y : Set α) (hXY : FinDiff X Y) (a b : α) (haX : a ∉ X) (haY : a ∉ Y)
+      (hbX : b ∉ X) (hbY : b ∉ Y) (_hab : a ≠ b) (_ih : motive X Y hXY),
+      motive (Insert.insert a X) (Insert.insert b Y) (hXY.insert haX haY hbX hbY))
+      {X Y : Set α} (hXY : FinDiff X Y) : motive X Y hXY := by
+  obtain hXYe | ⟨e, hXYe⟩ := (X \ Y).eq_empty_or_nonempty
+  · simp_rw [← hXY.eq_of_subset <| diff_eq_empty.1 hXYe]
+    apply h0
+  obtain ⟨f, hf⟩ := hXY.symm.nonempty_of_nonempty ⟨e, hXYe⟩
+  have hcard : ((X \ {e}) \ (Y \ {f})).encard + 1 = (X \ Y).encard := by
+    rw [diff_diff_right, inter_singleton_eq_empty.2 (by grind), union_empty, diff_diff_comm,
+      ← encard_diff_singleton_add_one hXYe]
+  have hcard' : ((Y \ {f}) \ (X \ {e})).encard + 1 = (Y \ X).encard := by
+    rw [diff_diff_right, inter_singleton_eq_empty.2 (by grind), union_empty, diff_diff_comm,
+      ← encard_diff_singleton_add_one hf]
+  have hlt : ((X \ {e}) \ (Y \ {f})).encard < (X \ Y).encard := by
+    rw [← ENat.add_one_lt_add_one_iff, hcard, ENat.lt_add_one_iff]
+    exact encard_ne_top_iff.2 hXY.diff_left_finite
+  have hfd : FinDiff (X \ {e}) (Y \ {f}) := by
+    refine ⟨hXY.diff_left_finite.subset (by grind), ?_⟩
+    rw [← ENat.add_one_eq_add_one_iff, hcard, hcard', hXY.encard_diff_eq]
+  have m := FinDiff.induction (motive := motive) h0 h_int hfd
+  specialize h_int _ _ hfd e f (by simp) (by grind) (by grind) (by simp) (by grind) m
+  simp_rw [insert_diff_self_of_mem hXYe.1, insert_diff_self_of_mem hf.1] at h_int
+  assumption
+termination_by (X \ Y).encard
+
+
+  -- induction hd : (X \ Y).encard generalizing X Y with
+  -- | zero =>
+  --   have hXY0 : (X \ Y).encard = 0 := by simpa using hd
+  --   have hYX0 := hXY.encard_diff_eq ▸ hXY0
+  --   simp only [encard_eq_zero, diff_eq_empty] at hXY0 hYX0
+  --   obtain rfl : X = Y := hXY0.antisymm hYX0
+  --   apply h0 X
+  -- | succ n ih =>
+  --   have hYX : hXY.diff_right_finite.toFinset.card = n + 1:=
+
+-- lemma FinDiff.exists (h : FinDiff X Y) : ∃ (Z P Q : Set α), P.Finite ∧ Q.Finite ∧
+--     Disjoint Z P ∧ Disjoint Z Q ∧ Disjoint P Q ∧ P.encard = Q.encard ∧ X = Z ∪ P ∧ Y = Z ∪ Q := by
+--   sorry
+
+-- lemma FinDiff.finDiff_union_union_iff' {P Q : Set α} (hPQ : FinDiff P Q) (hPX : Disjoint P X)
+--     (hQY : Disjoint Q Y)  : FinDiff X Y ↔ FinDiff (X ∪ P) (Y ∪ Q) := by
+--   obtain ⟨R, P, Q, hP, hQ, hRP, hRQ, hPQ, hPQcard, rfl, rfl⟩ := hPQ.exists
+
+
+
+
 lemma FinDiff.finDiff_union_union_iff {P Q : Set α} (hPQ : FinDiff P Q) (hPX : Disjoint P X)
     (hQY : Disjoint Q Y) : FinDiff X Y ↔ FinDiff (X ∪ P) (Y ∪ Q) := by
+
   have hrw' : ∀ {A B C D : Set α}, Disjoint A C → Disjoint B D → (A \ B) ∩ D = (D \ C) ∩ A := by
     intro A B C D h1 h2
     rw [subset_antisymm_iff, subset_inter_iff, and_iff_left (inter_subset_left.trans diff_subset),
@@ -70,7 +139,8 @@ lemma FinDiff.finDiff_union_union_iff {P Q : Set α} (hPQ : FinDiff P Q) (hPX : 
   have hfin4 : ((P \ Q) \ Y).Finite := hPQ.diff_left_finite.diff
 
   rw [finDiff_iff, ← diff_union_inter (X \ Y) Q, finDiff_iff, union_diff_distrib, ← diff_diff,
-    union_comm Y, ← diff_diff, union_diff_distrib, ← diff_diff (s := Y), union_comm X, ← diff_diff,
+    union_comm Y, ← diff_diff, union_diff_distrib, ← diff_diff (s := Y), union_comm X,
+← diff_diff,
     finite_union, finite_union, encard_union_eq disjoint_sdiff_inter, hrw1,
     and_iff_left hfin2, and_iff_left hfin4, and_congr_right_iff,
     encard_union_eq, encard_union_eq, ← diff_union_inter (Y \ X) P,
@@ -82,8 +152,9 @@ lemma FinDiff.finDiff_union_union_iff {P Q : Set α} (hPQ : FinDiff P Q) (hPX : 
 
   obtain hinf | hfin5 := ((Y \ X) \ P).finite_or_infinite.symm
   · simp only [hinf.encard_eq, top_add]
-    rw [WithTop.add_eq_top, WithTop.add_eq_top, encard_eq_top_iff, encard_eq_top_iff,
-      encard_eq_top_iff]
+    simp
+    -- rw [ENat.add_eq, WithTop.add_eq_top, encard_eq_top_iff, encard_eq_top_iff,
+    --   encard_eq_top_iff]
     simp [hfin2, hfin4]
   intro hfin6
 
@@ -92,8 +163,8 @@ lemma FinDiff.finDiff_union_union_iff {P Q : Set α} (hPQ : FinDiff P Q) (hPX : 
 
   rw [hfin1.encard_eq_coe, hfin2.encard_eq_coe, hfin3.encard_eq_coe, hfin4.encard_eq_coe] at h' ⊢
   rw [hfin5.encard_eq_coe, hfin6.encard_eq_coe]
-  simp_rw [← Nat.cast_add, Nat.cast_inj] at h' ⊢
-  refine ⟨fun h ↦ by linarith, fun h ↦ by linarith⟩
+  simp_rw [← Nat.cast_add, ENat.coe_inj] at h' ⊢
+  exact ⟨fun h ↦ by linarith, fun h ↦ by linarith⟩
 
 lemma finDiff_insert_insert_iff (heX : e ∉ X) (hfY : f ∉ Y) :
     FinDiff X Y ↔ FinDiff (insert e X) (insert f Y) := by
@@ -105,11 +176,11 @@ lemma FinDiff.union_union {P Q : Set α} (hXY : FinDiff X Y) (hPQ : FinDiff P Q)
   rwa [← hPQ.finDiff_union_union_iff hPX hQY]
 
 lemma FinDiff.insert_insert (hXY : FinDiff X Y) (heX : e ∉ X) (hfY : f ∉ Y) :
-    FinDiff (insert e X) (insert f Y) := by
+    FinDiff (Insert.insert e X) (Insert.insert f Y) := by
   rwa [← finDiff_insert_insert_iff heX hfY]
 
 lemma FinDiff.exchange_right (hXY : FinDiff X Y) {e f : α} (heY : e ∈ Y) (hfY : f ∉ Y) :
-    FinDiff X (insert f (Y \ {e})) := by
+    FinDiff X (Insert.insert f (Y \ {e})) := by
   by_cases heX : e ∈ X
   · have hrw := finDiff_insert_insert_iff (X := X \ {e}) (Y := Y \ {e}) (e := e) (f := e)
       (by simp) (by simp)
@@ -127,12 +198,11 @@ lemma FinDiff.trans {X Y Z : Set α} (hXY : FinDiff X Y) (hYZ : FinDiff Y Z) : F
     rwa [hYZ.symm.eq_of_subset h]
   obtain ⟨f, hfY, hfZ⟩ := hYZ.nonempty_of_nonempty h
   obtain ⟨e, heZ, heY⟩ := h
-  have decr : (insert f (Z \ {e}) \ Y).encard < (Z \ Y).encard := by
+  have decr : (Insert.insert f (Z \ {e}) \ Y).encard < (Z \ Y).encard := by
     rw [insert_diff_of_mem _ hfY, diff_diff_comm,
       ← encard_diff_singleton_add_one (show e ∈ Z \ Y by simp [heZ, heY]), ENat.lt_add_one_iff]
     simp [hYZ.diff_right_finite.diff]
-
-  have IH : FinDiff Y (insert f (Z \ {e})) := hYZ.exchange_right heZ hfZ
+  have IH : FinDiff Y (Insert.insert f (Z \ {e})) := hYZ.exchange_right heZ hfZ
   have hd := FinDiff.trans hXY IH
   have hne : e ≠ f := by rintro rfl; contradiction
   convert hd.exchange_right (e := f) (f := e) (by simp) (by simp [heZ, hne])

@@ -11,6 +11,7 @@ namespace Matroid
 
 section Minor
 
+set_option backward.isDefEq.respectTransparency false in
 /-- Contracting a set preserves representability. -/
 @[simps!] def Rep.contract (v : M.Rep 𝔽 W) (C : Set α) :
     (M ／ C).Rep 𝔽 (W ⧸ (span 𝔽 (v '' C))) where
@@ -21,7 +22,7 @@ section Minor
     · rw [hI.contract_indep_iff, and_iff_left hCJ, ← v.span_closure_congr hI.closure_eq_closure,
         (v.onIndep hI.indep).quotient_iff_union (hCJ.mono_left hI.subset), v.indep_iff, union_comm]
     obtain ⟨e, heC, heJ⟩ := not_disjoint_iff.1 hCJ
-    exact iff_of_false (fun hi ↦ hCJ (subset_diff.1 hi.subset_ground).2.symm)
+    refine iff_of_false (fun hi ↦ hCJ (subset_diff.1 hi.subset_ground).2.symm)
       fun hli ↦ hli.ne_zero heJ <| by simpa using subset_span (mem_image_of_mem v heC)
 
 @[simps!] noncomputable def Rep.delete (v : M.Rep 𝔽 W) (D : Set α) : (M ＼ D).Rep 𝔽 W :=

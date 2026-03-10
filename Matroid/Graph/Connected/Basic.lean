@@ -477,9 +477,7 @@ lemma ConnGE.edgeDelete_linkEdges (h : G.ConnGE (n + 1)) (u v : α) :
   le_cut C hC := by
     by_contra! hcd
     obtain h1 | h2 | h3 | h4 := hC.of_edgeDelete_linkEdges
-    · have := hcd.trans_le' (h.le_cut h1)
-      norm_cast at this
-      simp at this
+    · simpa using ENat.coe_lt_coe.1 <| hcd.trans_le' (h.le_cut h1)
     · simpa [hcd.not_ge] using h.le_cut h2 |>.trans <| encard_insert_le ..
     · simpa [hcd.not_ge] using h.le_cut h3 |>.trans <| encard_insert_le ..
     obtain h | hss := h.le_card.symm
@@ -612,7 +610,7 @@ lemma ConnGE.exists_isNonloopAt {k : ℕ} (hG : G.ConnGE k) (hk : 2 ≤ k) :
   have hconn : G.Connected := hG.connected (show 1 ≤ k from (by decide : 1 ≤ 2).trans hk)
   have hle : (k : ℕ∞) ≤ V(G).encard := by simpa using hG.le_cut vertexSet_isSep
   have hnt : V(G).Nontrivial := by
-    exact two_le_encard_iff_nontrivial.mp <| (by norm_cast : (2 : ℕ∞) ≤ k).trans hle
+    exact two_le_encard_iff_nontrivial.mp <| (by simpa : (2 : ℕ∞) ≤ k).trans hle
   obtain ⟨x, hx⟩ := hconn.nonempty
   obtain ⟨e, y, hxy, hne⟩ := hconn.exists_isLink_of_mem hnt hx
   exact ⟨e, x, ⟨y, hne, hxy⟩⟩
@@ -835,5 +833,3 @@ lemma maxDegreeLE_iff_forall_component {d : ℕ} :
   intro v H hH hvH
   rw [← G.eq_sUnion_components, ← hH.isClosedSubgraph.eDegree_eq hvH]
   exact h H hH v
-
-

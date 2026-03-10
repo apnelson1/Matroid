@@ -196,6 +196,7 @@ lemma faithful_delete_of_subset_closure (hD : D ⊆ P i) (hDcl : D ⊆ M.closure
     grw [coindep_iff_subset_closure_compl, ← diff_subset_diff_left (P.subset (i := i)), ← hDcl]
   rwa [faithful_delete_iff_subset_closure_of_subset hDi hD]
 
+set_option backward.isDefEq.respectTransparency false in
 lemma faithful_delete_of_forall_subset_closure (hDcl : ∀ i, P i ∩ D ⊆ M.closure (P i \ D)) :
     P.Faithful (M ＼ D) := by
   wlog hD : D ⊆ M.E generalizing D with aux
@@ -368,7 +369,7 @@ lemma faithful_iff_of_delete (P : (M ＼ D).Separation) (hD : D ⊆ M.E) (i : Bo
 
 
   -- cases i <;> simp [ofDelete, inter_eq_self_of_subset_right hD, ← diff_diff, skew_empty hss]
-
+set_option backward.isDefEq.respectTransparency false in
 lemma faithful_iff_of_contract (P : (M ／ C).Separation) (hC : C ⊆ M.E) (i : Bool) :
     (P.induce M i).Faithful (M ／ C) ↔ M.Skew (P !i) (C \ P !i) := by
   convert (P.induce (M✶ ＼ C) i).faithful_iff_of_delete hC i using 1
@@ -376,6 +377,7 @@ lemma faithful_iff_of_contract (P : (M ／ C).Separation) (hC : C ⊆ M.E) (i : 
       induce_induce_of_subset _ (by simp)]
   rw [dual_dual, induce_apply_not, show (M✶ ＼ C).E = (M ／ C).E by simp, P.inter_ground_left]
 
+set_option backward.isDefEq.respectTransparency false in
 lemma faithful_iff_of_remove {b} (P : (M.remove b X).Separation) (hX : X ⊆ M.E) (i : Bool) :
     (P.induce M i).Faithful (M.remove b X) ↔ (M.bDual (!b)).Skew (P !i) (X \ P !i) := by
   cases b

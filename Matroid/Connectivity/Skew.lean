@@ -327,6 +327,7 @@ lemma IsRkFinite.isSkewFamily_iff_sum_eRk_eq_eRk_iUnion [Fintype η] {Xs : η �
   exact pairwiseDisjoint_of_sum_encard_le_encard_iUnion
     (fun i ↦ (hXs i).finite_of_isBasis (hIs i)) (hsum.le.trans <| M.eRk_le_encard _)
 
+set_option backward.isDefEq.respectTransparency false in
 lemma isSkewFamily_iff_sum_eRk_eq_eRk_iUnion [Fintype η] [RankFinite M] {Xs : η → Set α}
     (hXs : ∀ i, Xs i ⊆ M.E) : M.IsSkewFamily Xs ↔ ∑ i, M.rk (Xs i) = M.rk (⋃ i, Xs i) := by
   simp_rw [IsRkFinite.isSkewFamily_iff_sum_eRk_eq_eRk_iUnion (fun i ↦ M.isRkFinite_set (Xs i)) hXs,
@@ -722,7 +723,7 @@ lemma skew_insert_iff (he : e ∈ M.E) :
   by_cases heY : e ∈ Y
   · refine iff_of_false (fun hsk ↦ hnl.not_isLoop ?_) ?_
     · exact hsk.inter_subset_loops ⟨.inl rfl, by simpa using heY⟩
-    rw [not_and, _root_.not_imp]
+    rw [not_and, Classical.not_imp]
     refine fun hsk ↦ ⟨M.mem_closure_of_mem' <| .inr heY  , fun hcl ↦ hnl.not_isLoop ?_⟩
     exact hsk.inter_closure_eq.subset (show e ∈ _ from ⟨hcl, M.mem_closure_of_mem' heY⟩)
 

@@ -311,7 +311,7 @@ def CompleteGraph (n : ℕ) : Graph ℕ (Sym2 ℕ) where
     induction e with
     | h x y =>
     simp +contextual only [mem_setOf_eq, Sym2.mem_iff, forall_eq_or_imp, forall_eq,
-      Sym2.isDiag_iff_proj_eq, ne_eq, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq, Prod.swap_prod_mk,
+      Sym2.mk_isDiag_iff, ne_eq, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq, Prod.swap_prod_mk,
       exists_and_left, iff_def, and_imp, forall_exists_index]
     refine ⟨fun hx hy hne ↦ ?_, fun a ha b hb hne heq ↦ ?_⟩
     · use x, hx, y, hy, hne, by simp
@@ -477,10 +477,11 @@ def LineSimpleGraph (G : Graph α β) : SimpleGraph E(G) :=
 
 /-- The line graph of a graph `G` is the simple graph with the same vertices as `G` and edges
     given by the pairs of edges in `G` that have a common vertex. -/
-@[simps (attr := grind =)]
+@[simps! (attr := grind =)]
 def LineGraph (G : Graph α β) : Graph β (Sym2 β) where
   vertexSet := E(G)
-  edgeSet := Sym2.mk '' { (e, f) | (e ≠ f) ∧ ∃ x, G.Inc e x ∧ G.Inc f x }
+  edgeSet := (fun (p : β × β) ↦ Sym2.mk p.1 p.2) ''
+    { (e, f) | (e ≠ f) ∧ ∃ x, G.Inc e x ∧ G.Inc f x }
   IsLink a e f := s(e, f) = a ∧ e ≠ f ∧ ∃ x, G.Inc e x ∧ G.Inc f x
   edge_mem_iff_exists_isLink a := by simp only [and_comm, mem_image, mem_setOf_eq, Prod.exists]
   isLink_symm a ha e f hef := by
@@ -506,7 +507,8 @@ lemma lineGraph_inc (G : Graph α β) (s : Sym2 β) (e : β) : L(G).Inc s e ↔ 
   · exact ⟨⟨e, a, ⟨hne, x, he, ha⟩, rfl⟩, by simp⟩
   obtain rfl | rfl := by simpa using hes
   · use b, rfl, hne, x
-  use a, Sym2.eq_swap, hne.symm, x
+  use a, Sym2.eq_swap, Ne.symm hne
+  exact ⟨x, hb, ha⟩
 
 @[simp]
 lemma lineGraph_adj (G : Graph α β) (e f : β) :

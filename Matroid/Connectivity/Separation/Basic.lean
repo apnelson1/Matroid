@@ -28,6 +28,7 @@ variable {α : Type*} {M N : Matroid α} {j k : ℕ∞} {e f : α} {A B X X' Y Y
 implicitly including the data of the actual matroid. -/
 protected def Separation (M : Matroid α) := M.E.IndexedPartition Bool
 
+set_option backward.isDefEq.respectTransparency false in
 instance : FunLike M.Separation Bool (Set α) where
   coe P i := IndexedPartition.toFun P i
   coe_injective' P Q := by simp
@@ -203,6 +204,7 @@ relevant, so we give lemmas more generally in terms of `P.induce N i`. -/
 def induce (P : M.Separation) (N : Matroid α) (i : Bool := false) : N.Separation :=
   IndexedPartition.shift P N.E i
 
+set_option backward.isDefEq.respectTransparency false in
 lemma induce_apply_eq_cond (P : M.Separation) (N : Matroid α) (i : Bool) :
     P.induce N i j = bif j == i then P j ∩ N.E ∪ (N.E \ M.E) else P j ∩ N.E := by
   rw [induce, IndexedPartition.shift_apply_eq_ite]
@@ -290,6 +292,7 @@ lemma induce_induce_of_subset {N' : Matroid α} (P : M.Separation) {i} (hss : M.
 lemma induce_self (P : M.Separation) : P.induce M i = P :=
   Separation.ext_bool (!i) <| by simp
 
+set_option backward.isDefEq.respectTransparency false in
 lemma induce_induce_eq_self (P : M.Separation) (hss : M.E ⊆ N.E) (i : Bool) :
     (P.induce N i).induce M = P :=
   Separation.ext_bool (!i) <| by rw [P.induce_induce hss, induce_apply_not, P.inter_ground_left]
@@ -500,6 +503,7 @@ lemma induce_dual_induce (P : M.Separation) (N i) : (P.induce M✶).induce N i =
 lemma eConn_induce_bDual (P : M.Separation) (b) : (P.induce (M.bDual b)).eConn = P.eConn := by
   cases b <;> simp
 
+set_option backward.isDefEq.respectTransparency false in
 lemma Trivial.eConn (h : P.Trivial) : P.eConn = 0 := by
   obtain ⟨i, hb⟩ := h
   simp [← P.eConn_eq i, hb]

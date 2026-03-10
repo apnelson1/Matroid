@@ -199,6 +199,7 @@ lemma Rep.FunStandard.apply_eq_single [DecidableEq β] (hv : v.FunStandard i) (b
   · simp [hv.apply_eq]
   rw [hv.apply_ne hne, Pi.single_eq_of_ne hne.symm]
 
+set_option backward.isDefEq.respectTransparency false in
 lemma Rep.FunStandard.IsBase [M.RankFinite] (hv : v.FunStandard i) : M.IsBase (range i) := by
   classical
   have h1 : M.Indep (range i) := by
@@ -291,6 +292,7 @@ lemma Rep.IsStandard.isBase {v : M.Rep 𝔽 (B →₀ 𝔽)} (hv : v.IsStandard)
   apply Finsupp.basisSingleOne.ofFun_isBase (fun x ↦ by simp [hv.apply_finsupp x])
   exact fun e heB ↦ v.mem_ground_of_apply_ne_zero <| by simp [hv.apply_finsupp_mem heB]
 
+set_option backward.isDefEq.respectTransparency false in
 lemma Rep.standardRep'_isStandard (v : M.Rep 𝔽 W) (hB : M.IsBase B) :
     (v.standardRep' hB).IsStandard := by
   simp only [standardRep', FullRank.basis_of_isBase, isStandard_iff, compEquiv_apply,

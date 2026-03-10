@@ -162,7 +162,7 @@ lemma Representable.encard_le_of_simple [RankFinite M] [Simple M] (h : M.Represe
     replace hE := show E.Subsingleton by simpa using hE
     obtain rfl | ⟨e, rfl⟩ := hE.eq_empty_or_singleton <;>
     simp [rank]
-  have hr : 1 < M.rank := by rwa [← Nat.cast_lt (α := ℕ∞), cast_rank_eq]
+  have hr : 1 < M.rank := by rwa [← ENat.coe_lt_coe, cast_rank_eq]
   -- If `𝔽` is infinite, this is trivial, because the RHS is infinite.
   obtain hinf | hfin := (finite_or_infinite 𝔽).symm
   · refine le_trans ?_ (CanonicallyOrderedAddCommMonoid.single_le_sum (i := 1) (by simpa))

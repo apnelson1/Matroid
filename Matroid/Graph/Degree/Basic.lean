@@ -187,11 +187,11 @@ lemma eDegree_eq_zero_iff_inc : G.eDegree v = 0 ↔ ∀ e, ¬ G.Inc e v := by
   simp [eDegree]
 
 lemma eDegree_eq_zero_iff_adj : G.eDegree v = 0 ↔ ∀ x, ¬ G.Adj v x := by
-  simp only [eDegree, ENat.tsum_eq_zero, Nat.cast_eq_zero, incFun_vertex_eq_zero_iff]
+  simp only [eDegree, ENat.tsum_eq_zero, ENat.coe_eq_zero, incFun_vertex_eq_zero_iff]
   exact ⟨fun h x ⟨e, hvx⟩ ↦ h e hvx.inc_left, fun h e ⟨y, hev⟩ ↦ h y hev.adj⟩
 
 lemma degree_eq_zero_iff_inc [G.LocallyFinite] : G.degree v = 0 ↔ ∀ e, ¬ G.Inc e v := by
-  rw [← Nat.cast_inj (R := ℕ∞), natCast_degree_eq, Nat.cast_zero, eDegree_eq_zero_iff_inc]
+  rw [← ENat.coe_inj, natCast_degree_eq, Nat.cast_zero, eDegree_eq_zero_iff_inc]
 
 lemma degree_ne_zero_iff_inc [G.LocallyFinite] : G.degree v ≠ 0 ↔ ∃ e, G.Inc e v := by
   have := (G.degree_eq_zero_iff_inc (v := v)).not
@@ -199,7 +199,7 @@ lemma degree_ne_zero_iff_inc [G.LocallyFinite] : G.degree v ≠ 0 ↔ ∃ e, G.I
   exact this
 
 lemma degree_eq_zero_iff_adj [G.LocallyFinite] : G.degree v = 0 ↔ ∀ x, ¬ G.Adj v x := by
-  rw [← Nat.cast_inj (R := ℕ∞), natCast_degree_eq, Nat.cast_zero, eDegree_eq_zero_iff_adj]
+  rw [← ENat.coe_inj, natCast_degree_eq, Nat.cast_zero, eDegree_eq_zero_iff_adj]
 
 lemma degree_ne_zero_iff_adj [G.LocallyFinite] : G.degree v ≠ 0 ↔ ∃ x, G.Adj v x := by
   have := (G.degree_eq_zero_iff_adj (v := v)).not
@@ -214,19 +214,22 @@ lemma degree_eq_zero_of_notMem (hv : v ∉ V(G)) : G.degree v = 0 := by
 
 lemma degree_eq_fintype_sum [Fintype β] (G : Graph α β) (v : α) :
     G.degree v = ∑ e, G.incFun e v := by
-  rw [degree, eDegree, tsum_eq_sum (s := Finset.univ) (by simp), ← Nat.cast_inj (R := ℕ∞),
+  rw [degree, eDegree, tsum_eq_sum (s := Finset.univ) (by simp), ← ENat.coe_inj,
     Nat.cast_sum, ENat.coe_toNat]
+  · rfl
   exact WithTop.sum_ne_top.2 fun i _ ↦ WithTop.coe_ne_top
 
 lemma degree_eq_finsum (G : Graph α β) (v : α) : G.degree v = ∑ᶠ e, G.incFun e v := by
   obtain hfin | hinf := E(G, v).finite_or_infinite
-  · rw [degree, eDegree, tsum_eq_sum (s := hfin.toFinset) (by simp), ← Nat.cast_inj (R := ℕ∞),
+  · rw [degree, eDegree, tsum_eq_sum (s := hfin.toFinset) (by simp), ← ENat.coe_inj,
       ENat.coe_toNat, finsum_eq_sum_of_support_subset (s := hfin.toFinset), Nat.cast_sum]
+    · rfl
     · simp
     intro h
-    rw [(WithTop.sum_eq_top (s := hfin.toFinset) (f := fun e ↦ (G.incFun e v : ℕ∞)))] at h
+
+    replace h := ((WithTop.sum_eq_top (s := hfin.toFinset) (f := fun e ↦ (G.incFun e v : ℕ∞)))).1 h
     obtain ⟨e, he, h_eq⟩ := h
-    simp [ENat.coe_ne_top (G.incFun e v)] at h_eq
+    exact ENat.coe_ne_top _ h_eq
   rw [degree, eDegree, ENat.toNat_eq_zero.2 (.inr _), ← finsum_of_infinite_support]
   · exact hinf.mono fun e hev ↦ by simpa
   rw [ENat.tsum_eq_top_iff]
@@ -239,9 +242,10 @@ lemma finsum_incFun_eq (he : e ∈ E(G)) : ∑ᶠ v, G.incFun e v = 2 := by
 
 @[simp]
 lemma tsum_incFun_eq (he : e ∈ E(G)) : ∑' v, (G.incFun e v : ℕ∞) = 2 := by
-  convert (Nat.cast_inj (R := ℕ∞)).2 <| G.sum_incFun_eq_two he
+  convert (ENat.coe_inj).2 <| G.sum_incFun_eq_two he
   rw [Finsupp.sum, tsum_eq_sum' (s := (G.incFun e).support) (by simp)]
-  simp
+  simp only [Nat.cast_sum]
+  rfl
 
 lemma IsLoopAt.two_le_eDegree (h : G.IsLoopAt e x) : 2 ≤ G.eDegree x := by
   rw [eDegree]
@@ -259,11 +263,11 @@ lemma Inc.one_le_eDegree (h : G.Inc e x) : 1 ≤ G.eDegree x := by
   exact h.one_le_eDegree
 
 lemma IsLoopAt.two_le_degree [G.LocallyFinite] (h : G.IsLoopAt e x) : 2 ≤ G.degree x := by
-  rw [← Nat.cast_le (α := ℕ∞), natCast_degree_eq]
+  rw [← ENat.coe_le_coe, natCast_degree_eq]
   exact h.two_le_eDegree
 
 lemma Inc.one_le_degree [G.LocallyFinite] (h : G.Inc e x) : 1 ≤ G.degree x := by
-  rw [← Nat.cast_le (α := ℕ∞), natCast_degree_eq]
+  rw [← ENat.coe_le_coe, natCast_degree_eq]
   exact h.one_le_eDegree
 
 lemma IsNonloopAt.one_le_degree [G.LocallyFinite] (h : G.IsNonloopAt e x) : 1 ≤ G.degree x :=
@@ -290,11 +294,13 @@ theorem handshake_eDegree_subtype (G : Graph α β) :
   obtain ⟨e, hex : G.Inc e x⟩ := by simpa [eDegree] using hx
   exact hex.vertex_mem
 
+set_option backward.isDefEq.respectTransparency false in
 lemma handshake_degree_subtype (G : Graph α β) [G.Finite] :
     ∑ᶠ v ∈ V(G), G.degree v = 2 * E(G).ncard := by
-  rw [finsum_mem_eq_finite_toFinset_sum _ G.vertexSet_finite, ← Nat.cast_inj (R := ℕ∞),
+  rw [finsum_mem_eq_finite_toFinset_sum _ G.vertexSet_finite, ← ENat.coe_inj,
     Nat.cast_sum, ← tsum_eq_sum (L := SummationFilter.unconditional _)]
-  · simp [G.edgeSet_finite.cast_ncard_eq, handshake_eDegree]
+  · simp only [natCast_degree_eq, Nat.cast_mul, Nat.cast_ofNat]
+    rw [handshake_eDegree, G.edgeSet_finite.cast_ncard_eq]
   simp +contextual [eDegree_eq_zero_of_notMem]
 
 lemma handshake_degree_finset (G : Graph α β) [G.Finite] :
@@ -330,7 +336,7 @@ lemma encard_setOf_inc_le_eDegree (G : Graph α β) (x : α) :
 
 lemma degree_eq_ncard_add_ncard (G : Graph α β) [G.LocallyFinite] (x : α) :
     G.degree x = 2 * {e | G.IsLoopAt e x}.ncard + {e | G.IsNonloopAt e x}.ncard := by
-  rw [← Nat.cast_inj (R := ℕ∞), natCast_degree_eq, eDegree_eq_encard_add_encard]
+  rw [← ENat.coe_inj, natCast_degree_eq, eDegree_eq_encard_add_encard]
   simp [G.finite_setOf_isLoopAt.cast_ncard_eq, G.finite_setOf_isNonloopAt.cast_ncard_eq]
 
 lemma incEdges_eq_isLoopAt_union_isNonloopAt :
@@ -402,7 +408,7 @@ lemma eDegree_mono (hle : H ≤ G) (x : α) : H.eDegree x ≤ G.eDegree x :=
 
 lemma degree_mono [hG : G.LocallyFinite] (hle : H ≤ G) (x : α) : H.degree x ≤ G.degree x := by
   have := hG.mono hle
-  rw [← Nat.cast_le (α := ℕ∞), natCast_degree_eq, natCast_degree_eq]
+  rw [← ENat.coe_le_coe, natCast_degree_eq, natCast_degree_eq]
   exact eDegree_mono hle x
 
 lemma IsClosedSubgraph.eDegree_eq (h : H ≤c G) (hx : x ∈ V(H)) : H.eDegree x = G.eDegree x := by

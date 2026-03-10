@@ -51,7 +51,7 @@ lemma CrossingBinary.iso {N : Matroid β} (hM : M.CrossingBinary) (i : M ≂ N) 
   have hfin : (Subtype.val '' (⇑i.symm '' N.E ↓∩ ↑X)).Finite
   · simp [← encard_ne_top_iff, hcard_eq]
   convert hM.even_of_finite (i.symm.isCrossing_image hX') hfin
-  rw [← Nat.cast_inj (R := ℕ∞), ← encard_coe_eq_coe_finsetCard, ← hcard_eq,
+  rw [← ENat.coe_inj, ← encard_coe_eq_coe_finsetCard, ← hcard_eq,
     ← encard_coe_eq_coe_finsetCard]
   simp
 
@@ -67,8 +67,8 @@ lemma crossingBinary_of_eRank_le_one (hM : M.eRank ≤ 1) : M.CrossingBinary := 
     (hC.eRk_add_one_eq.symm.trans_le (add_le_add_left (M.eRk_le_eRank C) 1)).trans
     (add_le_add_left hM 1)
   replace hX' := (encard_le_encard (hX'.subset.trans inter_subset_left)).trans hC'
-  rw [encard_coe_eq_coe_finsetCard, Nat.cast_le_ofNat] at hX'
-  obtain (h | h | h) : X.card = 1 ∨ X.card = 0 ∨ X.card = 2 := by omega
+  rw [encard_coe_eq_coe_finsetCard, ENat.coe_le_ofNat] at hX'
+  obtain (h | h | h) : X.card = 1 ∨ X.card = 0 ∨ X.card = 2 := by lia
   · simpa [h] using hX.encard_ne_one
   · simp [h]
   simp [h]
@@ -90,6 +90,7 @@ lemma crossingBinary_unif_iff {a b : ℕ} : (unif a b).CrossingBinary ↔ a ≤ 
   refine (crossingBinary_of_eRank_le_one ?_).of_dual
   suffices (b : ℕ∞) ≤ a + 1 by simpa [unif_dual, add_comm]
   norm_cast
+  rwa [ENat.coe_le_coe]
 
 end CrossingBinary
 
@@ -115,7 +116,7 @@ lemma exist_isCocircuits_of_rank_two (hr : M.eRank = 2) (hel : ¬ M.IsColoop e) 
     hN.simple.simplification_eq_self, show ((4 : ℕ) : ℕ∞) = (2 : ℕ∞) + 1 + 1 by norm_num,
     ENat.lt_add_one_iff (by norm_num),
     ← encard_diff_singleton_add_one (he.mem_simplification hN),
-    WithTop.add_le_add_iff_right (by simp), ← delete_ground] at hU
+    ENat.add_one_le_add_one_iff, ← delete_ground] at hU
   -- Since `N ＼ e` has rank two and at most two elements,
   -- it must have a two-element ground set `{a,b}`.
   obtain ⟨I, hI⟩ := (N ＼ {e}).exists_isBase

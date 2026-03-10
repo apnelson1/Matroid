@@ -493,14 +493,16 @@ lemma sep_subset_compl (H : G.Subgraph) : H.sep ⊆ V(Hᶜ.val) := by
   simp [sep_eq_vertexSet_inter_compl]
 
 lemma inf_compl_eq_bot_iff : H₁ ⊓ H₁ᶜ = ⊥ ↔ H₁.val ≤c G := by
+  -- why is this needed? for some reason `coe_bot` won't fire manually as of mathlib update.
+  have hbot : ((⊥ : G.Subgraph) : Graph α β) = ⊥ := rfl
   refine ⟨fun h => ⟨H₁.prop, fun e x hex hxH ↦ ?_⟩, fun h => ?_⟩
   · by_contra! he
     apply_fun Graph.vertexSet ∘ Subtype.val at h
-    simp only [comp_apply, coe_inf, inter_vertexSet, ← sep_eq_vertexSet_inter_compl, coe_bot,
+    simp only [comp_apply, coe_inf, inter_vertexSet, ← sep_eq_vertexSet_inter_compl, hbot,
       bot_vertexSet, eq_empty_iff_forall_notMem] at h
     exact h x ⟨hxH, by use e, ⟨hex.edge_mem, he⟩⟩
   refine Subtype.ext ?_
-  simp only [coe_inf, coe_bot, inter_eq_bot_iff, compl_vertexSet]
+  simp only [coe_inf, hbot, inter_eq_bot_iff, compl_vertexSet]
   ext x
   simp +contextual only [mem_inter_iff, mem_union, mem_diff, mem_incVertexSet_iff,
     mem_empty_iff_false, iff_false, not_and, not_true_eq_false, and_false, false_or, not_exists,

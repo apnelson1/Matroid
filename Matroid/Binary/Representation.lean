@@ -10,6 +10,7 @@ variable {α β W W' 𝔽 R ι : Type*} {e f x : α} {I E B X Y : Set α} {M : M
 
 open Function Set
 
+set_option backward.isDefEq.respectTransparency false in
 @[simp] lemma ne_one_iff {x : ZMod 2} : x ≠ 1 ↔ x = 0 := by
   fin_cases x <;> simp
 
@@ -64,6 +65,7 @@ instance {hB : M.IsBase B} : hB.BinaryProxy.Finitary :=
 lemma IsBase.binaryProxyRep_isStandard (hB : M.IsBase B) : hB.binaryProxyRep.IsStandard := by
   apply hB.fundCoord_isStandard
 
+set_option backward.isDefEq.respectTransparency false in
 lemma CrossingBinary.eq_binaryProxy (hM : M.CrossingBinary) (hB : M.IsBase B) :
     M = hB.BinaryProxy := by
   refine Eq.symm <| Quotient.eq_of_isBase_indep ?_ hB hB.fundCoord_isBase.indep

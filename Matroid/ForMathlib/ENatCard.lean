@@ -594,7 +594,7 @@ def equivFinOfCardPos {α : Type*} (h : Nat.card α ≠ 0) : α ≃ Fin (Nat.car
   · simp only [card_eq_zero_of_infinite, ne_eq, not_true_eq_false] at h
 
 theorem card_of_subsingleton (a : α) [Subsingleton α] : Nat.card α = 1 := by
-  rw [← Nat.cast_inj (R := ℕ∞), Nat.cast_card]
+  rw [← ENat.coe_inj, Nat.cast_card]
   exact ENat.card_of_subsingleton a
 
 theorem card_eq_one_iff_unique : Nat.card α = 1 ↔ Subsingleton α ∧ Nonempty α := by

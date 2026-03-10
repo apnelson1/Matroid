@@ -86,13 +86,12 @@ lemma pair_closure_isLine [Simple M] (hne : e ≠ f) (he : e ∈ M.E := by aesop
 lemma indep_of_encard_le_two [Simple M] (h : I.encard ≤ 2) (hI : I ⊆ M.E := by aesop_mat) :
     M.Indep I := by
   have hne : I.encard ≠ ⊤ := (h.trans_lt (by exact (cmp_eq_lt_iff 2 ⊤).mp rfl : (2 : ℕ∞) < ⊤ )).ne
-  rw [le_iff_lt_or_eq, encard_eq_two, ← ENat.add_one_le_iff hne, (by norm_num : (2 : ℕ∞) = 1 + 1),
-    WithTop.add_le_add_iff_right, encard_le_one_iff_eq] at h
-  · obtain (rfl | ⟨x, rfl⟩) | ⟨x, y, -, rfl⟩ := h
-    · exact M.empty_indep
-    · refine indep_singleton.2 (isNonloop_of_loopless (by aesop_mat))
-    exact pair_indep
-  norm_num
+  rw [le_iff_lt_or_eq, encard_eq_two, ← ENat.add_one_le_iff hne, ← one_add_one_eq_two,
+    ENat.add_one_le_add_one_iff, encard_le_one_iff_eq] at h
+  obtain (rfl | ⟨x, rfl⟩) | ⟨x, y, -, rfl⟩ := h
+  · exact M.empty_indep
+  · refine indep_singleton.2 (isNonloop_of_loopless (by aesop_mat))
+  exact pair_indep
 
 lemma eRk_pair_eq [Simple M] (hef : e ≠ f) (he : e ∈ M.E := by aesop_mat)
     (hf : f ∈ M.E := by aesop_mat) : M.eRk {e,f} = 2 := by
@@ -107,10 +106,10 @@ lemma three_le_girth_iff : 3 ≤ M.girth ↔ M.Simple := by
   · exact hC.dep.not_indep <| indep_of_encard_le_two (Order.le_of_lt_add_one hlt)
   simp_rw [simple_iff_isLoopless_eq_of_parallel_forall, loopless_iff_forall_isCircuit,
     ← one_lt_encard_iff_nontrivial]
-  refine ⟨fun C hC ↦ (show (1 : ℕ∞) < 3 by norm_num).trans_le (h C hC),
+  refine ⟨fun C hC ↦ (show (1 : ℕ∞) < 3 by enat_to_nat; lia).trans_le (h C hC),
     fun e f hef ↦ by_contra fun hne ↦ ?_⟩
   have hcon := (h _ (hef.isCircuit_of_ne hne)).trans_eq (encard_pair hne)
-  norm_num at hcon
+  simp at hcon
 
 lemma three_le_girth (M : Matroid α) [M.Simple] : 3 ≤ M.girth := by
   rwa [three_le_girth_iff]

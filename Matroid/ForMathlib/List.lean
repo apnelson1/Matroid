@@ -239,101 +239,105 @@ theorem splitBy_append_of_not_rel {r : α → α → Bool} {l₁ l₂ : List α}
     · rw [splitBy_cons_cons_of_not_rel _ hab, splitBy_cons_cons_of_not_rel _ hab, ← cons_append,
         splitBy_append_of_not_rel (by simp) hl₂ (by simpa), cons_append]
 
-theorem splitBy_of_isChain {r : α → α → Bool} {l : List α} (hc : l.IsChain (r · ·)) (hne : l ≠ []) :
-    splitBy r l = [l] := by
-  match l, hne with
-  | [a], _ => simp
-  | a :: b :: as, _ =>
-    rw [isChain_cons_cons] at hc
-    obtain ⟨m, ms, hm⟩ := bar r b as
-    obtain ⟨rfl, rfl⟩ : as = m ∧ ms = [] := by simpa [splitBy_of_isChain hc.2] using hm
-    rw [foo hc.1 hm]
+-- theorem splitBy_of_isChain {r : α → α → Bool} {l : List α} (hc : l.IsChain (r · ·))
+-- (hne : l ≠ []) :
+--     splitBy r l = [l] := by
+--   match l, hne with
+--   | [a], _ => simp
+--   | a :: b :: as, _ =>
+--     rw [isChain_cons_cons] at hc
+--     obtain ⟨m, ms, hm⟩ := bar r b as
+--     obtain ⟨rfl, rfl⟩ : as = m ∧ ms = [] := by simpa [splitBy_of_isChain hc.2] using hm
+--     rw [foo hc.1 hm]
 
-theorem splitBy_of_mem_splitBy {r : α → α → Bool} {l l' : List α} (h : l ∈ splitBy r l') :
-    splitBy r l = [l] :=
-  splitBy_of_isChain (isChain_of_mem_splitBy h) (ne_nil_of_mem_splitBy h)
+-- theorem splitBy_of_mem_splitBy {r : α → α → Bool} {l l' : List α} (h : l ∈ splitBy r l') :
+--     splitBy r l = [l] :=
+--   splitBy_of_isChain (isChain_of_mem_splitBy h) (ne_nil_of_mem_splitBy h)
 
-theorem splitBy_flatten_of_cons {r : α → α → Bool} {l l' : List α} {L : List (List α)}
-    (h : splitBy r l = l' :: L) : L.flatten.splitBy r = L := by
-  match l with
-  | nil => simp at h
-  | [a] =>
-    obtain rfl | rfl := (by simpa only [splitBy_singleton, infix_singleton_iff] using h)
-    simp
-  | a :: b :: as =>
-    obtain ⟨m, ms, hm⟩ := bar r b as
-    by_cases hab : r a b
-    · obtain ⟨rfl, rfl⟩ : _ = l' ∧ ms = L := by simpa [foo hab hm] using h
-      exact splitBy_flatten_of_cons hm
-    · obtain ⟨rfl, rfl⟩ : [a] = l' ∧ _ = L := by simpa [splitBy_cons_cons_of_not_rel _ hab] using h
-      rw [flatten_splitBy]
+-- theorem splitBy_flatten_of_cons {r : α → α → Bool} {l l' : List α} {L : List (List α)}
+--     (h : splitBy r l = l' :: L) : L.flatten.splitBy r = L := by
+--   match l with
+--   | nil => simp at h
+--   | [a] =>
+--     obtain rfl | rfl := (by simpa only [splitBy_singleton, infix_singleton_iff] using h)
+--     simp
+--   | a :: b :: as =>
+--     obtain ⟨m, ms, hm⟩ := bar r b as
+--     by_cases hab : r a b
+--     · obtain ⟨rfl, rfl⟩ : _ = l' ∧ ms = L := by simpa [foo hab hm] using h
+--       exact splitBy_flatten_of_cons hm
+--     · obtain ⟨rfl, rfl⟩ : [a] = l' ∧ _ = L := by simpa [splitBy_cons_cons_of_not_rel _ hab]
+-- using h
+--       rw [flatten_splitBy]
 
-theorem splitBy_flatten_of_prefix {r : α → α → Bool} {l : List α} {L : List (List α)}
-    (h : L <+: splitBy r l) : L.flatten.splitBy r = L := by
-  match l with
-  | nil =>
-    obtain rfl := by simpa using h
-    simp
-  | [a] =>
-    obtain rfl | rfl := (by simpa only [splitBy_singleton, infix_singleton_iff] using h.isInfix)
-    <;> simp
-  | a :: b :: as =>
-    obtain ⟨m, ms, hm⟩ := bar r b as
-    by_cases hab : r a b
-    · have habms := foo hab hm
-      rw [habms, prefix_cons_iff] at h
-      obtain rfl | ⟨L', rfl, hl'⟩ := h
-      · simp
-      have hbm := splitBy_of_mem_splitBy  <| hm ▸ (by simp : (b :: m) ∈ ((b :: m) :: ms))
-      obtain rfl | hneL' := eq_or_ne L' []
-      · simp only [flatten_cons, flatten_nil, append_nil]
-        exact foo hab hbm
-      have hrec := splitBy_flatten_of_prefix <| (splitBy_flatten_of_cons hm) ▸ hl'
-      have hne_flat : L'.flatten ≠ [] := by
-        intro hflat
-        simp [hflat, hneL'] at hrec
-      have hboundary : ¬ r ((a :: b :: m).getLast (by simp)) ((L'.flatten).head hne_flat) := by
-        have := isChain_getLast_head_splitBy r (a :: b :: as)
-        rw [habms, ← cons_head_tail (by grind : ms ≠ [])] at this
-        obtain ⟨_, hmsh, hf⟩ := this.rel_head
-        simp only [ne_eq, reduceCtorEq, not_false_eq_true, getLast_cons, Bool.not_eq_true]
-        simp_rw [head_flatten_eq_head_head hne_flat (hl'.head hneL' ▸ hmsh), hl'.head hneL']
-        exact hf
-      rw [flatten_cons, splitBy_append_of_not_rel (by simp) hne_flat hboundary, hrec]
-      simp [foo hab hbm]
-    · rw [splitBy_cons_cons_of_not_rel _ hab, prefix_cons_iff] at h
-      obtain rfl | ⟨L', rfl, hl'⟩ := h
-      · simp
-      obtain rfl | hneL' := eq_or_ne L' []
-      · simp
-      have := splitBy_flatten_of_prefix hl'
-      have hne_flat : L'.flatten ≠ [] := by
-        intro hflat
-        simp [hflat, hneL'] at this
-      -- The head of `L'.flatten` is `b`, since `L'` is a nonempty prefix of `(b :: as).splitBy r`.
-      have hboundary : ¬ r ([a].getLast (by simp)) ((L'.flatten).head hne_flat) := by
-        have := isChain_getLast_head_splitBy r (a :: b :: as)
-        rw [splitBy_cons_cons_of_not_rel _ hab, hm] at this
-        obtain ⟨_, hmsh, hf⟩ := this.rel_head
-        simp only [getLast_singleton, Bool.not_eq_true]
-        simp_rw [head_flatten_eq_head_head hne_flat (by simp [hl'.head hneL', hm]), hl'.head hneL',
-          hm]
-        exact hf
-      rw [flatten_cons, splitBy_append_of_not_rel (by simp) hne_flat hboundary, this]
-      simp
+-- theorem splitBy_flatten_of_prefix {r : α → α → Bool} {l : List α} {L : List (List α)}
+--     (h : L <+: splitBy r l) : L.flatten.splitBy r = L := by
+--   match l with
+--   | nil =>
+--     obtain rfl := by simpa using h
+--     simp
+--   | [a] =>
+--     obtain rfl | rfl := (by simpa only [splitBy_singleton, infix_singleton_iff] using h.isInfix)
+--     <;> simp
+--   | a :: b :: as =>
+--     obtain ⟨m, ms, hm⟩ := bar r b as
+--     by_cases hab : r a b
+--     · have habms := foo hab hm
+--       rw [habms, prefix_cons_iff] at h
+--       obtain rfl | ⟨L', rfl, hl'⟩ := h
+--       · simp
+--       have hbm := splitBy_of_mem_splitBy  <| hm ▸ (by simp : (b :: m) ∈ ((b :: m) :: ms))
+--       obtain rfl | hneL' := eq_or_ne L' []
+--       · simp only [flatten_cons, flatten_nil, append_nil]
+--         exact foo hab hbm
+--       have hrec := splitBy_flatten_of_prefix <| (splitBy_flatten_of_cons hm) ▸ hl'
+--       have hne_flat : L'.flatten ≠ [] := by
+--         intro hflat
+--         simp [hflat, hneL'] at hrec
+--       have hboundary : ¬ r ((a :: b :: m).getLast (by simp)) ((L'.flatten).head hne_flat) := by
+--         have := isChain_getLast_head_splitBy r (a :: b :: as)
+--         rw [habms, ← cons_head_tail (by grind : ms ≠ [])] at this
+--         obtain ⟨_, hmsh, hf⟩ := this.rel_head
+--         simp only [ne_eq, reduceCtorEq, not_false_eq_true, getLast_cons, Bool.not_eq_true]
+--         simp_rw [head_flatten_eq_head_head hne_flat (hl'.head hneL' ▸ hmsh), hl'.head hneL']
+--         exact hf
+--       rw [flatten_cons, splitBy_append_of_not_rel (by simp) hne_flat hboundary, hrec]
+--       simp [foo hab hbm]
+--     · rw [splitBy_cons_cons_of_not_rel _ hab, prefix_cons_iff] at h
+--       obtain rfl | ⟨L', rfl, hl'⟩ := h
+--       · simp
+--       obtain rfl | hneL' := eq_or_ne L' []
+--       · simp
+--       have := splitBy_flatten_of_prefix hl'
+--       have hne_flat : L'.flatten ≠ [] := by
+--         intro hflat
+--         simp [hflat, hneL'] at this
+--       -- The head of `L'.flatten` is `b`, since `L'`
+-- is a nonempty prefix of `(b :: as).splitBy r`.
+--       have hboundary : ¬ r ([a].getLast (by simp)) ((L'.flatten).head hne_flat) := by
+--         have := isChain_getLast_head_splitBy r (a :: b :: as)
+--         rw [splitBy_cons_cons_of_not_rel _ hab, hm] at this
+--         obtain ⟨_, hmsh, hf⟩ := this.rel_head
+--         simp only [getLast_singleton, Bool.not_eq_true]
+--         simp_rw [head_flatten_eq_head_head hne_flat (by simp [hl'.head hneL', hm]),
+-- hl'.head hneL',
+--           hm]
+--         exact hf
+--       rw [flatten_cons, splitBy_append_of_not_rel (by simp) hne_flat hboundary, this]
+--       simp
 
-theorem splitBy_flatten_of_infix {r : α → α → Bool} {l : List α} {L : List (List α)}
-    (h : L <:+: splitBy r l) : L.flatten.splitBy r = L := by
-  induction hl : splitBy r l generalizing l with
-  | nil =>
-    obtain rfl := by simpa [hl] using h
-    simp
-  | cons head tail IH =>
-    rw [hl, infix_cons_iff] at h
-    obtain hnil | htl := h
-    · exact splitBy_flatten_of_prefix <| hl ▸ hnil
-    · have htlf := splitBy_flatten_of_cons hl
-      exact IH (htlf.symm ▸ htl) htlf
+-- theorem splitBy_flatten_of_infix {r : α → α → Bool} {l : List α} {L : List (List α)}
+--     (h : L <:+: splitBy r l) : L.flatten.splitBy r = L := by
+--   induction hl : splitBy r l generalizing l with
+--   | nil =>
+--     obtain rfl := by simpa [hl] using h
+--     simp
+--   | cons head tail IH =>
+--     rw [hl, infix_cons_iff] at h
+--     obtain hnil | htl := h
+--     · exact splitBy_flatten_of_prefix <| hl ▸ hnil
+--     · have htlf := splitBy_flatten_of_cons hl
+--       exact IH (htlf.symm ▸ htl) htlf
 
 variable {e f x : α} {b c d : Bool} {L : List α}
 

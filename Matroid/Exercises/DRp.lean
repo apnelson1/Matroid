@@ -114,12 +114,12 @@ theorem TLT (M : Matroid α) [M.Finite] (hXY : Disjoint X Y) (hXE : X ⊆ M.E) (
   -- 2 inductive step cases that they are equal
 
   have minor_delConnBetween: (M ＼ {e}).connBetween X Y ≤ M.connBetween X Y := by
-    rw [← Nat.cast_le (α := ℕ∞), M.coe_connBetween X Y hXY, (M ＼ {e}).coe_connBetween X Y hXY]
+    rw [← ENat.coe_le_coe, M.coe_connBetween X Y hXY, (M ＼ {e}).coe_connBetween X Y hXY]
     --simp only [deleteElem]
     apply M.eConnBetween_delete_le X Y {e}
 
   have minor_contrConnBetween: (M ／ {e}).connBetween X Y ≤ M.connBetween X Y := by
-    rw [← Nat.cast_le (α := ℕ∞), M.coe_connBetween X Y hXY, (M ／ {e}).coe_connBetween X Y hXY]
+    rw [← ENat.coe_le_coe, M.coe_connBetween X Y hXY, (M ／ {e}).coe_connBetween X Y hXY]
     --simp only [contractElem]
     apply M.eConnBetween_contract_le X Y {e}
 

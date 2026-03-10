@@ -625,7 +625,7 @@ lemma IsRkFinite.isModularPair_iff_eRk (hXfin : M.IsRkFinite X) (hYfin : M.IsRkF
     (hIi.subset.trans inter_subset_right)
   refine ⟨IX, IY, hIX, hIY, ?_⟩
   rw [hIi.eRk_eq_encard, hIX.eRk_eq_encard, ← encard_diff_add_encard_of_subset hX,
-    add_comm (encard _), add_assoc, WithTop.add_left_inj hifin, hIY.eRk_eq_encard,
+    add_comm (encard _), add_assoc, add_right_inj_of_ne_top hifin, hIY.eRk_eq_encard,
     ← encard_union_add_encard_inter, ← union_eq_self_of_subset_left hY, ← union_assoc,
     diff_union_self, union_eq_self_of_subset_right hX] at hr
   refine IsBasis.indep <| (hXfin.union hYfin).isBasis_of_subset_closure_of_subset_of_encard_le ?_
@@ -638,7 +638,7 @@ lemma IsRkFinite.isModularPair_iff_eRk (hXfin : M.IsRkFinite X) (hYfin : M.IsRkF
 lemma IsRkFinite.isModularPair_iff_rk (hXfin : M.IsRkFinite X) (hYfin : M.IsRkFinite Y)
     (hXE : X ⊆ M.E := by aesop_mat) (hYE : Y ⊆ M.E := by aesop_mat) :
     M.IsModularPair X Y ↔ M.rk X + M.rk Y = M.rk (X ∩ Y) + M.rk (X ∪ Y) := by
-  rw [hXfin.isModularPair_iff_eRk hYfin, ← Nat.cast_inj (R := ℕ∞), ← hXfin.cast_rk_eq,
+  rw [hXfin.isModularPair_iff_eRk hYfin, ← ENat.coe_inj, ← hXfin.cast_rk_eq,
     ← hYfin.cast_rk_eq, ← hXfin.inter_right.cast_rk_eq, ← (hXfin.union hYfin).cast_rk_eq,
     Nat.cast_add, Nat.cast_add]
 

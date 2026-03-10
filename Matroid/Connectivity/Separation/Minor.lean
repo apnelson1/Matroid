@@ -76,6 +76,7 @@ lemma compl_contract_singleton (P : (M ／ {e}).Separation) (he : e ∈ M.E := b
     (i : Bool) : M.E \ (P i) = insert e (P !i) := by
   rw [compl_contract, union_singleton]
 
+set_option backward.isDefEq.respectTransparency false in
 /-- The generalized Bixby-Coullard inequality for pairs of separations. -/
 lemma eConn_inter_add_eConn_inter_le_add (P : (M ／ X).Separation) (Q : (M ＼ X).Separation)
     (i : Bool) :
@@ -94,6 +95,7 @@ lemma eConn_inter_add_eConn_inter_le_add_of_singleton
     M.eConn (P i ∩ Q i) + M.eConn (P (!i) ∩ Q (!i)) ≤ P.eConn + Q.eConn + 1 := by
   grw [P.eConn_inter_add_eConn_inter_le_add, eConn_le_encard, encard_singleton]
 
+set_option backward.isDefEq.respectTransparency false in
 @[simp]
 lemma induce_apply_remove (P : M.Separation) (X : Set α) (b i j : Bool) :
     P.induce (M.remove b X) i j = P j \ X := by
@@ -124,6 +126,7 @@ lemma induce_apply_contract_of_contract (P : (M ／ X).Separation) (hXY : X ⊆ 
     P.induce (M ／ Y) i j = P j \ Y :=
   induce_apply_remove_of_remove (b := true) P hXY i j
 
+set_option backward.isDefEq.respectTransparency false in
 @[simp]
 lemma induce_apply_contract_delete (P : M.Separation) (C D : Set α) (i j : Bool) :
     P.induce (M ／ C ＼ D) i j = P j \ (C ∪ D) := by
@@ -452,6 +455,7 @@ lemma exists_of_isRestriction_of_forall_mem_closure (P : N.Separation) (hNM : N 
   rw [hNM.eLocalConn_eq_of_subset, ← M.eLocalConn_closure_closure, auxcl, auxcl,
     eLocalConn_closure_closure]
 
+set_option backward.isDefEq.respectTransparency false in
 /-- If `N` simplifies `M`, then each separation of `N` extends naturally to one of `M`. -/
 lemma exists_of_simplifies (P : N.Separation) (hNM : N ≤si M) : ∃ (Q : M.Separation),
     (∀ i, (P i ⊆ Q i ∧ M.closure (Q i) = M.closure (P i))) ∧ Q.eConn = P.eConn := by

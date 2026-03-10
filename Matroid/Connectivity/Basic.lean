@@ -748,12 +748,7 @@ lemma IsNonloop.eLocalConn_eq_zero_iff {e : α} (he : M.IsNonloop e) :
 
 lemma IsNonloop.eLocalConn_eq_one_iff {e : α} (he : M.IsNonloop e) :
     M.eLocalConn {e} X = 1 ↔ e ∈ M.closure X := by
-  have h_eq (x : ℕ∞) (hx : x ≤ 1) : x = 1 ↔ x ≠ 0 := by
-    induction x with
-    | top => simp at hx
-    | coe a =>
-      simp only [Nat.cast_le_one, Nat.cast_eq_one, ne_eq, Nat.cast_eq_zero] at hx ⊢
-      omega
+  have h_eq (x : ℕ∞) (hx : x ≤ 1) : x = 1 ↔ x ≠ 0 := by enat_to_nat; lia
   rw [h_eq _ (by simpa using (M.eLocalConn_le_eRk_left {e} (X ∩ M.E)).trans (M.eRk_le_encard {e})),
     not_iff_comm, he.eLocalConn_eq_zero_iff]
 
@@ -851,7 +846,7 @@ lemma IsRkFinite.isModularPair_iff_eLocalConn_eq_eRk_inter (hX : M.IsRkFinite X)
       (inter_subset_inter hIX.subset hIY.subset)
 
   rw [hIX.eLocalConn_eq hIY, ← h_inter, hIi.encard_eq_eRk, ← add_zero (a := M.eRk _), add_assoc,
-    zero_add, WithTop.add_left_inj hX.inter_right.eRk_lt_top.ne, nullity_eq_zero] at h
+    zero_add, add_right_inj_of_ne_top hX.inter_right.eRk_lt_top.ne, nullity_eq_zero] at h
 
   exact h.isModularPair_of_union.of_isBasis_of_isBasis hIX hIY
 

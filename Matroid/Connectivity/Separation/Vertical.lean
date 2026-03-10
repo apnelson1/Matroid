@@ -260,6 +260,7 @@ lemma TutteConnected.not_isVerticalSeparation (h : M.TutteConnected (k + 1))
     (hP : P.eConn + 1 ≤ k) : ¬ P.IsVerticalSeparation :=
   fun hP' ↦ h.not_isTutteSeparation hP hP'.isTutteSeparation
 
+set_option backward.isDefEq.respectTransparency false in
 /-- In a matroid that isn't `(k + 1)`-connected, there is either a strong separation, or
 a separation arising from a small circuit or cocircuit. -/
 lemma exists_strong_or_small_of_not_tutteConnected (h : ¬ M.TutteConnected (k + 1)) (b : Bool) :
@@ -637,7 +638,7 @@ lemma TutteConnected.contract {C : Set α} (h : M.TutteConnected (k + M.eRk C + 
   · rw [add_right_comm] at h
     exact h.verticallyConnected.contract
   grw [M.girth_le_girth_contract_add C, add_right_comm,
-    WithTop.add_le_add_iff_right ((M.isRkFinite_of_finite hfin).eRk_lt_top.ne)] at hgirth
+    ENat.add_le_add_iff_right ((M.isRkFinite_of_finite hfin).eRk_lt_top.ne)] at hgirth
   assumption
 
 lemma TutteConnected.delete {D : Set α} (h : M.TutteConnected (k + M✶.eRk D + 1))
@@ -748,12 +749,14 @@ lemma TutteConnected.mem_closure_bDual_iff_of_separation_removeElem (h : M.Tutte
     (P := (P.induce ((M.remove (!c) {e}).bDual (c))).copy (by simp)) (by simpa) (by simpa)
     (by simpa) i
 
+set_option backward.isDefEq.respectTransparency false in
 lemma TutteConnected.mem_closure_dual_of_separation_deleteElem (h : M.TutteConnected (k + 1))
     {P : (M ＼ {e}).Separation} (hPk : P.eConn + 1 ≤ k) (hP : P.IsTutteSeparation) (i : Bool) :
     e ∈ M✶.closure (P i) := by
   rw [← bDual_true, h.mem_closure_bDual_iff_of_separation_removeElem (b := false) hPk hP]
   decide
 
+set_option backward.isDefEq.respectTransparency false in
 lemma TutteConnected.notMem_closure_of_separation_deleteElem (h : M.TutteConnected (k + 1))
     {P : (M ＼ {e}).Separation} (hPk : P.eConn + 1 ≤ k) (hP : P.IsTutteSeparation) (i : Bool) :
     e ∉ M.closure (P i) := by

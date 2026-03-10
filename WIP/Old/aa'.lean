@@ -668,7 +668,7 @@ def matroid_of_indep_of_finite {E : Set α} (hE : E.Finite) (Indep : Set α → 
     (h_support : ∀ ⦃I⦄, Indep I → I ⊆ E) : Matroid α :=
   matroid_of_indep_of_bdd_augment E Indep h_empty ind_mono
   ( fun I J hI hJ hlt ↦ ind_aug hI hJ ( by
-      rwa [← Nat.cast_lt (α := ℕ∞), (hE.subset (h_support hJ)).cast_ncard_eq,
+      rwa [← ENat.coe_lt_coe, (hE.subset (h_support hJ)).cast_ncard_eq,
       (hE.subset (h_support hI)).cast_ncard_eq]) )
   (⟨E.ncard, fun I hI ↦ by { rw [hE.cast_ncard_eq]; exact encard_mono (h_support hI) }⟩ )
   h_support

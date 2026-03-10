@@ -809,7 +809,7 @@ theorem eConn_inter_add_eConn_union_union_le (M : Matroid α) (hC : Disjoint C X
     (monotone_rhs_aux ..) (fun b ↦ bif b then C ∩ D else X ∪ C ∪ D) (by simpa)
   simp only [Fintype.univ_bool, Finset.mem_singleton, Bool.true_eq_false, not_false_eq_true,
     Finset.sum_insert, cond_true, Finset.sum_singleton, cond_false, g, ← cast_conn_eq,
-    ← Nat.cast_add, Nat.cast_lt] at hN
+    ← Nat.cast_add, ENat.coe_lt_coe] at hN
   exact (N.nConn_inter_add_conn_union_union_le hC hD).not_gt hN
 
 /-- The Bixby-Coullard inequality for `ℕ∞` -/

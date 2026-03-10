@@ -8,39 +8,6 @@ open Set
 
 variable {α : Type*} {s : Set α} {x y z : α}
 
-lemma Set.eq_of_encard_le_two_of_mem_of_mem (hs : s.encard ≤ 2) (hxs : x ∈ s) (hys : y ∈ s)
-    (hxy : x ≠ y) : s = {x, y} := by
-  rw [← encard_pair hxy] at hs
-  refine (Finite.eq_of_subset_of_encard_le' ?_ (by grind) hs).symm
-  grw [← encard_lt_top_iff, hs]
-  simp
-
--- for mathlib
-lemma Set.exists_eq_of_encard_eq_three_of_mem
-    (hs : s.encard = 3) (hxs : x ∈ s) : ∃ y z, y ≠ x ∧ z ≠ x ∧ y ≠ z ∧ s = {x, y, z} := by
-  obtain ⟨a, b, c, hab, hbc, hac, rfl⟩ := encard_eq_three.1 hs
-  obtain rfl | rfl | rfl := by simpa using hxs
-  · use b, c; grind
-  · use a, c; grind
-  use a, b; grind
-
--- for mathlib
-lemma Set.exists_eq_of_encard_eq_three_of_mem_of_mem
-    (hs : s.encard = 3) (hxs : x ∈ s) (hys : y ∈ s) (hxy : x ≠ y) :
-    ∃ z, z ≠ x ∧ z ≠ y ∧ s = {x,y,z} := by
-  obtain ⟨a, b, hax, hbc, hab, rfl⟩ := s.exists_eq_of_encard_eq_three_of_mem hs hxs
-  obtain rfl | rfl : y = a ∨ y = b := by simpa [hxy.symm] using hys
-  · use b, hbc, hab.symm
-  use a, hax, hab, by grind
-
-lemma Set.eq_of_encard_le_three_of_mem_of_mem_of_mem (hs : s.encard ≤ 3) (hxs : x ∈ s) (hys : y ∈ s)
-    (hzs : z ∈ s) (hxy : x ≠ y) (hxz : x ≠ z) (hyz : y ≠ z) : s = {x, y, z} := by
-  rw [show (3 : ℕ∞) = 2 + 1 from rfl, ← encard_pair hyz,
-    ← encard_insert_of_notMem (a := x) (by grind)] at hs
-  refine Eq.symm <| Finite.eq_of_subset_of_encard_le' ?_ (by grind) hs
-  grw [← encard_lt_top_iff, hs]
-  simp
-
 namespace Matroid
 
 variable {i b : Bool} {α : Type*} {e f g : α} {C K T X Y : Set α} {M : Matroid α}
@@ -95,7 +62,7 @@ lemma IsTriangle.nontrivial (h : M.IsTriangle T) : T.Nontrivial :=
   (h.nontrivial_diff_singleton h.nonempty.some).mono diff_subset
 
 lemma IsTriangle.finite (h : M.IsTriangle T) : T.Finite := by
-  simpa [← encard_lt_top_iff, h.three_elements] using ENat.coe_lt_top 3
+  simp [← encard_lt_top_iff, h.three_elements]
 
 -- the lemmas ahead allow one to comfortably work with terms of the form `IsTriangle {e, f, g}`
 -- rather than `IsTriangle T`.
@@ -135,6 +102,21 @@ lemma IsTriangle.swap_left (h : M.IsTriangle {e, f, g}) : M.IsTriangle {f, e, g}
   h.rotate_left.swap_right
 
 lemma IsTriangle.reverse (h : M.IsTriangle {e, f, g}) : M.IsTriangle {g, f, e} :=
+  h.rotate_left.swap_left
+
+lemma IsTriad.swap_right (h : M.IsTriad {e, f, g}) : M.IsTriad {e, g, f} := by
+  rwa [pair_comm]
+
+lemma IsTriad.rotate (h : M.IsTriad {e, f, g}) : M.IsTriad {g, e, f} := by
+  convert h using 1; grind
+
+lemma IsTriad.rotate_left (h : M.IsTriad {e, f, g}) : M.IsTriad {f, g, e} := by
+  convert h using 1; grind
+
+lemma IsTriad.swap_left (h : M.IsTriad {e, f, g}) : M.IsTriad {f, e, g} :=
+  h.rotate_left.swap_right
+
+lemma IsTriad.reverse (h : M.IsTriad {e, f, g}) : M.IsTriad {g, f, e} :=
   h.rotate_left.swap_left
 
 lemma IsTriangle.indep₁₂ (h : M.IsTriangle {e, f, g}) : M.Indep {e,f} :=

@@ -292,14 +292,15 @@ lemma Covby.eRk_eq_of_ssubset_of_subset (h : F ⋖[M] F') (hFX : F ⊂ X) (hXF' 
     ← h.isFlat_left.eRk_insert_eq_add_one ⟨(h.subset_ground_right (hXF'.subset heX)), heF⟩]
   exact M.eRk_mono (insert_subset heX hFX.subset)
 
+attribute [norm_cast] ENat.coe_add ENat.coe_one
+
 lemma CovBy.rk_eq_of_isRkFinite (h : F ⋖[M] F') (hFin : M.IsRkFinite F) : M.rk F' = M.rk F + 1 := by
   have hFin' : M.IsRkFinite F' := by
     rw [← eRk_lt_top_iff, h.eRk_eq]
     rw [← eRk_lt_top_iff] at hFin
     exact lt_tsub_iff_right.mp hFin
   have her := h.eRk_eq
-  rw [← hFin.cast_rk_eq, ← hFin'.cast_rk_eq] at her
-  norm_cast at her
+  rwa [← hFin.cast_rk_eq, ← hFin'.cast_rk_eq, ← ENat.coe_one, ← ENat.coe_add, ENat.coe_inj] at her
 
 lemma closure_covBy_iff :
     (M.closure X) ⋖[M] F ↔ ∃ e ∈ M.E \ M.closure X, F = M.closure (insert e X) := by
@@ -373,7 +374,7 @@ lemma IsFlat.covBy_iff_rk_eq_add_one [RankFinite M] (hF₀ : M.IsFlat F₀) (hF 
   rw [hF₀.covBy_iff_eRelRk_eq_one hF, and_congr_right_iff]
   intro hss
   rw [(M.isRkFinite_set _).eRelRk_eq_sub hss, eq_comm, ← cast_rk_eq, ← cast_rk_eq, ← ENat.coe_sub,
-    ← ENat.coe_one, Nat.cast_inj, eq_tsub_iff_add_eq_of_le (M.rk_mono hss), eq_comm, add_comm]
+    ← ENat.coe_one, ENat.coe_inj, eq_tsub_iff_add_eq_of_le (M.rk_mono hss), eq_comm, add_comm]
 
 lemma CovBy.eRelRk_eq_one (h : F₀ ⋖[M] F₁) : M.eRelRk F₀ F₁ = 1 :=
   ((h.isFlat_left.covBy_iff_eRelRk_eq_one h.isFlat_right).1 h).2

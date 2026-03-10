@@ -431,7 +431,7 @@ lemma connBetweenGE_zero (G : Graph α β) (s t : α) : G.ConnBetweenGE s t 0 :=
   simp [ConnBetweenGE]
 
 lemma ConnBetweenGE.anti_right (hle : n ≤ m) (h : G.ConnBetweenGE s t m) : G.ConnBetweenGE s t n :=
-  fun _ hC ↦ le_trans (by exact_mod_cast hle) (h hC)
+  fun _ hC ↦ le_trans (ENat.coe_le_coe.2 hle) (h hC)
 
 @[symm]
 lemma ConnBetweenGE.symm (h : G.ConnBetweenGE s t n) : G.ConnBetweenGE t s n :=
@@ -513,7 +513,7 @@ lemma edgeConnBetweenGE_zero (G : Graph α β) (s t : α) : G.EdgeConnBetweenGE 
 
 lemma EdgeConnBetweenGE.anti_right (hle : n ≤ m) (h : G.EdgeConnBetweenGE s t m) :
     G.EdgeConnBetweenGE s t n :=
-  fun _ hF ↦ le_trans (by exact_mod_cast hle) (h hF)
+  fun _ hF ↦ le_trans (ENat.coe_le_coe.2 hle) (h hF)
 
 lemma edgeConnBetweenGE_one_iff : G.EdgeConnBetweenGE s t 1 ↔ G.ConnBetween s t := by
   refine ⟨fun h => ?_, fun h F hF => ?_⟩

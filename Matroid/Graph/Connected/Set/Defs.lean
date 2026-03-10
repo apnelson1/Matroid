@@ -541,7 +541,7 @@ lemma SetConnGE_zero (G : Graph α β) (S T : Set α) : G.SetConnGE S T 0 := by
   simp [SetConnGE]
 
 lemma SetConnGE.anti_right (hle : n ≤ m) (h : G.SetConnGE S T m) : G.SetConnGE S T n :=
-  fun _ hC ↦ le_trans (by norm_cast) (h hC)
+  fun _ hC ↦ le_trans (by simpa) (h hC)
 
 @[symm]
 lemma SetConnGE.symm (h : G.SetConnGE S T n) : G.SetConnGE T S n :=
@@ -583,8 +583,7 @@ lemma SetConnGE.SetConnected (h : G.SetConnGE S T n) (hn : n ≠ 0) : G.SetConne
   use ∅, isSetCut_empty h
   change (∅ : Set α).encard < n
   rw [encard_empty]
-  norm_cast
-  exact pos_of_ne_zero hn
+  simpa using pos_of_ne_zero hn
 
 lemma SetConnGE.exists_isPathFrom (h : G.SetConnGE S T n) (hn : n ≠ 0) :
     ∃ P, G.IsPathFrom S T P := by
@@ -642,7 +641,9 @@ lemma SetConnGE.left_bound_anti (hS : S.Finite) (h : G.SetConnGE S T S.ncard) (h
   rw [← hCFin.cast_ncard_eq, ← hS.cast_ncard_eq, ← (hS.subset hU).cast_ncard_eq] at *
   norm_cast at h ⊢
   have := ncard_le_ncard hU hS
-  omega
+  norm_cast at *
+  rw [ENat.coe_le_coe] at *
+  lia
 
 lemma SetConnGE.right_bound_anti (hT : T.Finite) (h : G.SetConnGE S T T.ncard) (hU : U ⊆ T) :
     G.SetConnGE S U U.ncard :=
@@ -664,7 +665,7 @@ lemma EdgeSetConnGE_zero (G : Graph α β) (S T : Set α) : G.EdgeSetConnGE S T 
 
 lemma EdgeSetConnGE.anti_right (hle : n ≤ m) (h : G.EdgeSetConnGE S T m) :
     G.EdgeSetConnGE S T n :=
-  fun _ hF ↦ le_trans (by norm_cast) (h hF)
+  fun _ hF ↦ le_trans (by simpa) (h hF)
 
 @[simp]
 lemma EdgeSetConnGE_one_iff : G.EdgeSetConnGE S T 1 ↔ G.SetConnected S T := by

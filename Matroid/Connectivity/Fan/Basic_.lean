@@ -479,7 +479,7 @@ lemma IsFiniteRankUniform.exists_isFan (h : M.IsFiniteRankUniform 2 4) (b : Bool
 --               (by simpa [IsTriad] using hT) (by simpa)
 --             obtain ⟨F, hF, hFE⟩ := unifOn_two_four_isFan hE4 b
 --             have hF : F.length = 4 := by
---               rw [← Nat.cast_inj (R := ℕ∞), ← hF.nodup.encard_toSet_eq, hFE, hE4, Nat.cast_ofNat]
+--               rw [← ENat.coe_inj, ← hF.nodup.encard_toSet_eq, hFE, hE4, Nat.cast_ofNat]
 --             apply_fun (Matroid.bDual · b) at hME
 --             simp only [bDual_bDual, bne_self_eq_false, bDual_false] at hME
 --             exact ⟨F.reverse, true, by simpa [hME], by grind⟩

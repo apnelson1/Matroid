@@ -437,6 +437,7 @@ def IsMinor (G H : Graph α β) := Nonempty (minorMap G H)
 
 notation G " ≤ₘ " H => IsMinor G H
 
+set_option backward.isDefEq.respectTransparency false in
 lemma minorMap.ne_bot (F : minorMap G H) (x : V(G)) : F.map x ≠ ⊥ := by
   simpa using (F.conn x).nonempty
 

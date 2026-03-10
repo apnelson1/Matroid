@@ -29,7 +29,7 @@ lemma IsWalk.isPath_of_length_eq_eDist (hP : G.IsWalk P)
     (hlen : P.length = G.eDist P.first P.last) : G.IsPath P := by
   classical
   rw [isPath_iff, and_iff_right hP, ← dedup_eq_self_iff]
-  refine P.dedup_isSublist.eq_of_length_ge <| (Nat.cast_le (α := ℕ∞)).1 ?_
+  refine P.dedup_isSublist.eq_of_length_ge <| (ENat.coe_le_coe).1 ?_
   rw [hlen, ← dedup_first, ← dedup_last]
   apply (hP.sublist P.dedup_isSublist).eDist_le_length
 
@@ -117,12 +117,12 @@ lemma ConnBetween.exists_adj_eDist_eq_add_one (hconn : G.ConnBetween x y) (hne :
     simp only [first_cons, last_cons, hl]
     rw [cons_isPath_iff] at hP
     refine ⟨P.first, hP.1.adj.symm, ?_⟩
-    rw [WithTop.add_right_inj (by simp), eDist_comm, le_antisymm_iff,
+    rw [add_left_inj_of_ne_top (by simp), eDist_comm, le_antisymm_iff,
       and_iff_left hP.2.1.isWalk.eDist_le_length]
     have ht := G.eDist_triangle u P.first P.last
     rw [eDist_comm, hl] at ht
     replace ht := ht.trans (add_le_add_left hP.1.adj.eDist_le_one _)
-    rwa [add_comm, WithTop.add_le_add_iff_left (by simp)] at ht
+    rwa [add_comm, ENat.one_add_le_one_add_iff] at ht
 
 lemma exists_adj_of_eDist_eq_add_one {n : ℕ} (hxy : G.eDist x y = n + 1) :
     ∃ y', G.Adj y' y ∧ G.eDist x y' = n := by
@@ -133,7 +133,7 @@ lemma exists_adj_of_eDist_eq_add_one {n : ℕ} (hxy : G.eDist x y = n + 1) :
     rw [eDist_eq_zero_iff.2 (by simp [hconn.left_mem]), eq_comm] at hxy
     simp at hxy
   obtain ⟨y', hyy', heDist⟩ := hconn.exists_adj_eDist_eq_add_one hne
-  exact ⟨y', hyy', by rwa [← WithTop.add_right_inj (z := 1) (by simp), ← heDist]⟩
+  exact ⟨y', hyy', by rwa [← add_left_inj_of_ne_top (a := 1) (by simp), ← heDist]⟩
 
 /-! ### `ℕ` - valued eDistance -/
 
@@ -164,7 +164,7 @@ lemma dist_triangle (hxy : G.ConnBetween x y) (z) :
     G.dist x z ≤ G.dist x y + G.dist y z := by
   by_cases hxz : G.ConnBetween x z
   · have hyz : G.ConnBetween y z := hxy.symm.trans hxz
-    rw [← Nat.cast_le (α := ℕ∞), Nat.cast_add, hxy.cast_dist, hyz.cast_dist,
+    rw [← ENat.coe_le_coe, Nat.cast_add, hxy.cast_dist, hyz.cast_dist,
       (hxy.trans hyz).cast_dist]
     exact eDist_triangle G x y z
   simp [Graph.dist, eDist_eq_top_iff.2 hxz]
@@ -179,13 +179,13 @@ structure IsShortestPath (G : Graph α β) (P : WList α β) : Prop where
 
 lemma IsShortestPath.length_eq_dist (hP : G.IsShortestPath P) :
     P.length = G.dist P.first P.last := by
-  rw [← Nat.cast_inj (R := ℕ∞), hP.length_eq_eDist,
+  rw [← ENat.coe_inj, hP.length_eq_eDist,
     hP.isPath.isWalk.connBetween_first_last.cast_dist]
 
 lemma IsWalk.isShortestPath_of_length_le (hP : G.IsWalk P)
     (heDist : P.length ≤ G.dist P.first P.last) : G.IsShortestPath P := by
   have hlen : P.length = G.eDist P.first P.last := by
-    rw [← hP.connBetween_first_last.cast_dist, Nat.cast_inj]
+    rw [← hP.connBetween_first_last.cast_dist, ENat.coe_inj]
     exact heDist.antisymm <| hP.dist_le_length
   exact ⟨hP.isPath_of_length_eq_eDist hlen, hlen⟩
 

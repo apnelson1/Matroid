@@ -60,7 +60,7 @@ def Rep.subtype_ofEq {W₁ W₂ : Submodule 𝔽 W} (v : M.Rep 𝔽 W₁) (h : W
 @[simp] lemma Rep.subtype_ofEq_apply {W₁ W₂ : Submodule 𝔽 W} (v : M.Rep 𝔽 W₁) (h : W₁ = W₂)
     (e : α) : v.subtype_ofEq h e = LinearEquiv.ofEq _ _ h (v e) := rfl
 
-@[simps!] def Rep.finsuppToFun (v : M.Rep 𝔽 (β →₀ 𝔽)) : M.Rep 𝔽 (β → 𝔽) :=
+@[simps!] noncomputable def Rep.finsuppToFun (v : M.Rep 𝔽 (β →₀ 𝔽)) : M.Rep 𝔽 (β → 𝔽) :=
   v.comp' Finsupp.lcoeFun (by simp)
 
 /-- A representation gives a representation of a comap -/

@@ -261,6 +261,7 @@ lemma NumConnected.of_dual {dg} (h : M✶.NumConnected dg k) :
     M.NumConnected (fun M X ↦ dg M✶ X) k := by
   simpa using h.dual
 
+set_option backward.isDefEq.respectTransparency false in
 lemma numConnected_of_subsingleton {dg} (h : M.E.Subsingleton) (k : ℕ∞) (hdg : dg M ∅) :
     M.NumConnected dg k := by
   obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp

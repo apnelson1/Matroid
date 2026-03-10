@@ -212,7 +212,7 @@ lemma encard_le_of_simple [RankFinite M] [Simple M] (h : M.Representable 𝔽) :
     replace hE := show E.Subsingleton by simpa using hE
     obtain rfl | ⟨e, rfl⟩ := hE.eq_empty_or_singleton <;>
     simp [rank]
-  have hr : 1 < M.rank := by rwa [← Nat.cast_lt (α := ℕ∞), cast_rank_eq]
+  have hr : 1 < M.rank := by rwa [← ENat.coe_lt_coe, cast_rank_eq]
   obtain hinf | hfin := (finite_or_infinite 𝔽).symm
   · exact le_trans (by simp) (Finset.single_le_sum_of_canonicallyOrdered (i := 1) (by simpa))
   have : Nonempty (Fin M.rank) := ⟨1, hr⟩
@@ -226,4 +226,6 @@ lemma encard_le_of_simple [RankFinite M] [Simple M] (h : M.Representable 𝔽) :
   simp only [ENat.card_eq_coe_natCard, ground_eq_univ, encard_univ]
   norm_cast
   rw [Projectivization.card_of_finrank 𝔽 (B →₀ 𝔽) (n := M.rank)]
+  · simp only [Nat.card_eq_fintype_card, Nat.cast_pow, Nat.cast_sum]
+    rfl
   simp [hB.finset_card]

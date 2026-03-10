@@ -39,3 +39,7 @@ lemma Subsingleton.exists_eq_of_singleton_of_nonempty (h : s.Subsingleton) (hne 
 lemma insert_subsingleton_iff : (insert x s).Subsingleton ↔ s ⊆ {x} :=
   ⟨fun h _ hys ↦ h (mem_insert_of_mem _ hys) (mem_insert ..),
     fun h ↦ subsingleton_singleton.anti <| insert_subset rfl h⟩
+
+@[simp]
+lemma pair_subsingleton_iff {x y : α} : ({x, y} : Set α).Subsingleton ↔ x = y := by
+  simp [eq_comm]

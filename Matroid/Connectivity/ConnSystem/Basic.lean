@@ -93,7 +93,8 @@ def induce (μ : ConnSystem α R) (hF : μ.E ⊆ F) : ConnSystem α R where
 @[simp]
 lemma induce_pConn (μ : ConnSystem α R) (hF : μ.E ⊆ F) (P : F.IndexedPartition Bool) :
     (μ.induce hF).pConn P = μ.pConn (P.induce hF) := by
-  simp [pConn]
+  simp only [pConn, induce_E, induce_toFun, IndexedPartition.induce_apply, apply_inter_ground]
+  rfl
 
 section normal
 

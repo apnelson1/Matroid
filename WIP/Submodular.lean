@@ -785,7 +785,7 @@ theorem rado_v2 (M : Matroid α) (A : ι → Finset α) :
     use {i, j}
     simp only [image_insert, image_singleton, coe_insert, coe_singleton, hij, Set.mem_singleton_iff,
       Set.insert_eq_of_mem, card_insert_of_notMem <| notMem_singleton.mpr he_card,
-      Nat.lt_add_one_iff, ← @Nat.cast_le ℕ∞, cast_rk_eq, card_singleton, Nat.cast_one]
+      Nat.lt_add_one_iff, ← ENat.coe_le_coe, cast_rk_eq, card_singleton, Nat.cast_one]
     refine (M.eRk_le_encard {e j}).trans (by simp only [Set.encard_singleton, le_refl])
   have he'_inj : e'.Injective := fun i j hij ↦ SetCoe.ext (he_inj (by simpa only [e'] using hij))
   use PartialTransversal.of_fun (fun i ↦ he_mem i) he'_inj
@@ -921,7 +921,7 @@ theorem rado [DecidableEq ι] [DecidableEq α] (M : Matroid α) (A : ι → Fins
   · intro K
     simp only [← card_image_of_injective K he_inj]
     have h_indep : M.Indep (image e K : Set α) := he_indep.subset coe_image_subset_range
-    rw [← @Nat.cast_le ℕ∞, ← Set.encard_coe_eq_coe_finsetCard (image e K),
+    rw [← ENat.coe_le_coe, ← Set.encard_coe_eq_coe_finsetCard (image e K),
       M.cast_rk_eq_eRk_of_finite <| finite_toSet (image e K), h_indep.eRk]
   refine ⟨⟨?_, he_mem⟩, ?_⟩
   · intro a b hab
@@ -929,13 +929,13 @@ theorem rado [DecidableEq ι] [DecidableEq α] (M : Matroid α) (A : ι → Fins
     use {a, b}
     simp only [image_insert, image_singleton, coe_insert, coe_singleton, hab]
     simp only [Set.mem_singleton_iff, Set.insert_eq_of_mem, card_pair he]
-    rw [← @Nat.cast_lt ℕ∞, M.cast_rk_eq_eRk_of_finite <| Set.finite_singleton (e b),
+    rw [← ENat.coe_lt_coe, M.cast_rk_eq_eRk_of_finite <| Set.finite_singleton (e b),
       Nat.cast_two]
     have := Set.encard_singleton (e b) ▸ M.eRk_le_encard {e b}
     refine this.trans_lt Nat.one_lt_ofNat
   specialize he univ
   simp only [coe_image, coe_univ, Set.image_univ] at he
-  rw [← @Nat.cast_le ℕ∞, M.cast_rk_eq_eRk_of_finite <| Set.finite_range e] at he
+  rw [← ENat.coe_le_coe, M.cast_rk_eq_eRk_of_finite <| Set.finite_range e] at he
   rw [indep_iff_eRk_eq_encard_of_finite <| Set.finite_range e]
   refine le_antisymm (eRk_le_encard M (Set.range e)) ?_
   refine le_trans ?_ he
@@ -1149,7 +1149,7 @@ theorem rado' {ι : Type*} [DecidableEq ι] [Fintype ι] [DecidableEq α]
     refine add_le_add ?_ ?_
     · suffices h : (K ∩ image f univ).card ≤ M.r ↑(image e (K ∩ image f univ)) by
         refine le_trans h ?_
-        rw [← @Nat.cast_le ℕ∞]
+        rw [← ENat.coe_le_coe]
         rw [M.cast_rk_eq_eRk_of_finite <| finite_toSet (image e (K ∩ image f univ)),
             M.cast_rk_eq_eRk_of_finite <| finite_toSet (image e K)]
         apply M.eRk_mono
@@ -1160,7 +1160,7 @@ theorem rado' {ι : Type*} [DecidableEq ι] [Fintype ι] [DecidableEq α]
         rw [this]
         suffices h : ((image e (K ∩ image f univ)) : Set α) ⊆ (T : Set α) by
           replace h := hT_indep.subset h
-          rw [← @Nat.cast_le ℕ∞, M.cast_rk_eq_eRk_of_finite <| finite_toSet _,
+          rw [← ENat.coe_le_coe, M.cast_rk_eq_eRk_of_finite <| finite_toSet _,
               ← Set.encard_coe_eq_coe_finsetCard _, h.eRk]
         simp only [coe_subset]
         intro x hx

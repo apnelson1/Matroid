@@ -402,7 +402,7 @@ lemma IsTree.encard_vertexSet {T : Graph α β} (h : T.IsTree) : V(T).encard = E
 termination_by V(T).encard
 
 lemma IsTree.ncard_vertexSet [T.Finite] (h : T.IsTree) : V(T).ncard = E(T).ncard + 1 := by
-  rw [← Nat.cast_inj (R := ℕ∞), T.vertexSet_finite.cast_ncard_eq, h.encard_vertexSet,
+  rw [← ENat.coe_inj, T.vertexSet_finite.cast_ncard_eq, h.encard_vertexSet,
     Nat.cast_add, T.edgeSet_finite.cast_ncard_eq, Nat.cast_one]
 
 lemma IsForest.encard_vertexSet (hG : G.IsForest) :
@@ -419,7 +419,7 @@ lemma IsForest.encard_vertexSet (hG : G.IsForest) :
 
 lemma IsForest.ncard_vertexSet [G.Finite] (hG : G.IsForest) :
     V(G).ncard = E(G).ncard + G.Components.ncard := by
-  rw [← @Nat.cast_inj ℕ∞, G.vertexSet_finite.cast_ncard_eq, hG.encard_vertexSet, Nat.cast_add,
+  rw [← ENat.coe_inj, G.vertexSet_finite.cast_ncard_eq, hG.encard_vertexSet, Nat.cast_add,
     G.edgeSet_finite.cast_ncard_eq, Finite.cast_ncard_eq]
   exact G.finite_setOf_le.subset fun C hC ↦ hC.le
 
@@ -432,6 +432,6 @@ lemma IsForest.encard_edgeSet_add_one_le (hG : G.IsForest) (hne : V(G).Nonempty)
 
 lemma IsForest.ncard_edgeSet_lt [G.Finite] (hG : G.IsForest) (hne : V(G).Nonempty) :
     E(G).ncard < V(G).ncard := by
-  rw [Nat.lt_iff_add_one_le, ← @Nat.cast_le ℕ∞, Nat.cast_add, G.vertexSet_finite.cast_ncard_eq,
+  rw [Nat.lt_iff_add_one_le, ← ENat.coe_le_coe, Nat.cast_add, G.vertexSet_finite.cast_ncard_eq,
     G.edgeSet_finite.cast_ncard_eq]
   exact hG.encard_edgeSet_add_one_le hne

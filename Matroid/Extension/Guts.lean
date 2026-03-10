@@ -153,7 +153,7 @@ theorem exists_contract_skew_delete_eq_of_card_eq_dual_multiConn (M : Matroid α
       simp
     specialize IH (M.projectBy (M.gutsModularCut X hX)) (by simpa) ?_ (by simpa)
     · rwa [← multiConn_projectBy_gutsModularCut_add_one _ hdj hX hnsk, Finset.card_cons,
-        Nat.cast_add, Nat.cast_one, WithTop.add_right_inj (by simp)] at hA
+        Nat.cast_add, Nat.cast_one, add_left_inj_of_ne_top (by simp)] at hA
     obtain ⟨Q, hAQ, hQd, hQc⟩ := IH
     rw [← ModularCut.extendBy_contractElem (e := a) _ haE] at hQd
     obtain ⟨P, haP, rfl, hPd⟩ := exists_splice_of_delete_eq_contractElem (by simpa) hQd

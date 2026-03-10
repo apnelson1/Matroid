@@ -183,9 +183,7 @@ def compPartition (G : Graph α β) : Partition (G.Subgraph) := by
   · rintro H₁ hH₁ H₂ hH₂ hne
     exact H₁.disjoint_iff_stronglyDisjoint H₂ |>.mpr
     <| hH₁.stronglyDisjoint_of_ne hH₂ (by rwa [Subtype.coe_ne_coe])
-  intro H hH
-  simp only [ne_eq, Subgraph.ne_bot_iff]
-  exact hH.1.2
+  exact fun H hH ↦ Subgraph.ne_bot_iff.2 <| hH.1.2
 
 @[simp]
 lemma compPartition_parts_eq_components (G : Graph α β) :
@@ -198,8 +196,8 @@ lemma mem_components_iff_isCompOf : H ∈ G.Components ↔ H.IsCompOf G := by
   simp [Components]
 
 @[simp]
-lemma mem_compPartition_iff_isCompOf {H : G.Subgraph} : H ∈ G.compPartition ↔ H.val.IsCompOf G := by
-  simp [compPartition]
+lemma mem_compPartition_iff_isCompOf {H : G.Subgraph} : H ∈ G.compPartition ↔ H.val.IsCompOf G :=
+  Iff.rfl
 
 @[simp]
 lemma bot_notMem_components (G : Graph α β) : ⊥ ∉ G.Components := by

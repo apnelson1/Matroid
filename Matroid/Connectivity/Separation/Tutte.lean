@@ -578,6 +578,7 @@ lemma TutteConnected.union_isTriad_of_separation_delete {D} (hM : M.TutteConnect
   have hD' := hD.encard_pos
   enat_to_nat! <;> lia
 
+set_option backward.isDefEq.respectTransparency false in
 /-- If `P` is a Tutte separation in a contraction of a `3`-connected matroid, and one side is
 small enough, then we can find a triangle. -/
 lemma TutteConnected.union_isTriangle_of_separation_contract {C} (hM : M.TutteConnected 3)
@@ -586,7 +587,6 @@ lemma TutteConnected.union_isTriangle_of_separation_contract {C} (hM : M.TutteCo
     M.IsTriangle (P i ∪ C) := by
   simpa using hM.dual.union_isTriad_of_separation_delete (i := i) hcard
     (P := P.induce _) (by simpa) hCE hC (by simpa)
-
 
 lemma tutteConnected_iff_seqConnected : M.TutteConnected (k + 1) ↔
     M.SeqConnected Matroid.tutteWeight (indicator {i | k < i + 1} ⊤) := by

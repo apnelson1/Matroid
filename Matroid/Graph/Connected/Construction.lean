@@ -1,16 +1,11 @@
 import Matroid.ForMathlib.Card
+import Matroid.ForMathlib.Data.Set.Subsingleton
 import Matroid.Graph.Connected.Defs
 
 open Set Function Nat WList
 
 variable {α β : Type*} {G H K : Graph α β} {s t u v x x₁ x₂ y y₁ y₂ z : α} {n m : ℕ}
   {e e' f g : β} {U V S S' T T' X Y : Set α} {F F' R R': Set β} {C W P Q : WList α β}
-
-@[simp]
-lemma Set.pair_subsingleton_iff {x y : α} : ({x, y} : Set α).Subsingleton ↔ x = y := by
-  refine ⟨fun h => h (by simp) (by simp), ?_⟩
-  rintro rfl
-  simp
 
 namespace Graph
 
@@ -119,9 +114,9 @@ lemma noEdge_ConnGE_iff (n : ℕ) : (Graph.noEdge X β).ConnGE n ↔ n = 0 ∨ (
   simp only [noEdge_vertexSet, hc, true_and]
   obtain (rfl | ⟨x, rfl⟩) := hc.eq_empty_or_singleton
   · simp
-  simp only [encard_singleton, cast_le_one, cast_lt_one, singleton_eq_singleton_iff, exists_eq',
-    and_true]
-  omega
+  simp only [encard_singleton, singleton_eq_singleton_iff, exists_eq', and_true,
+    ENat.coe_le_one, ENat.coe_lt_one]
+  lia
 
 @[simp]
 lemma ConnBetweenGE_bouquet_self (n : ℕ) : (bouquet v F).ConnBetweenGE v v n :=
@@ -163,8 +158,8 @@ example (n : ℕ) : (Graph.singleEdge u v e).PreconnGE n := by simp
 @[simp]
 lemma singleEdge_connGE (hne : u ≠ v) (n : ℕ) : (Graph.singleEdge u v e).ConnGE n ↔ n ≤ 1 := by
   refine ⟨fun h ↦ ?_, fun h ↦ ConnGE.anti_right h (by simp)⟩
-  have := by simpa [hne, encard_pair] using h.le_card
-  omega
+  obtain ⟨rfl, hlt⟩ := by simpa [encard_pair hne] using h.le_card
+  all_goals lia
 
 @[simp]
 lemma banana_preconnected_iff : (banana u v F).Preconnected ↔ u = v ∨ F.Nonempty := by
@@ -187,7 +182,7 @@ lemma banana_preconnGE_iff : (banana u v F).PreconnGE n ↔ n = 0 ∨ u = v ∨ 
   · rw [or_iff_not_imp_right]
     simp only [← ne_eq, not_or, not_nonempty_iff_eq_empty]
     rintro ⟨hne, rfl⟩
-    simpa [hne] using hcon
+    simpa [hne.symm] using hcon
   rw [← banana_isComplete_iff] at h
   obtain rfl | hc := h
   · simp
@@ -201,8 +196,8 @@ lemma banana_connGE_iff : (banana u v F).ConnGE n ↔ n = 0 ∨ (n = 1 ∧ (u = 
     and_true]
   constructor
   · rintro (⟨rfl, hle⟩ | hlt)
-    · simp only [mem_singleton_iff, insert_eq_of_mem, encard_singleton, cast_le_one] at hle
-      omega
+    · simp only [mem_singleton_iff, insert_eq_of_mem, encard_singleton, ENat.coe_le_one] at hle
+      lia
     have := encard_pair_le u v
     enat_to_nat!
     omega

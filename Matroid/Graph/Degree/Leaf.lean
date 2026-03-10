@@ -20,7 +20,7 @@ lemma Isolated.degree (h : G.Isolated x) : G.degree x = 0 := by
 
 @[simp ←]
 lemma isolated_iff_degree [G.LocallyFinite] (hx : x ∈ V(G)) : G.Isolated x ↔ G.degree x = 0 := by
-  rw [← Nat.cast_inj (R := ℕ∞), natCast_degree_eq, isolated_iff_eDegree hx, Nat.cast_zero]
+  rw [← ENat.coe_inj, natCast_degree_eq, isolated_iff_eDegree hx, Nat.cast_zero]
 
 
 /-! ### Leaves -/
@@ -32,10 +32,14 @@ lemma IsPendant.eDegree (h : G.IsPendant e x) : G.eDegree x = 1 := by
     exact fun f hf ↦ h.edge_unique hf.inc
   simp [eDegree_eq_encard_add_encard, h.not_isLoopAt, hrw]
 
+
 lemma Inc.isPendant_of_eDegree_le_one (h : G.Inc e x) (hdeg : G.eDegree x ≤ 1) :
     G.IsPendant e x := by
   replace hdeg := hdeg.antisymm h.one_le_eDegree
-  have hnl : ∀ f, ¬ G.IsLoopAt f x := fun f hf ↦ by simpa using hf.two_le_eDegree.trans_eq hdeg
+  have hnl : ∀ f, ¬ G.IsLoopAt f x := fun f hf ↦ by
+    have := hf.two_le_eDegree.trans_eq hdeg
+    enat_to_nat
+    lia
   refine ⟨h.isLoopAt_or_isNonloopAt.elim (fun h ↦ (hnl _ h).elim) id, fun f hf ↦ ?_⟩
   rw [inc_iff_isLoopAt_or_isNonloopAt, or_iff_right (hnl _)] at h hf
   rw [eDegree_eq_encard_add_encard] at hdeg
@@ -49,7 +53,7 @@ lemma Inc.isPendant_of_degree_eq_one (h : G.Inc e x) (hdeg : G.degree x = 1) : G
 
 lemma Inc.isPendant_of_degree_le_one [G.LocallyFinite] (h : G.Inc e x) (hdeg : G.degree x ≤ 1) :
     G.IsPendant e x :=
-  h.isPendant_of_eDegree_le_one <| by rwa [← natCast_degree_eq, ← Nat.cast_one, Nat.cast_le]
+  h.isPendant_of_eDegree_le_one <| by rwa [← natCast_degree_eq, ENat.coe_le_one]
 
 lemma IsPendant.edgeSet_delete_vertex_eq (h : G.IsPendant e x) : E(G - x) = E(G) \ {e} := by
   ext f

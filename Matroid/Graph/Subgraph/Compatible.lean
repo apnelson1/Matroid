@@ -64,7 +64,7 @@ lemma compatible_comm : G.Compatible H ↔ H.Compatible G :=
 
 /-- Two subgraphs of the same graph are compatible. -/
 lemma compatible_of_le_le {H₁ H₂ : Graph α β} (h₁ : H₁ ≤ G) (h₂ : H₂ ≤ G) : H₁.Compatible H₂ :=
-  ((isLink_eqOn_of_le h₁).mono inter_subset_left).trans <|
+  compatible_iff_eqOn.2 <| ((isLink_eqOn_of_le h₁).mono inter_subset_left).trans <|
     (isLink_eqOn_of_le h₂).symm.mono inter_subset_right
 
 lemma compatible_of_forall_map_le (h : ∀ i, Gι i ≤ G) : Pairwise (Compatible on Gι) := by
@@ -77,26 +77,14 @@ lemma compatible_of_forall_mem_le (h : ∀ ⦃H⦄, H ∈ s → H ≤ G) : s.Pai
 
 lemma compatible_of_le (h : H ≤ G) : H.Compatible G := compatible_of_le_le h le_rfl
 
-lemma Inc.of_compatible (h : G.Inc e x) (hGH : G.Compatible H) (heH : e ∈ E(H)) : H.Inc e x := by
-  obtain ⟨y, hy⟩ := h
-  exact ⟨y, hy.of_compatible hGH heH⟩
-
-lemma IsLoopAt.of_compatible (h : G.IsLoopAt e x) (hGH : G.Compatible H) (heH : e ∈ E(H)) :
-    H.IsLoopAt e x := IsLink.of_compatible h hGH heH
-
-lemma IsNonloopAt.of_compatible (h : G.IsNonloopAt e x) (hGH : G.Compatible H) (heH : e ∈ E(H)) :
-    H.IsNonloopAt e x := by
-  obtain ⟨y, hne, hy⟩ := h
-  exact ⟨y, hne, hy.of_compatible hGH heH⟩
-
 lemma Compatible.pair (h : G.Compatible H) : ({G, H} : Set (Graph α β)).Pairwise Compatible := by
   rw [pairwise_pair]
   exact fun _ ↦ ⟨h, h.symm⟩
 
 lemma Compatible.mono_left {G₀ : Graph α β} (h : Compatible G H) (hG₀ : G₀ ≤ G) :
     Compatible G₀ H :=
-  ((isLink_eqOn_of_le hG₀).mono inter_subset_left).trans
-    (h.mono (inter_subset_inter_left _ (edgeSet_mono hG₀)))
+  compatible_iff_eqOn.2 <| ((isLink_eqOn_of_le hG₀).mono inter_subset_left).trans
+    (h.eqOn.mono (inter_subset_inter_left _ (edgeSet_mono hG₀)))
 
 lemma Compatible.mono_right {H₀ : Graph α β} (h : Compatible G H) (hH₀ : H₀ ≤ H) :
     Compatible G H₀ :=
@@ -107,10 +95,11 @@ lemma Compatible.mono {G₀ H₀ : Graph α β} (h : G.Compatible H) (hG : G₀ 
   (h.mono_left hG).mono_right hH
 
 lemma Compatible.induce_left (h : Compatible G H) (X : Set α) : G[X].Compatible H := by
+  rw [compatible_iff_eqOn]
   intro e ⟨heG, heX⟩
   ext x y
   obtain ⟨u, v, heuv : G.IsLink e u v, hu, hv⟩ := heG
-  simp only [induce_isLink, ← h ⟨heuv.edge_mem, heX⟩, and_iff_left_iff_imp]
+  simp only [induce_isLink, ← h.eqOn ⟨heuv.edge_mem, heX⟩, and_iff_left_iff_imp]
   intro h
   obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := h.eq_and_eq_or_eq_and_eq heuv <;> simp_all
 
@@ -141,7 +130,7 @@ lemma Compatible.stronglyDisjoint_of_vertexSet_disjoint (h : G.Compatible H)
     (hV : Disjoint V(G) V(H)) : G.StronglyDisjoint H := by
   refine ⟨hV, disjoint_left.2 fun e he he' ↦ ?_⟩
   obtain ⟨x, y, hexy⟩ := exists_isLink_of_mem_edgeSet he
-  exact hV.notMem_of_mem_left hexy.left_mem (h ⟨he, he'⟩ ▸ hexy).left_mem
+  exact hV.notMem_of_mem_left hexy.left_mem (h.eqOn ⟨he, he'⟩ ▸ hexy).left_mem
 
 lemma Compatible.disjoint_iff_vertexSet_disjoint (h : G.Compatible H) :
     G.StronglyDisjoint H ↔ Disjoint V(G) V(H) :=

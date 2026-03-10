@@ -1,6 +1,7 @@
 import Mathlib.Data.Set.Card
 import Mathlib.Algebra.BigOperators.WithTop
 import Mathlib.Algebra.BigOperators.Finprod
+import Mathlib.Tactic.ENatToNat
 
 open Set BigOperators Function
 
@@ -13,25 +14,28 @@ attribute [gcongr] encard_le_encard
 theorem Set.Finite.disjoint_of_sum_encard_le (h : (s ∪ t).Finite)
     (hle : s.encard + t.encard ≤ (s ∪ t).encard) : Disjoint s t := by
   rwa [← add_zero (encard (s ∪ t)), ← encard_union_add_encard_inter,
-    WithTop.add_le_add_iff_left h.encard_lt_top.ne, nonpos_iff_eq_zero, encard_eq_zero,
+    ENat.add_le_add_iff_left,  nonpos_iff_eq_zero, encard_eq_zero,
     ← disjoint_iff_inter_eq_empty] at hle
+  rwa [encard_ne_top_iff]
 
 theorem Set.Finite.encard_union_eq_add_encard_iff_disjoint (h : (s ∪ t).Finite) :
     s.encard + t.encard = (s ∪ t).encard ↔ Disjoint s t := by
-  rw [← add_zero (encard (s ∪ t)), ← encard_union_add_encard_inter,
-    WithTop.add_left_inj h.encard_lt_top.ne, encard_eq_zero, disjoint_iff_inter_eq_empty]
+  rw [le_antisymm_iff, and_iff_left (encard_union_le ..), iff_def,
+    and_iff_right h.disjoint_of_sum_encard_le, ← encard_union_add_encard_inter]
+  exact fun hdj ↦ by simp [hdj.inter_eq]
 
 @[simp] theorem encard_pair_le (e f : α) : encard {e,f} ≤ 2 := by
   obtain (rfl | hne) := eq_or_ne e f
   · simp only [mem_singleton_iff, insert_eq_of_mem, encard_singleton]
-    simp
+    exact one_le_two
   rw [encard_pair hne]
 
 @[simp]
 lemma encard_pair_iff (e f : α) : encard {e,f} = 2 ↔ e ≠ f := by
   refine ⟨?_, encard_pair⟩
   rintro h rfl
-  simp at h
+  simp only [mem_singleton_iff, insert_eq_of_mem, encard_singleton] at h
+  enat_to_nat; lia
 
 lemma two_le_encard_iff_nontrivial : 2 ≤ s.encard ↔ s.Nontrivial := by
   rw [← s.one_lt_encard_iff_nontrivial, ← one_add_one_eq_two, ENat.add_one_le_iff (by simp)]
@@ -62,7 +66,9 @@ lemma succ_le_encard_iff {n : ℕ∞} : (n + 1) ≤ s.encard ↔ ∃ x ∈ s, n 
 theorem Set.Infinite.exists_finite_subset_encard_gt (hs : s.Infinite) (b : ℕ) :
     ∃ t ⊆ s, b < t.encard ∧ t.Finite := by
   obtain ⟨t, hts, hcard⟩ := hs.exists_subset_card_eq (b + 1)
-  exact ⟨t, by simpa, by simp [encard_coe_eq_coe_finsetCard, hcard, Nat.cast_lt, - Nat.cast_add]⟩
+  refine ⟨t, by simpa, ?_⟩
+  rw [encard_coe_eq_coe_finsetCard, hcard, and_iff_left (by simp), ENat.coe_lt_coe]
+  lia
 
 /-- a version of `Set.Infinite.exists_finite_subset_encard_gt` with `b` of type `ℕ∞`-/
 theorem Set.Infinite.exists_finite_subset_encard_gt' (hs : s.Infinite) {b : ℕ∞} (hb : b ≠ ⊤) :
@@ -72,7 +78,7 @@ theorem Set.Infinite.exists_finite_subset_encard_gt' (hs : s.Infinite) {b : ℕ�
 
 theorem Set.coe_le_encard_iff : n ≤ s.encard ↔ (s.Finite → n ≤ s.ncard) := by
   obtain (hfin | hinf) := s.finite_or_infinite
-  · rw [← hfin.cast_ncard_eq, iff_true_intro hfin, Nat.cast_le, true_imp_iff]
+  · rw [← hfin.cast_ncard_eq, iff_true_intro hfin, ENat.coe_le_coe, true_imp_iff]
   rw [hinf.encard_eq, iff_true_intro le_top, true_iff, iff_false_intro hinf, false_imp_iff]
   trivial
 
@@ -103,7 +109,7 @@ theorem Fin.nonempty_embedding_iff_le_encard : Nonempty (Fin n ↪ s) ↔ n ≤ 
     simp [encard_univ]
   obtain ⟨t, hts, hcard⟩ := exists_subset_encard_eq h
   have ht : t.Finite := finite_of_encard_eq_coe hcard
-  rw [← ht.cast_ncard_eq, Nat.cast_inj, ncard_eq_toFinset_card t ht] at hcard
+  rw [← ht.cast_ncard_eq, ENat.coe_inj, ncard_eq_toFinset_card t ht] at hcard
   refine ⟨(Finset.equivFinOfCardEq hcard).symm.toEmbedding.trans ?_ ⟩
   simp only [Finite.mem_toFinset]
   exact embeddingOfSubset t s hts
@@ -115,7 +121,7 @@ theorem Fin.nonempty_equiv_iff_encard_eq : Nonempty (s ≃ Fin n) ↔ s.encard =
   refine ⟨fun ⟨e⟩ ↦ by simpa using e.encard_univ_eq, fun h ↦ ?_⟩
   have _ := Finite.fintype (finite_of_encard_eq_coe h).to_subtype
   refine ⟨Fintype.equivFinOfCardEq <| ?_⟩
-  rwa [encard_eq_coe_toFinset_card, Nat.cast_inj, toFinset_card] at h
+  rwa [encard_eq_coe_toFinset_card, ENat.coe_inj, toFinset_card] at h
 
 @[simp] theorem ENat.card_option (α : Type*) : ENat.card (Option α) = ENat.card α + 1 := by
   obtain hα | hα := finite_or_infinite α
@@ -233,14 +239,47 @@ lemma ENat.card_coe_setOf_ne (a : α) : ENat.card {i | i ≠ a} = ENat.card α -
 
 lemma List.encard_toSet_le (L : List α) : {x | x ∈ L}.encard ≤ L.length := by
   classical
-  have hle := (Nat.cast_le (α := ℕ∞)).2 L.toFinset_card_le
+  have hle := ENat.coe_le_coe.2 L.toFinset_card_le
   rwa [← encard_coe_eq_coe_finsetCard, coe_toFinset] at hle
 
 lemma List.Nodup.encard_toSet_eq {L : List α} (hL : L.Nodup) : {x | x ∈ L}.encard = L.length := by
   classical
   have h_eq := L.card_toFinset
-  rwa [hL.dedup, ← Nat.cast_inj (R := ℕ∞), ← encard_coe_eq_coe_finsetCard, coe_toFinset] at h_eq
+  rwa [hL.dedup, ← ENat.coe_inj, ← encard_coe_eq_coe_finsetCard, coe_toFinset] at h_eq
 
+
+lemma Set.eq_of_encard_le_two_of_mem_of_mem {x y} (hs : s.encard ≤ 2) (hxs : x ∈ s) (hys : y ∈ s)
+    (hxy : x ≠ y) : s = {x, y} := by
+  rw [← encard_pair hxy] at hs
+  refine (Finite.eq_of_subset_of_encard_le' ?_ (by grind) hs).symm
+  grw [← encard_lt_top_iff, hs]
+  simp
+
+-- for mathlib
+lemma Set.exists_eq_of_encard_eq_three_of_mem {x}
+    (hs : s.encard = 3) (hxs : x ∈ s) : ∃ y z, y ≠ x ∧ z ≠ x ∧ y ≠ z ∧ s = {x, y, z} := by
+  obtain ⟨a, b, c, hab, hbc, hac, rfl⟩ := encard_eq_three.1 hs
+  obtain rfl | rfl | rfl := by simpa using hxs
+  · use b, c; grind
+  · use a, c; grind
+  use a, b; grind
+
+-- for mathlib
+lemma Set.exists_eq_of_encard_eq_three_of_mem_of_mem {x y}
+    (hs : s.encard = 3) (hxs : x ∈ s) (hys : y ∈ s) (hxy : x ≠ y) :
+    ∃ z, z ≠ x ∧ z ≠ y ∧ s = {x,y,z} := by
+  obtain ⟨a, b, hax, hbc, hab, rfl⟩ := s.exists_eq_of_encard_eq_three_of_mem hs hxs
+  obtain rfl | rfl : y = a ∨ y = b := by simpa [hxy.symm] using hys
+  · use b, hbc, hab.symm
+  use a, hax, hab, by grind
+
+lemma Set.eq_of_encard_le_three_of_mem_of_mem_of_mem {x y z} (hs : s.encard ≤ 3) (hxs : x ∈ s)
+    (hys : y ∈ s) (hzs : z ∈ s) (hxy : x ≠ y) (hxz : x ≠ z) (hyz : y ≠ z) : s = {x, y, z} := by
+  rw [show (3 : ℕ∞) = 2 + 1 from rfl, ← encard_pair hyz,
+    ← encard_insert_of_notMem (a := x) (by grind)] at hs
+  refine Eq.symm <| Finite.eq_of_subset_of_encard_le' ?_ (by grind) hs
+  grw [← encard_lt_top_iff, hs]
+  simp
 
   -- induction L with
   -- | nil => simp

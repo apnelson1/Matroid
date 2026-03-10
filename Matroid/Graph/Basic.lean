@@ -1,6 +1,8 @@
 import Mathlib.Combinatorics.Graph.Basic
 import Mathlib.Data.Set.Card.Arithmetic
 import Matroid.ForMathlib.Partition.Set
+import Matroid.ForMathlib.ENat
+import Mathlib.Tactic.ENatToNat
 
 /-!
 # Basic Graph Theory
@@ -31,8 +33,6 @@ variable {α β : Type*} {x y z u v w : α} {e f : β} {G H : Graph α β} {F : 
 open Set
 
 namespace Graph
-
-initialize_simps_projections Graph (IsLink → isLink)
 
 /-! ## Additional lemmas for `Graph`
 
@@ -72,13 +72,6 @@ attribute [grind →] IsLink.edge_mem IsLink.left_mem IsLink.right_mem IsLink.in
 attribute [grind .] Inc.eq_or_eq_of_isLink exists_isLink_of_mem_edgeSet
 attribute [symm] Adj.symm IsLink.symm
 
-@[simp]
-lemma not_isLink_of_notMem_edgeSet (he : e ∉ E(G)) : ¬ G.IsLink e x y :=
-  mt IsLink.edge_mem he
-
-@[simp]
-lemma not_inc_of_notMem_edgeSet (he : e ∉ E(G)) : ¬ G.Inc e x :=
-  mt Inc.edge_mem he
 
 /-- Two graphs `G` and `H` have the same `IsLink` function for edge `e` if and only if
 there exist vertices `x` and `y` such that both graphs agree that `e` links `x` and `y`. -/
@@ -150,10 +143,15 @@ lemma incVertexSet_encard_le (G : Graph α β) (F : Set β) : V(G, F).encard ≤
   have : Fintype F := hfin.fintype
   refine (hfin.encard_biUnion_le (V(G, ·))).trans ?_
   grw [finsum_mem_eq_sum _ (hfin.inter_of_left _), Finset.sum_le_card_nsmul _ _ 2 (by simp)]
-  simp only [nsmul_eq_mul, mul_comm, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true,
-    ENat.ofNat_ne_top, ENat.mul_le_mul_left_iff]
-  refine le_trans ?_ (encard_eq_coe_toFinset_card F).ge
-  refine ENat.coe_le_coe.mpr <| Finset.card_le_card <| by simp
+  simp only [nsmul_eq_mul, mul_comm]
+  rw [ENat.mul_le_mul_left_iff _ (by simp)]
+  · refine le_trans ?_ (encard_eq_coe_toFinset_card F).ge
+    refine ENat.coe_le_coe.mpr <| Finset.card_le_card <| by simp
+  simp
+
+  -- ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true,
+  --   ENat.ofNat_ne_top, ENat.mul_le_mul_left_iff]
+
 
 lemma incVertexSet_inter_edgeSet (G : Graph α β) (F : Set β) : V(G, F ∩ E(G)) = V(G, F) := by
   ext x

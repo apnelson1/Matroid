@@ -218,7 +218,7 @@ lemma IsHyperplane.isModularFlat_iff_forall_isLine {H : Set α} (hH : M.IsHyperp
     rw [← eLocalConn_eq_zero hH.subset_ground] at hsk
     have hr := hH.eLocalConn_add_one_eq hLH
     rw [eLocalConn_comm, hsk, hL.eRk] at hr
-    simp at hr
+    enat_to_nat; lia
   obtain ⟨I, hI⟩ := M.exists_isBasis F
   rw [skew_iff_closure_skew_right, ← hI.closure_eq_closure, ← skew_iff_closure_skew_right]
   obtain hI' | hI' := I.subsingleton_or_nontrivial
@@ -244,11 +244,11 @@ lemma IsLine.isModularFlat_of_forall_isHyperplane {L : Set α} (hL : M.IsLine L)
   have hlc := M.eLocalConn_add_eRelRk_union_eq_eRk L F
   rw [hL.eRk, ← eRelRk_closure_right, hsp.closure_eq, add_comm] at hlc
   obtain h_eq | hlt := hle.eq_or_lt
-  · rw [← h_eq, (show (2 : ℕ∞) = 1 + 1 from rfl), WithTop.add_right_inj (by simp),
+  · rw [← h_eq, (show (2 : ℕ∞) = 1 + 1 from rfl), add_left_inj_of_ne_top (by simp),
       ← hF.isHyperplane_iff_eRelRk_ground_eq_one] at hlc
     exact h hlc hcl
   replace hlt := show (2 : ℕ∞) ≤ _ from Order.add_one_le_of_lt hlt
-  rw [← zero_add (a := M.eLocalConn L F), ← hlc, WithTop.add_le_add_iff_right,
+  rw [← zero_add (a := M.eLocalConn L F), ← hlc, ENat.add_le_add_iff_right,
     nonpos_iff_eq_zero, eRelRk_ground_eq_zero_iff, spanning_iff_closure_eq, hF.closure] at hlt
   · rw [hlt, inter_eq_self_of_subset_left hL.subset_ground] at hcl
     simpa [hL.eRk] using M.eRk_mono hcl

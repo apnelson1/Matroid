@@ -131,6 +131,7 @@ lemma CyclicallyConnected.compl_indep_of_dep (h : M.CyclicallyConnected ⊤) (hX
   rw [cyclicallyConnected_top_iff] at h
   simpa [hX.not_indep] using h X hX.subset_ground
 
+set_option backward.isDefEq.respectTransparency false in
 /-- A rank-`k` uniform matroid is infinitely Tutte-connected if and only if its
 cardinality is `2k-1`, `2k` or `2k+1`.  -/
 lemma unifOn_tutteConnected_top_iff {E : Set α} {k : ℕ} (hkE : k ≤ E.encard) :
@@ -151,6 +152,7 @@ lemma unifOn_tutteConnected_top_iff {E : Set α} {k : ℕ} (hkE : k ≤ E.encard
   have hcard := encard_diff_add_encard_of_subset hX
   enat_to_nat!; lia
 
+set_option backward.isDefEq.respectTransparency false in
 /-- For finite `r`, a rank-`r` uniform matroid is `k`-Tutte-connected if and only if either
 it has size `2r-1, 2r` or `2r+1`, or `k` is at most the rank and at most the corank. -/
 lemma unifOn_tutteConnected_iff {E : Set α} {r : ℕ} (hrE : r ≤ E.encard) :

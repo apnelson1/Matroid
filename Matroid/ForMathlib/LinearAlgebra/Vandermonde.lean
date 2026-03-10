@@ -85,7 +85,7 @@ lemma rectVandermonde_linearIndepOn_iff {v w : α → R} {s : Set α} (hn : n �
   have hsfin := (s.finite_of_encard_le_coe hle).fintype
   rw [← linearIndependent_set_coe_iff]
   refine rectVandermonde_rows_linearIndependent ?_ (by aesop) (by aesop)
-  rwa [Set.encard_eq_coe_toFinset_card, Set.toFinset_card, Nat.cast_le] at hle
+  rwa [Set.encard_eq_coe_toFinset_card, Set.toFinset_card, ENat.coe_le_coe] at hle
 
 lemma rectVandermonde_linearIndepOn_iff₀ {v w : α → R} {s : Set α}
     (hvw : ∀ i ∈ s, v i = 0 → w i ≠ 0) : LinearIndepOn R (rectVandermonde v w n) s ↔ s.encard ≤ n ∧

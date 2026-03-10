@@ -84,7 +84,7 @@ section edgeDelete
 but we define it with `copy` so that the edge set is definitionally equal to `E(G) \ F`. -/
 @[simps! (attr := grind =)]
 def edgeDelete (G : Graph α β) (F : Set β) : Graph α β :=
-  (G.edgeRestrict (E(G) \ F)).copy (E := E(G) \ F)
+  (G.edgeRestrict (E(G) \ F)).copy (edgeSet := E(G) \ F)
   (IsLink := fun e x y ↦ G.IsLink e x y ∧ e ∉ F) rfl
   (by simp [diff_subset])
   (fun e x y ↦ by
@@ -324,12 +324,19 @@ end CompatibleAt
 
 section Compatible
 
-/-- Two graphs are `Compatible` if the edges in their intersection agree on their ends -/
-def Compatible (G H : Graph α β) : Prop := EqOn G.IsLink H.IsLink (E(G) ∩ E(H))
+-- /-- Two graphs are `Compatible` if the edges in their intersection agree on their ends -/
+-- def Compatible (G H : Graph α β) : Prop := EqOn G.IsLink H.IsLink (E(G) ∩ E(H))
+
+lemma compatible_iff_eqOn : Compatible G H ↔ EqOn G.IsLink H.IsLink (E(G) ∩ E(H)) := by
+  simp [EqOn, Compatible, funext_iff]
+
+lemma Compatible.eqOn (h : Compatible G H) : EqOn G.IsLink H.IsLink (E(G) ∩ E(H)) :=
+  compatible_iff_eqOn.1 h
+
 
 @[simp]
 lemma Compatible.compatibleAt (h : G.Compatible H) (e : β) : CompatibleAt e G H :=
-  fun heG heH ↦ h ⟨heG, heH⟩
+  fun heG heH ↦ h.eqOn ⟨heG, heH⟩
 
 @[simp]
 lemma pairwise_compatibleAt_of_compatible (h : Pairwise (Compatible on Gι)) (e : β) :
@@ -341,28 +348,17 @@ lemma set_pairwise_compatibleAt_of_compatible (h : Gs.Pairwise Compatible) (e : 
 
 lemma Compatible.isLink_eq (h : G.Compatible H) (heG : e ∈ E(G)) (heH : e ∈ E(H)) :
     G.IsLink e = H.IsLink e :=
-  h ⟨heG, heH⟩
+  h.eqOn ⟨heG, heH⟩
 
 @[simp]
 lemma compatible_self (G : Graph α β) : G.Compatible G :=
-  eqOn_refl ..
+  compatible_iff_eqOn.2 <| eqOn_refl ..
 
 instance : Std.Refl (Compatible : Graph α β → Graph α β → Prop) where
   refl G := G.compatible_self
 
-@[symm]
-lemma Compatible.symm (h : G.Compatible H) : H.Compatible G := by
-  rwa [Compatible, inter_comm, eqOn_comm]
-
 instance : Std.Symm (Compatible : Graph α β → Graph α β → Prop) where
   symm _ _ := Compatible.symm
-
-lemma IsLink.of_compatible (h : G.IsLink e x y) (hGH : G.Compatible H) (heH : e ∈ E(H)) :
-    H.IsLink e x y := by
-  rwa [← hGH ⟨h.edge_mem, heH⟩]
-
-lemma Compatible.of_disjoint_edgeSet (h : Disjoint E(G) E(H)) : Compatible G H := by
-  simp [Compatible, h.inter_eq]
 
 @[simp]
 lemma compatible_edgeDelete_right : G.Compatible (H ＼ E(G)) :=
@@ -376,6 +372,7 @@ lemma pairwise_compatible_edgeDelete : ({G, H ＼ E(G)} : Set (Graph α β)).Pai
 @[simp]
 lemma singleEdge_compatible_iff :
     Compatible (Graph.singleEdge u v e) G ↔ (e ∈ E(G) → G.IsLink e u v) := by
+  rw [compatible_iff_eqOn]
   refine ⟨fun h he ↦ by simp [← h ⟨by simp, he⟩], fun h f ⟨hfe, hf⟩ ↦ ?_⟩
   obtain rfl : f = e := by simpa using hfe
   ext x y
@@ -563,7 +560,8 @@ its `H`-ends, then `G` is favoured, so this is not commutative in general.
 If `G` and `H` are `Compatible`, this doesn't occur.
 We define this in terms of `sUnion` and `Graph.copy` so the vertex and edge sets are
 definitionally unions. -/
-protected def union (G H : Graph α β) := Graph.copy (V := V(G) ∪ V(H)) (E := E(G) ∪ E(H))
+protected def union (G H : Graph α β) := Graph.copy (vertexSet := V(G) ∪ V(H))
+  (edgeSet := E(G) ∪ E(H))
   (Graph.sUnion {G, H ＼ E(G)} (by simp)) (by simp) (by simp) (fun _ _ _ ↦ Iff.rfl)
 
 instance : Union (Graph α β) where union := Graph.union

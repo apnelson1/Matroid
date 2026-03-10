@@ -229,7 +229,7 @@ lemma vertexSet_inter_pathr_eq_last_inter_pathr (hAST : A.between S T) (hPT : V(
   simpa [eq_comm, hPT hx] using hAST hP |>.eq_last_iff_mem x |>.symm
 
 @[simps! (attr := grind =)]
-def extend_right (A : G.SetEnsemble) (hAST : A.between S T) (P : WList α β)
+noncomputable def extend_right (A : G.SetEnsemble) (hAST : A.between S T) (P : WList α β)
    (hPT : V(P) ⊆ T) (hPfirst : A.vertexSet ∩ V(P) = {P.first}) (hP : G.IsPath P) :
    G.SetEnsemble := by
   let Q := A.of_vertex P.first (A.pathr_mem hPfirst)
@@ -320,9 +320,9 @@ lemma extend_right_last (A : G.SetEnsemble) (hAST : A.between S T) (hPT : V(P) �
 /-- Extends a SetEnsemble by a path in `P` when exactly two paths end somewhere in `P`.
   Send help. -/
 @[simps! (attr := grind =)]
-def extend_right_two (A : G.SetEnsemble) (hAST : A.between S T) (P : WList α β) (hPT : V(P) ⊆ T)
-    [DecidablePred (· ∈ A.vertexSet)] (htwo : P.vertex.countP (· ∈ A.vertexSet) = 2)
-    (hPP : G.IsPath P) : G.SetEnsemble := by
+noncomputable def extend_right_two (A : G.SetEnsemble) (hAST : A.between S T) (P : WList α β)
+    (hPT : V(P) ⊆ T) [DecidablePred (· ∈ A.vertexSet)]
+    (htwo : P.vertex.countP (· ∈ A.vertexSet) = 2) (hPP : G.IsPath P) : G.SetEnsemble := by
   have hPslen : (P.breakAt (· ∈ A.vertexSet)).length = 3 := by rw [breakAt_length, htwo]
   let P₀ := P.prefixUntil (· ∈ A.vertexSet)
   let P₂ := P.suffixFromLast (· ∈ A.vertexSet)
@@ -523,12 +523,11 @@ lemma extend_right_two_last (hAST : A.between S T) (hPT : V(P) ⊆ T)
   exact hdj.notMem_of_mem_left <| hPf ▸ first_mem
 
 @[simp]
-def extend_right_le_two (A : G.SetEnsemble) (hAST : A.between S (T ∪ V(P))) (hP : G.IsPath P)
-    [DecidablePred (· ∈ A.vertexSet)] (hAP : P.vertex.countP (· ∈ A.vertexSet) ≤ 2) :
-    G.SetEnsemble := by
+noncomputable def extend_right_le_two (A : G.SetEnsemble) (hAST : A.between S (T ∪ V(P)))
+    (hP : G.IsPath P) [DecidablePred (· ∈ A.vertexSet)]
+    (hAP : P.vertex.countP (· ∈ A.vertexSet) ≤ 2) : G.SetEnsemble := by
   by_cases h0 : P.vertex.countP (· ∈ A.vertexSet) = 0
   · exact A
-
   by_cases h1 : P.vertex.countP (· ∈ A.vertexSet) = 1
   · by_cases hPf : P.first ∈ A.vertexSet
     · exact A

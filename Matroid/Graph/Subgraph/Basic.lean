@@ -9,31 +9,6 @@ open scoped Sym2
 
 namespace Graph
 
-/-- `Copy` creates an identical graph with different definitions for its vertex set and edge set.
-  This is mainly used to create graphs with improved definitional properties. -/
-@[simps (attr := grind =)]
-def copy (G : Graph α β) {V : Set α} {E : Set β} {IsLink : β → α → α → Prop} (hV : V(G) = V)
-    (hE : E(G) = E) (h_isLink : ∀ e x y, G.IsLink e x y ↔ IsLink e x y) : Graph α β where
-  vertexSet := V
-  edgeSet := E
-  IsLink := IsLink
-  isLink_symm e he x y := by
-    simp_rw [← h_isLink]
-    apply G.isLink_symm (hE ▸ he)
-  eq_or_eq_of_isLink_of_isLink := by
-    simp_rw [← h_isLink]
-    exact G.eq_or_eq_of_isLink_of_isLink
-  edge_mem_iff_exists_isLink := by
-    simp_rw [← h_isLink, ← hE]
-    exact G.edge_mem_iff_exists_isLink
-  left_mem_of_isLink := by
-    simp_rw [← h_isLink, ← hV]
-    exact G.left_mem_of_isLink
-
-lemma copy_eq (G : Graph α β) {V : Set α} {E : Set β} {IsLink : β → α → α → Prop}
-    (hV : V(G) = V) (hE : E(G) = E) (h_isLink : ∀ e x y, G.IsLink e x y ↔ IsLink e x y) :
-    G.copy hV hE h_isLink = G := by
-  ext <;> simp_all
 
 /-- `IsSubgraph H G` means that `V(H) ⊆ V(G)`, and every link in `H` is a link in `G`.
 

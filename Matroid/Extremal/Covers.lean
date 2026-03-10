@@ -417,8 +417,8 @@ lemma set_to_binom_number {a b : ℕ} (X : Set α) (hX : X.encard = b) :
     {Y | Y ⊆ X ∧ Y.encard = a}.encard = b.choose a := by
   have hXfin : X.Finite := by simp [← encard_lt_top_iff, hX]
   set X' := hXfin.toFinset with hX'
-  have := (Nat.cast_inj (R := ℕ∞)).2 <| X'.card_powersetCard a
-  convert (Nat.cast_inj (R := ℕ∞)).2 <| X'.card_powersetCard a
+  have := (ENat.coe_inj).2 <| X'.card_powersetCard a
+  convert (ENat.coe_inj).2 <| X'.card_powersetCard a
   · rw [← encard_coe_eq_coe_finsetCard, ← Finset.coe_injective.encard_image (β := Set α)]
     convert rfl
     ext S
@@ -430,9 +430,9 @@ lemma set_to_binom_number {a b : ℕ} (X : Set α) (hX : X.encard = b) :
     intro ⟨hSX, hSa⟩
     refine ⟨Finite.toFinset (s := S) ?_, ?_⟩
     · simp [← encard_lt_top_iff, hSa]
-    simp_rw [← Nat.cast_inj (R := ℕ∞), ← hSa, ← Finite.encard_eq_coe_toFinset_card]
+    simp_rw [← ENat.coe_inj, ← hSa, ← Finite.encard_eq_coe_toFinset_card]
     simpa
-  rw [← Nat.cast_inj (R := ℕ∞), ← hX, eq_comm, hXfin.encard_eq_coe_toFinset_card]
+  rw [← ENat.coe_inj, ← hX, eq_comm, hXfin.encard_eq_coe_toFinset_card]
 
 lemma cover_foo {a : ℕ} (hr : M.eRank ≤ a + 1)
     (h : Maximal (fun Y ↦ Y ⊆ M.E ∧ (M ↾ Y).IsFiniteRankUniform (a + 1) Y.encard) X) :

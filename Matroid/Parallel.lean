@@ -126,6 +126,7 @@ lemma parallel_iff_isCircuit (hef : e ≠ f) : M.Parallel e f ↔ M.IsCircuit {e
   · convert h.mem_closure_diff_singleton_of_mem (mem_insert _ _); rw [pair_diff_left hef]
   apply h.isNonloop_of_mem_of_one_lt_card _ (mem_insert _ _)
   rw [encard_pair hef]
+  enat_to_nat
   norm_num
 
 lemma Parallel.isCircuit_of_ne (hef : M.Parallel e f) (hne : e ≠ f) : M.IsCircuit {e,f} := by
@@ -357,20 +358,38 @@ def isoOfMapParallelRestr {X Y : Set α} (φ : X ≃ Y) (h_para : ∀ e : X,  M.
       simp only [restrict_ground_eq, restrict_closure_eq', image_val_inter_self_left_eq_coe,
         preimage_union, preimage_inter, Subtype.coe_preimage_self, inter_univ, preimage_diff]
       intro Z
-      rw [image_image, closure_image_of_forall_parallel'_subtype _ h_para, image_image]
+      rw [image_image]
+      have hc := closure_image_of_forall_parallel'_subtype _ h_para Z
+      convert congr_arg (fun A ↦ A ∩ Y ∪ (Y \ M.E)) hc
+      rw [image_image]
+      -- [closure_image_of_forall_parallel'_subtype _ h_para, image_image]
       have hYE : Y ⊆ M.E := fun y hy ↦ by simpa using (h_para (φ.symm ⟨y,hy⟩)).mem_ground_right
 
       simp [preimage_val_eq_univ_of_subset hXE, diff_eq_empty.2 hYE]
       ext x
-      simp only [mem_inter_iff, mem_image, mem_preimage, Subtype.exists, exists_and_left]
-      refine ⟨fun ⟨hx,hxY⟩  ↦ ⟨φ.symm ⟨_,hxY⟩, ?_⟩, ?_⟩
-      · suffices (φ.symm ⟨x, hxY⟩).1 ∈ M.closure Z by simpa
-        exact mem_of_mem_of_subset (by simpa using (h_para (φ.symm ⟨x,hxY⟩)).mem_closure) <|
-          M.closure_subset_closure_of_subset_closure (by simpa)
-      rintro ⟨x, hx', hx, rfl⟩
-      simp only [Subtype.coe_prop, and_true]
-      exact mem_of_mem_of_subset (h_para ⟨x,hx⟩).symm.mem_closure <|
-          M.closure_subset_closure_of_subset_closure (by simpa) )
+      simp only [mem_inter_iff, mem_image, mem_preimage]
+      constructor
+      · rintro ⟨a, ha, hax, rfl⟩
+        simp only [Subtype.coe_prop, and_true]
+        exact ((h_para a).mem_closure_iff_mem_closure (X := Subtype.val '' Z)).1 ha
+      intro ⟨hx, hxY⟩
+      refine ⟨φ.symm ⟨x, hxY⟩, ((h_para _).mem_closure_iff_mem_closure).2 (by simpa), ?_⟩
+      exact Subtype.val_inj.2 <| φ.apply_symm_apply ⟨x, hxY⟩
+  )
+                -- rwa [(h_para ⟨a, hax⟩).mem_closure_iff_mem_closure] at ha
+      -- rintro ⟨hx, hxY⟩
+      -- refine ⟨φ.symm ⟨x, hxY⟩, ?_⟩
+      -- · have : φ (φ.symm ⟨x, hxY⟩) = ⟨x, hxY⟩ := sorry
+      --   sim
+      -- simp only [Subtype.coe_eta, Subtype.coe_prop, exists_const]
+      -- refine ⟨fun ⟨hx,hxY⟩  ↦ ⟨φ.symm ⟨_,hxY⟩, ?_⟩, ?_⟩
+      -- · suffices (φ.symm ⟨x, hxY⟩).1 ∈ M.closure Z by simpa
+      --   exact mem_of_mem_of_subset (by simpa using (h_para (φ.symm ⟨x,hxY⟩)).mem_closure) <|
+      --     M.closure_subset_closure_of_subset_closure (by simpa)
+      -- rintro ⟨x, hx', hx, rfl⟩
+      -- simp only [Subtype.coe_prop, and_true]
+      -- exact mem_of_mem_of_subset (h_para ⟨x,hx⟩).symm.mem_closure <|
+      --     M.closure_subset_closure_of_subset_closure (by simpa) )
 
 /-- If `φ` is a permutation of `M.E` that maps each element to something `Parallel'`, then
 `φ` determines an automorphism of `M`. -/

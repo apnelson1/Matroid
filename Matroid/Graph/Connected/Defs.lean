@@ -583,7 +583,7 @@ lemma connGE_zero : G.ConnGE 0 := by
   obtain h | h := V(G).eq_empty_or_nonempty <;> simp [connGE_iff, h]
 
 lemma ConnGE.anti_right (hle : n ≤ m) (h : G.ConnGE m) : G.ConnGE n where
-  le_cut C hC := (by norm_cast : (n : ℕ∞) ≤ ↑m).trans (h.le_cut hC)
+  le_cut C hC := (by simpa : (n : ℕ∞) ≤ ↑m).trans (h.le_cut hC)
   le_card := h.le_card.imp id (fun h ↦ by enat_to_nat!; omega)
 
 @[simp]
@@ -609,9 +609,7 @@ lemma bouquet_vertexDelete : (bouquet v F) - v = ⊥ :=
 @[simp]
 lemma connGE_bouquet_iff (n : ℕ) : (bouquet v F).ConnGE n ↔ n ≤ 1 := by
   refine ⟨fun h ↦ ?_, fun h ↦ ConnGE.anti_right h <| by simp⟩
-  simpa using h.le_cut (C := {v}) ⟨by simp, by
-    rw [← vertexDelete_singleton, bouquet_vertexDelete]
-    simp⟩
+  simpa using h.le_cut (C := {v}) (by simp)
 
 lemma connGE_iff_of_vertexSet_singleton (h : V(G) = {x}) : G.ConnGE n ↔ n ≤ 1 := by
   rw [eq_bouquet h, connGE_bouquet_iff]

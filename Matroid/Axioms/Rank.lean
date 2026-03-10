@@ -116,7 +116,7 @@ lemma Indep.insert_indep_of_eRelRk_ne_zero (hI : M.Indep I) (hx : M.eRelRk I (in
       (show I \ {a} ⊆ insert x I \ {a} from diff_subset_diff_left (subset_insert _ _)) diff_subset,
       hr, add_zero, ← insert_diff_singleton_comm hax,
       eRelRk_insert_eq_one_of_ne (by simp [hcon])] at hcon
-  norm_num at hcon
+  simp at hcon
 
 lemma Indep.subset_maximal_iff_eRelRk_zero (hI : M.Indep I) (hIX : I ⊆ X) :
     Maximal (fun S ↦ M.Indep S ∧ S ⊆ X) I ↔ M.eRelRk I X = 0 := by
@@ -177,7 +177,7 @@ lemma Indep.eRelRk_subset (hJ : M.Indep J) (hIJ : I ⊆ J) : M.eRelRk I J = (J \
 
   intro hdj heI heJ hSJ
   specialize IH hdj hSJ
-  rwa [M.eRelRk_insert_eq_one_of_ne, WithTop.add_le_add_iff_right (by simp)]
+  rwa [M.eRelRk_insert_eq_one_of_ne, ENat.add_one_le_add_one_iff]
 
   have hi : M.Indep (insert e (I ∪ S)) := hJ.subset (insert_subset heJ (union_subset hIJ hSJ))
   rw [indep_iff] at hi

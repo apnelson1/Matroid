@@ -152,13 +152,12 @@ lemma eRk_eq_iSup_finset_eRk (M : Matroid α) (X : Set α) :
 
   obtain ⟨I, hI⟩ := M.exists_isBasis' X
   rw [← eRk_eq_top_iff] at hX
-  rw [hX, top_le_iff, WithTop.eq_top_iff_forall_le]
+  rw [hX, top_le_iff, ENat.eq_top_iff_forall_ge]
   intro n
   rw [hI.eRk_eq_encard, encard_eq_top_iff] at hX
   obtain ⟨J, hJI, rfl⟩ := hX.exists_subset_card_eq n
   apply le_iSup₂_of_le J (hJI.trans hI.subset)
   rw [(hI.indep.subset hJI).eRk_eq_encard, encard_coe_eq_coe_finsetCard]
-  rfl
 
 lemma eRk_union_eq_of_subset_of_eRk_le_eRk (Z : Set α) (hXY : X ⊆ Y) (hr : M.eRk Y ≤ M.eRk X) :
     M.eRk (X ∪ Z) = M.eRk (Y ∪ Z) := by

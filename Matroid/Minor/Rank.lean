@@ -227,10 +227,8 @@ lemma eRelRk_union_add_eRk_inter_le (M : Matroid α) (X Y : Set α) :
 
 lemma IsRkFinite.eRelRk_eq_sub (hY : M.IsRkFinite X) (hXY : X ⊆ Y) :
     M.eRelRk X Y = M.eRk Y - M.eRk X := by
-  rw [← eRelRk_add_eRk_of_subset _ hXY]
-  apply WithTop.add_right_cancel <| ne_top_of_lt hY.eRk_lt_top
-  rw [eq_comm, tsub_add_cancel_iff_le]
-  exact le_add_self
+  rw [← eRelRk_add_eRk_of_subset _ hXY, ENat.add_tsub_cancel_right]
+  rwa [eRk_ne_top_iff]
 
 lemma IsNonloop.eRelRk_add_one_eq (he : M.IsNonloop e) (X : Set α) :
     M.eRelRk {e} X + 1 = M.eRk (insert e X) := by
@@ -238,9 +236,7 @@ lemma IsNonloop.eRelRk_add_one_eq (he : M.IsNonloop e) (X : Set α) :
 
 lemma IsNonloop.eRelRk_eq_sub_one (he : M.IsNonloop e) (X : Set α) :
     M.eRelRk {e} X = M.eRk (insert e X) - 1 := by
-  apply WithTop.add_right_cancel (show (1 : ℕ∞) ≠ ⊤ from ENat.coe_toNat_eq_self.mp rfl)
-  rw [← he.eRelRk_add_one_eq, eq_comm, tsub_add_cancel_iff_le]
-  exact le_add_self
+  rw [← he.eRelRk_add_one_eq, ENat.add_tsub_cancel_right (by simp)]
 
 lemma eRelRk_add_cancel (M : Matroid α) (hXY : X ⊆ Y) (hYZ : Y ⊆ Z) :
     M.eRelRk X Y + M.eRelRk Y Z = M.eRelRk X Z := by
@@ -452,8 +448,7 @@ lemma IsRkFinite.union_of_contract (hX : (M ／ C).IsRkFinite X) (hC : M.IsRkFin
     M.IsRkFinite (X ∪ C) := by
   rw [← eRk_lt_top_iff, ← M.eRelRk_add_eRk_eq, eRelRk]
   rw [← eRk_ne_top_iff] at hC hX
-  rw [lt_top_iff_ne_top, Ne, WithTop.add_eq_top, not_or]
-  exact ⟨hX, hC⟩
+  rwa [lt_top_iff_ne_top, Ne, ENat.add_eq_top, or_iff_right hX]
 
 lemma IsRkFinite.of_contract (hX : (M ／ C).IsRkFinite X) (hC : M.IsRkFinite C) : M.IsRkFinite X :=
   (hX.union_of_contract hC).subset subset_union_left
@@ -542,7 +537,7 @@ lemma delete_rank_add_rk_ge_rank (M : Matroid α) (D : Set α) : M.rank ≤ (M �
 
 lemma contract_rk_add_eq (M : Matroid α) [RankFinite M] (C X : Set α) :
     (M ／ C).rk X + M.rk C = M.rk (X ∪ C) := by
-  simp_rw [← Nat.cast_inj (R := ℕ∞), Nat.cast_add, cast_rk_eq, ← eRelRk_add_eRk_eq, eRelRk]
+  simp_rw [← ENat.coe_inj, Nat.cast_add, cast_rk_eq, ← eRelRk_add_eRk_eq, eRelRk]
 
 @[simp] lemma contract_rk_cast_int_eq (M : Matroid α) [RankFinite M] (C X : Set α) :
     ((M ／ C).rk X : ℤ) = M.rk (X ∪ C) - M.rk C := by

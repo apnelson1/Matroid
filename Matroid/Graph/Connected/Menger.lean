@@ -74,7 +74,8 @@ lemma Menger'sTheorem_aux [G.Finite] {S T : Set α} (hS : S ⊆ V(G)) (hT : T �
       rw [← ENat.coe_lt_coe, hn']
       simp only [cast_zero, encard_pos]
       use R.Q, R.Q_mem
-    rwa [Nat.sub_add_cancel (by omega), ← ENat.coe_lt_coe, hn']
+    rw [Nat.sub_add_cancel (by lia), hn']
+    lia
   have hT' : T ∪ V(R.bQ2) ⊆ V(G) := by
     rw [R.bQ2_vertexSet]
     exact union_subset hT <| union_subset (hP'P.subset.trans hGP.vertexSet_subset)
@@ -190,7 +191,7 @@ lemma Menger'sTheorem_aux' [G.Finite] (hS : S ⊆ V(G)) (hT : T ⊆ V(G)) {n : �
   | m + 2 =>
   obtain ⟨A, hA, hAcard⟩ := Menger'sTheorem_aux' hS hT hconn (m+1) (by omega)
   obtain ⟨B, hB, b, hb, hB⟩ := Menger'sTheorem_aux hS hT hconn (A := A)
-    hA (finite_of_encard_eq_coe hAcard) (hAcard ▸ (by norm_cast))
+    hA (finite_of_encard_eq_coe hAcard) (hAcard ▸ (by enat_to_nat; lia))
   use B
   apply_fun Set.encard (α := α) at hB
   rw [← B.last_injOn.encard_image, ← hB, encard_insert_of_notMem hb, A.last_injOn.encard_image,
@@ -345,8 +346,7 @@ theorem Menger'sTheorem_mixed [G.Finite] (hs : s ∈ V(G)) (ht : t ∈ V(G)) (h�
     n ≤ X.encard + F.encard) ↔ ∃ A : G.VertexEnsemble s t ι, A.edgeDisjoint := by
   convert (L'(G)).Menger'sTheorem_vertex (by simpa : Sum.inl s ∈ _) (by simpa : Sum.inl t ∈ _) hι
   · refine ⟨fun h C hC ↦ ?_, fun h X hX ⟨hsX, htX⟩ F hF hXF ↦ ?_⟩
-    · change n ≤ C.encard
-      rw [← image_preimage_inl_union_image_preimage_inr C, encard_union_eq (by simp),
+    · rw [← image_preimage_inl_union_image_preimage_inr C, encard_union_eq (by simp),
       Sum.inl_injective.encard_image, Sum.inr_injective.encard_image]
       refine h (Sum.inl ⁻¹' C) ?_ ?_ (Sum.inr ⁻¹' C) ?_ ?_
       · exact preimage_subset_iff.mpr fun x hxC ↦ by simpa using hC.subset hxC

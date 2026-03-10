@@ -367,7 +367,7 @@ lemma Quotient.intCast_rank_sub_mono [RankFinite M₁] (hQ : M₂ ≤q M₁) (hX
     (M₂.rk Y : ℤ) - M₂.rk X ≤ (M₁.rk Y : ℤ) - M₁.rk X := by
   have _ : RankFinite M₂ := hQ.rankFinite
   rw [← Nat.cast_sub (M₂.rk_mono hXY), ← Nat.cast_sub (M₁.rk_mono hXY), Nat.cast_le,
-    ← Nat.cast_le (α := ℕ∞), ENat.coe_sub, cast_rk_eq, ENat.coe_sub, cast_rk_eq, cast_rk_eq ,
+    ← ENat.coe_le_coe, ENat.coe_sub, cast_rk_eq, ENat.coe_sub, cast_rk_eq, cast_rk_eq ,
     cast_rk_eq, ← (M₁.isRkFinite_set X).eRelRk_eq_sub hXY,
     ← (M₂.isRkFinite_set X).eRelRk_eq_sub hXY]
   exact eRelRk_le hQ X Y

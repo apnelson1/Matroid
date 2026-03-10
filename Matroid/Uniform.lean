@@ -78,16 +78,19 @@ theorem unifOn_eRk_eq' (E : Set α) (k : ℕ) : (unifOn E k).eRk X = min (X ∩ 
 
 @[simp] theorem unifOn_eRank_eq (E : Set α) (k : ℕ) : (unifOn E k).eRank = min E.encard k := by
   rw [eRank_def, unifOn_ground_eq, unifOn_eRk_eq _ _ Subset.rfl]
+-- set_option pp.all true
 
+set_option backward.isDefEq.respectTransparency false in
 theorem unifOn_eRank_eq' (hle : k ≤ E.encard) : (unifOn E k).eRank = k := by
   rw [unifOn_eRank_eq, min_eq_right hle]
 
 theorem unifOn_rank_eq (hk : (k : ℕ∞) ≤ E.encard) : (unifOn E k).rank = k := by
-  rw [rank, unifOn_eRank_eq, min_eq_right hk, ENat.toNat_coe]
+  rw [rank, unifOn_eRank_eq, show min E.encard k = k from min_eq_right hk, ENat.toNat_coe]
 
 @[simp]
 theorem unifOn_rankPos_iff : (unifOn E k).RankPos ↔ 1 ≤ k ∧ E.Nonempty := by
   simp [← eRank_ne_zero_iff, unifOn_eRank_eq, ← ENat.one_le_iff_ne_zero, and_comm]
+
 
 instance {k : ℕ} {E : Set α} : RankFinite (unifOn E k) := by
   rw [← isRkFinite_ground_iff_rankFinite, ← eRk_lt_top_iff,
@@ -108,14 +111,14 @@ theorem unifOn_dual_eq {k : ℕ} (hE : E.Finite) :
 
   rw [dual_isBase_iff, unifOn_isBase_iff (by simpa) (by simpa using diff_subset),
     unifOn_ground_eq, unifOn_isBase_iff (by simp) hBE, ← Finset.coe_sdiff,
-    encard_coe_eq_coe_finsetCard, Nat.cast_inj, encard_coe_eq_coe_finsetCard, Nat.cast_inj,
+    encard_coe_eq_coe_finsetCard, ENat.coe_inj, encard_coe_eq_coe_finsetCard, ENat.coe_inj,
     toFinite_toFinset, E.toFinset_coe, Finset.card_sdiff_of_subset (by simpa),
     tsub_eq_iff_eq_add_of_le (Finset.card_mono (by simpa)),
     eq_tsub_iff_add_eq_of_le (by simpa), add_comm, eq_comm]
 
 lemma unifOn_dual_eq' {j k : ℕ} (hE : E.encard = k + j) : (unifOn E k)✶ = unifOn E j := by
   have hEfin : E.Finite := by rw [← encard_lt_top_iff]; enat_to_nat!
-  rw [hEfin.encard_eq_coe_toFinset_card, ← Nat.cast_add, Nat.cast_inj] at hE
+  rw [hEfin.encard_eq_coe_toFinset_card, ← Nat.cast_add, ENat.coe_inj] at hE
   rw [unifOn_dual_eq hEfin, hE, Nat.add_sub_cancel_left]
 
 lemma unifOn_dual_eq_of_le {k : ℕ} (hEfin : E.Finite) (hle : k ≤ E.encard) :
@@ -183,8 +186,7 @@ theorem unifOn_contract_finset_eq {C : Finset α} (hCE : (C : Set α) ⊆ E) :
   rw [subset_diff] at hIE
   simp [hC.contract_indep_iff, unifOn_indep_iff, hIE.1, hCE, subset_diff, hIE.2,
     encard_union_eq hIE.2]
-  rw [← WithTop.add_le_add_iff_right (x := I.encard) (z := C.card) (by simp),
-    tsub_add_cancel_of_le (by simpa)]
+  enat_to_nat!; lia
 
 theorem unifOn_contractElem (heE : e ∈ E) : (unifOn E (k+1)) ／ {e} = unifOn (E \ {e}) k := by
   simpa using unifOn_contract_finset_eq (C := {e}) (E := E) (k := (k+1)) (by simpa)
@@ -220,8 +222,8 @@ instance unifOn_simple (E : Set α) : Simple (unifOn E (k+2)) := by
 
   refine ⟨fun h ↦ (h.1.eq_of_not_lt fun hlt ↦ (h.2 e heC).1.not_gt ?_).symm,
     fun h ↦ ⟨h.symm.le, fun e heC ↦ ⟨Eq.le ?_, diff_subset.trans hCE⟩⟩⟩
-  · rwa [← encard_diff_singleton_add_one heC, WithTop.add_lt_add_iff_right (by simp)] at hlt
-  rwa [← encard_diff_singleton_add_one heC, WithTop.add_right_inj (by simp)] at h
+  · rwa [← encard_diff_singleton_add_one heC, ENat.add_one_lt_add_one_iff] at hlt
+  rwa [← encard_diff_singleton_add_one heC, ENat.add_one_eq_add_one_iff] at h
 
 lemma circuitOn_eq_unifOn {n : ℕ} (hn : n + 1 = C.encard) : circuitOn C = unifOn C n := by
   rw [← dual_inj, circuitOn_dual, unifOn_dual_eq' (j := 1)]
@@ -268,16 +270,6 @@ lemma unifOn_isCocircuit_iff {n : ℕ} {K : Set α} (hnE : n ≤ E.encard) :
   rw [← isHyperplane_compl_iff_isCocircuit, unifOn_isHyperplane_iff hnE]
   simp [hKE, diff_subset]
 
-lemma unifOn_isoMinor_unifOn {E E' : Set α} {k : ℕ} (hEE' : E' ⊆ E) :
-    Nonempty (unifOn E' k ≂ ((unifOn E k )↾ E') ) := by
-  refine ⟨ ?_, fun I ↦ ?_ ⟩
-  · simp only [unifOn_ground_eq, restrict_ground_eq]
-    exact Equiv.setCongr (Subset.antisymm (fun ⦃a⦄ a_1 ↦ a_1) fun ⦃a⦄ a_1 ↦ a_1 )
-  simp only [unifOn_ground_eq, unifOn_indep_iff, image_subset_iff, Subtype.coe_preimage_self,
-    subset_univ, and_true, restrict_ground_eq, id_eq, Equiv.setCongr_apply, Subtype.coe_eta,
-    image_id', restrict_indep_iff, iff_self_and]
-  exact fun _ i _ ↦ (mem_preimage.mpr (mem_preimage.mp (hEE' i.2) ) )
-
 section unif
 
 variable {a b a' b' : ℕ}
@@ -294,6 +286,7 @@ def unif (a b : ℕ) : Matroid (Fin b) := unifOn univ a
 @[simp] theorem unif_eRk_eq (X) : (unif a b).eRk X = min X.encard a := by
   rw [unif, unifOn_eRk_eq _ _ (subset_univ _)]
 
+set_option backward.isDefEq.respectTransparency false in
 @[simp] theorem unif_eRank_eq (a b : ℕ) : (unif a b).eRank = min a b := by
   rw [eRank_def, unif_eRk_eq]
   simp only [unif_ground_eq, min_comm, encard_univ_fin]; rfl
@@ -306,7 +299,7 @@ theorem unif_eRank_eq_of_le (hab : a ≤ b) : (unif a b).eRank = a := by
 
 theorem unif_isBase_iff (hab : a ≤ b) {B : Set (Fin b)} : (unif a b).IsBase B ↔ B.encard = a := by
   rw [unif, unifOn, truncateTo_isBase_iff, freeOn_indep_iff, and_iff_right (subset_univ _)]
-  rwa [eRank_freeOn, encard_univ, ENat.card_eq_coe_fintype_card, Fintype.card_fin, Nat.cast_le]
+  rwa [eRank_freeOn, encard_univ, ENat.card_eq_coe_fintype_card, Fintype.card_fin, ENat.coe_le_coe]
 
 @[simp] theorem unif_isBase_iff' {B : Set (Fin _)} : (unif a (a + b)).IsBase B ↔ B.encard = a := by
   rw [unif_isBase_iff (Nat.le_add_right _ _)]
@@ -320,12 +313,11 @@ theorem unif_dual' {n : ℕ} (h : a + b = n) : (unif a n)✶ = unif b n := by
   refine ext_isBase rfl (fun B _ ↦ ?_)
   rw [dual_isBase_iff, unif_ground_eq, unif_isBase_iff (Nat.le_add_right _ _),
     unif_isBase_iff (Nat.le_add_left _ _),
-    ← WithTop.add_right_inj (encard_ne_top_iff.2 B.toFinite),
+    ← add_left_inj_of_ne_top (encard_ne_top_iff.2 B.toFinite),
     encard_diff_add_encard_of_subset (subset_univ _), Iff.comm,
-    ← WithTop.add_left_inj (WithTop.coe_ne_top (a := a)), eq_comm]
+    ← add_right_inj_of_ne_top (ENat.coe_ne_top a), eq_comm]
   convert Iff.rfl
-  rw [encard_univ, ENat.card_eq_coe_fintype_card, Fintype.card_fin, ENat.some_eq_coe, eq_comm,
-    Nat.cast_add]
+  rw [encard_univ, ENat.card_eq_coe_fintype_card, Fintype.card_fin, Nat.cast_add]
 
 @[simp] theorem unif_add_left_dual (a b : ℕ) : (unif a (a + b))✶ = unif b (a+b) :=
   unif_dual' rfl
@@ -360,6 +352,7 @@ theorem unif_sub_dual (a b : ℕ) : (unif (b-a) b)✶ = unif a b := by
 @[simp] theorem unif_self_dual (a : ℕ) : (unif a (2*a))✶ = unif a (2*a) :=
   unif_dual' (two_mul a).symm
 
+set_option backward.isDefEq.respectTransparency false in
 theorem nonempty_iso_unif_iff :
     Nonempty (M ≂ (unif a b)) ↔ ∃ E, (M = unifOn E a ∧ E.encard = b) := by
   refine ⟨fun ⟨e⟩ ↦ ⟨M.E, ?_⟩, ?_⟩
@@ -556,29 +549,29 @@ lemma IsUniform.closure_not_spanning (hM : M.IsUniform) (hIE : I ⊆ M.E) (hIs :
   rw [(hIe.subset (subset_insert _ _)).mem_closure_iff_of_notMem heI] at he
   exact he.not_indep hIe
 
-lemma IsUniform.isBase_of_isBase_of_finDiff {B B' : Set α} (hM : M.IsUniform) (hB : M.IsBase B)
-    (h_fin : FinDiff B B') (hB' : B' ⊆ M.E) : M.IsBase B' := by
-  obtain h | h := (B' \ B).eq_empty_or_nonempty
-  · rw [diff_eq_empty] at h
-    rwa [h_fin.symm.eq_of_subset h]
-  obtain ⟨f, hfB, hfB'⟩ := h_fin.nonempty_of_nonempty h
-  obtain ⟨e, heB', heB⟩ := h
+-- lemma IsUniform.isBase_of_isBase_of_finDiff {B B' : Set α} (hM : M.IsUniform) (hB : M.IsBase B)
+--     (h_fin : FinDiff B B') (hB' : B' ⊆ M.E) : M.IsBase B' := by
+--   obtain h | h := (B' \ B).eq_empty_or_nonempty
+--   · rw [diff_eq_empty] at h
+--     rwa [h_fin.symm.eq_of_subset h]
+--   obtain ⟨f, hfB, hfB'⟩ := h_fin.nonempty_of_nonempty h
+--   obtain ⟨e, heB', heB⟩ := h
 
-  have hrw : (B' \ insert e (B \ {f})) = ((B' \ B) \ {e}) := by aesop
-  have IH : (B' \ insert e (B \ {f})).encard < (B' \ B).encard := by
-    rw [hrw, ← encard_diff_singleton_add_one (show e ∈ B' \ B from ⟨heB', heB⟩),
-      ENat.lt_add_one_iff]
-    simp_rw [encard_ne_top_iff]
-    exact h_fin.diff_right_finite.diff
+--   have hrw : (B' \ insert e (B \ {f})) = ((B' \ B) \ {e}) := by aesop
+--   have IH : (B' \ insert e (B \ {f})).encard < (B' \ B).encard := by
+--     rw [hrw, ← encard_diff_singleton_add_one (show e ∈ B' \ B from ⟨heB', heB⟩),
+--       ENat.lt_add_one_iff]
+--     simp_rw [encard_ne_top_iff]
+--     exact h_fin.diff_right_finite.diff
 
-  apply hM.isBase_of_isBase_of_finDiff (hM.exchange hB ⟨hB' heB', heB⟩ hfB)
-  rwa [finDiff_iff, insert_diff_of_mem _ heB', diff_diff_comm,
-    and_iff_right h_fin.diff_left_finite.diff, ← singleton_union, union_comm, ← diff_diff,
-    diff_diff_right, inter_singleton_eq_empty.2 hfB', union_empty,
-    ← WithTop.add_right_inj (z := 1) (by simp),
-    encard_diff_singleton_add_one (show f ∈ B \ B' from ⟨hfB, hfB'⟩),
-    encard_diff_singleton_add_one (show e ∈ B' \ B from ⟨heB', heB⟩), h_fin.encard_diff_eq]
-termination_by (B' \ B).encard
+--   apply hM.isBase_of_isBase_of_finDiff (hM.exchange hB ⟨hB' heB', heB⟩ hfB)
+--   rwa [finDiff_iff, insert_diff_of_mem _ heB', diff_diff_comm,
+--     and_iff_right h_fin.diff_left_finite.diff, ← singleton_union, union_comm, ← diff_diff,
+--     diff_diff_right, inter_singleton_eq_empty.2 hfB', union_empty,
+--     ← WithTop.add_right_inj (z := 1) (by simp),
+--     encard_diff_singleton_add_one (show f ∈ B \ B' from ⟨hfB, hfB'⟩),
+--     encard_diff_singleton_add_one (show e ∈ B' \ B from ⟨heB', heB⟩), h_fin.encard_diff_eq]
+-- termination_by (B' \ B).encard
 
 lemma maximal_right_of_forall_ge {α : Type*} {P Q : α → Prop} {a : α} [PartialOrder α]
     (hP : ∀ ⦃x y⦄, P x → x ≤ y → P y) (h : Maximal (fun x ↦ P x ∧ Q x) a) : Maximal Q a :=
@@ -819,9 +812,10 @@ lemma uniformMatroidOfBase_uniform (E : Set α) (IsBase : Set α → Prop)
     mem_diff, and_imp]
   exact fun B e f hB heE he hf ↦ exch hB hf ⟨heE, he⟩
 
-lemma IsBase.finDiff_of_finite_diff (hB : M.IsBase B) (hB' : M.IsBase B') (hBB' : (B \ B').Finite) :
-    FinDiff B B' := by
-  rw [finDiff_iff, and_iff_right hBB', hB.encard_diff_comm hB']
+-- lemma IsBase.finDiff_of_finite_diff (hB : M.IsBase B) (hB' : M.IsBase B')
+--  (hBB' : (B \ B').Finite) :
+--     FinDiff B B' := by
+--   rw [finDiff_iff, and_iff_right hBB', hB.encard_diff_comm hB']
 
 end Infinite
 
@@ -917,7 +911,7 @@ lemma unifOn_simple_iff {n : ℕ} :
   obtain ⟨rfl, rfl⟩ | ⟨rfl, h⟩ | h := h
   · simp
   · exact fun e f he hf ↦ by simpa [encard_le_one_iff_subsingleton] using h he hf
-  exact fun e f he hf ↦ (encard_pair_le e f).trans (by simpa)
+  exact fun e f he hf ↦ (encard_pair_le e f).trans <| by simpa
 
 end LowRank
 
@@ -935,6 +929,7 @@ lemma NoUniformMinor.minor {N a b} (hM : M.NoUniformMinor a b) (hNM : N ≤m M) 
   simp only [not_noUniformMinor_iff] at hM ⊢
   exact ⟨hM.some.trans_isMinor hNM⟩
 
+set_option backward.isDefEq.respectTransparency false in
 lemma nonempty_unif_isoRestr_unifOn (a : ℕ) {b : ℕ} {E : Set α} (h : b ≤ E.encard) :
     Nonempty (unif a b ≤ir unifOn E a) := by
   obtain ⟨f, hf⟩ : ∃ f : ↑(unif a b).E → ↑(unifOn E ↑a).E, f.Injective

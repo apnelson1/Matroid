@@ -144,7 +144,7 @@ lemma IsLoopAt.eDegree_delete_add_two (h : G.IsLoopAt e x) :
 
 lemma IsLoopAt.degree_delete_add_two [G.LocallyFinite] (h : G.IsLoopAt e x) :
     (G ＼ {e}).degree x + 2 = G.degree x := by
-  rw [← Nat.cast_inj (R := ℕ∞), natCast_degree_eq, ← h.eDegree_delete_add_two]
+  rw [← ENat.coe_inj, natCast_degree_eq, ← h.eDegree_delete_add_two]
   simp
 
 lemma Inc.degree_delete_lt [G.LocallyFinite] (he : G.Inc e x) :

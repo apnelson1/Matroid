@@ -61,9 +61,10 @@ def IsRestriction.isoRestr {M N : Matroid α} (h : N ≤r M) : N ≤ir M where
 
 noncomputable def IsoRestr.iso_restrict_range_comp (i : N ≤ir M) : N ≂ (M ↾ range (val ∘ i)) :=
   Iso.mk (Equiv.ofInjective _ <| Subtype.val_injective.comp (EmbeddingLike.injective i)) fun I ↦ by
-    simp only [← i.indep_image_iff, restrict_ground_eq, Equiv.ofInjective_apply, comp_apply,
+    simp only [← i.indep_image_iff, restrict_ground_eq,
       restrict_indep_iff, image_subset_iff, coe_preimage_self, subset_univ, and_true]
-    simp [image_image]
+    simp only [image_image]
+    rfl
 
 @[simp]
 lemma IsoRestr.iso_restrict_range_comp_apply (i : N ≤ir M) (e : N.E) :
