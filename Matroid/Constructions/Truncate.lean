@@ -139,6 +139,10 @@ lemma truncate_indep_iff' : M.truncate.Indep I ↔ M.Indep I ∧ (M.IsBase I →
   simp only [truncate_indep_iff', and_congr_right_iff]
   exact fun _ ↦ ⟨fun h hB ↦ hB.nonempty.ne_empty (h hB), fun h hB ↦ by contradiction⟩
 
+lemma truncate_dep_iff [M.RankPos] {D} :
+    M.truncate.Dep D ↔ (M.Indep D → M.IsBase D) ∧ D ⊆ M.E := by
+  rw [dep_iff, truncate_indep_iff, truncate_ground_eq, not_and, not_not]
+
 @[simp] lemma truncate_loopyOn_eq {E : Set α} : (loopyOn E).truncate = loopyOn E := by
   simp +contextual [truncate, eq_loopyOn_iff, Matroid.ofExistsMatroid]
 
@@ -196,13 +200,6 @@ lemma truncate_spanning_iff_of_ssubset {S : Set α} (hssu : S ⊂ M.E) :
   by_cases heS : e ∈ S
   · exact ⟨f, hf, he.superset (insert_subset (mem_insert_of_mem _ heS) (subset_insert _ _))⟩
   exact ⟨e, ⟨heE, heS⟩, he⟩
-
--- lemma truncate_closure_superset (M : Matroid α) (X : Set α) :
---     M.closure X ⊆ M.truncate.closure X := by
---   obtain ⟨I, hI⟩ := M.exists_isBasis' X
---   have : M.truncate.
-
-  -- rw [truncate_spanning_iff] at hs
 
 lemma Spanning.truncate_spanning {S : Set α} (hS : M.Spanning S) : M.truncate.Spanning S := by
   obtain rfl | hssu := hS.subset_ground.eq_or_ssubset
@@ -295,6 +292,22 @@ lemma truncateTo_truncate (M : Matroid α) (k : ℕ) (hk : k + 1 ≤ M.eRank) :
   refine ⟨⟨h.1, h.2.trans le_self_add⟩, fun hI hIk ↦ ?_⟩
   simp [hIk] at h
 
+lemma truncate_isCircuit_iff {C} [M.RankPos] :
+    M.truncate.IsCircuit C ↔ (M.IsCircuit C ∧ ¬ M.Spanning C) ∨ M.IsBase C := by
+  by_cases! hCE : ¬(C ⊆ M.E); grind
+  simp only [isCircuit_iff_forall_ssubset, truncate_dep_iff, hCE, and_true, truncate_indep_iff]
+  obtain (hCi | hCd) := M.indep_or_dep hCE
+  · suffices M.IsBase C → ∀ ⦃I : Set α⦄, I ⊂ C → M.Indep I ∧ ¬M.IsBase I by simpa [hCi.not_dep, hCi]
+    exact fun hCb I hIC ↦ ⟨hCi.subset hIC.subset, hCb.not_isBase_of_ssubset hIC⟩
+  suffices (∀ x ⊂ C, M.Indep x) → ((∀ x ⊂ C, ¬M.IsBase x) ↔ ¬M.Spanning C) by
+    simpa [hCd.not_indep, IsEmpty.forall_iff, true_and, hCd,
+      or_iff_left (show ¬M.IsBase C from fun h ↦ hCd.not_indep h.indep), forall_and]
+  refine fun hCss ↦ ⟨fun h hsp ↦ ?_, fun h B hBC hB ↦ h <| hB.spanning_of_superset hBC.subset ⟩
+  obtain ⟨B, hB, hBC⟩ := hsp.exists_isBase_subset
+  obtain rfl | hssu := hBC.eq_or_ssubset
+  · exact hCd.not_indep hB.indep
+  exact h _ hssu hB
+
 end truncate
 
 def freeLift (M : Matroid α) : Matroid α := M✶.truncate✶
@@ -362,6 +375,20 @@ lemma freeLift_indep_iff :
     rwa [insert_diff_self_of_notMem hfB]
   exact ⟨insert e B, ⟨⟨⟨e, by simp, by rwa [insert_diff_self_of_notMem heB]⟩, by grind⟩, hIB⟩⟩
 
+instance : (freeLift M).Loopless := by
+  simp [loopless_iff_forall_isNonloop, ← indep_singleton, freeLift_indep_iff]
+
+instance [M.Loopless] : (freeLift M).Simple := by
+  simp only [simple_iff_forall_pair_indep, freeLift_ground, freeLift_indep_iff, insert_nonempty,
+    mem_inter_iff, mem_insert_iff, mem_singleton_iff, forall_const]
+  refine fun e f he hf ↦ ⟨e, ⟨by simp, he⟩, (isNonloop_of_loopless hf).indep.subset <| by simp⟩
+
+lemma freeLift_dep_iff {D} :
+  M.freeLift.Dep D ↔ D.Nonempty ∧ (∀ e ∈ D, M.Dep (D \ {e})) ∧ D ⊆ M.E := by
+  simp only [dep_iff, freeLift_indep_iff, mem_inter_iff, Classical.not_imp, not_exists, not_and,
+    and_imp, freeLift_ground, diff_singleton_subset_iff, forall_mem_and]
+  grind
+
 lemma truncate_freeLift (M : Matroid α) [M.RankPos] [M✶.RankPos] :
     M.truncate.freeLift = M.freeLift.truncate := by
   refine ext_isBase rfl fun B hB ↦ ?_
@@ -382,6 +409,27 @@ lemma truncate_freeLift (M : Matroid α) [M.RankPos] [M✶.RankPos] :
     exact ⟨f, hfB, f, by simp, by rwa [insert_diff_self_of_mem hfB]⟩
   refine ⟨f, hfB, e, by simp [heB], ?_⟩
   rwa [insert_diff_singleton_comm (by rintro rfl; contradiction)]
+
+-- The lemma stated below is false. Circuits of the free lift are the minimal sets of nullity 2,
+-- rather than the sets that are one removal away from being a circuit.
+-- an example showing the difference is the directed sum of two triangles, which gets
+-- free-lifted onto a circuit.
+
+-- WRONG lemma freeLift_isCircuit_iff {C} :
+--     M.freeLift.IsCircuit C ↔ (∃ e ∈ C, M.IsCircuit (C \ {e})) ∧ C ⊆ M.E := by
+
+lemma freeLift_spanning_iff [M✶.RankPos] {X} :
+    M.freeLift.Spanning X ↔ (∃ e ∈ X, M.Spanning (X \ {e})) ∧ X ⊆ M.E := by
+  by_cases! hX : ¬ X ⊆ M.E; grind
+  rw [freeLift, spanning_dual_iff (by simpa), truncate_ground_eq,
+    truncate_indep_iff, dual_ground, dual_isBase_iff, diff_diff_cancel_left hX, ← Coindep,
+    ← spanning_iff_compl_coindep, and_iff_left hX]
+  refine ⟨fun ⟨hs, hb⟩ ↦ ?_, fun ⟨e, heX, hXs⟩ ↦ ?_⟩
+  · obtain ⟨B, hB⟩ := hs.exists_isBase_subset
+    obtain ⟨e, heX, heB⟩ := exists_of_ssubset (hB.2.ssubset_of_ne <| by grind)
+    exact ⟨e, heX, hB.1.spanning.superset (by grind) (by grind)⟩
+  refine ⟨hXs.superset diff_subset hX, fun hB ↦ ?_⟩
+  grind [hB.eq_of_superset_spanning hXs diff_subset]
 
 section circuitOn
 
@@ -465,6 +513,14 @@ lemma circuitOn_freeLift (C : Set α) : (circuitOn C).freeLift = freeOn C := by
   refine ⟨by grind, fun h ↦ ?_⟩
   obtain ⟨f, hfI⟩ := hIne
   exact ⟨f, by grind⟩
+
+@[simp]
+lemma circuitOn_singleton (e : α) : circuitOn {e} = loopyOn {e} := by
+  refine ext_indep rfl ?_
+  suffices (circuitOn {e}).IsLoop e by simpa [-subset_singleton_iff, subset_singleton_iff_eq]
+  rw [← singleton_isCircuit, circuitOn_isCircuit_iff]
+  simp
+
 
 end circuitOn
 

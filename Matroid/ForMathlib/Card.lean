@@ -55,6 +55,11 @@ lemma Subsingleton.encard_le_one (hs : s.Subsingleton) : s.encard ≤ 1 :=
 lemma encard_le_encard_diff_singleton_add_one (s : Set α) x : s.encard ≤ (s \ {x}).encard + 1 := by
   grw [← encard_singleton x, ← encard_union_le, diff_union_self, ← subset_union_left]
 
+lemma encard_add_one_le_of_ssubset (hst : s ⊂ t) : s.encard + 1 ≤ t.encard := by
+  obtain ⟨x, hxt, hxs⟩ := exists_of_ssubset hst
+  grw [← encard_diff_singleton_add_one hxt, ENat.add_le_add_iff_right (by simp)]
+  exact encard_le_encard (by grind)
+
 lemma succ_le_encard_iff {n : ℕ∞} : (n + 1) ≤ s.encard ↔ ∃ x ∈ s, n ≤ (s \ {x}).encard := by
   refine ⟨fun h ↦ ?_, fun ⟨x, hx, hn⟩ ↦ ?_⟩
   · obtain ⟨t, hts⟩ := one_le_encard_iff_nonempty.mp (le_trans (by simp) h)
@@ -247,13 +252,19 @@ lemma List.Nodup.encard_toSet_eq {L : List α} (hL : L.Nodup) : {x | x ∈ L}.en
   have h_eq := L.card_toFinset
   rwa [hL.dedup, ← ENat.coe_inj, ← encard_coe_eq_coe_finsetCard, coe_toFinset] at h_eq
 
-
 lemma Set.eq_of_encard_le_two_of_mem_of_mem {x y} (hs : s.encard ≤ 2) (hxs : x ∈ s) (hys : y ∈ s)
     (hxy : x ≠ y) : s = {x, y} := by
   rw [← encard_pair hxy] at hs
   refine (Finite.eq_of_subset_of_encard_le' ?_ (by grind) hs).symm
   grw [← encard_lt_top_iff, hs]
   simp
+
+lemma Set.exists_eq_of_encard_eq_two_of_mem {x} (hs : s.encard = 2) (hxs : x ∈ s) :
+    ∃ y ≠ x, s = {x, y} := by
+  obtain ⟨a, b, hab, rfl⟩ := encard_eq_two.1 hs
+  obtain rfl | rfl : x = a ∨ x = b := by simpa using hxs
+  · grind
+  use a; grind
 
 -- for mathlib
 lemma Set.exists_eq_of_encard_eq_three_of_mem {x}

@@ -105,8 +105,6 @@ lemma altBetween_pair_eq_left (hp : p < L.length) (hpb : p.bodd = b) :
   rw [altBetween_add_one_eq_self _ (by simpa), altBetween_add_one_eq_insert rfl.le hp hpb,
     altBetween_self, insert_empty_eq]
 
-
-
 lemma altBetween_insert_drop_two {L : List α} {p q : ℕ} (hpq : p ≤ q)
     (hplt : p + 1 < L.length) (hp : p.bodd = !b) :
     insert L[p + 1] ((L.drop 2).altBetween p q b) = L.altBetween p (q + 2) b := by
@@ -617,7 +615,6 @@ lemma IsFan.isCircuit_interval (hF : M.IsFan F b c) (hij : i < j) (hjF : j < F.l
       refine union_subset (altBetween_mono _ (by lia) (by lia) _) ?_
       simp [insert_subset_iff, hF.nodup.getElem_mem_altBetween_iff, add_assoc]
     exact (hF.isTriangle_getElem_of_eq (i + 2 * d + 2) (by lia) (by simp)).mem_closure₂
-
 
 /-- If a circuit of a matroid contains joints `F[i + 1], F[j]` of a fan `F`,
 and does not contain the cojoint `F[i]`,

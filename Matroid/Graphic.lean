@@ -322,7 +322,7 @@ lemma cycleMatroid_parallelClasses [G.Loopless] :
 
 @[simp]
 lemma cycleMatroid_simple : G.cycleMatroid.Simple ↔ G.Simple := by
-  rw [simple_iff_isLoopless_eq_of_parallel_forall, simple_iff, cycleMatroid_loopless_iff]
+  rw [simple_iff_loopless_eq_of_parallel_forall, simple_iff, cycleMatroid_loopless_iff]
   refine and_congr_right fun hL ↦ ⟨fun h e f x y hel hfl ↦ ?_, fun h e f hp ↦ ?_⟩
   · refine h e f <| cycleMatroid_parallel.mpr ⟨hel.edge_mem, hfl.edge_mem, ?_⟩
     ext u v
@@ -357,4 +357,3 @@ To Flat
 lemma cycleMatroid_representable (G : Graph α β) (𝔽 : Type*) [Field 𝔽] :
     G.cycleMatroid.Representable 𝔽 := by
   sorry
-

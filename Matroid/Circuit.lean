@@ -1,7 +1,7 @@
 import Matroid.ForMathlib.Card
 import Mathlib.Combinatorics.Matroid.Rank.ENat
 import Matroid.ForMathlib.Matroid.Basic
-import Matroid.ForMathlib.Matroid.Sum
+import Matroid.Sum
 import Matroid.ForMathlib.Set
 import Batteries.CodeAction.Basic
 import Batteries.CodeAction.Misc

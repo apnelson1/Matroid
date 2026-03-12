@@ -103,6 +103,18 @@ lemma removeColoops_eq_contract (M : Matroid α) : M.removeColoops = M ／ M.col
 lemma removeColoops_eq_delete (M : Matroid α) : M.removeColoops = M ＼ M.coloops := by
   rw [removeColoops, removeLoops_eq_contract, dual_contract, dual_dual, dual_loops]
 
+lemma removeLoops_removeColoops_comm (M : Matroid α) :
+    M.removeLoops.removeColoops = M.removeColoops.removeLoops := by
+  rw [removeColoops_eq_delete, removeLoops_coloops_eq, removeLoops_eq_delete,
+    removeLoops_eq_delete, removeColoops_loops_eq, removeColoops_eq_delete, delete_comm]
+
+lemma removeColoops_disjointSum (M : Matroid α) :
+     M = M.removeColoops.disjointSum (freeOn M.coloops)
+      (by simp [removeColoops_eq_delete, disjoint_sdiff_left]) := by
+  rw! [← dual_inj, disjointSum_dual, freeOn_dual_eq, removeColoops_dual,
+    coloops, ← M✶.removeLoops_disjointSum]
+  rfl
+
 lemma IsRestriction.contract (h : N ≤r M) (hC : C ⊆ N.E) : N ／ C ≤r M ／ C := by
   obtain ⟨R, hR, rfl⟩ := h
   exact ⟨R \ C, diff_subset_diff_left hR, by rwa [restrict_contract_eq_contract_restrict]⟩

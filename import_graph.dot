@@ -211,7 +211,7 @@ digraph "import_graph" {
   "Matroid.ForMathlib.Matroid.Circuit" [shape=ellipse];
   "Matroid.ForMathlib.Matroid.Closure" -> "Matroid.ForMathlib.Matroid.Circuit";
   "Matroid.ForMathlib.LinearAlgebra.Finsupp" [shape=ellipse];
-  "Matroid.ForMathlib.Matroid.Sum" [shape=ellipse];
+  "Matroid.Sum" [shape=ellipse];
   "Matroid.ForMathlib.Lattice" [shape=ellipse];
   "Matroid.ForMathlib.Card" [shape=ellipse];
   "Matroid.ForMathlib.List" [shape=ellipse];
@@ -256,7 +256,7 @@ digraph "import_graph" {
   "Matroid.Circuit" [shape=ellipse];
   "Matroid.ForMathlib.Card" -> "Matroid.Circuit";
   "Matroid.ForMathlib.Matroid.Basic" -> "Matroid.Circuit";
-  "Matroid.ForMathlib.Matroid.Sum" -> "Matroid.Circuit";
+  "Matroid.Sum" -> "Matroid.Circuit";
   "Matroid.ForMathlib.Set" -> "Matroid.Circuit";
   "Matroid.Graphic" [shape=ellipse];
   "Matroid.Axioms.Circuit" -> "Matroid.Graphic";
@@ -376,7 +376,7 @@ digraph "import_graph" {
   "Matroid.Graph.Subgraph.Inter" [shape=ellipse];
   "Matroid.Graph.Subgraph.Defs" -> "Matroid.Graph.Subgraph.Inter";
   "Matroid.OnUniv" [shape=ellipse];
-  "Matroid.ForMathlib.Matroid.Sum" -> "Matroid.OnUniv";
+  "Matroid.Sum" -> "Matroid.OnUniv";
   "Matroid.Graph.Bipartite" [shape=ellipse];
   "Matroid.Graph.Tree" -> "Matroid.Graph.Bipartite";
   "Matroid.Closure" [shape=ellipse];

@@ -1,5 +1,5 @@
 import Mathlib.Combinatorics.Matroid.Circuit -- inefficient import
-import Matroid.ForMathlib.Matroid.Sum
+import Matroid.Sum
 
 section OnUniv
 

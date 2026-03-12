@@ -1,5 +1,6 @@
 import Mathlib.Combinatorics.Matroid.Sum
 import Matroid.ForMathlib.Matroid.Map
+import Matroid.ForMathlib.Set
 
 namespace Matroid
 
@@ -199,6 +200,51 @@ lemma disjointSigma_closure h X :
   simp [Matroid.disjointSigma, mapEmbedding, Function.Embedding.sigmaSet, sigma_closure_eq,
     image_iUnion, image_image, preimage_preimage, inter_comm _ X]
 
+lemma disjointSigma_spanning_iff h X : (Matroid.disjointSigma M h).Spanning X ↔
+    (∀ i, (M i).Spanning (X ∩ (M i).E)) ∧ X ⊆ ⋃ i, (M i).E := by
+  refine ⟨fun h' ↦ ⟨fun i ↦ ?_, by simpa using h'.subset_ground⟩, fun h' ↦ ?_⟩
+  · have hwin := congr_arg (fun S ↦ S ∩ (M i).E) h'.closure_eq
+    simp only [disjointSigma_closure, closure_inter_ground, disjointSigma_ground_eq] at hwin
+    rw [iUnion_inter, iUnion_inter, iUnion_eq_single (a := i),
+      iUnion_eq_single (a := i), inter_eq_self_of_subset_left (closure_subset_ground ..),
+      inter_self] at hwin
+    · rwa [spanning_iff_closure_eq, closure_inter_ground]
+    · exact fun j hij ↦ (h hij).inter_eq
+    refine fun j hji ↦ ((h hji).mono_left (closure_subset_ground ..)).inter_eq
+  rw [spanning_iff_ground_subset_closure, disjointSigma_ground_eq, disjointSigma_closure]
+  exact iUnion_mono fun i ↦ by simp [(h'.1 i).closure_eq]
+
+lemma disjointSigma_restrict hdj (R : Set α) (hR : R ⊆ ⋃ i, (M i).E) :
+    (Matroid.disjointSigma M hdj) ↾ R = Matroid.disjointSigma (fun i ↦ (M i) ↾ (R ∩ (M i).E))
+      (hdj.mono fun _ _ ↦ Disjoint.mono inter_subset_right inter_subset_right) := by
+  refine ext_indep ?_ fun I (hI : I ⊆ R) ↦ ?_
+  · simp only [restrict_ground_eq, disjointSigma_ground_eq]
+    nth_rw 1 [← inter_eq_self_of_subset_left hR, inter_iUnion]
+  simp only [restrict_indep_iff, disjointSigma_indep_iff, restrict_ground_eq, ← inter_assoc,
+    inter_eq_self_of_subset_left hI, subset_inter_iff, inter_subset_right, and_true]
+  simp_rw [← inter_iUnion, inter_eq_self_of_subset_left hR, and_assoc, forall_and]
+  grind
+
+lemma disjointSigma_restrict_iUnion hdj (R : ι → Set α) (hR : ∀ i, R i ⊆ (M i).E) :
+    (Matroid.disjointSigma M hdj) ↾ (⋃ i, R i) = Matroid.disjointSigma (fun i ↦ (M i ↾ R i))
+      (hdj.mono fun i j ↦ Disjoint.mono (hR i) (hR j)) := by
+  convert disjointSigma_restrict hdj _ (iUnion_mono hR) with i
+  rw [iUnion_inter, iUnion_eq_single (a := i), inter_eq_self_of_subset_left (hR i)]
+  exact fun j hj ↦ ((hdj hj).mono_left (hR j)).inter_eq
+
+@[simp]
+lemma disjointSigma_dual (M : ι → Matroid α) hdj :
+    (Matroid.disjointSigma M hdj)✶ = Matroid.disjointSigma (fun i ↦ (M i)✶) hdj := by
+  refine ext_isBase rfl fun B hB ↦ ?_
+  rw [dual_isBase_iff]
+  simp only [dual_ground, disjointSigma_ground_eq] at hB
+  simp_rw [disjointSigma_isBase_iff, disjointSigma_ground_eq, and_iff_left diff_subset,
+    dual_ground, and_iff_left hB, dual_isBase_iff', and_iff_left inter_subset_right,
+    diff_inter_self_eq_diff, diff_inter_right_comm, iUnion_inter]
+  convert Iff.rfl with i
+  rw [iUnion_eq_single (a := i), inter_self]
+  exact fun j hji ↦ (hdj hji).inter_eq
+
 end disjointSigma
 
 section disjointSum
@@ -237,25 +283,21 @@ lemma IsBasis.disjointSum_isBasis_union {I J X Y : Set α} {M N : Matroid α} (h
   exact ⟨hIX, hJY, union_subset_union hIX.subset hJY.subset,
     union_subset_union hIX.subset_ground hJY.subset_ground⟩
 
--- TODO - generalize this to other sums.
-@[simp]
-lemma disjointSum_dual (M N : Matroid α) (hMN : Disjoint M.E N.E) :
-    (M.disjointSum N hMN)✶ = M✶.disjointSum N✶ hMN := by
-  refine ext_isBase (by simp) fun B hB ↦ ?_
-  rw [disjointSum_isBase_iff, dual_isBase_iff, disjointSum_isBase_iff]
-  simp only [disjointSum_ground_eq, dual_ground, inter_subset_right, dual_isBase_iff]
-  simp only [dual_ground, disjointSum_ground_eq] at hB
-  rw [union_diff_distrib, union_inter_distrib_right, inter_eq_self_of_subset_left diff_subset,
-      (hMN.symm.mono_left diff_subset).inter_eq, union_empty, union_inter_distrib_right,
-      inter_eq_self_of_subset_left diff_subset, (hMN.mono_left diff_subset).inter_eq, empty_union,
-      and_iff_left (union_subset_union diff_subset diff_subset)]
-  simp [hB]
 
 lemma disjointSum_eq_disjointSigma (M N : Matroid α) (hMN : Disjoint M.E N.E) :
     M.disjointSum N hMN = Matroid.disjointSigma (fun b ↦ bif b then M else N)
     (by simp [Function.onFun, Pairwise, hMN, hMN.symm]) := by
-  refine ext_indep (by simp [Set.ext_iff, or_comm]) fun I hI ↦ ?_
-  simp [union_eq_iUnion, Bool.apply_cond, and_comm, and_assoc]
+  refine ext_indep (by simp) fun I hI ↦ ?_
+  simp only [disjointSum_indep_iff, and_comm, disjointSigma_indep_iff, Bool.apply_cond,
+    Bool.cond_prop, Bool.forall_bool, Bool.false_eq_true, ↓reduceIte, cond_false, cond_true,
+    iUnion_bool]
+  tauto
+
+@[simp]
+lemma disjointSum_dual (M N : Matroid α) (hMN : Disjoint M.E N.E) :
+    (M.disjointSum N hMN)✶ = M✶.disjointSum N✶ hMN := by
+  simp only [disjointSum_eq_disjointSigma, disjointSigma_dual]
+  convert rfl using 3 with (i | i)
 
 lemma isRestriction_disjointSum_left (hMN : Disjoint M.E N.E) : M ≤r (disjointSum M N hMN) := by
   rw [disjointSum_eq_disjointSigma]
@@ -305,6 +347,62 @@ instance disjointSum_dual_rankPos_right [N✶.RankPos] (hMN : Disjoint M.E N.E) 
     (M.disjointSum N hMN)✶.RankPos := by
   simp [rankPos_iff, N.ground_not_isBase]
 
+lemma disjointSum_closure_eq (hMN : Disjoint M.E N.E) (X : Set α) :
+    (disjointSum M N hMN).closure X = M.closure (X ∩ M.E) ∪ N.closure (X ∩ N.E) := by
+  simp [disjointSum_eq_disjointSigma, disjointSigma_closure, iUnion_bool]
+
+lemma disjointSum_spanning_iff (hMN : Disjoint M.E N.E) {X : Set α} :
+    (disjointSum M N hMN).Spanning X ↔
+      M.Spanning (X ∩ M.E) ∧ N.Spanning (X ∩ N.E) ∧ X ⊆ M.E ∪ N.E := by
+    rw [disjointSum_eq_disjointSigma, disjointSigma_spanning_iff]
+    simp [and_comm, and_assoc]
+
+lemma disjointSum_dep_iff (hMN : Disjoint M.E N.E) {X : Set α} :
+    (disjointSum M N hMN).Dep X ↔ (M.Dep (X ∩ M.E) ∨ N.Dep (X ∩ N.E)) ∧ X ⊆ M.E ∪ N.E := by
+  rw [dep_iff, disjointSum_indep_iff, disjointSum_ground_eq, Classical.not_and_iff_not_or_not,
+    not_indep_iff, Classical.not_and_iff_not_or_not, not_indep_iff]
+  tauto
+
+lemma disjointSum_loopyOn {E : Set α} (hMN : Disjoint M.E E) :
+    M.disjointSum (loopyOn E) hMN = M ↾ (M.E ∪ E) := by
+  refine ext_indep (by simp) ?_
+  simp +contextual only [disjointSum_ground_eq, loopyOn_ground, disjointSum_indep_iff,
+    loopyOn_indep_iff, restrict_indep_iff, and_true]
+  refine fun I hI ↦ ⟨fun ⟨h'I, hIE⟩ ↦ ?_,
+    fun h' ↦ ⟨h'.inter_right _, (hMN.mono_left h'.subset_ground).inter_eq⟩⟩
+  rwa [← inter_eq_self_of_subset_left hI, inter_union_distrib_left, hIE, union_empty]
+
+@[simp]
+lemma freeOn_disjointSum_freeOn {E E' : Set α} (hdj : Disjoint E E') :
+    (freeOn E).disjointSum (freeOn E') hdj = freeOn (E ∪ E') :=
+  ext_indep (by simp) (by simp)
+
+@[simp]
+lemma loopyOn_disjointSum_loopyOn {E E' : Set α} (hdj : Disjoint E E') :
+    (loopyOn E).disjointSum (loopyOn E') hdj = loopyOn (E ∪ E') := by
+  rw [← dual_inj]
+  simp
+
+lemma restrict_superset_ground_eq_disjointSum {X : Set α} (hE : M.E ⊆ X) :
+    M ↾ X = M.disjointSum (loopyOn (X \ M.E)) disjoint_sdiff_right := by
+  nth_rw 1 [← diff_union_of_subset hE, union_comm, ← disjointSum_loopyOn]
+
+lemma disjointSum_assoc {M₁ M₂ M₃ : Matroid α} (h₁₂ : Disjoint M₁.E M₂.E)
+    (h₁₃ : Disjoint (M₁.disjointSum M₂ h₁₂).E M₃.E) :
+    (M₁.disjointSum M₂ h₁₂).disjointSum M₃ h₁₃ = M₁.disjointSum (M₂.disjointSum M₃
+      (by grind [disjointSum_ground_eq])) (by grind [disjointSum_ground_eq]) := by
+  refine ext_indep (by simp [union_assoc]) fun I hI ↦ ?_
+  simp only [disjointSum_ground_eq, disjoint_union_left] at h₁₂ h₁₃
+  simp only [disjointSum_ground_eq] at hI
+  simp [inter_assoc, union_inter_distrib_right, h₁₂.symm.inter_eq, h₁₂.inter_eq, hI,
+    h₁₃.2.symm.inter_eq, h₁₃.2.inter_eq, ← union_assoc, and_assoc]
+
+lemma disjointSum_restrict_union {S T : Set α} (hdj : Disjoint M.E N.E) (hS : S ⊆ M.E)
+    (hT : T ⊆ N.E) :
+    (M.disjointSum N hdj) ↾ (S ∪ T) = (M ↾ S).disjointSum (N ↾ T) (hdj.mono hS hT) := by
+  rw [disjointSum_eq_disjointSigma, union_eq_iUnion, disjointSigma_restrict_iUnion _ _ (by grind),
+    disjointSum_eq_disjointSigma]
+  convert rfl with (i | i)
 
 end disjointSum
 

@@ -402,7 +402,8 @@ lemma IsFan.contract_disjoint_aux (hF : M.IsFan F false c) (h4 : 4 ≤ F.length)
   obtain ⟨C, hC, hCss, h0C, hCX⟩ :=
     hT.isCircuit.exists_isCircuit_mem_subset_union_of_not_skew hdj hsk (e := F[0]) (by simp)
   have hT' := hF.isTriad_getElem_of_eq 1 (by lia) (by simp)
-  have h21 := hT'.reverse.mem_iff_mem_of_isCocircuit (K := C) (by simpa) (by grind)
+  have h21 := hT'.reverse.mem_iff_mem_of_isCocircuit (K := C) (by simpa)
+    (by grind [hF.nodup.getElem_inj_iff])
   by_cases h1 : F[1] ∈ C
   · simp [← hT.isCircuit.eq_of_subset_isCircuit hC (by grind), hdj.inter_eq] at hCX
   grw [← diff_subset_iff.2 hCss, ← union_singleton, ← diff_diff, Disjoint.sdiff_eq_left (a := C)
@@ -434,7 +435,9 @@ lemma IsFan.contract_disjoint (hF : M.IsFan F b c) (h4 : 4 ≤ F.length) (hX : D
     simpa [← heq] using hT.isCircuit
   simp only [Nat.bodd_succ, Bool.not_not, bne_self_eq_false, bDual_false]
   have hT := hF.isTriangle_getElem_of_eq (i + 1) (by lia) (by simp)
-  have hTdj : Disjoint {F[i + 1], F[i + 1 + 1], F[i + 1 + 2]} X := by grind
+  have hTdj : Disjoint {F[i + 1], F[i + 1 + 1], F[i + 1 + 2]} X := by
+    simp only [disjoint_insert_left, disjoint_singleton_left]
+    grind
   refine Skew.isCircuit_contract (by_contra fun hsk ↦ ?_) hT.isCircuit hTdj.symm
   rw [skew_comm] at hsk
   obtain ⟨C, hC, hCss, hCi, hCX⟩ := hT.isCircuit.exists_isCircuit_mem_subset_union_of_not_skew hTdj
@@ -445,7 +448,8 @@ lemma IsFan.contract_disjoint (hF : M.IsFan F b c) (h4 : 4 ≤ F.length) (hX : D
   have hi3C : F[i + 3] ∈ C := (hF.isTriad_getElem_of_eq (i + 2) (by lia)
     (by simp)).swap_right.mem_of_mem_of_notMem_of_is_Cocircuit (by simpa) hCi
     (by grind [hF.nodup.getElem_inj_iff])
-  simp [← hT.isCircuit.eq_of_subset_isCircuit hC (by grind), hTdj.inter_eq] at hCX
+  simp [← hT.isCircuit.eq_of_subset_isCircuit hC (by grind [insert_subset_iff]),
+    hTdj.inter_eq] at hCX
 
 /-- If `N` is a minor of `M`, and `F` is a fan of `M` contained in `E(N)`, whose (co)joint ends are
 are not (co)loops of `N`, then `F` is also a fan of `N`.  -/

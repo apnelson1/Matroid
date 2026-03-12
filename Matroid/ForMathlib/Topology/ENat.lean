@@ -240,6 +240,14 @@ protected theorem tsum_encard_eq_encard_iUnion {ι} {s : ι → Set α} (hI : Pa
     ∑' i, (s i).encard = (⋃ i, s i).encard := by
   simp_rw [← ENat.tsum_one', ENat.tsum_iUnion_eq_tsum _ _ hI]
 
+protected theorem tsum_subtype_eq_tsum_support (s : Set α) (f : α → ℕ∞) :
+    ∑' (x : s), f x = ∑' (x : {i ∈ s | f i ≠ 0}), f x := by
+  have hu : s = {i | i ∈ s ∧ f i ≠ 0} ∪ {i | i ∈ s ∧ f i = 0} := by
+    simp only [Set.ext_iff, ne_eq, mem_union, mem_setOf_eq]
+    grind
+  have hrw : ∑' i : {i | i ∈ s ∧ f i = 0}, f i = 0 := by simp
+  rw [hu, ENat.tsum_union_disjoint (by grind), hrw, add_zero, ← hu]
+
 theorem encard_iUnion_le_tsum_encard {ι} {s : ι → Set α} :
     (⋃ i, s i).encard ≤ ∑' i, (s i).encard := by
   rw [← ENat.tsum_one]

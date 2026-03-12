@@ -29,18 +29,55 @@ instance [h : M.Loopless] {D : Set α} : (M ＼ D).Loopless :=
 lemma removeLoops_eq_delete (M : Matroid α) : M.removeLoops = M ＼ M.loops := by
   rw [← restrict_compl, removeLoops]
   convert rfl using 2
-  simp [Set.ext_iff, isNonloop_iff, isLoop_iff, mem_diff, and_comm]
+  simp [Set.ext_iff, isNonloop_iff, mem_diff, and_comm]
 
 lemma removeLoops_del_eq_removeLoops (h : X ⊆ M.loops) :
     (M ＼ X).removeLoops = M.removeLoops := by
   rw [removeLoops_eq_delete, delete_delete, removeLoops_eq_delete, loops, delete_closure_eq,
     empty_diff, union_diff_self, closure_empty, union_eq_self_of_subset_left h]
 
+lemma disjointSigma_delete {ι : Type*} (M : ι → Matroid α) h (D : Set α):
+    Matroid.disjointSigma M h ＼ D = Matroid.disjointSigma (fun i ↦ (M i ＼ D))
+      (h.mono fun _ _ ↦ Disjoint.mono diff_subset diff_subset) := by
+  refine ext_indep (by simp [iUnion_diff]) fun I hI ↦ ?_
+  simp only [delete_indep_iff, disjointSigma_indep_iff, delete_ground, ← iUnion_diff, subset_diff]
+  by_cases! hID : ¬ Disjoint I D
+  · simp [hID]
+  simp [← inter_diff_assoc, inter_diff_right_comm, hID.sdiff_eq_left,
+    hID.mono_left inter_subset_left, hID]
+
+lemma disjointSum_delete {M N : Matroid α} (hMN : Disjoint M.E N.E) :
+    (M.disjointSum N hMN) ＼ D = (M ＼ D).disjointSum (N ＼ D)
+      (hMN.mono diff_subset diff_subset) := by
+  rw [disjointSum_eq_disjointSigma, disjointSigma_delete, disjointSum_eq_disjointSigma]
+  convert rfl with i
+  cases i with simp
+
+lemma disjointSum_delete_left {M N : Matroid α} (hMN : Disjoint M.E N.E) (hD : D ⊆ M.E) :
+    (M.disjointSum N hMN) ＼ D = (M ＼ D).disjointSum N (hMN.mono_left diff_subset) := by
+  rw! [disjointSum_delete, ← N.delete_inter_ground_eq, (hMN.mono_left hD).inter_eq, delete_empty]
+  rfl
+
+lemma disjointSum_delete_right {M N : Matroid α} (hMN : Disjoint M.E N.E) (hD : D ⊆ N.E) :
+    (M.disjointSum N hMN) ＼ D = M.disjointSum (N ＼ D) (hMN.mono_right diff_subset) := by
+  rw [disjointSum_comm, disjointSum_delete_left hMN.symm hD, disjointSum_comm]
+
 lemma Dep.delete_of_disjoint (hX : M.Dep X) (hXD : Disjoint X D) : (M ＼ D).Dep X := by
   rwa [delete_dep_iff, and_iff_left hXD]
 
 lemma Dep.of_delete (h : (M ＼ D).Dep X) : M.Dep X :=
   (delete_dep_iff.1 h).1
+
+lemma removeLoops_disjointSum (M : Matroid α) : M = M.removeLoops.disjointSum (loopyOn M.loops)
+    (by simp [removeLoops_eq_delete, disjoint_sdiff_left]) := by
+  refine ext_indep ?_ ?_
+  · simp [removeLoops_ground_eq_diff, union_eq_self_of_subset_right M.loops_subset_ground]
+  simp only [disjointSum_indep_iff, removeLoops_ground_eq, setOf_isNonloop_eq, removeLoops_indep_eq,
+    loopyOn_ground, loopyOn_indep_iff, diff_union_of_subset M.loops_subset_ground]
+  simp +contextual only [and_true]
+  exact fun I hIE ↦ ⟨fun hI ↦ ⟨hI.inter_right _, hI.disjoint_loops.inter_eq⟩,
+    fun hI ↦ hI.1.subset <| subset_inter rfl.subset <| subset_diff.2 ⟨hIE,
+      disjoint_iff_inter_eq_empty.2 hI.2⟩⟩
 
 @[simp]
 lemma loopyOn_delete (E X : Set α) : (loopyOn E) ＼ X = loopyOn (E \ X) := by
@@ -53,6 +90,11 @@ lemma delete_restrict_eq_restrict (M : Matroid α) {D R : Set α} (hDR : Disjoin
     M ＼ D ↾ R = M ↾ R := by
   suffices ∀ ⦃I : Set α⦄, I ⊆ R → M.Indep I → Disjoint I D from ext_indep rfl <| by simpa
   exact fun I hIR _ ↦ hDR.symm.mono_left hIR
+
+lemma delete_restrict_ground_of_subset_loops {L} (hL : L ⊆ M.loops) : (M ＼ L) ↾ M.E = M := by
+  refine ext_indep rfl fun I (hI : I ⊆ M.E) ↦ ?_
+  rw [restrict_indep_iff, delete_indep_iff, and_iff_left hI, and_iff_left_iff_imp]
+  exact fun h ↦ h.disjoint_loops.mono_right hL
 
 lemma IsRestriction.delete (h : N ≤r M) (D : Set α) : N ＼ D ≤r M ＼ D := by
   obtain ⟨R, hR, rfl⟩ := h
@@ -153,5 +195,10 @@ lemma IsRestriction.eq_delete (h : N ≤r M) : N = M ＼ (M.E \ N.E) := by
 lemma IsRestriction.eq_of_isRestriction_of_ground_eq {N'} (h : N ≤r M) (h' : N' ≤r M)
     (hE : N.E = N'.E) : N = N' := by
   rw [← h.eq_restrict, ← h'.eq_restrict, hE]
+
+lemma delete_restrict_ground_eq_disjointSum (hD : D ⊆ M.E) :
+    (M ＼ D) ↾ M.E = (M ＼ D).disjointSum (loopyOn D) disjoint_sdiff_left := by
+  rw [disjointSum_loopyOn, delete_ground, diff_union_of_subset hD]
+
 
 end Delete

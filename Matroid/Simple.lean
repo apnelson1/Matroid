@@ -35,7 +35,7 @@ lemma Simple.loopless (hM : M.Simple) : M.Loopless := by
 theorem Simple.isNonloop_of_mem (_ : M.Simple) (he : e ∈ M.E) : M.IsNonloop e :=
   isNonloop_of_loopless he
 
-lemma simple_iff_isLoopless_eq_of_parallel_forall:
+lemma simple_iff_loopless_eq_of_parallel_forall:
     Simple M ↔ (M.Loopless ∧ ∀ e f, M.Parallel e f → e = f) :=
   ⟨fun h ↦ ⟨by infer_instance, fun _ _ ↦ Parallel.eq⟩,
     fun ⟨_,h⟩ ↦ ⟨fun heE ↦ ⟨h _ _,by rintro rfl; exact (isNonloop_of_loopless heE).parallel_self⟩⟩⟩
@@ -59,7 +59,7 @@ lemma simple_iff_closure_subset_self_forall [RankPos M] :
     obtain ⟨f, hf⟩ := M.exists_isNonloop
     obtain (rfl : e = f) := (h f hf).subset (hel.mem_closure _)
     exact hf.not_isLoop hel
-  rw [simple_iff_isLoopless_eq_of_parallel_forall, and_iff_right hl]
+  rw [simple_iff_loopless_eq_of_parallel_forall, and_iff_right hl]
   exact fun e f hp ↦ (h _ hp.isNonloop_right) hp.mem_closure
 
 lemma closure_eq_self_of_subset_singleton [Simple M] (he : e ∈ M.E) (hX : X ⊆ {e}) :
@@ -104,7 +104,7 @@ lemma three_le_girth_iff : 3 ≤ M.girth ↔ M.Simple := by
   rw [iff_comm, le_girth_iff]
   refine ⟨fun h C hC ↦ le_of_not_gt fun hlt ↦ ?_, fun h ↦ ?_⟩
   · exact hC.dep.not_indep <| indep_of_encard_le_two (Order.le_of_lt_add_one hlt)
-  simp_rw [simple_iff_isLoopless_eq_of_parallel_forall, loopless_iff_forall_isCircuit,
+  simp_rw [simple_iff_loopless_eq_of_parallel_forall, loopless_iff_forall_isCircuit,
     ← one_lt_encard_iff_nontrivial]
   refine ⟨fun C hC ↦ (show (1 : ℕ∞) < 3 by enat_to_nat; lia).trans_le (h C hC),
     fun e f hef ↦ by_contra fun hne ↦ ?_⟩
@@ -123,7 +123,7 @@ lemma simple_iff_forall_isCircuit : M.Simple ↔ ∀ C, M.IsCircuit C → 2 < C.
 
 lemma simple_iff_forall_pair_indep : M.Simple ↔ ∀ ⦃e f⦄, e ∈ M.E → f ∈ M.E → M.Indep {e,f} := by
   refine ⟨fun h _ _ he hf ↦ pair_indep he hf, fun h ↦ ?_⟩
-  rw [simple_iff_isLoopless_eq_of_parallel_forall, loopless_iff_forall_not_isLoop]
+  rw [simple_iff_loopless_eq_of_parallel_forall, loopless_iff_forall_not_isLoop]
   exact ⟨fun e he hl ↦ hl.dep.not_indep <| by simpa using h he he,
     fun e f hef ↦ hef.eq_of_indep (h hef.mem_ground_left hef.mem_ground_right) ⟩
 
@@ -157,7 +157,7 @@ lemma simple_iff_forall_parallel_class [Loopless M] :
   refine ⟨?_, fun h ↦ ?_⟩
   · rintro h P x hx rfl
     exact ⟨x, by simp [parallel_iff_eq hx.mem_ground]⟩
-  rw [simple_iff_isLoopless_eq_of_parallel_forall, and_iff_right (by assumption)]
+  rw [simple_iff_loopless_eq_of_parallel_forall, and_iff_right (by assumption)]
   refine fun e f hef ↦ ?_
   obtain ⟨x, hx⟩ := h _ e hef.isNonloop_left rfl
   rw [(show f = x from hx.subset hef), show e = x from hx.subset (hef.isNonloop_left.parallel_self)]
@@ -170,7 +170,7 @@ lemma simple_iff_parallelClasses_eq_discrete' :
     refine fun x y ↦ ⟨fun hpara ↦ ⟨hpara.eq, hpara.isNonloop_left⟩, ?_⟩
     rintro ⟨rfl, nl⟩
     exact nl.parallel_self
-  rw [simple_iff_isLoopless_eq_of_parallel_forall, and_iff_right (by assumption)]
+  rw [simple_iff_loopless_eq_of_parallel_forall, and_iff_right (by assumption)]
   simp [Parallel, h]
 
 lemma simple_iff_parallelClasses_eq_discrete [Loopless M] :
@@ -189,7 +189,7 @@ lemma Simple.eq_of_parallel_of_mem (h : (M ↾ X).Simple) (he : e ∈ X) (hf : f
 lemma exists_isLoop_or_para_of_not_simple (hM : ¬ M.Simple) :
     (∃ e, M.IsLoop e) ∨ ∃ e f, M.Parallel e f ∧ e ≠ f := by
   by_contra! h
-  rw [simple_iff_isLoopless_eq_of_parallel_forall, loopless_iff_forall_not_isLoop] at hM
+  rw [simple_iff_loopless_eq_of_parallel_forall, loopless_iff_forall_not_isLoop] at hM
   push_neg at hM
   obtain ⟨e, f, hef, hne⟩ := hM (fun e _ ↦ h.1 e)
   exact hne <| h.2 e f hef
@@ -224,7 +224,7 @@ lemma Loopless.of_restrict_contract {C : Set α} (hC : (M ↾ C).Loopless) (h : 
 
 lemma Simple.of_restrict_contract {C : Set α} (hC : (M ↾ C).Simple) (h : (M ／ C).Simple) :
     M.Simple := by
-  rw [simple_iff_isLoopless_eq_of_parallel_forall] at h hC ⊢
+  rw [simple_iff_loopless_eq_of_parallel_forall] at h hC ⊢
   obtain ⟨hl, h⟩ := h
   obtain ⟨hclosure, hC⟩ := hC
   simp only [restrict_parallel_iff, and_imp] at hC
@@ -288,6 +288,12 @@ lemma Simplifies.trans {R : Matroid α} (hNM : N ≤si M) (hMR : M ≤si R) : N 
 
 lemma Simplifies.antisymm (hNM : N ≤si M) (hMN : M ≤si N) : N = M :=
   hNM.isRestriction.antisymm hMN.isRestriction
+
+lemma Simplifies.exists_imp_eq_of_isNonloop (h : N ≤si M) (he : M.IsNonloop e) :
+    ∃ f ∈ N.E, M.Parallel e f ∧ (e ∈ N.E → f = e) := by
+  by_cases heN : e ∈ N.E
+  · exact ⟨e, heN, he.parallel_self, by simp⟩
+  exact Exists.imp (by grind) (h.exists_of_isNonloop he)
 
 lemma Simplifies.exists_mem_closure [N.Nonempty] (hM : N ≤si M) (he : e ∈ M.E) :
     ∃ f ∈ N.E, e ∈ M.closure {f} := by
@@ -365,6 +371,79 @@ lemma Simplifies.contract {C : Set α} (h : N ≤si M) (hC : C ⊆ N.E) : N ／ 
   rw [parallel_comm, contract_parallel_iff, and_iff_left he.2]
   exact mem_of_mem_of_subset hef.mem_closure <| M.closure_mono <| by simp
 
+lemma Simplifies.eRank_eq (h : N ≤si M) : N.eRank = M.eRank :=
+  h.isSpanningRestriction.eRank_eq
+
+@[simp]
+lemma removeLoops_eRank_eq (M : Matroid α) : M.removeLoops.eRank = M.eRank :=
+  M.removeLoops_simplifies.eRank_eq
+
+/-- If `N` simplifies `M`, then `M` is a comap of `N` under some function that is the identity
+outside the nonloops of `M`, is the identity on `N`, and maps the nonloops of `M` to the
+nonloops of `M`. -/
+lemma Simplifies.exists_eq_comapOn (h : N ≤si M) :
+    ∃ (φ : α → α), M = N.comapOn M.E φ ∧ EqOn id φ N.E ∧ EqOn id φ {e | ¬ M.IsNonloop e} ∧
+        φ '' {e | M.IsNonloop e} = {e | N.IsNonloop e} ∧ ∀ e, φ (φ e) = φ e := by
+  have hex : ∀ e, ∃ x, (M.IsNonloop e → (x ∈ N.E ∧ M.Parallel e x)) ∧ (e ∈ N.E → x = e)
+      ∧ (¬ M.IsNonloop e → x = e) := fun e ↦ by
+    by_cases henl : M.IsNonloop e
+    · obtain ⟨x, hx, hex, heq⟩ := h.exists_imp_eq_of_isNonloop henl
+      exact ⟨x, fun _ ↦ ⟨hx, hex⟩, heq, by simp [henl]⟩
+    exact ⟨e, by simp [henl]⟩
+  choose φ hφ using hex
+  have aux' {e X} : φ e ∈ M.closure X ↔ e ∈ M.closure X := by
+    by_cases he : M.IsNonloop e
+    · rw [((hφ e).1 he).2.mem_closure_iff_mem_closure]
+    rw [(hφ e).2.2 he]
+  have hrw {X} (hXE : X ⊆ M.E) : M.closure (φ '' X ∩ N.E) = M.closure X := by
+    rw [← biUnion_of_singleton X, image_iUnion₂, iUnion₂_inter,
+      ← closure_biUnion_closure_eq_closure_biUnion, eq_comm,
+      ← closure_biUnion_closure_eq_closure_biUnion]
+    convert rfl using 5 with e he
+    obtain hel | henl := M.isLoop_or_isNonloop e
+    · rw [image_singleton, (hφ e).2.2 hel.not_isNonloop, hel.closure, closure_eq_loops_of_subset
+        (inter_subset_left.trans (singleton_subset_iff.2 hel))]
+    rw [image_singleton, singleton_inter_of_mem ((hφ e).1 henl).1,
+      ((hφ e).1 henl).2.closure_eq_closure]
+  have hidem (e) : φ (φ e) = φ e := by
+    by_cases henl : M.IsNonloop e
+    · exact (hφ (φ e)).2.1 ((hφ e).1 henl).1
+    nth_rw 1 [(hφ e).2.2 henl]
+  refine ⟨φ, ext_closure fun X ↦ ?_, fun e he ↦ ((hφ e).2.1 he).symm,
+    fun x hx ↦ ((hφ x).2.2 hx).symm, ?_, hidem⟩
+  · rw [comapOn, restrict_closure_eq', comap_closure_eq, subset_antisymm_iff,
+      union_subset_iff, comap_ground_eq, diff_subset_iff, diff_eq_compl_inter,
+        ← union_inter_distrib_right, subset_inter_iff, and_iff_left (M.closure_subset_ground ..),
+        h.isRestriction.closure_eq', hrw inter_subset_right, union_comm, ← diff_subset_iff,
+        diff_compl, preimage_inter, subset_inter_iff, and_iff_left inter_subset_right,
+        closure_inter_ground]
+    suffices ∀ x ∈ M.E, φ x ∈ N.E ∨ x ∈ M.closure X by simpa +contextual [subset_def, aux']
+    intro e he
+    obtain hel | henl := M.isLoop_or_isNonloop e
+    · simp [hel.mem_closure]
+    exact .inl ((hφ e).1 henl).1
+  simp only [Set.ext_iff, mem_image, mem_setOf_eq, h.isRestriction.isNonloop_iff]
+  refine fun x ↦ ⟨?_, fun ⟨hx, hxN⟩ ↦ ⟨φ x, ?_⟩⟩
+  · rintro ⟨y, hy, rfl⟩
+    exact ⟨((hφ y).1 hy).2.isNonloop_right, ((hφ y).1 hy).1⟩
+  exact ⟨((hφ x).1 hx).2.isNonloop_right, by rw [hidem, ((hφ x).2.1 hxN)] ⟩
+
+lemma Simplifies.exists_eq_comap [M.Loopless] (h : N ≤si M) :
+    ∃ (φ : α → α), M = N.comap φ ∧ EqOn id φ N.E ∧ φ '' M.E = N.E ∧ φ ⁻¹' N.E = M.E
+      ∧ ∀ e, φ (φ e) = φ e := by
+  obtain ⟨φ, hM, hφN, hinl, him, hidem⟩ := h.exists_eq_comapOn
+  rw [M.setOf_isNonloop_eq, loops_eq_empty, diff_empty, N.setOf_isNonloop_eq,
+    h.isRestriction.loopless.loops_eq_empty, diff_empty] at him
+  have aux : M.E = φ ⁻¹' N.E := by
+    ext e
+    simp only [mem_preimage]
+    refine ⟨fun h ↦ by grind, fun h' ↦ ?_⟩
+    by_cases he : M.IsNonloop e
+    · exact he.mem_ground
+    grw [← hinl he, id_eq, h.isRestriction.subset] at h'
+    assumption
+  exact ⟨φ, by rwa [hM, comapOn, restrict_eq_self_iff, comap_ground_eq], hφN, him, aux.symm, hidem⟩
+
 end LE
 -- end Simple
 
@@ -400,7 +479,7 @@ lemma IsSimplification.repFun_apply_mem_ground (h : N.IsSimplification M) (he : 
 
 lemma IsSimplification.simple (h : N.IsSimplification M) : N.Simple := by
   obtain ⟨f, rfl⟩ := h
-  rw [simple_iff_isLoopless_eq_of_parallel_forall]
+  rw [simple_iff_loopless_eq_of_parallel_forall]
   simp only [restrict_parallel_iff, mem_image, mem_setOf_eq, and_imp, forall_exists_index,
     loopless_iff_forall_isNonloop, restrict_ground_eq, mem_image, mem_setOf_eq,
     restrict_isNonloop_iff, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
@@ -597,6 +676,11 @@ lemma IsSimplification.exists_of_isStrictRestriction (hN : N.IsSimplification M)
 lemma IsSimplification.isSpanningRestriction (hN : N.IsSimplification M) : N ≤sr M :=
   hN.simplifies.isSpanningRestriction
 
+lemma IsSimplification.isSimplification_removeLoops (hN : N.IsSimplification M) :
+    N.IsSimplification M.removeLoops := by
+  have := hN.simple
+  exact hN.of_isRestriction hN.isRestriction.isRestriction_removeLoops M.removeLoops_isRestriction
+
 lemma IsSimplification.isBase_of_isBase {B : Set α} (hN : N.IsSimplification M) (hB : N.IsBase B) :
     M.IsBase B :=
   (IsBase.isBasis_of_isRestriction hB hN.isRestriction).isBase_of_spanning
@@ -613,6 +697,12 @@ lemma IsSimplification.ground_eq_biUnion_setOf_parallel [M.Loopless] (hNM : N.Is
   refine ⟨fun x hx ↦ ?_, fun _ _ _ ↦ Parallel.mem_ground_right⟩
   obtain ⟨f, hf⟩ := hNM.exists_unique (isNonloop_of_loopless hx)
   exact ⟨f, hf.1.1, hf.1.2.symm⟩
+
+lemma IsSimplification.ground_eq_biUnion_setOf_parallel_union_loops (hNM : N.IsSimplification M) :
+    M.E = (⋃ e ∈ N.E, {x | M.Parallel e x}) ∪ M.loops := by
+  have hrw := hNM.isSimplification_removeLoops.ground_eq_biUnion_setOf_parallel
+  simp_rw [removeLoops_parallel_iff, removeLoops_eq_delete, delete_ground] at hrw
+  rw [← diff_union_of_subset M.loops_subset_ground, hrw]
 
 lemma IsSimplification.ground_eq_biUnion_closure [M.RankPos] (hNM : N.IsSimplification M) :
     M.E = ⋃ e ∈ N.E, M.closure {e} := by
@@ -632,6 +722,20 @@ lemma IsSimplification.setOf_parallel_pairwiseDisjoint (hNM : N.IsSimplification
   simp_rw [disjoint_iff_forall_ne]
   rintro a hax _ hay rfl
   exact hne <| hNM.eq_of_parallel hx hy (Parallel.trans hax (Parallel.symm hay))
+
+lemma IsSimplification.setOf_parallel_injOn (hNM : N.IsSimplification M) :
+   InjOn (fun e ↦ {x | M.Parallel e x}) N.E := by
+  intro e he f hf h_eq
+  rw [← hNM.simple.parallel_iff_eq he, hNM.isRestriction.parallel_iff, and_iff_left hf,
+    and_iff_left he]
+  simpa [(hNM.simple.isNonloop_of_mem hf).of_isRestriction hNM.isRestriction] using
+    congr_arg (f ∈ ·) h_eq
+
+lemma IsSimplification.image_setOf_parallel_pairwiseDisjoint (hNM : N.IsSimplification M) :
+    ((fun e ↦ {f | M.Parallel e f}) '' N.E).PairwiseDisjoint id := by
+  have := hNM.setOf_parallel_pairwiseDisjoint
+  rwa [InjOn.pairwiseDisjoint_image, Function.id_comp]
+  exact hNM.setOf_parallel_injOn
 
 lemma IsSimplification.closure_pairwiseDisjoint [M.Loopless] (hNM : N.IsSimplification M) :
     N.E.PairwiseDisjoint (fun e ↦ M.closure {e}) := by

@@ -64,6 +64,19 @@ lemma unifOn_freeLift (E : Set α) (k : ℕ) : (unifOn E k).freeLift = unifOn E 
 theorem unifOn_eq_of_le (h : E.encard ≤ k) : unifOn E k = freeOn E := by
   rw [unifOn, truncate_eq_self_of_rank_le (by rwa [eRank_freeOn])]
 
+lemma unifOn_pair : unifOn {e, f} 2 = freeOn {e, f} := by
+  rw [unifOn_eq_of_le (encard_pair_le ..)]
+
+lemma unifOn_pair_one (hef : e ≠ f) : unifOn {e, f} 1 = circuitOn {e, f} := by
+  rw [circuitOn, ← unifOn_pair, unifOn_truncate]
+  rw [encard_pair hef]
+  rfl
+
+lemma unifOn_triple {e f g : α} : unifOn {e, f, g} 3 = freeOn {e, f, g} := by
+  rw [unifOn_eq_of_le]
+  grw [encard_insert_le, encard_pair_le]
+  rfl
+
 theorem unifOn_isBase_iff (hk : k ≤ E.encard) (hBE : B ⊆ E) :
     (unifOn E k).IsBase B ↔ B.encard = k := by
   rw [unifOn, truncateTo_isBase_iff, freeOn_indep_iff, and_iff_right hBE]
@@ -196,7 +209,7 @@ theorem unifOn_insert_contractElem (he : e ∉ E) :
   rw [unifOn_contractElem (mem_insert ..), insert_diff_of_mem _ (by simp),
     diff_singleton_eq_self he]
 
-instance unifOn_isLoopless (E : Set α) : Loopless (unifOn E (k+1)) := by
+instance unifOn_loopless (E : Set α) : Loopless (unifOn E (k+1)) := by
   simp_rw [loopless_iff_forall_isNonloop, ← indep_singleton, unifOn_indep_iff]
   simp
 
@@ -325,7 +338,7 @@ theorem unif_dual' {n : ℕ} (h : a + b = n) : (unif a n)✶ = unif b n := by
 @[simp] theorem unif_add_right_dual (a b : ℕ) : (unif b (a + b))✶ = unif a (a+b) :=
   unif_dual' <| add_comm _ _
 
-instance unif_isLoopless (a b : ℕ) : Loopless (unif (a + 1) b) := by
+instance unif_loopless (a b : ℕ) : Loopless (unif (a + 1) b) := by
   rw [unif]
   infer_instance
 
@@ -887,7 +900,7 @@ lemma eRank_le_one_iff : M.eRank ≤ 1 ↔ ∃ (E₀ E₁ : Set α) (h : Disjoin
   rintro ⟨E₀, E₁, hdj, rfl⟩
   simp [unifOn_eRank_eq]
 
-lemma unifOn_isLoopless_iff {n : ℕ} :
+lemma unifOn_loopless_iff {n : ℕ} :
     (unifOn E n).Loopless ↔ (n = 0 → E = ∅) := by
   refine ⟨?_, fun h ↦ ?_⟩
   · rintro h rfl
@@ -900,7 +913,7 @@ lemma unifOn_simple_iff {n : ℕ} :
     (unifOn E n).Simple ↔ (n = 0 ∧ E = ∅) ∨ (n = 1 ∧ E.Subsingleton) ∨ 2 ≤ n := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · obtain rfl | rfl | n := n
-    · simp [unifOn_isLoopless_iff.1 h.loopless]
+    · simp [unifOn_loopless_iff.1 h.loopless]
     · have h : ∀ ⦃e f : α⦄, e ∈ E → f ∈ E → e = f := by
         simpa +contextual [simple_iff_forall_pair_indep, pair_subset_iff,
           encard_le_one_iff_subsingleton] using h
@@ -912,6 +925,15 @@ lemma unifOn_simple_iff {n : ℕ} :
   · simp
   · exact fun e f he hf ↦ by simpa [encard_le_one_iff_subsingleton] using h he hf
   exact fun e f he hf ↦ (encard_pair_le e f).trans <| by simpa
+
+@[simp]
+lemma unifOn_map {β : Type*} (E : Set α) (f : α → β) (hf : InjOn f E) (a : ℕ) :
+    (unifOn E a).map f hf = unifOn (f '' E) a := by
+  refine ext_indep rfl fun I hI ↦ ?_
+  simp only [map_ground, unifOn_ground_eq] at hI
+  obtain ⟨I, hIE, rfl⟩ := subset_image_iff.1 hI
+  rw [map_image_indep_iff hIE, unifOn_indep_iff, unifOn_indep_iff, (hf.mono hIE).encard_image,
+    and_iff_left hIE, and_iff_left hI]
 
 end LowRank
 

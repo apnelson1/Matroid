@@ -248,6 +248,19 @@ lemma Parallel.mem_isCocircuit_of_mem {K : Set α}  (hef : M.Parallel e f) (hK :
   rw [← hef.mem_closure_iff_mem_closure, hK'] at hfK
   exact hfK.2 he
 
+@[simp]
+lemma comap_parallel_iff {β : Type*} {φ : α → β} {M : Matroid β} :
+    (M.comap φ).Parallel e f ↔ M.Parallel (φ e) (φ f) := by
+  rw [parallel_iff_isNonloop_isNonloop_indep_imp_eq, comap_isNonloop_iff, comap_isNonloop_iff,
+    parallel_iff_isNonloop_isNonloop_indep_imp_eq, comap_indep_iff, image_insert_eq,
+    image_singleton, injOn_pair]
+  grind
+
+@[simp]
+lemma comapOn_parallel_iff {β : Type*} {φ : α → β} {M : Matroid β} {E : Set α} :
+    (M.comapOn E φ).Parallel e f ↔ M.Parallel (φ e) (φ f) ∧ e ∈ E ∧ f ∈ E := by
+  rw [comapOn, restrict_parallel_iff, comap_parallel_iff]
+
 end Parallel
 
 section Parallel'

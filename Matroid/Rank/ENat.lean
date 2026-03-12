@@ -4,7 +4,8 @@ import Matroid.Loop
 import Matroid.OnUniv
 import Matroid.ForMathlib.Other
 import Matroid.ForMathlib.Matroid.Closure
-import Matroid.ForMathlib.Matroid.Sum
+import Matroid.Closure
+import Matroid.Sum
 
 /- The rank `M.eRk X` of a set `X` in a matroid `M` is the size of one of its bases,
 as a term in `ℕ∞`.
@@ -187,3 +188,31 @@ lemma eRk_restrict (M : Matroid α) (R X : Set α) : (M ↾ R).eRk X = M.eRk (X 
 @[simp]
 lemma eRk_restrict_univ (M : Matroid α) (X : Set α) : (M ↾ univ).eRk X = M.eRk (X) := by
   rw [eRk_restrict, inter_univ]
+
+lemma IsRestriction.eRk_eq (h : N ≤r M) {X : Set α} (hX : X ⊆ N.E) : N.eRk X = M.eRk X := by
+  obtain ⟨R, hR, rfl⟩ := h.exists_eq_restrict
+  rw [eRk_restrict, inter_eq_self_of_subset_left (by simpa)]
+
+lemma IsSpanningRestriction.eRank_eq {N : Matroid α} (h : N ≤sr M) : N.eRank = M.eRank := by
+  rw [← eRk_ground, h.isRestriction.eRk_eq rfl.subset, h.spanning.eRk_eq]
+
+lemma eRank_comapOn {β : Type*} {M : Matroid β} {E : Set α} (f : α → β) (hM : SurjOn f E M.E) :
+    (M.comapOn E f).eRank = M.eRank := by
+  obtain ⟨B, hB⟩ := M.exists_isBase
+  obtain ⟨B', hB'E, hbij⟩ := (hM.mono rfl.subset hB.subset_ground).exists_bijOn_subset
+  have hB' : (M.comapOn E f).IsBase B' := by
+    rwa [comapOn_isBase_iff_of_surjOn hM, hbij.image_eq, and_iff_left hB'E, and_iff_left hbij.injOn]
+  rw [← hB'.encard_eq_eRank, ← hB.encard_eq_eRank, ← hbij.image_eq, hbij.injOn.encard_image]
+
+lemma eRank_comap {β : Type*} {M : Matroid β} (f : α → β) (hM : M.E ⊆ range f) :
+    (M.comap f).eRank = M.eRank := by
+  obtain ⟨B, hB⟩ := M.exists_isBase
+  obtain ⟨B, rfl, hfB⟩ := exists_image_eq_injOn_of_subset_range (hB.subset_ground.trans hM)
+  rw [← hB.encard_eq_eRank, ← IsBase.encard_eq_eRank (B := B), hfB.encard_image]
+  grw [comap_isBase_iff, and_iff_right hfB, ← image_subset_iff, and_iff_left hB.subset_ground]
+  refine hB.isBasis_of_subset (image_preimage_subset ..) <| image_mono ?_
+  grw [← image_subset_iff, hB.subset_ground]
+
+
+  -- obtain ⟨B, rfl, hfB⟩ := exists_image_eq_injOn_of_subset_range (hB.subset_ground.trans hM)
+  -- have := exists_image_eq_and_injOn _(hB.subset_ground.trans hM)

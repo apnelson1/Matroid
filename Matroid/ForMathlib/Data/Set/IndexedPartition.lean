@@ -13,17 +13,6 @@ variable {α : Type*} {r s t : Set α}
 
 namespace Set
 
--- For mathlib
-lemma iUnion_eq_single_of_forall_subset {ι : Sort*} {s : ι → Set α} {a : ι}
-    (hi : ∀ i ≠ a, s i ⊆ s a) : ⋃ i, s i = s a := by
-  refine (subset_iUnion ..).antisymm' <| iUnion_subset fun i ↦ ?_
-  obtain rfl | hne := eq_or_ne i a
-  · rfl
-  exact hi i hne
-
-lemma iUnion_eq_single {ι : Sort*} (s : ι → Set α) {a : ι} (hi : ∀ i ≠ a, s i = ∅) :
-    ⋃ i, s i = s a :=
-  iUnion_eq_single_of_forall_subset fun i hia ↦ by grw [hi i hia, empty_subset]
 
 protected structure IndexedPartition {α : Type*} (s : Set α) (ι : Type*) where
   toFun : ι → Set α

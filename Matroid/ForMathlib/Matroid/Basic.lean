@@ -89,6 +89,11 @@ lemma IsBasis'.exists_isBasis'_inter_eq_of_superset {I X Y : Set α} (hIX : M.Is
   rw [← uniqueBaseOn_self, uniqueBaseOn_spanning_iff]
   simp [← subset_antisymm_iff, eq_comm]
 
+@[simp]
+lemma freeOn_not_dep {X E : Set α} : ¬ (freeOn E).Dep X := by
+  simp [Dep]
+
+
 @[simp] lemma emptyOn_spanning_iff {X : Set α} : (emptyOn α).Spanning X ↔ X = ∅ := by
   rw [← loopyOn_empty, loopyOn_spanning_iff, subset_empty_iff]
 

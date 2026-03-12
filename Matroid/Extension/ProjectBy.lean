@@ -81,7 +81,7 @@ lemma projectBy_bot : M.projectBy ⊥ = M := by
     · rw [← singleton_dep, dep_iff, extendBy_Indep,
       ModularCut.extIndep_iff_of_mem (show e ∈ {e} from rfl)]
       simp
-    rw [contract_eq_delete_of_subset_loops (by simpa), delete_indep_iff,
+    rw [contract_eq_delete_of_subset_loops (by simp), delete_indep_iff,
       extendBy_Indep, ModularCut.extIndep_iff_of_notMem heI, projectBy_indep_iff]
     simp [heI]
   have hnl : (M.extendBy e U).IsNonloop e

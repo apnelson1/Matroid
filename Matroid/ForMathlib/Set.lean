@@ -5,6 +5,24 @@ variable {α ι : Type*}
 open Function symmDiff
 namespace Set
 
+lemma iUnion_eq_single_of_forall_subset {ι : Sort*} {s : ι → Set α} {a : ι}
+    (hi : ∀ i ≠ a, s i ⊆ s a) : ⋃ i, s i = s a := by
+  refine (subset_iUnion ..).antisymm' <| iUnion_subset fun i ↦ ?_
+  obtain rfl | hne := eq_or_ne i a
+  · rfl
+  exact hi i hne
+
+lemma iUnion_eq_single {ι : Sort*} (s : ι → Set α) {a : ι} (hi : ∀ i ≠ a, s i = ∅) :
+    ⋃ i, s i = s a :=
+  iUnion_eq_single_of_forall_subset fun i hia ↦ by grw [hi i hia, empty_subset]
+
+lemma biUnion_eq_biUnion_nonempty (s : ι → Set α) {u : Set ι} :
+    ⋃ i ∈ u, s i = ⋃ i ∈ {i ∈ u | (s i).Nonempty}, s i := by
+  refine subset_antisymm (iUnion₂_subset fun i hiu ↦ ?_) <| biUnion_mono (by simp) <| by simp
+  obtain he | hne := (s i).eq_empty_or_nonempty
+  · simp [he]
+  exact subset_biUnion_of_mem <| by grind
+
 lemma sInter_subset_sUnion {s : Set (Set α)} (hs : s.Nonempty) : ⋂₀ s ⊆ ⋃₀ s :=
   (sInter_subset_of_mem hs.some_mem).trans (subset_sUnion_of_mem hs.some_mem)
 

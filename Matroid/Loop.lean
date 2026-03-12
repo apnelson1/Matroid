@@ -18,6 +18,52 @@ open scoped symmDiff
 
 namespace Matroid
 
+@[simp]
+lemma mem_loops_iff : e ∈ M.loops ↔ M.IsLoop e := Iff.rfl
+
+@[simp]
+lemma disjointSigma_isLoop_iff {ι : Type*} {M : ι → Matroid α} hdj :
+    (Matroid.disjointSigma M hdj).IsLoop e ↔ ∃ i, (M i).IsLoop e := by
+  simp_rw [← singleton_isCircuit, disjointSigma_isCircuit_iff]
+
+@[simp]
+lemma disjointSigma_isNonloop_iff {ι : Type*} {M : ι → Matroid α} hdj :
+    (Matroid.disjointSigma M hdj).IsNonloop e ↔ ∃ i, (M i).IsNonloop e := by
+  simp only [isNonloop_iff, disjointSigma_isLoop_iff, not_exists, disjointSigma_ground_eq,
+    mem_iUnion]
+  refine ⟨fun ⟨h, i, hi⟩ ↦ by grind, fun ⟨i, h1, h2⟩ ↦ ⟨fun j hj ↦ ?_, i, h2⟩⟩
+  obtain rfl | hij := eq_or_ne i j
+  · contradiction
+  exact (hdj hij).notMem_of_mem_right hj.mem_ground h2
+
+@[simp]
+lemma disjointSum_isNonloop_iff {M N : Matroid α} (hMN : Disjoint M.E N.E) :
+    (M.disjointSum N hMN).IsNonloop e ↔ M.IsNonloop e ∨ N.IsNonloop e := by
+  simp [disjointSum_eq_disjointSigma, or_comm]
+
+@[simp]
+lemma disjointSum_isLoop_iff {M N : Matroid α} (hMN : Disjoint M.E N.E) :
+    (M.disjointSum N hMN).IsLoop e ↔ M.IsLoop e ∨ N.IsLoop e := by
+  simp [← singleton_isCircuit]
+
+@[simp]
+lemma disjointSigma_loops {ι : Type*} {M : ι → Matroid α} hdj :
+    (Matroid.disjointSigma M hdj).loops = ⋃ i, (M i).loops := by
+  ext; simp
+
+@[simp]
+lemma disjointSum_loops {M N : Matroid α} (hMN : Disjoint M.E N.E) :
+    (M.disjointSum N hMN).loops = M.loops ∪ N.loops := by
+  ext; simp [← isLoop_iff]
+
+lemma loops_disjoint_setOf_isNonloop (M : Matroid α) : Disjoint M.loops {e | M.IsNonloop e} := by
+  rw [setOf_isNonloop_eq]
+  apply disjoint_sdiff_right
+
+lemma loops_disjoint_coloops (M : Matroid α) : Disjoint M.loops M.coloops :=
+  M.loops_disjoint_setOf_isNonloop.mono_right fun _ he ↦ IsColoop.isNonloop he
+
+
 /-- a version of `isNonloop_of_loopless` that works with dot notation -/
 lemma Loopless.isNonloop_of_mem (h : M.Loopless) (he : e ∈ M.E) : M.IsNonloop e :=
   isNonloop_of_loopless he
@@ -228,7 +274,6 @@ instance freeOn_loopless (E : Set α) : Loopless (freeOn E) := by
 lemma OnUniv.toIsNonloop [Loopless M] [OnUniv M] (e : α) : M.IsNonloop e :=
   Matroid.isNonloop_of_loopless (e := e)
 
-
 @[simp] lemma one_lt_girth_iff : 1 < M.girth ↔ M.Loopless := by
   simp_rw [loopless_iff_forall_isCircuit, ← Nat.cast_one (R := ℕ∞), lt_girth_iff',
     Finset.one_lt_card_iff_nontrivial]
@@ -277,6 +322,38 @@ lemma restrict_removeLoops (R : Set α) : (M ↾ R).removeLoops = (M ↾ (R ∩ 
   ext e
   simp +contextual [IsNonloop.mem_ground]
 
+@[simp]
+lemma disjointSigma_removeLoops {ι : Type*} (M : ι → Matroid α) hdj :
+    (Matroid.disjointSigma M hdj).removeLoops = Matroid.disjointSigma (fun i ↦ (M i).removeLoops)
+      (hdj.mono fun _ _ ↦
+        Disjoint.mono (fun _ ↦ IsNonloop.mem_ground) (fun _ ↦ IsNonloop.mem_ground)) := by
+  simp_rw [removeLoops_eq_restrict, disjointSigma_isNonloop_iff]
+  rw [← disjointSigma_restrict_iUnion hdj (fun i ↦ {e | (M i).IsNonloop e})
+    (fun i _ ↦ IsNonloop.mem_ground)]
+  convert rfl
+  ext
+  simp
+
+@[simp]
+lemma disjointSum_removeLoops {N : Matroid α} (hMN : Disjoint M.E N.E) :
+    (M.disjointSum N hMN).removeLoops = M.removeLoops.disjointSum N.removeLoops
+      (hMN.mono (fun _ ↦ IsNonloop.mem_ground) (fun _ ↦ IsNonloop.mem_ground)) := by
+  simp only [disjointSum_eq_disjointSigma, disjointSigma_removeLoops]
+  convert rfl using 3 with (i | i)
+
+@[simp]
+lemma disjointSigma_removeColoops {ι : Type*} (M : ι → Matroid α) hdj :
+    (Matroid.disjointSigma M hdj).removeColoops =
+    Matroid.disjointSigma (fun i ↦ (M i).removeColoops) (hdj.mono fun _ _ ↦
+        Disjoint.mono (fun _ ↦ IsNonloop.mem_ground) (fun _ ↦ IsNonloop.mem_ground)) := by
+  rw [← dual_inj]
+  simp_rw [removeColoops_dual, disjointSigma_dual, removeColoops_dual, disjointSigma_removeLoops]
+
+@[simp]
+lemma disjointSum_removeColoops {N : Matroid α} (hMN : Disjoint M.E N.E) :
+    (M.disjointSum N hMN).removeColoops = M.removeColoops.disjointSum N.removeColoops
+      (hMN.mono (fun _ ↦ IsNonloop.mem_ground) (fun _ ↦ IsNonloop.mem_ground)) := by
+  simp [disjointSum_eq_disjointSigma, Bool.apply_cond]
 
 section Constructions
 

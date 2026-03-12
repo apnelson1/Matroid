@@ -344,3 +344,186 @@ instance seriesExtend_finite (M : Matroid α) [M.Finite] : (M.seriesExtend e f).
   ⟨M.ground_finite.insert f⟩
 
 end Series
+
+variable {α β : Type*} {M : Matroid α} {N : Matroid β} {P : β → Set α}
+
+lemma multiExtendLoopless_aux (φ : α → β) (hφN : ∀ x ∈ N.E, ∀ e ∈ P x, φ e = x) {I : Set α} :
+    (N.comapOn (⋃ f ∈ N.E, P f) φ).Indep I ↔ (N.Indep {f ∈ N.E | ((P f) ∩ I).Nonempty} ∧
+    (∀ f ∈ N.E, (P f ∩ I).Subsingleton) ∧ I ⊆ ⋃ f ∈ N.E, P f) := by
+  have aux1 (I) (hI : I ⊆ ⋃ f ∈ N.E, P f) : φ '' I = {f ∈ N.E | (P f ∩ I).Nonempty} := by
+    ext b
+    simp only [mem_image, mem_setOf_eq]
+    constructor
+    · rintro ⟨b, hbI, rfl⟩
+      obtain ⟨x, hxN, hbx⟩ : ∃ x ∈ N.E, b ∈ P x := by simpa using hI hbI
+      exact ⟨by grind, b, by grind⟩
+    rintro ⟨hb, ⟨e, ⟨heb, heI⟩⟩⟩
+    grind
+  have aux2 (I) (hI : I ⊆ ⋃ f ∈ N.E, P f) : InjOn φ I ↔ ∀ f ∈ N.E, (P f ∩ I).Subsingleton := by
+    refine ⟨fun h b hbN e he f hf ↦ h he.2 hf.2 <| by grind, fun h e heI f hfI hef ↦ ?_⟩
+    obtain ⟨x, hxN, hbx⟩ : ∃ x ∈ N.E, e ∈ P x := by simpa using hI heI
+    obtain ⟨y, hyN, hby⟩ : ∃ y ∈ N.E, f ∈ P y := by simpa using hI hfI
+    exact h x hxN ⟨hbx, heI⟩ ⟨by grind, hfI⟩
+  simp +contextual [comapOn_indep_iff, ← and_assoc, and_congr_left_iff, aux1, aux2]
+
+/-- Given a matroid `N` on `β` and a function `P` that maps the elements of `N` to
+pairwise disjoint sets in `α`, constructs the matroid on `α` obtained from `N` by replacing
+each element `f` of `N` with the parallel class `P f` of elements of `α`.
+
+This is essentially a comap in the opposite direction. -/
+def multiExtendLoopless (N : Matroid β) (P : β → Set α) (dj : N.E.Pairwise (Disjoint on P)) :
+    Matroid α := Matroid.ofExistsMatroid
+  (E := ⋃ f ∈ N.E, P f)
+  (fun I ↦ N.Indep {f ∈ N.E | ((P f) ∩ I).Nonempty} ∧
+    (∀ f ∈ N.E, (P f ∩ I).Subsingleton) ∧ I ⊆ ⋃ f ∈ N.E, P f)
+  (by
+    obtain hβ | hβ := isEmpty_or_nonempty β
+    · exact ⟨emptyOn α, by simp [eq_empty_of_isEmpty]⟩
+    have hinv : ∀ x ∈ ⋃ f ∈ N.E, P f, ∃! e ∈ N.E, x ∈ P e := by
+      simp only [mem_iUnion, exists_prop, forall_exists_index, and_imp]
+      refine fun x  b hb hxb ↦ ⟨b, ⟨hb, hxb⟩, fun c ⟨hcN, hcx⟩ ↦ by_contra fun hcb ↦ ?_⟩
+      exact (dj hcN hb hcb).notMem_of_mem_left hcx hxb
+    choose! φ hφ hu using hinv
+    refine ⟨N.comapOn (⋃ f ∈ N.E, P f) φ, rfl, fun I ↦ ?_⟩
+    simp only [mem_iUnion, exists_prop, forall_exists_index, and_imp] at hφ
+    simp only [mem_iUnion, exists_prop, and_imp, forall_exists_index] at hu
+    rw [multiExtendLoopless_aux (φ := φ) (by grind)] )
+
+
+@[simp]
+def multiExtendLoopless_ground (N : Matroid β) (P : β → Set α) (dj : N.E.Pairwise (Disjoint on P)) :
+    (N.multiExtendLoopless P dj).E = ⋃ e ∈ N.E, P e := rfl
+
+@[simp]
+def multiExtendLoopless_indep (N : Matroid β) (P : β → Set α) (dj : N.E.Pairwise (Disjoint on P))
+    {I : Set α} : (N.multiExtendLoopless P dj).Indep I ↔ N.Indep {f ∈ N.E | ((P f) ∩ I).Nonempty} ∧
+    (∀ f ∈ N.E, (P f ∩ I).Subsingleton) ∧ I ⊆ ⋃ f ∈ N.E, P f := Iff.rfl
+
+lemma multiExtendLoopless_eq_comapOn [Nonempty β] (N : Matroid β) (P : β → Set α)
+    (dj : N.E.Pairwise (Disjoint on P)) (hne : ∀ x ∈ N.E, (P x).Nonempty) :
+    ∃ (φ : α → β), (∀ x ∈ N.E, ∀ e ∈ P x, φ e = x) ∧ (SurjOn φ (⋃ x ∈ N.E, P x) N.E) ∧
+    N.multiExtendLoopless P dj = N.comapOn (⋃ f ∈ N.E, P f) φ := by
+  have hinv : ∀ x ∈ ⋃ f ∈ N.E, P f, ∃! e ∈ N.E, x ∈ P e := by
+    simp only [mem_iUnion, exists_prop, forall_exists_index, and_imp]
+    refine fun x  b hb hxb ↦ ⟨b, ⟨hb, hxb⟩, fun c ⟨hcN, hcx⟩ ↦ by_contra fun hcb ↦ ?_⟩
+    exact (dj hcN hb hcb).notMem_of_mem_left hcx hxb
+  choose! φ hφ hu using hinv
+  simp only [mem_iUnion, exists_prop, forall_exists_index, forall_and_index] at hφ hu
+  refine ⟨φ, by grind, fun x hx ↦ ?_, ext_indep (by simp) fun I hIE ↦ ?_⟩
+  · obtain ⟨e, he⟩ := hne x hx
+    exact ⟨e, mem_iUnion₂.2 (by grind), by grind⟩
+  simp only [multiExtendLoopless_indep]
+  rw [multiExtendLoopless_aux _ (by grind)]
+
+/-- the same as `multiExtendLoopless`, but with a specified set `L` of loops added. -/
+def multiExtend (N : Matroid β) (P : β → Set α) (L : Set α) (dj : N.E.Pairwise (Disjoint on P)) :
+    Matroid α := (N.multiExtendLoopless P dj ↾ (L ∪ ⋃ f ∈ N.E, P f))
+
+@[simp]
+lemma multiExtend_ground (N : Matroid β) (L : Set α) (P : β → Set α)
+    {dj : N.E.Pairwise (Disjoint on P)} : (multiExtend N P L dj).E = (⋃ i ∈ N.E, P i) ∪ L := by
+  simp [multiExtend, union_comm]
+
+lemma multiExtend_ground_of_onUniv (N : Matroid β) [OnUniv N] (L : Set α) (P : β → Set α)
+    {dj : N.E.Pairwise (Disjoint on P)} : (multiExtend N P L dj).E = (⋃ i, P i) ∪ L := by
+  simp [multiExtend, union_comm]
+
+@[simp]
+lemma multiExtend_indep_iff (N : Matroid β) (L : Set α) (P : β → Set α)
+    {dj : N.E.Pairwise (Disjoint on P)} {I : Set α} :
+    (multiExtend N P L dj).Indep I ↔ N.Indep {f ∈ N.E | ((P f) ∩ I).Nonempty}
+      ∧ (∀ f ∈ N.E, (P f ∩ I).Subsingleton) ∧ I ⊆ ⋃ f ∈ N.E, P f := by
+  simp only [multiExtend, multiExtendLoopless, Matroid.ofExistsMatroid, restrict_indep_iff,
+    IndepMatroid.matroid_Indep, and_iff_left_iff_imp, and_imp]
+  grind
+
+lemma multiExtend_delete_loops (N : Matroid β) (L : Set α) (P : β → Set α)
+    {dj : N.E.Pairwise (Disjoint on P)}  (hLP : ∀ i ∈ N.E, Disjoint (P i) L):
+    (multiExtend N P L dj) ＼ L = multiExtendLoopless N P dj := by
+  refine ext_indep (by simpa) <| ?_
+  simp only [delete_indep_iff, multiExtend_indep_iff, multiExtendLoopless_indep]
+  grind
+
+lemma multiExtend_eq_diff (N : Matroid β) (L : Set α) (P : β → Set α)
+    {dj : N.E.Pairwise (Disjoint on P)} :
+    multiExtend N P L dj = multiExtend N P (L \ ⋃ f ∈ N.E, P f) dj :=
+  ext_indep (by simp) (by simp)
+
+lemma multiExtend_indep_iff_of_onUniv (N : Matroid β) [OnUniv N] (L : Set α) (P : β → Set α)
+    {dj : N.E.Pairwise (Disjoint on P)} {I : Set α} :
+    (multiExtend N P L dj).Indep I ↔ N.Indep {f ∈ N.E | ((P f) ∩ I).Nonempty}
+      ∧ (∀ f ∈ N.E, (P f ∩ I).Subsingleton) ∧ I ⊆ ⋃ f ∈ N.E, P f := by
+  simp [multiExtend_indep_iff]
+
+@[simp]
+lemma multiExtend_map {α β γ : Type*} (N : Matroid β) (f : β → γ) (hf : InjOn f N.E)
+    (P : γ → Set α) (L : Set α) (hP) : (N.map f hf).multiExtend P L hP = N.multiExtend (P ∘ f) L
+      ((hf.pairwiseDisjoint_image (f := P)).1 hP) := by
+  refine ext_indep (by simp) fun I hi ↦ ?_
+  simp only [multiExtend_indep_iff, map_ground, mem_image, map_indep_iff, forall_exists_index,
+    and_imp, forall_apply_eq_imp_iff₂, iUnion_exists, biUnion_and', iUnion_iUnion_eq_right,
+    comp_apply, and_congr_left_iff]
+  refine fun hss hIss ↦ ⟨fun ⟨I₀, hI₀, hI₀'⟩ ↦ hI₀.subset ?_, fun hI ↦ ⟨_, hI, by grind⟩⟩
+  rw [← hf.image_subset_image_iff (by grind) hI₀.subset_ground, ← hI₀']
+  grind
+
+lemma multiExtendLoopless_eRank_eq (N : Matroid β) (P : β → Set α)
+    {dj : N.E.Pairwise (Disjoint on P)} (hP : ∀ x ∈ N.E, (P x).Nonempty) :
+    (N.multiExtendLoopless P dj).eRank = N.eRank := by
+  obtain hβ | hβ := isEmpty_or_nonempty β
+  · simp only [eq_emptyOn N, eRank_emptyOn]
+    rw [((emptyOn β).multiExtendLoopless P _).ground_eq_empty_iff.1 ?_, eRank_emptyOn]
+    simp
+  obtain ⟨φ, hφ1, hφ2, h⟩ := multiExtendLoopless_eq_comapOn N P dj hP
+  rw [h, eRank_comapOn _ hφ2]
+
+lemma multiExtend_eRank_eq (N : Matroid β) (L : Set α) (P : β → Set α)
+    {dj : N.E.Pairwise (Disjoint on P)} (hP : ∀ f ∈ N.E, (P f).Nonempty) :
+    (N.multiExtend P L dj).eRank = N.eRank := by
+  rw [multiExtend, eRank_restrict, ← eRk_inter_ground, multiExtendLoopless_ground,
+    inter_eq_self_of_subset_right subset_union_right, ← multiExtendLoopless_ground _ _ dj,
+    eRk_ground, multiExtendLoopless_eRank_eq _ _ hP]
+
+lemma IsSimplification.multiExtendLoopless_eq {N M : Matroid α} [hM : M.Loopless]
+    (hN : N.IsSimplification M) : N.multiExtendLoopless (fun e ↦ {x | M.Parallel e x})
+    hN.setOf_parallel_pairwiseDisjoint = M := by
+  simp only [ext_iff_indep, multiExtendLoopless_ground, ← hN.ground_eq_biUnion_setOf_parallel,
+    multiExtendLoopless_indep, true_and]
+  intro I hI
+  obtain ⟨φ, hφ, hφNE, him, hpim, hidem⟩ := hN.simplifies.exists_eq_comap
+  nth_rw 1 [and_iff_left hI, iff_comm, hφ, comap_indep_iff]
+  simp_rw [hφ, comap_parallel_iff]
+  have auxN {e} (he : e ∈ M.E) : φ e ∈ N.E := by grind
+  have aux {e f} (he : e ∈ M.E) : M.Parallel e f ↔ φ e = φ f := by
+    rw [hφ, comap_parallel_iff, hN.simple.parallel_iff_eq (auxN he)]
+  convert Iff.rfl using 3
+  · ext e
+    simp only [mem_setOf_eq, mem_image]
+    constructor
+    · rintro ⟨heN, ⟨x, hex : N.Parallel _ _, hxI⟩⟩
+      refine ⟨x, hxI, ?_⟩
+      rw [show e = φ e from hφNE heN, ← hidem e, ← hidem x, eq_comm, ← aux]
+      · refine hex.of_isRestriction hN.isRestriction
+      exact hN.isRestriction.subset hex.mem_ground_left
+    rintro ⟨x, hxI, rfl⟩
+    refine ⟨auxN (hI hxI), ⟨x, ?_, hxI⟩⟩
+    rw [mem_setOf_eq, hidem, parallel_self_iff]
+    exact hN.simple.isNonloop_of_mem <| auxN <| hI hxI
+  refine ⟨fun h e heI f hfI hef ↦ ?_, fun h f hfN x ⟨hxf, hxI⟩ y ⟨hyf, hyI⟩ ↦ ?_⟩
+  · refine h (φ e) (auxN (hI heI)) ⟨?_, heI⟩ ⟨?_, hfI⟩
+    · simpa [hidem] using hN.simple.isNonloop_of_mem <| auxN (hI heI)
+    simpa [hef, hidem] using hN.simple.isNonloop_of_mem <| auxN (hI heI)
+  refine h hxI hyI ?_
+  rw [← hN.simple.parallel_iff_eq (auxN (hI hxI))]
+  exact hxf.symm.trans hyf
+
+lemma IsSimplification.multiExtend_eq {N M : Matroid α} (hN : N.IsSimplification M) :
+    N.multiExtend (fun e ↦ {x | M.Parallel e x})
+    M.loops hN.setOf_parallel_pairwiseDisjoint = M := by
+  have aux := hN.isSimplification_removeLoops.multiExtendLoopless_eq
+  simp_rw [removeLoops_parallel_iff] at aux
+  rw [multiExtend, aux, union_comm, ← hN.ground_eq_biUnion_setOf_parallel_union_loops,
+    eq_restrict_removeLoops]
+
+-- (unifOn E 2).multiExtend (fun e ↦ {x | M.Parallel e x}) M.loops ⋯ =
+--   (unifOn ((fun e ↦ {x | M.Parallel e x}) '' E) 2).multiExtend id M.loops ⋯
