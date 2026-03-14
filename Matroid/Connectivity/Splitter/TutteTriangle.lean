@@ -311,7 +311,7 @@ theorem tutte_triangle (hM : M.TutteConnected 3) (hT : M.IsTriangle {e, f, g})
   obtain ⟨K, hK, heK⟩ := tutte_triangle_weak hM hT hcard he hf
   -- If `K = {e,f,g}`, then `M` is `U₂,₄`, and we have some easy bookkeeping to do.
   obtain rfl | hne := eq_or_ne {e, f, g} K
-  · have hfin := hT.isFiniteRankUniform_two_four_of_isTriad hK hM
+  · have hfin := hT.isFiniteUniform_two_four_of_isTriad hK hM
     simp only [IsTriad, hfin.dual_eq_self, isTriangle_iff, hfin.isCircuit_iff,
       show (2 : ℕ) + (1 : ℕ∞) = 3 from rfl, encard_eq_three]
     obtain ⟨x, hxE, hxe, hxf, hxg⟩ : ∃ x ∈ M.E, x ≠ e ∧ x ≠ f ∧ x ≠ g := by

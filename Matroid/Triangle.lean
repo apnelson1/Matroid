@@ -333,7 +333,7 @@ lemma IsTriangle.eq_of_isTriad {x y : α} (h : M.IsTriangle {e, f, g}) (h' : M.I
   have h1 := h.reverse.mem_iff_mem_of_isCocircuit h'.isCocircuit
   grind [h.ne₁₃.symm, h.ne₁₂.symm]
 
-lemma IsFiniteRankUniform.isTriangle_iff {b : ℕ∞} (hM : M.IsFiniteRankUniform 2 b) :
+lemma IsFinRankUniform.isTriangle_iff (hM : M.IsFinRankUniform 2) :
     M.IsTriangle C ↔ C.encard = 3 ∧ C ⊆ M.E := by
   grind [Matroid.isTriangle_iff, hM.isCircuit_iff]
 

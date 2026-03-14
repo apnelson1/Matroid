@@ -29,6 +29,9 @@ instance [Simple M] : Loopless M := by
 instance {α : Type*} : Simple (emptyOn α) :=
   ⟨fun he ↦ by simp at he⟩
 
+instance simple_dual_dual [M.Simple] : M✶✶.Simple := by
+  simpa
+
 lemma Simple.loopless (hM : M.Simple) : M.Loopless := by
   infer_instance
 

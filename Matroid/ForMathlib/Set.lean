@@ -101,7 +101,6 @@ lemma sInter_diff_distrib {α : Type*} {s : Set (Set α)} (hs : s.Nonempty) {X :
     and_self, implies_true, true_and]
   exact fun h ↦ (h _ hs.some_mem).2
 
-
 lemma insert_inter_insert_eq {A : Set α} {b c : α} (hne : b ≠ c):
     (insert b A) ∩ (insert c A) = A := by
   aesop
@@ -168,6 +167,11 @@ lemma union_diff_eq_diff {A B C : Set α} (hBC : B ⊆ C) : (A ∪ B) \ C = A \ 
   ext x
   simp only [mem_diff, mem_union, and_congr_left_iff, or_iff_left_iff_imp]
   exact fun a a_1 ↦ (a (hBC a_1)).elim
+
+@[simp]
+lemma insert_eq_singleton_iff {x y : α} {s : Set α} :
+    insert x s = {y} ↔ x = y ∧ ∀ a ∈ s, a = y := by
+  simp +contextual [Set.ext_iff, iff_def]
 
 -- theorem exists_pairwiseDisjoint_iUnion_eq (s : ι → Set α) :
 --     ∃ t : ι → Set α, Pairwise (Disjoint on t) ∧ ⋃ i, t i = ⋃ i, s i ∧ ∀ i, t i ⊆ s i:= by

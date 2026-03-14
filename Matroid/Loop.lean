@@ -18,6 +18,68 @@ open scoped symmDiff
 
 namespace Matroid
 
+/-- A non-coloop of `M` is a nonloop of `M✶`. -/
+def IsNonColoop (M : Matroid α) (e : α) := M✶.IsNonloop e
+
+@[aesop unsafe 20% (rule_sets := [Matroid]), grind →]
+lemma IsNonColoop.mem_ground (h : M.IsNonColoop e) : e ∈ M.E :=
+  IsNonloop.mem_ground (M := M✶) h
+
+lemma IsNonColoop.not_isColoop (h : M.IsNonColoop e) : ¬ M.IsColoop e :=
+  IsNonloop.not_isLoop (M := M✶) h
+
+lemma IsColoop.not_isNonColoop (h : M.IsColoop e) : ¬ M.IsNonColoop e :=
+  IsLoop.not_isNonloop (M := M✶) h
+
+@[simp]
+lemma isNonColoop_dual : M✶.IsNonColoop e ↔ M.IsNonloop e := by
+  simp [IsNonColoop]
+
+@[simp]
+lemma isNonloop_dual : M✶.IsNonloop e ↔ M.IsNonColoop e := by
+  simp [IsNonColoop]
+
+lemma not_isColoop_iff (he : e ∈ M.E := by aesop_mat) : ¬ M.IsColoop e ↔ M.IsNonColoop e := by
+  rw [IsNonColoop, IsColoop, not_isLoop_iff]
+
+lemma not_isNonColoop_iff (he : e ∈ M.E := by aesop_mat) : ¬ M.IsNonColoop e ↔ M.IsColoop e := by
+  rw [IsNonColoop, IsColoop, not_isNonloop_iff]
+
+lemma isNonColoop_iff : M.IsNonColoop e ↔ ¬ M.IsColoop e ∧ e ∈ M.E := by
+  rw [IsNonColoop, isNonloop_iff]
+  rfl
+
+/-- A matroid is coloopless if its dual is loopless. -/
+@[mk_iff]
+class Coloopless (M : Matroid α) : Prop where
+  dual_loopless : M✶.Loopless
+
+instance dual_loopless [M.Coloopless] : M✶.Loopless :=
+  Coloopless.dual_loopless
+
+instance dual_coloopless [M.Loopless] : M✶.Coloopless :=
+  ⟨by simpa⟩
+
+@[simp]
+lemma coloops_eq_empty (M : Matroid α) [M.Coloopless] : M.coloops = ∅ := by
+  have hM' : M✶.Loopless := Coloopless.dual_loopless
+  exact M✶.loops_eq_empty
+
+lemma Coloopless.coloops_eq_empty (hM : M.Coloopless) : M.coloops = ∅ :=
+  M.coloops_eq_empty
+
+lemma coloops_eq_empty_iff : M.coloops = ∅ ↔ M.Coloopless := by
+  rw [coloopless_iff, coloops, ← loopless_iff]
+
+@[simp]
+lemma dual_loopless_iff : M✶.Loopless ↔ M.Coloopless := by
+  refine ⟨fun h ↦ ⟨h⟩, fun h ↦ ⟨?_⟩⟩
+  simp
+
+lemma isNonColoop_of_mem [M.Coloopless] (he : e ∈ M.E) : M.IsNonColoop e := by
+  have hM : M✶.Loopless := Coloopless.dual_loopless
+  exact isNonloop_of_loopless he
+
 @[simp]
 lemma mem_loops_iff : e ∈ M.loops ↔ M.IsLoop e := Iff.rfl
 
@@ -63,10 +125,12 @@ lemma loops_disjoint_setOf_isNonloop (M : Matroid α) : Disjoint M.loops {e | M.
 lemma loops_disjoint_coloops (M : Matroid α) : Disjoint M.loops M.coloops :=
   M.loops_disjoint_setOf_isNonloop.mono_right fun _ he ↦ IsColoop.isNonloop he
 
-
 /-- a version of `isNonloop_of_loopless` that works with dot notation -/
 lemma Loopless.isNonloop_of_mem (h : M.Loopless) (he : e ∈ M.E) : M.IsNonloop e :=
   isNonloop_of_loopless he
+
+lemma Coloopless.isNonColoop_of_mem (hM : M.Coloopless) (he : e ∈ M.E) : M.IsNonColoop e :=
+  hM.dual_loopless.isNonloop_of_mem he
 
 lemma Loopless.not_isLoop (h : M.Loopless) (e) : ¬ M.IsLoop e :=
   M.not_isLoop e
@@ -88,7 +152,7 @@ lemma removeColoops_dual : M.removeColoops✶ = M✶.removeLoops := by
 
 @[simp]
 lemma removeColoops_coloops : M.removeColoops.coloops = ∅ := by
-  simp [removeColoops, dual_coloops]
+  simp [removeColoops]
 
 lemma union_dep_iff_dep_of_subset_coloops (hX : X ⊆ M.coloops) : M.Dep (D ∪ X) ↔ M.Dep D := by
   rw [Dep, union_indep_iff_indep_of_subset_coloops hX, Dep, union_subset_iff,
@@ -97,6 +161,15 @@ lemma union_dep_iff_dep_of_subset_coloops (hX : X ⊆ M.coloops) : M.Dep (D ∪ 
 lemma diff_dep_iff_dep_of_subset_coloops (hX : X ⊆ M.coloops) : M.Dep (D \ X) ↔ M.Dep D := by
   rwa [← union_dep_iff_dep_of_subset_coloops hX, diff_union_self,
     union_dep_iff_dep_of_subset_coloops]
+
+@[simp]
+lemma removeColoops_eq_self (M : Matroid α) [M.Coloopless] : M.removeColoops = M := by
+  rw [removeColoops]
+  simp
+
+instance removeColoops_coloopless (M : Matroid α) : M.removeColoops.Coloopless := by
+  rw [← dual_loopless_iff, removeColoops_dual]
+  exact M✶.removeLoops_loopless
 
 attribute [simp] union_coloops_indep_iff
 
@@ -267,8 +340,12 @@ end IsLoopEquiv
 
 section Loopless
 
-instance freeOn_loopless (E : Set α) : Loopless (freeOn E) := by
+instance freeOn_loopless (E : Set α) : (freeOn E).Loopless := by
   simp [loopless_iff_forall_not_isLoop]
+
+instance loopless_dual_loopyOn {E : Set α} : (loopyOn E)✶.Loopless := by
+  rw [loopyOn_dual_eq]
+  infer_instance
 
 @[simp]
 lemma OnUniv.toIsNonloop [Loopless M] [OnUniv M] (e : α) : M.IsNonloop e :=
@@ -291,6 +368,14 @@ lemma OnUniv.toIsNonloop [Loopless M] [OnUniv M] (e : α) : M.IsNonloop e :=
 lemma removeLoops_isNonloop_iff : M.removeLoops.IsNonloop e ↔ M.IsNonloop e := by
   rw [removeLoops_eq_restrict, restrict_isNonloop_iff, mem_setOf, and_self]
 
+@[simp]
+lemma removeLoops_removeLoops : M.removeLoops.removeLoops = M.removeLoops := by
+  simp [removeLoops]
+
+@[simp]
+lemma removeColoops_removeColoops : M.removeColoops.removeColoops = M.removeColoops := by
+  simp [removeColoops]
+
 end Loopless
 
 @[simp]
@@ -300,6 +385,17 @@ lemma loopyOn_loops (E : Set α) : (loopyOn E).loops = E := by
 @[simp]
 lemma loopyOn_coloops (E : Set α) : (loopyOn E).coloops = ∅ := by
   simp [coloops]
+
+instance loopyOn_coloopless {E : Set α} : (loopyOn E).Coloopless := by
+  simp [← coloops_eq_empty_iff]
+
+instance emptyOn_coloopless {α} : (emptyOn α).Coloopless := by
+  rw [← loopyOn_empty]
+  infer_instance
+
+@[simp]
+lemma loopyOn_not_isNonloop (E : Set α) (e : α) : ¬ (loopyOn E).IsNonloop e := by
+  simp [isNonloop_iff]
 
 @[simp]
 lemma removeLoops_isColoop_eq (M : Matroid α) : M.removeLoops.IsColoop = M.IsColoop := by
@@ -314,6 +410,19 @@ lemma removeLoops_coloops_eq (M : Matroid α) : M.removeLoops.coloops = M.coloop
 @[simp]
 lemma removeColoops_loops_eq (M : Matroid α) : M.removeColoops.loops = M.loops := by
   rw [← dual_coloops, removeColoops_dual, removeLoops_coloops_eq, dual_coloops]
+
+@[simp]
+lemma loopyOn_removeLoops (E : Set α) : (loopyOn E).removeLoops = emptyOn α := by
+  simp [removeLoops_eq_restrict]
+
+@[simp]
+lemma loopyOn_removeColoops (E : Set α) : (loopyOn E).removeColoops = loopyOn E := by
+  rw [removeColoops_eq_self]
+
+@[simp]
+lemma freeOn_removeColoops (E : Set α) : (freeOn E).removeColoops = emptyOn α := by
+  rw [← dual_inj, removeColoops_dual]
+  simp
 
 lemma restrict_removeLoops (R : Set α) : (M ↾ R).removeLoops = (M ↾ (R ∩ M.E)).removeLoops := by
   rw [removeLoops_eq_restrict, restrict_restrict_eq _ (by simp [subset_def]),

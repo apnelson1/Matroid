@@ -290,10 +290,10 @@ lemma VerticallyConnected.sparsePaving_of_cyclicallyConnected (hv : M.Vertically
     refine aux hc.dual_verticallyConnected hv.dual_cyclicallyConnected (X := M.E \ X)
       diff_subset hns.codep_compl ?_ ?_ ?_
     · rwa [nonspanning_compl_dual_iff]
-    · rwa [← isCocircuit_def, isCocircuit_compl_iff_isHyperplane, isHyperplane_compl_dual_iff,
-        imp_not_comm]
+    · rwa [isCircuitHyperplane_iff, ← isCocircuit_def, isCocircuit_compl_iff_isHyperplane,
+        isHyperplane_compl_dual_iff, and_comm, ← isCircuitHyperplane_iff]
     rw [← isCocircuit_def, isCocircuit_compl_iff_isHyperplane]
-    exact hch hnot
+    exact fun h' ↦ hch ⟨hnot, h'⟩
   obtain ⟨C, hCX, hC⟩ := hd.exists_isCircuit_subset
   have h_eq := (hc.compl_indep_of_dep hC.dep).eq_of_spanning_subset
     (hv.compl_spanning_of_nonspanning hns) (diff_subset_diff_right hCX)

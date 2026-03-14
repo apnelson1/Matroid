@@ -10,7 +10,23 @@ variable {α : Type*} {N M : Matroid α} {B C D X : Set α} {e f : α}
 
 namespace Matroid
 
+@[mk_iff]
+structure IsCircuitHyperplane (M : Matroid α) (C : Set α) : Prop where
+  isCircuit : M.IsCircuit C
+  isHyperplane : M.IsHyperplane C
 
+-- do aesop tag
+@[grind →]
+lemma IsCircuitHyperplane.subset_ground (hC : M.IsCircuitHyperplane C) : C ⊆ M.E :=
+  hC.1.subset_ground
+
+lemma IsCircuitHyperplane.compl_dual (hC : M.IsCircuitHyperplane C) :
+    M✶.IsCircuitHyperplane (M.E \ C) := by
+  refine ⟨hC.isHyperplane.compl_isCocircuit, hC.isCircuit.compl_isHyperplane_dual⟩
+
+lemma isCircuitHyperplane_dual_iff (hC : C ⊆ M.E := by aesop_mat) :
+    M✶.IsCircuitHyperplane C ↔ M.IsCircuitHyperplane (M.E \ C) :=
+  ⟨fun h ↦ by simpa using h.compl_dual, fun h ↦ diff_diff_cancel_left hC ▸ h.compl_dual⟩
 
 /-- A `Paving` matroid is one whose truncation is uniform, or equivalently one where every
 dependent set is a single insertion away from being spanning. -/
@@ -248,21 +264,22 @@ lemma SparsePaving.isHyperplane_of_dep_of_nonspanning {H : Set α} (hM : M.Spars
   · rwa [← codep_def, codep_compl_iff]
   rwa [nonspanning_compl_dual_iff]
 
-theorem SparsePaving.indep_or_spanning_or_isCircuit_isHyperplane (hM : M.SparsePaving)
-    (hXE : X ⊆ M.E) : M.Indep X ∨ M.Spanning X ∨ (M.IsCircuit X ∧ M.IsHyperplane X) := by
+theorem SparsePaving.indep_or_spanning_or_isCircuitHyperplane (hM : M.SparsePaving)
+    (hXE : X ⊆ M.E) : M.Indep X ∨ M.Spanning X ∨ M.IsCircuitHyperplane X := by
   rw [or_iff_not_imp_left, not_indep_iff, or_iff_not_imp_left, not_spanning_iff]
   exact fun hXd hXs ↦ ⟨hM.isCircuit_of_dep_of_nonspanning hXd hXs,
     hM.isHyperplane_of_dep_of_nonspanning hXd hXs⟩
 
 theorem sparsePaving_iff_forall_indep_or_spanning_or_isCircuit_isHyperplane :
-    M.SparsePaving ↔ ∀ X ⊆ M.E, M.Indep X ∨ M.Spanning X ∨ (M.IsCircuit X ∧ M.IsHyperplane X) := by
+    M.SparsePaving ↔ ∀ X ⊆ M.E, M.Indep X ∨ M.Spanning X ∨ (M.IsCircuitHyperplane X) := by
   suffices aux : ∀ (M : Matroid α),
-    (∀ X ⊆ M.E, M.Indep X ∨ M.Spanning X ∨ M.IsCircuit X ∧ M.IsHyperplane X) → M.Paving
-  · refine ⟨fun h X hX ↦ h.indep_or_spanning_or_isCircuit_isHyperplane hX,
+    (∀ X ⊆ M.E, M.Indep X ∨ M.Spanning X ∨ M.IsCircuitHyperplane X) → M.Paving
+  · refine ⟨fun h X hX ↦ h.indep_or_spanning_or_isCircuitHyperplane hX,
       fun h ↦ ⟨aux M h, aux M✶ fun X hX ↦ ?_⟩⟩
     rw [← coindep_def, coindep_iff_compl_spanning, M✶.spanning_iff_compl_coindep,
-      dual_coindep_iff, dual_ground, ← isCocircuit_def, ← isHyperplane_compl_iff_isCocircuit,
-      ← M✶.isCocircuit_compl_iff_isHyperplane, dual_ground, dual_isCocircuit_iff]
+      dual_coindep_iff, dual_ground, isCircuitHyperplane_iff, ← isCocircuit_def,
+      ← isHyperplane_compl_iff_isCocircuit, ← M✶.isCocircuit_compl_iff_isHyperplane,
+      dual_ground, dual_isCocircuit_iff,  and_comm, ← isCircuitHyperplane_iff]
     specialize h (M.E \ X) diff_subset
     tauto
   clear! M

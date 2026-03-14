@@ -116,6 +116,9 @@ lemma IsCocircuit.compl_isHyperplane {K : Set α} (hK : M.IsCocircuit K) :
     M.IsHyperplane (M.E \ K) :=
   (isHyperplane_compl_iff_isCocircuit hK.subset_ground).mpr hK
 
+lemma IsCircuit.compl_isHyperplane_dual (h : M.IsCircuit C) : M✶.IsHyperplane (M.E \ C) :=
+  h.isCocircuit.compl_isHyperplane
+
 lemma Nonspanning.exists_isHyperplane_supset (h : M.Nonspanning X) :
     ∃ H, X ⊆ H ∧ M.IsHyperplane H := by
   obtain ⟨C, hCX, hC⟩ := h.codep_compl.exists_isCocircuit_subset

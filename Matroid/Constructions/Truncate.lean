@@ -531,10 +531,14 @@ lemma IsBase.isBase_of_indep_of_finDiff (hB : M.IsBase B) (hI : M.Indep I) (hBI 
   obtain ⟨B', hB', hIB'⟩ := hI.exists_isBase_superset
   have hfin' : FinDiff B B' := by
     rw [finDiff_iff, hB'.encard_diff_comm hB, and_iff_left rfl]
-    exact hBI.diff_left_finite.subset (diff_subset_diff_right hIB')
+    exact hBI.diff_finite.subset (diff_subset_diff_right hIB')
   rwa [(hBI.symm.trans hfin').eq_of_subset hIB']
 
-
+lemma IsBase.isBase_of_spanning_of_finDiff {S : Set α} (hB : M.IsBase B) (hS : M.Spanning S)
+    (hBS : FinDiff B S) : M.IsBase S := by
+  rw [← M.dual_dual, dual_isBase_iff]
+  exact hB.compl_isBase_dual.isBase_of_indep_of_finDiff hS.compl_coindep <|
+    hBS.diff_right hB.subset_ground hS.subset_ground
 /--
 A `TruncateFamily` is a collection of nonempty bases of `M` such that,
 for any two bases of `M` that both contain bases for a common hyperplane,
@@ -591,7 +595,8 @@ lemma ToTruncate.toTruncate_of_closure (hI : T.ToTruncate (insert e I)) (heI : e
 lemma ToTruncate.exchange (hB : T.ToTruncate B) (heB : e ∉ B) (hfB : f ∈ B)
     (h_indep : M.Indep (insert e (B \ {f}))) : T.ToTruncate (insert e (B \ {f})) := by
   have hef : e ≠ f := by rintro rfl; contradiction
-  have h_isBase := hB.isBase.isBase_of_indep_of_finDiff h_indep (finDiff_exchange hfB heB)
+  have h_isBase := hB.isBase.isBase_of_indep_of_finDiff h_indep
+    (isExchange_diff_insert hfB heB).finDiff
   exact T.toTruncate_of_toTruncate hB hfB h_isBase (mem_insert _ _)
     <| by simp [diff_singleton_eq_self (show e ∉ B \ {f} by simp [heB, hef])]
 
@@ -614,8 +619,9 @@ lemma ToTruncate.finDiff {B B' : Set α} (hB : T.ToTruncate B) (hB' : M.IsBase B
   have hlt : ((insert e (B' \ {f})) \ B).encard < (B' \ B).encard := by
     rw [insert_diff_of_mem _ he.1, diff_diff_comm, ← encard_diff_singleton_add_one hf,
       ENat.lt_add_one_iff]
-    simpa using hdiff.diff_right_finite.diff
-  have hfd : FinDiff B (insert e (B' \ {f})) := hdiff.trans (finDiff_exchange hf.1 he.2)
+    simpa using hdiff.symm.diff_finite.diff
+  have hfd : FinDiff B (insert e (B' \ {f})) :=
+    hdiff.trans_exchange <| isExchange_diff_insert hf.1 he.2
   exact (TruncateFamily.ToTruncate.finDiff hB heB hfd).of_exchange he.2 hf.1 hB'
 termination_by (B' \ B).encard
 
@@ -809,8 +815,7 @@ lemma eq_top_or_bot_of_rankFinite [RankFinite M] (T : M.TruncateFamily) :
   ext B
   simp only [top_ToTruncate]
   refine ⟨fun h ↦ ⟨h.isBase, h.nonempty⟩, fun ⟨hB, hBne⟩ ↦ ?_⟩
-  exact hB₀.finDiff hB <| (finDiff_iff _ _).2
-    ⟨hB₀.isBase.finite.diff, hB₀.isBase.encard_diff_comm hB⟩
+  exact hB₀.finDiff hB <| finDiff_iff.2 ⟨hB₀.isBase.finite.diff, hB₀.isBase.encard_diff_comm hB⟩
 
 lemma eq_top_or_bot_of_rankFinite_dual [RankFinite M✶] (T : M.TruncateFamily) :
     T = top M ∨ T = bot M := by
@@ -823,7 +828,7 @@ lemma eq_top_or_bot_of_rankFinite_dual [RankFinite M✶] (T : M.TruncateFamily) 
   ext B
   simp only [top_ToTruncate]
   refine ⟨fun h ↦ ⟨h.isBase, h.nonempty⟩, fun ⟨hB, hBne⟩ ↦ ?_⟩
-  refine hB₀.finDiff hB <| (finDiff_iff _ _).2 ⟨?_, ?_⟩
+  refine hB₀.finDiff hB <| finDiff_iff.2 ⟨?_, ?_⟩
   · exact hB.compl_isBase_dual.finite.subset <| diff_subset_diff_left hB₀.isBase.subset_ground
   convert hB.compl_isBase_dual.encard_diff_comm hB₀.isBase.compl_isBase_dual using 2
   · rw [diff_diff_right, diff_eq_empty.2 diff_subset, empty_union, inter_comm,

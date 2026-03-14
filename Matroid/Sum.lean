@@ -316,11 +316,11 @@ lemma disjointSum_restrict_right (hMN : Disjoint M.E N.E) : (disjointSum M N hMN
   (isRestriction_disjointSum_right hMN).eq_restrict
 
 @[simp]
-lemma emptyOn_disjointSum : disjointSum M (emptyOn α) (by simp) = M :=
+lemma emptyOn_disjointSum : disjointSum (emptyOn α) M (by simp) = M :=
   ext_indep (by simp) <| by simp +contextual [inter_eq_self_of_subset_left]
 
 @[simp]
-lemma disjointSum_emptyOn : disjointSum (emptyOn α) M (by simp) = M :=
+lemma disjointSum_emptyOn : disjointSum M (emptyOn α) (by simp) = M :=
   ext_indep (by simp) <| by simp +contextual [inter_eq_self_of_subset_left]
 
 instance disjointSum_nonempty_left [M.Nonempty] (hMN : Disjoint M.E N.E) :
@@ -403,6 +403,10 @@ lemma disjointSum_restrict_union {S T : Set α} (hdj : Disjoint M.E N.E) (hS : S
   rw [disjointSum_eq_disjointSigma, union_eq_iUnion, disjointSigma_restrict_iUnion _ _ (by grind),
     disjointSum_eq_disjointSigma]
   convert rfl with (i | i)
+
+lemma disjointSum_encard_ground (hdj : Disjoint M.E N.E) :
+    (M.disjointSum N hdj).E.encard = M.E.encard + N.E.encard := by
+  rw [disjointSum_ground_eq, encard_union_eq hdj]
 
 end disjointSum
 

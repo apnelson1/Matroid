@@ -184,6 +184,24 @@ theorem mul_eq_top_iff : a * b = ⊤ ↔ (a = ⊤ ∧ b ≠ 0) ∨ (a ≠ 0 ∧ 
   | coe b => simp only [coe_ne_top, ne_eq, false_and, and_false, or_self, ← coe_mul]
 
 @[simp]
+protected lemma ofNat_mul_eq_top_iff {n : ℕ} [n.AtLeastTwo] {a : ℕ∞} :
+    ofNat(n) * a = ⊤ ↔ a = ⊤ := by
+  simp [mul_eq_top_iff]
+
+@[simp]
+protected lemma mul_ofNat_eq_top_iff {n : ℕ} [n.AtLeastTwo] {a : ℕ∞} :
+    a * ofNat(n) = ⊤ ↔ a = ⊤ := by
+  simp [mul_eq_top_iff]
+
+@[simp]
+protected lemma coe_mul_eq_top_iff {n : ℕ} {a : ℕ∞} : a * n = ⊤ ↔ a = ⊤ ∧ n ≠ 0 := by
+  simp [mul_eq_top_iff]
+
+@[simp]
+protected lemma mul_coe_eq_top_iff {n : ℕ} {a : ℕ∞} : n * a = ⊤ ↔ a = ⊤ ∧ n ≠ 0 := by
+  simp [mul_eq_top_iff, and_comm]
+
+@[simp]
 protected theorem add_eq_left_iff {a b : ℕ∞} : a + b = a ↔ a = ⊤ ∨ b = 0 := by
   cases a with
   | top => simp

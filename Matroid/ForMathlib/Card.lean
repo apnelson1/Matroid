@@ -1,4 +1,5 @@
 import Mathlib.Data.Set.Card
+import Matroid.ForMathlib.ENat
 import Mathlib.Algebra.BigOperators.WithTop
 import Mathlib.Algebra.BigOperators.Finprod
 import Mathlib.Tactic.ENatToNat
@@ -98,6 +99,9 @@ theorem Set.encard_le_cast_iff {n : ℕ} :
 
 lemma finite_of_encard_eq_ofNat {n : ℕ} [n.AtLeastTwo] (h : s.encard = ofNat(n)) : s.Finite :=
   finite_of_encard_eq_coe h
+
+lemma finite_of_encard_le_ofNat {n : ℕ} [n.AtLeastTwo] (h : s.encard ≤ ofNat(n)) : s.Finite :=
+  finite_of_encard_le_coe h
 
 lemma finite_of_encard_eq_one (h : s.encard = 1) : s.Finite :=
   finite_of_encard_eq_coe h
@@ -292,8 +296,47 @@ lemma Set.eq_of_encard_le_three_of_mem_of_mem_of_mem {x y z} (hs : s.encard ≤ 
   grw [← encard_lt_top_iff, hs]
   simp
 
-  -- induction L with
-  -- | nil => simp
-  -- | cons a L ih =>
-  --   simp only [mem_cons, setOf_or, setOf_eq_eq_singleton, singleton_union, length_cons,
-  --     Nat.cast_add, Nat.cast_one]
+lemma nonempty_of_ofNat_le_encard [n.AtLeastTwo] (hs : ofNat(n) ≤ s.encard) : s.Nonempty := by
+  grw [← one_le_encard_iff_nonempty, ← hs]
+  simp
+
+lemma exists_of_encard_add_encard_eq_one (h : s.encard + t.encard = 1) :
+    ∃ x, (s = ∅ ∧ t = {x}) ∨ (s = {x} ∧ t = ∅) := by
+  obtain rfl | ⟨x, hx⟩ := s.eq_empty_or_nonempty
+  · rw [encard_empty, zero_add, encard_eq_one] at h
+    obtain ⟨x, rfl⟩ := h
+    simp
+  obtain ⟨hs0, rfl⟩ : s ⊆ {x} ∧ t = ∅ := by
+    simpa [← encard_diff_singleton_add_one hx, add_right_comm _ 1 t.encard, diff_eq_empty] using h
+  exact ⟨x, .inr ⟨hs0.antisymm (by simpa), rfl⟩⟩
+
+lemma exists_of_encard_add_encard_eq_two (h : s.encard + t.encard = 2) (hdj : Disjoint s t) :
+    ∃ x y, x ≠ y ∧ ((s = ∅ ∧ t = {x, y}) ∨ (s = {x} ∧ t = {y}) ∨ (s = {x, y} ∧ t = ∅)) := by
+  obtain rfl | ⟨x, hx⟩ := t.eq_empty_or_nonempty
+  · rw [encard_empty, add_zero, encard_eq_two] at h
+    grind
+  rw [← encard_diff_singleton_add_one hx, ← add_assoc, ← one_add_one_eq_two,
+    ENat.add_one_eq_add_one_iff] at h
+  obtain ⟨y, ⟨rfl, ht⟩ | ⟨rfl, ht⟩⟩ := exists_of_encard_add_encard_eq_one h
+  · obtain rfl : t = {x, y} := by grind
+    grind
+  obtain rfl : t = {x} := by grind [diff_eq_empty]
+  use y, x; grind
+
+lemma exists_of_encard_add_encard_eq_three (h : s.encard + t.encard = 3) (hdj : Disjoint s t) :
+    ∃ x y z, x ≠ y ∧ x ≠ z ∧ y ≠ z ∧
+      ((s = ∅ ∧ t = {x, y, z}) ∨ (s = {x} ∧ t = {y, z}) ∨ (s = {x, y} ∧ t = {z})
+      ∨ (s = {x, y, z} ∧ t = ∅)) := by
+  obtain rfl | ⟨x, hx⟩ := t.eq_empty_or_nonempty
+  · rw [encard_empty, add_zero, encard_eq_three] at h
+    grind
+  rw [← encard_diff_singleton_add_one hx, ← add_assoc, show (3 : ℕ∞) = 2 + 1 from rfl,
+    ENat.add_one_inj] at h
+  obtain ⟨y, z, hyz, ⟨rfl, ht⟩ | ⟨rfl, ht⟩ | ⟨rfl, ht⟩⟩ :=
+    exists_of_encard_add_encard_eq_two h (by grind)
+  · obtain rfl : t = {x, y, z} := by grind
+    grind
+  · obtain rfl : t = {x, z} := by grind
+    use y, x, z; grind
+  obtain rfl : t = {x} := by grind [diff_eq_empty]
+  use z, y, x; grind

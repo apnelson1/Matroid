@@ -405,7 +405,7 @@ lemma IsFan.eRk_le (h : M.IsFan F b c) (hlen : 3 ≤ F.length) :
       · simp [h.bool_right_eq]
       exact mem_of_mem_of_subset hT.mem_closure₁ <| M.closure_subset_closure <| by grind
 
-lemma IsFiniteRankUniform.exists_isFan (h : M.IsFiniteRankUniform 2 4) (b : Bool) :
+lemma IsFiniteUniform.exists_isFan (h : M.IsFiniteUniform 2 4) (b : Bool) :
     ∃ F, M.IsFan F b (!b) ∧ {e | e ∈ F} = M.E := by
   obtain ⟨x, y, z, w, hxy, hxz, hxw, hyz, hyw, hzw, hE⟩ := encard_eq_four.1 h.encard_eq
   refine ⟨[x, y, z, w], ?_, by simp [hE, Set.ext_iff]⟩
@@ -413,7 +413,7 @@ lemma IsFiniteRankUniform.exists_isFan (h : M.IsFiniteRankUniform 2 4) (b : Bool
 
 -- lemma Triassic.exists_fan (hM : M.Triassic) (hfin : M.Finite) (hne : M.Nonempty)
 --     (hconn : M.TutteConnected 3) : ∃ F c, M.IsFan F false c ∧ {e | e ∈ F} = M.E := by
---   by_cases hU : M.IsFiniteRankUniform 2 4
+--   by_cases hU : M.IsFiniteUniform 2 4
 --   · grind [hU.exists_isFan false]
 --   suffices aux : ∀ (n : ℕ), n ≤ M.E.encard → ∃ F b, M.IsFan F b false ∧ n ≤ F.length
 --   · have hcard := hfin.ground_finite.encard_eq_coe_toFinset_card

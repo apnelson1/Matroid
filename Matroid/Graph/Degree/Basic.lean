@@ -168,7 +168,7 @@ lemma natCast_degree_eq (G : Graph α β) [G.LocallyFinite] (v : α) :
     (G.degree v : ℕ∞) = G.eDegree v := by
   rw [degree, ENat.coe_toNat_eq_self, ← lt_top_iff_ne_top]
   refine (G.eDegree_le_two_mul_encard_setOf_inc v).trans_lt ?_
-  simp [lt_top_iff_ne_top, Ne, ENat.mul_eq_top_iff, G.finite_incEdges]
+  simp [lt_top_iff_ne_top, Ne, G.finite_incEdges]
 
 @[simp]
 lemma eDegree_lt_top [G.LocallyFinite] : G.eDegree x < ⊤ := by
@@ -383,7 +383,7 @@ lemma natCast_degree_eq_iff (G : Graph α β) (v : α) :
     (G.degree v : ℕ∞) = G.eDegree v ↔ E(G, v).Finite := by
   rw [degree, ENat.coe_toNat_eq_self, ← lt_top_iff_ne_top, eDegree_eq_encard_add_encard,
     incEdges_eq_isLoopAt_union_isNonloopAt]
-  simp [lt_top_iff_ne_top, ENat.mul_eq_top_iff]
+  simp [lt_top_iff_ne_top]
 
 
 /-! ### Subgraphs -/
