@@ -188,14 +188,14 @@ alias ⟨_, IsSetCut.vertexSet_inter_right⟩ := isSetCut_vertexSet_inter_right_
 lemma IsSetCut.of_vertexDelete (h : (G - X).IsSetCut S T C) : G.IsSetCut S T ((X ∩ V(G)) ∪ C) where
   subset_vertexSet := by
     simp only [union_subset_iff, inter_subset_right, true_and]
-    exact h.subset_vertexSet.trans (by simp [diff_subset])
+    exact h.subset_vertexSet.trans (by simp)
   ST_disconnects h1 := by
     refine h.ST_disconnects ?_
     convert h1 using 1
     rw [vertexDelete_vertexDelete, ← vertexDelete_vertexSet_inter, inter_comm,
       union_inter_distrib_right]
     congr
-    exact inter_eq_left.mpr <| h.subset_vertexSet.trans (by simp [diff_subset])
+    exact inter_eq_left.mpr <| h.subset_vertexSet.trans <| by simp
 
 @[simps (attr := grind =)]
 lemma IsSetCut.of_vertexDelete' (hC : (G - X).IsSetCut S T C) :

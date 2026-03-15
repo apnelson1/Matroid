@@ -13,8 +13,8 @@ variable {α : Type*} {ι : Sort*} {η : Type*} {A : Set η} {M : Matroid α} {B
 
 section IsMutualBasis
 
-/-- A base `B` is a mutual base for an indexed set family if it contains a basis for each set
-in the family. -/
+/-- An independent sets is a mutual basis for an indexed set family if it contains a basis
+for each set in the family. -/
 @[mk_iff]
 structure IsMutualBasis (M : Matroid α) (B : Set α) (Xs : ι → Set α) : Prop where
   indep : M.Indep B
@@ -346,7 +346,7 @@ lemma IsModularFamily.of_contract_indep (h : (M ／ I).IsModularFamily Xs) (hI :
   rw [← inter_union_distrib_right]
   refine union_subset ((h i).subset_closure.trans ?_)
     (M.subset_closure_of_subset' subset_union_right)
-  simp [contract_closure_eq, diff_subset]
+  simp [contract_closure_eq]
 
 /-- A mutual basis can be chosen to contain a prescribed independent subset of the intersection. -/
 lemma IsModularFamily.exists_isMutualBasis_superset_of_indep_of_subset_inter

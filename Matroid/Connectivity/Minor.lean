@@ -53,7 +53,8 @@ lemma multiConn_dual_eq_eRank_project (hdj : Pairwise (Disjoint on X)) (hu : ⋃
     · exact hI i
     grw [contract_ground, diff_diff_cancel_left (hXE i), diff_subset]
   rw [multiConn_eq_nullity_iUnion'' hdj (fun i ↦ (hI' i).isBasis'), nullity_eq_eRank_restrict_dual,
-    ← delete_compl, dual_delete_dual, dual_ground, eRank_project]
+    ← delete_compl (by grw [iUnion_mono (fun _ ↦ diff_subset), hu, dual_ground]),
+    dual_delete_dual, dual_ground, eRank_project]
   congr
   grw [subset_antisymm_iff, diff_subset_iff, ← iUnion_union_distrib, subset_diff,
     iUnion_congr (fun i ↦ diff_union_of_subset (hI i).subset), hu, and_iff_right rfl.subset,
@@ -578,7 +579,7 @@ lemma eConn_contract_diff_eq_self_iff_skew_skew (hconn : (M ／ C).eConn (X \ C)
     replace h := h.symm.le
     grw [← eConn_contract_le (C := C ∩ X), contract_contract, diff_union_inter,
       eConn_contract_eq_eConn_contract_diff, ENat.add_le_left_iff, or_iff_right hconn] at h
-    rwa [← eLocalConn_eq_zero]
+    rwa [← eLocalConn_eq_zero hX (by grind)]
   rw [M.eConn_eq_eConn_contract_subset_add (C := C ∩ X) inter_subset_right] at h
   replace h := h.symm.le
   grw [← (eConn_contract_le (C := C \ X)), contract_contract, inter_union_diff,

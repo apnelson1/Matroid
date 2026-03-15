@@ -174,7 +174,7 @@ lemma induce_map_isSpanningSubgraph : f ''ᴳ (G[X]) ≤s (f ''ᴳ G)[f '' X] wh
 lemma map_vertexDelete_isInducedSubgraph : (f ''ᴳ G) - (f '' X) ≤i f ''ᴳ (G - X) where
   le := by
     constructor
-    · simp [subset_image_diff]
+    · grind [map_vertexSet]
     simp only [vertexDelete_isLink_iff, map_isLink, mem_image, not_exists, not_and, and_imp,
       forall_exists_index]
     grind

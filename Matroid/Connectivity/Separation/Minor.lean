@@ -58,7 +58,7 @@ lemma apply_inter_ground_of_contract (P : (M ／ C).Separation) (i : Bool) : P i
 
 @[simp]
 lemma apply_inter_ground_of_remove (P : (M.remove b X).Separation) (i : Bool) : P i ∩ M.E = P i :=
-  inter_eq_self_of_subset_left <| P.subset.trans <| by simp [diff_subset]
+  inter_eq_self_of_subset_left <| P.subset.trans <| by simp
 
 @[simp]
 lemma compl_union_contract (P : (M ／ C).Separation) (i : Bool) : M.E \ (P i ∪ C) = P !i := by
@@ -99,7 +99,7 @@ set_option backward.isDefEq.respectTransparency false in
 @[simp]
 lemma induce_apply_remove (P : M.Separation) (X : Set α) (b i j : Bool) :
     P.induce (M.remove b X) i j = P j \ X := by
-  grw [induce_apply_subset _ (by simp [diff_subset]), remove_ground, ← inter_diff_assoc,
+  grw [induce_apply_subset _ (by simp), remove_ground, ← inter_diff_assoc,
     P.inter_ground_left]
 
 lemma induce_apply_remove_of_remove (P : (M.remove b X).Separation) (hXY : X ⊆ Y) (i j : Bool) :
@@ -183,11 +183,11 @@ lemma induce_remove_inter_ground_eq (P : M.Separation) (b X) :
 @[simp]
 lemma induce_induce_remove_eq_self {b X i} (P : (M.remove b X).Separation) :
     (P.induce M i).induce (M.remove b X) = P :=
-  induce_induce_eq_self _ (by simp [diff_subset]) i
+  induce_induce_eq_self _ (by simp) i
 
 lemma induce_induce_remove_of_subset {b X i} (P : M.Separation) (hX : X ⊆ P i) :
     (P.induce (M.remove b X)).induce M i = P :=
-  induce_induce_eq_self_of_subset_union _ (by simp [diff_subset]) <| by
+  induce_induce_eq_self_of_subset_union _ (by simp) <| by
     grw [remove_ground, hX, P.compl_eq]
 
 lemma induce_remove_union (P : M.Separation) (X Y : Set α) (b : Bool):
@@ -310,7 +310,7 @@ lemma eConn_induce_dual_delete (P : M.Separation) (X : Set α) :
 
 lemma induce_contract_delete (P : M.Separation) (C D : Set α) :
     P.induce (M ／ C ＼ D) = (P.induce (M ／ C)).induce (M ／ C ＼ D) :=
-  Eq.symm <| P.induce_induce (by simp [diff_subset])
+  Eq.symm <| P.induce_induce <| by simp
 
 lemma eConn_eq_eConn_induce_contract_add (P : M.Separation) (hC : C ⊆ P i) :
     P.eConn = (P.induce (M ／ C)).eConn + M.eLocalConn (P (!i)) C := by

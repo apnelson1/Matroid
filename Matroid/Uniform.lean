@@ -122,7 +122,7 @@ theorem unifOn_dual_eq {k : ℕ} (hE : E.Finite) :
   simp only [dual_ground, unifOn_ground_eq] at hBE
   replace hlt := hlt.le
 
-  rw [dual_isBase_iff, unifOn_isBase_iff (by simpa) (by simpa using diff_subset),
+  rw [dual_isBase_iff, unifOn_isBase_iff (by simpa) (by simp),
     unifOn_ground_eq, unifOn_isBase_iff (by simp) hBE, ← Finset.coe_sdiff,
     encard_coe_eq_coe_finsetCard, ENat.coe_inj, encard_coe_eq_coe_finsetCard, ENat.coe_inj,
     toFinite_toFinset, E.toFinset_coe, Finset.card_sdiff_of_subset (by simpa),
@@ -281,7 +281,7 @@ lemma unifOn_isCocircuit_iff {n : ℕ} {K : Set α} (hnE : n ≤ E.encard) :
   wlog hKE : K ⊆ E with aux
   · exact iff_of_false (fun h ↦ hKE h.subset_ground) (by simp [hKE])
   rw [← isHyperplane_compl_iff_isCocircuit, unifOn_isHyperplane_iff hnE]
-  simp [hKE, diff_subset]
+  simp [hKE]
 
 section unif
 

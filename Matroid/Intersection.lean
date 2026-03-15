@@ -98,7 +98,7 @@ theorem exists_common_ind (M₁ M₂ : Matroid α) [M₁.Finite] :
   refine ⟨I, (M₂.E \ M₁.E) ∪ X, hI₁, hI₂.of_restrict, ?_⟩
   rw [← diff_diff, diff_diff_right_self, ← rk_inter_ground, union_inter_distrib_right,
     disjoint_sdiff_left.inter_eq, empty_union, rk_inter_ground, hcard,
-    restrict_rk_eq _ (by simp [diff_subset]), restrict_ground_eq, ← M₂.rk_inter_ground,
+    restrict_rk_eq _ (by simp), restrict_ground_eq, ← M₂.rk_inter_ground,
     inter_diff_assoc, inter_comm]
 
 /-- A minimizer can be chosen in the matroid intersection theorem that is a flat of `M₁`.-/

@@ -579,7 +579,7 @@ lemma le_vertexDelete_iff : H ≤ G - X ↔ H ≤ G ∧ Disjoint V(H) X := by
   exact fun h _ ↦ vertexSet_mono h
 
 lemma vertexDelete_le_edgeDelete (h : ∀ e ∈ E(G) ∩ F, ∃ x ∈ X, G.Inc e x) : G - X ≤ G ＼ F := by
-  refine ⟨by simp [diff_subset], fun e x y hl ↦ ?_⟩
+  refine ⟨by simp, fun e x y hl ↦ ?_⟩
   simp only [vertexDelete_isLink_iff, edgeDelete_isLink] at hl ⊢
   use hl.1
   rintro heF

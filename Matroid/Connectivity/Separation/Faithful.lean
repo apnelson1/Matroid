@@ -151,7 +151,8 @@ lemma faithful_contract_iff (hCE : C ⊆ M.E) : P.Faithful (M ／ C) ↔ ∀ i, 
     contract_loops_eq, subset_diff] at h_eq
   set L := D ∪ Y with hL
   suffices h' : M✶.Skew (P i) (L \ P i) from h'.mono_right <| by grind
-  nth_rw 1 [skew_dual_iff disjoint_sdiff_right, P.compl_eq, isModularPair_comm,
+  nth_rw 1 [skew_dual_iff disjoint_sdiff_right (by simp) (by grind),
+    P.compl_eq, isModularPair_comm,
     (hY.1.subset diff_subset).compl_spanning.isModularPair_iff, diff_inter_right_comm,
     inter_eq_self_of_subset_right P.subset, P.diff_eq_inter_bool, diff_inter_self_eq_diff]
   suffices aux : P (!i) ∩ L ⊆ (M ↾ P (!i)).closure ((P !i) \ L) by
@@ -297,8 +298,8 @@ lemma Faithful.isModularPair (h : P.Faithful N) (hND : N ≤m M ＼ D) (i : Bool
   · convert aux (D := D ∩ M.E) (by simpa) inter_subset_right using 1
     grind
   have hsk := h.skew_dual_of_delete hD hND !i
-  rwa [skew_dual_iff disjoint_sdiff_right, P.compl_not_eq, P.diff_eq_inter_bool,
-    Bool.not_not] at hsk
+  rwa [skew_dual_iff disjoint_sdiff_right (by grind) (by grind),
+    P.compl_not_eq, P.diff_eq_inter_bool, Bool.not_not] at hsk
 
 lemma Faithful.isModularPair' (h : P.Faithful N) (hND : N ≤m M ＼ D) (i : Bool) :
     M.IsModularPair (P i) (P (!i) ∪ (P i \ D)) := by
