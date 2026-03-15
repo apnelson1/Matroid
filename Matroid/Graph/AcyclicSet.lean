@@ -1,7 +1,7 @@
 import Matroid.Graph.Forest
 
 variable {α β : Type*} {G H T : Graph α β} {u v x y z : α} {e e' f g : β} {X : Set α}
-  {F I J : Set β} {P C Q : WList α β}
+  {F F' I J : Set β} {P C Q : WList α β}
 open Set WList
 
 namespace Graph
@@ -85,7 +85,7 @@ lemma isCycleSet_pair_iff_parallel [G.Loopless] {e f : β} (hef : e ≠ f) :
       apply_fun encard at hC₀_eq
       rw [encard_pair hef, (show E(C₀) = {x | x ∈ C₀.edge} by rfl), hC₀.edge_nodup.encard_toSet_eq,
         length_edge] at hC₀_eq
-      exact Nat.cast_injective hC₀_eq
+      exact ENat.coe_inj.mp hC₀_eq
     obtain ⟨x, y, e', f', hxy, he'f', rfl⟩ := hC₀.length_eq_two_iff.1 hlen
     simp only [cons_edgeSet, nil_edgeSet, insert_empty_eq, pair_eq_pair_iff] at hC₀_eq
     have hl1 : G.IsLink e' x y := by grind [cons_isWalk_iff, hC₀.isWalk]
@@ -105,20 +105,6 @@ lemma isCycleSet_pair_iff_parallel [G.Loopless] {e f : β} (hef : e ≠ f) :
 def IsAcyclicSet (G : Graph α β) (I : Set β) : Prop :=
   I ⊆ E(G) ∧ ∀ C₀, G.IsCyclicWalk C₀ → ¬ (E(C₀) ⊆ I)
 
-lemma IsAcyclicSet.subset (hF : G.IsAcyclicSet F) : F ⊆ E(G) := hF.1
-
-lemma IsAcyclicSet.mono (hGH : G ≤ H) (hF : G.IsAcyclicSet F) : H.IsAcyclicSet F := by
-  use hF.1.trans (edgeSet_mono hGH)
-  intro C₀ hC₀ heC₀
-  exact hF.2 _ (hC₀.isCycle_of_le hGH (heC₀.trans hF.1)) heC₀
-
-lemma IsAcyclicSet.anti (hGH : G ≤ H) (hF : H.IsAcyclicSet F) : G.IsAcyclicSet (E(G) ∩ F) := by
-  obtain ⟨hF, hF'⟩ := hF
-  use inter_subset_left
-  intro C hC heC
-  rw [subset_inter_iff] at heC
-  exact hF' C (hC.of_le hGH) heC.2
-
 lemma edgeRestrict_isForest_iff' :
     (G ↾ F).IsForest ↔ ∀ (C : WList α β), E(C) ⊆ F → ¬ G.IsCyclicWalk C := by
   rw [isForest_iff_not_isCyclicWalk]
@@ -135,11 +121,34 @@ lemma isAcyclicSet_iff : G.IsAcyclicSet F ↔ F ⊆ E(G) ∧ (G ↾ F).IsForest 
   · rw [edgeRestrict_isForest_iff hF, and_iff_right hF]
   exact iff_of_false (mt (fun h ↦ h.1) hF) (by simp [hF])
 
-lemma IsAcyclicSet.isBridge (hF : G.IsAcyclicSet F) (he : e ∈ F) : (G ↾ F).IsBridge e := by
+lemma not_isAcyclicSet_iff (hF : F ⊆ E(G)) :
+    ¬ G.IsAcyclicSet F ↔ ∃ C, C.IsCycle ∧ C ≤ G ∧ E(C) ⊆ F := by
+  simp [isAcyclicSet_iff, hF, not_isForest_iff_exists_isCycle]
+
+namespace IsAcyclicSet
+
+lemma subset (hF : G.IsAcyclicSet F) : F ⊆ E(G) := hF.1
+
+lemma mono (hGH : G ≤ H) (hF : G.IsAcyclicSet F) : H.IsAcyclicSet F := by
+  use hF.1.trans (edgeSet_mono hGH)
+  intro C₀ hC₀ heC₀
+  exact hF.2 _ (hC₀.isCycle_of_le hGH (heC₀.trans hF.1)) heC₀
+
+lemma anti_inter (hGH : G ≤ H) (hF : H.IsAcyclicSet F) : G.IsAcyclicSet (E(G) ∩ F) := by
+  obtain ⟨hF, hF'⟩ := hF
+  use inter_subset_left
+  intro C hC heC
+  rw [subset_inter_iff] at heC
+  exact hF' C (hC.of_le hGH) heC.2
+
+lemma anti (hsu : F' ⊆ F) (hF : G.IsAcyclicSet F) : G.IsAcyclicSet F' :=
+  ⟨hsu.trans hF.1, fun C hC heC ↦ hF.2 C (hC.of_le (by simp)) (heC.trans hsu)⟩
+
+lemma isBridge (hF : G.IsAcyclicSet F) (he : e ∈ F) : (G ↾ F).IsBridge e := by
   rw [isAcyclicSet_iff] at hF
   exact hF.2 ⟨hF.1 he, he⟩
 
-lemma IsAcyclicSet.of_edgeDelete_isBond {B} (hB : G.IsBond B) (hF : (G ＼ B).IsAcyclicSet F)
+lemma of_edgeDelete_isBond {B} (hB : G.IsBond B) (hF : (G ＼ B).IsAcyclicSet F)
     (he : e ∈ B) : G.IsAcyclicSet (insert e F) := by
   have hFE := hF.1.trans diff_subset
   simp only [isAcyclicSet_iff, edgeDelete_edgeSet, subset_diff, hFE, true_and,
@@ -152,6 +161,8 @@ lemma IsAcyclicSet.of_edgeDelete_isBond {B} (hB : G.IsBond B) (hF : (G ＼ B).Is
   have := by simpa using hB.prop.1.anti (edgeRestrict_le (E₀ := insert e F))
   rwa [(inter_eq_right (s := E(G))).mpr (by simpa [hB.subset he, insert_subset_iff]),
     insert_inter_of_mem he, hFB.inter_eq, insert_empty_eq] at this
+
+end IsAcyclicSet
 
 lemma IsClosedSubgraph.isAcyclicSet_union (hI : G.IsAcyclicSet I) (hJ : G.IsAcyclicSet J)
     (hIH : I ⊆ E(H)) (hJH : J ⊆ E(G) \ E(H)) (h : H ≤c G): G.IsAcyclicSet (I ∪ J) := by

@@ -532,14 +532,24 @@ lemma DInc.right_mem (h : w.DInc e x y) : y ∈ w.vertex := by
 lemma DInc.edge_mem (h : w.DInc e x y) : e ∈ w.edge := by
   induction h with simp_all
 
-lemma exists_dInc_of_mem_edge (he : e ∈ w.edge) : ∃ x y, w.DInc e x y := by
+def dIncFirst [DecidableEq β] (w : WList α β) (he : e ∈ w.edge) : α × α :=
+  match w with
+  | .nil u => (u, u)
+  | .cons u f w =>
+    if hef : e = f then (u, w.first) else w.dIncFirst (by simpa [hef] using he)
+
+lemma dIncFirst_dInc [DecidableEq β] (w : WList α β) (he : e ∈ w.edge) :
+    w.DInc e (w.dIncFirst he).1 (w.dIncFirst he).2 := by
   induction w with
-  | nil => simp at he
+  | nil u => simp at he
   | cons u f w ih =>
-    obtain (rfl : e = f) | (hew : e ∈ w.edge) := by simpa using he
-    · exact ⟨u, w.first, DInc.cons_left ..⟩
-    obtain ⟨x, y, h⟩ := ih hew
-    exact ⟨x, y, h.cons ..⟩
+    obtain (rfl | hef) := eq_or_ne e f
+    · simp [dIncFirst]
+    simp [dIncFirst, hef, ih]
+
+lemma exists_dInc_of_mem_edge (he : e ∈ w.edge) : ∃ x y, w.DInc e x y := by
+  classical
+  use (w.dIncFirst he).1, (w.dIncFirst he).2, w.dIncFirst_dInc he
 
 lemma mem_edge_iff_exists_dInc : e ∈ w.edge ↔ ∃ x y, w.DInc e x y :=
   ⟨exists_dInc_of_mem_edge, fun ⟨_, _, h⟩ ↦ h.edge_mem⟩

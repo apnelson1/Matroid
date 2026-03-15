@@ -8,14 +8,14 @@ import Matroid.Connectivity.ConnSystem.Matroid
 import Matroid.Graph.Matrix
 import Matroid.Binary.Representation
 
-variable {α β : Type*} {G H : Graph α β} {u v x x₁ x₂ y y₁ y₂ z : α} {e e' f g : β}
-  {U V S T : Set α} {B F F' R R': Set β} {C w P Q : WList α β}
-
 open Set WList Matroid Function
 
 attribute [grind →] IsCocircuit.subset_ground
 
 namespace Graph
+
+variable {α β : Type*} {G H : Graph α β} {u v x x₁ x₂ y y₁ y₂ z : α} {e e' f g : β}
+  {U V S T : Set α} {B F F' R R': Set β} {C w P Q : WList α β}
 
 /-- The cycle matroid of a graph `G`. Its circuits are the edge sets of cycles of `G`,
 and its independent sets are the edge sets of forests. -/
@@ -119,7 +119,7 @@ lemma cycleMatroid_cocircuit (G : Graph α β) (C : Set β) :
   simp only [not_and, not_forall]
   refine ⟨fun h => ?_, fun h => ?_⟩
   · obtain ⟨x, y, hxy⟩ := h.1 hCE
-    rw [iff_def, and_comm, not_and, _root_.not_imp] at hxy
+    rw [iff_def, and_comm, not_and, Classical.not_imp] at hxy
     obtain ⟨hxy, hCxy⟩ := hxy <| ConnBetween.mono edgeDelete_le
     obtain ⟨B, hBC, hB, hBxy⟩ := exists_isBond_subset_of_not_connBetween hxy hCxy
     have hBiff : B ⊆ E(G) → ∃ x x_1, ¬(G.ConnBetween x x_1 ↔ (G ＼ B).ConnBetween x x_1) :=
@@ -128,7 +128,7 @@ lemma cycleMatroid_cocircuit (G : Graph α β) (C : Set β) :
   obtain ⟨x, y, hxy, hnxy⟩ := h.exists_minimal_not_connBetween
   refine ⟨fun _ ↦ ⟨x, y, by simp [hxy, hnxy.1]⟩, fun B hB hBC ↦ ?_⟩
   obtain ⟨u, v, huv⟩ := hB (hBC.trans h.subset)
-  rw [iff_comm, iff_def, not_and, _root_.not_imp] at huv
+  rw [iff_comm, iff_def, not_and, Classical.not_imp] at huv
   obtain ⟨huv, hnuv⟩ := huv (ConnBetween.mono edgeDelete_le)
   obtain ⟨F, hF, hFB, hFne, hFuv⟩ := isEdgeCut_subset_of_not_connBetween huv hnuv
   exact h.2 ⟨hF, hFne⟩ (hFB.trans hBC) |>.trans hFB
@@ -335,25 +335,122 @@ instance [G.Simple] : G.cycleMatroid.Simple := cycleMatroid_simple.mpr ‹G.Simp
 
 lemma cycleMatroid_isFlat (hFE : F ⊆ E(G)) (hF : ∀ H : Graph α β, H.IsCompOf (G ↾ F) → H ≤i G) :
     G.cycleMatroid.IsFlat F := by
-  sorry
-/-
-From Flat
-- flat iff cycle almost included is included
-- take a compOf G ↾ F
-- this is clearly a subgraph so why is it induced?
-- induced is defined as any edge, e, between x and y s.t. x and y are in the subgraph then e must
-  also be in the subgraph.
-- Suppose there is an edge e that is not in F and between x and y belonging to some connected
-  component of G ↾ F. Then, since connected, there is some path between x and y inside F.
-- Together with e, we have a cycle which is almost included in F, so e is in F. contradiction
+  rw [isFlat_iff_forall_isCircuit hFE]
+  intro C e hC heC hCss
+  obtain ⟨W, hW, rfl⟩ := cycleMatroid_isCircuit ▸ hC
+  obtain ⟨x, y, hxy_W⟩ := W.exists_isLink_of_mem_edge (by simpa using heC)
+  obtain ⟨P, hP, hP_eq, rfl, rfl⟩ := hW.exists_isPath_toGraph_eq_delete_edge_of_isLink hxy_W
+  have hP_walk : (G ↾ F).IsWalk P := by
+    simp only [isWalk_edgeRestrict_iff, hP.isWalk, true_and]
+    rwa [← toGraph_edgeSet, hP_eq, edgeDelete_edgeSet, toGraph_edgeSet, diff_subset_iff]
+  set H := (G ↾ F).walkable P.first
+  have hH_comp : H.IsCompOf (G ↾ F) := walkable_isCompOf hP_walk.first_mem
+  have hxH : P.first ∈ V(H) := mem_walkable_self_iff.mpr hP_walk.first_mem
+  have hyH : P.last ∈ V(H) := hP_walk.connBetween_first_last
+  have he_link : G.IsLink e P.first P.last := by
+    rw [← hW.isWalk.wellFormed.toGraph_isLink] at hxy_W
+    exact hxy_W.of_le hW.isWalk.toGraph_le
+  have heH := (hF H hH_comp).isLink_of_mem_mem he_link hxH hyH
+  exact edgeSet_mono hH_comp.le heH.edge_mem |>.2
 
-To Flat
-- Take a cycle that is almost included in F.
-- Every vertex of this cycle must be in some connected component of G ↾ F.
-- So the only edge possibly not included in F, e, is between two vertices in the component.
-- This component is an induced subgraph so e is included in F.
--/
+open Finset
 
-lemma cycleMatroid_representable (G : Graph α β) (𝔽 : Type*) [Field 𝔽] :
-    G.cycleMatroid.Representable 𝔽 := by
-  sorry
+lemma orientation.isAcyclicSet_linearIndepOn {𝔽 : Type*} [Field 𝔽] [DecidableEq α]
+    [DecidablePred (· ∈ E(G))] {I : Set β} (hI : G.IsAcyclicSet I) (D : orientation G) :
+    LinearIndepOn 𝔽 (signedIncMatrix D 𝔽) I := by
+  classical
+  rw [linearIndepOn_iff'']
+  rintro t g htI hg₀ hgI
+  induction ht : t.card generalizing t with
+  | zero =>
+    intro i hit
+    simp [card_eq_zero.mp ht] at hit
+  | succ k ih =>
+    intro i hit
+    have hF : (G ↾ (t : Set β)).IsForest := (isAcyclicSet_iff.mp (hI.anti htI)).2
+    have hne : E(G ↾ (t : Set β)).Nonempty := ⟨i, hI.subset (htI hit), hit⟩
+    haveI : (G ↾ (t : Set β)).EdgeFinite := by
+      constructor
+      rw [edgeRestrict_edgeSet]
+      exact (finite_toSet t).subset inter_subset_right
+    obtain ⟨e₀, x₀, hPendant⟩ := hF.exists_isPendant hne
+    have het := hPendant.isNonloopAt.edge_mem
+    simp only [edgeRestrict_edgeSet, mem_inter_iff, SetLike.mem_coe] at het
+    rw [← insert_sdiff_self_of_mem het.2, sum_insert (by simp)] at hgI
+    have hgI' := congr_fun hgI x₀
+    simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, sum_apply, Pi.zero_apply] at hgI'
+    rw [← (signedIncMatrix D 𝔽).col_apply x₀] at hgI'
+    let D' : (G ↾ (t : Set β)).orientation := D.anti edgeRestrict_le
+    have := D'.signedIncMatrix_pendent_col_support (𝔽 := 𝔽) hPendant
+    simp only [support_eq_iff, mem_singleton_iff, Matrix.col_apply, forall_eq, ← ne_eq] at this
+    rw [signedIncMatrix_anti_submatrix _ hPendant.edge_mem] at this
+    have hforall : ∀ x ∈ t \ {e₀}, g x * signedIncMatrix D 𝔽 x x₀ = 0 := by
+      simp only [mem_sdiff, Finset.mem_singleton, and_imp]
+      rintro x hxt hxe₀
+      suffices D.signedIncMatrix 𝔽 x x₀ = 0 by rw [this, mul_zero]
+      by_cases hxG : x ∈ E(G)
+      · have := this.2 x hxe₀
+        rw [signedIncMatrix_anti_submatrix _ (by simp [hxt, hxG])] at this
+        convert this
+      simp [signedIncMatrix_apply_of_not_mem hxG]
+    rw [sum_eq_zero hforall, add_zero, mul_eq_zero, Matrix.col_apply] at hgI'
+    replace hgI' : g e₀ = 0 := hgI'.resolve_right (by convert this.1)
+    simp only [hgI', zero_smul, zero_add, sdiff_singleton_eq_erase] at hgI
+    specialize ih (t.erase e₀) (by simp [subset_insert_iff.mpr (Or.inl htI)]) ?_ hgI
+      (by simp [het.2, ht])
+    · intro j hj
+      simp only [mem_erase, ne_eq, not_and_or, not_not] at hj
+      obtain rfl | hj := hj
+      · exact hgI'
+      exact hg₀ j hj
+    obtain rfl | hie := eq_or_ne i e₀
+    · exact hgI'
+    simp only [mem_erase, ne_eq, and_imp] at ih
+    exact ih i hie hit
+
+end Graph
+namespace Graph
+variable {α β : Type*} {G : Graph α β}
+
+open Finset
+
+noncomputable def cycleMatroidRep (𝔽 : Type*) [Field 𝔽] : G.cycleMatroid.Rep 𝔽 (α → 𝔽) where
+  to_fun := by
+    have hD := G.orientation_nonempty
+    classical
+    exact hD.some.signedIncMatrix 𝔽
+  indep_iff' I := by
+    classical
+    generalize_proofs hD
+    rw [cycleMatroid_indep]
+    refine ⟨hD.some.isAcyclicSet_linearIndepOn, fun h ↦ ?_⟩
+    rw [linearIndepOn_iff''] at h
+    wlog hIE : I ⊆ E(G)
+    · obtain ⟨e₀, he₀I, he₀E⟩ := not_subset.mp hIE
+      let g₀ : β → 𝔽 := fun x₀ => if x₀ = e₀ then 1 else 0
+      have h_finset : (↑({e₀} : Finset β) : Set β) ⊆ I := by
+        simpa only [coe_singleton, Set.singleton_subset_iff, forall_const]
+      have h_sum : ∑ i ∈ ({e₀} : Finset β), g₀ i • hD.some.signedIncMatrix 𝔽 i = 0 := by
+        simp [g₀, hD.some.signedIncMatrix_apply_of_not_mem he₀E]
+      absurd (by simp [g₀] : g₀ e₀ ≠ 0)
+      exact h {e₀} g₀ h_finset (by simp [g₀]) h_sum e₀ (mem_singleton.mpr rfl)
+    by_contra! hI
+    obtain ⟨C₀, hC₀, hCG, hCI⟩ := (not_isAcyclicSet_iff hIE).mp hI
+    obtain ⟨C'₀, hC'₀, rfl⟩ := isCycle_iff_exists_isCyclicWalk_eq.mp hC₀
+    have hC'₀_G := hC'₀.of_le hCG
+    obtain ⟨e₀, he₀⟩ := hC'₀.nonempty.edgeSet_nonempty
+    have he₀_finset : e₀ ∈ C'₀.edge.toFinset := by simpa using he₀
+    let g₀ := fun e₀ ↦ if e₀ ∈ C'₀.edge.toFinset then hD.some.coeff_walk hC'₀_G.isWalk 𝔽 e₀ else 0
+    have hh : ∑ i ∈ C'₀.edge.toFinset, g₀ i • hD.some.signedIncMatrix 𝔽 i = 0 := by
+      convert hD.some.signedIncMatrix_isCyclicWalk (𝔽 := 𝔽) hC'₀_G using 1
+      refine sum_congr rfl (fun x₀ hx₀ ↦ ?_)
+      simp only [g₀, hx₀, ↓reduceIte]
+    have h_zero := h C'₀.edge.toFinset g₀ (by simpa using hCI) (fun i hi ↦ if_neg hi) hh e₀
+      he₀_finset
+    simp only [g₀, he₀_finset, ↓reduceIte] at h_zero
+    exact hD.some.coeff_isCycleWalk_not_zero hC'₀_G he₀ 𝔽 h_zero
+
+lemma cycleMatroid_representable (𝔽 : Type*) [Field 𝔽] :
+    G.cycleMatroid.Representable 𝔽 := (G.cycleMatroidRep 𝔽).representable
+
+end Graph

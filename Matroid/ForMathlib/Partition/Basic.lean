@@ -465,7 +465,7 @@ instance : OrderTop (Partition α) where
   le_top := by
     obtain (hs | hs) := eq_or_ne ⊤ (⊥ : α)
     · have : Subsingleton α := subsingleton_of_bot_eq_top hs.symm
-      simp [hs]
+      simp only [hs, le_of_subsingleton, implies_true]
     exact fun P x hx ↦ ⟨⊤, by simp [hs], by simp⟩
 
 @[simp] lemma supp_top : (⊤ : Partition α).supp = ⊤ := by

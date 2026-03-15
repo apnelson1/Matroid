@@ -200,6 +200,29 @@ protected lemma concat_inj_right : w.concat e x = w.concat e y ↔ x = y := by
   apply_fun WList.vertex at h
   simpa using h
 
+@[simp]
+lemma dIncFirst_concat_of_mem [DecidableEq β] (w : WList α β) (he : e ∈ w.edge) :
+    (w.concat f x).dIncFirst (by grind [concat_edge] : e ∈ _) = w.dIncFirst he := by
+  induction w with
+  | nil u => simp at he
+  | cons u f w ih =>
+    obtain (rfl | hef) := eq_or_ne e f
+    · simp [dIncFirst]
+    simp only [cons_edge, mem_cons, hef, false_or] at he
+    simp [dIncFirst, hef, ih he]
+
+lemma dIncFirst_concat [DecidableEq β] (w : WList α β) (he : e ∈ (w.concat f x).edge) :
+    (w.concat f x).dIncFirst he = if hew : e ∈ w.edge then w.dIncFirst hew else (w.last, x) := by
+  induction w with
+  | nil u =>
+    simp only [nil_concat, cons_edge, nil_edge, mem_cons, not_mem_nil, or_false] at he
+    simp [dIncFirst, he]
+  | cons u e' w ih =>
+    rw [cons_concat, cons_edge, mem_cons] at he
+    obtain (rfl | hef) := eq_or_ne e e'
+    · simp [dIncFirst]
+    simp [dIncFirst, ih (he.resolve_left hef), hef]
+
 /- Properties of append operation -/
 @[simp]
 lemma append_notation : append w₁ w₂ = w₁ ++ w₂ := rfl
@@ -542,6 +565,26 @@ lemma idxOf_add_idxOf_reverse [DecidableEq α] (hw : w.vertex.Nodup) (hx : x ∈
   rw [add_comm]
   exact idxOf_reverse_add_idxOf hw hx
 
+def dIncLast [DecidableEq β] (w : WList α β) (he : e ∈ w.edge) : α × α :=
+  (w.reverse.dIncFirst (by simpa using he)).swap
+
+lemma dIncLast_dInc [DecidableEq β] (w : WList α β) (he : e ∈ w.edge) :
+    w.DInc e (w.dIncLast he).1 (w.dIncLast he).2 := by
+  simp only [dIncLast, Prod.fst_swap, Prod.snd_swap]
+  rw [← dInc_reverse_iff]
+  exact dIncFirst_dInc _ (by simpa using he)
+
+@[simp]
+lemma dIncLast_cons_of_mem [DecidableEq β] (w : WList α β) (he : e ∈ w.edge) :
+    (cons x f w).dIncLast (by simp; grind : e ∈ _) = w.dIncLast he := by
+  simp only [dIncLast, reverse_cons, Prod.swap_inj]
+  exact dIncFirst_concat_of_mem _ (by simpa using he)
+
+lemma dIncLast_cons [DecidableEq β] (w : WList α β) (he : e ∈ (cons x f w).edge) :
+    (cons x f w).dIncLast he = if hew : e ∈ w.edge then w.dIncLast hew else (x, w.first) := by
+  split_ifs with hew
+  · exact dIncLast_cons_of_mem w hew
+  simp [dIncLast, reverse_cons, dIncFirst_concat, hew]
 
 /-- The last edge of a nonempty `WList` -/
 def Nonempty.lastEdge (w : WList α β) (hw : w.Nonempty) : β := hw.reverse.firstEdge

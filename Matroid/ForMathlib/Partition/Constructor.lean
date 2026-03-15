@@ -284,8 +284,7 @@ Due to this, there are 3 different 'intersections' of partitions defined in this
 - `P.infer Q` is the maximal partition s.t. `P.infer Q ⊆ P` and `P.infer Q ≤ Q`
 - `P ⊓ Q` is the maximal partition s.t. `P ⊓ Q ≤ P` and `P ⊓ Q ≤ Q`
 -/
-
-protected def sInter (S : Set (Partition α)) (hS : S.Nonempty) : Partition α :=
+protected noncomputable def sInter (S : Set (Partition α)) (hS : S.Nonempty) : Partition α :=
   hS.some.restrict (⋂₀ (Partition.parts '' S)) (by
     rw [sInter_image]
     exact biInter_subset_of_mem hS.some_mem)
@@ -321,7 +320,7 @@ lemma sInter_singleton (P : Partition α) :
   ext a
   simp [mem_sInter_iff]
 
-protected def iInter [Nonempty ι] (f : ι → Partition α) : Partition α :=
+protected noncomputable def iInter [Nonempty ι] (f : ι → Partition α) : Partition α :=
   Partition.sInter (range f) (range_nonempty _)
 
 @[simp]
@@ -544,7 +543,7 @@ theorem eq_of_le_not_disjoint {x r : α} (hx : x ∈ R) (hxs : b ≤ x) (hr : r 
   exact hndisj.symm.mono hxs hrs
 
 def disjParts (S : Set α) : Partition (Set α) :=
-  let A : Std.Symm α ((¬ Disjoint · ·) : α → α → Prop) := by
+  let A : Std.Symm ((¬ Disjoint · ·) : α → α → Prop) := by
     refine ⟨fun x y h => ?_⟩
     contrapose! h
     exact h.symm

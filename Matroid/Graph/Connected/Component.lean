@@ -316,7 +316,7 @@ lemma ClosedSubgraph.le_of_mem_orderIso_set_components (H H' : G.ClosedSubgraph)
     H' ∈ Subtype.val '' (ClosedSubgraph.orderIso_set_components G H) → H' ≤ H := by
   rintro ⟨H', hH'cl, rfl⟩
   rw [← orderIso_set_components_sSup H]
-  exact CompleteLattice.le_sSup _ H'.val <| mem_image_of_mem Subtype.val hH'cl
+  exact le_sSup <| mem_image_of_mem Subtype.val hH'cl
 
 
 -- lemma ClosedSubgraph.orderIso_set_components_subset (H : G.ClosedSubgraph) :

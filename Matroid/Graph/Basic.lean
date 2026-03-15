@@ -528,6 +528,10 @@ lemma IsPendant.not_isLoopAt (h : G.IsPendant e x) (f : β) : ¬ G.IsLoopAt f x 
   refine fun h' ↦ h.isNonloopAt.not_isLoopAt x ?_
   rwa [← h.edge_unique h'.inc]
 
+lemma IsPendant.edge_mem (h : G.IsPendant e x) : e ∈ E(G) := h.isNonloopAt.edge_mem
+
+lemma IsPendant.vertex_mem (h : G.IsPendant e x) : x ∈ V(G) := h.isNonloopAt.vertex_mem
+
 /-- A leaf (or degree-one vertex) is a vertex that has exactly one incident edge,
 which is a nonloop. -/
 @[grind]

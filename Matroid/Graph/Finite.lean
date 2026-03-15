@@ -30,13 +30,13 @@ class EdgeFinite (G : Graph α β) : Prop where
 lemma edgeFinite_of_le [G.EdgeFinite] (hHG : H ≤ G) : H.EdgeFinite where
   edgeSet_finite := ‹G.EdgeFinite›.edgeSet_finite.subset <| edgeSet_mono hHG
 
-instance [G.EdgeFinite] (X : Set α) : (G - X).EdgeFinite :=
+instance [G.EdgeFinite] : (G - X).EdgeFinite :=
   edgeFinite_of_le vertexDelete_le
 
-instance [G.EdgeFinite] (F : Set β) : (G ↾ F).EdgeFinite :=
+instance [G.EdgeFinite] : (G ↾ F).EdgeFinite :=
   edgeFinite_of_le edgeRestrict_le
 
-instance [G.EdgeFinite] (F : Set β) : (G ＼ F).EdgeFinite :=
+instance [G.EdgeFinite] : (G ＼ F).EdgeFinite :=
   edgeFinite_of_le edgeDelete_le
 
 lemma edgeFinite_induce [G.EdgeFinite] (hX : X ⊆ V(G)) : (G[X]).EdgeFinite :=

@@ -60,16 +60,14 @@ instance flatLattice (M : Matroid α) : CompleteLattice (FlatOf M) where
   inf_le_right _ _ := inter_subset_right
   le_inf _ _ _ h h' := subset_inter h h'
   sSup Fs := M.flatClosure (⋃ F ∈ Fs, F)
-  le_sSup Fs F h := F.2.closure.symm.subset.trans <|
-    M.closure_subset_closure (subset_biUnion_of_mem h)
-  sSup_le Fs F h := by
-    simp only [FlatOf.le_iff, coe_flatClosure] at h ⊢
-    refine F.coe_isFlat.closure_subset_of_subset ?_
-    simp only [iUnion_subset_iff]
-    assumption
+  isLUB_sSup Fs := by
+    refine ⟨fun F hF ↦ F.2.closure.symm.subset.trans <|
+      M.closure_subset_closure (subset_biUnion_of_mem hF), fun F hF ↦ ?_⟩
+    simp only [FlatOf.le_iff, coe_flatClosure] at hF ⊢
+    exact F.coe_isFlat.closure_subset_of_subset <| by simpa only [iUnion_subset_iff]
   sInf Fs := ⟨(⋂ F ∈ Fs, F) ∩ M.E, IsFlat.biInter_inter_ground (by simp)⟩
-  sInf_le Fs F h := inter_subset_left.trans (biInter_subset_of_mem (by simpa))
-  le_sInf Fs F h := subset_inter (by simpa) F.coe_subset_ground
+  isGLB_sInf Fs := ⟨fun F hF ↦ inter_subset_left.trans (biInter_subset_of_mem (by simpa)),
+    fun F hF ↦ subset_inter (by simpa) F.coe_subset_ground⟩
   top := ⟨M.E, M.ground_isFlat⟩
   bot := ⟨M.loops, M.isFlat_closure _⟩
   le_top F := F.coe_isFlat.subset_ground

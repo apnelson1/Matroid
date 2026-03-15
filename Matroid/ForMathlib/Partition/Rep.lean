@@ -227,6 +227,42 @@ lemma RepFun.coeFun_eq_id_of_eq_discrete  (f : P.RepFun) (hP : P = Partition.dis
 
 end RepFun
 
+section fiber
+
+variable {f : α → α} {S : Set α} {P : Partition (Set α)}
+
+def fiber (f : α → α) : Partition (Set α) := by
+  refine ofIndependent' (u := (f ⁻¹' {·}) '' (univ : Set α)) ?_
+  rintro _ ⟨s, -, rfl⟩
+  simp only [image_univ, sSup_eq_sUnion, disjoint_iff_forall_ne, mem_preimage, mem_singleton_iff,
+    mem_sUnion, mem_diff, mem_range, ← ne_eq, ↓existsAndEq, true_and, exists_eq_right']
+  rintro s rfl t hne rfl
+  simp at hne
+
+@[simp]
+lemma mem_fiber_iff (f : α → α) : S ∈ fiber f ↔ (∃ a, f ⁻¹' {a} = S) ∧ S ≠ ∅ := by
+  simp [fiber]
+
+@[simp]
+lemma preimage_apply_mem_fiber (f : α → α) (a : α) : f ⁻¹' {f a} ∈ fiber f := by
+  simp only [fiber, image_univ, mem_ofIndependent'_iff, mem_range, exists_apply_eq_apply,
+    bot_eq_empty, true_and, ← nonempty_iff_ne_empty]
+  use a
+  simp
+
+@[simp]
+lemma fiber_rel_iff (f : α → α) : (fiber f) x y ↔ f x = f y := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ⟨f ⁻¹' {f y}, preimage_apply_mem_fiber f y, by simpa⟩⟩
+  obtain ⟨S, hS, hxS, hyS⟩ := h
+  obtain ⟨⟨z, rfl⟩, -⟩ := by simpa using hS
+  grind
+
+lemma le_fiber_iff (f : α → α) : P ≤ fiber f ↔ ∀ a b, P a b → f a = f b := by
+  simp_rw [← Partition.rel_le_iff_le, Pi.le_def, fiber_rel_iff]
+  rfl
+
+end fiber
+
 /-! ### IsRepFun -/
 
 section IsRepFun
