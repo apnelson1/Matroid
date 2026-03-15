@@ -226,7 +226,7 @@ lemma ConnBetween.edgeDelete_singleton_connBetween (h : G.ConnBetween x y) (he :
     use P, by simpa [hP.isWalk]
   apply hecon
   obtain ⟨w, w', hw, hw', hew, hew', hVdj, hEdj, rfl⟩ := hP.eq_append_cons_of_edge_mem heP
-  have := by simpa using hP.of_append_right
+  have := by simpa only [cons_isPath_iff] using hP.of_append_right
   rw [this.1.isBridge_iff_not_connBetween.not_left] at he
   simp only [first_cons, append_first_of_eq, append_last, last_cons]
   exact trans (trans (by use w; simpa [hw.isWalk]) he) (by use w'; simpa [hw'.isWalk])
@@ -311,7 +311,7 @@ lemma IsLink.exists_cons_isCyclicWalk_of_not_isBridge (hb : ¬ G.IsBridge e) (hx
     ∃ C, G.IsCyclicWalk (cons x e C) ∧ C.first = y := by
   rw [hxy.symm.isBridge_iff_not_connBetween, not_not] at hb
   obtain ⟨P, hP, rfl, rfl⟩ := hb.exists_isPath
-  have := by simpa [subset_diff] using hP.isWalk.edgeSet_subset
+  have : E(P) ⊆ E(G) ∧ e ∉ P.edge := by simpa [subset_diff] using hP.isWalk.edgeSet_subset
   use P, (hP.of_le edgeDelete_le).cons_isCyclicWalk hxy.symm this.2
 
 lemma exists_isCyclicWalk_of_not_isBridge (he : e ∈ E(G)) (hb : ¬ G.IsBridge e) :

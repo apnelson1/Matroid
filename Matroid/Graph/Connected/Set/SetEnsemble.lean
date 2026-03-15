@@ -106,7 +106,7 @@ lemma vertexDelete_vertexSet (A : G.SetEnsemble)
   rw [vertexSet_eq_biUnion, vertexDelete_paths, ← vertexSet_eq_biUnion]
 
 lemma of_vertexDelete (A : (G - X).SetEnsemble) : Disjoint A.vertexSet X := by
-  have := by simpa [subset_diff] using A.vertexSet_subset
+  have := by simpa only [Graph.vertexDelete_vertexSet, subset_diff] using A.vertexSet_subset
   exact this.2
 
 /-- Given a vertex set disjoint from a SetEnsemble, the same set of paths form a valid SetEnsmeble

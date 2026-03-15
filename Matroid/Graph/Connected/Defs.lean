@@ -386,7 +386,7 @@ lemma isSep_of_not_connected (h : ¬ (G - S).Connected) : G.IsSep (V(G) ∩ S) :
 
 lemma IsSep.of_vertexDelete (h : (G - X).IsSep S) : G.IsSep (S ∪ (V(G) ∩ X)) where
   subset_vx := by
-    have := by simpa [subset_diff] using h.subset_vx
+    have : S ⊆ V(G) ∧ Disjoint S X := by simpa [subset_diff] using h.subset_vx
     simp [this.1]
   not_connected := by
     rw [union_comm, ← vertexDelete_vertexDelete, vertexDelete_vertexSet_inter]
@@ -539,7 +539,7 @@ lemma preconnGE_iff_forall_setConnGE : G.PreconnGE n ↔ ∀ S T : Set α, S ⊆
     obtain ⟨hCn, hCS, hCT⟩ := (by simpa using hCcd); clear hCcd
     obtain ⟨s, hs, hsC⟩ := diff_nonempty_of_encard_lt_encard hCS
     obtain ⟨t, ht, htC⟩ := diff_nonempty_of_encard_lt_encard hCT
-    have := by simpa [SetConnected] using hC.ST_disconnects
+    have := by simpa only [SetConnected, not_exists, not_and] using hC.ST_disconnects
     have hSep : G.IsSepBetween s t C :=
       ⟨hC.subset_vertexSet, hsC, htC, this s hs t ht⟩
     exact hCn.not_ge <| h (hS hs) (hT ht) hSep
@@ -619,7 +619,7 @@ lemma ConnGE.pre (h : G.ConnGE n) : G.PreconnGE n := by
   intro X hX
   by_contra! hc
   have := mt Connected.pre hc
-  have := by simpa using h.le_cut (isSep_of_not_connected this)
+  have : ↑n ≤ (V(G) ∩ X).encard := by simpa using h.le_cut (isSep_of_not_connected this)
   exact hX.not_ge <| this.trans <| encard_le_encard inter_subset_right
 
 /-- If `G` is not complete, (or contain a complete graph as a spanning subgraph), then
@@ -668,7 +668,7 @@ lemma ConnGE.vertexDelete (h : G.ConnGE n) (hFin : (V(G) ∩ X).Finite) :
   le_cut C hC := by
     rw [ENat.coe_toNat (by simp), tsub_le_iff_right, ← encard_union_eq]
     exact h.le_cut hC.of_vertexDelete
-    · have := by simpa [subset_diff] using hC.subset_vx
+    · have := by simpa only [vertexDelete_vertexSet, subset_diff] using hC.subset_vx
       exact this.2.mono_right inter_subset_right
   le_card := by
     rw [inter_comm] at hFin

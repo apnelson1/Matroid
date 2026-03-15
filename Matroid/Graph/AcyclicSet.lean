@@ -71,7 +71,8 @@ lemma isCycleSet_singleton_iff : G.IsCycleSet {e} ↔ ∃ x, G.IsLoopAt e x := b
     use u, hv.2
   | .cons u f1 (cons v f2 w) =>
     exfalso
-    have := by simpa using hC.isTrail
+    have := by simpa only [cons_isTrail_iff, first_cons, cons_edge, List.mem_cons, not_or] using
+      hC.isTrail
     obtain ⟨h', heuv, hf12, hf1w⟩ := this
     simp only [cons_edgeSet] at hCe
     obtain rfl := hCe ▸ (show f1 ∈ insert f1 (insert f2 E(w)) by simp)
@@ -158,7 +159,8 @@ lemma of_edgeDelete_isBond {B} (hB : G.IsBond B) (hF : (G ＼ B).IsAcyclicSet F)
     rw [hFB.sdiff_eq_left] at hFf
     simpa [hFB.mono_right (by simpa : {e} ⊆ B) |>.sdiff_eq_left]
   apply hFf.of_edgeDelete_singleton ?_
-  have := by simpa using hB.prop.1.anti (edgeRestrict_le (E₀ := insert e F))
+  have : (G ↾ insert e F).IsEdgeCut (E(G) ∩ insert e F ∩ B) := by
+    simpa using hB.prop.1.anti (edgeRestrict_le (E₀ := insert e F))
   rwa [(inter_eq_right (s := E(G))).mpr (by simpa [hB.subset he, insert_subset_iff]),
     insert_inter_of_mem he, hFB.inter_eq, insert_empty_eq] at this
 

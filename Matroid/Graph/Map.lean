@@ -24,7 +24,7 @@ def ofPFun (f : β →. Sym2 α) : Graph α β where
     simp only [Part.coe_some] at hxy ⊢
     rw [hxy, Part.some_inj, Sym2.eq_swap]
   eq_or_eq_of_isLink_of_isLink e a b c d hab hcd := by
-    have := by simpa using hab.symm.trans hcd
+    have : a = c ∧ b = d ∨ a = d ∧ b = c := by simpa using hab.symm.trans hcd
     tauto
   left_mem_of_isLink e x y he := by use y, e
 

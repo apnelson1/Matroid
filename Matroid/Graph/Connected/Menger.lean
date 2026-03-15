@@ -325,7 +325,8 @@ theorem Menger'sTheorem [G.Finite] (hι : ENat.card ι = n) (hnt : V(G).Nontrivi
   | n + 1 =>
     have hιn : Nonempty ι := by simp [← ENat.one_le_card_iff_nonempty, hι]
     have hι' : ENat.card ({hιn.some}ᶜ : Set ι) = n := by
-      have := by simpa [hι] using encard_add_encard_compl ({hιn.some} : Set ι)
+      have : 1 + ({hιn.some}ᶜ : Set ι).encard = ↑n + 1 := by
+        simpa [hι] using encard_add_encard_compl ({hιn.some} : Set ι)
       simp only [ENat.card_coe_set_eq]
       enat_to_nat!
       omega

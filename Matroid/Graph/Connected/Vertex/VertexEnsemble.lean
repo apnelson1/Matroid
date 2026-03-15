@@ -11,13 +11,13 @@ namespace Graph
 def IsSetCut.isSepBetween_of_neighbor (hC : (G - ({s, t} : Set α)).IsSetCut (N(G, s) \ {s})
     (N(G, t) \ {t}) C) (hne : s ≠ t) (hadj : ¬ G.Adj s t) : G.IsSepBetween s t C where
   subset := by
-    have := by simpa [subset_diff] using hC.subset_vertexSet
+    have : C ⊆ V(G) ∧ s ∉ C ∧ t ∉ C := by simpa [subset_diff] using hC.subset_vertexSet
     exact this.1
   left_not_mem := by
-    have := by simpa [subset_diff] using hC.subset_vertexSet
+    have : C ⊆ V(G) ∧ s ∉ C ∧ t ∉ C := by simpa [subset_diff] using hC.subset_vertexSet
     exact this.2.1
   right_not_mem := by
-    have := by simpa [subset_diff] using hC.subset_vertexSet
+    have : C ⊆ V(G) ∧ s ∉ C ∧ t ∉ C := by simpa [subset_diff] using hC.subset_vertexSet
     exact this.2.2
   not_connBetween hst := hC.ST_disconnects <| G.vertexDelete_vertexDelete_comm _ _ ▸
       (hst.neighbor_setConnected hne <| (hadj <| ·.of_le vertexDelete_le)).subset
@@ -155,7 +155,8 @@ lemma VertexEnsemble.map_second_inj {A : G.VertexEnsemble s t ι} (hne : s ≠ t
     simp [hj, ← hl, this] at hij
   by_contra hijne
   have hnt := A.nonempty_of_ne hne i |>.nontrivial_of_length_ne_one hi1
-  have := by simpa [Set.ext_iff] using A.internallyDisjoint hijne
+  have : ∀ (x : α), x ∈ A.f i ∧ x ∈ A.f j ↔ x = s ∨ x = t := by
+    simpa [Set.ext_iff] using A.internallyDisjoint hijne
   obtain hs | ht := this (A.f i).second |>.mp ⟨second_mem, hij ▸ second_mem⟩
   · obtain hf := by simpa [hs] using A.first_eq i
     exact hnt.first_ne_second_of_nodup (A.isPath i).nodup (hf.trans hs.symm)

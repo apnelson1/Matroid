@@ -309,7 +309,7 @@ lemma edgeDelete_connected_iff_of_forall_isLoopAt (hF : ∀ e ∈ F, ∃ x, G.Is
   refine h.of_isSpanningSubgraph ?_
   apply edgeRestrict_isSpanningSubgraph_edgeRestrict
   intro e ⟨he, hel⟩
-  have := by simpa using mt (hF e)
+  have : (∀ (x : α), ¬G.IsLoopAt e x) → e ∉ F := by simpa only [not_exists] using mt (hF e)
   use he, he, this hel
 
 lemma edgeDelete_isLoopAt_isSep_iff (C) : (G ＼ E(G, u, u)).IsSep C ↔ G.IsSep C := by
@@ -458,12 +458,12 @@ lemma IsSep.of_edgeDelete_linkEdges (h : (G ＼ E(G, u, v)).IsSep S) :
     this
   · exact Or.inl ⟨by simpa using h.subset_vx, hnconn⟩
   · refine Or.inr (Or.inl ⟨?_, ?_⟩)
-    · have := by simpa using hsepu.subset_vx
+    · have : u ∈ V(G) ∧ u ∉ S := by simpa using hsepu.subset_vx
       simpa [insert_subset_iff, this] using h.subset_vx
     · rw [← union_singleton, ← vertexDelete_vertexDelete]
       exact hsepu.not_connected
   · refine Or.inr (Or.inr (Or.inl ⟨?_, ?_⟩))
-    · have := by simpa using hsepv.subset_vx
+    · have : v ∈ V(G) ∧ v ∉ S := by simpa using hsepv.subset_vx
       simpa [insert_subset_iff, this] using h.subset_vx
     · rw [← union_singleton, ← vertexDelete_vertexDelete]
       exact hsepv.not_connected
@@ -572,7 +572,7 @@ lemma IsSep.exists_adj_of_isCompOf_vertexDelete (hM : IsSep G S) (hG : G.Connect
     exact (hno y · x hxH <| by simpa [adj_comm] using hxy.adj)
   obtain rfl : H = G := hG.eq_of_isClosedSubgraph hHcl hH.1.2
   obtain ⟨x, hxS⟩ := hM.nonempty_of_connected hG
-  have := by simpa [disjoint_iff_forall_notMem] using hHcl'.le
+  have : ∀ ⦃x : α⦄, x ∈ V(H) → x ∉ S := by simpa [disjoint_iff_forall_notMem] using hHcl'.le
   exact this (hM.subset_vx hxS) hxS
 
 /-- Every vertex in a mininum cardinality separator has an edge to components of the vertex-deleted

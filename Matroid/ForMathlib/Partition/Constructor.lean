@@ -776,19 +776,13 @@ lemma sSup'_le {Ps : Set (Partition α)} (P : Partition α) (hP : ∀ b ∈ Ps, 
 
 instance : CompleteLattice (Partition α) where
   sInf := sInf'
-  sInf_le Ps := sInf'_le
-  le_sInf Ps := le_sInf'
+  isGLB_sInf s := ⟨sInf'_le, le_sInf'⟩
   sSup := sSup'
-  sSup_le Ps := sSup'_le
-  le_sSup Ps := le_sSup'
+  isLUB_sSup s := ⟨le_sSup', sSup'_le⟩
   sup P Q := sSup' {P, Q}
   le_sup_left P Q := le_sSup' P (by simp)
   le_sup_right P Q := le_sSup' Q (by simp)
   sup_le P Q R hPR hQR := sSup'_le R (by simp; tauto)
-  -- inf P Q := sInf' {P, Q}
-  -- inf_le_left P Q := sInf'_le P (by simp)
-  -- inf_le_right P Q := sInf'_le Q (by simp)
-  -- le_inf P Q R hPQ hPR := le_sInf' P (by simp; tauto)
 
 -- not a Frame nor a Coframe
 

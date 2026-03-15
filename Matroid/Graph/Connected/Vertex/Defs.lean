@@ -300,7 +300,7 @@ lemma VertexEnsemble.nontrivial_of_not_adj (P : G.VertexEnsemble s t ι) (hne : 
   | .cons s e (nil t) =>
     obtain rfl := by simpa [hi] using P.first_eq i
     obtain rfl := by simpa [hi] using P.last_eq i
-    have := by simpa [hi] using P.isPath i
+    have : G.IsLink e s t ∧ t ∈ V(G) ∧ ¬s = t := by simpa [hi] using P.isPath i
     exact hadj ⟨e, this.1⟩ |>.elim
   | .cons s e (cons x e' w) => simp
 
