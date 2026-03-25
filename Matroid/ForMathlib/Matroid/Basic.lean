@@ -9,7 +9,7 @@ namespace Matroid
 attribute [grind ->] Indep.subset_ground IsBase.subset_ground IsBasis.subset_ground
   Dep.subset_ground IsBasis.subset IsBasis'.subset
 
-attribute [grind =] dual_ground
+-- attribute [grind =] dual_ground
 
 @[grind ->]
 lemma IsBasis.subset_ground_left {I X} (h : M.IsBasis I X) : I ⊆ M.E :=

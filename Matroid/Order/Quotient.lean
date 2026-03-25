@@ -15,7 +15,7 @@ structure Quotient (M N : Matroid α) : Prop where
 
 infixl:50 " ≤q " => Matroid.Quotient
 
-attribute [grind .] Quotient.ground_eq
+-- attribute [grind .] Quotient.ground_eq
 
 @[grind →]
 lemma Quotient.ground_eq_of_dual (h : N✶ ≤q M✶) : N.E = M.E :=
