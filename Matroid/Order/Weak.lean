@@ -19,7 +19,7 @@ structure WeakLE (N M : Matroid α) : Prop where
 
 infixl:50 " ≤w " => Matroid.WeakLE
 
--- attribute [grind →] WeakLE.ground_eq
+attribute [grind .] WeakLE.ground_eq
 
 @[grind →]
 lemma WeakLE.ground_eq_of_dual (h : N✶ ≤w M✶) : N.E = M.E :=

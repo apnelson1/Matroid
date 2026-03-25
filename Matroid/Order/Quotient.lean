@@ -7,12 +7,19 @@ open Set
 
 namespace Matroid
 
+/-- TODO: rename `IsQuotient`. -/
 @[mk_iff]
 structure Quotient (M N : Matroid α) : Prop where
   forall_isFlat_of_isFlat : ∀ F, M.IsFlat F → N.IsFlat F
   ground_eq : M.E = N.E
 
 infixl:50 " ≤q " => Matroid.Quotient
+
+attribute [grind .] Quotient.ground_eq
+
+@[grind →]
+lemma Quotient.ground_eq_of_dual (h : N✶ ≤q M✶) : N.E = M.E :=
+  h.ground_eq
 
 lemma Quotient.isFlat_of_isFlat (h : M ≤q N) (hF : M.IsFlat F) : N.IsFlat F :=
   h.forall_isFlat_of_isFlat _ hF
@@ -41,81 +48,12 @@ lemma Quotient.weakLE (h : N ≤q M) : N ≤w M := by
   rw [indep_iff_forall_notMem_closure_diff] at hI ⊢
   exact fun e heI hecl ↦ hI heI <| h.closure_subset_closure (I \ {e}) hecl
 
-/-- Relative rank is monotone with respect to the quotient order for sets `X,Y` with `X ⊆ Y ⊆ E`.
-This hypothesis isn't required, but is included to facilitate the inductive proof.
-See `Quotient.eRelRk_le` for the stronger version applying to all `X` and `Y`.
-Note : including `X` as an implicit parameter is needed for well-founded induction to work. -/
-private theorem Quotient.eRelRk_le_aux (hQ : M₂ ≤q M₁) {X : Set α} (hXY : X ⊆ Y) (hYE: Y ⊆ M₁.E) :
-    M₂.eRelRk X Y ≤ M₁.eRelRk X Y := by
-  have hcas := lt_or_ge (M₁.eRelRk X Y) ⊤
-  --Divide into cases finite and infinite
-  obtain hfin | hinf := hcas
-
-  · by_cases hX : Y ⊆ M₁.closure X
-    . rw [(eRelRk_eq_zero_iff (M := M₂) _).2]
-      · apply zero_le
-      · exact hX.trans (hQ.closure_subset_closure _)
-      rwa [hQ.ground_eq]
-
-    obtain ⟨y, hyY, hyX⟩ := not_subset.1 hX
-
-    have hrw := fun M ↦ eRelRk_add_cancel M (subset_insert y X) (insert_subset hyY hXY)
-    have hy : y ∈ Y \ M₁.closure X ∧ M₁.eRelRk (insert y X) Y < M₁.eRelRk X Y := by
-      refine ⟨⟨hyY, hyX⟩, ?_⟩
-      rw [← hrw, eRelRk_insert_eq_one, add_comm, lt_iff_not_ge]
-      · intro hle
-        simp only [ENat.add_le_left_iff, one_ne_zero, or_false] at hle
-        simpa [hle] using (M₁.eRelRk_mono_left Y (subset_insert y X)).trans_lt hfin
-      exact ⟨hYE hyY, hyX⟩
-
-    obtain ⟨hy', hycard⟩ := hy
-
-    have hiY: insert y X ⊆ Y := insert_subset hy'.1 hXY
-    have ht := hQ.eRelRk_le_aux hiY hYE
-
-    have hycard1 : M₁.eRelRk (insert y X) Y + 1 ≤ M₁.eRelRk X Y := by
-      exact Order.add_one_le_of_lt hycard
-    have h1 := (add_le_add_left ht 1).trans hycard1
-    refine le_trans ?_ h1
-    rw [← hrw, add_comm]
-    apply add_le_add_right <| eRelRk_insert_le M₂ X y
-  refine le_top.trans hinf
-termination_by M₁.eRelRk X Y
-
-/-- Relative rank is monotone with respect to the quotient order. -/
-theorem Quotient.eRelRk_le (hQ : M₂ ≤q M₁) (X Y : Set α) : M₂.eRelRk X Y ≤ M₁.eRelRk X Y := by
-  rw [← eRelRk_inter_ground_right, ← eRelRk_inter_ground_left,
-    ← M₁.eRelRk_inter_ground_right, ← M₁.eRelRk_inter_ground_left, hQ.ground_eq,
-      eRelRk_eq_union_right, M₁.eRelRk_eq_union_right]
-  exact hQ.eRelRk_le_aux subset_union_right <| union_subset inter_subset_right inter_subset_right
-
 theorem quotient_of_forall_closure_subset_closure (hE : M₁.E = M₂.E)
     (hQ : ∀ X ⊆ M₁.E, M₁.closure X ⊆ M₂.closure X) : M₂ ≤q M₁ := by
   refine ⟨fun F hF ↦ ?_, hE.symm⟩
   have hFE : F ⊆ M₁.E := hF.subset_ground.trans_eq hE.symm
   exact isFlat_iff_closure_self.2 <|
     ((hQ _ hFE).trans hF.closure.subset).antisymm <| subset_closure _ _ hFE
-
-theorem quotient_of_forall_eRelRk_le (hE : M₁.E = M₂.E)
-    (hYZ : ∀ Y Z, Y ⊆ Z → Z ⊆ M₁.E → M₂.eRelRk Y Z ≤ M₁.eRelRk Y Z) : M₂ ≤q M₁ := by
-  refine quotient_of_forall_closure_subset_closure hE fun X hX ↦ ?_
-  have hX' : X ⊆ M₂.E := hX.trans hE.subset
-
-  have hXin : X ⊆ M₂.closure X := M₂.subset_closure X
-
-  refine IsFlat.closure_subset_of_subset ?_ hXin
-
-  by_contra! hc
-  obtain ⟨e, he, he'⟩ := exists_mem_closure_notMem_of_not_isFlat hc
-    ((M₂.closure_subset_ground X).trans hE.symm.subset)
-  have heE := mem_of_mem_of_subset he <| M₁.closure_subset_ground _
-  have hrr := hYZ (M₂.closure X) (insert e (M₂.closure X)) (subset_insert _ _)
-    (insert_subset heE ((M₂.closure_subset_ground X).trans hE.symm.subset))
-
-  rw [(eRelRk_insert_eq_zero_iff).2 he, eRelRk_closure_left, nonpos_iff_eq_zero,
-    ← eRelRk_closure_right, closure_insert_closure_eq_closure_insert,
-    eRelRk_closure_right, eRelRk_insert_eq_zero_iff] at hrr
-  contradiction
 
 lemma quotient_of_forall_closure_subset_closure_indep (hE : M₁.E = M₂.E)
     (hQ : ∀ I, M₁.Indep I → M₁.closure I ⊆ M₂.closure I) : M₂ ≤q M₁ := by
@@ -164,8 +102,8 @@ lemma quotient_of_forall_cyclic_of_isCircuit (hE : M₁.E = M₂.E)
 
 lemma Quotient.dual (hQ : M₂ ≤q M₁) : M₁✶ ≤q M₂✶ := by
   refine quotient_of_forall_cyclic_of_isCircuit hQ.ground_eq fun C hC ↦ ?_
-  rw [cyclic_iff_compl_isFlat_dual
-    (show C ⊆ M₁✶.E from hC.subset_ground.trans hQ.ground_eq.subset), dual_dual, dual_ground]
+  rw [cyclic_iff_compl_isFlat_dual (show C ⊆ M₁✶.E from hC.subset_ground.trans hQ.ground_eq.subset),
+    dual_dual, dual_ground]
   rw [← isCocircuit_def, ← isHyperplane_compl_iff_isCocircuit, hQ.ground_eq] at hC
   exact hQ.isFlat_of_isFlat hC.isFlat
 
@@ -176,16 +114,12 @@ lemma Quotient.of_dual (hQ : M₂✶ ≤q M₁✶) : M₁ ≤q M₂ := by
   ⟨Quotient.of_dual, Quotient.dual⟩
 
 lemma Quotient.spanning_of_spanning (hQ : M₂ ≤q M₁) {S : Set α} (hS : M₁.Spanning S) :
-    M₂.Spanning S := by
-
-  rw [spanning_iff, and_iff_left (hS.subset_ground.trans hQ.ground_eq.symm.subset),
-    subset_antisymm_iff, and_iff_right <| M₂.closure_subset_ground _, hQ.ground_eq, ← hS.closure_eq]
-  exact hQ.closure_subset_closure S
+    M₂.Spanning S :=
+  hQ.dual.weakLE.spanning_of_spanning_of_dual hS
 
 lemma Quotient.nonspanning_of_nonspanning (hQ : M₂ ≤q M₁) {S : Set α} (hS : M₂.Nonspanning S) :
-    M₁.Nonspanning S := by
-  rw [← not_spanning_iff (hS.subset_ground.trans hQ.ground_eq.subset)]
-  exact fun h ↦ hS.not_spanning <| hQ.spanning_of_spanning h
+    M₁.Nonspanning S :=
+  hQ.dual.weakLE.nonspanning_of_nonspanning_of_dual hS
 
 lemma Quotient.contract (hQ : M₂ ≤q M₁) (C : Set α) : M₂ ／ C ≤q M₁ ／ C := by
   refine quotient_of_forall_closure_subset_closure (by simp [hQ.ground_eq]) fun X _ ↦ ?_
@@ -207,6 +141,34 @@ lemma Quotient.restrict (hQ : M₂ ≤q M₁) (R : Set α) : M₂ ↾ R ≤q M�
   refine fun X hXR ↦ ⟨subset_trans ?_ subset_union_left,
     subset_trans (by simp [hQ.ground_eq]) subset_union_right⟩
   exact inter_subset_inter_left _ <| hQ.closure_subset_closure _
+
+theorem Quotient.eRelRk_le (hQ : M₂ ≤q M₁) (X Y : Set α) : M₂.eRelRk X Y ≤ M₁.eRelRk X Y := by
+  rw [eRelRk_eq_eRk_contract, eRelRk_eq_eRk_contract]
+  obtain ⟨I, hI⟩ := (M₂ ／ X).exists_isBasis' Y
+  have := (hQ.contract X).weakLE.indep_of_indep hI.indep
+  grw [hI.eRk_eq_encard, ← ((hQ.contract X).weakLE.indep_of_indep hI.indep).eRk_eq_encard]
+  exact eRk_mono _ hI.subset
+
+theorem quotient_of_forall_eRelRk_le (hE : M₁.E = M₂.E)
+    (hYZ : ∀ Y Z, Y ⊆ Z → Z ⊆ M₁.E → M₂.eRelRk Y Z ≤ M₁.eRelRk Y Z) : M₂ ≤q M₁ := by
+  refine quotient_of_forall_closure_subset_closure hE fun X hX ↦ ?_
+  have hX' : X ⊆ M₂.E := hX.trans hE.subset
+
+  have hXin : X ⊆ M₂.closure X := M₂.subset_closure X
+
+  refine IsFlat.closure_subset_of_subset ?_ hXin
+
+  by_contra! hc
+  obtain ⟨e, he, he'⟩ := exists_mem_closure_notMem_of_not_isFlat hc
+    ((M₂.closure_subset_ground X).trans hE.symm.subset)
+  have heE := mem_of_mem_of_subset he <| M₁.closure_subset_ground _
+  have hrr := hYZ (M₂.closure X) (insert e (M₂.closure X)) (subset_insert _ _)
+    (insert_subset heE ((M₂.closure_subset_ground X).trans hE.symm.subset))
+
+  rw [(eRelRk_insert_eq_zero_iff).2 he, eRelRk_closure_left, nonpos_iff_eq_zero,
+    ← eRelRk_closure_right, closure_insert_closure_eq_closure_insert,
+    eRelRk_closure_right, eRelRk_insert_eq_zero_iff] at hrr
+  contradiction
 
 theorem TFAE_quotient (hE : M₁.E = M₂.E) : List.TFAE [
     M₂ ≤q M₁,
