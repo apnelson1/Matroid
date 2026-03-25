@@ -177,9 +177,15 @@ lemma Quotient.of_dual (hQ : M₂✶ ≤q M₁✶) : M₁ ≤q M₂ := by
 
 lemma Quotient.spanning_of_spanning (hQ : M₂ ≤q M₁) {S : Set α} (hS : M₁.Spanning S) :
     M₂.Spanning S := by
+
   rw [spanning_iff, and_iff_left (hS.subset_ground.trans hQ.ground_eq.symm.subset),
     subset_antisymm_iff, and_iff_right <| M₂.closure_subset_ground _, hQ.ground_eq, ← hS.closure_eq]
   exact hQ.closure_subset_closure S
+
+lemma Quotient.nonspanning_of_nonspanning (hQ : M₂ ≤q M₁) {S : Set α} (hS : M₂.Nonspanning S) :
+    M₁.Nonspanning S := by
+  rw [← not_spanning_iff (hS.subset_ground.trans hQ.ground_eq.subset)]
+  exact fun h ↦ hS.not_spanning <| hQ.spanning_of_spanning h
 
 lemma Quotient.contract (hQ : M₂ ≤q M₁) (C : Set α) : M₂ ／ C ≤q M₁ ／ C := by
   refine quotient_of_forall_closure_subset_closure (by simp [hQ.ground_eq]) fun X _ ↦ ?_

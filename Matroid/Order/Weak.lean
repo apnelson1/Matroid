@@ -19,6 +19,12 @@ structure WeakLE (N M : Matroid α) : Prop where
 
 infixl:50 " ≤w " => Matroid.WeakLE
 
+-- attribute [grind →] WeakLE.ground_eq
+
+@[grind →]
+lemma WeakLE.ground_eq_of_dual (h : N✶ ≤w M✶) : N.E = M.E :=
+  h.ground_eq
+
 @[aesop unsafe 10% (rule_sets := [Matroid])]
 lemma WeakLE.subset_ground_of_subset_ground_left (h : N ≤w M) (hX : X ⊆ N.E := by aesop_mat) :
     X ⊆ M.E :=
@@ -34,9 +40,13 @@ lemma WeakLE.indep_of_indep (h : N ≤w M) (hI : N.Indep I) : M.Indep I :=
 
 lemma WeakLE.spanning_of_spanning_of_dual {S : Set α} (h : N✶ ≤w M✶) (hS : N.Spanning S) :
     M.Spanning S := by
-  rw [spanning_iff_compl_coindep (hS.subset_ground.trans (show N.E = M.E from h.ground_eq).subset),
-    coindep_def, ← dual_ground, ← h.ground_eq]
-  exact h.indep_of_indep hS.compl_coindep
+  rw [spanning_iff_compl_coindep (by grind), ← h.ground_eq_of_dual]
+  exact h.forall_indep_of_indep _ <| hS.compl_coindep
+
+lemma WeakLE.nonspanning_of_nonspanning_of_dual {S : Set α} (h : N✶ ≤w M✶) (hS : M.Nonspanning S) :
+    N.Nonspanning S := by
+  rw [← not_spanning_iff (by grind)] at *
+  exact fun hS' ↦ hS <| h.spanning_of_spanning_of_dual hS'
 
 lemma WeakLE.dep_of_dep (h : N ≤w M) (hD : M.Dep D) : N.Dep D := by
   have hIN := h.subset_ground_of_subset_ground_right hD.subset_ground

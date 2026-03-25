@@ -1,10 +1,12 @@
 import Matroid.Extremal.Covers
+import Matroid.Order.Quotient
 
 set_option linter.style.longLine false
 
 variable {α : Type*} {M N M' : Matroid α} {I F X Y F' F₀ F₁ F₂ P L H H₁ H₂ H' B C D K : Set α}
   {e f : α} {l r : ℕ} {a k d : ℕ∞} {T : Set (Set α)} {ι : Type*} {i j : ι}
   {P P' : Matroid α → Set α → Prop}
+
 
 open Set
 namespace Matroid
@@ -20,17 +22,25 @@ lemma IsThick_iff' (M : Matroid α) (d : ℕ∞) :
     M.IsThick d ↔ ∀ T, M.IsCover Matroid.Nonspanning T → d ≤ T.encard := by
   refine ⟨?_, ?_ ⟩
   · intro h T hT
-
     sorry
   sorry
 
 
-def IsThick_set (M : Matroid α) (X : Set α ) (d : ℕ∞) : Prop :=
+
+def IsThickSet (M : Matroid α) (X : Set α ) (d : ℕ∞) : Prop :=
     (M ↾ X).IsThick d
 
-lemma IsThick_set_iff (M : Matroid α) (X : Set α ) (d : ℕ∞) :
-    M.IsThick_set X d ↔ d ≤ (M ↾ X).coverNumber Matroid.Nonspanning := by
+lemma isThickSet_iff (M : Matroid α) (X : Set α ) (d : ℕ∞) :
+    M.IsThickSet X d ↔ d ≤ (M ↾ X).coverNumber Matroid.Nonspanning := by
   sorry
+
+lemma IsThick.of_isQuotient {M N : Matroid α} (hM : M.IsThick d) (hNM : N ≤q M) : N.IsThick d := by
+
+  rw [IsThick_iff] at ⊢ hM
+  grw [hM, coverNumber_le_coverNumber (fun _ X ↦ N.Nonspanning X) Matroid.Nonspanning M ?_]
+
+  -- apply coverNumber_mono
+
 
 lemma IsThick_two (M : Matroid α) [M.Nonempty] : M.IsThick 2 := by
   rw [M.IsThick_iff 2]
@@ -48,12 +58,12 @@ lemma IsThick_two (M : Matroid α) [M.Nonempty] : M.IsThick 2 := by
 
 lemma IsThick.mono {d' : ℕ∞} (hTd : M.IsThick d ) (hd : d' ≤ d ) : M.IsThick d' := by sorry
 
-lemma IsThick_ground_set (M : Matroid α) (d : ℕ∞) : M.IsThick_set M.E d ↔ M.IsThick d := by sorry
+lemma IsThick_ground_set (M : Matroid α) (d : ℕ∞) : M.IsThickSet M.E d ↔ M.IsThick d := by sorry
 
-lemma IsThick_set.Minor_mon (hTXd : M.IsThick_set X d) (hNM : N ≤m M ) ( hX : X ⊆ N.E )
-    (hXne : (M ↾ X ).Nonempty) :
-    N.IsThick_set X d := by
-  rw [N.IsThick_set_iff X d]
+lemma IsThick_set.Minor_mon (hTXd : M.IsThickSet X d) (hNM : N ≤m M ) ( hX : X ⊆ N.E )
+    (hXne : X.Nonempty) : N.IsThickSet X d := by
+
+  rw [N.isThickSet_iff X d]
   obtain ⟨C, D, hC, hD, hDC, hrw ⟩ := hNM.exists_contract_indep_delete_coindep
   have hDX : Disjoint D X := by grind
   have hCX : Disjoint C X := by grind
@@ -63,19 +73,20 @@ lemma IsThick_set.Minor_mon (hTXd : M.IsThick_set X d) (hNM : N ≤m M ) ( hX : 
     simp only [contract_ground, restrict_ground_eq, union_diff_right]
     have : (X \ C).Nonempty := by
       rw [ Disjoint.sdiff_eq_right hCX ]
-      rwa [←(M ↾ X).ground_nonempty_iff, restrict_ground_eq] at hXne
+      assumption
     refine nonempty_of_not_subset ?_
     have : ¬X ⊆ C := by
       exact not_subset.mpr this
     grind
   -- Peter?
-  have hP : (M ／ C ↾ X) = (M ／ (C ∩ M.closure X) ↾ X) := by sorry
+  have hP : (M ／ C ↾ X) = (M ／ (C ∩ M.closure X) ↾ X) := sorry
+
   have hCX' : Disjoint (C ∩ M.closure X) X := by grind
   grw [hrw, delete_restrict_eq_restrict (M ／ C) hDX, hP,
     M.contract_restrict_eq_restrict_contract hCX',
     ←NonSpanningNumber_contract hg3 hne, ← NonSpanningNumber_set_closure (inter_subset_right)
     (by grind) ]
-  exact (IsThick_set_iff M X d).mp hTXd
+  exact (isThick_set_iff M X d).mp hTXd
 
 lemma IsThick.Contract_mon (hTXd : M.IsThick d) (hC : C ⊆ M.E ) (hne : (M ／ C).Nonempty)
     : (M ／ C).IsThick d := by
@@ -84,7 +95,8 @@ lemma IsThick.Contract_mon (hTXd : M.IsThick d) (hC : C ⊆ M.E ) (hne : (M ／ 
 
 
 --Need Approval
-lemma exists_minor_encard (M : Matroid α) (hr : a ≤ M.eRank ) : ∃ X, X ⊆ M.E ∧ ( M ／ X).eRank = a := by
+lemma exists_minor_encard (M : Matroid α) (hr : a ≤ M.eRank) :
+    ∃ X, X ⊆ M.E ∧ (M ／ X).eRank = a := by
   obtain ⟨B, hB ⟩ := M.exists_isBase
   grw [← hB.encard_eq_eRank] at hr
   have ⟨Y, hYB, hYen ⟩ : ∃ Y, Y ⊆ B ∧ Y.encard = a := exists_subset_encard_eq hr
@@ -96,8 +108,7 @@ lemma exists_minor_encard (M : Matroid α) (hr : a ≤ M.eRank ) : ∃ X, X ⊆ 
   simpa [sdiff_sdiff_right_self, inf_eq_inter, inter_eq_self_of_subset_right hYB ]
 
 lemma thick_Bound {M : Matroid α} [M.RankPos] {a b : ℕ} (ha : a ≠ 0) (hb : a ≤ b)
-    (hM : NoUniformMinor M ( a + 1 ) (b + 1)) (ht : M.IsThick (Nat.choose b a)) :
-    M.eRank ≤ a := by
+    (hM : NoUniformMinor M (a + 1) (b + 1)) (ht : M.IsThick (Nat.choose b a)) : M.eRank ≤ a := by
   by_contra hc
   simp only [not_le] at hc
   wlog hlt : M.eRank = a + 1 generalizing M with aux
@@ -106,8 +117,8 @@ lemma thick_Bound {M : Matroid α} [M.RankPos] {a b : ℕ} (ha : a ≠ 0) (hb : 
       refine (eRank_ne_zero_iff (M ／ X)).mp ?_
       simp only [hXeRK, ne_eq, add_eq_zero, ENat.coe_eq_zero, one_ne_zero, and_false,
         not_false_eq_true]
-    exact aux (M := M ／ X) (hM.minor (contract_isMinor M X )) (ht.Contract_mon hX (rankPos_nonempty) )
-      (by simp only [hXeRK, ENat.natCast_lt_succ ]) hXeRK
+    exact aux (M := M ／ X) (hM.minor (contract_isMinor M X ))
+      (ht.Contract_mon hX (rankPos_nonempty)) (by simp only [hXeRK, ENat.natCast_lt_succ]) hXeRK
   sorry
 end Thick
 
@@ -116,7 +127,7 @@ section Firm
 @[mk_iff]
 structure IsFirm (M : Matroid α) (d : ℕ∞) (X : Set (Set α)) : Prop where
   subset : ∀ x ∈ X, x ⊆ M.E
-  eRk_union : ∀ X' ⊆ X, X.encard < d * X'.encard → M.eRk (⋃₀X) ≤ M.eRk (⋃₀X')
+  eRk_union : ∀ X' ⊆ X, X.encard < d * X'.encard → M.eRk (⋃₀ X) ≤ M.eRk (⋃₀ X')
 
 
 end Firm

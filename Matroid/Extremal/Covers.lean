@@ -16,9 +16,36 @@ variable {α : Type*} {M N M' : Matroid α} {I F X Y F' F₀ F₁ F₂ P L H H�
   {P P' : Matroid α → Set α → Prop}
 
 open Set
+
+/-- `T.IsCover X P` means that `T` is a collection of sets with union `X`,
+each satisfying property `P`.-/
+@[mk_iff]
+structure Set.IsCover (T : Set (Set α)) (X : Set α) (P : Set α → Prop) : Prop where
+  sUnion_eq : ⋃₀ T = X
+  pProp : ∀ F ∈ T, P F
+
+noncomputable def Set.coverNumber (X : Set α) (P : Set α → Prop) : ℕ∞ :=
+  ⨅ (T : Set (Set α)) (_ : T.IsCover X P), T.encard
+
+lemma coverNumber_mono (X : Set α) {P Q : Set α → Prop} (hPQ : ∀ Y ⊆ X, P Y → Q Y) :
+    X.coverNumber Q ≤ X.coverNumber P := by
+  simp only [coverNumber, le_iInf_iff]
+  refine fun T hT ↦ iInf₂_le T ⟨hT.1, fun F hF ↦ hPQ _ ?_ (hT.2 F hF)⟩
+
+
+
+
 namespace Matroid
 
+def IsRankCover (M : Matroid α) (T : Set (Set α)) (X : Set α) (k : ℕ∞) :=
+    T.IsCover X (fun A ↦ M.eRk A ≤ k)
+
+
+
 section General
+
+
+
 
 @[mk_iff]
 structure IsCover (M : Matroid α) (P : Matroid α → Set α → Prop) (T : Set (Set α)) : Prop where
@@ -297,6 +324,26 @@ lemma coverNumber_zero_iff (P : Matroid α → Set α → Prop) : M.coverNumber 
   have := h.coverNumber_le
   simp only [encard_empty, nonpos_iff_eq_zero] at this
   grind
+
+lemma coverNumber_le_coverNumber (P Q : Matroid α → Set α → Prop) (M : Matroid α)
+    (hPQ : ∀ X ⊆ M.E, P M X → Q M X) : M.coverNumber Q ≤ M.coverNumber P := by
+  sorry
+
+lemma coverNumber_congr (P Q : Matroid α → Set α → Prop)
+    (hPQ : ∀ (M : Matroid α) (X : Set α), X ⊆ M.E → (P M X ↔ Q M X)) (M : Matroid α) :
+    M.coverNumber P = M.coverNumber Q := by
+  sorry
+
+lemma coverNumber_mono_prop (P : Matroid α → Set α → Prop) {M N : Matroid α} (hMN : M.E = N.E)
+    (hMP : ∀ X ⊆ M.E, P N X → P M X) : M.coverNumber P ≤ N.coverNumber P := by
+
+--   simp only [coverNumber, le_sInf_iff, mem_image, mem_setOf_eq, forall_exists_index, and_imp,
+--     forall_apply_eq_imp_iff₂]
+--   refine fun C hC ↦ sInf_le ?_
+--   simp only [mem_image, mem_setOf_eq]
+--   refine ⟨C, ?_, rfl⟩
+--   have := hC.mono_prop (P' := P)
+
 
 end General
 
