@@ -1,4 +1,4 @@
-import Matroid.Paving
+import Matroid.Uniform.Paving
 import Matroid.Connectivity.Skew
 
 open Set Set.Notation

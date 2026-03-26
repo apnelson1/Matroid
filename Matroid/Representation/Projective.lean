@@ -3,6 +3,7 @@ import Matroid.Rank.Cardinal
 import Mathlib.FieldTheory.Finite.GaloisField
 import Mathlib.LinearAlgebra.Projectivization.Cardinality
 import Matroid.ForMathlib.LinearAlgebra.Projective
+import Matroid.Uniform.Minor
 
 variable {α β W W' 𝔽 R : Type*} {e f x : α} {I E B X Y : Set α} {M : Matroid α} [DivisionRing 𝔽]
   [AddCommGroup W] [Module 𝔽 W] [AddCommGroup W'] [Module 𝔽 W']

@@ -1,4 +1,4 @@
-import Matroid.Uniform
+import Matroid.Uniform.Basic
 import Matroid.ForMathlib.Matroid.Constructions
 
 namespace Matroid

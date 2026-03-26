@@ -1,4 +1,5 @@
 import Matroid.Constructions.Relax
+import Matroid.Uniform.Finite
 import Matroid.ForMathlib.Matroid.Basic
 import Matroid.Closure
 import Matroid.ForMathlib.Matroid.Closure

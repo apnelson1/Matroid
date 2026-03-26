@@ -1,5 +1,5 @@
 import Matroid.BaseExchange
-import Matroid.Uniform
+import Matroid.Uniform.Basic
 
 variable {α : Type*} {M : Matroid α} {E I H B X : Set α} {e f : α} {Hs T : Set (Set α)}
 

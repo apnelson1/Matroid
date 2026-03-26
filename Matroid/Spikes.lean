@@ -1,5 +1,5 @@
 import Matroid.Axioms.Circuit
-import Matroid.Uniform
+import Matroid.Uniform.Basic
 
 variable {α : Type*} {B X I J C Y : Set α}
 

@@ -1,7 +1,7 @@
 import Matroid.Rank.Skew
 import Matroid.ForMathlib.Matroid.Map
 import Matroid.ForMathlib.ENat
-import Matroid.Uniform
+import Matroid.Uniform.Basic
 import Matroid.Triangle
 
 open Set Function

@@ -1,4 +1,5 @@
 import Matroid.Tame
+import Matroid.Uniform.Minor
 import Matroid.ForMathlib.Data.Set.Subsingleton
 
 open Set.Notation

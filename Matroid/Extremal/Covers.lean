@@ -1,5 +1,5 @@
 import Matroid.Minor.Rank
-import Matroid.Uniform
+import Matroid.Uniform.Basic
 import Matroid.Simple
 import Matroid.Minor.Iso
 import Mathlib.Tactic.Linarith

@@ -1,7 +1,7 @@
 import Matroid.Extension.ProjectBy
 import Matroid.ForMathlib.FinDiff
 
-variable {α : Type*} {M : Matroid α} {E I B C H X Y : Set α} {k : ℕ∞} {e f : α}
+variable {α : Type*} {M : Matroid α} {E I B C H K X Y : Set α} {k : ℕ∞} {e f : α}
 
 namespace Matroid
 
@@ -17,6 +17,10 @@ variable {B B' : Set α}
 structure IsFreeBase (M : Matroid α) (B : Set α) : Prop where
   isBase : M.IsBase B
   isBase_of_exchange : ∀ B' ⊆ M.E, B'.IsExchange B → M.IsBase B'
+
+@[aesop unsafe 10% (rule_sets := [Matroid]), grind →]
+lemma IsFreeBase.subset_ground (h : M.IsFreeBase B) : B ⊆ M.E :=
+  h.isBase.subset_ground
 
 lemma IsFreeBase.isBase_insert_diff_singleton (h : M.IsFreeBase B) (he : e ∈ B) (hf : f ∈ M.E \ B) :
     M.IsBase (insert f (B \ {e})) :=
@@ -114,3 +118,47 @@ lemma IsCircuitHyperplane.isBase_of_isExchange (hH : M.IsCircuitHyperplane H) (h
     (hHB : H.IsExchange B) : M.IsBase B := by
   obtain ⟨e, he, f, hf, rfl⟩ := hHB.exists
   apply hH.insert_diff_singleton_isBase he.1 (by grind)
+
+/-- `M.IsNonbase K` means that `K` is not a base, but differs from a base by a finite
+number of exchanges. For a matroid of rank `r ≠ ∞`, this amounts to saying that `K` is a
+dependent `r`-set. -/
+structure IsNonbase (M : Matroid α) (K : Set α) : Prop where
+  subset_ground : K ⊆ M.E
+  not_isBase : ¬ M.IsBase K
+  exists_findiff : ∃ B, M.IsBase B ∧ B.FinDiff K
+
+attribute [aesop unsafe 10% (rule_sets := [Matroid]), grind →] IsNonbase.subset_ground
+
+lemma IsNonbase.compl_isNonbase_dual (h : M.IsNonbase K) : M✶.IsNonbase (M.E \ K) := by
+  refine ⟨diff_subset, ?_, ?_⟩
+  · simpa [inter_eq_self_of_subset_right h.subset_ground] using h.not_isBase
+  obtain ⟨B, hB, hBK⟩ := h.exists_findiff
+  exact ⟨M.E \ B, hB.compl_isBase_dual, hBK.diff_right hB.subset_ground h.subset_ground⟩
+
+lemma isNonbase_dual_iff (hK : K ⊆ M.E := by aesop_mat) :
+    M✶.IsNonbase K ↔ M.IsNonbase (M.E \ K) :=
+  ⟨fun h ↦ by simpa using h.compl_isNonbase_dual, fun h ↦ by
+    simpa [diff_diff_cancel_left hK] using h.compl_isNonbase_dual⟩
+
+lemma IsNonbase.dep (h : M.IsNonbase K) : M.Dep K := by
+  obtain ⟨B, hB, hBK⟩ := h.exists_findiff
+  rw [← not_indep_iff h.subset_ground]
+  exact fun hK ↦ h.not_isBase <| hB.isBase_of_indep_of_finDiff hK hBK
+
+lemma IsNonbase.nonspanning (h : M.IsNonbase K) : M.Nonspanning K := by
+  obtain ⟨B, hB, hBK⟩ := h.exists_findiff
+  rw [← not_spanning_iff h.subset_ground]
+  exact fun hK ↦ h.not_isBase <| hB.isBase_of_spanning_of_finDiff hK hBK
+
+lemma isNonbase_iff_encard [M.RankFinite] (hKE : K ⊆ M.E) :
+    M.IsNonbase K ↔ K.encard = M.eRank ∧ ¬ M.IsBase K := by
+  refine ⟨fun h ↦ ?_, fun ⟨hKr, hK⟩ ↦ ⟨hKE, hK, ?_⟩⟩
+  · obtain ⟨B, hB, hBK⟩ := h.exists_findiff
+    rw [← hBK.encard_eq_encard, and_iff_right hB.encard_eq_eRank]
+    exact h.not_isBase
+  obtain ⟨B, hB⟩ := M.exists_isBase
+  exact ⟨B, hB, by rw [hB.finite.finDiff_iff_encard_eq, hKr, hB.encard_eq_eRank]⟩
+
+lemma isNonbase_iff_not_isBase [M.RankFinite] (hKE : K ⊆ M.E) (hKcard : K.encard = M.eRank) :
+    M.IsNonbase K ↔ ¬ M.IsBase K := by
+  rw [isNonbase_iff_encard hKE, and_iff_right hKcard]

@@ -141,7 +141,6 @@ import Matroid.Order.Quotient
 -- import Matroid.Order.QuotientExtension
 import Matroid.Order.Weak
 import Matroid.Parallel
-import Matroid.Paving
 import Matroid.Rank.Cardinal
 import Matroid.Rank.ENat
 import Matroid.Rank.Nat
@@ -166,4 +165,7 @@ import Matroid.Spikes
 -- import Matroid.Sum
 import Matroid.Tame
 -- import Matroid.Triangle
-import Matroid.Uniform
+import Matroid.Uniform.Basic
+import Matroid.Uniform.Paving
+import Matroid.Uniform.Finite
+import Matroid.Uniform.Minor

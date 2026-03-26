@@ -1,6 +1,6 @@
 import Matroid.Bool
 import Matroid.Simple
-import Matroid.Uniform
+import Matroid.Uniform.Finite
 import Matroid.ForMathlib.ENat
 -- import Matroid.Connectivity.Separation.Tutte
 

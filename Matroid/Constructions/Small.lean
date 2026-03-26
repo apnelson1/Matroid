@@ -1,6 +1,6 @@
 import Matroid.Extension.Parallel
 import Matroid.ForMathlib.Topology.ENat
-import Matroid.Paving
+import Matroid.Uniform.Paving
 
 open Set
 
