@@ -226,7 +226,6 @@ lemma degree_eq_finsum (G : Graph α β) (v : α) : G.degree v = ∑ᶠ e, G.inc
     · rfl
     · simp
     intro h
-
     replace h := ((WithTop.sum_eq_top (s := hfin.toFinset) (f := fun e ↦ (G.incFun e v : ℕ∞)))).1 h
     obtain ⟨e, he, h_eq⟩ := h
     exact ENat.coe_ne_top _ h_eq

@@ -17,7 +17,7 @@ together with incidence data that associates each edge `e`
 with an unordered pair `s(x,y)` of vertices called the *ends* of `e`.
 The pair of `e` and `s(x,y)` is called a *link*.
 The vertices `x` and `y` may be equal, in which case `e` is a *loop*.
-There may be more than one edge with the same ends.
+There may be more than one edge wih the same ends.
 
 If a multigraph has no loops and has at most one edge for every given ends, it is called *simple*,
 and these objects are also formalized as `SimpleGraph`.
@@ -87,8 +87,7 @@ for `edgeSet` and `edge_mem_iff_exists_isLink` that use `IsLink`).
 While the field is not strictly necessary, when defining a graph we often
 immediately know what the edge set should be,
 and furthermore having `edgeSet` separate can be convenient for
-definitional equality reasons.
--/
+definitional equality reasons. -/
 structure Graph (α β : Type*) where
   /-- The vertex set. -/
   vertexSet : Set α
