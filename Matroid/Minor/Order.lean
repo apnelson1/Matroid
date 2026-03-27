@@ -134,6 +134,12 @@ lemma restrict_isMinor (M : Matroid α) (hR : R ⊆ M.E := by aesop_mat) : (M �
   rw [← delete_compl]
   apply delete_isMinor
 
+lemma Dep.of_isMinor_of_subset (hX : M.Dep X) (hNM : N ≤m M) (hIN : X ⊆ N.E) : N.Dep X := by
+  obtain ⟨C, D, hC, hD, hCD, rfl⟩ := hNM.exists_contract_indep_delete_coindep
+  simp only [delete_ground, contract_ground, subset_diff] at hIN
+  rw [delete_dep_iff, hC.contract_dep_iff, and_iff_right hIN.1.2, and_iff_left hIN.2]
+  exact hX.superset subset_union_left
+
 /-- The `right` version of this is false; for instance, if `N` is a component of `M`,
 and `N' = M ／ C` for some set `C` in another component. -/
 lemma IsRestriction.isRestriction_left_of_isMinor_isMinor (hNM : N ≤r M) {N'}

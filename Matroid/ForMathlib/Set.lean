@@ -16,6 +16,17 @@ lemma iUnion_eq_single {ι : Sort*} (s : ι → Set α) {a : ι} (hi : ∀ i ≠
     ⋃ i, s i = s a :=
   iUnion_eq_single_of_forall_subset fun i hia ↦ by grw [hi i hia, empty_subset]
 
+lemma iUnion_inter_right_inter_eq_of_pairwise_disjoint {s t : ι → Set α}
+    (h : Pairwise (Disjoint on s)) {j : ι} : (⋃ i, (s i ∩ t i)) ∩ s j = s j ∩ t j := by
+  rw [iUnion_inter, iUnion_eq_single (a := j), inter_right_comm, inter_self, inter_comm]
+  intro i hij
+  rw [inter_right_comm, (h hij).inter_eq, empty_inter]
+
+lemma iUnion_inter_left_inter_eq_of_pairwise_disjoint {s t : ι → Set α}
+    (h : Pairwise (Disjoint on s)) {j : ι} : (⋃ i, (t i ∩ s i)) ∩ s j = t j ∩ s j := by
+  rw [iUnion_congr (fun _ ↦ inter_comm ..), iUnion_inter_right_inter_eq_of_pairwise_disjoint h,
+
+    inter_comm]
 lemma biUnion_eq_biUnion_nonempty (s : ι → Set α) {u : Set ι} :
     ⋃ i ∈ u, s i = ⋃ i ∈ {i ∈ u | (s i).Nonempty}, s i := by
   refine subset_antisymm (iUnion₂_subset fun i hiu ↦ ?_) <| biUnion_mono (by simp) <| by simp

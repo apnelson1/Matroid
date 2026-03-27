@@ -465,3 +465,10 @@ lemma exists_of_simplifies (P : N.Separation) (hNM : N ≤si M) : ∃ (Q : M.Sep
   use i
   grw [← singleton_subset_iff.2 hi]
   exact hef.mem_closure
+
+lemma indep_of_contract {I} (hI : I ⊆ M.E) (hi : M.Indep (I ∩ P i))
+    (hic : (M ／ P i).Indep (I ∩ P (!i))) : M.Indep I := by
+  replace hic := hic.of_isMinor <|
+    contract_isMinor_of_subset _ (show I ∩ P i ⊆ P i from inter_subset_right)
+  rw [hi.contract_indep_iff, union_comm, P.union_inter_left _] at hic
+  exact hic.2
