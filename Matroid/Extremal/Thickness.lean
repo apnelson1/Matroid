@@ -80,65 +80,26 @@ lemma IsThick_set.Minor_mon (hTXd : M.IsThick X d) (hNM : N ≤m M ) ( hX : X �
   --   (by grind) ]
   -- exact (IsThick_set_iff M X d).mp hTXd
 
-lemma IsThick.Contract_mon (hTXd : M.IsThick X d) (hC : C ⊆ X ) (hne : (X \ C).Nonempty)
-    : (M ／ C).IsThick (X \ C) d := by
+lemma IsThick.Contract_mon (hTXd : M.IsThick X d) (hC : C ⊆ X ) (hne : (X \ C).Nonempty) :
+    (M ／ C).IsThick (X \ C) d := by
   grw [IsThick_iff, ←NonSpanningNumber_contract_subset hC hne  ]
   exact (IsThick_iff ).mp hTXd
 
-
---Need approval
-lemma exists_minor_encard (M : Matroid α) (hr : a ≤ M.eRank ) : ∃ X, X ⊆ M.E ∧ ( M ／ X).eRank = a := by
-  obtain ⟨B, hB ⟩ := M.exists_isBase
-  grw [← hB.encard_eq_eRank] at hr
-  have ⟨Y, hYB, hYen ⟩ : ∃ Y, Y ⊆ B ∧ Y.encard = a := exists_subset_encard_eq hr
-  use (B \ Y)
-  refine ⟨ by grind, ?_ ⟩
-  rw [ M.eRank_contract_eq_eRelRk_ground (B \ Y), (isBasis_self_iff_indep.mpr
-    (Indep.diff (IsBase.indep hB) Y)).eRelRk_eq_encard_diff_of_subset_isBasis
-    (isBasis_ground_iff.mpr hB) (by grind) ]
-  simpa [sdiff_sdiff_right_self, inf_eq_inter, inter_eq_self_of_subset_right hYB ]
-
---Need approval
-lemma RelRk_restriction_eq_of_subset (M : Matroid α) {R : Set α} (hR : R ⊆ M.E) (hX : X ⊆ R)
-    (hY : Y ⊆ R) : M.eRelRk X Y = (M ↾ R).eRelRk X Y := by
-  rw [←delete_compl]
-  exact (eRelRk_delete_eq_of_disjoint M (D := M.E \ R) ((disjoint_sdiff_iff_le (fun ⦃a⦄ a_1 ↦ hR (hX a_1)) hR).mpr hX )
-    ((disjoint_sdiff_iff_le (fun ⦃a⦄ a_1 ↦ hR (hY a_1)) hR).mpr hY)).symm
-
---Need approval
-lemma exists_minor_encard_eRk (M : Matroid α) (X : Set α) (hr : a ≤ M.eRk X ) (hX : X ⊆ M.E ) :
-    ∃ C, C ⊆ X ∧ ( M ／ C).eRk (X \ C) = a := by
-  obtain ⟨C, hCE, hCrk ⟩ := exists_minor_encard (M ↾ X ) (le_of_eq_of_le rfl hr )
-  refine ⟨C, by grind , ?_ ⟩
-  rw [←eRelRk_eq_eRk_diff_contract M C X]
-  rw [eRank_contract_eq_eRelRk_ground (M := M ↾ X) C ] at hCrk
-  simp only [restrict_ground_eq] at hCrk
-  rw [ RelRk_restriction_eq_of_subset M hX (LE.le.subset hCE) (by grind) , hCrk  ]
-
-lemma thick_Bound {M : Matroid α} [M.RankPos] {a b : ℕ} (ha : a ≠ 0) (hb : a ≤ b) (hX : X ⊆ M.E)
-    (hM : NoUniformMinor M ( a + 1 ) (b + 1)) (ht : M.IsThick X (Nat.choose b a)) :
+lemma thick_Bound {M : Matroid α} {a b : ℕ} (ha : a ≠ 0) (hb : a ≤ b) (hX : X ⊆ M.E)
+    (hM : NoUniformMinor M (a + 1) (b + 1)) (ht : M.IsThick X (Nat.choose b a)) :
     M.eRk X ≤ a := by
   by_contra hc
   simp only [not_le] at hc
   wlog hlt : M.eRk X = a + 1 generalizing M X with aux
   · rw [←eRank_restrict] at hc
-    obtain ⟨Y, hY, hYeRK ⟩ := M.exists_minor_encard_eRk X (Order.add_one_le_of_lt hc) hX
-    have h1 : (M ／ Y).RankPos := by
-      refine (eRank_ne_zero_iff (M ／ Y)).mp ?_
-      have : 0 < (M ／ Y).eRank := by
-        grw [←eRk_le_eRank (M ／ Y) (X \ Y), hYeRK]
-        exact ENat.add_one_pos
-      exact Ne.symm (Std.ne_of_lt this)
+    obtain ⟨Y, hY, hYeRK ⟩ := M.exists_contract_eRk_eq X (Order.add_one_le_of_lt hc)
     have h3 : (X \ Y).Nonempty := by
-      by_contra hc
-      rw [nonempty_iff_ne_empty] at hc
-      simp only [ne_eq, Decidable.not_not] at hc
-      rw [hc] at hYeRK
-      simp only [eRk_empty] at hYeRK
-      have := ENat.add_one_pos (n := a)
-      grind
-    exact aux (M := M ／ Y) (X := X \ Y) (by grind ) (hM.minor (contract_isMinor M Y )) (ht.Contract_mon hY h3 )
-      (by simp only [hYeRK, ENat.natCast_lt_succ ]) hYeRK
+      by_contra! hc
+      rw [eq_comm, hc] at hYeRK
+      simp at hYeRK
+    exact aux (M := M ／ Y) (X := X \ Y) (by grind) (hM.minor (contract_isMinor M Y))
+      (ht.Contract_mon hY h3) (by simp only [hYeRK, ENat.natCast_lt_succ]) hYeRK
+
 
   sorry
 end Thick

@@ -403,6 +403,14 @@ lemma isUniform_iff_circuit_cocircuit :
   obtain ⟨K, hKX, hK⟩ := hcon.2.exists_isCocircuit_subset
   exact (h hC hK).not_disjoint (disjoint_sdiff_right.mono hCX hKX)
 
+lemma isUniform_iff_forall_spanning_of_isCircuit :
+    M.IsUniform ↔ ∀ C, M.IsCircuit C → M.Spanning C := by
+  refine ⟨fun h C hC ↦ h.spanning_of_dep hC.dep, fun h X hX ↦ ?_⟩
+  rw [← not_dep_iff, ← imp_iff_not_or]
+  intro hXd
+  obtain ⟨C, hCX, hC⟩ := hXd.exists_isCircuit_subset
+  exact (h C hC).superset hCX
+
 lemma IsUniform.dual (hM : M.IsUniform) : M✶.IsUniform := by
   intro X hX
   rw [← diff_diff_cancel_left hX, ← coindep_def, ← coindep_iff_compl_spanning,

@@ -1177,7 +1177,35 @@ lemma Skew.isCircuit_contract_of_nontrivial {C} (hXC : M.Skew X C) (hC : M.IsCir
   have heC := he.isCircuit.eq_of_subset_isCircuit (by simpa) (by simpa)
   simp [← heC] at hCnt
 
-/-- If a circuit `C` is not skew to a set `X`, then we can find a circuit contained in `C ∪ X`
+lemma Indep.contract_indep_iff_skew {C} (hI : M.Indep I) (hCE : C ⊆ M.E := by aesop_mat) :
+    (M ／ C).Indep I ↔ M.Skew I C := by
+  obtain ⟨J, hJ⟩ := M.exists_isBasis C
+  rw [← project_indep_eq, hJ.project_eq_project, hJ.indep.project_indep_iff,
+    skew_iff_closure_skew_right, ← hJ.closure_eq_closure, ← skew_iff_closure_skew_right,
+    hI.skew_iff_disjoint_union_indep hJ.indep]
+
+lemma contract_indep_iff_indep_skew (hXE : X ⊆ M.E := by aesop_mat) :
+    (M ／ X).Indep I ↔ M.Indep I ∧ M.Skew I X := by
+  by_cases hI : M.Indep I
+  · rw [hI.contract_indep_iff_skew, and_iff_right hI]
+  exact iff_of_false (fun h ↦ hI h.of_contract) (by simp [hI])
+
+lemma project_indep_iff_indep_skew (hXE : X ⊆ M.E := by aesop_mat) :
+    (M.project X).Indep I ↔ M.Indep I ∧ M.Skew I X := by
+  rw [project_indep_eq, contract_indep_iff_indep_skew]
+
+lemma Indep.skew_of_contract {C} (hI : (M ／ C).Indep I) (hC : C ⊆ M.E := by aesop_mat) :
+    M.Skew I C := by
+  rw [contract_indep_iff_indep_skew] at hI
+  exact hI.2
+
+lemma Indep.skew_of_project {C} (hI : (M.project C).Indep I) (hC : C ⊆ M.E := by aesop_mat) :
+    M.Skew I C := by
+  rw [project_indep_iff_indep_skew] at hI
+  exact hI.2
+
+/-- If a circuit `C` is not skew to a set `X`, then we
+ can find a circuit contained in `C ∪ X`
 that intersects `X`, and also contains an arbitrary element of `C`. -/
 lemma IsCircuit.exists_isCircuit_mem_subset_union_of_not_skew {C} (hC : M.IsCircuit C)
     (hdj : Disjoint C X) (hXC : ¬ M.Skew C X) (he : e ∈ C) (hX : X ⊆ M.E := by aesop_mat) :

@@ -51,6 +51,8 @@ lemma IsCover.one_le (h : T.IsCover X P ) (hX : X.Nonempty) : 1 ≤ T.encard := 
   simp only [one_le_encard_iff_nonempty]
   exact h.nonempty hX
 
+lemma isCover_iff_isCover_subset : T.IsCover X P ↔ T.IsCover X (fun A ↦ P A ∧ A ⊆ X) := sorry
+
 -- --Monotono subset
 -- def IsMRProp (P : Set α → Prop) : Prop :=
 --     ∀ F : Set α, ∀ Y : Set α, Y ⊆ F → P Y → P F
@@ -888,31 +890,36 @@ section NonSpanning
 def NonSpanningCover (M : Matroid α) (T : Set (Set α)) (X : Set α) :=
     T.IsCover X (M ↾ X).Nonspanning
 
-lemma NonSpanningCover_iff : NonSpanningCover M T X ↔ T.IsCover X (M ↾ X).Nonspanning :=
-  Eq.to_iff rfl
+lemma nonSpanningCover_iff : NonSpanningCover M T X ↔ T.IsCover X (M ↾ X).Nonspanning := Iff.rfl
 
 -- This should be shorter
-lemma NonSpanningCover_iff_restriction :
+lemma nonSpanningCover_iff_restriction :
     M.NonSpanningCover T X ↔ (M ↾ X).NonSpanningCover T (M ↾ X).E := by
   refine ⟨?_, ?_ ⟩
   · intro h
-    rw [NonSpanningCover_iff, restrict_ground_eq, restrict_idem]
-    exact NonSpanningCover_iff.mp h
+    rw [nonSpanningCover_iff, restrict_ground_eq, restrict_idem]
+    exact nonSpanningCover_iff.mp h
   intro h
-  rw [NonSpanningCover_iff, restrict_ground_eq, restrict_idem] at h
-  exact NonSpanningCover_iff.mpr h
+  rw [nonSpanningCover_iff, restrict_ground_eq, restrict_idem] at h
+  exact nonSpanningCover_iff.mpr h
 
-lemma NonSpanning_to_RankCover [M.RankFinite] (hM : 2 ≤ M.eRk X) :
+lemma NonSpanning_to_RankCover (h : M.IsRkFinite X) (h0 : M.eRk X ≠ 0) :
     NonSpanningCover M T X ↔ M.IsRankCover T X (M.eRk X - 1) := by
     --M.IsCover Matroid.Nonspanning T ↔ M.IsRankCover (M.eRank - 1) T := by
-  refine ⟨?_, ?_ ⟩
-  · intro h
-    refine ⟨ h.sUnion_eq, ?_ ⟩
-    intro F hF
-    by_contra hc
-    simp only [not_le] at hc
-    sorry
-  sorry
+  rw [NonSpanningCover, IsRankCover, iff_comm, isCover_iff_isCover_subset]
+  convert Iff.rfl with A
+  have : (M ↾ X).RankFinite := sorry
+  by_cases hAX : A ⊆ X
+  -- rw [nonspanning_iff_eRk_lt]
+
+  -- refine ⟨?_, ?_ ⟩
+  -- · intro h
+  --   refine ⟨ h.sUnion_eq, ?_ ⟩
+  --   intro F hF
+  --   by_contra hc
+  --   simp only [not_le] at hc
+  --   sorry
+  -- sorry
 
 lemma NonSpaning_le_two (hX : X.Nonempty) (hle : M.eRk X ≤ 1) :
     ⊤ ≤ X.coverNumber (M ↾ X).Nonspanning := by

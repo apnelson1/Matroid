@@ -62,6 +62,13 @@ lemma weakLE_iff_forall_dep_of_dep : N ≤w M ↔ N.E = M.E ∧ ∀ D, M.Dep D �
   rw [not_indep_iff] at hD ⊢
   exact h.2 _ hD
 
+lemma weakLE_of_forall_not_indep_of_isCircuit (hE : N.E = M.E)
+    (hN : ∀ C, M.IsCircuit C → ¬ N.Indep C) : N ≤w M := by
+  rw [weakLE_iff_forall_dep_of_dep, and_iff_right hE]
+  intro D hD
+  obtain ⟨C, hCD, hC⟩ := hD.exists_isCircuit_subset
+  exact (not_indep_iff (by grind)).1 fun hi ↦ hN C hC <| hi.subset hCD
+
 lemma WeakLE.refl (M : Matroid α) : M ≤w M where
   forall_indep_of_indep := by simp
   ground_eq := rfl

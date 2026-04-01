@@ -388,10 +388,29 @@ lemma eRelRk_union_add_eRelRk_union_le_eRelRk_inter_union (X Y : Set α) :
   · apply eRelRk_union_le_eRelRk_inter_left
   apply eRelRk_union_le_eRelRk_inter_right
 
+lemma eRelRk_restrict_eq_of_subset (M : Matroid α) {R : Set α} (hX : X ⊆ R) (hY : Y ⊆ R) :
+    (M ↾ R).eRelRk X Y = M.eRelRk X Y := by
+  obtain ⟨I, hI⟩ := M.exists_isBasis' X
+  obtain ⟨J, hJ, rfl⟩ :=
+    hI.exists_isBasis'_inter_eq_of_superset (show X ⊆ Y ∪ X from subset_union_right)
+  rw [eq_comm, eRelRk_eq_union_right, (M ↾ R).eRelRk_eq_union_right,
+    hJ.eRelRk_eq_encard_diff_of_subset subset_union_right hI,
+    IsBasis'.eRelRk_eq_encard_diff_of_subset _ subset_union_right _]
+  · rwa [isBasis'_restrict_iff, inter_eq_self_of_subset_left (by grind), and_iff_left (by grind)]
+  rwa [isBasis'_restrict_iff, inter_eq_self_of_subset_left hX, and_iff_left (by grind)]
+
+@[simp]
+lemma eRelRk_restrict (M : Matroid α) (R X Y : Set α) :
+    (M ↾ R).eRelRk X Y = M.eRelRk (X ∩ R) (Y ∩ R) := by
+  rw [← eRelRk_inter_ground_left, ← eRelRk_inter_ground_right, eRelRk_restrict_eq_of_subset
+    _ (by simp) (by simp)]
+  rfl
 
 lemma RankPos.of_delete (h : (M ＼ D).RankPos) : M.RankPos := by
   rw [← eRank_ne_zero_iff, ← ENat.one_le_iff_ne_zero] at *
   grw [h, eRank_delete_le]
+
+
 
 -- lemma eRelRk_le_eRelRk_left_add_eRelRk_right (M : Matroid α) {A B : Set α} (hXA : X ⊆ A)
 --     (hXB : X ⊆ B) (hAY : A ⊆ Y) (hBY : B ⊆ Y) :
@@ -652,3 +671,23 @@ lemma relRk_intCast_eq_sub_of_subset (M : Matroid α) [RankFinite M] (hXY : X �
   rw [relRk_intCast_eq_sub, union_eq_self_of_subset_left hXY]
 
 end relRk
+
+lemma exists_contract_eRank_eq {a : ℕ∞} (M : Matroid α) (hr : a ≤ M.eRank) :
+    ∃ X, X ⊆ M.E ∧ (M ／ X).eRank = a := by
+  obtain ⟨B, hB⟩ := M.exists_isBase
+  grw [← hB.encard_eq_eRank] at hr
+  have ⟨Y, hYB, hYen ⟩ : ∃ Y, Y ⊆ B ∧ Y.encard = a := exists_subset_encard_eq hr
+  use (B \ Y)
+  refine ⟨ by grind, ?_ ⟩
+  rwa [eRank_contract_eq_eRelRk_ground, ← hB.closure_eq, eRelRk_closure_right,
+    (hB.indep.diff _).isBasis_self.eRelRk_eq_encard_diff_of_subset_isBasis hB.indep.isBasis_self
+    diff_subset, diff_diff_cancel_left hYB]
+
+lemma exists_contract_eRk_eq {a : ℕ∞} (M : Matroid α) (X : Set α) (hr : a ≤ M.eRk X) :
+    ∃ C, C ⊆ X ∧ (M ／ C).eRk (X \ C) = a := by
+  obtain ⟨C, hCE, hCrk ⟩ := exists_contract_eRank_eq (M ↾ X ) (le_of_eq_of_le rfl hr )
+  refine ⟨C, by grind , ?_⟩
+  rw [←eRelRk_eq_eRk_diff_contract M C X]
+  rw [eRank_contract_eq_eRelRk_ground (M := M ↾ X) C ] at hCrk
+  simp only [restrict_ground_eq] at hCrk
+  rwa [eRelRk_restrict_eq_of_subset _ (by simpa) rfl.subset] at hCrk
