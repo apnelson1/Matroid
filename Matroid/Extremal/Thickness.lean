@@ -1,4 +1,5 @@
 import Matroid.Extremal.Covers
+import Matroid.Order.Quotient
 
 set_option linter.style.longLine false
 
@@ -85,7 +86,7 @@ lemma IsThick.Contract_mon (hTXd : M.IsThick X d) (hC : C ⊆ X ) (hne : (X \ C)
   exact (IsThick_iff ).mp hTXd
 
 
---Need Approval
+--Need approval
 lemma exists_minor_encard (M : Matroid α) (hr : a ≤ M.eRank ) : ∃ X, X ⊆ M.E ∧ ( M ／ X).eRank = a := by
   obtain ⟨B, hB ⟩ := M.exists_isBase
   grw [← hB.encard_eq_eRank] at hr
@@ -97,9 +98,22 @@ lemma exists_minor_encard (M : Matroid α) (hr : a ≤ M.eRank ) : ∃ X, X ⊆ 
     (isBasis_ground_iff.mpr hB) (by grind) ]
   simpa [sdiff_sdiff_right_self, inf_eq_inter, inter_eq_self_of_subset_right hYB ]
 
-lemma exists_minor_encard_eRk (M : Matroid α) (X : Set α) (hr : a ≤ M.eRk X ) :
+--Need approval
+lemma RelRk_restriction_eq_of_subset (M : Matroid α) {R : Set α} (hR : R ⊆ M.E) (hX : X ⊆ R)
+    (hY : Y ⊆ R) : M.eRelRk X Y = (M ↾ R).eRelRk X Y := by
+  rw [←delete_compl]
+  exact (eRelRk_delete_eq_of_disjoint M (D := M.E \ R) ((disjoint_sdiff_iff_le (fun ⦃a⦄ a_1 ↦ hR (hX a_1)) hR).mpr hX )
+    ((disjoint_sdiff_iff_le (fun ⦃a⦄ a_1 ↦ hR (hY a_1)) hR).mpr hY)).symm
+
+--Need approval
+lemma exists_minor_encard_eRk (M : Matroid α) (X : Set α) (hr : a ≤ M.eRk X ) (hX : X ⊆ M.E ) :
     ∃ C, C ⊆ X ∧ ( M ／ C).eRk (X \ C) = a := by
-  sorry
+  obtain ⟨C, hCE, hCrk ⟩ := exists_minor_encard (M ↾ X ) (le_of_eq_of_le rfl hr )
+  refine ⟨C, by grind , ?_ ⟩
+  rw [←eRelRk_eq_eRk_diff_contract M C X]
+  rw [eRank_contract_eq_eRelRk_ground (M := M ↾ X) C ] at hCrk
+  simp only [restrict_ground_eq] at hCrk
+  rw [ RelRk_restriction_eq_of_subset M hX (LE.le.subset hCE) (by grind) , hCrk  ]
 
 lemma thick_Bound {M : Matroid α} [M.RankPos] {a b : ℕ} (ha : a ≠ 0) (hb : a ≤ b) (hX : X ⊆ M.E)
     (hM : NoUniformMinor M ( a + 1 ) (b + 1)) (ht : M.IsThick X (Nat.choose b a)) :
@@ -108,7 +122,7 @@ lemma thick_Bound {M : Matroid α} [M.RankPos] {a b : ℕ} (ha : a ≠ 0) (hb : 
   simp only [not_le] at hc
   wlog hlt : M.eRk X = a + 1 generalizing M X with aux
   · rw [←eRank_restrict] at hc
-    obtain ⟨Y, hY, hYeRK ⟩ := M.exists_minor_encard_eRk X (Order.add_one_le_of_lt hc)
+    obtain ⟨Y, hY, hYeRK ⟩ := M.exists_minor_encard_eRk X (Order.add_one_le_of_lt hc) hX
     have h1 : (M ／ Y).RankPos := by
       refine (eRank_ne_zero_iff (M ／ Y)).mp ?_
       have : 0 < (M ／ Y).eRank := by

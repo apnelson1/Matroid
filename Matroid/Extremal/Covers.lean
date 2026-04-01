@@ -544,7 +544,7 @@ lemma IsRankCover.delete (hT : M.IsRankCover T X k) (D : Set α) :
   grw [eRk_subset_le M (diff_subset)]
   exact hT.pProp F' hF'
 
-lemma IsRankcoverNumber_eRank (hX : X.Nonempty) :
+lemma IsRankcoverNumber_eRk (hX : X.Nonempty) :
     X.coverNumber (fun A ↦ M.eRk A ≤ (M.eRk X)) = 1 := by
   have h2 : 1 ≤ X.coverNumber (fun A ↦ M.eRk A ≤ (M.eRk X)) :=
     coverNumber_positive hX (fun A ↦ M.eRk A ≤ (M.eRk X))
@@ -623,6 +623,7 @@ lemma IsRankcoverNumber_delete_loop (hne : (X \ D).Nonempty) (hk : 1 ≤ k) (hD 
   -- grw [encard_image_le (M ↾ X).closure T', hT'en] at h2
   -- grind
   sorry
+
 lemma IsRankcoverNumber_contract_one {a : ℕ∞} (hel : M.IsNonloop e) (heX : e ∈ X)
     (hne : (X \ {e}).Nonempty) :
     X.coverNumber (fun A ↦ M.eRk A ≤ (a + 1)) ≤ (X \ {e}).coverNumber (fun A ↦ (M ／ {e}).eRk A ≤ a)
