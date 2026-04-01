@@ -11,7 +11,7 @@ namespace Matroid
 /-- Contract a set `C`, then put the removed elements back in as loops. -/
 def project (M : Matroid α) (C : Set α) : Matroid α := (M ／ C) ↾ M.E
 
-@[simp, aesop unsafe 20% (rule_sets := [Matroid])]
+@[simp, aesop unsafe 20% (rule_sets := [Matroid]), grind =]
 lemma project_ground (M : Matroid α) (C : Set α) : (M.project C).E = M.E := rfl
 
 @[simp]
@@ -197,14 +197,20 @@ lemma project_isBasis'_iff_contract_isBasis' :
      inter_assoc, inter_eq_self_of_subset_right diff_subset, inter_diff_assoc, iff_self_and]
   exact fun h ↦ h.indep.subset_ground.trans diff_subset
 
--- lemma project_isBasis_iff_contract_isBasis :
---     (M.project C).IsBasis I X ↔ (M ／ C).IsBasis I (X \ C) := by
---   -- wlog hXE : X ⊆ M.E
---   -- · refune iff_
---   -- convert M.project_isBasis'_iff_contract_isBasis' (I := I) (X := X ∩ M.E) (C := C) using 1
---   -- · sorry
+lemma project_isFlat_iff {F : Set α} (hC : C ⊆ M.E := by aesop_mat) :
+    (M.project C).IsFlat F ↔ M.IsFlat F ∧ C ⊆ F := by
+  by_cases! hFE : ¬ F ⊆ M.E
+  · exact iff_of_false (fun h ↦ hFE h.subset_ground) fun h ↦ hFE h.1.subset_ground
+  rw [isFlat_iff_closure_eq, project_closure, isFlat_iff_closure_eq]
+  refine ⟨fun h ↦ ⟨?_, ?_⟩, fun h ↦ ?_⟩
+  · refine (M.subset_closure F).antisymm' ?_
+    nth_grw 2 [← h]
+    grw [← subset_union_left]
+  · grw [← h, ← subset_union_right, ← subset_closure ..]
+  grw [union_eq_self_of_subset_right h.2, h.1]
 
-
+lemma project_isFlat_iff' {F : Set α} : (M.project C).IsFlat F ↔ M.IsFlat F ∧ C ∩ M.E ⊆ F := by
+  rw [← project_inter_ground, project_isFlat_iff]
 
 /-- Turn the elements of `D` into loops. -/
 def loopify (M : Matroid α) (D : Set α) : Matroid α := (M ＼ D) ↾ M.E

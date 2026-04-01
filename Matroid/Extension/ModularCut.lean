@@ -212,17 +212,21 @@ protected lemma inter_mem (U : M.ModularCut) (hF : F ∈ U) (hF' : F' ∈ U)
 lemma closure_mem_of_mem (hF : F ∈ U) : M.closure F ∈ U := by
   rwa [(U.isFlat_of_mem hF).closure]
 
-/-- The `ModularCut` of all flats containing `X` -/
+/-- The `ModularCut` of all flats containing `X ∩ M.E`. -/
 @[simps]
 def principal (M : Matroid α) (X : Set α) : M.ModularCut where
-  carrier := {F | M.IsFlat F ∧ X ⊆ F}
+  carrier := {F | M.IsFlat F ∧ X ∩ M.E ⊆ F}
   forall_superset _ _ hF hF' hFF' := ⟨hF', hF.2.trans hFF'⟩
   forall_isFlat _ h := h.1
   forall_inter _ hS hne _ := ⟨IsFlat.sInter hne fun _ h ↦ (hS h).1,
     subset_sInter fun _ h ↦ (hS h).2⟩
 
+lemma mem_principal_iff' : F ∈ principal M X ↔ M.IsFlat F ∧ X ∩ M.E ⊆ F := Iff.rfl
+
 @[simp]
-lemma mem_principal_iff : F ∈ principal M X ↔ M.IsFlat F ∧ X ⊆ F := Iff.rfl
+lemma mem_principal_iff (hX : X ⊆ M.E := by aesop_mat) :
+    F ∈ principal M X ↔ M.IsFlat F ∧ X ⊆ F := by
+  rw [mem_principal_iff', inter_eq_self_of_subset_left hX]
 
 /-- The empty modular cut -/
 @[simps]
@@ -271,14 +275,14 @@ protected lemma ne_bot_iff (U : M.ModularCut) : U ≠ ⊥ ↔ M.E ∈ U := by
   rw [Ne, U.eq_bot_iff, not_not]
 
 lemma mem_top_of_isFlat (hF : M.IsFlat F) : F ∈ (⊤ : M.ModularCut) :=
-  ⟨hF, empty_subset F⟩
+  ⟨hF, by simp⟩
 
 @[simp]
 protected lemma mem_top_iff : F ∈ (⊤ : M.ModularCut) ↔ M.IsFlat F :=
   ⟨fun h ↦ h.1, ModularCut.mem_top_of_isFlat⟩
 
 protected lemma eq_top_iff : U = ⊤ ↔ M.loops ∈ U := by
-  refine ⟨by rintro rfl; exact ⟨M.closure_isFlat ∅, empty_subset _⟩, fun h ↦ ?_⟩
+  refine ⟨by rintro rfl; exact ⟨M.closure_isFlat ∅, by simp⟩, fun h ↦ ?_⟩
   simp only [SetLike.ext_iff, ModularCut.mem_top_iff]
   exact fun F ↦ ⟨U.isFlat_of_mem, fun h' ↦ U.superset_mem h h' h'.loops_subset⟩
 
@@ -319,16 +323,20 @@ protected lemma map_eq_bot {β : Type*} {f : α → β} {U : M.ModularCut} (hf :
     iff_false, not_exists, not_and] at h_eq ⊢
   exact fun F hF hFU ↦ h_eq _ ⟨F, hF, rfl⟩ F hFU rfl
 
-@[simp]
-lemma principal_eq_top_iff : ModularCut.principal M F = ⊤ ↔ F ⊆ M.loops := by
-  rw [ModularCut.eq_top_iff, mem_principal_iff, ← closure_empty, and_iff_right (M.isFlat_closure ∅)]
+lemma principal_eq_top_iff' : ModularCut.principal M F = ⊤ ↔ F ∩ M.E ⊆ M.loops := by
+  rw [ModularCut.eq_top_iff, mem_principal_iff', ← closure_empty,
+    and_iff_right (M.isFlat_closure ∅)]
+
+lemma principal_eq_top_iff (hXE : X ⊆ M.E := by aesop_mat) :
+    ModularCut.principal M X = ⊤ ↔ X ⊆ M.loops := by
+  rw [principal_eq_top_iff', inter_eq_self_of_subset_left hXE]
 
 @[simp]
-lemma principal_eq_bot_iff : ModularCut.principal M F = ⊥ ↔ ¬ (F ⊆ M.E) := by
-  rw [ModularCut.eq_bot_iff, mem_principal_iff, and_iff_right M.ground_isFlat]
+lemma principal_ne_bot : ModularCut.principal M F ≠ ⊥ := by
+  simp [ModularCut.eq_bot_iff, mem_principal_iff']
 
 lemma principal_ground_ne_top (M : Matroid α) [RankPos M] : ModularCut.principal M M.E ≠ ⊤ := by
-  simp only [ne_eq, principal_eq_top_iff, loops]
+  simp only [ne_eq, principal_eq_top_iff rfl.subset, loops]
   obtain ⟨B, hB⟩ := M.exists_isBase
   obtain ⟨e, heB⟩ := hB.nonempty
   exact fun h ↦ (hB.indep.isNonloop_of_mem heB).not_isLoop <| h (hB.subset_ground heB)
@@ -404,6 +412,16 @@ protected def restrict (U : M.ModularCut) (R : Set α) : (M ↾ R).ModularCut wh
 @[simp]
 lemma mem_restrict_iff (U : M.ModularCut) {R : Set α}  :
     F ∈ (U.restrict R) ↔ (M ↾ R).IsFlat F ∧ M.closure F ∈ U := Iff.rfl
+
+lemma inter_mem_restrict_iff (U : M.ModularCut) {R : Set α} (hF : M.IsFlat F) (hR : R ⊆ M.E) :
+    F ∩ R ∈ U.restrict R ↔ M.closure (F ∩ R) ∈ U := by
+  rw [mem_restrict_iff, and_iff_right (hF.isFlat_restrict _)]
+
+@[simp]
+lemma restrict_copy {M N : Matroid α} (U : M.ModularCut) (R : Set α) (hMN : M = N) :
+    (U.restrict R).copy (show M ↾ R = N ↾ R by rw [hMN]) = (U.copy hMN).restrict R := by
+  subst hMN
+  rfl
 
 /-- a `ModularCut` in `M` gives a `ModularCut` in `M ＼ D` for any `D`. -/
 protected def delete (U : M.ModularCut) (D : Set α) : (M ＼ D).ModularCut :=
@@ -621,7 +639,7 @@ section LinearClass
 /-
 TODO. I think linear classes only work for finite-rank matroids;
 if `B` and `B'` are disjoint infinite
-bases of `M`, the class of hyperplanes `H` with `B\H` finite ought not to be a linear class,
+bases of `M`, the class of hyperplanes `H` with `B \ H` finite ought not to be a linear class,
 but I don't know what reasonable definition would forbid that.
 -/
 

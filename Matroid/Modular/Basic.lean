@@ -393,6 +393,19 @@ lemma IsModularFamily.contract (h : M.IsModularFamily Xs) {C : Set α}
   rw [union_inter_distrib_right]
   refine union_subset_union_right _ inter_subset_left
 
+lemma IsModularFamily.of_project {C : Set α} (h : (M.project C).IsModularFamily Xs)
+    (hCX : ∀ i, C ⊆ Xs i) : M.IsModularFamily Xs := by
+  obtain ⟨I, hI⟩ := M.exists_isBasis' C
+  obtain ⟨B, hB⟩ := h
+  have hBi := hB.indep
+  rw [hI.project_eq_project, hI.indep.project_indep_iff] at hBi
+  refine ⟨B ∪ I, hBi.2, fun i ↦ ?_⟩
+  have hBX := hB.forall_isBasis i
+  rw [hI.project_eq_project, hI.indep.project_isBasis_iff,
+    union_eq_self_of_subset_left (hI.subset.trans (hCX i))] at hBX
+  rw [inter_union_distrib_left, inter_eq_self_of_subset_right (hI.subset.trans (hCX i)), union_comm]
+  exact hBX.1
+
 /-- A `IsModularFamily` of flats in a finite-rank matroid is finite. -/
 lemma IsModularFamily.finite_of_forall_isFlat [M.RankFinite] (h : M.IsModularFamily Xs)
     (h_isFlat : ∀ i, M.IsFlat (Xs i)) : (range Xs).Finite := by

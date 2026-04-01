@@ -118,6 +118,16 @@ lemma disjointSum_loops {M N : Matroid α} (hMN : Disjoint M.E N.E) :
     (M.disjointSum N hMN).loops = M.loops ∪ N.loops := by
   ext; simp [← isLoop_iff]
 
+@[simp]
+lemma sigma_loops_eq {ι : Type*} {α : ι → Type*} {M : (i : ι) → Matroid (α i)} :
+    (Matroid.sigma M).loops = ⋃ i, Sigma.mk i '' (M i).loops := by
+  simp [loops, sigma_closure_eq]
+
+@[simp]
+lemma sum_loops_eq (M : Matroid α) (N : Matroid β) :
+    (M.sum N).loops = .inl '' M.loops ∪ .inr '' N.loops := by
+  simp [loops, sum_closure_eq]
+
 lemma loops_disjoint_setOf_isNonloop (M : Matroid α) : Disjoint M.loops {e | M.IsNonloop e} := by
   rw [setOf_isNonloop_eq]
   apply disjoint_sdiff_right

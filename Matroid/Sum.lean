@@ -408,6 +408,29 @@ lemma disjointSum_encard_ground (hdj : Disjoint M.E N.E) :
     (M.disjointSum N hdj).E.encard = M.E.encard + N.E.encard := by
   rw [disjointSum_ground_eq, encard_union_eq hdj]
 
+lemma sum_eq_disjointSum {β : Type*} (M : Matroid α) (N : Matroid β) : M.sum N =
+    (M.map Sum.inl Sum.inl_injective.injOn).disjointSum (N.map Sum.inr Sum.inr_injective.injOn)
+    (by simp) := by
+  refine ext_indep (by simp) fun I hI ↦ ?_
+  simp only [sum_ground] at hI
+  simp only [sum_indep_iff, disjointSum_indep_iff, map_ground, map_indep_iff]
+  refine ⟨fun h ↦ ⟨⟨_, h.1, by grind⟩, ⟨_, h.2, by grind⟩, hI⟩,
+    fun ⟨⟨J₀, hJ₀, hIJ₀⟩, ⟨J₁, hJ₁, hIJ₁⟩, h'⟩ ↦ ⟨hJ₀.subset ?_, hJ₁.subset ?_⟩⟩
+  · grw [← image_subset_image_iff Sum.inl_injective, ← hIJ₀, image_preimage_eq_inter_range,
+      subset_inter_iff, and_iff_right inter_subset_left, h']
+    grind
+  grw [← image_subset_image_iff Sum.inr_injective, ← hIJ₁, image_preimage_eq_inter_range,
+    subset_inter_iff, and_iff_right inter_subset_left, h']
+  grind
+
+
+
+
+
+
+
+
+
 end disjointSum
 
 variable {α β : Type*} {M : Matroid α} {N : Matroid β}
@@ -427,23 +450,7 @@ lemma sum_dep_iff (M : Matroid α) (N : Matroid β) (X : Set (α ⊕ β)) :
 
 lemma sum_closure_eq (M : Matroid α) (N : Matroid β) (X : Set (α ⊕ β)) :
     (M.sum N).closure X = inl '' (M.closure (inl ⁻¹' X)) ∪ inr '' (N.closure (inr ⁻¹' X)) := by
-  wlog hX : (M.sum N).Indep X generalizing X with aux
-  · obtain ⟨I, hI⟩ := (M.sum N).exists_isBasis' X
-    have hI' := sum_isBasis_iff.1 hI.isBasis_inter_ground
-    rw [← hI.closure_eq_closure, aux _ hI.indep, hI'.1.closure_eq_closure,
-      hI'.2.closure_eq_closure, sum_ground]
-    simp [preimage_image_eq _ inl_injective, preimage_image_eq _ inr_injective]
-  have hX' := (sum_indep_iff ..).1 hX
-  ext e
-  simp [hX.mem_closure_iff, hX'.1.mem_closure_iff, hX'.2.mem_closure_iff, sum_dep_iff]
-  obtain e | e := e
-  · simp only [Sum.preimage_inl_insert_inl, Sum.preimage_inr_insert_inl, hX'.2.not_dep, or_false,
-      insert_subset_iff, hX'.1.subset_ground, and_true, hX'.2.subset_ground, inl.injEq]
-    rw [and_iff_left_of_imp (fun h ↦ h.subset_ground <| mem_insert ..)]
-    simp
-  simp only [Sum.preimage_inr_insert_inr, Sum.preimage_inl_insert_inr, hX'.1.not_dep, false_or,
-      insert_subset_iff, hX'.1.subset_ground, and_true, hX'.2.subset_ground, inr.injEq, true_and]
-  rw [and_iff_left_of_imp (fun h ↦ h.subset_ground <| mem_insert ..)]
+  rw [sum_eq_disjointSum, disjointSum_eq_disjointSigma, disjointSigma_closure]
   simp
 
 @[simp]
@@ -455,3 +462,6 @@ lemma inl_mem_sum_closure_iff {e : α} {X : Set (α ⊕ β)} :
 lemma inr_mem_sum_closure_iff {e : β} {X : Set (α ⊕ β)} :
     inr e ∈ (M.sum N).closure X ↔ e ∈ N.closure (.inr ⁻¹' X) := by
   grind [sum_closure_eq]
+
+-- lemma sum_isFlat_iff (M : Matroid α) (N : Matroid β) (F : Set (α ⊕ β)) :
+--     (M.sum N).IsFlat F = inl '' (M.closure (inl ⁻¹' X)) ∪ inr '' (N.closure (inr ⁻¹' X)) := by

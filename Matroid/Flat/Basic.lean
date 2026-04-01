@@ -3,7 +3,8 @@ import Mathlib.Tactic.Linarith
 
 variable {α : Type*} {M : Matroid α} {I F X Y F' F₀ F₁ F₂ P L H H₁ H₂ H' B C K : Set α} {e f : α}
 
-open Set
+open Set Function
+
 namespace Matroid
 
 section Spanning
@@ -18,6 +19,9 @@ lemma IsFlat.inter (hF₁ : M.IsFlat F₁) (hF₂ : M.IsFlat F₂) : M.IsFlat (F
   simpa [hF₁, hF₂] using IsFlat.iInter (M := M) (Fs := fun b : Bool ↦ if b then F₁ else F₂)
 
 end Spanning
+
+lemma isFlat_iff_closure_subset (hF : F ⊆ M.E := by aesop_mat) : M.IsFlat F ↔ M.closure F ⊆ F := by
+  rw [isFlat_iff_closure_eq, subset_antisymm_iff, and_iff_left (M.subset_closure F)]
 
 /-- The intersection of an arbitrary collection of flats with the ground set is a flat.
 `Matroid.IsFlat.iInter` is often more convenient, but this works when the collection is empty. -/
@@ -187,6 +191,14 @@ lemma isFlat_map_iff {β : Type*} {f : α → β} (hf : M.E.InjOn f) {F : Set β
   rintro ⟨F, hF, rfl⟩
   rw [← closure_inter_ground, hf.preimage_image_inter, hF]
   exact hF.symm.subset.trans <| M.closure_subset_ground _
+
+@[simp]
+lemma isFlat_mapEquiv_iff {β : Type*} {f : α ≃ β} {F : Set β} :
+    (M.mapEquiv f).IsFlat F ↔ M.IsFlat (f.symm '' F) := by
+  rw [mapEquiv_eq_map, isFlat_map_iff]
+  refine ⟨?_, fun h ↦ ⟨f.symm '' F, by simpa⟩⟩
+  rintro ⟨F, hF, rfl⟩
+  simpa
 
 lemma IsFlat.map {β : Type*} {f : α → β} (hF : M.IsFlat F) (hf : M.E.InjOn f) :
     (M.map f hf).IsFlat (f '' F) := by
@@ -392,6 +404,45 @@ lemma IsFlat.iInter_mem_of_directed_of_isRkFinite {ι : Type*} {F : ι → Set �
 
 end Directed
 
+section Sum
+
+variable {ι : Type*}
+
+@[simp]
+lemma sigma_isFlat_iff {α : ι → Type*} {M : (i : ι) → Matroid (α i)} {F} :
+    (Matroid.sigma M).IsFlat F ↔ ∀ i, (M i).IsFlat (Sigma.mk i ⁻¹' F) := by
+  refine ⟨fun h i ↦ ?_, fun h ↦ ?_⟩
+  · simpa [isFlat_iff_closure_eq, sigma_closure_eq]
+      using congr_arg (fun X ↦ Sigma.mk i ⁻¹' X) h.closure
+  simp only [isFlat_iff_closure_eq, sigma_closure_eq, (h _).closure,
+    iUnion_image_preimage_sigma_mk_eq_self]
+
+@[simp]
+lemma disjointSigma_isFlat_iff {M : ι → Matroid α} (hdj : Pairwise (Disjoint on fun i ↦ (M i).E)) :
+    (Matroid.disjointSigma M hdj).IsFlat F ↔
+    (∀ i, (M i).IsFlat (F ∩ (M i).E)) ∧ F ⊆ ⋃ i, (M i).E := by
+  refine ⟨fun h ↦ ⟨fun i ↦ ?_, by simpa using h.subset_ground⟩, fun h ↦ ?_⟩
+  · have hwin := congr_arg (fun X ↦ X ∩ (M i).E) h.closure
+    simp_rw [disjointSigma_closure, iUnion_inter] at hwin
+    rwa [iUnion_eq_single (a := i), inter_eq_self_of_subset_left (closure_subset_ground ..),
+      ← isFlat_iff_closure_eq] at hwin
+    intro j hji
+    grw [← subset_empty_iff, closure_subset_ground, (hdj hji).inter_eq]
+  simp_rw [isFlat_iff_closure_eq, disjointSigma_closure, (h.1 _).closure, ← inter_iUnion,
+    inter_eq_self_of_subset_left h.2]
+
+@[simp]
+lemma disjointSum_isFlat_iff {M N : Matroid α} (hdj : Disjoint M.E N.E) :
+    (M.disjointSum N hdj).IsFlat F ↔ M.IsFlat (F ∩ M.E) ∧ N.IsFlat (F ∩ N.E) ∧ F ⊆ M.E ∪ N.E := by
+  simp [disjointSum_eq_disjointSigma, and_assoc, and_comm]
+
+@[simp]
+lemma sum_isFlat_iff {β : Type*} {N : Matroid β} (F : Set (α ⊕ β)) :
+    (M.sum N).IsFlat F ↔ M.IsFlat (.inl ⁻¹' F) ∧ N.IsFlat (.inr ⁻¹' F) := by
+  simp [isFlat_iff_closure_eq, sum_closure_eq]
+  grind
+
+end Sum
 
 -- section from_axioms
 -- lemma matroid_of_isFlat_aux [finite E] (isFlat : set α → Prop) (univ_isFlat : isFlat univ)

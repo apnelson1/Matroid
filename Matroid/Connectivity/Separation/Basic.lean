@@ -414,6 +414,17 @@ lemma nontrivial_copy_iff {M' : Matroid α} (h : M = M') (P : M.Separation) :
     (P.copy h).Nontrivial ↔ P.Nontrivial := by
   simp [Separation.nontrivial_def]
 
+/-- Push a separation forward along a matroid map. -/
+protected def map {β : Type*} (P : M.Separation) (f : α → β) (hf : InjOn f M.E) :
+    (M.map f hf).Separation where
+  toFun i := f '' (P i)
+  pairwise_disjoint' i j hij := (P.pairwise_disjoint' hij).image (f := f) hf (by simp) (by simp)
+  iUnion_eq' := by rw [← image_iUnion, P.iUnion_eq, map_ground]
+
+@[simp]
+protected lemma map_apply {β : Type*} (P : M.Separation) {f : α → β} (hf : InjOn f M.E) (i : Bool) :
+    P.map f hf i = f '' (P i) := rfl
+
 /-- The connectivity of a separation of `M`. -/
 noncomputable abbrev eConn (P : M.Separation) : ℕ∞ := M.eLocalConn (P true) (P false)
 
@@ -507,6 +518,12 @@ set_option backward.isDefEq.respectTransparency false in
 lemma Trivial.eConn (h : P.Trivial) : P.eConn = 0 := by
   obtain ⟨i, hb⟩ := h
   simp [← P.eConn_eq i, hb]
+
+@[simp]
+lemma map_eConn {β : Type*} (P : M.Separation) (f : α → β) (hf : InjOn f M.E) :
+    (P.map f hf).eConn = P.eConn := by
+  rw [Separation.eConn, eLocalConn_map, Separation.eConn, P.map_apply, ← M.eLocalConn_inter_ground,
+    InjOn.preimage_image_inter hf (by simp), P.map_apply, InjOn.preimage_image_inter hf (by simp)]
 
 @[simp]
 protected lemma not_indep_iff : ¬ M.Indep (P i) ↔ M.Dep (P i) := by
@@ -623,6 +640,36 @@ lemma ofSetSep_false_true (hA : A ⊆ M.E) : (M.ofSetSep A false hA true) = M.E 
 lemma eConn_ofSetSep (hA : A ⊆ M.E) : (M.ofSetSep A i hA).eConn = M.eConn A := by
   rw [← Separation.eConn_eq _ i, M.ofSetSep_apply_self]
 
+/-- The natural separation of a matroid on a sum type,
+where the `false` side is the first summand. -/
+def ofSumSep {α β : Type*} (M : Matroid (α ⊕ β)) : M.Separation :=
+    M.ofSetSep (range Sum.inl ∩ M.E) false
+
+@[simp]
+lemma ofSumSep_apply_false {α β : Type*} (M : Matroid (α ⊕ β)) :
+    M.ofSumSep false = range Sum.inl ∩ M.E := by
+  simp [ofSumSep]
+
+@[simp]
+lemma ofSumSep_apply_true {α β : Type*} (M : Matroid (α ⊕ β)) :
+    M.ofSumSep true = range Sum.inr ∩ M.E := by
+  rw [ofSumSep, ofSetSep_false_true]
+  grind
+
+/-- The natural separation of a disjoint sum of two matroids, where the first summand is
+the `false` side. -/
+def Separation.disjointSumSep (M N : Matroid α) (hMN : Disjoint M.E N.E) :
+    (M.disjointSum N hMN).Separation := ofSetSep _ M.E false
+
+@[simp]
+lemma Separation.disjointSumSep_apply_false (hMN : Disjoint M.E N.E) :
+    disjointSumSep M N hMN false = M.E := rfl
+
+@[simp]
+lemma Separation.disjointSumSep_apply_true (hMN : Disjoint M.E N.E) :
+    disjointSumSep M N hMN true = N.E := by
+  rw [← Separation.compl_false, disjointSumSep_apply_false, disjointSum_ground_eq,
+    union_diff_cancel_left hMN.inter_eq.subset]
 
 namespace Separation
 
@@ -1013,6 +1060,13 @@ lemma eConn_eq_zero_iff_eq_disjointSum {P : M.Separation} {i : Bool} :
   rw [eConn_eq_zero_iff_skew, skew_iff_restrict_union_eq P.subset_ground P.subset_ground
     (P.disjoint_bool i), P.union_bool_eq, restrict_ground_eq_self]
 
+@[simp]
+lemma disjointSumSep_eConn (hMN : Disjoint M.E N.E) :
+    (Separation.disjointSumSep M N hMN).eConn = 0 := by
+  rw [eConn_eq_zero_iff_skew (i := false), skew_iff_restrict_union_eq (by simp) (by simp)]
+  · simp [disjointSumSep, hMN.sdiff_eq_right]
+  simpa
+
 lemma _root_.Matroid.exists_separation_of_not_connected [M.Nonempty] (h : ¬ M.Connected) :
     ∃ P : M.Separation, P.eConn = 0 ∧ P.Nontrivial := by
   obtain ⟨M₁, M₂, hdj, hM₁, hM₂, rfl⟩ := eq_disjointSum_of_not_connected h
@@ -1052,3 +1106,13 @@ lemma Nontrivial.one_le_eConn_of_connected (hP : P.Nontrivial) (hM : M.Connected
     1 ≤ P.eConn := by
   contrapose! hP
   simpa using hM.trivial_of_eConn_eq_zero <| ENat.lt_one_iff_eq_zero.1 hP
+
+@[simp]
+lemma sum_ofSumSep_eConn {α β : Type*} (M : Matroid α) (N : Matroid β) :
+    (M.sum N).ofSumSep.eConn = 0 := by
+  rw [sum_eq_disjointSum]
+  generalize_proofs h1 h2 h
+  convert disjointSumSep_eConn h
+  refine Separation.ext ?_
+  simp only [ofSumSep_apply_true, disjointSum_ground_eq, map_ground, disjointSumSep_apply_true]
+  grind

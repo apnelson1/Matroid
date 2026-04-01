@@ -148,3 +148,80 @@ lemma Separation.isCircuit_union_inter_of_eConn_le_one {C₁ C₂} (hC₁ : M.Is
   have hwin := P.isCircuit_iUnion_inter_of_eConn_le_one
     (C := fun i ↦ bif (b == i) then C₁ else C₂) (by grind) hP (by grind)
   simpa [Set.iUnion_bool' _ b, inter_comm (P _)] using hwin
+
+
+
+/- Two-sum -/
+
+
+
+
+
+-- /-# Parallel Connection -/
+
+variable {β : Type*} {N : Matroid α} {e f : α}
+
+/-- Given elements `e` and `f` in two matroids on different types, the matroid on the sum type
+obtained by principally truncating the pair `{e, f}`.
+If `e` and `f` are nonloops in their respective matroids,
+then these two elements become parallel in the `parallelSum`. -/
+def parallelSum (M : Matroid α) (N : Matroid β) (e : α) (f : β) : Matroid (α ⊕ β) :=
+  (M.sum N).projectBy (ModularCut.principal _ {Sum.inl e, Sum.inr f})
+
+lemma parallelSum_union_indep_iff_of_notMem_notMem {N : Matroid β} {f : β} (he : M.IsNonloop e)
+    (hf : N.IsNonloop f) {I : Set α} {J : Set β} (heI : e ∉ I) (hfJ : f ∉ J) :
+    (M.parallelSum N e f).Indep (.inl '' I ∪ .inr '' J) ↔
+    (M.Indep (insert e I) ∧ N.Indep J) ∨ (M.Indep I ∧ N.Indep (insert f J)) := by
+  have htop : ModularCut.principal (M.sum N) {Sum.inl e, Sum.inr f} ≠ ⊤ := by
+    simp [ModularCut.principal_eq_top_iff', Set.subset_def, he.not_isLoop, he.mem_ground]
+  suffices (M.Indep I ∧ N.Indep J) ∧ (e ∈ M.closure I → f ∉ N.closure J) ↔
+      M.Indep (insert e I) ∧ N.Indep J ∨ M.Indep I ∧ N.Indep (insert f J) by
+    simpa [parallelSum, ModularCut.projectBy_indep_iff_of_ne_top htop,
+      ModularCut.mem_principal_iff', Set.subset_def, he.mem_ground, hf.mem_ground, htop]
+  by_cases! hI : ¬ M.Indep I
+  · simp [hI, show ¬ M.Indep (insert e I) from fun h ↦ hI (h.subset (subset_insert ..))]
+  by_cases! hJ : ¬ N.Indep J
+  · simp [hJ, show ¬ N.Indep (insert f J) from fun h ↦ hJ (h.subset (subset_insert ..))]
+  grind [hI.insert_indep_iff_of_notMem heI, hJ.insert_indep_iff_of_notMem hfJ,
+    he.mem_ground, hf.mem_ground]
+
+lemma parallelSum_indep_iff_of_notMem_notMem {N : Matroid β} {f : β} (he : M.IsNonloop e)
+    (hf : N.IsNonloop f) {I} (heI : .inl e ∉ I) (hfI : .inr f ∉ I) : (M.parallelSum N e f).Indep I ↔
+    (M.Indep (.inl ⁻¹' I) ∧ N.Indep (insert f (.inr ⁻¹' I))) ∨
+    (M.Indep (insert e (.inl ⁻¹' I)) ∧ N.Indep (.inr ⁻¹' I)) := by
+  have hrw := image_preimage_inl_union_image_preimage_inr I
+  nth_rw 1 [← hrw, parallelSum_union_indep_iff_of_notMem_notMem he hf (by simpa) (by simpa)]
+  grind
+
+
+
+
+-- lemma parallelSum_foo {N : Matroid β} {f : β} (he : M.IsNonloop e) (hf : N.IsNonloop f) :
+--     Separation.
+
+
+
+-- def parallelConnection (M N : Matroid α) (e : α) (_ : M.IsNonloop e) (_ : N.IsNonloop e)
+--     (he : M.E ∩ N.E ⊆ {e}) : Matroid α :=
+--     ((parallelSum M N e e) ＼ {Sum.inr e}).map (Sum.elim id id)
+--     (by
+--       suffices (∀ a ∈ M.E, ∀ b ∈ N.E, ¬b = e → ¬a = b) ∧ ∀ b ∈ N.E, ¬b = e → ∀ a ∈ M.E, ¬b = a by
+--         simpa [InjOn, parallelSum]
+--       simp only [subset_singleton_iff, mem_inter_iff, and_imp] at he
+--       grind)
+
+-- lemma parallelConnection_indep_iff_of_mem (heM : M.IsNonloop e) (heN : N.IsNonloop e)
+--     (h : M.E ∩ N.E ⊆ {e}) {I} (hI : e ∈ I) :
+--     (M.parallelConnection N e heM heN h).Indep I ↔ M.Indep (I ∩ M.E) ∧ N.Indep (I ∩ N.E) := by
+--   rw [parallelConnection, map_indep_iff, parallelSum]
+--   simp only [delete_indep_iff, ModularCut.projectBy_indep_iff, sum_indep_iff, ne_eq,
+--     ModularCut.principal_eq_top_iff, ModularCut.mem_principal_iff, isFlat_closure, true_and,
+--     disjoint_singleton_right]
+--   refine ⟨?_, fun h ↦ ?_⟩
+--   · rintro ⟨I₀, ⟨⟨⟨hIM, hIN⟩, h'⟩, he⟩, rfl⟩
+--     refine ⟨hIM.subset ?_, ?_⟩
+--     · rintro x ⟨⟨y | y, hy, rfl⟩, hxE⟩
+--       simpa
+
+--       simp at hxE
+--       simp

@@ -84,6 +84,10 @@ lemma restrict_isSpanningRestriction_iff : (M ↾ X) ≤sr M ↔ M.Spanning X :=
 lemma Spanning.restrict_isSpanningRestriction (h : M.Spanning X) : M ↾ X ≤sr M := by
   simpa
 
+lemma ext_closure' {M N : Matroid α} (hE : M.E = N.E) (hX : ∀ X ⊆ M.E, M.closure X = N.closure X) :
+    M = N := by
+  refine ext_closure fun X ↦ ?_
+  rw [← closure_inter_ground, hX _ inter_subset_right, hE, closure_inter_ground]
 
 -- lemma Coindep.delete_isSpanningRestriction (h : M.Coindep X) : M ＼ X →
 

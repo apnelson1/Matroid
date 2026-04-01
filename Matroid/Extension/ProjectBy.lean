@@ -148,6 +148,11 @@ lemma projectBy_map {β : Type*} (U : M.ModularCut) {f : α → β} (hf : InjOn 
   rw [hf.image_eq_image_iff (U.subset_ground hF₀U) (M.closure_subset_ground ..)] at h_eq
   rwa [← h_eq]
 
+@[simp]
+lemma projectby_copy {N : Matroid α} (U : M.ModularCut) (hMN : M = N) :
+    N.projectBy (U.copy hMN) = M.projectBy U := by
+  subst hMN; rfl
+
 /-- Projecting out by a flat in a modular cut cancels the projection by the modular cut. -/
 lemma projectBy_project_eq_project_of_mem (U : M.ModularCut) (hF : F ∈ U) :
     (M.projectBy U).project F = M.project F := by
@@ -210,5 +215,40 @@ lemma projectBy_eRank_add_one_eq (U : M.ModularCut) (hU_top : U ≠ ⊤) (hU_bot
   obtain ⟨B, hB⟩ := M.exists_isBase
   obtain ⟨e, heB, hB'⟩ := U.exists_diff_singleton_isBase_projectBy hU_top hU_bot hB
   rw [← hB'.encard_eq_eRank, ← hB.encard_eq_eRank, encard_diff_singleton_add_one heB]
+
+lemma projectBy_restrict (U : M.ModularCut) (R : Set α) :
+    (M ↾ R).projectBy (U.restrict R) = (M.projectBy U) ↾ R := by
+  refine ext_closure' rfl fun X (hXR : X ⊆ R) ↦ Set.ext fun e ↦ ?_
+  by_cases! heR : e ∉ R; grind
+  simp only [mem_closure_projectBy_iff, restrict_closure_eq', mem_union, mem_inter_iff, heR,
+    and_true, mem_diff, true_and, mem_restrict_iff, not_and, projectBy_ground]
+  by_cases! heE : e ∉ M.E
+  · simp [heE]
+  by_cases heX : e ∈ M.closure (X ∩ R)
+  · simp [heX]
+  simp only [heX, heE, not_true_eq_false, _root_.or_self, false_or, or_false]
+  rw [and_iff_right ((M.closure_isFlat ..).isFlat_restrict' _),
+    imp_iff_right ((M.closure_isFlat ..).isFlat_restrict' _),
+    ← M.closure_inter_ground, union_inter_distrib_right, disjoint_sdiff_left.inter_eq,
+    union_empty, closure_inter_ground, ← M.closure_inter_ground (_ ∪ _), union_inter_distrib_right,
+    disjoint_sdiff_left.inter_eq, union_empty, closure_inter_ground, insert_inter_of_mem heR]
+  refine ⟨fun h ↦ ⟨?_, fun hXU ↦ h.2 ?_⟩, fun h ↦ ⟨?_, fun hXU ↦ h.2 ?_⟩⟩
+  · exact U.superset_mem h.1 (M.closure_isFlat ..) <| by grw [inter_subset_left, closure_closure]
+  · refine U.superset_mem hXU (M.closure_isFlat ..) ?_
+    grw [← M.closure_inter_ground]
+    exact M.closure_subset_closure <| by grind
+  · refine U.superset_mem h.1 (M.closure_isFlat ..) ?_
+    grw [← M.closure_inter_ground]
+    exact M.closure_subset_closure <| by grind
+  exact U.superset_mem hXU (M.closure_isFlat ..) <| by grw [inter_subset_left, closure_closure]
+
+lemma projectBy_delete (U : M.ModularCut) (D : Set α) :
+    (M ＼ D).projectBy (U.delete D) = (M.projectBy U) ＼ D := by
+  simp_rw [delete_eq_restrict, projectBy_ground, ← projectBy_restrict]
+  rfl
+
+
+
+
 
 end Matroid.ModularCut
