@@ -74,7 +74,7 @@ lemma Menger'sTheorem_aux [G.Finite] {S T : Set α} (hS : S ⊆ V(G)) (hT : T �
       rw [← ENat.coe_lt_coe, hn']
       simp only [cast_zero, encard_pos]
       use R.Q, R.Q_mem
-    rw [Nat.sub_add_cancel (by lia), hn']
+    rw [Nat.sub_add_cancel (by lia), ← ENat.coe_lt_coe]
     lia
   have hT' : T ∪ V(R.bQ2) ⊆ V(G) := by
     rw [R.bQ2_vertexSet]

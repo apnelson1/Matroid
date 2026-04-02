@@ -41,7 +41,7 @@ private lemma exists_common_ind_aux (M₁ M₂ : Matroid α) [M₁.Finite] (hE :
       ⟨∅, M₁.loops, closure_subset_ground _ _, by simpa⟩
     rw [eq_comm, rk_eq_zero_iff diff_subset, diff_subset_iff, ← hE]
     simpa [subset_def]
-  push_neg at hloop
+  push Not at hloop
   obtain ⟨e, he, he₁, he₂⟩ := hloop
   rw [not_isLoop_iff] at he₁ he₂
 

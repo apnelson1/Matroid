@@ -227,6 +227,4 @@ lemma encard_le_of_simple [RankFinite M] [Simple M] (h : M.Representable 𝔽) :
   simp only [ENat.card_eq_coe_natCard, ground_eq_univ, encard_univ]
   norm_cast
   rw [Projectivization.card_of_finrank 𝔽 (B →₀ 𝔽) (n := M.rank)]
-  · simp only [Nat.card_eq_fintype_card, Nat.cast_pow, Nat.cast_sum]
-    rfl
   simp [hB.finset_card]

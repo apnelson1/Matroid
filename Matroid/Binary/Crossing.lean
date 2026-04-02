@@ -91,7 +91,6 @@ lemma crossingBinary_unif_iff {a b : ℕ} : (unif a b).CrossingBinary ↔ a ≤ 
   refine (crossingBinary_of_eRank_le_one ?_).of_dual
   suffices (b : ℕ∞) ≤ a + 1 by simpa [unif_dual, add_comm]
   norm_cast
-  rwa [ENat.coe_le_coe]
 
 end CrossingBinary
 

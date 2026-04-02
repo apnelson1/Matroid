@@ -302,7 +302,7 @@ end Simple
 
 lemma eq_banana [G.Loopless] (hV : V(G) = {a,b}) : G = banana a b E(G) := by
   refine Graph.ext_inc (by simpa) fun e x ↦ ?_
-  simp only [banana_inc_iff]
+  simp only [banana_inc]
   refine ⟨fun h ↦ ⟨h.edge_mem, by simpa using (show x ∈ {a,b} from hV ▸ h.vertex_mem)⟩, ?_⟩
   suffices aux : ∀ c, V(G) = {x,c} → e ∈ E(G) → G.Inc e x by
     rintro ⟨he, rfl | rfl⟩

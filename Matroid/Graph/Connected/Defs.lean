@@ -612,7 +612,7 @@ lemma connGE_bouquet_iff (n : ℕ) : (bouquet v F).ConnGE n ↔ n ≤ 1 := by
   simpa using h.le_cut (C := {v}) (by simp)
 
 lemma connGE_iff_of_vertexSet_singleton (h : V(G) = {x}) : G.ConnGE n ↔ n ≤ 1 := by
-  rw [eq_bouquet h, connGE_bouquet_iff]
+  rw [eq_bouquet_iff.mpr h, connGE_bouquet_iff]
 
 lemma ConnGE.pre (h : G.ConnGE n) : G.PreconnGE n := by
   rw [preconnGE_iff_forall_preconnected]

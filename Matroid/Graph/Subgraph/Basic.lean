@@ -409,7 +409,7 @@ lemma IsClosedSubgraph.of_le_of_le {G₁ : Graph α β} (hHG : H ≤c G) (hHG₁
 lemma not_isClosedSubgraph_iff_of_IsInducedSubgraph (hle : H ≤i G) : ¬ H ≤c G ↔ ∃ x y, G.Adj x y ∧
     x ∈ V(H) ∧ y ∉ V(H) := by
   rw [not_iff_comm]
-  push_neg
+  push Not
   exact ⟨fun hncl ↦ ⟨hle.le, fun e x ⟨y, hexy⟩ hxH =>
     hle.isLink_of_mem_mem hexy hxH (hncl x y ⟨e, hexy⟩ hxH) |>.edge_mem⟩,
     fun hcl x y hexy hx ↦ (hcl.mem_iff_mem_of_adj hexy).mp hx⟩

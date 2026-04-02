@@ -11,9 +11,6 @@ variable {a b c x y m n : ℕ∞}
 -- LinearOrderedCommMonoidWithZero ℕ∞ is not true anymore
 -- https://leanprover.zulipchat.com/#narrow/channel/116290-rss/topic/Recent.20Commits.20to.20mathlib4.3Amaster/near/566931076
 
-lemma le_one_iff_eq_zero_or_eq_one : a ≤ 1 ↔ a = 0 ∨ a = 1 := by
-  enat_to_nat <;> lia
-
 lemma eq_zero_or_exists_eq_add_one (a : ℕ∞) : a = 0 ∨ ∃ i, a = i + 1 := by
   obtain (a | a | a) := a
   · exact .inr ⟨⊤, rfl⟩
@@ -73,7 +70,8 @@ protected lemma ofNat_lt_ofNat {m n : ℕ} [m.AtLeastTwo] [n.AtLeastTwo] :
 @[simp]
 protected lemma ofNat_inj {m n : ℕ} [m.AtLeastTwo] [n.AtLeastTwo] :
     (ofNat(m) : ℕ∞) = (ofNat(n) : ℕ∞) ↔ m = n := by
-  simp [le_antisymm_iff]
+  simp only [OfNat.ofNat_eq_ofNat, le_antisymm_iff]
+  exact Iff.rfl
 
 @[simp]
 protected lemma one_lt_ofNat {n : ℕ} [n.AtLeastTwo] : (1 : ℕ∞) < ofNat(n) := by
@@ -351,7 +349,7 @@ protected lemma odd_natCast {n : ℕ} : Odd (n : ℕ∞) ↔ Odd n := by
   refine ⟨fun ⟨r, hr⟩ ↦ ?_, fun ⟨r, hr⟩ ↦ ⟨r, ?_⟩⟩
   · lift r to ℕ using (by rintro rfl; enat_to_nat)
     norm_cast at hr
-    obtain rfl : n = 2 * r + 1 := by rwa [← ENat.coe_inj]
+    subst hr
     exact odd_two_mul_add_one r
   simp [hr]
 

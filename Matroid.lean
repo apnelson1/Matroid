@@ -7,6 +7,7 @@ import Matroid.Axioms.Rank
 import Matroid.Binary.Crossing
 import Matroid.Binary.Representation
 import Matroid.Bool
+-- import Matroid.Bridge
 import Matroid.Circuit
 import Matroid.Closure
 import Matroid.Connectivity.Basic
@@ -30,6 +31,7 @@ import Matroid.Connectivity.Separation.Infinite
 import Matroid.Connectivity.Separation.Internal
 import Matroid.Connectivity.Separation.Minor
 import Matroid.Connectivity.Separation.Tutte
+-- import Matroid.Connectivity.Separation.Two
 import Matroid.Connectivity.Separation.Vertical
 import Matroid.Connectivity.Skew
 -- import Matroid.Connectivity.Splitter.Cretaceous
@@ -42,7 +44,6 @@ import Matroid.Constructions.Relax
 -- import Matroid.Constructions.SeriesParallel
 -- import Matroid.Constructions.Small
 import Matroid.Constructions.Truncate
--- import Matroid.Constructions.relax'
 import Matroid.Equiv
 import Matroid.Extension.ExtendBy
 import Matroid.Extension.Guts
@@ -56,6 +57,7 @@ import Matroid.Extension.Quotient
 -- import Matroid.Extremal.Thickness
 import Matroid.Finitize
 import Matroid.Flat.Basic
+-- import Matroid.Flat.Cyclic
 import Matroid.Flat.Hyperplane
 import Matroid.Flat.Lattice
 import Matroid.Flat.LowRank
@@ -98,13 +100,17 @@ import Matroid.Graph.Map
 import Matroid.Graph.Matrix
 import Matroid.Graph.Minor.Conn
 import Matroid.Graph.Minor.Defs
--- import Matroid.Graph.Planarity.Cut
 -- import Matroid.Graph.Planarity.Defs
 -- import Matroid.Graph.Planarity.Drawing
--- import Matroid.Graph.Planarity.JCT
--- import Matroid.Graph.Planarity.Path
--- import Matroid.Graph.Planarity.Plane
--- import Matroid.Graph.Planarity.PolygonalPath
+import Matroid.Graph.Planarity.GraphContinuum.Basic
+import Matroid.Graph.Planarity.GraphContinuum.Realization
+-- import Matroid.Graph.Planarity.Topology.Circuit
+import Matroid.Graph.Planarity.Topology.ConnPartition
+-- import Matroid.Graph.Planarity.Topology.Curve
+-- import Matroid.Graph.Planarity.Topology.JCT
+-- import Matroid.Graph.Planarity.Topology.Path
+-- import Matroid.Graph.Planarity.Topology.Plane
+-- import Matroid.Graph.Planarity.Topology.PolygonalPath
 import Matroid.Graph.Simple
 import Matroid.Graph.Subgraph.Basic
 import Matroid.Graph.Subgraph.Compatible
@@ -166,6 +172,6 @@ import Matroid.Spikes
 import Matroid.Tame
 -- import Matroid.Triangle
 import Matroid.Uniform.Basic
-import Matroid.Uniform.Paving
 import Matroid.Uniform.Finite
 import Matroid.Uniform.Minor
+import Matroid.Uniform.Paving

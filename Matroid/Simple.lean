@@ -193,7 +193,7 @@ lemma exists_isLoop_or_para_of_not_simple (hM : ¬ M.Simple) :
     (∃ e, M.IsLoop e) ∨ ∃ e f, M.Parallel e f ∧ e ≠ f := by
   by_contra! h
   rw [simple_iff_loopless_eq_of_parallel_forall, loopless_iff_forall_not_isLoop] at hM
-  push_neg at hM
+  push Not at hM
   obtain ⟨e, f, hef, hne⟩ := hM (fun e _ ↦ h.1 e)
   exact hne <| h.2 e f hef
 

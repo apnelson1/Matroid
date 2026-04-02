@@ -109,9 +109,8 @@ theorem truncateTo_eRk_eq (M : Matroid α) (k : ℕ∞) (X : Set α) :
   · intro J hJX hJi
     exact le_min (hJi.1.encard_le_eRk_of_subset hJX) hJi.2
   obtain ⟨I₀, hI₀, hI₀ss⟩ := exists_subset_encard_eq
-    (min_le_of_left_le (b := k) hI.encard_eq_eRk.symm.le)
+    (min_le_of_left_le hI.encard_eq_eRk.symm.le)
   exact ⟨_, hI₀.trans hI.subset, ⟨hI.indep.subset hI₀, hI₀ss.trans_le (min_le_right _ _)⟩, hI₀ss⟩
-
 
 end truncateTo
 
@@ -827,7 +826,7 @@ lemma eq_top_or_bot_of_rankFinite [RankFinite M] (T : M.TruncateFamily) :
     T = top M ∨ T = bot M := by
   obtain h | ⟨B₀, hB₀⟩ := em' (∃ B, T.ToTruncate B)
   · right
-    push_neg at h
+    push Not at h
     ext
     simp [h]
   left
@@ -840,7 +839,7 @@ lemma eq_top_or_bot_of_rankFinite_dual [RankFinite M✶] (T : M.TruncateFamily) 
     T = top M ∨ T = bot M := by
   obtain h | ⟨B₀, hB₀⟩ := em' (∃ B, T.ToTruncate B)
   · right
-    push_neg at h
+    push Not at h
     ext
     simp [h]
   left

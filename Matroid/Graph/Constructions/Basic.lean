@@ -11,17 +11,6 @@ open scoped Sym2
 
 namespace Graph
 
-/-- The graph with vertex set `V` and no edges -/
-@[simps (attr := grind =)]
-protected def noEdge (V : Set α) (β : Type*) : Graph α β where
-  vertexSet := V
-  edgeSet := ∅
-  IsLink _ _ _ := False
-  isLink_symm := by simp
-  eq_or_eq_of_isLink_of_isLink := by simp
-  edge_mem_iff_exists_isLink := by simp
-  left_mem_of_isLink := by simp
-
 @[simp]
 lemma noEdge_le_iff : Graph.noEdge V β ≤ G ↔ V ⊆ V(G) := by
   simp [le_iff]
@@ -151,61 +140,6 @@ lemma singleEdge_le_iff : Graph.singleEdge u v e ≤ G ↔ G.IsLink e u v := by
   · assumption
   exact h.symm
 
-
-
-/-! ### Graphs with one vertex  -/
-
-/-- A graph with one vertex and loops at that vertex -/
-@[simps (attr := grind =)]
-def bouquet (v : α) (F : Set β) : Graph α β where
-  vertexSet := {v}
-  edgeSet := F
-  IsLink e x y := e ∈ F ∧ x = v ∧ y = v
-  isLink_symm e := by simp +contextual [Symmetric]
-  eq_or_eq_of_isLink_of_isLink := by aesop
-  edge_mem_iff_exists_isLink := by aesop
-  left_mem_of_isLink := by aesop
-
-@[simp]
-lemma bouquet_inc_iff : (bouquet v F).Inc e x ↔ e ∈ F ∧ x = v := by
-  simp [Inc]
-
-@[simp]
-lemma bouquet_isLoopAt : (bouquet v F).IsLoopAt e x ↔ e ∈ F ∧ x = v := by
-  simp [← isLink_self_iff]
-
-@[simp]
-lemma bouquet_not_isNonloopAt : ¬ (bouquet v F).IsNonloopAt e x := by
-  simp +contextual [IsNonloopAt, eq_comm]
-
-@[simp]
-lemma bouquet_adj_iff : (bouquet v F).Adj x y ↔ F.Nonempty ∧ x = v ∧ y = v := by
-  simp only [Adj, bouquet_isLink, exists_and_right, and_congr_left_iff, and_imp]
-  exact fun _ _ ↦ Iff.rfl
-
-/-- Every graph on just one vertex is a bouquet on that vertex-/
-lemma eq_bouquet_of_mem (hv : v ∈ V(G)) (hss : V(G).Subsingleton) : G = bouquet v E(G) := by
-  have hrw := hss.eq_singleton_of_mem hv
-  refine Graph.ext_inc (by simpa) fun e x ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · simp [bouquet_inc_iff, ← mem_singleton_iff, ← hrw, h.edge_mem, h.vertex_mem]
-  simp only [bouquet_inc_iff] at h
-  obtain ⟨z,w, hzw⟩ := exists_isLink_of_mem_edgeSet h.1
-  rw [h.2, ← show z = v from (show z ∈ {v} from hrw ▸ hzw.left_mem)]
-  exact hzw.inc_left
-
-lemma eq_bouquet (hV : V(G) = {v}) : G = bouquet v E(G) :=
-  eq_bouquet_of_mem (by simp [hV]) (by simp [hV])
-
-/-- Every graph on just one vertex is a bouquet on that vertex-/
-lemma exists_eq_bouquet_edge (hv : v ∈ V(G)) (hss : V(G).Subsingleton) : ∃ F, G = bouquet v F :=
-  ⟨E(G), eq_bouquet_of_mem hv hss⟩
-
-lemma exists_eq_bouquet (hne : V(G).Nonempty) (hss : V(G).Subsingleton) : ∃ x F, G = bouquet x F :=
-  ⟨_, _, eq_bouquet_of_mem hne.some_mem hss⟩
-
-lemma bouquet_empty (v : α) : bouquet v ∅ = Graph.noEdge {v} β := by
-  ext <;> simp
-
 lemma bouquet_mono (v : α) {X Y : Set β} (hss : X ⊆ Y) : bouquet v X ≤s bouquet v Y where
   vertexSet_eq := rfl
   isLink_of_isLink := by simp +contextual [subset_def ▸ hss]
@@ -218,56 +152,20 @@ lemma bouquet_incEdges : E(bouquet v F, v) = F := by
 @[simp]
 lemma bouquet_le_iff_of_mem (hv : v ∈ V(G)) (F : Set β) :
     bouquet v F ≤ G ↔ ∀ e ∈ F, G.IsLoopAt e v := by
-  refine ⟨fun h e heF ↦ IsLoopAt.of_le (by simpa) h, fun h ↦ ⟨by simpa, ?_⟩⟩
-  rintro e x y ⟨hef, rfl, rfl⟩
+  refine ⟨fun h e heF ↦ IsLoopAt.of_le (by simpa) h, fun h ↦ ⟨by simpa, fun e x y h' ↦ ?_⟩⟩
+  simp only [banana_isLink, or_self] at h'
+  obtain ⟨hef, rfl, rfl⟩ := h'
   exact h e hef
 
 @[simp]
 lemma bouquet_le_iff_of_nonempty (v : α) (hF : F.Nonempty) :
     bouquet v F ≤ G ↔ ∀ e ∈ F, G.IsLoopAt e v := by
-  refine ⟨fun h e heF ↦ IsLoopAt.of_le (by simpa) h, fun h ↦ ⟨?_, ?_⟩⟩
+  refine ⟨fun h e heF ↦ IsLoopAt.of_le (by simpa) h, fun h ↦ ⟨?_, fun e x y h ↦ ?_⟩⟩
   · simp only [bouquet_vertexSet, singleton_subset_iff]
     exact (h _ hF.some_mem).vertex_mem
-  rintro e x y ⟨hef, rfl, rfl⟩
+  simp only [banana_isLink, or_self] at h
+  obtain ⟨hef, rfl, rfl⟩ := h
   exact h e hef
-
-/-! ### Two vertices -/
-
-/-- A graph with exactly two vertices and no loops. -/
-@[simps (attr := grind =)]
-def banana (a b : α) (F : Set β) : Graph α β where
-  vertexSet := {a,b}
-  edgeSet := F
-  IsLink e x y := e ∈ F ∧ ((x = a ∧ y = b) ∨ (x = b ∧ y = a))
-  isLink_symm _ _ _ := by aesop
-  eq_or_eq_of_isLink_of_isLink := by aesop
-  edge_mem_iff_exists_isLink := by aesop
-  left_mem_of_isLink := by aesop
-
-@[simp]
-lemma banana_inc_iff : (banana a b F).Inc e x ↔ e ∈ F ∧ (x = a ∨ x = b) := by
-  simp only [Inc, banana_isLink, exists_and_left, and_congr_right_iff]
-  aesop
-
-lemma banana_comm (a b : α) (F : Set β) : banana a b F = banana b a F :=
-  Graph.ext_inc (pair_comm ..) <| by simp [or_comm]
-
-@[simp]
-lemma banana_isNonloopAt_iff :
-    (banana a b F).IsNonloopAt e x ↔ e ∈ F ∧ (x = a ∨ x = b) ∧ a ≠ b := by
-  simp_rw [isNonloopAt_iff_inc_not_isLoopAt, ← isLink_self_iff, banana_isLink, banana_inc_iff]
-  aesop
-
-@[simp]
-lemma banana_isLoopAt_iff :
-    (banana a b F).IsLoopAt e x ↔ e ∈ F ∧ x = a ∧ a = b := by
-  simp only [← isLink_self_iff, banana_isLink, and_congr_right_iff]
-  aesop
-
-@[simp]
-lemma banana_adj_iff : (banana a b F).Adj x y ↔ F.Nonempty ∧ (x = a ∧ y = b ∨ x = b ∧ y = a) := by
-  simp only [Adj, banana_isLink, exists_and_right, and_congr_left_iff]
-  exact fun _ ↦ Iff.rfl
 
 @[simp]
 lemma banana_singleton (e : β) : banana a b {e} = Graph.singleEdge a b e := by
@@ -276,14 +174,6 @@ lemma banana_singleton (e : β) : banana a b {e} = Graph.singleEdge a b e := by
 lemma banana_mono {X Y : Set β} (hXY : X ⊆ Y) : banana a b X ≤s banana a b Y where
   vertexSet_eq := rfl
   isLink_of_isLink := by simp +contextual [subset_def ▸ hXY]
-
-@[simp]
-lemma banana_eq_bouquet : banana a a F = bouquet a F := by
-  ext a b c <;> simp
-
-@[simp]
-lemma banana_eq_noEdge : banana a b ∅ = Graph.noEdge {a, b} β := by
-  ext <;> simp
 
 @[simp]
 lemma banana_incEdges_left : E(banana a b F, a) = F := by

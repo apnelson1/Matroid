@@ -55,6 +55,14 @@ lemma frontier_subset_of_mem_componentPartition [LocPathConnectedSpace α]
   obtain ⟨z, hzU, hzT⟩ := mem_closure_iff_nhds.1 huc _ (hUopen.mem_nhds huU)
   exact hui ((pathComponentIn_congr hzU).symm.trans (pathComponentIn_congr hzT) ▸ huU)
 
+lemma IsPathConnected.exists_part_componentPartition_of_disjoint (h : Disjoint S T)
+    (hT : IsPathConnected T) : ∃ U ∈ ComponentPartition S, T ⊆ U := by
+  obtain ⟨x, hx⟩ := hT.nonempty
+  use (ComponentPartition S).partOf x, ?_, fun y hyT ↦ ?_
+  · exact (ComponentPartition S).partOf_mem <| by simp [h.notMem_of_mem_right hx]
+  simp only [componentPartition_partOf, pathComponentIn, mem_setOf_eq]
+  exact hT.joinedIn _ hx _ hyT |>.mono h.subset_compl_left
+
 structure AdjRegion (S T₁ T₂ : Set α) : Prop where
   hT₁ : T₁ ∈ ComponentPartition S
   hT₂ : T₂ ∈ ComponentPartition S

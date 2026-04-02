@@ -643,7 +643,6 @@ lemma SetConnGE.left_bound_anti (hS : S.Finite) (h : G.SetConnGE S T S.ncard) (h
   norm_cast at h ⊢
   have := ncard_le_ncard hU hS
   norm_cast at *
-  rw [ENat.coe_le_coe] at *
   lia
 
 lemma SetConnGE.right_bound_anti (hT : T.Finite) (h : G.SetConnGE S T T.ncard) (hU : U ⊆ T) :

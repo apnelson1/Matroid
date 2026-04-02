@@ -119,12 +119,10 @@ lemma rel_symmectric (P : Partition (Set α)) : Symmetric P :=
 instance (P : Partition (Set α)) : Std.Symm P where
   symm := P.rel_symmectric
 
-lemma rel_transitive (P : Partition (Set α)) : Transitive P := by
-  intro _ _ _ ⟨t, ht, ha, hb⟩ ⟨t', ht', hb', hc⟩
-  exact ⟨t, ht, ha, by rwa [eq_of_mem_of_mem ht ht' hb hb']⟩
-
 instance (P : Partition (Set α)) : IsTrans α P where
-  trans := P.rel_transitive
+  trans := by
+    intro _ _ _ ⟨t, ht, ha, hb⟩ ⟨t', ht', hb', hc⟩
+    exact ⟨t, ht, ha, by rwa [eq_of_mem_of_mem ht ht' hb hb']⟩
 
 lemma Rel.symm (h : P x y) : P y x :=
   symm_of P h

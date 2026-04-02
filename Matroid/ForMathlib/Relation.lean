@@ -519,10 +519,10 @@ instance {s : ι → α → α → Prop} [∀ i, Std.Symm (s i)] : Std.Symm (⨅
     exact fun i => symm (h i)
 
 lemma sInf_transitive {s : Set (α → α → Prop)} (hs : ∀ r ∈ s, IsTrans α r) :
-    Transitive (sInf s) := by
-  rintro a b c
-  simp_rw [binary_relation_sInf_iff s]
-  exact fun hab hbc r hrs => let := hs r hrs; trans' (hab r hrs) (hbc r hrs)
+    IsTrans α (sInf s) where
+  trans a b c := by
+    simp_rw [binary_relation_sInf_iff s]
+    exact fun hab hbc r hrs => let := hs r hrs; trans' (hab r hrs) (hbc r hrs)
 
 instance {s : ι → α → α → Prop} [∀ i, IsTrans α (s i)] : IsTrans α (⨅ i, s i) where
   trans a b c hab hbc := by
@@ -540,11 +540,11 @@ instance [IsTrans α r] [IsTrans α s] : IsTrans α (r ⊓ s) :=
 instance [IsTrans α r] : IsTrans α rᵀ where
   trans _ _ _ h h' := trans_of r h' h
 
-lemma transitive_of_le_eq (r : α → α → Prop) (hr : r ≤ (· = ·)) : Transitive r := by
-  rintro a b c hab hbc
-  obtain rfl := hr _ _ hab
-  obtain rfl := hr _ _ hbc
-  exact hab
+lemma transitive_of_le_eq (r : α → α → Prop) (hr : r ≤ (· = ·)) : IsTrans α r where
+  trans a b c hab hbc := by
+    obtain rfl := hr _ _ hab
+    obtain rfl := hr _ _ hbc
+    exact hab
 
 def SymmClosure : ClosureOperator (α → α → Prop) where
   toFun r := r ⊔ flip r
@@ -603,8 +603,8 @@ def TransClosure : ClosureOperator (α → α → Prop) where
       | single h => exact h
       | tail _ h' ih => exact TransGen.trans ih h'
     · exact TransGen.single h
-  IsClosed := Transitive
-  isClosed_iff := ⟨transGen_eq_self, fun hr => hr ▸ transitive_transGen⟩
+  IsClosed := IsTrans α
+  isClosed_iff := ⟨transGen_eq_self, (· ▸ inferInstance)⟩
 
 instance : IsTrans α (TransClosure r) := by
   change IsTrans α (TransGen r)
@@ -618,7 +618,7 @@ instance [Std.Symm r] : Std.Symm (TransClosure r) := by
 
 @[simp]
 lemma transClosure_eq_self (r : α → α → Prop) [IsTrans α r] : TransClosure r = r :=
-  transGen_eq_self <| transitive_of_trans r
+  transGen_eq_self inferInstance
 
 lemma transClosure_eq_self_of_le_eq (hr : r ≤ (· = ·)) : TransClosure r = r :=
   transGen_eq_self <| transitive_of_le_eq r hr
@@ -628,10 +628,10 @@ lemma transClosure_eq : TransClosure (Eq : α → α → Prop) = Eq :=
   transClosure_eq_self_of_le_eq le_rfl
 
 lemma transClosure_le_of_le_trans (hr : r ≤ s) [IsTrans α s] : TransClosure r ≤ s :=
-  (ClosureOperator.IsClosed.closure_le_iff IsTrans.trans).mpr hr
+  (ClosureOperator.IsClosed.closure_le_iff <| inferInstanceAs (IsTrans α s)).mpr hr
 
 lemma transClosure_le_domp_of_le_trans (hr : r ≤ s) [IsTrans α s] : TransClosure r ≤ Domp s r := by
-  have hs : TransClosure.IsClosed s := IsTrans.trans
+  have hs : TransClosure.IsClosed s := inferInstanceAs (IsTrans α s)
   rintro a b hab
   induction hab with
   | single hab' => exact ⟨_, hr _ _ hab', a, hab', hr _ _ hab'⟩
@@ -787,15 +787,12 @@ lemma domp_symm (r s : α → α → Prop) [Std.Symm r] [Std.Symm s] : Symmetric
 instance [Std.Symm r] [Std.Symm s] : Std.Symm (Domp r s) where
   symm := domp_symm r s
 
-lemma domp_transitive (r s : α → α → Prop) [Std.Symm r] [IsTrans α s] [H : Trans s r s] :
-    Transitive (Domp r s) := by
-  rintro a b c ⟨e, hae, d, hde, hdb⟩ ⟨f, hbf, e', he'f, he'c⟩
-  use e, hae, e', ?_, he'c
-  have := trans' (H.trans (H.trans he'f (symm hbf)) (symm hdb)) hde
-  exact this
-
 instance [Std.Symm r] [IsTrans α s] [H : Trans s r s] : IsTrans α (Domp r s) where
-  trans := domp_transitive r s
+  trans a b c := by
+    rintro ⟨e, hae, d, hde, hdb⟩ ⟨f, hbf, e', he'f, he'c⟩
+    use e, hae, e', ?_, he'c
+    have := trans' (H.trans (H.trans he'f (symm hbf)) (symm hdb)) hde
+    exact this
 
 instance [IsTrans α r]: Trans r (Domp r s) (Domp r s) where
   trans := by

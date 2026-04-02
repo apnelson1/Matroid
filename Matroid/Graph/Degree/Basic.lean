@@ -195,7 +195,7 @@ lemma degree_eq_zero_iff_inc [G.LocallyFinite] : G.degree v = 0 ↔ ∀ e, ¬ G.
 
 lemma degree_ne_zero_iff_inc [G.LocallyFinite] : G.degree v ≠ 0 ↔ ∃ e, G.Inc e v := by
   have := (G.degree_eq_zero_iff_inc (v := v)).not
-  push_neg at this
+  push Not at this
   exact this
 
 lemma degree_eq_zero_iff_adj [G.LocallyFinite] : G.degree v = 0 ↔ ∀ x, ¬ G.Adj v x := by
@@ -203,7 +203,7 @@ lemma degree_eq_zero_iff_adj [G.LocallyFinite] : G.degree v = 0 ↔ ∀ x, ¬ G.
 
 lemma degree_ne_zero_iff_adj [G.LocallyFinite] : G.degree v ≠ 0 ↔ ∃ x, G.Adj v x := by
   have := (G.degree_eq_zero_iff_adj (v := v)).not
-  push_neg at this
+  push Not at this
   exact this
 
 lemma eDegree_eq_zero_of_notMem (hv : v ∉ V(G)) : G.eDegree v = 0 := by
@@ -216,14 +216,12 @@ lemma degree_eq_fintype_sum [Fintype β] (G : Graph α β) (v : α) :
     G.degree v = ∑ e, G.incFun e v := by
   rw [degree, eDegree, tsum_eq_sum (s := Finset.univ) (by simp), ← ENat.coe_inj,
     Nat.cast_sum, ENat.coe_toNat]
-  · rfl
   exact WithTop.sum_ne_top.2 fun i _ ↦ WithTop.coe_ne_top
 
 lemma degree_eq_finsum (G : Graph α β) (v : α) : G.degree v = ∑ᶠ e, G.incFun e v := by
   obtain hfin | hinf := E(G, v).finite_or_infinite
   · rw [degree, eDegree, tsum_eq_sum (s := hfin.toFinset) (by simp), ← ENat.coe_inj,
       ENat.coe_toNat, finsum_eq_sum_of_support_subset (s := hfin.toFinset), Nat.cast_sum]
-    · rfl
     · simp
     intro h
     replace h := ((WithTop.sum_eq_top (s := hfin.toFinset) (f := fun e ↦ (G.incFun e v : ℕ∞)))).1 h
@@ -244,7 +242,6 @@ lemma tsum_incFun_eq (he : e ∈ E(G)) : ∑' v, (G.incFun e v : ℕ∞) = 2 := 
   convert (ENat.coe_inj).2 <| G.sum_incFun_eq_two he
   rw [Finsupp.sum, tsum_eq_sum' (s := (G.incFun e).support) (by simp)]
   simp only [Nat.cast_sum]
-  rfl
 
 lemma IsLoopAt.two_le_eDegree (h : G.IsLoopAt e x) : 2 ≤ G.eDegree x := by
   rw [eDegree]
