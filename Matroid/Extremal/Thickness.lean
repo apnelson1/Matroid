@@ -70,6 +70,7 @@ lemma IsThick_set.Minor_mon (hTXd : M.IsThick X d) (hNM : N ≤m M ) ( hX : X �
     have : ¬X ⊆ C := by
       exact not_subset.mpr this
     grind
+
   sorry
   -- Peter?
   -- have hP : (M ／ C ↾ X) = (M ／ (C ∩ M.closure X) ↾ X) := by sorry
@@ -86,7 +87,7 @@ lemma IsThick.Contract_mon (hTXd : M.IsThick X d) (hC : C ⊆ X ) (hne : (X \ C)
   exact (IsThick_iff ).mp hTXd
 
 lemma thick_Bound {M : Matroid α} {a b : ℕ} (ha : a ≠ 0) (hb : a ≤ b) (hX : X ⊆ M.E)
-    (hM : NoUniformMinor M (a + 1) (b + 1)) (ht : M.IsThick X (Nat.choose b a)) :
+    (hM : NoUniformMinor M (a + 1) (b + 1)) (ht : M.IsThick X (Nat.choose (b + 1) a)) :
     M.eRk X ≤ a := by
   by_contra hc
   simp only [not_le] at hc
@@ -99,9 +100,23 @@ lemma thick_Bound {M : Matroid α} {a b : ℕ} (ha : a ≠ 0) (hb : a ≤ b) (hX
       simp at hYeRK
     exact aux (M := M ／ Y) (X := X \ Y) (by grind) (hM.minor (contract_isMinor M Y))
       (ht.Contract_mon hY h3) (by simp only [hYeRK, ENat.natCast_lt_succ]) hYeRK
+  have h : M.IsRkFinite X := by
+    refine eRk_ne_top_iff.mp ?_
+    simp only [hlt, ne_eq, ENat.add_eq_top, ENat.coe_ne_top, ENat.one_ne_top, or_self,
+      not_false_eq_true]
+  have : (M ↾ X).RankPos := by
+    refine (eRank_ne_zero_iff (M ↾ X)).mp ?_
+    simp only [eRank_restrict, ne_eq, hlt, add_eq_zero, ENat.coe_eq_zero, one_ne_zero,
+      and_false, not_false_eq_true]
+  have hle := coverNumber_Bound_subset ha hb
+    (hM.minor (IsRestriction.isMinor (restrict_isRestriction M X) ) ) hlt
+  grw [← NonSpanning_le_RankCover h hlt, ←IsThick_iff.1 ht, ENat.epow_one, ENat.coe_le_coe ] at hle
+  have : b.choose a < (b + 1).choose a := by
+    rw [Nat.choose_succ_left (n := b) (k := a) (by grind) ]
+    simp only [lt_add_iff_pos_left]
+    refine Nat.zero_lt_of_ne_zero (Nat.choose_ne_zero_iff.2 (by lia))
+  omega
 
-
-  sorry
 end Thick
 
 section Firm
