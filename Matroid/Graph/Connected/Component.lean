@@ -11,7 +11,6 @@ namespace Graph
 
 /-! ### Components -/
 
-
 variable {G H H' H₁ H₂ : Graph α β}
 
 lemma IsCompOf.ne_bot (hHco : H.IsCompOf G) : H ≠ ⊥ := by

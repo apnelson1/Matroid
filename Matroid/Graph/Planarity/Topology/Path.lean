@@ -30,6 +30,19 @@ variable {t t₁ t₂ : I}
 @[simp] lemma one_le (t : I) : 1 ≤ t ↔ t = 1 := top_le_iff
 @[simp] lemma le_zero (t : I) : t ≤ 0 ↔ t = 0 := le_bot_iff
 
+@[simp]
+lemma val_le_zero_iff (t : I) : t.val ≤ 0 ↔ t = 0 := by
+  simp only [t.prop.1.ge_iff_eq, eq_comm, Icc.coe_eq_zero]
+
+@[simp]
+lemma one_le_val_iff (t : I) : 1 ≤ t.val ↔ t = 1 := by
+  simp only [t.prop.2.ge_iff_eq, Icc.coe_eq_one]
+
+instance : ContinuousMul I := submonoid.continuousMul
+instance : PathConnectedSpace I :=
+  isPathConnected_iff_pathConnectedSpace.mp <| (convex_Icc 0 1).isPathConnected ⟨0, by simp⟩
+instance : LocPathConnectedSpace I := (convex_Icc 0 1).locPathConnectedSpace
+
 noncomputable def squishLeft : I → I := fun t =>
   ⟨(t : ℝ) / 2, by constructor <;> nlinarith [t.2.1, t.2.2]⟩
 noncomputable def squishRight : I → I := fun t =>
@@ -302,3 +315,5 @@ lemma sInf_notMem {α : Type*} [TopologicalSpace α] {S : Set α} {x y : α} (P 
     rw [unitInterval.le_zero] at h'
     exact h h'
   simpa [h] using (P.continuous.isOpen_preimage _ hS).sInf_notMem ⟨0, h⟩
+
+end Path

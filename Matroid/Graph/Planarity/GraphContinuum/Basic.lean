@@ -1,10 +1,10 @@
 import Matroid.Graph.Planarity.Topology.ConnPartition
-import Matroid.Graph.Planarity.Topology.Circuit
+import Mathlib.Analysis.CStarAlgebra.Unitary.Connected
 import Mathlib.Geometry.Manifold.Metrizable
 
 variable {α β : Type*} {G : Graph α β} {C S T : Set α}
 
-open Set Function TopologicalSpace Topology Relation UniformSpace Sum Path
+open Set Function TopologicalSpace Topology Metric Nat Complex
 open scoped unitInterval
 
 /-!
@@ -18,8 +18,7 @@ class GraphContinuum (α : Type*) extends EMetricSpace α, CompactSpace α where
 
 namespace GraphContinuum
 
-variable [GraphContinuum α] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [FiniteDimensional ℝ E]
+variable [GraphContinuum α]
 
 scoped notation "V(" α ")" => GraphContinuum.verts (α := α)
 
@@ -28,6 +27,23 @@ def edges (α) [GraphContinuum α] : Partition (Set α) := ComponentPartition V(
 scoped notation "E(" α ")" => GraphContinuum.edges (α := α)
 
 def homeo_ball (hT : T ∈ E(α)) : T ≃ₜ (Metric.ball 0 1 : Set ℝ) := graphLike T hT
+
+noncomputable instance : HasDistribNeg Circle := inferInstanceAs <| HasDistribNeg (sphere _ _)
+noncomputable instance : ContinuousNeg Circle := inferInstanceAs <| ContinuousNeg (sphere _ _)
+
+-- noncomputable instance : GraphContinuum Circle where
+--   verts := {-1}
+--   totallyDisconnected := isTotallyDisconnected_singleton
+--   graphLike T hT := by
+--     rw [Real.ball_zero_eq_Ioo]
+--     replace hT : T = {-1}ᶜ := by
+--       sorry
+    -- have h := AddCircle.homeomorphCircle (T := 1) (by simp)
+    -- |>.symm.trans (AddCircle.homeoIccQuot 1 0)
+
+--     sorry
+
+--     -- apply Equiv.subtypeEquiv
 
 -- lemma exists_vert_of_circuit (hC : IsCircuit C) : ∃ v ∈ C, v ∈ V(α) := by
 --   rw [← not_disjoint_iff]
@@ -50,3 +66,5 @@ def homeo_ball (hT : T ∈ E(α)) : T ≃ₜ (Metric.ball 0 1 : Set ℝ) := grap
 --   eq_or_eq_of_isLink_of_isLink e u v x y huv hxy := by
 --     obtain ⟨he, hu, hv, huv⟩ := huv
 --     obtain ⟨-, hx, hy, hxy⟩ := hxy
+
+-- variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]

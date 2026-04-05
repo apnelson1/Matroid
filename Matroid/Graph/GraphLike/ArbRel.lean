@@ -40,23 +40,23 @@ noncomputable def Graph.toSym2 (G : Graph α β) (he : e ∈ E(G)) : Sym2 α :=
   let h := exists_isLink_of_mem_edgeSet he
   s(h.choose, h.choose_spec.choose)
 
-noncomputable def Graph.src (G : Graph α β) (he : e ∈ E(G)) : α :=
+noncomputable def Graph.source (G : Graph α β) (he : e ∈ E(G)) : α :=
   let h := exists_isLink_of_mem_edgeSet he
   if ArbRel α h.choose h.choose_spec.choose then h.choose else h.choose_spec.choose
 
-noncomputable def Graph.tgt (G : Graph α β) (he : e ∈ E(G)) : α :=
+noncomputable def Graph.target (G : Graph α β) (he : e ∈ E(G)) : α :=
   let h := exists_isLink_of_mem_edgeSet he
   if ArbRel α h.choose h.choose_spec.choose then h.choose_spec.choose else h.choose
 
-lemma Graph.isLink_src_tgt (he : e ∈ E(G)) : G.IsLink e (G.src he) (G.tgt he) := by
+lemma Graph.isLink_source_target (he : e ∈ E(G)) : G.IsLink e (G.source he) (G.target he) := by
   let h := exists_isLink_of_mem_edgeSet he
-  simp only [src, tgt]
+  simp only [source, target]
   split_ifs with hRel
   · exact h.choose_spec.choose_spec
   · exact h.choose_spec.choose_spec.symm
 
-lemma Graph.src_mem (he : e ∈ E(G)) : G.src he ∈ V(G) := by
-  exact (G.isLink_src_tgt he).left_mem
+lemma Graph.source_mem (he : e ∈ E(G)) : G.source he ∈ V(G) := by
+  exact (G.isLink_source_target he).left_mem
 
-lemma Graph.tgt_mem (he : e ∈ E(G)) : G.tgt he ∈ V(G) := by
-  exact (G.isLink_src_tgt he).right_mem
+lemma Graph.target_mem (he : e ∈ E(G)) : G.target he ∈ V(G) := by
+  exact (G.isLink_source_target he).right_mem
