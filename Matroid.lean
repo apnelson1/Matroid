@@ -103,8 +103,10 @@ import Matroid.Graph.Minor.Defs
 -- import Matroid.Graph.Planarity.Defs
 -- import Matroid.Graph.Planarity.Drawing
 import Matroid.Graph.Planarity.GraphContinuum.Basic
-import Matroid.Graph.Planarity.GraphContinuum.Realization
--- import Matroid.Graph.Planarity.Topology.Circuit
+import Matroid.Graph.Planarity.Realization.Basic
+import Matroid.Graph.Planarity.Realization.Subgraph
+import Matroid.Graph.Planarity.Topology.Circle
+import Matroid.Graph.Planarity.Topology.Circuit
 import Matroid.Graph.Planarity.Topology.ConnPartition
 -- import Matroid.Graph.Planarity.Topology.Curve
 -- import Matroid.Graph.Planarity.Topology.JCT

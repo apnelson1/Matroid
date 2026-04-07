@@ -67,8 +67,8 @@ instance : DiscreteTopology V(G) where
 instance instFiniteVtx [G.Finite] : Finite V(G) := G.vertexSet_finite
 instance instFiniteEg [G.EdgeFinite] : Finite E(G) := G.edgeSet_finite
 
-noncomputable def src (e : E(G)) : V(G) := ⟨G.source e.prop, G.source_mem e.prop⟩
-noncomputable def tgt (e : E(G)) : V(G) := ⟨G.target e.prop, G.target_mem e.prop⟩
+noncomputable def src (e : E(G)) : V(G) := ⟨G.source e.val e.prop, G.source_mem e.prop⟩
+noncomputable def tgt (e : E(G)) : V(G) := ⟨G.target e.val e.prop, G.target_mem e.prop⟩
 lemma isLink_src_tgt (e : E(G)) : G.IsLink e (src e) (tgt e) := G.isLink_source_target e.prop
 
 @[grind →]
@@ -89,21 +89,21 @@ private def glueRelAux (G : Graph α β) (x y : PreRealization G) : Prop :=
     (∃ e : E(G), u = tgt e ∧ y = Sum.inr ⟨e, (1 : I)⟩)
   | .inr _ => False
 
-private lemma glueRelAux_refl (u : V(G)) : G.glueRelAux (Sum.inl u) (Sum.inl u) := Or.inl rfl
+lemma glueRelAux_refl (u : V(G)) : G.glueRelAux (Sum.inl u) (Sum.inl u) := Or.inl rfl
 
 @[simp]
-private lemma glueRelAux_inl_inj (u v : V(G)) :G.glueRelAux (Sum.inl u) (Sum.inl v) ↔ u = v := by
+lemma glueRelAux_inl_inj (u v : V(G)) :G.glueRelAux (Sum.inl u) (Sum.inl v) ↔ u = v := by
   simp only [glueRelAux, reduceCtorEq, and_false, exists_false, or_self, or_false, eq_comm]
   exact Sum.inl_injective.eq_iff
 
 @[simp]
-private lemma glueRelAux_inl_inr_iff (u : V(G)) (e : E(G)) (t : I) :
+lemma glueRelAux_inl_inr_iff (u : V(G)) (e : E(G)) (t : I) :
     G.glueRelAux (Sum.inl u) (Sum.inr ⟨e, t⟩) ↔ t = 0 ∧ u = src e ∨ t = 1 ∧ u = tgt e := by
   simp only [glueRelAux, eq_comm, reduceCtorEq, Subtype.exists, false_or]
   grind
 
 @[simp]
-private lemma glueRelAux_inr_iff (x : PreRealization G) (e : E(G)) (t : I) :
+lemma glueRelAux_inr_iff (x : PreRealization G) (e : E(G)) (t : I) :
     G.glueRelAux x (Sum.inr ⟨e, t⟩) ↔ ∃ u : V(G), x = Sum.inl u ∧
     (t = 0 ∧ u = src e ∨ t = 1 ∧ u = tgt e) := by
   cases x
@@ -270,7 +270,7 @@ private lemma edgeMk_injective (e : E(G)) (he : G.IsNonloopAt e (src e)) :
   · rfl
   obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := (glueRel_inl_inr ..).mp hv₁ <;>
   obtain ⟨rfl, h1⟩ | ⟨rfl, h1⟩ := (glueRel_inl_inr ..).mp hv₂ <;> clear h hv₁ hv₂ hgr <;> (try rfl)
-  <;> have hval : G.source e.prop = _ := congrArg Subtype.val (by simpa [eq_comm] using h1)
+  <;> have hval : G.source e.val e.prop = _ := congrArg Subtype.val (by simpa [eq_comm] using h1)
   <;> have hlink := hval ▸ G.isLink_source_target e.prop <;> exact absurd hlink (he.not_isLoopAt _)
 
 private lemma edgeMk_preimage_image (e : E(G)) {X : Set I} (h0X : 0 ∉ X) (h1X : 1 ∉ X) :
@@ -693,7 +693,7 @@ theorem Preconnected.joined_vertexMk_realMk {v0 : α} (hv0 : v0 ∈ V(G)) (hG : 
   match a with
   | inl v => simpa using joined_vertexMk_of_connBetween (hG v0 v hv0 v.prop)
   | inr ⟨e, t⟩ =>
-    refine (joined_vertexMk_of_connBetween (hG v0 (G.source e.prop) hv0 ?_)).trans ?_
+    refine (joined_vertexMk_of_connBetween (hG v0 (G.source e.val e.prop) hv0 ?_)).trans ?_
     · exact (G.isLink_source_target e.prop).left_mem
     · simpa [src] using joined_vertexMk_edgeMk e t
 
@@ -833,7 +833,7 @@ noncomputable instance : Topology.CWComplex (univ : Set G.Realization) where
     obtain ⟨e', t', ⟨ht', rfl⟩, rfl⟩ := hx
     have h_mem : Quotient.mk' (Sum.inr ⟨e, t'⟩) ∈ edgeMk e '' Ioo (0 : I) (1 : I) := ⟨t', ht', rfl⟩
     simp only [h_mem, ↓reduceDIte, comp_apply, partialEquivEdgeMk, f_pre,
-      ← edgeMk_inj_on_Ioo ht' (Classical.choose_spec h_mem).2.symm]
+      ← edgeMk_inj_on_Ioo ht' h_mem.choose_spec.2.symm]
   | _ + 2, ⟨i⟩ => Empty.elim i
   pairwiseDisjoint' := by
     rintro ⟨n₁, i₁⟩ _ ⟨n₂, i₂⟩ _ hne
@@ -862,20 +862,11 @@ noncomputable instance : Topology.CWComplex (univ : Set G.Realization) where
       refine ⟨fun _ ↦ ∅, fun _ ↦ ?_⟩
       simp [mem_sphere_iff_norm, norm_eq_zero_of_subsingleton]
     | 1, ⟨e⟩ => by
-      let J : Π m, Finset (Realization.cell G m) := fun m ↦
-        match m with
-        | 0 => {⟨src e⟩, ⟨tgt e⟩}
-        | _ => ∅
-      use J
-      rintro x hx
+      refine ⟨fun m ↦ match m with | 0 => {⟨src e⟩, ⟨tgt e⟩} | _ => ∅, fun x hx ↦ ?_⟩
       simp only [mem_sphere_iff_norm, sub_zero, norm_eq_one_iff_fin_1, Fin.isValue,
-        Real.norm_eq_abs, zero_le_one, abs_eq, Nat.lt_one_iff, Realization.map,
-        iUnion_iUnion_eq_left, Matrix.zero_empty, partialEquivEdgeMk_apply, mem_iUnion, mem_image,
-        Metric.mem_closedBall, dist_eq_zero_of_subsingleton, true_and, Fin.exists_fin_zero_pi,
-        exists_prop] at hx ⊢
-      obtain hx | hx := hx
-      · exact ⟨⟨tgt e⟩, by simp [J, hx, vertexMk_tgt_eq_edgeMk_one]⟩
-      · exact ⟨⟨src e⟩, by simp [J, hx, vertexMk_src_eq_edgeMk_zero]⟩
+        Real.norm_eq_abs, zero_le_one, abs_eq] at hx
+      obtain hx | hx := hx <;> simp [hx, Realization.map, vertexMk_tgt_eq_edgeMk_one,
+        vertexMk_src_eq_edgeMk_zero]
     | n + 2, ⟨i⟩ => Empty.elim i
   closed' A _ h := by
     rw [isClosed_coinduced, isClosed_sum_iff, isClosed_sigma_iff]

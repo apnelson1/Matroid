@@ -80,10 +80,14 @@ lemma zero_lt_half : 0 < half := by
   simp only [half, ← Subtype.coe_lt_coe, Icc.coe_zero]
   positivity
 
+@[simp] lemma half_ne_zero : half ≠ 0 := zero_lt_half.ne'
+
 @[simp]
 lemma half_lt_one : half < 1 := by
   simp only [half, ← Subtype.coe_lt_coe, Icc.coe_one]
   exact two_inv_lt_one
+
+@[simp] lemma half_ne_one : half ≠ 1 := half_lt_one.ne
 
 lemma squishRight_lt_one (ht : t < 1) : squishRight t < 1 := by
   change t.val < 1 at ht

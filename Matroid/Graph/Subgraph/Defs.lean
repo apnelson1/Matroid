@@ -261,39 +261,43 @@ structure StronglyDisjoint (G H : Graph α β) : Prop where
   vertex : Disjoint V(G) V(H)
   edge : Disjoint E(G) E(H)
 
+namespace StronglyDisjoint
+
 @[symm]
-lemma StronglyDisjoint.symm (h : G.StronglyDisjoint H) : H.StronglyDisjoint G :=
+lemma symm (h : G.StronglyDisjoint H) : H.StronglyDisjoint G :=
   ⟨h.1.symm, h.2.symm⟩
 
 instance : Std.Symm (StronglyDisjoint : Graph α β → Graph α β → Prop) where
   symm _ _ := StronglyDisjoint.symm
 
-lemma StronglyDisjoint.anti_left (h : G.StronglyDisjoint H) (h₁ : H₁ ≤ G) :
+lemma anti_left (h : G.StronglyDisjoint H) (h₁ : H₁ ≤ G) :
     H₁.StronglyDisjoint H where
   vertex := h.vertex.mono_left (vertexSet_mono h₁)
   edge := h.edge.mono_left (edgeSet_mono h₁)
 
-lemma StronglyDisjoint.anti_right (h : G.StronglyDisjoint H) (h₂ : H₂ ≤ H) :
+lemma anti_right (h : G.StronglyDisjoint H) (h₂ : H₂ ≤ H) :
     G.StronglyDisjoint H₂ where
   vertex := h.vertex.mono_right (vertexSet_mono h₂)
   edge := h.edge.mono_right (edgeSet_mono h₂)
 
-lemma StronglyDisjoint.anti (h : G.StronglyDisjoint H) (h₁ : H₁ ≤ G) (h₂ : H₂ ≤ H) :
+lemma anti (h : G.StronglyDisjoint H) (h₁ : H₁ ≤ G) (h₂ : H₂ ≤ H) :
     H₁.StronglyDisjoint H₂ where
   vertex := h.vertex.mono (vertexSet_mono h₁) (vertexSet_mono h₂)
   edge := h.edge.mono (edgeSet_mono h₁) (edgeSet_mono h₂)
+
+lemma disjoint (h : G.StronglyDisjoint H) : Disjoint G H := by
+  rintro H' hH'G hH'H
+  rw [le_bot_iff, ← vertexSet_eq_empty_iff]
+  have := le_inf (vertexSet_mono hH'G) <| vertexSet_mono hH'H
+  rwa [h.vertex.eq_bot, le_bot_iff] at this
+
+end StronglyDisjoint
 
 lemma StronglyDisjoint_iff_of_le_le (h₁ : H₁ ≤ G) (h₂ : H₂ ≤ G) :
     StronglyDisjoint H₁ H₂ ↔ Disjoint V(H₁) V(H₂) := by
   refine ⟨StronglyDisjoint.vertex, fun h ↦ ⟨h, disjoint_left.2 fun e he₁ he₂ ↦ ?_⟩⟩
   obtain ⟨x, y, he₁⟩ := exists_isLink_of_mem_edgeSet he₁
   exact h.notMem_of_mem_left he₁.left_mem ((he₁.of_le h₁).of_le_of_mem h₂ he₂).left_mem
-
-lemma StronglyDisjoint.disjoint (h : G.StronglyDisjoint H) : Disjoint G H := by
-  rintro H' hH'G hH'H
-  rw [le_bot_iff, ← vertexSet_eq_empty_iff]
-  have := le_inf (vertexSet_mono hH'G) <| vertexSet_mono hH'H
-  rwa [h.vertex.eq_bot, le_bot_iff] at this
 
 end StronglyDisjoint
 
@@ -626,6 +630,31 @@ lemma Compatible.union_le_iff {H₁ H₂ : Graph α β} (h_compat : H₁.Compati
   simp [h_compat.union_eq_sUnion]
 
 end union
+
+lemma Compatible.of_le_le (hH₁G : H₁ ≤ G) (hH₂G : H₂ ≤ G) : H₁.Compatible H₂ :=
+  fun _ he₁ he₂ _ _ ↦ sorry
+
+lemma _root_.BddAbove.pairwise_compatible {Gs : Set (Graph α β)} (hG : BddAbove Gs) :
+    Gs.Pairwise Compatible := by
+  obtain ⟨G, hG⟩ := hG
+  exact fun _ hH₁ _ hH₂ _ ↦ Compatible.of_le_le (hG hH₁) (hG hH₂)
+
+noncomputable instance : ConditionallyCompletePartialOrder (Graph α β) where
+  sInf Gs :=
+    letI : Decidable Gs.Nonempty := Classical.dec _
+    if h : Gs.Nonempty then Graph.sInter Gs h else ⊥
+  isGLB_csInf_of_directed Gs hGs hGsNe hGsB := by
+    refine ⟨fun G hG ↦ ?_, fun G hGl ↦ ?_⟩ <;> split_ifs
+    · exact Graph.sInter_le hG
+    exact (Graph.le_sInter_iff hGsNe).mpr hGl
+  sSup Gs :=
+    letI : Decidable (Gs.Pairwise Compatible) := Classical.dec _
+    if h : Gs.Pairwise Compatible then Graph.sUnion Gs h else ⊥
+  isLUB_csSup_of_directed Gs hGs hGsNe hGsB := by
+    have h := hGsB.pairwise_compatible
+    refine ⟨fun G hG ↦ ?_, fun G hGl ↦ ?_⟩ <;> split_ifs
+    · exact Graph.le_sUnion h hG
+    · exact (Graph.sUnion_le_iff h).mpr hGl
 
 section addEdge
 
