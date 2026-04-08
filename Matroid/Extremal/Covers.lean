@@ -37,9 +37,7 @@ lemma Set.IsCover.subset (h : T.IsCover X P) (hY : Y ∈ T) : Y ⊆ X := by
 def Set.hasCover_with (X : Set α) (P : Set α → Prop) : Prop :=
     ∃ T, IsCover T X P
 
-lemma Cover_Nonempt_iff {X : Set α} :
-    X.hasCover_with P ↔ {T | IsCover T X P }.Nonempty := by
-  refine ⟨ fun a ↦ Nonempty.mono (fun ⦃a⦄ a_1 ↦ a_1) a , fun a ↦ ((fun a_1 ↦ a) ∘ fun a ↦ α) α ⟩
+lemma Cover_Nonempt_iff {X : Set α} : X.hasCover_with P ↔ {T | IsCover T X P }.Nonempty := Iff.rfl
 
 lemma Set.IsCover.nonempty (h : T.IsCover X P) (hX : X.Nonempty) : T.Nonempty := by
   rw [nonempty_iff_empty_ne]
@@ -176,6 +174,7 @@ end General
 
 section Number
 
+/-- Docstring here -/
 noncomputable def Set.coverNumber (X : Set α) (P : Set α → Prop) : ℕ∞ :=
   ⨅ (T : Set (Set α)) (_ : T.IsCover X P), T.encard
 
@@ -218,8 +217,7 @@ lemma Set.exists_cover (X : Set α ) (P : Set α → Prop) :
   right
   exact exists_min_cover h
 
-lemma coverNumber_positive (hX : X.Nonempty) (P : Set α → Prop) :
-    1 ≤ X.coverNumber P := by
+lemma coverNumber_positive (hX : X.Nonempty) (P : Set α → Prop) : 1 ≤ X.coverNumber P := by
   by_contra hc
   have h1 := ENat.lt_one_iff_eq_zero.mp (Std.not_le.mp hc)
   obtain ht | ⟨T, hT, hTe ⟩ := X.exists_cover P
@@ -228,6 +226,9 @@ lemma coverNumber_positive (hX : X.Nonempty) (P : Set α → Prop) :
   have : T.Nonempty := hT.nonempty hX
   grind
 
+/-- Docstring
+call it `coverNumber_le_tsum_coverNumber`?
+-/
 lemma coverNumber_cover_of_covers {P' : Set α → Prop} (hcover : T.IsCover Y P ) :
     Y.coverNumber P' ≤ ∑' X : T, (X.1).coverNumber P' := by
   obtain (h0 | h1) := exists_or_forall_not (fun X : T ↦ coverNumber X P' = ⊤)
@@ -253,8 +254,7 @@ lemma coverNumber_cover_of_covers_bound {P' : Set α → Prop} {k : ℕ∞}
   simp [hflat _ <| hcover.pProp F F.2 ]
   --exact hP'
 
-lemma IsCover_singleton_Prop (hP : ∀ e ∈ X, P (singleton e)) :
-    (singleton '' X).IsCover X P  := by
+lemma IsCover_singleton_Prop (hP : ∀ e ∈ X, P {e}) : (singleton '' X).IsCover X P  := by
   refine ⟨ ?_, ?_ ⟩
   · refine Eq.symm (ext ?_)
     intro x
@@ -270,8 +270,7 @@ lemma IsCover_singleton_Prop (hP : ∀ e ∈ X, P (singleton e)) :
   rw[←heF]
   exact hP e heE
 
-lemma IsCover_singleton_le (hP : ∀ e ∈ X, P (singleton e)) :
-    X.coverNumber P ≤ X.encard := by
+lemma IsCover_singleton_le (hP : ∀ e ∈ X, P {e}) : X.coverNumber P ≤ X.encard := by
   grw [(IsCover_singleton_Prop hP).coverNumber_le ]
   set Sing : Set (Set α ) := { singleton e | e ∈ X} with hs
   exact encard_image_le singleton X
@@ -323,10 +322,11 @@ end Number
 namespace Matroid
 section Matroid
 
+/-- Docstring here -/
 def IsCCProp (P : Matroid α → Set α → Prop) : Prop :=
     ∀ M : Matroid α, ∀ F : Set α, P M F → P M (M.closure F)
 
-lemma Set.IsCover.isCover_closure {P : Matroid α → Set α → Prop} {M :Matroid α }
+lemma Set.IsCover.isCover_closure {P : Matroid α → Set α → Prop} {M : Matroid α}
     (h : T.IsCover X (P M)) (hP : IsCCProp P) (hXc : M.IsFlat X) (hX : X ⊆ M.E) :
     (M.closure '' T).IsCover X (P M) := by
   simp only [isCover_iff, sUnion_image, mem_image, forall_exists_index, and_imp,
@@ -364,7 +364,8 @@ end Matroid
 
 section Rank
 
-def IsRankCover (M : Matroid α) (T : Set (Set α)) (X : Set α) (k : ℕ∞) :=
+/-- Docstring here -/
+def IsRankCover (M : Matroid α) (T : Set (Set α)) (X : Set α) (k : ℕ∞) : Prop :=
     T.IsCover X (fun A ↦ M.eRk A ≤ k)
 
 lemma IsRankCover.contract (h : (M ／ X).IsRankCover T Y k )
@@ -810,13 +811,13 @@ lemma baseCase {a b : ℕ} (ha : 1 ≤ a) (hM : NoUniformMinor M (a + 1) (b + 1)
 
 lemma coverNumber_rank_Frombase {a b : ℕ} (ha : 1 ≤ a)
     (hM : NoUniformMinor M ( a + 1 ) (b + 1)) :
-    (M.E).coverNumber (fun A ↦ M.eRk A ≤ a ) ≤
-    (Nat.choose b a) * (M.E).coverNumber (fun A ↦ M.eRk A ≤ (a + 1) ) := by
+    M.E.coverNumber (fun A ↦ M.eRk A ≤ a) ≤
+    (Nat.choose b a) * (M.E).coverNumber (fun A ↦ M.eRk A ≤ a + 1) := by
   sorry
 
 lemma coverNumber_Bound {M : Matroid α} [M.RankPos] {a b : ℕ} {n : ℕ∞} (ha : a ≠ 0) (hb : a ≤ b)
-    (hM : NoUniformMinor M ( a + 1 ) (b + 1)) (hn : M.eRank = a + n) :
-    (M.E).coverNumber (fun A ↦ M.eRk A ≤ a ) ≤ (Nat.choose b a)^n := by
+    (hM : NoUniformMinor M (a + 1) (b + 1)) (hn : M.eRank = a + n) :
+    M.E.coverNumber (fun A ↦ M.eRk A ≤ a ) ≤ (Nat.choose b a)^n := by
     --M.coverNumber (fun M X ↦ M.eRk X ≤ a) ≤ (Nat.choose b a)^(M.eRank - a) := by
   obtain htop | hfin := eq_or_ne M.eRank ⊤
   · grw [htop] at hn
@@ -843,7 +844,7 @@ termination_by M.eRank
 
 lemma coverNumber_Bound_subset {M : Matroid α} [(M ↾ Y).RankPos] {a b : ℕ} {n : ℕ∞} (ha : a ≠ 0)
     (hb : a ≤ b)
-    (hM : NoUniformMinor (M ↾ Y) ( a + 1 ) (b + 1)) (hn : M.eRk Y = a + n) :
+    (hM : (M ↾ Y).NoUniformMinor (a + 1) (b + 1)) (hn : M.eRk Y = a + n) :
     Y.coverNumber (fun A ↦ M.eRk A ≤ a ) ≤ (Nat.choose b a)^n := by
   rw [RankCoverNumber_eq ]
   nth_rw 1 [←restrict_ground_eq (M := M) (R := Y)]
@@ -851,8 +852,8 @@ lemma coverNumber_Bound_subset {M : Matroid α} [(M ↾ Y).RankPos] {a b : ℕ} 
 
 lemma coverNumber_Bound_contract {M : Matroid α} {C : Set α} {a b : ℕ} (ha : a ≠ 0) (hb : a ≤ b)
     (hM : NoUniformMinor M (a + 1) (b + 1)) (hC : C ⊂ M.E)  :
-    (M.E).coverNumber (fun A ↦ M.eRk A ≤ a ) ≤
-    (Nat.choose b a)^(M.eRk C) * ((M ／ C).E).coverNumber (fun A ↦ (M ／ C).eRk A ≤ a ) := by
+    (M.E).coverNumber (fun A ↦ M.eRk A ≤ a) ≤
+    (Nat.choose b a)^(M.eRk C) * (M ／ C).E.coverNumber (fun A ↦ (M ／ C).eRk A ≤ a) := by
     --M.coverNumber (fun M X ↦ M.eRk X ≤ a) ≤
     --(Nat.choose b a)^(M.eRk C) * (M ／ C).coverNumber (fun M X ↦ M.eRk X ≤ a) := by
   obtain htop | hlt := eq_or_ne (M.eRk C) ⊤
@@ -929,6 +930,7 @@ end Rank
 
 section NonSpanning
 
+/-- Docstring here -/
 def NonSpanningCover (M : Matroid α) (T : Set (Set α)) (X : Set α) :=
     T.IsCover X (M ↾ X).Nonspanning
 
@@ -945,8 +947,7 @@ lemma nonSpanningCover_iff_restriction :
   rw [nonSpanningCover_iff, restrict_ground_eq, restrict_idem] at h
   exact nonSpanningCover_iff.mpr h
 
-lemma NonSpanning_le_RankCover {n : ℕ} (h : M.IsRkFinite X)
-    (hr : M.eRk X = n + 1) :
+lemma NonSpanning_le_RankCover {n : ℕ} (hr : M.eRk X = n + 1) :
     X.coverNumber (M ↾ X).Nonspanning ≤ X.coverNumber (fun A ↦ M.eRk A ≤ n ) := by
   obtain ht | ⟨T, hT, hT' ⟩ := X.exists_cover (fun A ↦ M.eRk A ≤ n)
   · rw [ht]
