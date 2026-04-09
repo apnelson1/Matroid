@@ -16,7 +16,7 @@ open Set Matroid Function Separation
 
 namespace Matroid
 
-variable {α β : Type*} {e f x y : α} {X Y C₁ C₂: Set α} {i j k : Bool} {k : ℕ∞}
+variable {α β : Type*} {e f x y : α} {X Y C D : Set α} {i j k l : Bool} {k : ℕ∞}
     {M : Matroid α} {N : Matroid β} {P : M.Separation}
 
 theorem splitter_theorem (hM : M.TutteConnected 3) (hN : N.TutteConnected 3) (fNM : N <i M)
@@ -162,31 +162,83 @@ lemma Separation.isCircuit_union_inter_of_eConn_le_one_bool {C : Bool → Set α
       have hwin₂ := P.symm.isCircuit_iUnion_inter_of_eConn_le_one (hC) (by simpa) (hCP₂)
       rwa [Set.iUnion_bool' _ i] at hwin₂
 
+lemma Circuit.nonempty_circuit_union_of_independent (hX : M.Indep X)
+    (hC : M.IsCircuit C) (hCXP : C ⊆ X ∪ D) : (C ∩ D).Nonempty := by
+  rw [indep_iff_forall_subset_not_isCircuit] at hX
+  specialize hX (C := C)
+  by_contra! hc
+  rw [← disjoint_iff_inter_eq_empty] at hc
+  have aux := Disjoint.subset_left_of_subset_union hCXP hc
+  apply hX at aux
+  contradiction
+
 lemma Separation.unique_circuit_of_eConn_le_one {C : Bool → Set α}
     (hC : ∀ j, (M ↾ (X ∪ (P i))).IsCircuit (C j)) (hX : (M ↾ (P !i)).Indep X)
-    (hPconn : P.eConn ≤ 1) : ((C true) ∩ X) = ((C false) ∩ X) := by
+    (hPconn : P.eConn ≤ 1) (he : ∀ j, (C j ∩ X).Nonempty) : ((C true) ∩ X) = ((C false) ∩ X) := by
   rw [restrict_indep_iff] at hX
-  have hC₁ : ∀ j, M.IsCircuit (C j) ∧ (C j) ⊆ X ∪ (P i):= by
+  have hCX : ∀ j, (C j) ∩ (P !i) = (C j) ∩ X := by grind
+  have hC₁ : ∀ j, M.IsCircuit (C j) ∧ (C j) ⊆ X ∪ (P i) := by
     intro j
-    specialize hC (j := j)
-    rw [restrict_isCircuit_iff] at hC
-    exact hC
+    rw [← restrict_isCircuit_iff]
+    exact hC j
   clear hC
-  have hePi : ∀ j, ((C j) ∩ (P i)).Nonempty := by
-    by_contra! hc
-    obtain ⟨j, hj⟩ := hc
-    have h : C j ⊆ X := by
-      specialize hC₁ (j := j)
-      rw [← disjoint_iff_inter_eq_empty] at hj
-      grind
-    rw [indep_iff_forall_subset_not_isCircuit] at hX
-    grind
-  have heX : ∀ j, (C j) ∩ X = ∅ → (C !j) ∩ X = ∅ := by
-    intro j he
-    by_contra! h
-
-    sorry
-  sorry
+  revert hC₁
+  intro hC
+  have hC₁ : ∀ j, M.IsCircuit (C j) := by
+    intro j
+    exact (hC j).1
+  have heCP : ∀ j k, ((C j) ∩ (P k)).Nonempty := by
+    intro j k
+    by_cases aux : k = i
+    · subst aux
+      refine Circuit.nonempty_circuit_union_of_independent (hX.1) ((hC j).1) ((hC j).2)
+    · rw [← ne_eq, ← Bool.not_eq, Bool.not_eq_eq_eq_not] at aux
+      rw [aux, hCX j]
+      exact he j
+  clear he
+  have hC₂ : ∀ j k, M.IsCircuit (((C j) ∩ X) ∪ ((C k) ∩ (P i))) := by
+    intro j k
+    rw [← hCX j]
+    have aux := Separation.isCircuit_union_inter_of_eConn_le_one_bool
+        hC₁ hPconn heCP (!i) (j) (k)
+    rwa [Bool.not_not] at aux
+  clear hCX hC₁
+  by_contra! hcon
+  have hx : ∃ x, x ∈ (C true ∩ X) \ (C false ∩ X) := by
+    rw [← nonempty_def, diff_nonempty, subset_iff_ssubset_or_eq, not_or]
+    constructor
+    · have : ¬((C true) ∩ X) ⊂ ((C false) ∩ X) := by
+        have := IsCircuit.not_ssubset (hC₂ false true) (hC₂ true true)
+        grind only [→ Indep.subset_ground, = subset_def, !Separation.disjoint_bool, = ssubset_def,
+          = disjoint_left, → IsCircuit.subset_ground, = mem_inter_iff, = mem_union]
+      grind only [#53bc]
+    · exact hcon
+  clear hcon
+  obtain ⟨x, hx₁⟩ := hx
+  obtain ⟨y, hy₁, hy₂⟩ := heCP true i
+  obtain ⟨D₁, hD₁, hD₂, hD₃⟩ := IsCircuit.strong_elimination
+      ((hC true).1) (hC₂ false true) (hy₁) (by grind) (by grind)
+      (show x ∉ (C false ∩ X) ∪ (C true ∩ (P i)) by grind)
+  have hD₄ : ∀ j, (D₁ ∩ (P j)).Nonempty := by
+    intro j
+    by_cases! aux : j = i
+    rw [aux]
+    refine Circuit.nonempty_circuit_union_of_independent (hX.1) (hD₂) (show D₁ ⊆ X ∪ P i by grind)
+    rw [← Bool.not_eq, Bool.not_eq_eq_eq_not] at aux
+    rw [aux, nonempty_def]
+    use x
+    rw [mem_inter_iff]
+    constructor
+    · exact hD₃
+    · rw [mem_diff, mem_inter_iff] at hx₁
+      refine mem_of_subset_of_mem (hX.2) hx₁.1.2
+  clear hx₁ hD₃
+  have hD₃ := Separation.isCircuit_union_inter_of_eConn_le_one ((hC true).1) (hD₂) (hPconn)
+      (heCP true) (hD₄) (!i)
+  rw [Bool.not_not] at hD₃
+  have hcon : ((C true ∩ P !i) ∪ D₁ ∩ P i) ⊂ C true := by grind
+  have := IsCircuit.not_ssubset ((hC true).1) (hD₃)
+  contradiction
 
 lemma IsMinor.contract_disjoint_base_of_eConn_eq_one {N : Matroid α} (hPconn : P.eConn ≤ 1)
     (hN : N.TutteConnected 3) (hNM : N ≤m M) (hPi: (N.E ∩ (P !i)).Subsingleton) :
