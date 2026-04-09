@@ -49,8 +49,18 @@ lemma IsCover.one_le (h : T.IsCover X P ) (hX : X.Nonempty) : T.Nonempty := by
   --simp only [one_le_encard_iff_nonempty]
   exact h.nonempty hX
 
---Mathieu
-lemma isCover_iff_isCover_subset : T.IsCover X P ↔ T.IsCover X (fun A ↦ P A ∧ A ⊆ X) := sorry
+lemma isCover_iff_isCover_subset : T.IsCover X P ↔ T.IsCover X (fun A ↦ P A ∧ A ⊆ X) := by
+  rw [isCover_iff, isCover_iff]
+  refine and_congr_right fun hTX => ?_
+  refine ⟨?_, ?_⟩
+  · intro hAP F hF
+    have hFX : F ⊆ X := by
+      rw [← hTX]
+      exact subset_sUnion_of_mem hF
+    exact ⟨hAP F hF, hFX⟩
+  · intro hAPsub F hF
+    rcases hAPsub F hF with ⟨hPF, hFX⟩
+    exact hPF
 
 -- --Monotono subset
 -- def IsMRProp (P : Set α → Prop) : Prop :=
@@ -381,14 +391,24 @@ lemma IsRankCover.contract (h : (M ／ X).IsRankCover T Y k )
 lemma IsRankCover_iff_IsCover {M : Matroid α} {T : Set (Set α)} {X : Set α} {k : ℕ∞} :
     M.IsRankCover T X k ↔ T.IsCover X (fun A ↦ M.eRk A ≤ k) := Iff.rfl
 
-  --Mathieu
 lemma IsRankCover_iff (M : Matroid α) (T : Set (Set α)) (X : Set α) (k : ℕ∞) :
     M.IsRankCover T X k ↔ ⋃₀ T = X ∧ (∀ F ∈ T, M.eRk F ≤ k) := by
-  sorry
---Mathieu
-lemma IsRankCover_iff_restriction (hX : X ⊆ M.E) :
-    M.IsRankCover T X k ↔ (M ↾ X).IsRankCover T (M ↾ X).E k := by
-  sorry
+  rw [IsRankCover_iff_IsCover, isCover_iff]
+
+lemma IsRankCover_iff_restriction : M.IsRankCover T X k ↔ (M ↾ X).IsRankCover T (M ↾ X).E k := by
+  rw [IsRankCover_iff, IsRankCover_iff, M.restrict_ground_eq]
+  refine and_congr_right fun hU => ?_
+  refine ⟨?_, ?_⟩
+  · intro hRM F hFT
+    have hFX : F ⊆ X := by
+      rw [← hU]
+      exact subset_sUnion_of_mem hFT
+    simpa [M.restrict_eRk_eq hFX] using hRM F hFT
+  · intro hRMX F hFT
+    have hFX : F ⊆ X := by
+      rw [← hU]
+      exact subset_sUnion_of_mem hFT
+    simpa [M.restrict_eRk_eq hFX] using hRMX F hFT
 
 lemma IsRankCover.subset (h : M.IsRankCover T X k) (hY : Y ∈ T) : Y ⊆ X :=
   (IsRankCover_iff_IsCover.1 h ).subset hY
