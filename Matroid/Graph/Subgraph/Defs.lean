@@ -631,30 +631,30 @@ lemma Compatible.union_le_iff {H₁ H₂ : Graph α β} (h_compat : H₁.Compati
 
 end union
 
-lemma Compatible.of_le_le (hH₁G : H₁ ≤ G) (hH₂G : H₂ ≤ G) : H₁.Compatible H₂ :=
-  fun _ he₁ he₂ _ _ ↦ sorry
+-- lemma Compatible.of_le_le (hH₁G : H₁ ≤ G) (hH₂G : H₂ ≤ G) : H₁.Compatible H₂ :=
+--   fun _ he₁ he₂ _ _ ↦ sorry
 
-lemma _root_.BddAbove.pairwise_compatible {Gs : Set (Graph α β)} (hG : BddAbove Gs) :
-    Gs.Pairwise Compatible := by
-  obtain ⟨G, hG⟩ := hG
-  exact fun _ hH₁ _ hH₂ _ ↦ Compatible.of_le_le (hG hH₁) (hG hH₂)
+-- lemma _root_.BddAbove.pairwise_compatible {Gs : Set (Graph α β)} (hG : BddAbove Gs) :
+--     Gs.Pairwise Compatible := by
+--   obtain ⟨G, hG⟩ := hG
+--   exact fun _ hH₁ _ hH₂ _ ↦ Compatible.of_le_le (hG hH₁) (hG hH₂)
 
-noncomputable instance : ConditionallyCompletePartialOrder (Graph α β) where
-  sInf Gs :=
-    letI : Decidable Gs.Nonempty := Classical.dec _
-    if h : Gs.Nonempty then Graph.sInter Gs h else ⊥
-  isGLB_csInf_of_directed Gs hGs hGsNe hGsB := by
-    refine ⟨fun G hG ↦ ?_, fun G hGl ↦ ?_⟩ <;> split_ifs
-    · exact Graph.sInter_le hG
-    exact (Graph.le_sInter_iff hGsNe).mpr hGl
-  sSup Gs :=
-    letI : Decidable (Gs.Pairwise Compatible) := Classical.dec _
-    if h : Gs.Pairwise Compatible then Graph.sUnion Gs h else ⊥
-  isLUB_csSup_of_directed Gs hGs hGsNe hGsB := by
-    have h := hGsB.pairwise_compatible
-    refine ⟨fun G hG ↦ ?_, fun G hGl ↦ ?_⟩ <;> split_ifs
-    · exact Graph.le_sUnion h hG
-    · exact (Graph.sUnion_le_iff h).mpr hGl
+-- noncomputable instance : ConditionallyCompletePartialOrder (Graph α β) where
+--   sInf Gs :=
+--     letI : Decidable Gs.Nonempty := Classical.dec _
+--     if h : Gs.Nonempty then Graph.sInter Gs h else ⊥
+--   isGLB_csInf_of_directed Gs hGs hGsNe hGsB := by
+--     refine ⟨fun G hG ↦ ?_, fun G hGl ↦ ?_⟩ <;> split_ifs
+--     · exact Graph.sInter_le hG
+--     exact (Graph.le_sInter_iff hGsNe).mpr hGl
+--   sSup Gs :=
+--     letI : Decidable (Gs.Pairwise Compatible) := Classical.dec _
+--     if h : Gs.Pairwise Compatible then Graph.sUnion Gs h else ⊥
+--   isLUB_csSup_of_directed Gs hGs hGsNe hGsB := by
+--     have h := hGsB.pairwise_compatible
+--     refine ⟨fun G hG ↦ ?_, fun G hGl ↦ ?_⟩ <;> split_ifs
+--     · exact Graph.le_sUnion h hG
+--     · exact (Graph.sUnion_le_iff h).mpr hGl
 
 section addEdge
 

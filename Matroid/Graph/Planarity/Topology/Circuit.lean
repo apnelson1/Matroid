@@ -1,9 +1,10 @@
+import Mathlib.Topology.Order.IntermediateValue
 import Matroid.Graph.Planarity.Topology.Circle
 
 variable {α β : Type*} [TopologicalSpace α] [TopologicalSpace β] {a b c u v w x y z : α}
   {C X Y : Set α}
 
-open Set Function TopologicalSpace Topology Metric Nat unitInterval
+open Set Function TopologicalSpace Topology Metric Nat unitInterval Set.Notation
 
 def IsCircuit {α} [TopologicalSpace α] (C : Set α) : Prop :=
   ∃ f : Circle → α, Topology.IsEmbedding f ∧ range f = C
@@ -16,11 +17,23 @@ lemma circle_isCircuit : IsCircuit (univ : Set Circle) := ⟨id, IsEmbedding.id,
 
 -- lemma isCircuit_of_exists_paths (P : Path x x) (hP : InjOn P (Ioc 0 1)) :
 --     IsCircuit (range P) := by
---   let f :=(AddCircle.homeoIccQuot 1 0).symm.trans (AddCircle.homeomorphCircle (zero_ne_one' ℝ).symm)
---   have hII : (I → I → Prop) = ((Icc 0 (0 + 1 : ℝ)) → (Icc 0 (0 + 1 : ℝ)) → Prop) := by simp
---   let f' := Quot.lift (α := I) (r := by convert AddCircle.EndpointIdent (1 : ℝ) 0) P
---     (fun i j hij ↦ ?_)
-
+--   let g' := AddCircle.liftIoc (1 : ℝ) 0 P.extend
+--   have hisOpenEmb : IsOpenEmbedding ((Ioc 0 (0 + 1)).restrict ⇑P.extend) := by
+--     rw [Topology.isOpenEmbedding_iff_continuous_injective_isOpenMap]
+--     refine ⟨Pi.continuous_restrict_apply (Ioc 0 (0 + 1)) P.extend.continuous, ?_, ?_⟩
+--     · rintro ⟨i, hi1, hi2⟩ ⟨j, hj1, hj2⟩ hij
+--       simp only [restrict_apply, zero_add] at hij hi1 hj1 hi2 hj2
+--       rw [P.extend_apply ⟨hi1.le, hi2⟩, P.extend_apply ⟨hj1.le, hj2⟩] at hij
+--       simpa using hP ⟨hi1, hi2⟩ ⟨hj1, hj2⟩ hij
+--     sorry
+--   let e : AddCircle (1 : ℝ) ≃ₜ Circle := AddCircle.homeomorphCircle (by norm_num)
+--   use g' ∘ e.symm, ?_, ?_
+--   · apply IsOpenEmbedding.isEmbedding
+--     apply IsOpenEmbedding.comp ?_ e.symm.isOpenEmbedding
+--     apply IsOpenEmbedding.comp hisOpenEmb ?_
+--     sorry
+--   simp only [AddCircle.liftIoc, EquivLike.range_comp, range_restrict, zero_add, g']
+--   rw [← image_univ, ← unitInterval.Icc_eq_univ]
 --   sorry
 
 lemma IsCircuit.twoConnected (hC : IsCircuit C) : ∀ x, IsPathConnected (C \ {x}) := by
@@ -33,10 +46,44 @@ lemma IsCircuit.twoConnected (hC : IsCircuit C) : ∀ x, IsPathConnected (C \ {x
   simp only [hx, not_false_eq_true, diff_singleton_eq_self]
   exact isPathConnected_range hf.continuous
 
-def IsCircuit.isEmbedding (hC : IsCircuit C) (f : α → β) (hf : Topology.IsEmbedding f) :
+lemma IsCircuit.image (hC : IsCircuit C) {f : α → β} (hf : Topology.IsEmbedding f) :
     IsCircuit (f '' C) := by
   obtain ⟨f', hf', rfl⟩ := hC
   exact ⟨f ∘ f', hf.comp hf', by simp [range_comp]⟩
 
--- lemma not_isCircuit_real (S : Set ℝ) : ¬ IsCircuit S := by
---   sorry
+lemma IsCircuit.restrictSubtype (hC : IsCircuit C) (hCX : C ⊆ X) : IsCircuit (X ↓∩ C) := by
+  obtain ⟨f, hf, rfl⟩ := hC
+  rw [range_subset_iff] at hCX
+  exact ⟨_, hf.codRestrict X hCX, by rw [← Set.range_codRestrict hCX]⟩
+
+lemma not_isCircuit_real (S : Set ℝ) : ¬ IsCircuit S := by
+  rintro ⟨f, hf, rfl⟩
+  let f1 := f ∘ Circle.path (-1) 1
+  let f2 := f ∘ Circle.path 1 (-1)
+  have hf1 : IsEmbedding f1 :=
+    hf.comp (Circle.path_isClosedEmbedding_of_ne <| Circle.neg_ne_self 1).isEmbedding
+  have hf2 : IsEmbedding f2 :=
+    hf.comp (Circle.path_isClosedEmbedding_of_ne (Circle.neg_ne_self 1).symm).isEmbedding
+  have hne : (-1 : Circle) ≠ 1 := Circle.neg_ne_self 1
+  have hpaths {t : I} (ht : f1 t = f2 t) (ht0 : t ≠ 0) (ht1 : t ≠ 1) : False := by
+    have hp : Circle.path (-1) 1 t = Circle.path 1 (-1) t :=
+      hf.injective (by simpa [f1, f2, comp_apply] using ht)
+    have hm : Circle.path (-1) 1 t ∈ range (Circle.path (-1) 1) ∩ range (Circle.path 1 (-1)) :=
+      ⟨mem_range_self t, ⟨t, hp.symm⟩⟩
+    rw [Circle.path_range_inter hne] at hm
+    rcases hm with hm | hm
+    · exact ht0 (Circle.path_injective_of_ne hne (by simpa [Path.source] using hm))
+    · exact ht1 (Circle.path_injective_of_ne hne (by simpa [Path.target] using hm))
+  obtain h | h := lt_or_gt_of_ne (hf.injective.ne hne)
+  · have h1 : f1 0 < f2 0 := by simpa [f1, f2]
+    have h2 : f1 1 > f2 1 := by simpa [f1, f2]
+    obtain ⟨t, ht⟩ := intermediate_value_univ₂ hf1.continuous hf2.continuous h1.le (le_of_lt h2)
+    refine hpaths ht ?_ ?_
+    · rintro rfl; linarith [ht, h1]
+    · rintro rfl; linarith [ht, h2]
+  · have h1 : f2 0 < f1 0 := by simpa [f1, f2]
+    have h2 : f2 1 > f1 1 := by simpa [f1, f2]
+    obtain ⟨t, ht⟩ := intermediate_value_univ₂ hf2.continuous hf1.continuous h1.le (le_of_lt h2)
+    refine hpaths ht.symm ?_ ?_
+    · rintro rfl; linarith [ht, h1]
+    · rintro rfl; linarith [ht, h2]

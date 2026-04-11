@@ -3,7 +3,7 @@ import Mathlib.Topology.UniformSpace.Path
 import Mathlib.Topology.Separation.Connected
 import Mathlib.Geometry.Polygon.Basic -- inefficient import
 import Matroid.ForMathlib.List
-import Matroid.Graph.Planarity.Path
+import Matroid.Graph.Planarity.Topology.Path
 
 universe u
 variable {α β : Type u} {a b c x y z w : α} {C L : List α} {X Y : Set α} {N : ℕ}

@@ -9,5 +9,10 @@
 ^Matroid\.Init$
 ^Matroid\.Connectivity\.Separation_$
 
+
+^Matroid\.SimpGraph\.
+^Matroid\.Graph'\.
+^Matroid\.Graph\.GraphLike\.
+
 # Skip any module with "scratch" in its name/path:
 scratch

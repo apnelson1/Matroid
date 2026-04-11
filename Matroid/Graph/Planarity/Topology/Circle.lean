@@ -1,26 +1,32 @@
 import Mathlib.Analysis.CStarAlgebra.Unitary.Connected
 import Matroid.Graph.Planarity.Topology.Path
 
+instance (x : ℝ) : LocPathConnectedSpace (AddCircle x) := LocPathConnectedSpace.coinduced _
+
+instance : LocPathConnectedSpace Circle := by
+  convert LocPathConnectedSpace.coinduced AddCircle.homeomorphCircle'
+  exact AddCircle.homeomorphCircle'.coinduced_eq.symm
+
 namespace Circle
 
 variable {x y z : Circle} {a b : ℝ} {s : Set ℝ}
 
 open Set Function TopologicalSpace Topology Metric Nat Complex
 
-@[simp]
-lemma unitary_eq_sphere : unitary ℂ = Metric.sphere (0 : ℂ) 1 := by
-  ext x
-  simp only [unitary, RCLike.star_def, mul_comm, Complex.mul_conj', sq_eq_one_iff,
-    Complex.ofReal_eq_one, and_self, mem_sphere_iff_norm, sub_zero]
-  norm_cast
-  grind [norm_nonneg x]
+-- @[simp]
+-- lemma unitary_eq_sphere : unitary ℂ = Metric.sphere (0 : ℂ) 1 := by
+--   ext x
+--   simp only [unitary, RCLike.star_def, mul_comm, Complex.mul_conj', sq_eq_one_iff,
+--     Complex.ofReal_eq_one, and_self, mem_sphere_iff_norm, sub_zero]
+--   norm_cast
+--   grind [norm_nonneg x]
 
-noncomputable def unitaryCircleIsometryEquiv : unitary ℂ ≃ᵢ Circle :=
-  ⟨Equiv.setCongr unitary_eq_sphere, fun _ ↦ congrFun rfl⟩
+-- noncomputable def unitaryCircleIsometryEquiv : unitary ℂ ≃ᵢ Circle :=
+--   ⟨Equiv.setCongr unitary_eq_sphere, fun _ ↦ congrFun rfl⟩
 
-instance : LocPathConnectedSpace Circle := by
-  convert LocPathConnectedSpace.coinduced unitaryCircleIsometryEquiv
-  exact unitaryCircleIsometryEquiv.toHomeomorph.coinduced_eq.symm
+-- instance : LocPathConnectedSpace Circle := by
+--   convert LocPathConnectedSpace.coinduced unitaryCircleIsometryEquiv
+--   exact unitaryCircleIsometryEquiv.toHomeomorph.coinduced_eq.symm
 
 noncomputable instance : HasDistribNeg Circle := inferInstanceAs <| HasDistribNeg (sphere _ _)
 noncomputable instance : ContinuousNeg Circle := inferInstanceAs <| ContinuousNeg (sphere _ _)
@@ -145,6 +151,9 @@ lemma path_injective_of_ne (hne : x ≠ y) : Injective (path x y) := by
       Icc x.val.arg (x.val.arg + angleDiff x y) by
     rwa [exp_injOn_Icc (by linarith [angleDiff_lt_two_pi x y]) |>.eq_iff (hIcc a) (hIcc b)] at heq
   refine fun c ↦ ⟨?_, ?_⟩ <;> nlinarith [angleDiff_nonneg x y, c.prop.1, c.prop.2]
+
+lemma path_isClosedEmbedding_of_ne (hne : x ≠ y) : IsClosedEmbedding (path x y) :=
+  (path x y).continuous.isClosedEmbedding (path_injective_of_ne hne)
 
 @[simp]
 lemma path_range (x y : Circle) :

@@ -103,7 +103,12 @@ import Matroid.Graph.Minor.Defs
 -- import Matroid.Graph.Planarity.Defs
 -- import Matroid.Graph.Planarity.Drawing
 import Matroid.Graph.Planarity.GraphContinuum.Basic
+-- import Matroid.Graph.Planarity.GraphContinuum.EdgeCircuit
+-- import Matroid.Graph.Planarity.GraphContinuum.EdgeEndpoints
+-- import Matroid.Graph.Planarity.K33
 import Matroid.Graph.Planarity.Realization.Basic
+import Matroid.Graph.Planarity.Realization.CWComplex
+import Matroid.Graph.Planarity.Realization.Metric
 import Matroid.Graph.Planarity.Realization.Subgraph
 import Matroid.Graph.Planarity.Topology.Circle
 import Matroid.Graph.Planarity.Topology.Circuit
@@ -130,6 +135,7 @@ import Matroid.Graph.WList.Sublist
 import Matroid.Graph.WList.TakeDrop
 import Matroid.Graph.Walk.Basic
 import Matroid.Graph.Walk.Cycle
+-- import Matroid.Graph.Walk.OrientationWalk
 import Matroid.Graph.Walk.Path
 import Matroid.Graphic
 -- import Matroid.Induction

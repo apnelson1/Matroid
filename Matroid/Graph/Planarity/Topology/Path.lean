@@ -6,9 +6,16 @@ import Matroid.ForMathlib.List
 import Mathlib.Probability.ProbabilityMassFunction.Basic
 
 universe u
-variable {α β : Type u} {a b c x y z w : α} {C L : List α} {X Y : Set α} {N : ℕ}
+variable {α β : Type*} {a b c x y z w : α} {C L : List α} {X Y : Set α} {N : ℕ}
 
-open Set Function TopologicalSpace Topology Metric Nat unitInterval
+open Set Function TopologicalSpace Topology Metric Nat unitInterval Set.Notation
+
+lemma pathConnectedSpace_Ioo {E} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
+    [ContinuousAdd E] [PartialOrder E] [ContinuousSMul ℝ E] [IsOrderedCancelAddMonoid E]
+    [PosSMulStrictMono ℝ E] [DenselyOrdered E] {a b : E} (hab : a < b) :
+    PathConnectedSpace (Ioo a b) :=
+  isPathConnected_iff_pathConnectedSpace.mp <| (convex_Ioo a b).isPathConnected
+  <| Set.nonempty_Ioo.mpr hab
 
 lemma IsOpen.sSup_notMem {α : Type*} [CompleteLinearOrder α] [TopologicalSpace α] [OrderTopology α]
     [DenselyOrdered α] {s : Set α} (hs : ∃ x, sSup s < x) (h : IsOpen s) : sSup s ∉ s := by
@@ -37,6 +44,12 @@ lemma val_le_zero_iff (t : I) : t.val ≤ 0 ↔ t = 0 := by
 @[simp]
 lemma one_le_val_iff (t : I) : 1 ≤ t.val ↔ t = 1 := by
   simp only [t.prop.2.ge_iff_eq, Icc.coe_eq_one]
+
+lemma Icc_eq_univ : Icc (0 : I) 1 = univ := by
+  ext t
+  have := mem_univ t
+  have := t.prop
+  tauto
 
 instance : ContinuousMul I := submonoid.continuousMul
 instance : PathConnectedSpace I :=
@@ -127,6 +140,17 @@ lemma squishRight_Icc (i j : I) : squishRight '' Icc i j = Icc (squishRight i) (
 end unitInterval
 
 namespace Path
+
+lemma range_isPathConnected [TopologicalSpace α] (P : Path x y) : IsPathConnected (range P) :=
+  image_univ ▸ isPathConnected_univ.image P.continuous
+
+-- lemma extend_image [TopologicalSpace α] (P : Path x y) (s : Set ℝ) :
+--     P.extend '' s = P '' (Icc (0 : ℝ) 1 ↓∩ s) := by
+--   ext z
+--   simp only [mem_image, mem_preimage, Subtype.exists, mem_Icc, exists_and_left]
+--   constructor
+--   · rintro ⟨t, ht, rfl⟩
+--     use t, ht
 
 @[simp]
 lemma refl_not_injective [AddCommGroup α] [Module ℝ α] [TopologicalSpace α] [ContinuousAdd α]
