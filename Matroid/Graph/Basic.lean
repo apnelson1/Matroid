@@ -100,7 +100,7 @@ lemma IsLink.endSet_eq (h : G.IsLink e x y) : V(G, e) = {x, y} := by
 lemma IsLoopAt.endSet_eq (h : G.IsLoopAt e x) : V(G, e) = {x} := by
   rw [IsLink.endSet_eq h, pair_eq_singleton]
 
-@[grind →]
+@[simp, grind →]
 lemma endSet_eq_of_notMem (he : e ∉ E(G)) : V(G, e) = ∅ := by
   simp only [endSet, eq_empty_iff_forall_notMem, mem_setOf_eq]
   exact fun x hx ↦ he hx.edge_mem
