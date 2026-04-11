@@ -33,6 +33,9 @@ lemma edgeFinite_of_le [G.EdgeFinite] (hHG : H ≤ G) : H.EdgeFinite where
 instance [G.EdgeFinite] : (G - X).EdgeFinite :=
   edgeFinite_of_le vertexDelete_le
 
+instance [G.EdgeFinite] : (G - x).EdgeFinite :=
+  edgeFinite_of_le vertexDelete_le
+
 instance [G.EdgeFinite] : (G ↾ F).EdgeFinite :=
   edgeFinite_of_le edgeRestrict_le
 
@@ -139,6 +142,9 @@ lemma finite_of_le [G.Finite] (hHG : H ≤ G) : H.Finite :=
   ‹G.Finite›.mono hHG
 
 instance [G.Finite] (X : Set α) : (G - X).Finite :=
+  ‹G.Finite›.mono vertexDelete_le
+
+instance [G.Finite] (x : α) : (G - x).Finite :=
   ‹G.Finite›.mono vertexDelete_le
 
 instance [G.Finite] (F : Set β) : (G ↾ F).Finite :=

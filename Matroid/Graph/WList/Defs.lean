@@ -736,6 +736,56 @@ instance {w : WList α β} {e : β} {x y : α} [DecidableEq α] [DecidableEq β]
     have := instDecidableIsLinkOfDecidableEq (w := w) (e := e) (x := x) (y := y)
     infer_instance
 
+/-- `WList.Inc` is here for parity with `Graph.Inc`. -/
+def Inc (w : WList α β) (e : β) (x : α) : Prop :=
+  ∃ y : α, w.IsLink e x y
+
+protected noncomputable def Inc.other (h : w.Inc e x) : α := h.choose
+
+@[simp, grind .]
+protected lemma Inc.nonempty (h : w.Inc e x) : w.Nonempty := by
+  obtain ⟨y, h⟩ := h
+  cases h with simp
+
+@[simp, grind .]
+protected lemma Inc.not_nil : ¬ (nil u (β := β)).Inc e x := by
+  rintro ⟨_, h⟩
+  exact h.not_nil
+
+@[simp, grind .]
+protected lemma Inc.edge_mem (h : w.Inc e x) : e ∈ w.edge := by
+  obtain ⟨_, h⟩ := h
+  exact h.edge_mem
+
+@[simp, grind .]
+protected lemma Inc.vertex_mem (h : w.Inc e x) : x ∈ w := by
+  obtain ⟨_, h⟩ := h
+  exact h.left_mem
+
+@[simp, grind .]
+protected lemma inc_cons_left (x : α) (e : β) (w : WList α β) : (cons x e w).Inc e x :=
+  ⟨w.first, IsLink.cons_left x e w⟩
+
+@[simp, grind .]
+protected lemma inc_cons_right (x : α) (e : β) (w : WList α β) : (cons x e w).Inc e w.first :=
+  ⟨x, IsLink.cons_right x e w⟩
+
+@[simp, grind .]
+protected lemma IsLink.inc_left (h : w.IsLink e x y) : w.Inc e x :=
+  ⟨y, h⟩
+
+@[simp, grind .]
+protected lemma IsLink.inc_right (h : w.IsLink e x y) : w.Inc e y :=
+  ⟨x, h.symm⟩
+
+@[simp, grind .]
+protected lemma DInc.inc_left (h : w.DInc e x y) : w.Inc e x :=
+  h.isLink.inc_left
+
+@[simp, grind .]
+protected lemma DInc.inc_right (h : w.DInc e x y) : w.Inc e y :=
+  h.isLink.inc_right
+
 /-- A `WList` is `WellFormed` if each edge appears only with the same ends. -/
 def WellFormed (w : WList α β) : Prop :=
   ∀ ⦃e x₁ x₂ y₁ y₂⦄, w.IsLink e x₁ x₂ → w.IsLink e y₁ y₂ → s(x₁, x₂) = s(y₁, y₂)

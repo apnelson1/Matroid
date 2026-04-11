@@ -241,6 +241,28 @@ lemma vertexDelete_vertexSet_self (G : Graph α β) : G - V(G) = ⊥ := by
 @[simp, grind .]
 lemma vertexDelete_le : G - X ≤ G := G.induce_le diff_subset
 
+@[simp, grind .]
+lemma vertexDelete_singleton_lt (h : x ∈ V(G)) : G - x < G := by
+  refine lt_of_le_of_ne vertexDelete_le ?_
+  intro bad
+  rw [← bad] at h
+  simp only [vertexDelete_singleton, vertexDelete_vertexSet, mem_diff, mem_singleton_iff,
+    not_true_eq_false, and_false] at h
+
+lemma vertexDelete_singleton_edgeSet (G : Graph α β) (x : α) : E(G - x) ∪ E(G, x) = E(G) := by
+  refine eq_of_subset_of_subset ?_ ?_
+  · grind only [union_subset_iff, incEdges_subset, edgeSet_mono (G.vertexDelete_le (X := {x}))]
+  intro e he
+  simp only [vertexDelete_singleton, vertexDelete_edgeSet, mem_singleton_iff, mem_union, mem_setOf_eq,
+    mem_incEdges_iff]
+  apply exists_isLink_of_mem_edgeSet at he
+  obtain ⟨y, z, hyz⟩ := he
+  obtain (h|h) := em (y = x ∨ z = x)
+  · right
+    obtain (rfl|rfl) := h
+      <;> [exact hyz.inc_left ; exact hyz.inc_right]
+  left; use y,z; grind only
+
 @[grind =]
 lemma vertexDelete_isLink_iff' (G : Graph α β) (X : Set α) :
     (G - X).IsLink e x y ↔ G.IsLink e x y ∧ e ∉ E(G, X) := by

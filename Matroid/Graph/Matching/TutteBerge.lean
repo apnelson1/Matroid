@@ -136,18 +136,18 @@ size $\nu(G)$ whose vertex set does not include $v$.
   \end{enumerate}
 \end{proof}-/
 
-lemma inessential_of_not_mem (hx : x ∉ V(G)) : G.inessential x := by
+lemma inessential_of_not_mem (hx : x ∉ V(G)) : G.Inessential x := by
   sorry
 
-lemma matchingMatroid.noColoop (h : ∀ x, G.inessential x) (hx : x ∈ V(G)) :
+lemma matchingMatroid.noColoop (h : ∀ x, G.Inessential x) (hx : x ∈ V(G)) :
     ¬ G.matchingMatroid.IsColoop x := by
   sorry
 
-lemma matchingMatroid.seriesPair_of_adj (h : ∀ x, G.inessential x) (h : G.Adj x y) :
+lemma matchingMatroid.seriesPair_of_adj (h : ∀ x, G.Inessential x) (h : G.Adj x y) :
     G.matchingMatroid.Series x y := by
   sorry
 
-lemma foo_of_forall_inessential (h : ∀ x, G.inessential x) :
+lemma foo_of_forall_inessential (h : ∀ x, G.Inessential x) :
     ∃ M, G.IsMatching M ∧ ∀ H : Graph α β, H.IsCompOf G → ∃! x, x ∈ V(H) ∧ x ∉ V(G, M) := by
   sorry
 

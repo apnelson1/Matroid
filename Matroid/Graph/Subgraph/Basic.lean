@@ -148,6 +148,20 @@ lemma vertexSet_ssubset_or_edgeSet_ssubset_of_lt (h : G < H) : V(G) ⊂ V(H) ∨
   by_contra! heq
   exact h.2 <| ext_of_le_le h.1 le_rfl heq.1 heq.2
 
+@[grind .]
+lemma lt_of_le_of_vertexSet_ssubset (hle : G ≤ H) (h : V(G) ⊂ V(H)) : G < H := by
+  rw [lt_iff_le_and_ne]
+  refine ⟨hle, ?_⟩
+  rintro rfl
+  exact h.ne rfl
+
+@[grind .]
+lemma lt_of_le_of_edgeSet_ssubset (hle : G ≤ H) (h : E(G) ⊂ E(H)) : G < H := by
+  rw [lt_iff_le_and_ne]
+  refine ⟨hle, ?_⟩
+  rintro rfl
+  exact h.ne rfl
+
 lemma sum_ncard_lt_of_lt [Finite α] [Finite β] (h : G < H) :
     V(G).ncard + E(G).ncard < V(H).ncard + E(H).ncard := by
   obtain hV | hE := vertexSet_ssubset_or_edgeSet_ssubset_of_lt h

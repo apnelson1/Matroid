@@ -720,6 +720,12 @@ lemma WellFormed.toGraph_isLink (h : w.WellFormed) : w.toGraph.IsLink = w.IsLink
     · assumption
     exact hinc.symm
 
+@[simp, grind =]
+lemma WellFormed.toGraph_inc (h : w.WellFormed) : w.toGraph.Inc = w.Inc := by
+  ext e x
+  rw [Graph.Inc, WList.Inc]
+  grw [h.toGraph_isLink]
+
 lemma IsSublist.toGraph_le (h : w₁.IsSublist w₂) (hw₂ : w₂.WellFormed) :
     w₁.toGraph ≤ w₂.toGraph where
   vertex_subset := by

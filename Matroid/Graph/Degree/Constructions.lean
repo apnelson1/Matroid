@@ -184,8 +184,8 @@ lemma IsPath.last_isLeaf_toGraph (hP : G.IsPath P) (hne : P.Nonempty) :
     P.toGraph.IsLeaf P.last := by
   simpa [hP.isWalk.wellFormed.reverse_toGraph] using hP.reverse.first_isLeaf_toGraph (by simpa)
 
-lemma IsPath.degree_toGraph_eq_two (hP : G.IsPath P) (hvP : v ∈ P) (hne_first : v ≠ P.first)
-    (hne_last : v ≠ P.last) : P.toGraph.degree v = 2 := by
+lemma IsPath.eDegree_toGraph_eq_two (hP : G.IsPath P) (hvP : v ∈ P) (hne_first : v ≠ P.first)
+    (hne_last : v ≠ P.last) : P.toGraph.eDegree v = 2 := by
   induction P with
   | nil => simp_all
   | cons u e P ih =>
@@ -194,11 +194,17 @@ lemma IsPath.degree_toGraph_eq_two (hP : G.IsPath P) (hvP : v ∈ P) (hne_first 
     simp only [cons_edge, List.nodup_cons] at hPe
     simp only [mem_cons_iff, hne_first, false_or] at hvP
     simp only [cons_isPath_iff] at hP
-    rw [toGraph_cons, union_degree_eq (by simpa using hPe.1)]
+    rw [toGraph_cons, union_eDegree_eq (by simpa using hPe.1)]
     obtain rfl | hne1 := eq_or_ne v P.first
-    · rw [singleEdge_degree_right (Ne.symm hne_first), (hP.2.1.first_isLeaf_toGraph ?_).degree]
+    · rw [singleEdge_eDegree_right (Ne.symm hne_first), (hP.2.1.first_isLeaf_toGraph ?_).eDegree]
+      · grind
       rwa [first_eq_last_iff hP.2.1, not_nil_iff] at hne_last
-    rw [ singleEdge_degree_of_ne _ hne_first hne1, ih hP.2.1 hvP hne1 hne_last]
+    rw [singleEdge_eDegree_of_ne _ hne_first hne1, ih hP.2.1 hvP hne1 hne_last]
+    grind
+
+lemma IsPath.degree_toGraph_eq_two (hP : G.IsPath P) (hvP : v ∈ P) (hne_first : v ≠ P.first)
+    (hne_last : v ≠ P.last) : P.toGraph.degree v = 2 := by
+  simp only [Graph.degree, hP.eDegree_toGraph_eq_two hvP hne_first hne_last, ENat.toNat_ofNat]
 
 /-! ### Cycles -/
 

@@ -322,6 +322,15 @@ lemma setIncEdges_mono_right (G : Graph α β) {S T : Set α} (hST : S ⊆ T) : 
   rintro e ⟨x, hxS, he⟩
   exact ⟨x, hST hxS, he⟩
 
+-- TODO: rename
+@[simp]
+lemma setIncEdges_vertexSet (G : Graph α β) : E(G, V(G)) = E(G) := by
+  ext e
+  refine ⟨fun h ↦ G.setIncEdges_subset V(G) h, ?_⟩
+  rw [SetIncEdges, edge_mem_iff_exists_isLink]
+  rintro ⟨x, y, hxy⟩
+  refine ⟨x, hxy.left_mem, hxy.inc_left⟩
+
 @[simp, grind =]
 lemma mem_setIncEdges_iff (G : Graph α β) (S : Set α) : e ∈ E(G, S) ↔ ∃ x ∈ S, G.Inc e x := by
   simp [SetIncEdges]
