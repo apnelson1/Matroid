@@ -30,17 +30,10 @@ class EdgeFinite (G : Graph α β) : Prop where
 lemma edgeFinite_of_le [G.EdgeFinite] (hHG : H ≤ G) : H.EdgeFinite where
   edgeSet_finite := ‹G.EdgeFinite›.edgeSet_finite.subset <| edgeSet_mono hHG
 
-instance [G.EdgeFinite] : (G - X).EdgeFinite :=
-  edgeFinite_of_le vertexDelete_le
-
-instance [G.EdgeFinite] : (G - x).EdgeFinite :=
-  edgeFinite_of_le vertexDelete_le
-
-instance [G.EdgeFinite] : (G ↾ F).EdgeFinite :=
-  edgeFinite_of_le edgeRestrict_le
-
-instance [G.EdgeFinite] : (G ＼ F).EdgeFinite :=
-  edgeFinite_of_le edgeDelete_le
+instance [G.EdgeFinite] : (G - X).EdgeFinite := edgeFinite_of_le vertexDelete_le
+instance [G.EdgeFinite] : (G - x).EdgeFinite := edgeFinite_of_le vertexDelete_le
+instance [G.EdgeFinite] : (G ↾ F).EdgeFinite := edgeFinite_of_le edgeRestrict_le
+instance [G.EdgeFinite] : (G ＼ F).EdgeFinite := edgeFinite_of_le edgeDelete_le
 
 lemma edgeFinite_induce [G.EdgeFinite] (hX : X ⊆ V(G)) : (G[X]).EdgeFinite :=
   edgeFinite_of_le (induce_le hX)
@@ -138,28 +131,17 @@ lemma Finite.mono (hG : G.Finite) (hHG : H ≤ G) : H.Finite where
   vertexSet_finite := hG.vertexSet_finite.subset <| vertexSet_mono hHG
   edgeSet_finite := hG.edgeSet_finite.subset <| edgeSet_mono hHG
 
-lemma finite_of_le [G.Finite] (hHG : H ≤ G) : H.Finite :=
-  ‹G.Finite›.mono hHG
-
-instance [G.Finite] (X : Set α) : (G - X).Finite :=
-  ‹G.Finite›.mono vertexDelete_le
-
-instance [G.Finite] (x : α) : (G - x).Finite :=
-  ‹G.Finite›.mono vertexDelete_le
-
-instance [G.Finite] (F : Set β) : (G ↾ F).Finite :=
-  ‹G.Finite›.mono edgeRestrict_le
-
-instance [G.Finite] (F : Set β) : (G ＼ F).Finite :=
-  ‹G.Finite›.mono edgeDelete_le
+lemma finite_of_le [G.Finite] (hHG : H ≤ G) : H.Finite := ‹G.Finite›.mono hHG
+instance [G.Finite] (X : Set α) : (G - X).Finite := ‹G.Finite›.mono vertexDelete_le
+instance [G.Finite] (x : α) : (G - x).Finite := ‹G.Finite›.mono vertexDelete_le
+instance [G.Finite] (F : Set β) : (G ↾ F).Finite := ‹G.Finite›.mono edgeRestrict_le
+instance [G.Finite] (F : Set β) : (G ＼ F).Finite := ‹G.Finite›.mono edgeDelete_le
 
 lemma Finite.induce (hG : G.Finite) (hX : X ⊆ V(G)) : G[X].Finite where
   vertexSet_finite := hG.vertexSet_finite.subset hX
   edgeSet_finite := hG.edgeSet_finite.subset (by simp)
 
-@[simp]
-lemma vertexSet_finite [G.Finite] : G.vertexSet.Finite :=
-  Finite.vertexSet_finite
+@[simp] lemma vertexSet_finite [G.Finite] : G.vertexSet.Finite := Finite.vertexSet_finite
 
 lemma isTrail_finite (G : Graph α β) [G.Finite] : {P | G.IsTrail P}.Finite := by
   have hVfin := G.vertexSet_finite.to_subtype

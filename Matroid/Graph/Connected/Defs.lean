@@ -207,20 +207,12 @@ def symm (S : G.Separation) : G.Separation where
 
 @[simp, grind .]
 lemma left_ssubset (S : G.Separation) : S.left ⊂ V(G) := by
-  refine ⟨S.left_subset, ?_⟩
-  rw [← S.union_eq]
   obtain ⟨x, hx⟩ := S.nonempty_right
-  intro bad
-  replace bad : x ∈ S.left :=
-    bad (Or.inr hx)
-  grind only [S.disjoint, = disjoint_left]
+  exact ⟨S.left_subset, by grind [S.disjoint, S.union_eq]⟩
 
-@[simp, grind .]
-lemma right_ssubset (S : G.Separation) : S.right ⊂ V(G) := by
-  exact S.symm.left_ssubset
+@[simp, grind .] lemma right_ssubset (S : G.Separation) : S.right ⊂ V(G) := S.symm.left_ssubset
 
-@[simp]
-lemma symm_symm (S : G.Separation) : S.symm.symm = S := rfl
+@[simp] lemma symm_symm (S : G.Separation) : S.symm.symm = S := rfl
 
 lemma not_left_mem_iff (S : G.Separation) (hxV : x ∈ V(G)) : x ∉ S.left ↔ x ∈ S.right := by
   rw [← S.union_eq, mem_union] at hxV
@@ -275,7 +267,7 @@ lemma induce_left_isClosedSubgraph (S : G.Separation) : G[S.left].IsClosedSubgra
     simp only [induce_vertexSet] at this ⊢
     rwa [S.not_left_mem_iff hex.vertex_mem]
 
-lemma induce_right_isClosedSubgraph (S : G.Separation)  : G[S.right].IsClosedSubgraph G :=
+lemma induce_right_isClosedSubgraph (S : G.Separation)  : G[S.right] ≤c G :=
   S.symm.induce_left_isClosedSubgraph
 
 def of_not_connBetween (h : ¬ G.ConnBetween x y) (hx : x ∈ V(G)) (hy : y ∈ V(G)) :
@@ -309,20 +301,14 @@ def isSepBetween_of_vertexDelete (S : (G - X).Separation) (hx : x ∈ S.left)
   · simp [(S.right_subset hy).2]
   · simpa [vertexDelete_vertexSet_inter] using S.not_connBetween hx hy
 
-lemma induce_stronglyDisjoint (S : G.Separation) :
-    G[S.left].StronglyDisjoint G[S.right] where
-  vertex := by simp only [induce_vertexSet]; exact S.disjoint
+lemma induce_stronglyDisjoint (S : G.Separation) : G[S.left].StronglyDisjoint G[S.right] where
+  vertex := by simp only [induce_vertexSet, S.disjoint]
   edge := S.edge_induce_disjoint
 
-lemma induce_left_lt (S : G.Separation) : G[S.left] < G := by
-  refine lt_of_le_of_ne S.induce_left_isClosedSubgraph.le ?_
-  intro bad
-  have := S.left_ssubset
-  conv at this => rhs; rw [← bad, induce_vertexSet]
-  exact this.ne rfl
+lemma induce_left_lt (S : G.Separation) : G[S.left] < G :=
+  S.induce_left_isClosedSubgraph.le.lt_of_ne fun bad ↦ by grind [S.left_ssubset]
 
-lemma induce_right_lt (S : G.Separation) : G[S.right] < G :=
-  S.symm.induce_left_lt
+lemma induce_right_lt (S : G.Separation) : G[S.right] < G := S.symm.induce_left_lt
 
 end Separation
 
