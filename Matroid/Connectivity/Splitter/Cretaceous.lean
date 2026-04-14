@@ -16,16 +16,11 @@ open Set Matroid Function Separation
 
 namespace Matroid
 
-variable {α β : Type*} {e f x y : α} {X Y C D : Set α} {i j k l : Bool} {k : ℕ∞}
+variable {α β : Type*} {e f x y : α} {B C D C' D' X Y Z s : Set α} {i j k l : Bool} {k : ℕ∞}
     {M : Matroid α} {N : Matroid β} {P : M.Separation}
 
-theorem splitter_theorem (hM : M.TutteConnected 3) (hN : N.TutteConnected 3) (fNM : N <i M)
-    (hNT : ¬ N.Triassic) : ∃ e, (M.IsDeletable N e ∧ (M ＼ {e}).TutteConnected 3)
-    ∨ (M.IsContractible N e ∧ (M ／ {e}).TutteConnected 3) := by
-  sorry
-
 lemma IsMinor.exists_smallside_of_separation {N : Matroid α} (hNM : N ≤m M)
-    (hN : N.TutteConnected (k + 2)) (hPconn : P.eConn = k) : ∃ i, (P i ∩ N.E).encard ≤ k := by
+    (hN : N.TutteConnected (k + 2)) (hP : P.eConn = k) : ∃ i, (P i ∩ N.E).encard ≤ k := by
   by_contra! hc₁
   have htop : k ≠ ⊤ := by
     by_contra! hc₂
@@ -34,7 +29,7 @@ lemma IsMinor.exists_smallside_of_separation {N : Matroid α} (hNM : N ≤m M)
   rw [show k+2 = k+1+1 by grind, tutteConnected_iff_forall] at hN
   specialize hN (P := P.induce N)
   refine hN (?_) (?_)
-  · grw [eConn_induce_le_of_isMinor P hNM, hPconn]
+  · grw [eConn_induce_le_of_isMinor P hNM, hP]
   · rw [isTutteSeparation_iff_lt_encard]
     · intro i
       rw [induce_apply_subset _ hNM.subset]
@@ -42,10 +37,10 @@ lemma IsMinor.exists_smallside_of_separation {N : Matroid α} (hNM : N ≤m M)
       grw [eConn_induce_le_of_isMinor P hNM]
       grind
     · rw [← lt_top_iff_ne_top]
-      grw [eConn_induce_le_of_isMinor P hNM, hPconn]
+      grw [eConn_induce_le_of_isMinor P hNM, hP]
       rwa [lt_top_iff_ne_top]
 
-lemma IsMinor.delete_subset_separator (hPconn : P.eConn = 0) (hX : X ⊆ P i) :
+lemma IsMinor.delete_subset_separator (hP : P.eConn = 0) (hX : X ⊆ P i) :
     (M ＼ (P i \ X)) ／ X = M ＼ (P i) := by
   have h₁ : X ⊆ (M ＼ (P i \ X)).E := by
     rw [delete_ground, subset_diff, disjoint_comm, disjoint_diff_iff,
@@ -58,8 +53,8 @@ lemma IsMinor.delete_subset_separator (hPconn : P.eConn = 0) (hX : X ⊆ P i) :
     constructor
     · rw [delete_ground, diff_diff, diff_union_self, union_eq_self_of_subset_right hX,
         Separation.compl_eq]
-      rw [eConn_eq_zero_iff_skew (i := i)] at hPconn
-      refine Skew.mono_left (hPconn) (hX)
+      rw [eConn_eq_zero_iff_skew (i := i)] at hP
+      refine Skew.mono_left (hP) (hX)
     · constructor
       · rwa [disjoint_comm, disjoint_diff_iff, inter_eq_self_of_subset_right]
       · rw [disjoint_diff_iff, delete_ground, inter_diff_distrib_right, inter_self,
@@ -70,26 +65,26 @@ lemma IsMinor.delete_subset_separator (hPconn : P.eConn = 0) (hX : X ⊆ P i) :
   exact hX
 
 lemma IsMinor.isMinor_delete_smallside_of_eConn_eq_zero {N : Matroid α} (hNM : N ≤m M)
-    (hPconn : P.eConn = 0) (hPi : Disjoint (P i) N.E) : N ≤m M ＼ P i := by
+    (hP : P.eConn = 0) (hPi : Disjoint (P i) N.E) : N ≤m M ＼ P i := by
   refine hNM.isMinor_of_eConn_eq_zero (X := P (!i)) (delete_isMinor ..) ?_ (by simp) (by simpa)
   rwa [← disjoint_iff_subset_not hNM.subset, disjoint_comm]
 
 lemma IsMinor.isMinor_contract_smallside_of_eConn_eq_zero {N : Matroid α} (hNM : N ≤m M)
-    (hPconn : P.eConn = 0) (hPi : Disjoint (P i) N.E) : N ≤m M ／ P i := by
+    (hP : P.eConn = 0) (hPi : Disjoint (P i) N.E) : N ≤m M ／ P i := by
   have aux := hNM.dual.isMinor_delete_smallside_of_eConn_eq_zero (P := P.induce M✶) (i := i)
     (by simpa) (by simpa)
   simpa using aux.dual
 
 lemma IsMinor.isMinor_deleteElem_smallside_of_eConn_eq_zero {N : Matroid α} (hNM : N ≤m M)
-    (hPconn : P.eConn = 0) (hPi : Disjoint (P i) N.E) (he : e ∈ P i) : N ≤m M ＼ {e}  := by
-  have h₁ : N ≤m M ＼ P i := isMinor_delete_smallside_of_eConn_eq_zero hNM hPconn hPi
+    (hP : P.eConn = 0) (hPi : Disjoint (P i) N.E) (he : e ∈ P i) : N ≤m M ＼ {e}  := by
+  have h₁ : N ≤m M ＼ P i := isMinor_delete_smallside_of_eConn_eq_zero hNM hP hPi
   have h₂ : M ＼ P i ≤m M ＼ {e} := by
     refine IsMinor.delete_isMinor_delete_of_subset (by simp [IsMinor.refl]) ?_ (by simp)
     rwa [singleton_subset_iff]
   refine IsMinor.trans h₁ h₂
 
 lemma IsMinor.isMinor_contractElem_smallside_of_eConn_eq_zero {N : Matroid α} (hNM : N ≤m M)
-    (hPconn : P.eConn = 0) (hPi : Disjoint (P i) N.E) (he : e ∈ P i) : N ≤m M ／ {e}  := by
+    (hP : P.eConn = 0) (hPi : Disjoint (P i) N.E) (he : e ∈ P i) : N ≤m M ／ {e}  := by
   have aux := hNM.dual.isMinor_deleteElem_smallside_of_eConn_eq_zero (P := P.induce M✶) (i := i)
       (by simpa) (by simpa) (by simpa)
   rwa [← dual_contract, dual_isMinor_iff] at aux
@@ -104,16 +99,27 @@ This should be useful, and can be found with the lemma
 -/
 -- = mapEquiv (M ／ X ＼ ((P i) \ (insert x X))) (Equiv.swap x y) := by
 
-/-- Replace this with `Dep.of_isMinor_of_subset`. -/
+lemma IsMinor.isMinor_of_subsets {N : Matroid α} (hd : Disjoint C D) (hNM : N ≤m M ／ C ＼ D)
+    (hC : C' ⊆ C) (hD : D' ⊆ D) : N ≤m M ／ C' ＼ D' := by
+  refine IsMinor.trans hNM ?_
+  have aux := IsRestriction.isMinor (delete_isRestriction_of_subset (M ／ C) (hD))
+  rw [contract_delete_comm M (hd), contract_delete_comm M (by grind only [= disjoint_left,
+    = subset_def, #f02a, #f7d4])] at aux
+  rw [contract_delete_comm M (hd), contract_delete_comm M (by grind only [= disjoint_left,
+    = disjoint_comm, = subset_def, #f7d4, #32d2, #f02a])]
+  refine IsMinor.trans aux (contract_isMinor_of_subset (M ＼ D') (hC))
 
-lemma Dep.of_minor_disjoint {N : Matroid α} (hNM : N ≤m M) (hX : X ⊆ N.E) :
-    M.Dep X → N.Dep X := by
-  apply IsMinor.exists_contract_indep_delete_coindep at hNM
-  obtain ⟨C, D, hC, hD, hCD, hCDN⟩ := hNM
-  subst hCDN
-  intro h₁
-  have h₂ : (M ／ C).Dep X := Dep.contract_of_disjoint (h₁) (by grind)
-  apply Dep.delete_of_disjoint (h₂) (by grind)
+lemma IsMinor.exists_partition_of_disjoint_contract_indep_delete_coindep {N : Matroid α}
+    (hNM : N ≤m M) (hX : X ⊆ M.E) (hd : Disjoint X N.E) :
+    ∃ C D, M.Indep C ∧ M.Coindep D ∧ Disjoint C D ∧ C ∪ D = X ∧ N ≤m M ／ C ＼ D := by
+  obtain ⟨C, D, hCD₁, hCD₂, hCD₃, hCD₄⟩ := IsMinor.exists_contract_indep_delete_coindep (hNM)
+  subst hCD₄
+  clear hNM
+  use C ∩ X, D ∩ X
+  simp [hCD₁.subset, hCD₂.subset, Set.disjoint_of_subset _ _ hCD₃,
+      ← union_inter_distrib_right, show X ⊆ C ∪ D by grind]
+  refine IsMinor.isMinor_of_subsets (hCD₃) (IsMinor.refl) (show C ∩ X ⊆ C by simp)
+      (show D ∩ X ⊆ D by simp)
 
 lemma Separation.contract_exists_disjoint_base_of_eConn_eq_one {N : Matroid α}
     (hNM : N ≤m M) (hN : Loopless N✶) (hPi : (N.E ∩ (P !i)).Subsingleton) :
@@ -174,9 +180,11 @@ lemma Circuit.nonempty_circuit_union_of_independent (hX : M.Indep X)
 
 lemma Separation.unique_circuit_of_eConn_le_one {C : Bool → Set α}
     (hC : ∀ j, (M ↾ (X ∪ (P i))).IsCircuit (C j)) (hX : (M ↾ (P !i)).Indep X)
-    (hPconn : P.eConn ≤ 1) (he : ∀ j, (C j ∩ X).Nonempty) : ((C true) ∩ X) = ((C false) ∩ X) := by
+    (hP : P.eConn ≤ 1) (he : ∀ j, (C j ∩ X).Nonempty) : ((C true) ∩ X) = ((C false) ∩ X) := by
   rw [restrict_indep_iff] at hX
-  have hCX : ∀ j, (C j) ∩ (P !i) = (C j) ∩ X := by grind
+  have hCX : ∀ j, (C j) ∩ (P !i) = (C j) ∩ X := by grind only [!Separation.disjoint_bool,
+    = subset_def, = disjoint_left, → IsCircuit.subset_ground, = restrict_ground_eq, = mem_inter_iff,
+    = mem_union, #3682, #7d79, #36d6, #5a77, #5fc7, #0014]
   have hC₁ : ∀ j, M.IsCircuit (C j) ∧ (C j) ⊆ X ∪ (P i) := by
     intro j
     rw [← restrict_isCircuit_iff]
@@ -189,10 +197,10 @@ lemma Separation.unique_circuit_of_eConn_le_one {C : Bool → Set α}
     exact (hC j).1
   have heCP : ∀ j k, ((C j) ∩ (P k)).Nonempty := by
     intro j k
-    by_cases aux : k = i
+    by_cases! aux : k = i
     · subst aux
       refine Circuit.nonempty_circuit_union_of_independent (hX.1) ((hC j).1) ((hC j).2)
-    · rw [← ne_eq, ← Bool.not_eq, Bool.not_eq_eq_eq_not] at aux
+    · rw [← Bool.not_eq, Bool.not_eq_eq_eq_not] at aux
       rw [aux, hCX j]
       exact he j
   clear he
@@ -200,7 +208,7 @@ lemma Separation.unique_circuit_of_eConn_le_one {C : Bool → Set α}
     intro j k
     rw [← hCX j]
     have aux := Separation.isCircuit_union_inter_of_eConn_le_one_bool
-        hC₁ hPconn heCP (!i) (j) (k)
+        hC₁ hP heCP (!i) (j) (k)
     rwa [Bool.not_not] at aux
   clear hCX hC₁
   by_contra! hcon
@@ -209,54 +217,162 @@ lemma Separation.unique_circuit_of_eConn_le_one {C : Bool → Set α}
     constructor
     · have : ¬((C true) ∩ X) ⊂ ((C false) ∩ X) := by
         have := IsCircuit.not_ssubset (hC₂ false true) (hC₂ true true)
-        grind only [→ Indep.subset_ground, = subset_def, !Separation.disjoint_bool, = ssubset_def,
-          = disjoint_left, → IsCircuit.subset_ground, = mem_inter_iff, = mem_union]
+        grind only [→ Indep.subset_ground, = ssubset_def, = subset_def, → IsCircuit.subset_ground,
+          = mem_inter_iff, = mem_union, #4000, #139e, #54cb, #4989, #2bd4, #8aa3, #6f4a, #022d,
+          #06a3]
       grind only [#53bc]
     · exact hcon
   clear hcon
   obtain ⟨x, hx₁⟩ := hx
   obtain ⟨y, hy₁, hy₂⟩ := heCP true i
   obtain ⟨D₁, hD₁, hD₂, hD₃⟩ := IsCircuit.strong_elimination
-      ((hC true).1) (hC₂ false true) (hy₁) (by grind) (by grind)
-      (show x ∉ (C false ∩ X) ∪ (C true ∩ (P i)) by grind)
+      ((hC true).1) (hC₂ false true) (hy₁) (by grind only [= mem_union, = mem_inter_iff])
+      (by grind only [= mem_diff, = mem_inter_iff])
+      (show x ∉ (C false ∩ X) ∪ (C true ∩ (P i)) by grind only [= subset_def,
+        !Separation.disjoint_bool, = mem_union, = mem_diff, = mem_inter_iff, = disjoint_left, #36d6,
+        #def2])
   have hD₄ : ∀ j, (D₁ ∩ (P j)).Nonempty := by
     intro j
     by_cases! aux : j = i
-    rw [aux]
-    refine Circuit.nonempty_circuit_union_of_independent (hX.1) (hD₂) (show D₁ ⊆ X ∪ P i by grind)
-    rw [← Bool.not_eq, Bool.not_eq_eq_eq_not] at aux
-    rw [aux, nonempty_def]
-    use x
-    rw [mem_inter_iff]
-    constructor
-    · exact hD₃
-    · rw [mem_diff, mem_inter_iff] at hx₁
-      refine mem_of_subset_of_mem (hX.2) hx₁.1.2
+    · rw [aux]
+      refine Circuit.nonempty_circuit_union_of_independent (hX.1) (hD₂)
+          (show D₁ ⊆ X ∪ P i by grind only [= subset_def, = mem_union, = mem_diff, = mem_inter_iff])
+    · rw [← Bool.not_eq, Bool.not_eq_eq_eq_not] at aux
+      simp_rw [aux, nonempty_def, mem_inter_iff]
+      use x
+      constructor
+      · exact hD₃
+      · rw [mem_diff, mem_inter_iff] at hx₁
+        refine mem_of_subset_of_mem (hX.2) hx₁.1.2
   clear hx₁ hD₃
-  have hD₃ := Separation.isCircuit_union_inter_of_eConn_le_one ((hC true).1) (hD₂) (hPconn)
+  have hD₃ := Separation.isCircuit_union_inter_of_eConn_le_one ((hC true).1) (hD₂) (hP)
       (heCP true) (hD₄) (!i)
   rw [Bool.not_not] at hD₃
-  have hcon : ((C true ∩ P !i) ∪ D₁ ∩ P i) ⊂ C true := by grind
+  have hcon : ((C true ∩ P !i) ∪ D₁ ∩ P i) ⊂ C true := by grind only [= subset_def,
+    !Separation.disjoint_bool, = ssubset_def, → IsCircuit.subset_ground, = disjoint_left,
+    = mem_union, = mem_inter_iff, = mem_diff, = mem_singleton_iff]
   have := IsCircuit.not_ssubset ((hC true).1) (hD₃)
   contradiction
 
-lemma IsMinor.contract_disjoint_base_of_eConn_eq_one {N : Matroid α} (hPconn : P.eConn ≤ 1)
-    (hN : N.TutteConnected 3) (hNM : N ≤m M) (hPi: (N.E ∩ (P !i)).Subsingleton) :
-    ∃ X, (M ／ (P i)).IsBase X ∧ N ≤m (M ／ X) := by
+lemma Separation.exists_subsingleton_independent_in_contraction_of_eConn_one
+    (hX : (M ↾ (P !i)).Indep X) (hP : P.eConn ≤ 1) :
+    ∃ s : Set α, s.Subsingleton ∧ (M ／ (P i)).Indep (X \ s) := by
+  rw [restrict_indep_iff] at hX
+  by_cases hcases : (M ／ (P i)).Indep X
+  · use ∅
+    simpa [subsingleton_empty]
+  · rw [← Indep.skew_iff_contract_indep (hX.1) (by simp only [Separation.subset_ground]),
+      skew_iff_forall_isCircuit (by grind only [= subset_def, !Separation.disjoint_bool,
+        = disjoint_left, = disjoint_comm, #36d6, #def2])] at hcases
+    push Not at hcases
+    obtain ⟨Y, hY₁, hY₂, _, hY₃⟩ := hcases
+    have hy : ∃ y, y ∈ X ∩ Y := by
+      rw [not_subset] at hY₃
+      obtain ⟨a, ha⟩ := hY₃
+      use a
+      grind only [= subset_def, = mem_inter_iff, = mem_union, #f1e5]
+    obtain ⟨y, hy⟩ := hy
+    use {y}
+    simp [subsingleton_singleton]
+    by_contra hc
+    rw [← Indep.skew_iff_contract_indep (by simp [(hX.1).subset])
+        (by simp only [Separation.subset_ground]),
+        skew_iff_forall_isCircuit
+        (by grind only [= subset_def, !Separation.disjoint_bool, = disjoint_left, = disjoint_comm,
+        = mem_diff, #36d6, #def2])
+        (by grind only [→ Indep.subset_ground, = subset_def, = mem_diff, #139e])] at hc
+    push Not at hc
+    obtain ⟨Z, hZ₁, hZ₂, _, hZ₃⟩ := hc
+    let C := fun j ↦ bif j then Y else Z
+    have hC : ∀ j, (M ↾ (X ∪ (P i))).IsCircuit (C j) := by
+      intro j
+      rw [restrict_isCircuit_iff]
+      by_cases hj : j
+      · simp [hj, C]
+        exact And.intro hY₁ hY₂
+      · rw [Bool.not_eq_true] at hj
+        simp [hj, C]
+        grind only [= subset_def, = mem_union, = mem_diff, #9295]
+    have he : ∀ j, (C j ∩ X).Nonempty := by
+      intro j
+      by_cases hec : j
+      · simp [hec, C, nonempty_def]
+        rw [not_subset] at hY₃
+        grind only [= subset_def, = mem_inter_iff, #26bf]
+      · rw [Bool.not_eq_true] at hec
+        simp [hec, C, nonempty_def]
+        rw [not_subset] at hZ₃
+        grind only [= subset_def, = mem_union, = mem_diff, #d7c4, #3379, #9295]
+    rw [← restrict_indep_iff] at hX
+    have aux₁ := Separation.unique_circuit_of_eConn_le_one (hC) (hX) (hP) (he)
+    simp [C, Set.ext_iff] at aux₁
+    specialize aux₁ (x := y)
+    rw [mem_inter_iff] at hy
+    grind only [→ Indep.subset_ground, !Separation.disjoint_bool, = subset_def, = disjoint_left,
+      = mem_union, = mem_diff, = mem_singleton_iff, #9295, #b487, #def2]
 
-  /-
-  Let x be a subsingleton set such that (P !i) \ x is disjoint with N.E.
-  Let C, D be a partition of (P !i) \ x such that C is independent, D is dependent, and
-  N is a minor of M / C \ D.
-  The Separation.unique_circuit_of_eConn_le_one lemma implies that there is a subsingleton
-  set y such that C \ y is independent in M / P i.
-  Let B be a basis of M / P i \ x that contains C \ y.
-  We want to show that we can contract B from M and obtain an N minor.
-  We accomplish this by showing that in M / (C \ y), we have skewness between B \ C and P i,
-  so we are free to contract B \ C instead of deleting it.
-  -/
+lemma Separation.coindependent_inter_contraction_coloopless_minor {N : Matroid α}
+    (hN : Coloopless N) (hNM : N ≤m M) (hPi : (N.E ∩ (P !i)).Subsingleton) :
+    (M ／ P i).Coindep (N.E ∩ (P !i)) := by
+  by_contra hc₁
+  rw [not_coindep_iff] at hc₁
+  by_cases he : (N.E ∩ P !i).Nonempty
+  · have aux := And.intro he hPi
+    rw [← Set.exists_eq_singleton_iff_nonempty_subsingleton] at aux
+    obtain ⟨a, ha⟩ := aux
+    rw [ha, codep_iff, coindep_contract_iff, not_and_or] at hc₁
+    simp at hc₁
+    rcases hc₁.1 with ⟨ha₁⟩
+    · have ha₂ : a ∈ M.E ∩ N.E := by
+        constructor
+        · refine mem_of_subset_of_mem (P.subset' (!i)) hc₁.2
+        · rw [← singleton_subset_iff, ← ha, subset_def, inter_def]
+          grind => instantiate only [usr mem_setOf_eq]
+      rw [not_isNonColoop_iff] at ha₁
+      have aux := ha₁.of_isMinor (show a ∈ N.E by simp [ha₂.2]) hNM
+      rw [← dual_isLoop_iff_isColoop] at aux
+      rw [coloopless_iff, loopless_iff_forall_not_isLoop] at hN
+      grind only [= mem_inter_iff, #4c6f]
+    · grind only [!Separation.disjoint_bool, = disjoint_left, #def2]
+  · rw [not_nonempty_iff_eq_empty] at he
+    rw [he, codep_def, ← not_indep_iff] at hc₁
+    simp [empty_indep] at hc₁
 
+lemma Separation.exists_basis_contraction_coloopless_minor {N : Matroid α} (hNM : N ≤m M)
+    (hP : P.eConn ≤ 1) (hNc : (M ／ P i).Coindep (N.E ∩ (P !i))) (hC : (M ＼ (N.E ∪ P i)).Indep C) :
+    ∃ B, (M ／ P i).IsBase B ∧ (C \ B).Subsingleton ∧ B ∩ N.E = ∅ := by
   sorry
+
+lemma Separation.forall_circuits_meeting_basis_largeside {N : Matroid α} (hP : P.eConn ≤ 1)
+    (hPi : (N.E ∩ (P !i)).Subsingleton) (hC : M.Indep C) (hD : M.Coindep D) (hCD : Disjoint C D)
+    (hCDP : C ∪ D  = (P !i) \ N.E) (hNM : N ≤m M ／ C ＼ D) (hB : (M ／ P i).IsBase B)
+    (hBC : (C \ B).Subsingleton) (hBN : B ∩ N.E = ∅) :
+    ∀ C₀, (M ＼ (D \ B)).IsCircuit C₀ → (C₀ ∩ (B \ C)).Nonempty → C₀ ⊆ P !i := by
+  sorry
+
+lemma IsMinor.contract_disjoint_base_of_eConn_eq_one {N : Matroid α} (hP : P.eConn ≤ 1)
+    (hN : Coloopless N) (hNM : N ≤m M) (hPi: (N.E ∩ (P !i)).Subsingleton) :
+    ∃ X, (M ／ (P i)).IsBase X ∧ N ≤m (M ／ X) := by
+  have hPM : (P !i) \ N.E ⊆ M.E := by
+    simp only [diff_subset_iff]
+    refine subset_union_of_subset_right (P.subset' (!i)) N.E
+  have aux := IsMinor.exists_partition_of_disjoint_contract_indep_delete_coindep (hNM)
+      (hPM) (by grind only [= disjoint_left, = mem_diff])
+  obtain ⟨C, D, hC, hD, hCD, hCDP, hNM₀⟩ := aux
+  have hNc := Separation.coindependent_inter_contraction_coloopless_minor (hN) (hNM) (hPi)
+  have hC₀ : (M ＼ (N.E ∪ P i)).Indep C := by
+    simp [delete_indep_iff, hC]
+    grind only [!Separation.disjoint_bool, → subset, → Indep.subset_ground, = disjoint_left,
+      = disjoint_comm, = subset_def, = delete_ground, = contract_ground, = mem_diff, = mem_union,
+      #b35e, #dab3, #f02a, #7ef2, #def2, #7691]
+  have hB := Separation.exists_basis_contraction_coloopless_minor (hNM) (hP) (hNc) (hC₀)
+  clear hPM hNM
+  obtain ⟨B, hB₁, hB₂, hB₃⟩ := hB
+  use B
+  simp [hB₁]
+  suffices hsk : (M ／ C ＼ (D \ B)).Skew (B \ C) (P i)
+  · sorry
+  · sorry
 
 lemma splitter_no_triangle (hM : M.TutteConnected 3) (hN : N.TutteConnected 3) (fNM : N <i M)
     (hTriad : ∀ e T, M.IsDeletable N e → M.IsTriad T → e ∉ T)
@@ -303,7 +419,7 @@ lemma splitter_no_triangle (hM : M.TutteConnected 3) (hN : N.TutteConnected 3) (
 /-
 
 lemma IsMinor.exists_smallside_of_eConn_eq_zero {N : Matroid α} (hNM : N ≤m M)
-    (hN : N.TutteConnected 2) (hPconn : P.eConn = 0) :
+    (hN : N.TutteConnected 2) (hP : P.eConn = 0) :
     ∃ i, (P i ∩ N.E) = ∅ := by
   by_contra! hcon₁
   have hNnonem : N.Nonempty := by
@@ -319,7 +435,7 @@ lemma IsMinor.exists_smallside_of_eConn_eq_zero {N : Matroid α} (hNM : N ≤m M
     use e
   have hNconn : (P.induce hNM.subset).eConn = 0 := by
     rw [← ENat.lt_one_iff_eq_zero, show (1 : ℕ∞) = 0 + 1 from rfl, ENat.lt_add_one_iff]
-    grw [eConn_induce_le_of_isMinor _ hNM, hPconn]
+    grw [eConn_induce_le_of_isMinor _ hNM, hP]
     simp
   rw [tutteConnected_two_iff] at hN
   have hNP := hN.trivial_of_eConn_eq_zero hNconn
