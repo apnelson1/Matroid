@@ -14,10 +14,10 @@ section Thick
 
 def IsThick (M : Matroid α) (X : Set α) (d : ℕ∞) : Prop := d ≤ X.coverNumber (M ↾ X).Nonspanning
 
-lemma IsThick_iff {M : Matroid α} {X : Set α} {d : ℕ∞} :
+lemma isThick_iff {M : Matroid α} {X : Set α} {d : ℕ∞} :
     M.IsThick X d ↔ d ≤ X.coverNumber (M ↾ X).Nonspanning := Eq.to_iff rfl
 
-lemma IsThick_iff' {M : Matroid α} {X : Set α} {d : ℕ∞} :
+lemma isThick_iff' {M : Matroid α} {X : Set α} {d : ℕ∞} :
     M.IsThick X d ↔ ∀ T, NonSpanningCover M T X → d ≤ T.encard := by
   refine ⟨?_, ?_ ⟩
   · intro h T hT
@@ -25,16 +25,8 @@ lemma IsThick_iff' {M : Matroid α} {X : Set α} {d : ℕ∞} :
     sorry
   sorry
 
-
--- def IsThick_set (M : Matroid α) (X : Set α ) (d : ℕ∞) : Prop :=
---     (M ↾ X).IsThick d
-
--- lemma IsThick_set_iff (M : Matroid α) (X : Set α ) (d : ℕ∞) :
---     M.IsThick_set X d ↔ d ≤ (M ↾ X).coverNumber Matroid.Nonspanning := by
---   sorry
-
-lemma IsThick_two (M : Matroid α) (hX: X.Nonempty) : M.IsThick X 2 := by
-  rw [IsThick_iff ]
+lemma isThick_nonempty (M : Matroid α) (hX: X.Nonempty) : M.IsThick X 2 := by
+  rw [isThick_iff ]
   obtain ht | ⟨T, hT, hTe ⟩ := X.exists_cover (M ↾ X).Nonspanning
   · rw [ ht]
     simp only [le_top]
@@ -47,47 +39,40 @@ lemma IsThick_two (M : Matroid α) (hX: X.Nonempty) : M.IsThick X 2 := by
     refine ⟨ ?_, IsLoopEquiv.subset_ground rfl fun ⦃a⦄ a_1 ↦ a_1  ⟩
     nth_rw 2 [← restrict_ground_eq (M := M) (R := X)]
     simp only [closure_ground]
-    --refine ⟨ by simp only [closure_ground], by simp only [subset_refl] ⟩
   exact Ne.elim (fun a ↦ (hT.pProp Y ( by rw [hY]; exact mem_singleton Y )).not_spanning  hc1) hTe
 
 lemma IsThick.mono {d' : ℕ∞} (hTd : M.IsThick X d ) (hd : d' ≤ d ) : M.IsThick X d' := by sorry
 
-lemma IsThick_set.Minor_mon (hTXd : M.IsThick X d) (hNM : N ≤m M ) ( hX : X ⊆ N.E )
-    (hXne : (M ↾ X ).Nonempty) :
+lemma IsThick.minor_mono (hTXd : M.IsThick X d) (hNM : N ≤m M ) ( hX : X ⊆ N.E ) :
     N.IsThick X d := by
-  rw [N.IsThick_iff ]
+  rw [isThick_iff] at hTXd
   obtain ⟨C, D, hC, hD, hDC, hrw ⟩ := hNM.exists_contract_indep_delete_coindep
-  have hDX : Disjoint D X := by grind
-  have hCX : Disjoint C X := by grind
-  have hg3 : (C ∩ M.closure X) ⊆ (M ↾ (X ∪ (C ∩ M.closure X))).E := by grind
-  have hne : ((M ↾ (X ∪ (C ∩ M.closure X))) ／ (C ∩ M.closure X)).Nonempty := by
-    refine (ground_nonempty_iff ((M ↾ (X ∪ C ∩ M.closure X)) ／ (C ∩ M.closure X))).mp ?_
-    simp only [contract_ground, restrict_ground_eq, union_diff_right]
-    have : (X \ C).Nonempty := by
-      rw [ Disjoint.sdiff_eq_right hCX ]
-      rwa [←(M ↾ X).ground_nonempty_iff, restrict_ground_eq] at hXne
-    refine nonempty_of_not_subset ?_
-    have : ¬X ⊆ C := by
-      exact not_subset.mpr this
-    grind
+  grw[N.isThick_iff, hTXd]
+  apply coverNumber_mono X
+  intro Y hY hYns
+  by_contra! hc
+  rw [not_nonspanning_iff ] at hc
+  rw [nonspanning_iff ] at hYns
+  have hcon : (N ↾ X).Spanning Y := by
+    rw [hrw, delete_restrict_eq_restrict (M ／ C) (by grind) ]
+    apply (restrict_spanning_iff (M := M ／ C ) (R := X) hY (hR := by grind )).2
+    rw [restrict_spanning_iff hY (hR := by grind)] at hc
+    rw [@contract_closure_eq ]
+    refine subset_diff.2 ⟨?_, by grind ⟩
+    grw [←closure_subset_closure M (subset_union_left), hc]
+  exact hYns.1 hcon
 
-  sorry
-  -- Peter?
-  -- have hP : (M ／ C ↾ X) = (M ／ (C ∩ M.closure X) ↾ X) := by sorry
-  -- have hCX' : Disjoint (C ∩ M.closure X) X := by grind
-  -- grw [hrw, delete_restrict_eq_restrict (M ／ C) hDX, hP,
-  --   M.contract_restrict_eq_restrict_contract hCX',
-  --   ←NonSpanningNumber_contract hg3 hne, ← NonSpanningNumber_set_closure (inter_subset_right)
-  --   (by grind) ]
-  -- exact (IsThick_set_iff M X d).mp hTXd
 
-lemma IsThick.Contract_mon (hTXd : M.IsThick X d) (hC : C ⊆ X ) (hne : (X \ C).Nonempty) :
+
+
+lemma IsThick.contract_mono (hTXd : M.IsThick X d) (hC : C ⊆ X ) (hne : (X \ C).Nonempty) :
     (M ／ C).IsThick (X \ C) d := by
-  grw [IsThick_iff, ←NonSpanningNumber_contract_subset hC hne  ]
-  exact (IsThick_iff ).mp hTXd
+  grw [isThick_iff, ←nonSpanningNumber_le_contract_subset hC hne  ]
+  exact (isThick_iff ).mp hTXd
 
-lemma thick_Bound {M : Matroid α} {a b : ℕ} (ha : a ≠ 0) (hb : a ≤ b) (hX : X ⊆ M.E)
-    (hM : NoUniformMinor M (a + 1) (b + 1)) (ht : M.IsThick X (Nat.choose (b + 1) a)) :
+lemma IsThick_le_eRk {M : Matroid α} {a b : ℕ} (ht : M.IsThick X (Nat.choose (b + 1) a))
+    (ha : a ≠ 0) (hb : a ≤ b) (hX : X ⊆ M.E)
+    (hM : NoUniformMinor M (a + 1) (b + 1)) :
     M.eRk X ≤ a := by
   by_contra hc
   simp only [not_le] at hc
@@ -98,19 +83,15 @@ lemma thick_Bound {M : Matroid α} {a b : ℕ} (ha : a ≠ 0) (hb : a ≤ b) (hX
       by_contra! hc
       rw [eq_comm, hc] at hYeRK
       simp at hYeRK
-    exact aux (M := M ／ Y) (X := X \ Y) (by grind) (hM.minor (contract_isMinor M Y))
-      (ht.Contract_mon hY h3) (by simp only [hYeRK, ENat.natCast_lt_succ]) hYeRK
-  have h : M.IsRkFinite X := by
-    refine eRk_ne_top_iff.mp ?_
-    simp only [hlt, ne_eq, ENat.add_eq_top, ENat.coe_ne_top, ENat.one_ne_top, or_self,
-      not_false_eq_true]
+    exact aux (M := M ／ Y) (X := X \ Y) (ht.contract_mono hY h3) (by grind)
+      (hM.minor (contract_isMinor M Y)) (by simp only [hYeRK, ENat.natCast_lt_succ]) hYeRK
   have : (M ↾ X).RankPos := by
     refine (eRank_ne_zero_iff (M ↾ X)).mp ?_
     simp only [eRank_restrict, ne_eq, hlt, add_eq_zero, ENat.coe_eq_zero, one_ne_zero,
       and_false, not_false_eq_true]
-  have hle := coverNumber_Bound_subset ha hb
+  have hle := coverNumberByRank_le_binomial_subset ha hb
     (hM.minor (IsRestriction.isMinor (restrict_isRestriction M X) ) ) hlt
-  grw [← NonSpanning_le_RankCover h hlt, ←IsThick_iff.1 ht, ENat.epow_one, ENat.coe_le_coe ] at hle
+  grw [← nonSpanning_le_coverNumberByRank hlt, ←isThick_iff.1 ht, ENat.epow_one, ENat.coe_le_coe ] at hle
   have : b.choose a < (b + 1).choose a := by
     rw [Nat.choose_succ_left (n := b) (k := a) (by grind) ]
     simp only [lt_add_iff_pos_left]
