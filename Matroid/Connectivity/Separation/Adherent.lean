@@ -120,7 +120,7 @@ lemma Connected.contract_or_delete_connected {e : α} (hM : M.Connected) (hnt : 
   exact (M.adheresTo_contract_or_delete e).elim
     (.inl ∘ fun h ↦ h.connected_of_connected hM) (.inr ∘ fun h ↦ h.connected_of_connected hM)
 
-
+/-- Bixby's lemma. -/
 lemma TutteConnected.contract_or_delete_internallyConnected_three
     (hM : M.TutteConnected 3) {e : α} :
     (M ／ {e}).InternallyConnected 3 ∨ (M ＼ {e}).InternallyConnected 3 :=
