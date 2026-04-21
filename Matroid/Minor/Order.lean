@@ -261,6 +261,10 @@ lemma IsColoop.of_isMinor (he : M.IsColoop e) (heN : e ∈ N.E) (hNM : N ≤m M)
 lemma IsStrictMinor.encard_ground_lt [N.Finite] (hNM : N <m M) : N.E.encard < M.E.encard :=
   N.ground_finite.encard_lt_encard hNM.ssubset
 
+lemma Nonspanning.of_isMinor (h : N.Nonspanning X) (hN : N ≤m M) : M.Nonspanning X := by
+  obtain ⟨C, D, hC, hD, hCD, rfl⟩ := hN
+  exact h.of_delete.of_contract
+
 -- /-- Classically choose an independent contract-set from a proof that `N` is a minor of `M`. -/
 -- def IsMinor.C (h : N ≤m M) : Set α :=
 --   h.exists_contract_indep_delete_coindep.choose

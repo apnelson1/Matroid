@@ -21,12 +21,9 @@ can be taken to mean that all these statements are true, and hence that the defi
 are correctly formalized.
 
 (To give a very simple analogy outside matroid theory,
-one could be convinced that a function `f : ℝ → ℝ` is the function sending `x` to `x/2`
-by a formally verified proof is given that `2 * f(x) = x` for all `x`,
-even if the location where `f` is defined is not visible.)
-
-We limit the scope of the definitions included to just
--/
+one should be convinced that a function `f : ℝ → ℝ` is the function sending `x` to `x/2`
+by a formally verified proof that `2 * f(x) = x` for all `x`,
+even if the location where `f` is defined is not visible.) -/
 
 -- Define `α` as an ambient set of potential matroid elements,
 -- And `ι` to be used as an nonempty indexing set.
@@ -156,7 +153,7 @@ which is the content of *Corollary 5.7*  -/
 example (M : Matroid α) (X I : ι → Set α) (disjoint : Pairwise (Disjoint on X))
     (basis : ∀ i, M.IsBasis (I i) (X i)) :
     M.multiConn X = M.nullity (⋃ i, I i) :=
-  multiConn_eq_nullity_iUnion disjoint (fun i ↦ (basis i).isBasis')
+  multiConn_eq_nullity_iUnion'' disjoint (fun i ↦ (basis i).isBasis')
 
 /- ### Definition 11 : Local connectivity
 If `X` and `Y` are sets in a matroid `M`, then `⊓ (X,Y)`, written `M.eLocalConn X Y`,

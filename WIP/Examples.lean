@@ -1,4 +1,4 @@
-import Matroid.Constructions.NonSpanningIsCircuits
+import Matroid.Constructions.NonspanningIsCircuits
 import Mathlib.Combinatorics.Matroid.Basic
 import Mathlib.Combinatorics.Matroid.Dual
 

@@ -643,7 +643,7 @@ def Twolegs {ι : Type*} (i j : ι) : Set (ι × Bool) := {(i, true),(i,false),(
 -- def TLSpike {ι : Type*} [Finite ι] (F : Set (ι → Bool) )
 --     (hF : ∀ ⦃C C' ⦄, C ∈ F → C' ∈ F → ∀ i : ι, (∀ j : ι, i ≠ j ∧ (C j = C' j)) → C i = C' i )
 --     : Matroid (ι × Bool) :=
---   FiniteCircuitMatroid.matroid <| (FiniteCircuitMatroid.ofNonSpanningCircuit
+--   FiniteCircuitMatroid.matroid <| (FiniteCircuitMatroid.ofNonspanningCircuit
 --   (univ)
   --(IsNonspanningCircuit := fun {(i, true), (i, false), (j, true), (j,false)}
   --(i ∈ ι) (j ∈ ι) (i ≠ j) ↦ true)

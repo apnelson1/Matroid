@@ -1,8 +1,6 @@
 import Matroid.Extremal.Covers
 import Matroid.Order.Quotient
 
-set_option linter.style.longLine false
-
 variable {α : Type*} {M N M' : Matroid α} {I F X Y F' F₀ F₁ F₂ P L H H₁ H₂ H' B C D K : Set α}
   {e f : α} {l r : ℕ} {a k d : ℕ∞} {T : Set (Set α)} {ι : Type*} {i j : ι}
   {P P' : Matroid α → Set α → Prop}
@@ -12,13 +10,23 @@ namespace Matroid
 
 section Thick
 
-def IsThick (M : Matroid α) (X : Set α) (d : ℕ∞) : Prop := d ≤ X.coverNumber (M ↾ X).Nonspanning
+
+
+def IsThick (M : Matroid α) (d : ℕ∞) (X : Set α := M.E) : Prop :=
+    X.Nonempty → d ≤ X.coverNumber (M ↾ X).Nonspanning
 
 lemma isThick_iff {M : Matroid α} {X : Set α} {d : ℕ∞} :
-    M.IsThick X d ↔ d ≤ X.coverNumber (M ↾ X).Nonspanning := Eq.to_iff rfl
+    M.IsThick X d ↔ d ≤ X.coverNumber (M ↾ X).Nonspanning := Iff.rfl
+
+@[simp]
+lemma isThick_inter_ground_iff : M.IsThick (X ∩ M.E) d ↔ M.IsThick X d := by
+  simp only [isThick_iff, coverNumber, le_iInf_iff]
+  refine ⟨fun h C hC ↦ ?_, fun h C hC ↦ ?_⟩
+  · grw [h ((· ∩ M.E) '' C), encard_image_le]
+    sorry
 
 lemma isThick_iff' {M : Matroid α} {X : Set α} {d : ℕ∞} :
-    M.IsThick X d ↔ ∀ T, NonSpanningCover M T X → d ≤ T.encard := by
+    M.IsThick X d ↔ ∀ T, NonspanningCover M T X → d ≤ T.encard := by
   refine ⟨?_, ?_ ⟩
   · intro h T hT
 
@@ -41,7 +49,7 @@ lemma isThick_nonempty (M : Matroid α) (hX: X.Nonempty) : M.IsThick X 2 := by
     simp only [closure_ground]
   exact Ne.elim (fun a ↦ (hT.pProp Y ( by rw [hY]; exact mem_singleton Y )).not_spanning  hc1) hTe
 
-lemma IsThick.mono {d' : ℕ∞} (hTd : M.IsThick X d ) (hd : d' ≤ d ) : M.IsThick X d' := by sorry
+lemma IsThick.mono {d' : ℕ∞} (hTd : M.IsThick X d) (hd : d' ≤ d) : M.IsThick X d' := by sorry
 
 lemma IsThick.minor_mono (hTXd : M.IsThick X d) (hNM : N ≤m M ) ( hX : X ⊆ N.E ) :
     N.IsThick X d := by
@@ -62,18 +70,17 @@ lemma IsThick.minor_mono (hTXd : M.IsThick X d) (hNM : N ≤m M ) ( hX : X ⊆ N
     grw [←closure_subset_closure M (subset_union_left), hc]
   exact hYns.1 hcon
 
-
-
-
 lemma IsThick.contract_mono (hTXd : M.IsThick X d) (hC : C ⊆ X ) (hne : (X \ C).Nonempty) :
     (M ／ C).IsThick (X \ C) d := by
-  grw [isThick_iff, ←nonSpanningNumber_le_contract_subset hC hne  ]
+  grw [isThick_iff, ← nonspanningNumber_le_contract_subset hC hne  ]
   exact (isThick_iff ).mp hTXd
 
 lemma IsThick_le_eRk {M : Matroid α} {a b : ℕ} (ht : M.IsThick X (Nat.choose (b + 1) a))
-    (ha : a ≠ 0) (hb : a ≤ b) (hX : X ⊆ M.E)
-    (hM : NoUniformMinor M (a + 1) (b + 1)) :
+    (ha : a ≠ 0) (hb : a ≤ b) (hM : NoUniformMinor M (a + 1) (b + 1)) :
     M.eRk X ≤ a := by
+  wlog hXE : X ⊆ M.E generalizing X with aux
+  · specialize aux (X := X ∩ M.E) ?_ (by simp)
+
   by_contra hc
   simp only [not_le] at hc
   wlog hlt : M.eRk X = a + 1 generalizing M X with aux
@@ -89,9 +96,10 @@ lemma IsThick_le_eRk {M : Matroid α} {a b : ℕ} (ht : M.IsThick X (Nat.choose 
     refine (eRank_ne_zero_iff (M ↾ X)).mp ?_
     simp only [eRank_restrict, ne_eq, hlt, add_eq_zero, ENat.coe_eq_zero, one_ne_zero,
       and_false, not_false_eq_true]
-  have hle := coverNumberByRank_le_binomial_subset ha hb
+  have hle := rankCoverNumber_le_binomial_subset ha hb
     (hM.minor (IsRestriction.isMinor (restrict_isRestriction M X) ) ) hlt
-  grw [← nonSpanning_le_coverNumberByRank hlt, ←isThick_iff.1 ht, ENat.epow_one, ENat.coe_le_coe ] at hle
+  grw [← nonspanning_le_rankCoverNumber hlt, ←isThick_iff.1 ht, ENat.epow_one, ENat.coe_le_coe]
+    at hle
   have : b.choose a < (b + 1).choose a := by
     rw [Nat.choose_succ_left (n := b) (k := a) (by grind) ]
     simp only [lt_add_iff_pos_left]

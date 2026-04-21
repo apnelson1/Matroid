@@ -132,3 +132,9 @@ lemma IsSpanningRestriction.contract (h : N ≤sr M) (hC : C ⊆ N.E) : N ／ C 
   rw [contract_spanning_iff (hC.trans h.subset), contract_ground, and_iff_left disjoint_sdiff_left,
     diff_union_self]
   exact h.spanning.superset subset_union_left <| union_subset h.subset <| hC.trans h.subset
+
+lemma Nonspanning.of_contract (h : (M ／ C).Nonspanning X) : M.Nonspanning X := by
+  have hX : X ⊆ M.E \ C := h.subset_ground
+  rw [← (M ／ C).dual_dual, nonspanning_dual_iff (by simpa using h.subset_ground), dual_ground,
+    dual_contract, contract_ground] at h
+  exact (M.dual_dual ▸ M.dual_ground ▸ h.of_delete.nonspanning_compl_dual).subset <| by grind

@@ -128,7 +128,7 @@ protected lemma matroid_isCircuit : M.matroid.IsCircuit = M.IsCircuit := by
 
 --lemma foo {A B : Set α} : A ⊂ B ∨ B ⊂ A ∨ A = B
 
-protected def ofNonSpanningCircuit
+protected def ofNonspanningCircuit
   (E : Set α)
   (IsNonspanningCircuit : Set α → Prop)
   (r : ℕ)
@@ -292,7 +292,7 @@ protected def ofNonSpanningCircuit
       · exact hS1.1
 
 -- example : Matroid α :=
---   FiniteCircuitMatroid.matroid <| (ofNonSpanningCircuit E sorry sorry sorry sorry)
+--   FiniteCircuitMatroid.matroid <| (ofNonspanningCircuit E sorry sorry sorry sorry)
 
 end FiniteCircuitMatroid
 
