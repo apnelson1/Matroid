@@ -200,40 +200,40 @@ lemma exists_bipartition_bool_of_ne {T' : Tangle μ k} (h_ne : T ≠ T') (b : Bo
     ∃ (P : μ.E.IndexedPartition Bool), μ.pConn P ≤ k ∧ T.Small (P b) ∧
       ∀ i, T.Small (P i) ↔ T'.Large (P i) := by
   obtain ⟨X, hXE, hXk, hX, hX'⟩ := exists_of_ne h_ne
-  refine ⟨Bipartition.ofSubset hXE b, by simpa, by simpa, fun i ↦ ?_⟩
+  refine ⟨IndexedPartition.ofSubset hXE b, by simpa, by simpa, fun i ↦ ?_⟩
   obtain rfl | rfl := i.eq_or_eq_not b
   · simp [hX, hX']
-  simp only [↓Bipartition.ofSubset_apply, Bool.not_beq_self, cond_false]
+  simp only [IndexedPartition.ofSubset_apply, Bool.not_beq_self, cond_false]
   exact iff_of_false hX.compl_large.not_small hX'.compl_small.not_large
 
 lemma exists_bipartition_of_ne {T' : Tangle μ k} (h_ne : T ≠ T') :
     ∃ (P : μ.E.IndexedPartition Bool), μ.pConn P ≤ k ∧ T.Small (P false) ∧ T'.Small (P true) := by
   obtain ⟨X, hXE, hXk, hX, hX'⟩ := exists_of_ne h_ne
-  exact ⟨Bipartition.ofSubset hXE false, by simp [hXk, hX, hX'.compl_small]⟩
+  exact ⟨IndexedPartition.ofSubset hXE false, by simp [hXk, hX, hX'.compl_small]⟩
 
 lemma empty_small {R : Type*} [AddZeroClass R] [PartialOrder R] [CanonicallyOrderedAdd R]
     {k : R} {μ : ConnSystem α R} (T : Tangle μ k) (hμ : μ.Normal) : T.Small ∅ := by
-  have h := T.small_or_large (by simp [hμ.conn_empty]) (empty_subset _)
+  have h := T.small_or_large (by simp [hμ.apply_empty]) (empty_subset _)
   rwa [or_iff_left T.empty_not_large] at h
 
 lemma singleton_small {R : Type*} [One R] [Zero R] [Add R] [PartialOrder R]
     {k : R} {μ : ConnSystem α R} (T : Tangle μ k) (hk : 1 ≤ k) (hμ : μ.Unitary) (he : e ∈ μ.E) :
     T.Small {e} := by
-  have h := T.small_or_large (X := {e}) (by grw [hμ.conn_singleton_le e, hk]) (by simpa)
+  have h := T.small_or_large (X := {e}) (by grw [hμ.apply_singleton_le e, hk]) (by simpa)
   rwa [or_iff_left (T.singleton_not_large _)] at h
 
 lemma small_of_encard_le {μ : ConnSystem α ℕ∞} {k : ℕ∞} (T : Tangle μ k) (hμ : μ.Unitary)
     (hk : k ≠ ⊤) (hX : X.encard ≤ k) (hXE : X ⊆ μ.E) : T.Small X := by
   obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one
   · rw [show X = ∅ by simpa using hX]
-    exact T.empty_small hμ.conn_empty
+    exact T.empty_small hμ.apply_empty
   have hfin : X.Finite := by rw [← encard_lt_top_iff]; enat_to_nat!
   induction X, hfin using Finite.induction_on with
-  | empty => apply T.empty_small hμ.conn_empty
+  | empty => apply T.empty_small hμ.apply_empty
   | @insert e X heX hfin ih =>
     specialize ih (by grw [← hXE, ← subset_insert]) (by grw [← hX, ← subset_insert])
     exact union_singleton ▸ ih.union_small (Y := {e}) (T.singleton_small (by simp) hμ (by grind))
-      (by grw [union_singleton, hμ.conn_le_encard, hX])
+      (by grw [union_singleton, hμ.apply_le_encard, hX])
 
 end Tangle
 
@@ -251,9 +251,9 @@ lemma AdheresTo.eq_of_induce_eq {T₀ T₁ : Tangle ν k} (h : ν.AdheresTo μ)
   wlog hi : T₀.Small (P i) generalizing T₀ T₁ with aux
   · refine aux hT.symm (Ne.symm hcon) (fun b ↦ ?_) ?_
     · rw [← Tangle.small_bnot_iff, hP, Tangle.large_bnot_iff]
-    rwa [← not_large_iff (by rwa [ConnSystem.conn_eq_pConn]) P.subset, ← hP]
+    rwa [← not_large_iff (by rwa [ConnSystem.apply_eq_pConn]) P.subset, ← hP]
   have hle (j) : μ (P₀ j) ≤ k := by grw [hP₀, hPj]
-  have hle' (j) : ν (P₀ j) ≤ k := (h.conn_le _).trans <| hle j
+  have hle' (j) : ν (P₀ j) ≤ k := (h.apply_le _).trans <| hle j
   obtain ⟨b, hb⟩ : ∃ b, T₁.Large (P₀ b) := by
     simp_rw [← not_small_iff (hle' _) (P₀.subset.trans P.subset)]
     by_contra! hcon
@@ -273,6 +273,7 @@ def Entangled (μ : ConnSystem α R) (k : R) := ∀ ⦃j⦄, j < k → Subsingle
 lemma Entangled.entangled_of_adheresTo (hμ : μ.Entangled k) (h : ν.AdheresTo μ) :
     ν.Entangled k :=
   fun _ hjk ↦ ⟨fun _ _ ↦ h.eq_of_induce_eq ((hμ hjk).elim ..)⟩
+
 
 
 --   have := T.induce h.subset

@@ -23,23 +23,16 @@ variable {α β : Type*} {e f x y : α} {B C D C' D' I X Y Z s : Set α} {i j k 
 
 lemma Circuit.nonempty_circuit_union_of_independent (hX : M.Indep X)
     (hC : M.IsCircuit C) (hCXP : C ⊆ X ∪ D) : (C ∩ D).Nonempty := by
-  rw [indep_iff_forall_subset_not_isCircuit] at hX
-  specialize hX (C := C)
-  by_contra! hc
-  rw [← disjoint_iff_inter_eq_empty] at hc
-  have aux := Disjoint.subset_left_of_subset_union hCXP hc
-  apply hX at aux
-  contradiction
+  have hCX : ¬ (C ⊆ X) := fun hCX ↦ hC.not_indep <| hX.subset hCX
+  contrapose! hCX
+  rwa [union_comm, ← diff_subset_iff, ← diff_self_inter, hCX, diff_empty] at hCXP
 
 -- Next lemma belongs in IndepAxioms.lean
 
 lemma Indep.exists_isBase_disjoint_of_coindep (hI : M.Indep I) (hX : M.Coindep X)
     (hd : Disjoint I X) : ∃ B, M.IsBase B ∧ I ⊆ B ∧ Disjoint B X := by
-  have aux := exists_isBase_superset (indep_delete_of_disjoint (hI) (hd))
-  obtain ⟨B, hB₁, hB₂⟩ := aux
-  use B
-  rw [Coindep.delete_isBase_iff (hX)] at hB₁
-  exact And.intro hB₁.1 (And.intro hB₂ hB₁.2)
+  obtain ⟨B, hB, hIB, hBX⟩ := hI.exists_isBase_subset_spanning hX.compl_spanning (by grind)
+  exact ⟨B, hB, hIB, by grind⟩
 
 --- Following several lemmas may belong in Minor/Order.
 

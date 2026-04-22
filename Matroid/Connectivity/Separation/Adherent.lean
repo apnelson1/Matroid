@@ -113,7 +113,7 @@ lemma AdheresTo.internallyConnected_of_tutteConnected_three (hNM : N.AdheresTo M
   · obtain rfl | rfl := ENat.le_one_iff_eq_zero_or_eq_one.1 hle <;> simp
   simp [indicator_apply, hne, hlt]
 
-lemma Connected.contract_or_delete_connected {e : α} (hM : M.Connected) (hnt : M.E.Nontrivial) :
+lemma Connected.contract_or_delete_connected (hM : M.Connected) (hnt : M.E.Nontrivial) (e : α) :
     (M ／ {e}).Connected ∨ (M ＼ {e}).Connected := by
   have _ : (M ／ {e}).Nonempty := ⟨hnt.diff_singleton_nonempty e⟩
   have _ : (M ＼ {e}).Nonempty := ⟨hnt.diff_singleton_nonempty e⟩
@@ -121,9 +121,8 @@ lemma Connected.contract_or_delete_connected {e : α} (hM : M.Connected) (hnt : 
     (.inl ∘ fun h ↦ h.connected_of_connected hM) (.inr ∘ fun h ↦ h.connected_of_connected hM)
 
 /-- Bixby's lemma. -/
-lemma TutteConnected.contract_or_delete_internallyConnected_three
-    (hM : M.TutteConnected 3) {e : α} :
-    (M ／ {e}).InternallyConnected 3 ∨ (M ＼ {e}).InternallyConnected 3 :=
+lemma TutteConnected.contract_or_delete_internallyConnected_three (hM : M.TutteConnected 3)
+    (e : α) : (M ／ {e}).InternallyConnected 3 ∨ (M ＼ {e}).InternallyConnected 3 :=
   (M.adheresTo_contract_or_delete e).elim
     (.inl ∘ fun h ↦ h.internallyConnected_of_tutteConnected_three hM)
     (.inr ∘ fun h ↦ h.internallyConnected_of_tutteConnected_three hM)
