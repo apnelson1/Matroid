@@ -44,13 +44,9 @@ lemma IsMinor.isMinor_of_subsets {N : Matroid α} (hd : Disjoint C D) (hNM : N �
 lemma IsMinor.exists_partition_of_disjoint_contract_indep_delete_coindep {N : Matroid α}
     (hNM : N ≤m M) (hX : X ⊆ M.E) (hd : Disjoint X N.E) :
     ∃ C D, M.Indep C ∧ M.Coindep D ∧ Disjoint C D ∧ C ∪ D = X ∧ N ≤m M ／ C ＼ D := by
-  obtain ⟨C, D, hCD₁, hCD₂, hCD₃, rfl⟩ := IsMinor.exists_contract_indep_delete_coindep (hNM)
-  clear hNM
-  use C ∩ X, D ∩ X
-  simp [hCD₁.subset, hCD₂.subset, Set.disjoint_of_subset _ _ hCD₃,
-      ← union_inter_distrib_right, show X ⊆ C ∪ D by grind]
-  refine IsMinor.isMinor_of_subsets (hCD₃) (IsMinor.refl) (show C ∩ X ⊆ C by simp)
-      (show D ∩ X ⊆ D by simp)
+  obtain ⟨C, D, hC, hD, hCD, rfl⟩ := IsMinor.exists_contract_indep_delete_coindep (hNM)
+  exact ⟨C ∩ X, D ∩ X, hC.inter_right _, hD.inter_right _, by grind, by grind,
+    contract_delete_isMinor_contract_delete _ hCD inter_subset_left inter_subset_left ⟩
 
 lemma IsMinor.exists_smallside_of_separation {N : Matroid α} (hNM : N ≤m M)
     (hN : N.TutteConnected (k + 1 + 1)) (hP : P.eConn ≤ k) : ∃ i, (P i ∩ N.E).encard ≤ k := by
