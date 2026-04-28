@@ -529,4 +529,50 @@ lemma IsLoop.isLoop_of_isRestriction_of_mem (he : M.IsLoop e) (hNM : N ≤r M)
     (heN : e ∈ N.E) : N.IsLoop e := by
   simpa using he.dep.dep_isRestriction hNM (by simpa)
 
+/-- Given a function `f : α → Option β` and a matroid `M` on type `β`,
+the `Matroid α` obtained by pulling back `M` along `f`,
+and setting every `e` with `f e = none` to be a loop -/
+def loopComap {α β : Type*} (M : Matroid β) (f : α → Option β) : Matroid α :=
+  ((M.map some (Option.some_injective _).injOn) ↾ insert none (some '' M.E)).comap f
+
+@[simp]
+lemma loopComap_ground_eq (M : Matroid β) (f : α → Option β) :
+    (M.loopComap f).E = f ⁻¹' (insert none (some '' M.E)) := by
+  simp [loopComap]
+
+lemma loopComap_indep_iff {I : Set α} {M : Matroid β} {f : α → Option β} :
+    (M.loopComap f).Indep I ↔ ∃ (I₀ : Set β), M.Indep I₀ ∧ BijOn f I (some '' I₀) := by
+  rw [loopComap, comap_indep_iff, restrict_indep_iff, map_indep_iff]
+  refine ⟨fun ⟨⟨⟨I₀, hI₀, h_eq⟩, hss⟩, h_inj⟩ ↦ ⟨I₀, hI₀, ?_⟩,
+    fun ⟨I₀, hI₀, hbij⟩ ↦ ⟨⟨⟨I₀, hI₀, hbij.image_eq⟩, ?_⟩, hbij.injOn⟩⟩
+  · rw [← h_eq]
+    exact h_inj.bijOn_image
+  grw [← subset_insert, hbij.image_eq, hI₀.subset_ground]
+
+lemma loopComap_closure_eq (M : Matroid β) (f : α → Option β) (X : Set α) :
+    (M.loopComap f).closure X = f ⁻¹' (some '' (M.closure (some ⁻¹' (f '' X)))) ∪ f ⁻¹' {none} := by
+  wlog hX : f '' X ⊆ insert none (some '' M.E) generalizing X with aux
+  · specialize aux (X ∩ f ⁻¹' (insert none (some '' M.E))) ?_
+    · grw [inter_subset_right, image_preimage_subset]
+    rw [← closure_inter_ground, loopComap_ground_eq, aux, inter_comm, image_preimage_inter]
+    convert rfl using 4
+    rw [preimage_inter, ← union_singleton, preimage_union,
+      preimage_image_eq _ (Option.some_injective β),
+      preimage_singleton_eq_empty.2 (by simp), union_empty, inter_comm, closure_inter_ground]
+  rw [loopComap, comap_closure_eq, ← preimage_union, union_singleton, restrict_closure_eq',
+    inter_eq_self_of_subset_left hX, map_ground, inter_eq_self_of_subset_left]
+  · simp
+  grw [map_closure_eq, closure_subset_ground, ← subset_insert]
+
+lemma loopComap_subset_loops_preimage_none (M : Matroid β) (f : α → Option β) :
+    f ⁻¹' {none} ⊆ (M.loopComap f).loops := by
+  grw [loops, loopComap_closure_eq, ← subset_union_right]
+
+
+
+
+
+
+
+
 end Matroid

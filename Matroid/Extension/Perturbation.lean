@@ -41,6 +41,10 @@ lemma IsPerturbation.mono (h : M.IsPerturbation N k) (hkl : k ≤ l) : M.IsPertu
   rw [add_comm]
   exact (IsPerturbation.refl M).trans h
 
+lemma IsPerturbation.trans_le {M₁ M₂ M₃ : Matroid α} {j : ℕ∞} (h₁ : M₁.IsPerturbation M₂ j)
+    (h₂ : M₂.IsPerturbation M₃ k) (hle : j + k ≤ l) : M₁.IsPerturbation M₃ l :=
+  (h₁.trans h₂).mono hle
+
 lemma Projector.isPerturbation (P : M.Projector N β) : M.IsPerturbation N P.pivot.encard := by
   obtain ⟨γ, Q, hQu, hQi, hQci, -, ⟨f⟩⟩ := P.exists_good_projector
   refine ((IsPerturbation.refl' M).cons_left Q).mono ?_
@@ -177,6 +181,29 @@ lemma isPerturbation_loopify (M : Matroid α) (X : Set α) :
   refine (M.isPerturbation_of_delete_eq_delete (N := M.loopify X) (X := X) rfl (by simp)).mono ?_
   grw [eRk_le_encard, eRk_le_encard, two_mul]
 
+lemma isPerturbation_loopify' (M : Matroid α) (X : Set α) :
+    M.IsPerturbation (M.loopify X) (4 * M.eRk X) := by
+  obtain ⟨I, hI⟩ := M.exists_isBasis' X
+  have h1 := M.isPerturbation_project X
+  rw [hI.project_eq_loopify_project] at h1
+  have h2 := ((M.loopify (X \ I)).isPerturbation_project I).symm
+  have h3 := (M.loopify (X \ I)).isPerturbation_loopify I
+  rw [loopify_loopify, union_comm, union_diff_cancel hI.subset] at h3
+  convert (h1.trans h2).trans h3 using 1
+  rw [hI.eRk_eq_encard, Indep.eRk_eq_encard]
+  · ring
+  rw [loopify_indep_iff]
+  exact ⟨hI.indep, disjoint_sdiff_right⟩
+
+lemma isPerturbation_of_delete_eq_delete' (h : M.E = N.E) (hMX : M ＼ X = N ＼ X) :
+    M.IsPerturbation N (4 * (M.eRk X + N.eRk X)) := by
+  have hX' : M.loopify X = N.loopify X := by
+    simpa [ext_iff_indep, loopify_indep_iff_delete_indep, hMX]
+  have h1 := M.isPerturbation_loopify' X
+  rw [hX'] at h1
+  replace h1 := h1.trans (N.isPerturbation_loopify' X).symm
+  rwa [← mul_add] at h1
+
 lemma ModularCut.isPerturbation_projectBy (U : M.ModularCut) :
     M.IsPerturbation (M.projectBy U) 1 :=
   U.Projector.isPerturbation.symm.mono <| (encard_le_card ..).trans <| by simp
@@ -202,3 +229,107 @@ lemma dist_le_eRank_add_eRank (h : M.E = N.E) : M.dist N ≤ M.eRank + N.eRank :
 
 lemma isPerturbation_dist (h : M.E = N.E) : M.IsPerturbation N (M.dist N) :=
   ENat.sInf_mem (s := {k | M.IsPerturbation N k}) ⟨_, isPerturbation_eRank_add_eRank_of_ground_eq h⟩
+
+section shift
+
+variable {f : α → α} {C : Set α}
+
+/-- `M.IsShift C f` means that `f` is a function that is the identity outside `M.E \ M.closure C`,
+such that `f x` and `x` are parallel in `M ／ C` for all `x ∈ M.E \ M.closure C`. -/
+@[mk_iff]
+structure IsShift (M : Matroid α) (C : Set α) (f : α → α) : Prop where
+  closure_eq_closure' :
+    ∀ x ∈ M.E, x ∉ M.closure C → M.closure (insert x C) = M.closure (insert (f x) C)
+  eq_self_of_mem_closure : ∀ x ∈ M.closure C, f x = x
+  eq_self_of_notMem_ground : ∀ x ∉ M.E, f x = x
+
+lemma IsShift.closure_eq_closure (h : M.IsShift C f) (x : α) :
+    M.closure (insert x C) = M.closure (insert (f x) C) := by
+  by_cases hxC : x ∈ M.closure C
+  · rw [h.eq_self_of_mem_closure _ hxC]
+  by_cases hxE : x ∈ M.E
+  · rw [h.closure_eq_closure' _ hxE hxC]
+  rw [h.eq_self_of_notMem_ground _ hxE]
+
+lemma IsShift.apply_mem_iff_of_disjoint {x} (h : M.IsShift C f)
+    (hX : Disjoint X (M.E \ M.closure C)) : f x ∈ X ↔ x ∈ X := by
+  refine ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
+  · by_cases hxE : x ∈ M.E
+    · by_cases hxC : x ∈ M.closure C
+      · rwa [h.eq_self_of_mem_closure _ hxC] at hx
+      by_contra hcon
+      have hxcl := (h.closure_eq_closure x).subset (M.mem_closure_of_mem' (by simp) hxE)
+      refine hX.notMem_of_mem_left hx ⟨by_contra fun hcon' ↦ hxC ?_, fun hcl ↦ hxC ?_⟩
+      · rwa [← closure_inter_ground, insert_inter_of_notMem hcon', closure_inter_ground] at hxcl
+      rwa [closure_insert_eq_of_mem_closure hcl] at hxcl
+    rwa [h.eq_self_of_notMem_ground _ hxE] at hx
+  have himp : x ∈ M.E → x ∈ M.closure C := by simpa using hX.notMem_of_mem_left hx
+  by_cases hxE : x ∈ M.E
+  · rwa [h.eq_self_of_mem_closure _ (himp hxE)]
+  rwa [h.eq_self_of_notMem_ground _ hxE]
+
+lemma IsShift.apply_mem_closure_iff {x} (h : M.IsShift C f) :
+    x ∈ M.closure C ↔ f x ∈ M.closure C := by
+  rw [h.apply_mem_iff_of_disjoint disjoint_sdiff_right]
+
+lemma IsShift.apply_mem_ground_iff {x} (h : M.IsShift C f) : f x ∈ M.E ↔ x ∈ M.E := by
+  rw [← notMem_compl_iff, h.apply_mem_iff_of_disjoint (by grind), notMem_compl_iff]
+
+lemma IsShift.mapsTo (h : M.IsShift C f) : MapsTo f M.E M.E := by
+  simp [MapsTo, h.apply_mem_ground_iff]
+
+lemma IsShift.preimage_eq (h : M.IsShift C f) : f ⁻¹' M.E = M.E :=
+  subset_antisymm (fun x hx ↦ by_contra fun hxE ↦ hxE (by rwa [← h.eq_self_of_notMem_ground x hxE]))
+    h.mapsTo.subset_preimage
+
+lemma IsShift.eqOn (h : M.IsShift C f) : EqOn f id C := by
+  intro x hx
+  by_cases hxE : x ∈ M.E
+  · rw [h.eq_self_of_mem_closure _ (M.mem_closure_of_mem' hx hxE), id_eq]
+  rw [h.eq_self_of_notMem_ground _ hxE, id_eq]
+
+lemma IsShift.eqOn_closure (h : M.IsShift C f) : EqOn f id (M.closure C) := by
+  intro x hx
+  exact h.eq_self_of_mem_closure _ hx
+
+lemma IsShift.preimage_eq_of_subset_closure (h : M.IsShift C f) (hX : X ⊆ M.closure C) :
+    f ⁻¹' X = X :=
+  Set.ext fun x ↦ by rw [mem_preimage, h.apply_mem_iff_of_disjoint (by grind)]
+
+lemma IsShift.comap_contract_eq (h : M.IsShift C f) : M ／ C = (M.comap f) ／ C := by
+  refine ext_closure fun X ↦ ?_
+  simp only [contract_closure_eq, comap_closure_eq, image_union, h.eqOn.image_eq, id_eq, image_id']
+  obtain rfl | hne := X.eq_empty_or_nonempty
+  · rw [empty_union, image_empty, empty_union, h.preimage_eq_of_subset_closure rfl.subset]
+  have hrw (x) (hi : x ∈ X) : M.closure ({x} ∪ C) = M.closure ((f '' {x}) ∪ C) := by
+    simp [singleton_union, h.closure_eq_closure x]
+  rw [← biUnion_of_singleton X, biUnion_distrib_union _ hne,
+    ← closure_biUnion_closure_eq_closure_biUnion, iUnion₂_congr hrw,
+    closure_biUnion_closure_eq_closure_biUnion, ← biUnion_distrib_union _ hne,
+    ← image_iUnion₂, biUnion_of_singleton]
+  simp only [Set.ext_iff, mem_diff, mem_preimage, and_congr_left_iff]
+  refine fun x hxC ↦ ?_
+  refine ⟨fun hxcl ↦ ?_, fun hxcl ↦ ?_⟩
+  · rw [← closure_insert_eq_of_mem_closure hxcl, ← union_insert, ← closure_union_closure_right_eq,
+      h.closure_eq_closure, closure_union_closure_right_eq]
+    exact mem_closure_of_mem' _ (by simp) <| h.apply_mem_ground_iff.2 <| by grind
+  rw [← closure_insert_eq_of_mem_closure hxcl, ← union_insert, ← closure_union_closure_right_eq,
+    ← h.closure_eq_closure, closure_union_closure_right_eq]
+  exact mem_closure_of_mem' _ (by simp) <| h.apply_mem_ground_iff.1 <| by grind
+
+/-- If `f` is a shift by a set `C`, then `M.comap f` is a perturbation of `M`
+by a function of the rank of `C`.
+Here, `M.comap f` is the matroid obtained from `M` by replacing each `x` with `f x`,
+and the hypothesis implies that `x` and `f x` are always parallel in `M ／ C`.  -/
+lemma IsShift.isPerturbation_comap (h : M.IsShift C f) :
+    M.IsPerturbation (M.comap f) (2 * M.eRk C) := by
+  refine (M.isPerturbation_of_contract_eq_contract ?_ h.comap_contract_eq).mono ?_
+  · rw [comap_ground_eq, h.preimage_eq]
+  rw [eRk_comap, h.eqOn.image_eq, image_id, two_mul]
+
+/-- If `f` is a shift by a set `C`, and `L` is a set spanned by `C`, -/
+lemma IsShift.isPerturbation_loopify_comap (h : M.IsShift C f) {L : Set α} (hL : L ⊆ M.closure C) :
+    M.IsPerturbation ((M.comap f).loopify L) (6 * M.eRk C) := by
+  refine h.isPerturbation_comap.trans_le (isPerturbation_loopify' _ _) ?_
+  grw [eRk_comap, hL, h.eqOn_closure.image_eq_self, eRk_closure_eq, ← add_mul]
+  rfl
