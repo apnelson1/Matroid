@@ -152,6 +152,13 @@ lemma Projector.bijOn_aux {X : Set α} (hX : X ⊆ M.E) :
     aesop
   simp [SurjOn, image_union, ← range_comp, image_image]
 
+lemma Projector.eq_of_pivot_eq_empty {P : N.Projector M β} (h : P.pivot = ∅) : N = M := by
+  have hc := P.contract_image_pivot
+  have hd := P.delete_image_pivot
+  simp only [h, image_empty, contract_empty, delete_empty] at hc hd
+  rw [hc] at hd
+  exact Matroid.map_inj _ Sum.inl_injective.injOn hd
+
 def Projector.delete_contract' (M : Matroid α) (X : Set α) (hX : X ⊆ M.E) :
     (M ／ X).Projector (M ＼ X) X where
   carrier := M.comapOn (.inl '' (M.E \ X) ∪ range .inr) (Sum.elim id Subtype.val)
@@ -175,7 +182,6 @@ def Projector.delete_contract' (M : Matroid α) (X : Set α) (hX : X ⊆ M.E) :
       obtain ⟨b', ⟨hb'M, hb'X⟩, rfl⟩ | ⟨b', hb'X, rfl⟩ := hb <;>
       simp_all
       exact hb'X (hab ▸ ha'X)
-
 
 def Projector.copy {M M' N N' : Matroid α} (P : N.Projector M β) (hN : N = N') (hM : M = M') :
     N'.Projector M' β where

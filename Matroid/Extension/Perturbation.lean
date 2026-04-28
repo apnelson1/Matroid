@@ -45,6 +45,19 @@ lemma IsPerturbation.trans_le {M₁ M₂ M₃ : Matroid α} {j : ℕ∞} (h₁ :
     (h₂ : M₂.IsPerturbation M₃ k) (hle : j + k ≤ l) : M₁.IsPerturbation M₃ l :=
   (h₁.trans h₂).mono hle
 
+@[simp]
+lemma isPerturbation_zero_iff : M.IsPerturbation N 0 ↔ M = N := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
+  generalize hk : (0 : ℕ∞) = k at h
+  induction h with
+  | refl' => rfl
+  | @cons_left M' N' c h β P ih' =>
+    rw [eq_comm, add_eq_zero, encard_eq_zero] at hk
+    rw [ih' hk.1.symm, P.eq_of_pivot_eq_empty hk.2]
+  | @cons_right M' N' c h β P ih' =>
+    rw [eq_comm, add_eq_zero, encard_eq_zero] at hk
+    rw [ih' hk.1.symm, P.eq_of_pivot_eq_empty hk.2]
+
 lemma Projector.isPerturbation (P : M.Projector N β) : M.IsPerturbation N P.pivot.encard := by
   obtain ⟨γ, Q, hQu, hQi, hQci, -, ⟨f⟩⟩ := P.exists_good_projector
   refine ((IsPerturbation.refl' M).cons_left Q).mono ?_
@@ -327,7 +340,8 @@ lemma IsShift.isPerturbation_comap (h : M.IsShift C f) :
   · rw [comap_ground_eq, h.preimage_eq]
   rw [eRk_comap, h.eqOn.image_eq, image_id, two_mul]
 
-/-- If `f` is a shift by a set `C`, and `L` is a set spanned by `C`, -/
+/-- If `f` is a shift by a set `C`, and `L` is a set spanned by `C`,
+then `M` has bounded (by a function of `M.eRk C`) perturbation distance from `M.comap f`. -/
 lemma IsShift.isPerturbation_loopify_comap (h : M.IsShift C f) {L : Set α} (hL : L ⊆ M.closure C) :
     M.IsPerturbation ((M.comap f).loopify L) (6 * M.eRk C) := by
   refine h.isPerturbation_comap.trans_le (isPerturbation_loopify' _ _) ?_

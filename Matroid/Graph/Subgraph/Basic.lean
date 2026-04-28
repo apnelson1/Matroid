@@ -13,8 +13,8 @@ namespace Graph
 /-- `IsSubgraph H G` means that `V(H) ⊆ V(G)`, and every link in `H` is a link in `G`.
 
   One way to view is that `vertex_subset` ensures the vertices are a subset and `isLink_of_isLink`
-  for the vertices. Alternativly, if a vertex has an incident edge, it's existance in guranteed by
-  `isLink` condition so the vertex condition exists to handle the isolated vertices. -/
+  for the vertices. Alternatively, if a vertex has an incident edge, its existence in guaranteed by
+  the `isLink` condition so the vertex condition exists to handle the isolated vertices. -/
 structure IsSubgraph (H G : Graph α β) : Prop where
   vertex_subset : V(H) ⊆ V(G)
   isLink_of_isLink : ∀ ⦃e x y⦄, H.IsLink e x y → G.IsLink e x y
