@@ -57,11 +57,12 @@ lemma project_empty (M : Matroid α) : M.project ∅ = M := by
 lemma Indep.of_project (hI : (M.project C).Indep I) : M.Indep I :=
   (Matroid.project_indep_iff.1 hI).of_contract
 
+lemma Spanning.project_eq (hX : M.Spanning X) : M.project X = loopyOn M.E :=
+  ext_closure fun A ↦ by simp [hX.closure_eq_of_superset subset_union_right]
+
 @[simp]
-lemma project_ground_self (M : Matroid α) : M.project M.E = loopyOn M.E := by
-  refine ext_closure fun X ↦ ?_
-  simp only [project_closure, loopyOn_closure_eq]
-  rw [← closure_inter_ground, inter_eq_self_of_subset_right subset_union_right, closure_ground]
+lemma project_ground_self (M : Matroid α) : M.project M.E = loopyOn M.E :=
+  M.ground_spanning.project_eq
 
 @[simp]
 lemma project_project (M : Matroid α) (C₁ C₂ : Set α) :
@@ -230,6 +231,16 @@ lemma loopify_closure' (M : Matroid α) (D : Set α) :
     closure_inter_ground, union_inter_distrib_right,
     inter_eq_self_of_subset_left (closure_subset_ground ..)]
 
+lemma loopify_indep_iff_delete_indep {D : Set α} : (M.loopify D).Indep I ↔ (M ＼ D).Indep I := by
+  rw [loopify, restrict_indep_iff]
+  simp +contextual [Indep.subset_ground]
+
+lemma loopify_indep_iff {D : Set α} : (M.loopify D).Indep I ↔ M.Indep I ∧ Disjoint I D := by
+  rw [loopify_indep_iff_delete_indep, delete_indep_iff]
+
+@[simp]
+lemma loopify_delete (M : Matroid α) (D : Set α) : M.loopify D ＼ D = M ＼ D :=
+  ext_indep (by simp) fun I hI ↦ by simp [delete_indep_iff, loopify_indep_iff]
 
 -- lemma IsBasis.project_eq (h : M.IsBasis I X) : M.project X = (M.project I).loopify X := by
 --   _

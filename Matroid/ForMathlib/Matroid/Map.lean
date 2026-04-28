@@ -175,5 +175,9 @@ lemma restrictSubtype_ground_closure (M : Matroid α) (Y : Set M.E) :
     (M.restrictSubtype M.E).closure Y = M.closure ((↑) '' Y) := by
   rw [M.restrictSubtype_closure M.E, inter_eq_self_of_subset_left <| M.closure_subset_ground ..]
 
+@[simp]
+lemma map_coindep_iff {f : α → β} {hf : InjOn f M.E} {I : Set β} :
+    (M.map f hf).Coindep I ↔ ∃ I₀, M.Coindep I₀ ∧ I = f '' I₀ := by
+  rw [Coindep, map_dual, map_indep_iff]
 
 end Matroid

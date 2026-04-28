@@ -31,6 +31,11 @@ lemma contract_comap {β : Type*} (M : Matroid β) (f : α → β) {C : Set β} 
   obtain ⟨C, rfl⟩ := subset_range_iff_exists_image_eq.1 hC
   exact ext_closure fun X ↦ by simp [image_union, image_preimage_image]
 
+@[simp]
+lemma sum_contract {α β : Type*} (M : Matroid α) (N : Matroid β) (C : Set (α ⊕ β)) :
+    (M.sum N) ／ C = (M ／ .inl ⁻¹' C).sum (N ／ .inr ⁻¹' C) := by
+  rw [← dual_inj, dual_contract, sum_dual, sum_delete, ← dual_contract, ← dual_contract, ← sum_dual]
+
 lemma contract_closure_congr (h : M.closure X = M.closure Y) (C : Set α) :
     (M ／ C).closure X = (M ／ C).closure Y := by
   rw [contract_closure_eq, contract_closure_eq, closure_union_congr_left h]

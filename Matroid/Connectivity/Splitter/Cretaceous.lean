@@ -46,7 +46,7 @@ lemma IsMinor.exists_partition_of_disjoint_contract_indep_delete_coindep {N : Ma
     ∃ C D, M.Indep C ∧ M.Coindep D ∧ Disjoint C D ∧ C ∪ D = X ∧ N ≤m M ／ C ＼ D := by
   obtain ⟨C, D, hC, hD, hCD, rfl⟩ := IsMinor.exists_contract_indep_delete_coindep (hNM)
   exact ⟨C ∩ X, D ∩ X, hC.inter_right _, hD.inter_right _, by grind, by grind,
-    contract_delete_isMinor_contract_delete _ hCD inter_subset_left inter_subset_left ⟩
+    contract_delete_isMinor_contract_delete _ hCD inter_subset_left inter_subset_left⟩
 
 lemma IsMinor.exists_smallside_of_separation {N : Matroid α} (hNM : N ≤m M)
     (hN : N.TutteConnected (k + 1 + 1)) (hP : P.eConn ≤ k) : ∃ i, (P i ∩ N.E).encard ≤ k := by

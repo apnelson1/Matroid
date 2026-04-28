@@ -36,6 +36,16 @@ lemma removeLoops_del_eq_removeLoops (h : X ⊆ M.loops) :
   rw [removeLoops_eq_delete, delete_delete, removeLoops_eq_delete, loops, delete_closure_eq,
     empty_diff, union_diff_self, closure_empty, union_eq_self_of_subset_left h]
 
+@[simp]
+lemma sum_delete {α β : Type*} (M : Matroid α) (N : Matroid β) (D : Set (α ⊕ β)) :
+    (M.sum N) ＼ D = (M ＼ .inl ⁻¹' D).sum (N ＼ .inr ⁻¹' D) := by
+  refine ext_indep ?_ fun I hI ↦ ?_
+  · simp only [delete_ground, sum_ground, image_diff Sum.inl_injective]
+    grind
+  simp only [delete_indep_iff, sum_indep_iff]
+  nth_rw 1 [← image_preimage_inl_union_image_preimage_inr D]
+  grind
+
 lemma disjointSigma_delete {ι : Type*} (M : ι → Matroid α) h (D : Set α):
     Matroid.disjointSigma M h ＼ D = Matroid.disjointSigma (fun i ↦ (M i ＼ D))
       (h.mono fun _ _ ↦ Disjoint.mono diff_subset diff_subset) := by

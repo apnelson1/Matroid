@@ -340,3 +340,20 @@ lemma exists_of_encard_add_encard_eq_three (h : s.encard + t.encard = 3) (hdj : 
     use y, x, z; grind
   obtain rfl : t = {x} := by grind [diff_eq_empty]
   use z, y, x; grind
+
+@[simp]
+lemma ENat.encard_Iio (n : ℕ∞) : (Set.Iio n).encard = n := by
+  cases n using ENat.recTopCoe with
+  | top =>
+    simp only [encard_eq_top_iff]
+    exact (infinite_univ.image Nat.cast_injective.injOn).mono <| by simp [subset_def]
+  | coe n =>
+    nth_rw 2 [← ENat.coe_inj.2 <| Nat.card_Iio n]
+    rw [← encard_coe_eq_coe_finsetCard, ← Nat.cast_injective.encard_image (β := ℕ∞)]
+    convert rfl
+    ext i
+    cases i with simp
+
+@[simp]
+lemma ENat.encard_Iic (n : ℕ∞) : (Set.Iic n).encard = n + 1 := by
+  rw [← Iio_insert, encard_insert_of_notMem (by simp), ENat.encard_Iio]
