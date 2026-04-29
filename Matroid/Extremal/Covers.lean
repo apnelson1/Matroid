@@ -16,7 +16,7 @@ import Matroid.Uniform.Minor
 
 variable {α : Type*} {M N M' : Matroid α} {I F X Y F' F₀ F₁ F₂ P L H H₁ H₂ H' B C D K : Set α}
   {e f : α} {l r : ℕ} {a k : ℕ∞} {T : Set (Set α)} {ι : Type*} {i j : ι}
-  {P P' : Set α → Prop}
+  {P P' Q : Set α → Prop}
 
 open Set
 
@@ -145,25 +145,16 @@ lemma Set.IsCover.image_union (h : T.IsCover Y P)
     exact fun F hFT ↦ (((fun a ↦ (hPP' F (hi F hFT))) ∘ T) X)
   exact fun F hFT ↦ h.pProp F hFT
 
-lemma Set.IsCover.mono_subset (h : T.IsCover X P) (hX : Y ⊆ X) (hp : ∀ Z, P Z → P (Z ∩ Y)) :
-    ((· ∩ Y) '' T).IsCover Y P := by
-  refine ⟨?_, ?_ ⟩
-  · simp only [sUnion_image]
-    apply subset_antisymm (iUnion₂_subset_iff.mpr (fun i j ↦ inter_subset_right))
-    intro y hY
-    have hy : y ∈ X := mem_of_subset_of_mem hX hY
-    rw [←h.sUnion_eq] at hy
-    obtain ⟨T', hT', hT'y ⟩ := hy
-    exact mem_biUnion hT' (mem_inter hT'y hY)
-  intro F hF
-  obtain ⟨Z, hZ, rfl⟩ := hF
-  simp only
-  exact hp Z (h.pProp Z hZ)
+lemma Set.IsCover.mono_subset (h : T.IsCover X P) (hX : Y ⊆ X) (hPQ : ∀ Z, P Z → Q (Z ∩ Y)) :
+    ((· ∩ Y) '' T).IsCover Y Q := by
+  rw [isCover_iff, sUnion_image, ← iUnion₂_inter, ← sUnion_eq_biUnion, h.sUnion_eq,
+      inter_eq_self_of_subset_right hX, and_iff_right rfl]
+  simp only [mem_image, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
+  exact fun Z hZ ↦ hPQ Z <| h.pProp _ hZ
 
---Not sure about name
-lemma Set.isCover_union (T : Set (Set α)) (P : Set α → Prop) (hF : ∀ F ∈ T, P F) :
-    T.IsCover (⋃ F ∈ T, F) P := by
-  refine ⟨sUnion_eq_biUnion, fun F hF' ↦ hF F hF' ⟩
+lemma Set.isCover_sUnion (T : Set (Set α)) (P : Set α → Prop) (hF : ∀ F ∈ T, P F) :
+    T.IsCover (⋃₀ T) P :=
+  ⟨rfl, hF⟩
 
 end General
 
@@ -188,6 +179,7 @@ lemma Set.IsCover.coverNumber_le {T : Set (Set α)} (h : T.IsCover X P) :
 lemma encard_eq_coverNumber_of_nonempty {P : Set α → Prop}
     (hn : {T | IsCover T X P}.Nonempty) :
     ∃ T, IsCover T X P ∧ T.encard = X.coverNumber P := by
+  have := ENat.exists_eq_iInf
   simp only [coverNumber]
   simp_rw [iInf_subtype']
   have := hn.to_subtype
@@ -199,6 +191,10 @@ lemma encard_eq_coverNumber_of_nonempty {P : Set α → Prop}
 lemma exists_encard_eq_coverNumber (hP : X.HasCover P) :
     ∃ T, IsCover T X P ∧ T.encard = X.coverNumber P := by
   exact encard_eq_coverNumber_of_nonempty hP
+
+lemma coverNumber_eq_top_of_not_hasCover (hP : ¬ X.HasCover P) : X.coverNumber P = ⊤ := by
+  simp only [coverNumber, iInf_eq_top, encard_eq_top_iff]
+  exact fun C hC ↦ False.elim <| hP ⟨C, hC⟩
 
 lemma Set.exists_cover (X : Set α) (P : Set α → Prop) :
     X.coverNumber P = ⊤ ∨ ∃ T, IsCover T X P ∧ T.encard = X.coverNumber P := by
@@ -1066,11 +1062,12 @@ lemma nonspanningNumber_le_contract_subset (hX : C ⊆ Y) (hYne : (Y \ C).Nonemp
       (encard_image_le (fun x ↦ x ∪ C) T)
 
 lemma nonspanningNumber_set_closure (hY : Y ⊆ M.closure X) (hX : X ⊆ M.E) :
-    X.coverNumber (M ↾ X).Nonspanning  ≤ (X ∪ Y).coverNumber (M ↾ (X ∪ Y)).Nonspanning := by
+    X.coverNumber (M ↾ X).Nonspanning ≤ (X ∪ Y).coverNumber (M ↾ (X ∪ Y)).Nonspanning := by
   obtain hT | ⟨T, hT, hTe ⟩ := (X ∪ Y).exists_cover (M ↾ (X ∪ Y)).Nonspanning
   · rw [hT]
     exact OrderTop.le_top (X.coverNumber (M ↾ X).Nonspanning)
-  rw[←hTe]
+  rw [← hTe]
+
   have hcov : NonspanningCover M ((fun x ↦ x ∩ X) '' T) X := by
     refine ⟨?_, ?_ ⟩
     · refine subset_antisymm (sUnion_subset fun K ↦ ?_) fun e he ↦ ?_
