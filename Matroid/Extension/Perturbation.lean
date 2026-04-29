@@ -8,7 +8,6 @@ open Set
 
 namespace Matroid
 
-
 /-- `M.IsPerturbation N k` means that `N` can be obtained from `M` by a finite sequence of lifts
 and projections, with combined cardinality at most `k`.
 (each lift/projection in the sequence is possibly by an infinite set. )
@@ -22,9 +21,8 @@ inductive IsPerturbation.{u} {α : Type u} : Matroid α → Matroid α → ℕ�
   | cons_right {M N N' : Matroid α} {k : ℕ∞} (h : IsPerturbation M N k) {β : Type u}
        (P : N'.Projector N β) : IsPerturbation M N' (k + P.pivot.encard)
 
-lemma IsPerturbation.trans {M₁ M₂ M₃ : Matroid α}
-    (h : M₁.IsPerturbation M₂ l) (h' : M₂.IsPerturbation M₃ k) :
-    M₁.IsPerturbation M₃ (l + k) := by
+lemma IsPerturbation.trans {M₁ M₂ M₃ : Matroid α} (h : M₁.IsPerturbation M₂ l)
+    (h' : M₂.IsPerturbation M₃ k) : M₁.IsPerturbation M₃ (l + k) := by
   induction h' generalizing M₁ with
   | refl' => simpa
   | cons_left h P ih => rw [← add_assoc]; exact (ih h).cons_left P
@@ -179,28 +177,29 @@ lemma isPerturbation_of_contract_eq_contract (h : M.E = N.E) (hMX : M ／ X = N 
     M.IsPerturbation N (M.eRk X + N.eRk X) := by
   have hMX' : M.project X = N.project X :=
     ext_indep (by simpa) fun I hI ↦ by rw [project_indep_iff, hMX, project_indep_iff]
-  refine (M.isPerturbation_project X).trans ?_
-  rw [hMX']
-  exact (N.isPerturbation_project X).symm
+  exact (M.isPerturbation_project X).trans <| hMX' ▸ (N.isPerturbation_project X).symm
 
-lemma isPerturbation_of_delete_eq_delete (h : M.E = N.E) (hMX : M ＼ X = N ＼ X) :
+lemma isPerturbation_eRk_dual_of_delete_eq_delete (h : M.E = N.E) (hMX : M ＼ X = N ＼ X) :
     M.IsPerturbation N (M✶.eRk X + N✶.eRk X) := by
   have h := isPerturbation_of_contract_eq_contract (M := M✶) (N := N✶) (by simpa) (X := X)
     <| by rwa [← dual_inj, dual_contract_dual, dual_contract_dual]
   simpa using h.dual
 
-lemma isPerturbation_loopify (M : Matroid α) (X : Set α) :
+lemma isPerturbation_loopify_encard (M : Matroid α) (X : Set α) :
     M.IsPerturbation (M.loopify X) (2 * X.encard) := by
-  refine (M.isPerturbation_of_delete_eq_delete (N := M.loopify X) (X := X) rfl (by simp)).mono ?_
+  refine (M.isPerturbation_eRk_dual_of_delete_eq_delete (N := M.loopify X) (X := X)
+    rfl (by simp)).mono ?_
   grw [eRk_le_encard, eRk_le_encard, two_mul]
 
-lemma isPerturbation_loopify' (M : Matroid α) (X : Set α) :
+/-- A version of `isPerturbation_loopify_encard` where the bound is in terms of the rank
+rather than the cardinality of `X`. -/
+lemma isPerturbation_loopify (M : Matroid α) (X : Set α) :
     M.IsPerturbation (M.loopify X) (4 * M.eRk X) := by
   obtain ⟨I, hI⟩ := M.exists_isBasis' X
   have h1 := M.isPerturbation_project X
   rw [hI.project_eq_loopify_project] at h1
   have h2 := ((M.loopify (X \ I)).isPerturbation_project I).symm
-  have h3 := (M.loopify (X \ I)).isPerturbation_loopify I
+  have h3 := (M.loopify (X \ I)).isPerturbation_loopify_encard I
   rw [loopify_loopify, union_comm, union_diff_cancel hI.subset] at h3
   convert (h1.trans h2).trans h3 using 1
   rw [hI.eRk_eq_encard, Indep.eRk_eq_encard]
@@ -208,13 +207,13 @@ lemma isPerturbation_loopify' (M : Matroid α) (X : Set α) :
   rw [loopify_indep_iff]
   exact ⟨hI.indep, disjoint_sdiff_right⟩
 
-lemma isPerturbation_of_delete_eq_delete' (h : M.E = N.E) (hMX : M ＼ X = N ＼ X) :
+lemma isPerturbation_eRk_of_delete_eq_delete (h : M.E = N.E) (hMX : M ＼ X = N ＼ X) :
     M.IsPerturbation N (4 * (M.eRk X + N.eRk X)) := by
   have hX' : M.loopify X = N.loopify X := by
     simpa [ext_iff_indep, loopify_indep_iff_delete_indep, hMX]
-  have h1 := M.isPerturbation_loopify' X
+  have h1 := M.isPerturbation_loopify X
   rw [hX'] at h1
-  replace h1 := h1.trans (N.isPerturbation_loopify' X).symm
+  replace h1 := h1.trans (N.isPerturbation_loopify X).symm
   rwa [← mul_add] at h1
 
 lemma ModularCut.isPerturbation_projectBy (U : M.ModularCut) :
@@ -341,9 +340,27 @@ lemma IsShift.isPerturbation_comap (h : M.IsShift C f) :
   rw [eRk_comap, h.eqOn.image_eq, image_id, two_mul]
 
 /-- If `f` is a shift by a set `C`, and `L` is a set spanned by `C`,
-then `M` has bounded (by a function of `M.eRk C`) perturbation distance from `M.comap f`. -/
+then `M` has bounded (by a function of `M.eRk C`) perturbation distance
+from the matroid `(M.comap f).loopify L`. -/
 lemma IsShift.isPerturbation_loopify_comap (h : M.IsShift C f) {L : Set α} (hL : L ⊆ M.closure C) :
     M.IsPerturbation ((M.comap f).loopify L) (6 * M.eRk C) := by
-  refine h.isPerturbation_comap.trans_le (isPerturbation_loopify' _ _) ?_
+  refine h.isPerturbation_comap.trans_le (isPerturbation_loopify _ _) ?_
   grw [eRk_comap, hL, h.eqOn_closure.image_eq_self, eRk_closure_eq, ← add_mul]
   rfl
+
+end shift
+
+section uniform
+
+
+
+lemma foo (a b : ℕ)  (X : Set α) (hxB : b + ∑ i < b, Nat.choose a i ≤ X.encard)
+    (U : (unifOn X (a + 1)).ModularCut) (hU : U ≠ ⊤) :
+    ∃ Y ⊆ X, Y.encard = b ∧ ((unifOn X (a + 1)).projectBy U ↾ Y).IsFiniteRankUniform a := by
+  let G := unifOn X (a + 1)
+  let M := G.projectBy U
+
+  sorry
+
+
+end uniform
