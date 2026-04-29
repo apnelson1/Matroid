@@ -133,7 +133,6 @@ lemma isCover_empty_iff (P : Set α → Prop) : IsCover ∅ Y P ↔ Y = ∅ := b
   rw [ ←sUnion_empty] at h
   refine ⟨h.symm, by grind ⟩
 
---Peter, is this a better name?
 lemma Set.IsCover.image_union (h : T.IsCover Y P)
     (hXN : Y.Nonempty)
     (hPP' : ∀ F : Set α, P F → P' (F ∪ X)) :
@@ -160,8 +159,17 @@ lemma Set.IsCover.mono_subset (h : T.IsCover X P) (hX : Y ⊆ X) (hp : ∀ Z, P 
   simp only
   exact hp Z (h.pProp Z hZ)
 
+lemma Set.IsCover.union_isCover {T' : Set (Set α)} (h : T.IsCover X P) (h' : T'.IsCover Y P) :
+    (T ∪ T').IsCover (X ∪ Y) P := by
+  refine ⟨?_, ?_ ⟩
+  · rw [sUnion_union, h.sUnion_eq, h'.sUnion_eq]
+  intro F hF
+  obtain hX | hY := hF
+  exact h.pProp F hX
+  exact h'.pProp F hY
+
 --Not sure about name
-lemma Set.isCover_union (T : Set (Set α)) (P : Set α → Prop) (hF : ∀ F ∈ T, P F) :
+lemma Set.isCover_biunion (T : Set (Set α)) (P : Set α → Prop) (hF : ∀ F ∈ T, P F) :
     T.IsCover (⋃ F ∈ T, F) P := by
   refine ⟨sUnion_eq_biUnion, fun F hF' ↦ hF F hF' ⟩
 
@@ -172,13 +180,6 @@ section Number
 /-- This is the size of the smallest cover of `X` in which each set satisfies `P`. -/
 noncomputable def Set.coverNumber (X : Set α) (P : Set α → Prop) : ℕ∞ :=
   ⨅ (T : Set (Set α)) (_ : T.IsCover X P), T.encard
-
-lemma coverNumber_mono (X : Set α) {P Q : Set α → Prop} (hPQ : ∀ Y ⊆ X, P Y → Q Y) :
-    X.coverNumber Q ≤ X.coverNumber P := by
-  simp only [coverNumber, le_iInf_iff]
-  refine fun T hT ↦ iInf₂_le T ⟨hT.1, fun F hF ↦ hPQ _ ?_ (hT.2 F hF)⟩
-  have := hT.sUnion_eq
-  grind
 
 lemma Set.IsCover.coverNumber_le {T : Set (Set α)} (h : T.IsCover X P) :
     X.coverNumber P ≤ T.encard := by
@@ -197,8 +198,20 @@ lemma encard_eq_coverNumber_of_nonempty {P : Set α → Prop}
   -- have := ENat.exists_eq_iInf (f := fun (hT : T.IsCover X P) ↦ T.encard)
 
 lemma exists_encard_eq_coverNumber (hP : X.HasCover P) :
-    ∃ T, IsCover T X P ∧ T.encard = X.coverNumber P := by
-  exact encard_eq_coverNumber_of_nonempty hP
+    ∃ T, IsCover T X P ∧ T.encard = X.coverNumber P := encard_eq_coverNumber_of_nonempty hP
+
+-- lemma iInf₂_empty_eq_top {α : Type u_1} {ι : Sort u_4} {κ : ι → Sort u_6} [CompleteLattice α]
+--    {f : (i : ι) → κ i → α} : ⨅ (i : ι), ⨅ (j : κ i), f i j = ⊤ := by sorry
+
+lemma coverNumber_empty_eq_top {P : Set α → Prop}
+    (hem : {T | IsCover T X P} = ∅) : X.coverNumber P = ⊤ := by
+  simp only [coverNumber, iInf₂_eq_top]
+  intro T hT
+  by_contra
+  have : T ∈ {T | T.IsCover X P} := mem_setOf.mpr hT
+  rw [hem] at this
+  exact this
+
 
 lemma Set.exists_cover (X : Set α) (P : Set α → Prop) :
     X.coverNumber P = ⊤ ∨ ∃ T, IsCover T X P ∧ T.encard = X.coverNumber P := by
@@ -268,9 +281,7 @@ lemma isCover_image_singleton (hP : ∀ e ∈ X, P {e}) : (singleton '' X).IsCov
   exact hP e heE
 
 lemma isCover_singleton_le (hP : ∀ e ∈ X, P {e}) : X.coverNumber P ≤ X.encard := by
-  grw [(isCover_image_singleton hP).coverNumber_le ]
-  set Sing : Set (Set α) := {singleton e | e ∈ X} with hs
-  exact encard_image_le singleton X
+  grw [(isCover_image_singleton hP).coverNumber_le, encard_image_le singleton X ]
 
 lemma coverNumber_eq_zero_iff (P : Set α → Prop) : X.coverNumber P = 0 ↔ IsCover ∅ X P := by
   refine ⟨?_, ?_ ⟩
@@ -286,13 +297,20 @@ lemma coverNumber_eq_zero_iff (P : Set α → Prop) : X.coverNumber P = 0 ↔ Is
   simp only [encard_empty, nonpos_iff_eq_zero] at this
   grind
 
-lemma coverNumber_le_coverNumber (P Q : Set α → Prop) (X : Set α)
+lemma coverNumber_le_coverNumber {P Q : Set α → Prop} {X : Set α} {Y : Set α} (f : Set α → Set α )
+    (hcov : ∀ T, T.IsCover X P → ( f '' T).IsCover Y Q) : Y.coverNumber Q ≤ X.coverNumber P := by
+  obtain ht | ⟨T, hT, hTe ⟩ := exists_cover X P
+  · rw [ht]
+    simp only [le_top]
+  grw [←hTe, (hcov T hT).coverNumber_le, encard_image_le]
+
+lemma coverNumber_le_prop (P Q : Set α → Prop) (X : Set α)
     (hPQ : ∀ Y ⊆ X, P Y → Q Y) : X.coverNumber Q ≤ X.coverNumber P := by
   obtain ht | ⟨T, hT, hTe ⟩ := exists_cover X P
   · rw [ht]
     simp only [le_top]
   rw [←hTe]
-  exact IsCover.coverNumber_le ⟨hT.sUnion_eq, fun F hF ↦ hPQ F (hT.subset hF) (hT.pProp F hF) ⟩
+  exact IsCover.coverNumber_le ⟨hT.sUnion_eq, fun F hF ↦ hPQ F (hT.subset hF) (hT.pProp F hF)⟩
 
 --Mathieu
 lemma coverNumber_congr (P Q : Set α → Prop)
@@ -300,6 +318,42 @@ lemma coverNumber_congr (P Q : Set α → Prop)
     X.coverNumber P = X.coverNumber Q := by
   sorry
 
+lemma coverNumber_le_coverNumber_union {P Q : Set α → Prop} {X : Set α} {Y : Set α}
+    (hX : X.Nonempty) (hP : ∀ F : Set α, P F → Q (F ∪ Y)) :
+    (X ∪ Y).coverNumber Q ≤ X.coverNumber P :=
+  coverNumber_le_coverNumber (· ∪ Y) (fun ?_ hT ↦ (hT.image_union hX hP))
+
+lemma coverNumber_union_le :
+    (X ∪ Y).coverNumber P ≤ X.coverNumber P + Y.coverNumber P := by
+  obtain ht | ⟨T, hT, hTe ⟩ := exists_cover X P
+  · rw [ht]
+    simp only [top_add, le_top]
+  obtain ht | ⟨T', hT', hT'e ⟩ := exists_cover Y P
+  · rw [ht]
+    simp only [add_top, le_top]
+  grw [←hTe, ←hT'e, (hT.union_isCover hT').coverNumber_le ]
+  exact encard_union_le T T'
+
+lemma coverNumber_le_coverNumber_intersect {P Q : Set α → Prop} (X : Set α) (Y : Set α )
+    (hP : ∀ F ⊆ X, P F → Q (F ∩ Y) ) : (X ∩ Y).coverNumber Q ≤ X.coverNumber P := by
+  apply coverNumber_le_coverNumber (· ∩ Y)
+  intro T hT
+  refine ⟨?_, ?_ ⟩
+  · refine subset_antisymm (sUnion_subset fun K ↦ ?_) fun e ⟨he, heE⟩ ↦ ?_
+    · intro ⟨F, hF, hF' ⟩
+      simp only at hF'
+      rw [←hF']
+      have := hT.subset hF
+      grind
+    simp only [sUnion_image, mem_iUnion, mem_inter_iff, exists_and_left, exists_prop]
+    rw [←hT.sUnion_eq ] at he
+    obtain ⟨F, hF, hFe ⟩ := he
+    refine ⟨F, ⟨hFe, hF, heE⟩⟩
+  intro F hF
+  obtain ⟨G, hG, hG2 ⟩ := hF
+  simp only at hG2
+  rw [←hG2]
+  exact hP G (hT.subset hG) (hT.pProp G hG)
 
 end Number
 
@@ -324,7 +378,7 @@ lemma Set.IsCover.isCover_closure {P : Matroid α → Set α → Prop} {M : Matr
     fun F hF ↦ (hP F (h.pProp F hF)) ⟩
   · grw [h.sUnion_eq.symm.subset, sUnion_eq_biUnion]
     refine biUnion_mono rfl.subset fun Z hZ ↦ (subset_closure_iff_forall_subset_isFlat Z
-      (LE.le.subset fun ⦃a⦄ a_1 ↦ hX ((IsCover.subset h hZ) a_1))).mpr fun F a a_1 ↦ a_1
+      ((h.subset hZ).trans hX)).mpr fun F a a_1 ↦ a_1
 
 end Matroid
 
@@ -346,7 +400,7 @@ lemma IsRankCover.contract (h : (M ／ X).IsRankCover T Y k) (hXN : Y.Nonempty) 
   unfold IsRankCover at h
   apply IsCover.image_union h hXN
   intro F hF
-  rw [← @eRelRk_add_eRk_eq, eRelRk_eq_eRk_contract]
+  rw [← eRelRk_add_eRk_eq, eRelRk_eq_eRk_contract]
   exact add_le_add_left hF (M.eRk X)
 
 lemma IsRankCover_iff {M : Matroid α} {T : Set (Set α)} {X : Set α} {k : ℕ∞} :
@@ -427,7 +481,7 @@ lemma IsRankCover.isCover_flat_closure (hcov : M.IsRankCover T X k) (hX : M.IsFl
 lemma IsRankCover.mono_k {k' : ℕ∞} (hcov : M.IsRankCover T X k) (hkk' : k ≤ k') :
     M.IsRankCover T X k' := by
   refine ⟨ hcov.sUnion_eq, fun F hF ↦
-    Std.IsPreorder.le_trans (M.eRk F) k k' (hcov.pProp F hF) hkk' ⟩
+    Std.IsPreorder.le_trans (M.eRk F) k k' (hcov.pProp F hF) hkk'⟩
 
 lemma IsRankCover.nonempty_set (h : M.IsRankCover T X k) (hX : X.Nonempty) :
     T.Nonempty := h.nonempty hX
@@ -439,26 +493,22 @@ lemma IsRankCover_Zero (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
     obtain ⟨ T', hT' ⟩ := h
     rw[←hT'.sUnion_eq ] at he
     obtain ⟨ Y, hYt, heY ⟩ := he
-    apply isLoop_iff.mp
-    exact isLoop_iff.mp (((Matroid.eRk_eq_zero_iff ((IsRankCover_iff.2 hT').subset_ground hYt )).1
-      (nonpos_iff_eq_zero.mp (hT'.pProp Y hYt))) heY)
+    exact isLoop_iff.mp (isLoop_iff.mp (((Matroid.eRk_eq_zero_iff
+    ((IsRankCover_iff.2 hT').subset_ground hYt )).1 (nonpos_iff_eq_zero.mp (hT'.pProp Y hYt))) heY))
   intro h
-  refine ⟨ (singleton '' X), isCover_image_singleton ?_ ⟩
+  refine ⟨(singleton '' X), isCover_image_singleton ?_⟩
   intro e he
   simp only [nonpos_iff_eq_zero]
-  refine IsLoop.eRk_eq ?_
-  exact isLoop_iff.mpr (h he)
+  refine IsLoop.eRk_eq (isLoop_iff.mpr (h he))
 
 lemma CoverNumberRank_subset_le (M : Matroid α) (k : ℕ∞) (hX : Y ⊆ X) :
     M.rankCoverNumber Y k ≤ M.rankCoverNumber X k := by
-    --Y.coverNumber (fun A ↦ M.eRk A ≤ k) ≤ X.coverNumber (fun A ↦ M.eRk A ≤ k) := by
   rw [rankCoverNumber_eq, rankCoverNumber_eq]
-  obtain htop | ⟨T, hT, hTen ⟩ := X.exists_cover (fun A ↦ M.eRk A ≤ k)
-  · rw [htop]
-    exact OrderTop.le_top (Y.coverNumber fun A ↦ M.eRk A ≤ k)
+  apply coverNumber_le_coverNumber (fun x ↦ x ∩ Y)
+  intro T hT
   rw [←IsRankCover_iff] at hT
-  have := hT.mono_subset hX
-  grw [(hT.mono_subset hX).coverNumber_le, ←hTen, encard_image_le (fun x ↦ x ∩ Y) T ]
+  rw [←IsRankCover_iff]
+  exact hT.mono_subset hX
 
 lemma IsRankCover_zero_or_exists' (X : Set α) (hne : X.Nonempty) (hX : X ⊆ M.E := by aesop_mat) :
     ⊤ = M.rankCoverNumber X 0 ∨ ∃ F, M.IsRankCover ({M.closure F ∩ X}) X 0 := by
@@ -498,12 +548,6 @@ lemma IsRankCover_zero_iff_not_rankPos :
     by simp only ⟩)) , fun h ↦ (IsRankCover_Zero M.E fun ⦃a⦄ a_1 ↦ a_1).mpr
     (subset_of_subset_of_eq (fun ⦃a⦄ a_1 ↦ a_1) (Eq.symm (Matroid.eq_loopyOn_iff_loops.1
     (M.not_rankPos_iff.1 h)).1)) ⟩
-
--- lemma IsRankCover.nonempty (h : M.IsRankCover T X k) (hX : X.Nonempty) : T.Nonempty := by
---   rw [nonempty_iff_empty_ne]
---   rintro rfl
---   simp [IsRankCover_iff, eq_comm] at h
---   exact Ne.elim (Set.nonempty_iff_empty_ne.1 hX) (Eq.symm h)
 
 lemma IsRankCover.nontrivial (hcov : M.IsRankCover T X k) (hk : k < M.eRk X) :
     T.Nontrivial := by
@@ -552,7 +596,119 @@ lemma setOf_point_isRankCover' [hM : (M ↾ X).Loopless] :
       eRk_empty, zero_ne_one, implies_true]
   exact M.setOf_point_isRankCover X
 
--- M.eRank ({M.E})
+lemma setOf_point_isRankCover_ground (M : Matroid α) [M.RankPos] :
+    M.IsRankCover {P | M.IsPoint P} M.E 1 := by
+  sorry
+
+--Need Help
+lemma setOf_point_isminRankCover_ground (M : Matroid α) [M.RankPos] :
+    M.rankCoverNumber M.E 1 = {P | M.IsPoint P}.encard := by
+  have h1 := (setOf_point_isRankCover_ground M ).coverNumber_le
+  rw [←rankCoverNumber] at h1
+  sorry
+
+lemma setOf_line_isRankCover [(M ／ {e}).RankPos] (he : M.IsNonloop e) :
+    (M.E \ {e}).coverNumber (fun F ↦ ∃ L, M.IsLine L ∧ e ∈ L ∧ F = L \ {e}) ≤
+    (M.E \ {e}).coverNumber (fun A ↦ (M ／ {e}).eRk A ≤ 1)
+    := by
+  rw [←rankCoverNumber, ←contract_ground M {e}, setOf_point_isminRankCover_ground]
+  have hcov : ((· \ {e})''  (M.closure '' ((insert e · ) '' {P | (M ／ {e}).IsPoint P}))).IsCover
+    (M.E \ {e}) (fun F ↦ ∃ L, M.IsLine L ∧ e ∈ L ∧ F = L \ {e}) := by
+    refine ⟨?_, ?_ ⟩
+    --rw [←hT.sUnion_eq ]
+    · simp only [sUnion_image, mem_image, exists_exists_and_eq_and, iUnion_exists, biUnion_and',
+      iUnion_iUnion_eq_right]
+      refine subset_antisymm (iUnion_subset fun P ↦ ?_) fun f hf ↦ ?_
+      · simp only [mem_setOf_eq, iUnion_subset_iff, diff_subset_iff, union_diff_self,
+        singleton_union]
+        intro h
+        rw [insert_eq_of_mem he.mem_ground]
+        exact closure_subset_ground M (insert e P)
+      rw [←contract_ground M {e}, ←(setOf_point_isRankCover_ground (M ／ {e})).sUnion_eq] at hf
+      obtain ⟨P, hP, hPf⟩ := hf
+      simp only [mem_setOf_eq, mem_iUnion, mem_diff, mem_singleton_iff, exists_and_left,
+        exists_prop]
+      have hP' : P ⊆ M.E \ {e} := by
+        rw [←contract_ground M {e}]
+        exact IsPoint.subset_ground hP
+      refine ⟨P, ⟨mem_of_subset_of_mem (subset_closure M (insert e P) (insert_subset_iff.mpr
+          ⟨he.mem_ground, hP'.trans diff_subset⟩)) (by grind), hP, by grind ⟩⟩
+    intro F hF
+    simp only [mem_image, exists_exists_and_eq_and] at hF
+    obtain ⟨P, hP, hPF ⟩ := hF
+    use M.closure (insert e P)
+    have hP' : P ⊆ M.E \ {e} := by
+      rw [←contract_ground M {e}]
+      exact IsPoint.subset_ground hP
+    refine ⟨?_,mem_of_subset_of_mem (subset_closure M (insert e P) (insert_subset_iff.mpr
+          ⟨he.mem_ground, hP'.trans diff_subset⟩)) (mem_insert e P), hPF.symm⟩
+    refine ⟨isFlat_closure (insert e P), ?_⟩
+    simp only [eRk_closure_eq]
+    have hhelp := CovBy.eRk_eq ((isPoint_contract_iff (M := M) (C := {e}) (P := P)).1 hP).1
+    simp only [singleton_union, eRk_closure_eq] at hhelp
+    rw [hhelp, he.eRk_eq]
+    exact one_add_one_eq_two
+  grw [contract_ground M {e}, hcov.coverNumber_le, encard_image_le, encard_image_le,
+    encard_image_le]
+
+
+
+  --   have ⟨P, hP1, hP2⟩ : ∃ P, (M ／ {e}).IsPoint P ∧ A ⊆ P := by sorry
+  -- -- obtain hlt | heq := lt_or_eq_of_le hP1
+  -- -- · sorry
+  -- use M.closure (insert e P)
+  -- refine ⟨?_,?_,?_⟩
+  -- · refine ⟨isFlat_closure (insert e P), ?_⟩
+  --   simp only [eRk_closure_eq]
+  --   have hhelp := CovBy.eRk_eq ((isPoint_contract_iff (M := M) (C := {e}) (P := P)).1 hP1).1
+  --   simp only [singleton_union, eRk_closure_eq] at hhelp
+  --   rw [hhelp, he.eRk_eq]
+  --   exact one_add_one_eq_two
+  -- have hP' : P ⊆ M.E \ {e} := by
+  --     rw [←contract_ground M {e}]
+  --     exact IsPoint.subset_ground hP1
+  -- exact mem_of_subset_of_mem ((subset_closure M (insert e P) (insert_subset_iff.mpr
+  --     ⟨he.mem_ground, hP'.trans diff_subset⟩)) ) (mem_insert e P)
+  -- (subset_closure M (insert e P) (insert_subset_iff.mpr
+  --     ⟨he.mem_ground, hP1.trans diff_subset⟩))
+
+
+lemma setOf_line_isRankCover' [(M ／ {e}).RankPos] (he : M.IsNonloop e) :
+    M.IsRankCover { F | ∃ L, M.IsLine L ∧ e ∈ L ∧ F = L \ {e}} (M.E \ {e}) 2 := by
+  refine ⟨?_, ?_⟩
+  · rw [←contract_ground M {e}, ←((M ／ {e}).setOf_point_isRankCover_ground).sUnion_eq]
+    refine ext ?_
+    intro x
+    refine ⟨?_, ?_ ⟩
+    · intro ⟨F, ⟨⟨L, ⟨hL, ⟨hLe, hL'⟩⟩⟩, hFx⟩⟩
+      rw [hL'] at hFx
+      have hP : (M ／ {e}).IsPoint (L \ {e}) := by
+        refine (isPoint_contract_iff (singleton_subset_iff.mpr he.mem_ground)).mpr ?_
+        simp only [union_diff_self, singleton_union, insert_eq_of_mem hLe]
+        refine ⟨(IsLine.mem_iff_covBy hL he).mp hLe, disjoint_sdiff_left⟩
+      refine ⟨L \ {e}, ⟨hP, hFx⟩⟩
+    intro ⟨P, ⟨hP, hxP⟩⟩
+    have hLin : M.IsLine (M.closure (insert e P)) := by
+      refine ⟨isFlat_closure (insert e P), ?_⟩
+      simp only [eRk_closure_eq]
+      have hhelp := CovBy.eRk_eq ((isPoint_contract_iff (M := M) (C := {e}) (P := P)).1 hP).1
+      simp only [singleton_union, eRk_closure_eq] at hhelp
+      rw [hhelp, he.eRk_eq]
+      exact one_add_one_eq_two
+    have hP : P ⊆ M.E \ {e} := by
+      rw [←contract_ground M {e}]
+      exact IsPoint.subset_ground hP
+    refine ⟨(M.closure (insert e P)) \ {e}, ⟨⟨M.closure (insert e P),
+      ⟨hLin,mem_of_subset_of_mem (subset_closure M (insert e P) (insert_subset_iff.mpr
+      ⟨he.mem_ground, hP.trans diff_subset⟩)) (mem_insert e P),
+      diff_eq_diff_iff_inter_eq_inter.mpr rfl⟩ ⟩, ?_ ⟩⟩
+    refine mem_diff_singleton.mpr ⟨mem_of_subset_of_mem (subset_closure_of_subset' M
+      (subset_insert e P) (hP.trans diff_subset)) hxP, by grind⟩
+  intro F ⟨L, ⟨hL, hL2, h3⟩⟩
+  grw [h3, eRk_subset_le M diff_subset, hL.eRk]
+
+--lemma setOf_line_isminRankCover [(M ／ {e}).RankPos] (he : M.IsNonloop e) :
+
 lemma isRankCover_ground (M : Matroid α) : M.IsRankCover ({X}) X (M.eRk X) := by
   refine ⟨ by simp, ?_ ⟩
   intro F hF
@@ -574,8 +730,7 @@ lemma rankCoverNumber_exists (M : Matroid α) (hk : 1 ≤ k) (hX : X ⊆ M.E) :
 
 lemma rankCoverNumber_exists_cover (M : Matroid α) (X : Set α) (k : ℕ∞) :
     M.rankCoverNumber X k = ⊤ ∨ ∃ T, M.IsRankCover T X k ∧ T.encard = M.rankCoverNumber X k
-    := by
-  exact exists_cover X (fun A ↦ M.eRk A ≤ k)
+    := exists_cover X (fun A ↦ M.eRk A ≤ k)
 
 lemma RankPropCover_exists_encard_eq (M : Matroid α) (hk : 1 ≤ k) (hX : X ⊆ M.E) :
     ∃ T, M.IsRankCover T X k ∧ T.encard = M.rankCoverNumber X k := by
@@ -621,6 +776,35 @@ lemma rankCoverNumber_eRk (hX : X.Nonempty) :
   refine h2.antisymm' ?_
   simpa using (isRankCover_ground M).coverNumber_le
 
+lemma rankCoverNumber_spanning [M.Nonempty] (hY : M.Spanning Y) :
+    M.rankCoverNumber M.E (M.eRk Y) = 1 := by
+  have hcov : M.IsRankCover {M.closure Y} M.E (M.eRk Y) := by
+    refine ⟨?_, ?_ ⟩
+    · simp only [sUnion_singleton, hY.closure_eq]
+    intro F hF
+    rw [mem_singleton_iff.1 hF, eRk_closure_eq]
+  have h1 := hcov.rankCoverNumber_le
+  simp only [encard_singleton] at h1
+  have h2 : 1 ≤ M.rankCoverNumber M.E (M.eRk Y) := by
+    rw [rankCoverNumber]
+    exact one_le_coverNumber (ground_nonempty M) (fun A ↦ M.eRk A ≤ M.eRk Y)
+  grind
+
+lemma rankCoverNumber_spanning' (hY : (M ↾ X).Spanning Y) (hX : X.Nonempty) :
+    M.rankCoverNumber X ((M ↾ X).eRk Y) = 1 := by
+  have hcov : M.IsRankCover {(M ↾ X).closure Y} X ((M ↾ X).eRk Y) := by
+    refine ⟨?_, ?_ ⟩
+    · simp only [sUnion_singleton, hY.closure_eq, restrict_ground_eq]
+    intro F hF
+    have hrw : (M ↾ X).closure Y = (M ↾ X).closure Y ∩ X := by refine left_eq_inter.mpr (by grind)
+    rw [mem_singleton_iff.1 hF, hrw, ←eRk_restrict, eRk_closure_eq]
+  have h1 := hcov.rankCoverNumber_le
+  simp only [encard_singleton] at h1
+  have h2 : 1 ≤ M.rankCoverNumber X ((M ↾ X).eRk Y) := by
+    rw [rankCoverNumber]
+    exact one_le_coverNumber hX (fun A ↦ M.eRk A ≤ (M ↾ X).eRk Y)
+  grind
+
 lemma rankCoverNumber_delete_loop (hD : D ⊆ M.loops) (hne : (X \ D).Nonempty)
     (hX : X ⊆ M.E) :
     M.rankCoverNumber X k = M.rankCoverNumber (X \ D) k := by
@@ -645,40 +829,28 @@ lemma rankCoverNumber_delete_loop (hD : D ⊆ M.loops) (hne : (X \ D).Nonempty)
 lemma rankCoverNumber_contract_one {a : ℕ∞} (hel : M.IsNonloop e) (heX : e ∈ X)
     (hne : (X \ {e}).Nonempty) :
     M.rankCoverNumber X (a + 1) ≤ (M ／ {e}).rankCoverNumber (X \ {e}) a
-    -- (X \ {e}).coverNumber (fun A ↦ (M ／ {e}).eRk A ≤ a)
-    -- X.coverNumber (fun A ↦ M.eRk A ≤ (a + 1)) ≤ (X \ {e}).coverNumber
-    -- (fun A ↦ (M ／ {e}).eRk A ≤ a)
     := by
-  obtain ht | ⟨T, hT, hT' ⟩ := rankCoverNumber_exists_cover (M ／ {e}) (X \ {e}) a
-  -- obtain ht | ⟨T, hT, hT' ⟩ := (X \ {e}).exists_cover (fun A ↦ (M ／ {e}).eRk A ≤ a)
-  · rw [ht]
-    exact OrderTop.le_top (X.coverNumber fun A ↦ M.eRk A ≤ a + 1)
-  have hcov : ((fun x ↦ x ∪ {e}) '' T).IsCover X fun A ↦ M.eRk A ≤ (a + 1) := by
-    have hrw : X = X \ {e} ∪ {e} := by grind
-    nth_rw 1 [hrw]
-    apply hT.image_union hne (P' := (fun A ↦ M.eRk A ≤ a + 1))
-      (P := (fun A ↦ (M ／ {e}).eRk A ≤ a)) (X := {e})
-    intro F hF
-    rw [←eRelRk_eq_eRk_contract M {e} F] at hF
-    grw [ ←eRelRk_add_eRk_eq M {e} F, IsNonloop.eRk_eq hel]
-    simp only [ne_eq, ENat.one_ne_top, not_false_eq_true, add_le_add_iff_left_of_ne_top]
-    exact hF
-  rw [←IsRankCover_iff] at hcov
-  grw [←hT', hcov.rankCoverNumber_le ]
-  simp only [union_singleton, ge_iff_le]
-  exact encard_image_le (fun a ↦ insert e a) T
+  apply coverNumber_le_coverNumber (fun x ↦ x ∪ {e})
+  intro T hT
+  have hrw : X = X \ {e} ∪ {e} := by grind
+  nth_rw 1 [hrw]
+  apply hT.image_union hne (P' := (fun A ↦ M.eRk A ≤ a + 1))
+    (P := (fun A ↦ (M ／ {e}).eRk A ≤ a)) (X := {e})
+  intro F hF
+  rw [←eRelRk_eq_eRk_contract M {e} F] at hF
+  grw [ ←eRelRk_add_eRk_eq M {e} F, IsNonloop.eRk_eq hel]
+  simp only [ne_eq, ENat.one_ne_top, not_false_eq_true, add_le_add_iff_left_of_ne_top]
+  exact hF
 
 
 lemma rankCoverNumber_contract_one' {a : ℕ∞} (hel : M.IsNonloop e) :
     M.rankCoverNumber X (a + 1) ≤ (M ／ {e}).rankCoverNumber X a
     := by
-  refine coverNumber_le_coverNumber (fun A ↦ (M ／ {e}).eRk A ≤ a) (fun A ↦ M.eRk A ≤ a + 1) X ?_
-  intro Y hY
-  simp only
-  intro h
+  refine coverNumber_le_prop (fun A ↦ (M ／ {e}).eRk A ≤ a) (fun A ↦ M.eRk A ≤ a + 1) X ?_
+  intro Y hY h
   rw [←eRelRk_eq_eRk_contract M {e} Y] at h
-  grw [eRk_subset_le M (subset_union_left (t := {e})), ←eRelRk_add_eRk_eq M {e} Y ]
-  rw[IsNonloop.eRk_eq hel ]
+  grw [eRk_subset_le M (subset_union_left (t := {e})), ←eRelRk_add_eRk_eq M {e} Y,
+    IsNonloop.eRk_eq hel ]
   simp only [ne_eq, ENat.one_ne_top, not_false_eq_true, add_le_add_iff_left_of_ne_top, h]
 
 lemma set_to_binom_number {a b : ℕ} (X : Set α) (hX : X.encard = b) :
@@ -802,7 +974,7 @@ lemma baseCase {a b : ℕ} (ha : 1 ≤ a) (hM : NoUniformMinor M (a + 1) (b + 1)
 lemma rankCoverNumber_from_base {a b : ℕ} (ha : 1 ≤ a)
     (hM : NoUniformMinor M (a + 1) (b + 1)) :
     M.rankCoverNumber M.E a ≤
-    (Nat.choose b a) * rankCoverNumber M M.E (a + 1) := by
+    (Nat.choose b a) * M.rankCoverNumber M.E (a + 1) := by
     -- M.E.coverNumber (fun A ↦ M.eRk A ≤ a) ≤
     -- (Nat.choose b a) * (M.E).coverNumber (fun A ↦ M.eRk A ≤ a + 1) := by
   sorry
@@ -837,7 +1009,7 @@ termination_by M.eRank
 -- `RankPos` hypothesis not needed, because of `a ≠ 0` and `hn`.
 lemma rankCoverNumber_le_binomial_subset [(M ↾ Y).RankPos] {a b : ℕ} {n : ℕ∞}
     (ha : a ≠ 0) (hb : a ≤ b) (hM : (M ↾ Y).NoUniformMinor (a + 1) (b + 1)) (hn : M.eRk Y = a + n) :
-     M.rankCoverNumber Y a ≤ (Nat.choose b a)^n := by
+    M.rankCoverNumber Y a ≤ (Nat.choose b a)^n := by
   rw [rankCoverNumber_restriction_eq ]
   exact rankCoverNumber_le_binomial ha hb hM hn
 
@@ -910,6 +1082,130 @@ lemma rankCoverNumber_le_binomial_contract {M : Matroid α} {C : Set α} {a b : 
 
 termination_by M.eRk C
 
+lemma kung_bound  {M : Matroid α} {b : ℕ} [M.RankPos]
+    (hM : NoUniformMinor M 2 (b + 2)) :
+    M.rankCoverNumber M.E 1 ≤ ∑' (i : {i : ℕ // i < M.eRank}), b^(i.1) := by
+  have fn : 1 < b := by sorry
+  obtain htop | hfin := eq_or_ne M.eRank ⊤
+  · rw [htop]
+    have : (∑' (i : {i : ℕ // (i : ℕ∞) < ⊤}), b^(i.1) : ℕ∞) = ⊤ := by
+      refine Eq.symm (ENat.eq_of_forall_natCast_le_iff ?_)
+      intro n
+      refine ⟨?_,?_⟩
+      intro hn
+
+      have h1 : (n : ℕ∞ ) ≤ b^ (n : ℕ∞) := by
+        have : n < b ^ n := Nat.lt_pow_self fn
+        have : n ≤ b ^ n := by exact Nat.le_of_succ_le this
+        sorry
+      grw [h1]
+      sorry
+      sorry
+    sorry
+
+  have : M.RankFinite := (eRank_ne_top_iff M).mp hfin
+  have : Fintype {i : ℕ // (i : ℕ∞) < M.eRank} := by
+    refine fintypeOfNotInfinite ?_
+    simp only [not_infinite_iff_finite]
+    obtain ⟨m, hm ⟩ := ENat.ne_top_iff_exists.mp hfin
+    rw [←hm]
+    simp only [Nat.cast_lt]
+    exact instFiniteSubtypeLtOfLocallyFiniteOrderBot
+  rw [tsum_fintype]
+  obtain ⟨e, heC⟩ : ∃ e, M.IsNonloop e := exists_isNonloop M
+  by_cases hse : ¬M.Nonspanning {e}
+  · rw [not_nonspanning_iff] at hse
+    have := (ground_nonempty M)
+    grw [←heC.eRk_eq, rankCoverNumber_spanning hse ]
+    simp only [Nat.cast_sum, Nat.cast_pow, ge_iff_le]
+    have h1 : (1 : ℕ∞) ≤ b ^ 0 := by
+      simp only [pow_zero, Std.le_refl]
+    set f : {i : ℕ // (i : ℕ∞) < M.eRank} → ℕ∞ := (fun x ↦ b^x.1 ) with hfun
+    rw [hfun]
+    have hh : f ⟨0, eRank_pos M ⟩ ≤ ∑ x : {i : ℕ // (i : ℕ∞) < M.eRank}, (b : ℕ∞)^x.1 := by
+      apply Finset.single_le_sum
+      · intro i hi
+        rw [hfun]
+        simp only [zero_le]
+      simp only [Finset.mem_univ]
+    rw [hfun ] at hh
+    simp only at hh
+    grw [h1]
+    exact hh
+  --Start hard case
+  simp only [not_not] at hse
+  have h' : (M ／ {e}).eRank < M.eRank := by
+    rw [← heC.eRank_contractElem_add_one ]
+    simp only [ENat.lt_add_left_iff, ne_eq, eRank_eq_top_iff, not_rankInfinite_iff, one_ne_zero,
+      not_false_eq_true, and_true, contract_rankFinite]
+  have : (M ／ {e}).RankPos := by
+    refine (contract_rankPos_iff hse.subset_ground).mpr hse
+  have ih := kung_bound (M := M ／ {e}) (hM.minor (contract_isMinor M {e}))
+  have hlin : (M.E \ {e}).coverNumber (fun F ↦ ∃ L, M.IsLine L ∧ e ∈ L ∧ F = L \ {e}) ≤
+      (M ／ {e}).rankCoverNumber (M ／ {e}).E 1 := by
+    rw [rankCoverNumber]
+    apply setOf_line_isRankCover heC
+  grw [←hlin] at ih
+  have h2 : M.rankCoverNumber (M.E \ {e}) 1 ≤
+    (M.E \ {e}).coverNumber (fun F ↦ ∃ L, M.IsLine L ∧ e ∈ L ∧ F = L \ {e}) * b := by
+    --Here I need the special cover of lines containig e and
+    --to prove it has size M.rankCoverNumber (M.E \ {e}) 2
+    obtain hT | ⟨T, hT1, hT2 ⟩ := (M.E \ {e}).exists_cover (fun F ↦ ∃ L, M.IsLine L ∧ e ∈ L ∧ F = L \ {e})
+    · rw[ hT, ENat.top_mul ]
+      simp only [le_top]
+      rw [←ENat.coe_zero]
+      simp only [Nat.cast_zero, ne_eq, Nat.cast_eq_zero]
+      grind
+    rw [←hT2, rankCoverNumber]
+    apply coverNumber_le_bound hT1
+    intro F ⟨L, ⟨hL1, hL2, hL3⟩⟩
+    have heq := hL1.2
+    rw [←one_add_one_eq_two] at heq
+    rw [←rankCoverNumber, ←(Nat.choose_one_right b)]
+    have hM' : (M ↾ F).NoUniformMinor (1 + 1) (b + 1) := by
+      simp only [Nat.reduceAdd]
+
+      sorry
+    have : (M ↾ F).RankPos := by sorry
+    have hlie : M.eRk F = 1 + 1 := by sorry
+    have := rankCoverNumber_le_binomial_subset (a := 1) (b := b) (by grind) (by grind) hM' hlie
+    simp only [Nat.cast_one, Nat.choose_one_right, ENat.epow_one] at this
+    simp only [Nat.choose_one_right, ge_iff_le]
+    sorry
+  grw [ih] at h2
+  -- Now just need to use new lemma for X = {w} and Y = M.E \ {e}
+  have h3 : M.rankCoverNumber M.E 1 ≤ M.rankCoverNumber (M.E \ {e}) 1 + 1 := by
+    sorry
+  grw [h3, h2]
+  simp only [Nat.cast_sum, Nat.cast_pow]
+  have h : ∀ (i : ℕ), ((i : ℕ∞) < (M ／ {e}).eRank) ↔ ((i : ℕ∞) + 1 < M.eRank ):= by sorry
+  set f : ℕ → ℕ := (fun x ↦ b^x ) with hfun
+  set g : { i : ℕ // (i : ℕ∞) < (M ／ {e}).eRank } → ℕ := fun x ↦ f x.1  with h_g
+  rw [h_g]
+  rw [tsum_congr_subtype f h, hfun]
+  have : Fintype {i : ℕ // (i : ℕ∞) + 1 < M.eRank} := by
+    refine fintypeOfNotInfinite ?_
+    simp only [not_infinite_iff_finite]
+    obtain ⟨m, hm ⟩ := ENat.ne_top_iff_exists.mp hfin
+    rw [←hm]
+    sorry
+  --   --←ENat.coe_one
+  --   sorry--simp only [Nat.cast_one]
+
+  --   --simp only [ENat.coe_add, Nat.cast_lt]
+  --   --exact instFiniteSubtypeLtOfLocallyFiniteOrderBot
+  rw [tsum_fintype ]
+  simp only [Nat.cast_sum, Nat.cast_pow]
+  rw [ Finset.sum_mul] -- ←ENat.epow_one (x := b),   ENat.epow_natCast (x := (b : ℕ∞)),← ENat.coe_mul (n := b) ]
+  nth_rw 2 [←ENat.epow_one (x := b)]
+
+
+  --rw [(ENat.add_one_lt_add_one_iff (a := (i : ℕ∞)) (b := (M ／ {e}).eRank )).2 ]
+  --rw [← heC.eRank_contractElem_add_one ]
+  sorry
+termination_by M.eRank
+
+
 end Rank
 
 section Nonspanning
@@ -932,26 +1228,67 @@ lemma nonspanningCover_iff_restriction :
   rw [nonspanningCover_iff, restrict_ground_eq, restrict_idem] at h
   exact nonspanningCover_iff.mpr h
 
+-- Need to move
+lemma spanning_iff_intersection (hF : F ⊆ X) :
+    (M ↾ X).Spanning F ↔ (M ↾ X ∩ M.E).Spanning (F ∩ M.E) := by
+  rw [restrict_spanning_iff (hR := inter_subset_right) (inter_subset_inter hF fun ⦃a⦄ a_1 ↦ a_1),
+  restrict_spanning_iff', ←closure_inter_ground]
+  simp only [hF, and_true]
+
+lemma nonspanning_iff_intersection (hF : F ⊆ X) :
+    (M ↾ X).Nonspanning F ↔ (M ↾ X ∩ M.E).Nonspanning (F ∩ M.E) := by
+  rw [←not_spanning_iff, ←not_spanning_iff (hXE := by grind)]
+  refine not_congr (spanning_iff_intersection hF)
+
+lemma nonspanning_empty_intersection (hXE : X ∩ M.E = ∅) (hX : X.Nonempty ) :
+    X.coverNumber (M ↾ X).Nonspanning = ⊤ := by
+  have hem : {T | IsCover T X (M ↾ X).Nonspanning} = ∅ := by
+    by_contra! hc
+    obtain ⟨T, hT⟩ := hc
+    obtain ⟨F, hF⟩ := hT.nonempty hX
+    have hcc : (M ↾ X).Spanning F := by
+      rw [restrict_spanning_iff']
+      refine ⟨?_, hT.subset hF ⟩
+      rw [hXE]
+      exact empty_subset (M.closure F)
+    exact Ne.elim (fun a ↦ ((hT.pProp F hF).not_spanning) hcc) hXE
+  exact coverNumber_empty_eq_top hem
+
+lemma nonspanning_intersection_ground (hX : (X ∩ M.E).Nonempty)
+    (hns : M.NonspanningCover T (X ∩ M.E)) : M.NonspanningCover ((· ∪ (X \ M.E)) '' T) X := by
+  rw [nonspanningCover_iff]
+  have : X = (X ∩ M.E) ∪ (X \ M.E) := by grind
+  nth_rw 2 [this]
+  rw [nonspanningCover_iff] at hns
+  refine hns.image_union (Y := X ∩ M.E) (X := X \ M.E) hX ?_
+  intro F hF
+  by_contra hc
+  have hrw : (F ∪ X \ M.E) ∩ M.E = F := by
+    refine Subset.antisymm (by simp only [union_inter_distrib_right, diff_inter_self, union_empty,
+      inter_subset_left] ) (by simp only [subset_inter_iff, subset_union_left, true_and,
+      (hF.subset_ground.subset).trans (inter_subset_right)])
+  rw [not_nonspanning_iff (hXE := ?_), restrict_spanning_iff', ←closure_inter_ground, hrw] at hc
+  exact ((not_spanning_iff (hXE := by grind )).2 hF)
+    ((restrict_spanning_iff (hR := by grind) (by grind)).2 hc.1 )
+  simp only [restrict_ground_eq, union_subset_iff, diff_subset_iff, subset_union_right, and_true]
+  exact (hF.subset_ground.subset).trans (inter_subset_left)
+
 lemma nonspanning_le_rankCoverNumber {n : ℕ} (hr : M.eRk X = n + 1) :
     X.coverNumber (M ↾ X).Nonspanning ≤ M.rankCoverNumber X n := by
-  obtain ht | ⟨T, hT, hT' ⟩ := X.exists_cover (fun A ↦ M.eRk A ≤ n)
-  · rw [rankCoverNumber ,ht]
-    exact OrderTop.le_top (X.coverNumber (M ↾ X).Nonspanning)
-  have hcov :  T.IsCover X (M ↾ X).Nonspanning := by
-    refine ⟨hT.sUnion_eq, ?_⟩
-    intro F hF
-    have hcon := hT.pProp F hF
-    apply nonspanning_of_eRk_ne (hXE := by simp only [restrict_ground_eq, hT.subset hF ])
-    simp only [restrict_eRk_eq M (hT.subset hF), eRank_restrict, ne_eq, hr]
-    enat_to_nat! <;>
-    grind
-  grw [rankCoverNumber, ←hT', hcov.coverNumber_le]
+  apply coverNumber_le_coverNumber (fun X ↦ X)
+  intro T hT
+  simp only [image_id']
+  refine ⟨hT.sUnion_eq, ?_⟩
+  intro F hF
+  have hcon := hT.pProp F hF
+  apply nonspanning_of_eRk_ne (hXE := by simp only [restrict_ground_eq, hT.subset hF])
+  simp only [restrict_eRk_eq M (hT.subset hF), eRank_restrict, ne_eq, hr]
+  enat_to_nat!
+  grind
 
 lemma top_le_nonspanning (hX : X.Nonempty) (hle : M.eRk X ≤ 1) :
     ⊤ ≤ X.coverNumber (M ↾ X).Nonspanning := by
-  --rw [NonspanningCover_iff]
   obtain hT | ⟨T, hT1, hT2 ⟩  := X.exists_cover (M ↾ X).Nonspanning
-  --M.exists_cover (Matroid.Nonspanning)
   · rw[ hT ]
   by_contra hc
   have : (M ↾ X).RankFinite := by
@@ -965,13 +1302,10 @@ lemma top_le_nonspanning (hX : X.Nonempty) (hle : M.eRk X ≤ 1) :
     have h1 := Nonspanning.eRk_lt (hT1.pProp T1 hT')
     rw [←eRank_restrict] at hle
     grw [hle] at h1
-    --←restrict_eRk_eq M (hT1.subset hT'),
     simp only [ENat.lt_one_iff] at h1
-    -- have hX : T1 ⊆ (M ↾ X).E := by exact IsCover.subset hT1 hT'
     exact ((M ↾ X).eRk_eq_zero_iff (X := T1) (hT1.subset hT')).1 h1
   have hs : (M ↾ X).E ⊆ (M ↾ X).loops := by
     nth_rw 1 [←hT1.sUnion_eq]
-    --rw [←hT1.sUnion_eq]
     exact sUnion_subset hl
   obtain ⟨T', hT' ⟩ := hT1.nonempty hX
   have h2 : (M ↾ X).E ⊆ (M ↾ X).closure T' := by
@@ -979,7 +1313,6 @@ lemma top_le_nonspanning (hX : X.Nonempty) (hle : M.eRk X ≤ 1) :
     exact loops_subset_closure (M ↾ X) T'
   exact Ne.elim (fun a ↦ ((hT1.pProp T' hT').not_spanning) ((spanning_iff_ground_subset_closure
     (hT1.subset hT')).2 h2)) hT2
-
 
 lemma nonspanning_singleton (he : e ∈ M.E) (hM : 2 ≤ M.eRank) : M.Nonspanning {e} := by
     by_contra hc
@@ -991,16 +1324,35 @@ lemma nonspanning_singleton (he : e ∈ M.E) (hM : 2 ≤ M.eRank) : M.Nonspannin
     simp only [ENat.not_ofNat_le_one] at h1
 
 lemma isCover_singleton_nonspanning (hM : 2 ≤ M.eRk X) :
-    NonspanningCover M (singleton '' X) X := by
-    --M.IsCover (Matroid.Nonspanning) (singleton '' M.E) := by
-  exact isCover_image_singleton (fun e he ↦ nonspanning_singleton he hM)
+    NonspanningCover M (singleton '' X) X :=
+  isCover_image_singleton (fun _ he ↦ nonspanning_singleton he hM)
 
 lemma nonspanningNumber_le (hM : 2 ≤ M.eRk X) :
-    X.coverNumber ((M ↾ X).Nonspanning) ≤ X.encard := by
-  exact isCover_singleton_le (fun e he ↦ nonspanning_singleton he hM)
+    X.coverNumber ((M ↾ X).Nonspanning) ≤ X.encard :=
+  isCover_singleton_le (fun _ he ↦ nonspanning_singleton he hM)
 
-lemma nonspanning_HasCover (hM : 2 ≤ M.eRk X) : X.HasCover ((M ↾ X).Nonspanning) :=
+lemma nonspanning_hasCover (hM : 2 ≤ M.eRk X) : X.HasCover ((M ↾ X).Nonspanning) :=
   ⟨(singleton '' X), isCover_singleton_nonspanning hM ⟩
+
+lemma nonspanningNumber_intersection_ground (hX : (X ∩ M.E).Nonempty) :
+    X.coverNumber (M ↾ X).Nonspanning = (X ∩ M.E).coverNumber (M ↾ X ∩ M.E).Nonspanning := by
+  by_cases h2 : 2 ≤ M.eRk X
+  · have h1 : (X ∩ M.E).coverNumber (M ↾ X ∩ M.E).Nonspanning ≤ X.coverNumber (M ↾ X).Nonspanning :=
+    coverNumber_le_coverNumber_intersect X M.E
+      (fun F hF hFns ↦ (nonspanning_iff_intersection hF).mp hFns)
+    have h3 : X.coverNumber (M ↾ X).Nonspanning ≤ (X ∩ M.E).coverNumber (M ↾ X ∩ M.E).Nonspanning
+        := by
+      rw [←eRk_inter_ground M X] at h2
+      obtain ⟨T, hT, hTen⟩ := exists_encard_eq_coverNumber (nonspanning_hasCover h2)
+      have hcov := nonspanning_intersection_ground hX hT
+      rw [nonspanningCover_iff] at hcov
+      grw [←hTen, hcov.coverNumber_le]
+      exact encard_image_le (fun x ↦ x ∪ X \ M.E) T
+    grind
+  have := top_le_nonspanning (Nonempty.left hX) (Order.le_of_lt_succ (not_le.1 h2))
+  rw [←eRk_inter_ground M X] at h2
+  have := top_le_nonspanning (hX) (Order.le_of_lt_succ (not_le.1 h2))
+  grind
 
 lemma nonspanning_image_union (h : NonspanningCover (M ／ C) T (M.E \ C)) (hX : C ⊆ M.E)
     (hXN : (M ／ C).Nonempty) : NonspanningCover M ((· ∪ C) '' T) M.E := by
@@ -1022,7 +1374,7 @@ lemma nonspanning_image_union (h : NonspanningCover (M ／ C) T (M.E \ C)) (hX :
       have := hF.subset_ground
       grind
     rw [not_nonspanning_iff hr] at hc
-    refine (contract_spanning_iff hX).mpr ⟨hc, by grind ⟩
+    refine (contract_spanning_iff hX).mpr ⟨hc, by grind⟩
   rw [←not_spanning_iff (hF.subset_ground)] at hF
   exact Ne.elim (fun a ↦ hF hcc) h3
 
@@ -1067,37 +1419,18 @@ lemma nonspanningNumber_le_contract_subset (hX : C ⊆ Y) (hYne : (Y \ C).Nonemp
 
 lemma nonspanningNumber_set_closure (hY : Y ⊆ M.closure X) (hX : X ⊆ M.E) :
     X.coverNumber (M ↾ X).Nonspanning  ≤ (X ∪ Y).coverNumber (M ↾ (X ∪ Y)).Nonspanning := by
-  obtain hT | ⟨T, hT, hTe ⟩ := (X ∪ Y).exists_cover (M ↾ (X ∪ Y)).Nonspanning
-  · rw [hT]
-    exact OrderTop.le_top (X.coverNumber (M ↾ X).Nonspanning)
-  rw[←hTe]
-  have hcov : NonspanningCover M ((fun x ↦ x ∩ X) '' T) X := by
-    refine ⟨?_, ?_ ⟩
-    · refine subset_antisymm (sUnion_subset fun K ↦ ?_) fun e he ↦ ?_
-      · intro hK
-        obtain ⟨K', hK'T, hK' ⟩ := hK
-        rw [← hK']
-        grind
-      have h1 := hT.sUnion_eq
-      have : e ∈  ⋃₀ T := by grind
-      obtain ⟨ T', hT', heT' ⟩ := this
-      have : e ∈ T' ∩ X := by grind
-      grind
-    intro F hF
-    obtain ⟨F', hF', hhF' ⟩ := hF
-    simp only at hhF'
-    rw [← hhF']
-    by_contra hc
-    rw [not_nonspanning_iff, restrict_spanning_iff (by grind)] at hc
-    have hcc : X ∪ Y ⊆ M.closure F' := union_subset (LE.le.subset fun ⦃a⦄ a_1 ↦
-      (closure_subset_closure M (inter_subset_left)) (hc a_1)) (LE.le.subset fun ⦃a⦄ a_1 ↦
-      (closure_subset_closure M (inter_subset_left)) ((LE.le.subset fun ⦃a⦄ a_1 ↦
-      (closure_subset_closure_of_subset_closure hc) (hY a_1)) a_1))
-    rw [←restrict_spanning_iff (hR := by grind), ←not_nonspanning_iff (by grind)  ] at hcc
-    have := (hT.pProp F' hF')
-    exact Ne.elim (fun a ↦ hcc (hT.pProp F' hF')) hTe
-    exact LE.le.subset (hT.subset hF')
-  grw [hcov.coverNumber_le ]
-  exact encard_image_le (fun x ↦ x ∩ X) T
+  have : X = (X ∪ Y) ∩ X := by grind
+  nth_rw 1 [this]
+  apply coverNumber_le_coverNumber_intersect
+  intro F' hF' hhF'
+  simp only at hhF'
+  by_contra hc
+  rw [not_nonspanning_iff (hXE := by grind), restrict_spanning_iff (hR := by grind) (by grind)]
+    at hc
+  have hcc : X ∪ Y ⊆ M.closure F' := union_subset (hc.trans (closure_subset_closure M
+    (inter_subset_left))) ((hY.trans (closure_subset_closure_of_subset_closure hc)).trans
+    (closure_subset_closure M (inter_subset_left)))
+  rw [←restrict_spanning_iff (hR := by grind) hF', ←not_nonspanning_iff (by grind)] at hcc
+  exact hcc hhF'
 
 end Nonspanning
