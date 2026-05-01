@@ -15,7 +15,7 @@ attribute [gcongr] encard_le_encard
 theorem Set.Finite.disjoint_of_sum_encard_le (h : (s ∪ t).Finite)
     (hle : s.encard + t.encard ≤ (s ∪ t).encard) : Disjoint s t := by
   rwa [← add_zero (encard (s ∪ t)), ← encard_union_add_encard_inter,
-    ENat.add_le_add_iff_left,  nonpos_iff_eq_zero, encard_eq_zero,
+    ENat.add_le_add_iff_left, nonpos_iff_eq_zero, encard_eq_zero,
     ← disjoint_iff_inter_eq_empty] at hle
   rwa [encard_ne_top_iff]
 
@@ -25,14 +25,14 @@ theorem Set.Finite.encard_union_eq_add_encard_iff_disjoint (h : (s ∪ t).Finite
     and_iff_right h.disjoint_of_sum_encard_le, ← encard_union_add_encard_inter]
   exact fun hdj ↦ by simp [hdj.inter_eq]
 
-@[simp] theorem encard_pair_le (e f : α) : encard {e,f} ≤ 2 := by
+@[simp] theorem encard_pair_le (e f : α) : encard {e, f} ≤ 2 := by
   obtain (rfl | hne) := eq_or_ne e f
   · simp only [mem_singleton_iff, insert_eq_of_mem, encard_singleton]
     exact one_le_two
   rw [encard_pair hne]
 
 @[simp]
-lemma encard_pair_iff (e f : α) : encard {e,f} = 2 ↔ e ≠ f := by
+lemma encard_pair_iff (e f : α) : encard {e, f} = 2 ↔ e ≠ f := by
   refine ⟨?_, encard_pair⟩
   rintro h rfl
   simp only [mem_singleton_iff, insert_eq_of_mem, encard_singleton] at h

@@ -9,13 +9,7 @@ open Set Set.Notation Function
 
 namespace ENat
 
-
-
-variable {ι : Sort*}
-
-instance : OrderTopology ℕ∞ := ⟨rfl⟩
-
-variable {α β : Type*} {f g : α → ℕ∞} {s t : Set α}
+variable {ι : Sort*} {α β : Type*} {f g : α → ℕ∞} {s t : Set α}
 
 protected theorem hasSum : HasSum f (⨆ s : Finset α, ∑ a ∈ s, f a) :=
   tendsto_atTop_iSup fun _ _ ↦ Finset.sum_le_sum_of_subset
@@ -149,7 +143,7 @@ protected theorem tsum_comp_le_tsum_of_injective {f : α → β} (hf : Injective
 protected theorem tsum_le_tsum_comp_of_surjective {f : α → β} (hf : Surjective f) (g : β → ℕ∞) :
     ∑' y, g y ≤ ∑' x, g (f x) :=
   calc ∑' y, g y = ∑' y, g (f (surjInv hf y)) := by simp only [surjInv_eq hf]
-    _ ≤ ∑' x, g (f x) := ENat.tsum_comp_le_tsum_of_injective (injective_surjInv hf) _
+    _ ≤ ∑' x, g (f x) := ENat.tsum_comp_le_tsum_of_injective (injective_surjInv hf) (g ∘ f)
 
 protected theorem tsum_comp_eq_tsum_of_bijective {f : α → β} (hf : f.Bijective) (g : β → ℕ∞) :
     ∑' x, g (f x) = ∑' y, g y :=
@@ -162,7 +156,7 @@ protected theorem tsum_comp_eq_tsum_of_equiv (e : α ≃ β) (g : β → ℕ∞)
 
 protected theorem tsum_mono_subtype (f : α → ℕ∞) {s t : Set α} (h : s ⊆ t) :
     ∑' x : s, f x ≤ ∑' x : t, f x :=
-  ENat.tsum_comp_le_tsum_of_injective (inclusion_injective h) _
+  ENat.tsum_comp_le_tsum_of_injective (inclusion_injective h) (f ∘ (↑))
 
 protected theorem tsum_sigma {β : α → Type*} (f : ∀ a, β a → ℕ∞) :
     ∑' p : Σa, β a, f p.1 p.2 = ∑' (a) (b), f a b :=
@@ -214,7 +208,7 @@ section Card
 /-- A version of `ENat.tsum_one` where the `1` is explicitly a function from the type rather than
   from the subtype. Useful for rewriting. -/
 protected theorem tsum_one' (s : Set α) : ∑' (i : s), (1 : α → ℕ∞) i = s.encard := by
-  simp
+  simp only [Pi.one_apply, ENat.tsum_const, card_coe_set_eq, one_mul]
 
 @[simp] protected theorem tsum_one (s : Set α) : ∑' (_ : s), 1 = s.encard :=
   ENat.tsum_one' s

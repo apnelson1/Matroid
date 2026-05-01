@@ -250,3 +250,5 @@ def CWComplex.OneSkeletonGraph (C : Set X) [CWComplex C] : Graph (cell C 0) (cel
   edge_mem_iff_exists_isLink e := by
     simp only [mem_univ, true_iff]
     exact cellFrontier_one_exists e
+
+end Topology
