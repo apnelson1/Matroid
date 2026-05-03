@@ -312,7 +312,7 @@ lemma iInter_isInducedSubgraph [Nonempty ι] (h : ∀ i, Hι i ≤i G) :
     Graph.iInter Hι ≤i G where
   le := Graph.iInter_le_of_forall_le fun i ↦ (h i).le
   isLink_of_mem_mem := by
-    simp only [iInter_vertexSet, mem_iInter, iInter_isLink]
+    simp only [vertexSet_iInter, mem_iInter, iInter_isLink]
     exact fun e x y he hx hy i ↦ (h i).isLink_of_mem_mem he (hx i) (hy i)
 
 /-- A nonempty intersection of spanning subgraphs of `G` is a spanning subgraph of `G`.-/
@@ -326,7 +326,7 @@ lemma iInter_isClosedSubgraph [Nonempty ι] (h : ∀ i, Hι i ≤c G) :
     Graph.iInter Hι ≤c G where
   le := Graph.iInter_le_of_forall_le fun i ↦ (h i).le
   closed e x he := by
-    simp only [iInter_vertexSet, mem_iInter, iInter_edgeSet, mem_setOf_eq]
+    simp only [vertexSet_iInter, mem_iInter, edgeSet_iInter, mem_setOf_eq]
     rintro hx
     obtain ⟨y, hy⟩ := he
     use x, y, fun i ↦ by rwa [(h i).isLink_iff_of_mem (hx i)]

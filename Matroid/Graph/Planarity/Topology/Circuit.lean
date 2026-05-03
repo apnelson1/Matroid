@@ -41,7 +41,7 @@ lemma IsCircuit.twoConnected (hC : IsCircuit C) : ∀ x, IsPathConnected (C \ {x
   obtain ⟨f, hf, rfl⟩ := hC
   by_cases hx : x ∈ range f
   · obtain ⟨i, rfl⟩ := hx
-    convert Circle.singleton_compl_isPathConnected i |>.image hf.continuous
+    convert Circle.isPathConnected_compl_singleton i |>.image hf.continuous
     rw [image_compl_eq_range_diff_image hf.injective, image_singleton]
   simp only [hx, not_false_eq_true, diff_singleton_eq_self]
   exact isPathConnected_range hf.continuous
@@ -70,19 +70,19 @@ lemma not_isCircuit_real (S : Set ℝ) : ¬ IsCircuit S := by
       hf.injective (by simpa [f1, f2, comp_apply] using ht)
     have hm : Circle.path (-1) 1 t ∈ range (Circle.path (-1) 1) ∩ range (Circle.path 1 (-1)) :=
       ⟨mem_range_self t, ⟨t, hp.symm⟩⟩
-    rw [Circle.path_range_inter hne] at hm
+    rw [Circle.range_path_inter_range_path hne] at hm
     rcases hm with hm | hm
     · exact ht0 (Circle.path_injective_of_ne hne (by simpa [Path.source] using hm))
     · exact ht1 (Circle.path_injective_of_ne hne (by simpa [Path.target] using hm))
   obtain h | h := lt_or_gt_of_ne (hf.injective.ne hne)
-  · have h1 : f1 0 < f2 0 := by simpa [f1, f2]
-    have h2 : f1 1 > f2 1 := by simpa [f1, f2]
+  · have h1 : f1 0 < f2 0 := by simpa [f1, f2, -Circle.coe_path]
+    have h2 : f1 1 > f2 1 := by simpa [f1, f2, -Circle.coe_path]
     obtain ⟨t, ht⟩ := intermediate_value_univ₂ hf1.continuous hf2.continuous h1.le (le_of_lt h2)
     refine hpaths ht ?_ ?_
     · rintro rfl; linarith [ht, h1]
     · rintro rfl; linarith [ht, h2]
-  · have h1 : f2 0 < f1 0 := by simpa [f1, f2]
-    have h2 : f2 1 > f1 1 := by simpa [f1, f2]
+  · have h1 : f2 0 < f1 0 := by simpa [f1, f2, -Circle.coe_path]
+    have h2 : f2 1 > f1 1 := by simpa [f1, f2, -Circle.coe_path]
     obtain ⟨t, ht⟩ := intermediate_value_univ₂ hf2.continuous hf1.continuous h1.le (le_of_lt h2)
     refine hpaths ht.symm ?_ ?_
     · rintro rfl; linarith [ht, h1]

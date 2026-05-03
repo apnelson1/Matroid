@@ -216,12 +216,12 @@ lemma encard_delete_vertexSet_lt [G.Finite] (hX : (V(G) ∩ X).Nonempty) :
 /-- Used for well-founded induction on finite graphs by number of edges -/
 lemma encard_delete_edge_lt [G.Finite] (he : e ∈ E(G)) :
     E(G ＼ {e}).encard < E(G).encard := by
-  rw [edgeDelete_edgeSet]
+  rw [edgeSet_edgeDelete]
   exact (G.edgeSet_finite.subset diff_subset).encard_lt_encard (by simpa)
 
 lemma encard_delete_edgeSet_lt [G.Finite] (hF : (E(G) ∩ F).Nonempty) :
     E(G ＼ F).encard < E(G).encard := by
-  rw [edgeDelete_edgeSet]
+  rw [edgeSet_edgeDelete]
   exact (G.edgeSet_finite.subset diff_subset).encard_lt_encard (by simpa)
 
 lemma of_not_exists_minimal {P : Graph α β → Prop} [G.Finite]

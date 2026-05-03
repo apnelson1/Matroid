@@ -169,7 +169,7 @@ lemma Nontrivial.rotate (hw : w.Nontrivial) (n : ℕ) : (w.rotate n).Nontrivial 
   exact rotate_nontrivial_iff.mpr hw
 
 lemma rotate_firstEdge (n : ℕ) (hn : n < w.length) :
-    have hne : w.Nonempty := length_pos_iff.1 <| (zero_le _).trans_lt hn
+    have hne : w.Nonempty := length_pos_iff.1 <| zero_le.trans_lt hn
     have hn : n < w.edge.length := by simpa
     (hne.rotate n).firstEdge = w.edge[n] := by
   induction n generalizing w with

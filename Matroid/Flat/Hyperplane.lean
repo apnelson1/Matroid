@@ -13,7 +13,7 @@ section IsHyperplane
 def IsHyperplane (M : Matroid α) (H : Set α) : Prop :=
   H ⋖[M] M.E
 
-@[aesop unsafe 10% (rule_sets := [Matroid])]
+@[aesop unsafe 10% (rule_sets := [Matroid]), grind →]
 lemma IsHyperplane.subset_ground (hH : M.IsHyperplane H) : H ⊆ M.E :=
   hH.isFlat_left.subset_ground
 
@@ -82,7 +82,7 @@ lemma isCocircuit_compl_iff_isHyperplane (hH : H ⊆ M.E := by aesop_mat) :
   rw [isCocircuit_iff_minimal_compl_nonspanning', isHyperplane_iff_maximal_nonspanning, iff_comm]
   have h_image := image_antitone_setOf_maximal_mem (f := fun X ↦ M.E \ X)
     (s := {X | M.Nonspanning X}) (fun X Y hX hY ↦ sdiff_le_sdiff_iff_le hX.2 hY.2)
-  have h_inj : InjOn (M.E \ ·) {X | X ⊆ M.E} := fun X hX Y hY h_eq ↦ eq_of_sdiff_eq_sdiff hX hY h_eq
+  have h_inj : InjOn (M.E \ ·) {X | X ⊆ M.E} := fun X hX Y hY h_eq ↦ (sdiff_right_inj hX hY).mp h_eq
   convert Set.ext_iff.1 h_image (M.E \ H) using 1
   · exact Iff.symm <| h_inj.mem_image_iff (s := {X | X ⊆ M.E}) (fun X h ↦ h.prop.subset_ground) hH
   rw [iff_comm]

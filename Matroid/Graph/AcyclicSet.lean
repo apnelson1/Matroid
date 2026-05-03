@@ -153,7 +153,7 @@ lemma isBridge (hF : G.IsAcyclicSet F) (he : e ∈ F) : (G ↾ F).IsBridge e := 
 lemma of_edgeDelete_isBond {B} (hB : G.IsBond B) (hF : (G ＼ B).IsAcyclicSet F)
     (he : e ∈ B) : G.IsAcyclicSet (insert e F) := by
   have hFE := hF.1.trans diff_subset
-  simp only [isAcyclicSet_iff, edgeDelete_edgeSet, subset_diff, hFE, true_and,
+  simp only [isAcyclicSet_iff, edgeSet_edgeDelete, subset_diff, hFE, true_and,
     edgeDelete_edgeRestrict, insert_subset_iff, hB.subset he, and_self] at hF ⊢
   obtain ⟨hFB, hFf⟩ := hF
   replace hFf : ((G ↾ insert e F) ＼ {e}).IsForest := by
@@ -170,7 +170,7 @@ end IsAcyclicSet
 lemma IsClosedSubgraph.isAcyclicSet_union (hI : G.IsAcyclicSet I) (hJ : G.IsAcyclicSet J)
     (hIH : I ⊆ E(H)) (hJH : J ⊆ E(G) \ E(H)) (h : H ≤c G): G.IsAcyclicSet (I ∪ J) := by
   simp only [isAcyclicSet_iff, hI.subset, IsForest,
-    edgeRestrict_edgeSet, mem_inter_iff, and_imp, true_and, hJ.subset,
+    edgeSet_edgeRestrict, mem_inter_iff, and_imp, true_and, hJ.subset,
     union_subset_iff, and_self, mem_union] at hI hJ ⊢
   rintro e he heIJ
   wlog heI : e ∈ I

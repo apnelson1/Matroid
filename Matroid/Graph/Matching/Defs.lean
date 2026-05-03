@@ -116,7 +116,7 @@ lemma IsMatching.locallyFinite (hM : G.IsMatching M) : (G ↾ M).LocallyFinite :
 lemma IsMatching.matched_vertexSet_encard_eq [G.Loopless] (hM : G.IsMatching M) :
     V(G, M).encard = 2 * M.encard := by
   classical
-  rw [ENat.encard_eq_tsum_ite, ← hM.eDegree_eq_fn, handshake_eDegree, edgeRestrict_edgeSet,
+  rw [ENat.encard_eq_tsum_ite, ← hM.eDegree_eq_fn, handshake_eDegree, edgeSet_edgeRestrict,
     inter_eq_right.mpr hM.subset]
 
 @[simp, grind .]
@@ -153,12 +153,12 @@ lemma IsMatching.anti_left' (hM : G.IsMatching M) (hle : H ≤ G) : H.IsMatching
 
 lemma isMatching_iff_edgeRestrict_isMatching : G.IsMatching M ↔ (G ↾ M).IsMatching M := by
   refine ⟨fun hM ↦ hM.anti_left edgeRestrict_le ?_, (·.mono_left edgeRestrict_le)⟩
-  simp only [edgeRestrict_edgeSet, subset_inter_iff, subset_refl, and_true]
+  simp only [edgeSet_edgeRestrict, subset_inter_iff, subset_refl, and_true]
   grind only [hM.subset]
 
 lemma isMatching_iff_edgeRestrict_isMatching_golfed : G.IsMatching M ↔ (G ↾ M).IsMatching M := by
   refine ⟨fun hM ↦ hM.anti_left edgeRestrict_le ?_, (·.mono_left edgeRestrict_le)⟩
-  simp only [edgeRestrict_edgeSet, subset_inter_iff, subset_refl, and_true]
+  simp only [edgeSet_edgeRestrict, subset_inter_iff, subset_refl, and_true]
   grind only [hM.subset]
 
 lemma isMaxMatching_iff_maximalFor : G.IsMaxMatching M ↔ MaximalFor G.IsMatching Set.encard M :=
@@ -194,7 +194,7 @@ lemma IsMatching.eDegree_eq_one' [G.Loopless] (hM : G.IsMatching M) (hle : H ≤
   have hM' := hM.anti_left' hle
   have _ : H.Loopless := ‹G.Loopless›.mono hle
   have := hM'.eDegree_eq_one hx
-  rwa [← edgeRestrict_edgeSet_inter]
+  rwa [← edgeSet_edgeRestrict_inter]
 
 lemma IsMatching.eDegree_eq_fn' [DecidablePred (· ∈ V(H, M))] [G.Loopless] (hM : G.IsMatching M)
     (hle : H ≤ G) : (H ↾ M).eDegree = fun x ↦ if x ∈ V(H, M) then 1 else 0 := by
@@ -202,7 +202,7 @@ lemma IsMatching.eDegree_eq_fn' [DecidablePred (· ∈ V(H, M))] [G.Loopless] (h
   have hM' := hM.anti_left' hle
   have _ : H.Loopless := ‹G.Loopless›.mono hle
   have := hM'.eDegree_eq_fn
-  rw [edgeRestrict_edgeSet_inter, inter_comm, incVertexSet_inter_edgeSet] at this
+  rw [edgeSet_edgeRestrict_inter, inter_comm, incVertexSet_inter_edgeSet] at this
   simp only [this, mem_incVertexSet_iff]
 
 lemma IsMatching.maxDegreeLE_one' [G.Loopless] (hM : G.IsMatching M) (hle : H ≤ G) :
@@ -223,7 +223,7 @@ lemma IsMatching.matched_vertexSet_encard_eq' [G.Loopless] (hM : G.IsMatching M)
   have hM' := hM.anti_left' hle
   have _ : H.Loopless := ‹G.Loopless›.mono hle
   have := hM'.matched_vertexSet_encard_eq
-  rwa [← incVertexSet_inter_edgeSet, inter_comm, edgeRestrict_edgeSet]
+  rwa [← incVertexSet_inter_edgeSet, inter_comm, edgeSet_edgeRestrict]
 
 -- If every vertex has at most 1 incident edge, then it must be a matching.
 lemma isMatching_of_encard_incEdges_le_one (M : Set β) (hM_subset : M ⊆ E(G))

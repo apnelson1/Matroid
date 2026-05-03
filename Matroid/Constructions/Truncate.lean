@@ -130,7 +130,7 @@ def truncate (M : Matroid α) := Matroid.ofExistsMatroid
     have hIb := hI.isBase_of_ground_subset_closure hss.symm.subset
     exact hIb.nonempty.ne_empty (h hIb))
 
-@[simp] lemma truncate_ground_eq : M.truncate.E = M.E := rfl
+@[simp, grind =] lemma truncate_ground_eq : M.truncate.E = M.E := rfl
 
 lemma truncate_indep_iff' : M.truncate.Indep I ↔ M.Indep I ∧ (M.IsBase I → I = ∅) := Iff.rfl
 
@@ -343,7 +343,7 @@ end truncate
 
 def freeLift (M : Matroid α) : Matroid α := M✶.truncate✶
 
-@[simp]
+@[simp, grind =]
 lemma freeLift_ground (M : Matroid α) : M.freeLift.E = M.E := rfl
 
 @[simp]

@@ -15,14 +15,14 @@ lemma ConnBetween.map (f : α → α') (h : G.ConnBetween x y) :
 
 lemma Preconnected.map (f : α → α') (h : G.Preconnected) : (f ''ᴳ G).Preconnected := by
   intro x' y' hx' hy'
-  obtain ⟨x, hx, rfl⟩ := by simpa only [map_vertexSet, mem_image] using hx'
-  obtain ⟨y, hy, rfl⟩ := by simpa only [map_vertexSet, mem_image] using hy'
+  obtain ⟨x, hx, rfl⟩ := by simpa only [vertexSet_map, mem_image] using hx'
+  obtain ⟨y, hy, rfl⟩ := by simpa only [vertexSet_map, mem_image] using hy'
   exact (h _ _ hx hy).map f
 
 @[simp]
 lemma Connected.map (f : α → α') (h : G.Connected) : (f ''ᴳ G).Connected := by
   obtain ⟨⟨v, hv⟩, hpre⟩ := connected_iff.mp h
-  exact connected_iff.mpr ⟨⟨f v, by simpa [map_vertexSet] using Set.mem_image_of_mem f hv⟩,
+  exact connected_iff.mpr ⟨⟨f v, by simpa [vertexSet_map] using Set.mem_image_of_mem f hv⟩,
       hpre.map f⟩
 
 /-! ### Pulling separators back along a map -/
@@ -42,7 +42,7 @@ lemma IsSep.of_contract (hφ : (G ↾ C).connPartition.IsRepFun φ) (hS : (G /[C
     G.IsSep (φ ⁻¹' S) where
   subset_vx v hvS := by
     obtain ⟨x, hx, hvx⟩ := by
-      simpa only [contract_vertexSet, mem_image] using hS.subset_vx (mem_preimage.mp hvS)
+      simpa only [vertexSet_contract, mem_image] using hS.subset_vx (mem_preimage.mp hvS)
     rw [hφ.apply_eq_apply_iff_rel (by simpa)] at hvx
     simpa using hvx.right_mem
   not_connected hcon := by
@@ -91,7 +91,7 @@ lemma ConnGE.contract_isLink {n : ℕ} (hG : G.ConnGE (n + 1)) (hl : G.IsLink e 
       apply h1.anti
       simp [hl.left_mem, insert_subset_iff]
     right
-    rw [IsLink.contract_vertexSet]
+    rw [IsLink.vertexSet_contract]
     apply lt_of_lt_of_le ?_ <| encard_le_encard (subset_insert ..)
     rw [encard_diff_singleton_of_mem hl.right_mem]
     enat_to_nat!
@@ -133,7 +133,7 @@ theorem exists_contract_connGE_three [G.Finite] (hG : G.ConnGE 3) (hV : 5 ≤ V(
     have hxy : x ≠ y := by simpa [y] using hnl.other_ne.symm
     have hAdj : G.Adj x y := hl.adj
     have hnV : ((3 : ℕ) : ℕ∞) < V(hl.contract).encard := by
-      rw [hl.contract_vertexSet_of_ne hxy, encard_diff_singleton_of_mem hl.right_mem]
+      rw [hl.vertexSet_contract_of_ne hxy, encard_diff_singleton_of_mem hl.right_mem]
       enat_to_nat!
       omega
     obtain ⟨T, hTsep, hTcard, hxT, hyT⟩ :=

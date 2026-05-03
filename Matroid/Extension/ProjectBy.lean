@@ -46,7 +46,7 @@ lemma projectBy_eq_map_comap (U : M.ModularCut) :
   rw [projectBy_aux, projectBy, Matroid.ofExistsMatroid]
   simp
 
-@[simp] lemma projectBy_ground (U : M.ModularCut) : (M.projectBy U).E = M.E := rfl
+@[simp, grind =] lemma projectBy_ground (U : M.ModularCut) : (M.projectBy U).E = M.E := rfl
 
 @[simp] lemma projectBy_indep_iff (U : M.ModularCut) :
     (M.projectBy U).Indep I ↔ M.Indep I ∧ (U ≠ ⊤ → M.closure I ∉ U) := Iff.rfl

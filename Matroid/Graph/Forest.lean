@@ -96,7 +96,7 @@ lemma IsForest.of_isCompOf_isForest (h : ∀ H : Graph α β, H.IsCompOf G → H
     G.IsForest := by
   rintro e he
   rw [G.eq_sUnion_components] at he
-  simp only [sUnion_edgeSet, mem_components_iff_isCompOf, mem_iUnion, exists_prop] at he
+  simp only [edgeSet_sUnion, mem_components_iff_isCompOf, mem_iUnion, exists_prop] at he
   obtain ⟨H, hH, heH⟩ := he
   exact h H hH heH |>.of_isClosedSubgraph hH.isClosedSubgraph
 
@@ -242,7 +242,7 @@ lemma singleEdge_isForest (hxy : x ≠ y) (e : β) : (Graph.singleEdge x y e).Is
     aesop
   refine hnt.firstEdge_ne_lastEdge hC.edge_nodup ?_
   have h_const := hC.isWalk.edgeSet_subset
-  simp only [singleEdge_edgeSet, subset_singleton_iff, WList.mem_edgeSet_iff] at h_const
+  simp only [edgeSet_singleEdge, subset_singleton_iff, WList.mem_edgeSet_iff] at h_const
   rw [h_const hnt.nonempty.firstEdge (by simp), h_const hnt.nonempty.lastEdge (by simp)]
 
 lemma IsForest.eq_of_isPath_eq_eq (hG : G.IsForest) (hP : G.IsPath P) (hQ : G.IsPath Q)
@@ -408,9 +408,9 @@ lemma IsTree.ncard_vertexSet [T.Finite] (h : T.IsTree) : V(T).ncard = E(T).ncard
 
 lemma IsForest.encard_vertexSet (hG : G.IsForest) :
     V(G).encard = E(G).encard + G.Components.encard := by
-  rw [G.eq_sUnion_components, sUnion_vertexSet, ← ENat.tsum_encard_eq_encard_biUnion,
+  rw [G.eq_sUnion_components, vertexSet_sUnion, ← ENat.tsum_encard_eq_encard_biUnion,
     tsum_congr (β := G.Components) (f := fun C ↦ V(C.1).encard)
-      (g := fun C ↦ E(C.1).encard + 1), sUnion_edgeSet, ← ENat.tsum_encard_eq_encard_biUnion,
+      (g := fun C ↦ E(C.1).encard + 1), edgeSet_sUnion, ← ENat.tsum_encard_eq_encard_biUnion,
     ← ENat.tsum_one, ENat.tsum_add, ← G.eq_sUnion_components, Components]
   · exact G.components_pairwise_stronglyDisjoint.mono' <| by simp [Pi.le_def, stronglyDisjoint_iff]
   · simp only [Subtype.forall, mem_components_iff_isCompOf]

@@ -26,7 +26,7 @@ lemma edgeDelete_setLinkEdge_not_connBetween (hx : x ∈ S) (hy : y ∉ S) :
 lemma setLinkEdges_eq_empty_iff (hS : S ⊆ V(G)) : δ(G, S) = ∅ ↔ G[S] ≤c G := by
   refine ⟨fun h ↦ ⟨induce_le hS, ?_⟩, fun h ↦ ?_⟩
   · rintro e x ⟨y, hxy⟩ hxS
-    rw [induce_edgeSet]
+    rw [edgeSet_induce]
     use x, y, hxy, hxS
     contrapose! h
     use e, x, hxS, y, ⟨hxy.right_mem, h⟩
@@ -128,7 +128,7 @@ lemma isEdgeCut_subset_of_not_connBetween (hcon : G.ConnBetween x y)
   let G' := (G ＼ F).walkable x
   have := ((G ＼ F).walkable_isClosedSubgraph (u := x)).setLinkEdges_empty
   rw [setLinkEdges_eq_inter_of_le' edgeDelete_le] at this
-  simp only [edgeDelete_edgeSet, diff_inter_right_comm,
+  simp only [edgeSet_edgeDelete, diff_inter_right_comm,
     inter_eq_right.mpr (G.setLinkEdges_subset ..), diff_eq_empty] at this
   obtain ⟨P, hP, rfl, rfl⟩ := hcon.exists_isPath
   have hx : P.first ∈ V(G') := mem_walkable <| by simpa using hcon.left_mem
@@ -375,7 +375,7 @@ lemma IsBridge.isBond (he : G.IsBridge e) : G.IsBond {e} := by
 
 lemma IsBond.isBridge (heB : e ∈ B) (hB : G.IsBond B) : (G ＼ (B \ {e})).IsBridge e := by
   have := hB.prop.1.anti (edgeDelete_le (F := B \ {e}))
-  rw [edgeDelete_edgeSet, inter_comm, inter_diff_distrib_left, inter_eq_left.mpr hB.subset,
+  rw [edgeSet_edgeDelete, inter_comm, inter_diff_distrib_left, inter_eq_left.mpr hB.subset,
     inter_eq_right.mpr diff_subset] at this
   simpa [heB] using this
 
@@ -401,14 +401,14 @@ lemma isBond_of_conn (hS : S ⊆ V(G)) (hScon : G[S].Preconnected) (hS'con : (G 
   clear h huv'
   have hSleF : G[S] ≤ G ＼ F := by
     apply le_of_le_le_subset_subset (induce_le hS) edgeDelete_le hS
-    simp only [edgeDelete_edgeSet, subset_diff, induce_edgeSet_subset, true_and]
+    simp only [edgeSet_edgeDelete, subset_diff, edgeSet_induce_subset, true_and]
     apply Disjoint.mono_right <| hFδ.trans <| setLinkEdges_subset_setIncEdges_right ..
-    rw [induce_edgeSet_eq_diff]
+    rw [edgeSet_induce_eq_diff]
     exact disjoint_sdiff_left
   have hS'leF : (G - S) ≤ G ＼ F := by
     apply le_of_le_le_subset_subset vertexDelete_le edgeDelete_le (by grind)
     rw [vertexDelete_edgeSet_diff]
-    simp only [edgeDelete_edgeSet, subset_diff, diff_subset, disjoint_comm, le_eq_subset,
+    simp only [edgeSet_edgeDelete, subset_diff, diff_subset, disjoint_comm, le_eq_subset,
       hF.1.subset, setIncEdges_subset, disjoint_sdiff_iff_le, true_and]
     exact hFδ.trans <| setLinkEdges_subset_setIncEdges_left ..
   clear hS hFδ
@@ -480,7 +480,7 @@ lemma exists_isBond_subset_of_not_connBetween (hcon : G.ConnBetween x y)
   apply isBond_of_conn (hGy.subset.trans diff_subset)
   · have hGyi : Gy.IsInducedSubgraph G :=
       hGy.isInducedSubgraph.trans <| vertexDelete_isInducedSubgraph ..
-    rw [hGyi.induce_vertexSet_eq]
+    rw [hGyi.vertexSet_induce_eq]
     exact hGy.preconnected
   · have hGxcon : ∀ z, z ∈ V(Gx) → (G - V(Gy)).ConnBetween x z := by
       intro z hzGx
@@ -551,7 +551,7 @@ lemma edgeConnGE_iff_isBond {n : ℕ} (hn : 1 ≤ n) :
 lemma EdgeConnGE.minDegreeGE {n : ℕ} (hN : V(G).Nontrivial) (hn : G.EdgeConnGE n) :
     G.MinDegreeGE n := by
   match n with
-  | 0 => exact fun _ _ ↦ zero_le _
+  | 0 => exact fun _ _ ↦ zero_le
   | n + 1 =>
     intro v hv
     have hFne : δ(G, {v}).Nonempty := by

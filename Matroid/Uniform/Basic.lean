@@ -25,7 +25,7 @@ section Uniform
 at most `k`. -/
 def unifOn {α : Type*} (E : Set α) (k : ℕ) : Matroid α := (freeOn E).truncateTo k
 
-@[simp] theorem unifOn_ground_eq (E : Set α) : (unifOn E k).E = E := rfl
+@[simp, grind =] theorem unifOn_ground_eq (E : Set α) : (unifOn E k).E = E := rfl
 
 @[simp] theorem unifOn_indep_iff : (unifOn E k).Indep I ↔ I.encard ≤ k ∧ I ⊆ E := by
   simp [unifOn, and_comm]

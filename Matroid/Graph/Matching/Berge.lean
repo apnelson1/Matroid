@@ -362,7 +362,7 @@ private lemma symmDiff_matching_cycle_edge_encard [G.Loopless] (hM : G.IsMatchin
     eq_of_subset_of_subset (incVertexSet_subset _ _) (fun x hx ↦ h_vx x hx |>.1)
   have vertexSet_eq₂ : V(H, M') = V(H) :=
     eq_of_subset_of_subset (incVertexSet_subset _ _) (fun x hx ↦ h_vx x hx |>.2)
-  iterate rw [← edgeRestrict_edgeSet]
+  iterate rw [← edgeSet_edgeRestrict]
   have heq : 2 * E(H ↾ M).encard = 2 * E(H ↾ M').encard := by
     grind only [IsMatching.matched_vertexSet_encard_eq']
   -- TODO: grind dies here
@@ -408,7 +408,7 @@ lemma exists_isAugmenter_of_matching_encard_lt [G.Loopless] [G.EdgeFinite] (hM :
     by_contra! hcon
     have P_edgeSet : E(P.val) = ⋃ i ∈ P.val.Components, E(i) := by
       change ∀ P' ∈ P.val.Components, (E(P') ∩ M').encard ≤ (E(P') ∩ M).encard at hcon
-      conv_lhs => rw [P.val.eq_sUnion_components, sUnion_edgeSet]
+      conv_lhs => rw [P.val.eq_sUnion_components, edgeSet_sUnion]
     have PM'_edges : E(P.val) ∩ M' = ⋃ i : P.val.Components, E(i.val) ∩ M' := by
       simp only [P_edgeSet, iUnion_inter, iUnion_coe_set, mem_components_iff_isCompOf]
     have PM_edges : E(P.val) ∩ M = ⋃ i : P.val.Components, E(i.val) ∩ M := by
@@ -484,8 +484,8 @@ lemma exists_isAugmenter_of_matching_encard_lt [G.Loopless] [G.EdgeFinite] (hM :
     grind only [= mem_diff]
 
   have bruh : V(P', M).encard < V(P', M').encard := by
-    rwa [hM.matched_vertexSet_encard_eq' (hP'P.le.trans P.2), edgeRestrict_edgeSet,
-      hM'.matched_vertexSet_encard_eq' (hP'P.le.trans P.2), edgeRestrict_edgeSet,
+    rwa [hM.matched_vertexSet_encard_eq' (hP'P.le.trans P.2), edgeSet_edgeRestrict,
+      hM'.matched_vertexSet_encard_eq' (hP'P.le.trans P.2), edgeSet_edgeRestrict,
       ENat.mul_lt_mul_left_iff (by simp) (by simp)]
   rw [encard_lt_encard_iff_encard_diff_lt_encard_diff
     ((incVertexSet_finite P' _).subset inter_subset_left)] at bruh

@@ -38,13 +38,13 @@ lemma noEdge_preconnected_iff : (Graph.noEdge X β).Preconnected ↔ X.Subsingle
   · by_contra! ht
     obtain ⟨x, hx, y, hy, hne⟩ := ht
     simpa [hne] using h x y hx hy
-  simp only [noEdge_vertexSet] at hx hy
+  simp only [vertexSet_noEdge] at hx hy
   obtain rfl := h hx hy
   simpa
 
 @[simp]
 lemma noEdge_connected_iff : (Graph.noEdge X β).Connected ↔ ∃ v, X = {v} := by
-  rw [connected_iff, noEdge_preconnected_iff, noEdge_vertexSet]
+  rw [connected_iff, noEdge_preconnected_iff, vertexSet_noEdge]
   simp only [exists_eq_singleton_iff_nonempty_subsingleton]
 
 @[simp]
@@ -111,7 +111,7 @@ lemma noEdge_ConnGE_iff (n : ℕ) : (Graph.noEdge X β).ConnGE n ↔ n = 0 ∨ (
     rintro (rfl | ⟨rfl, x, rfl⟩) <;> simp
   rw [hc.connGE_iff]
   rw [noEdge_isComplete_iff] at hc
-  simp only [noEdge_vertexSet, hc, true_and]
+  simp only [vertexSet_noEdge, hc, true_and]
   obtain (rfl | ⟨x, rfl⟩) := hc.eq_empty_or_singleton
   · simp
   simp only [encard_singleton, singleton_eq_singleton_iff, exists_eq', and_true,
@@ -192,7 +192,7 @@ lemma banana_preconnGE_iff : (banana u v F).PreconnGE n ↔ n = 0 ∨ u = v ∨ 
 lemma banana_connGE_iff : (banana u v F).ConnGE n ↔ n = 0 ∨ (n = 1 ∧ (u = v ∨ F.Nonempty)) := by
   obtain hc | hc := em ((banana u v F).IsComplete) |>.symm
   · simp [← banana_isComplete_iff, hc, ← preconnGE_iff_connGE_of_not_isComplete hc]
-  simp only [hc.connGE_iff, banana_vertexSet, pair_subsingleton_iff, ← banana_isComplete_iff, hc,
+  simp only [hc.connGE_iff, vertexSet_banana, pair_subsingleton_iff, ← banana_isComplete_iff, hc,
     and_true]
   constructor
   · rintro (⟨rfl, hle⟩ | hlt)

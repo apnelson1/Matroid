@@ -234,7 +234,7 @@ lemma mem_or_mem (S : G.Separation) (hxV : x ∈ V(G)) : x ∈ S.left ∨ x ∈ 
 
 lemma edge_induce_disjoint (S : G.Separation) : Disjoint E(G[S.left]) E(G[S.right]) := by
   refine disjoint_left.2 fun e he he' ↦ ?_
-  simp only [induce_edgeSet, mem_setOf_eq] at he he'
+  simp only [edgeSet_induce, mem_setOf_eq] at he he'
   obtain ⟨x, y, hexy, hx, hy⟩ := he
   obtain ⟨x', y', hexy', hx', hy'⟩ := he'
   obtain rfl | rfl := hexy.left_eq_or_eq hexy'
@@ -264,7 +264,7 @@ lemma induce_left_isClosedSubgraph (S : G.Separation) : G[S.left].IsClosedSubgra
     contrapose! hx
     have := hex.of_le_of_mem (by simp [S.right_subset])
       (S.edge_mem_or_mem hex.edge_mem |>.resolve_left hx) |>.vertex_mem
-    simp only [induce_vertexSet] at this ⊢
+    simp only [vertexSet_induce] at this ⊢
     rwa [S.not_left_mem_iff hex.vertex_mem]
 
 lemma induce_right_isClosedSubgraph (S : G.Separation)  : G[S.right] ≤c G :=
@@ -302,7 +302,7 @@ def isSepBetween_of_vertexDelete (S : (G - X).Separation) (hx : x ∈ S.left)
   · simpa [vertexDelete_vertexSet_inter] using S.not_connBetween hx hy
 
 lemma induce_stronglyDisjoint (S : G.Separation) : G[S.left].StronglyDisjoint G[S.right] where
-  vertex := by simp only [induce_vertexSet, S.disjoint]
+  vertex := by simp only [vertexSet_induce, S.disjoint]
   edge := S.edge_induce_disjoint
 
 lemma induce_left_lt (S : G.Separation) : G[S.left] < G :=
@@ -490,7 +490,7 @@ lemma IsMixedSep.of_isSpanningSubgraph (h : G.IsMixedSep S F) (hsle : H ≤s G) 
   subset_vertexSet := hsle.vertexSet_eq ▸ h.subset_vertexSet
   subset_edgeSet := inter_subset_left
   not_connected hc := by
-    rw [edgeDelete_edgeSet_inter] at hc
+    rw [edgeSet_edgeDelete_inter] at hc
     exact h.not_connected <| hc.of_isSpanningSubgraph (by gcongr)
 
 /-- A graph has `PreconnGE n`, if for every pair of vertices `s` and `t`, there is no

@@ -324,7 +324,7 @@ lemma iUnion_isClosedSubgraph (h : ∀ i, H i ≤c G) :
     Graph.iUnion H (pairwise_compatible_of_subgraph (fun i ↦ (h i).le)) ≤c G where
   le := Graph.iUnion_le_of_forall_le fun i ↦ (h i).le
   closed e x he := by
-    simp only [iUnion_vertexSet, mem_iUnion, iUnion_edgeSet, forall_exists_index]
+    simp only [vertexSet_iUnion, mem_iUnion, edgeSet_iUnion, forall_exists_index]
     exact fun i hxi ↦ ⟨_, (he.of_isClosedSubgraph_of_mem (h i) hxi).edge_mem⟩
 
 
@@ -340,7 +340,7 @@ lemma iUnion_isSpanningSubgraph_of_exists_isSpanningSubgraph_of_forall_le [Nonem
     Graph.iUnion H (pairwise_compatible_of_subgraph h) ≤s G where
   vertexSet_eq := by
     apply le_antisymm
-    · simp only [iUnion_vertexSet, le_eq_subset, iUnion_subset_iff]
+    · simp only [vertexSet_iUnion, le_eq_subset, iUnion_subset_iff]
       exact fun i ↦ (h i).vertex_subset
     obtain ⟨i, hi⟩ := hH
     rw [← hi.vertexSet_eq]

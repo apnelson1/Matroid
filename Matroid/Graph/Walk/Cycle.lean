@@ -124,7 +124,7 @@ lemma edgeRestrict_isTour_iff (F : Set β) (C : WList α β) :
     (G ↾ F).IsTour C ↔ G.IsTour C ∧ E(C) ⊆ F := by
   refine ⟨fun h ↦ ⟨h.of_le edgeRestrict_le, ?_⟩,
     fun ⟨h, hss⟩ ↦ h.of_le_of_subset (by simp) (by simp [hss, h.isWalk.edgeSet_subset])⟩
-  have := by simpa only [edgeRestrict_edgeSet, subset_inter_iff] using h.isWalk.edgeSet_subset
+  have := by simpa only [edgeSet_edgeRestrict, subset_inter_iff] using h.isWalk.edgeSet_subset
   use this.2
 
 @[simp]
@@ -132,7 +132,7 @@ lemma edgeDelete_isTour_iff (F : Set β) (C : WList α β) :
     (G ＼ F).IsTour C ↔ G.IsTour C ∧ Disjoint E(C) F := by
   refine ⟨fun h ↦ ⟨h.of_le edgeDelete_le, ?_⟩, fun ⟨h, hss⟩ ↦
     h.of_le_of_subset (by simp) (by simp [subset_diff, hss, h.isWalk.edgeSet_subset])⟩
-  have := by simpa only [edgeDelete_edgeSet, subset_diff] using h.isWalk.edgeSet_subset
+  have := by simpa only [edgeSet_edgeDelete, subset_diff] using h.isWalk.edgeSet_subset
   use this.2
 
 @[simp]
@@ -351,7 +351,7 @@ lemma edgeRestrict_isCyclicWalk_iff (F : Set β) (C : WList α β) :
     (G ↾ F).IsCyclicWalk C ↔ G.IsCyclicWalk C ∧ E(C) ⊆ F := by
   refine ⟨fun h ↦ ⟨h.of_le edgeRestrict_le, ?_⟩,
     fun ⟨h, hss⟩ ↦ h.isCycle_of_le (by simp) (by simp [hss, h.isWalk.edgeSet_subset])⟩
-  have := by simpa only [edgeRestrict_edgeSet, subset_inter_iff] using h.isWalk.edgeSet_subset
+  have := by simpa only [edgeSet_edgeRestrict, subset_inter_iff] using h.isWalk.edgeSet_subset
   use this.2
 
 @[simp]
@@ -359,7 +359,7 @@ lemma edgeDelete_isCyclicWalk_iff (F : Set β) (C : WList α β) :
     (G ＼ F).IsCyclicWalk C ↔ G.IsCyclicWalk C ∧ Disjoint E(C) F := by
   refine ⟨fun h ↦ ⟨h.of_le edgeDelete_le, ?_⟩,
     fun ⟨h, hss⟩ ↦ h.isCycle_of_le (by simp) (by simp [subset_diff, hss, h.isWalk.edgeSet_subset])⟩
-  have := by simpa only [edgeDelete_edgeSet, subset_diff] using h.isWalk.edgeSet_subset
+  have := by simpa only [edgeSet_edgeDelete, subset_diff] using h.isWalk.edgeSet_subset
   use this.2
 
 @[simp]

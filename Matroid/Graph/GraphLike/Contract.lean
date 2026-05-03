@@ -27,7 +27,7 @@ variable {α α' α'' β : Type*} {G H : Graph α β} {X : Set α} {C F : Set β
 def contract (G : Graph α β) (C : Set β) (φ : α → α') : Graph α' β :=
   (φ ''ᴳ G) ＼ C
 
--- attribute [grind =] contract_vertexSet contract_edgeSet contract_isLink
+-- attribute [grind =] vertexSet_contract edgeSet_contract contract_isLink
 
 notation:70 G " /["C ", " φ"] " => Graph.contract G C φ
 
@@ -132,7 +132,7 @@ lemma IsWalk.edgeRemove_contract [DecidablePred (· ∈ E(H))] {w} (h : G.IsWalk
     (hφ : H.connPartition.IsRepFun φ) : (G /[E(H), φ]).IsWalk <| (w.map φ).edgeRemove E(H) := by
   induction w with
   | nil x =>
-    simp only [nil_isWalk_iff, map_nil, edgeRemove_nil, contract_vertexSet] at h ⊢
+    simp only [nil_isWalk_iff, map_nil, edgeRemove_nil, vertexSet_contract] at h ⊢
     grind
   | cons x e w ih =>
     simp_all only [cons_isWalk_iff, map_cons, forall_const, edgeRemove_cons]

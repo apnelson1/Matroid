@@ -75,10 +75,10 @@ lemma IsPendant.eq_addEdge (h : G.IsPendant e x) :
   · rw [h.edgeSet_delete_vertex_eq]
     simp
   · exact Graph.union_le (by simpa) (by simp)
-  · rw [addEdge_vertexSet, vertexDelete_singleton, vertexDelete_vertexSet, ← union_singleton,
+  · rw [vertexSet_addEdge, vertexDelete_singleton, vertexDelete_vertexSet, ← union_singleton,
       union_assoc]
     simp [insert_eq_of_mem hexy.right_mem, insert_eq_of_mem hexy.left_mem]
-  rw [addEdge_edgeSet, h.edgeSet_delete_vertex_eq, insert_diff_singleton,
+  rw [edgeSet_addEdge, h.edgeSet_delete_vertex_eq, insert_diff_singleton,
     insert_eq_of_mem hexy.edge_mem]
 
 lemma IsPendant.exists_eq_addEdge (h : G.IsPendant e x) :

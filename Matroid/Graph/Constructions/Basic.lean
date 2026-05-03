@@ -32,7 +32,7 @@ lemma noEdge_not_adj : ¬ (Graph.noEdge V β).Adj x y := by
   simp [Adj]
 
 lemma edgeSet_eq_empty_iff : E(G) = ∅ ↔ G = Graph.noEdge V(G) β := by
-  refine ⟨fun h ↦ Graph.ext rfl ?_, fun h ↦ by rw [h, noEdge_edgeSet]⟩
+  refine ⟨fun h ↦ Graph.ext rfl ?_, fun h ↦ by rw [h, edgeSet_noEdge]⟩
   simp only [noEdge_isLink, iff_false]
   refine fun e x y he ↦ ?_
   have := h ▸ he.edge_mem
@@ -133,7 +133,7 @@ lemma singleEdge_adj_iff :
 
 @[simp]
 lemma singleEdge_le_iff : Graph.singleEdge u v e ≤ G ↔ G.IsLink e u v := by
-  simp only [le_iff, singleEdge_vertexSet, Set.pair_subset_iff, singleEdge_isLink_iff, and_imp,
+  simp only [le_iff, vertexSet_singleEdge, Set.pair_subset_iff, singleEdge_isLink_iff, and_imp,
     Sym2.eq_iff]
   refine ⟨fun h ↦ h.2 rfl (.inl ⟨rfl, rfl⟩), fun h ↦ ⟨⟨h.left_mem, h.right_mem⟩, ?_⟩⟩
   rintro e x y rfl (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)
@@ -161,7 +161,7 @@ lemma bouquet_le_iff_of_mem (hv : v ∈ V(G)) (F : Set β) :
 lemma bouquet_le_iff_of_nonempty (v : α) (hF : F.Nonempty) :
     bouquet v F ≤ G ↔ ∀ e ∈ F, G.IsLoopAt e v := by
   refine ⟨fun h e heF ↦ IsLoopAt.of_le (by simpa) h, fun h ↦ ⟨?_, fun e x y h ↦ ?_⟩⟩
-  · simp only [bouquet_vertexSet, singleton_subset_iff]
+  · simp only [vertexSet_bouquet, singleton_subset_iff]
     exact (h _ hF.some_mem).vertex_mem
   simp only [banana_isLink, or_self] at h
   obtain ⟨hef, rfl, rfl⟩ := h
@@ -229,19 +229,19 @@ lemma bot_isComplete : (⊥ : Graph α β).IsComplete := by
 @[simp]
 lemma bouquet_isComplete (v : α) (F : Set β) : (bouquet v F).IsComplete := by
   rintro a ha b hb hne
-  simp only [bouquet_vertexSet, mem_singleton_iff] at ha hb
+  simp only [vertexSet_bouquet, mem_singleton_iff] at ha hb
   subst a b
   exact (hne rfl).elim
 
 @[simp]
 lemma singleEdge_isComplete (u v : α) (e : β) : (Graph.singleEdge u v e).IsComplete := by
   rintro a ha b hb hne
-  simp only [singleEdge_vertexSet, mem_insert_iff, mem_singleton_iff] at ha hb
+  simp only [vertexSet_singleEdge, mem_insert_iff, mem_singleton_iff] at ha hb
   obtain rfl | rfl := ha <;> obtain rfl | rfl := hb <;> simp at hne ⊢
 
 lemma banana_isComplete (a b : α) (hF : F.Nonempty) : (banana a b F).IsComplete := by
   rintro x hx y hy hne
-  simp only [banana_vertexSet, mem_insert_iff, mem_singleton_iff] at hx hy
+  simp only [vertexSet_banana, mem_insert_iff, mem_singleton_iff] at hx hy
   obtain rfl | rfl := hx <;> obtain rfl | rfl := hy <;> simp [hF] at hne ⊢
 
 @[simp]
@@ -421,7 +421,7 @@ scoped notation "L(" G ")" => LineGraph G
 @[simp]
 lemma lineGraph_inc (G : Graph α β) (s : Sym2 β) (e : β) : L(G).Inc s e ↔ s ∈ E(L(G)) ∧ e ∈ s := by
   unfold Inc
-  simp +contextual only [LineGraph_isLink, LineGraph_edgeSet, mem_image, mem_setOf_eq, Prod.exists,
+  simp +contextual only [LineGraph_isLink, edgeSet_LineGraph, mem_image, mem_setOf_eq, Prod.exists,
     iff_def, forall_exists_index, and_imp]
   refine ⟨fun a hs hne x he ha ↦ ?_, fun a b hne x ha hb hs hes ↦ ?_⟩ <;> subst s
   · exact ⟨⟨e, a, ⟨hne, x, he, ha⟩, rfl⟩, by simp⟩
@@ -449,7 +449,7 @@ lemma lineGraph_singleEdge_isComplete (u v : α) (e : β) : L(Graph.singleEdge u
 
 lemma lineGraph_starGraph_isComplete (v : α) (f : β →. α) : L(StarGraph v f).IsComplete := by
   rintro e h e'
-  simp_all only [LineGraph_vertexSet, StarGraph_edgeSet, PFun.mem_dom, ne_eq, lineGraph_adj,
+  simp_all only [vertexSet_LineGraph, edgeSet_StarGraph, PFun.mem_dom, ne_eq, lineGraph_adj,
     starGraph_inc_iff, and_true, forall_exists_index, not_false_iff, true_and]
   intro _ _ _
   use v

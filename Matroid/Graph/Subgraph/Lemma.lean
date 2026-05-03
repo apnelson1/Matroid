@@ -109,8 +109,8 @@ lemma isInducedSubgraph_bot_iff : G ≤i ⊥ ↔ G = ⊥ :=
 lemma addEdge_deleteEdge (he : e ∉ E(G)) (hx : x ∈ V(G)) (hy : y ∈ V(G)) :
     (G.addEdge e x y) ＼ {e} = G := by
   have hc : Compatible (Graph.singleEdge x y e) G := by simp [he]
-  simp only [Graph.addEdge, Graph.ext_iff, edgeDelete_vertexSet, union_vertexSet,
-    singleEdge_vertexSet, union_eq_right, insert_subset_iff, hx, singleton_subset_iff, hy, and_self,
+  simp only [Graph.addEdge, Graph.ext_iff, vertexSet_edgeDelete, union_vertexSet,
+    vertexSet_singleEdge, union_eq_right, insert_subset_iff, hx, singleton_subset_iff, hy, and_self,
     edgeDelete_isLink, hc.union_isLink_iff, singleEdge_isLink, mem_singleton_iff, true_and]
   intro f p q
   obtain rfl | hne := eq_or_ne f e
@@ -124,7 +124,7 @@ lemma addEdge_mono (hle : H ≤ G) : H.addEdge e x y ≤ G.addEdge e x y :=
 
 lemma deleteEdge_le_addEdge : G ＼ {e} ≤ G.addEdge e x y := by
   rw [Graph.addEdge, union_eq_union_edgeDelete]
-  simp only [singleEdge_edgeSet]
+  simp only [edgeSet_singleEdge]
   exact Compatible.right_le_union <| by simp
 
 lemma deleteEdge_addEdge : (G ＼ {e}).addEdge e x y = G.addEdge e x y := by

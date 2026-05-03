@@ -604,7 +604,7 @@ def TransClosure : ClosureOperator (α → α → Prop) where
       | tail _ h' ih => exact TransGen.trans ih h'
     · exact TransGen.single h
   IsClosed := IsTrans α
-  isClosed_iff := ⟨transGen_eq_self, (· ▸ inferInstance)⟩
+  isClosed_iff := ⟨fun _ => transGen_eq_self, (· ▸ inferInstance)⟩
 
 instance : IsTrans α (TransClosure r) := by
   change IsTrans α (TransGen r)
@@ -618,10 +618,11 @@ instance [Std.Symm r] : Std.Symm (TransClosure r) := by
 
 @[simp]
 lemma transClosure_eq_self (r : α → α → Prop) [IsTrans α r] : TransClosure r = r :=
-  transGen_eq_self inferInstance
+  transGen_eq_self
 
 lemma transClosure_eq_self_of_le_eq (hr : r ≤ (· = ·)) : TransClosure r = r :=
-  transGen_eq_self <| transitive_of_le_eq r hr
+  letI := transitive_of_le_eq r hr
+  transGen_eq_self
 
 @[simp]
 lemma transClosure_eq : TransClosure (Eq : α → α → Prop) = Eq :=

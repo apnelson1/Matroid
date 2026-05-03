@@ -234,7 +234,7 @@ lemma degree_eq_finsum (G : Graph α β) (v : α) : G.degree v = ∑ᶠ e, G.inc
 
 @[simp]
 lemma finsum_incFun_eq (he : e ∈ E(G)) : ∑ᶠ v, G.incFun e v = 2 := by
-  rw [← G.sum_incFun_eq_two he, Finsupp.sum, finsum_eq_finset_sum_of_support_subset]
+  rw [← G.sum_incFun_eq_two he, Finsupp.sum, finsum_eq_finsetSum_of_support_subset]
   simp
 
 @[simp]

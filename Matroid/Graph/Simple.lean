@@ -103,12 +103,12 @@ lemma loopRemove_edgeDelete (G : Graph α β) : loopRemove G = G ＼ ⋃ x ∈ V
 
 @[simp]
 lemma loopRemove_edgeSet : E(loopRemove G) = {e ∈ E(G) | ∀ x, ¬ G.IsLoopAt e x} := by
-  simp only [loopRemove, edgeRestrict_edgeSet]
+  simp only [loopRemove, edgeSet_edgeRestrict]
   rw [setOf_and]
   rfl
 
 lemma loopRemove_edgeSet_diff : E(loopRemove G) = E(G) \ (⋃ x ∈ V(G), G.loopSet x) := by
-  rw [loopRemove_edgeDelete, edgeDelete_edgeSet]
+  rw [loopRemove_edgeDelete, edgeSet_edgeDelete]
 
 @[simp]
 lemma loopRemove_isLink : (loopRemove G).IsLink e x y ↔ G.IsLink e x y ∧ x ≠ y := by
@@ -372,7 +372,7 @@ lemma simplify_le : G.simplify φ ≤ G := simplify_isSpanningSubgraph.le
 
 lemma simplify_edgeSet_diff (hφ : G.parallelClasses.IsRepFun φ) :
     E(G.simplify φ) = φ '' E(G) \ ⋃ x ∈ V(G), G.loopSet x := by
-  simp only [simplify, edgeRestrict_edgeSet, loopRemove_edgeSet_diff]
+  simp only [simplify, edgeSet_edgeRestrict, loopRemove_edgeSet_diff]
   ext e
   simp only [mem_inter_iff, mem_diff, mem_iUnion, mem_loopSet, exists_prop, and_comm, not_exists,
     not_and, mem_image, and_congr_right_iff, and_iff_right_iff_imp, forall_exists_index, and_imp]
@@ -403,7 +403,7 @@ lemma simplify_eq_edgeRestrict (hφ : G.parallelClasses.IsRepFun φ) :
     G.simplify φ = G ↾ φ '' (E(G) \ (⋃ x ∈ V(G), G.loopSet x)) := by
   apply G.ext_of_le_le (edgeRestrict_le.trans <| loopRemove_le G) edgeRestrict_le rfl
   convert simplify_edgeSet hφ
-  simp only [edgeRestrict_edgeSet, inter_eq_right, image_subset_iff]
+  simp only [edgeSet_edgeRestrict, inter_eq_right, image_subset_iff]
   refine fun e he ↦ ?_
   simp only [mem_preimage]
   simpa using hφ.apply_mem <| by simpa using he.1

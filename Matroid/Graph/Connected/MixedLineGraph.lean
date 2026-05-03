@@ -47,7 +47,7 @@ instance (G : Graph α β) : Simple L'(G) where
 
 instance [G.Finite] : L'(G).Finite := by
   apply Graph.Simple.vertexSet_finite_iff.mp
-  simp only [mixedLineGraph_vertexSet, finite_union]
+  simp only [vertexSet_mixedLineGraph, finite_union]
   exact ⟨G.vertexSet_finite.image inl, G.edgeSet_finite.image inr⟩
 
 instance [G.LocallyFinite] : L'(G).LocallyFinite where
@@ -87,7 +87,7 @@ lemma mixedLineGraph_inr_eDegree_le_two : L'(G).eDegree (Sum.inr e) ≤ 2 := by
 
 lemma mixedLineGraph_edgeDelete : L'(G ＼ F) = L'(G) - (Sum.inr '' F : Set (α ⊕ β)) := by
   ext a b c
-  · simp only [mixedLineGraph_vertexSet, edgeDelete_vertexSet, edgeDelete_edgeSet,
+  · simp only [vertexSet_mixedLineGraph, vertexSet_edgeDelete, edgeSet_edgeDelete,
       vertexDelete_vertexSet, image_diff Sum.inr_injective, union_diff_distrib]
     convert Iff.rfl
     apply Disjoint.sdiff_eq_left
@@ -99,7 +99,7 @@ lemma mixedLineGraph_edgeDelete : L'(G ＼ F) = L'(G) - (Sum.inr '' F : Set (α 
 
 lemma mixedLineGraph_vertexDelete : L'(G - X) = L'(G) - (Sum.inl '' X ∪ Sum.inr '' E(G, X)) := by
   ext a b c
-  · simp only [mixedLineGraph_vertexSet, vertexDelete_vertexSet, vertexDelete_edgeSet_diff]
+  · simp only [vertexSet_mixedLineGraph, vertexDelete_vertexSet, vertexDelete_edgeSet_diff]
     rw [image_diff Sum.inl_injective, union_diff_distrib, ← diff_diff, ← diff_diff]
     convert Iff.rfl using 3
     · apply Disjoint.sdiff_eq_left
@@ -197,7 +197,7 @@ lemma IsPath.mixedLineGraph_walkMap {P} (hP : G.IsPath P) :
     use hP.2.1.mixedLineGraph_walkMap.nodup
 
 @[simp]
-lemma mixedLineGraph_walkMap_vertexSet :
+lemma mixedLineGraph_walkvertexSet_map :
     V(mixedLineGraph_walkMap W) = Sum.inl '' V(W) ∪ Sum.inr '' E(W) := by
   induction W with
   | nil x => simp
@@ -217,7 +217,7 @@ def mixedLineEnsembleMap (A : G.VertexEnsemble s t ι) (hA : A.edgeDisjoint) :
   last_eq i := by simp [A.last_eq i]
   internallyDisjoint i j hne := by
     ext x
-    simp only [mixedLineGraph_walkMap_vertexSet, mem_inter_iff, mem_union, mem_image,
+    simp only [mixedLineGraph_walkvertexSet_map, mem_inter_iff, mem_union, mem_image,
       mem_vertexSet_iff, mem_edgeSet_iff, mem_insert_iff, mem_singleton_iff]
     refine ⟨fun ⟨h1, h2⟩ ↦ ?_, ?_⟩
     · obtain ⟨u, hu, rfl⟩ | ⟨e, he, rfl⟩ := h1 <;> obtain ⟨v, hv, hveq⟩ | ⟨f, hf, heeq⟩ := h2
@@ -465,7 +465,7 @@ lemma Preconnected.exists_isWalk_firstEdge_lastEdge (h : G.Preconnected) (he : e
   simp [hP, he, hf, Nonempty.lastEdge_cons]
 
 lemma Preconnected.mixedLineGraph (h : G.Preconnected) : L'(G).Preconnected := by
-  rintro (a | a) (b | b) ha hb <;> simp only [mixedLineGraph_vertexSet, mem_union, mem_image,
+  rintro (a | a) (b | b) ha hb <;> simp only [vertexSet_mixedLineGraph, mem_union, mem_image,
     Sum.inl.injEq, Sum.inr.injEq, exists_eq_right, reduceCtorEq, and_false, exists_false, or_false,
     false_or] at ha hb
   · obtain ⟨W, hW, rfl, rfl⟩ := h a b ha hb

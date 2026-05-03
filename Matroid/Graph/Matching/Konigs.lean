@@ -278,7 +278,7 @@ lemma gah (hM : G.IsMatching M) (hx : E(G ↾ M, x).encard = 0) (hy : E(G ↾ M,
     (G.addEdge e x y).IsMatching (insert e M) := by
   refine isMatching_of_encard_incEdges_le_one ?_ ?_ ?_
   · grind [hM.subset]
-  simp only [addEdge_vertexSet, mem_union, mem_insert_iff, mem_singleton_iff]
+  simp only [vertexSet_addEdge, mem_union, mem_insert_iff, mem_singleton_iff]
   intro u
   have he' : e ∉ E(G ↾ M) := by grind
   obtain (rfl|hux) := em (u = x)
@@ -621,7 +621,7 @@ theorem Konig'sTheorem [H.Simple] [H.Finite] (hB : H.Bipartite) : τ(H) = ν(H) 
       rintro rfl
       have := hf.of_le edgeDelete_le |>.right_unique huv
       contradiction
-    have heG' : e ∈ E(G ＼ {f}) := by grind [edgeDelete_edgeSet]
+    have heG' : e ∈ E(G ＼ {f}) := by grind [edgeSet_edgeDelete]
     grind only [hW'.mem_or_mem_of_isLink (huv.of_le_of_mem edgeDelete_le heG')]
   -- So W' also covers f (since f = ux), so W' is a cover of G
   have hW'G : G.IsCover W' := by

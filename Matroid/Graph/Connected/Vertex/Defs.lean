@@ -240,7 +240,7 @@ lemma IsEdgeCutBetween.of_le (hF : G.IsEdgeCutBetween F s t) (hle : H ≤ G) :
     H.IsEdgeCutBetween (E(H) ∩ F) s t where
   subset_edgeSet := inter_subset_left
   not_connBetween := by
-    rw [edgeDelete_edgeSet_inter]
+    rw [edgeSet_edgeDelete_inter]
     exact mt (ConnBetween.mono (by gcongr)) hF.not_connBetween
 
 lemma IsWalk.not_disjoint_isEdgeCutBetween (hW : G.IsWalk W)

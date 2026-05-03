@@ -349,7 +349,7 @@ def minAx : CompletelyDistribLattice.MinimalAxioms G.Subgraph where
     obtain (hι | hι) := isEmpty_or_nonempty ι
     · rw [iInf_of_isEmpty]
       simp
-    ext a b c <;> simp only [coe_iInf_of_nonempty, coe_iSup, iInter_vertexSet, iUnion_vertexSet,
+    ext a b c <;> simp only [coe_iInf_of_nonempty, coe_iSup, vertexSet_iInter, vertexSet_iUnion,
       mem_iInter, mem_iUnion] <;> exact ⟨fun h => ⟨fun i ↦ (h i).choose, fun i ↦ (h i).choose_spec⟩,
         fun h i => ⟨h.choose i, h.choose_spec i⟩⟩
 
@@ -367,7 +367,7 @@ scoped infixl:65 " ↾↾ " => Subgraph.ofEdge
 @[simp]
 lemma induce_incVertexSet_inter_eq (F : Set β) : E(G[V(G, F)]) ∩ F = E(G) ∩ F := by
   ext e
-  simp only [induce_edgeSet, mem_incVertexSet_iff, mem_inter_iff, mem_setOf_eq, and_congr_left_iff]
+  simp only [edgeSet_induce, mem_incVertexSet_iff, mem_inter_iff, mem_setOf_eq, and_congr_left_iff]
   refine fun he ↦ ⟨fun ⟨_, _, he, _⟩ => he.edge_mem, fun h => ?_⟩
   obtain ⟨x, y, h⟩ := exists_isLink_of_mem_edgeSet h
   exact ⟨x, y, h, ⟨e, he, h.inc_left⟩, ⟨e, he, h.inc_right⟩⟩
@@ -378,7 +378,7 @@ lemma ofEdge_vertexSet (F : Set β) : V((G ↾↾ F).val) = V(G, F) := by
 
 @[simp]
 lemma ofEdge_edgeSet (F : Set β) : E((G ↾↾ F).val) = E(G) ∩ F := by
-  simp [ofEdge, edgeRestrict_edgeSet]
+  simp [ofEdge, edgeSet_edgeRestrict]
 
 @[simp]
 lemma ofEdge_isLink (F : Set β) : (G ↾↾ F).val.IsLink e x y ↔ e ∈ F ∧ G.IsLink e x y := by
@@ -404,7 +404,7 @@ lemma compl_vertexSet (H : G.Subgraph) : V(Hᶜ.val) = V(G) \ V(H.val) ∪ V(G, 
 lemma compl_edgeSet (H : G.Subgraph) : E(Hᶜ.val) = E(G) \ E(H.val) := by
   change E(G[V(G) \ V(H.val) ∪ V(G, E(G) \ E(H.val))] ＼ E(H.val)) = _
   ext e
-  simp only [edgeDelete_edgeSet, induce_edgeSet, mem_union, mem_diff, mem_incVertexSet_iff,
+  simp only [edgeSet_edgeDelete, edgeSet_induce, mem_union, mem_diff, mem_incVertexSet_iff,
     mem_setOf_eq, and_congr_left_iff]
   refine fun heH ↦ ⟨fun ⟨x, y, hxy, h⟩ => hxy.edge_mem, fun h => ?_⟩
   obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet h
@@ -716,11 +716,11 @@ lemma coe_iSup (f : ι → G.ClosedSubgraph)
 
 @[simp]
 lemma vertexSet_sSup (s : Set G.ClosedSubgraph) : V((sSup s).val) = ⋃ a ∈ s, V(a.val) := by
-  rw [coe_sSup, sUnion_vertexSet, biUnion_image]
+  rw [coe_sSup, vertexSet_sUnion, biUnion_image]
 
 @[simp]
 lemma edgeSet_sSup (s : Set G.ClosedSubgraph) : E((sSup s).val) = ⋃ a ∈ s, E(a.val) := by
-  rw [coe_sSup, sUnion_edgeSet, biUnion_image]
+  rw [coe_sSup, edgeSet_sUnion, biUnion_image]
 
 @[simp]
 lemma toSubgraph_iInf (f : ι → G.ClosedSubgraph) : toSubgraph (⨅ i, f i) = ⨅ i, toSubgraph (f i) :=
@@ -770,12 +770,12 @@ lemma coe_sInf_of_empty : ((sInf ∅ : G.ClosedSubgraph) : Graph α β) = G := b
 
 lemma vertexSet_sInf_comm (s : Set G.ClosedSubgraph) :
     V((sInf s).val) = V(G) ∩ ⋂ a ∈ s, V(a.val) := by
-  simp only [coe_sInf, sInter_vertexSet, mem_insert_iff, iInter_iInter_eq_or_left, biInter_image]
+  simp only [coe_sInf, vertexSet_sInter, mem_insert_iff, iInter_iInter_eq_or_left, biInter_image]
 
 @[simp]
 lemma vertexSet_sInf_comm_of_nonempty (hs : s.Nonempty) :
     V((sInf s).val) = ⋂ a ∈ s, V(a.val) := by
-  simp only [coe_sInf_of_nonempty hs, sInter_vertexSet, biInter_image]
+  simp only [coe_sInf_of_nonempty hs, vertexSet_sInter, biInter_image]
 
 instance : CompleteAtomicBooleanAlgebra G.ClosedSubgraph where
   iInf_iSup_eq {ι κ} f := by
@@ -823,7 +823,7 @@ lemma disjoint_iff_val_disjoint (H₁ H₂ : G.ClosedSubgraph) :
 lemma eq_ambient_of_subset_vertexSet (h : V(G) ⊆ V(H.val)) : H = ⊤ := by
   have hV : V(G) = V(H.val) := subset_antisymm h (vertexSet_mono H.prop.le)
   refine le_antisymm le_top ?_
-  rw [← Subtype.coe_le_coe, ← H.coe_eq_induce, ← hV, induce_vertexSet_self]
+  rw [← Subtype.coe_le_coe, ← H.coe_eq_induce, ← hV, induce_vertexSet]
   rfl
 
 @[simp, push]
