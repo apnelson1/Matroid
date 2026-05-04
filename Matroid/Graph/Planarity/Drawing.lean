@@ -126,7 +126,7 @@ lemma Graph.IsPlanar.exists_polygonal_drawing {G : Graph α β} [G.Finite] (hG :
     by_contra! hE
     refine hMin.prop ⟨DG.anti hle, ?_, ?_⟩ <;> rintro ⟨e, he⟩ <;> simp [hE] at he
   have hlt : H ＼ {e} < H := by
-    apply lt_of_le_of_ne edgeDelete_le
+    apply lt_of_le_of_ne deleteEdges_le
     rintro heq
     simpa [he] using congrArg Graph.edgeSet heq
   obtain ⟨D, L, h⟩ := not_not.mp <| hMin.not_prop_of_lt hlt

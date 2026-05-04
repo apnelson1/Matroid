@@ -133,7 +133,7 @@ lemma IsNonloopAt.degree_delete_add_one [G.LocallyFinite] (he : G.IsNonloopAt e 
 lemma IsLoopAt.eDegree_delete_add_two (h : G.IsLoopAt e x) :
     (G ＼ {e}).eDegree x + 2 = G.eDegree x := by
   have hrw : {f | G.IsLoopAt f x} = insert e {f | (G ＼ {e}).IsLoopAt f x} := by
-    simp only [edgeDelete_isLoopAt_iff, mem_singleton_iff]
+    simp only [deleteEdges_isLoopAt, mem_singleton_iff]
     ext f
     have := eq_or_ne f e
     aesop

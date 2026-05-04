@@ -66,8 +66,8 @@ lemma isTrail_induce_iff' (hw : w.Nonempty) : G[X].IsTrail w ↔ G.IsTrail w ∧
   tauto
 
 @[simp]
-lemma isTrail_vertexDelete_iff : (G - X).IsTrail w ↔ G.IsTrail w ∧ Disjoint V(w) X := by
-  rw [vertexDelete_def, isTrail_induce_iff diff_subset, subset_diff, and_congr_right_iff,
+lemma isTrail_deleteVerts_iff : (G - X).IsTrail w ↔ G.IsTrail w ∧ Disjoint V(w) X := by
+  rw [deleteVerts_def, isTrail_induce_iff diff_subset, subset_diff, and_congr_right_iff,
     and_iff_right_iff_imp]
   exact fun h _ ↦ h.vertexSet_subset
 
@@ -221,8 +221,8 @@ lemma isPath_induce_iff' (hP : P.Nonempty) : G[X].IsPath P ↔ G.IsPath P ∧ V(
   tauto
 
 @[simp]
-lemma isPath_vertexDelete_iff : (G - X).IsPath P ↔ G.IsPath P ∧ Disjoint V(P) X := by
-  rw [vertexDelete_def, isPath_induce_iff diff_subset, subset_diff, and_congr_right_iff,
+lemma isPath_deleteVerts_iff : (G - X).IsPath P ↔ G.IsPath P ∧ Disjoint V(P) X := by
+  rw [deleteVerts_def, isPath_induce_iff diff_subset, subset_diff, and_congr_right_iff,
     and_iff_right_iff_imp]
   exact fun h _ ↦ h.vertexSet_subset
 
@@ -237,12 +237,12 @@ lemma IsPath.isPath_le_of_nonempty (h : G.IsPath w) (hle : H ≤ G) (hE : E(w) �
   nodup := h.nodup
 
 @[simp]
-lemma isPath_edgeRestrict_iff {F : Set β} : (G ↾ F).IsPath P ↔ G.IsPath P ∧ E(P) ⊆ F := by
+lemma isPath_restrict_iff {F : Set β} : (G ↾ F).IsPath P ↔ G.IsPath P ∧ E(P) ⊆ F := by
   simp [isPath_iff, and_right_comm]
 
 @[simp]
-lemma isPath_edgeDelete_iff {F : Set β} : (G ＼ F).IsPath P ↔ G.IsPath P ∧ Disjoint E(P) F := by
-  rw [isPath_iff, isWalk_edgeDelete_iff, isPath_iff, and_right_comm]
+lemma isPath_deleteEdges_iff {F : Set β} : (G ＼ F).IsPath P ↔ G.IsPath P ∧ Disjoint E(P) F := by
+  rw [isPath_iff, isWalk_deleteEdges_iff, isPath_iff, and_right_comm]
 
 lemma IsPath.append {P Q : WList α β} (hP : G.IsPath P) (hQ : G.IsPath Q) (hPQ : P.last = Q.first)
     (h_inter : ∀ x, x ∈ P → x ∈ Q → x = P.last) : G.IsPath (P ++ Q) := by
@@ -469,9 +469,9 @@ lemma IsPathFrom.isPathFrom_le (h : G.IsPathFrom S T P) (hle : H ≤ G) (hss : E
   eq_first_of_mem := h.eq_first_of_mem
   eq_last_of_mem := h.eq_last_of_mem
 
-lemma IsPathFrom.of_vertexDelete (hP : (G - X).IsPathFrom S T P) :
+lemma IsPathFrom.of_deleteVerts (hP : (G - X).IsPathFrom S T P) :
     G.IsPathFrom (S ∪ X) (T ∪ X) P where
-  toIsPath := hP.isPath.of_le vertexDelete_le
+  toIsPath := hP.isPath.of_le deleteVerts_le
   first_mem := subset_union_left hP.first_mem
   last_mem := subset_union_left hP.last_mem
   eq_first_of_mem _ hvP hvS :=
@@ -479,17 +479,17 @@ lemma IsPathFrom.of_vertexDelete (hP : (G - X).IsPathFrom S T P) :
   eq_last_of_mem _ hvP hvT :=
     hP.eq_last_of_mem hvP (Or.elim hvT id (False.elim <| hP.isPath.vertexSet_subset hvP |>.2 ·))
 
-lemma IsPathFrom.of_vertexDelete' (hP : (G - X).IsPathFrom S T P) :
+lemma IsPathFrom.of_deleteVerts' (hP : (G - X).IsPathFrom S T P) :
     G.IsPathFrom S T P where
-  toIsPath := hP.isPath.of_le vertexDelete_le
+  toIsPath := hP.isPath.of_le deleteVerts_le
   first_mem := hP.first_mem
   last_mem := hP.last_mem
   eq_first_of_mem _ hvP hvS := hP.eq_first_of_mem hvP hvS
   eq_last_of_mem _ hvP hvT := hP.eq_last_of_mem hvP hvT
 
-lemma IsPathFrom.vertexDelete (hP : G.IsPathFrom S T P) (hdj : Disjoint V(P) X) :
+lemma IsPathFrom.deleteVerts (hP : G.IsPathFrom S T P) (hdj : Disjoint V(P) X) :
     (G - X).IsPathFrom S T P where
-  toIsPath := isPath_vertexDelete_iff.mpr ⟨hP.isPath, hdj⟩
+  toIsPath := isPath_deleteVerts_iff.mpr ⟨hP.isPath, hdj⟩
   first_mem := hP.first_mem
   last_mem := hP.last_mem
   eq_first_of_mem _ hvP hvS := hP.eq_first_of_mem hvP hvS

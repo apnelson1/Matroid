@@ -55,7 +55,7 @@ lemma IsCompOf.of_isClosedSubgraph (hHcl : H ≤c G) (hH'co : H'.IsCompOf H) :
     H'.IsCompOf G := by
   obtain ⟨⟨hH'co, hVH'⟩, hH'min⟩ := hH'co
   exact ⟨⟨hH'co.trans hHcl, hVH'⟩, fun H₀ ⟨hH₀cl, hVH₀⟩ hH₀leH' =>
-    hH'min ⟨hH₀cl.of_le_of_le (hH₀leH'.trans hH'co.le) hHcl.le, hVH₀⟩ hH₀leH'⟩
+    hH'min ⟨hH₀cl.anti_right (hH₀leH'.trans hH'co.le) hHcl.le, hVH₀⟩ hH₀leH'⟩
 
 
 def walkable (G : Graph α β) (u : α) : Graph α β :=
@@ -69,7 +69,7 @@ lemma mem_walkable_iff : x ∈ V(G.walkable u) ↔ G.ConnBetween u x := by
   simp [walkable]
 
 lemma walkable_isClosedSubgraph : G.walkable u ≤c G := by
-  refine ⟨induce_le fun x hx => ?_, ?_⟩
+  refine IsClosedSubgraph.mk' (induce_le fun x hx => ?_) ?_
   · obtain ⟨W, hW, rfl, rfl⟩ := hx
     exact hW.last_mem
   · rintro e x ⟨y, hl⟩ ⟨W, hW, rfl, rfl⟩
@@ -214,7 +214,9 @@ def connPartition (G : Graph α β) : Partition (Set α) where
     contrapose! hne
     obtain rfl := IsCompOf.eq_of_not_disjoint hH hH₀co hne
     rfl
-  bot_not_mem := by simp
+  bot_not_mem := by
+    simp only [bot_eq_empty, mem_image, mem_components_iff_isCompOf, not_exists, not_and]
+    grind [IsCompOf.nonempty, nonempty_iff_ne_empty]
 
 lemma mem_connPartition_iff_isCompOf :
     S ∈ G.connPartition ↔ ∃ H : Graph α β, H.IsCompOf G ∧ V(H) = S := by

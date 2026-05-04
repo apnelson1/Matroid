@@ -30,10 +30,10 @@ class EdgeFinite (G : Graph α β) : Prop where
 lemma edgeFinite_of_le [G.EdgeFinite] (hHG : H ≤ G) : H.EdgeFinite where
   edgeSet_finite := ‹G.EdgeFinite›.edgeSet_finite.subset <| edgeSet_mono hHG
 
-instance [G.EdgeFinite] : (G - X).EdgeFinite := edgeFinite_of_le vertexDelete_le
-instance [G.EdgeFinite] : (G - x).EdgeFinite := edgeFinite_of_le vertexDelete_le
-instance [G.EdgeFinite] : (G ↾ F).EdgeFinite := edgeFinite_of_le edgeRestrict_le
-instance [G.EdgeFinite] : (G ＼ F).EdgeFinite := edgeFinite_of_le edgeDelete_le
+instance [G.EdgeFinite] : (G - X).EdgeFinite := edgeFinite_of_le deleteVerts_le
+-- instance [G.EdgeFinite] : (G - x).EdgeFinite := edgeFinite_of_le deleteVerts_le
+instance [G.EdgeFinite] : (G ↾ F).EdgeFinite := edgeFinite_of_le restrict_le
+instance [G.EdgeFinite] : (G ＼ F).EdgeFinite := edgeFinite_of_le deleteEdges_le
 
 lemma edgeFinite_induce [G.EdgeFinite] (hX : X ⊆ V(G)) : (G[X]).EdgeFinite :=
   edgeFinite_of_le (induce_le hX)
@@ -132,10 +132,10 @@ lemma Finite.mono (hG : G.Finite) (hHG : H ≤ G) : H.Finite where
   edgeSet_finite := hG.edgeSet_finite.subset <| edgeSet_mono hHG
 
 lemma finite_of_le [G.Finite] (hHG : H ≤ G) : H.Finite := ‹G.Finite›.mono hHG
-instance [G.Finite] (X : Set α) : (G - X).Finite := ‹G.Finite›.mono vertexDelete_le
-instance [G.Finite] (x : α) : (G - x).Finite := ‹G.Finite›.mono vertexDelete_le
-instance [G.Finite] (F : Set β) : (G ↾ F).Finite := ‹G.Finite›.mono edgeRestrict_le
-instance [G.Finite] (F : Set β) : (G ＼ F).Finite := ‹G.Finite›.mono edgeDelete_le
+instance [G.Finite] (X : Set α) : (G - X).Finite := ‹G.Finite›.mono deleteVerts_le
+-- instance [G.Finite] (x : α) : (G - x).Finite := ‹G.Finite›.mono deleteVerts_le
+instance [G.Finite] (F : Set β) : (G ↾ F).Finite := ‹G.Finite›.mono restrict_le
+instance [G.Finite] (F : Set β) : (G ＼ F).Finite := ‹G.Finite›.mono deleteEdges_le
 
 lemma Finite.induce (hG : G.Finite) (hX : X ⊆ V(G)) : G[X].Finite where
   vertexSet_finite := hG.vertexSet_finite.subset hX
@@ -205,23 +205,23 @@ instance (W : WList α β) : W.toGraph.Finite where
 /-- Used for well-founded induction on finite graphs by number of vertices -/
 lemma encard_delete_vertex_lt [G.Finite] (hx : x ∈ V(G)) :
     V(G - ({x} : Set α)).encard < V(G).encard := by
-  rw [vertexDelete_vertexSet]
+  rw [vertexSet_deleteVerts]
   exact (G.vertexSet_finite.subset diff_subset).encard_lt_encard (by simpa)
 
 lemma encard_delete_vertexSet_lt [G.Finite] (hX : (V(G) ∩ X).Nonempty) :
     V(G - X).encard < V(G).encard := by
-  rw [vertexDelete_vertexSet]
+  rw [vertexSet_deleteVerts]
   exact (G.vertexSet_finite.subset diff_subset).encard_lt_encard (by simpa)
 
 /-- Used for well-founded induction on finite graphs by number of edges -/
 lemma encard_delete_edge_lt [G.Finite] (he : e ∈ E(G)) :
     E(G ＼ {e}).encard < E(G).encard := by
-  rw [edgeSet_edgeDelete]
+  rw [edgeSet_deleteEdges]
   exact (G.edgeSet_finite.subset diff_subset).encard_lt_encard (by simpa)
 
 lemma encard_delete_edgeSet_lt [G.Finite] (hF : (E(G) ∩ F).Nonempty) :
     E(G ＼ F).encard < E(G).encard := by
-  rw [edgeSet_edgeDelete]
+  rw [edgeSet_deleteEdges]
   exact (G.edgeSet_finite.subset diff_subset).encard_lt_encard (by simpa)
 
 lemma of_not_exists_minimal {P : Graph α β → Prop} [G.Finite]
@@ -274,13 +274,13 @@ instance [G.LocallyFinite] (X : Set α) : G[X].LocallyFinite where
   finite _ := (G.finite_incEdges _).subset fun _ ⟨_, he⟩ ↦ ((induce_isLink ..) ▸ he).1.inc_left
 
 instance [G.LocallyFinite] (X : Set α) : (G - X).LocallyFinite :=
-  ‹G.LocallyFinite›.mono vertexDelete_le
+  ‹G.LocallyFinite›.mono deleteVerts_le
 
 instance [G.LocallyFinite] (F : Set β) : (G ↾ F).LocallyFinite :=
-  ‹G.LocallyFinite›.mono edgeRestrict_le
+  ‹G.LocallyFinite›.mono restrict_le
 
 instance [G.LocallyFinite] (F : Set β) : (G ＼ F).LocallyFinite :=
-  ‹G.LocallyFinite›.mono edgeDelete_le
+  ‹G.LocallyFinite›.mono deleteEdges_le
 
 instance [G.EdgeFinite] : G.LocallyFinite where
   finite _ := ‹G.EdgeFinite›.edgeSet_finite.subset fun _ ↦ Inc.edge_mem

@@ -360,7 +360,7 @@ instance : CompletelyDistribLattice G.Subgraph :=
 /-- The minimal subgraph of `G` that contains the edges in `F`. -/
 def ofEdge (G : Graph α β) (F : Set β) : G.Subgraph where
   val := G[V(G, F)] ↾ F
-  property := edgeRestrict_le.trans <| induce_le (by simp)
+  property := restrict_le.trans <| induce_le (by simp)
 
 scoped infixl:65 " ↾↾ " => Subgraph.ofEdge
 
@@ -378,11 +378,11 @@ lemma ofEdge_vertexSet (F : Set β) : V((G ↾↾ F).val) = V(G, F) := by
 
 @[simp]
 lemma ofEdge_edgeSet (F : Set β) : E((G ↾↾ F).val) = E(G) ∩ F := by
-  simp [ofEdge, edgeSet_edgeRestrict]
+  simp [ofEdge, edgeSet_restrict]
 
 @[simp]
 lemma ofEdge_isLink (F : Set β) : (G ↾↾ F).val.IsLink e x y ↔ e ∈ F ∧ G.IsLink e x y := by
-  simp only [ofEdge, edgeRestrict_isLink, induce_isLink, mem_incVertexSet_iff, and_congr_right_iff,
+  simp only [ofEdge, restrict_isLink, induce_isLink, mem_incVertexSet_iff, and_congr_right_iff,
     and_iff_left_iff_imp]
   exact fun heF he ↦ ⟨⟨e, heF, he.inc_left⟩, e, heF, he.inc_right⟩
 
@@ -393,10 +393,10 @@ lemma ofEdge_isLink (F : Set β) : (G ↾↾ F).val.IsLink e x y ↔ e ∈ F ∧
 instance : Compl G.Subgraph where
   compl H := by
     use G[V(G) \ V(H.val) ∪ V(G, E(G) \ E(H.val))] ＼ E(H.val)
-    grw [edgeDelete_le, induce_le]
+    grw [deleteEdges_le, induce_le]
     rw [union_subset_iff]
     refine ⟨?_, incVertexSet_subset G _⟩
-    grw [← vertexDelete_vertexSet, vertexSet_mono (vertexDelete_le)]
+    grw [← vertexSet_deleteVerts, vertexSet_mono (deleteVerts_le)]
 
 lemma compl_vertexSet (H : G.Subgraph) : V(Hᶜ.val) = V(G) \ V(H.val) ∪ V(G, E(G) \ E(H.val)) := rfl
 
@@ -404,7 +404,7 @@ lemma compl_vertexSet (H : G.Subgraph) : V(Hᶜ.val) = V(G) \ V(H.val) ∪ V(G, 
 lemma compl_edgeSet (H : G.Subgraph) : E(Hᶜ.val) = E(G) \ E(H.val) := by
   change E(G[V(G) \ V(H.val) ∪ V(G, E(G) \ E(H.val))] ＼ E(H.val)) = _
   ext e
-  simp only [edgeSet_edgeDelete, edgeSet_induce, mem_union, mem_diff, mem_incVertexSet_iff,
+  simp only [edgeSet_deleteEdges, edgeSet_induce, mem_union, mem_diff, mem_incVertexSet_iff,
     mem_setOf_eq, and_congr_left_iff]
   refine fun heH ↦ ⟨fun ⟨x, y, hxy, h⟩ => hxy.edge_mem, fun h => ?_⟩
   obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet h
@@ -492,11 +492,11 @@ lemma sep_subset_compl (H : G.Subgraph) : H.sep ⊆ V(Hᶜ.val) := by
 lemma inf_compl_eq_bot_iff : H₁ ⊓ H₁ᶜ = ⊥ ↔ H₁.val ≤c G := by
   -- why is this needed? for some reason `coe_bot` won't fire manually as of mathlib update.
   have hbot : ((⊥ : G.Subgraph) : Graph α β) = ⊥ := rfl
-  refine ⟨fun h => ⟨H₁.prop, fun e x hex hxH ↦ ?_⟩, fun h => ?_⟩
+  refine ⟨fun h => IsClosedSubgraph.mk' H₁.prop fun e x hex hxH ↦ ?_, fun h => ?_⟩
   · by_contra! he
     apply_fun Graph.vertexSet ∘ Subtype.val at h
     simp only [comp_apply, coe_inf, inter_vertexSet, ← sep_eq_vertexSet_inter_compl, hbot,
-      bot_vertexSet, eq_empty_iff_forall_notMem] at h
+      vertexSet_bot, eq_empty_iff_forall_notMem] at h
     exact h x ⟨hxH, by use e, ⟨hex.edge_mem, he⟩⟩
   refine Subtype.ext ?_
   simp only [coe_inf, hbot, inter_eq_bot_iff, compl_vertexSet]
@@ -518,7 +518,7 @@ instance : PartialOrder G.ClosedSubgraph := inferInstanceAs (PartialOrder {H // 
 
 /-- The order embedding from closed subgraphs to subgraphs -/
 def toSubgraph : G.ClosedSubgraph ↪o G.Subgraph :=
-  Subtype.orderEmbedding fun _ ↦ IsClosedSubgraph.le
+  Subtype.orderEmbedding fun _ ↦ IsClosedSubgraph.le'
 
 @[simp]
 lemma toSubgraph_val_eq_val : (·.toSubgraph.val : G.ClosedSubgraph → _) = (↑) := rfl
@@ -609,7 +609,7 @@ lemma inf_vertexSet (H₁ H₂ : G.ClosedSubgraph) : V((H₁ ⊓ H₂).val) = V(
 -- @[simp↓]
 -- lemma compl'_isLink (H : G.ClosedSubgraph) :
 --     (G - V(H.val)).IsLink e x y ↔ G.IsLink e x y ∧ e ∉ E(H.val) := by
---   simp only [vertexDelete_isLink_iff, and_congr_right_iff, ← not_or, not_iff_not]
+--   simp only [deleteVerts_isLink_iff, and_congr_right_iff, ← not_or, not_iff_not]
 --   exact fun he ↦ ⟨fun h ↦ h.elim (H.prop.closed ⟨y, he⟩) (H.prop.closed ⟨x, he.symm⟩),
 --     fun h ↦ Or.inl <| he.of_le_of_mem (H.prop.le) h |>.left_mem⟩
 
@@ -621,7 +621,7 @@ lemma inf_vertexSet (H₁ H₂ : G.ClosedSubgraph) : V((H₁ ⊓ H₂).val) = V(
 
 -- lemma compl'_isClosedSubgraph (H : G.ClosedSubgraph) : G - V(H.val) ≤c G where
 --   vertexSet_subset := by simp [diff_subset]
---   isLink_of_isLink e u v h := h.1
+--   isLink_mono e u v h := h.1
 --   closed e u he := by
 --     rintro ⟨huG, _, huH⟩
 --     rw [compl'_edgeSet]
@@ -639,7 +639,7 @@ instance : CompleteBooleanAlgebra G.ClosedSubgraph where
     refine ⟨fun H hHs ↦ ?_, fun H h ↦ ?_⟩
     · simp only [Subgraph.coe_iSup, ClosedSubgraph.coe_toSubgraph]
       exact Graph.le_iUnion (G := fun i : s ↦ (i.1.toSubgraph : Graph α β))
-        (G.pairwise_compatible_of_subgraph (by simp +contextual [IsClosedSubgraph.le])) ⟨H, hHs⟩
+        (G.pairwise_compatible_of_subgraph (by simp +contextual [IsClosedSubgraph.le'])) ⟨H, hHs⟩
     · simpa using fun H' hH' hH's ↦ h hH's
   sInf s := ⟨((⨅ (H : s), ClosedSubgraph.toSubgraph H.1 : G.Subgraph) : Graph α β), by
     obtain hs | hs := isEmpty_or_nonempty s; simp
@@ -658,8 +658,8 @@ instance : CompleteBooleanAlgebra G.ClosedSubgraph where
       intro H' hH' hH's
       simpa using h hH's
   bot := ⟨⊥, by simp⟩
-  top := ⟨G, isClosedSubgraph_self⟩
-  le_top := by simp +contextual [IsClosedSubgraph.le]
+  top := ⟨G, IsClosedSubgraph.rfl⟩
+  le_top := by simp +contextual [IsClosedSubgraph.le']
   bot_le := by simp
   le_sup_inf := by
     refine fun ⟨H₁, h₁⟩ ⟨H₂, h₂⟩ ⟨H₃, h₃⟩ ↦ ClosedSubgraph.coe_le_coe.1 ?_
@@ -678,8 +678,8 @@ instance : CompleteBooleanAlgebra G.ClosedSubgraph where
     refine fun H hc ↦ ⟨by simp, fun e x y he ↦ ?_⟩
     rw [(G.compatible_of_le_le hc.le (by simp)).union_isLink_iff]
     by_cases hx : x ∈ V(H)
-    · exact .inl <| he.of_isClosedSubgraph_of_mem hc hx
-    exact .inr <| he.of_isClosedSubgraph_of_mem hc.compl (by simp [hx, he.left_mem])
+    · exact .inl <| hc.isLink_congr hx |>.mpr he
+    exact .inr <| hc.compl.isLink_congr (by simp [hx, he.left_mem]) |>.mpr he
   sdiff_eq _ _ := rfl
   himp_eq _ _ := rfl
 
@@ -789,7 +789,7 @@ lemma compatible (H₁ H₂ : G.ClosedSubgraph) : H₁.val.Compatible H₂.val :
 @[simp]
 lemma coe_eq_induce (H : G.ClosedSubgraph) :
     G[V(H.val)] = H.val := Graph.ext rfl fun e x y =>
-  ⟨fun ⟨hl, hx, hy⟩ => by rwa [H.prop.isLink_iff_of_mem hx],
+  ⟨fun ⟨hl, hx, hy⟩ => by rwa [H.prop.isLink_congr hx],
   fun h => ⟨h.of_le H.prop.le, h.left_mem, h.right_mem⟩⟩
 
 lemma ext_vertexSet (h : V(H₁.val) = V(H₂.val)) : H₁ = H₂ := by
@@ -843,14 +843,14 @@ lemma lt_iff_vertexSet_ssubset : H₁ < H₂ ↔ V(H₁.val) ⊂ V(H₂.val) := 
 @[simp]
 lemma compl_vertexSet (H : G.ClosedSubgraph) :
     V((Hᶜ : G.ClosedSubgraph).val) = V(G) \ V(H.val) :=
-  vertexDelete_vertexSet G V(H.val)
+  vertexSet_deleteVerts G V(H.val)
 
 @[simp]
 lemma compl_edgeSet (H : G.ClosedSubgraph) :
     E((Hᶜ : G.ClosedSubgraph).val) = E(G) \ E(H.val) := by
   change E(G - V(H.val)) = E(G) \ E(H.val)
   ext e
-  simp only [vertexDelete_edgeSet, mem_setOf_eq, mem_diff, iff_def, forall_exists_index, and_imp]
+  simp only [edgeSet_deleteVerts, mem_setOf_eq, mem_diff, iff_def, forall_exists_index, and_imp]
   refine ⟨fun u v huv hunin hvnin => ⟨huv.edge_mem, ?_⟩, fun he heH => ?_⟩
   · exact fun he => hunin <| huv.of_le_of_mem H.prop.le he |>.left_mem
   · obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet he
@@ -863,7 +863,7 @@ lemma compl_edgeSet (H : G.ClosedSubgraph) :
 lemma compl_isLink (H : G.ClosedSubgraph) :
     Hᶜ.val.IsLink e x y ↔ G.IsLink e x y ∧ e ∉ E(H.val) := by
   change (G - V(H.val)).IsLink e x y ↔ _
-  simp only [vertexDelete_isLink_iff, and_congr_right_iff]
+  simp only [deleteVerts_isLink_iff, and_congr_right_iff]
   rintro he
   have hx := H.prop.mem_tfae_of_isLink he |>.not.out 0 2
   have hy := H.prop.mem_tfae_of_isLink he |>.not.out 1 2

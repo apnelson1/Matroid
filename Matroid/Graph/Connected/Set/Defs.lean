@@ -123,17 +123,17 @@ lemma isSetCut_empty (h : ¬ G.SetConnected S T) : G.IsSetCut S T ∅ := by
 lemma left_isSetCut (G : Graph α β) (S T : Set α) : G.IsSetCut S T (V(G) ∩ S) where
   subset_vertexSet := inter_subset_left
   ST_disconnects := by
-    simp only [SetConnected, vertexDelete_vertexSet_inter, not_exists, not_and]
+    simp only [SetConnected, deleteVerts_vertexSet_inter, not_exists, not_and]
     rintro s hs t ht h
-    have := by simpa only [vertexDelete_vertexSet, mem_diff] using h.left_mem
+    have := by simpa only [vertexSet_deleteVerts, mem_diff] using h.left_mem
     exact this.2 hs
 
 lemma right_isSetCut (G : Graph α β) (S T : Set α) : G.IsSetCut S T (V(G) ∩ T) where
   subset_vertexSet := inter_subset_left
   ST_disconnects := by
-    simp only [SetConnected, vertexDelete_vertexSet_inter, not_exists, not_and]
+    simp only [SetConnected, deleteVerts_vertexSet_inter, not_exists, not_and]
     rintro s hs t ht h
-    have := by simpa only [vertexDelete_vertexSet, mem_diff] using h.right_mem
+    have := by simpa only [vertexSet_deleteVerts, mem_diff] using h.right_mem
     exact this.2 ht
 
 @[symm]
@@ -147,8 +147,8 @@ lemma isSetCut_comm : G.IsSetCut S T C ↔ G.IsSetCut T S C :=
 lemma IsSetCut.of_le (h : G.IsSetCut S T C) (hle : H ≤ G) : H.IsSetCut S T (V(H) ∩ C) where
   subset_vertexSet := inter_subset_left
   ST_disconnects hH := by
-    rw [vertexDelete_vertexSet_inter] at hH
-    exact h.ST_disconnects <| hH.of_le (vertexDelete_mono_left hle C)
+    rw [deleteVerts_vertexSet_inter] at hH
+    exact h.ST_disconnects <| hH.of_le (deleteVerts_mono_left hle C)
 
 lemma IsSetCut.subset_left (h : G.IsSetCut S T C) (hS : S' ⊆ S) : G.IsSetCut S' T C where
   subset_vertexSet := h.subset_vertexSet.trans (by simp)
@@ -167,8 +167,8 @@ lemma IsSetCut.left_union (h₁ : G.IsSetCut S T C) (h₂ : G.IsSetCut S' T C') 
   ST_disconnects := by
     rw [setConnected_left_union_iff]
     rintro (hST | hS'T)
-    · exact h₁.ST_disconnects <| hST.of_le <| G.vertexDelete_anti_right subset_union_left
-    · exact h₂.ST_disconnects <| hS'T.of_le <| G.vertexDelete_anti_right subset_union_right
+    · exact h₁.ST_disconnects <| hST.of_le <| G.deleteVerts_anti_right subset_union_left
+    · exact h₂.ST_disconnects <| hS'T.of_le <| G.deleteVerts_anti_right subset_union_right
 
 lemma IsSetCut.right_union (h₁ : G.IsSetCut S T C) (h₂ : G.IsSetCut S T' C') :
     G.IsSetCut S (T ∪ T') (C ∪ C') :=
@@ -186,39 +186,39 @@ lemma isSetCut_vertexSet_inter_right_iff : G.IsSetCut S (V(G) ∩ T) C ↔ G.IsS
   · exact h.subset_right inter_subset_right
 alias ⟨_, IsSetCut.vertexSet_inter_right⟩ := isSetCut_vertexSet_inter_right_iff
 
-lemma IsSetCut.of_vertexDelete (h : (G - X).IsSetCut S T C) : G.IsSetCut S T ((X ∩ V(G)) ∪ C) where
+lemma IsSetCut.of_deleteVerts (h : (G - X).IsSetCut S T C) : G.IsSetCut S T ((X ∩ V(G)) ∪ C) where
   subset_vertexSet := by
     simp only [union_subset_iff, inter_subset_right, true_and]
     exact h.subset_vertexSet.trans (by simp)
   ST_disconnects h1 := by
     refine h.ST_disconnects ?_
     convert h1 using 1
-    rw [vertexDelete_vertexDelete, ← vertexDelete_vertexSet_inter, inter_comm,
+    rw [deleteVerts_deleteVerts, ← deleteVerts_vertexSet_inter, inter_comm,
       union_inter_distrib_right]
     congr
     exact inter_eq_left.mpr <| h.subset_vertexSet.trans <| by simp
 
 @[simps (attr := grind =)]
-lemma IsSetCut.of_vertexDelete' (hC : (G - X).IsSetCut S T C) :
+lemma IsSetCut.of_deleteVerts' (hC : (G - X).IsSetCut S T C) :
     G.IsSetCut (S ∪ X) (T ∪ X) ((X ∩ V(G)) ∪ C) where
   subset_vertexSet := by
     simp only [union_subset_iff, inter_subset_right, true_and]
-    exact hC.subset_vertexSet.trans <| (G.vertexDelete_vertexSet X) ▸ diff_subset
+    exact hC.subset_vertexSet.trans <| (G.vertexSet_deleteVerts X) ▸ diff_subset
   ST_disconnects := by
     rintro ⟨s, hs, t, ht, h⟩
     have hl := h.left_mem
     have hr := h.right_mem
-    simp only [vertexDelete_vertexSet, mem_diff, mem_union, mem_inter_iff, not_or, not_and] at hl hr
+    simp only [vertexSet_deleteVerts, mem_diff, mem_union, mem_inter_iff, not_or, not_and] at hl hr
     obtain hs | hs := hs.symm
     · tauto
     obtain ht | ht := ht.symm
     · tauto
-    exact hC.of_vertexDelete.ST_disconnects ⟨s, hs, t, ht, h⟩
+    exact hC.of_deleteVerts.ST_disconnects ⟨s, hs, t, ht, h⟩
 
 lemma IsWalkFrom.not_disjoint_isSetCut (hW : G.IsWalkFrom S T W) (hC : G.IsSetCut S T C) :
     ¬ Disjoint V(W) C := by
   refine fun hdisj ↦ hC.ST_disconnects ⟨W.first, hW.first_mem, W.last, hW.last_mem, ?_⟩
-  use W, hW.isWalk.vertexDelete hdisj
+  use W, hW.isWalk.deleteVerts hdisj
 
 lemma IsWalkFrom.exists_mem_isSetCut (hW : G.IsWalkFrom S T W) (hC : G.IsSetCut S T C) :
     ∃ v ∈ W, v ∈ C := by
@@ -245,7 +245,7 @@ lemma IsSetCut.left_trans (h₁ : G.IsSetCut S T C) (h₂ : G.IsSetCut C T U) : 
   subset_vertexSet := h₂.subset_vertexSet
   ST_disconnects h := by
     obtain ⟨w, hw⟩ := h.exists_isWalkFrom
-    have hwG := hw.of_le vertexDelete_le
+    have hwG := hw.of_le deleteVerts_le
     obtain ⟨v, hvw, hvC⟩ := hwG.exists_mem_isSetCut h₁
     classical
     have hw' : G.IsWalkFrom C T (w.suffixFromVertex v) := by
@@ -272,7 +272,7 @@ lemma IsSetCut.subset_of_self (hC : G.IsSetCut S S U) : V(G) ∩ S ⊆ U := by
 lemma isSetCut_self_iff (hU : U ⊆ V(G)) : G.IsSetCut S S U ↔ V(G) ∩ S ⊆ U := by
   refine ⟨fun h => h.subset_of_self, fun h => ⟨hU, ?_⟩⟩
   rintro ⟨s, hsS, t, htS, hcon⟩
-  obtain ⟨hs, hsU⟩ := by simpa only [vertexDelete_vertexSet, mem_diff] using hcon.left_mem
+  obtain ⟨hs, hsU⟩ := by simpa only [vertexSet_deleteVerts, mem_diff] using hcon.left_mem
   exact hsU <| h ⟨hs, hsS⟩
 
 lemma IsSepBetween.isSetCut (hC : G.IsSepBetween s t C) :
@@ -324,16 +324,16 @@ lemma IsSetCut.suffixFrom_disjoint [DecidablePred (· ∈ C)] (hP : G.IsWalk P) 
   rw [reverse_vertexSet]
   exact hC.symm.prefixUntil_disjoint hP.reverse (by simpa using hPl) (by simpa using hPf)
 
-lemma IsSetCut.prefixUntil_isWalk_vertexDelete [DecidablePred (· ∈ C)] (hP : G.IsWalk P)
+lemma IsSetCut.prefixUntil_isWalk_deleteVerts [DecidablePred (· ∈ C)] (hP : G.IsWalk P)
     (hPf : P.first ∈ S) (hPl : P.last ∈ T) (hC : G.IsSetCut S T C) :
     (G - (T \ C)).IsWalk (P.prefixUntil (· ∈ C)) := by
-  rw [isWalk_vertexDelete_iff]
+  rw [isWalk_deleteVerts_iff]
   use hP.prefix (P.prefixUntil_isPrefix (· ∈ C)), hC.prefixUntil_disjoint hP hPf hPl
 
-lemma IsSetCut.suffixFrom_isWalk_vertexDelete [DecidablePred (· ∈ C)] (hP : G.IsWalk P)
+lemma IsSetCut.suffixFrom_isWalk_deleteVerts [DecidablePred (· ∈ C)] (hP : G.IsWalk P)
     (hPf : P.first ∈ S) (hPl : P.last ∈ T) (hC : G.IsSetCut S T C) :
     (G - (S \ C)).IsWalk (P.suffixFromLast (· ∈ C)) := by
-  rw [isWalk_vertexDelete_iff]
+  rw [isWalk_deleteVerts_iff]
   use hP.suffix (suffixFromLast_isSuffix P (· ∈ C)), hC.suffixFrom_disjoint hP hPf hPl
 
 structure IsEdgeSetCut (G : Graph α β) (S T : Set α) (C : Set β) where
@@ -348,7 +348,7 @@ lemma IsWalkFrom.not_disjoint_isEdgeSetCut (hW : G.IsWalkFrom S T W) (hC : G.IsE
     ¬ Disjoint E(W) F := by
   intro hdisj
   apply hC.ST_disconnects ⟨W.first, hW.first_mem, W.last, hW.last_mem, ?_⟩
-  use W, hW.isWalk.edgeDelete hdisj
+  use W, hW.isWalk.deleteEdges hdisj
 
 lemma IsWalkFrom.exists_mem_isEdgeSetCut (hW : G.IsWalkFrom S T W) (hC : G.IsEdgeSetCut S T F) :
     ∃ e ∈ E(W), e ∈ F := by
@@ -388,7 +388,7 @@ noncomputable def IsEdgeSetCut.isSetCut (hF : G.IsEdgeSetCut S T F) :
   subset_vertexSet := by
     rintro x ⟨e, he, rfl⟩
     exact inc_vert_mem e
-  ST_disconnects h := hF.ST_disconnects <| h.of_le <| G.vertexDelete_le_edgeDelete inc_vert_foo
+  ST_disconnects h := hF.ST_disconnects <| h.of_le <| G.deleteVerts_le_deleteEdges inc_vert_foo
 
 /-! ### Ensemble of paths between two sets -/
 
@@ -593,16 +593,16 @@ lemma SetConnGE.exists_isPathFrom (h : G.SetConnGE S T n) (hn : n ≠ 0) :
   obtain ⟨P, hP, rfl, rfl⟩ := hst.exists_isPath
   exact ⟨P.extractPathFrom S T, hP.extractPathFrom_isPathFrom hs ht⟩
 
-lemma SetConnGE.vertexDelete (h : G.SetConnGE S T n) (X : Set α) :
+lemma SetConnGE.deleteVerts (h : G.SetConnGE S T n) (X : Set α) :
     (G - X).SetConnGE S T (n - (X ∩ V(G)).encard).toNat := by
   intro C hC
-  have := by simpa only using h (hC.of_vertexDelete)
+  have := by simpa only using h (hC.of_deleteVerts)
   exact (ENat.coe_toNat_le_self _).trans <| tsub_le_iff_left.mpr <| this.trans <| encard_union_le ..
 
-lemma SetConnGE.vertexDelete' (h : G.SetConnGE S T n) (X : Set α) :
+lemma SetConnGE.deleteVerts' (h : G.SetConnGE S T n) (X : Set α) :
     (G - X).SetConnGE (S \ X) (T \ X) (n - (X ∩ V(G)).encard).toNat := by
   intro C hC
-  have := by simpa only using h ((hC.of_vertexDelete').subset (by simp) (by simp))
+  have := by simpa only using h ((hC.of_deleteVerts').subset (by simp) (by simp))
   exact (ENat.coe_toNat_le_self _).trans <| tsub_le_iff_left.mpr <| this.trans <| encard_union_le ..
 
 lemma SetConnGE.subset (h : G.SetConnGE S T n) (hS : S ⊆ S') (hT : T ⊆ T') : G.SetConnGE S' T' n :=

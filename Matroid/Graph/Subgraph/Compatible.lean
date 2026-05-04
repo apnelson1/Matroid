@@ -22,36 +22,36 @@ open scoped Sym2
 namespace Graph
 
 /-! ### Compatibility -/
-section CompatibleAt
+-- section CompatibleAt
 
 -- This is not transitive.
 
-lemma compatibleAt_symmetric : Symmetric (CompatibleAt e (α := α)) := fun _ _ ↦ CompatibleAt.symm
+-- lemma compatibleAt_symmetric : Symmetric (CompatibleAt e (α := α)) := fun _ _ ↦ CompatibleAt.symm
 
-lemma CompatibleAt.isLink_iff (h : CompatibleAt e G H) (heG : e ∈ E(G)) (heH : e ∈ E(H)) :
-    G.IsLink e x y ↔ H.IsLink e x y := by
-  rw [h heG heH]
+-- lemma CompatibleAt.isLink_iff (h : CompatibleAt e G H) (heG : e ∈ E(G)) (heH : e ∈ E(H)) :
+--     G.IsLink e x y ↔ H.IsLink e x y := by
+--   rw [h heG heH]
 
-lemma compatibleAt_of_notMem_left (he : e ∉ E(G)) : CompatibleAt e G H := by
-  simp [CompatibleAt, he]
+-- lemma compatibleAt_of_notMem_left (he : e ∉ E(G)) : CompatibleAt e G H := by
+--   simp [CompatibleAt, he]
 
-lemma compatibleAt_of_notMem_right (he : e ∉ E(H)) : CompatibleAt e G H := by
-  simp [CompatibleAt, he]
+-- lemma compatibleAt_of_notMem_right (he : e ∉ E(H)) : CompatibleAt e G H := by
+--   simp [CompatibleAt, he]
 
-lemma CompatibleAt.induce_left (h : CompatibleAt e G H) (X : Set α) : CompatibleAt e G[X] H := by
-  rintro ⟨x, y, ⟨he, hx, hy⟩⟩ heH
-  ext z w
-  rw [← h he.edge_mem heH, induce_isLink, he.isLink_iff]
-  aesop
+-- lemma CompatibleAt.induce_left (h : CompatibleAt e G H) (X : Set α) : CompatibleAt e G[X] H := by
+--   rintro ⟨x, y, ⟨he, hx, hy⟩⟩ heH
+--   ext z w
+--   rw [← h he.edge_mem heH, induce_isLink, he.isLink_iff]
+--   aesop
 
-lemma CompatibleAt.induce_right (h : CompatibleAt e G H) (X : Set α) : CompatibleAt e G H[X] :=
-  (h.symm.induce_left X).symm
+-- lemma CompatibleAt.induce_right (h : CompatibleAt e G H) (X : Set α) : CompatibleAt e G H[X] :=
+--   (h.symm.induce_left X).symm
 
-@[gcongr]
-lemma CompatibleAt.induce (h : CompatibleAt e G H) (X : Set α) : CompatibleAt e G[X] H[X] :=
-  (h.induce_left X).induce_right X
+-- @[gcongr]
+-- lemma CompatibleAt.induce (h : CompatibleAt e G H) (X : Set α) : CompatibleAt e G[X] H[X] :=
+--   (h.induce_left X).induce_right X
 
-end CompatibleAt
+-- end CompatibleAt
 
 section Compatible
 
@@ -81,10 +81,9 @@ lemma Compatible.pair (h : G.Compatible H) : ({G, H} : Set (Graph α β)).Pairwi
   rw [pairwise_pair]
   exact fun _ ↦ ⟨h, h.symm⟩
 
-lemma Compatible.mono_left {G₀ : Graph α β} (h : Compatible G H) (hG₀ : G₀ ≤ G) :
-    Compatible G₀ H :=
+lemma Compatible.mono_left {G₀ : Graph α β} (h : Compatible G H) (hG₀ : G₀ ≤ G) : Compatible G₀ H :=
   compatible_iff_eqOn.2 <| ((isLink_eqOn_of_le hG₀).mono inter_subset_left).trans
-    (h.eqOn.mono (inter_subset_inter_left _ (edgeSet_mono hG₀)))
+    (h.eqOn.mono (inter_subset_inter_left _ hG₀.edgeSet_mono))
 
 lemma Compatible.mono_right {H₀ : Graph α β} (h : Compatible G H) (hH₀ : H₀ ≤ H) :
     Compatible G H₀ :=
@@ -111,16 +110,16 @@ lemma Compatible.induce (h : Compatible G H) : G[X].Compatible H[X] :=
   (h.induce_left X).induce_right X
 
 @[gcongr]
-lemma Compatible.vertexDelete (h : Compatible G H) : (G - X).Compatible (H - X) :=
-  h.mono vertexDelete_le vertexDelete_le
+lemma Compatible.deleteVerts (h : Compatible G H) : (G - X).Compatible (H - X) :=
+  h.mono deleteVerts_le deleteVerts_le
 
 @[gcongr]
-lemma Compatible.edgeDelete (h : Compatible G H) : (G ＼ F).Compatible (H ＼ F) :=
-  h.mono edgeDelete_le edgeDelete_le
+lemma Compatible.deleteEdges (h : Compatible G H) : (G ＼ F).Compatible (H ＼ F) :=
+  h.mono deleteEdges_le deleteEdges_le
 
 @[gcongr]
-lemma Compatible.edgeRestrict (h : Compatible G H) : (G ↾ F).Compatible (H ↾ F) :=
-  h.mono edgeRestrict_le edgeRestrict_le
+lemma Compatible.restrict (h : Compatible G H) : (G ↾ F).Compatible (H ↾ F) :=
+  h.mono restrict_le restrict_le
 
 @[simp, gcongr]
 lemma Compatible.induce_induce : G[X].Compatible G[Y] :=

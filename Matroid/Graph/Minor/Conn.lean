@@ -264,8 +264,8 @@ lemma contract_isBridge_iff (hφ : G.connPartition.IsRepFun φ) (hGH : G ≤ H) 
     (H /[E(G), φ]).IsBridge e ↔ H.IsBridge e := by
   obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet he.1
   have := contract_isLink H E(G) φ e (φ x) (φ y) |>.mpr ⟨by grind, he.2⟩
-  rw [hxy.isBridge_iff_not_connBetween, this.isBridge_iff_not_connBetween, contract_edgeDelete_comm,
-    not_iff_not, contract_connBetween_iff hφ (by simp [hGH, he.2])]
+  rw [hxy.isBridge_iff_not_connBetween, this.isBridge_iff_not_connBetween,
+    contract_deleteEdges_comm, not_iff_not, contract_connBetween_iff hφ (by simp [hGH, he.2])]
 
 lemma IsForest.contract (hφ : G.connPartition.IsRepFun φ) (hGH : G ≤ H) (hH : H.IsForest) :
     (H /[E(G), φ]).IsForest := by
@@ -273,7 +273,7 @@ lemma IsForest.contract (hφ : G.connPartition.IsRepFun φ) (hGH : G ≤ H) (hH 
   rw [contract_isBridge_iff hφ hGH he]
   exact hH he.1
 
--- lemma eq_contract_edgeDelete (hφ : G.connPartition.IsRepFun φ) (hGH : G ≤ H) :
+-- lemma eq_contract_deleteEdges (hφ : G.connPartition.IsRepFun φ) (hGH : G ≤ H) :
 --     ∃ F ≤ G, F.IsForest ∧ H /[φ, E(G)] = (H ＼ (E(G) \ E(F))) /[φ, E(F)] := by
 --   have :=
 --   sorry

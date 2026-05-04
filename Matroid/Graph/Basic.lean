@@ -1,4 +1,5 @@
-import Mathlib.Combinatorics.Graph.Basic
+import Mathlib.Combinatorics.Graph.Lattice
+import Mathlib.Combinatorics.Graph.Delete
 import Mathlib.Data.Set.Card.Arithmetic
 import Matroid.ForMathlib.Partition.Set
 import Matroid.ForMathlib.ENat
@@ -39,6 +40,8 @@ namespace Graph
 This section contains auxiliary lemmas and definitions for the `Graph` structure from Mathlib,
 extending basic graph functionality for use in matroid theory.
 -/
+
+attribute [simp] Graph.vertexSet_eq_empty_iff
 
 @[simp]
 lemma IsLink.other_eq (h : G.IsLink e x y) : Inc.other ⟨y, h⟩ = y := by

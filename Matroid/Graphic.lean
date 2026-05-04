@@ -41,12 +41,12 @@ def cycleMatroid (G : Graph α β) : Matroid β :=
       obtain ⟨P₂, hP₂, hP₂C₂, hx₂, hy₂⟩ := hC₂.exists_isPath_toGraph_eq_delete_edge_of_isLink hxy₂
       by_cases h_eq : P₁ = P₂
       · apply_fun (fun P : WList α β ↦ insert e E(P)) at h_eq
-        simp [← P₁.toGraph_edgeSet, ← P₂.toGraph_edgeSet, hP₁C₁, hP₂C₂, edgeSet_edgeDelete,
+        simp [← P₁.toGraph_edgeSet, ← P₂.toGraph_edgeSet, hP₁C₁, hP₂C₂, edgeSet_deleteEdges,
           WList.toGraph_edgeSet, Set.insert_eq_of_mem he₁, Set.insert_eq_of_mem he₂, hne] at h_eq
       obtain ⟨C, hC, hCE⟩ := twoPaths hP₁ hP₂ h_eq (by rw [hx₁, hx₂]) (by rw [hy₁, hy₂])
       have hss : E(C) ⊆ (E(C₁) ∪ E(C₂)) \ {e} := by
         apply_fun Graph.edgeSet at hP₁C₁ hP₂C₂
-        simp only [WList.toGraph_edgeSet, edgeSet_edgeDelete] at hP₁C₁ hP₂C₂
+        simp only [WList.toGraph_edgeSet, edgeSet_deleteEdges] at hP₁C₁ hP₂C₂
         rwa [union_diff_distrib, ← hP₁C₁, ← hP₂C₂]
       refine ⟨E(C), ⟨C, hC, rfl⟩, notMem_subset hss (by simp), fun x hx ↦ ?_⟩
       simpa using (hss.trans diff_subset) hx )
@@ -85,29 +85,30 @@ lemma cycleMatroid_coindep : G.cycleMatroid.Coindep F ↔
   · grind
   simp only [coindep_iff_exists hFE, isBase_iff_maximal_indep, cycleMatroid_indep, cycleMatroid_E,
     (show F ⊆ E(G) from hFE), true_and]
-  refine ⟨fun ⟨B, hB, hBF⟩ x y ↦ ⟨fun hxy ↦ ?_, fun hxy ↦ hxy.mono edgeDelete_le⟩, fun h ↦ ?_⟩
+  refine ⟨fun ⟨B, hB, hBF⟩ x y ↦ ⟨fun hxy ↦ ?_, fun hxy ↦ hxy.mono deleteEdges_le⟩, fun h ↦ ?_⟩
   · rw [← IsMaximalAcyclicSet.connBetween_iff hB] at hxy
     rw [subset_diff] at hBF
     exact hxy.mono <| by simp [inter_eq_right.mpr hBF.1, hBF.2]
   obtain ⟨B, hB⟩ := (G ＼ F).exists_isMaximalAcyclicSet
   have hBF := by simpa [subset_diff] using hB.prop.subset
-  use B, ⟨hB.prop.mono edgeDelete_le, fun R hR hBR ↦ ?_⟩, hB.prop.1
+  use B, ⟨hB.prop.mono deleteEdges_le, fun R hR hBR ↦ ?_⟩, hB.prop.1
   by_contra! hRB
   obtain ⟨e, heR, heB⟩ := not_subset.mp hRB
   obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet (hR.subset heR)
   have hRexy : ¬((G ↾ R) ＼ {e}).ConnBetween x y := hR.isBridge heR |>.not_connBetween_of_isLink
     ⟨heR, hxy⟩ rfl
-  rw [edgeRestrict_edgeDelete] at hRexy
+  rw [restrict_deleteEdges] at hRexy
   have := (IsMaximalAcyclicSet.connBetween_iff hB).mpr <| (h x y).mp hxy.connBetween
-  simp only [edgeDelete_edgeRestrict, hBF.2.sdiff_eq_left] at this
-  exact hRexy <| this.mono <| edgeRestrict_mono_right _ <| by simpa [subset_diff, heB]
+  simp only [deleteEdges_restrict, hBF.2.sdiff_eq_left] at this
+  exact hRexy <| this.mono <| restrict_mono_right _ <| by simpa [subset_diff, heB]
 
 lemma cycleMatroid_spanning : G.cycleMatroid.Spanning F ↔
     F ⊆ E(G) ∧ (∀ x y, G.ConnBetween x y ↔ (G ↾ F).ConnBetween x y) := by
   wlog hFE : F ⊆ E(G)
   · grind
   rw [spanning_iff_compl_coindep, cycleMatroid_coindep, cycleMatroid_E]
-  simp only [diff_subset, true_and, hFE, edgeDelete_eq_edgeRestrict, diff_diff_cancel_left]
+  simp only [diff_subset, ← restrict_edgeSet_diff_eq_deleteEdges, hFE, diff_diff_cancel_left,
+    true_and]
 
 @[simp, grind =]
 lemma cycleMatroid_cocircuit (G : Graph α β) (C : Set β) :
@@ -120,7 +121,7 @@ lemma cycleMatroid_cocircuit (G : Graph α β) (C : Set β) :
   refine ⟨fun h => ?_, fun h => ?_⟩
   · obtain ⟨x, y, hxy⟩ := h.1 hCE
     rw [iff_def, and_comm, not_and, Classical.not_imp] at hxy
-    obtain ⟨hxy, hCxy⟩ := hxy <| ConnBetween.mono edgeDelete_le
+    obtain ⟨hxy, hCxy⟩ := hxy <| ConnBetween.mono deleteEdges_le
     obtain ⟨B, hBC, hB, hBxy⟩ := exists_isBond_subset_of_not_connBetween hxy hCxy
     have hBiff : B ⊆ E(G) → ∃ x x_1, ¬(G.ConnBetween x x_1 ↔ (G ＼ B).ConnBetween x x_1) :=
       fun _ ↦ ⟨x, y, by simp [hxy, hBxy]⟩
@@ -129,7 +130,7 @@ lemma cycleMatroid_cocircuit (G : Graph α β) (C : Set β) :
   refine ⟨fun _ ↦ ⟨x, y, by simp [hxy, hnxy.1]⟩, fun B hB hBC ↦ ?_⟩
   obtain ⟨u, v, huv⟩ := hB (hBC.trans h.subset)
   rw [iff_comm, iff_def, not_and, Classical.not_imp] at huv
-  obtain ⟨huv, hnuv⟩ := huv (ConnBetween.mono edgeDelete_le)
+  obtain ⟨huv, hnuv⟩ := huv (ConnBetween.mono deleteEdges_le)
   obtain ⟨F, hF, hFB, hFne, hFuv⟩ := isEdgeCut_subset_of_not_connBetween huv hnuv
   exact h.2 ⟨hF, hFne⟩ (hFB.trans hBC) |>.trans hFB
 
@@ -151,18 +152,18 @@ lemma IsMaximalAcyclicSet.isTree (hG : G.Connected) (hF : G.IsMaximalAcyclicSet 
     simpa [hG.1, ← hF] using hG.2
 
 @[simp]
-lemma cycleMatroid_edgeRestrict (G : Graph α β) (F : Set β) :
+lemma cycleMatroid_restrict (G : Graph α β) (F : Set β) :
     (G ↾ F).cycleMatroid = G.cycleMatroid ↾ (E(G) ∩ F) := by
   refine ext_isCircuit rfl fun I hI ↦ ?_
   obtain ⟨hI, hIF⟩ := by simpa using hI
   simp [restrict_isCircuit_iff, hI, hIF]
 
-lemma cycleMatroid_restrict (hF : F ⊆ E(G)) :
+lemma restrict_cycleMatroid (hF : F ⊆ E(G)) :
     G.cycleMatroid ↾ F = (G ↾ F).cycleMatroid := by
-  rw [cycleMatroid_edgeRestrict, inter_eq_right.mpr hF]
+  rw [cycleMatroid_restrict, inter_eq_right.mpr hF]
 
 @[simp]
-lemma cycleMatroid_edgeDelete (G : Graph α β) (F : Set β) :
+lemma cycleMatroid_deleteEdges (G : Graph α β) (F : Set β) :
     (G ＼ F).cycleMatroid = G.cycleMatroid ＼ F :=
   ext_isCircuit rfl fun I hI ↦ by simp
 
@@ -175,19 +176,19 @@ lemma cycleMatroid_contract {φ} (hφ : H.connPartition.IsRepFun φ) (hHG : H �
   simp only [← coindep_def, cycleMatroid_coindep, edgeSet_contract, subset_diff, hI.1, hI.2,
     and_self, true_and, dual_contract, delete_indep_iff, and_true]
   refine ⟨fun h x y ↦ ?_, fun h x y ↦ ?_⟩
-  · rw [← contract_connBetween_iff hφ hHG, h, contract_edgeDelete_comm,
+  · rw [← contract_connBetween_iff hφ hHG, h, contract_deleteEdges_comm,
       contract_connBetween_iff hφ hHGI]
   wlog h : x ∈ φ '' V(G) ∧ y ∈ φ '' V(G)
   · grind
   obtain ⟨⟨x, hx, rfl⟩, ⟨y, hy, rfl⟩⟩ := h
-  rw [contract_connBetween_iff hφ hHG, h, contract_edgeDelete_comm,
+  rw [contract_connBetween_iff hφ hHG, h, contract_deleteEdges_comm,
     contract_connBetween_iff hφ hHGI]
 
 @[simp]
-lemma cycleMatroid_vertexDelete_isolatedSet (G : Graph α β) :
+lemma cycleMatroid_deleteVerts_isolatedSet (G : Graph α β) :
     (G - Isol(G)).cycleMatroid = G.cycleMatroid := by
   refine ext_isCircuit ?_ fun I hI ↦ ?_
-  · rw [cycleMatroid_E, cycleMatroid_E, vertexDelete_edgeSet_diff, setincEdges_isolatedSet,
+  · rw [cycleMatroid_E, cycleMatroid_E, deleteVerts_edgeSet_diff, setincEdges_isolatedSet,
       diff_empty]
   rw [cycleMatroid_isCircuit, cycleMatroid_isCircuit]
   refine ⟨fun h ↦ h.of_isLink (fun e x y hxy ↦ ?_), fun h ↦ h.of_isLink (fun e x y hxy ↦ ?_)⟩
@@ -201,14 +202,14 @@ lemma cycleMatroid_isRestriction_of_isLink (hl : ∀ ⦃e x y⦄, G.IsLink e x y
     obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet he
     exact (hl hxy).edge_mem
   use E(G), hsu, ext_isCircuit rfl fun I hI ↦ ?_
-  rw [← inter_eq_right.mpr hsu, ← cycleMatroid_edgeRestrict]
+  rw [← inter_eq_right.mpr hsu, ← cycleMatroid_restrict]
   simp only [cycleMatroid_isCircuit]
-  refine ⟨fun h ↦ h.of_isLink (fun e x y hxy ↦ (hl hxy).of_le_of_mem edgeRestrict_le ?_),
+  refine ⟨fun h ↦ h.of_isLink (fun e x y hxy ↦ (hl hxy).of_le_of_mem restrict_le ?_),
     fun h ↦ h.of_isLink (fun e x y hxy ↦ ?_)⟩
   · simp [hxy.edge_mem, (hl hxy).edge_mem]
   obtain ⟨-, he⟩ := by simpa using hxy.edge_mem
   obtain ⟨u, v, huv⟩ := G.exists_isLink_of_mem_edgeSet he
-  obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := hl huv |>.eq_and_eq_or_eq_and_eq (hxy.of_le edgeRestrict_le)
+  obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := hl huv |>.eq_and_eq_or_eq_and_eq (hxy.of_le restrict_le)
   · exact huv
   exact huv.symm
 
@@ -220,20 +221,20 @@ lemma cycleMatroid_isBasis :
   wlog hFE : F ⊆ E(G)
   · grind
   simp only [hFE, true_and]
-  rw [← isBase_restrict_iff, ← cycleMatroid_isBase, cycleMatroid_edgeRestrict,
+  rw [← isBase_restrict_iff, ← cycleMatroid_isBase, cycleMatroid_restrict,
     inter_eq_right.mpr hFE]
 
 lemma cycleMatroid_eRk_add_one (hG : (G ↾ R).Connected) :
     G.cycleMatroid.eRk R + 1 = V(G).encard := by
   wlog hRE : R ⊆ E(G)
-  · rw [← edgeSet_edgeRestrict_inter] at hG
+  · rw [← restrict_edgeSet_inter] at hG
     specialize this hG inter_subset_left
     rwa [← cycleMatroid_E, eRk_ground_inter] at this
   obtain ⟨B, hB⟩ := (G ↾ R).exists_isMaximalAcyclicSet
   rw [cycleMatroid_isBasis.mpr ⟨hRE, hB⟩ |>.eRk_eq_encard, eq_comm]
   obtain ⟨hBE, hBR⟩ := by simpa using hB.subset
   have := hB.isTree hG
-  rw [edgeRestrict_edgeRestrict, inter_eq_right.mpr hBR] at this
+  rw [restrict_restrict, inter_eq_right.mpr hBR] at this
   simpa [inter_eq_right.mpr hBE] using this.encard_vertexSet
 
 lemma cycleMatroid_eRank_add_one (hG : G.Connected) :
@@ -299,7 +300,7 @@ lemma cycleMatroid_disjointSum (h : (V(G) ∩ V(H)).Subsingleton) (hdj : Disjoin
     (G ∪ H).cycleMatroid = G.cycleMatroid.disjointSum H.cycleMatroid hdj := by
   have hc := Compatible.of_disjoint_edgeSet hdj
   have := (skew_iff_restrict_union_eq (by simp) (by simp) hdj).mp <| hc.cycleMatroid_union_skew h
-  rw [restrict_eq_self_iff.mpr (by simp)] at this
+  rw [Matroid.restrict_eq_self_iff.mpr (by simp)] at this
   convert this
   · exact (cycleMatroid_isRestriction_of_le (G.left_le_union H)).eq_restrict.symm
   · exact (cycleMatroid_isRestriction_of_le hc.right_le_union).eq_restrict.symm
@@ -341,8 +342,8 @@ lemma cycleMatroid_isFlat (hFE : F ⊆ E(G)) (hF : ∀ H : Graph α β, H.IsComp
   obtain ⟨x, y, hxy_W⟩ := W.exists_isLink_of_mem_edge (by simpa using heC)
   obtain ⟨P, hP, hP_eq, rfl, rfl⟩ := hW.exists_isPath_toGraph_eq_delete_edge_of_isLink hxy_W
   have hP_walk : (G ↾ F).IsWalk P := by
-    simp only [isWalk_edgeRestrict_iff, hP.isWalk, true_and]
-    rwa [← toGraph_edgeSet, hP_eq, edgeSet_edgeDelete, toGraph_edgeSet, diff_subset_iff]
+    simp only [isWalk_restrict_iff, hP.isWalk, true_and]
+    rwa [← toGraph_edgeSet, hP_eq, edgeSet_deleteEdges, toGraph_edgeSet, diff_subset_iff]
   set H := (G ↾ F).walkable P.first
   have hH_comp : H.IsCompOf (G ↾ F) := walkable_isCompOf hP_walk.first_mem
   have hxH : P.first ∈ V(H) := mem_walkable_self_iff.mpr hP_walk.first_mem
@@ -371,16 +372,16 @@ lemma orientation.isAcyclicSet_linearIndepOn {𝔽 : Type*} [Field 𝔽] [Decida
     have hne : E(G ↾ (t : Set β)).Nonempty := ⟨i, hI.subset (htI hit), hit⟩
     haveI : (G ↾ (t : Set β)).EdgeFinite := by
       constructor
-      rw [edgeSet_edgeRestrict]
+      rw [edgeSet_restrict]
       exact (finite_toSet t).subset inter_subset_right
     obtain ⟨e₀, x₀, hPendant⟩ := hF.exists_isPendant hne
     have het := hPendant.isNonloopAt.edge_mem
-    simp only [edgeSet_edgeRestrict, mem_inter_iff, SetLike.mem_coe] at het
+    simp only [edgeSet_restrict, mem_inter_iff, SetLike.mem_coe] at het
     rw [← insert_sdiff_self_of_mem het.2, sum_insert (by simp)] at hgI
     have hgI' := congr_fun hgI x₀
     simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, sum_apply, Pi.zero_apply] at hgI'
     rw [← (signedIncMatrix D 𝔽).col_apply x₀] at hgI'
-    let D' : (G ↾ (t : Set β)).orientation := D.anti edgeRestrict_le
+    let D' : (G ↾ (t : Set β)).orientation := D.anti restrict_le
     have := D'.signedIncMatrix_pendent_col_support (𝔽 := 𝔽) hPendant
     simp only [support_eq_iff, mem_singleton_iff, Matrix.col_apply, forall_eq, ← ne_eq] at this
     rw [signedIncMatrix_anti_submatrix _ hPendant.edge_mem] at this

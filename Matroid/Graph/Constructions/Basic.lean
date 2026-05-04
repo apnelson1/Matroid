@@ -11,17 +11,12 @@ open scoped Sym2
 
 namespace Graph
 
-@[simp]
-lemma noEdge_le_iff : Graph.noEdge V β ≤ G ↔ V ⊆ V(G) := by
-  simp [le_iff]
-
-@[simp]
 lemma noEdge_not_inc : ¬ (Graph.noEdge V β).Inc e x := by
-  simp [Inc]
+  exact not_inc_of_notMem_edgeSet fun a ↦ a
 
 @[simp]
 lemma noEdge_not_isLoopAt : ¬ (Graph.noEdge V β).IsLoopAt e x := by
-  simp [← isLink_self_iff]
+  exact Not.imp (fun a ↦ a) fun a ↦ a
 
 @[simp]
 lemma noEdge_not_isNonloopAt : ¬ (Graph.noEdge V β).IsNonloopAt e x := by
@@ -29,7 +24,7 @@ lemma noEdge_not_isNonloopAt : ¬ (Graph.noEdge V β).IsNonloopAt e x := by
 
 @[simp]
 lemma noEdge_not_adj : ¬ (Graph.noEdge V β).Adj x y := by
-  simp [Adj]
+  exact (linkEdges_empty (noEdge V β) x y).mp rfl
 
 lemma edgeSet_eq_empty_iff : E(G) = ∅ ↔ G = Graph.noEdge V(G) β := by
   refine ⟨fun h ↦ Graph.ext rfl ?_, fun h ↦ by rw [h, edgeSet_noEdge]⟩
@@ -39,68 +34,12 @@ lemma edgeSet_eq_empty_iff : E(G) = ∅ ↔ G = Graph.noEdge V(G) β := by
   simp at this
 
 @[simp]
-lemma le_noEdge_iff : G ≤ Graph.noEdge X β ↔ V(G) ⊆ X ∧ E(G) = ∅ :=
-  ⟨fun h ↦ ⟨vertexSet_mono h, subset_empty_iff.1 (edgeSet_mono h)⟩,
-    fun h ↦ ⟨h.1, fun e x y he ↦ by simpa [h] using he.edge_mem⟩⟩
-
-@[simp]
 lemma noEdge_incEdges : E(Graph.noEdge X β, x) = ∅ := by
   ext e
   simp
 
-instance : OrderBot (Graph α β) where
-  bot := Graph.noEdge ∅ β
-  bot_le := by simp
-
-@[simp]
-lemma bot_vertexSet : V((⊥ : Graph α β)) = ∅ := rfl
-
-@[simp]
-lemma bot_edgeSet : E((⊥ : Graph α β)) = ∅ := rfl
-
 instance : IsEmpty V((⊥ : Graph α β)) := isEmpty_coe_sort.mpr rfl
 instance : IsEmpty E((⊥ : Graph α β)) := isEmpty_coe_sort.mpr rfl
-
-@[simp]
-lemma bot_isClosedSubgraph (G : Graph α β) : ⊥ ≤c G where
-  le := bot_le
-  closed := by simp
-
-@[simp]
-lemma bot_isInducedSubgraph (G : Graph α β) : ⊥ ≤i G :=
-  G.bot_isClosedSubgraph.isInducedSubgraph
-
-@[simp]
-lemma noEdge_empty : Graph.noEdge (∅ : Set α) β = ⊥ := rfl
-
-@[simp]
-lemma bot_not_isLink : ¬ (⊥ : Graph α β).IsLink e x y :=
-  id
-
-lemma eq_bot_or_vertexSet_nonempty (G : Graph α β) : G = ⊥ ∨ V(G).Nonempty := by
-  refine (em (V(G) = ∅)).elim (fun he ↦ .inl (Graph.ext he fun e x y ↦ ?_)) (Or.inr ∘
-    nonempty_iff_ne_empty.mpr)
-  simp only [bot_not_isLink, iff_false]
-  exact fun h ↦ by simpa [he] using h.left_mem
-
-@[simp]
-lemma vertexSet_eq_empty_iff : V(G) = ∅ ↔ G = ⊥ := by
-  refine ⟨fun h ↦ bot_le.antisymm' ⟨by simp [h], fun e x y he ↦ False.elim ?_⟩, fun h ↦ by simp [h]⟩
-  simpa [h] using he.left_mem
-
-@[push, simp]
-lemma ne_bot_iff : G ≠ ⊥ ↔ V(G).Nonempty := not_iff_not.mp <| by
-  simp [not_nonempty_iff_eq_empty]
-
-@[push, simp]
-lemma vertexSet_not_nonempty_iff : ¬ V(G).Nonempty ↔ G = ⊥ := by
-  simp [not_nonempty_iff_eq_empty]
-
-lemma ne_bot_of_mem_vertexSet (h : x ∈ V(G)) : G ≠ ⊥ :=
-  ne_bot_iff.mpr ⟨x, h⟩
-
-instance : Inhabited (Graph α β) where
-  default := ⊥
 
 /-- A graph with a single edge `e` from `u` to `v` -/
 @[simps (attr := grind =)]
@@ -116,9 +55,8 @@ protected def singleEdge (u v : α) (e : β) : Graph α β where
 lemma singleEdge_comm (u v : α) (e : β) : Graph.singleEdge u v e = Graph.singleEdge v u e := by
   ext <;> simp [or_comm]
 
-lemma singleEdge_isLink_iff :
-    (Graph.singleEdge u v e).IsLink f x y ↔ (f = e) ∧ s(x,y) = s(u,v) := by
-  simp [Graph.singleEdge]
+lemma singleEdge_isLink_iff :(Graph.singleEdge u v e).IsLink f x y ↔ (f = e) ∧ s(x,y) = s(u,v) := by
+  simp
 
 @[simp]
 lemma singleEdge_inc_iff :
@@ -139,10 +77,6 @@ lemma singleEdge_le_iff : Graph.singleEdge u v e ≤ G ↔ G.IsLink e u v := by
   rintro e x y rfl (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)
   · assumption
   exact h.symm
-
-lemma bouquet_mono (v : α) {X Y : Set β} (hss : X ⊆ Y) : bouquet v X ≤s bouquet v Y where
-  vertexSet_eq := rfl
-  isLink_of_isLink := by simp +contextual [subset_def ▸ hss]
 
 @[simp]
 lemma bouquet_incEdges : E(bouquet v F, v) = F := by
@@ -171,9 +105,9 @@ lemma bouquet_le_iff_of_nonempty (v : α) (hF : F.Nonempty) :
 lemma banana_singleton (e : β) : banana a b {e} = Graph.singleEdge a b e := by
   ext <;> rfl
 
-lemma banana_mono {X Y : Set β} (hXY : X ⊆ Y) : banana a b X ≤s banana a b Y where
-  vertexSet_eq := rfl
-  isLink_of_isLink := by simp +contextual [subset_def ▸ hXY]
+@[deprecated IsSpanningSubgraph.banana_mono (since := "2026-05-04")]
+lemma banana_mono {X Y : Set β} (hXY : X ⊆ Y) : banana a b X ≤s banana a b Y :=
+  IsSpanningSubgraph.banana_mono hXY
 
 @[simp]
 lemma banana_incEdges_left : E(banana a b F, a) = F := by

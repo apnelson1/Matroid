@@ -26,7 +26,7 @@ lemma Menger'sTheorem_aux [G.Finite] {S T : Set α} (hS : S ⊆ V(G)) (hT : T �
     have hlast : last '' A.paths ⊆ V(G) := by
       rintro _ ⟨P, hP, rfl⟩
       exact hT <| hA hP |>.last_mem
-    apply hconn.vertexDelete' (last '' A.paths) |>.subset diff_subset subset_rfl |>.anti_right
+    apply hconn.deleteVerts' (last '' A.paths) |>.subset diff_subset subset_rfl |>.anti_right
     rw [inter_eq_left.mpr hlast, A.last_injOn.encard_image]
     rw [← ENat.add_one_le_iff (by simpa)] at hAcard
     refine one_le_iff_ne_zero.mpr ?_
@@ -36,13 +36,13 @@ lemma Menger'sTheorem_aux [G.Finite] {S T : Set α} (hS : S ⊆ V(G)) (hT : T �
   obtain ⟨P, hP⟩ := h1.exists_isPathFrom (by simp); clear h1
   have hPlA : Disjoint V(P) (last '' A.paths) := by
     have := hP.isPath.vertexSet_subset
-    simp only [vertexDelete_vertexSet, subset_diff] at this
+    simp only [vertexSet_deleteVerts, subset_diff] at this
     exact this.2
 
   by_cases hdj : Disjoint V(P) A.vertexSet
-  · let A' := A.path_insert P (hP.of_vertexDelete.subset subset_union_left (by simp) hP.first_mem
+  · let A' := A.path_insert P (hP.of_deleteVerts.subset subset_union_left (by simp) hP.first_mem
       hP.last_mem.1).isPath hdj.symm
-    refine ⟨A', hA.path_insert (hP.of_vertexDelete.subset subset_union_left (by simp) hP.first_mem
+    refine ⟨A', hA.path_insert (hP.of_deleteVerts.subset subset_union_left (by simp) hP.first_mem
         hP.last_mem.1) hdj.symm, P.last, ?_, by simp [A', image_insert_eq]⟩
     by_contra! hdj'
     absurd hdj
@@ -51,7 +51,7 @@ lemma Menger'sTheorem_aux [G.Finite] {S T : Set α} (hS : S ⊆ V(G)) (hT : T �
   rw [not_disjoint_iff] at hdj
 
   have hGP : G.IsPathFrom S T P := by
-    refine hP.of_vertexDelete'.right_of_symmdiff_disjoint ?_
+    refine hP.of_deleteVerts'.right_of_symmdiff_disjoint ?_
     simpa [inter_eq_right.mpr (hA.image_last_eq_inter ▸ inter_subset_left),
       symmDiff_of_le diff_subset]
   let P' := P.suffixFromLast (· ∈ A.vertexSet)
@@ -247,7 +247,7 @@ theorem Menger'sTheorem_vertex [G.Finite] (hs : s ∈ V(G)) (ht : t ∈ V(G)) (h
     (by simpa [subset_diff, not_symm_not hadj] using (G.neighbor_subset t).trans
     <| subset_insert ..)] at h
     obtain ⟨A, hA, hAcard⟩ := h
-    have hAdj := A.of_vertexDelete
+    have hAdj := A.of_deleteVerts
     replace hA := hA.left (S₀ := N(G, s)) <| by
       rw [diff_symmDiff]
       exact (hAdj.mono_right (by simp)).mono_right inter_subset_right
@@ -331,16 +331,16 @@ theorem Menger'sTheorem [G.Finite] (hι : ENat.card ι = n) (hnt : V(G).Nontrivi
       enat_to_nat!
       omega
     obtain ⟨A⟩ := (G ＼ E(G, s, t)).Menger'sTheoremPre hι' |>.mp
-      (h.edgeDelete_linkEdges s t |>.pre) (by simpa : s ∈ _) (by simpa : t ∈ _)
+      (h.deleteEdges_linkEdges s t |>.pre) (by simpa : s ∈ _) (by simpa : t ∈ _)
     have hP : G.IsPath <| cons s e (nil t) := by simpa [hne, ht]
-    use A.of_le edgeDelete_le |>.extend_singleEdge hιn.some hP
+    use A.of_le deleteEdges_le |>.extend_singleEdge hιn.some hP
     intro i hAi j hAj
     obtain rfl | hnei := eq_or_ne i hιn.some <;> obtain rfl | hnej := eq_or_ne j hιn.some
     <;> simp_all only [mem_linkEdges_iff, cast_add, cast_one, ENat.card_coe_set_eq,
       mem_setOf_eq, VertexEnsemble.extend_singleEdge_of_eq, cons_length, nil_length, zero_add]
-    · simp [(A.of_le _).extend_singleEdge_of_ne hP hnej, A.of_linkEdges_edgeDelete] at hAj
-    · simp [(A.of_le _).extend_singleEdge_of_ne hP hnei, A.of_linkEdges_edgeDelete] at hAi
-    simp [(A.of_le _).extend_singleEdge_of_ne hP hnei, A.of_linkEdges_edgeDelete] at hAi
+    · simp [(A.of_le _).extend_singleEdge_of_ne hP hnej, A.of_linkEdges_deleteEdges] at hAj
+    · simp [(A.of_le _).extend_singleEdge_of_ne hP hnei, A.of_linkEdges_deleteEdges] at hAi
+    simp [(A.of_le _).extend_singleEdge_of_ne hP hnei, A.of_linkEdges_deleteEdges] at hAi
 
 theorem Menger'sTheorem_mixed [G.Finite] (hs : s ∈ V(G)) (ht : t ∈ V(G)) (hι : ENat.card ι = n) :
     (∀ X ⊆ V(G), s ∉ X ∧ t ∉ X → ∀ F ⊆ E(G), ¬ ((G - X) ＼ F).ConnBetween s t →

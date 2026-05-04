@@ -120,19 +120,19 @@ lemma IsTour.of_forall_isLink (h : G.IsTour C) (he : ∀ ⦃e x y⦄, G.IsLink e
   isClosed := h.isClosed
 
 @[simp]
-lemma edgeRestrict_isTour_iff (F : Set β) (C : WList α β) :
+lemma restrict_isTour_iff (F : Set β) (C : WList α β) :
     (G ↾ F).IsTour C ↔ G.IsTour C ∧ E(C) ⊆ F := by
-  refine ⟨fun h ↦ ⟨h.of_le edgeRestrict_le, ?_⟩,
+  refine ⟨fun h ↦ ⟨h.of_le restrict_le, ?_⟩,
     fun ⟨h, hss⟩ ↦ h.of_le_of_subset (by simp) (by simp [hss, h.isWalk.edgeSet_subset])⟩
-  have := by simpa only [edgeSet_edgeRestrict, subset_inter_iff] using h.isWalk.edgeSet_subset
+  have := by simpa only [edgeSet_restrict, subset_inter_iff] using h.isWalk.edgeSet_subset
   use this.2
 
 @[simp]
-lemma edgeDelete_isTour_iff (F : Set β) (C : WList α β) :
+lemma deleteEdges_isTour_iff (F : Set β) (C : WList α β) :
     (G ＼ F).IsTour C ↔ G.IsTour C ∧ Disjoint E(C) F := by
-  refine ⟨fun h ↦ ⟨h.of_le edgeDelete_le, ?_⟩, fun ⟨h, hss⟩ ↦
+  refine ⟨fun h ↦ ⟨h.of_le deleteEdges_le, ?_⟩, fun ⟨h, hss⟩ ↦
     h.of_le_of_subset (by simp) (by simp [subset_diff, hss, h.isWalk.edgeSet_subset])⟩
-  have := by simpa only [edgeSet_edgeDelete, subset_diff] using h.isWalk.edgeSet_subset
+  have := by simpa only [edgeSet_deleteEdges, subset_diff] using h.isWalk.edgeSet_subset
   use this.2
 
 @[simp]
@@ -147,12 +147,12 @@ lemma induce_isTour_iff (X : Set α) (C : WList α β) : (G[X]).IsTour C ↔ G.I
   simp [isWalk_induce_iff, h.isWalk, hss]
 
 @[simp]
-lemma vertexDelete_isTour_iff (X : Set α) (C : WList α β) :
+lemma deleteVerts_isTour_iff (X : Set α) (C : WList α β) :
     (G - X).IsTour C ↔ G.IsTour C ∧ Disjoint V(C) X := by
   refine ⟨fun h ↦ ⟨⟨⟨?_, h.edge_nodup⟩, h.nonempty, h.isClosed⟩,
-    h.isWalk.disjoint_of_vertexDelete⟩, fun ⟨h, hdisj⟩ ↦
+    h.isWalk.disjoint_of_deleteVerts⟩, fun ⟨h, hdisj⟩ ↦
     ⟨⟨by simp [h.isWalk, hdisj], h.edge_nodup⟩, h.nonempty, h.isClosed⟩⟩
-  have := by simpa only [isWalk_vertexDelete_iff] using h.isWalk
+  have := by simpa only [isWalk_deleteVerts_iff] using h.isWalk
   exact this.1
 
 /-- Dedup preserves being a trail (walk with distinct edges). -/
@@ -347,19 +347,19 @@ lemma rotate_toGraph {n : ℕ} (hC : C.IsClosed) (hCwf : C.WellFormed) :
   simp [hCwf.toGraph_isLink, (hCwf.rotate hC n).toGraph_isLink, hC]
 
 @[simp]
-lemma edgeRestrict_isCyclicWalk_iff (F : Set β) (C : WList α β) :
+lemma restrict_isCyclicWalk_iff (F : Set β) (C : WList α β) :
     (G ↾ F).IsCyclicWalk C ↔ G.IsCyclicWalk C ∧ E(C) ⊆ F := by
-  refine ⟨fun h ↦ ⟨h.of_le edgeRestrict_le, ?_⟩,
+  refine ⟨fun h ↦ ⟨h.of_le restrict_le, ?_⟩,
     fun ⟨h, hss⟩ ↦ h.isCycle_of_le (by simp) (by simp [hss, h.isWalk.edgeSet_subset])⟩
-  have := by simpa only [edgeSet_edgeRestrict, subset_inter_iff] using h.isWalk.edgeSet_subset
+  have := by simpa only [edgeSet_restrict, subset_inter_iff] using h.isWalk.edgeSet_subset
   use this.2
 
 @[simp]
-lemma edgeDelete_isCyclicWalk_iff (F : Set β) (C : WList α β) :
+lemma deleteEdges_isCyclicWalk_iff (F : Set β) (C : WList α β) :
     (G ＼ F).IsCyclicWalk C ↔ G.IsCyclicWalk C ∧ Disjoint E(C) F := by
-  refine ⟨fun h ↦ ⟨h.of_le edgeDelete_le, ?_⟩,
+  refine ⟨fun h ↦ ⟨h.of_le deleteEdges_le, ?_⟩,
     fun ⟨h, hss⟩ ↦ h.isCycle_of_le (by simp) (by simp [subset_diff, hss, h.isWalk.edgeSet_subset])⟩
-  have := by simpa only [edgeSet_edgeDelete, subset_diff] using h.isWalk.edgeSet_subset
+  have := by simpa only [edgeSet_deleteEdges, subset_diff] using h.isWalk.edgeSet_subset
   use this.2
 
 @[simp]
@@ -369,9 +369,9 @@ lemma induce_isCyclicWalk_iff (X : Set α) (C : WList α β) :
   tauto
 
 @[simp]
-lemma vertexDelete_isCyclicWalk_iff (X : Set α) (C : WList α β) :
+lemma deleteVerts_isCyclicWalk_iff (X : Set α) (C : WList α β) :
     (G - X).IsCyclicWalk C ↔ G.IsCyclicWalk C ∧ Disjoint V(C) X := by
-  rw [isCyclicWalk_iff, isCyclicWalk_iff, vertexDelete_isTour_iff]
+  rw [isCyclicWalk_iff, isCyclicWalk_iff, deleteVerts_isTour_iff]
   tauto
 
 lemma IsCyclicWalk.of_forall_isLink (h : G.IsCyclicWalk C)
@@ -445,13 +445,13 @@ lemma IsCyclicWalk.loop_or_nontrivial (hC : G.IsCyclicWalk C) :
   cases hC.nonempty with
   | cons x e w => cases w with | nil u => simp [show x = u from hC.isClosed] | cons => simp
 
-lemma IsCyclicWalk.toGraph_vertexDelete_first_eq (hC : G.IsCyclicWalk C) (hnt : C.Nontrivial) :
+lemma IsCyclicWalk.toGraph_deleteVerts_first_eq (hC : G.IsCyclicWalk C) (hnt : C.Nontrivial) :
     C.toGraph - ({C.first} : Set α) = C.tail.dropLast.toGraph := by
   obtain ⟨P, u, e, f, hP, huP, heP, hfP, hef, rfl⟩ := hC.exists_isPath hnt
   refine Graph.ext (by simpa) fun g x y ↦ ?_
   have h1 : P.IsLink g x y → x ∈ P := fun h ↦ h.left_mem
   have h2 : P.IsLink g x y → y ∈ P := fun h ↦ h.right_mem
-  simp only [vertexDelete_isLink_iff, hC.isWalk.wellFormed.toGraph_isLink, isLink_cons_iff',
+  simp only [deleteVerts_isLink_iff, hC.isWalk.wellFormed.toGraph_isLink, isLink_cons_iff',
     concat_first, isLink_concat_iff, tail_cons, dropLast_concat,
     hP.isWalk.wellFormed.toGraph_isLink]
   aesop
@@ -470,7 +470,7 @@ lemma IsCyclicWalk.exists_isPath_toGraph_eq_delete_vertex (hC : G.IsCyclicWalk C
   · obtain ⟨n, -, rfl⟩ := exists_rotate_first_eq hx
     obtain ⟨P, hP, hP'⟩ := aux (C := C.rotate n) (hC.rotate n) (hnt.rotate n) (by simp) rfl
     exact ⟨P, hP, by rw [hP', WellFormed.rotate_toGraph hC.isWalk.wellFormed hC.isClosed]⟩
-  exact ⟨_, hC.tail_dropLast_isPath, by rw [hxC, hC.toGraph_vertexDelete_first_eq hnt]⟩
+  exact ⟨_, hC.tail_dropLast_isPath, by rw [hxC, hC.toGraph_deleteVerts_first_eq hnt]⟩
 
 lemma IsCyclicWalk.exists_isPath_toGraph_eq_delete_edge_of_isLink (hC : G.IsCyclicWalk C)
     (he : C.IsLink e x y) :
@@ -487,7 +487,7 @@ lemma IsCyclicWalk.exists_isPath_toGraph_eq_delete_edge_of_isLink (hC : G.IsCycl
       aux (hC.rotate n) (hC.isClosed.dInc_rotate he' n) rfl
   refine ⟨C.tail, hC.tail_isPath, Graph.ext (by simp [hC.isClosed.vertexSet_tail])
     fun f z z' ↦ ?_, ?_⟩
-  · rw [hC.tail_isPath.isWalk.wellFormed.toGraph_isLink, edgeDelete_isLink, Set.mem_singleton_iff,
+  · rw [hC.tail_isPath.isWalk.wellFormed.toGraph_isLink, deleteEdges_isLink, Set.mem_singleton_iff,
       hC.isWalk.wellFormed.toGraph_isLink, hC.nonempty.tail_isLink_iff hC.edge_nodup, ← hxC]
   rw [tail_last, ← hC.isClosed.eq, and_comm, ← hC.toIsTrail.dInc_iff_eq_of_dInc he', hxC]
   cases C with | _ => simp_all

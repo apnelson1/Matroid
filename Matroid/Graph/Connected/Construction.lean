@@ -60,7 +60,7 @@ lemma isSepBetween_noEdge_of_ne (hne : x ≠ y) (hY : Y ⊆ X \ {x, y}) :
   right_not_mem := (disjoint_iff_forall_notMem ..).mp (subset_diff.mp hY).2.symm (by simp)
   not_connBetween := by
     rintro ⟨W, hW, rfl, rfl⟩
-    rw [isWalk_vertexDelete_iff] at hW
+    rw [isWalk_deleteVerts_iff] at hW
     exact hne hW.1.nil_of_noEdge.first_eq_last
 
 @[simp]

@@ -56,21 +56,21 @@ lemma induce_iUnion [Nonempty ι] {G : ι → Graph α β} (hG : Pairwise (Graph
   Graph.ext (by simp [iUnion_const]) (by simp)
 
 @[simp]
-lemma Compatible.vertexDelete_iUnion {G : ι → Graph α β} (hG : Pairwise (Graph.Compatible on G))
+lemma Compatible.deleteVerts_iUnion {G : ι → Graph α β} (hG : Pairwise (Graph.Compatible on G))
     (X : Set α) :
-    (Graph.iUnion G hG) - X = .iUnion (fun i ↦ (G i) - X) (fun _ _ hij ↦ (hG hij).vertexDelete) :=
+    (Graph.iUnion G hG) - X = .iUnion (fun i ↦ (G i) - X) (fun _ _ hij ↦ (hG hij).deleteVerts) :=
   Graph.ext (by simp [iUnion_diff]) (by simp)
 
 @[simp]
-lemma Compatible.edgeDelete_iUnion {G : ι → Graph α β} (hG : Pairwise (Graph.Compatible on G))
+lemma Compatible.deleteEdges_iUnion {G : ι → Graph α β} (hG : Pairwise (Graph.Compatible on G))
     (F : Set β) :
-    (Graph.iUnion G hG) ＼ F = .iUnion (fun i ↦ (G i) ＼ F) (fun _ _ hij ↦ (hG hij).edgeDelete) := by
+    (Graph.iUnion G hG) ＼ F = .iUnion (fun i ↦ (G i) ＼ F) (fun _ _ hij ↦ (hG hij).deleteEdges) := by
   ext <;> simp
 
 @[simp]
-lemma Compatible.edgeRestrict_iUnion {G : ι → Graph α β} (hG : Pairwise (Graph.Compatible on G))
+lemma Compatible.restrict_iUnion {G : ι → Graph α β} (hG : Pairwise (Graph.Compatible on G))
     (F : Set β) : (Graph.iUnion G hG) ↾ F =
-    .iUnion (fun i ↦ (G i) ↾ F) (fun _ _ hij ↦ (hG hij).edgeRestrict) := by
+    .iUnion (fun i ↦ (G i) ↾ F) (fun _ _ hij ↦ (hG hij).restrict) := by
   ext <;> simp
 
 protected lemma iUnion_comp_le {f : ι' → ι} {G : ι → Graph α β} (hG : Pairwise (Compatible on G)) :
@@ -139,22 +139,22 @@ lemma union_isNonloopAt_iff :
   simp only [IsNonloopAt, ne_eq, union_isLink_iff]
   aesop
 
-lemma union_eq_union_edgeDelete (G H : Graph α β) : G ∪ H = G ∪ (H ＼ E(G)) := by
+lemma union_eq_union_deleteEdges (G H : Graph α β) : G ∪ H = G ∪ (H ＼ E(G)) := by
   simp [union_eq_sUnion, union_eq_sUnion]
 
 lemma union_mono_right (h : H₁ ≤ H₂) : G ∪ H₁ ≤ G ∪ H₂ := by
   simp only [union_eq_sUnion, Graph.sUnion_le_iff, mem_insert_iff, mem_singleton_iff,
     forall_eq_or_imp, forall_eq]
-  exact ⟨Graph.le_sUnion _ (by simp), le_trans (edgeDelete_mono_left h E(G)) <|
+  exact ⟨Graph.le_sUnion _ (by simp), le_trans (deleteEdges_mono_left h E(G)) <|
     Graph.le_sUnion _ (by simp : H₂ ＼ E(G) ∈ _)⟩
 
 lemma isLink_or_isLink_of_union (h : (G ∪ H).IsLink e x y) : G.IsLink e x y ∨ H.IsLink e x y :=
   (union_isLink_iff.1 h).elim .inl fun h' ↦ .inr h'.1
 
-lemma edgeRestrict_union (G : Graph α β) (F₁ F₂ : Set β) : (G ↾ (F₁ ∪ F₂)) = G ↾ F₁ ∪ (G ↾ F₂) := by
+lemma restrict_union (G : Graph α β) (F₁ F₂ : Set β) : (G ↾ (F₁ ∪ F₂)) = G ↾ F₁ ∪ (G ↾ F₂) := by
   refine Graph.ext (by simp) fun e x y ↦ ?_
   rw [(G.compatible_self.mono (by simp) (by simp)).union_isLink_iff]
-  simp only [edgeRestrict_isLink, mem_union]
+  simp only [restrict_isLink, mem_union]
   tauto
 
 lemma Compatible.union_inc_iff (h : G.Compatible H) : (G ∪ H).Inc e x ↔ G.Inc e x ∨ H.Inc e x := by
@@ -190,21 +190,21 @@ lemma compatible_iff_exists_le_le (G H : Graph α β) : G.Compatible H ↔ ∃ I
 lemma Compatible.union_mono (hleG : G₁ ≤ G₂) (hleH : H₁ ≤ H₂) (h : G₂.Compatible H₁) :
     G₁ ∪ H₁ ≤ G₂ ∪ H₂ := le_trans (h.union_mono_left hleG) (union_mono_right hleH)
 
-lemma edgeRestrict_union_edgeDelete (G : Graph α β) (F : Set β) : (G ↾ F) ∪ (G ＼ F) = G := by
-  rw [edgeDelete_eq_edgeRestrict, ← edgeRestrict_union, ← edgeRestrict_inter_edgeSet]
-  simp only [union_diff_self, edgeRestrict_inter_edgeSet, edgeRestrict_union, edgeRestrict_self]
+lemma restrict_union_deleteEdges (G : Graph α β) (F : Set β) : (G ↾ F) ∪ (G ＼ F) = G := by
+  rw [← restrict_edgeSet_diff_eq_deleteEdges, ← restrict_union, ← restrict_inter_edgeSet]
+  simp only [union_diff_self, restrict_inter_edgeSet, restrict_union, restrict_self]
   exact union_eq_self_of_le_left (by simp)
 
-lemma edgeDelete_union_edgeRestrict (G : Graph α β) (F : Set β) : (G ＼ F) ∪ (G ↾ F) = G := by
-  convert G.edgeRestrict_union_edgeDelete F using 1
+lemma deleteEdges_union_restrict (G : Graph α β) (F : Set β) : (G ＼ F) ∪ (G ↾ F) = G := by
+  convert G.restrict_union_deleteEdges F using 1
   rw [Compatible.union_comm]
   apply G.compatible_of_le_le (by simp) (by simp)
 
-lemma induce_union_edgeDelete (G : Graph α β) (hX : X ⊆ V(G)) : G[X] ∪ (G ＼ E(G[X])) = G := by
-  rw [← union_eq_union_edgeDelete, union_eq_self_of_le_left (induce_le hX)]
+lemma induce_union_deleteEdges (G : Graph α β) (hX : X ⊆ V(G)) : G[X] ∪ (G ＼ E(G[X])) = G := by
+  rw [← union_eq_union_deleteEdges, union_eq_self_of_le_left (induce_le hX)]
 
-lemma edgeDelete_union_induce (G : Graph α β) (hX : X ⊆ V(G)) : (G ＼ E(G[X])) ∪ G[X] = G := by
-  rw [(Compatible.of_disjoint_edgeSet _).union_comm, induce_union_edgeDelete _ hX]
+lemma deleteEdges_union_induce (G : Graph α β) (hX : X ⊆ V(G)) : (G ＼ E(G[X])) ∪ G[X] = G := by
+  rw [(Compatible.of_disjoint_edgeSet _).union_comm, induce_union_deleteEdges _ hX]
   simp [disjoint_sdiff_left]
 
 lemma Compatible.union_eq_iUnion (h : G.Compatible H) :
@@ -219,10 +219,10 @@ lemma Compatible.induce_union (h : G.Compatible H) (X : Set α) : (G ∪ H)[X] =
   simp only [induce_isLink, h.union_isLink_iff, h.induce.union_isLink_iff]
   tauto
 
-lemma Compatible.vertexDelete_union (h : G.Compatible H) (X : Set α) :
+lemma Compatible.deleteVerts_union (h : G.Compatible H) (X : Set α) :
     (G ∪ H) - X = (G - X) ∪ (H - X) := by
-  simp only [h.union_eq_iUnion, vertexDelete_iUnion, Bool.apply_cond (f := fun G ↦ G - X),
-    ← h.vertexDelete.union_eq_iUnion]
+  simp only [h.union_eq_iUnion, deleteVerts_iUnion, Bool.apply_cond (f := fun G ↦ G - X),
+    ← h.deleteVerts.union_eq_iUnion]
 
 lemma induce_union (G : Graph α β) (X Y : Set α) (hX : ∀ x ∈ X, ∀ y ∈ Y, ¬ G.Adj x y) :
     G [X ∪ Y] = G [X] ∪ G [Y] := by
@@ -321,31 +321,29 @@ protected lemma sUnion_le_of_forall_le (h : ∀ ⦃H⦄, H ∈ Gs → H ≤ G) :
 
 /-- A union of closed subgraphs of `G` is a closed subgraph of `G`. -/
 lemma iUnion_isClosedSubgraph (h : ∀ i, H i ≤c G) :
-    Graph.iUnion H (pairwise_compatible_of_subgraph (fun i ↦ (h i).le)) ≤c G where
-  le := Graph.iUnion_le_of_forall_le fun i ↦ (h i).le
-  closed e x he := by
+    Graph.iUnion H (pairwise_compatible_of_subgraph (fun i ↦ (h i).le)) ≤c G :=
+  IsClosedSubgraph.mk' (Graph.iUnion_le_of_forall_le fun i ↦ (h i).le)
+  fun e x he ↦ by
     simp only [vertexSet_iUnion, mem_iUnion, edgeSet_iUnion, forall_exists_index]
-    exact fun i hxi ↦ ⟨_, (he.of_isClosedSubgraph_of_mem (h i) hxi).edge_mem⟩
-
+    exact fun i hxi ↦ ⟨_, ((h i).inc_congr hxi).mpr he |>.edge_mem⟩
 
 /-- A nonempty union of spanning subgraphs of `G` is a spanning subgraph of `G`. -/
 lemma iUnion_isSpanningSubgraph [Nonempty ι] (h : ∀ i, H i ≤s G) :
-    Graph.iUnion H (pairwise_compatible_of_subgraph (fun i ↦ (h i).le)) ≤s G where
-  vertexSet_eq := by simp [(h _).vertexSet_eq, iUnion_const]
-  isLink_of_isLink := (Graph.iUnion_le_of_forall_le fun i ↦ (h i).le).isLink_of_isLink
+    Graph.iUnion H (pairwise_compatible_of_subgraph (fun i ↦ (h i).le)) ≤s G :=
+  IsSpanningSubgraph.mk' (by simp [(h _).vertexSet_eq, iUnion_const])
+    (Graph.iUnion_le_of_forall_le fun i ↦ (h i).le).isLink_mono
 
 -- A weakening of the previous lemma.
 lemma iUnion_isSpanningSubgraph_of_exists_isSpanningSubgraph_of_forall_le [Nonempty ι]
     (h : ∀ i, H i ≤ G) (hH : ∃ i, H i ≤s G) :
-    Graph.iUnion H (pairwise_compatible_of_subgraph h) ≤s G where
-  vertexSet_eq := by
+    Graph.iUnion H (pairwise_compatible_of_subgraph h) ≤s G := IsSpanningSubgraph.mk' (by
     apply le_antisymm
     · simp only [vertexSet_iUnion, le_eq_subset, iUnion_subset_iff]
-      exact fun i ↦ (h i).vertex_subset
+      exact fun i ↦ (h i).vertexSet_mono
     obtain ⟨i, hi⟩ := hH
     rw [← hi.vertexSet_eq]
-    exact subset_iUnion_of_subset i fun ⦃a⦄ a ↦ a
-  isLink_of_isLink := (Graph.iUnion_le_of_forall_le h).isLink_of_isLink
+    exact subset_iUnion_of_subset i fun ⦃a⦄ a ↦ a)
+  (Graph.iUnion_le_of_forall_le h).isLink_mono
 
 lemma sUnion_isClosedSubgraph (hs : ∀ ⦃H⦄, H ∈ Gs → H ≤c G) :
     Graph.sUnion Gs (set_pairwise_compatible_of_subgraph (fun _ h ↦ (hs h).le)) ≤c G :=

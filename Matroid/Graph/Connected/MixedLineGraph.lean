@@ -25,9 +25,9 @@ lemma Inc.eq_or_isLink_of_inc (h1 : G.Inc e x) (h2 : G.Inc e y) : x = y ∨ G.Is
 lemma Inc.isLink_of_inc_of_ne (h1 : G.Inc e x) (h2 : G.Inc e y) (hne : x ≠ y) : G.IsLink e x y := by
   obtain rfl | h := h1.eq_or_isLink_of_inc h2 <;> tauto
 
-lemma connBetween_vertexDelete_iff_of_degree_le_one (hX : ∀ x ∈ X, G.eDegree x ≤ 1) (hs : s ∉ X)
+lemma connBetween_deleteVerts_iff_of_degree_le_one (hX : ∀ x ∈ X, G.eDegree x ≤ 1) (hs : s ∉ X)
     (ht : t ∉ X) : (G - X).ConnBetween s t ↔ G.ConnBetween s t := by
-  refine ⟨fun h ↦ h.mono vertexDelete_le, fun h ↦ ?_⟩
+  refine ⟨fun h ↦ h.mono deleteVerts_le, fun h ↦ ?_⟩
   obtain ⟨w, hw, rfl, rfl⟩ := h.exists_isPath
   use w, by simp [hw.isWalk, hw.isTrail.disjoint_of_degree_le_one hX hs ht]
 
@@ -85,30 +85,30 @@ lemma mixedLineGraph_inr_eDegree_le_two : L'(G).eDegree (Sum.inr e) ≤ 2 := by
   rw [eDegree_eq_encard_adj, mixedLineGraph_neighbor_inr, inl_injective.encard_image]
   exact G.endSet_encard_le e
 
-lemma mixedLineGraph_edgeDelete : L'(G ＼ F) = L'(G) - (Sum.inr '' F : Set (α ⊕ β)) := by
+lemma mixedLineGraph_deleteEdges : L'(G ＼ F) = L'(G) - (Sum.inr '' F : Set (α ⊕ β)) := by
   ext a b c
-  · simp only [vertexSet_mixedLineGraph, vertexSet_edgeDelete, edgeSet_edgeDelete,
-      vertexDelete_vertexSet, image_diff Sum.inr_injective, union_diff_distrib]
+  · simp only [vertexSet_mixedLineGraph, vertexSet_deleteEdges, edgeSet_deleteEdges,
+      vertexSet_deleteVerts, image_diff Sum.inr_injective, union_diff_distrib]
     convert Iff.rfl
     apply Disjoint.sdiff_eq_left
     simp
-  cases b <;> cases c <;> simp only [mixedLineGraph_isLink, edgeDelete_inc_iff, Sym2.eq,
+  cases b <;> cases c <;> simp only [mixedLineGraph_isLink, deleteEdges_inc, Sym2.eq,
     Sym2.rel_iff', Prod.mk.injEq, Sum.inl.injEq, reduceCtorEq, and_false, Prod.swap_prod_mk,
-    or_self, vertexDelete_isLink_iff, mem_image, exists_false, not_false_eq_true, and_self,
+    or_self, deleteVerts_isLink_iff, mem_image, exists_false, not_false_eq_true, and_self,
     and_true, Sum.inr.injEq, false_and, or_self, and_false, exists_eq_right] <;> aesop
 
-lemma mixedLineGraph_vertexDelete : L'(G - X) = L'(G) - (Sum.inl '' X ∪ Sum.inr '' E(G, X)) := by
+lemma mixedLineGraph_deleteVerts : L'(G - X) = L'(G) - (Sum.inl '' X ∪ Sum.inr '' E(G, X)) := by
   ext a b c
-  · simp only [vertexSet_mixedLineGraph, vertexDelete_vertexSet, vertexDelete_edgeSet_diff]
+  · simp only [vertexSet_mixedLineGraph, vertexSet_deleteVerts, deleteVerts_edgeSet_diff]
     rw [image_diff Sum.inl_injective, union_diff_distrib, ← diff_diff, ← diff_diff]
     convert Iff.rfl using 3
     · apply Disjoint.sdiff_eq_left
       rw [← image_diff Sum.inl_injective]
       simp
     rw [disjoint_image_inl_image_inr.symm.sdiff_eq_left, ← image_diff Sum.inr_injective]
-  cases b <;> cases c <;> simp only [mixedLineGraph_isLink, vertexDelete_inc_iff,
+  cases b <;> cases c <;> simp only [mixedLineGraph_isLink, deleteVerts_inc_iff,
     mem_setIncEdges_iff, not_exists, not_and, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq,
-    Sum.inl.injEq, reduceCtorEq, and_false, Prod.swap_prod_mk, or_self, vertexDelete_isLink_iff,
+    Sum.inl.injEq, reduceCtorEq, and_false, Prod.swap_prod_mk, or_self, deleteVerts_isLink_iff,
     mem_union, mem_image, exists_eq_right, exists_false, or_false, false_and, Sum.inr.injEq,
     exists_eq_right, false_or, not_exists, not_and]
   · refine ⟨?_, ?_⟩
@@ -398,16 +398,16 @@ lemma connBetween_mixedLineGraph_del_iff :
     (L'(G) - (Sum.inl '' X ∪ Sum.inr '' F)).ConnBetween (Sum.inl s) (Sum.inl t) ↔
     ((G - X) ＼ F).ConnBetween s t := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · rwa [← connBetween_vertexDelete_iff_of_degree_le_one (X := inr '' E(G, X)) ?_ (by simp)
-    (by simp), ← vertexDelete_vertexDelete, vertexDelete_vertexDelete_comm,
-    vertexDelete_vertexDelete _ (inl '' _), ← mixedLineGraph_vertexDelete,
-    ← mixedLineGraph_edgeDelete, connBetween_mixedLineGraph_iff] at h
+  · rwa [← connBetween_deleteVerts_iff_of_degree_le_one (X := inr '' E(G, X)) ?_ (by simp)
+    (by simp), ← deleteVerts_deleteVerts, deleteVerts_deleteVerts_comm,
+    deleteVerts_deleteVerts _ (inl '' _), ← mixedLineGraph_deleteVerts,
+    ← mixedLineGraph_deleteEdges, connBetween_mixedLineGraph_iff] at h
     -- inr '' E(G, X) vertices are either isolated or is a leaf so does not affect the connection
     rintro _ ⟨e, he, rfl⟩
-    grw [eDegree_eq_encard_adj, ← vertexDelete_vertexDelete, neighbors_mono vertexDelete_le,
+    grw [eDegree_eq_encard_adj, ← deleteVerts_deleteVerts, neighbors_mono deleteVerts_le,
       encard_le_one_iff_subsingleton]
     intro _ ⟨⟨a, b⟩, ha⟩ _ ⟨⟨c, d⟩, hc⟩
-    simp only [vertexDelete_isLink_iff, mixedLineGraph_isLink, Sym2.eq, Sym2.rel_iff',
+    simp only [deleteVerts_isLink_iff, mixedLineGraph_isLink, Sym2.eq, Sym2.rel_iff',
       Prod.mk.injEq, reduceCtorEq, false_and, Prod.swap_prod_mk, inr.injEq, false_or, mem_image,
       and_false, exists_false, not_false_eq_true, not_exists, not_and, ne_eq, true_and] at ha hc
     obtain ⟨⟨hda, rfl, rfl⟩, h1⟩ := ha
@@ -417,10 +417,10 @@ lemma connBetween_mixedLineGraph_del_iff :
     · simpa using h1 x hx
     · simpa using h2 x hx
     rfl
-  rw [← connBetween_mixedLineGraph_iff, mixedLineGraph_edgeDelete, mixedLineGraph_vertexDelete] at h
+  rw [← connBetween_mixedLineGraph_iff, mixedLineGraph_deleteEdges, mixedLineGraph_deleteVerts] at h
   refine h.mono ?_
-  rw [← vertexDelete_vertexDelete, ← vertexDelete_vertexDelete, vertexDelete_vertexDelete_comm]
-  exact vertexDelete_le
+  rw [← deleteVerts_deleteVerts, ← deleteVerts_deleteVerts, deleteVerts_deleteVerts_comm]
+  exact deleteVerts_le
 
 @[simps (attr := grind =)]
 def mixedLineOfEnsembleMap [DecidableEq α] (A : L'(G).VertexEnsemble (inl s) (inl t) ι) :
