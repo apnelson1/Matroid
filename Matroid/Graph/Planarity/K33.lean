@@ -14,10 +14,12 @@ open scoped unitInterval
 namespace Graph
 
 lemma K5_lemma (hCG : C ≤ G) (hC : IsCycle C) (hu : u ∈ V(G)) (hv : v ∈ V(G)) (huv : u ≠ v)
-    (hadj : G.Adj u v) (h : 3 ≤ (V(C) ∩ N(G, u) ∩ N(G, v)).encard) : CompleteGraph 5 ≤ₘ G
+    (hadj : G.Adj u v) (h : 3 ≤ (V(C) ∩ N(G, u) ∩ N(G, v)).encard) : CompleteGraph 5 ≤m G := by
+  sorry
 
 lemma K33_lemma (hCG : C ≤ G) (hC : IsCycle C) (hu : u ∈ V(G)) (hv : v ∈ V(G)) (huv : u ≠ v)
-    (hadj : G.Adj u v)
+    (hadj : G.Adj u v) (h : sorry) : CompleteBipartiteGraph 3 3 ≤m G := by
+  sorry
 
 -- theorem K33_not_planar (f : (CompleteBipartiteGraph 3 3).Realization → E)
 --     (hf : Topology.IsEmbedding f) : ∃ C : Set E, IsCircuit C ∧ C ⊆ range f ∧ IsConnected Cᶜ := by
