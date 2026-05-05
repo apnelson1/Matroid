@@ -45,6 +45,16 @@ lemma isCover_closure_inter (h : T.IsCover X (M.RkLE k)) (hX : X ⊆ M.E := by a
     ← iUnion₂_mono (fun Y hY ↦ M.inter_ground_subset_closure Y), ← iUnion₂_inter, h.biUnion_eq,
     inter_eq_self_of_subset_left hX]
 
+lemma exists_isCover_rkLE_isFlat (M : Matroid α) (ha : a ≠ 0) :
+    ∃ (T : Set (Set α)), T.IsCover M.E (M.RkLE a) ∧ T.encard = M.E.coverNumber (M.RkLE a) ∧
+      ∀ F ∈ T, M.IsFlat F := by
+  obtain rfl | ⟨a, rfl⟩ := a.eq_zero_or_exists_eq_add_one; simp at ha
+  obtain ⟨S, hS⟩ := exists_cover M.E (M.RkLE (a + 1)) fun e he ↦ (M.rkLE_singleton).mono <| by simp
+  have hcl := isCover_closure (P := fun M ↦ M.RkLE (a + 1)) hS.1 (by simp) (by simp)
+  refine ⟨_, hcl, ?_, by simp⟩
+  refine le_antisymm ?_ hcl.coverNumber_le
+  grw [encard_image_le, hS.2]
+
 lemma IsFlat.isCover_closure_of_isCover (hF : M.IsFlat F) (h : T.IsCover F (M.RkLE k)) :
     (M.closure '' T).IsCover F (M.RkLE k) := by
   convert isCover_closure_inter h using 1
@@ -59,9 +69,11 @@ lemma setOf_singleton_isCover_rkLE (M : Matroid α) (X : Set α) :
     (singleton '' X).IsCover X (M.RkLE 1) :=
   isCover_image_singleton <| by simp
 
-lemma coverNumber_rkLE_mono (M : Matroid α) (X : Set α) {j k : ℕ∞} (hjk : j ≤ k) :
-    X.coverNumber (M.RkLE k) ≤ X.coverNumber (M.RkLE j) :=
-  coverNumber_le_prop _ _ _ fun _ _ hY ↦ hY.mono hjk
+
+
+-- lemma coverNumber_rkLE_mono (M : Matroid α) (X : Set α) {j k : ℕ∞} (hjk : j ≤ k) :
+--     X.coverNumber (M.RkLE k) ≤ X.coverNumber (M.RkLE j) :=
+--   coverNumber_le_prop _ _ _ fun _ _ hY ↦ hY.mono hjk
 
 @[gcongr]
 lemma coverNumber_rkLE_subset (M : Matroid α) (hXY : X ⊆ Y) (k : ℕ∞) :
@@ -86,6 +98,27 @@ lemma setOf_point_restrict_isCover_rkLE (M : Matroid α) (X : Set α) (hX : M.eR
   replace hX : (M ↾ X).RankPos := by simpa
   refine (isCover_congr' (fun P hPX ↦ ?_)).1 <| (M ↾ X).setOf_point_isCover_rkLE
   simp [inter_eq_self_of_subset_left hPX]
+
+
+lemma foo (hM : M.eRank = 2) {P : Set α} (hP : M.IsPoint P) :
+    M.E.coverNumber (M.RkLE 1) = (M ＼ P).E.coverNumber (M.RkLE 1) + 1 := by
+  refine le_antisymm ?_ ?_
+  · sorry
+  -- obtain ⟨T, hT, hTcard⟩ := exists_cover (M ＼ P).E (M.RkLE 1) (by simp)
+  obtain ⟨S, hS, hScard, hSflat⟩ := exists_isCover_rkLE_isFlat M (a := 1) (by simp)
+  have hPS : P ∈ S := sorry
+  rw [← hScard, ← encard_diff_singleton_add_one hPS, ENat.add_one_le_add_one_iff]
+  refine IsCover.coverNumber_le ⟨?_, fun y hy ↦ hS.prop hy.1⟩
+  rw [delete_ground, ← hS.sUnion_eq]
+  nth_rw 2 [← insert_diff_self_of_mem hPS]
+  rw [sUnion_insert, union_diff_left, eq_comm, sdiff_eq_left]
+  simp only [disjoint_sUnion_left, mem_diff, mem_singleton_iff, and_imp]
+  sorry
+
+
+
+
+
 
 
 -- lemma foo (M : Matroid α) (C : Set α) (k : ℕ∞) : coverNumber

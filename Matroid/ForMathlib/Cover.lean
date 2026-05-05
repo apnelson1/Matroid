@@ -2,7 +2,7 @@ import Mathlib.Data.Set.Lattice
 import Matroid.ForMathlib.Set
 import Mathlib.Data.Set.Card
 import Matroid.ForMathlib.Topology.ENat
-import Mathlib.Order.Partition.Basic
+-- import Mathlib.Order.Partition.Basic
 
 variable {α ι : Type*} {s t x y : Set α} {P Q P' : Set α → Prop} {T : Set (Set α)}
 
@@ -116,6 +116,9 @@ lemma IsCover.nontrivial_of_prop_empty (hT : T.IsCover x P) (hx : ¬ P x) (he : 
     T.Nontrivial :=
   hT.nontrivial hx <| nonempty_iff_ne_empty.2 fun h ↦ hx <| h ▸ he
 
+lemma IsCover.exists_mem (hT : T.IsCover x P) {a : α} (hax : a ∈ x) : ∃ s ∈ T, a ∈ s := by
+  simpa [← hT.sUnion_eq] using hax
+
 end General
 
 section Number
@@ -154,11 +157,11 @@ lemma weightedCoverNumber_subset_of_monotone {f : Set α → ℕ∞} (hf : Monot
     x.weightedCoverNumber f ≤ y.weightedCoverNumber f :=
   weightedCoverNumber_subset_of_antitone hf antitone_const hxy
 
-lemma exi
+-- lemma exi
 
-lemma exists_partition_weightedCoverNumber {f : Set α → ℕ∞} (hf : Monotone f) (x : Set α) :
-    ∃ (T : Partition x), ⋃₀ T = s ∧ x.weightedCoverNumber f = ∑' x : T, f x := by
-  _
+-- lemma exists_partition_weightedCoverNumber {f : Set α → ℕ∞} (hf : Monotone f) (x : Set α) :
+--     ∃ (T : Partition x), ⋃₀ T = s ∧ x.weightedCoverNumber f = ∑' x : T, f x := by
+--   _
 
 /-- This is the size of the smallest cover of `x` in which each set satisfies `P`. -/
 noncomputable def coverNumber (x : Set α) (P : Set α → Prop) : ℕ∞ :=
