@@ -52,6 +52,14 @@ lemma IsFiniteRankUniform.indep_iff (hM : M.IsFiniteRankUniform a) :
   obtain ⟨E, rfl, hle⟩ := hM.exists_eq_unifOn
   simp
 
+lemma isFiniteRankUniform_iff_forall_indep_iff :
+    M.IsFiniteRankUniform a ↔ a ≤ M.E.encard ∧ ∀ I ⊆ M.E, M.Indep I ↔ I.encard ≤ a := by
+  refine ⟨fun h ↦ ⟨?_, fun I hIE ↦ ?_⟩, fun h ↦ ?_⟩
+  · grw [← h.eRank_eq, eRank_le_encard_ground]
+  · rw [h.indep_iff, and_iff_left hIE]
+  rw [isFiniteRankUniform_iff_eq_unifOn, and_iff_left h.1, ext_iff_indep, and_iff_right (by simp)]
+  simp +contextual [h.2]
+
 lemma IsFiniteRankUniform.isCircuit_iff (hM : M.IsFiniteRankUniform a) :
     M.IsCircuit C ↔ C.encard = a + 1 ∧ C ⊆ M.E := by
   obtain ⟨E, rfl, hle⟩ := hM.exists_eq_unifOn
@@ -80,6 +88,11 @@ lemma IsFiniteRankUniform.spanning_iff (hM : M.IsFiniteRankUniform a) :
   by_cases! hXE : ¬ X ⊆ E; grind [Spanning.subset_ground]
   rw [unifOn_spanning_iff hle hXE, unifOn_ground_eq, and_iff_left hXE]
 
+lemma IsFiniteRankUniform.restrict (hM : M.IsFiniteRankUniform a) {R : Set α} (hRX : R ⊆ M.E)
+    (haR : a ≤ R.encard) : (M ↾ R).IsFiniteRankUniform a := by
+  refine ⟨?_, hM.isUniform.minor (restrict_isMinor _ hRX)⟩
+  rw [eRank_restrict, hM.eq_unifOn, unifOn_eRk_eq _ _ hRX, min_eq_right haR]
+
 /-- A uniform matroid whose rank is finite is one of the obvious ones. -/
 lemma IsUniform.isFiniteRankUniform [M.RankFinite] (hM : M.IsUniform) :
     ∃ a, M.IsFiniteRankUniform a :=
@@ -99,6 +112,87 @@ lemma IsUniform.eq_freeOn_or_isFiniteRankUniform [M.Finitary] (hM : M.IsUniform)
   obtain ⟨E, rfl⟩ | hr := M.exists_eq_freeOn_or_rankPos_dual
   · exact ⟨E, .inl rfl⟩
   simp [hM.isFiniteRankUniform_of_finitary]
+
+@[simp]
+lemma isFiniteRankUniform_zero_iff : M.IsFiniteRankUniform 0 ↔ M.eRank = 0 := by
+  refine ⟨fun h ↦ h.eRank_eq, fun h ↦ ⟨h, ?_⟩⟩
+  rw [eRank_eq_zero_iff.1 h]
+  simp
+
+/-- The restriction of `M` to `X` is a rank-`a` uniform matroid -/
+structure IsFiniteRankUniformOn (M : Matroid α) (a : ℕ) (X : Set α) : Prop where
+  isFiniteRankUniform : (M ↾ X).IsFiniteRankUniform a
+  subset_ground : X ⊆ M.E
+
+attribute [grind →] IsFiniteRankUniformOn.subset_ground
+
+lemma IsFiniteRankUniformOn.eRk (h : M.IsFiniteRankUniformOn a X) : M.eRk X = a := by
+  rw [← M.eRank_restrict, h.isFiniteRankUniform.eRank_eq]
+
+lemma IsFiniteRankUniform.isFiniteRankUniformOn_of_restrict
+    (h : (M ↾ X).IsFiniteRankUniform a) (ha : a ≠ 0) : M.IsFiniteRankUniformOn a X := by
+  refine ⟨h, fun e heX ↦ (Indep.subset_ground ?_ (mem_singleton ..))⟩
+  rw [isFiniteRankUniform_iff_forall_indep_iff] at h
+  replace h := h.2 {e} (by simpa)
+  rw [restrict_indep_iff, and_iff_left (by simpa), encard_singleton, ← Nat.cast_one,
+    ENat.coe_le_coe] at h
+  exact h.2 <| by lia
+
+@[simp]
+lemma isFiniteRankUniformOn_zero_iff : M.IsFiniteRankUniformOn 0 X ↔ X ⊆ M.loops := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ⟨?_, ?_⟩⟩
+  · exact (eRk_eq_zero_iff h.subset_ground).1 h.isFiniteRankUniform.eRank_eq
+  · grw [isFiniteRankUniform_zero_iff, eRank_restrict, eRk_eq_zero_iff', inter_subset_left, h]
+  grw [← loops_subset_ground, h]
+
+lemma isFiniteRankUniformOn_iff_indep (ha : a ≠ 0) :
+    M.IsFiniteRankUniformOn a X ↔ a ≤ X.encard ∧ ∀ I ⊆ X, M.Indep I ↔ I.encard ≤ a := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ⟨?_, fun e heX ↦ (Indep.subset_ground ?_ (mem_singleton ..))⟩⟩
+  · simpa +contextual using isFiniteRankUniform_iff_forall_indep_iff.1 h.isFiniteRankUniform
+  · simpa +contextual [isFiniteRankUniform_iff_forall_indep_iff]
+  simp only [h.2 {e} (by simpa), encard_singleton, Nat.one_le_cast]
+  lia
+
+lemma IsFiniteRankUniformOn.subset (h : M.IsFiniteRankUniformOn a X) (hYX : Y ⊆ X)
+    (hY : a ≤ Y.encard) : M.IsFiniteRankUniformOn a Y := by
+  obtain rfl | hne := eq_or_ne a 0
+  · grind [isFiniteRankUniformOn_zero_iff]
+  grind [isFiniteRankUniformOn_iff_indep hne]
+
+lemma isFiniteRankUniform_restrict_iff :
+    (M ↾ X).IsFiniteRankUniform a ↔ a ≤ X.encard ∧ ∀ I ⊆ X, M.Indep I ↔ I.encard ≤ a := by
+  simp only [isFiniteRankUniform_iff_forall_indep_iff, restrict_ground_eq, restrict_indep_iff]
+  grind
+
+lemma IsFiniteRankUniform.restrict_insert_iff (h : (M ↾ X).IsFiniteRankUniform (a + 1))
+    (heX : e ∉ X) (he : e ∈ M.closure X) :
+    (M ↾ (insert e X)).IsFiniteRankUniform (a + 1) ↔ ∀ I ⊆ X, I.encard = a → e ∉ M.closure I := by
+  have hX : M.eRk X = a + 1 := by simpa using h.eRank_eq
+  simp only [isFiniteRankUniform_restrict_iff, encard_insert_of_notMem heX] at ⊢ h
+  refine ⟨fun ⟨hcard, hI⟩ ↦ fun I hIX hIcard hIcl ↦ ?_, fun h' ↦ ⟨?_, fun I hIeX ↦ ?_⟩⟩
+  · rw [Indep.mem_closure_iff_of_notMem _ (by grind)] at hIcl
+    · refine (hI (insert e I) (by grind)).not.1 hIcl.not_indep ?_
+      grw [encard_insert_le, hIcard, Nat.cast_add_one]
+    grw [h.2 _ hIX, hIcard, ← le_self_add]
+  · grw [h.1, ← le_self_add]
+  by_cases! heI : e ∉ I
+  · rw [h.2 _ (by grind)]
+  replace h'' : ∀ J ⊆ X, J.encard ≤ a → e ∉ M.closure J := by
+    refine fun J hJX hJ ↦ ?_
+    obtain ⟨K, hJK, hKX, hK⟩ := exists_superset_subset_encard_eq hJX hJ
+      (by grw [← h.1, Nat.cast_add_one, ← le_self_add])
+    refine notMem_subset (M.closure_subset_closure hJK) <| h' _ hKX hK
+  obtain hle | hgt := le_or_gt I.encard (a + 1)
+  · refine iff_of_true ?_ hle
+    rw [← insert_diff_self_of_mem heI, Indep.insert_indep_iff_of_notMem _ (by simp), mem_diff,
+      and_iff_right (M.mem_ground_of_mem_closure he)]
+    · refine h'' _ (by grind) ?_
+      grw [← ENat.add_one_le_add_one_iff, ← hle, encard_diff_singleton_add_one heI]
+    grw [h.2 _ (by grind), Nat.cast_add_one, ← hle, diff_subset]
+  refine iff_of_false (fun hI ↦ ?_) hgt.not_ge
+  replace hI := hI.encard_le_eRk_of_subset hIeX
+  grw [← eRk_insert_closure_eq, insert_eq_of_mem he, eRk_closure_eq, hX] at hI
+  exact hI.not_gt hgt
 
 /-- `M.IsFiniteUniform a b n` means that `M` is a finite uniform matroid of rank `a` and corank `b`,
 with `n` elements.

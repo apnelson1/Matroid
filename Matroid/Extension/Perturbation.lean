@@ -1,5 +1,6 @@
 import Matroid.Uniform.Minor
 import Matroid.Extension.ProjectionBy
+import Matroid.ForMathlib.Data.ENat.Powerset
 
 variable {α β : Type*} {M N M' : Matroid α} {I X Y : Set α} {e f : α} {a k l : ℕ∞}
     {T : Set (Set α)}
@@ -354,7 +355,7 @@ section uniform
 
 
 
-lemma foo (a b : ℕ)  (X : Set α) (hxB : b + ∑ i < b, Nat.choose a i ≤ X.encard)
+lemma foo (a b : ℕ) (X : Set α) (hxB : b + ∑ i < b, ENat.choose a i ≤ X.encard)
     (U : (unifOn X (a + 1)).ModularCut) (hU : U ≠ ⊤) :
     ∃ Y ⊆ X, Y.encard = b ∧ ((unifOn X (a + 1)).projectBy U ↾ Y).IsFiniteRankUniform a := by
   let G := unifOn X (a + 1)

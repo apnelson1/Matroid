@@ -76,6 +76,8 @@ protected theorem tsum_singleton_add_tsum_ne {a : α} :
   rw [eq_comm, ← tsum_univ, show univ = insert a {a}ᶜ by ext; simp [em]]
   exact ENat.tsum_insert (by simp)
 
+
+
 -- protected theorem tsum_sub (hfin : ∑' a, g a ≠ ⊤) (h : g ≤ f) :
 --     ∑' a, (f a - g a) = ∑' a, f a - ∑' a, g a := by
 --   rw [← (ENat.add_right_injective_of_ne_top hfin).eq_iff, ← ENat.tsum_add]
@@ -150,9 +152,17 @@ protected theorem tsum_comp_eq_tsum_of_bijective {f : α → β} (hf : f.Bijecti
   (ENat.tsum_comp_le_tsum_of_injective hf.injective g).antisymm
     (ENat.tsum_le_tsum_comp_of_surjective hf.surjective g)
 
+protected theorem tsum_range_le_tsum_comp (f : β → ℕ∞) (g : α → β) :
+    ∑' (x : range g), f x ≤ ∑' x, f (g x) :=
+  ENat.tsum_le_tsum_comp_of_surjective rangeFactorization_surjective _
+
 protected theorem tsum_comp_eq_tsum_of_equiv (e : α ≃ β) (g : β → ℕ∞) :
     ∑' x, g (e x) = ∑' y, g y := by
   rw [ENat.tsum_comp_eq_tsum_of_bijective e.bijective]
+
+protected theorem tsum_image_le_tsum_comp (f : β → ℕ∞) (g : α → β) (s : Set α) :
+    ∑' x : (g '' s), f x ≤ ∑' x : s, f (g x) :=
+  ENat.tsum_le_tsum_comp_of_surjective imageFactorization_surjective _
 
 protected theorem tsum_mono_subtype (f : α → ℕ∞) {s t : Set α} (h : s ⊆ t) :
     ∑' x : s, f x ≤ ∑' x : t, f x :=
@@ -229,6 +239,15 @@ protected theorem encard_support_le_tsum : f.support.encard ≤ ∑' x, f x := b
   split_ifs with h
   · simpa [ENat.one_le_iff_ne_zero]
   simp
+
+protected theorem tsum_ite {P : α → Prop} {s t : ℕ∞} [DecidablePred P] :
+    ∑' x, (if P x then s else t) = s * {x | P x}.encard + t * {x | ¬ P x}.encard := by
+  set f := fun x ↦ (if P x then s else t) with hf
+  convert ENat.tsum_union_disjoint (s := {x | P x}) disjoint_compl_right (f := f)
+  · rw [tsum_congr_set_coe (f := f) (union_compl_self {x | P x})]
+    exact (tsum_univ ..).symm
+  · rw [tsum_congr (g := fun _ ↦ s) (by grind), ENat.tsum_subtype_const]
+  rw [tsum_congr (g := fun _ ↦ t) (by grind), ENat.tsum_subtype_const, compl_setOf]
 
 protected theorem tsum_encard_eq_encard_iUnion {ι} {s : ι → Set α} (hI : Pairwise (Disjoint on s)) :
     ∑' i, (s i).encard = (⋃ i, s i).encard := by

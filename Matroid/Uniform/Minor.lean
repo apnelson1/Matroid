@@ -94,7 +94,7 @@ lemma NoUniformMinor.le_minor {a b b' : ℕ} (hM : M.NoUniformMinor a b) (ha : a
   exact ⟨((unif_isoMinor_unif_iff' ha (Nat.le_trans ha hb')).2 ⟨ Nat.le_refl a,
       Nat.sub_le_sub_right hb' a ⟩).some.trans hM.some⟩
 
-lemma NoUniformMinor.lt_of_isoMinor {N : Matroid α} {a b : ℕ} (h : M.NoUniformMinor a b)
+lemma NoUniformMinor.lt_of_isoMinor {β : Type*} {N : Matroid β} {a b : ℕ} (h : M.NoUniformMinor a b)
     (hNM : N ≤i M) (hN : N.IsFiniteRankUniform a) : N.E.encard < b := by
   by_contra! hle
   obtain ⟨E, rfl, _⟩ := hN.exists_eq_unifOn

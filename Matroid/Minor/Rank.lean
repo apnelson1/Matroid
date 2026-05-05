@@ -7,7 +7,7 @@ open Set
 
 namespace Matroid
 
-variable {α : Type*} {M N : Matroid α} {I J C D X Y Z : Set α} {e f : α}
+variable {α : Type*} {M N : Matroid α} {I J C D X Y Z : Set α} {e f : α} {k : ℕ∞}
 
 section Delete
 
@@ -691,3 +691,34 @@ lemma exists_contract_eRk_eq {a : ℕ∞} (M : Matroid α) (X : Set α) (hr : a 
   rw [eRank_contract_eq_eRelRk_ground (M := M ↾ X) C ] at hCrk
   simp only [restrict_ground_eq] at hCrk
   rwa [eRelRk_restrict_eq_of_subset _ (by simpa) rfl.subset] at hCrk
+
+@[simp]
+lemma delete_rkLE_iff : (M ＼ D).RkLE k X ↔ M.RkLE k (X \ D) := by
+  simp [RkLE]
+
+@[simp]
+lemma restrict_rkLE_iff {R} : (M ↾ R).RkLE k X ↔ M.RkLE k (X ∩ R) := by
+  simp [RkLE]
+
+lemma IsRkFinite.contract_rkLE_iff (h : M.IsRkFinite C) :
+    (M ／ C).RkLE k X ↔ M.RkLE (k + M.eRk C) (X ∪ C) := by
+  rw [RkLE, RkLE, ← eRelRk_add_eRk_eq, ENat.add_le_add_iff_right (by simpa), eRelRk_eq_eRk_contract]
+
+lemma RkLE.delete (h : M.RkLE k X) (D : Set α) : (M ＼ D).RkLE k X := by
+  simp [h.subset]
+
+lemma RkLE.contract (h : M.RkLE k X) (C : Set α) : (M ／ C).RkLE k X := by
+  grw [RkLE, ← eRelRk_eq_eRk_contract, eRelRk_le_eRk, h.le]
+
+lemma RkLE.restrict (h : M.RkLE k X) (R : Set α) : (M ↾ R).RkLE k X := by
+  grw [RkLE, restrict_eRk_eq', inter_subset_left, h.le]
+
+lemma RkLE.minor (h : M.RkLE k X) (hNM : N ≤m M) : N.RkLE k X := by
+  obtain ⟨C, D, rfl⟩ := hNM
+  exact (h.contract C).delete D
+
+lemma RkLE.union_of_contract (h : (M ／ C).RkLE k X) : M.RkLE (k + M.eRk C) (X ∪ C) := by
+  grw [RkLE, ← eRelRk_add_eRk_eq, eRelRk_eq_eRk_contract, h.le]
+
+lemma RkLE.of_contract (h : (M ／ C).RkLE k X) : M.RkLE (k + M.eRk C) X :=
+  h.union_of_contract.subset subset_union_left

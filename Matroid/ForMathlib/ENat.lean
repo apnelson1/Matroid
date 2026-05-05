@@ -1,5 +1,6 @@
 import Mathlib.Data.ENat.Lattice -- inefficient import
 import Mathlib.Tactic.ENatToNat
+import Mathlib.Tactic.Recall
 
 open WithTop
 
@@ -32,6 +33,16 @@ def recZeroSucc {C : ℕ∞ → Prop} (zero : C 0) (coe : (a : ℕ∞) → C (a 
   obtain rfl | ⟨k, rfl⟩ := n.eq_zero_or_exists_eq_add_one
   · assumption
   exact coe k
+
+/-- A version of `ENat.nat_induction'` which stays in the type `ℕ∞`. -/
+@[elab_as_elim]
+theorem nat_induction' {motive : ℕ∞ → Prop} (a : ℕ∞) (zero : motive 0)
+    (succ : ∀ n : ℕ∞, n < ⊤ → motive n → motive (n + 1))
+    (top : (∀ n < ⊤, motive n) → motive ⊤) : motive a := by
+  refine nat_induction (motive := motive) _ zero (fun n hn ↦ succ n (by simp) hn)
+    fun h ↦ top fun n hn ↦ ?_
+  lift n to ℕ using hn.ne
+  exact h n
 
 -- this won't fire as `simp` without an explicit `ENat` version.
 @[simp]
@@ -378,3 +389,27 @@ end Parity
 -- This is here for parity with `Nat`; `Nat` has `Nat.sInf_mem` with almost the same type signature.
 lemma sInf_mem {s : Set ℕ∞} (h : s.Nonempty) : sInf s ∈ s :=
   csInf_mem h
+
+lemma exists_eq_iInf₂ {ι : Sort*} {κ : ι → Sort*} (f : (i : ι) → κ i → ℕ∞) (a₀ : ι) (b₀ : κ a₀) :
+    ∃ a b, f a b = ⨅ i, ⨅ j, f i j := by
+  have : Nonempty ι := ⟨a₀⟩
+  obtain ⟨a, ha⟩ := ENat.exists_eq_iInf (fun i ↦ ⨅ j, f i j)
+  rw [← ha]
+  by_cases htop : ⨅ j, f a j = ⊤
+  · exact ⟨a₀, b₀, le_antisymm (by simp [htop]) (by grw [ha, iInf₂_le])⟩
+  simp only [iInf_eq_top, not_forall] at htop
+  obtain ⟨b', hb'⟩ := htop
+  have : Nonempty (κ a) := ⟨b'⟩
+  obtain ⟨b, hb⟩ := ENat.exists_eq_iInf (f a)
+  exact ⟨a, b, hb⟩
+
+lemma exists_eq_biInf {ι : Type*} {s : Set ι} (f : ι → ℕ∞) (hs : s.Nonempty) :
+    ∃ a ∈ s, f a = ⨅ i ∈ s, f i := by
+  simpa using exists_eq_iInf₂ (ι := ι) (κ := fun i ↦ i ∈ s) (fun i _ ↦ f i) _ hs.some_mem
+
+lemma exists_eq_biSup_of_lt_top {ι : Type*} {s : Set ι} (hs : s.Nonempty)
+    (f : ι → ℕ∞) (hf : ⨆ i ∈ s, f i < ⊤) : ∃ a ∈ s, f a = ⨆ i ∈ s, f i := by
+  have := hs.to_subtype
+  rw [← iSup_subtype''] at ⊢ hf
+  obtain ⟨⟨a, has⟩, ha⟩ := ENat.exists_eq_iSup_of_lt_top (ι := s) (f := fun i ↦ f i) hf
+  exact ⟨a, has, ha⟩

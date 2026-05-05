@@ -22,6 +22,7 @@ variable {α ι : Type*} {M N : Matroid α} {I B X X' Y Y' Z R : Set α} {n : �
 
 section Basic
 
+
 @[gcongr]
 lemma eRk_subset_le (M : Matroid α) (hXY : X ⊆ Y) : M.eRk X ≤ M.eRk Y :=
   M.eRk_mono hXY
@@ -88,6 +89,10 @@ lemma eRank_ne_zero_iff (M : Matroid α) : M.eRank ≠ 0 ↔ M.RankPos := by
 
 instance [M.RankInfinite] : M.RankPos where
   empty_not_isBase := fun h ↦ by simpa using h.infinite
+
+@[simp]
+lemma rankPos_restrict_iff : (M ↾ X).RankPos ↔ M.eRk X ≠ 0 := by
+  rw [← eRank_ne_zero_iff, eRank_restrict]
 
 lemma Dep.eRk_add_one_le_encard (h : M.Dep X) : M.eRk X + 1 ≤ X.encard := by
   obtain hinf | hfin := X.finite_or_infinite.symm
@@ -213,6 +218,68 @@ lemma eRank_comap {β : Type*} {M : Matroid β} (f : α → β) (hM : M.E ⊆ ra
   refine hB.isBasis_of_subset (image_preimage_subset ..) <| image_mono ?_
   grw [← image_subset_iff, hB.subset_ground]
 
+variable {k : ℕ∞}
+
+/-- The property of having rank at most `k` in a matroid `M`. -/
+def RkLE (M : Matroid α) (k : ℕ∞) (X : Set α) : Prop := M.eRk X ≤ k
+
+lemma RkLE.le (h : M.RkLE k X) : M.eRk X ≤ k := h
+
+lemma rkLE_self (M : Matroid α) (X : Set α) : M.RkLE (M.eRk X) X := rfl.le
+
+@[simp]
+lemma rkLE_empty : M.RkLE k ∅ := by
+  simp [RkLE]
+
+@[simp]
+lemma rkLE_singleton : M.RkLE 1 {e} := by
+  simp [RkLE]
+
+@[gcongr]
+lemma RkLE.mono {l k : ℕ∞} (h : M.RkLE l X) (hlk : l ≤ k) : M.RkLE k X :=
+  h.trans hlk
+
+lemma rkLE_eRank (M : Matroid α) (X : Set α) : M.RkLE (M.eRank) X :=
+  (rkLE_self M X).mono <| M.eRk_le_eRank X
+
+@[gcongr]
+lemma RkLE.subset (h : M.RkLE k X) (hYX : Y ⊆ X) : M.RkLE k Y :=
+  (M.eRk_mono hYX).trans h
+
+@[simp]
+lemma antitone_rkLE : Antitone (M.RkLE k) :=
+  fun _ _ hXY h ↦ h.subset hXY
+
+lemma RkLE.closure (h : M.RkLE k X) : M.RkLE k (M.closure X) := by
+  grw [RkLE, eRk_closure_eq, h.le]
+
+@[simp]
+lemma rkLE_closure_iff : M.RkLE k (M.closure X) ↔ M.RkLE k X :=
+  ⟨fun h ↦ by grw [RkLE, ← h.le, eRk_closure_eq], RkLE.closure⟩
+
+lemma eRk_insert_of_mem_closure (he : e ∈ M.closure X) : M.eRk (insert e X) = M.eRk X := by
+  rw [← eRk_insert_closure_eq, insert_eq_of_mem he, eRk_closure_eq]
+
+lemma IsRkFinite.mem_closure_iff (h : M.IsRkFinite X) (he : e ∈ M.E := by aesop_mat) :
+    e ∈ M.closure X ↔ M.eRk (Insert.insert e X) = M.eRk X := by
+  obtain ⟨I, hI⟩ := M.exists_isBasis' X
+  rw [← eRk_insert_closure_eq, ← hI.closure_eq_closure, eRk_insert_closure_eq, hI.eRk_eq_encard]
+  by_cases heI : e ∈ I
+  · rw [insert_eq_of_mem heI, hI.indep.eRk_eq_encard]
+    simp [M.mem_closure_of_mem' heI]
+  by_cases heI' : e ∈ M.closure I
+  · rw [← eRk_insert_closure_eq, insert_eq_of_mem heI', eRk_closure_eq, hI.indep.eRk_eq_encard]
+    simpa
+  rw [eRk_insert_eq_add_one ⟨he, heI'⟩, hI.indep.eRk_eq_encard]
+  simp [heI', hI.finite_of_isRkFinite h]
+
+lemma IsRkFinite.mem_closure_iff_le (h : M.IsRkFinite X) (he : e ∈ M.E := by aesop_mat) :
+    e ∈ M.closure X ↔ M.eRk (Insert.insert e X) ≤ M.eRk X := by
+  rw [h.mem_closure_iff, le_antisymm_iff, and_iff_left (M.eRk_subset_le (subset_insert ..))]
+
+  -- refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  -- ·
+  -- rw [hI.indep.mem_closure_iff_of_notMem heI]
 
   -- obtain ⟨B, rfl, hfB⟩ := exists_image_eq_injOn_of_subset_range (hB.subset_ground.trans hM)
   -- have := exists_image_eq_and_injOn _(hB.subset_ground.trans hM)
