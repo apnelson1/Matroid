@@ -44,7 +44,7 @@ noncomputable def IsWalk.uncontract_aux (hφ : G.connPartition.IsRepFun φ) {u v
   match W with
   | .nil x => by
     classical
-    simp only [nil_first, nil_last, nil_isWalk_iff, contract_vertexSet, mem_image] at hu hv hw
+    simp only [nil_first, nil_last, nil_isWalk_iff, vertexSet_contract, mem_image] at hu hv hw
     subst x
     simp only [hφ.apply_eq_apply_iff, connPartition_rel_iff] at hv
     use if huv : u = v then .nil u else (hv.resolve_left huv).exists_isPath.choose
@@ -90,7 +90,7 @@ lemma IsWalk.uncontract_map_edgeRemove (hφ : G.connPartition.IsRepFun φ) [Deci
   | nil z =>
     simp only [nil_first, nil_last] at hu hv
     subst z
-    simp only [nil_isWalk_iff, contract_vertexSet, mem_image, uncontract, uncontract_aux] at hw ⊢
+    simp only [nil_isWalk_iff, vertexSet_contract, mem_image, uncontract, uncontract_aux] at hw ⊢
     split_ifs with heq
     · simp
     generalize_proofs hP
@@ -113,7 +113,7 @@ lemma IsWalk.uncontract_map_edgeRemove (hφ : G.connPartition.IsRepFun φ) [Deci
       hw11.choose_spec.choose_spec.2.1.symm]
 
 @[simp]
-lemma IsWalk.uncontract_edgeSet_diff (hφ : G.connPartition.IsRepFun φ) {W}
+lemma IsWalk.unedgeSet_contract_diff (hφ : G.connPartition.IsRepFun φ) {W}
     (hw : H /[E(G), φ].IsWalk W) (hu : W.first = φ u) (hv : W.last = φ v) :
     E(hw.uncontract hφ hu hv) \ E(G) = E(W) := by
   classical
@@ -121,17 +121,17 @@ lemma IsWalk.uncontract_edgeSet_diff (hφ : G.connPartition.IsRepFun φ) {W}
   simp
 
 @[simp]
-lemma IsWalk.subset_uncontract_edgeSet (hφ : G.connPartition.IsRepFun φ) {W}
+lemma IsWalk.subset_unedgeSet_contract (hφ : G.connPartition.IsRepFun φ) {W}
     (hw : H /[E(G), φ].IsWalk W) (hu : W.first = φ u) (hv : W.last = φ v) :
     E(W) ⊆ E(hw.uncontract hφ hu hv) := by
-  rw [← hw.uncontract_edgeSet_diff hφ hu hv]
+  rw [← hw.unedgeSet_contract_diff hφ hu hv]
   exact diff_subset
 
 @[simp]
-lemma IsWalk.uncontract_edgeSet_subset (hφ : G.connPartition.IsRepFun φ) {W}
+lemma IsWalk.unedgeSet_contract_subset (hφ : G.connPartition.IsRepFun φ) {W}
     (hw : H /[E(G), φ].IsWalk W) (hu : W.first = φ u) (hv : W.last = φ v) :
     E(hw.uncontract hφ hu hv) ⊆ E(W) ∪ E(G) := by
-  rw [← hw.uncontract_edgeSet_diff hφ hu hv, diff_union_eq_union_of_subset _ subset_rfl]
+  rw [← hw.unedgeSet_contract_diff hφ hu hv, diff_union_eq_union_of_subset _ subset_rfl]
   exact subset_union_left
 
 lemma IsWalk.uncontract_isWalk (hφ : G.connPartition.IsRepFun φ) (hGH : G ≤ H) {W}
@@ -142,7 +142,7 @@ lemma IsWalk.uncontract_isWalk (hφ : G.connPartition.IsRepFun φ) (hGH : G ≤ 
   | nil z =>
     simp only [nil_first, nil_last] at hu hv
     subst z
-    simp only [nil_isWalk_iff, contract_vertexSet, uncontract, uncontract_aux] at hw ⊢
+    simp only [nil_isWalk_iff, vertexSet_contract, uncontract, uncontract_aux] at hw ⊢
     split_ifs with huv
     · subst u
       simp only [nil_isWalk_iff]
@@ -185,7 +185,7 @@ lemma IsPath.uncontract_isPath (hφ : G.connPartition.IsRepFun φ) (hGH : G ≤ 
   | nil z =>
     simp only [nil_first, nil_last] at hu hv
     subst z
-    simp only [nil_isPath_iff, contract_vertexSet, mem_image, IsWalk.uncontract,
+    simp only [nil_isPath_iff, vertexSet_contract, mem_image, IsWalk.uncontract,
       IsWalk.uncontract_aux] at hw ⊢
     split_ifs with heq
     · simp
@@ -227,7 +227,7 @@ lemma IsCyclicWalk.exists_isCyclicWalk_of_contract (hφ : G.connPartition.IsRepF
   have hv : w.last = φ x := by simpa using hw.isClosed.symm
   have hwP' := hwP.uncontract_isPath hφ hGH hwf hv
   have he : e ∉ E(IsWalk.uncontract hφ hwP.isWalk hwf hv) := by
-    apply notMem_subset (hwP.isWalk.uncontract_edgeSet_subset hφ hwf hv)
+    apply notMem_subset (hwP.isWalk.unedgeSet_contract_subset hφ hwf hv)
     simp [hew, heG]
   have hew' := hwP'.cons_isCyclicWalk (e := e) (by simp [hxy.symm]) he
   exact ⟨_, hew', by simp [insert_diff_of_notMem _ heG]⟩
@@ -264,8 +264,8 @@ lemma contract_isBridge_iff (hφ : G.connPartition.IsRepFun φ) (hGH : G ≤ H) 
     (H /[E(G), φ]).IsBridge e ↔ H.IsBridge e := by
   obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet he.1
   have := contract_isLink H E(G) φ e (φ x) (φ y) |>.mpr ⟨by grind, he.2⟩
-  rw [hxy.isBridge_iff_not_connBetween, this.isBridge_iff_not_connBetween, contract_edgeDelete_comm,
-    not_iff_not, contract_connBetween_iff hφ (by simp [hGH, he.2])]
+  rw [hxy.isBridge_iff_not_connBetween, this.isBridge_iff_not_connBetween,
+    contract_deleteEdges_comm, not_iff_not, contract_connBetween_iff hφ (by simp [hGH, he.2])]
 
 lemma IsForest.contract (hφ : G.connPartition.IsRepFun φ) (hGH : G ≤ H) (hH : H.IsForest) :
     (H /[E(G), φ]).IsForest := by
@@ -273,7 +273,7 @@ lemma IsForest.contract (hφ : G.connPartition.IsRepFun φ) (hGH : G ≤ H) (hH 
   rw [contract_isBridge_iff hφ hGH he]
   exact hH he.1
 
--- lemma eq_contract_edgeDelete (hφ : G.connPartition.IsRepFun φ) (hGH : G ≤ H) :
+-- lemma eq_contract_deleteEdges (hφ : G.connPartition.IsRepFun φ) (hGH : G ≤ H) :
 --     ∃ F ≤ G, F.IsForest ∧ H /[φ, E(G)] = (H ＼ (E(G) \ E(F))) /[φ, E(F)] := by
 --   have :=
 --   sorry

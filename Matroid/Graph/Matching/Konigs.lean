@@ -153,7 +153,7 @@ lemma addEdge_inc_iff :
 
 -- not sure if you add grind patterns to these sorts of things
 -- @[grind =]
-lemma addEdge_edgeRestrict_commutes :
+lemma addEdge_restrict_commutes :
     (G.addEdge e x y) ↾ (insert e M) = (G ↾ M).addEdge e x y := by
   apply ext_inc
   · simp
@@ -162,9 +162,9 @@ lemma addEdge_edgeRestrict_commutes :
   -- holy!! `grind` is so powerful
 
 @[simp, grind .]
-lemma edgeRestrict_eDegree_le_eDegree {F : Set β} : (G ↾ F).eDegree x ≤ G.eDegree x := by
+lemma restrict_eDegree_le_eDegree {F : Set β} : (G ↾ F).eDegree x ≤ G.eDegree x := by
   -- special case of mono
-  exact eDegree_mono edgeRestrict_le x
+  exact eDegree_mono restrict_le x
 
 @[simp, grind .]
 lemma ENat.le_zero {i : ℕ∞} : i ≤ 0 ↔ i = 0 := by
@@ -258,7 +258,7 @@ lemma incEdges_encard_mono (hle : G ≤ H) (x : α) : E(G, x).encard ≤ E(H, x)
   grind only [encard_le_encard, incEdges_mono]
 
 @[simp, grind .]
-lemma edgeRestrict_incEdges_encard_le_encard (F : Set β) (x : α) :
+lemma restrict_incEdges_encard_le_encard (F : Set β) (x : α) :
     E(G ↾ F, x).encard ≤ E(G, x).encard := by
   grind
 
@@ -278,35 +278,35 @@ lemma gah (hM : G.IsMatching M) (hx : E(G ↾ M, x).encard = 0) (hy : E(G ↾ M,
     (G.addEdge e x y).IsMatching (insert e M) := by
   refine isMatching_of_encard_incEdges_le_one ?_ ?_ ?_
   · grind [hM.subset]
-  simp only [addEdge_vertexSet, mem_union, mem_insert_iff, mem_singleton_iff]
+  simp only [vertexSet_addEdge, mem_union, mem_insert_iff, mem_singleton_iff]
   intro u
   have he' : e ∉ E(G ↾ M) := by grind
   obtain (rfl|hux) := em (u = x)
   · -- u = x
     have := addEdge_incEdges_encard_left he'
-    rw [addEdge_edgeRestrict_commutes, this, hx]
+    rw [addEdge_restrict_commutes, this, hx]
     enat_to_nat; omega
   obtain (rfl|huy) := em (u = y)
   · -- u = y
     have := addEdge_incEdges_encard_right he'
-    rw [addEdge_edgeRestrict_commutes, this, hy]
+    rw [addEdge_restrict_commutes, this, hy]
     enat_to_nat; omega
   rintro ((rfl|rfl)|hu)
     <;> [contradiction ; contradiction ; skip]
   have := hM.incEdges_encard_le_one u
-  rw [isMatching_iff_edgeRestrict_isMatching] at hM
-  rw [addEdge_edgeRestrict_commutes, addEdge_incEdges_encard_of_ne he' hux huy]
+  rw [isMatching_iff_restrict_isMatching] at hM
+  rw [addEdge_restrict_commutes, addEdge_incEdges_encard_of_ne he' hux huy]
   assumption
 
 private
 lemma gah2 (hM : G.IsMatching M) (he : e ∉ M) : (G.addEdge e x y).IsMatching M := by
-  rw [isMatching_iff_edgeRestrict_isMatching] at hM
+  rw [isMatching_iff_restrict_isMatching] at hM
   refine IsMatching.mono_left (G := G ↾ M) ?_ hM
   rw [← deleteEdge_addEdge]
   transitivity (G ＼ {e})
-  · rw [edgeDelete_eq_edgeRestrict]
+  · rw [← restrict_edgeSet_diff_eq_deleteEdges]
     -- TODO: needs grind tag
-    refine G.edgeRestrict_mono_right (by grind [hM.subset])
+    refine G.restrict_mono_right (by grind [hM.subset])
   refine le_addEdge ?_
   grind
 
@@ -332,7 +332,7 @@ lemma IsPath.pathMatching_isMatching (hP : G.IsPath P) : P.toGraph.IsMatching P.
         simp at hP ⊢; grind
       grw [← ENat.le_zero, encard_inc_le_eDegree, ENat.le_zero]
       exact eDegree_eq_zero_of_notMem this
-    · simp only [encard_eq_zero, incEdges_edgeRestrict]
+    · simp only [encard_eq_zero, incEdges_restrict]
       have v_not_in : v ∉ V(w.toGraph) := by
         -- TODO: needs grind tags
         grind [cons_isPath_iff, toGraph_vertexSet]
@@ -502,14 +502,14 @@ theorem Konig'sTheorem [H.Simple] [H.Finite] (hB : H.Bipartite) : τ(H) = ν(H) 
   -/
   obtain (ν_ne|ν_eq) := em' (ν(G - v) = ν(G))
   · have ν_le : ν(G - v) ≤ ν(G) :=
-      matchingNumber_mono vertexDelete_le
+      matchingNumber_mono deleteVerts_le
     obtain ⟨W', hW'⟩ := (G - v).exists_isMinCover
-    have hlt : G - v < G := vertexDelete_singleton_lt huv.right_mem
+    have hlt : G - v < G := deleteVerts_singleton_lt huv.right_mem
     have W_cover : G.IsCover (insert v W') := by
       refine ⟨by grind [huv.right_mem, hW'.subset, vertexSet_mono hlt.le], ?_⟩
       intro e he
       simp only [mem_setIncEdges_iff, mem_insert_iff, exists_eq_or_imp]
-      rw [← G.vertexDelete_singleton_edgeSet v] at he
+      rw [← G.deleteVerts_singleton_edgeSet v] at he
       obtain (he|he) := he
         <;> [right; left]
       · exact setIncEdges_mono hlt.le _ <| hW'.cover he
@@ -537,7 +537,7 @@ theorem Konig'sTheorem [H.Simple] [H.Finite] (hB : H.Bipartite) : τ(H) = ν(H) 
   -/
   obtain ⟨M, hM⟩ := (G - v).exists_isMaxMatching
   have hMG : G.IsMaxMatching M := by
-    refine (hM.mono_left vertexDelete_le).isMaxMatching_of_encard_eq ?_
+    refine (hM.mono_left deleteVerts_le).isMaxMatching_of_encard_eq ?_
     rw [hM.encard, ν_eq]
   have no_touch {f} (hf : f ∈ M) : ¬ G.Inc f v := by
     have := hM.subset hf
@@ -557,7 +557,7 @@ theorem Konig'sTheorem [H.Simple] [H.Finite] (hB : H.Bipartite) : τ(H) = ν(H) 
     have fin1 : E(G ＼ M, u).Finite :=
       LocallyFinite.finite u
     have GMu_deg : E(G ↾ M, u).encard ≤ ↑(1 : ℕ) := hMG.incEdges_encard_le_one u
-    rw [encard_le_coe_iff_finite_ncard_le, incEdges_edgeRestrict] at GMu_deg
+    rw [encard_le_coe_iff_finite_ncard_le, incEdges_restrict] at GMu_deg
     rw [degree_eq_ncard_inc, bwah, ncard_union_eq hdisj fin1 GMu_deg.1] at hdegu
     omega
   obtain ⟨x, hux, hxv_ne⟩ := exists_ne_of_one_lt_ncard neighbors v
@@ -570,21 +570,21 @@ theorem Konig'sTheorem [H.Simple] [H.Finite] (hB : H.Bipartite) : τ(H) = ν(H) 
   -- Since (G \ f) < G, therefore by minimality assumption τ(G \ f) = ν(G \ f),
   -- so we can find such a cover.
   have hMG' : (G ＼ {f}).IsMatching M := by
-    refine hMG.anti_left edgeDelete_le ?_
+    refine hMG.anti_left deleteEdges_le ?_
     have := hf.edge_mem
     simp at this ⊢
     grind [hMG.subset]
 
   have G'_matchingNumber : ν(G ＼ {f}) = ν(G) := by
-    refine le_antisymm (matchingNumber_mono edgeDelete_le) ?_
+    refine le_antisymm (matchingNumber_mono deleteEdges_le) ?_
     rw [← hMG.encard]
     exact hMG'.encard_le
   have hlt : G ＼ {f} < G := by
-    refine lt_of_le_of_edgeSet_ssubset edgeDelete_le ?_
+    refine lt_of_le_of_edgeSet_ssubset deleteEdges_le ?_
     rw [ssubset_iff_subset_ne]
-    refine ⟨edgeSet_mono edgeDelete_le, ?_⟩
+    refine ⟨edgeSet_mono deleteEdges_le, ?_⟩
     simp
-    exact edgeSet_mono edgeDelete_le hf.edge_mem
+    exact edgeSet_mono deleteEdges_le hf.edge_mem
   have G'_coverNumber : τ(G ＼ {f}) = ν(G) := by
     rw [← G'_matchingNumber]
     refine hMin.2 hlt
@@ -606,7 +606,7 @@ theorem Konig'sTheorem [H.Simple] [H.Finite] (hB : H.Bipartite) : τ(H) = ν(H) 
       have := hMG'.mapToCover_inc hW'.toIsCover e.2
       rw [he] at this
       simp only [mem_incVertexSet_iff]
-      refine ⟨e, e.2, this.of_le edgeDelete_le⟩
+      refine ⟨e, e.2, this.of_le deleteEdges_le⟩
     intro bad
     apply this at bad
     simp only [mem_incVertexSet_iff] at bad
@@ -619,10 +619,10 @@ theorem Konig'sTheorem [H.Simple] [H.Finite] (hB : H.Bipartite) : τ(H) = ν(H) 
   have huW' : u ∈ W' := by
     have hne : e ≠ f := by
       rintro rfl
-      have := hf.of_le edgeDelete_le |>.right_unique huv
+      have := hf.of_le deleteEdges_le |>.right_unique huv
       contradiction
-    have heG' : e ∈ E(G ＼ {f}) := by grind [edgeDelete_edgeSet]
-    grind only [hW'.mem_or_mem_of_isLink (huv.of_le_of_mem edgeDelete_le heG')]
+    have heG' : e ∈ E(G ＼ {f}) := by grind [edgeSet_deleteEdges]
+    grind only [hW'.mem_or_mem_of_isLink (huv.of_le_of_mem deleteEdges_le heG')]
   -- So W' also covers f (since f = ux), so W' is a cover of G
   have hW'G : G.IsCover W' := by
     refine ⟨?_, ?_⟩
@@ -631,11 +631,11 @@ theorem Konig'sTheorem [H.Simple] [H.Finite] (hB : H.Bipartite) : τ(H) = ν(H) 
     obtain (h|h) := em' (edge = f)
     · replace h : edge ∈ E(G ＼ {f}) := by grind
       apply hW'.cover at h
-      exact setIncEdges_mono edgeDelete_le _ h
+      exact setIncEdges_mono deleteEdges_le _ h
     symm at h
     obtain rfl := h
     refine ⟨u, huW', ?_⟩
-    exact hf.of_le edgeDelete_le |>.inc_left
+    exact hf.of_le deleteEdges_le |>.inc_left
 
   -- so τ(G) ≤ |W'| = ν(G)
   refine hMin.1 ?_

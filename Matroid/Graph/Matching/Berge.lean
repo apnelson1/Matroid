@@ -282,10 +282,10 @@ private lemma symmDiff_matching_edge_at [G.Loopless] (hM : G.IsMatching M)
     grind only [= mem_diff]
   -- here is a case where matching is baring its teeth...
   replace hex : e ∈ E(H ↾ M, x) := by
-    simp only [incEdges_edgeRestrict]
+    simp only [incEdges_restrict]
     refine ⟨?_, ?_⟩ <;> assumption
   replace hfx : f ∈ E(H ↾ M, x) := by
-    simp only [incEdges_edgeRestrict]
+    simp only [incEdges_restrict]
     refine ⟨?_, ?_⟩ <;> assumption
   have H_le_G : H ≤ G := hle.trans (Subgraph.le _)
   have := hM.incEdges_subsingleton' H_le_G x hex hfx
@@ -309,9 +309,9 @@ private lemma symmDiff_matching_internal_vx [G.Loopless] (hM : G.IsMatching M)
   have hfM' : f ∉ M := by
     intro hfM
     have he : e ∈ E(H ↾ M, x) := by
-      grind only [= incEdges_edgeRestrict, = mem_inter_iff, = mem_insert_iff]
+      grind only [= incEdges_restrict, = mem_inter_iff, = mem_insert_iff]
     have hf : f ∈ E(H ↾ M, x) := by
-      grind only [= incEdges_edgeRestrict, = mem_inter_iff, = mem_insert_iff, = mem_singleton_iff]
+      grind only [= incEdges_restrict, = mem_inter_iff, = mem_insert_iff, = mem_singleton_iff]
     exact hne <| hM.incEdges_subsingleton' H_le_G x he hf
   replace hfM' : f ∈ M' := by grind
   refine ⟨⟨e, ‹_›, ?_⟩, ⟨f, ‹_›, ?_⟩⟩
@@ -362,7 +362,7 @@ private lemma symmDiff_matching_cycle_edge_encard [G.Loopless] (hM : G.IsMatchin
     eq_of_subset_of_subset (incVertexSet_subset _ _) (fun x hx ↦ h_vx x hx |>.1)
   have vertexSet_eq₂ : V(H, M') = V(H) :=
     eq_of_subset_of_subset (incVertexSet_subset _ _) (fun x hx ↦ h_vx x hx |>.2)
-  iterate rw [← edgeRestrict_edgeSet]
+  iterate rw [← edgeSet_restrict]
   have heq : 2 * E(H ↾ M).encard = 2 * E(H ↾ M').encard := by
     grind only [IsMatching.matched_vertexSet_encard_eq']
   -- TODO: grind dies here
@@ -386,7 +386,7 @@ lemma exists_isAugmenter_of_matching_encard_lt [G.Loopless] [G.EdgeFinite] (hM :
     rw [encard_union_eq (by grind), show (2 : ℕ) = (1 : ℕ∞) + 1 by enat_to_nat]
     refine add_le_add ?_ ?_
     all_goals
-      rw [← incEdges_edgeRestrict]
+      rw [← incEdges_restrict]
       refine IsMatching.incEdges_encard_le_one ?_ _
       exact IsMatching.anti_right ‹_› diff_subset
   have M_finite : M.Finite := by
@@ -408,7 +408,7 @@ lemma exists_isAugmenter_of_matching_encard_lt [G.Loopless] [G.EdgeFinite] (hM :
     by_contra! hcon
     have P_edgeSet : E(P.val) = ⋃ i ∈ P.val.Components, E(i) := by
       change ∀ P' ∈ P.val.Components, (E(P') ∩ M').encard ≤ (E(P') ∩ M).encard at hcon
-      conv_lhs => rw [P.val.eq_sUnion_components, sUnion_edgeSet]
+      conv_lhs => rw [P.val.eq_sUnion_components, edgeSet_sUnion]
     have PM'_edges : E(P.val) ∩ M' = ⋃ i : P.val.Components, E(i.val) ∩ M' := by
       simp only [P_edgeSet, iUnion_inter, iUnion_coe_set, mem_components_iff_isCompOf]
     have PM_edges : E(P.val) ∩ M = ⋃ i : P.val.Components, E(i.val) ∩ M := by
@@ -484,8 +484,8 @@ lemma exists_isAugmenter_of_matching_encard_lt [G.Loopless] [G.EdgeFinite] (hM :
     grind only [= mem_diff]
 
   have bruh : V(P', M).encard < V(P', M').encard := by
-    rwa [hM.matched_vertexSet_encard_eq' (hP'P.le.trans P.2), edgeRestrict_edgeSet,
-      hM'.matched_vertexSet_encard_eq' (hP'P.le.trans P.2), edgeRestrict_edgeSet,
+    rwa [hM.matched_vertexSet_encard_eq' (hP'P.le.trans P.2), edgeSet_restrict,
+      hM'.matched_vertexSet_encard_eq' (hP'P.le.trans P.2), edgeSet_restrict,
       ENat.mul_lt_mul_left_iff (by simp) (by simp)]
   rw [encard_lt_encard_iff_encard_diff_lt_encard_diff
     ((incVertexSet_finite P' _).subset inter_subset_left)] at bruh
@@ -529,10 +529,10 @@ lemma exists_isAugmenter_of_matching_encard_lt [G.Loopless] [G.EdgeFinite] (hM :
   · -- if e ∈ M', then e cannot be in M ∆ M', so e cannot be f.
     -- but this violates the disjointness condition for the matching M'.
     have hfxGM' : f ∈ E(G ↾ M', x) := by
-      simp only [incEdges_edgeRestrict, mem_inter_iff, mem_incEdges_iff]
+      simp only [incEdges_restrict, mem_inter_iff, mem_incEdges_iff]
       exact ⟨hf.inc.of_le hP'P.le |>.of_le P.2, hfM'⟩
     have hexGM' : e ∈ E(G ↾ M', x) := by
-      simp only [incEdges_edgeRestrict, mem_inter_iff, mem_incEdges_iff]
+      simp only [incEdges_restrict, mem_inter_iff, mem_incEdges_iff]
       exact ⟨hexG, heM'⟩
     have := hM'.incEdges_subsingleton x hexGM' hfxGM'
     have := symmDiff_edge_mem_or_mem hP'P.le _ hfP'

@@ -93,20 +93,20 @@ lemma between_vertexSet_inter_right_iff : A.between S (V(G) ∩ T) ↔ A.between
 /-- Given a vertex set disjoint from a SetEnsemble, the same set of paths form a valid SetEnsmeble
   for `G - X`. -/
 @[simps (attr := grind =)]
-def vertexDelete (A : G.SetEnsemble) (hA : Disjoint A.vertexSet X) : (G - X).SetEnsemble where
+def deleteVerts (A : G.SetEnsemble) (hA : Disjoint A.vertexSet X) : (G - X).SetEnsemble where
   paths := A.paths
   disjoint := A.disjoint
   valid _ hP := by
-    rw [isPath_vertexDelete_iff]
+    rw [isPath_deleteVerts_iff]
     use A.valid hP, hA.mono_left (A.subset_vertexSet_of_mem hP)
 
 @[simp]
-lemma vertexDelete_vertexSet (A : G.SetEnsemble)
-    (hA : Disjoint A.vertexSet X) : (A.vertexDelete hA).vertexSet = A.vertexSet := by
-  rw [vertexSet_eq_biUnion, vertexDelete_paths, ← vertexSet_eq_biUnion]
+lemma vertexSet_deleteVerts (A : G.SetEnsemble)
+    (hA : Disjoint A.vertexSet X) : (A.deleteVerts hA).vertexSet = A.vertexSet := by
+  rw [vertexSet_eq_biUnion, deleteVerts_paths, ← vertexSet_eq_biUnion]
 
-lemma of_vertexDelete (A : (G - X).SetEnsemble) : Disjoint A.vertexSet X := by
-  have := by simpa only [Graph.vertexDelete_vertexSet, subset_diff] using A.vertexSet_subset
+lemma of_deleteVerts (A : (G - X).SetEnsemble) : Disjoint A.vertexSet X := by
+  have := by simpa only [Graph.vertexSet_deleteVerts, subset_diff] using A.vertexSet_subset
   exact this.2
 
 /-- Given a vertex set disjoint from a SetEnsemble, the same set of paths form a valid SetEnsmeble

@@ -15,14 +15,14 @@ lemma ConnBetween.map (f : α → α') (h : G.ConnBetween x y) :
 
 lemma Preconnected.map (f : α → α') (h : G.Preconnected) : (f ''ᴳ G).Preconnected := by
   intro x' y' hx' hy'
-  obtain ⟨x, hx, rfl⟩ := by simpa only [map_vertexSet, mem_image] using hx'
-  obtain ⟨y, hy, rfl⟩ := by simpa only [map_vertexSet, mem_image] using hy'
+  obtain ⟨x, hx, rfl⟩ := by simpa only [vertexSet_map, mem_image] using hx'
+  obtain ⟨y, hy, rfl⟩ := by simpa only [vertexSet_map, mem_image] using hy'
   exact (h _ _ hx hy).map f
 
 @[simp]
 lemma Connected.map (f : α → α') (h : G.Connected) : (f ''ᴳ G).Connected := by
   obtain ⟨⟨v, hv⟩, hpre⟩ := connected_iff.mp h
-  exact connected_iff.mpr ⟨⟨f v, by simpa [map_vertexSet] using Set.mem_image_of_mem f hv⟩,
+  exact connected_iff.mpr ⟨⟨f v, by simpa [vertexSet_map] using Set.mem_image_of_mem f hv⟩,
       hpre.map f⟩
 
 /-! ### Pulling separators back along a map -/
@@ -33,28 +33,28 @@ lemma IsSep.of_map {f : α → α'} {S : Set α'} (hS : (f ''ᴳ G).IsSep S) :
   by_contra hcon
   have hcon' : (G - (f ⁻¹' S)).Connected := by
     -- deleting vertices outside `V(G)` has no effect
-    simpa [vertexDelete_vertexSet_inter] using hcon
+    simpa [deleteVerts_vertexSet_inter] using hcon
   have : ((f ''ᴳ G) - S).Connected := by
-    simpa [map_vertexDelete_preimage] using (Connected.map (G := G - (f ⁻¹' S)) f hcon')
+    simpa [map_deleteVerts_preimage] using (Connected.map (G := G - (f ⁻¹' S)) f hcon')
   exact hS.not_connected this
 
 lemma IsSep.of_contract (hφ : (G ↾ C).connPartition.IsRepFun φ) (hS : (G /[C, φ]).IsSep S) :
     G.IsSep (φ ⁻¹' S) where
   subset_vx v hvS := by
     obtain ⟨x, hx, hvx⟩ := by
-      simpa only [contract_vertexSet, mem_image] using hS.subset_vx (mem_preimage.mp hvS)
+      simpa only [vertexSet_contract, mem_image] using hS.subset_vx (mem_preimage.mp hvS)
     rw [hφ.apply_eq_apply_iff_rel (by simpa)] at hvx
     simpa using hvx.right_mem
   not_connected hcon := by
     absurd hS.not_connected
     have hsc : G.IsContractClosed (φ : α → α) C := hφ.isContractClosed
     have hmap : ((φ ''ᴳ G) - S).Connected := by
-      simpa [map_vertexDelete_preimage] using hcon.map φ
+      simpa [map_deleteVerts_preimage] using hcon.map φ
     have hdel : (((φ ''ᴳ G) - S) ＼ C).Connected := by
-      rw [← edgeDelete_inter_edgeSet]
-      refine (edgeDelete_connected_iff_of_forall_isLoopAt ?hloops).2 hmap
+      rw [← deleteEdges_inter_edgeSet]
+      refine (deleteEdges_connected_iff_of_forall_isLoopAt ?hloops).2 hmap
       intro e he
-      simpa using hsc.exists_isLoopAt_map_vertexDelete_of_mem S he
+      simpa using hsc.exists_isLoopAt_map_deleteVerts_of_mem S he
     simpa [contract] using hdel
 
 /-! ### Connectivity bounds under contracting a single edge -/
@@ -91,7 +91,7 @@ lemma ConnGE.contract_isLink {n : ℕ} (hG : G.ConnGE (n + 1)) (hl : G.IsLink e 
       apply h1.anti
       simp [hl.left_mem, insert_subset_iff]
     right
-    rw [IsLink.contract_vertexSet]
+    rw [IsLink.vertexSet_contract]
     apply lt_of_lt_of_le ?_ <| encard_le_encard (subset_insert ..)
     rw [encard_diff_singleton_of_mem hl.right_mem]
     enat_to_nat!
@@ -133,7 +133,7 @@ theorem exists_contract_connGE_three [G.Finite] (hG : G.ConnGE 3) (hV : 5 ≤ V(
     have hxy : x ≠ y := by simpa [y] using hnl.other_ne.symm
     have hAdj : G.Adj x y := hl.adj
     have hnV : ((3 : ℕ) : ℕ∞) < V(hl.contract).encard := by
-      rw [hl.contract_vertexSet_of_ne hxy, encard_diff_singleton_of_mem hl.right_mem]
+      rw [hl.vertexSet_contract_of_ne hxy, encard_diff_singleton_of_mem hl.right_mem]
       enat_to_nat!
       omega
     obtain ⟨T, hTsep, hTcard, hxT, hyT⟩ :=
@@ -172,12 +172,12 @@ theorem exists_contract_connGE_three [G.Finite] (hG : G.ConnGE 3) (hV : 5 ≤ V(
       refine (encard_insert_le _ _).trans <| ENat.add_one_le_add_one_iff.mpr ?_
       refine (encard_insert_le _ _).trans <| ENat.add_one_le_add_one_iff.mpr ?_
       simp}
-  obtain ⟨w, hwC, f, hzw⟩ := hMsep.exists_adj_of_isCompOf_vertexDelete hC (x := z) (by simp)
+  obtain ⟨w, hwC, f, hzw⟩ := hMsep.exists_adj_of_isCompOf_deleteVerts hC (x := z) (by simp)
     (by simp); clear hMsep
   -- `z ≠ w` since `z ∉ C` and `w ∈ C`
   have hzwne : z ≠ w := by
     rintro rfl
-    obtain ⟨-, -, -, hzC⟩ := by simpa only [vertexDelete_vertexSet, subset_diff,
+    obtain ⟨-, -, -, hzC⟩ := by simpa only [vertexSet_deleteVerts, subset_diff,
       disjoint_insert_right, disjoint_singleton_right] using vertexSet_mono hC.le
     exact hzC hwC
 
@@ -202,7 +202,7 @@ theorem exists_contract_connGE_three [G.Finite] (hG : G.ConnGE 3) (hV : 5 ≤ V(
     ← ne_eq]
 
   have hor : x ∉ ({w, z, w'} : Set α) ∨ y ∉ ({w, z, w'} : Set α) := by
-    obtain ⟨-, hxC, hyC, hzC⟩ := by simpa only [vertexDelete_vertexSet, subset_diff,
+    obtain ⟨-, hxC, hyC, hzC⟩ := by simpa only [vertexSet_deleteVerts, subset_diff,
       disjoint_insert_right, disjoint_singleton_right] using vertexSet_mono hC.le
     by_contra! h
     simp only [mem_insert_iff, mem_singleton_iff] at h
@@ -225,7 +225,7 @@ theorem exists_contract_connGE_three [G.Finite] (hG : G.ConnGE 3) (hV : 5 ≤ V(
   obtain ⟨v, hv, hvx⟩ := exists_not_connBetween_of_not_connected hTsep.not_connected
     ⟨hxy.left_mem, hxnT⟩
   -- 6. In the component containing `v`, there is some `u` that is adjacent to `w`.
-  obtain ⟨u, huv, hwuadj⟩ := hTsep.exists_adj_of_isCompOf_vertexDelete (walkable_isCompOf hv)
+  obtain ⟨u, huv, hwuadj⟩ := hTsep.exists_adj_of_isCompOf_deleteVerts (walkable_isCompOf hv)
     (by simp : w ∈ _) (vertexSet_finite.subset hTsep.subset_vx)
   clear hTcard hv
   -- 7. `u ∈ C` since `w ∈ C`, `G.Adj w u`, `u ∉ T` and `u ∉ {x, y, z}`.
@@ -234,23 +234,23 @@ theorem exists_contract_connGE_three [G.Finite] (hG : G.ConnGE 3) (hV : 5 ≤ V(
     fun hxu ↦ hvx <| hxu.trans (by exact huv : (G - ({w, z, w'} : Set α)).ConnBetween v u).symm
   -- 8. The entire `(G - T).walkable u` must be strictly contained in `C`.
   have hC' := walkable_isCompOf huT
-  have h := hC'.of_vertexDelete (S := {x, y, z}) <| by
+  have h := hC'.of_deleteVerts (S := {x, y, z}) <| by
     rw [connBetween_comm] at hxuconn
     simp only [disjoint_insert_right, ← connBetween_iff_mem_walkable_of_mem, hxuconn,
-      not_false_eq_true, disjoint_singleton_right, vertexDelete_vertexSet, mem_diff, mem_insert_iff,
+      not_false_eq_true, disjoint_singleton_right, vertexSet_deleteVerts, mem_diff, mem_insert_iff,
       mem_singleton_iff, true_or, or_true, not_true_eq_false, and_false,
       not_connBetween_of_right_not_mem, and_true, true_and]
     by_cases hy : y ∈ ({w, z, w'} : Set α)
     · simp [hy]
     exact fun h ↦ hxuconn <| h.trans (hxy' hy |>.connBetween).symm
   replace h := h.eq_walkable_of_mem_walkable (x := u) (by simpa using huT)
-  rw [vertexDelete_vertexDelete_comm] at h
+  rw [deleteVerts_deleteVerts_comm] at h
   have hC'C : (G - ({w, z, w'} : Set α)).walkable u ≤ C := by
     suffices huC : u ∈ V(C) by
       rw [hC.eq_walkable_of_mem_walkable huC, h]
-      exact walkable_mono vertexDelete_le u
+      exact walkable_mono deleteVerts_le u
     refine hC.isClosedSubgraph.adj_of_adj_of_mem hwC (y := u) ?_ |>.right_mem
-    rw [vertexDelete_adj_iff]
+    rw [deleteVerts_adj_iff]
     use hwuadj, (vertexSet_mono hC.le) hwC |>.2
     simp only [mem_insert_iff, mem_singleton_iff, not_or]
     refine ⟨?_, ?_, ?_⟩ <;> rintro rfl

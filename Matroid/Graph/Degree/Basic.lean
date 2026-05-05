@@ -234,7 +234,7 @@ lemma degree_eq_finsum (G : Graph α β) (v : α) : G.degree v = ∑ᶠ e, G.inc
 
 @[simp]
 lemma finsum_incFun_eq (he : e ∈ E(G)) : ∑ᶠ v, G.incFun e v = 2 := by
-  rw [← G.sum_incFun_eq_two he, Finsupp.sum, finsum_eq_finset_sum_of_support_subset]
+  rw [← G.sum_incFun_eq_two he, Finsupp.sum, finsum_eq_finsetSum_of_support_subset]
   simp
 
 @[simp]
@@ -408,7 +408,7 @@ lemma degree_mono [hG : G.LocallyFinite] (hle : H ≤ G) (x : α) : H.degree x �
   exact eDegree_mono hle x
 
 lemma IsClosedSubgraph.eDegree_eq (h : H ≤c G) (hx : x ∈ V(H)) : H.eDegree x = G.eDegree x := by
-  simp_rw [eDegree_eq_encard_add_encard, ← isLink_self_iff, IsNonloopAt, h.isLink_iff_of_mem hx]
+  simp_rw [eDegree_eq_encard_add_encard, ← isLink_self_iff, IsNonloopAt, h.isLink_congr hx]
 
 lemma IsClosedSubgraph.degree_eq (h : H ≤c G) (hx : x ∈ V(H)) : H.degree x = G.degree x := by
   rw [Graph.degree, h.eDegree_eq hx, Graph.degree]

@@ -85,7 +85,7 @@ lemma IsFiniteRankUniform.isCocircuit_iff (hM : M.IsFiniteRankUniform a) :
 lemma IsFiniteRankUniform.spanning_iff (hM : M.IsFiniteRankUniform a) :
     M.Spanning X ↔ a ≤ X.encard ∧ X ⊆ M.E := by
   obtain ⟨E, rfl, hle⟩ := hM.exists_eq_unifOn
-  by_cases! hXE : ¬ X ⊆ E; grind [Spanning.subset_ground]
+  by_cases! hXE : ¬ X ⊆ E; grind
   rw [unifOn_spanning_iff hle hXE, unifOn_ground_eq, and_iff_left hXE]
 
 lemma IsFiniteRankUniform.restrict (hM : M.IsFiniteRankUniform a) {R : Set α} (hRX : R ⊆ M.E)

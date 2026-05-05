@@ -39,7 +39,7 @@ namespace Graph
 
 def IsSubgraph.RealizationEmbeddingAux (h : H ≤ G) : C(H.PreRealization, G.PreRealization) where
   toFun x := match x with
-  | inl v => inl ⟨v.val, h.vertex_subset v.prop⟩
+  | inl v => inl ⟨v.val, h.vertexSet_mono v.prop⟩
   | inr ⟨e, t⟩ => inr ⟨⟨e.val, edgeSet_mono h e.prop⟩, t⟩
   continuous_toFun := by
     refine continuous_sum_dom.mpr ⟨continuous_of_discreteTopology, ?_⟩

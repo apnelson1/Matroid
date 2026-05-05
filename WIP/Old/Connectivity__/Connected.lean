@@ -342,7 +342,7 @@ theorem Connected.finite_of_finitary_of_cofinitary {α : Type*} {M : Matroid α}
   have h0 : ∀ {i C}, C ∈ cSet i → (e 0 ∈ C ∧ M'.IsCircuit C) := by
     refine @fun i C h ↦ ?_
     obtain ⟨j, rfl⟩ : ∃ (i : ℕ), Cs i = C := by simpa [cSet, Matroid.cSet] using
-      (show C ∈ cSet 0 from cSet_antitone (zero_le _) h)
+      (show C ∈ cSet 0 from cSet_antitone (zero_le) h)
     exact ⟨(hCs j).1,
       (hCs j).2.isCircuit_restrict_of_subset <|(subset_iUnion ..).trans he.symm.subset⟩
 

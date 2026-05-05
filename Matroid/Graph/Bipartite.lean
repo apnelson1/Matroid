@@ -211,7 +211,7 @@ def Bipartition.iUnion {ι : Type*} {H : ι → Graph α β} (B : ∀ i, (H i).B
     · exact (B i).disjoint
     exact (hdj hne.symm).vertex.mono (B j).left_subset (B i).right_subset
   forall_edge e := by
-    simp_rw [iUnion_edgeSet, mem_iUnion, iUnion_isLink, forall_exists_index]
+    simp_rw [edgeSet_iUnion, mem_iUnion, iUnion_isLink, forall_exists_index]
     intro i he
     obtain ⟨x, hx, y, hy, hxy⟩ := (B i).forall_edge _ he
     exact ⟨x, ⟨i, hx⟩, y, ⟨i, hy⟩, ⟨i, hxy⟩⟩
@@ -229,7 +229,7 @@ def Bipartition.sUnion {s : Set (Graph α β)} (B : ∀ G ∈ s, G.Bipartition)
     · exact (B G hG).disjoint
     exact (hs hH hG hne.symm).vertex.mono (B H hH).left_subset (B G hG).right_subset
   forall_edge e := by
-    simp_rw [sUnion_edgeSet, mem_iUnion, sUnion_isLink, forall_exists_index]
+    simp_rw [edgeSet_sUnion, mem_iUnion, sUnion_isLink, forall_exists_index]
     intro i hs hi
     obtain ⟨x, hx, y, hy, hxy⟩ := (B i hs).forall_edge _ hi
     exact ⟨x, ⟨⟨i, hs⟩, hx⟩, y, ⟨⟨i, hs⟩, hy⟩, ⟨i, hs, hxy⟩⟩
@@ -244,9 +244,9 @@ noncomputable def Bipartition.union (G H : Graph α β) (B₁ : G.Bipartition) (
       exact B₁
     simp only [mem_insert_iff, mem_singleton_iff] at hi
     obtain rfl : i = H ＼ E(G) := hi.resolve_left h
-    exact B₂.of_le edgeDelete_le) (by
+    exact B₂.of_le deleteEdges_le) (by
     rw [Set.pairwise_pair_of_symmetric Std.Symm.symm]
-    exact fun _ ↦ hGH.anti_right edgeDelete_le)
+    exact fun _ ↦ hGH.anti_right deleteEdges_le)
 
 /-- Rather than switching the entire bipartition, we can switch the bipartition for the component
  containing `x`. -/

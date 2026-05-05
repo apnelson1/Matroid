@@ -174,7 +174,7 @@ lemma IsBase.nonempty_embedding_of_isBase_isChain (hB : M.IsBase B) (hB' : M.IsB
 lemma Indep.nonempty_embedding_set_of_isBase (hI : M.Indep I) (hB : M.IsBase B) :
     Nonempty (I ↪ Set B) := by
   obtain ⟨B', hB', hIB'⟩ := hI.exists_isBase_superset
-  obtain ⟨r, hr⟩ := exists_wellOrder α
+  obtain ⟨r, hr⟩ := exists_wellFoundedLT α
   let S := range fun a ↦ {x ∈ B' | r.le x a}
   have hS : IsChain (· ⊆ ·) S := by
     rintro _ ⟨a, ha, rfl⟩ _ ⟨b, hb, rfl⟩ hne

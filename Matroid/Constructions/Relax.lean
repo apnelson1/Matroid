@@ -67,7 +67,7 @@ lemma IsLawfulRelaxation.all (M : Matroid α) :
 
 /-- Relax a collection `T` of circuit-hyperplanes of a matroid `M` to obtain a new matroid whose
   bases are the old bases together with the sets in `T`. -/
-@[simps]
+@[simps (attr := grind =)]
 def relax (M : Matroid α) (T : Set (Set α)) (hT : M.IsLawfulRelaxation T) :
     Matroid α where
   E := M.E
@@ -289,7 +289,7 @@ lemma IsLawfulTightening.dual (h : M.IsLawfulTightening T) :
 
 /-- Given a collection of free bases of a matroid `M`, with no pair having symmetric difference
 of size two, we can declare all these to be nonbases, and still have a matroid.  -/
-@[simps!]
+@[simps! (attr := grind =)]
 def tighten (M : Matroid α) (T : Set (Set α)) (hT : M.IsLawfulTightening T) : Matroid α where
   E := M.E
   IsBase B := M.IsBase B ∧ B ∉ T
@@ -416,6 +416,6 @@ lemma IsLawfulTightening.relax_tighten (hT : M.IsLawfulTightening T) :
     (M.tighten T hT).relax T hT.isLawfulRelaxation_tighten = M := by
   refine ext_isBase rfl ?_
   have : ∀ B ∈ T, M.IsBase B := fun B hB ↦ (hT.isFreeBase_of_mem hB).isBase
-  grind [relax_E, tighten_E, relax_IsBase, tighten_IsBase]
+  grind
 
 end Tighten

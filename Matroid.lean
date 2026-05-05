@@ -25,6 +25,7 @@ import Matroid.Connectivity.Extension
 import Matroid.Connectivity.Minor
 import Matroid.Connectivity.Nat
 -- import Matroid.Connectivity.Separation.Abstract
+-- import Matroid.Connectivity.Separation.Adherent
 import Matroid.Connectivity.Separation.Basic
 -- import Matroid.Connectivity.Separation.Faithful
 import Matroid.Connectivity.Separation.Infinite
@@ -50,11 +51,13 @@ import Matroid.Extension.Guts
 import Matroid.Extension.Minor
 import Matroid.Extension.ModularCut
 import Matroid.Extension.Parallel
+-- import Matroid.Extension.Perturbation
 import Matroid.Extension.ProjectBy
 import Matroid.Extension.ProjectionBy
 import Matroid.Extension.Quotient
 -- import Matroid.Extremal.Covers
 -- import Matroid.Extremal.Thickness
+-- import Matroid.Extremal.UniformMinor
 import Matroid.Finitize
 import Matroid.Flat.Basic
 -- import Matroid.Flat.Cyclic
@@ -93,7 +96,6 @@ import Matroid.Graph.Forest
 import Matroid.Graph.Independent
 import Matroid.Graph.Lattice
 import Matroid.Graph.Map
--- import Matroid.Graph.Matching.AugmentingPath
 -- import Matroid.Graph.Matching.Berge
 -- import Matroid.Graph.Matching.Defs
 -- import Matroid.Graph.Matching.Konigs
@@ -101,6 +103,10 @@ import Matroid.Graph.Map
 import Matroid.Graph.Matrix
 import Matroid.Graph.Minor.Conn
 import Matroid.Graph.Minor.Defs
+-- import Matroid.Graph.Path
+-- import Matroid.Graph.Planarity.CWComplex.DualGraph
+-- import Matroid.Graph.Planarity.CycleList.Bar
+-- import Matroid.Graph.Planarity.CycleList.Basic
 -- import Matroid.Graph.Planarity.Defs
 -- import Matroid.Graph.Planarity.Drawing
 import Matroid.Graph.Planarity.GraphContinuum.Basic
@@ -111,7 +117,7 @@ import Matroid.Graph.Planarity.Realization.Basic
 import Matroid.Graph.Planarity.Realization.CWComplex
 import Matroid.Graph.Planarity.Realization.Metric
 import Matroid.Graph.Planarity.Realization.Subgraph
-import Matroid.Graph.Planarity.Topology.Circle
+-- import Matroid.Graph.Planarity.Topology.Circle
 import Matroid.Graph.Planarity.Topology.Circuit
 import Matroid.Graph.Planarity.Topology.ConnPartition
 -- import Matroid.Graph.Planarity.Topology.Curve
@@ -127,6 +133,7 @@ import Matroid.Graph.Subgraph.Delete
 import Matroid.Graph.Subgraph.Inter
 import Matroid.Graph.Subgraph.Lemma
 import Matroid.Graph.Subgraph.Union
+-- import Matroid.Graph.Suppress
 import Matroid.Graph.Tree
 import Matroid.Graph.WList.Cycle
 import Matroid.Graph.WList.Decompose

@@ -58,7 +58,7 @@ lemma IsForest.isEdgeSep (hG : G.IsForest) (he : e ∈ E(G)) : G.IsEdgeSep {e} w
   subset_edgeSet := by simpa
   not_connected h := by
     have := hG he
-    rw [(h.of_isSpanningSubgraph edgeDelete_isSpanningSubgraph).isBridge_iff_isEdgeSep] at this
+    rw [(h.of_isSpanningSubgraph deleteEdges_isSpanningSubgraph).isBridge_iff_isEdgeSep] at this
     exact this.not_connected h
 
 lemma IsForest.isEdgeCutBetween (hG : G.IsForest) (hl : G.IsLink e x y) :
@@ -74,9 +74,9 @@ lemma IsForest.anti (hG : G.IsForest) (hHG : H ≤ G) : H.IsForest :=
 lemma IsForest.union_isForest_of_subsingleton_inter (hG : G.IsForest) (hH : H.IsForest)
     (hi : (V(G) ∩ V(H)).Subsingleton) : (G ∪ H).IsForest := by
   wlog hc : Compatible G H generalizing H with aux
-  · have := aux (hH.anti edgeDelete_le : (H ＼ E(G)).IsForest) (by simpa)
+  · have := aux (hH.anti deleteEdges_le : (H ＼ E(G)).IsForest) (by simpa)
       (Compatible.of_disjoint_edgeSet disjoint_sdiff_right)
-    rwa [Graph.union_eq_union_edgeDelete]
+    rwa [Graph.union_eq_union_deleteEdges]
   intro e he
   wlog heG : e ∈ E(G) generalizing G H with aux
   · obtain heH : e ∈ E(G) ∨ e ∈ E(H) := by simpa using he
@@ -96,7 +96,7 @@ lemma IsForest.of_isCompOf_isForest (h : ∀ H : Graph α β, H.IsCompOf G → H
     G.IsForest := by
   rintro e he
   rw [G.eq_sUnion_components] at he
-  simp only [sUnion_edgeSet, mem_components_iff_isCompOf, mem_iUnion, exists_prop] at he
+  simp only [edgeSet_sUnion, mem_components_iff_isCompOf, mem_iUnion, exists_prop] at he
   obtain ⟨H, hH, heH⟩ := he
   exact h H hH heH |>.of_isClosedSubgraph hH.isClosedSubgraph
 
@@ -114,7 +114,7 @@ lemma IsCyclicWalk.toGraph_not_isForest (hC : G.IsCyclicWalk C) : ¬ C.toGraph.I
   rw [(he.of_le_of_mem hC.isWalk.toGraph_le (by simp)).isBridge_iff_not_connBetween, not_not,
     connBetween_comm]
   use P, ?_
-  simp only [isWalk_edgeDelete_iff, disjoint_singleton_right, mem_edgeSet_iff, heP,
+  simp only [isWalk_deleteEdges_iff, disjoint_singleton_right, mem_edgeSet_iff, heP,
     not_false_eq_true, and_true]
   exact hP.isWalk.wellFormed.isWalk_toGraph.of_le (Graph.left_le_union ..)
 
@@ -134,16 +134,16 @@ lemma IsCyclicWalk.toGraph_eq_of_le {C C₀ : WList α β} (hC : G.IsCyclicWalk 
       (by simpa using hxC)
     refine hC₀.toGraph_not_isForest <| hP.toGraph_isForest.anti ?_
     rw [hP_eq, hC.isWalk.toGraph_eq_induce_restrict, hC₀.isWalk.toGraph_eq_induce_restrict,
-      edgeRestrict_vertexDelete, induce_vertexDelete]
-    refine (edgeRestrict_mono_right _ hCE).trans (edgeRestrict_mono_left (induce_mono_right _ ?_) _)
+      restrict_deleteVerts, induce_deleteVerts]
+    refine (restrict_mono_right _ hCE).trans (restrict_mono_left (induce_mono_right _ ?_) _)
     simpa [subset_diff, hCV] using hxC₀
   obtain ⟨P, hP, hPC⟩ := hC.exists_isPath_toGraph_eq_delete_edge <| by simpa using heC
   refine hC₀.toGraph_not_isForest <| hP.toGraph_isForest.anti ?_
   rw [hPC, hC.isWalk.toGraph_eq_induce_restrict, hC₀.isWalk.toGraph_eq_induce_restrict,
-    edgeRestrict_edgeDelete]
+    restrict_deleteEdges]
   have hss : E(C₀) ⊆ E(C) \ {e} := subset_diff_singleton hCE (by simpa using heC₀)
-  refine (edgeRestrict_mono_right _ hss).trans ?_
-  rw [← edgeRestrict_induce, ← edgeRestrict_induce]
+  refine (restrict_mono_right _ hss).trans ?_
+  rw [← restrict_induce, ← restrict_induce]
   exact induce_mono_right _ hCV
 
 lemma IsForest.not_isTour (hG : G.IsForest) : ¬ G.IsTour P := by
@@ -242,7 +242,7 @@ lemma singleEdge_isForest (hxy : x ≠ y) (e : β) : (Graph.singleEdge x y e).Is
     aesop
   refine hnt.firstEdge_ne_lastEdge hC.edge_nodup ?_
   have h_const := hC.isWalk.edgeSet_subset
-  simp only [singleEdge_edgeSet, subset_singleton_iff, WList.mem_edgeSet_iff] at h_const
+  simp only [edgeSet_singleEdge, subset_singleton_iff, WList.mem_edgeSet_iff] at h_const
   rw [h_const hnt.nonempty.firstEdge (by simp), h_const hnt.nonempty.lastEdge (by simp)]
 
 lemma IsForest.eq_of_isPath_eq_eq (hG : G.IsForest) (hP : G.IsPath P) (hQ : G.IsPath Q)
@@ -277,8 +277,8 @@ lemma isForest_of_minimal_connected (hF : Minimal (fun F ↦ (G ↾ F).Connected
   intro C hC
   obtain ⟨e, he⟩ := hC.nonempty.edgeSet_nonempty
   refine hF.notMem_of_prop_diff_singleton (x := e) ?_ (hC.isWalk.edgeSet_subset he).2
-  rw [← edgeRestrict_edgeDelete]
-  exact hF.prop.edgeDelete_singleton_connected <| hC.not_isBridge_of_mem he
+  rw [← restrict_deleteEdges]
+  exact hF.prop.deleteEdges_singleton_connected <| hC.not_isBridge_of_mem he
 
 lemma IsForest.isShortestPath_of_isPath (hG : G.IsForest) (hP : G.IsPath P) :
     G.IsShortestPath P := by
@@ -326,7 +326,7 @@ lemma isForest_iff_not_isCycle : G.IsForest ↔ ∀ H ≤ G, ¬ H.IsCycle := by
   rw [not_isForest_iff_exists_isCycle.not_right]
   grind
 
-lemma IsForest.of_edgeDelete_singleton (he : G.IsBridge e) (hG : (G ＼ {e}).IsForest) :
+lemma IsForest.of_deleteEdges_singleton (he : G.IsBridge e) (hG : (G ＼ {e}).IsForest) :
     G.IsForest := by
   by_contra! h
   rw [not_isForest_iff_exists_isCycle] at h
@@ -344,12 +344,12 @@ lemma IsForest.isTree_of_IsCompOf (hG : G.IsForest) (hT : T.IsCompOf G) : T.IsTr
   ⟨hG.anti hT.le, hT.connected⟩
 
 lemma IsTree.exists_delete_vertex_isTree [T.Finite] (hT : T.IsTree)
-    (hnt : V(T).Nontrivial) : ∃ v ∈ V(T), (T - v).IsTree := by
+    (hnt : V(T).Nontrivial) : ∃ v ∈ V(T), (T - {v}).IsTree := by
   obtain ⟨x, hxT, hconn⟩ := hT.connected.exists_delete_vertex_connected hnt
-  exact ⟨x, hxT, hT.isForest.anti vertexDelete_le, hconn⟩
+  exact ⟨x, hxT, hT.isForest.anti deleteVerts_le, hconn⟩
 
-lemma IsLeaf.delete_isTree (hT : T.IsTree) (hx : T.IsLeaf x) : (T - x).IsTree :=
-  ⟨hT.isForest.anti vertexDelete_le, hx.delete_connected hT.connected⟩
+lemma IsLeaf.delete_isTree (hT : T.IsTree) (hx : T.IsLeaf x) : (T - {x}).IsTree :=
+  ⟨hT.isForest.anti deleteVerts_le, hx.delete_connected hT.connected⟩
 
 /-! ### Leaves -/
 
@@ -397,7 +397,7 @@ lemma IsTree.encard_vertexSet {T : Graph α β} (h : T.IsTree) : V(T).encard = E
   have hxV := he.isNonloopAt.vertex_mem
   have hlt := encard_delete_vertex_lt hxV
   have := he.isLeaf.delete_isTree h
-  rw [← encard_diff_singleton_add_one hxV, ← vertexDelete_vertexSet, ← vertexDelete_singleton,
+  rw [← encard_diff_singleton_add_one hxV, ← vertexSet_deleteVerts,
     (he.isLeaf.delete_isTree h).encard_vertexSet, he.edgeSet_delete_vertex_eq,
     encard_diff_singleton_add_one he.isNonloopAt.edge_mem]
 termination_by V(T).encard
@@ -408,9 +408,9 @@ lemma IsTree.ncard_vertexSet [T.Finite] (h : T.IsTree) : V(T).ncard = E(T).ncard
 
 lemma IsForest.encard_vertexSet (hG : G.IsForest) :
     V(G).encard = E(G).encard + G.Components.encard := by
-  rw [G.eq_sUnion_components, sUnion_vertexSet, ← ENat.tsum_encard_eq_encard_biUnion,
+  rw [G.eq_sUnion_components, vertexSet_sUnion, ← ENat.tsum_encard_eq_encard_biUnion,
     tsum_congr (β := G.Components) (f := fun C ↦ V(C.1).encard)
-      (g := fun C ↦ E(C.1).encard + 1), sUnion_edgeSet, ← ENat.tsum_encard_eq_encard_biUnion,
+      (g := fun C ↦ E(C.1).encard + 1), edgeSet_sUnion, ← ENat.tsum_encard_eq_encard_biUnion,
     ← ENat.tsum_one, ENat.tsum_add, ← G.eq_sUnion_components, Components]
   · exact G.components_pairwise_stronglyDisjoint.mono' <| by simp [Pi.le_def, stronglyDisjoint_iff]
   · simp only [Subtype.forall, mem_components_iff_isCompOf]

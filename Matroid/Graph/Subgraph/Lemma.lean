@@ -23,9 +23,8 @@ lemma iInter_option_eq_sInter_insert {G₁ : Graph α β} {G : ι → Graph α �
   rw [Graph.sInter_insert _ (range_nonempty _), Graph.sInter_range, Graph.iInter_option]
 
 lemma isClosedSubgraph_iUnion_of_stronglyDisjoint (h : Pairwise (StronglyDisjoint on Hι)) (i : ι) :
-    Hι i ≤c Graph.iUnion Hι (h.mono fun _ _ ↦ StronglyDisjoint.compatible) where
-  le := Graph.le_iUnion ..
-  closed e x he hx := by
+    Hι i ≤c Graph.iUnion Hι (h.mono fun _ _ ↦ StronglyDisjoint.compatible) := IsClosedSubgraph.mk'
+  (Graph.le_iUnion ..) fun e x he hx ↦ by
     obtain ⟨j, hj : (Hι j).Inc e x⟩ := (iUnion_inc_iff ..).1 he
     obtain rfl | hne := eq_or_ne i j
     · exact hj.edge_mem
@@ -37,7 +36,7 @@ lemma isClosedSubgraph_sUnion_of_stronglyDisjoint (s : Set (Graph α β))
 
 lemma isClosedSubgraph_union_left_of_vertexSet_disjoint (h : Disjoint V(H₁) V(H₂)) :
     H₁ ≤c H₁ ∪ H₂ := by
-  refine ⟨Graph.left_le_union H₁ H₂, fun e x hinc hx₁ => ?_⟩
+  refine IsClosedSubgraph.mk' (Graph.left_le_union H₁ H₂) fun e x hinc hx₁ => ?_
   have hninc : ¬ H₂.Inc e x := fun hinc ↦ h.notMem_of_mem_left hx₁ hinc.vertex_mem
   simp only [union_inc_iff, hninc, false_and, or_false] at hinc
   exact hinc.edge_mem
@@ -65,12 +64,12 @@ lemma IsSpanningSubgraph.union (h₁ : H₁ ≤s G) (h₂ : H₂ ≤s G) : H₁ 
 
 lemma IsSpanningSubgraph.union_left (h₁ : H₁ ≤s G) (h₂ : H₂ ≤ G) : H₁ ∪ H₂ ≤s G := by
   rw [(compatible_of_le_le h₁.le h₂).union_eq_iUnion]
-  exact iUnion_isSpanningSubgraph_of_exists_isSpanningSubgraph_of_forall_le (by simp [h₁.le, h₂])
-    ⟨True, h₁⟩
+  exact iUnion_isSpanningSubgraph_of_exists_isSpanningSubgraph_of_forall_le
+    (by simp [h₂, h₁.le']) ⟨True, h₁⟩
 
 lemma IsSpanningSubgraph.union_right (h₁ : H₁ ≤ G) (h₂ : H₂ ≤s G) : H₁ ∪ H₂ ≤s G := by
   rw [(compatible_of_le_le h₁ h₂.le).union_eq_iUnion]
-  exact iUnion_isSpanningSubgraph_of_exists_isSpanningSubgraph_of_forall_le (by simp [h₁, h₂.le])
+  exact iUnion_isSpanningSubgraph_of_exists_isSpanningSubgraph_of_forall_le (by simp [h₁, h₂.le'])
     ⟨False, h₂⟩
 
 lemma IsInducedSubgraph.inter (h₁ : H₁ ≤i G) (h₂ : H₂ ≤i G) : H₁ ∩ H₂ ≤i G := by
@@ -81,37 +80,21 @@ lemma IsClosedSubgraph.inter (h₁ : H₁ ≤c G) (h₂ : H₂ ≤c G) : H₁ �
   rw [inter_eq_iInter]
   exact iInter_isClosedSubgraph <| by simp [h₁,h₂]
 
-lemma IsClosedSubgraph.inter_le {K G H : Graph α β} (hKG : K ≤c G) (hle : H ≤ G) : K ∩ H ≤c H where
-  le := Graph.inter_le_right
-  closed e x hex hx := by
+lemma IsClosedSubgraph.inter_le {K G H : Graph α β} (hKG : K ≤c G) (hle : H ≤ G) : K ∩ H ≤c H :=
+  mk' Graph.inter_le_right fun e x hex hx ↦ by
     rw [inter_vertexSet] at hx
-    have heK := ((hex.of_le hle).of_isClosedSubgraph_of_mem hKG hx.1).edge_mem
+    have heK := ((hKG.inc_congr hx.1).mpr (hex.of_le hle)).edge_mem
     rw [(compatible_of_le_le hKG.le hle).inter_edgeSet]
     exact ⟨heK, hex.edge_mem⟩
-
-@[simp]
-lemma le_bot_iff : G ≤ ⊥ ↔ G = ⊥ := _root_.le_bot_iff
-
-@[simp]
-lemma isClosedSubgraph_bot_iff : G ≤c ⊥ ↔ G = ⊥ :=
-  ⟨fun h => le_bot_iff.mp h.le, fun h => h ▸ bot_isClosedSubgraph ⊥⟩
-
-@[simp]
-lemma isSpanningSubgraph_bot_iff : G ≤s ⊥ ↔ G = ⊥ :=
-  ⟨fun h => le_bot_iff.mp h.le, fun h => h ▸ ⟨rfl, (le_refl G).isLink_of_isLink⟩⟩
-
-@[simp]
-lemma isInducedSubgraph_bot_iff : G ≤i ⊥ ↔ G = ⊥ :=
-  ⟨fun h => le_bot_iff.mp h.le, fun h => h ▸ bot_isInducedSubgraph ⊥⟩
 
 /-! ### Adding one edge -/
 
 lemma addEdge_deleteEdge (he : e ∉ E(G)) (hx : x ∈ V(G)) (hy : y ∈ V(G)) :
     (G.addEdge e x y) ＼ {e} = G := by
   have hc : Compatible (Graph.singleEdge x y e) G := by simp [he]
-  simp only [Graph.addEdge, Graph.ext_iff, edgeDelete_vertexSet, union_vertexSet,
-    singleEdge_vertexSet, union_eq_right, insert_subset_iff, hx, singleton_subset_iff, hy, and_self,
-    edgeDelete_isLink, hc.union_isLink_iff, singleEdge_isLink, mem_singleton_iff, true_and]
+  simp only [Graph.addEdge, Graph.ext_iff, vertexSet_deleteEdges, union_vertexSet,
+    vertexSet_singleEdge, union_eq_right, insert_subset_iff, hx, singleton_subset_iff, hy, and_self,
+    deleteEdges_isLink, hc.union_isLink_iff, singleEdge_isLink, mem_singleton_iff, true_and]
   intro f p q
   obtain rfl | hne := eq_or_ne f e
   · suffices ¬ G.IsLink f p q by simpa
@@ -123,12 +106,12 @@ lemma addEdge_mono (hle : H ≤ G) : H.addEdge e x y ≤ G.addEdge e x y :=
   union_mono_right hle
 
 lemma deleteEdge_le_addEdge : G ＼ {e} ≤ G.addEdge e x y := by
-  rw [Graph.addEdge, union_eq_union_edgeDelete]
-  simp only [singleEdge_edgeSet]
+  rw [Graph.addEdge, union_eq_union_deleteEdges]
+  simp only [edgeSet_singleEdge]
   exact Compatible.right_le_union <| by simp
 
 lemma deleteEdge_addEdge : (G ＼ {e}).addEdge e x y = G.addEdge e x y := by
-  refine le_antisymm (addEdge_mono edgeDelete_le) ?_
+  refine le_antisymm (addEdge_mono deleteEdges_le) ?_
   unfold Graph.addEdge
   rw [union_le_iff]
   refine ⟨Graph.left_le_union (Graph.singleEdge x y e) (G ＼ {e}), Compatible.right_le_union ?_⟩
@@ -137,7 +120,7 @@ lemma deleteEdge_addEdge : (G ＼ {e}).addEdge e x y = G.addEdge e x y := by
 lemma isSpanningSubgraph_addEdge (he : e ∉ E(G)) (hx : x ∈ V(G)) (hy : y ∈ V(G)) :
     G ≤s G.addEdge e x y := by
   nth_rw 1 [← addEdge_deleteEdge he hx hy]
-  exact edgeDelete_isSpanningSubgraph
+  exact deleteEdges_isSpanningSubgraph
 
 lemma IsLink.deleteEdge_addEdge (h : G.IsLink e x y) : (G ＼ {e}).addEdge e x y = G :=
   ext_of_le_le (addEdge_le (by simp) h) le_rfl (by simp [pair_subset_iff, h.left_mem, h.right_mem])

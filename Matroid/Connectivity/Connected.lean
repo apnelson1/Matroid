@@ -264,7 +264,7 @@ lemma cSet_antitone {Cs : ℕ → Set α} {e : ℕ → α} : Antitone (cSet Cs e
   split_ifs with h <;> simp
 
 lemma cSet_subset_range (Cs : ℕ → Set α) (e : ℕ → α) (i : ℕ) : cSet Cs e i ⊆ range Cs :=
-  subset_trans (cSet_antitone (zero_le i)) rfl.le
+  subset_trans (cSet_antitone zero_le) rfl.le
 
 lemma X_monotone (Cs : ℕ → Set α) (e : ℕ → α) : Monotone (X Cs e) := by
   apply monotone_nat_of_le_succ fun n ↦ ?_
@@ -343,7 +343,7 @@ theorem Connected.finite_of_finitary_of_cofinitary {α : Type*} {M : Matroid α}
   have h0 : ∀ {i C}, C ∈ cSet i → (e 0 ∈ C ∧ M'.IsCircuit C) := by
     refine @fun i C h ↦ ?_
     obtain ⟨j, rfl⟩ : ∃ (i : ℕ), Cs i = C := by simpa [cSet, Matroid.cSet] using
-      (show C ∈ cSet 0 from cSet_antitone (zero_le _) h)
+      (show C ∈ cSet 0 from cSet_antitone (zero_le) h)
     exact ⟨(hCs j).1,
       (hCs j).2.isCircuit_restrict_of_subset <|(subset_iUnion ..).trans he.symm.subset⟩
 
