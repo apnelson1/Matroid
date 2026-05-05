@@ -88,19 +88,19 @@ lemma not_isCircuit_real (S : Set ℝ) : ¬ IsCircuit S := by
     · rintro rfl; linarith [ht, h1]
     · rintro rfl; linarith [ht, h2]
 
--- A set is a circuit iff it is a simple closed curve.
-lemma isCircuit_iff_range_path_injOn_Ico :
-    IsCircuit C ↔ ∃ x, ∃ P : Path x x, InjOn P (Ico 0 1) ∧ range P = C := by
-  refine ⟨fun h ↦ ?_, fun ⟨x, h⟩ ↦ ?_⟩ <;> obtain ⟨f, hf, rfl⟩ := h
-  · let P := ((Circle.path 1 (-1)).trans (Circle.path (-1) 1)).map hf.continuous
-    have hPinj : InjOn P (Ico 0 1) := by
-      refine hf.injective.comp_injOn ?_
-      sorry
-    use f 1, P, hPinj
-    change range (f ∘ ((Circle.path 1 (-1)).trans (Circle.path (-1) 1))) = range f
-    rw [Surjective.range_comp]
-    intro i
-    sorry
-  
+-- -- A set is a circuit iff it is a simple closed curve.
+-- lemma isCircuit_iff_range_path_injOn_Ico :
+--     IsCircuit C ↔ ∃ x, ∃ P : Path x x, InjOn P (Ico 0 1) ∧ range P = C := by
+--   refine ⟨fun h ↦ ?_, fun ⟨x, h⟩ ↦ ?_⟩ <;> obtain ⟨f, hf, rfl⟩ := h
+--   · let P := ((Circle.path 1 (-1)).trans (Circle.path (-1) 1)).map hf.continuous
+--     have hPinj : InjOn P (Ico 0 1) := by
+--       refine hf.injective.comp_injOn ?_
+--       sorry
+--     use f 1, P, hPinj
+--     change range (f ∘ ((Circle.path 1 (-1)).trans (Circle.path (-1) 1))) = range f
+--     rw [Surjective.range_comp]
+--     intro i
+--     sorry
 
-  sorry
+
+--   sorry

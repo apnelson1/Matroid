@@ -56,8 +56,10 @@ import Matroid.Extension.ProjectBy
 import Matroid.Extension.ProjectionBy
 import Matroid.Extension.Quotient
 -- import Matroid.Extremal.Covers
+-- import Matroid.Extremal.Covers_
 -- import Matroid.Extremal.Thickness
--- import Matroid.Extremal.UniformMinor
+-- import Matroid.Extremal.Triangular
+-- import Matroid.Extremal.Uniform
 import Matroid.Finitize
 import Matroid.Flat.Basic
 -- import Matroid.Flat.Cyclic
