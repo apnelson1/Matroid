@@ -308,11 +308,14 @@ lemma coverNumber_le_prop (P Q : Set α → Prop) (X : Set α)
   rw [←hTe]
   exact IsCover.coverNumber_le ⟨hT.sUnion_eq, fun F hF ↦ hPQ F (hT.subset hF) (hT.pProp F hF)⟩
 
---Mathieu
 lemma coverNumber_congr (P Q : Set α → Prop)
     (hPQ : ∀ (Y : Set α), Y ⊆ X → (P Y ↔ Q Y)) :
     X.coverNumber P = X.coverNumber Q := by
-  sorry
+  have h1 : X.coverNumber P ≤ X.coverNumber Q :=
+    coverNumber_le_prop Q P X (fun Y hY hQ ↦ (hPQ Y hY).2 hQ)
+  have h2 : X.coverNumber Q ≤ X.coverNumber P :=
+    coverNumber_le_prop P Q X (fun Y hY hP ↦ (hPQ Y hY).1 hP)
+  grind
 
 lemma coverNumber_le_coverNumber_union {P Q : Set α → Prop} {X : Set α} {Y : Set α}
     (hX : X.Nonempty) (hP : ∀ F : Set α, P F → Q (F ∪ Y)) :
@@ -403,8 +406,7 @@ lemma IsRankCover_iff {M : Matroid α} {T : Set (Set α)} {X : Set α} {k : ℕ�
     M.IsRankCover T X k ↔ T.IsCover X (fun A ↦ M.eRk A ≤ k) := Iff.rfl
 
 lemma rankCoverNumber_eq {M : Matroid α} {X : Set α} {k : ℕ∞} :
-    M.rankCoverNumber X k = X.coverNumber (fun A ↦ M.eRk A ≤ k) := by
-  sorry
+    M.rankCoverNumber X k = X.coverNumber (fun A ↦ M.eRk A ≤ k) := by rfl
 
 lemma IsRankCover_iff' (M : Matroid α) (T : Set (Set α)) (X : Set α) (k : ℕ∞) :
     M.IsRankCover T X k ↔ ⋃₀ T = X ∧ (∀ F ∈ T, M.eRk F ≤ k) := by
