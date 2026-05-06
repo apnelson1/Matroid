@@ -6,10 +6,29 @@ import Matroid.ForMathlib.Analysis.Normed.Module.Connected
 
 open Metric Set Graph Topology.RelCWComplex Topology.CWComplex Function Set.Notation
 
-namespace Topology
+-- def finOneHomeo (K : Type*) [TopologicalSpace K] : (Fin 1 → K) ≃ₜ K :=
+--   Homeomorph.funUnique (Fin 1) K
+
+namespace Topology.RelCWComplex
 
 variable {E ι : Type*} [TopologicalSpace E] {K C D : Set E} [CWComplex K] {n m : ℕ} {x : E}
   {u v : cell K 0} {e f : cell K 1}
+
+@[simp]
+lemma map_target_eq (e : cell K n) : (map n e).target = openCell n e :=
+  (map n e).image_source_eq_target.symm.trans <| source_eq n e ▸ rfl
+
+@[simps! apply symm_apply source]
+def mapOne (e : cell K 1) : PartialEquiv E ℝ :=
+  (map 1 e).symm.transEquiv (Homeomorph.funUnique (Fin 1) ℝ)
+
+@[simp]
+lemma mapOne_target (e : cell K 1) : (mapOne e).target = ball 0 1 := by
+  ext x
+  simp only [mapOne, PartialEquiv.transEquiv_target, PartialEquiv.symm_target, source_eq,
+    mem_preimage, mem_ball, dist_zero_right, Real.norm_eq_abs]
+  change ‖(fun _ : Fin 1 ↦ x)‖ < 1 ↔ |x| < 1
+  simp
 
 lemma isPathConnected_openCell (e : cell K n) : IsPathConnected (openCell n e) :=
   (isPathConnected_ball zero_lt_one).image' ((continuousOn n e).mono ball_subset_closedBall)
@@ -69,6 +88,30 @@ lemma not_isCircuit_range_subset_openCell_one {f : Circle → E} (hf : IsEmbeddi
       exact hxy
     exact hf.injective <| (map 1 e).symm.injOn (htarget x) (htarget y) hfin
   exact not_isCircuit_real (range g) ⟨g, (hg_cont.isClosedEmbedding hg_inj).isEmbedding, rfl⟩
+
+lemma exists_Ioo_subset_image_Ioo_of_continuousOn_injOn {a t b : unitInterval}
+    {g : unitInterval → ℝ} (hat : a < t) (htb : t < b) (hg_cont : ContinuousOn g (Icc a b))
+    (hg_inj : InjOn g (Icc a b)) : ∃ l r, l < g t ∧ g t < r ∧ Ioo l r ⊆ g '' Ioo a b := by
+  have hab : a ≤ b := hat.le.trans htb.le
+  have ht_mem : t ∈ Icc a b := ⟨hat.le, htb.le⟩
+  obtain hmono | hanti := hg_cont.strictMonoOn_of_injOn_Icc' hab hg_inj
+  · exact ⟨g a, g b, hmono (left_mem_Icc.mpr hab) ht_mem hat,
+      hmono ht_mem (right_mem_Icc.mpr hab) htb, intermediate_value_Ioo hab hg_cont⟩
+  exact ⟨g b, g a, hanti ht_mem (right_mem_Icc.mpr hab) htb,
+    hanti (left_mem_Icc.mpr hab) ht_mem hat, intermediate_value_Ioo' hab hg_cont⟩
+
+lemma linePoint_mem_openCell_one (e : cell K 1) {r : ℝ} (hr : |r| < 1) :
+    map 1 e (fun _ ↦ r) ∈ openCell 1 e := ⟨fun _ ↦ r, by simp [hr], rfl⟩
+
+lemma linePoint_coord_one (e : cell K 1) {r : ℝ} (hr : |r| < 1) :
+    (map 1 e).symm (map 1 e (fun _ ↦ r)) 0 = r := by
+  suffices (map 1 e).symm (map 1 e (fun _ ↦ r)) = (fun _ ↦ r) by rw [this]
+  refine PartialEquiv.left_inv _ ?_
+  simp [hr, source_eq]
+
+lemma map_zero_notMem_openCell_one (u : cell K 0) (e : cell K 1) : map 0 u 0 ∉ openCell 1 e :=
+  disjoint_openCell_of_ne (by simp [Sigma.ext_iff] : (⟨0, u⟩ : Σ n, cell K n) ≠ ⟨1, e⟩)
+    |>.notMem_of_mem_left (map_zero_mem_openCell 0 u)
 
 variable [T2Space E]
 
@@ -219,9 +262,58 @@ theorem exists_openCell_zero_subset_of_isCircuit (hC : IsCircuit C)
 theorem subset_of_not_disjoint_of_path (P : Path (map 0 u 0) (map 0 v 0))
     (hP : Injective P) (h : range P ⊆ skeleton K 1) (hdisj : ¬ Disjoint (range P) (openCell 1 e)) :
     openCell 1 e ⊆ range P := by
-  obtain ⟨x, hxP, hxe⟩ := not_disjoint_iff.mp hdisj
-
-  sorry
+  obtain ⟨x, hxP, hxe⟩ := not_disjoint_iff.mp hdisj; clear hdisj
+  let A : Set (openCell 1 e) := {z | (z : E) ∈ range P}
+  have hopen_preimage : IsOpen {s : unitInterval | P s ∈ openCell 1 e} := by
+    let PS : unitInterval → (skeleton K 1 : Set E) := fun s ↦ ⟨P s, h (mem_range_self s)⟩
+    change IsOpen (PS ⁻¹' (↑(skeleton K 1) ↓∩ openCell 1 e))
+    exact (isOpen_openCell_skeleton e).preimage <| P.continuous.subtype_mk _
+  have htarget_of_mem_openCell {y : E} (hy : y ∈ openCell 1 e) : y ∈ (map 1 e).target := by
+    rwa [← (map 1 e).image_source_eq_target, source_eq]
+  let coord : openCell 1 e → ℝ := fun z ↦ (map 1 e).symm (z : E) 0
+  have hcoord_cont : Continuous coord :=
+    (continuous_apply 0).comp <| (continuousOn_symm 1 e).comp_continuous continuous_subtype_val
+      (fun z ↦ htarget_of_mem_openCell z.prop)
+  have hA_open : IsOpen A := by
+    refine isOpen_iff_forall_mem_open.mpr fun z ⟨t, ht⟩ ↦ ?_
+    have ht_openCell : P t ∈ openCell 1 e := ht ▸ z.prop
+    have ht0 : t ≠ 0 :=
+      fun h ↦ map_zero_notMem_openCell_one u e (by simpa [Path.source, h] using ht_openCell)
+    have ht1 : t ≠ 1 :=
+      fun h ↦ map_zero_notMem_openCell_one v e (by simpa [Path.target, h] using ht_openCell)
+    have h0t : (0 : unitInterval) < t := lt_of_le_of_ne bot_le ht0.symm
+    have ht1' : t < (1 : unitInterval) := lt_of_le_of_ne le_top ht1
+    obtain ⟨l, r, htlr, hlr_sub⟩ := (mem_nhds_iff_exists_Ioo_subset' ⟨0, h0t⟩ ⟨1, ht1'⟩).mp
+      (hopen_preimage.mem_nhds ht_openCell)
+    obtain ⟨a, hla, hat⟩ := exists_between htlr.1
+    obtain ⟨b, htb, hbr⟩ := exists_between htlr.2
+    clear h0t ht1' ht0 ht1 ht_openCell hopen_preimage hxe hxP h htlr
+    have hIcc_openCell : Icc a b ⊆ {s : unitInterval | P s ∈ openCell 1 e} :=
+      fun s hs ↦ hlr_sub ⟨hla.trans_le hs.1, hs.2.trans_lt hbr⟩
+    have hg_cont : ContinuousOn ((mapOne e) ∘ P) (Icc a b) :=
+      (continuous_apply 0).comp_continuousOn <| (continuousOn_symm 1 e).comp
+        P.continuous.continuousOn (fun s hs ↦ htarget_of_mem_openCell (hIcc_openCell hs))
+    have hg_inj : InjOn ((mapOne e) ∘ P) (Icc a b) := ((mapOne_source e ▸ (mapOne e).injOn).comp
+      hP.injOn <| MapsTo.congr hlr_sub fun _ ↦ congrFun rfl) |>.mono (Icc_subset_Ioo hla hbr)
+    obtain ⟨L, R, hL, hR, hLR_image⟩ :=
+      exists_Ioo_subset_image_Ioo_of_continuousOn_injOn hat htb hg_cont hg_inj
+    clear hg_cont hg_inj hat htb hla hbr hlr_sub
+    let B : Set (openCell 1 e) := coord ⁻¹' Ioo L R
+    refine ⟨B, fun y hyB ↦ ?_, isOpen_Ioo.preimage hcoord_cont, by
+      simp only [comp_apply, mapOne_apply, Fin.isValue] at hL hR; grind⟩
+    obtain ⟨s, hsIoo, hgs⟩ := hLR_image hyB
+    refine ⟨s, ?_⟩
+    rw [← (map 1 e).right_inv (htarget_of_mem_openCell (hIcc_openCell ⟨hsIoo.1.le, hsIoo.2.le⟩)),
+      ← (map 1 e).right_inv (htarget_of_mem_openCell y.prop)]
+    congr 1
+    ext i
+    fin_cases i
+    exact hgs
+  haveI : PreconnectedSpace (openCell 1 e) :=
+    isPreconnected_iff_preconnectedSpace.mp (isPathConnected_openCell e).isConnected.isPreconnected
+  have hA_univ : A = univ := IsClopen.eq_univ ⟨(isCompact_range P.continuous).isClosed.preimage
+    continuous_subtype_val, hA_open⟩ ⟨⟨x, hxe⟩, hxP⟩
+  exact fun y hy ↦ (show (⟨y, hy⟩ : openCell 1 e) ∈ A by simp [hA_univ])
 
 theorem path_to_walk (P : Path (map 0 u 0) (map 0 v 0)) (h : range P ⊆ skeleton K 1) :
     ∃ W, (OneSkeletonGraph K).IsWalk W ∧ W.first = u ∧ W.last = v := by
@@ -241,7 +333,7 @@ theorem cycle_iff_jordan_curve (hCK : C ⊆ skeleton K 1) :
 
     sorry
   subst C
-  
+
   sorry
 
 

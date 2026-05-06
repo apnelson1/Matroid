@@ -102,5 +102,4 @@ lemma not_isCircuit_real (S : Set ℝ) : ¬ IsCircuit S := by
 --     intro i
 --     sorry
 
-
 --   sorry
