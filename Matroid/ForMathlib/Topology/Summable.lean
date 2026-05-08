@@ -4,6 +4,7 @@ import Mathlib.Topology.Order.T5
 import Matroid.ForMathlib.Topology.SSup
 import Mathlib.Topology.Algebra.InfiniteSum.Order
 import Matroid.ForMathlib.Order.Misc
+import Mathlib.Algebra.Order.Quantale
 -- import Mathlib.Algebra.Order.IsBotOne
 -- import Matroid.ForMathlib.ENat
 -- import Matroid.ForMathlib.Card
@@ -415,16 +416,16 @@ end CompleteLinearOrder
 
 section Ring
 
-variable {R : Type*} [Semiring R] [CompleteLinearOrder R] [CanonicallyOrderedAdd R]
-    [TopologicalSpace R] [OrderTopology R]
+variable {R : Type*} [Semiring R] [CompleteLattice R] [IsQuantale R] [TopologicalSpace R]
+    [CanonicallyOrderedAdd R] [SupConvergenceClass R] [T2Space R]
 
-theorem mul_tsum [ContinuousMul R] [ContinuousAdd R] [MulLeftMono R] (c : R) (f : α → R) :
-    c * (∑' a, f a) = ∑' a, (c * f a) := by
-  rw [tsum_eq_iSup_sum, mul_iSup, tsum_eq_iSup_sum, iSup_congr (fun _ ↦ Finset.mul_sum ..)]
+theorem mul_tsum (c : R) (f : α → R) : c * (∑' a, f a) = ∑' a, (c * f a) := by
+  rw [tsum_eq_iSup_sum, tsum_eq_iSup_sum, Quantale.mul_iSup_distrib,
+    iSup_congr (fun _ ↦ Finset.mul_sum ..)]
 
-theorem tsum_mul [ContinuousMul R] [ContinuousAdd R] [MulLeftMono R] (c : R) (f : α → R) :
-    (∑' a, f a) * c = ∑' a, (f a * c) := by
-  rw [tsum_eq_iSup_sum, iSup_mul, tsum_eq_iSup_sum, iSup_congr (fun _ ↦ Finset.sum_mul ..)]
+theorem tsum_mul (c : R) (f : α → R) : (∑' a, f a) * c = ∑' a, (f a * c) := by
+  rw [tsum_eq_iSup_sum, tsum_eq_iSup_sum, Quantale.iSup_mul_distrib,
+    iSup_congr (fun _ ↦ Finset.sum_mul ..)]
 
 end Ring
 
