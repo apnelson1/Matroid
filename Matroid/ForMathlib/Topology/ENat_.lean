@@ -7,8 +7,12 @@ import Mathlib.Topology.Algebra.InfiniteSum.Order
 
 open Set Function
 
-instance : AddEqTopClass ℕ∞ where
-  eq_or_eq_of_add a b := by simp
+instance : AddEqTopClass ℕ∞ := inferInstanceAs <| AddEqTopClass (WithTop ℕ)
+
+instance : Archimedean (AddSubmonoid.neTop ℕ∞) where
+  arch a b h0b := by
+    have := orderAddMonoidIsoNeTop ℕ
+
 
 namespace ENat
 
@@ -119,7 +123,7 @@ protected theorem tsum_sigma' {β : α → Type*} (f : (Σ a, β a) → ℕ∞) 
 
 protected theorem tsum_eq_top_iff_of_finite (hs : s.Finite) :
     ∑' (x : s), f x = ⊤ ↔ ∃ a ∈ s, f a = ⊤ :=
-  tsum_eq_top_iff_of_finite hs (by simp)
+  tsum_eq_top_iff_of_finite hs
 
 variable {ι : Type*}
 

@@ -3,9 +3,12 @@ import Mathlib.Topology.Algebra.InfiniteSum.Constructions
 import Mathlib.Topology.Order.T5
 import Matroid.ForMathlib.Topology.SSup
 import Mathlib.Topology.Algebra.InfiniteSum.Order
+import Matroid.ForMathlib.Order.Misc
+-- import Mathlib.Algebra.Order.IsBotOne
 -- import Matroid.ForMathlib.ENat
 -- import Matroid.ForMathlib.Card
 set_option linter.style.longLine false
+
 
 open Lean Lean.PrettyPrinter.Delaborator in
 /-- Delaborator for tsums?. -/
@@ -66,20 +69,28 @@ meta def tprod_delab : Delab := whenPPOption Lean.getPPNotation do
 
 open Set Set.Notation Function
 
-
 variable {ι : Sort*} {α β M : Type*} {a b : α} {f g : α → M} {s t : Set α}
 
-class AddEqTopClass (M : Type*) [Add M] [Top M] : Prop where
-  eq_or_eq_of_add (a b : M) : a + b = ⊤ → a = ⊤ ∨ b = ⊤
-
-@[to_additive]
-class MulEqTopClass (M : Type*) [Mul M] [Top M] : Prop where
-  eq_or_eq_of_mul (a b : M) : a * b = ⊤ → a = ⊤ ∨ b = ⊤
 
 section prelim
 
-variable [CommMonoid M] [TopologicalSpace M] [CompleteLattice M] [SupConvergenceClass M]
-  [CanonicallyOrderedMul M]
+@[to_additive]
+theorem tprod_subtype_eq_toFinset_prod [CommMonoid M] [TopologicalSpace M] (hs : s.Finite) :
+    ∏' (x : s), f x = ∏ x ∈ hs.toFinset, f x := by
+  obtain ⟨s, rfl⟩ := hs.exists_finset_coe
+  simp [Finset.prod_attach]
+
+@[to_additive]
+theorem tprod_subtype_const_of_finite [CommMonoid M] [TopologicalSpace M] (hs : s.Finite) (c : M) :
+    ∏' (_ : s), c = c ^ hs.toFinset.card := by
+  obtain ⟨s, rfl⟩ := hs.exists_finset_coe
+  simp
+
+variable [CommMonoid M] [TopologicalSpace M]
+
+section CompleteLattice
+
+variable [CompleteLattice M] [SupConvergenceClass M] [CanonicallyOrderedMul M]
 
 @[to_additive]
 theorem hasProd : HasProd f (⨆ s : Finset α, ∏ a ∈ s, f a) :=
@@ -235,6 +246,18 @@ theorem tprod_subtype_eq_top_of_eq_top (h : ∃ a ∈ s, f a = ⊤) : ∏' a : s
   let ⟨a, ha, has⟩ := h
   tprod_eq_top_of_eq_top ⟨⟨a, ha⟩, has⟩
 
+@[to_additive]
+theorem tprod_eq_top_iff_of_finite [ContinuousMul M] [MulEqTopClass M] (hs : s.Finite) :
+    ∏' (x : s), f x = ⊤ ↔ ∃ a ∈ s, f a = ⊤ := by
+  refine ⟨fun h ↦ ?_, tprod_subtype_eq_top_of_eq_top⟩
+  induction s, hs using Set.Finite.induction_on with
+  | empty => simp at h
+  | @insert a s₀ has₀ hs₀ ih =>
+    rw [tprod_insert has₀] at h
+    obtain (h | h) := MulEqTopClass.eq_or_eq_of_mul _ _ h
+    · simp [h]
+    simp [ih h]
+
 section ContinuousMul
 
 variable [ContinuousMul M] [T3Space M] {ι : Type*}
@@ -279,30 +302,118 @@ theorem tprod_subtype_eq_tprod_mulSupport (s : Set α) (f : α → M) :
   have hrw : ∏' i : {i | i ∈ s ∧ f i = 1}, f i = 1 := by simp
   rw [hu, tprod_union_disjoint (by grind), hrw, mul_one, ← hu]
 
+-- theorem tprod_iUnion_eq_tprod_iff [MulEqTopClass M] [MulLeftStrictMono (Submonoid.neTop M)]
+--     {ι} {s : ι → Set α} (hfin : (⋃ i, s i).Finite) (h1 : ∀ x, f x ≠ 1) (htop : ∀ x, f x ≠ ⊤) :
+--     ∏' (x : ⋃ i, s i), f x = ∏' i, ∏' (x : s i), f x ↔ Pairwise (Disjoint on s) := by
+--   refine ⟨fun h i j hij ↦ disjoint_left.2 fun a hai haj ↦ ?_, tprod_iUnion_eq_tprod _ _⟩
+--   refine h.symm.not_gt ?_
+--   grw [← insert_diff_self_of_mem (mem_iUnion_of_mem _ hai), tprod_insert (by simp), iUnion_diff,
+--     mul_le_mul_right (tprod_iUnion_le_tprod ..),
+--     ← tprod_congr (fun i ↦ tprod_congr_set_coe f (diff_union_inter (s i) {a})),
+--     tprod_congr fun i ↦ tprod_union_disjoint disjoint_sdiff_inter, mul_comm, tprod_mul]
+--   set u := (∏' (i : ι) (x : ↑(s i \ {a})), f ↑x) with hu
+--   -- have hle : ∏' (i : ι) (x : ↑(s i ∩ {a})), f x ≤ f a * f a := sorry
+--   by_cases htop : ∏' (a_1 : ι) (x : ↑(s a_1 ∩ {a})), f ↑x = ⊤
+--   · simp [htop]
+--   refine mul_lt_mul_right (α := Submonoid.neTop M) (a := ⟨u, ?_⟩)
+--     (b := ⟨f a, htop a⟩) (c := ⟨_, ?_⟩) ?_
+--   · simp only [Submonoid.neTop, ne_eq, Submonoid.mem_mk, Subsemigroup.mem_mk, mem_setOf_eq]
+--     grw [← top_le_iff]
+--   -- rw [tprod_congr (fun i ↦ tsum_congr_set_coe (diff_union_inter (s i) {a}))] at h
+
+--   -- have aux (x y z : M) (hxy : x ≤ y) : x * z ≤ y * z := by exact mul_le_mul_left hxy z
+
+
+--   -- generalize ht : ⋃ i, s i = t at *
+--   -- induction t, hfin using Finite.induction_on generalizing s with
+--   -- | empty =>
+--   --   rw [eq_comm] at h
+--   --   simp only [tprod_empty, tprod_eq_one, h1, Subtype.forall, imp_false] at h
+--   --   simp [Pairwise, disjoint_left, h]
+--   -- | @insert a t hat ht ih =>
+
+
+--   -- -- rw [finite_iUnion_iff] at hfin
+--   -- refine fun i j hij ↦ disjoint_left.2 fun a hai haj ↦ ?_
+--   -- specialize h1 a
+--   -- have : 1 < f a := sorry
+--   -- sorry
+
+
+
 end ContinuousMul
 
 end OrderClosedTopology
 
-section Union
+end CompleteLattice
 
-section Top
+section CompleteLinearOrder
+
+variable [CompleteLinearOrder M] [SupConvergenceClass M] [CanonicallyOrderedMul M]
+    [MulEqTopClass M] [IsOrderedMonoid M] [OrderClosedTopology M]
+    [MulArchimedean (Submonoid.neTop M)]
+    [MulLeftStrictMono (Submonoid.neTop M)]
 
 @[to_additive]
-theorem tprod_eq_top_iff_of_finite [T2Space M] [ContinuousMul M] [IsOrderedMonoid M]
-    [OrderClosedTopology M] [MulEqTopClass M] (hs : s.Finite) (htop : (1 : M) ≠ ⊤) :
-    ∏' (x : s), f x = ⊤ ↔ ∃ a ∈ s, f a = ⊤ := by
-  refine ⟨fun h ↦ ?_, tprod_subtype_eq_top_of_eq_top⟩
-  induction s, hs using Set.Finite.induction_on with
-  | empty => simp [htop] at h
-  | @insert a s₀ has₀ hs₀ ih =>
-    rw [tprod_insert has₀] at h
-    obtain (h | h) := MulEqTopClass.eq_or_eq_of_mul _ _ h
-    · simp [h]
-    simp [ih h]
+theorem tprod_const_eq_top [Infinite α] {c : M} (hc : c ≠ 1) : ∏' (_ : α), c = ⊤ := by
+  obtain rfl | hne := eq_or_ne c ⊤
+  · grw [← top_le_iff, ← le_tprod (Classical.arbitrary α)]
+  simp only [tprod_eq_iSup_prod, Finset.prod_const, iSup_eq_top]
+  refine fun b hb ↦ ?_
+  obtain ⟨n, hlt⟩ := exists_lt_pow (R := (Submonoid.neTop M)) (a := ⟨c, hne⟩)
+    (Subtype.coe_lt_coe.1 <| one_le.lt_of_ne (by simpa using hc.symm)) ⟨b, hb.ne⟩
+  obtain ⟨s, rfl⟩ := Infinite.exists_subset_card_eq α n
+  exact ⟨s, by simpa using hlt⟩
 
-end Top
+@[to_additive]
+theorem tprod_subtype_const_eq_top (hs : s.Infinite) {c : M} (hc : c ≠ 1) : ∏' (_ : s), c = ⊤ := by
+  have := hs.to_subtype
+  exact tprod_const_eq_top hc
 
-section distrib
+variable [IsAtomic M]
+
+@[to_additive]
+theorem tprod_eq_top_of_support_infinite (hf : f.mulSupport.Infinite) : ∏' a, f a = ⊤ := by
+  obtain ⟨x, hx : f x ≠ 1⟩ := hf.nonempty
+  have hx' := eq_bot_or_exists_atom_le (f x)
+  rw [bot_eq_one, or_iff_right hx] at hx'
+  obtain ⟨a, ha, hax⟩ := hx'
+  grw [← tprod_subtype_mulSupport, ← top_le_iff, ← tprod_le_tprod (f := fun _ ↦ a),
+    tprod_subtype_const_eq_top hf]
+  · rw [← bot_eq_one]
+    exact ha.ne_bot
+  rintro ⟨y, hy⟩
+  by_contra! hcon
+  rw [ha.lt_iff, bot_eq_one] at hcon
+  contradiction
+
+@[to_additive]
+theorem tprod_eq_top_iff : ∏' a, f a = ⊤ ↔ f.mulSupport.Infinite ∨ ∃ a, f a = ⊤ := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.elim (fun hs ↦ ?_) (fun hex ↦ ?_)⟩
+  · contrapose! h
+    rw [← tprod_subtype_mulSupport, tprod_subtype_eq_toFinset_prod h.1]
+    intro hcon
+    obtain ⟨x, hx⟩ := exists_of_prod_eq_top hcon
+    exact h.2 x hx
+  · exact tprod_eq_top_of_support_infinite hs
+  exact tprod_eq_top_of_eq_top hex
+
+@[to_additive]
+theorem tprod_subtype_eq_top_iff :
+    ∏' (a : s), f a = ⊤ ↔ (s ∩ f.mulSupport).Infinite ∨ ∃ a ∈ s, f a = ⊤ := by
+  convert tprod_eq_top_iff (M := M)
+  · convert Set.finite_image_iff Subtype.val_injective.injOn
+    aesop
+  simp
+
+@[to_additive]
+theorem tprod_subtype_eq_top_of_inter_support_infinite {s : Set α}
+    (hf : (s ∩ f.mulSupport).Infinite) : ∏' (a : s), f a = ⊤ := by
+  simp [tprod_subtype_eq_top_iff, hf]
+
+end CompleteLinearOrder
+
+section Ring
 
 variable {R : Type*} [Semiring R] [CompleteLinearOrder R] [CanonicallyOrderedAdd R]
     [TopologicalSpace R] [OrderTopology R]
@@ -315,129 +426,10 @@ theorem tsum_mul [ContinuousMul R] [ContinuousAdd R] [MulLeftMono R] (c : R) (f 
     (∑' a, f a) * c = ∑' a, (f a * c) := by
   rw [tsum_eq_iSup_sum, iSup_mul, tsum_eq_iSup_sum, iSup_congr (fun _ ↦ Finset.sum_mul ..)]
 
-end distrib
-
--- #exit
-
--- -- true for ennreal
--- protected theorem tsum_const_eq_top {ι : Type*} [Infinite ι] {c : M} (hc : c ≠ 0) :
---     ∑' (_ : ι), c = ⊤ :=
---   tsum_eq_top_of_support_infinite <| by rwa [Function.support_const hc, infinite_univ_iff]
-
--- -- true for ennreal
--- protected theorem tsum_subtype_const_eq_top_of_ne_zero {s : Set α} (hs : s.Infinite) {c : M}
---     (hc : c ≠ 0) : ∑' (_ : s), c = ⊤ :=
---   tsum_subtype_eq_top_of_inter_support_infinite <| by rwa [support_const hc, inter_univ]
-
-
--- -- false for ennreal
--- protected theorem tsum_eq_top_iff : ∑' a, f a = ⊤ ↔ f.support.Infinite ∨ ∃ a, f a = ⊤ := by
---   rw [iff_def, or_imp, and_iff_right tsum_eq_top_of_support_infinite, or_iff_not_imp_left,
---     not_infinite]
---   refine ⟨fun htop hfin ↦ ?_, fun ⟨a, ha⟩ ↦ ?_⟩
---   · rw [← tsum_subtype_support, tsum_eq_top_iff_of_finite hfin] at htop
---     exact Exists.elim htop <| fun a h ↦ ⟨a, h.2⟩
---   rw [← top_le_iff, ← ha]
---   exact le_tsum a
-
--- -- false for ennreal
--- protected theorem tsum_subtype_eq_top_iff {s : Set α} :
---     ∑' (a : s), f a = ⊤ ↔ (s ∩ f.support).Infinite ∨ ∃ a ∈ s, f a = ⊤ := by
---   simp only [tsum_eq_top_iff, Subtype.exists, exists_prop]
---   convert Iff.rfl
---   convert Set.finite_image_iff Subtype.val_injective.injOn
---   aesop
-
--- -- false for ennreal
--- protected theorem tsum_subtype_eq_top_of_inter_support_infinite {s : Set α}
---     (hf : (s ∩ f.support).Infinite) : ∑' (a : s), f a = ⊤ :=
---   tsum_subtype_eq_top_iff.2 <| Or.inl hf
-
-
--- end prelim
+end Ring
 
 
 
--- #exit
-
--- protected theorem tsum_eq_top_of_support_infinite (hf : f.support.Infinite) : ∑' a, f a = ⊤ := by
---   rw [tsum_eq_iSup_sum, iSup_eq_top]
---   intro b hb
---   lift b to ℕ using hb.ne
---   obtain ⟨t, htf, hbt, hfin⟩ := hf.exists_finite_subset_encard_gt b
---   refine ⟨hfin.toFinset, hbt.trans_le ?_⟩
---   rw [hfin.encard_eq_coe_toFinset_card, Finset.card_eq_sum_ones, Nat.cast_sum]
---   refine Finset.sum_le_sum fun i hi ↦ ?_
---   simp only [Nat.cast_one, one_le_iff_ne_zero]
---   exact htf <| by simpa using hi
-
--- protected theorem tsum_const_eq_top {ι : Type*} [Infinite ι] {c : M} (hc : c ≠ 0) :
---     ∑' (_ : ι), c = ⊤ :=
---   tsum_eq_top_of_support_infinite <| by rwa [Function.support_const hc, infinite_univ_iff]
-
--- protected theorem tsum_eq_top_iff : ∑' a, f a = ⊤ ↔ f.support.Infinite ∨ ∃ a, f a = ⊤ := by
---   rw [iff_def, or_imp, and_iff_right tsum_eq_top_of_support_infinite, or_iff_not_imp_left,
---     not_infinite]
---   refine ⟨fun htop hfin ↦ ?_, fun ⟨a, ha⟩ ↦ ?_⟩
---   · rw [← tsum_subtype_support, tsum_eq_top_iff_of_finite hfin] at htop
---     exact Exists.elim htop <| fun a h ↦ ⟨a, h.2⟩
---   rw [← top_le_iff, ← ha]
---   exact le_tsum a
-
--- protected theorem tsum_subtype_eq_top_iff {s : Set α} :
---     ∑' (a : s), f a = ⊤ ↔ (s ∩ f.support).Infinite ∨ ∃ a ∈ s, f a = ⊤ := by
---   simp only [tsum_eq_top_iff, Subtype.exists, exists_prop]
---   convert Iff.rfl
---   convert Set.finite_image_iff Subtype.val_injective.injOn
---   aesop
-
--- protected theorem tsum_subtype_eq_top_of_inter_support_infinite {s : Set α}
---     (hf : (s ∩ f.support).Infinite) : ∑' (a : s), f a = ⊤ :=
---   tsum_subtype_eq_top_iff.2 <| Or.inl hf
-
--- protected theorem tsum_subtype_const_eq_top_of_ne_zero {s : Set α} (hs : s.Infinite) {c : M}
---     (hc : c ≠ 0) : ∑' (_ : s), c = ⊤ :=
---   tsum_subtype_eq_top_of_inter_support_infinite <| by rwa [support_const hc, inter_univ]
-
--- protected theorem tsum_comp_le_tsum_of_injective {f : α → β} (hf : Injective f) (g : β → M) :
---     ∑' x, g (f x) ≤ ∑' y, g y :=
---   summable.tsum_le_tsum_of_inj f hf (fun _ _ ↦ zero_le) (fun _ ↦ le_rfl) summable
-
--- protected theorem tsum_le_tsum_comp_of_surjective {f : α → β} (hf : Surjective f) (g : β → M) :
---     ∑' y, g y ≤ ∑' x, g (f x) :=
---   calc ∑' y, g y = ∑' y, g (f (surjInv hf y)) := by simp only [surjInv_eq hf]
---     _ ≤ ∑' x, g (f x) := tsum_comp_le_tsum_of_injective (injective_surjInv hf) (g ∘ f)
-
--- protected theorem tsum_comp_eq_tsum_of_bijective {f : α → β} (hf : f.Bijective) (g : β → M) :
---     ∑' x, g (f x) = ∑' y, g y :=
---   (tsum_comp_le_tsum_of_injective hf.injective g).antisymm
---     (tsum_le_tsum_comp_of_surjective hf.surjective g)
-
--- protected theorem tsum_range_le_tsum_comp (f : β → M) (g : α → β) :
---     ∑' (x : range g), f x ≤ ∑' x, f (g x) :=
---   tsum_le_tsum_comp_of_surjective rangeFactorization_surjective _
-
--- protected theorem tsum_comp_eq_tsum_of_equiv (e : α ≃ β) (g : β → M) :
---     ∑' x, g (e x) = ∑' y, g y := by
---   rw [tsum_comp_eq_tsum_of_bijective e.bijective]
-
--- protected theorem tsum_image_le_tsum_comp (f : β → M) (g : α → β) (s : Set α) :
---     ∑' x : (g '' s), f x ≤ ∑' x : s, f (g x) :=
---   tsum_le_tsum_comp_of_surjective imageFactorization_surjective _
-
--- protected theorem tsum_mono_subtype (f : α → M) {s t : Set α} (h : s ⊆ t) :
---     ∑' x : s, f x ≤ ∑' x : t, f x :=
---   tsum_comp_le_tsum_of_injective (inclusion_injective h) (f ∘ (↑))
-
--- protected theorem tsum_sigma {β : α → Type*} (f : ∀ a, β a → M) :
---     ∑' p : Σa, β a, f p.1 p.2 = ∑' (a) (b), f a b :=
---   summable.tsum_sigma' (fun _ ↦ summable)
-
--- protected theorem tsum_sigma' {β : α → Type*} (f : (Σ a, β a) → M) :
---     ∑' p : Σ a, β a, f p = ∑' (a) (b), f ⟨a, b⟩ :=
---   summable.tsum_sigma' (fun _ ↦ summable)
-
--- variable {ι : Type*}
 
 -- section Card
 
@@ -487,14 +479,6 @@ end distrib
 -- protected theorem tsum_encard_eq_encard_iUnion {ι} {s : ι → Set α} (hI : Pairwise (Disjoint on s)) :
 --     ∑' i, (s i).encard = (⋃ i, s i).encard := by
 --   simp_rw [← tsum_one', tsum_iUnion_eq_tsum _ _ hI]
-
--- protected theorem tsum_subtype_eq_tsum_support (s : Set α) (f : α → M) :
---     ∑' (x : s), f x = ∑' (x : {i ∈ s | f i ≠ 0}), f x := by
---   have hu : s = {i | i ∈ s ∧ f i ≠ 0} ∪ {i | i ∈ s ∧ f i = 0} := by
---     simp only [Set.ext_iff, ne_eq, mem_union, mem_setOf_eq]
---     grind
---   have hrw : ∑' i : {i | i ∈ s ∧ f i = 0}, f i = 0 := by simp
---   rw [hu, tsum_union_disjoint (by grind), hrw, add_zero, ← hu]
 
 -- theorem encard_iUnion_le_tsum_encard {ι} {s : ι → Set α} :
 --     (⋃ i, s i).encard ≤ ∑' i, (s i).encard := by
