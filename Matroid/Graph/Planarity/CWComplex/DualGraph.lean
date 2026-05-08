@@ -1,15 +1,15 @@
 import Mathlib.Topology.CWComplex.Classical.Graph
 import Mathlib.Topology.CWComplex.Classical.Subcomplex
 import Matroid.Graph.Planarity.Topology.Circuit
-import Matroid.Graph.Forest
+import Matroid.Graphic
 import Matroid.ForMathlib.Analysis.Normed.Module.Connected
+import Mathlib.Geometry.Manifold.Instances.Sphere
 
 open Metric Set Graph Topology.RelCWComplex Topology.CWComplex Function Set.Notation
 
--- def finOneHomeo (K : Type*) [TopologicalSpace K] : (Fin 1 → K) ≃ₜ K :=
---   Homeomorph.funUnique (Fin 1) K
-
 namespace Topology.RelCWComplex
+
+section
 
 variable {E ι : Type*} [TopologicalSpace E] {K C D : Set E} [CWComplex K] {n m : ℕ} {x : E}
   {u v : cell K 0} {e f : cell K 1}
@@ -60,8 +60,7 @@ lemma iUnion_openCellStratum_eq_complex : ⋃ n : ℕ, openCellStratum K n = K :
   simpa [openCellStratum] using CWComplex.iUnion_openCell_eq_complex (C := K)
 
 lemma disjoint_preimage_subtypeval_openCell_one {i j : cell K 1} (hij : i ≠ j) :
-    Disjoint ((Subtype.val : ⋃ e : cell K 1, openCell 1 e → E) ⁻¹' openCell 1 i)
-      ((Subtype.val : ⋃ e : cell K 1, openCell 1 e → E) ⁻¹' openCell 1 j) := by
+    Disjoint (openCellStratum K 1 ↓∩ openCell 1 i) (openCellStratum K 1 ↓∩ openCell 1 j) := by
   rw [Set.disjoint_iff_inter_eq_empty, Set.eq_empty_iff_forall_notMem]
   intro z hz
   rw [Set.mem_inter_iff, Set.mem_preimage, Set.mem_preimage] at hz
@@ -151,8 +150,7 @@ lemma closedCell_diff_openCell_eq_cellFrontier (e : cell K n) :
 
 lemma isOpen_openCell_skeleton (e : cell K n) : IsOpen (↑(skeleton K n) ↓∩ openCell n e) := by
   let A : Set E := ↑(skeleton K n) \ openCell n e
-  have hpre : (↑(skeleton K n) ↓∩ openCell n e)ᶜ =
-      ((fun x : (skeleton K n : Set E) ↦ (x : E)) ⁻¹' A) := by
+  have hpre : (↑(skeleton K n) ↓∩ openCell n e)ᶜ = ↑(skeleton K n) ↓∩ A := by
     simp [A, Set.ext_iff]
   rw [← isClosed_compl_iff, hpre]
   refine CWComplex.isClosed_of_disjoint_openCell_or_isClosed_inter_closedCell
@@ -186,9 +184,9 @@ lemma iUnion_openCellStratum_eq_skeleton (n : ℕ∞) :
   simpa [openCellStratum] using CWComplex.iUnion_openCell_eq_skeleton (C := K) n
 
 lemma isClosed_preimage_openCellStratum (e : cell K n) :
-    IsClosed (((↑) : openCellStratum K n → E) ⁻¹' openCell n e) := by
-  have hpre_closed : ((↑) : openCellStratum K n → E) ⁻¹' openCell n e =
-      ((↑) : openCellStratum K n → E) ⁻¹' closedCell n e := by
+    IsClosed (openCellStratum K n ↓∩ openCell n e) := by
+  have hpre_closed : openCellStratum K n ↓∩ openCell n e =
+      openCellStratum K n ↓∩ closedCell n e := by
     ext x
     refine ⟨(openCell_subset_closedCell n e ·), fun hxcl ↦ ?_⟩
     obtain ⟨f, hxf⟩ := mem_openCellStratum_iff.mp x.prop
@@ -198,25 +196,25 @@ lemma isClosed_preimage_openCellStratum (e : cell K n) :
   exact hpre_closed ▸ isClosed_closedCell.preimage continuous_subtype_val
 
 lemma isOpen_preimage_openCellStratum (e : cell K n) :
-    IsOpen (((↑) : openCellStratum K n → E) ⁻¹' openCell n e) := by
+    IsOpen (openCellStratum K n ↓∩ openCell n e) := by
   let f : openCellStratum K n → skeleton K n := fun x ↦ ⟨x, openCellStratum_subset_skeleton x.prop⟩
   have hf : Continuous f := continuous_subtype_val.subtype_mk _
   exact (isOpen_openCell_skeleton e).preimage hf
 
 lemma isClopen_preimage_openCellStratum (e : cell K n) :
-    IsClopen (((↑) : openCellStratum K n → E) ⁻¹' openCell n e) :=
+    IsClopen (openCellStratum K n ↓∩ openCell n e) :=
   ⟨isClosed_preimage_openCellStratum e, isOpen_preimage_openCellStratum e⟩
 
 lemma pathComponentIn_openCellStratum {v : E} {e : cell K n}
     (hv : v ∈ openCell n e) : pathComponentIn (openCellStratum K n) v = openCell n e := by
   let T : Set E := openCellStratum K n
-  have hclopen : IsClopen ((Subtype.val : T → E) ⁻¹' openCell n e) :=
+  have hclopen : IsClopen (T ↓∩ openCell n e) :=
     isClopen_preimage_openCellStratum e
   ext x
   refine ⟨fun ⟨P, hP⟩ => ?_, fun hx => ?_⟩
   · let PT : unitInterval → T := fun t => ⟨P t, hP t⟩
     have hPT : Continuous PT := P.continuous.subtype_mk hP
-    let A : Set unitInterval := PT ⁻¹' ((Subtype.val : T → E) ⁻¹' openCell n e)
+    let A : Set unitInterval := PT ⁻¹' (T ↓∩ openCell n e)
     have hAclopen : IsClopen A := hclopen.preimage hPT
     have h0 : (0 : unitInterval) ∈ A := by
       dsimp [A, PT]
@@ -315,10 +313,10 @@ theorem subset_of_not_disjoint_of_path (P : Path (map 0 u 0) (map 0 v 0))
     continuous_subtype_val, hA_open⟩ ⟨⟨x, hxe⟩, hxP⟩
   exact fun y hy ↦ (show (⟨y, hy⟩ : openCell 1 e) ∈ A by simp [hA_univ])
 
-theorem path_to_walk (P : Path (map 0 u 0) (map 0 v 0)) (h : range P ⊆ skeleton K 1) :
-    ∃ W, (OneSkeletonGraph K).IsWalk W ∧ W.first = u ∧ W.last = v := by
+-- theorem path_to_walk (P : Path (map 0 u 0) (map 0 v 0)) (h : range P ⊆ skeleton K 1) :
+--     ∃ W, (OneSkeletonGraph K).IsWalk W ∧ W.first = u ∧ W.last = v := by
 
-  sorry
+--   sorry
 
 /- Cycle & Jordan curve correspondence
 
@@ -336,12 +334,27 @@ theorem cycle_iff_jordan_curve (hCK : C ⊆ skeleton K 1) :
 
   sorry
 
+class JCTSpace (E : Type*) [TopologicalSpace E] : Prop where
+  two_comp : ∀ C : Set E, IsCircuit C → Nat.card (ConnectedComponents ↑(Cᶜ)) = 2
 
-variable [CWComplex (univ : Set E)]
-    (h_max_two : ∀ e : cell (univ : Set E) 1, ∀ x y z : cell (univ : Set E) 2,
-      closedCell 1 e ⊆ cellFrontier 2 x ∩ cellFrontier 2 y ∩ cellFrontier 2 z → z = x ∨ z = y)
-    (h_no_dangling : ∀ e : cell (univ : Set E) 1, ∃ x : cell (univ : Set E) 2,
-      closedCell 1 e ⊆ cellFrontier 2 x)
+end
+
+section
+
+variable {E : Type*} [TopologicalSpace E] [T2Space E] [ChartedSpace (EuclideanSpace ℝ (Fin 2)) E]
+  [BoundarylessManifold (modelWithCornersSelf ℝ (EuclideanSpace ℝ (Fin 2))) E]
+  [CWComplex (univ : Set E)]
+
+theorem CWComplex.face_card_one_of_forest (h : (OneSkeletonGraph (univ : Set E)).IsForest)
+    [(OneSkeletonGraph (univ : Set E)).Finite] : Nat.card (cell (univ : Set E) 2) = 1 := by
+  /- Induction on the number of edges.
+  1. If the one skeleton is empty, then there must be at least one face to cover the whole surface.
+    If there are multiple faces, there must be a pair of faces that are glued together via the one
+    skeleton, contradiction. (Use boundaryless)
+  2. Take a leaf vertex `v` and its only edge `e`. In a suitably small neighborhood around any point
+    of `e` or `v`, it only contains only one face. Hence, removing `v` and `e` from the one skeleton
+    does not change the number of faces. -/
+  sorry
 
 def CWComplex.DualGraph : Graph (cell (univ : Set E) 2) (cell (univ : Set E) 1) where
   vertexSet := univ
@@ -349,7 +362,52 @@ def CWComplex.DualGraph : Graph (cell (univ : Set E) 2) (cell (univ : Set E) 1) 
   IsLink e x y := closedCell 1 e ⊆ cellFrontier 2 x ∩ cellFrontier 2 y
   isLink_symm e he x y h := by grind
   eq_or_eq_of_isLink_of_isLink e x y z w h1 h2 := by
-    simp only [subset_inter_iff, and_imp] at h1 h2 h_max_two
-    exact h_max_two e z w x h2.1 h2.2 h1.1
+
+    sorry
   left_mem_of_isLink e x y h := mem_univ _
-  edge_mem_iff_exists_isLink e := by simp [h_no_dangling]
+  edge_mem_iff_exists_isLink e := sorry
+
+/-- Let `K` be a CW decomposition of a surface `E`. Let `S` be a union of some faces and edges.
+`S` is connected iff the dual graph induced by the faces and edges of `S` is connected. -/
+theorem CWComplex.dualGraph_preConnected (F : Set (cell (univ : Set E) 2))
+    (E : Set (cell (univ : Set E) 1)) : Graph.Preconnected ((DualGraph.induce F).restrict E) ↔
+    IsPreconnected ((⋃ e ∈ E, closedCell 1 e) ∪ (⋃ f ∈ F, openCell 2 f)) := by
+  refine ⟨fun h => ?_, fun h => ?_⟩
+  · sorry
+  sorry
+
+theorem CWComplex.dualGraph_connected (F : Set (cell (univ : Set E) 2)) (hF : F.Nonempty)
+    (E : Set (cell (univ : Set E) 1)) : Graph.Connected ((DualGraph.induce F).restrict E) ↔
+    IsConnected ((⋃ e ∈ E, closedCell 1 e) ∪ (⋃ f ∈ F, openCell 2 f)) := by
+  rw [Graph.connected_iff, IsConnected]
+  refine and_congr ?_ <| dualGraph_preConnected F E
+  simp only [vertexSet_restrict, vertexSet_induce, hF, union_nonempty, nonempty_iUnion,
+  exists_prop, openCell_nonempty, and_true, true_iff]
+  exact Or.inr ⟨hF.some, hF.some_mem⟩
+
+theorem CWComplex.dualGraph_abstract_dual [JCTSpace E] (S : Set (cell (univ : Set E) 1)) :
+    (OneSkeletonGraph (univ : Set E)).IsCycleSet S ↔ DualGraph.IsBond S := by
+  refine ⟨fun h => ?_, fun h => ?_⟩
+  · /- If `S` is a cycle set, by theorem above, its drawing is a jordan curve. As the space is
+    jordan, removing `S` from the surface disconnects the space into two components.
+    Consider set of all faces in each components, F₁ and F₂.
+    Since each side is connected, by `dualGraph_connected`, F₁ and F₂ are connected in the dual
+    graph \ S.
+    WTS: δ(F₁) = S.
+    1. `δ(F₁) ⊆ S`:
+      If `e ∈ δ(F₁)`, then `e` incident to a face in `F₁` and a face in `F₂ := F₁ᶜ`. If `e ∉ S`,
+      then those two faces are connected in the dual graph \ S. Since `F₁` and `F₂` are connected,
+      The whole dual graph \ S is connected and therefore the space is connected, contradiction.
+    2. `S ⊆ δ(F₁)`:
+      Consider `e ∈ S`. if two, maybe not distinct, faces are incident to `e` are connected after
+      removing `S` from the surface, then removing `S \ {e}` will still separate the space into two
+      components. However, as `S` is a cycle, `S \ {e}` is a forest in the one skeleton. By
+      `face_card_one_of_forest`, drawing of a forest cannot separate the space, contradiction.
+    Hence, `δ(F₁) = S`.
+    By `isBond_of_conn`, `S` is a bond.-/
+    sorry
+  /- If `S` is a bond of the dual graph, then it must separate the space into two components by
+  `dualGraph_connected`. By `face_card_one_of_forest`, `S` cannot be a forest in the one skeleton,
+  so `S` must contain a cycle in one skeleton graph. From before, we showed that a cycle is an edge
+  cut of the dual graph. Since bond is a minimal edge cut, `S` must be the cycle. -/
+  sorry
