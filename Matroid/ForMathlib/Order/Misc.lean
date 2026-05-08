@@ -22,16 +22,16 @@ class OneNeTopClass (M : Type*) [One M] [Top M] : Prop where
   protected one_ne_top : (1 : M) ≠ ⊤
 
 @[to_additive, simp]
-lemma one_ne_top [One M] [Mul M] [Top M] [OneNeTopClass M] : (1 : M) ≠ ⊤ :=
+lemma one_ne_top [One M] [Top M] [OneNeTopClass M] : (1 : M) ≠ ⊤ :=
   OneNeTopClass.one_ne_top
 
 /-- An `AddEqTopClass` is one where the top element is nonzero, and is not the sum of two
-non-top elements. Equivalently, the set of non-top elements is an additive submonoid. -/
+non-top elements. Equivalently, the non-top elements are an additive submonoid. -/
 class AddEqTopClass (M : Type*) [Zero M] [Add M] [Top M] : Prop extends ZeroNeTopClass M where
   protected eq_or_eq_of_add (a b : M) : a + b = ⊤ → a = ⊤ ∨ b = ⊤
 
 /-- A `MulEqTopClass` is one where the top element is not `1`, and is not the product of two
-non-top elements. Equivalently, the set of non-top elements is a submonoid. -/
+non-top elements. Equivalently, the non-top elements are a submonoid. -/
 @[to_additive]
 class MulEqTopClass (M : Type*) [One M] [Mul M] [Top M] : Prop extends OneNeTopClass M where
   protected eq_or_eq_of_mul (a b : M) : a * b = ⊤ → a = ⊤ ∨ b = ⊤
@@ -45,7 +45,6 @@ lemma mul_ne_top [One M] [Mul M] [Top M] [MulEqTopClass M] {a b : M} (ha : a ≠
 lemma eq_or_eq_of_mul_eq_top [One M] [Mul M] [Top M] [MulEqTopClass M] {a b : M} (h : a * b = ⊤) :
     a = ⊤ ∨ b = ⊤ :=
   MulEqTopClass.eq_or_eq_of_mul _ _ h
-
 
 @[to_additive]
 lemma exists_of_prod_eq_top [CommMonoid M] [Top M] [MulEqTopClass M] {s : Finset α} {f : α → M}
@@ -69,14 +68,25 @@ def Submonoid.neTop (M : Type*) [Monoid M] [Top M] [MulEqTopClass M] :
 
 /-- A mixin class for the property that `⊤` is additively absorbing. -/
 class AddTopClass (M : Type*) [Add M] [Top M] : Prop where
-  add_top (a : M) : a + ⊤ = ⊤
-  top_add (a : M) : ⊤ + a = ⊤
+  protected add_top (a : M) : a + ⊤ = ⊤
+  protected top_add (a : M) : ⊤ + a = ⊤
 
 /-- A mixin class for the property that `⊤` is multiplicatively absorbing. -/
 @[to_additive]
 class MulTopClass (M : Type*) [Mul M] [Top M] : Prop where
-  mul_top (a : M) : a * ⊤ = ⊤
-  top_mul (a : M) : ⊤ * a = ⊤
+  protected mul_top (a : M) : a * ⊤ = ⊤
+  protected top_mul (a : M) : ⊤ * a = ⊤
+
+/-- A mixin class for the property that `⊤` multiplicatively absorbs positive elements. -/
+class PosMulTopClass (M : Type*) [Zero M] [Top M] [Mul M] [LT M] : Prop where
+  protected mul_top_of_pos {a : M} (ha : 0 < a) : a * ⊤ = ⊤
+  protected top_mul_of_pos {a : M} (ha : 0 < a) : ⊤ * a = ⊤
+
+lemma mul_top_of_pos {M : Type*} [Zero M] [Top M] [Mul M] [LT M] [PosMulTopClass M] {a : M}
+    (ha : 0 < a) : a * ⊤ = ⊤ := PosMulTopClass.mul_top_of_pos ha
+
+lemma top_mul_of_pos {M : Type*} [Zero M] [Top M] [Mul M] [LT M] [PosMulTopClass M] {a : M}
+    (ha : 0 < a) : ⊤ * a = ⊤ := PosMulTopClass.top_mul_of_pos ha
 
 @[to_additive, simp]
 lemma mul_top' [Mul M] [Top M] [MulTopClass M] (a : M) : a * ⊤ = ⊤ :=
@@ -85,6 +95,10 @@ lemma mul_top' [Mul M] [Top M] [MulTopClass M] (a : M) : a * ⊤ = ⊤ :=
 @[to_additive, simp]
 lemma top_mul' [Mul M] [Top M] [MulTopClass M] (a : M) : ⊤ * a = ⊤ :=
   MulTopClass.top_mul a
+
+instance [Zero M] [Top M] [Mul M] [LT M] [MulTopClass M] : PosMulTopClass M where
+  mul_top_of_pos _ := mul_top' ..
+  top_mul_of_pos _ := top_mul' ..
 
 @[to_additive, simp]
 lemma mul_eq_top_iff [One M] [Mul M] [Top M] [MulTopClass M] [MulEqTopClass M] {a b : M} :
@@ -102,7 +116,6 @@ def Subsemiring.neTop (α : Type*) [DecidableEq α] [Semiring α] [PartialOrder 
   add_mem' := add_ne_top
   zero_mem' := zero_ne_top
 
-
 section instances
 
 instance {M : Type*} [LinearOrderedAddCommMonoidWithTop M] : AddTopClass M where
@@ -118,7 +131,11 @@ instance {M : Type*} [LinearOrderedAddCommMonoidWithTop M] [Nontrivial M] : AddE
     contrapose! hab
     simpa using (add_right_strictMono_of_ne_top hab.1 (lt_top_iff_ne_top.2 hab.2)).ne
 
-instance {}
+instance {M : Type*} [CommMonoidWithZero M] [Preorder M] [OrderTop M] [MulEqTopClass M]
+    [ZeroNeTopClass M] : CommMonoidWithZero (Submonoid.neTop M) where
+  zero := ⟨0, zero_ne_top⟩
+  zero_mul a := Subtype.val_inj.1 <| zero_mul a.1
+  mul_zero a := Subtype.val_inj.1 <| mul_zero a.1
 
 end instances
 
@@ -168,24 +185,42 @@ lemma mul_lt_mul_iff_left_of_ne_top' [IsOrderedCancelMonoid (Submonoid.neTop M)]
     x * y < x * z ↔ y < z := by
   simp_rw [mul_comm x, mul_lt_mul_iff_right_of_ne_top' hx]
 
-theorem mul_right_strictMono' {M : Type*} [CommMonoidWithZero M] [Preorder M] [OrderTop M]
-    [MulEqTopClass M] [PosMulStrictMono (Submonoid.neTop M)] {a : M} (h₀ : 0 < a) (hinf : a ≠ ⊤) :
-    StrictMono fun (x : M) => a * x := by
-  _
+theorem mul_right_strictMono_of_pos_of_ne_top {M : Type*} [CommMonoidWithZero M] [PartialOrder M]
+    [OrderTop M] [MulEqTopClass M] [ZeroNeTopClass M] [PosMulTopClass M]
+    [PosMulStrictMono (Submonoid.neTop M)] {a : M} (h₀ : 0 < a) (hinf : a ≠ ⊤) :
+    StrictMono (a * ·) := by
+  intro x y hxy
+  obtain rfl | hy := eq_or_ne y ⊤
+  · simp [mul_top_of_pos h₀, lt_top_iff_ne_top, mul_ne_top hinf hxy.ne]
+  exact mul_lt_mul_of_pos_left (α := Submonoid.neTop M) (a := ⟨a, hinf⟩)
+    (b := ⟨x, (lt_top_of_lt hxy).ne⟩) (c := ⟨y, hy⟩) (by simpa) (by simpa)
 
--- theorem mul_right_strictMono' {α : Type u_1} [DecidableEq α] [MulZeroClass α] {a : WithTop α}
---     [Preorder α] [PosMulStrictMono α] (h₀ : 0 < a) (hinf : a ≠ ⊤) :
---     StrictMono fun (x : WithTop α) => a * x
+theorem mul_left_strictMono_of_pos_of_ne_top {M : Type*} [CommMonoidWithZero M] [PartialOrder M]
+    [OrderTop M] [MulEqTopClass M] [ZeroNeTopClass M] [PosMulTopClass M]
+    [PosMulStrictMono (Submonoid.neTop M)] {a : M} (h₀ : 0 < a) (hinf : a ≠ ⊤) :
+    StrictMono (· * a) := by
+  simp_rw [mul_comm _ a]
+  exact mul_right_strictMono_of_pos_of_ne_top h₀ hinf
+
+@[simp]
+theorem mul_lt_mul_iff_left₀_of_ne_top {M : Type*} [CommMonoidWithZero M] [LinearOrder M]
+    [OrderTop M] [MulEqTopClass M] [ZeroNeTopClass M] [PosMulTopClass M]
+    [PosMulStrictMono (Submonoid.neTop M)] {a b c : M} (a0 : 0 < a) (ha : a ≠ ⊤) :
+    b * a < c * a ↔ b < c :=
+  (mul_left_strictMono_of_pos_of_ne_top a0 ha).lt_iff_lt
+
+@[simp]
+theorem mul_lt_mul_iff_right₀_of_ne_top {M : Type*} [CommMonoidWithZero M] [LinearOrder M]
+    [OrderTop M] [MulEqTopClass M] [ZeroNeTopClass M] [PosMulTopClass M]
+    [PosMulStrictMono (Submonoid.neTop M)] {a b c : M} (a0 : 0 < a) (ha : a ≠ ⊤) :
+    a * b < a * c ↔ b < c :=
+  (mul_right_strictMono_of_pos_of_ne_top a0 ha).lt_iff_lt
 
 end lemmas
 
 section WithTop
 
 section Monoid
-
--- theorem WithTop.mul_right_strictMono {α : Type u_1} [DecidableEq α] [MulZeroClass α]
--- {a : WithTop α} [Preorder α] [PosMulStrictMono α] (h₀ : 0 < a) (hinf : a ≠ ⊤) :
--- StrictMono fun (x : WithTop α) => a * x
 
 instance [DecidableEq M] [CommMonoidWithZero M] [Preorder M] : MulEqTopClass (WithTop M) where
   one_ne_top := WithTop.one_ne_top
