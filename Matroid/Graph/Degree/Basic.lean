@@ -155,8 +155,8 @@ lemma eDegree_eq_tsum_mem : G.eDegree x = ∑' e : E(G, x), (G.incFun e x : ℕ�
 
 lemma eDegree_le_two_mul_encard_setOf_inc (G : Graph α β) (v : α) :
     G.eDegree v ≤ 2 * E(G, v).encard := by
-  rw [eDegree_eq_tsum_mem, ← ENat.tsum_one, ENat.mul_tsum]
-  exact ENat.tsum_le_tsum <| by simp [Pi.le_def, G.incFun_le_two]
+  rw [eDegree_eq_tsum_mem, ← ENat.tsum_one, mul_tsum]
+  exact tsum_le_tsum <| by simp [Pi.le_def, G.incFun_le_two]
 
 lemma eDegree_le_two_mul_card_edgeSet (G : Graph α β) (v : α) : G.eDegree v ≤ 2 * E(G).encard := by
   refine (G.eDegree_le_two_mul_encard_setOf_inc v).trans ?_
@@ -187,7 +187,7 @@ lemma eDegree_eq_zero_iff_inc : G.eDegree v = 0 ↔ ∀ e, ¬ G.Inc e v := by
   simp [eDegree]
 
 lemma eDegree_eq_zero_iff_adj : G.eDegree v = 0 ↔ ∀ x, ¬ G.Adj v x := by
-  simp only [eDegree, ENat.tsum_eq_zero, ENat.coe_eq_zero, incFun_vertex_eq_zero_iff]
+  simp only [eDegree, tsum_eq_zero, ENat.coe_eq_zero, incFun_vertex_eq_zero_iff]
   exact ⟨fun h x ⟨e, hvx⟩ ↦ h e hvx.inc_left, fun h e ⟨y, hev⟩ ↦ h y hev.adj⟩
 
 lemma degree_eq_zero_iff_inc [G.LocallyFinite] : G.degree v = 0 ↔ ∀ e, ¬ G.Inc e v := by
@@ -208,6 +208,7 @@ lemma degree_ne_zero_iff_adj [G.LocallyFinite] : G.degree v ≠ 0 ↔ ∃ x, G.A
 
 lemma eDegree_eq_zero_of_notMem (hv : v ∉ V(G)) : G.eDegree v = 0 := by
   simp [eDegree_eq_tsum_mem, show ∀ e, ¬ G.Inc e v from fun e h ↦ hv h.vertex_mem]
+
 
 lemma degree_eq_zero_of_notMem (hv : v ∉ V(G)) : G.degree v = 0 := by
   simp [degree, eDegree_eq_zero_of_notMem hv]
@@ -245,12 +246,12 @@ lemma tsum_incFun_eq (he : e ∈ E(G)) : ∑' v, (G.incFun e v : ℕ∞) = 2 := 
 
 lemma IsLoopAt.two_le_eDegree (h : G.IsLoopAt e x) : 2 ≤ G.eDegree x := by
   rw [eDegree]
-  convert ENat.le_tsum e
+  convert le_tsum e (M := ℕ∞)
   simp [h.incFun_eq_two]
 
 lemma IsNonloopAt.one_le_eDegree (h : G.IsNonloopAt e x) : 1 ≤ G.eDegree x := by
   rw [eDegree]
-  convert ENat.le_tsum e
+  convert le_tsum (M := ℕ∞) e
   simp [h.incFun_eq_one]
 
 lemma Inc.one_le_eDegree (h : G.Inc e x) : 1 ≤ G.eDegree x := by
@@ -279,7 +280,7 @@ lemma support_eDegree_subset (G : Graph α β) : Function.support G.eDegree ⊆ 
 
 theorem handshake_eDegree (G : Graph α β) : ∑' v, G.eDegree v = 2 * E(G).encard := by
   simp_rw [eDegree]
-  rw [ENat.tsum_comm, ← ENat.tsum_subtype_const',
+  rw [tsum_comm, ← ENat.tsum_subtype_const',
     ← tsum_subtype_eq_of_support_subset (s := E(G)) (by simpa using fun _ _ ↦ Inc.edge_mem)]
   simp
 
@@ -317,8 +318,7 @@ lemma eDegree_eq_encard_add_encard (G : Graph α β) (x : α) : G.eDegree x =
       IsLoopAt.inc, IsNonloopAt.inc]
   rw [eDegree_eq_tsum_mem]
   rw [tsum_congr_set_coe (fun e ↦ (G.incFun e x : ℕ∞)) hrw,
-    Summable.tsum_union_disjoint (f := (fun e ↦ (G.incFun e x : ℕ∞)))
-    disjoint_isLoopAt_isNonLoopAt ENat.summable ENat.summable]
+    tsum_union_disjoint (f := (fun e ↦ (G.incFun e x : ℕ∞))) disjoint_isLoopAt_isNonLoopAt]
   have hrw2 : ∀ e : {e | G.IsLoopAt e x}, (G.incFun e x : ℕ∞) = 2 :=
     fun ⟨e, he⟩ ↦ by simp [he.incFun_eq_two]
   have hrw1 : ∀ e : {e | G.IsNonloopAt e x}, (G.incFun e x : ℕ∞) = 1 :=
@@ -328,7 +328,7 @@ lemma eDegree_eq_encard_add_encard (G : Graph α β) (x : α) : G.eDegree x =
 lemma encard_setOf_inc_le_eDegree (G : Graph α β) (x : α) :
     E(G, x).encard ≤ G.eDegree x := by
   rw [← ENat.tsum_one, eDegree_eq_tsum_mem]
-  exact ENat.tsum_le_tsum fun ⟨e, (he : G.Inc e x)⟩ ↦ by simpa using he.one_le_incFun
+  exact tsum_le_tsum fun ⟨e, (he : G.Inc e x)⟩ ↦ by simpa using he.one_le_incFun
 
 lemma degree_eq_ncard_add_ncard (G : Graph α β) [G.LocallyFinite] (x : α) :
     G.degree x = 2 * {e | G.IsLoopAt e x}.ncard + {e | G.IsNonloopAt e x}.ncard := by
@@ -400,7 +400,7 @@ lemma incFun_mono (hle : H ≤ G) (e : β) (x : α) : H.incFun e x ≤ G.incFun 
   simp [incFun_eq_zero_of_notMem he]
 
 lemma eDegree_mono (hle : H ≤ G) (x : α) : H.eDegree x ≤ G.eDegree x :=
-  ENat.tsum_le_tsum fun e ↦ by simp [incFun_mono hle]
+  tsum_le_tsum fun e ↦ by simp [incFun_mono hle]
 
 lemma degree_mono [hG : G.LocallyFinite] (hle : H ≤ G) (x : α) : H.degree x ≤ G.degree x := by
   have := hG.mono hle

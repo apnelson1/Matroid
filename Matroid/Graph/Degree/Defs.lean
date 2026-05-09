@@ -31,7 +31,7 @@ lemma degreePos_iff [G.LocallyFinite] : G.DegreePos ↔ ∀ ⦃x⦄, x ∈ V(G) 
 
 lemma DegreePos.finite_of_edgeSet_finite (hG : G.DegreePos) (hE : E(G).Finite) : G.Finite where
   vertexSet_finite := by
-    have hle := ENat.tsum_le_tsum (f := fun x : V(G) ↦ 1) (g := fun x : V(G) ↦ G.eDegree x)
+    have hle := tsum_le_tsum (f := fun x : V(G) ↦ 1) (g := fun x : V(G) ↦ G.eDegree x)
     simp only [Pi.le_def, Subtype.coe_prop, (fun x ↦ hG.one_le_eDegree), implies_true,
       ENat.tsum_subtype_const, one_mul, G.handshake_eDegree_subtype, forall_const] at hle
     rw [← encard_lt_top_iff] at hE ⊢
@@ -67,8 +67,8 @@ lemma maxDegreeLE_iff [G.LocallyFinite] : G.MaxDegreeLE d ↔ ∀ v ∈ V(G), G.
   simp_rw [maxDegreeLE_iff', ← ENat.coe_le_coe, natCast_degree_eq]
 
 lemma MaxDegreeLE.encard_edgeSet_le (h : G.MaxDegreeLE d) : 2 * E(G).encard ≤ d * V(G).encard := by
-  rw [← handshake_eDegree_subtype, ← ENat.tsum_one, ENat.mul_tsum]
-  exact ENat.tsum_le_tsum fun x ↦ (h x).trans_eq <| by simp
+  rw [← handshake_eDegree_subtype, ← ENat.tsum_one, mul_tsum]
+  exact tsum_le_tsum fun x ↦ (h x).trans_eq <| by simp
 
 lemma MaxDegreeLE.ncard_edgeSet_le [G.Finite] (h : G.MaxDegreeLE d) :
     2 * E(G).ncard ≤ d * V(G).ncard := by
@@ -107,8 +107,8 @@ lemma minDegreeGE_iff [G.LocallyFinite] : G.MinDegreeGE d ↔ ∀ v ∈ V(G), d 
   simp_rw [minDegreeGE_iff', ← ENat.coe_le_coe, natCast_degree_eq]
 
 lemma MinDegreeGE.le_encard_edgeSet (h : G.MinDegreeGE d) : d * V(G).encard ≤ 2 * E(G).encard := by
-  rw [← handshake_eDegree_subtype, ← ENat.tsum_one, ENat.mul_tsum]
-  exact ENat.tsum_le_tsum fun x ↦ (h x.1 x.2).trans_eq' (by simp)
+  rw [← handshake_eDegree_subtype, ← ENat.tsum_one, mul_tsum]
+  exact tsum_le_tsum fun x ↦ (h x.1 x.2).trans_eq' (by simp)
 
 lemma MinDegreeGE.le_ncard_edgeSet [G.Finite] (h : G.MinDegreeGE d) :
     d * V(G).ncard ≤ 2 * E(G).ncard := by

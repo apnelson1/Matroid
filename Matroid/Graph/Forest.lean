@@ -411,7 +411,7 @@ lemma IsForest.encard_vertexSet (hG : G.IsForest) :
   rw [G.eq_sUnion_components, vertexSet_sUnion, ← ENat.tsum_encard_eq_encard_biUnion,
     tsum_congr (β := G.Components) (f := fun C ↦ V(C.1).encard)
       (g := fun C ↦ E(C.1).encard + 1), edgeSet_sUnion, ← ENat.tsum_encard_eq_encard_biUnion,
-    ← ENat.tsum_one, ENat.tsum_add, ← G.eq_sUnion_components, Components]
+    ← ENat.tsum_one, tsum_add, ← G.eq_sUnion_components, Components]
   · exact G.components_pairwise_stronglyDisjoint.mono' <| by simp [Pi.le_def, stronglyDisjoint_iff]
   · simp only [Subtype.forall, mem_components_iff_isCompOf]
     exact fun H hle ↦ (hG.isTree_of_IsCompOf hle).encard_vertexSet

@@ -97,10 +97,9 @@ variable [CompleteLattice M] [SupConvergenceClass M] [CanonicallyOrderedMul M]
 theorem hasProd : HasProd f (⨆ s : Finset α, ∏ a ∈ s, f a) :=
   tendsto_atTop_iSup fun _ _ ↦ Finset.prod_le_prod_of_subset'
 
-@[to_additive, simp]
+@[to_additive (attr := simp)]
 theorem multipliable : Multipliable f :=
   ⟨_, hasProd⟩
-
 
 @[to_additive]
 theorem tprod_eq_iSup_prod [T2Space M] : ∏' x, f x = (⨆ s : Finset α, ∏ a ∈ s, f a) :=
@@ -200,7 +199,7 @@ theorem le_tprod (a : α) : f a ≤ ∏' a, f a :=
 theorem le_tprod_of_mem (ha : a ∈ s) : f a ≤ ∏' x : s, f x :=
   le_tprod ⟨a, ha⟩ (f := fun (x : s) ↦ f x)
 
-@[to_additive, simp]
+@[to_additive (attr := simp)]
 theorem tprod_eq_one : ∏' i, f i = 1 ↔ ∀ i, f i = 1 :=
   multipliable.tprod_eq_one_iff
 

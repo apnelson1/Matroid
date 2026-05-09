@@ -87,7 +87,7 @@ lemma union_incFun_eq (hdj : Disjoint E(G) E(H)) : (G ∪ H).incFun = G.incFun +
 
 lemma union_eDegree_eq (hdj : Disjoint E(G) E(H)) (x : α) :
     (G ∪ H).eDegree x = G.eDegree x + H.eDegree x := by
-  simp [eDegree, union_incFun_eq hdj, ENat.tsum_add]
+  simp [eDegree, union_incFun_eq hdj, tsum_add]
 
 lemma eDegree_addEdge_left {a b : α} (he : e ∉ E(G)) (hab : a ≠ b) :
     (G.addEdge e a b).eDegree a = G.eDegree a + 1 := by
