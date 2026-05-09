@@ -1,9 +1,16 @@
-name: Nightly doc-gen deployment
+name: Doc-gen deployment
 
+# docgen-action deploy steps only run on `push` (not `schedule`).
+#
+# Deploy only when someone pushes to `main` *and* the actor matches:
+# - repository variable `DOCGEN_DEPLOY_ACTOR` if set (Settings → Secrets and variables → Actions → Variables), otherwise
+# - `github.repository_owner` (the repo owner account).
+#
+# Other people's pushes to `main`, or any push on another branch, are skipped for this workflow.
 on:
-  schedule:
-    - cron: '0 6  * * *' # runs at 06:00 UTC every day (01:00 EST)
-    # - cron: '0 22 * * *' # runs at 22:00 UTC every day (17:00 EST)
+  push:
+    branches: [main]
+  workflow_dispatch:
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
@@ -13,6 +20,7 @@ permissions:
 
 jobs:
   build:
+    if: github.actor == (vars.DOCGEN_DEPLOY_ACTOR != '' && vars.DOCGEN_DEPLOY_ACTOR || github.repository_owner)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout project
