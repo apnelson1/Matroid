@@ -126,6 +126,11 @@ protected lemma matroid_isCircuit : M.matroid.IsCircuit = M.IsCircuit := by
   refine ⟨hIC.subset.trans hCE, fun C' hC'I hC' ↦ ?_⟩
   exact M.circuit_antichain hC' h (hC'I.trans_ssubset hIC).ne (hC'I.trans hIC.subset)
 
+instance {M : FiniteCircuitMatroid α} : Matroid.Finitary M.matroid := by
+  refine Matroid.finitary_iff_forall_isCircuit_finite.mpr fun C ↦ ?_
+  rw [FiniteCircuitMatroid.matroid_isCircuit]
+  apply FiniteCircuitMatroid.circuit_finite _
+
 --lemma foo {A B : Set α} : A ⊂ B ∨ B ⊂ A ∨ A = B
 
 protected def ofNonspanningCircuit

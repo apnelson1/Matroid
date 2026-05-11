@@ -73,6 +73,8 @@ lemma IsEdgeCut.not_isLoopAt (hF : G.IsEdgeCut F) (he : e ∈ F) : ¬ G.IsLoopAt
   obtain ⟨rfl, rfl⟩ := hev.eq_of_isLink hxy
   tauto
 
+lemma IsEdgeCut.of_vert (v : α) : G.IsEdgeCut δ(G, {v}) := by use {v}
+
 @[grind →]
 lemma IsEdgeCut.symmDiff (hF : G.IsEdgeCut F) (hF' : G.IsEdgeCut F') : G.IsEdgeCut (F ∆ F') := by
   obtain ⟨S, rfl⟩ := hF
@@ -373,6 +375,8 @@ lemma IsBridge.isBond (he : G.IsBridge e) : G.IsBond {e} := by
   obtain rfl | rfl := subset_singleton_iff_eq.mp hF'e
   · simp at hF'
   exact hF'e
+
+lemma isBridge_iff_isBond : G.IsBridge e ↔ G.IsBond {e} := ⟨IsBridge.isBond, fun h => h.isEdgeCut⟩
 
 lemma IsBond.isBridge (heB : e ∈ B) (hB : G.IsBond B) : (G ＼ (B \ {e})).IsBridge e := by
   have := hB.prop.1.anti (deleteEdges_le (F := B \ {e}))

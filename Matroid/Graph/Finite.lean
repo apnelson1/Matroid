@@ -338,4 +338,9 @@ instance completeBipartiteGraph_finite (m n : ℕ) : (CompleteBipartiteGraph m n
       cases x <;> simp [CompleteBipartiteGraph]]
     exact (finite_lt_nat m).image Sum.inl |>.union <| (finite_lt_nat n).image Sum.inr
 
+instance completeGraph_finite (n : ℕ) : (CompleteGraph n).Finite :=
+  finite_of_vertexSet_finite (G := CompleteGraph n) <| by
+    rw [vertexSet_CompleteGraph]
+    exact finite_lt_nat n
+
 end Graph

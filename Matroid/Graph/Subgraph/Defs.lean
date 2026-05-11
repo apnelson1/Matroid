@@ -108,19 +108,18 @@ lemma deleteVerts_edgeSet_diff (G : Graph α β) (X : Set α) : E(G - X) = E(G) 
 lemma deleteVerts_vertexSet_self (G : Graph α β) : G - V(G) = ⊥ := by
   simp [deleteVerts_def]
 
--- @[simp, grind .]
--- lemma deleteVerts_singleton_lt (h : x ∈ V(G)) : G - x < G := deleteVerts_le.lt_of_ne <| by grind
+@[simp, grind .]
+lemma deleteVerts_singleton_lt (h : x ∈ V(G)) : G - {x} < G := deleteVerts_le.lt_of_ne <| by grind
 
--- lemma deleteVerts_singleton_edgeSet (G : Graph α β) (x : α) : E(G - x) ∪ E(G, x) = E(G) := by
---   refine eq_of_subset_of_subset ?_ ?_
---   · grind -- `grind?` cannot close the goal
---   intro e he
---   simp only [deleteVerts_singleton, edgeSet_deleteVerts, mem_singleton_iff, mem_union,
---     mem_setOf_eq, mem_incEdges_iff]
---   obtain ⟨y, z, hyz⟩ := exists_isLink_of_mem_edgeSet he
---   obtain h | h := em (y = x ∨ z = x)
---   · obtain (rfl | rfl) := h <;> [exact Or.inr hyz.inc_left ; exact Or.inr hyz.inc_right]
---   refine Or.inl ⟨y, z, by grind only⟩
+lemma deleteVerts_singleton_edgeSet (G : Graph α β) (x : α) : E(G - {x}) ∪ E(G, x) = E(G) := by
+  refine eq_of_subset_of_subset ?_ ?_
+  · grind -- `grind?` cannot close the goal
+  intro e he
+  simp only [edgeSet_deleteVerts, mem_singleton_iff, mem_union, mem_setOf_eq, mem_incEdges_iff]
+  obtain ⟨y, z, hyz⟩ := exists_isLink_of_mem_edgeSet he
+  obtain h | h := em (y = x ∨ z = x)
+  · obtain (rfl | rfl) := h <;> [exact Or.inr hyz.inc_left ; exact Or.inr hyz.inc_right]
+  refine Or.inl ⟨y, z, by grind only⟩
 
 @[grind =]
 lemma deleteVerts_isLink_iff' (G : Graph α β) (X : Set α) :

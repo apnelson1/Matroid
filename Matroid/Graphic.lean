@@ -57,6 +57,8 @@ def cycleMatroid (G : Graph α β) : Matroid β :=
       rintro _ ⟨C, hC, rfl⟩
       simpa using edgeSet_mono hC.isWalk.toGraph_le )
 
+instance : Finitary G.cycleMatroid := inferInstanceAs (Finitary (FiniteCircuitMatroid.matroid _))
+
 @[simp, grind =]
 lemma cycleMatroid_isCircuit : G.cycleMatroid.IsCircuit = G.IsCycleSet := by
   simp [cycleMatroid]
@@ -133,6 +135,11 @@ lemma cycleMatroid_cocircuit (G : Graph α β) (C : Set β) :
   obtain ⟨huv, hnuv⟩ := huv (ConnBetween.mono deleteEdges_le)
   obtain ⟨F, hF, hFB, hFne, hFuv⟩ := isEdgeCut_subset_of_not_connBetween huv hnuv
   exact h.2 ⟨hF, hFne⟩ (hFB.trans hBC) |>.trans hFB
+
+@[simp, grind =]
+lemma cycleMatroid_coloop (G : Graph α β) (e : β) : G.cycleMatroid.IsColoop e ↔ G.IsBridge e := by
+  rw [isBridge_iff_isBond, ← cycleMatroid_cocircuit]
+  exact singleton_isCocircuit.symm
 
 lemma IsEdgeCut.cycleMatroid_dual_cyclic (hF : G.IsEdgeCut F) : (G.cycleMatroid✶).Cyclic F := by
   refine ((cyclic_tfae (M := G.cycleMatroid✶) (A := F)).out 0 2).mpr fun e heF ↦ ?_
@@ -224,7 +231,7 @@ lemma cycleMatroid_isBasis :
   rw [← isBase_restrict_iff, ← cycleMatroid_isBase, cycleMatroid_restrict,
     inter_eq_right.mpr hFE]
 
-lemma cycleMatroid_eRk_add_one (hG : (G ↾ R).Connected) :
+lemma Connected.eRk_cycleMatroid_restrict_add_one (hG : (G ↾ R).Connected) :
     G.cycleMatroid.eRk R + 1 = V(G).encard := by
   wlog hRE : R ⊆ E(G)
   · rw [← restrict_edgeSet_inter] at hG
@@ -237,9 +244,9 @@ lemma cycleMatroid_eRk_add_one (hG : (G ↾ R).Connected) :
   rw [restrict_restrict, inter_eq_right.mpr hBR] at this
   simpa [inter_eq_right.mpr hBE] using this.encard_vertexSet
 
-lemma cycleMatroid_eRank_add_one (hG : G.Connected) :
+lemma Connected.eRank_cycleMatroid_add_one (hG : G.Connected) :
     G.cycleMatroid.eRank + 1 = V(G).encard := by
-  rw [← eRk_ground, cycleMatroid_eRk_add_one (by simpa)]
+  rw [← eRk_ground, eRk_cycleMatroid_restrict_add_one (by simpa)]
 
 lemma Preconnected.cycleMatroid_dual_girth (hG : G.Preconnected) (n : ℕ) :
     n ≤ G.cycleMatroid✶.girth ↔ G.EdgeConnGE n := by
@@ -262,6 +269,11 @@ lemma cycleMatroid_loopless_iff : G.cycleMatroid.Loopless ↔ G.Loopless := by
   simp [cycleMatroid_loops, loopSet]
 
 instance [G.Loopless] : G.cycleMatroid.Loopless := cycleMatroid_loopless_iff.mpr ‹G.Loopless›
+
+@[simp]
+lemma cycleMatroid_isLoop (G : Graph α β) (e : β) :
+    G.cycleMatroid.IsLoop e ↔ ∃ v, G.IsLoopAt e v := by
+  simp [isLoop_iff, cycleMatroid_loops]
 
 -- def edgeBasedVertexSep (G : Graph α β) (F : Set β) : Set α := V(G, F) ∩ V(G, E(G) \ F)
 
@@ -305,6 +317,45 @@ lemma cycleMatroid_disjointSum (h : (V(G) ∩ V(H)).Subsingleton) (hdj : Disjoin
   · exact (cycleMatroid_isRestriction_of_le (G.left_le_union H)).eq_restrict.symm
   · exact (cycleMatroid_isRestriction_of_le hc.right_le_union).eq_restrict.symm
 
+lemma components_cycleMatroid_isSkewFamily (G : Graph α β) :
+    G.cycleMatroid.IsSkewFamily (fun (H : G.Components) ↦ E(H.val)) := by
+  rw [isSkewFamily_iff_forall_skew_compl_singleton]
+  rintro H
+  convert H.prop.isClosedSubgraph.cycleMatroid_skew
+  ext e
+  simp only [mem_compl_iff, mem_singleton_iff, Subtype.ext_iff, ← ne_eq, iUnion_coe_set,
+    mem_components_iff_isCompOf, mem_iUnion, exists_prop, mem_diff]
+  refine ⟨fun ⟨H', hH'c, hH'H, heH'⟩ ↦ ⟨hH'c.le.edgeSet_mono heH',
+    hH'c.stronglyDisjoint_of_ne H.prop hH'H |>.edge.notMem_of_mem_left heH'⟩, fun ⟨heG, heH⟩ ↦ ?_⟩
+  obtain ⟨K, hKG, heK⟩ := exists_IsCompOf_edge_mem heG
+  exact ⟨K, hKG, by grind, heK⟩
+
+lemma eRank_cycleMatroid_add_numberOfComponents (G : Graph α β) :
+    G.cycleMatroid.eRank + c(G) = V(G).encard := by
+  obtain hGCInfinite | hGC := em' G.Components.Finite
+  · have htop := Infinite.encard_eq hGCInfinite
+    have := top_le_iff.mp (htop ▸ G.components_encard_le)
+    simp [this, htop, NumberOfComponents]
+  let f : ∀ H ∈ hGC.toFinset, H.cycleMatroid.eRank + 1 = V(H).encard :=
+    fun H hH ↦ (hGC.mem_toFinset.mp hH).connected.eRank_cycleMatroid_add_one
+  convert Finset.sum_congr rfl f
+  · rw [← Finset.sum_add_card_nsmul]
+    haveI : Fintype G.Components := hGC.fintype
+    simp only [← eRk_eq_eRank subset_rfl, cycleMatroid_E, NumberOfComponents, toFinite_toFinset,
+      toFinset_card, nsmul_eq_mul, coe_fintypeCard, mul_one, ne_eq, encard_eq_top_iff, hGC,
+      Set.Finite.not_infinite, not_false_eq_true, add_left_inj_of_ne_top]
+    convert (G.components_cycleMatroid_isSkewFamily.sum_eRk_eq_eRk_iUnion).symm
+    · nth_rw 1 [G.eq_sUnion_components]
+      simp
+    rw [← Finset.sum_set_coe]
+    congr
+    ext x
+    exact (cycleMatroid_isRestriction_of_le x.prop.le).eRk_eq subset_rfl
+  nth_rw 1 [G.eq_sUnion_components]
+  rw [← Set.encard_biUnion fun H hH K hK hne ↦ G.components_pairwise_stronglyDisjoint
+    (hGC.coe_toFinset ▸ hH) (hGC.coe_toFinset ▸ hK) hne |>.vertex]
+  simp
+
 @[simp]
 lemma isNonloop_iff_of_loopless {M : Matroid β} [M.Loopless] : M.IsNonloop e ↔ e ∈ M.E := by
   rw [isNonloop_iff_mem_compl_loops, loops_eq_empty]
@@ -333,6 +384,13 @@ lemma cycleMatroid_simple : G.cycleMatroid.Simple ↔ G.Simple := by
     exact h hel (hl ▸ hel)
 
 instance [G.Simple] : G.cycleMatroid.Simple := cycleMatroid_simple.mpr ‹G.Simple›
+
+@[simp]
+lemma cycleMatroid_finite : G.cycleMatroid.Finite ↔ G.EdgeFinite := by
+  rw [Matroid.finite_iff, cycleMatroid_E, edgeFinite_iff]
+
+instance [G.EdgeFinite] : G.cycleMatroid.Finite where
+  ground_finite := G.edgeSet_finite
 
 lemma cycleMatroid_isFlat (hFE : F ⊆ E(G)) (hF : ∀ H : Graph α β, H.IsCompOf (G ↾ F) → H ≤i G) :
     G.cycleMatroid.IsFlat F := by

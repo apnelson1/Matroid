@@ -37,7 +37,7 @@ lemma norm_eq_zero_of_subsingleton {α : Type*} [SeminormedAddGroup α] [Subsing
 
 namespace Graph
 
-variable {α β : Type*} {G : Graph α β}
+variable {α β : Type*} {G : Graph α β} {t t₁ t₂ : I}
 
 /-!
 # Topological realization of a multigraph
@@ -220,24 +220,24 @@ lemma vertexMk_injective : Injective G.vertexMk := fun u v ↦ by simp [vertexMk
 @[simp] lemma vertexMk_inj : vertexMk u = vertexMk v ↔ u = v := G.vertexMk_injective.eq_iff
 
 /-- Inclusion of a point of the `e`-th edge interval into the realization. -/
-def edgeMk (e : E(G)) (t : I) : Realization G := Quotient.mk' (s := G.glueRel) (Sum.inr ⟨e, t⟩)
+-- def edgeMk (e : E(G)) (t : I) : Realization G := Quotient.mk' (s := G.glueRel) (Sum.inr ⟨e, t⟩)
 
-section edgeMk
+def edgePath (e : E(G)) : Path (vertexMk (src e)) (vertexMk (tgt e)) where
+  toFun t := Quotient.mk' (s := G.glueRel) (Sum.inr ⟨e, t⟩)
+  source' := Quotient.sound (by simp)
+  target' := Quotient.sound (by simp)
+  continuous_toFun := continuous_quotient_mk'.comp' <| continuous_inr.comp' continuous_sigmaMk
 
-theorem vertexMk_src_eq_edgeMk_zero (e : E(G)) : vertexMk (src e) = edgeMk e 0 :=
-  Quotient.sound (by simp)
+section edgePath
 
-theorem vertexMk_tgt_eq_edgeMk_one (e : E(G)) : vertexMk (tgt e) = edgeMk e 1 :=
-  Quotient.sound (by simp)
-
-lemma vertexMk_notMem_edgeMk_Ioo (v : V(G)) (e : E(G)) : vertexMk v ∉ edgeMk e '' Ioo 0 1 := by
+lemma vertexMk_notMem_edgePath_Ioo (v : V(G)) (e : E(G)) : vertexMk v ∉ edgePath e '' Ioo 0 1 := by
   rintro ⟨t, ht, heq⟩
   have := Quotient.exact heq
   simp only [glueRel_inr_inl] at this
   grind
 
-lemma edgeMk_Ioo_disjoint_iff_ne (e₁ e₂ : E(G)) :
-    Disjoint (edgeMk e₁ '' Ioo 0 1) (edgeMk e₂ '' Ioo 0 1) ↔ e₁ ≠ e₂ := by
+lemma edgePath_Ioo_disjoint_iff_ne (e₁ e₂ : E(G)) :
+    Disjoint (edgePath e₁ '' Ioo 0 1) (edgePath e₂ '' Ioo 0 1) ↔ e₁ ≠ e₂ := by
   refine ⟨fun h => ?_, fun h => ?_⟩
   · rintro rfl
     simp only [disjoint_self, bot_eq_empty, image_eq_empty] at h
@@ -252,18 +252,14 @@ lemma edgeMk_Ioo_disjoint_iff_ne (e₁ e₂ : E(G)) :
   simp only [glueRel_inr_inr_iff, glueRel_inl_iff_glueRelAux, glueRelAux_inr_iff] at this
   grind
 
-lemma continuous_edgeMk (e : E(G)) : Continuous (edgeMk e) :=
-  letI : UniformSpace E(G) := ⊥
-  continuous_quotient_mk'.comp <| continuous_inr.comp <| continuous_sigmaMk
-
-lemma edgeMk_inj_on_Ioo {t₁ t₂ : I} (h₁ : (t₁ : ℝ) ∈ Ioo 0 1) (h : edgeMk e t₁ = edgeMk e t₂) :
+lemma edgePath_inj_on_Ioo (h₁ : (t₁ : ℝ) ∈ Ioo 0 1) (h : edgePath e t₁ = edgePath e t₂) :
     t₁ = t₂ := by
   obtain ⟨-, rfl⟩ | ⟨v, hv₁, hv₂⟩ := (glueRel_inr_inr_iff ..).mp (Quotient.exact h)
   · rfl
   obtain ⟨rfl, -⟩ | ⟨rfl, -⟩ := (glueRel_inl_inr ..).mp hv₁ <;> simp at h₁
 
-private lemma edgeMk_injective (e : E(G)) (he : G.IsNonloopAt e (src e)) :
-    Injective (edgeMk e) := by
+private lemma edgePath_injective (e : E(G)) (he : G.IsNonloopAt e (src e)) :
+    Injective (edgePath e) := by
   intro t₁ t₂ h
   have hgr : G.glueRel (Sum.inr ⟨e, t₁⟩) (Sum.inr ⟨e, t₂⟩) := (Quotient.eq (r := G.glueRel)).1 h
   obtain ⟨-, rfl⟩ | ⟨v, hv₁, hv₂⟩ := (glueRel_inr_inr_iff ..).mp (Quotient.exact h)
@@ -273,15 +269,15 @@ private lemma edgeMk_injective (e : E(G)) (he : G.IsNonloopAt e (src e)) :
   <;> have hval : G.source e.val e.prop = _ := congrArg Subtype.val (by simpa [eq_comm] using h1)
   <;> have hlink := hval ▸ G.isLink_source_target e.prop <;> exact absurd hlink (he.not_isLoopAt _)
 
-lemma edgeMk_preimage_image (e : E(G)) {X : Set I} (h0X : 0 ∉ X) (h1X : 1 ∉ X) :
-    Quotient.mk' ⁻¹' (edgeMk e '' X) = Sum.inr '' (Sigma.mk e '' X) := by
+lemma edgePath_preimage_image (e : E(G)) {X : Set I} (h0X : 0 ∉ X) (h1X : 1 ∉ X) :
+    Quotient.mk' ⁻¹' (edgePath e '' X) = Sum.inr '' (Sigma.mk e '' X) := by
   ext x
   simp only [mem_preimage, mem_image, Sigma.exists, Sigma.mk.injEq, heq_eq_eq,
     exists_eq_right_right]
   refine Iff.symm ⟨?_, fun ⟨t, ht, h_eq⟩ => ?_⟩
   · rintro ⟨e', t', ⟨ht', rfl⟩, rfl⟩
     exact ⟨t', ht', rfl⟩
-  simp only [edgeMk, Quotient.eq'] at h_eq
+  simp only [edgePath, coe_mk', ContinuousMap.coe_mk, Quotient.eq'] at h_eq
   match x with
   | inl v => obtain ⟨rfl, -⟩ | ⟨rfl, -⟩ := (glueRel_inr_inl ..).mp h_eq <;> tauto
   | inr ⟨e', t'⟩ =>
@@ -289,14 +285,14 @@ lemma edgeMk_preimage_image (e : E(G)) {X : Set I} (h0X : 0 ∉ X) (h1X : 1 ∉ 
       exists_eq_left'] at h_eq
     grind
 
-theorem isOpen_edgeMk_image (e : E(G)) {X : Set I} (h0X : 0 ∉ X) (h1X : 1 ∉ X) :
-    IsOpen (edgeMk e '' X) ↔ IsOpen X := by
-  change IsOpen (Quotient.mk' ⁻¹' (edgeMk e '' X)) ↔ _
-  rw [edgeMk_preimage_image e h0X h1X, isOpen_sum_iff]
+theorem isOpen_edgePath_image (e : E(G)) {X : Set I} (h0X : 0 ∉ X) (h1X : 1 ∉ X) :
+    IsOpen (edgePath e '' X) ↔ IsOpen X := by
+  change IsOpen (Quotient.mk' ⁻¹' (edgePath e '' X)) ↔ _
+  rw [edgePath_preimage_image e h0X h1X, isOpen_sum_iff]
   simp [IsOpenEmbedding.sigmaMk.isOpen_iff_image_isOpen.symm]
 
-private lemma edgeMk_preimage_aux_eq_preimage_mk' (e : E(G)) (C : Set I) :
-    {z | ∃ t ∈ C, G.glueRel z (Sum.inr ⟨e, t⟩)} = Quotient.mk' ⁻¹' (edgeMk e '' C) := by
+private lemma edgePath_preimage_aux_eq_preimage_mk' (e : E(G)) (C : Set I) :
+    {z | ∃ t ∈ C, G.glueRel z (Sum.inr ⟨e, t⟩)} = Quotient.mk' ⁻¹' (edgePath e '' C) := by
   ext z
   simp only [mem_setOf_eq, mem_preimage, mem_image]
   constructor
@@ -305,13 +301,13 @@ private lemma edgeMk_preimage_aux_eq_preimage_mk' (e : E(G)) (C : Set I) :
   · rintro ⟨t, ht, hgr⟩
     exact ⟨t, ht, Quotient.exact hgr.symm⟩
 
-private lemma inr_sigma_mk_preimage_edgeMk_preimage_aux (e e' : E(G)) (C : Set I) :
+private lemma inr_sigma_mk_preimage_edgePath_preimage_aux (e e' : E(G)) (C : Set I) :
     Sigma.mk e' ⁻¹' (Sum.inr ⁻¹' {z | ∃ t ∈ C, G.glueRel z (Sum.inr ⟨e, t⟩)}) =
       { x | ∃ t ∈ C, G.glueRel (Sum.inr ⟨e', x⟩) (Sum.inr ⟨e, t⟩) } := by
   ext x
   simp only [mem_preimage, mem_setOf_eq]
 
-private lemma isClosed_inr_sigma_mk_preimage_edgeMk_preimage_aux_of_ne {e' : E(G)} (hne : e' ≠ e)
+private lemma isClosed_inr_sigma_mk_preimage_edgePath_preimage_aux_of_ne {e' : E(G)} (hne : e' ≠ e)
     (C : Set I) : IsClosed {x | ∃ t ∈ C, G.glueRel (Sum.inr ⟨e', x⟩) (Sum.inr ⟨e, t⟩)} := by
   have hF_sub : {x | ∃ t ∈ C, G.glueRel (Sum.inr ⟨e', x⟩) (Sum.inr ⟨e, t⟩) } ⊆ {0, 1} := by
     simp only [glueRel_inr_inr_iff, glueRel_inl_iff_glueRelAux, glueRelAux_inr_iff]
@@ -334,46 +330,40 @@ private lemma subset_inr_inr_same_edge_set (e : E(G)) (C : Set I) :
   simp only [glueRel_inr_inr_iff, glueRel_inl_iff_glueRelAux, glueRelAux_inr_iff]
   grind
 
-private lemma isClosed_inr_sigma_mk_preimage_edgeMk_preimage_aux_of_eq (e : E(G)) {C : Set I}
+private lemma isClosed_inr_sigma_mk_preimage_edgePath_preimage_aux_of_eq (e : E(G)) {C : Set I}
     (hC : IsClosed C) : IsClosed {x | ∃ t ∈ C, G.glueRel (Sum.inr ⟨e, x⟩) (Sum.inr ⟨e, t⟩)} := by
   rw [← diff_union_of_subset (subset_inr_inr_same_edge_set e C)]
   exact (Finite.subset (s := {0, 1}) (by simp) <|
       diff_subset_iff.mpr <| inr_inr_same_edge_set_subset_union_endpoints e C).isClosed.union hC
 
-private lemma isClosed_inr_preimage_edgeMk_preimage_aux (e₀ : E(G)) {C : Set I} (hC : IsClosed C) :
-    IsClosed (Sum.inr ⁻¹' {z | ∃ t ∈ C, G.glueRel z (Sum.inr ⟨e₀, t⟩)}) := by
+private lemma isClosed_inr_preimage_edgePath_preimage_aux (e₀ : E(G)) {C : Set I}
+    (hC : IsClosed C) : IsClosed (Sum.inr ⁻¹' {z | ∃ t ∈ C, G.glueRel z (Sum.inr ⟨e₀, t⟩)}) := by
   rw [isClosed_sigma_iff]
   intro e'
-  rw [inr_sigma_mk_preimage_edgeMk_preimage_aux e₀ e']
+  rw [inr_sigma_mk_preimage_edgePath_preimage_aux e₀ e']
   obtain rfl | hne := eq_or_ne e' e₀
-  · exact isClosed_inr_sigma_mk_preimage_edgeMk_preimage_aux_of_eq e' hC
-  · exact isClosed_inr_sigma_mk_preimage_edgeMk_preimage_aux_of_ne hne C
+  · exact isClosed_inr_sigma_mk_preimage_edgePath_preimage_aux_of_eq e' hC
+  · exact isClosed_inr_sigma_mk_preimage_edgePath_preimage_aux_of_ne hne C
 
-lemma isClosedMap_edgeMk (e0 : E(G)) : IsClosedMap (edgeMk e0) := by
+lemma isClosedMap_edgePath (e0 : E(G)) : IsClosedMap (edgePath e0) := by
   intro C hC
-  rw [isClosed_coinduced (f := Quotient.mk'), ← edgeMk_preimage_aux_eq_preimage_mk',
+  rw [isClosed_coinduced (f := Quotient.mk'), ← edgePath_preimage_aux_eq_preimage_mk',
     isClosed_sum_iff]
-  exact ⟨isClosed_discrete _, isClosed_inr_preimage_edgeMk_preimage_aux e0 hC⟩
+  exact ⟨isClosed_discrete _, isClosed_inr_preimage_edgePath_preimage_aux e0 hC⟩
 
 @[simp]
-theorem isClosedEmbedding_edgeMk (e : E(G)) (he : G.IsNonloopAt e (src e)) :
-    IsClosedEmbedding (edgeMk e) :=
-  IsClosedEmbedding.of_continuous_injective_isClosedMap (continuous_edgeMk e)
-    (edgeMk_injective e he) (isClosedMap_edgeMk e)
+theorem isClosedEmbedding_edgePath (e : E(G)) (he : G.IsNonloopAt e (src e)) :
+    IsClosedEmbedding (edgePath e) :=
+  IsClosedEmbedding.of_continuous_injective_isClosedMap (edgePath e).continuous
+    (edgePath_injective e he) (isClosedMap_edgePath e)
 
-end edgeMk
-
-/-- The canonical path along an edge `e` in the realization, from `src e` to `tgt e`. -/
-noncomputable def pathAlongEdge (e : E(G)) : Path (vertexMk (src e)) (vertexMk (tgt e)) where
-  toContinuousMap := ⟨fun t : I ↦ edgeMk e t, continuous_edgeMk e⟩
-  source' := (vertexMk_src_eq_edgeMk_zero e).symm
-  target' := (vertexMk_tgt_eq_edgeMk_one e).symm
+end edgePath
 
 theorem joined_vertexMk_of_isLink {e : β} {x y : α} (h : G.IsLink e x y) :
     Joined (vertexMk ⟨x, h.left_mem⟩) (vertexMk ⟨y, h.right_mem⟩) := by
   obtain ⟨h1, h2⟩ | ⟨h1, h2⟩ := h.eq_and_eq_or_eq_and_eq <| G.isLink_source_target h.edge_mem
-  · simpa [h1, h2, src, tgt] using ⟨pathAlongEdge ⟨e, h.edge_mem⟩⟩
-  · simpa [h1, h2, src, tgt] using ⟨pathAlongEdge ⟨e, h.edge_mem⟩ |>.symm⟩
+  · simpa [h1, h2, src, tgt] using ⟨edgePath ⟨e, h.edge_mem⟩⟩
+  · simpa [h1, h2, src, tgt] using ⟨edgePath ⟨e, h.edge_mem⟩ |>.symm⟩
 
 theorem joined_vertexMk_of_isWalk {w : WList α β} (hw : G.IsWalk w) :
     Joined (vertexMk ⟨w.first, hw.first_mem⟩) (vertexMk ⟨w.last, hw.last_mem⟩) := by
@@ -386,15 +376,6 @@ theorem joined_vertexMk_of_connBetween {x y : α} (h : G.ConnBetween x y) :
   obtain ⟨w, hw, rfl, rfl⟩ := h
   exact joined_vertexMk_of_isWalk hw
 
-noncomputable def pathAlongEdgeTo (e : E(G)) (t : I) : Path (vertexMk (src e)) (edgeMk e t) where
-  toContinuousMap :=
-    ⟨fun s : I ↦ edgeMk e (t * s), (continuous_edgeMk e).comp (continuous_const_mul t)⟩
-  source' := by simp [vertexMk_src_eq_edgeMk_zero]
-  target' := by simp
-
-theorem joined_vertexMk_edgeMk (e : E(G)) (t : I) : Joined (vertexMk (src e)) (edgeMk e t) :=
-  ⟨pathAlongEdgeTo e t⟩
-
 theorem Preconnected.joined_vertexMk_realMk {v0 : α} (hv0 : v0 ∈ V(G)) (hG : G.Preconnected)
     (a : G.PreRealization) : Joined (vertexMk ⟨v0, hv0⟩) ⟦a⟧ := by
   match a with
@@ -402,7 +383,10 @@ theorem Preconnected.joined_vertexMk_realMk {v0 : α} (hv0 : v0 ∈ V(G)) (hG : 
   | inr ⟨e, t⟩ =>
     refine (joined_vertexMk_of_connBetween (hG v0 (G.source e.val e.prop) hv0 ?_)).trans ?_
     · exact (G.isLink_source_target e.prop).left_mem
-    · simpa [src] using joined_vertexMk_edgeMk e t
+    let p : Path (vertexMk (src e)) (edgePath e t) :=
+      edgePath e |>.truncate 0 t |>.cast (by simp [t.prop.1]) (by simp)
+    use p <;> simp only [ContinuousMap.toFun_eq_coe, ContinuousMap.coe_coe, Path.source,
+    vertexMk_inj, Path.target] <;> rfl
 
 theorem Connected.pathConnectedSpace (h : G.Connected) : PathConnectedSpace G.Realization := by
   obtain ⟨v0, hv0⟩ := h.nonempty

@@ -1,6 +1,8 @@
 import Matroid.ForMathlib.Card
 import Matroid.ForMathlib.Data.Set.Subsingleton
 import Matroid.Graph.Connected.Defs
+import Matroid.Graph.Degree.Constructions
+import Matroid.Graph.Connected.Bond
 
 open Set Function Nat WList
 
@@ -206,3 +208,64 @@ lemma banana_connGE_iff : (banana u v F).ConnGE n ↔ n = 0 ∨ (n = 1 ∧ (u = 
   obtain (rfl | hne) := eq_or_ne u v
   · simp
   simp [encard_pair hne]
+
+lemma completeGraph_preconnected (n : ℕ) : (CompleteGraph n).Preconnected := by
+  rintro u v hu hv
+  simp only [vertexSet_CompleteGraph, mem_Iio] at hu hv
+  obtain rfl | hne := eq_or_ne u v
+  · simpa
+  exact Adj.connBetween <| by simp [hu, hv, hne]
+
+-- lemma IsComplete.edgeConnGE [G.Finite] (h : G.IsComplete) : G.EdgeConnGE (V(G).ncard - 1) := by
+--   sorry
+
+-- @[simp]
+-- lemma IsComplete.edgeConnGE_iff [G.Finite] [G.Simple] (h : G.IsComplete) (hnt : V(G).Nontrivial)
+--     (k : ℕ) : G.EdgeConnGE k ↔ k + 1 ≤ V(G).encard := by
+--   refine ⟨fun hk ↦ ?_, fun hk ↦ ?_⟩
+--   · obtain ⟨u, hu, v, hv, hne⟩ := hnt
+--     obtain rfl | h1k := (Nat.zero_le k).eq_or_lt
+--     · simp only [cast_zero, zero_add, one_le_encard_iff_nonempty]
+--       use u
+--     simp only [edgeConnGE_iff_isEdgeCut h1k, h.preconnected, true_and] at hk
+--     obtain ⟨e, he⟩ := h u hu v hv hne
+--     specialize hk _ (IsEdgeCut.of_vert u) ⟨e, by grind⟩
+--     rw [setLinkEdges_singleton_compl_eq_incEdges, encard_incEdges, h.neighbors hu,
+--       encard_diff_singleton_of_mem hu] at hk
+--     eomega
+--   apply h.edgeConnGE |>.anti_right (n := k)
+--   have := G.vertexSet_finite.encard_lt_top.ne
+--   rw [ncard]
+--   enat_to_nat!
+--   rw [ENat.toNat_coe]
+--   grind
+
+-- @[simp]
+-- lemma completeGraph_edgeConnGE_iff {n : ℕ} (hn : 1 < n) (k : ℕ) :
+--     (CompleteGraph n).EdgeConnGE k ↔ k + 1 ≤ n := by
+--   rw [completeGraph_isComplete n |>.edgeConnGE_iff (by use 0, by grind, 1, by grind, by simp) k]
+--   simp only [↓encard_vertexSet_completeGraph, Order.add_one_le_iff]
+--   eomega
+
+lemma completeBipartiteGraph_connected {m n : ℕ} (hm : m ≠ 0) (hn : n ≠ 0) :
+    (CompleteBipartiteGraph m n).Connected := by
+  rw [connected_iff_exists_connBetween (by simp [pos_of_ne_zero hm] : Sum.inl 0 ∈ _)]
+  rintro v hv
+  match v with
+  | .inl v =>
+    have hul : (CompleteBipartiteGraph m n).Adj (Sum.inl 0) (Sum.inr 0) := by
+      simp [pos_of_ne_zero hn, pos_of_ne_zero hm]
+    have hlv : (CompleteBipartiteGraph m n).Adj (Sum.inr 0) (Sum.inl v) := by
+      simpa [pos_of_ne_zero hn] using hv
+    exact hul.connBetween.trans hlv.connBetween
+  | .inr v => exact Adj.connBetween <| by simpa [pos_of_ne_zero hm] using hv
+
+-- @[simp]
+-- lemma completeBipartiteGraph_edgeConnGE (m n : ℕ) :
+--     (CompleteBipartiteGraph m n).EdgeConnGE (min m n) := by
+--   sorry
+
+-- @[simp]
+-- lemma completeBipartiteGraph_edgeConnGE_iff {m n : ℕ} (hm : m ≠ 0) (hn : n ≠ 0) (k : ℕ) :
+--     (CompleteBipartiteGraph m n).EdgeConnGE k ↔ k ≤ m ∧ k ≤ n := by
+--   sorry

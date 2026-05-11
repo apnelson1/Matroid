@@ -53,6 +53,18 @@ lemma setOf_isNonloopAt_incEdges [G.Loopless] (x : α) : {e | G.IsNonloopAt e x}
   ext e
   simp +contextual [iff_def, IsNonloopAt.inc]
 
+@[simp]
+lemma setLinkEdges_singleton_compl_eq_incEdges (G : Graph α β) [G.Loopless] (x : α) :
+    δ(G, {x}) = E(G, x) := by
+  rw [setLinkEdges_singleton_eq_setOf_isNonloopAt, setOf_isNonloopAt_incEdges]
+
+@[simp]
+lemma IsComplete.neighbors [G.Loopless] (h : G.IsComplete) (hx : x ∈ V(G)) :
+    N(G, x) = V(G) \ {x} := by
+  ext y
+  simp only [Neighbor, mem_setOf_eq, mem_diff, mem_singleton_iff]
+  exact ⟨fun hadj ↦ ⟨hadj.right_mem, hadj.ne.symm⟩, fun ⟨hy, hne⟩ ↦ h x hx y hy (Ne.symm hne)⟩
+
 instance [G.Loopless] (X : Set α) : G[X].Loopless where
   not_isLoopAt e x (h : G[X].IsLink e x x) := h.1.adj.ne rfl
 
@@ -255,6 +267,10 @@ lemma isLink_incAdjEquiv_symm (y : N(G, x)) : G.IsLink ((G.incAdjEquiv x).symm y
 lemma inc_incAdjEquiv_symm (y : N(G, x)) : G.Inc ((G.incAdjEquiv x).symm y) x :=
   (isLink_incAdjEquiv_symm y).inc_left
 
+@[simp]
+lemma encard_incEdges (G : Graph α β) [G.Simple] (x : α) : E(G, x).encard = N(G, x).encard :=
+  ENat.card_congr (G.incAdjEquiv x)
+
 /-! ### Operations -/
 
 lemma Simple.union [H.Simple] (h : ∀ ⦃e f x y⦄, G.IsLink e x y → H.IsLink f x y → e = f) :
@@ -351,12 +367,23 @@ instance mixedLineGraph_simple : L'(G).Simple where
     rw [← h1.2] at h2
     simp_all
 
-instance completeBipartiteGraph_simple (m n : ℕ) : (CompleteBipartiteGraph m n).Simple where
+instance completeGraph_simple {n : ℕ} : (CompleteGraph n).Simple where
   not_isLoopAt e x := by
-    rintro ⟨_, _, ⟨rfl, h⟩ | ⟨rfl, h⟩⟩ <;> cases h
+    rintro ⟨-, hx, hne, rfl⟩
+    exact hne rfl
+  eq_of_isLink e f x y he hf := by grind
+
+instance completeBipartiteGraph_simple {m n : ℕ} : (CompleteBipartiteGraph m n).Simple where
+  not_isLoopAt e x := by rintro ⟨_, _, ⟨rfl, h⟩ | ⟨rfl, h⟩⟩ <;> cases h
   eq_of_isLink := by
     rintro e f x y ⟨_, _, ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩⟩ ⟨_, _, ⟨h, h'⟩ | ⟨h, h'⟩⟩ <;>
       simp_all [Prod.ext_iff]
+
+@[simp↓]
+lemma encard_setLinkEdges_singleton_compl_completeGraph (n : ℕ) (x : ℕ) (hx : x < n) :
+    δ(CompleteGraph n, {x}).encard = n - 1 := by
+  rw [setLinkEdges_singleton_compl_eq_incEdges, encard_incEdges,
+    encard_neighbors_completeGraph _ _ hx, ENat.coe_sub, Nat.cast_one]
 
 section Simplify
 

@@ -29,9 +29,6 @@ lemma components_subsingleton_iff : G.Components.Subsingleton ↔ G.Preconnected
   rw [connBetween_iff_mem_walkable_of_mem, h (G.walkable_isCompOf hx) (G.walkable_isCompOf hy)]
   exact mem_walkable_self_iff.mpr hy
 
-lemma Connected.components_subsingleton (hG : G.Connected) : G.Components.Subsingleton :=
-  hG.pre.components_subsingleton
-
 @[simp]
 lemma connPartition_rel_iff (G : Graph α β) (x y : α): G.connPartition x y ↔ G.ConnBetween x y := by
   simp only [connPartition, Partition.rel_iff_exists]
@@ -52,9 +49,14 @@ lemma components_eq_singleton_iff : (∃ H, G.Components = {H}) ↔ G.Connected 
   intro hyp
   obtain ⟨x, hx⟩ := hyp.nonempty
   refine ⟨G.walkable x, ?_⟩
-  have h₁ := hyp.components_subsingleton
+  have h₁ := hyp.pre.components_subsingleton
   have h₂ : G.walkable x ∈ G.Components := walkable_isCompOf hx
   rwa [subsingleton_iff_singleton h₂] at h₁
+
+@[simp]
+lemma numberOfComponents_eq_one_iff : c(G) = 1 ↔ G.Connected := by
+  rw [NumberOfComponents, encard_eq_one, components_eq_singleton_iff]
+alias ⟨_, Connected.numberOfComponents⟩ := numberOfComponents_eq_one_iff
 
 lemma components_subsingleton_iff_connected : G.Components.Subsingleton ↔ G = ⊥ ∨ G.Connected := by
   rw [components_subsingleton_iff, preconnected_iff]

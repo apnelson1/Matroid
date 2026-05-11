@@ -1,4 +1,3 @@
-import Matroid.Graph.AcyclicSet
 import Matroid.Graphic
 
 variable {α β : Type*} {G H T : Graph α β} {u v x y z : α} {e e' f g : β} {X : Set α} {F : Set β}

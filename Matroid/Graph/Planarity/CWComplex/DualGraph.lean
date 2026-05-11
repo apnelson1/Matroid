@@ -323,15 +323,12 @@ theorem subset_of_not_disjoint_of_path (P : Path (map 0 u 0) (map 0 v 0))
   Given a CW complex `K`, a subset of `K` is a jordan curve iff it is a cycle of its one skeleton.
 -/
 theorem cycle_iff_jordan_curve (hCK : C ⊆ skeleton K 1) :
-    IsCircuit C ↔ ∃ C' : WList _ _, (OneSkeletonGraph K).IsCyclicWalk C' ∧
-      ⋃ (e : E(OneSkeletonGraph K)), closedCell 1 e.val = C := by
-  refine ⟨fun hC ↦ ?_, fun ⟨C', hC', hC''⟩ ↦ ?_⟩
+    IsCircuit C ↔ ∃ C' ≤ OneSkeletonGraph K, C'.IsCycle ∧ ⋃ e ∈ E(C'), closedCell 1 e = C := by
+  refine ⟨fun hC ↦ ?_, fun ⟨C', hC', hC'le, hC'eq⟩ ↦ ?_⟩
   · obtain ⟨v, hv⟩ := exists_openCell_zero_subset_of_isCircuit hC hCK
     rw [openCell_zero_eq_singleton, singleton_subset_iff] at hv
-
     sorry
   subst C
-
   sorry
 
 class JCTSpace (E : Type*) [TopologicalSpace E] : Prop where
@@ -345,17 +342,18 @@ variable {E : Type*} [TopologicalSpace E] [T2Space E] [ChartedSpace (EuclideanSp
   [BoundarylessManifold (modelWithCornersSelf ℝ (EuclideanSpace ℝ (Fin 2))) E]
   [CWComplex (univ : Set E)]
 
-theorem CWComplex.face_card_one_of_forest (h : (OneSkeletonGraph (univ : Set E)).IsForest)
-    [(OneSkeletonGraph (univ : Set E)).Finite] : Nat.card (cell (univ : Set E) 2) = 1 := by
-  /- Induction on the number of edges.
-  1. If the one skeleton is empty, then there must be at least one face to cover the whole surface.
-    If there are multiple faces, there must be a pair of faces that are glued together via the one
-    skeleton, contradiction. (Use boundaryless)
-  2. Take a leaf vertex `v` and its only edge `e`. In a suitably small neighborhood around any point
-    of `e` or `v`, it only contains only one face. Hence, removing `v` and `e` from the one skeleton
-    does not change the number of faces. -/
-  sorry
+-- theorem CWComplex.face_card_one_of_forest (h : (OneSkeletonGraph (univ : Set E)).IsForest)
+--     [(OneSkeletonGraph (univ : Set E)).Finite] : Nat.card (cell (univ : Set E) 2) = 1 := by
+--   /- Induction on the number of edges.
+--   1. If the one skeleton is empty, then there must be at least one face to cover the whole surface.
+--     If there are multiple faces, there must be a pair of faces that are glued together via the one
+--     skeleton, contradiction. (Use boundaryless)
+--   2. Take a leaf vertex `v` and its only edge `e`. In a suitably small neighborhood around any point
+--     of `e` or `v`, it only contains only one face. Hence, removing `v` and `e` from the one skeleton
+--     does not change the number of faces. -/
+--   sorry
 
+@[simps]
 def CWComplex.DualGraph : Graph (cell (univ : Set E) 2) (cell (univ : Set E) 1) where
   vertexSet := univ
   edgeSet := univ
@@ -384,6 +382,36 @@ theorem CWComplex.dualGraph_connected (F : Set (cell (univ : Set E) 2)) (hF : F.
   simp only [vertexSet_restrict, vertexSet_induce, hF, union_nonempty, nonempty_iUnion,
   exists_prop, openCell_nonempty, and_true, true_iff]
   exact Or.inr ⟨hF.some, hF.some_mem⟩
+
+-- lemma CWComplex.two_faces_disconnected_of_mem_cycle [JCTSpace E] (C : Set (cell (univ : Set E) 1))
+--     (hC : (OneSkeletonGraph (univ : Set E)).IsCycleSet C) (e : cell (univ : Set E) 1) (heC : e ∈ C):
+--     ∃ F₁ F₂, DualGraph.IsLink e F₁ F₂ ∧ ¬ (DualGraph.deleteEdges C).ConnBetween F₁ F₂ := by
+--   rw [isCycleSet_iff] at hC
+--   obtain ⟨C', hCle, hC', rfl⟩ := hC
+--   have := cycle_iff_jordan_curve (C := ⋃ e ∈ E(C'), closedCell 1 e) ?_ |>.mpr ⟨C', hCle, hC', rfl⟩
+--   swap
+--   · simp only [iUnion_subset_iff]
+--     exact fun e _ ↦ closedCell_subset_skeleton 1 e
+--   obtain ⟨f₁, f₂, hef⟩ := DualGraph.exists_isLink_of_mem_edgeSet (by simp : e ∈ _)
+--   use f₁, f₂, hef, fun hconn ↦ ?_
+
+--   sorry
+
+-- theorem CWComplex.dualGraph_abstract_dual_indep [JCTSpace E] (S : Set (cell (univ : Set E) 1)) :
+--     (cycleMatroid (OneSkeletonGraph univ)).Indep S ↔ (cycleMatroid DualGraph).Coindep S := by
+--   simp only [cycleMatroid_indep, cycleMatroid_coindep, edgeSet_DualGraph, subset_univ, true_and]
+--   refine ⟨fun h f₁ f₂ => ?_, fun h ↦ ?_⟩
+--   ·
+--     sorry
+--   contrapose! h
+--   rw [not_isAcyclicSet_iff (by simp)] at h
+--   obtain ⟨C, hC, hCle, hCS⟩ := h
+--   obtain ⟨e, heC⟩ := hC.edgeSet_nonempty
+--   obtain ⟨f₁, f₂, hef, hf⟩ :=
+--     two_faces_disconnected_of_mem_cycle E(C) (by rw [isCycleSet_iff]; use C) e heC
+--   use f₁, f₂, Or.inl ⟨hef.connBetween, ?_⟩
+--   contrapose! hf
+--   exact hf.mono (deleteEdges_anti_right _ hCS)
 
 theorem CWComplex.dualGraph_abstract_dual [JCTSpace E] (S : Set (cell (univ : Set E) 1)) :
     (OneSkeletonGraph (univ : Set E)).IsCycleSet S ↔ DualGraph.IsBond S := by

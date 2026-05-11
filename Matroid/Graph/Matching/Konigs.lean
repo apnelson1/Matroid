@@ -5,10 +5,6 @@ variable {α β : Type*} {G H C : Graph α β} {S X Y : Set α} {M M' : Set β} 
 
 open Set symmDiff WList
 
-namespace Graph
-
-end Graph
-
 namespace WList
 open Graph
 
@@ -423,7 +419,8 @@ lemma IsCycle.konig (hB : G.Bipartite) (h : G.IsCycle) : τ(G) = ν(G) := by
   · rw [← pathCover_ncard hC.nodup]
     have : C.tail.pathCover.Finite := by
       have : V(C.tail) ⊆ V(C) := WList.IsSuffix.subset (tail_isSuffix C)
-      exact G_finite.vertexSet_finite.subset <| by grind [toGraph_vertexSet, C.tail.pathCover_subset]
+      exact G_finite.vertexSet_finite.subset <| by grind [toGraph_vertexSet,
+        C.tail.pathCover_subset]
     rw [this.cast_ncard_eq]
     grw [← pathCover.le_encard]
   rw [← pathMatching_ncard P_isPath.nodup P_isPath.edge_nodup]
@@ -456,7 +453,7 @@ So W' contains u and is a cover of G. [cite: 22]
 -/
 theorem Konig'sTheorem [H.Simple] [H.Finite] (hB : H.Bipartite) : τ(H) = ν(H) := by
   refine of_not_exists_minimal (P := fun H ↦ τ(H) = ν(H)) fun G hle _ hMin ↦ ?_
-  push_neg at hMin
+  push Not at hMin
   replace hB := hB.of_le hle
   have _ : G.Loopless := hB.loopless
   have _ : G.Simple := Simple.mono ‹_› hle
@@ -500,11 +497,11 @@ theorem Konig'sTheorem [H.Simple] [H.Finite] (hB : H.Bipartite) : τ(H) = ν(H) 
   By minimality, G \ v has a cover W' with |W'| < ν(G). [cite: 16]
   Hence, W' ∪ {v} is a cover of G with cardinality ν(G) at most. [cite: 17]
   -/
-  obtain (ν_ne|ν_eq) := em' (ν(G - v) = ν(G))
-  · have ν_le : ν(G - v) ≤ ν(G) :=
+  obtain (ν_ne|ν_eq) := em' (ν(G - {v}) = ν(G))
+  · have ν_le : ν(G - {v}) ≤ ν(G) :=
       matchingNumber_mono deleteVerts_le
-    obtain ⟨W', hW'⟩ := (G - v).exists_isMinCover
-    have hlt : G - v < G := deleteVerts_singleton_lt huv.right_mem
+    obtain ⟨W', hW'⟩ := (G - {v}).exists_isMinCover
+    have hlt : G - {v} < G := deleteVerts_singleton_lt huv.right_mem
     have W_cover : G.IsCover (insert v W') := by
       refine ⟨by grind [huv.right_mem, hW'.subset, vertexSet_mono hlt.le], ?_⟩
       intro e he
@@ -535,7 +532,7 @@ theorem Konig'sTheorem [H.Simple] [H.Finite] (hB : H.Bipartite) : τ(H) = ν(H) 
   Since no edge of M is incident at v, it follows that W' does not contain v. [cite: 22]
   So W' contains u and is a cover of G. [cite: 22]
   -/
-  obtain ⟨M, hM⟩ := (G - v).exists_isMaxMatching
+  obtain ⟨M, hM⟩ := (G - {v}).exists_isMaxMatching
   have hMG : G.IsMaxMatching M := by
     refine (hM.mono_left deleteVerts_le).isMaxMatching_of_encard_eq ?_
     rw [hM.encard, ν_eq]
