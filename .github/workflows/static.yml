@@ -10,7 +10,6 @@ name: Doc-gen deployment
 on:
   push:
     branches: [main]
-  workflow_dispatch:
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
@@ -35,6 +34,39 @@ jobs:
       - name: Build project documentation.
         id: build-docgen
         uses: leanprover-community/docgen-action@main
-        # with:
+        with:
+          deploy: false
+          build-page: false
+          # The doc cache can replay a stale top-level docs facet without the Matroid HTML pages.
+          use-github-cache: false
           # Uncomment the next line if you wish to build a blueprint alongside your repository.
           # blueprint: true
+
+      - name: Check generated Matroid docs.
+        if: github.event_name == 'push'
+        run: |
+          echo "::group::agent docgen diagnostics"
+          target="docs/docs/Matroid/Graph/Planarity/Realization/Basic.html"
+          if [ -f "$target" ]; then
+            target_exists=true
+          else
+            target_exists=false
+          fi
+          printf '{"sessionId":"06e552","runId":"post-workflow-change","hypothesisId":"H4","location":".github/workflows/static.yml","message":"docgen artifact contains target module","data":{"target":"%s","target_exists":%s},"timestamp":%s}\n' "$target" "$target_exists" "$(date +%s%3N)"
+          if [ "$target_exists" != true ]; then
+            echo "::error::Missing expected generated documentation page: $target"
+            echo "::endgroup::"
+            exit 1
+          fi
+          echo "::endgroup::"
+
+      - name: Upload documentation artifact.
+        if: github.event_name == 'push'
+        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
+        with:
+          path: docs/
+
+      - name: Deploy to GitHub Pages.
+        if: github.event_name == 'push'
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
