@@ -16,7 +16,8 @@ set_option linter.style.longLine false
 -- missing to_dual tags
 attribute [to_dual self] mul_le_mul_iff_left add_le_add_iff_left le_of_mul_le_mul_left'
   le_of_mul_le_mul_right' le_of_add_le_add_right le_of_add_le_add_left mul_lt_mul_left
-  mul_lt_mul_right add_lt_add_left add_lt_add_right
+  mul_lt_mul_right add_lt_add_left add_lt_add_right mul_le_mul_right mul_le_mul_left
+  add_le_add_right add_le_add_left
 
 section Order
 
@@ -264,7 +265,7 @@ end StrictMono
 
 section Mono
 
-variable {M : Type*} [CommMonoid M] [Preorder M] [OrderTop M] [MulIsTopClass M] [TopUniqueClass M]
+variable {M : Type*} [Monoid M] [Preorder M] [OrderTop M] [MulIsTopClass M] [TopUniqueClass M]
     [IsTopMulClass M] {x y z : M}
 
 @[to_additive (attr := to_dual)]
@@ -300,8 +301,12 @@ lemma mul_left_cancel_of_ne_top [IsLeftCancelMul (Submonoid.notTop M)] (hz : z �
   rwa [mul_left_inj_of_ne_top hz] at h
 
 @[to_additive (attr := to_dual (attr := simp))]
-lemma IsRegular.of_ne_top [IsCancelMul (Submonoid.notTop M)] (hx : x ≠ ⊤) : IsRegular x :=
-  isLeftRegular_iff_isRegular.1 fun _ _ ↦ mul_left_cancel_of_ne_top hx
+lemma IsLeftRegular.of_ne_top [IsCancelMul (Submonoid.notTop M)] (hx : x ≠ ⊤) : IsLeftRegular x :=
+  fun _ _ ↦ mul_left_cancel_of_ne_top hx
+
+@[to_additive (attr := to_dual (attr := simp))]
+lemma IsRightRegular.of_ne_top [IsCancelMul (Submonoid.notTop M)] (hx : x ≠ ⊤) : IsRightRegular x :=
+  fun _ _ ↦ mul_right_cancel_of_ne_top hx
 
 @[to_additive (attr := to_dual)]
 lemma le_of_mul_le_mul_left_of_ne_top [MulLeftReflectLE (Submonoid.notTop M)] (hx : x ≠ ⊤)
@@ -341,15 +346,25 @@ lemma mul_lt_mul_right_of_ne_top [MulRightStrictMono (Submonoid.notTop M)] (hx :
   simpa using @mul_lt_mul_left (Submonoid.notTop M) _ _ _ ⟨y, by simpa using hyz.trans_le le_top⟩
     ⟨z, by simpa⟩ (by simpa) ⟨x, by simpa [lt_top_iff_ne_top']⟩
 
--- @[to_additive (attr := to_dual)]
+@[to_dual]
 instance [MulLeftMono (Submonoid.notTop M)] : MulLeftMono M := by
   refine ⟨@fun x y z hyz ↦ ?_⟩
-  obtain rfl | hne := eq_or_ne
+  obtain rfl | hx := eq_top_or_lt_top' x
+  · simp
+  obtain rfl | hz := eq_top_or_lt_top' z
+  · simp
+  sorry
+  -- simpa using @mul_le_mul_right (Submonoid.notTop M) _ _ _ ⟨y, by simpa using hyz.trans_lt hz⟩
+  --   ⟨z, by simpa⟩ (by simpa) ⟨x, by simpa⟩
 
-instance [MulRightMono (Submonoid.notTop M)] : MulRightMono M where
-  elim := by
-    refine @fun x y z hyz ↦ ?_
-    simp [Function.swap]
+instance [MulRightMono (Submonoid.notTop M)] : MulRightMono M := by
+  refine ⟨@fun x y z hyz ↦ ?_⟩
+  obtain rfl | hx := eq_top_or_lt_top' x
+  · simp [Function.swap]
+  obtain rfl | hz := eq_top_or_lt_top' z
+  · simp [Function.swap]
+  simpa using @mul_le_mul_left (Submonoid.notTop M) _ _ _ ⟨y, by simpa using hyz.trans_lt hz⟩
+    ⟨z, by simpa⟩ (by simpa) ⟨x, by simpa⟩
 
 @[gcongr]
 theorem mul_lt_mul''' [MulLeftStrictMono (Submonoid.notTop M)]
@@ -358,6 +373,12 @@ theorem mul_lt_mul''' [MulLeftStrictMono (Submonoid.notTop M)]
   obtain rfl | hz := eq_top_or_lt_top' z
   · simp [lt_top_iff_ne_top', xz.ne, (yw.trans_le le_top).ne]
   refine lt_of_le_of_lt ?_ <| mul_lt_mul_left_of_ne_top hz.ne yw
+  obtain rfl | hy := eq_top_or_lt_top' y
+  · simp
+  exact (mul_lt_mul_right_of_ne_top hy.ne xz).le
+
+
+  -- have : MulLeftMono (Submonoid.notTop M) := by exact?
 
   -- apply (WithTop.add_lt_add_left xz.ne_top yw).trans_le
   -- cases w
@@ -367,7 +388,7 @@ theorem mul_lt_mul''' [MulLeftStrictMono (Submonoid.notTop M)]
 -- protected lemma add_le_add_iff_left [LE α] [AddLeftMono α] [AddLeftReflectLE α] (hx : x ≠ ⊤) :
 --     x + y ≤ x + z ↔ y ≤ z := ⟨WithTop.le_of_add_le_add_left hx, fun _ ↦ by gcongr⟩
 
-variable [IsOrderedCancelMonoid (Submonoid.notTop M)]
+
 
 @[to_additive (attr := to_dual)]
 lemma mul_le_mul_iff_left_of_ne_top' (hx : x ≠ ⊤) : x * y ≤ x * z ↔ y ≤ z := by
