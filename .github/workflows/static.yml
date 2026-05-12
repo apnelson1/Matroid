@@ -45,20 +45,16 @@ jobs:
       - name: Check generated Matroid docs.
         if: github.event_name == 'push'
         run: |
-          echo "::group::agent docgen diagnostics"
           target="docs/docs/Matroid/Graph/Planarity/Realization/Basic.html"
           if [ -f "$target" ]; then
             target_exists=true
           else
             target_exists=false
           fi
-          printf '{"sessionId":"06e552","runId":"post-workflow-change","hypothesisId":"H4","location":".github/workflows/static.yml","message":"docgen artifact contains target module","data":{"target":"%s","target_exists":%s},"timestamp":%s}\n' "$target" "$target_exists" "$(date +%s%3N)"
           if [ "$target_exists" != true ]; then
             echo "::error::Missing expected generated documentation page: $target"
-            echo "::endgroup::"
             exit 1
           fi
-          echo "::endgroup::"
 
       - name: Upload documentation artifact.
         if: github.event_name == 'push'

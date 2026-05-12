@@ -1,7 +1,4 @@
-import Matroid.ForMathlib.Card
-import Matroid.ForMathlib.Data.Set.Subsingleton
-import Matroid.Graph.Connected.Defs
-import Matroid.Graph.Degree.Constructions
+import Matroid.Graph.Connected.Menger
 import Matroid.Graph.Connected.Bond
 
 open Set Function Nat WList
@@ -216,36 +213,74 @@ lemma completeGraph_preconnected (n : ℕ) : (CompleteGraph n).Preconnected := b
   · simpa
   exact Adj.connBetween <| by simp [hu, hv, hne]
 
--- lemma IsComplete.edgeConnGE [G.Finite] (h : G.IsComplete) : G.EdgeConnGE (V(G).ncard - 1) := by
---   sorry
+open Classical in
+@[simps (attr := grind =)]
+noncomputable def IsComplete.VertexEnsemble (h : G.IsComplete) (hs : s ∈ V(G)) (ht : t ∈ V(G))
+    (hne : s ≠ t) : G.VertexEnsemble s t ↑(V(G) \ {s}) where
+  f x := if hxt : x = t then (h s hs t ht hne).choose_spec.walk else
+    cons s ((h s hs x x.prop.1 (Ne.symm x.prop.2)).choose)
+    (h x x.prop.1 t ht hxt).choose_spec.walk
+  isPath x := by
+    split_ifs with hxt
+    · exact IsLink.walk_isPath (Exists.choose_spec (h s hs t ht hne)) hne
+    generalize_proofs h1 h2 h3
+    simp [h1.choose_spec, h3.walk_isPath hxt, hne, Ne.symm x.prop.2]
+  first_eq x := by split_ifs with hxt <;> simp
+  last_eq x := by split_ifs with hxt <;> simp
+  internallyDisjoint i j hne := by
+    simp only
+    split_ifs <;> grind [IsLink.walk_vertexSet, IsLink.walk_last, IsLink.walk_first]
 
--- @[simp]
--- lemma IsComplete.edgeConnGE_iff [G.Finite] [G.Simple] (h : G.IsComplete) (hnt : V(G).Nontrivial)
---     (k : ℕ) : G.EdgeConnGE k ↔ k + 1 ≤ V(G).encard := by
---   refine ⟨fun hk ↦ ?_, fun hk ↦ ?_⟩
---   · obtain ⟨u, hu, v, hv, hne⟩ := hnt
---     obtain rfl | h1k := (Nat.zero_le k).eq_or_lt
---     · simp only [cast_zero, zero_add, one_le_encard_iff_nonempty]
---       use u
---     simp only [edgeConnGE_iff_isEdgeCut h1k, h.preconnected, true_and] at hk
---     obtain ⟨e, he⟩ := h u hu v hv hne
---     specialize hk _ (IsEdgeCut.of_vert u) ⟨e, by grind⟩
---     rw [setLinkEdges_singleton_compl_eq_incEdges, encard_incEdges, h.neighbors hu,
---       encard_diff_singleton_of_mem hu] at hk
---     eomega
---   apply h.edgeConnGE |>.anti_right (n := k)
---   have := G.vertexSet_finite.encard_lt_top.ne
---   rw [ncard]
---   enat_to_nat!
---   rw [ENat.toNat_coe]
---   grind
+lemma IsComplete.edgeConnGE [G.Finite] (h : G.IsComplete) : G.EdgeConnGE (V(G).ncard - 1) := by
+  obtain h1 | ⟨v, hv⟩ := V(G).eq_empty_or_nonempty
+  · simp_all
+  have hV : V(G).encard ≠ ⊤ := by simp
+  rw [Menger'sTheorem_edge (ι := ↑(V(G) \ {v}))
+    (by simp [encard_diff_singleton_of_mem hv, ncard, ENat.coe_toNat])]
+  intro s t hs ht
+  obtain rfl | hne := eq_or_ne s t
+  · exact ⟨G.edgePathEnsemble_nil hs _⟩
+  classical
+  let e : ↑(V(G) \ {v}) ≃ ↑(V(G) \ {s}) := by
+    refine BijOn.equiv (fun x ↦ if x = s then v else x) ⟨by grind [MapsTo], by grind [InjOn], ?_⟩
+    intro x hx
+    obtain rfl | hne := eq_or_ne x v <;> [use s; use x] <;> grind
+  let A : G.EdgePathEnsemble s t ↑(V(G) \ {s}) :=
+    EdgePathEnsemble.ofVertexEnsemble (h.VertexEnsemble hs ht hne) ?_
+  refine ⟨A.comp e.toEmbedding⟩
+  intro i hi j hj
+  simp at hi hj
+  split_ifs at hi hj
+  · grind
+  all_goals simp [IsLink.walk] at hi hj
 
--- @[simp]
--- lemma completeGraph_edgeConnGE_iff {n : ℕ} (hn : 1 < n) (k : ℕ) :
---     (CompleteGraph n).EdgeConnGE k ↔ k + 1 ≤ n := by
---   rw [completeGraph_isComplete n |>.edgeConnGE_iff (by use 0, by grind, 1, by grind, by simp) k]
---   simp only [↓encard_vertexSet_completeGraph, Order.add_one_le_iff]
---   eomega
+@[simp]
+lemma IsComplete.edgeConnGE_iff [G.Finite] [G.Simple] (h : G.IsComplete) (hnt : V(G).Nontrivial)
+    (k : ℕ) : G.EdgeConnGE k ↔ k + 1 ≤ V(G).encard := by
+  refine ⟨fun hk ↦ ?_, fun hk ↦ ?_⟩
+  · obtain ⟨u, hu, v, hv, hne⟩ := hnt
+    obtain rfl | h1k := (Nat.zero_le k).eq_or_lt
+    · simp only [cast_zero, zero_add, one_le_encard_iff_nonempty]
+      use u
+    simp only [edgeConnGE_iff_isEdgeCut h1k, h.preconnected, true_and] at hk
+    obtain ⟨e, he⟩ := h u hu v hv hne
+    specialize hk _ (IsEdgeCut.of_vert u) ⟨e, by grind⟩
+    rw [setLinkEdges_singleton_compl_eq_incEdges, encard_incEdges, h.neighbors hu,
+      encard_diff_singleton_of_mem hu] at hk
+    eomega
+  apply h.edgeConnGE |>.anti_right (n := k)
+  have := G.vertexSet_finite.encard_lt_top.ne
+  rw [ncard]
+  enat_to_nat!
+  rw [ENat.toNat_coe]
+  grind
+
+@[simp]
+lemma completeGraph_edgeConnGE_iff {n : ℕ} (hn : 1 < n) (k : ℕ) :
+    (CompleteGraph n).EdgeConnGE k ↔ k + 1 ≤ n := by
+  rw [completeGraph_isComplete n |>.edgeConnGE_iff (by use 0, by grind, 1, by grind, by simp) k]
+  simp only [↓encard_vertexSet_completeGraph, Order.add_one_le_iff]
+  eomega
 
 lemma completeBipartiteGraph_connected {m n : ℕ} (hm : m ≠ 0) (hn : n ≠ 0) :
     (CompleteBipartiteGraph m n).Connected := by

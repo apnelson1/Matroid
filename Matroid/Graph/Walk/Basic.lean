@@ -452,6 +452,7 @@ lemma walk_last (h : G.IsLink e u v): h.walk.last = v := rfl
 @[simp]
 lemma walk_vertex (h : G.IsLink e u v): h.walk.vertex = [u, v] := rfl
 
+@[simp]
 lemma mem_walk_iff (h : G.IsLink e u v) (x : α) : x ∈ h.walk ↔ x = u ∨ x = v := by
   simp [walk]
 

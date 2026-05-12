@@ -3,7 +3,6 @@ import Matroid.Graph.Connected.Component
 import Matroid.Graph.Connected.Set.Defs
 
 open Set Function Nat WList
-
 variable {α β : Type*} {G H K : Graph α β} {s t u v x x₁ x₂ y y₁ y₂ z : α} {n m : ℕ}
   {e e' f g : β} {U V S S' T T' X Y : Set α} {F F' R R': Set β} {C W P Q : WList α β}
 
@@ -577,6 +576,67 @@ lemma preconnGE_iff_forall_setConnGE : G.PreconnGE n ↔ ∀ S T : Set α, S ⊆
   have hcd := h _ _ hSC hTC hC.isSetCut
   rw [ENat.coe_toNat (by simp)] at hcd
   simpa [hsC.not_ge, htC.not_ge] using hcd
+
+/-- Minimum `C.encard` over vertex cuts `C` of `G`, as an `ℕ∞`. -/
+noncomputable def sepConnectivity (G : Graph α β) : ℕ∞ :=
+  ⨅ C : {C : Set α // G.IsSep C}, (C.val : Set α).encard
+
+open Classical in
+/-- Upper bound on connectivity from the vertex count: `⊤` if `V(G)` is a subsingleton, else
+`|V(G)| - 1` in `ℕ∞`. -/
+noncomputable def cardConnectivityBound (G : Graph α β) : ℕ∞ :=
+  if _ : V(G).Subsingleton then ⊤ else V(G).encard - 1
+
+/-- Global vertex connectivity as an `ℕ∞`: minimum of separator connectivity and the
+cardinality bound that appears in `ConnGE`. -/
+noncomputable def connectivity (G : Graph α β) : ℕ∞ :=
+  min G.sepConnectivity G.cardConnectivityBound
+
+/-- Minimum pairwise `connBetweenConnectivity` over ordered pairs of vertices in `V(G)`. -/
+noncomputable def preconnectivity (G : Graph α β) : ℕ∞ :=
+  ⨅ s : V(G), ⨅ t : V(G), connectivityBetween G s t
+
+/-- Minimum pairwise `edgeConnBetweenConnectivity` over ordered pairs of vertices in `V(G)`. -/
+noncomputable def edgeConnectivity (G : Graph α β) : ℕ∞ :=
+  ⨅ s : V(G), ⨅ t : V(G), edgeConnectivityBetween G s t
+
+lemma le_sepConnectivity_iff {k : ℕ∞} :
+    k ≤ G.sepConnectivity ↔ ∀ ⦃C : Set α⦄, G.IsSep C → k ≤ C.encard := by
+  simp [sepConnectivity, le_iInf_iff, Subtype.forall]
+
+lemma nat_le_cardConnectivityBound_iff (n : ℕ) :
+    n ≤ G.cardConnectivityBound ↔ V(G).Subsingleton ∨ n < V(G).encard := by
+  unfold cardConnectivityBound
+  split_ifs with hV
+  · refine ⟨fun _ => Or.inl hV, fun _ => le_top⟩
+  refine ⟨fun hn => Or.inr ?_, by simp only [hV, false_or]; eomega⟩
+  rw [not_subsingleton_iff, ← one_lt_encard_iff_nontrivial] at hV
+  eomega
+
+lemma connGE_iff_le_connectivity (n : ℕ) : G.ConnGE n ↔ n ≤ G.connectivity := by
+  rw [connectivity, le_min_iff, connGE_iff, le_sepConnectivity_iff,
+    nat_le_cardConnectivityBound_iff n]
+
+lemma le_preconnectivity_iff {k : ℕ∞} : k ≤ G.preconnectivity ↔ ∀ ⦃s t : α⦄, s ∈ V(G) → t ∈ V(G) →
+    k ≤ connectivityBetween G s t := by
+  rw [preconnectivity, le_iInf_iff]
+  exact ⟨fun h s t hs ht ↦ (le_iInf_iff.mp (h ⟨s, hs⟩)) ⟨t, ht⟩,
+    fun h ⟨s, hs⟩ ↦ le_iInf_iff.mpr fun ⟨t, ht⟩ ↦ h hs ht⟩
+
+lemma preconnGE_iff_le_preconnectivity (n : ℕ) : G.PreconnGE n ↔ n ≤ G.preconnectivity := by
+  rw [preconnGE_iff_forall_connBetweenGE, le_preconnectivity_iff]
+  exact forall₄_congr fun s t _ _ ↦ by simpa using connBetweenGE_iff_le_connectivityBetween s t n
+
+lemma le_edgeConnectivity_iff {k : ℕ∞} : k ≤ G.edgeConnectivity ↔
+    ∀ ⦃s t : α⦄, s ∈ V(G) → t ∈ V(G) → k ≤ edgeConnectivityBetween G s t := by
+  rw [edgeConnectivity, le_iInf_iff]
+  exact ⟨fun h s t hs ht ↦ (le_iInf_iff.mp (h ⟨s, hs⟩)) ⟨t, ht⟩,
+    fun h ⟨s, hs⟩ ↦ le_iInf_iff.mpr fun ⟨t, ht⟩ ↦ h hs ht⟩
+
+lemma edgeConnGE_iff_le_edgeConnectivity (n : ℕ) : G.EdgeConnGE n ↔ n ≤ G.edgeConnectivity := by
+  rw [EdgeConnGE, le_edgeConnectivity_iff]
+  refine forall₄_congr fun s t hs ht ↦ ?_
+  simpa using (edgeConnBetweenGE_iff_le_edgeConnectivityBetween s t n)
 
 lemma PreconnGE.isSpanningSubgraph (hconn : H.PreconnGE n) (hsle : H ≤s G) : G.PreconnGE n :=
   fun _ _ hs ht => hconn (hsle.vertexSet_eq ▸ hs) (hsle.vertexSet_eq ▸ ht) |>.of_le hsle.le

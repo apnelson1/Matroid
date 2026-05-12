@@ -75,6 +75,7 @@ import Matroid.Graph.Connected.Component
 import Matroid.Graph.Connected.Construction
 import Matroid.Graph.Connected.Defs
 -- import Matroid.Graph.Connected.Gammoid
+import Matroid.Graph.Connected.LineGraph
 import Matroid.Graph.Connected.Menger
 import Matroid.Graph.Connected.Minor
 import Matroid.Graph.Connected.MixedLineGraph
