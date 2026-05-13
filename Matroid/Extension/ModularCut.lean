@@ -223,10 +223,19 @@ def principal (M : Matroid α) (X : Set α) : M.ModularCut where
 
 lemma mem_principal_iff' : F ∈ principal M X ↔ M.IsFlat F ∧ X ∩ M.E ⊆ F := Iff.rfl
 
-@[simp]
 lemma mem_principal_iff (hX : X ⊆ M.E := by aesop_mat) :
     F ∈ principal M X ↔ M.IsFlat F ∧ X ⊆ F := by
   rw [mem_principal_iff', inter_eq_self_of_subset_left hX]
+
+@[simp]
+lemma closure_mem_principal_iff (hX : X ⊆ M.E := by aesop_mat) :
+    M.closure Y ∈ principal M X ↔ X ⊆ M.closure Y := by
+  rw [mem_principal_iff, and_iff_right (isFlat_closure ..)]
+
+@[simp]
+lemma closure_mem_principal (M : Matroid α) (X : Set α) :
+    M.closure X ∈ ModularCut.principal M X := by
+  simp [mem_principal_iff', inter_ground_subset_closure]
 
 /-- The empty modular cut -/
 @[simps]
@@ -273,6 +282,10 @@ protected lemma eq_bot_iff (U : M.ModularCut) : U = ⊥ ↔ M.E ∉ U := by
 
 protected lemma ne_bot_iff (U : M.ModularCut) : U ≠ ⊥ ↔ M.E ∈ U := by
   rw [Ne, U.eq_bot_iff, not_not]
+
+@[simp]
+lemma principal_ne_bot (M : Matroid α) (X : Set α) : ModularCut.principal M X ≠ ⊥ := by
+  simp [ModularCut.ne_bot_iff, mem_principal_iff']
 
 lemma mem_top_of_isFlat (hF : M.IsFlat F) : F ∈ (⊤ : M.ModularCut) :=
   ⟨hF, by simp⟩
@@ -330,10 +343,6 @@ lemma principal_eq_top_iff' : ModularCut.principal M F = ⊤ ↔ F ∩ M.E ⊆ M
 lemma principal_eq_top_iff (hXE : X ⊆ M.E := by aesop_mat) :
     ModularCut.principal M X = ⊤ ↔ X ⊆ M.loops := by
   rw [principal_eq_top_iff', inter_eq_self_of_subset_left hXE]
-
-@[simp]
-lemma principal_ne_bot : ModularCut.principal M F ≠ ⊥ := by
-  simp [ModularCut.eq_bot_iff, mem_principal_iff']
 
 lemma principal_ground_ne_top (M : Matroid α) [RankPos M] : ModularCut.principal M M.E ≠ ⊤ := by
   simp only [ne_eq, principal_eq_top_iff rfl.subset, loops]
@@ -457,6 +466,25 @@ lemma mem_delete_elem_iff :
   rw [← hfl.closure, ← closure_insert_closure_eq_closure_insert, insert_eq_of_mem hFU.2,
     closure_closure] at hFU
   exact ⟨⟨heF, .inr hfl⟩, hFU.1⟩
+
+lemma principal_restrict_eq_bot_iff (hX : X ⊆ M.E := by aesop_mat) :
+    (ModularCut.principal M X).restrict Y = ⊥ ↔ ¬ (X ⊆ M.closure Y) := by
+  rw [ModularCut.eq_bot_iff, mem_restrict_iff, and_iff_right (ground_isFlat ..),
+    restrict_ground_eq, mem_principal_iff, and_iff_right (closure_isFlat ..)]
+
+lemma principal_delete_eq_bot_iff (hX : X ⊆ M.E := by aesop_mat) :
+    (ModularCut.principal M X).delete Y = ⊥ ↔ ¬ (X ⊆ M.closure (M.E \ Y)) :=
+  principal_restrict_eq_bot_iff
+
+lemma principal_delete_self_eq_bot_iff (hX : X ⊆ M.E := by aesop_mat) :
+    (ModularCut.principal M X).delete X = ⊥ ↔ M.Codep X := by
+  rw [principal_delete_eq_bot_iff, ← not_coindep_iff, coindep_iff_subset_closure_compl]
+
+lemma principal_restrict_eq_top_iff (hX : X ⊆ M.E := by aesop_mat) :
+    (ModularCut.principal M X).restrict Y = ⊤ ↔ X ⊆ M.loops := by
+  rw [ModularCut.eq_top_iff, mem_restrict_iff, and_iff_right (isFlat_loops ..),
+    closure_mem_principal_iff, restrict_loops_eq', ← M.closure_union_inter_ground,
+    disjoint_sdiff_left.inter_eq, union_empty, closure_eq_loops_of_subset inter_subset_left]
 
 def comapOfSubsetRange {β : Type*} {M : Matroid β} (U : M.ModularCut) (f : α → β)
     (hf : M.E ⊆ range f) : (M.comap f).ModularCut where

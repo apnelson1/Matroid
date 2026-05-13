@@ -9,6 +9,7 @@ open Set
 
 namespace Matroid
 
+
 /-- `M.IsPerturbation N k` means that `N` can be obtained from `M` by a finite sequence of lifts
 and projections, with combined cardinality at most `k`.
 (each lift/projection in the sequence is possibly by an infinite set. )
@@ -221,6 +222,51 @@ lemma ModularCut.isPerturbation_projectBy (U : M.ModularCut) :
     M.IsPerturbation (M.projectBy U) 1 :=
   U.Projector.isPerturbation.symm.mono <| (encard_le_card ..).trans <| by simp
 
+lemma ModularCut.isPerturbation_liftBy (U : M✶.ModularCut) :
+    M.IsPerturbation (M.liftBy U) 1 := by
+  have h := U.isPerturbation_projectBy.dual
+  rwa [dual_dual, projectBy_dual] at h
+
+example (M : Matroid α) (L : Set α) (hLr : ¬ (L ⊆ M.loops)) (hL : L ⊆ M.E) :
+    ∃ (N : Matroid α), N.IsPerturbation M 2 ∧ N ＼ L = M ＼ L ∧ N.eRk L + 1 = M.eRk L := by
+  set R := M.liftBy (ModularCut.principal M✶ L) with hR
+  have hR1 : R ＼ L = M ＼ L := by
+    rw [hR, ModularCut.liftBy_delete_eq_delete_of_dual_closure_mem _ (by simp)]
+  set N := R.projectBy (ModularCut.principal R L) with hN
+  have hRL : R.Codep L :=
+    ModularCut.liftBy_principal_codep _ (by contrapose! hLr; simp [hLr]) hL
+  -- have h' : (ModularCut.principal R L).delete L = ⊥ := by
+  --   rw [ModularCut.principal_delete_eq_bot hRL]
+    -- rw [ModularCut.eq_bot_iff, ModularCut.mem_delete_iff, and_iff_right (R ＼ L).ground_isFlat,
+    --   ModularCut.mem_principal_iff]
+  have hN1 : R ＼ L = N ＼ L := by
+    rw [hN, ← ModularCut.projectBy_delete, (ModularCut.principal_delete_self_eq_bot_iff _).2 hRL,
+      ModularCut.projectBy_bot]
+  have hloops : ¬ (L ⊆ R.loops) := by
+    grw [hR, (liftBy_quotient _).weakLE.loops_subset_loops]
+    exact hLr
+  have hr : N.eRk L + 1 = M.eRk L := by
+    rw [hN, ModularCut.projectBy_eRk_add_one_eq _ hloops (subset_closure ..), hR]
+
+
+    -- assumption
+
+
+    -- , eq_comm, ModularCut.projectBy_eq_self_iff,
+    --   ModularCut.eq_bot_iff, ModularCut.eq_top_iff]
+
+
+  -- set U := ModularCut.principal M✶  L with hU
+
+  -- set V := ModularCut.principal (M✶.projectBy U)✶ L with hV
+  -- -- set R := (M✶.projectBy U)✶ with hR
+  -- refine ⟨(M✶.projectBy U)✶.projectBy V, ?_, ?_, ?_⟩
+  -- · refine V.isPerturbation_projectBy.symm.trans_le (M₂ := (M✶.projectBy U)✶) (k := 1)
+  --     ?_ rfl.le
+  --   have h1 := U.isPerturbation_projectBy.dual.symm
+  --   rwa [dual_dual] at h1
+  -- ·
+
 /-- The minimum size of a perturbation needed to take `M` to `N`.
 This is a little coarser than `IsPerturbation` in the information it contains,
 since Matroids `M, N` with distinct ground sets satisfy `dist M N = ⊤`,
@@ -355,13 +401,13 @@ section uniform
 
 
 
-lemma foo (a b : ℕ) (X : Set α) (hxB : b + ∑ i < b, ENat.choose a i ≤ X.encard)
-    (U : (unifOn X (a + 1)).ModularCut) (hU : U ≠ ⊤) :
-    ∃ Y ⊆ X, Y.encard = b ∧ ((unifOn X (a + 1)).projectBy U ↾ Y).IsFiniteRankUniform a := by
-  let G := unifOn X (a + 1)
-  let M := G.projectBy U
+-- lemma foo (a b : ℕ) (X : Set α) (hxB : b + ∑ i < b, ENat.choose a i ≤ X.encard)
+--     (U : (unifOn X (a + 1)).ModularCut) (hU : U ≠ ⊤) :
+--     ∃ Y ⊆ X, Y.encard = b ∧ ((unifOn X (a + 1)).projectBy U ↾ Y).IsFiniteRankUniform a := by
+--   let G := unifOn X (a + 1)
+--   let M := G.projectBy U
 
-  sorry
+--   sorry
 
 
 end uniform

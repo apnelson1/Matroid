@@ -18,6 +18,10 @@ open scoped symmDiff
 
 namespace Matroid
 
+@[simp]
+lemma isFlat_loops (M : Matroid α) : M.IsFlat M.loops :=
+  isFlat_closure ..
+
 /-- A non-coloop of `M` is a nonloop of `M✶`. -/
 def IsNonColoop (M : Matroid α) (e : α) := M✶.IsNonloop e
 

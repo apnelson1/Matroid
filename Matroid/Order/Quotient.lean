@@ -312,6 +312,11 @@ lemma Quotient.truncate (h : M₂ ≤q M₁) : M₂.truncate ≤q M₁.truncate 
   rw [M₁.truncate_closure_eq_of_not_spanning hXE hX]
   exact (h.closure_subset_closure X).trans <| M₂.truncate_quotient.closure_subset_closure X
 
+lemma project_quotient (M : Matroid α) (X : Set α) : M.project X ≤q M := by
+  refine quotient_of_forall_closure_subset_closure rfl fun Y _ ↦ ?_
+  rw [project_closure]
+  exact M.closure_subset_closure <| subset_union_left
+
 lemma projectBy_quotient (U : M.ModularCut) : M.projectBy U ≤q M := by
   nth_rewrite 1 [U.projectBy_eq_map_comap]
   convert ((((M.map some _)).extendBy none
@@ -319,15 +324,13 @@ lemma projectBy_quotient (U : M.ModularCut) : M.projectBy U ≤q M := by
   nth_rewrite 1 [← comap_map (Option.some_injective α) (M := M)]
   rw [ModularCut.extendBy_deleteElem _ (by simp)]
 
-lemma project_quotient (M : Matroid α) (X : Set α) : M.project X ≤q M := by
-  refine quotient_of_forall_closure_subset_closure rfl fun Y _ ↦ ?_
-  rw [project_closure]
-  exact M.closure_subset_closure <| subset_union_left
-
 lemma Quotient.project_quotient_project (h : M₂ ≤q M₁) (X : Set α) :
     M₂.project X ≤q M₁.project X :=
   quotient_of_forall_closure_subset_closure (by simpa using h.ground_eq.symm) fun Y _ ↦
     by simpa using h.closure_subset_closure ..
+
+lemma liftBy_quotient (U : M✶.ModularCut) : M ≤q M.liftBy U := by
+  convert M.dual_dual ▸ (projectBy_quotient U).dual
 
 end Constructions
 

@@ -122,7 +122,7 @@ lemma projectBy_project (U : M.ModularCut) (C : Set α) :
 lemma projectBy_contract (U : M.ModularCut) (C : Set α) :
     (M.projectBy U).contract C = (M ／ C).projectBy (U.contract C) := by
   rw [← project_delete_self, U.projectBy_project, ModularCut.contract]
-  exact ext_closure fun X ↦ by simp [delete_closure_eq, projectby_copy, projectBy_delete]
+  exact ext_closure fun X ↦ by simp [delete_closure_eq, projectBy_copy, projectBy_delete]
 
 -- TODO : versions of the above for `extendBy`.
 
