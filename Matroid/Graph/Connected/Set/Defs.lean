@@ -537,6 +537,18 @@ end SetEnsemble
 def SetConnGE (G : Graph α β) (S T : Set α) (n : ℕ) : Prop :=
   ∀ ⦃C : Set α⦄, G.IsSetCut S T C → n ≤ C.encard
 
+/-- Minimum `C.encard` over vertex set cuts `C` between `S` and `T`, as an `ℕ∞`. -/
+noncomputable def setConnectivity (G : Graph α β) (S T : Set α) : ℕ∞ :=
+  ⨅ C : {C : Set α // G.IsSetCut S T C}, (C.val : Set α).encard
+
+lemma le_setConnectivity_iff {k : ℕ∞} (S T : Set α) :
+    k ≤ G.setConnectivity S T ↔ ∀ ⦃C : Set α⦄, G.IsSetCut S T C → k ≤ C.encard := by
+  simp [setConnectivity, le_iInf_iff, Subtype.forall]
+
+lemma setConnGE_iff_le_setConnectivity (S T : Set α) (n : ℕ) :
+    G.SetConnGE S T n ↔ (n : ℕ∞) ≤ G.setConnectivity S T := by
+  simp [SetConnGE, le_setConnectivity_iff]
+
 @[simp]
 lemma SetConnGE_zero (G : Graph α β) (S T : Set α) : G.SetConnGE S T 0 := by
   simp [SetConnGE]
@@ -658,6 +670,18 @@ lemma setConnGE_self (hS : S.Finite) (hsu : S ⊆ V(G)) : G.SetConnGE S S S.ncar
 
 def EdgeSetConnGE (G : Graph α β) (S T : Set α) (n : ℕ) : Prop :=
   ∀ ⦃F : Set β⦄, G.IsEdgeSetCut S T F → n ≤ F.encard
+
+/-- Minimum `F.encard` over edge set cuts `F` between `S` and `T`, as an `ℕ∞`. -/
+noncomputable def edgeSetConnectivity (G : Graph α β) (S T : Set α) : ℕ∞ :=
+  ⨅ F : {F : Set β // G.IsEdgeSetCut S T F}, (F.val : Set β).encard
+
+lemma le_edgeSetConnectivity_iff {k : ℕ∞} (S T : Set α) :
+    k ≤ G.edgeSetConnectivity S T ↔ ∀ ⦃F : Set β⦄, G.IsEdgeSetCut S T F → k ≤ F.encard := by
+  simp [edgeSetConnectivity, le_iInf_iff, Subtype.forall]
+
+lemma edgeSetConnGE_iff_le_edgeSetConnectivity (S T : Set α) (n : ℕ) :
+    G.EdgeSetConnGE S T n ↔ (n : ℕ∞) ≤ G.edgeSetConnectivity S T := by
+  simp [EdgeSetConnGE, le_edgeSetConnectivity_iff]
 
 @[simp]
 lemma EdgeSetConnGE_zero (G : Graph α β) (S T : Set α) : G.EdgeSetConnGE S T 0 := by

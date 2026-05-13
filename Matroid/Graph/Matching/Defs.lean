@@ -494,9 +494,9 @@ lemma coverNumber_mono (hle : G ≤ H) : τ(G) ≤ τ(H) := by
 -- You can take unions of matchings/covers across strongly disjoint graphs
 lemma IsCover.union {H₁ H₂ : Graph α β} {S₁ S₂ : Set α} (hS₁ : H₁.IsCover S₁) (hS₂ : H₂.IsCover S₂)
     (hdisj : H₁.StronglyDisjoint H₂) : (H₁ ∪ H₂).IsCover (S₁ ∪ S₂) where
-  subset := by grind [union_vertexSet, hS₁.subset, hS₂.subset]
+  subset := by grind [vertexSet_union, hS₁.subset, hS₂.subset]
   cover e := by
-    simp only [union_edgeSet, mem_union, mem_setIncEdges_iff, hdisj.compatible.union_inc_iff]
+    simp only [edgeSet_union, mem_union, mem_setIncEdges_iff, hdisj.compatible.union_inc_iff]
     rintro (he | he) <;> apply exists_isLink_of_mem_edgeSet at he <;> obtain ⟨x, y, hexy⟩ := he
     · obtain (h | h) := hS₁.mem_or_mem_of_isLink hexy <;> [use x; use y] <;> refine
         ⟨Or.inl ‹_›, Or.inl ?_⟩ <;> [exact hexy.inc_left ; exact hexy.inc_right]
@@ -514,7 +514,7 @@ lemma IsMinCover.union {T : Set α} (hS : G.IsMinCover S) (hT : H.IsMinCover T)
   have ST_disj : Disjoint S T := by grind [hS.subset, hT.subset, hdisj.vertex]
   rw [encard_union_eq ST_disj]
   have : A = (A ∩ V(G)) ∪ (A ∩ V(H)) := by
-    have : V(G ∪ H) = V(G) ∪ V(H) := union_vertexSet G H
+    have : V(G ∪ H) = V(G) ∪ V(H) := vertexSet_union G H
     grind [hA.subset]
   rw [this, encard_union_eq (show Disjoint (A ∩ V(G)) (A ∩ V(H)) by grind [hdisj.vertex]),
     hS.encard, hT.encard]
@@ -523,7 +523,7 @@ lemma IsMinCover.union {T : Set α} (hS : G.IsMinCover S) (hT : H.IsMinCover T)
 lemma IsMatching.union {H₁ H₂ : Graph α β} {M₁ M₂ : Set β} (hM₁ : H₁.IsMatching M₁)
     (hM₂ : H₂.IsMatching M₂) (hdisj : StronglyDisjoint H₁ H₂) : (H₁ ∪ H₂).IsMatching (M₁ ∪ M₂) where
   -- TODO: grind tags
-  subset := by grind [union_edgeSet, hM₁.subset, hM₂.subset]
+  subset := by grind [edgeSet_union, hM₁.subset, hM₂.subset]
   disjoint e f he hf hne := by
     have all_left {M : Set β} {H K : Graph α β} (hM : H.IsMatching M)
         (hdisj : H.StronglyDisjoint K) : ∀ ⦃e⦄, e ∈ M → V(H ∪ K, e) = V(H, e) := by
@@ -554,7 +554,7 @@ lemma IsMaxMatching.union {N : Set β} (hM : G.IsMaxMatching M) (hN : H.IsMaxMat
   have hFH : H.IsMatching (E(H) ∩ F) :=
     hF.anti_left' <| by grind only [hdisj.compatible.union_comm, Graph.left_le_union]
   rw [encard_union_eq (show Disjoint M N by grind [hM.subset, hN.subset, hdisj.edge]),
-    show F = (E(G) ∩ F) ∪ (E(H) ∩ F) by grind [hF.subset, union_edgeSet],
+    show F = (E(G) ∩ F) ∪ (E(H) ∩ F) by grind [hF.subset, edgeSet_union],
     encard_union_eq (show Disjoint (E(G) ∩ F) (E(H) ∩ F) by grind [hdisj.edge]),
     hM.encard, hN.encard]
   exact add_le_add hFG.encard_le hFH.encard_le

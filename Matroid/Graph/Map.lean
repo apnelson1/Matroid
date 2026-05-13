@@ -1,3 +1,4 @@
+import Matroid.Graph.Subgraph.Compatible
 import Matroid.Graph.Subgraph.Delete
 import Matroid.Graph.Walk.Cycle
 
@@ -93,6 +94,12 @@ lemma map_id : (id ''ᴳ G) = G := by
 lemma map_map {α'' : Type*} {f : α' → α''} : (f ''ᴳ (g ''ᴳ G)) = (f ∘ g) ''ᴳ G := by
   ext a b c <;> simp
 
+lemma Compatible.map (h : G.Compatible H) : (f ''ᴳ G).Compatible (f ''ᴳ H) := by
+  grind [Compatible, h.isLink_eq]
+
+lemma map_union (G H : Graph α β) (f : α → α') : f ''ᴳ (G ∪ H) = (f ''ᴳ G) ∪ (f ''ᴳ H) := by
+  refine Graph.ext ?_ ?_ <;> grind
+
 @[gcongr]
 lemma map_mono (h : G ≤ H) : f ''ᴳ G ≤ f ''ᴳ H where
   vertexSet_mono v := by
@@ -134,6 +141,19 @@ lemma IsWalk.map (f : α → α') (hw : G.IsWalk w) : (f ''ᴳ G).IsWalk (w.map 
       simpa [map_first] using hlink.map f
     simpa [map, map_first] using ih.cons hlink'
 
+lemma IsWalk.map_invFunOn [Nonempty α] (hf : InjOn f V(G)) {w : WList α' β}
+    (hw : (f ''ᴳ G).IsWalk w) : G.IsWalk (w.map (invFunOn f V(G))) := by
+  induction hw with
+  | nil hx => simpa [nil_isWalk_iff] using invFunOn_mem hx
+  | cons hw he ih =>
+    simp only [WList.map_cons, cons_isWalk_iff, WList.map_first]
+    obtain ⟨a, b, hab, rfl, hfb⟩ := by simpa only [map_isLink] using he
+    grind [hf.leftInvOn_invFunOn hab.left_mem, hf.leftInvOn_invFunOn hab.right_mem]
+
+lemma IsWalk.map_invFunOn_map [Nonempty α] {w : WList α' β}
+    (hw : (f ''ᴳ G).IsWalk w) : (w.map (invFunOn f V(G))).map f = w :=
+  WList.map_invFunOn_map (by simpa using hw.vertexSet_subset)
+
 @[simp]
 lemma IsTrail.map (f : α → α') (hw : G.IsTrail w) : (f ''ᴳ G).IsTrail (w.map f) where
   isWalk := hw.isWalk.map f
@@ -165,6 +185,20 @@ lemma IsCyclicWalk.map (hf : InjOn f V(w)) (hw : G.IsCyclicWalk w) :
     simp only [map_cons, tail_cons, map_vertex]
     refine (List.nodup_map_iff_inj_on hw.nodup).mpr ?_
     grind [InjOn]
+
+lemma IsCyclicWalk.exists_of_map_of_injOn {φ : α → α'} (hφ : InjOn φ V(H)) {C : WList α' β}
+    (hC : (φ ''ᴳ H).IsCyclicWalk C) : ∃ C₀, H.IsCyclicWalk C₀ ∧ C₀.map φ = C := by
+  haveI : Nonempty α := ⟨hC.isWalk.vertex_mem_of_mem first_mem |>.choose⟩
+  refine ⟨C.map (invFunOn φ V(H)), ⟨⟨⟨by simpa using hC.isWalk.map_invFunOn hφ, by
+    simpa [WList.map_edge] using hC.edge_nodup⟩, by simpa using hC.nonempty, by
+    simpa [WList.IsClosed] using congrArg _ hC.isClosed⟩, ?_⟩, by
+    simpa using hC.isWalk.map_invFunOn_map⟩
+  cases C with
+  | nil y => simp at hC
+  | cons y e W =>
+    simp only [map_cons, tail_cons, map_vertex]
+    exact (List.nodup_map_iff_inj_on hC.nodup).mpr fun a ha b hb hab ↦
+      invFunOn_injOn_image φ V(H) |>.mono hC.isWalk.vertexSet_subset (by simp_all) (by simp_all) hab
 
 lemma induce_map_isSpanningSubgraph : f ''ᴳ (G[X]) ≤s (f ''ᴳ G)[f '' X] where
   vertexSet_eq := by simp

@@ -310,6 +310,11 @@ lemma IsSkewFamily.sum_eRk_eq_eRk_iUnion [Fintype η] {Xs : η → Set α} (h : 
   rw [(h.iUnion_isBasis_iUnion hIs).eRk_eq_encard, encard_iUnion _ hdj]
   simp_rw [(hIs _).eRk_eq_encard]
 
+lemma IsSkewFamily.sum_eRk_eq_eRk_biUnion {ι : Type*} {X : ι → Set α} (s : Finset ι)
+    (h : M.IsSkewFamily (fun i ↦ X i)) : ∑ i ∈ s, M.eRk (X i) = M.eRk (⋃ i ∈ s, X i) := by
+  rw [← Finset.sum_coe_sort, sum_eRk_eq_eRk_iUnion (η := s), iUnion_subtype]
+  exact h.comp Subtype.val Subtype.val_injective
+
 lemma IsRkFinite.isSkewFamily_iff_sum_eRk_eq_eRk_iUnion [Fintype η] {Xs : η → Set α}
     (hXs : ∀ i, M.IsRkFinite (Xs i)) (hXE : ∀ i, Xs i ⊆ M.E) :
     M.IsSkewFamily Xs ↔ ∑ i, M.eRk (Xs i) = M.eRk (⋃ i, Xs i) := by

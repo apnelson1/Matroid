@@ -75,6 +75,7 @@ import Matroid.Graph.Connected.Component
 import Matroid.Graph.Connected.Construction
 import Matroid.Graph.Connected.Defs
 -- import Matroid.Graph.Connected.Gammoid
+import Matroid.Graph.Connected.LineGraph
 import Matroid.Graph.Connected.Menger
 import Matroid.Graph.Connected.Minor
 import Matroid.Graph.Connected.MixedLineGraph
@@ -98,15 +99,16 @@ import Matroid.Graph.Forest
 import Matroid.Graph.Independent
 import Matroid.Graph.Lattice
 import Matroid.Graph.Map
--- import Matroid.Graph.Matching.Berge
--- import Matroid.Graph.Matching.Defs
--- import Matroid.Graph.Matching.Konigs
+import Matroid.Graph.Matching.Berge
+import Matroid.Graph.Matching.Defs
+import Matroid.Graph.Matching.Konigs
 -- import Matroid.Graph.Matching.TutteBerge
 import Matroid.Graph.Matrix
 import Matroid.Graph.Minor.Conn
 import Matroid.Graph.Minor.Defs
 -- import Matroid.Graph.Path
 -- import Matroid.Graph.Planarity.CWComplex.DualGraph
+-- import Matroid.Graph.Planarity.CWComplex.Operations
 -- import Matroid.Graph.Planarity.CycleList.Bar
 -- import Matroid.Graph.Planarity.CycleList.Basic
 -- import Matroid.Graph.Planarity.Defs
@@ -117,9 +119,10 @@ import Matroid.Graph.Planarity.GraphContinuum.Basic
 -- import Matroid.Graph.Planarity.K33
 import Matroid.Graph.Planarity.Realization.Basic
 import Matroid.Graph.Planarity.Realization.CWComplex
+import Matroid.Graph.Planarity.Realization.Celluar
 import Matroid.Graph.Planarity.Realization.Metric
 import Matroid.Graph.Planarity.Realization.Subgraph
--- import Matroid.Graph.Planarity.Topology.Circle
+import Matroid.Graph.Planarity.Topology.Circle
 import Matroid.Graph.Planarity.Topology.Circuit
 import Matroid.Graph.Planarity.Topology.ConnPartition
 -- import Matroid.Graph.Planarity.Topology.Curve
@@ -186,9 +189,9 @@ import Matroid.Representation.StandardRep
 import Matroid.Representation.Uniform
 import Matroid.Simple
 import Matroid.Spikes
--- import Matroid.Sum
+import Matroid.Sum
 import Matroid.Tame
--- import Matroid.Triangle
+import Matroid.Triangle
 import Matroid.Uniform.Basic
 import Matroid.Uniform.Finite
 import Matroid.Uniform.Minor

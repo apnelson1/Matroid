@@ -416,7 +416,7 @@ lemma exists_isAugmenter_of_matching_encard_lt [G.Loopless] [G.EdgeFinite] (hM :
     have h_encard_le_encard : (E(P.val) ∩ M').encard ≤ (E(P.val) ∩ M).encard := by
       rw [PM'_edges, PM_edges]
       iterate rw [← ENat.tsum_encard_eq_encard_iUnion]
-      · exact ENat.tsum_le_tsum fun ⟨P', hP'⟩ ↦ hcon P' hP'
+      · exact tsum_le_tsum fun ⟨P', hP'⟩ ↦ hcon P' hP'
       all_goals
         have hle : ∀ (F : Set β),
            (fun x : P.val.Components ↦ E(x.val) ∩ F) ≤ (fun x : P.val.Components ↦ E(x.val)) := by
@@ -544,7 +544,7 @@ lemma exists_isAugmenter_of_matching_encard_lt [G.Loopless] [G.EdgeFinite] (hM :
     simp only [Subgraph.ofEdge_inc_iff, P]
     grind only [= mem_symmDiff, → Inc.edge_mem]
   have hexP' : P'.Inc e x := by
-    refine hexP.of_isClosedSubgraph_of_mem hP'P.isClosedSubgraph ?_
+    refine hP'P.isClosedSubgraph.inc_congr ?_ |>.mpr hexP
     grind only [!incVertexSet_subset, = mem_diff, = subset_def]
   have heq := hf.edge_unique hexP'
   grind only

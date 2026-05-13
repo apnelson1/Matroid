@@ -298,6 +298,16 @@ lemma components_encard_le (G : Graph α β) : G.Components.encard ≤ V(G).enca
   rw [components_eq_walkable_image]
   exact encard_image_le ..
 
+@[simp]
+lemma biUnion_components_vertexSet (G : Graph α β) : ⋃ H ∈ G.Components, V(H) = V(G) := by
+  nth_rw 3 [G.eq_sUnion_components]
+  simp
+
+@[simp]
+lemma biUnion_components_edgeSet (G : Graph α β) : ⋃ H ∈ G.Components, E(H) = E(G) := by
+  nth_rw 3 [G.eq_sUnion_components]
+  simp
+
 lemma IsClosedSubgraph.components_subset_components (hcl : H ≤c G) :
     H.Components ⊆ G.Components := by
   rintro H' hH'

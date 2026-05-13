@@ -162,7 +162,7 @@ lemma restrict_sInter (hs : Gs.Nonempty) (F : Set β) :
 /-! ### Intersections -/
 
 lemma inter_edgeSet_subset : E(G ∩ H) ⊆ E(G) ∩ E(H) := by
-  simp +contextual [inter_edgeSet, subset_def]
+  simp +contextual [edgeSet_inter, subset_def]
 
 @[simp]
 lemma inter_inc_iff : (G ∩ H).Inc e x ↔ ∃ y, G.IsLink e x y ∧ H.IsLink e x y := by
@@ -182,7 +182,7 @@ lemma inf_eq_inter : H₁ ⊓ H₂ = H₁ ∩ H₂ := rfl
 
 @[simp]
 lemma inter_eq_bot_iff : H₁ ∩ H₂ = ⊥ ↔ V(H₁) ∩ V(H₂) = ∅ := by
-  rw [← vertexSet_eq_empty_iff, inter_vertexSet]
+  rw [← vertexSet_eq_empty_iff, vertexSet_inter]
 
 lemma disjoint_iff_inter_eq_bot : Disjoint H₁ H₂ ↔ H₁ ∩ H₂ = ⊥ := by
   rw [disjoint_iff, inf_eq_inter]
@@ -196,8 +196,8 @@ lemma disjoint_iff_vertexSet_disjoint : Disjoint H₁ H₂ ↔ Disjoint V(H₁) 
 
 alias ⟨Disjoint.vertex_disjoint, _⟩ := disjoint_iff_vertexSet_disjoint
 
-lemma Compatible.inter_edgeSet (h : G.Compatible H) : E(G ∩ H) = E(G) ∩ E(H) := by
-  rw [Graph.inter_edgeSet]
+lemma Compatible.edgeSet_inter (h : G.Compatible H) : E(G ∩ H) = E(G) ∩ E(H) := by
+  rw [Graph.edgeSet_inter]
   exact le_antisymm (fun e he ↦ he.1) fun e he ↦ ⟨he, h.eqOn he⟩
 
 lemma inter_eq_iInter : G ∩ H = Graph.iInter (fun b ↦ bif b then G else H) :=

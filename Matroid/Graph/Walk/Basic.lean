@@ -452,6 +452,7 @@ lemma walk_last (h : G.IsLink e u v): h.walk.last = v := rfl
 @[simp]
 lemma walk_vertex (h : G.IsLink e u v): h.walk.vertex = [u, v] := rfl
 
+@[simp]
 lemma mem_walk_iff (h : G.IsLink e u v) (x : α) : x ∈ h.walk ↔ x = u ∨ x = v := by
   simp [walk]
 
@@ -801,7 +802,7 @@ lemma IsWalk.toGraph_eq_induce_restrict (h : G.IsWalk w) : w.toGraph = G[V(w)] �
     · simpa using h.1
     · refine (restrict_le ..).trans (induce_le ?_)
       simp [insert_subset_iff, h.1.left_mem, h.2.vertexSet_subset]
-    simp only [union_edgeSet, edgeSet_restrict, edgeSet_singleEdge, union_singleton]
+    simp only [edgeSet_union, edgeSet_restrict, edgeSet_singleEdge, union_singleton]
     rw [inter_eq_self_of_subset_right h.2.edgeSet_subset_edgeSet_induce,
       inter_eq_self_of_subset_right hss']
 

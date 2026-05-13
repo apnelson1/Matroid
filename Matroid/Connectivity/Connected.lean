@@ -27,6 +27,7 @@ lemma IsCircuit.mem_connectedTo_mem (hC : M.IsCircuit C) (heC : e ∈ C) (hfC : 
 lemma connectedTo_self (he : e ∈ M.E) : M.ConnectedTo e e :=
   .inl ⟨rfl, he⟩
 
+@[symm]
 lemma ConnectedTo.symm (h : M.ConnectedTo e f) : M.ConnectedTo f e := by
   obtain (⟨rfl, hef⟩ | ⟨C, hC, heC, hfC⟩) := h
   · exact connectedTo_self hef
@@ -34,6 +35,9 @@ lemma ConnectedTo.symm (h : M.ConnectedTo e f) : M.ConnectedTo f e := by
 
 lemma connectedTo_comm : M.ConnectedTo e f ↔ M.ConnectedTo f e :=
   ⟨ConnectedTo.symm, ConnectedTo.symm⟩
+
+instance : Std.Symm M.ConnectedTo where
+  symm _ _ := ConnectedTo.symm
 
 @[aesop unsafe 10% (rule_sets := [Matroid])]
 lemma ConnectedTo.mem_ground_left (h : M.ConnectedTo e f) : e ∈ M.E := by
@@ -125,6 +129,7 @@ private lemma connectedTo_of_indep_isHyperplane_of_not_isColoop {I : Set α} (hI
   simp only [insert_comm, mem_singleton_iff, insert_diff_of_mem] at hss
   exact hC.dep.not_indep (hxi.subset hss)
 
+@[trans]
 lemma ConnectedTo.trans {e₁ e₂ : α} (h₁ : M.ConnectedTo e₁ f) (h₂ : M.ConnectedTo f e₂) :
     M.ConnectedTo e₁ e₂ := by
   obtain (rfl | hne) := eq_or_ne e₁ e₂; simp [h₁.mem_ground_left]
@@ -155,6 +160,32 @@ lemma ConnectedTo.trans {e₁ e₂ : α} (h₁ : M.ConnectedTo e₁ f) (h₂ : M
   refine IsCircuit.not_isColoop_of_mem ?_ he₂C₂
   rwa [delete_isCircuit_iff, and_iff_right hC₂, disjoint_iff_inter_eq_empty, ← inter_diff_assoc,
     diff_eq_empty, ← inter_diff_assoc, inter_eq_self_of_subset_left hC₂.subset_ground]
+
+instance : IsTrans α M.ConnectedTo where
+  trans _ _ _ := ConnectedTo.trans
+
+def ConnPartition (M : Matroid α) : Partition (Set α) :=
+  Partition.ofRel (ConnectedTo M)
+
+@[simp]
+lemma connPartition_supp (M : Matroid α) : M.ConnPartition.supp = M.E := by
+  ext x
+  simp only [ConnPartition, Partition.ofRel_supp, Relation.domain, mem_setOf_eq]
+  exact ⟨fun ⟨y, hy⟩ ↦ hy.mem_ground_left, fun hx ↦ ⟨x, connectedTo_self hx⟩⟩
+
+@[simp]
+lemma connPartition_rel (M : Matroid α) : M.ConnPartition e f ↔ M.ConnectedTo e f := by
+  simp [ConnPartition]
+
+lemma IsCircuit.disjoint_or_subset (hC : M.IsCircuit C) (hK : K ∈ M.ConnPartition) :
+    Disjoint C K ∨ C ⊆ K := by
+  rw [or_iff_not_imp_left, not_disjoint_iff]
+  rintro ⟨x, hxC, hxK⟩ y hyC
+  rw [← M.ConnPartition.rel_iff_right_mem_of_mem hK hxK, connPartition_rel]
+  exact hC.mem_connectedTo_mem hxC hyC
+
+lemma IsCircuit.subset_of_mem_connPartition (hC : M.IsCircuit C) (hK : K ∈ M.ConnPartition)
+    (heC : e ∈ C) (heK : e ∈ K) : C ⊆ K := hC.disjoint_or_subset hK |>.resolve_left (by grind)
 
 @[mk_iff]
 structure Connected (M : Matroid α) : Prop where

@@ -649,6 +649,12 @@ lemma compl (h : H ≤c G) : G - V(H) ≤c G := IsClosedSubgraph.rfl.diff h
 
 lemma compl_edgeSet (h : H ≤c G) : E(G - V(H)) = E(G) \ E(H) := IsClosedSubgraph.rfl.diff_edgeSet h
 
+@[simp]
+lemma eq_union_deleteVerts (h : H ≤c G) : H ∪ (G - V(H)) = G := by
+  refine ext_of_le_le (Graph.union_le h.le deleteVerts_le) le_rfl ?_ ?_
+  · simp [union_eq_right.mpr h.vertexSet_mono]
+  simp [-edgeSet_deleteVerts, union_eq_right.mpr h.edgeSet_mono, h.compl_edgeSet]
+
 lemma of_deleteEdges_iff (hclF : H ≤c G ＼ F) : H ≤c G ↔ E(G) ∩ F ⊆ E(G - V(H)) := by
   rw [edgeSet_deleteVerts]
   refine ⟨fun hcl f hf ↦ ?_, fun hF ↦ mk' (hclF.le.trans deleteEdges_le) fun e x he hxH => ?_⟩
