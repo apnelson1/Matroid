@@ -251,7 +251,7 @@ lemma edge_mem_or_mem (S : G.Separation) (he : e ∈ E(G)) :
     e ∈ E(G[S.left]) ∨ e ∈ E(G[S.right]) := by
   have := S.eq_union
   apply_fun edgeSet at this
-  rwa [this, union_edgeSet] at he
+  rwa [this, edgeSet_union] at he
 
 lemma vertexSet_nontrivial (S : G.Separation) : V(G).Nontrivial :=
   ⟨_, S.left_subset S.nonempty_left.some_mem, _, S.right_subset S.nonempty_right.some_mem,

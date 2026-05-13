@@ -187,12 +187,16 @@ lemma compatible_iff_exists_le_le (G H : Graph α β) : G.Compatible H ↔ ∃ I
   ⟨fun h => ⟨G ∪ H, G.left_le_union .., h.right_le_union ..⟩,
     fun ⟨_, hGI, hHI⟩ ↦ compatible_of_le_le hGI hHI⟩
 
+lemma bddAbove_iff_pairwise_compatible : BddAbove Gs ↔ Gs.Pairwise Compatible :=
+  ⟨fun ⟨_, hG⟩ ↦ compatible_of_forall_mem_le hG,
+    fun hGs ↦ ⟨Graph.sUnion Gs hGs, fun _ hG ↦ Graph.le_sUnion hGs hG⟩⟩
+
 lemma Compatible.union_mono (hleG : G₁ ≤ G₂) (hleH : H₁ ≤ H₂) (h : G₂.Compatible H₁) :
     G₁ ∪ H₁ ≤ G₂ ∪ H₂ := le_trans (h.union_mono_left hleG) (union_mono_right hleH)
 
 lemma restrict_union_deleteEdges (G : Graph α β) (F : Set β) : (G ↾ F) ∪ (G ＼ F) = G := by
-  rw [← restrict_edgeSet_diff_eq_deleteEdges, ← restrict_union, ← restrict_inter_edgeSet]
-  simp only [union_diff_self, restrict_inter_edgeSet, restrict_union, restrict_self]
+  rw [← restrict_edgeSet_diff_eq_deleteEdges, ← restrict_union, ← restrict_edgeSet_inter]
+  simp only [union_diff_self, restrict_edgeSet_inter, restrict_union, restrict_self]
   exact union_eq_self_of_le_left (by simp)
 
 lemma deleteEdges_union_restrict (G : Graph α β) (F : Set β) : (G ＼ F) ∪ (G ↾ F) = G := by

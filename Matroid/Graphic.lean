@@ -14,8 +14,8 @@ attribute [grind →] IsCocircuit.subset_ground
 
 namespace Graph
 
-variable {α β : Type*} {G H : Graph α β} {u v x x₁ x₂ y y₁ y₂ z : α} {e e' f g : β}
-  {U V S T : Set α} {B F F' R R': Set β} {C w P Q : WList α β}
+variable {α β : Type*} {G H : Graph α β} {u v x x₁ x₂ y y₁ y₂ z : α} {e e' g : β}
+  {U V S T : Set α} {B F F' R R': Set β} {C w P Q : WList α β} {f : α → α}
 
 /-- The cycle matroid of a graph `G`. Its circuits are the edge sets of cycles of `G`,
 and its independent sets are the edge sets of forests. -/
@@ -356,6 +356,137 @@ lemma eRank_cycleMatroid_add_numberOfComponents (G : Graph α β) :
     (hGC.coe_toFinset ▸ hH) (hGC.coe_toFinset ▸ hK) hne |>.vertex]
   simp
 
+/-- Vertex map used in `Graph.joinAt`. -/
+def joinAtMap (G : Graph α β) (x : α) (f : α → α) [DecidablePred (· ∈ f '' V(G))] (y : α) : α :=
+  if y ∈ f '' V(G) then x else y
+
+lemma exists_joinAtMap_of_nonempty [DecidablePred (· ∈ f '' V(G))] (hf : G.connPartition.IsRepFun f)
+    (x) (hV : V(G).Nonempty) : ∃ y ∈ V(G), G.joinAtMap x f y = x := by
+  obtain ⟨u, hu⟩ := hV
+  use f u, ?_, ?_
+  · simpa using hf.apply_mem (by simpa using hu)
+  simp only [joinAtMap, mem_image, ite_eq_left_iff, not_exists, not_and]
+  exact fun h ↦ (h u hu rfl).elim
+
+lemma joinAtMap_eq_of_joinAtMap_eq_joinAtMap [DecidablePred (· ∈ f '' V(G))] {y₁ y₂ : α}
+    (h : G.joinAtMap x f y₁ = G.joinAtMap x f y₂) (hne : y₁ ≠ y₂) : G.joinAtMap x f y₁ = x := by
+  by_cases haf : y₁ ∈ f '' V(G)
+  · simp [joinAtMap, haf]
+  have hbf : y₂ ∈ f '' V(G) := by
+    by_contra hbf
+    exact hne (by simpa [joinAtMap, haf, hbf] using h)
+  obtain rfl : y₁ = x := by simpa [joinAtMap, haf, hbf] using h
+  simp [joinAtMap]
+
+/-- Join the connected components of `G` at `x` using the function `f`. Has sound output when
+`f` is a rep-function of `G.connPartition`. -/
+def joinAt (G : Graph α β) (x : α) (f : α → α) [DecidablePred (· ∈ f '' V(G))] : Graph α β :=
+  joinAtMap G x f ''ᴳ G
+
+@[simp, grind =]
+lemma vertexSet_joinAt [DecidablePred (· ∈ f '' V(G))] (hf : G.connPartition.IsRepFun f)
+    (hV : V(G).Nonempty) : V(G.joinAt x f) = insert x (V(G) \ (f '' V(G))) := by
+  ext y
+  grind [joinAt, joinAtMap, exists_joinAtMap_of_nonempty hf y hV]
+
+@[simp, grind =]
+lemma edgeSet_joinAt [DecidablePred (· ∈ f '' V(G))] : E(G.joinAt x f) = E(G) := rfl
+
+lemma joinAt_finite [DecidablePred (· ∈ f '' V(G))] (hf : G.connPartition.IsRepFun f)
+    [G.EdgeFinite] : (G.joinAt x f).Finite where
+  vertexSet_finite := by
+    obtain hem | hne := V(G).eq_empty_or_nonempty
+    · simp [joinAt, hem]
+    rw [vertexSet_joinAt hf hne]
+    refine finite_insert.mpr <| (G.incVertexSet_finite E(G)).subset fun y ⟨hyG, hyf⟩ ↦ ?_
+    obtain ⟨e, z, heyz⟩ | hy_iso := (G.isolated_or_exists_isLink hyG).symm
+    · exact ⟨e, heyz.edge_mem, heyz.inc_left⟩
+    exact hyf ⟨y, hyG, (hy_iso.connBetween_iff_eq.mp
+      (by simpa using hf.rel_apply (by simpa using hyG) : G.ConnBetween y (f y))).symm⟩ |>.elim
+  edgeSet_finite := by simp
+
+lemma mem_vertexSet_joinAt_of_nonempty [DecidablePred (· ∈ f '' V(G))] (hV : V(G).Nonempty)
+    (hf : G.connPartition.IsRepFun f) : x ∈ V(G.joinAt x f) := by
+  grind
+
+lemma joinAt_preconnected [DecidablePred (· ∈ f '' V(G))] (hf : G.connPartition.IsRepFun f) :
+    (G.joinAt x f).Preconnected := by
+  let φ := joinAtMap G x f
+  rintro u v ⟨x, hx, rfl⟩ ⟨y, hy, rfl⟩
+  have hxf : G.ConnBetween x (f x) := by simpa [joinAtMap] using hf.rel_apply <| by simpa using hx
+  have hyf : G.ConnBetween y (f y) := by simpa [joinAtMap] using hf.rel_apply <| by simpa using hy
+  have hφ : φ (f x) = φ (f y) := by grind [joinAtMap]
+  exact hxf.map φ |>.trans (hφ ▸ hyf.map φ).symm
+
+lemma IsWalk.of_joinAt_of_disjoint [DecidablePred (· ∈ f '' V(G))] {W : WList α β}
+    (hW : G.IsWalk W) (hfW : Disjoint V(W) (f '' V(G))) : (G.joinAt v f).IsWalk W := by
+  induction hW <;> grind [joinAt, joinAtMap, cons_isWalk_iff, nil_isWalk_iff]
+
+lemma IsWalk.joinAt_of_notMem [DecidablePred (· ∈ f '' V(G))] {W : WList α β}
+    (hW : (G.joinAt v f).IsWalk W) (hvW : v ∉ W) : G.IsWalk W := by
+  induction hW <;> grind [joinAt, joinAtMap, cons_isWalk_iff, nil_isWalk_iff]
+
+lemma IsCompOf.joinAtMap_injOn {H : Graph α β} (hH : H.IsCompOf G) (hf : G.connPartition.IsRepFun f)
+    (hx : x ∉ V(G) \ f '' V(G)) [DecidablePred (· ∈ f '' V(G))] : InjOn (joinAtMap G x f) V(H) := by
+  obtain ⟨v, hvH⟩ := hH.nonempty
+  have hv {x : α} : x ∈ V(H) → x ≠ f v → x ∉ f '' V(G) := by
+    intro hxH hxfv
+    simpa using hf.notMem_image_supp_of_rel_of_ne_apply
+      (by simpa using (hH.connected.connBetween hxH hvH).mono hH.le) hxfv
+  rw [← Set.insert_diff_self_of_mem (?_ : f v ∈ V(H)), injOn_insert (by simp)]
+  refine ⟨fun x ⟨hx, hxf⟩ y ⟨hy, hyf⟩ heq ↦ ?_, ?_⟩ <;> grind [hH.le.vertexSet_mono, joinAtMap]
+  have : G.ConnBetween v (f v) := by
+    simpa using hf.rel_apply (by simpa using hH.le.vertexSet_mono hvH)
+  exact this.isClosedSubgraph hH.isClosedSubgraph hvH |>.right_mem
+
+lemma IsCycleSet.joinAt_of [DecidablePred (· ∈ f '' V(G))] {C : Set β}
+    (hf : G.connPartition.IsRepFun f) (hx : x ∉ V(G) \ f '' V(G)) (hC : G.IsCycleSet C) :
+    (G.joinAt x f).IsCycleSet C := by
+  obtain ⟨W, hW, rfl⟩ := hC
+  obtain ⟨H, hHco, hHW⟩ := hW.isWalk.exists_IsCompOf_isWalk
+  exact ⟨W.map (joinAtMap G x f), hW.map ((hHco.joinAtMap_injOn hf hx).mono hHW.vertexSet_subset),
+    by simp [WList.edgeSet_map]⟩
+
+private lemma IsCyclicWalk.joinAt_edges_subset_IsCompOf [DecidablePred (· ∈ f '' V(G))]
+    {W : WList α β} (hW : (G.joinAt x f).IsCyclicWalk W) :
+    ∃ H : Graph α β, H.IsCompOf G ∧ E(W) ⊆ E(H) := by
+  obtain ⟨H, hHco, he0⟩ := G.exists_IsCompOf_edge_mem
+    (hW.isWalk.edge_mem_of_mem hW.nonempty.firstEdge_mem)
+  refine ⟨H, hHco, ?_⟩
+  let φ := joinAtMap G x f
+  have h_union : G.joinAt x f = (φ ''ᴳ H) ∪ (φ ''ᴳ (G - V(H))) := by
+    rw [← map_union]
+    exact congrArg _ (hHco.isClosedSubgraph.eq_union_deleteVerts).symm
+  have h2 : (V(φ ''ᴳ H) ∩ V(φ ''ᴳ (G - V(H)))).Subsingleton := by
+    rintro y ⟨⟨a, haH, rfl⟩, ⟨b, ⟨-, hbH⟩, hφab⟩⟩ z ⟨⟨c, hcH, rfl⟩, ⟨d, ⟨-, hdH⟩, hφcd⟩⟩
+    exact (joinAtMap_eq_of_joinAtMap_eq_joinAtMap hφab.symm (by grind)).trans
+      (joinAtMap_eq_of_joinAtMap_eq_joinAtMap hφcd.symm (by grind)).symm
+  rw [h_union] at hW
+  obtain hW_left | hW_right := hW.isCyclicWalk_or_isCyclicWalk_of_union_of_subsingleton_inter h2
+  · simpa [φ] using hW_left.isWalk.edgeSet_subset
+  simpa [edgeSet_map, ↓hHco.isClosedSubgraph.compl_edgeSet, he0] using
+    hW_right.edgeSet_subset hW.nonempty.firstEdge_mem
+
+lemma IsCycleSet.of_joinAt [DecidablePred (· ∈ f '' V(G))] {C : Set β}
+    (hf : G.connPartition.IsRepFun f) (hx : x ∉ V(G) \ f '' V(G))
+    (hC : (G.joinAt x f).IsCycleSet C) : G.IsCycleSet C := by
+  obtain ⟨W, hW, rfl⟩ := hC
+  obtain ⟨H, hHco, hEH⟩ := hW.joinAt_edges_subset_IsCompOf
+  have hW_H : (joinAtMap G x f ''ᴳ H).IsCyclicWalk W :=
+    hW.isCycle_of_le (by simpa [joinAt] using map_mono hHco.le) (by simpa using hEH)
+  obtain ⟨W₀, hW₀, hW₀_map⟩ := hW_H.exists_of_map_of_injOn (hHco.joinAtMap_injOn hf hx)
+  exact ⟨W₀, hW₀.of_le hHco.le, by rw [← hW₀_map, WList.edgeSet_map]⟩
+
+@[simp]
+lemma cycleMatroid_joinAt [DecidablePred (· ∈ f '' V(G))] (hf : G.connPartition.IsRepFun f)
+    (hx : x ∉ V(G) \ f '' V(G)) :
+    (G.joinAt x f).cycleMatroid = G.cycleMatroid := by
+  refine ext_isCircuit rfl fun I hI ↦ ?_
+  simp only [cycleMatroid_isCircuit]
+  exact ⟨IsCycleSet.of_joinAt hf hx, IsCycleSet.joinAt_of hf hx⟩
+
+variable {f : β}
+
 @[simp]
 lemma isNonloop_iff_of_loopless {M : Matroid β} [M.Loopless] : M.IsNonloop e ↔ e ∈ M.E := by
   rw [isNonloop_iff_mem_compl_loops, loops_eq_empty]
@@ -391,6 +522,29 @@ lemma cycleMatroid_finite : G.cycleMatroid.Finite ↔ G.EdgeFinite := by
 
 instance [G.EdgeFinite] : G.cycleMatroid.Finite where
   ground_finite := G.edgeSet_finite
+
+@[simp]
+lemma cycleMatroid_bot : cycleMatroid (⊥ : Graph α β) = emptyOn β := by
+  rw [← Matroid.ground_eq_empty_iff]
+  simp
+
+@[simp]
+lemma cycleMatroid_noEdge : (noEdge V β).cycleMatroid = emptyOn β := by
+  rw [← Matroid.ground_eq_empty_iff]
+  simp
+
+@[simp]
+lemma cycleMatroid_bouquet (v : α) (F : Set β) : (bouquet v F).cycleMatroid = loopyOn F := by
+  simp only [eq_loopyOn_iff, cycleMatroid_E, edgeSet_banana, cycleMatroid_indep, isAcyclicSet_iff,
+    ↓restrict_bouquet, and_imp, forall_self_imp, true_and]
+  intro I hIF hI
+  by_contra! ⟨e, he⟩
+  exact (hI ⟨hIF he, he⟩).not_isLoopAt rfl (bouquet_isLoopAt v (F ∩ I) |>.mpr ⟨⟨hIF he, he⟩, rfl⟩)
+
+@[simp]
+lemma cycleMatroid_eq_emptyOn (G : Graph α β) : G.cycleMatroid = emptyOn β ↔ E(G) = ∅ := by
+  rw [← Matroid.ground_eq_empty_iff]
+  simp
 
 lemma cycleMatroid_isFlat (hFE : F ⊆ E(G)) (hF : ∀ H : Graph α β, H.IsCompOf (G ↾ F) → H ≤i G) :
     G.cycleMatroid.IsFlat F := by

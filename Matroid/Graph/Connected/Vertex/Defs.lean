@@ -134,6 +134,11 @@ lemma connBetween_iff_of_edgeless (h : E(G) = ∅) : G.ConnBetween x y ↔ x ∈
   obtain ⟨hx, rfl⟩ := h
   exact ConnBetween.refl hx
 
+lemma Isolated.connBetween_iff_eq (hisol : G.Isolated x) : G.ConnBetween x y ↔ x = y := by
+  refine ⟨?_, fun hxy ↦ hxy ▸ ConnBetween.refl hisol.mem⟩
+  rintro ⟨W, hW, rfl, rfl⟩
+  exact hisol.eq_last_of_mem hW first_mem
+
 /-! ### Separators between two vertices -/
 
 structure IsSepBetween (G : Graph α β) (s t : α) (C : Set α) : Prop where
@@ -479,52 +484,18 @@ def EdgePathEnsemble.ofVertexEnsemble (P : G.VertexEnsemble s t ι)
   isPath i := P.isPath i
   first_eq i := P.first_eq i
   last_eq i := P.last_eq i
-  edgeDisjoint i j hne := by -- AI-generated, not golfed yet
-    have aux {P : WList α β} {e : β} {x y s t : α} (hP : G.IsPath P)
-        (hfirst : P.first = s) (hlast : P.last = t) (he : P.DInc e x y)
-        (hx : x = s ∨ x = t) (hy : y = s ∨ y = t) : ¬ P.Nontrivial := by
-      have hx' : x = s := by
-        rcases hx with rfl | rfl
-        · rfl
-        · exact (he.ne_last hP.nodup (by simp [hlast])).elim
-      have hy' : y = t := by
-        rcases hy with rfl | rfl
-        · exact (he.ne_first hP.nodup (by simp [hfirst])).elim
-        · rfl
-      subst x y
-      obtain ⟨W, hW, hW_first⟩ := he.exists_isSuffix
-      have h_eq : cons s e W = P := hW.eq_of_first_mem hP.nodup (by simp [hfirst])
-      rw [← h_eq] at hP hlast ⊢
-      rw [cons_isPath_iff] at hP
-      have hW_last : W.last = t := by simpa using hlast
-      have hW_nil : W.Nil := (hP.2.1.first_eq_last_iff).mp (hW_first.trans hW_last.symm)
-      rw [hW_nil.eq_nil_first]
-      simp
+  edgeDisjoint i j hne := by
     simp only [onFun, disjoint_iff_forall_notMem, mem_edgeSet_iff]
-    intro e hei hej
-    obtain ⟨x, y, hxyi⟩ := exists_dInc_of_mem_edge hei
-    obtain ⟨x', y', hxyj⟩ := exists_dInc_of_mem_edge hej
-    have hxyG : G.IsLink e x y := (P.isPath i).isWalk.isLink_of_dInc hxyi
-    have hxyj' : (P.f j).IsLink e x y :=
-      ((P.isPath j).isWalk.isLink_iff_isLink_of_mem hej).2 hxyG
-    have hxi : x ∈ V(P.f i) := by simpa [WList.vertexSet] using hxyi.left_mem
-    have hxj : x ∈ V(P.f j) := by simpa [WList.vertexSet] using hxyj'.left_mem
-    have hyi : y ∈ V(P.f i) := by simpa [WList.vertexSet] using hxyi.right_mem
-    have hyj : y ∈ V(P.f j) := by simpa [WList.vertexSet] using hxyj'.right_mem
-    have hi_nontrivial : ¬ (P.f i).Nontrivial :=
-      aux (P.isPath i) (P.first_eq i) (P.last_eq i) hxyi
-        (P.eq_or_eq_of_mem hxi hxj hne) (P.eq_or_eq_of_mem hyi hyj hne)
-    have hxyG' : G.IsLink e x' y' := (P.isPath j).isWalk.isLink_of_dInc hxyj
-    have hxyi' : (P.f i).IsLink e x' y' :=
-      ((P.isPath i).isWalk.isLink_iff_isLink_of_mem hei).2 hxyG'
-    have hxj' : x' ∈ V(P.f j) := by simpa [WList.vertexSet] using hxyj.left_mem
-    have hxi' : x' ∈ V(P.f i) := by simpa [WList.vertexSet] using hxyi'.left_mem
-    have hyj' : y' ∈ V(P.f j) := by simpa [WList.vertexSet] using hxyj.right_mem
-    have hyi' : y' ∈ V(P.f i) := by simpa [WList.vertexSet] using hxyi'.right_mem
-    have hj_nontrivial : ¬ (P.f j).Nontrivial :=
-      aux (P.isPath j) (P.first_eq j) (P.last_eq j) hxyj
-        (P.eq_or_eq_of_mem hxj' hxi' hne.symm) (P.eq_or_eq_of_mem hyj' hyi' hne.symm)
-    exact hne <| h hi_nontrivial hj_nontrivial
+    refine fun e hei hej => hne <| ?_
+    obtain ⟨x, y, hxyi⟩ := exists_isLink_of_mem_edge hei
+    have hxyG : G.IsLink e x y := (P.isPath i).isWalk.isLink_mono hxyi
+    have hxyj : (P.f j).IsLink e x y := ((P.isPath j).isWalk.isLink_iff_isLink_of_mem hej).mpr hxyG
+    exact h ((P.isPath i).not_nontrivial_of_isLink (P.first_eq i) (P.last_eq i) hxyi
+      (P.eq_or_eq_of_mem hxyi.left_mem hxyj.left_mem hne)
+      (P.eq_or_eq_of_mem hxyi.right_mem hxyj.right_mem hne))
+      ((P.isPath j).not_nontrivial_of_isLink (P.first_eq j) (P.last_eq j) hxyj
+      (P.eq_or_eq_of_mem hxyj.left_mem hxyi.left_mem hne.symm)
+      (P.eq_or_eq_of_mem hxyj.right_mem hxyi.right_mem hne.symm))
 
 /-! ### k-connectivity between two vertices -/
 

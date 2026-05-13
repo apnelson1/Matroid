@@ -185,7 +185,7 @@ lemma IsClosedSubgraph.isAcyclicSet_union (hI : G.IsAcyclicSet I) (hJ : G.IsAcyc
   refine ext_of_le_le restrict_le H.inter_le_left (by simp [h.vertexSet_mono]) ?_
   have hcompat : Compatible H (G ↾ (I ∪ J)) := compatible_of_le_le h.le restrict_le
   rw [subset_diff, disjoint_comm] at hJH
-  simp [hcompat.inter_edgeSet, inter_union_distrib_left, ← inter_assoc, hJH.2.inter_eq,
+  simp [hcompat.edgeSet_inter, inter_union_distrib_left, ← inter_assoc, hJH.2.inter_eq,
     inter_eq_left.mpr h.edgeSet_mono]
 
 def IsMaximalAcyclicSet (G : Graph α β) (F : Set β) : Prop :=

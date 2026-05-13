@@ -665,6 +665,14 @@ lemma map_vertex (w : WList α β) (f : α → α') : (w.map f).vertex = w.verte
   | cons x e w ih => simp [map, ih]
 
 @[simp]
+lemma map_invFunOn_map [Nonempty α] {s : Set α} {w : WList α' β}
+    (hw : V(w) ⊆ f '' s) : (w.map (invFunOn f s)).map f = w := by
+  induction w with
+  | nil x => simp [(surjOn_image f s).rightInvOn_invFunOn (hw (by simp : x ∈ _))]
+  | cons x e w ih => simp [(surjOn_image f s).rightInvOn_invFunOn (hw (by simp : x ∈ _)),
+    ih fun y hy ↦ hw (by simp [hy])]
+
+@[simp]
 lemma mem_map_iff (w : WList α β) (f : α → α') (x : α') : x ∈ w.map f ↔ ∃ y, y ∈ w ∧ f y = x := by
   rw [← mem_vertex, map_vertex]
   simp

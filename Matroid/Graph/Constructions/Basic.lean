@@ -107,6 +107,26 @@ lemma bouquet_le_iff_of_nonempty (v : α) (hF : F.Nonempty) :
 lemma banana_singleton (e : β) : banana a b {e} = Graph.singleEdge a b e := by
   ext <;> rfl
 
+@[simp]
+lemma restrict_banana (a b : α) (F R : Set β) :
+    Graph.restrict (banana a b F) R = banana a b (F ∩ R) := by
+  ext <;> simp [and_assoc, and_comm]
+
+@[simp↓]
+lemma restrict_bouquet (v : α) (F R : Set β) :
+    Graph.restrict (bouquet v F) R = bouquet v (F ∩ R) := by
+  exact restrict_banana v v F R
+
+@[simp]
+lemma deleteEdges_banana (a b : α) (F R : Set β) :
+    Graph.deleteEdges (banana a b F) R = banana a b (F \ R) := by
+  ext <;> simp [and_assoc, and_comm]
+
+@[simp↓]
+lemma deleteEdges_bouquet (v : α) (F R : Set β) :
+    Graph.deleteEdges (bouquet v F) R = bouquet v (F \ R) := by
+  exact deleteEdges_banana v v F R
+
 @[deprecated IsSpanningSubgraph.banana_mono (since := "2026-05-04")]
 lemma banana_mono {X Y : Set β} (hXY : X ⊆ Y) : banana a b X ≤s banana a b Y :=
   IsSpanningSubgraph.banana_mono hXY

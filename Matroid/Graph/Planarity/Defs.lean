@@ -34,6 +34,36 @@ variable {h : G.matroidalDual H}
 
 lemma edgeSet_eq (h : G.matroidalDual H) : E(G) = E(H) := congrArg (·.E) h
 
+lemma edgeFinite_of_matroidalDual [G.EdgeFinite] (h : G.matroidalDual H) : H.EdgeFinite where
+  edgeSet_finite := by simp [← h.edgeSet_eq]
+
+lemma exists_connected_matroidalDual (h : G.matroidalDual H) [Nonempty γ] :
+    ∃ H' : Graph γ β, G.matroidalDual H' ∧ H'.Connected := by
+  obtain hem | hne := V(H).eq_empty_or_nonempty
+  · obtain rfl := vertexSet_eq_empty_iff.mp hem
+    rw [matroidalDual_comm, matroidalDual, eq_comm] at h
+    simp only [cycleMatroid_bot, Matroid.emptyOn_dual_eq] at h
+    exact ⟨noEdge {(Classical.arbitrary γ)} β, by simp [matroidalDual, h], by simp⟩
+  obtain ⟨f, hf⟩ := H.connPartition.isRepFun_nonempty
+  classical
+  refine ⟨joinAt H (f _) f,
+    h.trans (cycleMatroid_joinAt hf (notMem_diff_of_mem ⟨_, hne.some_mem, rfl⟩)).symm, by
+    simp [connected_iff, joinAt_preconnected hf, vertexSet_joinAt hf hne]⟩
+
+lemma exists_connected_finite_matroidalDual [G.EdgeFinite] (h : G.matroidalDual H) [Nonempty γ] :
+    ∃ H' : Graph γ β, G.matroidalDual H' ∧ H'.Finite ∧ H'.Connected := by
+  obtain hem | hne := V(H).eq_empty_or_nonempty
+  · obtain rfl := vertexSet_eq_empty_iff.mp hem
+    rw [matroidalDual_comm, matroidalDual, eq_comm] at h
+    simp only [cycleMatroid_bot, Matroid.emptyOn_dual_eq] at h
+    exact ⟨noEdge {(Classical.arbitrary γ)} β, by simp [matroidalDual, h], by simp⟩
+  obtain ⟨f, hf⟩ := H.connPartition.isRepFun_nonempty
+  haveI := h.edgeFinite_of_matroidalDual
+  classical
+  refine ⟨joinAt H (f _) f,
+    h.trans (cycleMatroid_joinAt hf (notMem_diff_of_mem ⟨_, hne.some_mem, rfl⟩)).symm,
+    joinAt_finite hf, by simp [connected_iff, joinAt_preconnected hf, vertexSet_joinAt hf hne]⟩
+
 theorem euler_formula (h : G.matroidalDual H) :
     V(G).encard + V(H).encard = E(G).encard + c(G) + c(H) := by
   rw [← G.cycleMatroid_E, ← G.cycleMatroid.eRank_add_eRank_dual, h, add_add_add_comm', add_assoc,
@@ -81,14 +111,36 @@ lemma girth_edgeConn_bound_of_connected (h : G.matroidalDual H) {k g : ℕ} (hk 
   enat_to_nat!
   nlinarith
 
-lemma not_matroidalDual_K33 (G : Graph α _) : ¬ (CompleteBipartiteGraph 3 3).matroidalDual G := by
+lemma girth_edgeConn_bound_of_connected' (h : G.matroidalDual H) {k g : ℕ} (hk : G.EdgeConnGE k)
+    (hg : g ≤ G.cycleMatroid.girth) (hGF : ¬ G.IsForest) (hG : G.Connected) (hH : H.Connected)
+    (hVG : V(G).Nontrivial) :
+    12 + k * V(G).encard + 2 * g * V(H).encard ≤ 6 * (V(G).encard + V(H).encard) := by
+  have h1 := euler_formula_of_connected h hG hH
+  have h2 := hk.minDegreeGE hVG |>.le_encard_edgeSet
+  have h3 := h.bound_face_encard_of_girth hGF hH.pre
+  replace hG := G.girth_ne_top hGF
+  enat_to_nat!
+  nlinarith
+
+lemma not_matroidalDual_K5 [Nonempty α] (G : Graph α _) : ¬ (CompleteGraph 5).matroidalDual G := by
   rintro h
-  have := h.girth_edgeConn_bound_of_connected (k := 3) (g := 4) (by simp) ?_ ?_
-    (completeBipartiteGraph_connected (by simp) (by simp)) ?_
+  obtain ⟨H, h, _, hHcon⟩ := h.exists_connected_finite_matroidalDual
+  have := h.girth_edgeConn_bound_of_connected' (k := 4) (g := 3) (by simp) ?_ ?_ (by simp) hHcon
+    (by use 0, by simp, 1, by simp, by simp)
+  rw [mul_add] at this
+  norm_num at this
+  all_goals sorry
+
+lemma not_matroidalDual_K33 [Nonempty α] (G : Graph α _) :
+    ¬ (CompleteBipartiteGraph 3 3).matroidalDual G := by
+  rintro h
+  obtain ⟨H, h, _, hHcon⟩ := h.exists_connected_finite_matroidalDual
+  have := h.girth_edgeConn_bound_of_connected (k := 3) (g := 4) ?_ ?_ ?_
+    (completeBipartiteGraph_connected (by simp) (by simp)) hHcon
     (by use Sum.inl 0, by simp, Sum.inr 0, by simp, by simp)
   rw [mul_add] at this
   norm_num at this
-  sorry
+  all_goals sorry
 
 end matroidalDual
 

@@ -115,7 +115,7 @@ lemma Connected.union (hG : G.Connected) (hH : H.Connected) (hcompat : G.Compati
   simp only [le_deleteVerts_iff, hcompat.right_le_union, true_and] at hHle
   obtain hGK | hGK := disjoint_or_nonempty_inter V(G) V(K)
   · obtain hHK | hHK := disjoint_or_nonempty_inter V(H) V(K)
-    · simpa [union_vertexSet, ← inter_eq_right, union_inter_distrib_right, hGK.inter_eq,
+    · simpa [vertexSet_union, ← inter_eq_right, union_inter_distrib_right, hGK.inter_eq,
         hHK.inter_eq, hKne.ne_empty.symm] using vertexSet_mono hK.le
     rw [or_iff_left (not_disjoint_iff_nonempty_inter.2 hHK)] at hHle
     simpa [hGK.symm.inter_eq] using hi.mono (inter_subset_inter_left _ (vertexSet_mono hHle))
@@ -664,7 +664,7 @@ lemma IsPath.isPath_of_union_of_subsingleton_inter (hP : (G ∪ H).IsPath P)
   | nil u => simpa [hf]
   | cons u e w ih =>
     obtain ⟨heuwf, hw, huw⟩ := cons_isPath_iff.mp hP
-    obtain heG | heH := by simpa only [union_edgeSet, mem_union] using heuwf.edge_mem
+    obtain heG | heH := by simpa only [edgeSet_union, mem_union] using heuwf.edge_mem
     · replace heuwf : G.IsLink e u w.first := heuwf.of_le_of_mem (Graph.left_le_union ..) heG
       simp [ih heuwf.right_mem hl hw, heuwf, huw]
     replace heH : H.IsLink e u w.first := heuwf.of_le_of_mem (hc.right_le_union ..) heH

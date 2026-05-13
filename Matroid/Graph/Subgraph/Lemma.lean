@@ -82,9 +82,9 @@ lemma IsClosedSubgraph.inter (h₁ : H₁ ≤c G) (h₂ : H₂ ≤c G) : H₁ �
 
 lemma IsClosedSubgraph.inter_le {K G H : Graph α β} (hKG : K ≤c G) (hle : H ≤ G) : K ∩ H ≤c H :=
   mk' Graph.inter_le_right fun e x hex hx ↦ by
-    rw [inter_vertexSet] at hx
+    rw [vertexSet_inter] at hx
     have heK := ((hKG.inc_congr hx.1).mpr (hex.of_le hle)).edge_mem
-    rw [(compatible_of_le_le hKG.le hle).inter_edgeSet]
+    rw [(compatible_of_le_le hKG.le hle).edgeSet_inter]
     exact ⟨heK, hex.edge_mem⟩
 
 /-! ### Adding one edge -/
@@ -92,7 +92,7 @@ lemma IsClosedSubgraph.inter_le {K G H : Graph α β} (hKG : K ≤c G) (hle : H 
 lemma addEdge_deleteEdge (he : e ∉ E(G)) (hx : x ∈ V(G)) (hy : y ∈ V(G)) :
     (G.addEdge e x y) ＼ {e} = G := by
   have hc : Compatible (Graph.singleEdge x y e) G := by simp [he]
-  simp only [Graph.addEdge, Graph.ext_iff, vertexSet_deleteEdges, union_vertexSet,
+  simp only [Graph.addEdge, Graph.ext_iff, vertexSet_deleteEdges, vertexSet_union,
     vertexSet_singleEdge, union_eq_right, insert_subset_iff, hx, singleton_subset_iff, hy, and_self,
     deleteEdges_isLink, hc.union_isLink_iff, singleEdge_isLink, mem_singleton_iff, true_and]
   intro f p q

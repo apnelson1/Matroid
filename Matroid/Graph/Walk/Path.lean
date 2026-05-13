@@ -321,6 +321,32 @@ lemma IsPath.inter_eq_singleton_of_append (hP : G.IsPath <| P₀ ++ P₁) (heq :
   by_contra! hne
   exact hdj (P₀.vertex.mem_dropLast_of_mem_ne (by simp) hxP₀ (by simpa)) hxP₁
 
+lemma IsPath.not_nontrivial_of_dInc {P : WList α β} {e : β} {x y s t : α} (hP : G.IsPath P)
+    (hfirst : P.first = s) (hlast : P.last = t) (he : P.DInc e x y)
+    (hx : x = s ∨ x = t) (hy : y = s ∨ y = t) : ¬ P.Nontrivial := by
+  obtain rfl : x = s := by
+    obtain rfl | rfl := hx
+    · rfl
+    · exact (he.ne_last hP.nodup (by simp [hlast])).elim
+  obtain rfl : y = t := by
+    obtain rfl | rfl := hy
+    · exact (he.ne_first hP.nodup (by simp [hfirst])).elim
+    · rfl
+  obtain ⟨W, hW, hW_first⟩ := he.exists_isSuffix
+  obtain rfl : cons x e W = P := hW.eq_of_first_mem hP.nodup (by simp [hfirst])
+  rw [cons_isPath_iff] at hP
+  obtain rfl : W.last = y := by simpa using hlast
+  have hW_nil : W.Nil := hP.2.1.first_eq_last_iff.mp hW_first
+  rw [hW_nil.eq_nil_first]
+  simp
+
+lemma IsPath.not_nontrivial_of_isLink {P : WList α β} {e : β} {x y s t : α} (hP : G.IsPath P)
+    (hfirst : P.first = s) (hlast : P.last = t) (he : P.IsLink e x y)
+    (hx : x = s ∨ x = t) (hy : y = s ∨ y = t) : ¬ P.Nontrivial := by
+  obtain he | he := P.isLink_iff_dInc.mp he
+  · exact hP.not_nontrivial_of_dInc hfirst hlast he hx hy
+  · exact hP.not_nontrivial_of_dInc hfirst hlast he hy hx
+
 /-! ### Fixed ends. (To be cleaned up) -/
 
 

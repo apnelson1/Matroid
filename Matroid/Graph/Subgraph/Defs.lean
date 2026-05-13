@@ -339,12 +339,12 @@ protected def inter (G H : Graph α β) : Graph α β where
 instance : Inter (Graph α β) where inter := Graph.inter
 
 @[simp]
-lemma inter_vertexSet (G H : Graph α β) : V(G ∩ H) = V(G) ∩ V(H) := rfl
+lemma vertexSet_inter (G H : Graph α β) : V(G ∩ H) = V(G) ∩ V(H) := rfl
 
 @[simp]
 lemma inter_isLink_iff : (G ∩ H).IsLink e x y ↔ G.IsLink e x y ∧ H.IsLink e x y := Iff.rfl
 
-lemma inter_edgeSet (G H : Graph α β) : E(G ∩ H) = {e ∈ E(G) ∩ E(H) | G.IsLink e = H.IsLink e} :=
+lemma edgeSet_inter (G H : Graph α β) : E(G ∩ H) = {e ∈ E(G) ∩ E(H) | G.IsLink e = H.IsLink e} :=
   rfl
 
 protected lemma inter_comm (G H : Graph α β) : G ∩ H = H ∩ G :=
@@ -431,6 +431,12 @@ protected lemma le_sUnion (hGs : Gs.Pairwise Graph.Compatible) (hG : G ∈ Gs) :
   convert Graph.le_iUnion (ι := Gs) _ ⟨G, hG⟩
   rfl
 
+/-- Used to simplify the definition of the union of a pair. -/
+@[simp]
+lemma bddAbove_deleteEdges : BddAbove ({G, H ＼ E(G)} : Set (Graph α β)) :=
+  ⟨Graph.sUnion {G, H ＼ E(G)} pairwise_compatible_deleteEdges,
+    fun _ hK ↦ Graph.le_sUnion pairwise_compatible_deleteEdges hK⟩
+
 @[simp]
 protected lemma sUnion_le_iff (hGs : Gs.Pairwise Graph.Compatible) :
     Graph.sUnion Gs hGs ≤ H ↔ ∀ G ∈ Gs, G ≤ H := by
@@ -452,10 +458,10 @@ protected def union (G H : Graph α β) := Graph.copy (vertexSet := V(G) ∪ V(H
 instance : Union (Graph α β) where union := Graph.union
 
 @[simp, grind =]
-lemma union_vertexSet (G H : Graph α β) : V(G ∪ H) = V(G) ∪ V(H) := rfl
+lemma vertexSet_union (G H : Graph α β) : V(G ∪ H) = V(G) ∪ V(H) := rfl
 
 @[simp, grind =]
-lemma union_edgeSet (G H : Graph α β) : E(G ∪ H) = E(G) ∪ E(H) := rfl
+lemma edgeSet_union (G H : Graph α β) : E(G ∪ H) = E(G) ∪ E(H) := rfl
 
 lemma union_eq_sUnion (G H : Graph α β) : G ∪ H = Graph.sUnion {G, H ＼ E(G)} (by simp) := by
   simp_rw [Union.union, Graph.union, Graph.copy]

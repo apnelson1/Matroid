@@ -192,9 +192,21 @@ instance [G.Finite] [H.Finite] : (G ∪ H).Finite where
   vertexSet_finite := G.vertexSet_finite.union H.vertexSet_finite
   edgeSet_finite := G.edgeSet_finite.union H.edgeSet_finite
 
+instance (V : Set α) : (Graph.noEdge V β).EdgeFinite where
+  edgeSet_finite := finite_empty
+
+@[simp]
+lemma noEdge_finite (V : Set α) : (Graph.noEdge V β).Finite ↔ V.Finite := by
+  simp only [finite_iff, vertexSet_noEdge, and_iff_right_iff_imp]
+  infer_instance
+
 instance : (Graph.singleEdge x y e).Finite where
   vertexSet_finite := by simp
   edgeSet_finite := by simp
+
+@[simp]
+lemma banana_finite (u v : α) (F : Set β) : (Graph.banana u v F).Finite ↔ F.Finite := by
+  simp [finite_iff, edgeFinite_iff]
 
 instance (W : WList α β) : W.toGraph.Finite where
   vertexSet_finite := by simp

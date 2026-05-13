@@ -495,7 +495,7 @@ lemma inf_compl_eq_bot_iff : H₁ ⊓ H₁ᶜ = ⊥ ↔ H₁.val ≤c G := by
   refine ⟨fun h => IsClosedSubgraph.mk' H₁.prop fun e x hex hxH ↦ ?_, fun h => ?_⟩
   · by_contra! he
     apply_fun Graph.vertexSet ∘ Subtype.val at h
-    simp only [comp_apply, coe_inf, inter_vertexSet, ← sep_eq_vertexSet_inter_compl, hbot,
+    simp only [comp_apply, coe_inf, vertexSet_inter, ← sep_eq_vertexSet_inter_compl, hbot,
       vertexSet_bot, eq_empty_iff_forall_notMem] at h
     exact h x ⟨hxH, by use e, ⟨hex.edge_mem, he⟩⟩
   refine Subtype.ext ?_
@@ -874,7 +874,7 @@ lemma compl_eq_of_stronglyDisjoint_union {H₁ H₂ : Graph α β}
     (⟨H₁, hdisj.isClosedSubgraph_union_left⟩ : (H₁ ∪ H₂).ClosedSubgraph)ᶜ =
     ⟨H₂, hdisj.isClosedSubgraph_union_right⟩ := by
   rw [vertexSet_inj]
-  simp only [compl_vertexSet, union_vertexSet, union_diff_left, sdiff_eq_left]
+  simp only [compl_vertexSet, vertexSet_union, union_diff_left, sdiff_eq_left]
   exact hdisj.vertex.symm
 
 lemma isAtom_iff_isCompOf (H : G.ClosedSubgraph) : IsAtom H ↔ H.val.IsCompOf G := by
