@@ -1,4 +1,6 @@
 import Matroid.BaseExchange
+import Matroid.Extension.ProjectBy
+import Matroid.Order.Quotient
 
 variable {α : Type*} {M : Matroid α} {E I B : Set α} {k : ℕ∞}
 
@@ -861,3 +863,44 @@ lemma truncate_closure_eq_of_not_spanning {X : Set α} (hXE : X ⊆ M.E := by ae
     (hs : ¬ M.truncate.Spanning X) : M.truncate.closure X = M.closure X := by
   rw [← TruncateFamily.matroid_top] at hs ⊢
   rwa [TruncateFamily.matroid_closure_eq_closure _ hXE]
+
+
+/-- This gives an exotic example of a proper quotient that leaves some bases unchanged. -/
+lemma TruncateFamily.quotient (T : M.TruncateFamily) : T.matroid ≤q M := by
+  refine quotient_of_forall_closure_subset_closure rfl fun X hX ↦ ?_
+  by_cases hXs : T.matroid.Spanning X
+  · simp [hXs.closure_eq, closure_subset_ground]
+  rw [T.matroid_closure_eq_closure X hX hXs]
+
+lemma truncate_quotient (M : Matroid α) : M.truncate ≤q M := by
+  obtain hM | h := M.eq_loopyOn_or_rankPos
+  · rw [hM]
+    simp [Quotient.refl]
+  rw [← TruncateFamily.matroid_top]
+  exact TruncateFamily.quotient _
+
+lemma Quotient.truncate {M₁ M₂ : Matroid α} (h : M₂ ≤q M₁) : M₂.truncate ≤q M₁.truncate := by
+  refine quotient_of_forall_closure_subset_closure h.ground_eq.symm fun X (hXE : X ⊆ M₁.E) ↦ ?_
+  obtain rfl | hssu := hXE.eq_or_ssubset
+  · rw [← truncate_ground_eq, closure_ground, truncate_ground_eq, ← h.ground_eq,
+      ← M₂.truncate_ground_eq, closure_ground]
+  by_cases hX : M₁.truncate.Spanning X
+  · suffices hsp : M₂.truncate.Spanning X
+    · rw [hsp.closure_eq, truncate_ground_eq, h.ground_eq, ← truncate_ground_eq]
+      apply closure_subset_ground
+    rw [truncate_spanning_iff_of_ssubset (hssu.trans_eq h.ground_eq.symm)]
+    rw [truncate_spanning_iff_of_ssubset hssu] at hX
+    obtain ⟨e, ⟨heE, heX⟩, hS⟩ := hX
+    exact ⟨e, ⟨h.ground_eq.symm.subset heE, heX⟩, h.spanning_of_spanning hS⟩
+  rw [M₁.truncate_closure_eq_of_not_spanning hXE hX]
+  exact (h.closure_subset_closure X).trans <| M₂.truncate_quotient.closure_subset_closure X
+
+lemma project_quotient (M : Matroid α) (X : Set α) : M.project X ≤q M := by
+  refine quotient_of_forall_closure_subset_closure rfl fun Y _ ↦ ?_
+  rw [project_closure]
+  exact M.closure_subset_closure <| subset_union_left
+
+lemma Quotient.project_quotient_project {M₁ M₂ : Matroid α} (h : M₂ ≤q M₁) (X : Set α) :
+    M₂.project X ≤q M₁.project X :=
+  quotient_of_forall_closure_subset_closure (by simpa using h.ground_eq.symm) fun Y _ ↦
+    by simpa using h.closure_subset_closure ..

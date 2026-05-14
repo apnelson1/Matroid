@@ -1,7 +1,6 @@
 import Matroid.Modular.Basic
-import Matroid.Order.Quotient
-import Matroid.Constructions.Project
 import Matroid.ForMathlib.Set
+import Matroid.Constructions.Truncate
 
 universe u
 

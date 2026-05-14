@@ -1,4 +1,4 @@
-import Matroid.Extension.ProjectBy
+import Matroid.Flat.Hyperplane
 import Matroid.ForMathlib.FinDiff
 
 variable {α : Type*} {M : Matroid α} {E I B C H K X Y : Set α} {k : ℕ∞} {e f : α}
