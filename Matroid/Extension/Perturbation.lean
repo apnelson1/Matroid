@@ -1,6 +1,8 @@
 import Matroid.Uniform.Minor
 import Matroid.Extension.ProjectionBy
+import Matroid.Extension.Principal
 import Matroid.ForMathlib.Data.ENat.Powerset
+import Matroid.Extension.Guts
 
 variable {α β : Type*} {M N M' : Matroid α} {I X Y : Set α} {e f : α} {a k l : ℕ∞}
     {T : Set (Set α)}
@@ -45,19 +47,6 @@ lemma IsPerturbation.trans_le {M₁ M₂ M₃ : Matroid α} {j : ℕ∞} (h₁ :
     (h₂ : M₂.IsPerturbation M₃ k) (hle : j + k ≤ l) : M₁.IsPerturbation M₃ l :=
   (h₁.trans h₂).mono hle
 
-@[simp]
-lemma isPerturbation_zero_iff : M.IsPerturbation N 0 ↔ M = N := by
-  refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
-  generalize hk : (0 : ℕ∞) = k at h
-  induction h with
-  | refl' => rfl
-  | @cons_left M' N' c h β P ih' =>
-    rw [eq_comm, add_eq_zero, encard_eq_zero] at hk
-    rw [ih' hk.1.symm, P.eq_of_pivot_eq_empty hk.2]
-  | @cons_right M' N' c h β P ih' =>
-    rw [eq_comm, add_eq_zero, encard_eq_zero] at hk
-    rw [ih' hk.1.symm, P.eq_of_pivot_eq_empty hk.2]
-
 lemma Projector.isPerturbation (P : M.Projector N β) : M.IsPerturbation N P.pivot.encard := by
   obtain ⟨γ, Q, hQu, hQi, hQci, -, ⟨f⟩⟩ := P.exists_good_projector
   refine ((IsPerturbation.refl' M).cons_left Q).mono ?_
@@ -75,6 +64,22 @@ lemma IsPerturbation.symm (h : M.IsPerturbation N k) : N.IsPerturbation M k := b
       ENat.card_coe_set_eq, zero_add]
   | cons_right h P ih => rw [add_comm]; exact P.isPerturbation.trans ih
 
+lemma IsPerturbation.ground_eq (h : M.IsPerturbation N k) : M.E = N.E := by
+  induction h with
+  | refl' => rfl
+  | cons_left h P ih => rw [ih, P.ground_eq]
+  | cons_right h P ih => rw [ih, P.ground_eq]
+
+lemma isPerturbation_top (h : M.E = N.E) : M.IsPerturbation N ⊤ := by
+  have h1 := M.ground_spanning.projector_loopyOn
+  have h2 := h ▸ N.ground_spanning.projector_loopyOn
+  exact (h1.isPerturbation.symm.trans h2.isPerturbation).mono le_top
+
+@[simp]
+lemma isPerturbation_top_iff : M.IsPerturbation N ⊤ ↔ M.E = N.E :=
+  ⟨fun h ↦ h.ground_eq, isPerturbation_top⟩
+
+
 lemma isPerturbation_comm : M.IsPerturbation N k ↔ N.IsPerturbation M k :=
   ⟨IsPerturbation.symm, IsPerturbation.symm⟩
 
@@ -84,11 +89,55 @@ lemma IsPerturbation.dual (h : M.IsPerturbation N k) : M✶.IsPerturbation N✶ 
   | cons_left h P ih => exact ih.trans P.dual.isPerturbation.symm
   | cons_right h P ih => exact ih.trans P.dual.isPerturbation
 
-lemma IsPerturbation.ground_eq (h : M.IsPerturbation N k) : M.E = N.E := by
+lemma ModularCut.isPerturbation_projectBy (U : M.ModularCut) :
+    M.IsPerturbation (M.projectBy U) 1 :=
+  U.Projector.isPerturbation.symm.mono <| (encard_le_card ..).trans <| by simp
+
+lemma ModularCut.isPerturbation_liftBy (U : M✶.ModularCut) :
+    M.IsPerturbation (M.liftBy U) 1 := by
+  have h := U.isPerturbation_projectBy.dual
+  rwa [dual_dual, projectBy_dual] at h
+
+
+
+-- @[elab_as_elim]
+-- lemma IsPerturbation.rec_foo
+-- {motive : (M N : Matroid α) → (k : ℕ∞) → M.IsPerturbation N k → Prop}
+--     (refl' : ∀ M, motive M M 0 (by simp))
+--     (top : ∀ (M N : Matroid α) (hE : M.E = N.E), motive M N ⊤ (by simpa))
+--     (projectBy : ∀ (M N : Matroid α) (k : ℕ∞) (h : M.IsPerturbation N k) (U : M.ModularCut)
+--       (ih : motive M N k h), motive (M.projectBy U) N (k + 1)
+--       (U.isPerturbation_projectBy.symm.trans_le h <| by rw [add_comm]))
+--     (of_projectBy : ∀ (M N : Matroid α) (k : ℕ∞) (U : M.ModularCut)
+--       (h : (M.projectBy U).IsPerturbation N k) (ih : motive _ N k h),
+--       motive M N (k + 1) ((U.isPerturbation_projectBy.trans_le h <| by rw [add_comm])))
+--     {M N : Matroid α} {k : ℕ∞} (h : M.IsPerturbation N k) :
+--     motive M N k h := by
+--   induction h with
+--   | refl' => exact refl' ..
+--   | @cons_left M' N k h β P ih =>
+
+--   | cons_right h P ih => sorry
+  --   (cons_left :
+  --   ∀ {N N' : Matroid α} {k : ℕ∞} (h : a✝.IsPerturbation N k) {β : Type u} (P : N.Projector N' β)
+  --     motive N k h → motive N' (k + P.pivot.encard) ⋯)
+  -- (cons_right :
+  --   ∀ {N N' : Matroid α} {k : ℕ∞} (h : a✝.IsPerturbation N k) {β : Type u} (P : N'.Projector N β)
+  --     motive N k h → motive N' (k + P.pivot.encard) ⋯)
+  -- {a✝¹ : Matroid α} {a✝² : ℕ∞} (t : a✝.IsPerturbation a✝¹ a✝²) : motive a✝¹ a✝² t
+
+@[simp]
+lemma isPerturbation_zero_iff : M.IsPerturbation N 0 ↔ M = N := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
+  generalize hk : (0 : ℕ∞) = k at h
   induction h with
   | refl' => rfl
-  | cons_left h P ih => rw [ih, P.ground_eq]
-  | cons_right h P ih => rw [ih, P.ground_eq]
+  | @cons_left M' N' c h β P ih' =>
+    rw [eq_comm, add_eq_zero, encard_eq_zero] at hk
+    rw [ih' hk.1.symm, P.eq_of_pivot_eq_empty hk.2]
+  | @cons_right M' N' c h β P ih' =>
+    rw [eq_comm, add_eq_zero, encard_eq_zero] at hk
+    rw [ih' hk.1.symm, P.eq_of_pivot_eq_empty hk.2]
 
 @[simp]
 lemma IsPerturbation_dual_iff : M✶.IsPerturbation N✶ k ↔ M.IsPerturbation N k :=
@@ -187,85 +236,49 @@ lemma isPerturbation_eRk_dual_of_delete_eq_delete (h : M.E = N.E) (hMX : M ＼ X
     <| by rwa [← dual_inj, dual_contract_dual, dual_contract_dual]
   simpa using h.dual
 
-lemma isPerturbation_loopify_encard (M : Matroid α) (X : Set α) :
-    M.IsPerturbation (M.loopify X) (2 * X.encard) := by
-  refine (M.isPerturbation_eRk_dual_of_delete_eq_delete (N := M.loopify X) (X := X)
-    rfl (by simp)).mono ?_
-  grw [eRk_le_encard, eRk_le_encard, two_mul]
-
-/-- A version of `isPerturbation_loopify_encard` where the bound is in terms of the rank
-rather than the cardinality of `X`. -/
+/-- Loopifying a set is a perturbation by at most twice the rank of the set. -/
 lemma isPerturbation_loopify (M : Matroid α) (X : Set α) :
-    M.IsPerturbation (M.loopify X) (4 * M.eRk X) := by
-  obtain ⟨I, hI⟩ := M.exists_isBasis' X
-  have h1 := M.isPerturbation_project X
-  rw [hI.project_eq_loopify_project] at h1
-  have h2 := ((M.loopify (X \ I)).isPerturbation_project I).symm
-  have h3 := (M.loopify (X \ I)).isPerturbation_loopify_encard I
-  rw [loopify_loopify, union_comm, union_diff_cancel hI.subset] at h3
-  convert (h1.trans h2).trans h3 using 1
-  rw [hI.eRk_eq_encard, Indep.eRk_eq_encard]
-  · ring
-  rw [loopify_indep_iff]
-  exact ⟨hI.indep, disjoint_sdiff_right⟩
+    M.IsPerturbation (M.loopify X) (2 * M.eRk X) := by
+  rw [← loopify_inter_ground, ← eRk_inter_ground]
+  set X' := X ∩ M.E with hX'
+  obtain ht | hnt := eq_top_or_lt_top (M.eRk X')
+  · simp [ht]
+  obtain h0 | h0 := (zero_le (a := M.eRk X')).eq_or_lt'
+  · rwa [h0, mul_zero, isPerturbation_zero_iff, eq_comm, loopify_eq_self_iff, ← eRk_eq_zero_iff]
+  -- let `N` be obtained from `M` by lifting through the coguts modular cut of `X`,
+  -- then principally truncating `X`. This decreases the rank of `X` without changing
+  -- the loopification of `X`, so we can apply induction.
+  set N := (M.localLift X').principalTruncate X' with hN
+  have hMN : M.IsPerturbation N 2 :=
+    (ModularCut.isPerturbation_liftBy ..).trans (ModularCut.isPerturbation_projectBy ..)
+  have hNMX : M.loopify X' = N.loopify X' := by
+    refine loopify_eq_loopify_iff.2 ⟨rfl, ?_⟩
+    rw [hN, principalTruncate, ← ModularCut.projectBy_delete,
+      (ModularCut.principal_delete_eq_bot_iff (by simp [hX'])).2, ModularCut.projectBy_bot,
+      localLift_delete_self]
+    rw [← coindep_iff_subset_closure_compl, not_coindep_iff]
+    exact localLift_codep_self inter_subset_right <| h0.ne'
+  have hNr : N.eRk X' + 1 = M.eRk X' := by
+    rw [hN, principalTruncate_eRk_add_one_eq, ← eRank_restrict, localLift_restrict_self,
+      eRank_restrict]
+    · grw [localLift, (ModularCut.liftBy_quotient _).weakLE.loops_subset_loops, ← eRk_eq_zero_iff]
+      exact h0.ne'
+    exact subset_closure _ _ (by simp [hX'])
+  have hNrlt : N.eRk X' < M.eRk X := by
+    rw [← M.eRk_inter_ground, ← hX']
+    enat_to_nat!; lia
+  rw [hNMX, ← hNr, mul_add_one, add_comm]
+  exact hMN.trans <| isPerturbation_loopify N X'
+termination_by M.eRk X
 
 lemma isPerturbation_eRk_of_delete_eq_delete (h : M.E = N.E) (hMX : M ＼ X = N ＼ X) :
-    M.IsPerturbation N (4 * (M.eRk X + N.eRk X)) := by
+    M.IsPerturbation N (2 * (M.eRk X + N.eRk X)) := by
   have hX' : M.loopify X = N.loopify X := by
     simpa [ext_iff_indep, loopify_indep_iff_delete_indep, hMX]
   have h1 := M.isPerturbation_loopify X
   rw [hX'] at h1
   replace h1 := h1.trans (N.isPerturbation_loopify X).symm
   rwa [← mul_add] at h1
-
-lemma ModularCut.isPerturbation_projectBy (U : M.ModularCut) :
-    M.IsPerturbation (M.projectBy U) 1 :=
-  U.Projector.isPerturbation.symm.mono <| (encard_le_card ..).trans <| by simp
-
-lemma ModularCut.isPerturbation_liftBy (U : M✶.ModularCut) :
-    M.IsPerturbation (M.liftBy U) 1 := by
-  have h := U.isPerturbation_projectBy.dual
-  rwa [dual_dual, projectBy_dual] at h
-
-example (M : Matroid α) (L : Set α) (hLr : ¬ (L ⊆ M.loops)) (hL : L ⊆ M.E) :
-    ∃ (N : Matroid α), N.IsPerturbation M 2 ∧ N ＼ L = M ＼ L ∧ N.eRk L + 1 = M.eRk L := by
-  set R := M.liftBy (ModularCut.principal M✶ L) with hR
-  have hR1 : R ＼ L = M ＼ L := by
-    rw [hR, ModularCut.liftBy_delete_eq_delete_of_dual_closure_mem _ (by simp)]
-  set N := R.projectBy (ModularCut.principal R L) with hN
-  have hRL : R.Codep L :=
-    ModularCut.liftBy_principal_codep _ (by contrapose! hLr; simp [hLr]) hL
-  -- have h' : (ModularCut.principal R L).delete L = ⊥ := by
-  --   rw [ModularCut.principal_delete_eq_bot hRL]
-    -- rw [ModularCut.eq_bot_iff, ModularCut.mem_delete_iff, and_iff_right (R ＼ L).ground_isFlat,
-    --   ModularCut.mem_principal_iff]
-  have hN1 : R ＼ L = N ＼ L := by
-    rw [hN, ← ModularCut.projectBy_delete, (ModularCut.principal_delete_self_eq_bot_iff _).2 hRL,
-      ModularCut.projectBy_bot]
-  have hloops : ¬ (L ⊆ R.loops) := by
-    grw [hR, (liftBy_quotient _).weakLE.loops_subset_loops]
-    exact hLr
-  have hr : N.eRk L + 1 = M.eRk L := by
-    rw [hN, ModularCut.projectBy_eRk_add_one_eq _ hloops (subset_closure ..), hR]
-
-
-    -- assumption
-
-
-    -- , eq_comm, ModularCut.projectBy_eq_self_iff,
-    --   ModularCut.eq_bot_iff, ModularCut.eq_top_iff]
-
-
-  -- set U := ModularCut.principal M✶  L with hU
-
-  -- set V := ModularCut.principal (M✶.projectBy U)✶ L with hV
-  -- -- set R := (M✶.projectBy U)✶ with hR
-  -- refine ⟨(M✶.projectBy U)✶.projectBy V, ?_, ?_, ?_⟩
-  -- · refine V.isPerturbation_projectBy.symm.trans_le (M₂ := (M✶.projectBy U)✶) (k := 1)
-  --     ?_ rfl.le
-  --   have h1 := U.isPerturbation_projectBy.dual.symm
-  --   rwa [dual_dual] at h1
-  -- ·
 
 /-- The minimum size of a perturbation needed to take `M` to `N`.
 This is a little coarser than `IsPerturbation` in the information it contains,
@@ -390,10 +403,9 @@ lemma IsShift.isPerturbation_comap (h : M.IsShift C f) :
 then `M` has bounded (by a function of `M.eRk C`) perturbation distance
 from the matroid `(M.comap f).loopify L`. -/
 lemma IsShift.isPerturbation_loopify_comap (h : M.IsShift C f) {L : Set α} (hL : L ⊆ M.closure C) :
-    M.IsPerturbation ((M.comap f).loopify L) (6 * M.eRk C) := by
-  refine h.isPerturbation_comap.trans_le (isPerturbation_loopify _ _) ?_
-  grw [eRk_comap, hL, h.eqOn_closure.image_eq_self, eRk_closure_eq, ← add_mul]
-  rfl
+    M.IsPerturbation ((M.comap f).loopify L) (4 * M.eRk C) :=
+  h.isPerturbation_comap.trans_le (isPerturbation_loopify _ _) <| by grw [eRk_comap, hL,
+    h.eqOn_closure.image_eq_self, eRk_closure_eq, ← add_mul, two_add_two_eq_four]
 
 end shift
 

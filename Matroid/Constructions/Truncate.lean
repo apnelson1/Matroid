@@ -118,19 +118,21 @@ end truncateTo
 
 section truncate
 
+lemma truncate_aux : (M.projectBy (ModularCut.principal M M.E)).Indep I ↔
+    (M.Indep I ∧ (M.IsBase I → I = ∅)) := by
+  obtain (hM | hM) := M.eq_loopyOn_or_rankPos
+  · rw [hM]; simp [ModularCut.eq_top_iff, loops]
+  suffices M.Indep I → (¬M.closure I = M.E ↔ M.IsBase I → I = ∅) by
+    simpa [ModularCut.principal_eq_top_iff']
+  refine fun hI ↦ ⟨fun h hIb ↦ by simp [hIb.closure_eq] at h, fun h hss ↦ ?_⟩
+  have hIb := hI.isBase_of_ground_subset_closure hss.symm.subset
+  exact hIb.nonempty.ne_empty (h hIb)
+
 /-- The matroid on `M.E` whose independent sets are the independent nonbases of `M`. -/
 def truncate (M : Matroid α) := Matroid.ofExistsMatroid
   (E := M.E)
   (Indep := fun I ↦ M.Indep I ∧ (M.IsBase I → I = ∅))
-  (hM := by
-    refine ⟨M.projectBy (ModularCut.principal M M.E), rfl, fun I ↦ ?_⟩
-    obtain (hM | hM) := M.eq_loopyOn_or_rankPos
-    · rw [hM]; simp [ModularCut.eq_top_iff, loops]
-    suffices M.Indep I → (¬M.closure I = M.E ↔ M.IsBase I → I = ∅) by
-      simpa [ModularCut.principal_eq_top_iff']
-    refine fun hI ↦ ⟨fun h hIb ↦ by simp [hIb.closure_eq] at h, fun h hss ↦ ?_⟩
-    have hIb := hI.isBase_of_ground_subset_closure hss.symm.subset
-    exact hIb.nonempty.ne_empty (h hIb))
+  (hM := ⟨M.projectBy (ModularCut.principal M M.E), rfl, fun _ ↦ truncate_aux⟩)
 
 @[simp, grind =] lemma truncate_ground_eq : M.truncate.E = M.E := rfl
 
@@ -139,6 +141,9 @@ lemma truncate_indep_iff' : M.truncate.Indep I ↔ M.Indep I ∧ (M.IsBase I →
 @[simp] lemma truncate_indep_iff [M.RankPos] : M.truncate.Indep I ↔ M.Indep I ∧ ¬ M.IsBase I := by
   simp only [truncate_indep_iff', and_congr_right_iff]
   exact fun _ ↦ ⟨fun h hB ↦ hB.nonempty.ne_empty (h hB), fun h hB ↦ by contradiction⟩
+
+lemma truncate_def (M : Matroid α) : M.truncate = M.projectBy (ModularCut.principal M M.E) :=
+  ext_indep rfl fun I hI ↦ by rw [truncate_indep_iff', truncate_aux]
 
 lemma Indep.of_truncate (h : M.truncate.Indep I) : M.Indep I :=
   (truncate_indep_iff'.2 h).1
@@ -554,8 +559,8 @@ lemma circuitOn_singleton (e : α) : circuitOn {e} = loopyOn {e} := by
   rw [← singleton_isCircuit, circuitOn_isCircuit_iff]
   simp
 
-
 end circuitOn
+
 
 variable {I J B B' : Set α} {e f : α}
 

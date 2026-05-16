@@ -105,3 +105,8 @@ lemma IsRestriction.restrict {N : Matroid α} (h : N ≤r M) {R : Set α} (hR : 
   obtain ⟨R', hR', rfl⟩ := h
   rw [restrict_restrict_eq _ (by simpa using hR)]
   exact IsRestriction.refl
+
+@[simp]
+lemma restrict_inter_ground_restrict (M : Matroid α) (X : Set α) :
+    (M ↾ (X ∩ M.E)) ↾ X  = M ↾ X :=
+  ext_indep rfl fun I hIX ↦ by simp +contextual [Indep.subset_ground]

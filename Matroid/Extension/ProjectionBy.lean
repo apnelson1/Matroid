@@ -133,6 +133,26 @@ lemma Projector.map_pivot {γ : Type u} (P : N.Projector M β) (f : β → γ) (
 @[simp]
 lemma Projector.dual_pivot (P : N.Projector M β) : P.dual.pivot = P.pivot := rfl
 
+-- lemma Projector.foo (P : N.Projector M β) {e : β} (he : e ∈ P.pivot) :
+--     ∃ (U : M.ModularCut) (Q : N.Projector (M.projectBy U) β), Q.pivot = P.pivot \ {e} := by
+--   -- let R := P.carrier ／ {.inr e}
+--   have hc := P.contract_image_pivot
+--   have hd := P.delete_image_pivot
+--   rw [← insert_diff_self_of_mem he, image_insert_eq, ← union_singleton, ← delete_delete] at hd
+
+
+--   let V := ModularCut.ofDeleteElem (P.carrier ＼ Sum.inr '' (P.pivot \ {e})) (.inr e)
+--   refine ⟨((V.copy hd).comapOfSubsetRange .inl (by simp)).copy (comap_map Sum.inl_injective),
+--     ⟨P.carrier ／ {.inr e}, ?_, ?_⟩, ?_⟩
+--   · rw [← P.contract_eq, contract_contract, union_eq_self_of_subset_left (by simp)]
+--   · simp
+
+
+
+
+
+
+
 lemma Projector.delete_contract_aux (M : Matroid α) (X : Set α) :
     M.comapOn (Sum.inl '' (M.E \ X) ∪ Sum.inr '' (X ∩ M.E)) (Sum.elim id id) ＼ range Sum.inr =
     (M ＼ X).mapEmbedding Embedding.inl := by

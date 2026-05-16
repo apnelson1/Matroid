@@ -237,6 +237,19 @@ lemma closure_mem_principal (M : Matroid α) (X : Set α) :
     M.closure X ∈ ModularCut.principal M X := by
   simp [mem_principal_iff', inter_ground_subset_closure]
 
+@[simp]
+lemma principal_inter_ground (M : Matroid α) (X : Set α) :
+    ModularCut.principal M (X ∩ M.E) = ModularCut.principal M X := by
+  ext F hF
+  simp [mem_principal_iff', inter_assoc]
+
+@[simp]
+lemma principal_closure_eq (M : Matroid α) (X : Set α) :
+    ModularCut.principal M (M.closure X) = ModularCut.principal M X := by
+  ext F hF
+  rw [mem_principal_iff, ← closure_inter_ground, ← principal_inter_ground, mem_principal_iff,
+    hF.closure_subset_iff_subset]
+
 /-- The empty modular cut -/
 @[simps]
 protected def empty (M : Matroid α) : M.ModularCut where

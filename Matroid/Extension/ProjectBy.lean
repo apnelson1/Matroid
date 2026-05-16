@@ -64,6 +64,30 @@ lemma projectBy_top : M.projectBy ⊤ = M := by
 lemma projectBy_bot : M.projectBy ⊥ = M := by
   simp [ext_iff_indep, projectBy_indep_iff]
 
+@[simp]
+lemma projectBy_copy {N : Matroid α} (U : N.ModularCut) (h : N = M) :
+    M.projectBy (U.copy h) = N.projectBy U := by
+  subst h; rfl
+
+@[simp]
+lemma map_projectBy_map {β : Type*} {f : α → β} (hf : InjOn f M.E) (U : M.ModularCut) :
+    (M.map f hf).projectBy (U.map f hf) = (M.projectBy U).map f hf := by
+  obtain rfl | hne := eq_or_ne U ⊤
+  · simp
+  refine ext_indep rfl fun I _ ↦ ?_
+  rw [projectBy_indep_iff_of_ne_top (by simpa)]
+  simp_rw [map_indep_iff, projectBy_indep_iff_of_ne_top hne, U.mem_map_iff, map_closure_eq,
+    not_exists, not_and, ← M.closure_inter_ground (f ⁻¹' I)]
+  constructor
+  · rintro ⟨⟨I, hI, rfl⟩, h⟩
+    refine ⟨I, ⟨hI, fun hIU ↦ h _ hIU ?_⟩, rfl⟩
+    rw [hf.preimage_image_inter hI.subset_ground]
+  rintro ⟨I, ⟨hI, hIU⟩, rfl⟩
+  refine ⟨⟨I, hI, rfl⟩, fun X hXU hX ↦ hIU ?_⟩
+  rw [hf.preimage_image_inter hI.subset_ground, hf.image_eq_image_iff (U.subset_ground hXU)
+    (closure_subset_ground ..)] at hX
+  rwa [← hX]
+
 lemma projectBy_eq_self_iff (U : M.ModularCut) : M.projectBy U = M ↔ U = ⊥ ∨ U = ⊤ := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.elim (by simp +contextual) (by simp +contextual)⟩
   by_contra! hcon
@@ -190,11 +214,6 @@ lemma projectBy_map {β : Type*} (U : M.ModularCut) {f : α → β} (hf : InjOn 
   rw [hf.image_eq_image_iff (U.subset_ground hF₀U) (M.closure_subset_ground ..)] at h_eq
   rwa [← h_eq]
 
-@[simp]
-lemma projectBy_copy {N : Matroid α} (U : M.ModularCut) (hMN : M = N) :
-    N.projectBy (U.copy hMN) = M.projectBy U := by
-  subst hMN; rfl
-
 /-- Projecting out by a flat in a modular cut cancels the projection by the modular cut. -/
 lemma projectBy_project_eq_project_of_mem (U : M.ModularCut) (hF : F ∈ U) :
     (M.projectBy U).project F = M.project F := by
@@ -289,28 +308,11 @@ lemma projectBy_delete (U : M.ModularCut) (D : Set α) :
   simp_rw [delete_eq_restrict, projectBy_ground, ← projectBy_restrict]
   rfl
 
-lemma projectBy_principal_dep {X : Set α} (hXne : X.Nonempty) (hXE : X ⊆ M.E := by aesop_mat) :
-    (M.projectBy (ModularCut.principal M X)).Dep X := by
-  rw [dep_iff, and_iff_left (by simpa), projectBy_indep_iff]
-  suffices M.Indep X → ¬ (X ∩ M.E) ⊆ M.loops by
-    simpa [ModularCut.eq_top_iff, mem_principal_iff', inter_ground_subset_closure, loops]
-  intro hXi h
-  have hdj := hXi.disjoint_loops.mono_right h
-  simp [inter_eq_self_of_subset_left hXE, hXne.ne_empty] at hdj
-
-lemma projectBy_principal_eRk_eq_self (M : Matroid α) (hY : ¬ (X ⊆ M.closure Y))
-    (hX : X ⊆ M.E := by aesop_mat) : (M.projectBy (ModularCut.principal M X)).eRk Y = M.eRk Y := by
-  rw [← eRank_restrict, ← projectBy_restrict, (ModularCut.principal_restrict_eq_bot_iff hX).2 hY,
-    projectBy_bot, eRank_restrict]
-
-lemma projectBy_principal_eRk_add_one_eq (M : Matroid α) (hX : ¬ (X ⊆ M.loops))
-    (hY : X ⊆ M.closure Y) : (M.projectBy (ModularCut.principal M X)).eRk Y + 1 = M.eRk Y := by
-  rw [← eRank_restrict, ← projectBy_restrict, projectBy_eRank_add_one_eq, eRank_restrict]
-  · rwa [Ne, principal_restrict_eq_top_iff]
-  rwa [Ne, principal_restrict_eq_bot_iff, not_not]
-
 /-- Lift a matroid using a modular cut of the dual. -/
 def _root_.Matroid.liftBy (M : Matroid α) (U : M✶.ModularCut) : Matroid α := (M✶.projectBy U)✶
+
+@[simp]
+lemma liftBy_ground (M : Matroid α) (U : M✶.ModularCut) : (M.liftBy U).E = M.E := rfl
 
 @[simp]
 lemma liftBy_dual (M : Matroid α) (U : M✶.ModularCut) : (M.liftBy U)✶ = M✶.projectBy U := by
@@ -328,34 +330,8 @@ lemma liftBy_delete_eq_delete_of_dual_closure_mem (U : M✶.ModularCut) (hX : M�
   rw [← dual_inj, dual_delete, liftBy_dual, projectBy_contract_eq_contract_of_closure_mem _ hX,
     dual_delete]
 
-lemma liftBy_principal_codep (M : Matroid α) (hXne : X.Nonempty) (hX : X ⊆ M.E := by aesop_mat) :
-    (M.liftBy (ModularCut.principal M✶ X)).Codep X := by
-  rw [Codep, liftBy_dual]
-  exact projectBy_principal_dep hXne hX
 
 lemma liftBy_quotient (U : M✶.ModularCut) : M ≤q M.liftBy U := by
   convert M.dual_dual ▸ (projectBy_quotient U).dual
-
--- lemma foo (hY : (M.liftBy ((ModularCut.principal M✶ X))).Spanning Y) : M.Spanning Y := by
---   _
-
--- lemma bar (hI : (M.liftBy ((ModularCut.principal M✶ X))).Indep I) : M.Indep I := by
---   have := liftBy_quotinet
---   have hIE : I ⊆ M.E := sorry
---   rw [liftBy, ← coindep_def, coindep_iff_compl_spanning, projectBy_ground, dual_ground,
---     projectBy_spanning_iff (by simp)] at hI
---   sorry
-
-
--- lemma liftBy_principal_eRk_eq_self (hY : Y ⊆ M.closure X) :
---     (M.liftBy (ModularCut.principal M✶ X)).eRk Y = M.eRk Y := by
-
-
-  -- obtain ⟨I, hI⟩ := M.exists_isBasis Y
-  -- -- suffices hI' :
-
-
-
-
 
 end Matroid.ModularCut

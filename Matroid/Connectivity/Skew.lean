@@ -963,6 +963,10 @@ lemma skew_of_subset_loops {L : Set α} (hL : L ⊆ M.loops) (hX : X ⊆ M.E) : 
   rw [skew_iff_diff_loops_skew_left, diff_eq_empty.2 hL]
   apply empty_skew hX
 
+lemma skew_project_self (hX : X ⊆ M.E := by aesop_mat) (hY : Y ⊆ M.E := by aesop_mat) :
+    (M.project X).Skew X Y :=
+  skew_of_subset_loops (by simp [M.subset_closure X hX]) hY
+
 lemma IsLoop.skew (he : M.IsLoop e) (hX : X ⊆ M.E) : M.Skew {e} X :=
   skew_of_subset_loops (by simpa) hX
 
@@ -1133,22 +1137,36 @@ lemma contract_eq_delete_iff_skew_compl (hX : X ⊆ M.E := by aesop_mat) :
   rw [skew_iff_contract_restrict_eq_restrict, restrict_compl, ← contract_ground,
     restrict_ground_eq_self]
 
+lemma skew_iff_of_subset_left (hXY : X ⊆ Y) (hY : Y ⊆ M.E := by aesop_mat) :
+    M.Skew X Y ↔ X ⊆ M.loops := by
+  refine ⟨?_, fun h ↦ skew_of_subset_loops h (by grind)⟩
+  obtain ⟨I, J, hI, hJ, hIJ⟩ := M.exists_isBasis_subset_isBasis hXY
+  rw [skew_iff_closure_skew, ← hI.closure_eq_closure, ← hJ.closure_eq_closure,
+    ← skew_iff_closure_skew, Indep.skew_iff_disjoint (hJ.indep.subset (by grind)),
+    disjoint_iff_inter_eq_empty, inter_eq_self_of_subset_left hIJ]
+  rintro rfl
+  simpa using hI
+
+lemma skew_iff_of_subset_right (hXY : X ⊆ Y) (hY : Y ⊆ M.E := by aesop_mat) :
+    M.Skew Y X ↔ X ⊆ M.loops := by
+  rw [skew_comm, skew_iff_of_subset_left hXY]
+
 lemma Coindep.skew_compl_iff_subset_loops (hX : M.Coindep X) :
     M.Skew X (M.E \ X) ↔ X ⊆ M.loops := by
-  refine ⟨fun h ↦ ?_, fun h ↦ skew_of_subset_loops h diff_subset⟩
-  obtain ⟨B, hB⟩ := M.exists_isBasis (M.E \ X)
-  have hBM := hB.isBase_of_spanning hX.compl_spanning
-  obtain ⟨I, hI⟩ := M.exists_isBasis X
-  have hIB : B \ B = (I ∪ B) \ B := by rw [← hBM.eq_of_subset_indep
-    ((h.mono hI.subset hB.subset).union_indep hI.indep hB.indep) subset_union_right]
-  rw [union_diff_cancel_right (disjoint_sdiff_right.mono hI.subset hB.subset).inter_eq.subset,
-    diff_self] at hIB
-  rwa [← hIB, empty_isBasis_iff] at hI
+  rw [skew_iff_closure_skew_right, hX.closure_compl, skew_iff_of_subset_left hX.subset_ground]
 
 lemma Indep.skew_compl_iff_subset_coloops (hI : M.Indep I) :
     M.Skew I (M.E \ I) ↔ I ⊆ M.coloops := by
   rw [← dual_loops, ← hI.coindep.skew_compl_iff_subset_loops, ← contract_eq_delete_iff_skew_compl,
     ← contract_eq_delete_iff_skew_compl, ← dual_inj, dual_contract, dual_delete, eq_comm]
+
+lemma Spanning.skew_iff_left (hX : M.Spanning X) (hY : Y ⊆ M.E := by aesop_mat) :
+    M.Skew X Y ↔ Y ⊆ M.loops := by
+  rwa [skew_iff_closure_skew_left, hX.closure_eq, skew_iff_of_subset_right]
+
+lemma Spanning.skew_iff_right (hX : M.Spanning X) (hY : Y ⊆ M.E := by aesop_mat) :
+    M.Skew Y X ↔ Y ⊆ M.loops := by
+  rwa [skew_iff_closure_skew_right, hX.closure_eq, skew_iff_of_subset_left]
 
 lemma skew_iff_forall_isCircuit_of_inter_subset_loops (hX : X ⊆ M.E := by aesop_mat)
     (hY : Y ⊆ M.E := by aesop_mat) :
