@@ -18,6 +18,15 @@ lemma IsCompOf.preconnected (h : H.IsCompOf G) : H.Preconnected :=
 lemma walkable_connected (hx : x ∈ V(G)) : (G.walkable x).Connected :=
   (walkable_isCompOf hx).connected
 
+@[simp]
+lemma walkable_disjoint_iff : Disjoint V(G.walkable x) V(G.walkable y) ↔ ¬ G.ConnBetween x y := by
+  wlog hx : x ∈ V(G)
+  · simp [hx]
+  wlog hy : y ∈ V(G)
+  · simp [hy]
+  rw [(walkable_isCompOf hx).not_disjoint_iff (walkable_isCompOf hy) |>.not_right,
+    walkable_eq_walkable_iff_mem hx, mem_walkable_iff, connBetween_comm]
+
 lemma Preconnected.components_subsingleton (h : G.Preconnected) : G.Components.Subsingleton := by
   intro H₁ hH₁ H₂ hH₂
   obtain ⟨x, hx, rfl⟩ := hH₁.exists_walkable

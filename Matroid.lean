@@ -52,6 +52,7 @@ import Matroid.Extension.Minor
 import Matroid.Extension.ModularCut
 import Matroid.Extension.Parallel
 -- import Matroid.Extension.Perturbation
+-- import Matroid.Extension.Principal
 import Matroid.Extension.ProjectBy
 import Matroid.Extension.ProjectionBy
 import Matroid.Extension.Quotient
@@ -96,6 +97,7 @@ import Matroid.Graph.Degree.Max
 import Matroid.Graph.Distance
 import Matroid.Graph.Finite
 import Matroid.Graph.Forest
+-- import Matroid.Graph.Hom
 import Matroid.Graph.Independent
 import Matroid.Graph.Lattice
 import Matroid.Graph.Map

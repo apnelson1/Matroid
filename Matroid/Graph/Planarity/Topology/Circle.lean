@@ -19,8 +19,8 @@ variable {x y z : Circle} {a b : ℝ} {s : Set ℝ}
 
 -- noncomputable instance : InvolutiveNeg Circle := inferInstanceAs <| InvolutiveNeg (sphere _ _)
 
-noncomputable instance : InvolutiveNeg ↥(Submonoid.unitSphere ℂ) :=
-  inferInstanceAs <| InvolutiveNeg (sphere _ _)
+-- noncomputable instance : InvolutiveNeg ↥(Submonoid.unitSphere ℂ) :=
+--   inferInstanceAs <| InvolutiveNeg (sphere _ _)
 
 lemma path_isClosedEmbedding_of_ne (hne : x ≠ y) : IsClosedEmbedding (path x y) :=
   (path x y).continuous.isClosedEmbedding (path_injective_of_ne hne)

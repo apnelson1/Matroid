@@ -88,8 +88,9 @@ lemma exists_vert_of_circuit (hC : IsCircuit C) : ∃ v ∈ C, v ∈ V(G) := by
   by_contra! hdj
   obtain ⟨U, hU, hCU⟩ := (hC.isPathConnected).exists_part_pathComponentPartition
     hdj.subset_compl_right
-  exact not_isCircuit_real _ <| hC.restrictSubtype hCU |>.image (graphLike U hU).isEmbedding
-  |>.image .subtypeVal
+  exact not_isCircuit_real _ <| hC.restrictSubtype hCU |>.image
+    (f := ⟨_, (graphLike U hU).continuous⟩) (graphLike U hU).injective
+    |>.image (f := ⟨_, continuous_subtype_val⟩) Subtype.val_injective
 
 -- def dualGraph (f : α → E) (hf : Topology.IsEmbedding f) : Graph (Set E) (Set α) where
 --   vertexSet := ComponentPartition (range f)

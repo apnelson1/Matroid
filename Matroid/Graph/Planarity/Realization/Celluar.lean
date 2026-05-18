@@ -30,8 +30,7 @@ instance : FunLike (CellularEmbedding G E) G.Realization E where
 @[reducible]
 def Faces (φ : CellularEmbedding G E) := ConnectedComponents ↑((range φ.toFun)ᶜ)
 
-def FaceMk (f : Faces φ) : Set E :=
-  Subtype.val '' ConnectedComponents.mk ⁻¹' {f}
+def FaceMk (f : Faces φ) : Set E := Subtype.val '' ConnectedComponents.mk ⁻¹' {f}
 
 lemma faceMk_nonempty (f : Faces φ) : (FaceMk f).Nonempty := by
   simp only [FaceMk, ConnectedComponents.mk, image_nonempty]
@@ -53,11 +52,28 @@ lemma faceMk_eq_connectedComponentIn (f : Faces φ) (x : E)
   rw [connectedComponentIn_eq_image hxran]
   simp [← connectedComponent_eq_iff_mem, ConnectedComponents.coe_eq_coe]
 
-lemma homeomorphism_FaceMk (f : Faces φ) : Nonempty (FaceMk f ≃ₜ ball (0 : ℂ) 1) := by
+lemma homeomorphism_faceMk (f : Faces φ) : Nonempty (FaceMk f ≃ₜ ball (0 : ℂ) 1) := by
   obtain ⟨x, hx⟩ := φ.faceMk_nonempty f
   obtain h := φ.cellular x <| (φ.faceMk_disjoint_range f).subset_compl_right hx
-  rw [← φ.faceMk_eq_connectedComponentIn f x hx] at h
-  exact h
+  rwa [← φ.faceMk_eq_connectedComponentIn f x hx] at h
+
+def drawing (φ : CellularEmbedding G E) : Set E := range φ.toFun
+
+lemma vertexMK_mem_drawing (v : V(G)) : φ (vertexMk v) ∈ drawing φ := by
+  use vertexMk v
+  rfl
+
+lemma edge_subset_drawing (e : E(G)) : range (φ ∘ edgePath e) ⊆ drawing φ := by
+  rintro x ⟨t, ht, rfl⟩
+  use (edgePath e) t
+  rfl
+
+-- instance : Topology.CWComplex (univ : Set E) where
+--   cell n := match n with
+--     | 0 => ULift.{u_2, u_3} V(G)
+--     | 1 => ULift E(G)
+--     | _ + 2 => ULift.{max u v, 0} Empty
+
 
 end TopologicalSpace
 

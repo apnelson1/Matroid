@@ -70,7 +70,7 @@ lemma disjoint_preimage_subtypeval_openCell_one {i j : cell K 1} (hij : i ≠ j)
   rw [Set.disjoint_iff_inter_eq_empty, Set.eq_empty_iff_forall_notMem] at hdis
   exact hdis z.val (Set.mem_inter hzi hzj)
 
-lemma not_isCircuit_range_subset_openCell_one {f : Circle → E} (hf : IsEmbedding f)
+lemma not_isCircuit_range_subset_openCell_one {f : C(Circle, E)} (hf : Injective f)
     (hr : range f ⊆ openCell 1 e) : False := by
   /- Embed `Circle` into `ℝ` through the open `1`-cell chart and apply `not_isCircuit_real`. -/
   let g : Circle → ℝ := fun x ↦ (map 1 e).symm (f x) 0
@@ -78,15 +78,15 @@ lemma not_isCircuit_range_subset_openCell_one {f : Circle → E} (hf : IsEmbeddi
     rw [← (map 1 e).image_source_eq_target, source_eq]
     simpa [openCell] using hr (mem_range_self x)
   have hg_cont : Continuous g :=
-    (continuous_apply 0).comp <| (continuousOn_symm 1 e).comp_continuous hf.continuous htarget
+    (continuous_apply 0).comp <| (continuousOn_symm 1 e).comp_continuous f.continuous htarget
   have hg_inj : Injective g := by
     intro x y hxy
     have hfin : (map 1 e).symm (f x) = (map 1 e).symm (f y) := by
       ext i
       fin_cases i
       exact hxy
-    exact hf.injective <| (map 1 e).symm.injOn (htarget x) (htarget y) hfin
-  exact not_isCircuit_real (range g) ⟨g, (hg_cont.isClosedEmbedding hg_inj).isEmbedding, rfl⟩
+    exact hf <| (map 1 e).symm.injOn (htarget x) (htarget y) hfin
+  exact not_isCircuit_real (range g) ⟨⟨g, hg_cont⟩, hg_inj, rfl⟩
 
 lemma exists_Ioo_subset_image_Ioo_of_continuousOn_injOn {a t b : unitInterval}
     {g : unitInterval → ℝ} (hat : a < t) (htb : t < b) (hg_cont : ContinuousOn g (Icc a b))
@@ -313,11 +313,6 @@ theorem subset_of_not_disjoint_of_path (P : Path (map 0 u 0) (map 0 v 0))
     continuous_subtype_val, hA_open⟩ ⟨⟨x, hxe⟩, hxP⟩
   exact fun y hy ↦ (show (⟨y, hy⟩ : openCell 1 e) ∈ A by simp [hA_univ])
 
--- theorem path_to_walk (P : Path (map 0 u 0) (map 0 v 0)) (h : range P ⊆ skeleton K 1) :
---     ∃ W, (OneSkeletonGraph K).IsWalk W ∧ W.first = u ∧ W.last = v := by
-
---   sorry
-
 /- Cycle & Jordan curve correspondence
 
   Given a CW complex `K`, a subset of `K` is a jordan curve iff it is a cycle of its one skeleton.
@@ -327,6 +322,7 @@ theorem cycle_iff_jordan_curve (hCK : C ⊆ skeleton K 1) :
   refine ⟨fun hC ↦ ?_, fun ⟨C', hC', hC'le, hC'eq⟩ ↦ ?_⟩
   · obtain ⟨v, hv⟩ := exists_openCell_zero_subset_of_isCircuit hC hCK
     rw [openCell_zero_eq_singleton, singleton_subset_iff] at hv
+    obtain ⟨P, hP, rfl⟩ := hC.exists_path_injOn_Ico hv
     sorry
   subst C
   sorry
@@ -367,7 +363,7 @@ def CWComplex.DualGraph : Graph (cell (univ : Set E) 2) (cell (univ : Set E) 1) 
 
 /-- Let `K` be a CW decomposition of a surface `E`. Let `S` be a union of some faces and edges.
 `S` is connected iff the dual graph induced by the faces and edges of `S` is connected. -/
-theorem CWComplex.dualGraph_preConnected (F : Set (cell (univ : Set E) 2))
+theorem CWComplex.dualGraph_preconnected (F : Set (cell (univ : Set E) 2))
     (E : Set (cell (univ : Set E) 1)) : Graph.Preconnected ((DualGraph.induce F).restrict E) ↔
     IsPreconnected ((⋃ e ∈ E, closedCell 1 e) ∪ (⋃ f ∈ F, openCell 2 f)) := by
   refine ⟨fun h => ?_, fun h => ?_⟩
@@ -378,7 +374,7 @@ theorem CWComplex.dualGraph_connected (F : Set (cell (univ : Set E) 2)) (hF : F.
     (E : Set (cell (univ : Set E) 1)) : Graph.Connected ((DualGraph.induce F).restrict E) ↔
     IsConnected ((⋃ e ∈ E, closedCell 1 e) ∪ (⋃ f ∈ F, openCell 2 f)) := by
   rw [Graph.connected_iff, IsConnected]
-  refine and_congr ?_ <| dualGraph_preConnected F E
+  refine and_congr ?_ <| dualGraph_preconnected F E
   simp only [vertexSet_restrict, vertexSet_induce, hF, union_nonempty, nonempty_iUnion,
   exists_prop, openCell_nonempty, and_true, true_iff]
   exact Or.inr ⟨hF.some, hF.some_mem⟩

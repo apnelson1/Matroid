@@ -125,8 +125,8 @@ lemma girth_edgeConn_bound_of_connected' (h : G.matroidalDual H) {k g : ℕ} (hk
 lemma not_matroidalDual_K5 [Nonempty α] (G : Graph α _) : ¬ (CompleteGraph 5).matroidalDual G := by
   rintro h
   obtain ⟨H, h, _, hHcon⟩ := h.exists_connected_finite_matroidalDual
-  have := h.girth_edgeConn_bound_of_connected' (k := 4) (g := 3) (by simp) ?_ ?_ (by simp) hHcon
-    (by use 0, by simp, 1, by simp, by simp)
+  have := h.girth_edgeConn_bound_of_connected' (k := 4) (g := 3) (by simp)
+    (Matroid.three_le_girth _) ?_ (by simp) hHcon (by use 0, by simp, 1, by simp, by simp)
   rw [mul_add] at this
   norm_num at this
   all_goals sorry

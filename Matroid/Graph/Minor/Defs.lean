@@ -34,6 +34,24 @@ lemma ConnBetween.eq_or_isLink_of_edgeSet_singleton (h : G.ConnBetween x y) (hE 
     obtain rfl := hxy.left_unique hywf.symm
     simp at hxw
 
+@[simp]
+lemma connBetween_isRepFun_left_iff {φ : α → α} (hφ : G.connPartition.IsRepFun φ) :
+    G.ConnBetween (φ x) y ↔ G.ConnBetween x y := by
+  wlog hx : x ∈ V(G)
+  · have : φ x = x := hφ.apply_of_notMem (by simpa)
+    simp [hx, this]
+  have h' : G.ConnBetween x (φ x) := by simpa using hφ.rel_apply (by simpa)
+  exact ⟨fun h => h'.trans h, fun h => h'.symm.trans h⟩
+
+@[simp]
+lemma connBetween_isRepFun_right_iff {φ : α → α} (hφ : G.connPartition.IsRepFun φ) :
+    G.ConnBetween x (φ y) ↔ G.ConnBetween x y := by
+  wlog hy : y ∈ V(G)
+  · have : φ y = y := hφ.apply_of_notMem (by simpa)
+    simp [hy, this]
+  have h' : G.ConnBetween y (φ y) := by simpa using hφ.rel_apply (by simpa)
+  exact ⟨fun h => h.trans h'.symm, fun h => h.trans h'⟩
+
 /-! ## Contracting a set of edges -/
 
 variable {α' α'' : Type*}
@@ -54,7 +72,7 @@ def contract (G : Graph α β) (C : Set β) (φ : α → α') : Graph α' β :=
 
 -- attribute [grind =] vertexSet_contract edgeSet_contract contract_isLink
 
-notation:70 G " /["C ", " φ"] " => Graph.contract G C φ
+notation:70 G " /["C ", " φ"]" => Graph.contract G C φ
 
 /- lemmas about Contract -/
 
@@ -418,19 +436,22 @@ lemma sContract_isPartitionGraph [G.IsPartitionGraph] : G/[C].IsPartitionGraph :
 
 end IsPartitionGraph
 
-structure minorMap (G : Graph α β) (H : Graph α' β) where
-  map : V(G) → H.Subgraph
+structure minorMap (G H : Graph α β) where
+  map : V(G) → Graph α β
+  map_le : ∀ x, map x ≤ H
+  mem_map : ∀ x, x.val ∈ V(map x)
   disj : Pairwise (Disjoint on map)
-  link : ∀ e x y, G.IsLink e x.val y.val →
-    ∃ u v, H.IsLink e u v ∧ u ∈ V((map x).val) ∧ v ∈ V((map y).val)
-  conn : ∀ x, (map x).val.Connected
+  edge_disj : ∀ x, Disjoint E(G) E(map x)
+  link : ∀ e x y, G.IsLink e x.val y.val → ∃ u v, H.IsLink e u v ∧ u ∈ V(map x) ∧ v ∈ V(map y)
+  -- Relation.Map (G.IsLink e ·.val ·.val) map map
+  conn : ∀ x, (map x).Connected
 
 @[ext]
 lemma minorMap_ext {F₁ F₂ : minorMap G H} (hmap : F₁.map = F₂.map) : F₁ = F₂ := by
   cases F₁; cases F₂
   simpa
 
-instance : FunLike (minorMap G H) V(G) H.Subgraph where
+instance : FunLike (minorMap G H) V(G) (Graph α β) where
   coe f := f.map
   coe_injective' _ _ := minorMap_ext
 
@@ -442,23 +463,59 @@ set_option backward.isDefEq.respectTransparency false in
 lemma minorMap.ne_bot (F : minorMap G H) (x : V(G)) : F.map x ≠ ⊥ := by
   simpa using (F.conn x).nonempty
 
+lemma minorMap.vertexSet_mono (F : minorMap G H) : V(G) ⊆ V(H) :=
+  fun x hx ↦ (F.map_le ⟨x, hx⟩).vertexSet_mono (F.mem_map ⟨x, hx⟩)
+
+lemma minorMap.edgeSet_mono (F : minorMap G H) : E(G) ⊆ E(H) := by
+  intro e he
+  obtain ⟨u, v, huv⟩ := G.exists_isLink_of_mem_edgeSet he
+  obtain ⟨_, _, hab, -, -⟩ := F.link e ⟨u, huv.left_mem⟩ ⟨v, huv.right_mem⟩ huv
+  exact hab.edge_mem
+
+lemma minorMap.mem_iff_eq (F : minorMap G H) (x : V(G)) (hy : y ∈ V(F.map x)) :
+    y ∈ V(G) ↔ x = y := by
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · have := by simpa only [Graph.disjoint_iff, Subtype.ext_iff, not_disjoint_iff] using
+      F.disj.eq (a := x) (b := ⟨y, h⟩)
+    exact this ⟨y, hy, F.mem_map ⟨y, h⟩⟩
+  rintro rfl
+  exact x.prop
+
+lemma minorMap.inj_of_mem (F : minorMap G H) {x y : V(G)} (hvx : v ∈ V(F.map x))
+    (hvy : v ∈ V(F.map y)) : x = y :=
+  F.disj.eq (a := x) (b := y) <| by
+    simp only [Graph.disjoint_iff, not_disjoint_iff]
+    exact ⟨v, hvx, hvy⟩
+
 def minorMap_refl (G : Graph α β) : minorMap G G where
-  map v := ⟨Graph.noEdge {v.val} β, by simp⟩
+  map v := Graph.noEdge {v.val} β
+  map_le v := by simp
+  mem_map v := by simp
   disj u v huv := by simpa [Subtype.coe_inj]
+  edge_disj v := by simp
   link := by simp
   conn v := by simp
 
--- TODO: Given indexed subgraphs of G, their union is G.induce (union of vertex sets)
--- |>.restrict (union of edge sets)
+lemma iUnion_eq_of_forall_le {ι : Type*} {Gι : ι → Graph α β} (hG : ∀ i, Gι i ≤ G) :
+    Graph.iUnion Gι (compatible_of_forall_map_le hG) = G[⋃ i, V(Gι i)] ↾ ⋃ i, E(Gι i) := by
+  let hcomp := compatible_of_forall_map_le hG
+  refine Compatible.ext (by simp) ?_ ?_
+  · simp only [edgeSet_iUnion, edgeSet_restrict, right_eq_inter, iUnion_subset_iff]
+    intro i e hei
+    obtain ⟨u, v, huv⟩ := exists_isLink_of_mem_edgeSet hei
+    exact ⟨u, v, (hG i).isLink_mono huv, by grind [mem_iUnion]⟩
+  exact G.compatible_of_le_le ((Graph.iUnion_le_iff hcomp).mpr hG)
+    <| restrict_le.trans <| induce_le <| by simp [fun i ↦ vertexSet_mono (hG i)]
+
 -- def minorMap.trans {I : Graph α'' β} (F₁ : minorMap G H) (F₂ : minorMap H I) : minorMap G I where
---   map v := ⟨
---     I[⋃ x : V((F₁.map v).val), V((F₂.map ⟨x.val, vertexSet_mono (F₁.map v).prop x.prop⟩).val)]
---     ↾ ⋃ x : V((F₁.map v).val), E((F₂.map ⟨x.val, vertexSet_mono (F₁.map v).prop x.prop⟩).val),
---     restrict_le.trans <| induce_le <| by
+--   map v :=
+--     I[⋃ x : V(F₁.map v), V(F₂.map ⟨x.val, (F₁.map_le v).vertexSet_mono x.prop⟩)]
+--     ↾ (E(F₁.map v) ∪ ⋃ x : V(F₁.map v), E(F₂.map ⟨x.val, (F₁.map_le v).vertexSet_mono x.prop⟩))
+--   map_le v := restrict_le.trans <| induce_le <| by
 --       simp only [iUnion_coe_set, iUnion_subset_iff]
---       exact fun x hx ↦ vertexSet_mono (F₂.map _).prop⟩
+--       exact fun x hx ↦ vertexSet_mono (F₂.map_le _)
 --   disj u v huv := by
---     simp only [iUnion_coe_set, Subgraph.disjoint_iff, vertexSet_restrict, vertexSet_induce,
+--     simp only [iUnion_coe_set, Graph.disjoint_iff, vertexSet_restrict, vertexSet_induce,
 --       disjoint_iUnion_right, disjoint_iUnion_left]
 --     intro x hx y hy
 --     generalize_proofs hyH hxH
@@ -472,8 +529,13 @@ def minorMap_refl (G : Graph α β) : minorMap G G where
 --     obtain ⟨a, b, hab, ha, hb⟩ := F₂.link e ⟨u, huv.left_mem⟩ ⟨v, huv.right_mem⟩ huv
 --     exact ⟨a, b, hab, (by use u, hu), (by use v, hv)⟩
 --   conn v := by
---     simp only [iUnion_coe_set]
-
+--     refine connected_iff.mpr ⟨?_, fun a b ha hb↦ ?_⟩
+--     · simp only [iUnion_coe_set, vertexSet_restrict, vertexSet_induce, nonempty_iUnion]
+--       exact ⟨_, (F₁.conn v).nonempty.some_mem, (F₂.conn _).nonempty⟩
+--     simp only [iUnion_coe_set, vertexSet_restrict, vertexSet_induce, mem_iUnion] at ha hb
+--     obtain ⟨x, hx, ha⟩ := ha
+--     obtain ⟨y, hy, hb⟩ := hb
+--     have hxy := F₁.conn v |>.pre x y hx hy
 --     sorry
 
 -- instance : IsPreorder (Graph α β) IsMinor where
@@ -483,21 +545,27 @@ def minorMap_refl (G : Graph α β) : minorMap G G where
 -- Not antisymm (only upto vertex relabeling)
 
 def minorMap_of_le (h : G ≤ H) : minorMap G H where
-  map v := ⟨Graph.noEdge {v.val} β, by simp [vertexSet_mono h v.prop]⟩
+  map v := Graph.noEdge {v.val} β
+  map_le v := by simp [vertexSet_mono h v.prop]
+  mem_map v := by simp
   disj u v huv := by simpa [Subtype.coe_inj]
+  edge_disj v := by simp
   link e x y hxy := ⟨x, y, h.isLink_mono hxy, by simp⟩
   conn v := by simp
 
 def minorMap_of_contract (hφ : (G ↾ C).connPartition.IsRepFun φ) : minorMap (G /[C, φ]) G where
-  map v := ⟨(G ↾ C).walkable v.val, walkable_isClosedSubgraph.le.trans restrict_le⟩
+  map v := (G ↾ C).walkable v.val
+  map_le v := walkable_isClosedSubgraph.le.trans restrict_le
+  mem_map v := by simpa using hφ.image_subset_supp (by simpa [-Subtype.coe_prop] using v.prop)
   disj u v huv := by
     obtain ⟨u, ⟨x, hx, rfl⟩⟩ := u
     obtain ⟨v, ⟨y, hy, rfl⟩⟩ := v
-    simp only [vertexSet_contract, ne_eq, Subtype.mk.injEq, Subgraph.disjoint_iff,
-      disjoint_iff_forall_notMem, mem_walkable_iff] at huv ⊢
-    intro z hxz hyz
-    have := hφ.apply_eq_apply <| by simpa using hxz.trans hyz.symm
-    simp [huv, hφ.idem] at this
+    simpa [hφ.apply_eq_apply_iff_rel (by simpa : x ∈ _), hφ] using huv
+  edge_disj v := by
+    simp only [edgeSet_contract, vertexSet_contract]
+    refine disjoint_sdiff_inter.mono_right (walkable_isCompOf ?_).le.edgeSet_mono
+    rw [vertexSet_restrict]
+    exact contract_vertex_mono hφ restrict_le v.prop
   link e x y hxy := by
     obtain ⟨x, ⟨x', hx', rfl⟩⟩ := x
     obtain ⟨y, ⟨y', hy', rfl⟩⟩ := y
@@ -513,29 +581,145 @@ def minorMap_of_contract (hφ : (G ↾ C).connPartition.IsRepFun φ) : minorMap 
     have := by simpa only [connPartition_supp, vertexSet_restrict] using hφ.image_subset_supp
     exact this v.prop
 
-private noncomputable def minorMap.some_vx (F : minorMap G H) : V(G) → V(H) :=
-  fun x ↦ ⟨(F.conn x).nonempty.some, vertexSet_mono (F.map x).prop (F.conn x).nonempty.some_mem⟩
+lemma minorMap.mem_iUnion_of_edge_mem (F : minorMap G H) (he : e ∈ E(G) ∪ ⋃ v, E(F.map v))
+    (h : H.Inc e x) : x ∈ ⋃ v, V(F.map v) := by
+  rw [mem_iUnion]
+  obtain (he | ⟨v, ⟨a, rfl⟩, he⟩) := he
+  · obtain ⟨u, v, heG⟩ := G.exists_isLink_of_mem_edgeSet he
+    obtain ⟨a, b, hab, ha, hb⟩ := F.link e ⟨u, heG.left_mem⟩ ⟨v, heG.right_mem⟩ heG
+    grind
+  use a, h.of_le_of_mem (F.map_le a) he |>.vertex_mem
 
-private lemma minorMap.some_vx_mem (F : minorMap G H) (x : V(G)) :
-    (F.some_vx x).val ∈ V((F.map x).val) := by
-  simp only [minorMap.some_vx, Subtype.coe_mk]
-  exact (F.conn x).nonempty.some_mem
+private def minorMap.intermediate (F : minorMap G H) : Graph α β :=
+  H[⋃ x, V(F.map x)] ↾ (E(G) ∪ ⋃ x, E(F.map x))
 
-private lemma minorMap.some_vx_injective (F : minorMap G H) :
-    Function.Injective (minorMap.some_vx F) := by
-  refine fun x y hxy ↦ F.disj.eq ?_
-  simp only [Subgraph.disjoint_iff, not_disjoint_iff]
-  use F.some_vx x, F.some_vx_mem x, hxy ▸ F.some_vx_mem y
+@[simp]
+private lemma minorMap.vertexSet_intermediate (F : minorMap G H) :
+    V(F.intermediate) = ⋃ x, V(F.map x) := by
+  simp [intermediate]
 
-lemma minorMap.vertex_encard_le (F : minorMap G H) : V(G).encard ≤ V(H).encard :=
-  ENat.card_le_card_of_injective F.some_vx_injective
+@[simp]
+private lemma minorMap.edgeSet_intermediate (F : minorMap G H) :
+    E(F.intermediate) = E(G) ∪ ⋃ x, E(F.map x) := by
+  rw [intermediate, edgeSet_restrict, inter_eq_right, edgeSet_induce_eq_diff, subset_diff,
+    union_subset_iff]
+  refine ⟨⟨F.edgeSet_mono, ?_⟩, ?_⟩
+  · simp only [iUnion_coe_set, iUnion_subset_iff]
+    intro x hx
+    exact F.map_le ⟨x, hx⟩ |>.edgeSet_mono
+  simp only [disjoint_iff_forall_notMem, mem_setIncEdges_iff, mem_diff, not_exists, not_and,
+    and_imp]
+  exact fun _ he _ _ hy hey ↦ hy <| F.mem_iUnion_of_edge_mem he hey
 
-lemma minorMap.edgeSet_mono (F : minorMap G H) : E(G) ⊆ E(H) := by
+private lemma minorMap.intermediate_le (F : minorMap G H) : F.intermediate ≤ H := by
+  refine restrict_le.trans <| induce_le ?_
+  simp only [iUnion_coe_set, iUnion_subset_iff]
+  exact fun x hx ↦ (F.map_le ⟨x, hx⟩).vertexSet_mono
+
+private lemma minorMap.vertexSet_subset_intermediate (F : minorMap G H) :
+    V(G) ⊆ V(F.intermediate) := by
+  intro x hx
+  simp only [vertexSet_intermediate, mem_iUnion]
+  use ⟨x, hx⟩, F.mem_map ⟨x, hx⟩
+
+private lemma minorMap.edgeSet_subset_intermediate (F : minorMap G H) :
+    E(G) ⊆ E(F.intermediate) := by
   intro e he
-  obtain ⟨u, v, huv⟩ := G.exists_isLink_of_mem_edgeSet he
-  obtain ⟨_, _, hab, -, -⟩ := F.link e ⟨u, huv.left_mem⟩ ⟨v, huv.right_mem⟩ huv
-  exact hab.edge_mem
+  simp [edgeSet_intermediate, mem_iUnion, he]
 
+private lemma minorMap.map_isCompOf_intermediate (F : minorMap G H) (v : V(G)) :
+    (F.map v).IsCompOf (F.intermediate ↾ ⋃ x, E(F.map x)) := by
+  unfold intermediate
+  rw [restrict_restrict, inter_eq_right.mpr subset_union_right, ← iUnion_eq_of_forall_le F.map_le]
+  refine (F.conn v).IsCompOf_of_isClosedSubgraph <| IsClosedSubgraph.mk' (Graph.le_iUnion ..) ?_
+  intro e x he hx
+  simp only [iUnion_inc_iff, Subtype.exists] at he
+  obtain ⟨u, hu, heu⟩ := he
+  obtain rfl := F.disj.eq <| Graph.disjoint_iff.not.mpr <| not_disjoint_iff.mpr
+    ⟨x, hx, heu.vertex_mem⟩
+  exact heu.edge_mem
+
+private noncomputable def minorMap.repFun (F : minorMap G H) : α → α :=
+  letI : DecidablePred (∃ v : V(G), · ∈ V(F.map v)) := Classical.decPred _
+  fun x ↦ if h : ∃ v : V(G), x ∈ V(F.map v) then h.choose else x
+
+private lemma minorMap.repFun_of_mem_map (F : minorMap G H) {x : V(G)} (hx : v ∈ V(F.map x)) :
+    F.repFun v = x := by
+  have h : ∃ u, v ∈ V(F.map u) := by use x
+  simp only [repFun, h, ↓reduceDIte, ← Subtype.ext_iff]
+  exact F.disj.eq <| Graph.disjoint_iff.not.mpr <| not_disjoint_iff.mpr ⟨v, h.choose_spec, hx⟩
+
+private lemma minorMap.repFun_of (F : minorMap G H) (x : V(G)) : F.repFun x.val = x.val := by
+  simp only [dite_eq_right_iff, repFun]
+  intro h
+  rw [← F.mem_iff_eq _ h.choose_spec]
+  exact x.prop
+
+private lemma minorMap.repFun_mapsTo (F : minorMap G H) :
+    MapsTo F.repFun V(F.intermediate) V(G) := by
+  intro x hx
+  simp only [intermediate, vertexSet_restrict, vertexSet_induce, mem_iUnion] at hx
+  simp [repFun, hx]
+
+private lemma minorMap.repFun_prop (F : minorMap G H) (x : α) (hx : x ∈ V(F.intermediate)) :
+    x ∈ V(F.map (⟨F.repFun x, F.repFun_mapsTo hx⟩)) := by
+  simp only [intermediate, vertexSet_restrict, vertexSet_induce, mem_iUnion] at hx
+  simp only [repFun, hx, ↓reduceDIte, Subtype.coe_eta]
+  exact hx.choose_spec
+
+private lemma minorMap.repFun_isRepFun (F : minorMap G H) :
+    (F.intermediate ↾ ⋃ x, E(F.map x)).connPartition.IsRepFun F.repFun where
+  apply_of_notMem x hx := by
+    simp only [connPartition_supp, vertexSet_restrict, vertexSet_intermediate] at hx ⊢
+    grind [repFun, mem_iUnion]
+  rel_apply x hx := by
+    simp only [connPartition_supp, vertexSet_restrict, vertexSet_intermediate, mem_iUnion,
+      Subtype.exists, connPartition_rel_iff] at hx ⊢
+    obtain ⟨v, hv, hxv⟩ := hx
+    rw [F.repFun_of_mem_map hxv]
+    exact F.conn ⟨v, hv⟩ |>.pre x v hxv (F.mem_map ⟨v, hv⟩) |>.mono
+      (F.map_isCompOf_intermediate ⟨v, hv⟩).le
+  apply_eq_apply x y hxy := by
+    have hx : ∃ u, x ∈ V(F.map u) := by simpa using hxy.left_mem
+    have hy : ∃ v, y ∈ V(F.map v) := by simpa using hxy.right_mem
+    simp only [connPartition_rel_iff, repFun, hx, ↓reduceDIte, hy, ← Subtype.ext_iff] at hxy ⊢
+    refine F.inj_of_mem (hx.choose_spec) ?_
+    rw [F.map_isCompOf_intermediate hy.choose |>.eq_walkable_of_mem_walkable hy.choose_spec]
+    exact hxy.symm
+
+@[simp]
+private lemma minorMap.intermediate_isLink (F : minorMap G H) :
+    F.intermediate.IsLink e x y ↔ H.IsLink e x y ∧ e ∈ (E(G) ∪ ⋃ x, E(F.map x)) := by
+  refine ⟨fun h ↦ ⟨F.intermediate_le.isLink_mono h, F.edgeSet_intermediate ▸ h.edge_mem⟩,
+    fun ⟨hH, he⟩ ↦ ?_⟩
+  rw [intermediate, restrict_isLink, induce_isLink]
+  exact ⟨he, hH, F.mem_iUnion_of_edge_mem he hH.inc_left, F.mem_iUnion_of_edge_mem he hH.inc_right⟩
+
+lemma minorMap.exists_le_contract (F : minorMap G H) :
+    ∃ H' C φ, H' ≤ H ∧ (H' ↾ C).connPartition.IsRepFun φ ∧ G = H' /[C, φ] := by
+  use F.intermediate, ⋃ x, E(F.map x), F.repFun, F.intermediate_le, F.repFun_isRepFun
+  ext a b c
+  · simp only [iUnion_coe_set, vertexSet_contract, mem_image]
+    refine ⟨fun haG ↦ ⟨a, F.vertexSet_subset_intermediate haG, F.repFun_of ⟨a, haG⟩⟩, ?_⟩
+    rintro ⟨b, hb, rfl⟩
+    exact F.repFun_mapsTo hb
+  simp only [contract_isLink, intermediate_isLink]
+  refine ⟨fun habc ↦ ?_, ?_⟩
+  · have habc' : G.IsLink a (⟨b, habc.left_mem⟩ : V(G)).val (⟨c, habc.right_mem⟩ : V(G)).val := habc
+    obtain ⟨x, y, hxy, hx, hy⟩ := F.link a _ _ habc'
+    refine ⟨⟨x, y, ⟨hxy, Or.inl habc.edge_mem⟩, ?_, ?_⟩, ?_⟩
+    · rw [F.repFun_of_mem_map hx]
+    · rw [F.repFun_of_mem_map hy]
+    simp only [mem_iUnion, not_exists]
+    exact fun v ↦ F.edge_disj v |>.notMem_of_mem_left habc.edge_mem
+  rintro ⟨⟨x, y, ⟨hxy, ha⟩, rfl, rfl⟩, hamap⟩
+  replace ha := ha.resolve_right hamap
+  obtain ⟨u, v, huv⟩ := G.exists_isLink_of_mem_edgeSet ha
+  obtain ⟨n, m, hnm, hn, hm⟩ := F.link a ⟨u, huv.left_mem⟩ ⟨v, huv.right_mem⟩ huv
+  obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := hxy.eq_and_eq_or_eq_and_eq hnm <;>
+    rw [F.repFun_of_mem_map hn, F.repFun_of_mem_map hm]
+  · exact huv
+  exact huv.symm
 
 lemma IsMinor.refl (G : Graph α β) : G ≤m G := ⟨minorMap_refl G⟩
 
