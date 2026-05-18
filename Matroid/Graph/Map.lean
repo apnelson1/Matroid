@@ -226,6 +226,10 @@ lemma map_deleteVerts_preimage {X : Set α'} : f ''ᴳ (G - (f ⁻¹' X)) = (f '
   · simp only [map_isLink, deleteVerts_isLink_iff, mem_preimage, ← exists_and_right, and_assoc]
     grind
 
+@[simp]
+lemma induce_preimage_map {X : Set α'} (h : X ⊆ f '' V(H)) : f ''ᴳ (H[f ⁻¹' X]) = (f ''ᴳ H)[X] := by
+  ext <;> grind
+
 lemma surjOn_of_le_map {G} (h : G ≤ f ''ᴳ H) : SurjOn f V(H) V(G) := by
   intro a' ha'
   exact vertexSet_mono h ha'
@@ -251,10 +255,9 @@ lemma exists_map_eq_of_le_map {G} (h : G ≤ f ''ᴳ H) : ∃ H' ≤ H, f ''ᴳ 
   have hxy'' := hxy'.of_le_of_mem h he
   use x, y, hxy, ⟨hxy.left_mem, hxy''.left_mem⟩, hxy.right_mem, hxy''.right_mem
 
-lemma exists_le_map_comm {G} : (∃ f : α → α', G ≤ f ''ᴳ H) ↔ ∃ f H', H' ≤ H ∧ f ''ᴳ H' = G := by
-  refine ⟨fun ⟨f, hf⟩ ↦ ⟨f, exists_map_eq_of_le_map hf⟩, ?_⟩
-  rintro ⟨f, H', hH', rfl⟩
-  use f
+lemma exists_le_map_comm {G} (f : α → α') : G ≤ f ''ᴳ H ↔ ∃ H', H' ≤ H ∧ f ''ᴳ H' = G := by
+  refine ⟨fun hf ↦ exists_map_eq_of_le_map hf, ?_⟩
+  rintro ⟨H', hH', rfl⟩
   grw [hH']
 
 /-! ### IsContractClosed predicate

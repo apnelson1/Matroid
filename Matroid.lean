@@ -13,7 +13,7 @@ import Matroid.Closure
 import Matroid.Connectivity.Basic
 import Matroid.Connectivity.ConnSystem.Basic
 import Matroid.Connectivity.ConnSystem.Matroid
--- import Matroid.Connectivity.ConnSystem.Tangle
+import Matroid.Connectivity.ConnSystem.Tangle
 import Matroid.Connectivity.Connected
 import Matroid.Connectivity.Core
 import Matroid.Connectivity.Extension
@@ -24,20 +24,20 @@ import Matroid.Connectivity.Extension
 -- import Matroid.Connectivity.Fan.Cyclic
 import Matroid.Connectivity.Minor
 import Matroid.Connectivity.Nat
--- import Matroid.Connectivity.Separation.Abstract
--- import Matroid.Connectivity.Separation.Adherent
+import Matroid.Connectivity.Separation.Abstract
+import Matroid.Connectivity.Separation.Adherent
 import Matroid.Connectivity.Separation.Basic
--- import Matroid.Connectivity.Separation.Faithful
+import Matroid.Connectivity.Separation.Faithful
 import Matroid.Connectivity.Separation.Infinite
 import Matroid.Connectivity.Separation.Internal
 import Matroid.Connectivity.Separation.Minor
 import Matroid.Connectivity.Separation.Tutte
--- import Matroid.Connectivity.Separation.Two
+import Matroid.Connectivity.Separation.Two
 import Matroid.Connectivity.Separation.Vertical
 import Matroid.Connectivity.Skew
 -- import Matroid.Connectivity.Splitter.Cretaceous
 import Matroid.Connectivity.Splitter.TutteTriangle
--- import Matroid.Connectivity.Triangle
+import Matroid.Connectivity.Triangle
 import Matroid.Constructions.Matching
 -- import Matroid.Constructions.ModularSum
 import Matroid.Constructions.Project
@@ -97,7 +97,7 @@ import Matroid.Graph.Degree.Max
 import Matroid.Graph.Distance
 import Matroid.Graph.Finite
 import Matroid.Graph.Forest
--- import Matroid.Graph.Hom
+import Matroid.Graph.Hom
 import Matroid.Graph.Independent
 import Matroid.Graph.Lattice
 import Matroid.Graph.Map

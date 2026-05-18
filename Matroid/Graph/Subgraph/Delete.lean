@@ -394,6 +394,14 @@ lemma restrict_induce (G : Graph α β) (X : Set α) (F : Set β) : (G ↾ F)[X]
   simp only [induce_isLink, restrict_isLink]
   tauto
 
+@[simp]
+lemma IsSubgraph.induce_restrict_eq (h : H ≤ G) : G[V(H)] ↾ E(H) = H := by
+  refine ext_of_le_le (restrict_le.trans <| induce_le h.vertexSet_mono) h (by simp) ?_
+  simp only [edgeSet_restrict, inter_eq_right, edgeSet_induce]
+  intro e he
+  obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet he
+  exact ⟨x, y, hxy.of_le h, hxy.left_mem, hxy.right_mem⟩
+
 lemma induce_isInducedSubgraph (hX : X ⊆ V(G)) : G[X] ≤i G := ⟨by simpa, by simp_all⟩
 
 lemma IsInducedSubgraph.vertexSet_induce_eq (h : H ≤i G) : G[V(H)] = H := by

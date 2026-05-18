@@ -120,8 +120,8 @@ lemma IsComplete.connBetween (h : G.IsComplete) (hs : s ∈ V(G)) (ht : t ∈ V(
   · simp [hs]
   exact (h s hs t ht hne).connBetween
 
-lemma ConnBetween.isClosedSubgraph (h : G.ConnBetween x y) (hle : H ≤c G) (hx : x ∈ V(H))
-    : H.ConnBetween x y := by
+lemma ConnBetween.isClosedSubgraph (h : G.ConnBetween x y) (hle : H ≤c G) (hx : x ∈ V(H)) :
+    H.ConnBetween x y := by
   obtain ⟨W, hW, rfl, rfl⟩ := h
   use W, hW.isWalk_isClosedSubgraph_of_first_mem hle hx
 

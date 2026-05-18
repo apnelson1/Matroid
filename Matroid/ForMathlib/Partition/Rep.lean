@@ -311,6 +311,16 @@ lemma mapsTo_supp (hf : IsRepFun P f) : Set.MapsTo f P.supp P.supp :=
 lemma mapsTo {S : Set α} (hf : IsRepFun P f) (hS : P.supp ⊆ S) : Set.MapsTo f S S :=
   fun x h ↦ hf.image_subset hS ⟨x, h, rfl⟩
 
+lemma preimage_subset {S : Set α} (hf : IsRepFun P f) (hS : P.supp ⊆ S) : f ⁻¹' S ⊆ S := by
+  simp only [preimage_subset_iff]
+  intro x hx
+  by_cases ha : x ∈ P.supp
+  · exact hS ha
+  exact hf.apply_of_notMem ha ▸ hx
+
+lemma preimage_supp_subset (hf : IsRepFun P f) : f ⁻¹' P.supp ⊆ P.supp :=
+  hf.preimage_subset subset_rfl
+
 @[simp]
 lemma apply_mem_iff (hf : IsRepFun P f) : f a ∈ P.supp ↔ a ∈ P.supp := by
   refine ⟨fun h ↦ ?_, hf.apply_mem⟩

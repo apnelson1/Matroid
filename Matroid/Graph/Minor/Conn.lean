@@ -278,4 +278,39 @@ lemma IsForest.contract (hφ : G.connPartition.IsRepFun φ) (hGH : G ≤ H) (hH 
 --   have :=
 --   sorry
 
+def minorMap.trans {I : Graph α β} (F₁ : minorMap G H) (F₂ : minorMap H I) : minorMap G I where
+  map v := F₂.anti_left (F₁.map_le v) |>.intermediate
+  map_le v := intermediate_le (F₂.anti_left (F₁.map_le v))
+  mem_map v := by
+    simp only [vertexSet_intermediate, mem_iUnion]
+    use ⟨v, F₁.mem_map v⟩, (F₂.anti_left (F₁.map_le v)).mem_map ⟨v, F₁.mem_map v⟩
+  disj u v huv := by
+    simp only [Graph.disjoint_iff, vertexSet_intermediate, anti_left_map, iUnion_coe_set,
+      disjoint_iUnion_right, disjoint_iUnion_left]
+    intro x hx y hy
+    apply Graph.disjoint_iff.mp <| F₂.disj ?_
+    simp only [ne_eq, Subtype.mk.injEq]
+    exact (Graph.disjoint_iff.mp <| F₁.disj huv).ne_of_mem hy hx
+  edge_disj v := by
+    simp only [edgeSet_intermediate, anti_left_map, iUnion_coe_set, disjoint_union_right,
+      disjoint_iUnion_right]
+    exact ⟨F₁.edge_disj v, fun u hu ↦ F₂.edge_disj ⟨u, (F₁.map_le v).vertexSet_mono hu⟩
+      |>.mono_left F₁.edgeSet_mono⟩
+  link e x y hxy := by
+    obtain ⟨u, v, huv, hu, hv⟩ := F₁.link e x y hxy
+    obtain ⟨a, b, hab, ha, hb⟩ := F₂.link e ⟨u, huv.left_mem⟩ ⟨v, huv.right_mem⟩ huv
+    simp only [vertexSet_intermediate, anti_left_map, iUnion_coe_set, mem_iUnion]
+    exact ⟨a, b, hab, (by use u, hu), (by use v, hv)⟩
+  conn v := by
+    rw [← contract_connected_iff ((F₂.anti_left (F₁.map_le v)).repFun_isRepFun) restrict_le]
+    convert (F₂.anti_left (F₁.map_le v)).eq_contract_of_intermediate ▸ (F₁.conn v)
+    rw [edgeSet_restrict, inter_eq_right, edgeSet_intermediate]
+    exact subset_union_right
+
+lemma IsMinor.trans (hGH : G ≤m H) (hHI : H ≤m I) : G ≤m I := ⟨hGH.some.trans hHI.some⟩
+
+instance : IsPreorder (Graph α β) IsMinor where
+  refl G := ⟨minorMap_refl G⟩
+  trans _ _ _ F₁ F₂ := F₁.trans F₂
+
 end Graph

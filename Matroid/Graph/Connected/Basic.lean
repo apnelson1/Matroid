@@ -27,6 +27,13 @@ lemma walkable_disjoint_iff : Disjoint V(G.walkable x) V(G.walkable y) ↔ ¬ G.
   rw [(walkable_isCompOf hx).not_disjoint_iff (walkable_isCompOf hy) |>.not_right,
     walkable_eq_walkable_iff_mem hx, mem_walkable_iff, connBetween_comm]
 
+@[simp]
+lemma IsCompOf.eq_of_connBetween (hH₁ : H₁.IsCompOf G) (hH₂ : H₂.IsCompOf G)
+    (hxy : G.ConnBetween x y) (hx : x ∈ V(H₁)) (hy : y ∈ V(H₂)) : H₁ = H₂ := by
+  obtain rfl := hH₁.eq_walkable_of_mem_walkable hx
+  obtain rfl := hH₂.eq_walkable_of_mem_walkable hy
+  exact hxy.walkable_eq_walkable
+
 lemma Preconnected.components_subsingleton (h : G.Preconnected) : G.Components.Subsingleton := by
   intro H₁ hH₁ H₂ hH₂
   obtain ⟨x, hx, rfl⟩ := hH₁.exists_walkable
@@ -773,7 +780,7 @@ lemma IsClosedSubgraph.isCompOf_of_connected (h : H ≤c G) (hH : H.Connected) :
     H.IsCompOf G := by
   refine IsCompOf_iff_isClosedSubgraph_connected.2 ⟨h, hH⟩
 
-lemma Connected.IsCompOf_of_isClosedSubgraph (hH : H.Connected) (h : H ≤c G) :
+lemma Connected.isCompOf_of_isClosedSubgraph (hH : H.Connected) (h : H ≤c G) :
     H.IsCompOf G := by
   refine IsCompOf_iff_isClosedSubgraph_connected.2 ⟨h, hH⟩
 

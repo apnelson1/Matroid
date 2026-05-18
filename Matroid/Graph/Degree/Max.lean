@@ -116,7 +116,7 @@ lemma IsCompOf.isPathGraph_or_isCycle_of_maxDegreeLE [G.EdgeFinite] (hH : H.IsCo
 
 lemma IsCycle.isCompOf_of_maxDegreeLE (hC : C.IsCycle) (hmax : G.MaxDegreeLE 2)
     (hle : C ≤ G) : C.IsCompOf G := by
-  refine hC.connected.IsCompOf_of_isClosedSubgraph
+  refine hC.connected.isCompOf_of_isClosedSubgraph
     <| IsClosedSubgraph.mk' hle (fun e x hex hxC ↦ ?_)
   have := hmax.locallyFinite
   have : E(C, x) = E(G, x) := by
