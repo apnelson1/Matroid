@@ -57,11 +57,12 @@ lemma project_empty (M : Matroid α) : M.project ∅ = M := by
 lemma Indep.of_project (hI : (M.project C).Indep I) : M.Indep I :=
   (Matroid.project_indep_iff.1 hI).of_contract
 
+lemma Spanning.project_eq (hX : M.Spanning X) : M.project X = loopyOn M.E :=
+  ext_closure fun A ↦ by simp [hX.closure_eq_of_superset subset_union_right]
+
 @[simp]
-lemma project_ground_self (M : Matroid α) : M.project M.E = loopyOn M.E := by
-  refine ext_closure fun X ↦ ?_
-  simp only [project_closure, loopyOn_closure_eq]
-  rw [← closure_inter_ground, inter_eq_self_of_subset_right subset_union_right, closure_ground]
+lemma project_ground_self (M : Matroid α) : M.project M.E = loopyOn M.E :=
+  M.ground_spanning.project_eq
 
 @[simp]
 lemma project_project (M : Matroid α) (C₁ C₂ : Set α) :
@@ -222,7 +223,7 @@ lemma loopify_ground (M : Matroid α) (D : Set α) : (M.loopify D).E = M.E := rf
 lemma loopify_inter_ground (M : Matroid α) (D : Set α) : M.loopify (D ∩ M.E) = M.loopify D := by
   rw [loopify, delete_inter_ground_eq, loopify]
 
-lemma loopify_closure' (M : Matroid α) (D : Set α) :
+lemma loopify_closure (M : Matroid α) (D : Set α) :
     (M.loopify D).closure X = M.closure (X \ D) ∪ (D ∩ M.E) := by
   simp only [loopify, restrict_closure_eq', delete_closure_eq, delete_ground,
     sdiff_sdiff_right_self, inf_eq_inter]
@@ -230,6 +231,45 @@ lemma loopify_closure' (M : Matroid α) (D : Set α) :
     closure_inter_ground, union_inter_distrib_right,
     inter_eq_self_of_subset_left (closure_subset_ground ..)]
 
+lemma loopify_indep_iff_delete_indep {D : Set α} : (M.loopify D).Indep I ↔ (M ＼ D).Indep I := by
+  rw [loopify, restrict_indep_iff]
+  simp +contextual [Indep.subset_ground]
 
--- lemma IsBasis.project_eq (h : M.IsBasis I X) : M.project X = (M.project I).loopify X := by
---   _
+lemma loopify_indep_iff {D : Set α} : (M.loopify D).Indep I ↔ M.Indep I ∧ Disjoint I D := by
+  rw [loopify_indep_iff_delete_indep, delete_indep_iff]
+
+@[simp]
+lemma loopify_delete (M : Matroid α) (D : Set α) : M.loopify D ＼ D = M ＼ D :=
+  ext_indep (by simp) fun I hI ↦ by simp [delete_indep_iff, loopify_indep_iff]
+
+lemma loopify_eq_loopify_iff {M N : Matroid α} {D} :
+    M.loopify D = N.loopify D ↔ M.E = N.E ∧ M ＼ D = N ＼ D := by
+  simp +contextual [ext_iff_indep, loopify_indep_iff_delete_indep, subset_diff]
+
+lemma IsBasis'.project_eq_loopify_project (h : M.IsBasis' I X) :
+    M.project X = (M.loopify (X \ I)).project I := by
+  refine ext_closure fun Y ↦ ?_
+  grw [project_closure, project_closure, loopify_closure, union_diff_distrib,
+    disjoint_sdiff_right.sdiff_eq_left, closure_union_congr_right h.closure_eq_closure,
+    show Y \ (X \ I) ∪ X = Y ∪ X by grind, eq_comm, union_eq_left, ← subset_union_right,
+    diff_subset, inter_ground_subset_closure]
+
+lemma IsBasis.project_eq_loopify_project (h : M.IsBasis I X) :
+    M.project X = (M.loopify (X \ I)).project I :=
+  h.isBasis'.project_eq_loopify_project
+
+@[simp]
+lemma loopify_loopify (M : Matroid α) (X Y : Set α) :
+    (M.loopify X).loopify Y = M.loopify (X ∪ Y) :=
+  ext_indep rfl fun I (hI : I ⊆ M.E) ↦ by simp [loopify_indep_iff, and_assoc]
+
+lemma loopify_loops_subset (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
+    X ⊆ (M.loopify X).loops := by
+  grind [loops, loopify_closure]
+
+@[simp]
+lemma loopify_eq_self_iff (hX : X ⊆ M.E := by aesop_mat) : M.loopify X = M ↔ X ⊆ M.loops := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ext_indep rfl fun I hI ↦ ?_⟩
+  · grw [← h, ← M.loopify_loops_subset X hX]
+  simp only [loopify_indep_iff, and_iff_left_iff_imp]
+  exact fun hI ↦ hI.disjoint_loops.mono_right h

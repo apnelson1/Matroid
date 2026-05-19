@@ -19,9 +19,9 @@ def IsSetCut.isSepBetween_of_neighbor (hC : (G - ({s, t} : Set α)).IsSetCut (N(
   right_not_mem := by
     have : C ⊆ V(G) ∧ s ∉ C ∧ t ∉ C := by simpa [subset_diff] using hC.subset_vertexSet
     exact this.2.2
-  not_connBetween hst := hC.ST_disconnects <| G.vertexDelete_vertexDelete_comm _ _ ▸
-      (hst.neighbor_setConnected hne <| (hadj <| ·.of_le vertexDelete_le)).subset
-        (by grw [neighbor_mono vertexDelete_le]) (by grw [neighbor_mono vertexDelete_le])
+  not_connBetween hst := hC.ST_disconnects <| G.deleteVerts_deleteVerts_comm _ _ ▸
+      (hst.neighbor_setConnected hne <| (hadj <| ·.of_le deleteVerts_le)).subset
+        (by grw [neighbor_mono deleteVerts_le]) (by grw [neighbor_mono deleteVerts_le])
 
 lemma connBetweenGE_iff_setConnGE (hne : s ≠ t) (hadj : ¬ G.Adj s t) :
     G.ConnBetweenGE s t n ↔ (G - ({s, t} : Set α)).SetConnGE (N(G, s) \ {s}) (N(G, t) \ {t}) n := by
@@ -30,15 +30,15 @@ lemma connBetweenGE_iff_setConnGE (hne : s ≠ t) (hadj : ¬ G.Adj s t) :
       simpa [subset_diff] using hC.subset_vertexSet
     simpa using h (hC.isSepBetween_of_neighbor (s := s) (t := t) hne hadj)
   refine h ⟨?_, ?_⟩
-  · simp only [vertexDelete_vertexSet, subset_diff, disjoint_insert_right, disjoint_singleton_right]
+  · simp only [vertexSet_deleteVerts, subset_diff, disjoint_insert_right, disjoint_singleton_right]
     exact ⟨hC.subset, hC.left_not_mem, hC.right_not_mem⟩
   have hh := hC.not_connBetween
   contrapose! hh
   obtain ⟨a, ⟨hsa, hsane⟩, b, ⟨htb, htbne⟩, hab⟩ := hh
-  have hsa' := (G.vertexDelete_adj_iff C).mpr ⟨hsa, hC.left_not_mem, hab.left_mem.2⟩
-  have htb' := (G.vertexDelete_adj_iff C).mpr ⟨htb, hC.right_not_mem, hab.right_mem.2⟩
-  exact (hsa'.connBetween.trans ((G.vertexDelete_vertexDelete_comm _ _ ▸ hab).mono
-    vertexDelete_le)).trans htb'.connBetween.symm
+  have hsa' := (G.deleteVerts_adj_iff C).mpr ⟨hsa, hC.left_not_mem, hab.left_mem.2⟩
+  have htb' := (G.deleteVerts_adj_iff C).mpr ⟨htb, hC.right_not_mem, hab.right_mem.2⟩
+  exact (hsa'.connBetween.trans ((G.deleteVerts_deleteVerts_comm _ _ ▸ hab).mono
+    deleteVerts_le)).trans htb'.connBetween.symm
 
 lemma ConnBetweenGE.le_left_Neighbor_encard (hne : s ≠ t) (hadj : ¬ G.Adj s t)
     (hconn : G.ConnBetweenGE s t n) : n ≤ (N(G, s) \ {s}).encard := by
@@ -73,9 +73,9 @@ noncomputable def VertexEnsemble.ofSetEnsemble (x y : α) (hxy : x ≠ y)
     simp only [cons_concat, cons_isPath_iff, concat_isPath_iff, concat_first, mem_concat, not_or]
     generalize_proofs huN hu huf hv
     have := A.valid (A.of_vertex_mem_setEnsemble hu) |>.vertexSet_subset
-    simp only [vertexDelete_vertexSet, subset_diff, disjoint_insert_right, mem_vertexSet_iff,
+    simp only [vertexSet_deleteVerts, subset_diff, disjoint_insert_right, mem_vertexSet_iff,
       disjoint_singleton_right] at this
-    refine ⟨?_, ⟨A.valid (A.of_vertex_mem_setEnsemble hu) |>.of_le vertexDelete_le, ?_, this.2.2⟩,
+    refine ⟨?_, ⟨A.valid (A.of_vertex_mem_setEnsemble hu) |>.of_le deleteVerts_le, ?_, this.2.2⟩,
       this.2.1, hxy⟩
     · convert link_isLink _
       obtain ⟨P, hP, hPu⟩ := huf
@@ -96,7 +96,7 @@ noncomputable def VertexEnsemble.ofSetEnsemble (x y : α) (hxy : x ≠ y)
     apply A.disjoint (A.of_vertex_mem_setEnsemble hu) (A.of_vertex_mem_setEnsemble hv)
     rwa [ne_eq, A.of_vertex_injOn_first u.prop v.prop, Subtype.coe_inj]
 
-lemma VertexEnsemble.of_linkEdges_edgeDelete (A : (G ＼ E(G, u, v)).VertexEnsemble u v ι) (i : ι) :
+lemma VertexEnsemble.of_linkEdges_deleteEdges (A : (G ＼ E(G, u, v)).VertexEnsemble u v ι) (i : ι) :
     (A.f i).length ≠ 1 := by
   by_contra h
   obtain ⟨x, e, y, heq⟩ := WList.length_eq_one_iff.mp h

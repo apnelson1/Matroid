@@ -44,7 +44,7 @@ namespace WList
 in the same order that they appear in `w₂`.
 Examples include prefixes, suffixes and wLists obtained from `w₂` by shortcuts.  -/
 inductive IsSublist : WList α β → WList α β → Prop
-  | nil {x w} (h : x ∈ w) : IsSublist (nil x) w
+  | nil {x w : _} (h : x ∈ w) : IsSublist (nil x) w
   | cons x e {w₁ w₂} (h : IsSublist w₁ w₂) : IsSublist w₁ (cons x e w₂)
   | cons₂ x e {w₁ w₂} (h : IsSublist w₁ w₂) (h_eq : w₁.first = w₂.first) :
       IsSublist (cons x e w₁) (cons x e w₂)
@@ -205,7 +205,7 @@ lemma cons_wellFormed_iff : (cons x e w).WellFormed ↔
 /-- `IsPrefix w₁ w₂` means that `w₁` is a prefix of `w₂`. -/
 inductive IsPrefix : WList α β → WList α β → Prop
   | nil (w : WList α β) : IsPrefix (nil w.first) w
-  | cons (x) (e) (w₁ w₂ : WList α β) (h : IsPrefix w₁ w₂) : IsPrefix (cons x e w₁) (cons x e w₂)
+  | cons (x : _) (e) (w₁ w₂ : WList α β) (h : IsPrefix w₁ w₂) : IsPrefix (cons x e w₁) (cons x e w₂)
 
 lemma IsPrefix.first_eq (h : IsPrefix w₁ w₂) : w₁.first = w₂.first := by
   induction h with simp
@@ -309,7 +309,7 @@ lemma IsPrefix.eq_of_last_mem (h : w₁.IsPrefix w₂) (hnd : w₂.vertex.Nodup)
 
 inductive IsSuffix : WList α β → WList α β → Prop
   | nil (w : WList α β) : IsSuffix (nil w.last) w
-  | concat (e x w₁ w₂) (h : IsSuffix w₁ w₂) : IsSuffix (w₁.concat e x) (w₂.concat e x)
+  | concat (e x w₁ w₂ : _) (h : IsSuffix w₁ w₂) : IsSuffix (w₁.concat e x) (w₂.concat e x)
 
 lemma IsSuffix.reverse_isPrefix_reverse (h : w₁.IsSuffix w₂) : w₁.reverse.IsPrefix w₂.reverse := by
   induction h with | nil => simp | concat e x w₁ w₂ h ih => simp [ih.cons]
@@ -554,7 +554,7 @@ lemma appendList_cons [Inhabited α] {l : WList α β} {L : List (WList α β)}
     exact (append_nil h).symm
   | head :: tail =>
     simp only [appendList, foldl_cons, nil_append]
-    rw [List.op_foldl_eq_foldl_op_of_assoc]
+    rw [List.foldl_assoc]
 
 @[simp↓]
 lemma appendList_nil_cons [Inhabited α] (x : α) {L : List (WList α β)} (hne : L ≠ []) :
@@ -610,7 +610,7 @@ lemma appendList_edge [Inhabited α] (L : List (WList α β)) :
   | l₁ :: l₂ :: L =>
     have := appendList_edge (l₂ :: L)
     simp only [appendList, foldl_cons, nil_append, List.map_cons, List.nil_append] at this ⊢
-    rw [op_foldl_eq_foldl_op_of_assoc, op_foldl_eq_foldl_op_of_assoc, append_edge, ← this]
+    rw [foldl_assoc, foldl_assoc, append_edge, ← this]
 
 
 /-- A decomposed wList is a list of wLists that appends to the original wList and
@@ -654,7 +654,7 @@ lemma head_first_eq_first {w : WList α β} {L : List (WList α β)} (h : w.Deco
   | cons u e w', l' :: L' =>
     subst L
     simp only [appendList, head_cons, first_cons, h.append, foldl_cons, nil_append]
-    rw [List.op_foldl_eq_foldl_op_of_assoc]
+    rw [List.foldl_assoc]
     simp
 termination_by L
 decreasing_by simp [hl]
@@ -664,7 +664,7 @@ lemma append_cons_iff (heq : w.last = w'.first) (hL : L ≠ []) :
     (w ++ w').DecomposeTo (w :: L) ↔ w'.DecomposeTo L := by
   refine ⟨fun h => h.append_cons hL, fun h => ⟨by simp, ?_, ?_⟩⟩
   · obtain ⟨l, L', rfl⟩ := List.exists_cons_of_ne_nil hL
-    simp [h.append, appendList, L'.op_foldl_eq_foldl_op_of_assoc]
+    simp [h.append, appendList, L'.foldl_assoc]
   simp only [isChain_cons, Option.mem_def, h.chain_eq, and_true]
   rintro l hl
   rw [head?_eq_some_head hL, Option.some_inj] at hl
@@ -677,12 +677,12 @@ lemma head_isPrefix (h : w.DecomposeTo L) : (L.head h.nonempty).IsPrefix w := by
   | [] => simp
   | l' :: L' =>
     simp only [foldl_cons]
-    rw [List.op_foldl_eq_foldl_op_of_assoc]
+    rw [List.foldl_assoc]
     apply WList.isPrefix_append_right
     rw [h.chain_eq.rel_head]
     have := h.append ▸ h
     simp only [foldl_cons, appendList, nil_append] at this
-    rw [List.op_foldl_eq_foldl_op_of_assoc] at this
+    rw [List.foldl_assoc] at this
     simpa using (this.append_cons (by simp)).head_first_eq_first
 
 lemma isSublist_of_mem {L : List (WList α β)} {w l : WList α β} (h : w.DecomposeTo L) (hl : l ∈ L) :

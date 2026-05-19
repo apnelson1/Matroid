@@ -89,6 +89,21 @@ lemma ext_closure' {M N : Matroid α} (hE : M.E = N.E) (hX : ∀ X ⊆ M.E, M.cl
   refine ext_closure fun X ↦ ?_
   rw [← closure_inter_ground, hX _ inter_subset_right, hE, closure_inter_ground]
 
+@[simp]
+lemma closure_union_inter_ground (M : Matroid α) (X Y : Set α) :
+    M.closure (X ∪ (Y ∩ M.E)) = M.closure (X ∪ Y) :=
+  M.closure_union_congr_right (by simp)
+
+@[simp]
+lemma closure_inter_ground_union (M : Matroid α) (X Y : Set α) :
+    M.closure ((X ∩ M.E) ∪ Y) = M.closure (X ∪ Y) :=
+  M.closure_union_congr_left (by simp)
+
+@[simp]
+lemma closure_insert_inter_ground (M : Matroid α) (e : α) (X : Set α) :
+    M.closure (insert e (X ∩ M.E)) = M.closure (insert e X) :=
+  M.closure_insert_congr_right (by simp)
+
 -- lemma Coindep.delete_isSpanningRestriction (h : M.Coindep X) : M ＼ X →
 
   -- grw [spanning_iff_ground_subset_closure (h.subset.trans h'.subset), ← h'.spanning.closure_eq,

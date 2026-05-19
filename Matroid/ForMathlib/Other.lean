@@ -27,8 +27,8 @@ lemma WithBot.eq_bot_iff_forall_ge {α : Type*} [Preorder α] [NoMinOrder α] {x
 @[simp] lemma ENat.lt_one_iff (n : ℕ∞) : n < 1 ↔ n = 0 := by
   rw [← not_iff_not, not_lt, ENat.one_le_iff_ne_zero]
 
-@[simp] theorem zero_ne_top : (0 : ℕ∞) ≠ ⊤ :=
-  ENat.coe_toNat_eq_self.mp rfl
+-- @[simp] theorem zero_ne_top : (0 : ℕ∞) ≠ ⊤ :=
+--   ENat.coe_toNat_eq_self.mp rfl
 
 
 

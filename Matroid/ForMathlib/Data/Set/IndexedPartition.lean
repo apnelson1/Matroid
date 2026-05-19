@@ -87,7 +87,7 @@ protected lemma ext' {P Q : s.IndexedPartition ι} {j : ι} (h : ∀ i ≠ j, P 
   · exact h _ hne
   rwa [single_eq_diff_iUnion, single_eq_diff_iUnion, iUnion₂_congr]
 
-/-- Transfer a partition across a se equality. -/
+/-- Transfer a partition across a set equality. -/
 protected def copy (P : s.IndexedPartition ι) (h_eq : s = t) : t.IndexedPartition ι where
   toFun := P.toFun
   pairwise_disjoint' := P.pairwise_disjoint

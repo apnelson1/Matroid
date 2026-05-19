@@ -16,7 +16,7 @@ open scoped unitInterval
 class GraphContinuum (G : Type*) extends EMetricSpace G, CompactSpace G where
   verts : Set G
   totallyDisconnected : IsTotallyDisconnected verts
-  graphLike : ∀ T ∈ ComponentPartition vertsᶜ, T ≃ₜ Ioo (0 : ℝ) 1
+  graphLike : ∀ T ∈ PathComponentPartition vertsᶜ, T ≃ₜ Ioo (0 : ℝ) 1
 
 namespace GraphContinuum
 
@@ -24,14 +24,14 @@ variable [GraphContinuum G]
 
 scoped notation "V(" G ")" => GraphContinuum.verts (G := G)
 
-def edges (G) [GraphContinuum G] : Partition (Set G) := ComponentPartition V(G)ᶜ
+def edges (G) [GraphContinuum G] : Partition (Set G) := PathComponentPartition V(G)ᶜ
 
 scoped notation "E(" G ")" => GraphContinuum.edges (G := G)
 
 def homeo_ball (he : e ∈ E(G)) : e ≃ₜ Ioo (0 : ℝ) 1 := graphLike e he
 
 lemma subset_compl_verts_of_mem_edges (he : e ∈ E(G)) : e ⊆ V(G)ᶜ :=
-  (subset_of_mem he).trans (by rw [edges, componentPartition_supp])
+  (subset_of_mem he).trans (by rw [edges, pathComponentPartition_supp])
 
 lemma disjoint_verts_of_mem_edges (he : e ∈ E(G)) : Disjoint e V(G) := by
   rw [disjoint_iff_inter_eq_empty, ← subset_empty_iff]
@@ -39,7 +39,7 @@ lemma disjoint_verts_of_mem_edges (he : e ∈ E(G)) : Disjoint e V(G) := by
   simp
 
 lemma isOpen_edge [LocPathConnectedSpace G] (he : e ∈ E(G)) (hV : IsClosed V(G)) : IsOpen e :=
-  hV.isOpen_compl.componentPartition_isOpen he
+  hV.isOpen_compl.pathComponentPartition_isOpen he
 
 lemma not_isClosed_edge (he : e ∈ E(G)) : ¬ IsClosed e := by
   have hom := homeo_ball he
@@ -86,9 +86,11 @@ lemma Inc.vertex_mem (h : Inc e v) : v ∈ V(G) := h.2.1
 lemma exists_vert_of_circuit (hC : IsCircuit C) : ∃ v ∈ C, v ∈ V(G) := by
   rw [← not_disjoint_iff]
   by_contra! hdj
-  obtain ⟨U, hU, hCU⟩ := (hC.isPathConnected).exists_part_componentPartition hdj.subset_compl_right
-  exact not_isCircuit_real _ <| hC.restrictSubtype hCU |>.image (graphLike U hU).isEmbedding
-  |>.image .subtypeVal
+  obtain ⟨U, hU, hCU⟩ := (hC.isPathConnected).exists_part_pathComponentPartition
+    hdj.subset_compl_right
+  exact not_isCircuit_real _ <| hC.restrictSubtype hCU |>.image
+    (f := ⟨_, (graphLike U hU).continuous⟩) (graphLike U hU).injective
+    |>.image (f := ⟨_, continuous_subtype_val⟩) Subtype.val_injective
 
 -- def dualGraph (f : α → E) (hf : Topology.IsEmbedding f) : Graph (Set E) (Set α) where
 --   vertexSet := ComponentPartition (range f)

@@ -6,7 +6,7 @@ import Matroid.Constructions.Project
 import Matroid.ForMathlib.Matroid.Closure
 import Matroid.ForMathlib.Data.ENat.Iterate
 
-open Set BigOperators Set.Notation Function
+open Set BigOperators Set.Notation Function Matroid.ModularCut
 
 namespace Matroid
 
@@ -77,6 +77,12 @@ lemma closure_mem_gutsModularCut_iff (M : Matroid α) (X : ι → Set α) (Xu : 
 lemma gutsModularCut_eq_top_iff {X : ι → Set α} (Xu : ⋃ i, X i = M.E) :
     M.gutsModularCut X Xu = ⊤ ↔ M.IsSkewFamily X := by
   rw [ModularCut.eq_top_iff, loops, closure_mem_gutsModularCut_iff, project_empty]
+
+@[simp]
+lemma gutsModularCut_ne_bot {X : ι → Set α} (Xu : ⋃ i, X i = M.E) : M.gutsModularCut X Xu ≠ ⊥ := by
+  have aux (i : ι) : X i ⊆ M.E := by simp [← Xu, subset_iUnion]
+  rw [ModularCut.ne_bot_iff]
+  simpa
 
 /-- Projecting through the guts modular cut of a partition drops its dual connectivity by `1`. -/
 lemma multiConn_projectBy_gutsModularCut_add_one (M : Matroid α) {X : ι → Set α}
@@ -175,3 +181,71 @@ theorem multiConn_dual_le_encard_of_delete_isSkewFamily {X : ι → Set α} (hX 
   · grw [← iUnion_subset_iff, hX, delete_ground, dual_ground, diff_subset]
   grw [← disjoint_iUnion_left, hX, delete_ground]
   exact disjoint_sdiff_left
+
+section Set
+
+/-- The modular cut corresponding the guts of a separation between a set `X` and its complement. -/
+def gutsModularCutSet (M : Matroid α) (X : Set α) : M.ModularCut :=
+    M.gutsModularCut (IndexedPartition.ofSubset
+      (show X ∩ M.E ⊆ M.E from inter_subset_right) true) (by simp [inter_comm X])
+
+@[simp]
+lemma gutsModularCutSet_inter_ground : M.gutsModularCutSet (X ∩ M.E) = M.gutsModularCutSet X := by
+  simp only [gutsModularCutSet, gutsModularCut, ModularCut.mk.injEq]
+  convert rfl using 5
+  simp [IndexedPartition.ofSubset, inter_assoc]
+
+lemma mem_gutsModularCutSet_iff' :
+    F ∈ M.gutsModularCutSet X ↔ M.IsFlat F ∧ (M.project F).Skew (X ∩ M.E) (M.E \ X) := by
+  rw [gutsModularCutSet, mem_gutsModularCut_iff, Skew]
+  convert Iff.rfl with b
+  simp
+
+lemma mem_gutsModularCutSet_iff (hX : X ⊆ M.E := by aesop_mat) :
+    F ∈ M.gutsModularCutSet X ↔ M.IsFlat F ∧ (M.project F).Skew X (M.E \ X) := by
+  rw [mem_gutsModularCutSet_iff', inter_eq_self_of_subset_left hX]
+
+lemma closure_mem_gutsModularCutSet_iff (hX : X ⊆ M.E := by aesop_mat) :
+    M.closure Y ∈ M.gutsModularCutSet X ↔ (M.project Y).Skew X (M.E \ X) := by
+  rw [mem_gutsModularCutSet_iff, and_iff_right (by simp), project_closure_eq]
+
+@[simp]
+lemma closure_self_mem_gutsModularCut_set (M : Matroid α) (X : Set α) :
+    M.closure X ∈ M.gutsModularCutSet X := by
+  rw [mem_gutsModularCutSet_iff', and_iff_right (by simp)]
+  exact (skew_project_self (closure_subset_ground ..) diff_subset).mono_left <|
+    inter_ground_subset_closure ..
+
+@[simp]
+lemma gutsModularCutSet_ne_bot : M.gutsModularCutSet X ≠ ⊥ := by
+  simp [gutsModularCutSet]
+
+@[simp]
+lemma gutsModularCutSet_compl : M.gutsModularCutSet (M.E \ X) = M.gutsModularCutSet X := by
+  rw [← gutsModularCutSet_inter_ground (X := X)]
+  ext F hF
+  rw [mem_gutsModularCutSet_iff diff_subset, mem_gutsModularCutSet_iff inter_subset_right,
+    skew_comm, diff_inter_self_eq_diff, inter_comm X]
+  simp
+
+lemma gutsModularCutSet_eq_principal_compl (hX : M.Spanning X) :
+    M.gutsModularCutSet X = ModularCut.principal M (M.E \ X) := by
+  refine ModularCut.ext fun F hF ↦ ?_
+  rw [mem_gutsModularCutSet_iff hX.subset_ground, ModularCut.mem_principal_iff,
+    and_iff_right hF, and_iff_right hF, skew_iff_closure_skew_left, project_closure,
+    hX.closure_eq_of_superset (by simp), skew_iff_of_subset_right diff_subset, project_loops,
+    hF.closure]
+
+lemma gutsModularCutSet_eq_principal (hX : M.Coindep X) :
+    M.gutsModularCutSet X = ModularCut.principal M X := by
+  rw [← gutsModularCutSet_compl, gutsModularCutSet_eq_principal_compl hX.compl_spanning,
+    diff_diff_cancel_left hX.subset_ground]
+
+lemma gutsModularCutSet_eq_top_iff (hXE : X ⊆ M.E := by aesop_mat) :
+    M.gutsModularCutSet X = ⊤ ↔ M.Skew X (M.E \ X) := by
+  simp only [gutsModularCutSet, gutsModularCut_eq_top_iff, Skew]
+  convert Iff.rfl with b
+  cases b with | false => simp | true => simpa
+
+
+end Set

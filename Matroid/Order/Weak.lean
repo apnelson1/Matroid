@@ -85,6 +85,15 @@ lemma WeakLE.delete (h : N ≤w M) (D : Set α) : N ＼ D ≤w M ＼ D := by
     simpa +contextual [weakLE_iff, h.ground_eq]
   exact fun I hI _ ↦ h.indep_of_indep hI
 
+lemma WeakLE.loops_subset_loops (h : N ≤w M) : M.loops ⊆ N.loops := by
+  intro e he
+  by_contra! hcon
+  rw [mem_loops_iff, not_isLoop_iff _] at hcon
+  · rw [mem_loops_iff] at he
+    exact he.dep.not_indep <| h.indep_of_indep (show N.Indep {e} by simpa)
+  grw [h.ground_eq]
+  exact mem_of_mem_of_subset he <| loops_subset_ground ..
+
 lemma contract_weakLE_delete (M : Matroid α) (X : Set α) : M ／ X ≤w M ＼ X := by
   obtain ⟨I, hI⟩ := M.exists_isBasis' X
   rw [hI.contract_eq_contract_delete]

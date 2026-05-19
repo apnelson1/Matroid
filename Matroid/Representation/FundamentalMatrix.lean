@@ -52,7 +52,7 @@ variable {R : Type*} [DivisionRing R]
 
 lemma IsBase.fundCoord_of_mem (hB : M.IsBase B) (he : e ∈ B) :
     hB.fundCoord R e = Finsupp.single ⟨e, he⟩ 1 := by
-  rw [fundCoord, coords_of_mem hB he, Finsupp.single_eq_indicator]
+  rw [fundCoord, coords_of_mem hB he, Finsupp.indicator_singleton]
 
 @[simp] lemma IsBase.fundCoord_mem (hB : M.IsBase B) (e : B) :
     hB.fundCoord R e = Finsupp.single e 1 :=

@@ -3,7 +3,6 @@ import Matroid.Graph.Connected.Component
 import Matroid.Graph.Connected.Set.Defs
 
 open Set Function Nat WList
-
 variable {α β : Type*} {G H K : Graph α β} {s t u v x x₁ x₂ y y₁ y₂ z : α} {n m : ℕ}
   {e e' f g : β} {U V S S' T T' X Y : Set α} {F F' R R': Set β} {C W P Q : WList α β}
 
@@ -100,14 +99,14 @@ lemma IsClosedSubgraph.disjoint_or_subset_of_isCompOf (h : H ≤c G) (hK : K.IsC
   intro hne
   have h_eq := hK.eq_of_le ⟨h.inter hK.isClosedSubgraph, by simpa⟩ Graph.inter_le_right
   rw [← h_eq] at hK ⊢
-  refine ⟨⟨hK.isClosedSubgraph.of_le_of_le Graph.inter_le_left h.le, by simpa⟩, ?_⟩
+  refine ⟨⟨hK.isClosedSubgraph.anti_right Graph.inter_le_left h.le, by simpa⟩, ?_⟩
   intro P ⟨hPH, hP⟩ hle
   rw [hK.eq_of_le ⟨?_, hP⟩ hle]
-  exact (hPH.of_le_of_le hle Graph.inter_le_left).trans hK.isClosedSubgraph
+  exact (hPH.anti_right hle Graph.inter_le_left).trans hK.isClosedSubgraph
 
 lemma IsCompOf.of_le_le (h : K.IsCompOf G) (hKH : K ≤ H) (hHG : H ≤ G) : K.IsCompOf H := by
-  refine ⟨⟨h.isClosedSubgraph.of_le_of_le hKH hHG, h.nonempty⟩, fun K' ⟨hK'H, hK'ne⟩ hK'K ↦ ?_⟩
-  exact h.le_of_le ⟨(hK'H.of_le_of_le hK'K hKH).trans h.isClosedSubgraph, hK'ne⟩ hK'K
+  refine ⟨⟨h.isClosedSubgraph.anti_right hKH hHG, h.nonempty⟩, fun K' ⟨hK'H, hK'ne⟩ hK'K ↦ ?_⟩
+  exact h.le_of_le ⟨(hK'H.anti_right hK'K hKH).trans h.isClosedSubgraph, hK'ne⟩ hK'K
 
 lemma ConnBetween.mem_walkable (h : G.ConnBetween x y) : y ∈ V(G.walkable x) := h
 
@@ -234,7 +233,7 @@ lemma mem_or_mem (S : G.Separation) (hxV : x ∈ V(G)) : x ∈ S.left ∨ x ∈ 
 
 lemma edge_induce_disjoint (S : G.Separation) : Disjoint E(G[S.left]) E(G[S.right]) := by
   refine disjoint_left.2 fun e he he' ↦ ?_
-  simp only [induce_edgeSet, mem_setOf_eq] at he he'
+  simp only [edgeSet_induce, mem_setOf_eq] at he he'
   obtain ⟨x, y, hexy, hx, hy⟩ := he
   obtain ⟨x', y', hexy', hx', hy'⟩ := he'
   obtain rfl | rfl := hexy.left_eq_or_eq hexy'
@@ -252,19 +251,18 @@ lemma edge_mem_or_mem (S : G.Separation) (he : e ∈ E(G)) :
     e ∈ E(G[S.left]) ∨ e ∈ E(G[S.right]) := by
   have := S.eq_union
   apply_fun edgeSet at this
-  rwa [this, union_edgeSet] at he
+  rwa [this, edgeSet_union] at he
 
 lemma vertexSet_nontrivial (S : G.Separation) : V(G).Nontrivial :=
   ⟨_, S.left_subset S.nonempty_left.some_mem, _, S.right_subset S.nonempty_right.some_mem,
     S.disjoint.ne_of_mem S.nonempty_left.some_mem S.nonempty_right.some_mem⟩
 
-lemma induce_left_isClosedSubgraph (S : G.Separation) : G[S.left].IsClosedSubgraph G where
-  le := by simp [S.left_subset]
-  closed e x hex hx := by
+lemma induce_left_isClosedSubgraph (S : G.Separation) : G[S.left].IsClosedSubgraph G :=
+  IsClosedSubgraph.mk' (by simp [S.left_subset]) fun e x hex hx => by
     contrapose! hx
     have := hex.of_le_of_mem (by simp [S.right_subset])
       (S.edge_mem_or_mem hex.edge_mem |>.resolve_left hx) |>.vertex_mem
-    simp only [induce_vertexSet] at this ⊢
+    simp only [vertexSet_induce] at this ⊢
     rwa [S.not_left_mem_iff hex.vertex_mem]
 
 lemma induce_right_isClosedSubgraph (S : G.Separation)  : G[S.right] ≤c G :=
@@ -294,19 +292,19 @@ lemma not_connBetween (S : G.Separation) (hx : x ∈ S.left) (hy : y ∈ S.right
   obtain ⟨e, x, y, hinc, hx, hy⟩ := exists_dInc_prop_not_prop hx hy
   exact hy <| S.left_mem_of_adj hx (hW.isLink_of_dInc hinc).adj
 
-def isSepBetween_of_vertexDelete (S : (G - X).Separation) (hx : x ∈ S.left)
+def isSepBetween_of_deleteVerts (S : (G - X).Separation) (hx : x ∈ S.left)
     (hy : y ∈ S.right) : G.IsSepBetween x y (V(G) ∩ X) := by
   refine ⟨inter_subset_left, ?_, ?_, ?_⟩
   · simp [(S.left_subset hx).2]
   · simp [(S.right_subset hy).2]
-  · simpa [vertexDelete_vertexSet_inter] using S.not_connBetween hx hy
+  · simpa [deleteVerts_vertexSet_inter] using S.not_connBetween hx hy
 
 lemma induce_stronglyDisjoint (S : G.Separation) : G[S.left].StronglyDisjoint G[S.right] where
-  vertex := by simp only [induce_vertexSet, S.disjoint]
+  vertex := by simp only [vertexSet_induce, S.disjoint]
   edge := S.edge_induce_disjoint
 
 lemma induce_left_lt (S : G.Separation) : G[S.left] < G :=
-  S.induce_left_isClosedSubgraph.le.lt_of_ne fun bad ↦ by grind [S.left_ssubset]
+  lt_of_le_of_ne (S.induce_left_isClosedSubgraph.le) fun bad ↦ by grind [S.left_ssubset]
 
 lemma induce_right_lt (S : G.Separation) : G[S.right] < G := S.symm.induce_left_lt
 
@@ -405,12 +403,12 @@ lemma vertexSet_isSep : G.IsSep V(G) := ⟨refl _, by simp⟩
 lemma isSep_of_not_connected (h : ¬ (G - S).Connected) : G.IsSep (V(G) ∩ S) :=
   ⟨inter_subset_left, by simpa⟩
 
-lemma IsSep.of_vertexDelete (h : (G - X).IsSep S) : G.IsSep (S ∪ (V(G) ∩ X)) where
+lemma IsSep.of_deleteVerts (h : (G - X).IsSep S) : G.IsSep (S ∪ (V(G) ∩ X)) where
   subset_vx := by
     have : S ⊆ V(G) ∧ Disjoint S X := by simpa [subset_diff] using h.subset_vx
     simp [this.1]
   not_connected := by
-    rw [union_comm, ← vertexDelete_vertexDelete, vertexDelete_vertexSet_inter]
+    rw [union_comm, ← deleteVerts_deleteVerts, deleteVerts_vertexSet_inter]
     exact h.not_connected
 
 lemma IsSep.of_isSpanningSubgraph (h : G.IsSep S) (hsle : H ≤s G) : H.IsSep S where
@@ -419,14 +417,14 @@ lemma IsSep.of_isSpanningSubgraph (h : G.IsSep S) (hsle : H ≤s G) : H.IsSep S 
 
 lemma IsComplete.isInducedSubgraph (hG : G.IsComplete) (hH : H ≤i G) : H.IsComplete := by
   rintro x hx y hy hne
-  exact hH.adj_of_adj (hG x (hH.vertexSet_mono hx) y (hH.vertexSet_mono hy) hne) hx hy
+  exact hH.adj_congr hx hy |>.mpr (hG x (hH.vertexSet_mono hx) y (hH.vertexSet_mono hy) hne)
 
 @[simp]
 lemma IsComplete.isSep_iff_subset (h : G.IsComplete) : G.IsSep S ↔ S = V(G) := by
   refine ⟨fun hS => hS.subset_vx.antisymm ?_, ?_⟩
-  · have := h.isInducedSubgraph (G.vertexDelete_isInducedSubgraph S)
+  · have := h.isInducedSubgraph (G.deleteVerts_isInducedSubgraph S)
     |>.connected_iff.not.mp hS.not_connected
-    simpa only [vertexDelete_vertexSet, not_nonempty_iff_eq_empty, diff_eq_empty] using this
+    simpa only [vertexSet_deleteVerts, not_nonempty_iff_eq_empty, diff_eq_empty] using this
   rintro rfl
   exact vertexSet_isSep
 
@@ -490,7 +488,7 @@ lemma IsMixedSep.of_isSpanningSubgraph (h : G.IsMixedSep S F) (hsle : H ≤s G) 
   subset_vertexSet := hsle.vertexSet_eq ▸ h.subset_vertexSet
   subset_edgeSet := inter_subset_left
   not_connected hc := by
-    rw [edgeDelete_edgeSet_inter] at hc
+    rw [edgeSet_deleteEdges_inter] at hc
     exact h.not_connected <| hc.of_isSpanningSubgraph (by gcongr)
 
 /-- A graph has `PreconnGE n`, if for every pair of vertices `s` and `t`, there is no
@@ -544,12 +542,12 @@ lemma preconnGE_iff_forall_preconnected :
     obtain ⟨S⟩ := hS
     have hcut := h (diff_subset <| S.left_subset S.nonempty_left.some_mem)
         (diff_subset <| S.right_subset S.nonempty_right.some_mem)
-        (S.isSepBetween_of_vertexDelete (X := X) S.nonempty_left.some_mem S.nonempty_right.some_mem)
+        (S.isSepBetween_of_deleteVerts (X := X) S.nonempty_left.some_mem S.nonempty_right.some_mem)
     exact hcut.trans (encard_le_encard inter_subset_right) |>.not_gt hX
   · by_contra! hCn
     have hpre : (G - C).Preconnected := h (X := C) hCn
-    have hs' : s ∈ V(G - C) := by simp [vertexDelete_vertexSet, hs, hC.left_not_mem]
-    have ht' : t ∈ V(G - C) := by simp [vertexDelete_vertexSet, ht, hC.right_not_mem]
+    have hs' : s ∈ V(G - C) := by simp [hs, hC.left_not_mem]
+    have ht' : t ∈ V(G - C) := by simp [ht, hC.right_not_mem]
     exact hC.not_connBetween <| hpre s t hs' ht'
 
 lemma preconnGE_iff_forall_setConnGE : G.PreconnGE n ↔ ∀ S T : Set α, S ⊆ V(G) → T ⊆ V(G) →
@@ -579,6 +577,67 @@ lemma preconnGE_iff_forall_setConnGE : G.PreconnGE n ↔ ∀ S T : Set α, S ⊆
   rw [ENat.coe_toNat (by simp)] at hcd
   simpa [hsC.not_ge, htC.not_ge] using hcd
 
+/-- Minimum `C.encard` over vertex cuts `C` of `G`, as an `ℕ∞`. -/
+noncomputable def sepConnectivity (G : Graph α β) : ℕ∞ :=
+  ⨅ C : {C : Set α // G.IsSep C}, (C.val : Set α).encard
+
+open Classical in
+/-- Upper bound on connectivity from the vertex count: `⊤` if `V(G)` is a subsingleton, else
+`|V(G)| - 1` in `ℕ∞`. -/
+noncomputable def cardConnectivityBound (G : Graph α β) : ℕ∞ :=
+  if _ : V(G).Subsingleton then ⊤ else V(G).encard - 1
+
+/-- Global vertex connectivity as an `ℕ∞`: minimum of separator connectivity and the
+cardinality bound that appears in `ConnGE`. -/
+noncomputable def connectivity (G : Graph α β) : ℕ∞ :=
+  min G.sepConnectivity G.cardConnectivityBound
+
+/-- Minimum pairwise `connBetweenConnectivity` over ordered pairs of vertices in `V(G)`. -/
+noncomputable def preconnectivity (G : Graph α β) : ℕ∞ :=
+  ⨅ s : V(G), ⨅ t : V(G), connectivityBetween G s t
+
+/-- Minimum pairwise `edgeConnBetweenConnectivity` over ordered pairs of vertices in `V(G)`. -/
+noncomputable def edgeConnectivity (G : Graph α β) : ℕ∞ :=
+  ⨅ s : V(G), ⨅ t : V(G), edgeConnectivityBetween G s t
+
+lemma le_sepConnectivity_iff {k : ℕ∞} :
+    k ≤ G.sepConnectivity ↔ ∀ ⦃C : Set α⦄, G.IsSep C → k ≤ C.encard := by
+  simp [sepConnectivity, le_iInf_iff, Subtype.forall]
+
+lemma nat_le_cardConnectivityBound_iff (n : ℕ) :
+    n ≤ G.cardConnectivityBound ↔ V(G).Subsingleton ∨ n < V(G).encard := by
+  unfold cardConnectivityBound
+  split_ifs with hV
+  · refine ⟨fun _ => Or.inl hV, fun _ => le_top⟩
+  refine ⟨fun hn => Or.inr ?_, by simp only [hV, false_or]; eomega⟩
+  rw [not_subsingleton_iff, ← one_lt_encard_iff_nontrivial] at hV
+  eomega
+
+lemma connGE_iff_le_connectivity (n : ℕ) : G.ConnGE n ↔ n ≤ G.connectivity := by
+  rw [connectivity, le_min_iff, connGE_iff, le_sepConnectivity_iff,
+    nat_le_cardConnectivityBound_iff n]
+
+lemma le_preconnectivity_iff {k : ℕ∞} : k ≤ G.preconnectivity ↔ ∀ ⦃s t : α⦄, s ∈ V(G) → t ∈ V(G) →
+    k ≤ connectivityBetween G s t := by
+  rw [preconnectivity, le_iInf_iff]
+  exact ⟨fun h s t hs ht ↦ (le_iInf_iff.mp (h ⟨s, hs⟩)) ⟨t, ht⟩,
+    fun h ⟨s, hs⟩ ↦ le_iInf_iff.mpr fun ⟨t, ht⟩ ↦ h hs ht⟩
+
+lemma preconnGE_iff_le_preconnectivity (n : ℕ) : G.PreconnGE n ↔ n ≤ G.preconnectivity := by
+  rw [preconnGE_iff_forall_connBetweenGE, le_preconnectivity_iff]
+  exact forall₄_congr fun s t _ _ ↦ by simpa using connBetweenGE_iff_le_connectivityBetween s t n
+
+lemma le_edgeConnectivity_iff {k : ℕ∞} : k ≤ G.edgeConnectivity ↔
+    ∀ ⦃s t : α⦄, s ∈ V(G) → t ∈ V(G) → k ≤ edgeConnectivityBetween G s t := by
+  rw [edgeConnectivity, le_iInf_iff]
+  exact ⟨fun h s t hs ht ↦ (le_iInf_iff.mp (h ⟨s, hs⟩)) ⟨t, ht⟩,
+    fun h ⟨s, hs⟩ ↦ le_iInf_iff.mpr fun ⟨t, ht⟩ ↦ h hs ht⟩
+
+lemma edgeConnGE_iff_le_edgeConnectivity (n : ℕ) : G.EdgeConnGE n ↔ n ≤ G.edgeConnectivity := by
+  rw [EdgeConnGE, le_edgeConnectivity_iff]
+  refine forall₄_congr fun s t hs ht ↦ ?_
+  simpa using (edgeConnBetweenGE_iff_le_edgeConnectivityBetween s t n)
+
 lemma PreconnGE.isSpanningSubgraph (hconn : H.PreconnGE n) (hsle : H ≤s G) : G.PreconnGE n :=
   fun _ _ hs ht => hconn (hsle.vertexSet_eq ▸ hs) (hsle.vertexSet_eq ▸ ht) |>.of_le hsle.le
 
@@ -591,10 +650,10 @@ lemma encard_le_preconnGE_of_not_isComplete (h : ¬ G.IsComplete) (hn : G.Precon
   obtain ⟨x, hx, y, hy, hne, hxy⟩ := by simpa [IsComplete] using h
   exact connBetweenGE_le_encard (hn hx hy) hne hxy
 
--- lemma PreconnGE.edgeDelete_singleton_of_not_isComplete (h : G.PreconnGE n)
+-- lemma PreconnGE.deleteEdges_singleton_of_not_isComplete (h : G.PreconnGE n)
 --     (hne : ¬ G.IsComplete) (e : β) : (G ＼ {e}).PreconnGE (n - 1) := by
 --   obtain he | he := (em <| e ∈ E(G)).symm
---   · rw [edgeDelete_eq _ (by simpa)]
+--   · rw [deleteEdges_eq _ (by simpa)]
 --     exact h.anti_right (by omega)
 --   rintro s t hs ht
 
@@ -624,8 +683,8 @@ lemma connGE_bot : (⊥ : Graph α β).ConnGE n ↔ n = 0 := by
   simp
 
 @[simp]
-lemma bouquet_vertexDelete : (bouquet v F) - v = ⊥ :=
-  (vertexDelete_eq_bot_iff (bouquet v F) {v}).mpr <| by simp
+lemma bouquet_deleteVerts : (bouquet v F) - {v} = ⊥ :=
+  (deleteVerts_eq_bot_iff (bouquet v F) {v}).mpr <| by simp
 
 @[simp]
 lemma connGE_bouquet_iff (n : ℕ) : (bouquet v F).ConnGE n ↔ n ≤ 1 := by
@@ -650,7 +709,7 @@ lemma preconnGE_iff_connGE_of_not_isComplete (h : ¬ G.IsComplete) (n : ℕ) :
   refine ⟨fun hn ↦ ⟨fun C hC ↦ ?_ , ?_⟩, fun hn ↦ hn.pre⟩
   · have := hC.not_connected
     rw [connected_iff, not_and_or] at this
-    simp only [vertexDelete_vertexSet, not_nonempty_iff_eq_empty, diff_eq_empty] at this
+    simp only [vertexSet_deleteVerts, not_nonempty_iff_eq_empty, diff_eq_empty] at this
     obtain hsu | hne := this
     · obtain ⟨x, hx, y, hy, hne, hxy⟩ := by simpa [IsComplete] using h
       exact connBetweenGE_le_encard (hn hx hy) hne hxy |>.trans <| encard_le_encard hsu
@@ -681,15 +740,15 @@ lemma ConnGE.isSpanningSubgraph (h : H.ConnGE n) (hsle : H ≤s G) : G.ConnGE n 
   le_cut C hC := by simpa using h.le_cut <| hC.of_isSpanningSubgraph hsle
   le_card := hsle.vertexSet_eq ▸ h.le_card
 
-lemma ConnGE.of_edgeDelete (h : (G ＼ F).ConnGE n) : G.ConnGE n :=
-  h.isSpanningSubgraph edgeDelete_isSpanningSubgraph
+lemma ConnGE.of_deleteEdges (h : (G ＼ F).ConnGE n) : G.ConnGE n :=
+  h.isSpanningSubgraph deleteEdges_isSpanningSubgraph
 
-lemma ConnGE.vertexDelete (h : G.ConnGE n) (hFin : (V(G) ∩ X).Finite) :
+lemma ConnGE.deleteVerts (h : G.ConnGE n) (hFin : (V(G) ∩ X).Finite) :
     (G - X).ConnGE (n - (V(G) ∩ X).encard).toNat where
   le_cut C hC := by
     rw [ENat.coe_toNat (by simp), tsub_le_iff_right, ← encard_union_eq]
-    exact h.le_cut hC.of_vertexDelete
-    · have := by simpa only [vertexDelete_vertexSet, subset_diff] using hC.subset_vx
+    exact h.le_cut hC.of_deleteVerts
+    · have := by simpa only [vertexSet_deleteVerts, subset_diff] using hC.subset_vx
       exact this.2.mono_right inter_subset_right
   le_card := by
     rw [inter_comm] at hFin
@@ -697,21 +756,21 @@ lemma ConnGE.vertexDelete (h : G.ConnGE n) (hFin : (V(G) ∩ X).Finite) :
     · left
       exact hss
     have : V(G - X).encard = V(G).encard - (X ∩ V(G)).encard := by
-      rw [vertexDelete_vertexSet, ← diff_inter_self_eq_diff, encard_diff inter_subset_right hFin]
+      rw [vertexSet_deleteVerts, ← diff_inter_self_eq_diff, encard_diff inter_subset_right hFin]
     rw [not_subsingleton_iff, ← one_lt_encard_iff_nontrivial, this] at hss
     refine h.le_card.imp (fun h a ha b hb ↦ h ha.1 hb.1) (fun h ↦ ?_)
     rw [ENat.coe_toNat (by simp), this, inter_comm]
     enat_to_nat! <;> omega
 
--- lemma ConnGE.edgeDelete_singleton (h : G.ConnGE (n+1)) (e : β) :
+-- lemma ConnGE.deleteEdges_singleton (h : G.ConnGE (n+1)) (e : β) :
 --     (G ＼ {e}).ConnGE n where
 --   le_cut C hC := by
 --     by_contra! hcd
---     have := h.le_cut hC.of_edgeDelete
+--     have := h.le_cut hC.of_deleteEdges
 --   le_card := by
 --     rw [← encard_singleton]
 
--- lemma ConnGE.edgeDelete_parallel (h : G.ConnGE (n+1)) (u v : α) :
+-- lemma ConnGE.deleteEdges_parallel (h : G.ConnGE (n+1)) (u v : α) :
 --     (G ＼ {e | G.IsLink e u v}).ConnGE n where
 --   le_cut C hC := by
 

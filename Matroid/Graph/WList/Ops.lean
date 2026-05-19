@@ -665,6 +665,14 @@ lemma map_vertex (w : WList α β) (f : α → α') : (w.map f).vertex = w.verte
   | cons x e w ih => simp [map, ih]
 
 @[simp]
+lemma map_invFunOn_map [Nonempty α] {s : Set α} {w : WList α' β}
+    (hw : V(w) ⊆ f '' s) : (w.map (invFunOn f s)).map f = w := by
+  induction w with
+  | nil x => simp [(surjOn_image f s).rightInvOn_invFunOn (hw (by simp : x ∈ _))]
+  | cons x e w ih => simp [(surjOn_image f s).rightInvOn_invFunOn (hw (by simp : x ∈ _)),
+    ih fun y hy ↦ hw (by simp [hy])]
+
+@[simp]
 lemma mem_map_iff (w : WList α β) (f : α → α') (x : α') : x ∈ w.map f ↔ ∃ y, y ∈ w ∧ f y = x := by
   rw [← mem_vertex, map_vertex]
   simp
@@ -676,7 +684,7 @@ lemma map_edge (w : WList α β) (f : α → α') : (w.map f).edge = w.edge := b
   | cons x e w ih => simp [map, ih]
 
 @[simp]
-lemma map_edgeSet (w : WList α β) (f : α → α') : E(w.map f) = E(w) := by
+lemma edgeSet_map (w : WList α β) (f : α → α') : E(w.map f) = E(w) := by
   ext e
   simp [WList.edgeSet, map_edge]
 
@@ -749,7 +757,7 @@ lemma edgeMap_edge (w : WList α β) (k : β → β') : (w.edgeMap k).edge = w.e
   | cons x e w ih => simp [edgeMap, ih]
 
 @[simp]
-lemma edgeMap_edgeSet (w : WList α β) (k : β → β') : E(w.edgeMap k) = k '' E(w) := by
+lemma edgeedgeSet_map (w : WList α β) (k : β → β') : E(w.edgeMap k) = k '' E(w) := by
   ext e
   constructor
   · intro he

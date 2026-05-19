@@ -53,17 +53,29 @@ lemma setOf_isNonloopAt_incEdges [G.Loopless] (x : α) : {e | G.IsNonloopAt e x}
   ext e
   simp +contextual [iff_def, IsNonloopAt.inc]
 
+@[simp]
+lemma setLinkEdges_singleton_compl_eq_incEdges (G : Graph α β) [G.Loopless] (x : α) :
+    δ(G, {x}) = E(G, x) := by
+  rw [setLinkEdges_singleton_eq_setOf_isNonloopAt, setOf_isNonloopAt_incEdges]
+
+@[simp]
+lemma IsComplete.neighbors [G.Loopless] (h : G.IsComplete) (hx : x ∈ V(G)) :
+    N(G, x) = V(G) \ {x} := by
+  ext y
+  simp only [Neighbor, mem_setOf_eq, mem_diff, mem_singleton_iff]
+  exact ⟨fun hadj ↦ ⟨hadj.right_mem, hadj.ne.symm⟩, fun ⟨hy, hne⟩ ↦ h x hx y hy (Ne.symm hne)⟩
+
 instance [G.Loopless] (X : Set α) : G[X].Loopless where
   not_isLoopAt e x (h : G[X].IsLink e x x) := h.1.adj.ne rfl
 
 instance [G.Loopless] (X : Set α) : (G - X).Loopless :=
-  ‹G.Loopless›.mono vertexDelete_le
+  ‹G.Loopless›.mono deleteVerts_le
 
 instance [G.Loopless] (F : Set β) : (G ↾ F).Loopless :=
-  ‹G.Loopless›.mono edgeRestrict_le
+  ‹G.Loopless›.mono restrict_le
 
 instance [G.Loopless] (F : Set β) : (G ＼ F).Loopless :=
-  ‹G.Loopless›.mono edgeDelete_le
+  ‹G.Loopless›.mono deleteEdges_le
 
 lemma eq_noEdge_or_vertexSet_nontrivial (G : Graph α β) [G.Loopless] :
     (G = ⊥) ∨ (∃ x, G = Graph.noEdge {x} β) ∨ V(G).Nontrivial := by
@@ -85,16 +97,16 @@ def loopRemove (G : Graph α β) : Graph α β := G ↾ {e | ∀ x, ¬ G.IsLoopA
 
 instance : (loopRemove G).Loopless where
   not_isLoopAt e x := by
-    simp only [loopRemove, edgeRestrict_isLoopAt_iff, mem_setOf_eq, not_and, not_forall, not_not]
+    simp only [loopRemove, restrict_isLoopAt, mem_setOf_eq, not_and, not_forall, not_not]
     exact fun h ↦ ⟨x, h⟩
 
-lemma loopRemove_le (G : Graph α β) : loopRemove G ≤ G := edgeRestrict_le
+lemma loopRemove_le (G : Graph α β) : loopRemove G ≤ G := restrict_le
 
 lemma loopRemove_isSpanningSubgraph (G : Graph α β) : loopRemove G ≤s G :=
-  edgeRestrict_isSpanningSubgraph
+  restrict_isSpanningSubgraph
 
-lemma loopRemove_edgeDelete (G : Graph α β) : loopRemove G = G ＼ ⋃ x ∈ V(G), G.loopSet x := by
-  rw [loopRemove, ← edgeRestrict_inter_edgeSet, edgeDelete_eq_edgeRestrict, inter_comm]
+lemma loopRemove_deleteEdges (G : Graph α β) : loopRemove G = G ＼ ⋃ x ∈ V(G), G.loopSet x := by
+  rw [loopRemove, ← restrict_inter_edgeSet, ← restrict_edgeSet_diff_eq_deleteEdges, inter_comm]
   apply congrArg
   ext e
   simp only [mem_inter_iff, mem_setOf_eq, mem_diff, mem_iUnion, mem_loopSet, exists_prop,
@@ -103,17 +115,17 @@ lemma loopRemove_edgeDelete (G : Graph α β) : loopRemove G = G ＼ ⋃ x ∈ V
 
 @[simp]
 lemma loopRemove_edgeSet : E(loopRemove G) = {e ∈ E(G) | ∀ x, ¬ G.IsLoopAt e x} := by
-  simp only [loopRemove, edgeRestrict_edgeSet]
+  simp only [loopRemove, edgeSet_restrict]
   rw [setOf_and]
   rfl
 
 lemma loopRemove_edgeSet_diff : E(loopRemove G) = E(G) \ (⋃ x ∈ V(G), G.loopSet x) := by
-  rw [loopRemove_edgeDelete, edgeDelete_edgeSet]
+  rw [loopRemove_deleteEdges, edgeSet_deleteEdges]
 
 @[simp]
 lemma loopRemove_isLink : (loopRemove G).IsLink e x y ↔ G.IsLink e x y ∧ x ≠ y := by
   rw [and_comm]
-  simp only [loopRemove, edgeRestrict_isLink, mem_setOf_eq, ne_eq, and_congr_left_iff]
+  simp only [loopRemove, restrict_isLink, mem_setOf_eq, ne_eq, and_congr_left_iff]
   intro h
   rw [iff_not_comm]
   simp only [not_forall, not_not]
@@ -122,8 +134,8 @@ lemma loopRemove_isLink : (loopRemove G).IsLink e x y ↔ G.IsLink e x y ∧ x �
 
 /-- Proof that `loopRemove` is the maximally loopless subgraph of `G`. -/
 lemma le_loopRemove [H.Loopless] (h : H ≤ G) : H ≤ loopRemove G where
-  vertex_subset := by simp [vertexSet_mono h]
-  isLink_of_isLink e x y he := by
+  vertexSet_mono := by simp [vertexSet_mono h]
+  isLink_mono e x y he := by
     rw [loopRemove_isLink]
     refine ⟨he.of_le h, he.ne⟩
 
@@ -144,24 +156,24 @@ lemma IsPath.loopRemove (hP : G.IsPath P) : (loopRemove G).IsPath P := by
     rintro rfl
     exact hP.2.2 first_mem
 
-lemma loopRemove_isSpanningSubgraph_edgeDelete_isLoopAt (G : Graph α β) (x : α) :
+lemma loopRemove_isSpanningSubgraph_deleteEdges_isLoopAt (G : Graph α β) (x : α) :
     loopRemove G ≤s (G ＼ {e | G.IsLoopAt e x}) := by
-  rw [edgeDelete_eq_edgeRestrict]
-  apply edgeRestrict_isSpanningSubgraph_edgeRestrict
+  rw [← restrict_edgeSet_diff_eq_deleteEdges]
+  apply restrict_isSpanningSubgraph_restrict
   intro e ⟨he, hel⟩
   use he, he, hel x
 
-lemma loopRemove_le_edgeDelete_isLoopAt (G : Graph α β) (x : α) :
+lemma loopRemove_le_deleteEdges_isLoopAt (G : Graph α β) (x : α) :
     loopRemove G ≤ (G ＼ {e | G.IsLoopAt e x}) :=
-  G.loopRemove_isSpanningSubgraph_edgeDelete_isLoopAt x |>.le
+  G.loopRemove_isSpanningSubgraph_deleteEdges_isLoopAt x |>.le
 
-lemma IsLoopAt.loopRemove_isSpanningSubgraph_edgeDelete (h : G.IsLoopAt e x) :
+lemma IsLoopAt.loopRemove_isSpanningSubgraph_deleteEdges (h : G.IsLoopAt e x) :
     loopRemove G ≤s (G ＼ {e}) :=
-  G.loopRemove_isSpanningSubgraph_edgeDelete_isLoopAt x |>.trans
-  <| G.edgeDelete_isSpanningSubgraph_anti_right <| by simpa
+  G.loopRemove_isSpanningSubgraph_deleteEdges_isLoopAt x |>.trans
+  <| G.deleteEdges_isSpanningSubgraph_anti_right <| by simpa
 
-lemma IsLoopAt.loopRemove_le_edgeDelete (h : G.IsLoopAt e x) : loopRemove G ≤ (G ＼ {e}) :=
-  h.loopRemove_isSpanningSubgraph_edgeDelete.le
+lemma IsLoopAt.loopRemove_le_deleteEdges (h : G.IsLoopAt e x) : loopRemove G ≤ (G ＼ {e}) :=
+  h.loopRemove_isSpanningSubgraph_deleteEdges.le
 
 section Simple
 
@@ -191,9 +203,9 @@ lemma Simple.mono (hG : G.Simple) (hle : H ≤ G) : H.Simple where
   not_isLoopAt e x := by simp [hG.toLoopless.mono hle]
   eq_of_isLink e f x y he hf := (he.of_le hle).unique_edge (hf.of_le hle)
 
-instance : (G ↾ F).Simple := ‹G.Simple›.mono edgeRestrict_le
-instance : (G ＼ F).Simple := ‹G.Simple›.mono edgeDelete_le
-instance : (G - X).Simple := ‹G.Simple›.mono vertexDelete_le
+instance : (G ↾ F).Simple := ‹G.Simple›.mono restrict_le
+instance : (G ＼ F).Simple := ‹G.Simple›.mono deleteEdges_le
+instance : (G - X).Simple := ‹G.Simple›.mono deleteVerts_le
 
 instance : G[X].Simple where
   eq_of_isLink e f x y := by
@@ -254,6 +266,10 @@ lemma isLink_incAdjEquiv_symm (y : N(G, x)) : G.IsLink ((G.incAdjEquiv x).symm y
 @[simp]
 lemma inc_incAdjEquiv_symm (y : N(G, x)) : G.Inc ((G.incAdjEquiv x).symm y) x :=
   (isLink_incAdjEquiv_symm y).inc_left
+
+@[simp]
+lemma encard_incEdges (G : Graph α β) [G.Simple] (x : α) : E(G, x).encard = N(G, x).encard :=
+  ENat.card_congr (G.incAdjEquiv x)
 
 /-! ### Operations -/
 
@@ -351,12 +367,23 @@ instance mixedLineGraph_simple : L'(G).Simple where
     rw [← h1.2] at h2
     simp_all
 
-instance completeBipartiteGraph_simple (m n : ℕ) : (CompleteBipartiteGraph m n).Simple where
+instance completeGraph_simple {n : ℕ} : (CompleteGraph n).Simple where
   not_isLoopAt e x := by
-    rintro ⟨_, _, ⟨rfl, h⟩ | ⟨rfl, h⟩⟩ <;> cases h
+    rintro ⟨-, hx, hne, rfl⟩
+    exact hne rfl
+  eq_of_isLink e f x y he hf := by grind
+
+instance completeBipartiteGraph_simple {m n : ℕ} : (CompleteBipartiteGraph m n).Simple where
+  not_isLoopAt e x := by rintro ⟨_, _, ⟨rfl, h⟩ | ⟨rfl, h⟩⟩ <;> cases h
   eq_of_isLink := by
     rintro e f x y ⟨_, _, ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩⟩ ⟨_, _, ⟨h, h'⟩ | ⟨h, h'⟩⟩ <;>
       simp_all [Prod.ext_iff]
+
+@[simp↓]
+lemma encard_setLinkEdges_singleton_compl_completeGraph (n : ℕ) (x : ℕ) (hx : x < n) :
+    δ(CompleteGraph n, {x}).encard = n - 1 := by
+  rw [setLinkEdges_singleton_compl_eq_incEdges, encard_incEdges,
+    encard_neighbors_completeGraph _ _ hx, ENat.coe_sub, Nat.cast_one]
 
 section Simplify
 
@@ -366,13 +393,13 @@ variable {φ : β → β}
 def simplify (G : Graph α β) (φ : β → β) : Graph α β := G.loopRemove ↾ (φ '' E(G))
 
 lemma simplify_isSpanningSubgraph : G.simplify φ ≤s G :=
-  edgeRestrict_isSpanningSubgraph.trans G.loopRemove_isSpanningSubgraph
+  restrict_isSpanningSubgraph.trans G.loopRemove_isSpanningSubgraph
 
 lemma simplify_le : G.simplify φ ≤ G := simplify_isSpanningSubgraph.le
 
 lemma simplify_edgeSet_diff (hφ : G.parallelClasses.IsRepFun φ) :
     E(G.simplify φ) = φ '' E(G) \ ⋃ x ∈ V(G), G.loopSet x := by
-  simp only [simplify, edgeRestrict_edgeSet, loopRemove_edgeSet_diff]
+  simp only [simplify, edgeSet_restrict, loopRemove_edgeSet_diff]
   ext e
   simp only [mem_inter_iff, mem_diff, mem_iUnion, mem_loopSet, exists_prop, and_comm, not_exists,
     not_and, mem_image, and_congr_right_iff, and_iff_right_iff_imp, forall_exists_index, and_imp]
@@ -399,11 +426,11 @@ lemma simplify_edgeSet (hφ : G.parallelClasses.IsRepFun φ) :
   simp_rw [IsLoopAt, ← hfφ.isLink_eq]
   exact h
 
-lemma simplify_eq_edgeRestrict (hφ : G.parallelClasses.IsRepFun φ) :
+lemma simplify_eq_restrict (hφ : G.parallelClasses.IsRepFun φ) :
     G.simplify φ = G ↾ φ '' (E(G) \ (⋃ x ∈ V(G), G.loopSet x)) := by
-  apply G.ext_of_le_le (edgeRestrict_le.trans <| loopRemove_le G) edgeRestrict_le rfl
+  apply G.ext_of_le_le (restrict_le.trans <| loopRemove_le G) restrict_le rfl
   convert simplify_edgeSet hφ
-  simp only [edgeRestrict_edgeSet, inter_eq_right, image_subset_iff]
+  simp only [edgeSet_restrict, inter_eq_right, image_subset_iff]
   refine fun e he ↦ ?_
   simp only [mem_preimage]
   simpa using hφ.apply_mem <| by simpa using he.1

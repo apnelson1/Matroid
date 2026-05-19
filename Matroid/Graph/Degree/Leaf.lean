@@ -55,10 +55,9 @@ lemma Inc.isPendant_of_degree_le_one [G.LocallyFinite] (h : G.Inc e x) (hdeg : G
     G.IsPendant e x :=
   h.isPendant_of_eDegree_le_one <| by rwa [← natCast_degree_eq, ENat.coe_le_one]
 
-lemma IsPendant.edgeSet_delete_vertex_eq (h : G.IsPendant e x) : E(G - x) = E(G) \ {e} := by
+lemma IsPendant.edgeSet_delete_vertex_eq (h : G.IsPendant e x) : E(G - {x}) = E(G) \ {e} := by
   ext f
-  simp only [vertexDelete_singleton, vertexDelete_edgeSet, mem_singleton_iff, mem_setOf_eq,
-    mem_diff]
+  simp only [edgeSet_deleteVerts, mem_singleton_iff, mem_setOf_eq, mem_diff]
   refine ⟨fun ⟨z, y, h'⟩ ↦ ⟨h'.1.edge_mem, ?_⟩, fun ⟨hfE, hfe⟩ ↦ ?_⟩
   · rintro rfl
     cases h.isNonloopAt.inc.eq_or_eq_of_isLink h'.1 <;> simp_all
@@ -69,16 +68,15 @@ lemma IsPendant.edgeSet_delete_vertex_eq (h : G.IsPendant e x) : E(G - x) = E(G)
   exact h.edge_unique (h_eq ▸ hzw.inc_right)
 
 lemma IsPendant.eq_addEdge (h : G.IsPendant e x) :
-    ∃ y ∈ V(G), G.IsLink e x y ∧ y ≠ x ∧ e ∉ E(G - x) ∧ G = (G - x).addEdge e x y := by
+    ∃ y ∈ V(G), G.IsLink e x y ∧ y ≠ x ∧ e ∉ E(G - {x}) ∧ G = (G - {x}).addEdge e x y := by
   obtain ⟨y, hne, hexy⟩ := h.isNonloopAt
   refine ⟨y, hexy.right_mem, hexy, hne, ?_, ext_of_le_le le_rfl ?_ ?_ ?_⟩
   · rw [h.edgeSet_delete_vertex_eq]
     simp
   · exact Graph.union_le (by simpa) (by simp)
-  · rw [addEdge_vertexSet, vertexDelete_singleton, vertexDelete_vertexSet, ← union_singleton,
-      union_assoc]
+  · rw [vertexSet_addEdge, vertexSet_deleteVerts, ← union_singleton, union_assoc]
     simp [insert_eq_of_mem hexy.right_mem, insert_eq_of_mem hexy.left_mem]
-  rw [addEdge_edgeSet, h.edgeSet_delete_vertex_eq, insert_diff_singleton,
+  rw [edgeSet_addEdge, h.edgeSet_delete_vertex_eq, insert_diff_singleton,
     insert_eq_of_mem hexy.edge_mem]
 
 lemma IsPendant.exists_eq_addEdge (h : G.IsPendant e x) :

@@ -2,6 +2,7 @@ import Matroid.Rank.Skew
 import Matroid.Order.Quotient
 import Matroid.Order.Discrepancy
 import Matroid.Extension.Minor
+import Matroid.Extension.ProjectBy
 import Matroid.ForMathlib.Data.Set.Finite
 
 open Set BigOperators Set.Notation Function
@@ -115,7 +116,7 @@ lemma Quotient.quotient_projectBy_modularCut [N.Finitary] (h : N ≤q M) :
     h.closure_mem_modularCut_iff] at heU
   obtain heI | ⟨h_eq, h_ne⟩ := heU
   · exact h.closure_subset_closure _ heI
-  replace hI := (projectBy_quotient U).weakLE.indep_of_indep hI
+  replace hI := U.projectBy_quotient.weakLE.indep_of_indep hI
   have heI : M.Indep (insert e I) := by
     rw [hI.insert_indep_iff]
     refine .inl ⟨heE, fun hcl ↦ h_ne ?_⟩

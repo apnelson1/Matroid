@@ -1,6 +1,7 @@
 import Matroid.Graph.Connected.Set.Leg
 import Matroid.Graph.Connected.Vertex.VertexEnsemble
 import Matroid.Graph.Connected.MixedLineGraph
+import Matroid.Graph.Connected.LineGraph
 import Matroid.Graph.Finite
 import Mathlib.Data.Finite.Card
 
@@ -26,7 +27,7 @@ lemma Menger'sTheorem_aux [G.Finite] {S T : Set α} (hS : S ⊆ V(G)) (hT : T �
     have hlast : last '' A.paths ⊆ V(G) := by
       rintro _ ⟨P, hP, rfl⟩
       exact hT <| hA hP |>.last_mem
-    apply hconn.vertexDelete' (last '' A.paths) |>.subset diff_subset subset_rfl |>.anti_right
+    apply hconn.deleteVerts' (last '' A.paths) |>.subset diff_subset subset_rfl |>.anti_right
     rw [inter_eq_left.mpr hlast, A.last_injOn.encard_image]
     rw [← ENat.add_one_le_iff (by simpa)] at hAcard
     refine one_le_iff_ne_zero.mpr ?_
@@ -36,13 +37,13 @@ lemma Menger'sTheorem_aux [G.Finite] {S T : Set α} (hS : S ⊆ V(G)) (hT : T �
   obtain ⟨P, hP⟩ := h1.exists_isPathFrom (by simp); clear h1
   have hPlA : Disjoint V(P) (last '' A.paths) := by
     have := hP.isPath.vertexSet_subset
-    simp only [vertexDelete_vertexSet, subset_diff] at this
+    simp only [vertexSet_deleteVerts, subset_diff] at this
     exact this.2
 
   by_cases hdj : Disjoint V(P) A.vertexSet
-  · let A' := A.path_insert P (hP.of_vertexDelete.subset subset_union_left (by simp) hP.first_mem
+  · let A' := A.path_insert P (hP.of_deleteVerts.subset subset_union_left (by simp) hP.first_mem
       hP.last_mem.1).isPath hdj.symm
-    refine ⟨A', hA.path_insert (hP.of_vertexDelete.subset subset_union_left (by simp) hP.first_mem
+    refine ⟨A', hA.path_insert (hP.of_deleteVerts.subset subset_union_left (by simp) hP.first_mem
         hP.last_mem.1) hdj.symm, P.last, ?_, by simp [A', image_insert_eq]⟩
     by_contra! hdj'
     absurd hdj
@@ -51,7 +52,7 @@ lemma Menger'sTheorem_aux [G.Finite] {S T : Set α} (hS : S ⊆ V(G)) (hT : T �
   rw [not_disjoint_iff] at hdj
 
   have hGP : G.IsPathFrom S T P := by
-    refine hP.of_vertexDelete'.right_of_symmdiff_disjoint ?_
+    refine hP.of_deleteVerts'.right_of_symmdiff_disjoint ?_
     simpa [inter_eq_right.mpr (hA.image_last_eq_inter ▸ inter_subset_left),
       symmDiff_of_le diff_subset]
   let P' := P.suffixFromLast (· ∈ A.vertexSet)
@@ -174,8 +175,7 @@ termination_by (V(G) \ T).ncard
 decreasing_by
   refine ncard_lt_ncard ?_ (by assumption)
   rw [diff_ssubset_diff_iff, ssubset_iff_exists]
-  use inter_subset_inter subset_rfl subset_union_left
-  use P'.first, ?_, by simp [hP'T]
+  use inter_subset_inter_right _ subset_union_left, P'.first, ?_, by simp [hP'T]
   simp only [SetEnsemble.mem_vertexSet_iff, mem_inter_iff, mem_union, WList.mem_vertexSet_iff]
   use (hP'P.subset.trans hGP.vertexSet_subset) first_mem, Or.inr (R.first_mem_bQ2)
 
@@ -247,7 +247,7 @@ theorem Menger'sTheorem_vertex [G.Finite] (hs : s ∈ V(G)) (ht : t ∈ V(G)) (h
     (by simpa [subset_diff, not_symm_not hadj] using (G.neighbor_subset t).trans
     <| subset_insert ..)] at h
     obtain ⟨A, hA, hAcard⟩ := h
-    have hAdj := A.of_vertexDelete
+    have hAdj := A.of_deleteVerts
     replace hA := hA.left (S₀ := N(G, s)) <| by
       rw [diff_symmDiff]
       exact (hAdj.mono_right (by simp)).mono_right inter_subset_right
@@ -331,16 +331,16 @@ theorem Menger'sTheorem [G.Finite] (hι : ENat.card ι = n) (hnt : V(G).Nontrivi
       enat_to_nat!
       omega
     obtain ⟨A⟩ := (G ＼ E(G, s, t)).Menger'sTheoremPre hι' |>.mp
-      (h.edgeDelete_linkEdges s t |>.pre) (by simpa : s ∈ _) (by simpa : t ∈ _)
+      (h.deleteEdges_linkEdges s t |>.pre) (by simpa : s ∈ _) (by simpa : t ∈ _)
     have hP : G.IsPath <| cons s e (nil t) := by simpa [hne, ht]
-    use A.of_le edgeDelete_le |>.extend_singleEdge hιn.some hP
+    use A.of_le deleteEdges_le |>.extend_singleEdge hιn.some hP
     intro i hAi j hAj
     obtain rfl | hnei := eq_or_ne i hιn.some <;> obtain rfl | hnej := eq_or_ne j hιn.some
     <;> simp_all only [mem_linkEdges_iff, cast_add, cast_one, ENat.card_coe_set_eq,
       mem_setOf_eq, VertexEnsemble.extend_singleEdge_of_eq, cons_length, nil_length, zero_add]
-    · simp [(A.of_le _).extend_singleEdge_of_ne hP hnej, A.of_linkEdges_edgeDelete] at hAj
-    · simp [(A.of_le _).extend_singleEdge_of_ne hP hnei, A.of_linkEdges_edgeDelete] at hAi
-    simp [(A.of_le _).extend_singleEdge_of_ne hP hnei, A.of_linkEdges_edgeDelete] at hAi
+    · simp [(A.of_le _).extend_singleEdge_of_ne hP hnej, A.of_linkEdges_deleteEdges] at hAj
+    · simp [(A.of_le _).extend_singleEdge_of_ne hP hnei, A.of_linkEdges_deleteEdges] at hAi
+    simp [(A.of_le _).extend_singleEdge_of_ne hP hnei, A.of_linkEdges_deleteEdges] at hAi
 
 theorem Menger'sTheorem_mixed [G.Finite] (hs : s ∈ V(G)) (ht : t ∈ V(G)) (hι : ENat.card ι = n) :
     (∀ X ⊆ V(G), s ∉ X ∧ t ∉ X → ∀ F ⊆ E(G), ¬ ((G - X) ＼ F).ConnBetween s t →
@@ -369,5 +369,67 @@ theorem Menger'sTheorem_mixed [G.Finite] (hs : s ∈ V(G)) (ht : t ∈ V(G)) (h�
   refine ⟨fun ⟨A, hA⟩ ↦ ⟨mixedLineEnsembleMap A hA⟩, fun ⟨A⟩ ↦ ?_⟩
   classical
   use mixedLineOfEnsembleMap A, mixedLineOfEnsembleMap_edgeDisjoint A
+
+/-! ### Edge Menger (via the line graph) -/
+
+section edgeMenger
+
+private lemma foo {Q : WList β (Sym2 β)}
+    (hconn : (G ↾ V(Q)).ConnBetween s t) : E(hconn.exists_isPath.choose) ⊆ V(Q) :=
+  hconn.exists_isPath.choose_spec.1.isWalk.edgeSet_subset_of_restrict
+
+/-- From a line-graph `SetEnsemble` between incident edge sets, build edge-disjoint `s`–`t`
+paths in `G` indexed by the ensemble's paths. -/
+noncomputable def EdgePathEnsemble.ofLineGraphSetEnsemblePaths (A : (L(G)).SetEnsemble)
+    (hA : A.between (E(G, s)) (E(G, t))) : G.EdgePathEnsemble s t {P // P ∈ A.paths} := by
+  have h : ∀ P ∈ A.paths, _ := fun _ hQ ↦ lineGraph_isWalk_restrict_connBetween (A.valid hQ).isWalk
+    (hA hQ).first_mem (hA hQ).last_mem
+  exact {
+    f := fun ⟨Q, hQ⟩ ↦ h Q hQ |>.exists_isPath.choose
+    isPath := fun ⟨Q, hQ⟩ ↦ by simpa using (h Q hQ).exists_isPath.choose_spec.1.of_le restrict_le
+    first_eq := fun ⟨Q, hQ⟩ ↦ (h Q hQ).exists_isPath.choose_spec.2.1
+    last_eq := fun ⟨Q, hQ⟩ ↦ (h Q hQ).exists_isPath.choose_spec.2.2
+    edgeDisjoint := fun ⟨Q₁, h₁⟩ ⟨Q₂, h₂⟩ hne => (A.disjoint h₁ h₂ (Subtype.coe_injective.ne hne)
+      |>.mono_right (foo (h Q₂ h₂))).mono_left (foo (h Q₁ h₁))}
+
+lemma nonempty_edgePathEnsemble_of_lineGraphSetEnsemble [G.Finite] {n : ℕ}
+    (A : (L(G)).SetEnsemble) (hA : A.between (E(G, s)) (E(G, t))) (hι : ENat.card ι = n)
+    (hAcard : A.paths.encard = n) : Nonempty (G.EdgePathEnsemble s t ι) := by
+  have _ιfin : Finite ι := ENat.card_lt_top.mp (hι ▸ ENat.coe_lt_top n)
+  let E₀ := EdgePathEnsemble.ofLineGraphSetEnsemblePaths A hA
+  have hAcardFin := finite_of_encard_eq_coe hAcard
+  rw [ENat.card_eq_coe_natCard, ENat.coe_inj] at hι
+  rw [← hAcardFin.cast_ncard_eq, ENat.coe_inj] at hAcard
+  have hpaths : Nat.card (↥A.paths) = n := by simpa [← Nat.card_coe_set_eq] using hAcard
+  let φ := ((Finite.equivFinOfCardEq hι).trans (hAcardFin.equivFinOfCardEq hpaths).symm).toEmbedding
+  exact ⟨E₀.comp φ⟩
+
+theorem Menger'sTheorem_edge_vertex [G.Finite] (hs : s ∈ V(G)) (ht : t ∈ V(G))
+    (hι : ENat.card ι = n) : G.EdgeConnBetweenGE s t n ↔ Nonempty (G.EdgePathEnsemble s t ι) := by
+  rcases eq_or_ne s t with rfl | hst
+  · simp only [edgeConnBetweenGE_self hs, true_iff]
+    exact ⟨edgePathEnsemble_nil G hs ι⟩
+  refine ⟨fun hconn => ?_, fun ⟨E⟩ F hF => ?_⟩
+  · rw [edgeConnBetweenGE_iff_lineGraph_setConnGE hst] at hconn
+    obtain ⟨A, hA, hAcard⟩ := (Menger'sTheorem_set (by simp) (by simp) n).mp hconn
+    exact nonempty_edgePathEnsemble_of_lineGraphSetEnsemble A hA hι hAcard
+  have hF' (i : ι) : G.IsEdgeCutBetween F (E.f i).first (E.f i).last := by
+    simpa [E.first_eq i, E.last_eq i] using hF
+  have h (i : ι) := (E.isPath i).isWalk.exists_mem_isEdgeCutBetween (hF' i)
+  let g (i : ι) : F := ⟨h i |>.choose, h i |>.choose_spec.2⟩
+  have hg : Injective g := by
+    intro i j hij
+    by_contra! hne
+    have hijv := by simpa only [g] using congrArg Subtype.val hij
+    exact not_disjoint_iff.mpr ⟨((E.isPath i).isWalk.exists_mem_isEdgeCutBetween (hF' i)).choose,
+      (h i).choose_spec.1, hijv ▸ (h j).choose_spec.1⟩ (E.edgeDisjoint hne)
+  simpa [hι, ENat.card_coe_set_eq] using ENat.card_le_card_of_injective hg
+
+theorem Menger'sTheorem_edge [G.Finite] (hι : ENat.card ι = n) :
+    G.EdgeConnGE n ↔ ∀ ⦃s t⦄, s ∈ V(G) → t ∈ V(G) → Nonempty (G.EdgePathEnsemble s t ι) :=
+  ⟨fun hConn _ _ hs ht => (Menger'sTheorem_edge_vertex hs ht hι).1 (hConn hs ht),
+    fun hEns _ _ hs ht => (Menger'sTheorem_edge_vertex hs ht hι).2 (hEns hs ht)⟩
+
+end edgeMenger
 
 end Graph

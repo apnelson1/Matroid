@@ -36,72 +36,34 @@ lemma Indep.exists_isBase_disjoint_of_coindep (hI : M.Indep I) (hX : M.Coindep X
 
 --- Following several lemmas may belong in Minor/Order.
 
+-- this doesn't need to be a lemma imo.
 lemma IsMinor.isMinor_of_subsets {N : Matroid α} (hd : Disjoint C D) (hNM : N ≤m M ／ C ＼ D)
-    (hC : C' ⊆ C) (hD : D' ⊆ D) : N ≤m M ／ C' ＼ D' := by
-  refine IsMinor.trans hNM ?_
-  have aux := IsRestriction.isMinor (delete_isRestriction_of_subset (M ／ C) (hD))
-  rw [contract_delete_comm M (hd), contract_delete_comm M (by grind only [= disjoint_left,
-    = subset_def, #f02a, #f7d4])] at aux
-  rw [contract_delete_comm M (hd), contract_delete_comm M (by grind only [= disjoint_left,
-    = disjoint_comm, = subset_def, #f7d4, #32d2, #f02a])]
-  refine IsMinor.trans aux (contract_isMinor_of_subset (M ＼ D') (hC))
+    (hC : C' ⊆ C) (hD : D' ⊆ D) : N ≤m M ／ C' ＼ D' :=
+  hNM.trans <| contract_delete_isMinor_contract_delete _ hd hC hD
 
 lemma IsMinor.exists_partition_of_disjoint_contract_indep_delete_coindep {N : Matroid α}
     (hNM : N ≤m M) (hX : X ⊆ M.E) (hd : Disjoint X N.E) :
     ∃ C D, M.Indep C ∧ M.Coindep D ∧ Disjoint C D ∧ C ∪ D = X ∧ N ≤m M ／ C ＼ D := by
-  obtain ⟨C, D, hCD₁, hCD₂, hCD₃, hCD₄⟩ := IsMinor.exists_contract_indep_delete_coindep (hNM)
-  subst hCD₄
-  clear hNM
-  use C ∩ X, D ∩ X
-  simp [hCD₁.subset, hCD₂.subset, Set.disjoint_of_subset _ _ hCD₃,
-      ← union_inter_distrib_right, show X ⊆ C ∪ D by grind]
-  refine IsMinor.isMinor_of_subsets (hCD₃) (IsMinor.refl) (show C ∩ X ⊆ C by simp)
-      (show D ∩ X ⊆ D by simp)
+  obtain ⟨C, D, hC, hD, hCD, rfl⟩ := IsMinor.exists_contract_indep_delete_coindep (hNM)
+  exact ⟨C ∩ X, D ∩ X, hC.inter_right _, hD.inter_right _, by grind, by grind,
+    contract_delete_isMinor_contract_delete _ hCD inter_subset_left inter_subset_left⟩
 
 lemma IsMinor.exists_smallside_of_separation {N : Matroid α} (hNM : N ≤m M)
-    (hN : N.TutteConnected (k + 2)) (hP : P.eConn = k) : ∃ i, (P i ∩ N.E).encard ≤ k := by
-  by_contra! hc₁
-  have htop : k ≠ ⊤ := by
-    by_contra! hc₂
-    rw [hc₂] at hc₁
-    simp [not_top_lt] at hc₁
-  rw [show k+2 = k+1+1 by grind, tutteConnected_iff_forall] at hN
-  specialize hN (P := P.induce N)
-  refine hN (?_) (?_)
-  · grw [eConn_induce_le_of_isMinor P hNM, hP]
-  · rw [isTutteSeparation_iff_lt_encard]
-    · intro i
-      rw [induce_apply_subset _ hNM.subset]
-      specialize hc₁ (i := i)
-      grw [eConn_induce_le_of_isMinor P hNM]
-      grind
-    · rw [← lt_top_iff_ne_top]
-      grw [eConn_induce_le_of_isMinor P hNM, hP]
-      rwa [lt_top_iff_ne_top]
+    (hN : N.TutteConnected (k + 1 + 1)) (hP : P.eConn ≤ k) : ∃ i, (P i ∩ N.E).encard ≤ k := by
+  have hns := hN.not_isTutteSeparation (P := P.induce N)
+    (by grw [P.eConn_induce_le_of_isMinor hNM, hP])
+  contrapose! hns
+  refine isTutteSeparation_of_lt_encard fun i ↦ ?_
+  grw [eConn_induce_le_of_isMinor _ hNM, hP, induce_apply_subset _ hNM.subset]
+  exact hns i
 
-lemma IsMinor.delete_subset_separator (hP : P.eConn = 0) (hX : X ⊆ P i) :
+lemma delete_contract_eq_delete_of_subset (hP : P.eConn = 0) (hX : X ⊆ P i) :
     (M ＼ (P i \ X)) ／ X = M ＼ (P i) := by
-  have h₁ : X ⊆ (M ＼ (P i \ X)).E := by
-    rw [delete_ground, subset_diff, disjoint_comm, disjoint_diff_iff,
-    inter_eq_self_of_subset_right]
-    · simp only [subset_refl, and_true]
-      apply subset_trans hX P.subset_ground
-    · exact hX
-  have h₂  : (M ＼ (P i \ X)).Skew X ((M ＼ (P i \ X)).E \ X) := by
-    rw [skew_delete_iff]
-    constructor
-    · rw [delete_ground, diff_diff, diff_union_self, union_eq_self_of_subset_right hX,
-        Separation.compl_eq]
-      rw [eConn_eq_zero_iff_skew (i := i)] at hP
-      refine Skew.mono_left (hP) (hX)
-    · constructor
-      · rwa [disjoint_comm, disjoint_diff_iff, inter_eq_self_of_subset_right]
-      · rw [disjoint_diff_iff, delete_ground, inter_diff_distrib_right, inter_self,
-          inter_diff_assoc, diff_self, inter_empty]
-        simp
-  rw [← contract_eq_delete_iff_skew_compl h₁] at h₂
-  rw [h₂, delete_delete, diff_union_self, union_eq_self_of_subset_right]
-  exact hX
+  rw [eConn_eq_zero_iff_skew (i := i)] at hP
+  rw [delete_eq_restrict, delete_eq_restrict, restrict_contract_eq_contract_restrict,
+    diff_diff, diff_union_of_subset hX, P.compl_eq, (hP.mono_left hX).contract_restrict_eq]
+  grw [diff_diff_right, ← subset_union_right,
+    inter_eq_self_of_subset_right (hX.trans P.subset_ground)]
 
 lemma IsMinor.isMinor_delete_smallside_of_eConn_eq_zero {N : Matroid α} (hNM : N ≤m M)
     (hP : P.eConn = 0) (hPi : Disjoint (P i) N.E) : N ≤m M ＼ P i := by

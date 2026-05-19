@@ -228,7 +228,7 @@ lemma multiConn_project_add_tsum_eLocalConn_eq (M : Matroid α) (X : ι → Set 
   obtain hι | ⟨⟨a⟩⟩ := isEmpty_or_nonempty ι; simp
   rw [← M.eLocalConn_add_project_eLocalConn_of_subset (X := X a) (subset_iUnion ..) (Z := C),
     ← tsum_univ, show univ = insert a {i | i ≠ a} by ext; simp [em],
-    ENat.tsum_insert (f := fun i ↦ M.eLocalConn (X i) C) (by simp),
+    tsum_insert (f := fun i ↦ M.eLocalConn (X i) C) (by simp),
     add_comm (M.eLocalConn ..), add_comm (M.eLocalConn ..), ← add_assoc, ← add_assoc,
     multiConn_project_add_tsum_eLocalConn_ne_eq, ← eLocalConn_closure_left,
     project_closure_eq_project_closure_union, eLocalConn_closure_left]
@@ -343,7 +343,7 @@ lemma multiConn_le_multiConn_project_add_mul_eLocalConn
   have hle := (M.multiConn_project_add_tsum_eLocalConn_ne_eq X C a).symm.le
   grw [← le_self_add] at hle
   grw [hle, add_le_add_right]
-  grw [ENat.tsum_le_tsum (g := fun i ↦ M.eLocalConn (⋃ j, X j) C)
+  grw [tsum_le_tsum (g := fun i ↦ M.eLocalConn (⋃ j, X j) C)
     fun i ↦ eLocalConn_mono_left _ (by simp [subset_iUnion]) _, ENat.tsum_const,
     ENat.card_coe_setOf_ne, mul_comm]
 
@@ -361,7 +361,7 @@ lemma multiConn_project_eq_multiConn_add_iff (M : Matroid α) {X : ι → Set α
     simpa [hCfin, lt_top_iff_ne_top]
   rw [← M.eLocalConn_add_eRelRk_union_eq_eRk C (⋃ i, X i), ← add_assoc, eLocalConn_comm,
     ← multiConn_project_add_tsum_eLocalConn_eq, add_assoc, ENat.eq_add_left_iff, add_eq_zero,
-      ENat.tsum_eq_zero, eRelRk_eq_zero_iff, union_subset_iff,
+      tsum_eq_zero, eRelRk_eq_zero_iff, union_subset_iff,
       and_iff_left (M.subset_closure _), and_comm, or_iff_left hlt.ne]
   convert Iff.rfl with i
   rw [eLocalConn_eq_zero]

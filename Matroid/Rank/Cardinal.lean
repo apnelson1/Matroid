@@ -9,6 +9,7 @@ import Mathlib.Combinatorics.Matroid.Rank.Cardinal
 import Matroid.ForMathlib.Card
 import Matroid.Rank.Nat
 import Mathlib.SetTheory.Cardinal.Arithmetic
+import Mathlib.SetTheory.Cardinal.Order
 
 /-!
 # Cardinal-valued rank
@@ -57,13 +58,17 @@ which sometime makes their proofs longer than they would be with the instance.
 * Higgs' theorem : if the generalized continuum hypothesis holds,
   then every matroid is `InvariantCardinalRank`.
 
+  Sketch : If the generalized continuum hypothesis is true, then there is a chain of size
+  `2 ^ #B` contained in each base `B`. Then `IsBase.two_pow_cardinalMk_ge_of_isBase_isChain`
+  implies that `2 ^ #B ≤ 2 ^ #B'` for each pair `B, B'` of bases. By GCH, this gives `#B = #B'`.
+
 -/
 
 universe u v
 
 variable {α : Type u} {β : Type v} {f : α → β} {M : Matroid α} {I J B B' X Y : Set α}
 
-open Cardinal Set
+open Cardinal Set Set.Notation
 
 namespace Matroid
 
@@ -144,5 +149,62 @@ lemma cRank_lt_aleph0_iff :  M.cRank < aleph0 ↔ M.RankFinite := by
   rw [cRk, cRank_toNat, rk, eRk]
 
 end Finite
+
+lemma IsBase.nonempty_embedding_of_isBase_isChain (hB : M.IsBase B) (hB' : M.IsBase B')
+    (S : Set (Set α)) (hS : ∀ X ∈ S, X ⊆ B) (hS_chain : IsChain (· ⊆ ·) S) :
+    Nonempty (S ↪ Set B') := by
+  have h : ∀ X ∈ S, ∃ Y ⊆ B', Disjoint X Y ∧ M.IsBase (X ∪ Y) := by
+    intro X hX
+    obtain ⟨B'', hB'', hss, hB''X⟩ :=
+      (hB.indep.subset (hS X hX)).exists_isBase_subset_union_isBase hB'
+    exact ⟨B'' \ X, by grind, disjoint_sdiff_right, by rwa [union_diff_cancel hss]⟩
+  choose! Y hY using h
+  refine ⟨fun T ↦ B' ↓∩ Y T.1, ?_⟩
+  rintro ⟨T, hT⟩ ⟨T', hT'⟩ h_eq
+  simp only [Subtype.mk.injEq] at h_eq ⊢
+  by_contra! hne
+  rw [Subtype.preimage_coe_eq_preimage_coe_iff, inter_eq_self_of_subset_right (hY T hT).1,
+    inter_eq_self_of_subset_right (hY T' hT').1] at h_eq
+  wlog hss : T ⊆ T' generalizing T T' with aux
+  · exact aux T' hT' T hT h_eq.symm hne.symm <| by simpa [hss] using hS_chain hT hT' hne
+  have hwin := (hY T hT).2.2.eq_of_subset_isBase (hY T' hT').2.2 (by grind)
+  grind
+
+/-- No independent set is larger than the power set of a base. -/
+lemma Indep.nonempty_embedding_set_of_isBase (hI : M.Indep I) (hB : M.IsBase B) :
+    Nonempty (I ↪ Set B) := by
+  obtain ⟨B', hB', hIB'⟩ := hI.exists_isBase_superset
+  obtain ⟨r, hr⟩ := exists_wellFoundedLT α
+  let S := range fun a ↦ {x ∈ B' | r.le x a}
+  have hS : IsChain (· ⊆ ·) S := by
+    rintro _ ⟨a, ha, rfl⟩ _ ⟨b, hb, rfl⟩ hne
+    grind
+  obtain ⟨f⟩ : Nonempty (B' ↪ S) := by
+    refine ⟨fun a ↦ ⟨{x ∈ B' | r.le x a}, mem_range_self _⟩, ?_⟩
+    rintro ⟨a, ha⟩ ⟨b, hb⟩
+    simp only [Subtype.mk.injEq, Set.ext_iff, mem_setOf_eq]
+    grind
+  obtain ⟨g⟩ := hB'.nonempty_embedding_of_isBase_isChain hB S (by grind) hS
+  let f' := Function.Embedding.trans ⟨inclusion hIB', inclusion_injective ..⟩ f
+  exact ⟨f'.trans g⟩
+
+lemma IsBase.two_pow_cardinalMk_ge_of_isBase_isChain (hB : M.IsBase B) (hB' : M.IsBase B')
+    (S : Set (Set α)) (hS : ∀ X ∈ S, X ⊆ B) (hS_chain : IsChain (· ⊆ ·) S) : #S ≤ 2 ^ #B' := by
+  obtain ⟨f, hf⟩ := hB.nonempty_embedding_of_isBase_isChain hB' S hS hS_chain
+  simpa using Cardinal.mk_le_of_injective hf
+
+lemma IsBase.two_pow_cardinalMk_ge_of_isBase (hB : M.IsBase B) (hB' : M.IsBase B') :
+    #B' ≤ 2 ^ #B := by
+  obtain ⟨f⟩ := hB'.indep.nonempty_embedding_set_of_isBase hB
+  simpa using Cardinal.mk_le_of_injective f.injective
+
+lemma Indep.two_pow_cardinalMk_ge_of_isBase (hI : M.Indep I) (hB : M.IsBase B) : #I ≤ 2 ^ #B := by
+  obtain ⟨B', hB', hIB'⟩ := hI.exists_isBase_superset
+  grw [Cardinal.mk_le_mk_of_subset hIB', hB.two_pow_cardinalMk_ge_of_isBase hB']
+
+lemma IsBase.cRank_le_two_pow_cardinalMk (hB : M.IsBase B) : M.cRank ≤ 2 ^ #B := by
+  rw [cRank_le_iff]
+  intro B' hB'
+  exact hB.two_pow_cardinalMk_ge_of_isBase hB'
 
 end Matroid

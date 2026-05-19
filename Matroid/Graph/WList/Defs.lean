@@ -166,8 +166,8 @@ instance [DecidableEq α] : Decidable (x ∈ w) :=
 /-- `w.UniqueMem x` means that `x : α` appears in `w` exactly once. -/
 protected inductive UniqueMem : WList α β → α → Prop
   | nil x : (nil x).UniqueMem x
-  | cons_eq {x} e w (h : x ∉ w) : (cons x e w).UniqueMem x
-  | cons_ne {x u} (h : u ≠ x) e w (hw : w.UniqueMem x) : (cons u e w).UniqueMem x
+  | cons_eq {x : α} e w (h : x ∉ w) : (cons x e w).UniqueMem x
+  | cons_ne {x u : α} (h : u ≠ x) e w (hw : w.UniqueMem x) : (cons u e w).UniqueMem x
 
 /-! ### Vertex/Edge Sets -/
 
@@ -275,7 +275,7 @@ lemma first_eq_last_iff (hnodup : w.vertex.Nodup) : w.first = w.last ↔ w.Nil :
 
 /-- `Nonempty w` means that `w : WList α β` has at least one edge -/
 protected inductive Nonempty : WList α β → Prop
-  | cons (x e) (w : WList α β) : WList.Nonempty (cons x e w)
+  | cons (x : α) (e : β) (w : WList α β) : WList.Nonempty (cons x e w)
 
 @[simp, grind .]
 lemma cons_nonempty (x e) (w : WList α β) : (cons x e w).Nonempty := by
@@ -369,7 +369,7 @@ lemma Nonempty.first_ne_last_of_nodup (hne : w.Nonempty) (hv : w.vertex.Nodup) :
 
 /-- a `WList` is nontrivial if it has at least two edges. -/
 inductive Nontrivial : WList α β → Prop
-| cons_cons (u e v f) (w : WList α β) : Nontrivial (cons u e (cons v f w))
+| cons_cons (u e v f : _) (w : WList α β) : Nontrivial (cons u e (cons v f w))
 
 attribute [simp] Nontrivial.cons_cons
 
@@ -510,8 +510,8 @@ lemma edge_toFinset_card_le [DecidableEq β] (w : WList α β) :
 /-- `w.DInc e x y` means that `w` contains `[x,e,y]` as a contiguous sublist.
 (`DInc` stands for 'directed incidence')` -/
 protected inductive DInc : WList α β → β → α → α → Prop
-  | cons_left (x e w) : (cons x e w).DInc e x w.first
-  | cons (u f) {w e x y} (hw : w.DInc e x y) : (cons u f w).DInc e x y
+  | cons_left (x e w : _) : (cons x e w).DInc e x w.first
+  | cons (u f : _) {w e x y} (hw : w.DInc e x y) : (cons u f w).DInc e x y
 
 @[simp]
 lemma not_nil_dInc (u : α) (e : β) x y : ¬ (WList.nil u).DInc e x y := by
@@ -637,9 +637,9 @@ instance {w : WList α β} {e : β} {x y : α} [DecidableEq α] [DecidableEq β]
 
 /-- `w.IsLink e x y` means that `w` contains `[x,e,y]` or `[y,e,x]` as a contiguous sublist. -/
 protected inductive IsLink : WList α β → β → α → α → Prop
-  | cons_left (x e w) : (cons x e w).IsLink e x w.first
-  | cons_right (x e w) : (cons x e w).IsLink e w.first x
-  | cons (u f) {w e x y} (hw : w.IsLink e x y) : (cons u f w).IsLink e x y
+  | cons_left (x e w : _) : (cons x e w).IsLink e x w.first
+  | cons_right (x e w : _) : (cons x e w).IsLink e w.first x
+  | cons (u f : _) {w e x y} (hw : w.IsLink e x y) : (cons u f w).IsLink e x y
 
 @[simp]
 protected lemma IsLink.not_nil : ¬ (nil u (β := β)).IsLink e x y := by

@@ -1,9 +1,15 @@
-name: Nightly doc-gen deployment
+name: Doc-gen deployment
 
+# docgen-action deploy steps only run on `push` (not `schedule`).
+#
+# Deploy only when someone pushes to `main` *and* the actor matches:
+# - repository variable `DOCGEN_DEPLOY_ACTOR` if set (Settings → Secrets and variables → Actions → Variables), otherwise
+# - `github.repository_owner` (the repo owner account).
+#
+# Other people's pushes to `main`, or any push on another branch, are skipped for this workflow.
 on:
-  schedule:
-    - cron: '0 6  * * *' # runs at 06:00 UTC every day (01:00 EST)
-    # - cron: '0 22 * * *' # runs at 22:00 UTC every day (17:00 EST)
+  push:
+    branches: [main]
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
@@ -13,6 +19,7 @@ permissions:
 
 jobs:
   build:
+    if: github.actor == (vars.DOCGEN_DEPLOY_ACTOR != '' && vars.DOCGEN_DEPLOY_ACTOR || github.repository_owner)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout project
@@ -27,6 +34,35 @@ jobs:
       - name: Build project documentation.
         id: build-docgen
         uses: leanprover-community/docgen-action@main
-        # with:
+        with:
+          deploy: false
+          build-page: false
+          # The doc cache can replay a stale top-level docs facet without the Matroid HTML pages.
+          use-github-cache: false
           # Uncomment the next line if you wish to build a blueprint alongside your repository.
           # blueprint: true
+
+      - name: Check generated Matroid docs.
+        if: github.event_name == 'push'
+        run: |
+          target="docs/docs/Matroid/Graph/Planarity/Realization/Basic.html"
+          if [ -f "$target" ]; then
+            target_exists=true
+          else
+            target_exists=false
+          fi
+          if [ "$target_exists" != true ]; then
+            echo "::error::Missing expected generated documentation page: $target"
+            exit 1
+          fi
+
+      - name: Upload documentation artifact.
+        if: github.event_name == 'push'
+        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
+        with:
+          path: docs/
+
+      - name: Deploy to GitHub Pages.
+        if: github.event_name == 'push'
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5

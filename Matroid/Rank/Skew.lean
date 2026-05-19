@@ -37,8 +37,6 @@ lemma inter_iUnion_eq_of_pairwiseDisjoint_of_forall_subset {s t : ι → Set α}
   · assumption
   exact False.elim <| (h hne).notMem_of_mem_left hxi (hst _ hxj)
 
-
-
 lemma tsum_nullity_le (M : Matroid α) {X : ι → Set α} (hX : Pairwise (Disjoint on X)) :
     ∑' i, M.nullity (X i) ≤ M.nullity (⋃ i, X i) := by
   wlog hM : M.E = univ generalizing M with aux
@@ -88,10 +86,10 @@ lemma tsum_nullity_eq_nullity_iUnion_iff_isSkewFamily {X : ι → Set α}
     ← ENat.tsum_encard_eq_encard_iUnion (hX.mono fun _ _ h ↦ h.mono diff_subset diff_subset)]
     at hfin ⊢
   have hfin' : ∑' i, (X i \ Is i).encard < ⊤ := by
-    refine lt_of_le_of_lt (ENat.tsum_le_tsum fun i ↦ (encard_le_encard ?_)) hfin
+    refine lt_of_le_of_lt (tsum_le_tsum fun i ↦ (encard_le_encard ?_)) hfin
     grw [← diff_self_inter (t := I), (hIs i).2]
-  rw [tsum_congr (fun i ↦ (hIs i).1.nullity_eq), tsum_congr hrw, ENat.tsum_add,
-    ENat.add_eq_left_iff, ENat.tsum_eq_zero, or_iff_right hfin'.ne]
+  rw [tsum_congr (fun i ↦ (hIs i).1.nullity_eq), tsum_congr hrw, tsum_add,
+    ENat.add_eq_left_iff, tsum_eq_zero, or_iff_right hfin'.ne]
   simp only [encard_eq_zero, diff_eq_empty]
   refine ⟨fun h ↦ ?_, fun h i ↦ ?_⟩
   · exact Indep.isSkewFamily_of_disjoint_isBases (hI.indep.subset (iUnion_subset h))
@@ -163,8 +161,8 @@ lemma nullity_biUnion_mono {X Y : ι → Set α} {I : Set ι} (hX : I.PairwiseDi
     by_cases hsk : M.IsSkewFamily (fun i : I ↦ Y i)
     · have hsk' : M.IsSkewFamily (fun i : I ↦ X i) :=
       (hsk.cls_isSkewFamily.mono (fun i : I ↦ hcl i.1 i.2)).mono fun i ↦ M.subset_closure ..
-      grw [biUnion_eq_iUnion, biUnion_eq_iUnion, hsk.nullity_iUnion_eq, hsk'.nullity_iUnion_eq,
-        ENat.tsum_le_tsum (fun i : I ↦ hn i.1 i.2)]
+      grw [biUnion_eq_iUnion, biUnion_eq_iUnion, hsk.nullity_iUnion_eq,
+        hsk'.nullity_iUnion_eq, tsum_le_tsum (fun i : I ↦ hn i.1 i.2)]
       · rwa [PairwiseDisjoint, ← pairwise_subtype_iff_pairwise_set] at hX
       rwa [PairwiseDisjoint, ← pairwise_subtype_iff_pairwise_set] at hY
     -- Otherwise, there exists `Y j` that is not skew to the union of the other `Y i`.

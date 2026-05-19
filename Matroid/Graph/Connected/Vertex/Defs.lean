@@ -120,8 +120,8 @@ lemma IsComplete.connBetween (h : G.IsComplete) (hs : s ∈ V(G)) (ht : t ∈ V(
   · simp [hs]
   exact (h s hs t ht hne).connBetween
 
-lemma ConnBetween.isClosedSubgraph (h : G.ConnBetween x y) (hle : H ≤c G) (hx : x ∈ V(H))
-    : H.ConnBetween x y := by
+lemma ConnBetween.isClosedSubgraph (h : G.ConnBetween x y) (hle : H ≤c G) (hx : x ∈ V(H)) :
+    H.ConnBetween x y := by
   obtain ⟨W, hW, rfl, rfl⟩ := h
   use W, hW.isWalk_isClosedSubgraph_of_first_mem hle hx
 
@@ -133,6 +133,11 @@ lemma connBetween_iff_of_edgeless (h : E(G) = ∅) : G.ConnBetween x y ↔ x ∈
     | .cons u e w => simp_all
   obtain ⟨hx, rfl⟩ := h
   exact ConnBetween.refl hx
+
+lemma Isolated.connBetween_iff_eq (hisol : G.Isolated x) : G.ConnBetween x y ↔ x = y := by
+  refine ⟨?_, fun hxy ↦ hxy ▸ ConnBetween.refl hisol.mem⟩
+  rintro ⟨W, hW, rfl, rfl⟩
+  exact hisol.eq_last_of_mem hW first_mem
 
 /-! ### Separators between two vertices -/
 
@@ -155,15 +160,15 @@ instance : Std.Symm (G.IsSepBetween · · X) where
 
 lemma not_isSepBetween_self (hs : s ∈ V(G)) : ¬ G.IsSepBetween s s X := by
   refine fun hX ↦ hX.not_connBetween <| ConnBetween.refl ?_
-  simp [vertexDelete_vertexSet, hs, hX.left_not_mem]
+  simp [vertexSet_deleteVerts, hs, hX.left_not_mem]
 
 lemma IsLink.not_isSepBetween (he : G.IsLink e s t) : ¬ G.IsSepBetween s t X := by
   refine fun hX ↦ hX.not_connBetween <| Adj.connBetween <| ?_
-  simpa [vertexDelete_adj_iff, hX.left_not_mem, hX.right_not_mem] using he.adj
+  simpa [deleteVerts_adj_iff, hX.left_not_mem, hX.right_not_mem] using he.adj
 
 lemma Adj.not_isSepBetween (h : G.Adj s t) : ¬ G.IsSepBetween s t X := by
   refine fun hX ↦ hX.not_connBetween <| Adj.connBetween <| ?_
-  simpa [vertexDelete_adj_iff, hX.left_not_mem, hX.right_not_mem] using h
+  simpa [deleteVerts_adj_iff, hX.left_not_mem, hX.right_not_mem] using h
 
 def isSepBetween_empty (h : ¬ G.ConnBetween s t) : G.IsSepBetween s t ∅ := by
   refine ⟨by simp, by simp, by simp, ?_⟩
@@ -174,13 +179,13 @@ lemma IsSepBetween.of_le (hX : G.IsSepBetween s t X) (hle : H ≤ G) :
   refine ⟨inter_subset_left, by simp [hX.left_not_mem], by simp [hX.right_not_mem], ?_⟩
   have : ¬ (H - X).ConnBetween s t :=
     mt (ConnBetween.mono (by gcongr)) hX.not_connBetween
-  simpa [vertexDelete_vertexSet_inter] using this
+  simpa [deleteVerts_vertexSet_inter] using this
 
 lemma IsWalk.not_disjoint_isSepBetween (hW : G.IsWalk W) (hX : G.IsSepBetween W.first W.last X) :
     ¬ Disjoint V(W) X := by
   by_contra hc
   apply hX.not_connBetween
-  use W, hW.vertexDelete hc
+  use W, hW.deleteVerts hc
 
 lemma IsWalk.exists_mem_isSepBetween (hW : G.IsWalk W) (hX : G.IsSepBetween W.first W.last X) :
     ∃ x ∈ V(W), x ∈ X := by
@@ -191,9 +196,9 @@ lemma IsComplete.not_isSepBetween (h : G.IsComplete) (hs : s ∈ V(G)) (ht : t �
     ¬ G.IsSepBetween s t X := by
   refine fun hX ↦ hX.not_connBetween <| ?_
   obtain rfl | hne := eq_or_ne s t
-  · exact ConnBetween.refl (by simp [vertexDelete_vertexSet, hs, hX.left_not_mem])
+  · exact ConnBetween.refl (by simp [vertexSet_deleteVerts, hs, hX.left_not_mem])
   apply Adj.connBetween
-  exact (G.vertexDelete_adj_iff X).2 ⟨h s hs t ht hne, hX.left_not_mem, hX.right_not_mem⟩
+  exact (G.deleteVerts_adj_iff X).2 ⟨h s hs t ht hne, hX.left_not_mem, hX.right_not_mem⟩
 
 def isSepBetween_of_not_adj (hne : s ≠ t) (hnst : ¬ G.Adj s t) :
     G.IsSepBetween s t (V(G) \ {s, t}) := by
@@ -204,22 +209,22 @@ def isSepBetween_of_not_adj (hne : s ≠ t) (hnst : ¬ G.Adj s t) :
   | .nil u => simp at hne
   | .cons u e (nil v) =>
     simp only [first_cons, last_cons, nil_last, cons_isPath_iff, nil_isPath_iff,
-      vertexDelete_vertexSet, sdiff_sdiff_right_self, inf_eq_inter, mem_inter_iff, mem_insert_iff,
-      mem_singleton_iff, or_true, and_true, nil_first, vertexDelete_isLink_iff, mem_diff, true_or,
+      vertexSet_deleteVerts, sdiff_sdiff_right_self, inf_eq_inter, mem_inter_iff, mem_insert_iff,
+      mem_singleton_iff, or_true, and_true, nil_first, deleteVerts_isLink_iff, mem_diff, true_or,
       not_true_eq_false, and_false, not_false_eq_true, and_self, mem_nil_iff] at hW ⊢
     use e, hW.1
   | cons u e (cons v f w) =>
-    simp_all only [first_cons, last_cons, ne_eq, cons_isPath_iff, isPath_vertexDelete_iff,
-      vertexDelete_isLink_iff, mem_diff, mem_insert_iff, mem_singleton_iff, not_or, not_and,
+    simp_all only [first_cons, last_cons, ne_eq, cons_isPath_iff, isPath_deleteVerts_iff,
+      deleteVerts_isLink_iff, mem_diff, mem_insert_iff, mem_singleton_iff, not_or, not_and,
       not_not, or_false, not_true_eq_false, and_false, not_false_eq_true, true_and, mem_cons_iff]
     obtain ⟨⟨huv, -⟩, ⟨⟨-, hvwl, -⟩, ⟨-, -⟩, -⟩, hne, -⟩ := hW
     obtain rfl := hvwl huv.right_mem (hne ·.symm)
     use e
 
-def isSepBetween_of_vertexDelete (h : ¬ (G - X).ConnBetween s t) (hs : s ∉ X) (ht : t ∉ X) :
+def isSepBetween_of_deleteVerts (h : ¬ (G - X).ConnBetween s t) (hs : s ∉ X) (ht : t ∉ X) :
     G.IsSepBetween s t (V(G) ∩ X) := by
   refine ⟨inter_subset_left, by simp [hs], by simp [ht], ?_⟩
-  simpa [vertexDelete_vertexSet_inter] using h
+  simpa [deleteVerts_vertexSet_inter] using h
 
 @[mk_iff]
 structure IsEdgeCutBetween (G : Graph α β) (F : Set β) (s t : α) : Prop where
@@ -240,14 +245,14 @@ lemma IsEdgeCutBetween.of_le (hF : G.IsEdgeCutBetween F s t) (hle : H ≤ G) :
     H.IsEdgeCutBetween (E(H) ∩ F) s t where
   subset_edgeSet := inter_subset_left
   not_connBetween := by
-    rw [edgeDelete_edgeSet_inter]
+    rw [edgeSet_deleteEdges_inter]
     exact mt (ConnBetween.mono (by gcongr)) hF.not_connBetween
 
 lemma IsWalk.not_disjoint_isEdgeCutBetween (hW : G.IsWalk W)
     (hF : G.IsEdgeCutBetween F W.first W.last) : ¬ Disjoint E(W) F := by
   intro hc
   apply hF.not_connBetween
-  use W, hW.edgeDelete hc
+  use W, hW.deleteEdges hc
 
 lemma IsWalk.exists_mem_isEdgeCutBetween (hW : G.IsWalk W)
     (hF : G.IsEdgeCutBetween F W.first W.last) : ∃ e ∈ E(W), e ∈ F := by
@@ -259,11 +264,13 @@ lemma IsWalk.exists_mem_isEdgeCutBetween (hW : G.IsWalk W)
 def internallyDisjoint (s t : α) {ι : Type*} (f : ι → WList α β) : Prop :=
   Pairwise (fun i j => V(f i) ∩ V(f j) = {s, t})
 
-structure VertexEnsemble (G : Graph α β) (s t : α) (ι : Type*) where
+structure PathEnsemble (G : Graph α β) (s t : α) (ι : Type*) where
   f : ι → WList α β
   isPath : ∀ i, G.IsPath (f i)
   first_eq : ∀ i, (f i).first = s
   last_eq : ∀ i, (f i).last = t
+
+structure VertexEnsemble (G : Graph α β) (s t : α) (ι : Type*) extends PathEnsemble G s t ι where
   internallyDisjoint : internallyDisjoint s t f
 
 def VertexEnsemble.edgeDisjoint (P : G.VertexEnsemble s t ι) : Prop :=
@@ -421,10 +428,91 @@ def VertexEnsemble.sum (P : G.VertexEnsemble s t ι) (Q : G.VertexEnsemble s t �
       by simp [← P.first_eq j, first_mem, ← P.last_eq j, last_mem, pair_subset]⟩
   | Sum.inr i, Sum.inr j => Q.internallyDisjoint (by simpa using hne)
 
+/-! ### Ensemble of edge-disjoint paths between two vertices -/
+
+/-- An indexed family of `s`–`t` paths whose edge sets are pairwise disjoint. -/
+structure EdgePathEnsemble (G : Graph α β) (s t : α) (ι : Type*) extends PathEnsemble G s t ι where
+  edgeDisjoint : Pairwise (Disjoint on WList.edgeSet on f)
+
+@[simps (attr := grind =)]
+def edgePathEnsemble_empty (G : Graph α β) (s t : α) (ι : Type*) [h : IsEmpty ι] :
+    G.EdgePathEnsemble s t ι where
+  f := (h.elim ·)
+  isPath := (h.elim ·)
+  first_eq := (h.elim ·)
+  last_eq := (h.elim ·)
+  edgeDisjoint := (h.elim ·)
+
+@[simps! (attr := grind =)]
+def edgePathEnsemble_nil (G : Graph α β) (h : s ∈ V(G)) (ι : Type*) :
+    G.EdgePathEnsemble s s ι where
+  f _ := nil s
+  isPath i := by simpa
+  first_eq i := by simp
+  last_eq i := by simp
+  edgeDisjoint _ _ _ := by simp [WList.nil_edgeSet]
+
+@[simps (attr := grind =)]
+def IsPath.edgePathEnsemble (h : G.IsPath P) : G.EdgePathEnsemble P.first P.last PUnit where
+  f _ := P
+  isPath _ := h
+  first_eq _ := by simp
+  last_eq _ := by simp
+  edgeDisjoint i j h := by simp at h
+
+@[simps (attr := grind =)]
+def EdgePathEnsemble.comp (P : G.EdgePathEnsemble s t ι) (g : ι' ↪ ι) :
+    G.EdgePathEnsemble s t ι' where
+  f := P.f ∘ g
+  isPath i := P.isPath (g i)
+  first_eq i := P.first_eq (g i)
+  last_eq i := P.last_eq (g i)
+  edgeDisjoint _ _ hne := P.edgeDisjoint (g.inj'.ne hne)
+
+@[simps (attr := grind =)]
+def EdgePathEnsemble.of_le (P : H.EdgePathEnsemble s t ι) (hle : H ≤ G) :
+    G.EdgePathEnsemble s t ι where
+  f := P.f
+  isPath i := (P.isPath i).of_le hle
+  first_eq i := P.first_eq i
+  last_eq i := P.last_eq i
+  edgeDisjoint _ _ hne := P.edgeDisjoint hne
+
+def EdgePathEnsemble.ofVertexEnsemble (P : G.VertexEnsemble s t ι)
+    (h : Set.Subsingleton {i : ι | ¬ (P.f i).Nontrivial}) : G.EdgePathEnsemble s t ι where
+  f := P.f
+  isPath i := P.isPath i
+  first_eq i := P.first_eq i
+  last_eq i := P.last_eq i
+  edgeDisjoint i j hne := by
+    simp only [onFun, disjoint_iff_forall_notMem, mem_edgeSet_iff]
+    refine fun e hei hej => hne <| ?_
+    obtain ⟨x, y, hxyi⟩ := exists_isLink_of_mem_edge hei
+    have hxyG : G.IsLink e x y := (P.isPath i).isWalk.isLink_mono hxyi
+    have hxyj : (P.f j).IsLink e x y := ((P.isPath j).isWalk.isLink_iff_isLink_of_mem hej).mpr hxyG
+    exact h ((P.isPath i).not_nontrivial_of_isLink (P.first_eq i) (P.last_eq i) hxyi
+      (P.eq_or_eq_of_mem hxyi.left_mem hxyj.left_mem hne)
+      (P.eq_or_eq_of_mem hxyi.right_mem hxyj.right_mem hne))
+      ((P.isPath j).not_nontrivial_of_isLink (P.first_eq j) (P.last_eq j) hxyj
+      (P.eq_or_eq_of_mem hxyj.left_mem hxyi.left_mem hne.symm)
+      (P.eq_or_eq_of_mem hxyj.right_mem hxyi.right_mem hne.symm))
+
 /-! ### k-connectivity between two vertices -/
 
 def ConnBetweenGE (G : Graph α β) (s t : α) (n : ℕ) : Prop :=
   ∀ ⦃C : Set α⦄, G.IsSepBetween s t C → n ≤ C.encard
+
+/-- Minimum `C.encard` over vertex separators `C` between `s` and `t`, as an `ℕ∞`. -/
+noncomputable def connectivityBetween (G : Graph α β) (s t : α) : ℕ∞ :=
+  ⨅ C : {C : Set α // G.IsSepBetween s t C}, (C.val : Set α).encard
+
+lemma le_connectivityBetween_iff {k : ℕ∞} (s t : α) : k ≤ G.connectivityBetween s t ↔
+      ∀ ⦃C : Set α⦄, G.IsSepBetween s t C → k ≤ C.encard := by
+  simp [connectivityBetween, le_iInf_iff, Subtype.forall]
+
+lemma connBetweenGE_iff_le_connectivityBetween (s t : α) (n : ℕ) :
+    G.ConnBetweenGE s t n ↔ (n : ℕ∞) ≤ G.connectivityBetween s t := by
+  simp [ConnBetweenGE, le_connectivityBetween_iff]
 
 @[simp]
 lemma connBetweenGE_zero (G : Graph α β) (s t : α) : G.ConnBetweenGE s t 0 := by
@@ -506,6 +594,19 @@ lemma connBetweenGE_le_encard (h : G.ConnBetweenGE s t n) (hne : s ≠ t) (hadj 
 
 def EdgeConnBetweenGE (G : Graph α β) (s t : α) (n : ℕ) : Prop :=
   ∀ ⦃F : Set β⦄, G.IsEdgeCutBetween F s t → n ≤ F.encard
+
+/-- Minimum `F.encard` over edge cuts `F` between `s` and `t`, as an `ℕ∞`. -/
+noncomputable def edgeConnectivityBetween (G : Graph α β) (s t : α) : ℕ∞ :=
+  ⨅ F : {F : Set β // G.IsEdgeCutBetween F s t}, (F.val : Set β).encard
+
+lemma le_edgeConnectivityBetween_iff {k : ℕ∞} (s t : α) :
+    k ≤ G.edgeConnectivityBetween s t ↔
+      ∀ ⦃F : Set β⦄, G.IsEdgeCutBetween F s t → k ≤ F.encard := by
+  simp [edgeConnectivityBetween, le_iInf_iff, Subtype.forall]
+
+lemma edgeConnBetweenGE_iff_le_edgeConnectivityBetween (s t : α) (n : ℕ) :
+    G.EdgeConnBetweenGE s t n ↔ (n : ℕ∞) ≤ G.edgeConnectivityBetween s t := by
+  simp [EdgeConnBetweenGE, le_edgeConnectivityBetween_iff]
 
 @[simp]
 lemma edgeConnBetweenGE_zero (G : Graph α β) (s t : α) : G.EdgeConnBetweenGE s t 0 := by

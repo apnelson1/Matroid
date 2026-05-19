@@ -1,3 +1,4 @@
+import Matroid.Graph.Subgraph.Compatible
 import Matroid.Graph.Subgraph.Delete
 import Matroid.Graph.Walk.Cycle
 
@@ -64,8 +65,8 @@ lemma map_inc : (f ''ᴳ G).Inc e x ↔ ∃ v, G.Inc e v ∧ x = f v := by
   tauto
 
 @[simp]
-lemma map_vertexSet_subset (h : X ⊆ V(G)) : f '' X ⊆ V(f ''ᴳ G) := by
-  rw [map_vertexSet]
+lemma vertexSet_map_subset (h : X ⊆ V(G)) : f '' X ⊆ V(f ''ᴳ G) := by
+  rw [vertexSet_map]
   gcongr
 
 lemma IsLink.map (h : G.IsLink e u v) (f : α → α') : (f ''ᴳ G).IsLink e (f u) (f v) := by
@@ -78,7 +79,7 @@ lemma map_isLoopAt : (f ''ᴳ G).IsLoopAt e x ↔ ∃ u v, G.IsLink e u v ∧ x 
 @[gcongr]
 lemma map_congr_left_of_eqOn (h : EqOn f g V(G)) : (f ''ᴳ G) = (g ''ᴳ G) := by
   apply Graph.ext ?_ fun e x y ↦ ?_
-  · rw [map_vertexSet, map_vertexSet]
+  · rw [vertexSet_map, vertexSet_map]
     exact image_congr h
   · simp_rw [map_isLink]
     refine ⟨fun ⟨v, w, hvw, _, _⟩ ↦ ?_, fun ⟨v, w, hvw, _, _⟩ ↦ ?_⟩ <;> subst x y
@@ -93,13 +94,19 @@ lemma map_id : (id ''ᴳ G) = G := by
 lemma map_map {α'' : Type*} {f : α' → α''} : (f ''ᴳ (g ''ᴳ G)) = (f ∘ g) ''ᴳ G := by
   ext a b c <;> simp
 
+lemma Compatible.map (h : G.Compatible H) : (f ''ᴳ G).Compatible (f ''ᴳ H) := by
+  grind [Compatible, h.isLink_eq]
+
+lemma map_union (G H : Graph α β) (f : α → α') : f ''ᴳ (G ∪ H) = (f ''ᴳ G) ∪ (f ''ᴳ H) := by
+  refine Graph.ext ?_ ?_ <;> grind
+
 @[gcongr]
 lemma map_mono (h : G ≤ H) : f ''ᴳ G ≤ f ''ᴳ H where
-  vertex_subset v := by
-    simp only [map_vertexSet, mem_image, forall_exists_index, and_imp]
+  vertexSet_mono v := by
+    simp only [vertexSet_map, mem_image, forall_exists_index, and_imp]
     rintro u hu rfl
     use u, vertexSet_mono h hu
-  isLink_of_isLink e x y := by
+  isLink_mono e x y := by
     simp only [map_isLink, forall_exists_index, and_imp]
     rintro a b hab rfl rfl
     use a, b, hab.of_le h
@@ -107,18 +114,19 @@ lemma map_mono (h : G ≤ H) : f ''ᴳ G ≤ f ''ᴳ H where
 @[gcongr]
 lemma map_isSpanningSubgraph (hsle : G ≤s H) : f ''ᴳ G ≤s f ''ᴳ H where
   vertexSet_eq := by simp [hsle.vertexSet_eq]
-  isLink_of_isLink := (map_mono hsle.le).isLink_of_isLink
+  vertexSet_mono := by simp [hsle.vertexSet_eq]
+  isLink_mono := (map_mono hsle.le).isLink_mono
 
-lemma map_edgeRestrict_comm : f ''ᴳ (G ↾ F) = (f ''ᴳ G) ↾ F := by
+lemma map_restrict_comm : f ''ᴳ (G ↾ F) = (f ''ᴳ G) ↾ F := by
   ext a b c
   · simp
-  simp only [map_isLink, edgeRestrict_isLink]
+  simp only [map_isLink, restrict_isLink]
   tauto
 
-lemma map_edgeDelete_comm : f ''ᴳ (G ＼ F) = (f ''ᴳ G) ＼ F := by
+lemma map_deleteEdges_comm : f ''ᴳ (G ＼ F) = (f ''ᴳ G) ＼ F := by
   ext a b c
   · simp
-  simp only [map_isLink, edgeDelete_isLink]
+  simp only [map_isLink, deleteEdges_isLink]
   tauto
 
 @[simp]
@@ -126,12 +134,25 @@ lemma IsWalk.map (f : α → α') (hw : G.IsWalk w) : (f ''ᴳ G).IsWalk (w.map 
   refine hw.recOn ?hnil ?hcons
   · intro x hx
     have hx' : f x ∈ V(f ''ᴳ G) := by
-      simpa [map_vertexSet] using Set.mem_image_of_mem f hx
+      simpa [vertexSet_map] using Set.mem_image_of_mem f hx
     simpa [map] using IsWalk.nil hx'
   · intro x e w hw hlink ih
     have hlink' : (f ''ᴳ G).IsLink e (f x) (w.map f).first := by
       simpa [map_first] using hlink.map f
     simpa [map, map_first] using ih.cons hlink'
+
+lemma IsWalk.map_invFunOn [Nonempty α] (hf : InjOn f V(G)) {w : WList α' β}
+    (hw : (f ''ᴳ G).IsWalk w) : G.IsWalk (w.map (invFunOn f V(G))) := by
+  induction hw with
+  | nil hx => simpa [nil_isWalk_iff] using invFunOn_mem hx
+  | cons hw he ih =>
+    simp only [WList.map_cons, cons_isWalk_iff, WList.map_first]
+    obtain ⟨a, b, hab, rfl, hfb⟩ := by simpa only [map_isLink] using he
+    grind [hf.leftInvOn_invFunOn hab.left_mem, hf.leftInvOn_invFunOn hab.right_mem]
+
+lemma IsWalk.map_invFunOn_map [Nonempty α] {w : WList α' β}
+    (hw : (f ''ᴳ G).IsWalk w) : (w.map (invFunOn f V(G))).map f = w :=
+  WList.map_invFunOn_map (by simpa using hw.vertexSet_subset)
 
 @[simp]
 lemma IsTrail.map (f : α → α') (hw : G.IsTrail w) : (f ''ᴳ G).IsTrail (w.map f) where
@@ -165,50 +186,68 @@ lemma IsCyclicWalk.map (hf : InjOn f V(w)) (hw : G.IsCyclicWalk w) :
     refine (List.nodup_map_iff_inj_on hw.nodup).mpr ?_
     grind [InjOn]
 
+lemma IsCyclicWalk.exists_of_map_of_injOn {φ : α → α'} (hφ : InjOn φ V(H)) {C : WList α' β}
+    (hC : (φ ''ᴳ H).IsCyclicWalk C) : ∃ C₀, H.IsCyclicWalk C₀ ∧ C₀.map φ = C := by
+  haveI : Nonempty α := ⟨hC.isWalk.vertex_mem_of_mem first_mem |>.choose⟩
+  refine ⟨C.map (invFunOn φ V(H)), ⟨⟨⟨by simpa using hC.isWalk.map_invFunOn hφ, by
+    simpa [WList.map_edge] using hC.edge_nodup⟩, by simpa using hC.nonempty, by
+    simpa [WList.IsClosed] using congrArg _ hC.isClosed⟩, ?_⟩, by
+    simpa using hC.isWalk.map_invFunOn_map⟩
+  cases C with
+  | nil y => simp at hC
+  | cons y e W =>
+    simp only [map_cons, tail_cons, map_vertex]
+    exact (List.nodup_map_iff_inj_on hC.nodup).mpr fun a ha b hb hab ↦
+      invFunOn_injOn_image φ V(H) |>.mono hC.isWalk.vertexSet_subset (by simp_all) (by simp_all) hab
+
 lemma induce_map_isSpanningSubgraph : f ''ᴳ (G[X]) ≤s (f ''ᴳ G)[f '' X] where
   vertexSet_eq := by simp
-  isLink_of_isLink e x y := by
+  isLink_mono e x y := by
     simp only [map_isLink, induce_isLink, mem_image, forall_exists_index, and_imp]
     grind
 
-lemma map_vertexDelete_isInducedSubgraph : (f ''ᴳ G) - (f '' X) ≤i f ''ᴳ (G - X) where
+lemma map_deleteVerts_isInducedSubgraph : (f ''ᴳ G) - (f '' X) ≤i f ''ᴳ (G - X) where
   le := by
     constructor
-    · grind [map_vertexSet]
-    simp only [vertexDelete_isLink_iff, map_isLink, mem_image, not_exists, not_and, and_imp,
+    · grind [vertexSet_map]
+    simp only [deleteVerts_isLink_iff, map_isLink, mem_image, not_exists, not_and, and_imp,
       forall_exists_index]
     grind
   isLink_of_mem_mem e x y := by
-    simp only [map_isLink, vertexDelete_isLink_iff, vertexDelete_vertexSet, map_vertexSet, mem_diff,
+    simp only [map_isLink, deleteVerts_isLink_iff, vertexSet_deleteVerts, vertexSet_map, mem_diff,
       mem_image, not_exists, not_and, and_imp, forall_exists_index]
     grind
 
 @[simp]
-lemma map_vertexDelete_preimage {X : Set α'} : f ''ᴳ (G - (f ⁻¹' X)) = (f ''ᴳ G) - X := by
+lemma map_deleteVerts_preimage {X : Set α'} : f ''ᴳ (G - (f ⁻¹' X)) = (f ''ᴳ G) - X := by
   ext a b c
-  · simp only [map_vertexSet, vertexDelete_vertexSet, mem_image, mem_diff, mem_preimage]
+  · simp only [vertexSet_map, vertexSet_deleteVerts, mem_image, mem_diff, mem_preimage]
     grind
-  · simp only [map_isLink, vertexDelete_isLink_iff, mem_preimage, ← exists_and_right, and_assoc]
+  · simp only [map_isLink, deleteVerts_isLink_iff, mem_preimage, ← exists_and_right, and_assoc]
     grind
+
+@[simp]
+lemma induce_preimage_map {X : Set α'} (h : X ⊆ f '' V(H)) : f ''ᴳ (H[f ⁻¹' X]) = (f ''ᴳ H)[X] := by
+  ext <;> grind
 
 lemma surjOn_of_le_map {G} (h : G ≤ f ''ᴳ H) : SurjOn f V(H) V(G) := by
   intro a' ha'
   exact vertexSet_mono h ha'
 
 lemma exists_map_eq_of_le_map {G} (h : G ≤ f ''ᴳ H) : ∃ H' ≤ H, f ''ᴳ H' = G := by
-  use H[V(H) ∩ f ⁻¹' V(G)] ↾ E(G), .trans edgeRestrict_le <| induce_le inter_subset_left, ?_
+  use H[V(H) ∩ f ⁻¹' V(G)] ↾ E(G), .trans restrict_le <| induce_le inter_subset_left, ?_
   refine ext_of_le_le ?_ h ?_ ?_
   · gcongr
-    exact .trans edgeRestrict_le <| induce_le inter_subset_left
+    exact .trans restrict_le <| induce_le inter_subset_left
   · ext x
-    simp only [map_vertexSet, edgeRestrict_vertexSet, induce_vertexSet, mem_image, mem_inter_iff,
+    simp only [vertexSet_map, vertexSet_restrict, vertexSet_induce, mem_image, mem_inter_iff,
       mem_preimage]
     refine ⟨?_, fun hx ↦ ?_⟩
     · rintro ⟨y, ⟨hyH, hy⟩, rfl⟩
       exact hy
-    obtain ⟨y, hy, rfl⟩ := by simpa only [map_vertexSet, mem_image] using vertexSet_mono h hx
+    obtain ⟨y, hy, rfl⟩ := by simpa only [vertexSet_map, mem_image] using vertexSet_mono h hx
     use y
-  simp only [map_edgeSet, edgeRestrict_edgeSet, inter_eq_right, induce_edgeSet, mem_inter_iff,
+  simp only [edgeSet_map, edgeSet_restrict, inter_eq_right, edgeSet_induce, mem_inter_iff,
     mem_preimage]
   intro e he
   obtain ⟨x', y', hxy'⟩ := exists_isLink_of_mem_edgeSet <| edgeSet_mono h he
@@ -216,10 +255,9 @@ lemma exists_map_eq_of_le_map {G} (h : G ≤ f ''ᴳ H) : ∃ H' ≤ H, f ''ᴳ 
   have hxy'' := hxy'.of_le_of_mem h he
   use x, y, hxy, ⟨hxy.left_mem, hxy''.left_mem⟩, hxy.right_mem, hxy''.right_mem
 
-lemma exists_le_map_comm {G} : (∃ f : α → α', G ≤ f ''ᴳ H) ↔ ∃ f H', H' ≤ H ∧ f ''ᴳ H' = G := by
-  refine ⟨fun ⟨f, hf⟩ ↦ ⟨f, exists_map_eq_of_le_map hf⟩, ?_⟩
-  rintro ⟨f, H', hH', rfl⟩
-  use f
+lemma exists_le_map_comm {G} (f : α → α') : G ≤ f ''ᴳ H ↔ ∃ H', H' ≤ H ∧ f ''ᴳ H' = G := by
+  refine ⟨fun hf ↦ exists_map_eq_of_le_map hf, ?_⟩
+  rintro ⟨H', hH', rfl⟩
   grw [hH']
 
 /-! ### IsContractClosed predicate
@@ -246,7 +284,7 @@ lemma subset (hφ : G.IsContractClosed φ C) (hDC : D ⊆ C) : G.IsContractClose
 
 lemma of_le (hGH : G ≤ H) (hφ : H.IsContractClosed φ C) : G.IsContractClosed φ C := by
   intro e u v heC huv
-  exact hφ heC (hGH.isLink_of_isLink huv)
+  exact hφ heC (hGH.isLink_mono huv)
 
 lemma isLoopAt_map_of_mem (hφ : G.IsContractClosed φ C) (heC : e ∈ C) (huv : G.IsLink e u v) :
     (φ ''ᴳ G).IsLoopAt e (φ u) := by
@@ -263,16 +301,16 @@ lemma exists_isLoopAt_map_of_mem_edgeSet (hφ : G.IsContractClosed φ C) (he : e
 
 /-- A vertex-deletion-stable version: if `e ∈ C` and `e` survives deleting `S` from the mapped
 graph, then `e` is a loop in `((φ ''ᴳ G) - S)`. -/
-lemma exists_isLoopAt_map_vertexDelete_of_mem (hφ : G.IsContractClosed φ C) (S : Set α')
+lemma exists_isLoopAt_map_deleteVerts_of_mem (hφ : G.IsContractClosed φ C) (S : Set α')
     (he : e ∈ C ∩ E((φ ''ᴳ G) - S)) : ∃ x, ((φ ''ᴳ G) - S).IsLoopAt e x := by
   obtain ⟨heC, heE⟩ := he
-  have heG : e ∈ E(G) := by simpa only [map_edgeSet] using (edgeSet_mono vertexDelete_le) heE
+  have heG : e ∈ E(G) := by simpa only [edgeSet_map] using (edgeSet_mono deleteVerts_le) heE
   obtain ⟨u, v, huv⟩ := G.exists_isLink_of_mem_edgeSet heG
   have hloop : (φ ''ᴳ G).IsLoopAt e (φ u) := hφ.isLoopAt_map_of_mem heC huv
   have huS : (φ u) ∉ S := by
     intro huS
     exact (hloop.inc.not_mem_of_mem huS) heE
-  refine ⟨φ u, ((φ ''ᴳ G).vertexDelete_isLink_iff S).mpr ⟨hloop, huS, huS⟩⟩
+  refine ⟨φ u, ((φ ''ᴳ G).deleteVerts_isLink_iff S).mpr ⟨hloop, huS, huS⟩⟩
 
 lemma disjoint_of_isWalk_noLoop (hφ : G.IsContractClosed φ C) {W : WList α' β}
     (h : (φ ''ᴳ G).IsWalk W) (hloop : W.NoLoop) : Disjoint E(W) C := by
@@ -364,11 +402,11 @@ lemma edgeMap_inc (hσ : ∀ e₁ ∈ E(G), ∀ e₂ ∈ E(G), σ e₁ = σ e₂
 --   use u, v, e
 
 -- lemma mem_vertexSet_map (hin : u ∈ V(G)) : f u ∈ V(G.map f σ hσ) := by
---   rw [map_vertexSet]
+--   rw [vertexSet_map]
 --   exact ⟨u, hin, rfl⟩
 
 -- lemma mem_edgeSet_map (hin : e ∈ E(G)) : σ e ∈ E(G.map f σ hσ) := by
---   rw [map_edgeSet]
+--   rw [edgeSet_map]
 --   use e
 
 -- @[simp]

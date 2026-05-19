@@ -1,4 +1,4 @@
-import Matroid.Graph.Matching.AugmentingPath
+import Matroid.Graph.Matching.Defs
 
 namespace Graph
 
@@ -215,17 +215,17 @@ Let $G$ be a graph with vertex set $V$.
   \end{enumerate}
 \end{proof}
 -/
-lemma tutte_berge_of_maximal_vertexDelete (hX : Maximal (fun X ↦ ν(G - X) = ν(G) - X.encard) X) :
-    2 * ν(G - X) = (V(G) \ X).encard - (G - X).OddComponents.encard := by
+lemma tutte_berge_of_maximal_deleteVerts (hX : Maximal (fun X ↦ ν(G - X) = ν(G) - X.encard) X) :
+    2 * ν(G - X) = (V(G) \ X).encard - (G - X).oddComponents.encard := by
   sorry
 
 lemma tutte_berge_le [G.Finite] :
-    2 * ν(G) ≤ (V(G).encard + Y.encard) - (G - Y).OddComponents.encard := by
+    2 * ν(G) ≤ (V(G).encard + Y.encard) - (G - Y).oddComponents.encard := by
 
   sorry
 
 lemma tutte_berge [G.Finite] :
-    2 * ν(G) = ⨅ Z ⊆ V(G), (V(G).encard + Z.encard) - (G - Z).OddComponents.encard := by
+    2 * ν(G) = ⨅ Z ⊆ V(G), (V(G).encard + Z.encard) - (G - Z).oddComponents.encard := by
   sorry
 
 -- def HasPerfectMatching (G : Graph α β) : Prop :=
@@ -244,7 +244,7 @@ lemma tutte_berge [G.Finite] :
 --   -- Proof: For any v, G-v has a perfect matching, so |V|-1 is even, implying |V| is odd.
 --   sorry
 
--- lemma IsFactorCritical.hasPerfectMatching_of_vertexDelete [G.Finite] (h : G.IsFactorCritical)
+-- lemma IsFactorCritical.hasPerfectMatching_of_deleteVerts [G.Finite] (h : G.IsFactorCritical)
 --     (v : α) (hv : v ∈ V(G)) : (G - {v}).HasPerfectMatching := by
 --   -- Proof: Follows directly from the definition.
 --   sorry

@@ -87,7 +87,7 @@ lemma union_incFun_eq (hdj : Disjoint E(G) E(H)) : (G ∪ H).incFun = G.incFun +
 
 lemma union_eDegree_eq (hdj : Disjoint E(G) E(H)) (x : α) :
     (G ∪ H).eDegree x = G.eDegree x + H.eDegree x := by
-  simp [eDegree, union_incFun_eq hdj, ENat.tsum_add]
+  simp [eDegree, union_incFun_eq hdj, tsum_add]
 
 lemma eDegree_addEdge_left {a b : α} (he : e ∉ E(G)) (hab : a ≠ b) :
     (G.addEdge e a b).eDegree a = G.eDegree a + 1 := by
@@ -133,7 +133,7 @@ lemma IsNonloopAt.degree_delete_add_one [G.LocallyFinite] (he : G.IsNonloopAt e 
 lemma IsLoopAt.eDegree_delete_add_two (h : G.IsLoopAt e x) :
     (G ＼ {e}).eDegree x + 2 = G.eDegree x := by
   have hrw : {f | G.IsLoopAt f x} = insert e {f | (G ＼ {e}).IsLoopAt f x} := by
-    simp only [edgeDelete_isLoopAt_iff, mem_singleton_iff]
+    simp only [deleteEdges_isLoopAt, mem_singleton_iff]
     ext f
     have := eq_or_ne f e
     aesop

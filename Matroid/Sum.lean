@@ -423,17 +423,13 @@ lemma sum_eq_disjointSum {β : Type*} (M : Matroid α) (N : Matroid β) : M.sum 
     subset_inter_iff, and_iff_right inter_subset_left, h']
   grind
 
-
-
-
-
-
-
-
-
 end disjointSum
 
 variable {α β : Type*} {M : Matroid α} {N : Matroid β}
+
+@[simp]
+lemma sum_dual (M : Matroid α) (N : Matroid β) : (M.sum N)✶ = M✶.sum N✶ := by
+  simp_rw [sum_eq_disjointSum, disjointSum_dual, map_dual]
 
 lemma sum_dep_iff (M : Matroid α) (N : Matroid β) (X : Set (α ⊕ β)) :
     (M.sum N).Dep X ↔ (M.Dep (.inl ⁻¹' X) ∨ N.Dep (.inr ⁻¹' X))

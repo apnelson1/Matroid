@@ -311,6 +311,16 @@ lemma mapsTo_supp (hf : IsRepFun P f) : Set.MapsTo f P.supp P.supp :=
 lemma mapsTo {S : Set α} (hf : IsRepFun P f) (hS : P.supp ⊆ S) : Set.MapsTo f S S :=
   fun x h ↦ hf.image_subset hS ⟨x, h, rfl⟩
 
+lemma preimage_subset {S : Set α} (hf : IsRepFun P f) (hS : P.supp ⊆ S) : f ⁻¹' S ⊆ S := by
+  simp only [preimage_subset_iff]
+  intro x hx
+  by_cases ha : x ∈ P.supp
+  · exact hS ha
+  exact hf.apply_of_notMem ha ▸ hx
+
+lemma preimage_supp_subset (hf : IsRepFun P f) : f ⁻¹' P.supp ⊆ P.supp :=
+  hf.preimage_subset subset_rfl
+
 @[simp]
 lemma apply_mem_iff (hf : IsRepFun P f) : f a ∈ P.supp ↔ a ∈ P.supp := by
   refine ⟨fun h ↦ ?_, hf.apply_mem⟩
@@ -378,6 +388,14 @@ lemma idem (hf : IsRepFun P f) : f (f a) = f a := by
     exact hf.rel_apply ha
   simp_rw [hf.apply_of_notMem ha]
 
+@[grind →]
+lemma notMem_image_supp_of_rel_of_ne_apply (hf : IsRepFun P f) (hab : P a b) (h : a ≠ f b) :
+    a ∉ f '' P.supp := by
+  rintro ⟨x, -, rfl⟩
+  exact h <| hf.idem (a := x) ▸ hf.apply_eq_apply hab
+
+end IsRepFun
+
 /-- Any partially defined representative function extends to a complete one. -/
 lemma exists_extend_partial (P : Partition (Set α)) {t : Set α} (f₀ : t → α)
     (h_notMem : ∀ x : t, x.1 ∉ P.supp → f₀ x = x) (h_mem : ∀ x : t, x.1 ∈ P.supp → P x (f₀ x))
@@ -412,7 +430,7 @@ lemma exists_extend_partial' (P : Partition (Set α)) {t : Set α}
   simpa using exists_extend_partial P (fun x : t ↦ x) (by simp)
     (by simp [P.rel_self_iff_mem]) (fun x y ↦ h x.2 y.2)
 
-lemma nonempty (P : Partition (Set α)) : ∃ f, IsRepFun P f := by
+lemma isRepFun_nonempty (P : Partition (Set α)) : ∃ f, IsRepFun P f := by
   obtain ⟨f, hf, -⟩ := exists_extend_partial' P (t := ∅) (by simp)
   exact ⟨f, hf⟩
 
@@ -422,7 +440,7 @@ theorem isRepFun_isRepFun (hf : IsRepFun P f) (hg : IsRepFun P g) (x : α) : f (
   · exact hf.apply_eq_apply (hg.rel_apply hx).symm
   rw [hg.apply_of_notMem hx, hf.apply_of_notMem hx]
 
-lemma eq_id_of_discrete (s : Set α) (hf : IsRepFun (Partition.discrete s) f) : f = id := by
+lemma IsRepFun.eq_id_of_discrete (s : Set α) (hf : IsRepFun (.discrete s) f) : f = id := by
   ext x
   obtain (hx | hx) := em (x ∈ s)
   · have hx' := hf.rel_apply (supp_discrete s ▸ hx)
@@ -430,18 +448,16 @@ lemma eq_id_of_discrete (s : Set α) (hf : IsRepFun (Partition.discrete s) f) : 
     exact hx'.1.symm
   rw [hf.apply_of_notMem (supp_discrete s |>.symm ▸ hx), id]
 
-lemma eq_id_of_eq_discrete (hf : IsRepFun P f) (hP : P = Partition.discrete s) : f = id := by
+lemma IsRepFun.eq_id_of_eq_discrete (hf : IsRepFun P f) (hP : P = .discrete s) : f = id := by
   subst hP
-  exact eq_id_of_discrete s hf
+  exact hf.eq_id_of_discrete s
 
 /-- Convert an `IsRepFun` proof to a `RepFun`. -/
-def toRepFun (hf : IsRepFun P f) : P.RepFun where
+def IsRepFun.toRepFun (hf : IsRepFun P f) : P.RepFun where
   toFun := f
   apply_eq_self_of_notMem := hf.apply_of_notMem
   rel_apply_of_mem := hf.rel_apply
   apply_eq_of_rel := hf.apply_eq_apply
-
-end IsRepFun
 
 /-- Convert a `RepFun` to an `IsRepFun` proof. -/
 lemma RepFun.isRepFun (rf : P.RepFun) : IsRepFun P rf where

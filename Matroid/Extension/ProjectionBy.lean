@@ -4,17 +4,22 @@ import Mathlib.Logic.Function.CompTypeclasses
 import Matroid.Extension.Minor
 import Matroid.ForMathlib.Matroid.Map
 import Matroid.Order.Quotient
+import Matroid.Rank.Cardinal
+import Matroid.ForMathlib.Data.Set.Sum
 
 open Set BigOperators Set.Notation Function
 
 namespace Matroid
 
-universe u
+universe u v
 
 variable {α β : Type*} {ι : Type*} {η : Type*} {A : Set η} {M N : Matroid α}
     {B I J X X' Y Y' F : Set α} {e : α} {i j : ι} {Xs Ys Is Js : ι → Set α}
 
-/-- A matroid encoding the fact that `N` is a projection of `M`. -/
+/-- A matroid encoding the fact that `N` is a projection of `M`.
+It consists of a matroid `P` on `α ⊕ β` for some other type `β`,
+so that, after appropriate maps, we have `P ／ X = N` and `P ＼ X = M`,
+where `X` is the set of elements of `β`. -/
 structure Projector (N M : Matroid α) (β : Type*) where
   carrier : Matroid (α ⊕ β)
   contract_eq' : carrier ／ range Sum.inr = N.map Sum.inl Sum.inl_injective.injOn
@@ -30,10 +35,6 @@ This works even if there are no elements outside the common ground set of `M` an
 to perform the projection within the type. -/
 def IsProjection {α : Type u} (N M : Matroid α) : Prop :=
   ∃ (β : Type u), Nonempty (N.Projector M β)
-
-lemma Projector.isProjection {α β : Type u} {M N : Matroid α} (P : N.Projector M β) :
-    N.IsProjection M :=
-  ⟨β, ⟨P⟩⟩
 
 lemma Projector.contract_eq_mapEmbedding (P : N.Projector M β) :
     (P : Matroid (α ⊕ β)) ／ range Sum.inr = N.mapEmbedding Embedding.inl := P.contract_eq'
@@ -63,6 +64,7 @@ lemma Projector.delete_comap_eq (P : N.Projector M β) :
   rw [P.delete_eq]
   exact comap_map Embedding.inl.injective
 
+/-- The set whose contraction gives `N` and whose deletion gives `M`, as a set in `β`. -/
 def Projector.pivot (P : N.Projector M β) : Set β :=
     Sum.inr ⁻¹' (P : Matroid (α ⊕ β)).E
 
@@ -82,6 +84,13 @@ lemma Projector.preimage_inl_eq_left (P : N.Projector M β) :
 lemma Projector.preimage_inl_eq_right (P : N.Projector M β) :
     .inl ⁻¹' (P : Matroid (α ⊕ β)).E = M.E := by
   simp [← P.delete_comap_eq]
+
+lemma Projector.coe_ground_eq_union (P : N.Projector M β) :
+    (P : Matroid (α ⊕ β)).E = Sum.inl '' M.E ∪ Sum.inr '' P.pivot := by
+  nth_rw 1 [← image_preimage_inl_union_image_preimage_inr (P : Matroid (α ⊕ β)).E,
+    image_preimage_eq_inter_range, pivot]
+  convert rfl
+  rw [← P.preimage_inl_eq_right, image_preimage_eq_inter_range]
 
 lemma Projector.ground_eq (P : N.Projector M β) : N.E = M.E := by
   rw [← P.preimage_inl_eq_left, ← P.preimage_inl_eq_right]
@@ -121,6 +130,29 @@ lemma Projector.map_pivot {γ : Type u} (P : N.Projector M β) (f : β → γ) (
     (P.map f hf).pivot = f '' P.pivot := by
   simp [Projector.pivot, Projector.map, Set.ext_iff]
 
+@[simp]
+lemma Projector.dual_pivot (P : N.Projector M β) : P.dual.pivot = P.pivot := rfl
+
+-- lemma Projector.foo (P : N.Projector M β) {e : β} (he : e ∈ P.pivot) :
+--     ∃ (U : M.ModularCut) (Q : N.Projector (M.projectBy U) β), Q.pivot = P.pivot \ {e} := by
+--   -- let R := P.carrier ／ {.inr e}
+--   have hc := P.contract_image_pivot
+--   have hd := P.delete_image_pivot
+--   rw [← insert_diff_self_of_mem he, image_insert_eq, ← union_singleton, ← delete_delete] at hd
+
+
+--   let V := ModularCut.ofDeleteElem (P.carrier ＼ Sum.inr '' (P.pivot \ {e})) (.inr e)
+--   refine ⟨((V.copy hd).comapOfSubsetRange .inl (by simp)).copy (comap_map Sum.inl_injective),
+--     ⟨P.carrier ／ {.inr e}, ?_, ?_⟩, ?_⟩
+--   · rw [← P.contract_eq, contract_contract, union_eq_self_of_subset_left (by simp)]
+--   · simp
+
+
+
+
+
+
+
 lemma Projector.delete_contract_aux (M : Matroid α) (X : Set α) :
     M.comapOn (Sum.inl '' (M.E \ X) ∪ Sum.inr '' (X ∩ M.E)) (Sum.elim id id) ＼ range Sum.inr =
     (M ＼ X).mapEmbedding Embedding.inl := by
@@ -139,6 +171,13 @@ lemma Projector.bijOn_aux {X : Set α} (hX : X ⊆ M.E) :
   · simp_rw [InjOn]
     aesop
   simp [SurjOn, image_union, ← range_comp, image_image]
+
+lemma Projector.eq_of_pivot_eq_empty {P : N.Projector M β} (h : P.pivot = ∅) : N = M := by
+  have hc := P.contract_image_pivot
+  have hd := P.delete_image_pivot
+  simp only [h, image_empty, contract_empty, delete_empty] at hc hd
+  rw [hc] at hd
+  exact Matroid.map_inj _ Sum.inl_injective.injOn hd
 
 def Projector.delete_contract' (M : Matroid α) (X : Set α) (hX : X ⊆ M.E) :
     (M ／ X).Projector (M ＼ X) X where
@@ -170,10 +209,58 @@ def Projector.copy {M M' N N' : Matroid α} (P : N.Projector M β) (hN : N = N')
   contract_eq' := by rw [P.contract_eq, hN]
   delete_eq' := by rw [P.delete_eq, hM]
 
+@[simp]
+lemma Projector.copy_coe {M M' N N' : Matroid α} (P : N.Projector M β) (hN : N = N') (hM : M = M') :
+    (P.copy hN hM : Matroid (α ⊕ β)) = P := rfl
+
+@[simp]
+lemma Projector.copy_pivot {M M' N N' : Matroid α} (P : N.Projector M β) (hN : N = N')
+    (hM : M = M') : (P.copy hN hM).pivot = P.pivot := rfl
+
 def Projector.delete_contract (M : Matroid α) (X : Set α) : (M ／ X).Projector (M ＼ X) X :=
   ((Projector.delete_contract' M (X ∩ M.E) inter_subset_right).copy
     (contract_inter_ground_eq ..) (delete_inter_ground_eq ..)).map (inclusion inter_subset_left)
     (inclusion_injective _).injOn
+
+/-- Given a projector for `M` and `N`, the correseponding projector for `M ／ C` and `N ／ C`. -/
+def Projector.contract_contract (P : M.Projector N β) (C : Set α) :
+    (M ／ C).Projector (N ／ C) β :=
+  let P' : (M ／ (C ∩ M.E)).Projector (N ／ (C ∩ N.E)) β := {
+    carrier := P ／ (.inl '' (C ∩ M.E))
+    contract_eq' := by rw [contract_comm, P.contract_eq, contract_map _ inter_subset_right]
+    delete_eq' := by rw [contract_delete_comm _ (by grind), P.delete_eq,
+      contract_map Sum.inl_injective.injOn inter_subset_right, P.ground_eq]
+  }
+  P'.copy (by simp) (by simp)
+
+@[simp]
+lemma Projector.contract_contract_coe (P : M.Projector N β) (C : Set α) :
+    ((P.contract_contract C) : Matroid (α ⊕ β)) = (P : Matroid (α ⊕ β)) ／ (Sum.inl '' C) := by
+  simp only [contract_contract, copy_coe]
+  nth_rw 1 [eq_comm, ← contract_inter_ground_eq, P.coe_ground_eq_union, P.ground_eq,
+    inter_union_distrib_left, image_inter Sum.inl_injective, disjoint_image_inl_image_inr.inter_eq,
+    union_empty]
+
+@[simp]
+lemma Projector.contract_projector_pivot (P : M.Projector N β) (C : Set α) :
+    (P.contract_contract C).pivot = P.pivot := by
+  rw [pivot, contract_contract_coe, contract_ground, preimage_diff, preimage_inr_image_inl,
+    diff_empty, pivot]
+
+/-- Given a projector for `M` and `N`, the correseponding projector for `M ＼ D` and `N ＼ D`. -/
+def Projector.delete_delete (P : M.Projector N β) (D : Set α) :
+    (M ＼ D).Projector (N ＼ D) β :=
+  (P.dual.contract_contract D).dual.copy (by simp) (by simp)
+
+@[simp]
+lemma Projector.delete_delete_coe (P : M.Projector N β) (D : Set α) :
+    ((P.delete_delete D) : Matroid (α ⊕ β)) = (P : Matroid (α ⊕ β)) ＼ (Sum.inl '' D) := by
+  simp [Projector.delete_delete, Projector.dual]
+
+@[simp]
+lemma Projector.delete_delete_pivot (P : M.Projector N β) (D : Set α) :
+    (P.delete_delete D).pivot = P.pivot := by
+  simp [Projector.delete_delete]
 
 lemma exists_indep_coindep_of_delete_contract (M : Matroid α) (X : Set α) :
     ∃ (N : Matroid α) (I : Set α),
@@ -201,19 +288,22 @@ lemma exists_indep_coindep_of_delete_contract (M : Matroid α) (X : Set α) :
   rw [contract_contract, diff_union_of_subset hI.subset,
     ← contract_delete_comm _ disjoint_sdiff_right, hK.contract_eq_contract_delete]
 
-/-- We can always choose a projector so that the pivot set is independent and coindepent,
-and consists of the entire type of projected elements. -/
-lemma IsProjection.exists_good_projector {α : Type u} {M N : Matroid α} (h : N.IsProjection M) :
-    ∃ (β : Type u) (P : N.Projector M β),
-      (P : Matroid (α ⊕ β)).E = .inl '' M.E ∪ range .inr ∧
-      (P : Matroid (α ⊕ β)).Indep (range .inr) ∧
-      (P : Matroid (α ⊕ β)).Coindep (range .inr) := by
-  obtain ⟨β, ⟨P⟩⟩ := h
+
+lemma delete_isProjection_contract (M : Matroid α) (X : Set α) : (M ／ X).IsProjection (M ＼ X) :=
+  ⟨_, ⟨Projector.delete_contract M X⟩⟩
+
+/-- For every projector `Q`, there is a subset `J` of the pivot,
+and a projector `P` on the type `α ⊕ J` whose pivot is all of `J`,
+such that the pivot is both independent and coindependent in `P`.  -/
+lemma Projector.exists_set_projector {β : Type u} (Q : N.Projector M β) :
+    ∃ J ⊆ Q.pivot, ∃ (P : N.Projector M J), P.pivot = univ ∧
+      (P : Matroid (α ⊕ J)).Indep (range .inr) ∧
+      (P : Matroid (α ⊕ J)).Coindep (range .inr) := by
   obtain ⟨M', J, hM', hJ, hJi, hJi', hd, hc⟩ :=
-    exists_indep_coindep_of_delete_contract (P : Matroid (α ⊕ β)) (range .inr)
-  obtain ⟨J, rfl⟩ := subset_range_iff_exists_image_eq.1 hJ
+    exists_indep_coindep_of_delete_contract (Q : Matroid (α ⊕ β)) (.inr '' Q.pivot)
+  obtain ⟨J, hJss, rfl⟩ := subset_image_iff.1 hJ
   have hbij : BijOn (Sum.map id (Subtype.val : J → β)) (Sum.inl '' M.E ∪ range Sum.inr) M'.E := by
-    rw [← P.preimage_inl_eq_right]
+    rw [← Q.preimage_inl_eq_right]
     refine ⟨?_, by simp [InjOn], ?_⟩
     · rintro (x | ⟨x, hx⟩)
       simp only [mem_union, mem_image, mem_preimage, Sum.inl.injEq, exists_eq_right, mem_range,
@@ -226,28 +316,76 @@ lemma IsProjection.exists_good_projector {α : Type u} {M N : Matroid α} (h : N
       ← range_comp]
     rw [image_preimage_eq_inter_range, Sum.elim_comp_inr, range_comp, Subtype.range_val,
       union_comm, ← diff_subset_iff, ← M'.delete_ground, hd, delete_ground,
-      subset_inter_iff, and_iff_right diff_subset, diff_subset_iff]
+      subset_inter_iff, and_iff_right diff_subset, diff_subset_iff, Q.coe_ground_eq_union,
+      union_comm]
     simp
-  refine ⟨J, ⟨M'.comapOn (Sum.inl '' M.E ∪ range .inr) (Sum.map id Subtype.val), ?_, ?_⟩,
-    by simp, ?_, ?_⟩
+  refine ⟨J, hJss, ⟨M'.comapOn (Sum.inl '' M.E ∪ range .inr) (Sum.map id Subtype.val), ?_, ?_⟩,
+    by simp [pivot], ?_, ?_⟩
   · refine Matroid.map_inj (Sum.map id Subtype.val) (by simp [InjOn]) ?_
     rw [contract_map (by simp) (by simp), map_comapOn hbij]
     simp only [Sum.map, CompTriple.comp_eq, ← range_comp, Sum.elim_comp_inr]
     simp only [range_comp, Subtype.range_coe_subtype, setOf_mem_eq, map_map, Sum.elim_comp_inl]
-    rw [hc, P.contract_eq]
-
+    rw [hc, Q.contract_image_pivot]
   · refine Matroid.map_inj (Sum.map id Subtype.val) (by simp [InjOn]) ?_
     rw [delete_map (by simp) (by simp), map_comapOn hbij, map_map]
     simp only [Sum.map, CompTriple.comp_eq, ← range_comp, Sum.elim_comp_inr, Sum.elim_comp_inl]
-    simp only [range_comp, Subtype.range_coe_subtype, setOf_mem_eq, hd, P.delete_eq]
+    simp only [range_comp, Subtype.range_coe_subtype, setOf_mem_eq, hd, Q.delete_image_pivot]
   · suffices M'.Indep (range (Sum.inr ∘ Subtype.val)) by simpa [Sum.map, ← range_comp]
     simpa [range_comp]
   suffices M'.Coindep (range (Sum.inr ∘ Subtype.val)) by
     simpa [Coindep, comapOn_dual_eq_of_bijOn hbij, ← range_comp]
   simpa [range_comp]
 
-lemma delete_isProjection_contract (M : Matroid α) (X : Set α) : (M ／ X).IsProjection (M ＼ X) :=
-  ⟨_, ⟨Projector.delete_contract M X⟩⟩
+/-- For every type `α`, matroids `M N` on `α`, and projector `P` for `N` and `M`,
+there is a projector `Q` on a type `β` in the same universe as `α`,
+such that the pivot of `Q` is all of `β`, is independent and coindependent in `Q`,
+and so that `β` is smaller than both `Set α` and the pivot of P`. -/
+lemma Projector.exists_good_projector {α : Type u} {γ : Type v} {M N : Matroid α}
+    (P : N.Projector M γ) : ∃ (β : Type u) (Q : N.Projector M β), Q.pivot = univ ∧
+      (Q : Matroid (α ⊕ β)).Indep (range .inr) ∧ (Q : Matroid (α ⊕ β)).Coindep (range .inr)
+      ∧ Nonempty (β ↪ Set α) ∧ Nonempty (β ↪ P.pivot) := by
+  -- obtain ⟨β, ⟨P⟩⟩ := h
+  obtain ⟨J, hJss, Q', hJE, hi, hci⟩ := P.exists_set_projector
+  obtain ⟨B, hB⟩ := M.exists_isBase
+  have hB' : (Q' : Matroid (α ⊕ J)).IsBase (.inl '' B) := by
+    rw [← Q'.delete_comap_eq] at hB
+    have ⟨h1, h2⟩ : (Q' : Matroid (α ⊕ J)).IsBasis (Sum.inl '' B) (Sum.inl '' M.E) ∧ B ⊆ M.E := by
+      simpa [comap_isBase_iff] using hB
+    refine h1.isBase_of_spanning <| hci.compl_spanning.superset ?_
+    rw [Q'.coe_ground_eq_union, hJE, image_univ]
+    grind
+  obtain ⟨f⟩ : Nonempty (J ↪ Set α) := by
+    obtain ⟨f⟩ := hi.nonempty_embedding_set_of_isBase hB'
+    refine ⟨(Embedding.trans ?_ f).trans ?_⟩
+    · exact (Equiv.ofInjective Sum.inr Sum.inr_injective).toEmbedding
+    refine Embedding.trans (Equiv.Set.congr ?_).symm.toEmbedding (Embedding.setSubtype B).image
+    exact Set.BijOn.equiv Sum.inl Sum.inl_injective.injOn.bijOn_image
+  refine ⟨_, Q'.map (Equiv.ofInjective f f.injective) (by simp), ?_, ?_, ?_, ?_, ?_⟩
+  · simp only [map_pivot, Equiv.ofInjective_apply, hJE, image_univ]
+    grind
+  · simp only [map, map_indep_iff]
+    exact ⟨_, hi, by aesop⟩
+  · simp only [map, map_coindep_iff]
+    exact ⟨_, hci, by aesop⟩
+  · exact ⟨(Equiv.ofInjective f f.injective).symm.toEmbedding.trans f⟩
+  refine ⟨Embedding.trans ?_ ⟨_, Set.inclusion_injective hJss⟩⟩
+  exact (Equiv.ofInjective f f.injective).symm.toEmbedding
+
+lemma IsProjection.exists_good_projector {α : Type u} {M N : Matroid α} (h : N.IsProjection M) :
+    ∃ (β : Type u) (P : N.Projector M β), P.pivot = univ ∧
+      (P : Matroid (α ⊕ β)).Indep (range .inr) ∧ (P : Matroid (α ⊕ β)).Coindep (range .inr)
+      ∧ Nonempty (β ↪ Set α) := by
+  obtain ⟨γ, ⟨P⟩⟩ := h
+  obtain ⟨β, Q, hQp, hQi, hQci, hne, hne'⟩ := P.exists_good_projector
+  exact ⟨β, Q, hQp, hQi, hQci, hne⟩
+
+/-- Every projector gives a projection.
+This proof is not trivial because it is universe-heterogeneous;
+it works even if the type `β` has a different universe from `α`.  -/
+lemma Projector.isProjection {α : Type u} {β : Type v} {M N : Matroid α} (P : N.Projector M β) :
+    N.IsProjection M := by
+  obtain ⟨γ, Q, hQp, hQi, hQci, hne, hne'⟩ := P.exists_good_projector
+  exact ⟨γ, ⟨Q⟩⟩
 
 /-- Given a modular cut `U` in `M`,
 the projector certifying that `M.projectBy U` is a single-element projection of `M`. -/
@@ -267,29 +405,65 @@ lemma IsProjection.Quotient (h : N.IsProjection M) : N ≤q M := by
   simp_rw [← P.contract_comap_eq, ← P.delete_comap_eq]
   exact ((P : Matroid (α ⊕ β)).contract_quotient_delete (range .inr)).comap Sum.inl
 
-/-- The projector for `M` and itself. -/
-def Projector.refl (M : Matroid α) : M.Projector M (Fin 0) where
-  carrier := M.map Sum.inl Sum.inl_injective.injOn
-  contract_eq' := by simp
-  delete_eq' := by simp
+/-- A projector for `M` and itself with an arbitrary specified pivot, via a direct sum. -/
+def Projector.refl_set (M : Matroid α) {β : Type*} (X : Set β) : M.Projector M β where
+  carrier := M.sum (loopyOn X)
+  contract_eq' := by
+    rw [sum_contract, preimage_inl_range_inr, contract_empty, loopyOn_contract,
+      preimage_range, diff_univ, loopyOn_empty]
+    exact ext_indep (by simp) <| by simp [image_eq_image Sum.inl_injective]
+  delete_eq' := by
+    rw [sum_delete, preimage_inl_range_inr, delete_empty, loopyOn_delete, preimage_range,
+      diff_univ, loopyOn_empty]
+    exact ext_indep (by simp) <| by simp [image_eq_image Sum.inl_injective]
 
--- def Projector.comp_projectBy_modularCut {M N : Matroid α} (P : N.Projector M β)
--- (U : N.ModularCut) :
---     (N.projectBy U).Projector M (Option β) where
---   carrier :=
---     have hinj : InjOn (Sum.map id some) (P : Matroid (α ⊕ β)).E := by simp [InjOn]
---     ((P : Matroid (α ⊕ β)).map _ hinj).extendBy (.inr none)
---       <| ((U.map Sum.inl Sum.inl_injective.injOn).copy P.contract_eq.symm).ofContract'.map _ hinj
---   contract_eq' := by
---     simp only
---     have hrw1 : range (Sum.inr : Option β → α ⊕ Option β)
---       = {.inr none} ∪ (.inr '' (range some)) := by ext (a | rfl | b) <;> simp
---     obtain rfl | hne := eq_or_ne U ⊤
---     simp
---     rw [hrw1, ← contract_contract]
---     rw [← ModularCut.projectBy_map]
---   delete_eq' := _
+@[simp]
+lemma Projector.refl_set_pivot (M : Matroid α) {β : Type*} (X : Set β) :
+    (Projector.refl_set M X).pivot = X := by
+  simp [pivot, Projector.refl_set]
 
+/-- The projector for `M` and itself with an empty pivot set in an arbitrary type. -/
+def Projector.refl (M : Matroid α) (β : Type*) : M.Projector M β :=
+  Projector.refl_set M ∅
+
+/-- The projector for `M.project X` and `M` with pivot `univ : Set X`. -/
+def projector_project (M : Matroid α) (X : Set α) : (M.project X).Projector M X where
+  carrier := M.comap (Sum.elim id Subtype.val)
+  contract_eq' := by
+    refine ext_closure fun Y ↦ ?_
+    rw [← image_preimage_inl_union_image_preimage_inr Y]
+    simp only [contract_closure_eq, union_assoc,
+      union_eq_self_of_subset_left (image_subset_range ..), comap_closure_eq, map_closure_eq,
+      preimage_union, Sum.preimage_image_inl, preimage_inl_image_inr, union_empty, project_closure]
+    rw [image_union, preimage_sumElim]
+    simp only [Sum.image_elim_image_inl, id_eq, image_id', preimage_id_eq]
+    rw [union_diff_distrib, Disjoint.sdiff_eq_left (by simp), diff_eq_empty.2 (by simp),
+      union_empty, ← image_univ, Sum.image_elim_image_inr, image_univ, Subtype.range_coe_subtype,
+      setOf_mem_eq]
+  delete_eq' := by
+    refine ext_indep ?_ fun I hI ↦ ?_
+    · simp only [delete_ground, comap_ground_eq, map_ground]
+      grind
+    have hIE : I ⊆ .inl '' M.E := by
+      simp only [delete_ground, comap_ground_eq] at hI
+      grind
+    obtain ⟨I, hIE', rfl⟩ := subset_image_iff.1 hIE
+    rw [delete_indep_iff, and_iff_left (by simp), comap_indep_iff, map_image_indep_iff hIE',
+      and_iff_left (by simp [InjOn])]
+    convert Iff.rfl
+    grind
+
+/-- The projector for `M.project X` and `M` with pivot `X : Set α`. -/
+def projector_project' (M : Matroid α) (X : Set α) : (M.project X).Projector M α :=
+  (projector_project M X).map Subtype.val Subtype.val_injective.injOn
+
+/-- The projector for `loopyOn M.E` and `M` with a given spanning set as pivot. -/
+def Spanning.projector_loopyOn (hX : M.Spanning X) : (loopyOn M.E).Projector M X :=
+  (projector_project M X).copy hX.project_eq rfl
+
+/-- The projector for `loopyOn M.E` and `M` with a given spanning set as pivot. -/
+def Spanning.projector_loopyOn' (hX : M.Spanning X) : (loopyOn M.E).Projector M α :=
+  (projector_project' M X).copy hX.project_eq rfl
 
 /-- If `P` is a projector for `N` and `M` using a type `β` that is small enough to map into
 the complement of `M.E`, then in fact `N` and `M` have a common major within their own type. -/

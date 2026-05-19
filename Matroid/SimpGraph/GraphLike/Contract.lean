@@ -27,7 +27,7 @@ variable {α α' α'' β : Type*} {G H : Graph α β} {X : Set α} {C F : Set β
 def contract (G : Graph α β) (C : Set β) (φ : α → α') : Graph α' β :=
   (φ ''ᴳ G) ＼ C
 
--- attribute [grind =] contract_vertexSet contract_edgeSet contract_isLink
+-- attribute [grind =] contract_vertexSet edgeSet_contract contract_isLink
 
 notation:70 G " /["C ", " φ"] " => Graph.contract G C φ
 

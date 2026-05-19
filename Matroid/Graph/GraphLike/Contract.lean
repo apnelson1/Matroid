@@ -27,7 +27,7 @@ variable {α α' α'' β : Type*} {G H : Graph α β} {X : Set α} {C F : Set β
 def contract (G : Graph α β) (C : Set β) (φ : α → α') : Graph α' β :=
   (φ ''ᴳ G) ＼ C
 
--- attribute [grind =] contract_vertexSet contract_edgeSet contract_isLink
+-- attribute [grind =] vertexSet_contract edgeSet_contract contract_isLink
 
 notation:70 G " /["C ", " φ"] " => Graph.contract G C φ
 
@@ -37,7 +37,7 @@ variable {φ φ' τ : α → α'} {C C' D : Set β}
 
 @[simp, grind =]
 lemma contract_inc {x : α'} : G /[C, φ].Inc e x ↔ e ∉ C ∧ ∃ v, G.Inc e v ∧ φ v = x := by
-  simp +contextual only [contract, edgeDelete_inc_iff, map_inc, iff_def, not_false_eq_true,
+  simp +contextual only [contract, deleteEdges_inc, map_inc, iff_def, not_false_eq_true,
     true_and, and_imp, forall_exists_index, and_true]
   tauto
 
@@ -52,22 +52,22 @@ lemma IsLoopAt.contract_of_notMem (φ : α → α') (heC : e ∉ C) (hbtw : G.Is
 
 @[gcongr]
 lemma contract_mono (h : G ≤ H) : G /[C, φ] ≤ H /[C, φ] :=
-  edgeDelete_mono_left (map_mono h) C
+  deleteEdges_mono_left (map_mono h) C
 
 @[gcongr]
 lemma contract_isSpanningSubgraph (h : G ≤s H) : G /[C, φ] ≤s H /[C, φ] :=
-  (map_isSpanningSubgraph h).edgeDelete C
+  (map_isSpanningSubgraph h).deleteEdges C
 
 @[simp]
 lemma contract_contract {φ' : α' → α''} : (G /[C, φ]) /[C', φ'] = G /[C ∪ C', φ' ∘ φ] := by
   unfold contract
-  rw [map_edgeDelete_comm, map_map, edgeDelete_edgeDelete]
+  rw [map_deleteEdges_comm, map_map, deleteEdges_deleteEdges]
 
-lemma contract_edgeRestrict_comm : H /[C, φ] ↾ F = (H ↾ F) /[C, φ] := by
-  rw [contract, ← edgeRestrict_edgeDelete_comm, ← map_edgeRestrict_comm]
+lemma contract_restrict_comm : H /[C, φ] ↾ F = (H ↾ F) /[C, φ] := by
+  rw [contract, ← restrict_deleteEdges_comm, ← map_restrict_comm]
   rfl
 
-lemma contract_edgeDelete_comm : (H /[C, φ]) ＼ F = (H ＼ F) /[C, φ] := by
+lemma contract_deleteEdges_comm : (H /[C, φ]) ＼ F = (H ＼ F) /[C, φ] := by
   ext x y <;> grind
 
 lemma edgeSet_disjoint_of_le_contract {φ : α → α} (h : G ≤ G /[C, φ]) : Disjoint E(G) C := by
@@ -77,11 +77,11 @@ lemma edgeSet_disjoint_of_le_contract {φ : α → α} (h : G ≤ G /[C, φ]) : 
 @[simp]
 lemma contract_eq_map_of_disjoint (hdj : Disjoint E(G) C) : G /[C, φ] = φ ''ᴳ G := by
   unfold contract
-  rw [edgeDelete_eq _ (by simpa)]
+  rw [deleteEdges_eq _ (by simpa)]
 
 lemma map_eq_self_of_contract_eq_self {φ : α → α} (h : G /[C, φ] = G) : (φ ''ᴳ G) = G := by
   unfold contract at h
-  rwa [edgeDelete_eq _ (by simp [edgeSet_disjoint_of_le_contract h.ge])] at h
+  rwa [deleteEdges_eq _ (by simp [edgeSet_disjoint_of_le_contract h.ge])] at h
 
 variable {φ : α → α}
 
@@ -89,7 +89,7 @@ lemma _root_.Partition.IsRepFun.isContractClosed (hφ : (G ↾ C).connPartition.
     G.IsContractClosed φ C := by
   intro e u v heC huv
   have huvC : (G ↾ C).IsLink e u v := by
-    simpa [edgeRestrict_isLink, heC] using (And.intro huv heC)
+    simpa [restrict_isLink, heC] using (And.intro huv heC)
   have hrel : (G ↾ C).connPartition u v := by
     exact ((G ↾ C).connPartition_rel_iff u v).2 (huvC.adj.connBetween)
   exact hφ.apply_eq_apply hrel
@@ -107,13 +107,13 @@ lemma _root_.Partition.IsRepFun.isContractClosed_of_ge (hφ : H.connPartition.Is
   hφ.isContractClosed_of_compatible (compatible_of_le hHG).symm
 
 @[simp]
-lemma preimage_vertexDelete_contract : (H - φ ⁻¹' X) /[C, φ] = H /[C, φ] - X := by
-  rw [contract, contract, edgeDelete_vertexDelete, map_vertexDelete_preimage]
+lemma preimage_deleteVerts_contract : (H - φ ⁻¹' X) /[C, φ] = H /[C, φ] - X := by
+  rw [contract, contract, deleteEdges_deleteVerts, map_deleteVerts_preimage]
 
 /- The contract definition is sound when `φ` is a `H.connPartition.IsRepFun`. -/
 lemma contract_vertex_mono (hφ : G.connPartition.IsRepFun φ) (hGH : G ≤ H) :
     V(H /[E(G), φ]) ⊆ V(H) := by
-  refine vertexSet_mono edgeDelete_le |>.trans <| hφ.image_subset ?_
+  refine vertexSet_mono deleteEdges_le |>.trans <| hφ.image_subset ?_
   simp [vertexSet_mono hGH]
 
 lemma isLoopAt_map_iff_connBetween (hφ : G.connPartition.IsRepFun φ) :
@@ -132,7 +132,7 @@ lemma IsWalk.edgeRemove_contract [DecidablePred (· ∈ E(H))] {w} (h : G.IsWalk
     (hφ : H.connPartition.IsRepFun φ) : (G /[E(H), φ]).IsWalk <| (w.map φ).edgeRemove E(H) := by
   induction w with
   | nil x =>
-    simp only [nil_isWalk_iff, map_nil, edgeRemove_nil, contract_vertexSet] at h ⊢
+    simp only [nil_isWalk_iff, map_nil, edgeRemove_nil, vertexSet_contract] at h ⊢
     grind
   | cons x e w ih =>
     simp_all only [cons_isWalk_iff, map_cons, forall_const, edgeRemove_cons]
