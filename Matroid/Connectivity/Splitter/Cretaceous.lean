@@ -375,6 +375,7 @@ lemma Separation.forall_circuits_meeting_basis_largeside {N : Matroid α} (hP : 
     (hCDP : C ∪ D  = (P !i) \ N.E) (hNM : N ≤m M ／ C ＼ D) (hB : (M ／ P i).IsBase B)
     (hBC : (C \ B).Subsingleton) (hBN : B ∩ N.E = ∅) :
     ∀ C₀, (M ＼ (D \ B)).IsCircuit C₀ → ¬C₀ ⊆ P i ∪ N.E ∪ C → C₀ ⊆ B ∪ C := by
+  intro C₀ hC₀ hCPiN
   sorry
 
 lemma IsMinor.contract_disjoint_base_of_eConn_eq_one {N : Matroid α} (hP : P.eConn ≤ 1)
