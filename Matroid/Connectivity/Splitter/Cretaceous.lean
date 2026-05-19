@@ -279,8 +279,9 @@ lemma Separation.exists_subsingleton_independent_in_contraction_of_eConn_one
     simp [C, Set.ext_iff] at aux₁
     specialize aux₁ (x := y)
     rw [mem_inter_iff] at hy
-    grind only [→ Indep.subset_ground, !Separation.disjoint_bool, = subset_def, = disjoint_left,
-      = mem_union, = mem_diff, = mem_singleton_iff, #9295, #b487, #def2]
+    grind only [→ Indep.subset_ground, !Separation.disjoint_bool, = subset_def,
+      = restrict_ground_eq, = disjoint_left, = mem_union, = mem_diff, = mem_singleton_iff, #9295,
+      #b487, #def2]
 
 lemma Separation.coindependent_inter_contraction_coloopless_minor {N : Matroid α}
     (hN : Coloopless N) (hNM : N ≤m M) (hPi : (N.E ∩ (P !i)).Subsingleton) :
@@ -303,7 +304,7 @@ lemma Separation.coindependent_inter_contraction_coloopless_minor {N : Matroid �
       have aux := ha₁.of_isMinor (show a ∈ N.E by simp [ha₂.2]) hNM
       rw [← dual_isLoop_iff_isColoop] at aux
       rw [coloopless_iff, loopless_iff_forall_not_isLoop] at hN
-      grind only [= mem_inter_iff, #4c6f]
+      grind only [= dual_ground, = mem_inter_iff, #4c6f]
     · grind only [!Separation.disjoint_bool, = disjoint_left, #def2]
   · rw [not_nonempty_iff_eq_empty] at he
     rw [he, codep_def, ← not_indep_iff] at hc₁
@@ -337,7 +338,6 @@ lemma Separation.forall_circuits_meeting_basis_largeside {N : Matroid α} (hP : 
     (hCDP : C ∪ D  = (P !i) \ N.E) (hNM : N ≤m M ／ C ＼ D) (hB : (M ／ P i).IsBase B)
     (hBC : (C \ B).Subsingleton) (hBN : B ∩ N.E = ∅) :
     ∀ C₀, (M ＼ (D \ B)).IsCircuit C₀ → ¬C₀ ⊆ P i ∪ N.E ∪ C → C₀ ⊆ B ∪ C := by
-  intro C₀ hC₀ hCPiN
   sorry
 
 lemma IsMinor.contract_disjoint_base_of_eConn_eq_one {N : Matroid α} (hP : P.eConn ≤ 1)
@@ -380,8 +380,8 @@ lemma IsMinor.contract_disjoint_base_of_eConn_eq_one {N : Matroid α} (hP : P.eC
     rw [hskew₃] at hskew
     clear hskew₃
     have hskew₃ : (B \ C) ⊆ (M ／ C ＼ (D \ B)).E := by
-      grind only [→ Indep.subset_ground, = delete_ground, = subset_def, = contract_ground,
-          = mem_diff, #e397, #c367]
+      grind only [→ Indep.subset_ground, = delete_ground, = subset_def, = dual_ground,
+        = contract_ground, = mem_diff, #e397, #c367]
     have hskew₄ : (M ／ C ＼ (D \ B)) ／ (B \ C) = (M ／ C ＼ (D \ B)) ＼ (B \ C) := by
       rwa [← contract_eq_delete_iff_skew_compl] at hskew
     rw [delete_delete, hskew₂] at hskew₄
