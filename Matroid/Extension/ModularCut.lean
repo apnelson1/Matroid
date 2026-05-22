@@ -593,6 +593,23 @@ lemma mem_ofDeleteElem_iff' :
   rw [← h.2.closure, ← closure_insert_closure_eq_closure_insert, insert_eq_of_mem h.1.1,
     closure_closure]
 
+@[simp]
+lemma ofDeleteElem_eq_top_iff : ModularCut.ofDeleteElem M e = ⊤ ↔ M.IsLoop e := by
+  rw [ModularCut.eq_top_iff]
+  simp only [delete_loops_eq, mem_ofDeleteElem_iff', mem_diff, mem_loops_iff, mem_singleton_iff,
+    not_true_eq_false, and_false, not_false_eq_true, and_true, insert_diff_singleton]
+  refine ⟨fun h ↦ ?_, fun h ↦ ⟨?_, ?_⟩⟩
+  · grw [diff_subset, closure_loops] at h
+    exact h.1
+  · exact h.mem_closure _
+  rw [insert_eq_of_mem h]
+  exact isFlat_closure ..
+
+lemma ofDeleteElem_eq_bot_of_notMem (he : e ∉ M.E) : ModularCut.ofDeleteElem M e = ⊥ := by
+  have aux (X) : e ∉ M.closure X := by
+    grw [closure_subset_ground]; assumption
+  simp [ModularCut.eq_bot_iff, aux]
+
 end restrict
 
 section finite

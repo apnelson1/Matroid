@@ -303,10 +303,45 @@ lemma projectBy_restrict (U : M.ModularCut) (R : Set α) :
     exact M.closure_subset_closure <| by grind
   exact U.superset_mem hXU (M.closure_isFlat ..) <| by grw [inter_subset_left, closure_closure]
 
+@[simp]
 lemma projectBy_delete (U : M.ModularCut) (D : Set α) :
     (M ＼ D).projectBy (U.delete D) = (M.projectBy U) ＼ D := by
   simp_rw [delete_eq_restrict, projectBy_ground, ← projectBy_restrict]
   rfl
+
+@[simp]
+lemma projectBy_ofDeleteElem (M : Matroid α) (e : α) :
+    (M ＼ {e}).projectBy (ModularCut.ofDeleteElem M e) = M ／ {e} := by
+  refine ext_indep rfl fun I hI ↦ ?_
+  by_cases! heE : e ∉ M.E
+  · rw [ofDeleteElem_eq_bot_of_notMem heE, projectBy_bot, contractElem_eq_self heE,
+      deleteElem_eq_self heE]
+  obtain he | he := M.isLoop_or_isNonloop e
+  · rw [ofDeleteElem_eq_top_iff.2 he, projectBy_top, contract_eq_delete_of_subset_loops (by simpa)]
+  have heI : e ∉ I := fun heI ↦ (hI heI).2 rfl
+  by_cases! hecl : e ∉ M.closure I
+  · simp [diff_singleton_eq_self heI, diff_singleton_eq_self hecl, heI, he.contractElem_indep_iff,
+      insert_indep_iff, hecl, heE]
+  suffices M.Indep I → e ∈ M.closure (M.closure I \ {e}) by
+    simpa [diff_singleton_eq_self heI, he.not_isLoop, heI, he.contractElem_indep_iff,
+      insert_indep_iff, heE, hecl]
+  intro hi
+  grw [← M.subset_closure I, diff_singleton_eq_self heI]
+  assumption
+
+@[simp]
+lemma projectBy_comapOfSubsetRange {β : Type*} {M : Matroid β} (U : M.ModularCut) {f : α → β}
+    (hf : M.E ⊆ range f) :
+    (M.comap f).projectBy (U.comapOfSubsetRange f hf) = (M.projectBy U).comap f := by
+  refine ext_indep rfl fun I hI ↦ ?_
+  simp only [projectBy_ground, comap_ground_eq] at hI
+  simp only [projectBy_indep_iff, comap_indep_iff, ne_eq, ModularCut.eq_top_iff, comap_loops,
+    mem_comapOfSubsetRange_iff, not_exists, not_and, comap_closure_eq]
+  refine ⟨fun h ↦ ⟨⟨h.1.1, fun h' hcl ↦ h.2 (fun x hx hl ↦ h' ?_) _ hcl rfl⟩, h.1.2⟩,
+    fun h ↦ ⟨⟨h.1.1, h.2⟩, fun h' x hx h_eq ↦ h.1.2 ?_ ?_⟩⟩
+  · rwa [← injOn_preimage (powerset_mono.2 hf) (U.subset_ground hx) (loops_subset_ground ..) hl]
+  · grind
+  rwa [← injOn_preimage (powerset_mono.2 hf) (U.subset_ground hx) (closure_subset_ground ..) h_eq]
 
 /-- Lift a matroid using a modular cut of the dual. -/
 def _root_.Matroid.liftBy (M : Matroid α) (U : M✶.ModularCut) : Matroid α := (M✶.projectBy U)✶

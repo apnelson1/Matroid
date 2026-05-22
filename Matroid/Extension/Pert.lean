@@ -304,9 +304,6 @@ lemma dist_le_eRank_add_eRank (h : M.E = N.E) : M.dist N ≤ M.eRank + N.eRank :
 lemma isPerturbation_dist (h : M.E = N.E) : M.IsPerturbation N (M.dist N) :=
   ENat.sInf_mem (s := {k | M.IsPerturbation N k}) ⟨_, isPerturbation_eRank_add_eRank_of_ground_eq h⟩
 
--- lemma foo (h : M.dist N = 1) :
---     ∃ (U : M.ModularCut), N = M.projectBy U ∨ ∃ (U : M.ModularCut),
-
 section shift
 
 variable {f : α → α} {C : Set α}
