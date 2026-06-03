@@ -44,10 +44,6 @@ lemma Set.IsCover.nonempty (h : T.IsCover X P) (hX : X.Nonempty) : T.Nonempty :=
   simp [isCover_iff, eq_comm] at h
   simp_all only [Set.not_nonempty_empty]
 
--- lemma IsCover.one_le (h : T.IsCover X P) (hX : X.Nonempty) : T.Nonempty := by
---   --simp only [one_le_encard_iff_nonempty]
---   exact h.nonempty hX
-
 lemma isCover_iff_isCover_subset : T.IsCover X P ↔ T.IsCover X (fun A ↦ P A ∧ A ⊆ X) := by
   rw [isCover_iff, isCover_iff]
   refine and_congr_right fun hTX => ?_
@@ -123,6 +119,38 @@ lemma Set.IsCover.biUnion {P' :  Set α → Prop}
   obtain ⟨X, hXT, hF⟩ := hF
   exact (hfun X hXT).pProp F hF
 
+/-- The covers of each element of a set of sets which union is the whole set 'E' define a cover.
+This is a relaxation of Set.IsCover.biUnion'.
+In this case we use typesets to give the cover of sets-/
+lemma Set.covers_biUnion' {E : Set α} {T : Set (Set α)}
+    (hcover : ⋃₀ T = E) (f : T → Set (Set α))
+    (hfun : ∀ X : T, (f X).IsCover X.1 P') :
+    (⋃ X : T, f X).IsCover E P' := by
+  refine ⟨ ?_, ?_ ⟩
+  · rw[←hcover]
+    refine ext ?_
+    intro e
+    refine ⟨ ?_, ?_ ⟩
+    · intro he
+      simp only [iUnion_coe_set, mem_sUnion, mem_iUnion] at he
+      obtain ⟨T', ⟨ X, ⟨hX, hT'X ⟩ ⟩, hee ⟩ := he
+      simp only [mem_sUnion]
+      refine ⟨X, ⟨hX, (mem_of_subset_of_mem (((hfun ⟨X, hX⟩).subset hT'X)) hee) ⟩⟩
+    intro he
+    simp only [mem_sUnion] at he
+    obtain ⟨X, hXT, heX⟩ := he
+    simp only [iUnion_coe_set, mem_sUnion, mem_iUnion]
+    have h1 := (hfun ⟨X, hXT⟩).sUnion_eq
+    simp only at h1
+    rw[←h1] at heX
+    simp only [mem_sUnion] at heX
+    obtain ⟨X', hX', heX' ⟩ := heX
+    refine ⟨ X', ⟨⟨X, ⟨hXT, hX'⟩ ⟩, heX'⟩ ⟩
+  intro F hF
+  simp only [iUnion_coe_set, mem_iUnion] at hF
+  obtain ⟨X, hXT, hF⟩ := hF
+  exact (hfun ⟨X, hXT⟩).pProp F hF
+
 lemma IsCover.mono_prop (h : T.IsCover Y P) (hPP' : ∀ X ∈ T, P X → P' X) : T.IsCover Y P' :=
   (T.isCover_iff Y P').2 ⟨h.sUnion_eq, fun F hF ↦ hPP' F hF (h.pProp F hF)⟩
 
@@ -134,8 +162,9 @@ lemma isCover_empty_iff (P : Set α → Prop) : IsCover ∅ Y P ↔ Y = ∅ := b
   rw [ ←sUnion_empty] at h
   refine ⟨h.symm, by grind ⟩
 
-lemma Set.IsCover.image_union (h : T.IsCover Y P)
-    (hXN : Y.Nonempty)
+/-- If the property PF is 'inhereted' by adding a set X to each F (or inhereted with respect to a
+different P') then by adding X to each element of T we get a cover of Y ∪ X of the same size. -/
+lemma Set.IsCover.image_union (h : T.IsCover Y P) (hXN : Y.Nonempty)
     (hPP' : ∀ F : Set α, P F → P' (F ∪ X)) :
     ((· ∪ X) '' T).IsCover (Y ∪ X) P' := by
   suffices hi : ∀ F ∈ T, P F by
@@ -181,14 +210,12 @@ lemma Set.IsCover.coverNumber_le {T : Set (Set α)} (h : T.IsCover X P) :
 lemma encard_eq_coverNumber_of_nonempty {P : Set α → Prop}
     (hn : {T | IsCover T X P}.Nonempty) :
     ∃ T, IsCover T X P ∧ T.encard = X.coverNumber P := by
-  --have := ENat.exists_eq_iInf
   simp only [coverNumber]
   simp_rw [iInf_subtype']
   have := hn.to_subtype
   obtain ⟨T, hT ⟩ :=
     ENat.exists_eq_iInf (f := fun (T : {T : Set (Set α) | T.IsCover X P}) ↦ T.1.encard)
   refine ⟨T.1, ⟨T.2, hT ⟩ ⟩
-  -- have := ENat.exists_eq_iInf (f := fun (hT : T.IsCover X P) ↦ T.encard)
 
 lemma exists_encard_eq_coverNumber (hP : X.HasCover P) :
     ∃ T, IsCover T X P ∧ T.encard = X.coverNumber P := encard_eq_coverNumber_of_nonempty hP
@@ -238,7 +265,7 @@ See IsCover.biUnion'
 lemma coverNumber_le_tsum_coverNumber {P' : Set α → Prop} (hcover : T.IsCover Y P) :
     Y.coverNumber P' ≤ ∑' X : T, (X.1).coverNumber P' := by
   obtain (h0 | h1) := exists_or_forall_not (fun X : T ↦ coverNumber X P' = ⊤)
-  · simp [ENat.tsum_eq_top_of_eq_top h0]
+  · simp [tsum_eq_top_of_eq_top h0]
   have hf : ∀ X : T, ∃ XT : Set (Set α), XT.IsCover (X.1) P' ∧
     XT.encard = (X.1).coverNumber P' := by
     intro X
@@ -254,11 +281,10 @@ lemma coverNumber_le_bound {P' : Set α → Prop} {k : ℕ∞}
     (hcover : T.IsCover Y P)
     (hflat : ∀ F, P F → F.coverNumber P' ≤ k) :
     Y.coverNumber P' ≤ (T.encard) * k := by
-  grw [coverNumber_le_tsum_coverNumber hcover, ENat.tsum_le_tsum (g := fun _ ↦ k),
+  grw [coverNumber_le_tsum_coverNumber hcover, tsum_le_tsum (g := fun _ ↦ k),
     ENat.tsum_subtype_const, mul_comm]
   intro F
-  simp [hflat _ <| hcover.pProp F F.2 ]
-  --exact hP'
+  simp [hflat _ <| hcover.pProp F F.2]
 
 lemma coverNumber_empty : coverNumber ∅ P = 0 := by
   grw [←nonpos_iff_eq_zero, ←encard_empty, ((isCover_empty_iff P).mpr rfl).coverNumber_le]
@@ -325,6 +351,7 @@ lemma coverNumber_le_coverNumber_union {P Q : Set α → Prop} {X : Set α} {Y :
     (X ∪ Y).coverNumber Q ≤ X.coverNumber P :=
   coverNumber_le_coverNumber (· ∪ Y) (fun ?_ hT ↦ (hT.image_union hX hP))
 
+/-- coverNumber version of Set.IsCover.union_isCover -/
 lemma coverNumber_union_le :
     (X ∪ Y).coverNumber P ≤ X.coverNumber P + Y.coverNumber P := by
   obtain ht | ⟨T, hT, hTe ⟩ := exists_cover X P
@@ -398,7 +425,7 @@ lemma isCover_rkLE_subset_ground (hT : T.IsCover X (M.RkLE k)) (hY : Y ∈ T)
 
 lemma isCover_rkLE_mono_subset (hT : T.IsCover X (M.RkLE k)) (hX : Y ⊆ X) :
     ((· ∩ Y) '' T).IsCover Y (M.RkLE k) :=
-  hT.mono_subset hX (fun F hF ↦ hF.subset (inter_subset_left (s := F) (t := Y))  )
+  hT.mono_subset hX (fun F hF ↦ hF.subset (inter_subset_left (s := F) (t := Y)))
 
 lemma isCover_rkLE_subset_union_closure (hcov : T.IsCover X (M.RkLE k)) (hne : X.Nonempty)
     (hX : X ⊆ M.E) : X ∪ M.closure ∅ ⊆ ⋃ F ∈ T, M.closure F := by
@@ -620,8 +647,7 @@ lemma isCover_rkLE_delete (hT : T.IsCover X (M.RkLE k)) (D : Set α) :
     ((fun s ↦ s \ D) '' T).IsCover (X \ D) (M.RkLE k) := by
   refine ⟨ ?_, ?_ ⟩
   · refine subset_antisymm (sUnion_subset fun K ↦ ?_) fun e he ↦ ?_
-    · intro hK
-      obtain ⟨X, hX, h⟩ := hK
+    · intro ⟨Y, hX, h⟩
       rw[←h]
       exact diff_subset_diff_left (hT.subset hX)
     simp only [mem_diff] at he
@@ -1052,12 +1078,10 @@ lemma rkLE_coverNumber_line_to_point (hM : M.eRank = 2) {P : Set α} (hP : M.IsP
         (le_iff_subset.mpr (hP.isFlat.loops_subset)))]
     have h2 : (M.removeLoops.RkLE 1) = M.RkLE 1 := by
       refine rkLE_eRk_eq ?_
-      intro X
-      rw [removeLoops_eRk]
+      simp only [removeLoops_eRk, implies_true]
     have : M.RankPos := by
       refine (eRank_ne_zero_iff M).mp ?_
-      rw [hM]
-      simp only [ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true]
+      simp only [hM, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true]
     rw [rkLE_CoverNumber_removeLoops (k := 1), delete_ground, hrw, ←delete_ground, ←h2]
     have hPr : M.removeLoops.IsPoint (P \ M.loops) := by
       obtain ⟨e, hnl, heq⟩ := hP.exists_eq_closure_isNonloop
@@ -1090,8 +1114,7 @@ lemma rkLE_coverNumber_line_to_point (hM : M.eRank = 2) {P : Set α} (hP : M.IsP
       rw [heq]
       have hsub : M.closure {e} ⊆ F := by
         refine (hSflat F hF).closure_subset_of_subset (singleton_subset_iff.mpr heF)
-      refine IsPoint.eq_closure_of_mem ?_ hnl heF
-      refine ⟨hSflat F hF, ?_⟩
+      refine IsPoint.eq_closure_of_mem (⟨hSflat F hF, ?_⟩) hnl heF
       have := (hS.pProp F hF).le
       have h2 : M.eRk {e} ≤ M.eRk F := eRk_subset_le M (singleton_subset_iff.mpr heF)
       rw [hnl.eRk_eq] at h2
@@ -1176,13 +1199,13 @@ lemma coverNumber_rkLE_contract_le_rkLE_coverumber (ha : a ≠ 0) :
   obtain ⟨T, hT, hTcard⟩ := isCover_rkLE_exists_encard_eq (M ／ C) ha (M ／ C).E
   set f : T → ℕ∞ := fun F ↦ ⨆ (X : Set α) (_ : (M／C).RkLE a X ∧ X ⊆ (M／C).E),
     (X.coverNumber (M.RkLE a)) with hf
-  grw [coverNumber_le_tsum_coverNumber hT, ENat.tsum_le_tsum (g := f) ?_]
+  grw [coverNumber_le_tsum_coverNumber hT, tsum_le_tsum (g := f) ?_]
   · rw [ENat.tsum_const (⨆ (X : Set α) (_ : (M／C).RkLE a X ∧ X ⊆ (M／C).E),
     (X.coverNumber (M.RkLE a))), mul_comm]
     simp only [ENat.card_coe_set_eq, contract_ground, ge_iff_le]
     rw [hTcard, contract_ground]
   rw [hf]
-  refine Pi.le_def.mpr (fun F ↦ le_iSup₂_of_le F.1 ⟨(hT.pProp F.1 F.2), hT.subset F.2⟩ (by rfl))
+  refine (fun F ↦ le_iSup₂_of_le F.1 ⟨(hT.pProp F.1 F.2), hT.subset F.2⟩ (by rfl))
 
 lemma kung_bound  {M : Matroid α} {b : ℕ} [M.RankPos]
     (hM : NoUniformMinor M 2 (b + 2)) :
@@ -1311,6 +1334,8 @@ lemma kung_bound  {M : Matroid α} {b : ℕ} [M.RankPos]
   rw [Finset.sum_mul, hg1, ←hnm, Finset.sum_range_succ']
   simp only [pow_zero, Std.le_refl]
 termination_by M.eRank
+
+lemma tsum_to_ENat_range {m : ℕ} {f : ℕ → } : (∑' (i : { i : ℕ // (i : ℕ∞) < (m : ℕ∞) }), f i)
 
 end Rank
 
