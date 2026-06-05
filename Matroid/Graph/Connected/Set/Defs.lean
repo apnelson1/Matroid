@@ -96,7 +96,7 @@ lemma setConnected_iff_exists_isPathFrom (S T : Set α) :
   refine ⟨?_, fun ⟨P, hP⟩ => hP.isWalkFrom.SetConnected⟩
   rintro ⟨s, hs, t, ht, h⟩
   obtain ⟨P, hP, rfl, rfl⟩ := h.exists_isPath
-  exact ⟨P.extractPathFrom S T, hP.extractPathFrom_isPathFrom hs ht⟩
+  exact ⟨P.betweenSets S T, hP.betweenSets_isPathFrom hs ht⟩
 alias ⟨SetConnected.exists_isPathFrom, _⟩ := setConnected_iff_exists_isPathFrom
 
 lemma ConnBetween.neighbor_setConnected (h : G.ConnBetween s t) (hne : s ≠ t)
@@ -603,7 +603,7 @@ lemma SetConnGE.exists_isPathFrom (h : G.SetConnGE S T n) (hn : n ≠ 0) :
   classical
   obtain ⟨s, hs, t, ht, hst⟩ := h.SetConnected hn
   obtain ⟨P, hP, rfl, rfl⟩ := hst.exists_isPath
-  exact ⟨P.extractPathFrom S T, hP.extractPathFrom_isPathFrom hs ht⟩
+  exact ⟨P.betweenSets S T, hP.betweenSets_isPathFrom hs ht⟩
 
 lemma SetConnGE.deleteVerts (h : G.SetConnGE S T n) (X : Set α) :
     (G - X).SetConnGE S T (n - (X ∩ V(G)).encard).toNat := by
