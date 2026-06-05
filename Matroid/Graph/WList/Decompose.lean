@@ -11,48 +11,57 @@ namespace WList
   `s`, if any such vertex exists. Otherwise, it returns `w`.
   In the case where `w` is a path with some vertex in `S` before some vertex in `T`,
   its result satisfies `w.IsPathFrom S T`. -/
-def extractPathFrom (w : WList α β) (S T : Set α) [DecidablePred (· ∈ S)]
-    [DecidablePred (· ∈ T)] : WList α β :=
-  (w.suffixFromLast (· ∈ S)).prefixUntil (· ∈ T)
+def betweenSets (w : WList α β) (S T : Set α) [DecidablePred (· ∈ S)] [DecidablePred (· ∈ T)] :
+    WList α β := (w.suffixFromLast (· ∈ S)).prefixUntil (· ∈ T)
 
 @[simp]
-lemma extractPathFrom_isSublist (w : WList α β) (S T : Set α) [DecidablePred (· ∈ S)]
-    [DecidablePred (· ∈ T)] : (w.extractPathFrom S T).IsSublist w :=
-  (prefixUntil_isPrefix _ _).isSublist.trans (w.suffixFromLast_isSuffix (· ∈ S)).isSublist
+lemma betweenSets_isInfix (w : WList α β) (S T : Set α) [DecidablePred (· ∈ S)]
+    [DecidablePred (· ∈ T)] : (w.betweenSets S T).IsInfix w :=
+  (prefixUntil_isPrefix _ _).isInfix.trans (w.suffixFromLast_isSuffix (· ∈ S)).isInfix
 
-lemma extractPathFrom_first_mem [DecidablePred (· ∈ S)] [DecidablePred (· ∈ T)]
-    (hw : ∃ x ∈ w, x ∈ S) : (w.extractPathFrom S T).first ∈ S := by
-  rw [extractPathFrom, prefixUntil_first]
+lemma betweenSets_first_mem [DecidablePred (· ∈ S)] [DecidablePred (· ∈ T)]
+    (hw : ∃ x ∈ w, x ∈ S) : (w.betweenSets S T).first ∈ S := by
+  rw [betweenSets, prefixUntil_first]
   exact suffixFromLast_prop_first hw
 
-lemma extractPathFrom_first_eq_of_mem [DecidablePred (· ∈ S)] [DecidablePred (· ∈ T)]
-    (hv : v ∈ w.extractPathFrom S T) (hvS : v ∈ S) : (w.extractPathFrom S T).first = v := by
-  rw [extractPathFrom, prefixUntil_first]
+lemma betweenSets_first_eq_of_mem [DecidablePred (· ∈ S)] [DecidablePred (· ∈ T)]
+    (hv : v ∈ w.betweenSets S T) (hvS : v ∈ S) : (w.betweenSets S T).first = v := by
+  rw [betweenSets, prefixUntil_first]
   exact suffixFromLast_first_eq_of_prop ((prefixUntil_isPrefix _ _).mem hv) hvS
 
-lemma extractPathFrom_first_eq_iff_mem [DecidablePred (· ∈ S)] [DecidablePred (· ∈ T)]
+lemma betweenSets_first_eq_iff_mem [DecidablePred (· ∈ S)] [DecidablePred (· ∈ T)]
     (hw : ∃ x ∈ w, x ∈ S) :
-    (w.extractPathFrom S T).first = v ↔ v ∈ V(w.extractPathFrom S T) ∧ v ∈ S :=
-  ⟨fun h ↦ ⟨h ▸ first_mem, h ▸ extractPathFrom_first_mem hw⟩,
-    fun ⟨hv, hvS⟩ ↦ extractPathFrom_first_eq_of_mem hv hvS⟩
+    (w.betweenSets S T).first = v ↔ v ∈ V(w.betweenSets S T) ∧ v ∈ S :=
+  ⟨fun h ↦ ⟨h ▸ first_mem, h ▸ betweenSets_first_mem hw⟩,
+    fun ⟨hv, hvS⟩ ↦ betweenSets_first_eq_of_mem hv hvS⟩
 
-/- When there are multiple `S` to `T` segments in `w`, `w.extractPathFrom S T` will return the
-  last such segment. This is an arbitrary choice and it means that `extractPathFrom_first_mem`
+lemma betweenSets_vertex_tail_not_prop (w : WList α β) (S T : Set α) [DecidablePred (· ∈ S)]
+    [DecidablePred (· ∈ T)] : ∀ x ∈ (w.betweenSets S T).vertex.tail, x ∉ S := by
+  intro x hx
+  have := (w.suffixFromLast (· ∈ S)).prefixUntil_isPrefix (· ∈ T) |>.prefix.tail
+  exact suffixFromLast_vertex_tail_not_prop (this.mem hx)
+
+/- When there are multiple `S` to `T` segments in `w`, `w.betweenSets S T` will return the
+  last such segment. This is an arbitrary choice and it means that `betweenSets_first_mem`
   only requires having some vertex from `S` in `w`, whereas for this lemma, it is more strict. -/
-lemma extractPathFrom_last_mem [DecidablePred (· ∈ S)] [DecidablePred (· ∈ T)]
-    (hw : ∃ u ∈ w.suffixFromLast (· ∈ S), u ∈ T) : (w.extractPathFrom S T).last ∈ T := by
-  rw [extractPathFrom]
+lemma betweenSets_last_mem [DecidablePred (· ∈ S)] [DecidablePred (· ∈ T)]
+    (hw : ∃ u ∈ w.suffixFromLast (· ∈ S), u ∈ T) : (w.betweenSets S T).last ∈ T := by
+  rw [betweenSets]
   exact prefixUntil_prop_last hw
 
-lemma extractPathFrom_last_eq_of_mem [DecidablePred (· ∈ S)] [DecidablePred (· ∈ T)]
-    (hv : v ∈ w.extractPathFrom S T) (hvT : v ∈ T) : (w.extractPathFrom S T).last = v :=
+lemma betweenSets_last_eq_of_mem [DecidablePred (· ∈ S)] [DecidablePred (· ∈ T)]
+    (hv : v ∈ w.betweenSets S T) (hvT : v ∈ T) : (w.betweenSets S T).last = v :=
   prefixUntil_last_eq_of_prop hv hvT
 
-lemma extractPathFrom_last_eq_iff_mem [DecidablePred (· ∈ S)] [DecidablePred (· ∈ T)]
+lemma betweenSets_last_eq_iff_mem [DecidablePred (· ∈ S)] [DecidablePred (· ∈ T)]
     (hw : ∃ u ∈ w.suffixFromLast (· ∈ S), u ∈ T) :
-    (w.extractPathFrom S T).last = v ↔ v ∈ V(w.extractPathFrom S T) ∧ v ∈ T :=
-  ⟨fun h ↦ ⟨h ▸ last_mem, h ▸ extractPathFrom_last_mem hw⟩,
-    fun ⟨hv, hvT⟩ ↦ extractPathFrom_last_eq_of_mem hv hvT⟩
+    (w.betweenSets S T).last = v ↔ v ∈ V(w.betweenSets S T) ∧ v ∈ T :=
+  ⟨fun h ↦ ⟨h ▸ last_mem, h ▸ betweenSets_last_mem hw⟩,
+    fun ⟨hv, hvT⟩ ↦ betweenSets_last_eq_of_mem hv hvT⟩
+
+lemma betweenSets_vertex_dropLast_not_prop (w : WList α β) (S T : Set α) [DecidablePred (· ∈ S)]
+    [DecidablePred (· ∈ T)] : ∀ x ∈ (w.betweenSets S T).vertex.dropLast, x ∉ T :=
+  fun _ ↦ prefixUntil_vertex_dropLast_not_prop
 
 def breakAt_aux (w : WList α β) (P : α → Prop) [DecidablePred P] (e' : β) (w' : WList α β)
     (L : List (WList α β)) : List (WList α β) :=
@@ -380,5 +389,74 @@ lemma breakAt_tail_map_first_eq_inter (w : WList α β) (S : Set α) [DecidableP
 -- lemma nil_mem_breakAt_iff (w : WList α β) (P : α → Prop) [DecidablePred P] (x : α) :
 --     nil x ∈ w.breakAt P ↔ (P w.first ∧ x = w.first) ∨ (P w.last ∧ x = w.last) := by
 --   sorry
+
+lemma exists_infix_of_prop {p q : α → Prop} (hfirst : p w.first) (hlast : q w.last) :
+    ∃ w' : WList α β, w'.IsInfix w ∧ p w'.first ∧ q w'.last ∧ (∀ x ∈ w'.vertex.tail, ¬ p x) ∧
+      (∀ x ∈ w'.vertex.dropLast, ¬ q x) := by
+  classical
+  exact ⟨w.betweenSets p q, betweenSets_isInfix w p q,
+    betweenSets_first_mem ⟨w.first, by simp, hfirst⟩,
+    betweenSets_last_mem ⟨w.last, (w.suffixFromLast_last p) ▸ last_mem, hlast⟩,
+    betweenSets_vertex_tail_not_prop w p q,
+    betweenSets_vertex_dropLast_not_prop w p q⟩
+
+lemma exists_infix_of_exists_prop {p q : α → Prop} (hp : ∃ x ∈ w, p x) (hq : ∃ x ∈ w, q x) :
+    ∃ w' : WList α β, w'.IsInfix w ∧ ((p w'.first ∧ q w'.last ∧ (∀ x ∈ w'.vertex.tail, ¬ p x) ∧
+    (∀ x ∈ w'.vertex.dropLast, ¬ q x)) ∨ (q w'.first ∧ p w'.last ∧ (∀ x ∈ w'.vertex.tail, ¬ q x) ∧
+    (∀ x ∈ w'.vertex.dropLast, ¬ p x))) := by
+  classical
+  obtain h | h := suffixFrom_vertex_filter_eq_vertex_filter w p q
+  · have hp' : ∃ x ∈ w.suffixFrom p, q x := by
+      obtain ⟨x, hxw, hqx⟩ := hq
+      have hfilt : x ∈ w.vertex.filter (fun b => decide (q b)) := by simp [hxw, hqx]
+      exact ⟨x, mem_vertex.mp (List.mem_filter.mp (h.symm ▸ hfilt)).1, hqx⟩
+    let w' := w.suffixFrom p |>.prefixUntilLast q
+    have hw'f : p w'.first := by simp [w', suffixFrom_prop_first hp]
+    have hw'l : q w'.last := by simp [w', prefixUntilLast_prop_last hp']
+    obtain ⟨w'', hinfix, hpw''f, hqw''l, hpw'', hqw''⟩ := exists_infix_of_prop hw'f hw'l
+    refine ⟨w'', ?_, Or.inl ⟨hpw''f, hqw''l, hpw'', hqw''⟩⟩
+    exact hinfix.trans <| ((w.suffixFrom p).prefixUntilLast_isPrefix q).isInfix.trans
+      (w.suffixFrom_isSuffix p).isInfix
+  have hq' : ∃ x ∈ w.suffixFrom q, p x := by
+    obtain ⟨x, hxw, hpx⟩ := hp
+    have hfilt : x ∈ w.vertex.filter (fun b => decide (p b)) := by simp [hxw, hpx]
+    exact ⟨x, mem_vertex.mp (List.mem_filter.mp (h.symm ▸ hfilt)).1, hpx⟩
+  let w' := w.suffixFrom q |>.prefixUntilLast p
+  have hw'f : q w'.first := by simp [w', suffixFrom_prop_first hq]
+  have hw'l : p w'.last := by simp [w', prefixUntilLast_prop_last hq']
+  obtain ⟨w'', hinfix, hqw''f, hpw''l, hqw'', hpw''⟩ := exists_infix_of_prop hw'f hw'l
+  refine ⟨w'', ?_, Or.inr ⟨hqw''f, hpw''l, hqw'', hpw''⟩⟩
+  exact hinfix.trans <| ((w.suffixFrom q).prefixUntilLast_isPrefix p).isInfix.trans
+    (w.suffixFrom_isSuffix q).isInfix
+
+/-- If a proposition `P` holds at the first vertex of `w` but not the last,
+then `w` has a directed edge `e` from `x` to `y` such that `x` satisfies `P` but `y` doesn't. -/
+lemma exists_dInc_prop_not_prop {P : α → Prop} (hfirst : P w.first) (hlast : ¬ P w.last) :
+    ∃ e x y, w.DInc e x y ∧ P x ∧ ¬ P y := by
+  induction w with
+  | nil => simp_all
+  | cons u e w ih =>
+    by_cases hP : P w.first
+    · obtain ⟨f, x, y, h, hx, hy⟩ := ih hP (by simpa using hlast)
+      exact ⟨f, x, y, h.cons .., hx, hy⟩
+    exact ⟨e, u, w.first, DInc.cons_left .., hfirst, hP⟩
+
+lemma exists_dInc_not_prop_prop {P : α → Prop} (hfirst : ¬ P w.first) (hlast : P w.last) :
+    ∃ e x y, w.DInc e x y ∧ ¬ P x ∧ P y := by
+  obtain ⟨e, x, y, h, hx, hy⟩ := exists_dInc_prop_not_prop (P := fun x ↦ ¬ P x) hfirst (by simpa)
+  exact ⟨e, x, y, h, hx, by simpa using hy⟩
+
+lemma exists_isLink_prop_not_prop {P : α → Prop} (hxw : x ∈ V(w)) (hT : P x) (hyw : y ∈ V(w))
+    (hF : ¬ P y) : ∃ e x y, w.IsLink e x y ∧ P x ∧ ¬ P y := by
+  obtain ⟨w₀, hsub, ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩⟩ := exists_sublist_of_mem_mem hxw hyw
+  · obtain ⟨e, x, y, h, hx, hy⟩ := exists_dInc_prop_not_prop hT hF
+    exact ⟨e, x, y, (h.of_isSublist hsub).isLink, hx, hy⟩
+  · rw [← w₀.reverse_reverse] at hF hT
+    rw [reverse_first] at hF
+    rw [reverse_last] at hT
+    obtain ⟨e, x, y, h, hx, hy⟩ := exists_dInc_prop_not_prop hT hF
+    refine ⟨e, x, y, ?_, hx, hy⟩
+    rw [dInc_reverse_iff] at h
+    exact (h.of_isSublist hsub).isLink.symm
 
 end WList

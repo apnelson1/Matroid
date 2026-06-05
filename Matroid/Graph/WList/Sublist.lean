@@ -92,6 +92,10 @@ lemma IsSublist.edge_subset (h : w₁.IsSublist w₂) : E(w₁) ⊆ E(w₂) :=
 lemma IsSublist.mem_edge (h : w₁.IsSublist w₂) (he : e ∈ w₁.edge) : e ∈ w₂.edge :=
   h.edge_subset he
 
+lemma IsSublist.nonempty (h : w₁.IsSublist w₂) (hne : w₁.Nonempty) : w₂.Nonempty := by
+  obtain ⟨e, he⟩ := nonempty_iff_exists_edge.mp hne
+  exact nonempty_iff_exists_edge.mpr ⟨e, h.mem_edge he⟩
+
 lemma IsSublist.length_le (h : w₁.IsSublist w₂) : w₁.length ≤ w₂.length := by
   rw [← length_edge, ← length_edge]
   exact h.edge_sublist.length_le
@@ -210,14 +214,15 @@ inductive IsPrefix : WList α β → WList α β → Prop
 lemma IsPrefix.first_eq (h : IsPrefix w₁ w₂) : w₁.first = w₂.first := by
   induction h with simp
 
-lemma IsPrefix.exists_eq_append (h : IsPrefix w₁ w₂) :
-    ∃ w₁', w₁.last = w₁'.first ∧ w₁ ++ w₁' = w₂ := by
-  induction h with | nil => simp | cons => simpa
-
 lemma isPrefix_append_right (hw : w₁.last = w₂.first) : w₁.IsPrefix (w₁ ++ w₂) := by
   induction w₁ with
   | nil => convert IsPrefix.nil w₂
   | cons u e w₁ ih => simpa using (ih hw).cons ..
+
+lemma isPrefix_iff_exists_eq_append : w₁.IsPrefix w₂ ↔
+    ∃ w₁', w₁.last = w₁'.first ∧ w₁ ++ w₁' = w₂ := by
+  refine ⟨fun h ↦ ?_, fun ⟨w₁', hL, hEq⟩ ↦ hEq ▸ isPrefix_append_right hL⟩
+  induction h with | nil => simp | cons => simpa
 
 lemma IsPrefix.isSublist (h : w₁.IsPrefix w₂) : w₁.IsSublist w₂ := by
   induction h with | nil => simp | cons _ _ _ _ h ih => exact ih.cons₂ _ _ h.first_eq
@@ -359,8 +364,8 @@ lemma isSuffix_nil_iff : w.IsSuffix (nil x) ↔ w = nil x :=
 lemma nil_isSuffix_iff : (nil x).IsSuffix w ↔ w.last = x := by
   rw [← reverse_isPrefix_reverse_iff, reverse_nil, nil_isPrefix_iff, reverse_first]
 
-lemma IsSuffix.last_eq (h : w₁.IsSuffix w₂) : w₁.last = w₂.last :=
-  by simpa using h.reverse_isPrefix_reverse.first_eq
+lemma IsSuffix.last_eq (h : w₁.IsSuffix w₂) : w₁.last = w₂.last := by
+  simpa using h.reverse_isPrefix_reverse.first_eq
 
 lemma IsSuffix.length_le (h : w₁.IsSuffix w₂) : w₁.length ≤ w₂.length :=
   h.isSublist.length_le
@@ -389,6 +394,14 @@ lemma isSuffix_cons_self (w : WList α β) (e) (x) : w.IsSuffix (cons x e w) :=
 @[simp]
 lemma isSuffix_append_left (w₁ w₂ : WList α β) : w₂.IsSuffix (w₁ ++ w₂) := by
   induction w₁ with | nil => simp | cons u e w ih => simpa using ih.cons ..
+
+lemma isSuffix_iff_exists_eq_append : w₁.IsSuffix w₂ ↔
+    ∃ w', w'.last = w₁.first ∧ w' ++ w₁ = w₂ := by
+  refine ⟨fun h ↦ ?_, fun ⟨w', hL, hEq⟩ ↦ hEq ▸ isSuffix_append_left w' w₁⟩
+  obtain ⟨w', hL, hEq⟩ := isPrefix_iff_exists_eq_append.mp h.reverse_isPrefix_reverse
+  refine ⟨w'.reverse, ?_, ?_⟩
+  · simpa [reverse_last, reverse_first] using hL.symm
+  · rw [← reverse_reverse w₂, ← hEq, reverse_append hL, reverse_reverse]
 
 lemma IsSuffix.eq_of_first_mem (h : w₁.IsSuffix w₂) (hnd : w₂.vertex.Nodup) (hl : w₂.first ∈ w₁) :
     w₁ = w₂ := by
@@ -432,7 +445,7 @@ lemma IsInfix.infix (h : w₁.IsInfix w₂) : w₁.vertex <:+: w₂.vertex := by
   cases hwR : wR.vertex with
   | nil => exact (wR.vertex_ne_nil hwR).elim
   | cons head tail =>
-    obtain rfl := by simpa only [← wR.vertex_head, hwR, head_cons] using hR
+    obtain rfl : w₁.last = head := by simpa only [← wR.vertex_head, hwR, head_cons] using hR
     rw [← w₁.vertex_getLast, append_cons, dropLast_concat_getLast]
     simp
 
@@ -489,6 +502,16 @@ lemma reverse (h : w₁.IsInfix w₂) : w₁.reverse.IsInfix w₂.reverse := by
 
 end IsInfix
 
+lemma IsPrefix.isInfix (h : w₁.IsPrefix w₂) : w₁.IsInfix w₂ := by
+  obtain ⟨wR, hR, rfl⟩ := isPrefix_iff_exists_eq_append.mp h
+  use (WList.nil w₁.first), wR, rfl, hR
+  simp
+
+lemma IsSuffix.isInfix (h : w₁.IsSuffix w₂) : w₁.IsInfix w₂ := by
+  obtain ⟨wL, hL, rfl⟩ := isSuffix_iff_exists_eq_append.mp h
+  use wL, (WList.nil w₁.last), hL
+  simp
+
 @[simp]
 lemma reverse_infix_reverse_iff : w₁.reverse.IsInfix w₂.reverse ↔ w₁.IsInfix w₂ :=
   ⟨fun h ↦ by simpa using h.reverse, fun h ↦ h.reverse⟩
@@ -508,6 +531,33 @@ lemma nil_isInfix_iff : (nil x).IsInfix w ↔ x ∈ w := by
   refine ⟨wL, wR, heq, ?_, ?_⟩
   · simp
   rw [append_assoc, nil_append]
+
+lemma isInfix_iff_exists_isSuffix_isPrefix (w₁ w₂ : WList α β) :
+    w₁.IsInfix w₂ ↔ ∃ w, w₁.IsSuffix w ∧ w.IsPrefix w₂ := by
+  refine ⟨fun h ↦ ?_, fun ⟨w, h₁, h₂⟩ ↦ ?_⟩
+  · rcases h with ⟨wL, wR, hL, hR, rfl⟩
+    use wL ++ w₁, by simp, isPrefix_append_right (by simpa)
+  obtain ⟨wL, hwL, rfl⟩ := isSuffix_iff_exists_eq_append.mp h₁
+  obtain ⟨wR, hwR, rfl⟩ := isPrefix_iff_exists_eq_append.mp h₂
+  exact ⟨wL, wR, hwL, by simpa using hwR, rfl⟩
+
+lemma isInfix_iff_exists_isPrefix_isSuffix (w₁ w₂ : WList α β) :
+    w₁.IsInfix w₂ ↔ ∃ w, w₁.IsPrefix w ∧ w.IsSuffix w₂ := by
+  refine ⟨fun h ↦ ?_, fun ⟨w, h₁, h₂⟩ ↦ ?_⟩
+  · rcases h with ⟨wL, wR, hL, hR, rfl⟩
+    use w₁ ++ wR, isPrefix_append_right hR, ?_
+    rw [append_assoc]
+    exact isSuffix_append_left wL (w₁ ++ wR)
+  obtain ⟨wR, hwR, rfl⟩ := isPrefix_iff_exists_eq_append.mp h₁
+  obtain ⟨wL, hwL, rfl⟩ := isSuffix_iff_exists_eq_append.mp h₂
+  refine ⟨wL, wR, ?_, by simpa using hwR, append_assoc ..⟩
+  rwa [append_first_of_eq hwR] at hwL
+
+lemma IsInfix.eq_of_first_eq_last_eq (hnd : w₂.vertex.Nodup) (hf : w₁.first = w₂.first)
+    (hl : w₁.last = w₂.last) (h : w₁.IsInfix w₂) : w₁ = w₂ := by
+  obtain ⟨w, h₁, h₂⟩ := (isInfix_iff_exists_isSuffix_isPrefix w₁ w₂).mp h
+  obtain rfl := h₂.eq_of_last_mem hnd (hl ▸ h₁.last_eq ▸ last_mem)
+  exact h₁.eq_of_first_mem hnd (hf ▸ first_mem)
 
 /-! ## Decomposed wLists -/
 
@@ -690,10 +740,10 @@ lemma isSublist_of_mem {L : List (WList α β)} {w l : WList α β} (h : w.Decom
   match L with
   | [] => simp at hl
   | l' :: L' =>
-    obtain rfl | hl := (by simpa using hl) <;> have := by
-      simpa only [head_cons] using h.head_isPrefix
+    obtain rfl | hl := (by simpa using hl) <;>
+      have := by simpa only [head_cons] using h.head_isPrefix
     · exact this.isSublist
-    obtain ⟨w', hw', rfl⟩ := this.exists_eq_append; clear this
+    obtain ⟨w', hw', rfl⟩ := isPrefix_iff_exists_eq_append.mp this; clear this
     exact (h.append_cons (ne_nil_of_mem hl) |>.isSublist_of_mem hl).trans
     <| (isSuffix_append_left _ _).isSublist
 
@@ -720,8 +770,8 @@ lemma disjoint_of_edge_nodup {w : WList α β} {L : List (WList α β)} (h : w.D
   | [l] => simp
   | l₁ :: l₂ :: L =>
     rw [pairwise_cons]
-    obtain hprefix := by simpa only [head_cons] using h.head_isPrefix
-    obtain ⟨w', hw', rfl⟩ := hprefix.exists_eq_append
+    obtain ⟨w', hw', rfl⟩ := by
+      simpa only [head_cons, isPrefix_iff_exists_eq_append] using h.head_isPrefix
     have h' := h.append_cons (by simp)
     have hnd := by simpa only [append_edge, nodup_append] using hw
     exact ⟨fun l' hl' ↦ (edgeSet_disjoint_of_append_nodup hw).mono_right (h'.isSublist_of_mem hl'

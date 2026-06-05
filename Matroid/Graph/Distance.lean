@@ -210,7 +210,7 @@ lemma isShortestPath_nil_iff : G.IsShortestPath (nil x) ↔ x ∈ V(G) :=
 
 -- Maybe induction with `hQ` is better here.
 lemma IsShortestPath.prefix (hP : G.IsShortestPath P) (hQ : Q.IsPrefix P) : G.IsShortestPath Q := by
-  obtain ⟨Q', hQ', rfl⟩ := hQ.exists_eq_append
+  obtain ⟨Q', hQ', rfl⟩ := isPrefix_iff_exists_eq_append.mp hQ
   have hQpath := hP.isPath.prefix hQ
   refine hQpath.isWalk.isShortestPath_of_length_le ?_
   have heDist := hP.length_eq_dist
@@ -231,8 +231,5 @@ lemma IsShortestPath.sublist (hP : G.IsShortestPath P) (hQ : Q.IsSublist P) :
     G.IsShortestPath Q := by
   obtain ⟨P', hP'⟩ := hQ.exists_isPrefix_isSuffix hP.isPath.nodup
   exact (hP.prefix hP'.1).suffix hP'.2
-
-
-
 
 end Graph

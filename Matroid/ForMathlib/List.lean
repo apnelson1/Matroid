@@ -61,6 +61,29 @@ lemma IsPrefix.eq_of_last_mem {α} {l₁ l₂ : List α} (h : l₁.IsPrefix l₂
     (hne : l₂ ≠ []) (hl : l₂.getLast hne ∈ l₁) : l₁ = l₂ := by
   simpa using h.reverse.eq_of_first_mem (by simpa) (by simpa) (by simpa)
 
+@[gcongr] lemma IsPrefix.tail {α} {l₁ l₂ : List α} (h : l₁ <+: l₂) : l₁.tail <+: l₂.tail := by
+  convert h.drop 1 using 1 <;> exact drop_one.symm
+
+@[gcongr] lemma IsPrefix.dropLast {α} {l₁ l₂ : List α} (h : l₁ <+: l₂) :
+    l₁.dropLast <+: l₂.dropLast := by
+  obtain heq | hlt := h.length_le.eq_or_lt
+  · exact eq_of_length h heq ▸ refl _
+  rw [prefix_iff_eq_take.mp h, dropLast_take hlt, dropLast_eq_take]
+  exact take_prefix_take_left (by grind)
+
+@[gcongr] lemma IsSuffix.dropLast {α} {l₁ l₂ : List α} (h : l₁ <:+ l₂) :
+    l₁.dropLast <:+ l₂.dropLast := by
+  rw [← reverse_prefix, ← tail_reverse, ← tail_reverse]
+  exact h.reverse.tail
+
+@[gcongr] lemma IsSuffix.drop {α} {l₁ l₂ : List α} (h : l₁ <:+ l₂) (n : ℕ) :
+    l₁.drop n <:+ l₂.drop n := by
+  rw [suffix_iff_eq_drop.mp h, drop_drop]
+  exact drop_suffix_drop_left l₂ (by omega)
+
+@[gcongr] lemma IsSuffix.tail {α} {l₁ l₂ : List α} (h : l₁ <:+ l₂) : l₁.tail <:+ l₂.tail := by
+  convert h.drop 1 using 1 <;> exact drop_one.symm
+
 lemma isChain_iff_all_zip_tail {α} (r : α → α → Prop) (l : List α) :
     l.IsChain r ↔ ∀ x ∈ l.zip l.tail, r x.1 x.2 := by
   induction l with | nil => simp | cons a l ih => cases l <;> simp [ih]

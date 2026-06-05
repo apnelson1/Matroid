@@ -211,6 +211,17 @@ lemma IsPath.prefix (hP : G.IsPath P) (hP₀ : P₀.IsPrefix P) : G.IsPath P₀ 
 lemma IsPath.suffix (hP : G.IsPath P) (hP₀ : P₀.IsSuffix P) : G.IsPath P₀ :=
   hP.sublist hP₀.isSublist
 
+lemma IsPath.infix (hP : G.IsPath P) (hP₀ : P₀.IsInfix P) : G.IsPath P₀ :=
+  hP.sublist hP₀.isSublist
+
+lemma IsPath.infix_of_sublist {P P₀ : WList α β} (hP : G.IsPath P) (hP₀ : P₀ ≤ P) :
+    P₀.IsInfix P := by
+  rwa [isSublist_iff_isInfix hP.nodup] at hP₀
+
+lemma IsPath.eq_of_sublist_of_first_eq_last_eq (hP : G.IsPath P) (hP₀ : P₀ ≤ P)
+    (hf : P₀.first = P.first) (hl : P₀.last = P.last) : P₀ = P :=
+  (hP.infix_of_sublist hP₀).eq_of_first_eq_last_eq hP.nodup hf hl
+
 /-- This is almost true without the `X ⊆ V(G)` assumption; the exception is where
 `w` is a nil walk on a vertex in `X \ V(G)`. -/
 lemma isPath_induce_iff (hXV : X ⊆ V(G)) : G[X].IsPath P ↔ G.IsPath P ∧ V(P) ⊆ X :=
@@ -610,14 +621,14 @@ lemma IsPathFrom.notMem_left_of_dInc (h : G.IsPathFrom S T P) (hP : P.DInc e x y
 lemma IsPathFrom.notMem_right_of_dInc (h : G.IsPathFrom S T P) (hP : P.DInc e x y) : x ∉ T :=
   fun hyT ↦ hP.ne_last h.nodup (h.eq_last_of_mem hP.left_mem hyT)
 
-lemma IsPath.extractPathFrom_isPathFrom [DecidablePred (· ∈ S)] [DecidablePred (· ∈ T)]
+lemma IsPath.betweenSets_isPathFrom [DecidablePred (· ∈ S)] [DecidablePred (· ∈ T)]
     (hP : G.IsPath P) (hf : P.first ∈ S) (hl : P.last ∈ T) :
-    G.IsPathFrom S T (P.extractPathFrom S T) where
-  toIsPath := hP.sublist (P.extractPathFrom_isSublist S T)
-  first_mem := P.extractPathFrom_first_mem ⟨P.first, P.first_mem, hf⟩
-  last_mem := P.extractPathFrom_last_mem ⟨P.last, (P.suffixFromLast_last (· ∈ S)) ▸ last_mem, hl⟩
-  eq_first_of_mem _ := (Eq.symm <| P.extractPathFrom_first_eq_of_mem · ·)
-  eq_last_of_mem _ := (Eq.symm <| P.extractPathFrom_last_eq_of_mem · ·)
+    G.IsPathFrom S T (P.betweenSets S T) where
+  toIsPath := hP.sublist (P.betweenSets_isInfix S T).isSublist
+  first_mem := P.betweenSets_first_mem ⟨P.first, P.first_mem, hf⟩
+  last_mem := P.betweenSets_last_mem ⟨P.last, (P.suffixFromLast_last (· ∈ S)) ▸ last_mem, hl⟩
+  eq_first_of_mem _ := (Eq.symm <| P.betweenSets_first_eq_of_mem · ·)
+  eq_last_of_mem _ := (Eq.symm <| P.betweenSets_last_eq_of_mem · ·)
 
 lemma IsTrailFrom.isTrail (h : G.IsTrailFrom S T w) : G.IsTrail w where
   isWalk := h.isWalk

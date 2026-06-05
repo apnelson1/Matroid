@@ -232,6 +232,53 @@ lemma IsCycle.toGraph_of_isCyclicWalk {C : WList α β} (hG : G.IsCycle)
   obtain ⟨C', hC', rfl⟩ := by simpa only [isCycle_iff_exists_isCyclicWalk_eq] using hG
   exact hC'.toGraph_eq_of_le hC <| hC.isWalk.toGraph_le
 
+/-- Given a cycle and a vertex in the cycle, there exists a cyclic walk that starts with the vertex.
+The direction of the cyclic walk is not known. -/
+lemma IsCycle.exists_isCyclicWalk_of_vertex (hG : G.IsCycle) (hx : x ∈ V(G)) :
+    ∃ C, G.IsCyclicWalk C ∧ C.first = x ∧ C.toGraph = G := by
+  have := eDegree_eq_zero_iff_inc.not.mp (by rw [hG.regular_two hx]; simp)
+  push Not at this
+  obtain ⟨e, y, he⟩ := this
+  obtain ⟨C, hC, rfl, rfl⟩ := he.exists_cons_isCyclicWalk_eq_of_IsCycle hG
+  use (cons x e C), hC, rfl
+
+lemma IsCycle.exists_two_trails (hG : G.IsCycle) (hx : x ∈ V(G)) (hy : y ∈ V(G)) :
+    ∃ P Q : WList α β, G.IsTrail P ∧ G.IsTrail Q ∧ P.first = x ∧ P.last = y ∧ Q.first = y ∧
+    Q.last = x ∧ (P ++ Q).toGraph = G := by
+  classical
+  obtain ⟨P, hP, rfl, rfl⟩ := hG.exists_isCyclicWalk_of_vertex hx
+  refine ⟨P.prefixUntilVertex y, P.suffixFromVertex y, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · exact hP.isTrail.sublist (P.prefixUntilVertex_isPrefix y).isSublist
+  · exact hP.isTrail.sublist (P.suffixFromVertex_isSuffix y).isSublist
+  · exact P.prefixUntilVertex_first _
+  · exact P.prefixUntilVertex_last (by simpa using hy)
+  · exact P.suffixFromVertex_first (by simpa using hy)
+  · exact hP.isClosed ▸ P.suffixFromVertex_last y
+  rw [P.prefixUntilVertex_append_suffixFromVertex y]
+
+lemma IsCycle.exists_two_paths_of_ne (hG : G.IsCycle) (hx : x ∈ V(G)) (hy : y ∈ V(G)) (hxy : x ≠ y):
+    ∃ P Q : WList α β, G.IsPath P ∧ G.IsPath Q ∧ P.first = x ∧ P.last = y ∧ Q.first = y ∧
+    Q.last = x ∧ (P ++ Q).toGraph = G := by
+  classical
+  obtain ⟨P, hP, rfl, rfl⟩ := hG.exists_isCyclicWalk_of_vertex hx
+  clear hx
+  refine ⟨P.prefixUntilVertex y, P.suffixFromVertex y, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · apply hP.eq_or_isPath_of_isSublist (P.prefixUntilVertex_isPrefix y).isSublist |>.resolve_left
+    rw [prefixUntilVertex, prefixUntil_eq_self_iff]
+    simp only [toGraph_vertexSet, mem_vertexSet_iff] at hy
+    obtain hhh := mem_iff_eq_mem_dropLast_or_eq_last.mp hy |>.resolve_right (hP.isClosed ▸ hxy.symm)
+    push Not
+    have hhh' : y ∈ P.dropLast.vertex := by simpa [mem_vertex] using hhh
+    simpa [dropLast_vertex hP.nonempty] using hhh'
+  · apply hP.eq_or_isPath_of_isSublist (P.suffixFromVertex_isSuffix y).isSublist |>.resolve_left
+    rw [suffixFromVertex, suffixFrom_eq_self_iff]
+    simp [hP.nonempty, hxy]
+  · exact P.prefixUntilVertex_first _
+  · exact P.prefixUntilVertex_last (by simpa using hy)
+  · exact P.suffixFromVertex_first (by simpa using hy)
+  · exact hP.isClosed ▸ P.suffixFromVertex_last y
+  rw [P.prefixUntilVertex_append_suffixFromVertex y]
+
 @[simp]
 lemma singleEdge_isForest (hxy : x ≠ y) (e : β) : (Graph.singleEdge x y e).IsForest := by
   rw [isForest_iff_not_isCyclicWalk]

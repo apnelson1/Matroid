@@ -426,9 +426,9 @@ lemma length_edge (w : WList α β) : w.edge.length = w.length := by
 lemma length_vertex (w : WList α β) : w.vertex.length = w.length + 1 := by
   induction w with simp_all [length, vertex]
 
-@[simp] lemma cons_length : (cons x e w).length = w.length + 1 := rfl
+@[simp, grind =] lemma cons_length : (cons x e w).length = w.length + 1 := rfl
 
-@[simp] lemma nil_length : (nil x : WList α β).length = 0 := rfl
+@[simp, grind =] lemma nil_length : (nil x : WList α β).length = 0 := rfl
 
 @[simp]
 lemma length_eq_zero : w.length = 0 ↔ w.Nil := by

@@ -427,7 +427,7 @@ lemma IsWalk.of_mem_mem (h : G.IsWalk w) (hu : u ∈ V(w) ∩ S) (hv : v ∈ V(w
   let W : WList α β := wR.prefixUntilVertex v
   have hWpref : W.IsPrefix wR := by
     simpa [W] using (wR.prefixUntilVertex_isPrefix v)
-  rcases hWpref.exists_eq_append with ⟨wR', hWlast, hWappend⟩
+  obtain ⟨wR', hWlast, hWappend⟩ := isPrefix_iff_exists_eq_append.mp hWpref
   have hWinfix : W.IsInfix w := by
     refine ⟨wL, wR', ?_, hWlast, ?_⟩
     · simp [wL, wR, W, huw]

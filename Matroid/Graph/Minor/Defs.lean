@@ -474,10 +474,6 @@ instance : FunLike (minorMap G H) V(G) (Graph α β) where
   coe f := f.map
   coe_injective' _ _ := minorMap_ext
 
-def IsMinor (G H : Graph α β) := Nonempty (minorMap G H)
-
-notation G " ≤m " H => IsMinor G H
-
 set_option backward.isDefEq.respectTransparency false in
 lemma minorMap.ne_bot (F : minorMap G H) (x : V(G)) : F.map x ≠ ⊥ := by
   simpa using (F.conn x).nonempty
@@ -490,6 +486,11 @@ lemma minorMap.edgeSet_mono (F : minorMap G H) : E(G) ⊆ E(H) := by
   obtain ⟨u, v, huv⟩ := G.exists_isLink_of_mem_edgeSet he
   obtain ⟨_, _, hab, -, -⟩ := F.link e ⟨u, huv.left_mem⟩ ⟨v, huv.right_mem⟩ huv
   exact hab.edge_mem
+
+lemma minorMap.disjoint_edgeSet_iUnion (F : minorMap G H) :
+    Disjoint E(G) (⋃ x, E(F.map x)) := by
+  rw [disjoint_iUnion_right]
+  exact F.edge_disj
 
 lemma minorMap.mem_iff_eq (F : minorMap G H) (x : V(G)) (hy : y ∈ V(F.map x)) :
     y ∈ V(G) ↔ x = y := by
@@ -726,12 +727,20 @@ lemma nonempty_minorMap_iff_exists_le_contract (G H : Graph α β) : Nonempty (m
     F.eq_contract_of_intermediate⟩,
     fun ⟨_, _, _, hH', hφ, h⟩ ↦ ⟨h ▸ minorMap.of_contract hφ |>.mono_right hH'⟩⟩
 
+lemma minorMap.le_contract_repFun (F : minorMap G H) : G ≤ H /[⋃ x, E(F.map x), F.repFun] := by
+  nth_rw 1 [F.eq_contract_of_intermediate]
+  exact contract_mono F.intermediate_le
+
+def IsMinor (G H : Graph α β) := Nonempty (minorMap G H)
+
+notation G " ≤m " H => IsMinor G H
+
 lemma IsMinor.refl (G : Graph α β) : G ≤m G := ⟨minorMap_refl G⟩
 
-@[simp] lemma isMinor_of_le (h : G ≤ H) : G ≤m H := ⟨minorMap.of_le h⟩
+@[simp] lemma IsSubgraph.isMinor (h : G ≤ H) : G ≤m H := ⟨minorMap.of_le h⟩
 
 @[simp]
-lemma isMinor_of_contract (hφ : (G ↾ C).connPartition.IsRepFun φ) : G /[C, φ] ≤m G :=
+lemma isMinor_of_contract (hφ : (G ↾ E(H)).connPartition.IsRepFun φ) : G /[E(H), φ] ≤m G :=
   ⟨minorMap.of_contract hφ⟩
 
 lemma IsMinor.vertexSet_mono (hGH : G ≤m H) : V(G) ⊆ V(H) := hGH.some.vertexSet_mono

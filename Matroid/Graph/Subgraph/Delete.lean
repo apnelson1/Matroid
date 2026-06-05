@@ -322,6 +322,11 @@ lemma edgeSet_induce_subset (G : Graph α β) (X : Set α) : E(G[X]) ⊆ E(G) :=
   rintro e ⟨x, y, h, -, -⟩
   exact h.edge_mem
 
+@[simp, grind =]
+lemma induce_inc (G : Graph α β) (X : Set α) : G[X].Inc e x ↔ G.Inc e x ∧ e ∈ E(G[X]) := by
+  simp only [Inc, induce_isLink, edgeSet_induce, mem_setOf_eq]
+  grind [IsLink.eq_and_eq_or_eq_and_eq]
+
 @[simp]
 lemma induce_singleton_edgeSet (G : Graph α β) (x : α) : E(G[{x}]) = {e | G.IsLoopAt e x} := by
   simp [edgeSet_induce]
@@ -348,6 +353,11 @@ lemma induce_induce (G : Graph α β) (X Y : Set α) : G[X][Y] = G[Y] ↾ E(G[X]
   · simp [he]
   rw [he.mem_induce_iff]
   tauto
+
+lemma compatible_induce (G : Graph α β) (X : Set α) : G.Compatible G[X] := by
+  refine compatible_iff_eqOn.mpr fun e ⟨heG, heX⟩ ↦ funext₂ fun u v ↦ ?_
+  obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet heX
+  grind [hxy.1.eq_and_eq_or_eq_and_eq]
 
 @[gcongr]
 lemma induce_mono_right (G : Graph α β) (hXY : X ⊆ Y) : G[X] ≤ G[Y] where
