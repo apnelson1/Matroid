@@ -58,8 +58,8 @@ lemma IsClosed.dropLast_vertex_nodup (hw : w.IsClosed) (hw₁ : w.tail.vertex.No
     w.dropLast.vertex.Nodup := by
   obtain ⟨x, rfl⟩ | hne := w.exists_eq_nil_or_nonempty
   · simp
-  rw [tail_vertex hne] at hw₁
-  rw [dropLast_vertex hne]
+  rw [hne.vertex_tail] at hw₁
+  rw [hne.vertex_dropLast]
   apply hw₁.perm
   have htail : w.vertex.tail ≠ [] := by simpa [← List.length_pos_iff]
   have hdropLast : w.vertex.dropLast ≠ [] := by simpa [← List.length_pos_iff]
@@ -310,7 +310,7 @@ lemma IsClosed.rotate_length (hw : w.IsClosed) : w.rotate w.length = w := by
   | cons u e w =>
     rw [cons_length, rotate_cons_succ, cons_vertex,
       ← ((w.concat e w.first).rotate w.length).vertex.cons_head_tail (by simp),
-      ← tail_vertex (by simp), rotate_vertex_tail, vertex_head, rotate_first _ _ (by simp),
+      ← Nonempty.vertex_tail (by simp), rotate_vertex_tail, vertex_head, rotate_first _ _ (by simp),
       get_concat _ _ _ rfl.le, get_length, eq_comm, show u = w.last from hw]
     convert rfl
     cases w with

@@ -65,6 +65,9 @@ lemma φ_fixed_of_notMem_dom (M : CombinatorialMap G D) {d : D} (hd : d ∉ M.f�
   unfold IsFixedPt
   rw [φ_apply, DartStructure.α_apply, M.otherDart_of_notMem_dom hd, M.sigma_id hd]
 
+def faceCycles (M : CombinatorialMap G D) [G.Finite] : Set (Cycle D) :=
+  periodicOrbit M.φ '' M.fₑ.Dom
+
 lemma finite_preimage_fₑ_of_finite (M : CombinatorialMap G D) (hF : F.Finite) :
     (M.fₑ.preimage F).Finite := by
   rw [show M.fₑ.preimage F = ⋃ e ∈ F, M.fₑ.preimage {e} by
@@ -143,7 +146,7 @@ noncomputable def of_le (h : H ≤ G) (M : CombinatorialMap G D)
     rw [DartStructure.fᵥ_of_le, PFun.preimage_restrict]
     exact (M.transtive_preimage v).keep (M.sigma_finiteOrbit hM) (M.fₑ.preimage E(H))
 
-noncomputable def deleteEdge (M : CombinatorialMap G D) (hM : M.toDartStructure.LocallyFinite)
+noncomputable def deleteEdges (M : CombinatorialMap G D) (hM : M.toDartStructure.LocallyFinite)
     (F : Set E) : CombinatorialMap (G ＼ F) D where
   toDartStructure := M.toDartStructure.deleteEdges F
   σ := by
@@ -228,37 +231,46 @@ noncomputable def contractσ (M : CombinatorialMap G D) (C : Set E) (hφ : M.φ.
 --     exact ⟨u, rfl, hdu⟩)
 --   exact ⟨u, huφ, by simpa [PFun.Preimage_def] using hpre⟩
 
-noncomputable def contract (M : CombinatorialMap G D) (C : Set E) (φ : V → V')
-    (hφfin : M.φ.finiteOrbit)  : CombinatorialMap (G /[C, φ]) D where
-  toDartStructure := M.toDartStructure.contract C φ
-  σ := by
-    classical
-    exact M.contractσ C hφfin
-  sigma_id d hd := by
-    classical
-    by_cases hdel : d ∈ M.fₑ.preimage C
-    · simp [contractσ, contractφ, contractα, Equiv.skip_apply_of_mem, hdel]
-    have hdom : d ∉ M.fₑ.Dom := by
-      rw [DartStructure.dom_fₑ_contract] at hd
-      exact by_contra fun hdom ↦ hd ⟨not_not.mp hdom, hdel⟩
-    have hα : M.contractα C d = d := by
-      exact Equiv.skip_apply_of_fixed M.alpha_finiteOrbit (by
-        unfold IsFixedPt
-        rw [DartStructure.α_apply, M.otherDart_of_notMem_dom hdom])
-    have hψ : M.contractφ C hφfin d = d :=
-      Equiv.skip_apply_of_fixed hφfin (M.φ_fixed_of_notMem_dom hdom)
-    rw [contractσ, Perm.mul_apply, hα, hψ]
-  transtive_preimage v := by
-    rw [DartStructure.preimage_fᵥ_contract]
-    refine ⟨?_, ?_⟩
-    · sorry
-    simp only [mem_diff, PFun.mem_preimage, Set.mem_preimage, mem_singleton_iff, not_exists,
-      not_and, and_imp, forall_exists_index]
-    rintro d u rfl hud hCd d' v hvu hvd' hCd'
-    simp [contractσ, SameCycle]
-    sorry
+-- noncomputable def contract (M : CombinatorialMap G D) (C : Set E) (φ : V → V')
+--     (hφfin : M.φ.finiteOrbit)  : CombinatorialMap (G /[C, φ]) D where
+--   toDartStructure := M.toDartStructure.contract C φ
+--   σ := by
+--     classical
+--     exact M.contractσ C hφfin
+--   sigma_id d hd := by
+--     classical
+--     by_cases hdel : d ∈ M.fₑ.preimage C
+--     · simp [contractσ, contractφ, contractα, Equiv.skip_apply_of_mem, hdel]
+--     have hdom : d ∉ M.fₑ.Dom := by
+--       rw [DartStructure.dom_fₑ_contract] at hd
+--       exact by_contra fun hdom ↦ hd ⟨not_not.mp hdom, hdel⟩
+--     have hα : M.contractα C d = d := by
+--       exact Equiv.skip_apply_of_fixed M.alpha_finiteOrbit (by
+--         unfold IsFixedPt
+--         rw [DartStructure.α_apply, M.otherDart_of_notMem_dom hdom])
+--     have hψ : M.contractφ C hφfin d = d :=
+--       Equiv.skip_apply_of_fixed hφfin (M.φ_fixed_of_notMem_dom hdom)
+--     rw [contractσ, Perm.mul_apply, hα, hψ]
+--   transtive_preimage v := by
+--     rw [DartStructure.preimage_fᵥ_contract]
+--     refine ⟨?_, ?_⟩
+--     · sorry
+--     simp only [mem_diff, PFun.mem_preimage, Set.mem_preimage, mem_singleton_iff, not_exists,
+--       not_and, and_imp, forall_exists_index]
+--     rintro d u rfl hud hCd d' v hvu hvd' hCd'
+--     simp [contractσ, SameCycle]
+--     sorry
 
 end Contract
+
+noncomputable def EulerCharacteristic [G.Finite] (M : CombinatorialMap G D) : ℤ :=
+  (V(G).ncard - E(G).ncard) + M.faceCycles.ncard - G.Components.ncard
+
+-- lemma EulerCharacteristic.of_le (h : H ≤ G) (M : CombinatorialMap G D) [G.Finite] :
+--     letI : H.Finite := Finite.mono ‹G.Finite› h
+--     M.EulerCharacteristic ≤
+--     (M.of_le h (.of_locallyFinite M.toDartStructure)).EulerCharacteristic := by
+--   sorry
 
 end CombinatorialMap
 end Graph

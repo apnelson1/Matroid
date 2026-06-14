@@ -266,14 +266,20 @@ lemma IsCyclicWalk.reverse (hC : G.IsCyclicWalk C) : G.IsCyclicWalk C.reverse wh
   isClosed := by simp [hC.isClosed]
   nodup := by simp [hC.dropLast_isPath.nodup]
 
-lemma IsCyclicWalk.eq_or_isPath_of_isSublist (hC : G.IsCyclicWalk C) (h : w ≤ C) :
-    w = C ∨ G.IsPath w := by
+lemma IsCyclicWalk.ne_iff_isPath_of_isSublist (hC : G.IsCyclicWalk C) (h : w ≤ C) :
+    w ≠ C ↔ G.IsPath w := by
   obtain hfirst | hfirst := eq_or_ne w.first C.first |>.symm
-  · exact Or.inr (hC.tail_isPath.sublist (h.le_tail_of_ne_first hfirst))
+  · simp only [ne_eq, hC.tail_isPath.sublist (h.le_tail_of_ne_first hfirst), iff_true]
+    grind
   obtain hlast | hlast := eq_or_ne w.last C.last |>.symm
-  · exact Or.inr (hC.dropLast_isPath.sublist (h.le_dropLast_of_ne_last hlast))
-  refine (hC.eq_or_nil_of_isSublist_of_first_last_eq h hfirst hlast).imp id ?_
-  exact fun hNil ↦ (hNil ▸ hfirst ▸ nil_isPath (hC.isWalk.vertexSet_subset (by simp)))
+  · simp only [ne_eq, hC.dropLast_isPath.sublist (h.le_dropLast_of_ne_last hlast), iff_true]
+    grind
+  obtain rfl | hw := hC.eq_or_nil_of_isSublist_of_first_last_eq h hfirst hlast
+  · simp only [ne_eq, not_true_eq_false, false_iff]
+    exact (hC.nonempty.not_nil <| ·.first_eq_last_iff.mp hC.isClosed)
+  have hne : w ≠ C := fun h ↦ hC.nonempty.not_nil <| h ▸ hw ▸ nil_nil
+  simp only [ne_eq, hne, not_false_eq_true, true_iff]
+  exact hw ▸ nil_isPath <| hC.vertexSet_subset (IsSublist.subset h first_mem)
 
 lemma IsCyclicWalk.of_le (hC : H.IsCyclicWalk C) (hle : H ≤ G) : G.IsCyclicWalk C where
   isWalk := hC.isWalk.of_le hle
@@ -336,7 +342,7 @@ lemma IsCyclicWalk.length_eq_two_iff (h : G.IsCyclicWalk C) :
         simpa [he, show u = w.last from h.isClosed, show w.last ≠ v by rintro rfl; simp_all]
       exact ⟨Nil.eq_nil_last, fun h ↦ by rw [h]; simp⟩
 
-lemma IsCyclicWalk.encard_vxSet (h : G.IsCyclicWalk C) : V(C).encard = C.length := by
+lemma IsCyclicWalk.encard_vertexSet (h : G.IsCyclicWalk C) : V(C).encard = C.length := by
   rw [← h.nonempty.cons_tail, cons_length, cons_vertexSet, Set.insert_eq_of_mem,
     encard_vxSet_of_nodup h.nodup, Nat.cast_add, Nat.cast_one]
   rw [h.isClosed.eq, ← tail_last, mem_vertexSet_iff]
@@ -478,11 +484,20 @@ lemma IsCyclicWalk.toGraph_deleteVerts_first_eq (hC : G.IsCyclicWalk C) (hnt : C
     hP.isWalk.wellFormed.toGraph_isLink]
   aesop
 
-lemma IsCyclicWalk.vertexSet_nontrivial (hC : G.IsCyclicWalk C) (hnt : C.Nontrivial) :
-    V(C).Nontrivial := by
-  obtain ⟨P, u, -, -, -, huP, -, -, -, rfl⟩ := hC.exists_isPath hnt
-  refine Set.nontrivial_of_exists_ne (x := u) (by simp) ⟨P.first, ?_⟩
-  simp [show P.first ≠ u by rintro rfl; simp at huP]
+lemma IsCyclicWalk.nontrivial_iff_vertexSet_nontrivial (hC : G.IsCyclicWalk C) :
+    C.Nontrivial ↔ V(C).Nontrivial := by
+  refine ⟨fun hnt ↦ ?_, fun hV ↦ (hC.loop_or_nontrivial).resolve_left ?_⟩
+  · obtain ⟨P, u, -, -, -, huP, -, -, -, rfl⟩ := hC.exists_isPath hnt
+    refine Set.nontrivial_of_exists_ne (x := u) (by simp) ⟨P.first, ?_⟩
+    simp [show P.first ≠ u by rintro rfl; simp at huP]
+  grind [insert_eq_of_mem, not_nontrivial_singleton]
+
+lemma IsCyclicWalk.nontrivial_iff_edgeSet_nontrivial (hC : G.IsCyclicWalk C) :
+    C.Nontrivial ↔ E(C).Nontrivial := by
+  refine ⟨fun hnt ↦ ?_, fun hE ↦ (hC.loop_or_nontrivial).resolve_left ?_⟩
+  · obtain ⟨_, e, _, f, _⟩ := hnt
+    exact Set.nontrivial_of_exists_ne (x := e) (by simp) ⟨f, by simp, by grind [hC.edge_nodup]⟩
+  grind [insert_empty_eq, not_nontrivial_singleton]
 
 /-- Deleting a vertex from the graph of a nontrivial cycle gives the graph of a path. -/
 lemma IsCyclicWalk.exists_isPath_toGraph_eq_delete_vertex (hC : G.IsCyclicWalk C)

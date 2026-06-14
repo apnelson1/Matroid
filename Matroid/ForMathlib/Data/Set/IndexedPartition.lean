@@ -2,6 +2,7 @@ import Matroid.ForMathlib.Data.Set.Subsingleton
 import Matroid.ForMathlib.Set
 -- import Mathlib.Tactic.DepRewrite
 import Mathlib.Tactic.NthRewrite
+import Mathlib.Data.PFun
 import Batteries.CodeAction.Basic
 import Batteries.CodeAction.Misc
 
@@ -36,6 +37,7 @@ protected lemma toFun_eq_coe (P : s.IndexedPartition ι) : P.toFun = P := rfl
 protected lemma mk_apply (f : ι → Set α) (dj) (hu : ⋃ i, f i = s) (i : ι) :
     IndexedPartition.mk f dj hu i = f i := rfl
 
+@[ext]
 protected lemma ext {P Q : s.IndexedPartition ι} (h : ∀ i, P i = Q i) : P = Q := by
   cases P
   cases Q
@@ -68,8 +70,14 @@ protected lemma exists_mem (P : s.IndexedPartition ι) {a : α} (ha : a ∈ s) :
     ∃ i, a ∈ P i := by
   rwa [← P.iUnion_eq, mem_iUnion] at ha
 
+@[grind .]
 protected lemma eq_of_mem_of_mem {a : α} (hi : a ∈ P i) (hj : a ∈ P j) : i = j :=
   P.pairwise_disjoint.eq fun h ↦ disjoint_left.1 h hi hj
+
+lemma existsUnique_mem (P : s.IndexedPartition ι) {a : α} (ha : a ∈ s) :
+    ∃! i, a ∈ P i := by
+  obtain ⟨i, hi⟩ := P.exists_mem ha
+  exact ⟨i, hi, by grind⟩
 
 lemma single_eq_diff_iUnion (P : s.IndexedPartition ι) (i : ι) : P i = s \ (⋃ j ≠ i, P j) := by
   simp only [subset_antisymm_iff, subset_diff, P.subset, disjoint_iUnion_right, true_and,
@@ -86,6 +94,29 @@ protected lemma ext' {P Q : s.IndexedPartition ι} {j : ι} (h : ∀ i ≠ j, P 
   obtain hne | rfl := ne_or_eq i j
   · exact h _ hne
   rwa [single_eq_diff_iUnion, single_eq_diff_iUnion, iUnion₂_congr]
+
+noncomputable def equivSubtype (s : Set α) (ι : Type*) : (s.IndexedPartition ι) ≃ (↑s → ι) where
+  toFun P s := (P.exists_mem s.prop).choose
+  invFun f := by
+    refine ⟨fun i ↦ Subtype.val '' (f⁻¹' {i}), fun i j hne ↦ ?_, ?_⟩
+    · simp only [Subtype.val_injective, disjoint_image_iff]
+      exact Disjoint.preimage f <| by grind
+    ext a
+    simp
+  left_inv P := by
+    ext i
+    simp only [IndexedPartition.mk_apply, mem_image, mem_preimage, mem_singleton_iff,
+      Subtype.exists, exists_and_right, exists_eq_right]
+    refine ⟨?_, fun hx ↦ ⟨P.subset hx, ?_⟩⟩
+    · rintro ⟨hx, rfl⟩
+      generalize_proofs h
+      exact h.choose_spec
+    generalize_proofs h
+    exact P.eq_of_mem_of_mem h.choose_spec hx
+  right_inv f := by simp
+
+noncomputable def equivPFun (ι : Type*) : (Σ s : Set α, s.IndexedPartition ι) ≃ (α →. ι) :=
+  (Equiv.sigmaCongrRight (equivSubtype · ι)).trans PFun.equivSubtype.symm
 
 /-- Transfer a partition across a set equality. -/
 protected def copy (P : s.IndexedPartition ι) (h_eq : s = t) : t.IndexedPartition ι where
@@ -110,7 +141,7 @@ protected def induce (P : s.IndexedPartition ι) (hts : t ⊆ s) : t.IndexedPart
   pairwise_disjoint' := P.pairwise_disjoint.mono <| by grind
   iUnion_eq' := by rw [← iUnion_inter, P.iUnion_eq, inter_eq_self_of_subset_right hts]
 
-@[simp]
+@[simp, grind =]
 protected lemma induce_apply {P : s.IndexedPartition ι} {hts : t ⊆ s} {i : ι} :
   (P.induce hts) i = P i ∩ t := rfl
 
@@ -371,7 +402,7 @@ protected lemma ext_bool' {P P' : s.IndexedPartition Bool} (i : Bool) (h : P i =
 protected lemma ext_bool {P P' : s.IndexedPartition Bool} (h : P true = P' true) : P = P' :=
   P.ext_bool' true h
 
-protected lemma ext_iff {P P' : s.IndexedPartition Bool} (b : Bool) : P = P' ↔ P b = P' b :=
+protected lemma ext_bool_iff {P P' : s.IndexedPartition Bool} (b : Bool) : P = P' ↔ P b = P' b :=
   ⟨fun h ↦ by simp [h], fun h ↦ P.ext_bool' b h⟩
 
 @[simp]

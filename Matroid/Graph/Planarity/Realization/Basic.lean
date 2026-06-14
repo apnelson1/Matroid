@@ -1,14 +1,11 @@
 import Matroid.Graph.Finite
 import Matroid.Graph.GraphLike.ArbRel
 import Matroid.Graph.Distance
-import Mathlib.Geometry.Manifold.Metrizable
-import Mathlib.Data.ENNReal.BigOperators
-import Mathlib.Topology.Connected.PathConnected
 import Mathlib.Topology.CWComplex.Classical.Subcomplex
-import Mathlib.Topology.Maps.Basic
 import Matroid.Graph.Planarity.Topology.Path
+import Matroid.Graph.Planarity.Topology.ConnPartition
 
-open Set Function TopologicalSpace Topology Relation UniformSpace Sum Path WList Classical ENNReal
+open Set Function TopologicalSpace Topology Relation Sum Path WList ENNReal Set.Notation
 open scoped unitInterval
 
 @[simp]
@@ -92,7 +89,7 @@ private def glueRelAux (G : Graph α β) (x y : PreRealization G) : Prop :=
 lemma glueRelAux_refl (u : V(G)) : G.glueRelAux (Sum.inl u) (Sum.inl u) := Or.inl rfl
 
 @[simp]
-lemma glueRelAux_inl_inj (u v : V(G)) :G.glueRelAux (Sum.inl u) (Sum.inl v) ↔ u = v := by
+lemma glueRelAux_inl_inj (u v : V(G)) : G.glueRelAux (Sum.inl u) (Sum.inl v) ↔ u = v := by
   simp only [glueRelAux, reduceCtorEq, and_false, exists_false, or_self, or_false, eq_comm]
   exact Sum.inl_injective.eq_iff
 
@@ -394,5 +391,146 @@ theorem Connected.pathConnectedSpace (h : G.Connected) : PathConnectedSpace G.Re
   exact (h.pre.joined_vertexMk_realMk hv0 a).symm.trans (h.pre.joined_vertexMk_realMk hv0 b)
 
 -- instance [G.Finite] : CompactSpace G.Realization := inferInstance
+
+lemma vertexMk_or_edgePath (x : G.Realization) :
+    (∃ v : V(G), vertexMk v = x) ∨ ∃ (e : E(G)) (t : I), t ∈ Ioo 0 1 ∧ edgePath e t = x := by
+  induction x using Quotient.inductionOn with | h a => _
+  match a with
+  | .inl v => exact Or.inl ⟨v, rfl⟩
+  | .inr ⟨e, t⟩ =>
+    by_cases ht0 : 0 = t
+    · exact Or.inl ⟨src e, Quotient.sound <| by simp [ht0]⟩
+    by_cases ht1 : t = 1
+    · exact Or.inl ⟨tgt e, Quotient.sound <| by simp [ht1]⟩
+    have h0 : 0 < t := t.prop.1.lt_of_ne (by grind)
+    have h1 : t < 1 := t.prop.2.lt_of_ne (by grind)
+    exact Or.inr ⟨e, t, ⟨h0, h1⟩, rfl⟩
+
+def foo : Set G.Realization := (range vertexMk)ᶜ
+
+@[simp]
+lemma union_edges_eq_foo : ⋃ (e : E(G)), edgePath e '' Ioo 0 1 = G.foo := by
+  ext y
+  simp only [foo, mem_compl_iff, mem_range, mem_iUnion]
+  refine ⟨?_, fun hyS ↦ ?_⟩
+  · rintro ⟨e', t', ht', rfl⟩
+    exact fun ⟨v, hv⟩ ↦ vertexMk_notMem_edgePath_Ioo v e' ⟨t', ht', hv.symm⟩
+  obtain ⟨e', t', ht', rfl⟩ := vertexMk_or_edgePath y |>.resolve_left hyS
+  grind
+
+lemma preimage_foo_isClopen (e : E(G)) : IsClopen (G.foo ↓∩ edgePath e '' Ioo 0 1) := by
+  have hU_open : IsOpen (edgePath e '' Ioo 0 1) := by
+    rw [isOpen_edgePath_image e (by simp) (by simp)]
+    exact isOpen_Ioo
+  have hU_compl : G.foo \ edgePath e '' Ioo 0 1 = ⋃ (e') (_ : e' ≠ e), edgePath e' '' Ioo 0 1 := by
+    ext y
+    simp only [mem_diff, mem_compl_iff, mem_range, mem_iUnion, exists_prop, foo]
+    refine ⟨fun ⟨hyS, hyU⟩ ↦ ?_, ?_⟩
+    · obtain ⟨e', t', ht', rfl⟩ := vertexMk_or_edgePath y |>.resolve_left hyS
+      exact ⟨e', fun heq => hyU (heq ▸ mem_image_of_mem _ ht'), t', ht', rfl⟩
+    rintro ⟨e', hne, t', ht', rfl⟩
+    exact ⟨fun ⟨v, hv⟩ ↦ vertexMk_notMem_edgePath_Ioo v e' ⟨t', ht', hv.symm⟩,
+      (((edgePath_Ioo_disjoint_iff_ne e' e).mpr hne).le_bot ⟨mem_image_of_mem _ ht', ·⟩)⟩
+  have hU_compl_open : IsOpen (G.foo \ edgePath e '' Ioo 0 1) := by
+    rw [hU_compl]
+    refine isOpen_biUnion fun e' _ ↦ ?_
+    rw [isOpen_edgePath_image e' (by simp) (by simp)]
+    exact isOpen_Ioo
+  refine ⟨?_, hU_open.preimage continuous_subtype_val⟩
+  have eq_compl : (G.foo ↓∩ edgePath e '' Ioo 0 1)ᶜ =
+      Subtype.val ⁻¹' (G.foo \ edgePath e '' Ioo 0 1) := by
+    rw [← preimage_compl]
+    grind
+  rw [← isOpen_compl_iff, eq_compl]
+  exact isOpen_induced_iff.mpr ⟨G.foo \ edgePath e '' Ioo 0 1, hU_compl_open, rfl⟩
+
+lemma pathComponent_eq_edge (T : Set G.Realization)
+    (hT : T ∈ PathComponentPartition (range vertexMk)ᶜ) :
+    ∃ e : E(G), T = edgePath e '' Ioo 0 1 := by
+  obtain ⟨x, hx⟩ := Partition.nonempty_of_mem hT
+  obtain ⟨e, t, ht, rfl⟩ := vertexMk_or_edgePath x |>.resolve_left
+    <| by simpa using Partition.subset_of_mem hT hx
+  use e
+  let S := (range G.vertexMk)ᶜ
+  let U := edgePath e '' Ioo 0 1
+  have hU_clopen : IsClopen (S ↓∩ U) := preimage_foo_isClopen e
+  have hU_pathConn : IsPathConnected U := by
+    let f : Ioo (0 : ℝ) 1 → G.Realization := fun x ↦ edgePath e ⟨x.val, ⟨x.prop.1.le, x.prop.2.le⟩⟩
+    have hf : Continuous f := (edgePath e).continuous.comp
+      (continuous_subtype_val.subtype_mk fun x ↦ ⟨x.prop.1.le, x.prop.2.le⟩)
+    have hU_eq : U = range f := by
+      ext y
+      simp only [U, mem_image, mem_range, Subtype.exists]
+      refine ⟨by grind, ?_⟩
+      rintro ⟨t', ht', rfl⟩
+      use t', Ioo_subset_Icc_self ht', ht'
+    rw [hU_eq]
+    haveI : PathConnectedSpace (Ioo (0:ℝ) 1) := isPathConnected_iff_pathConnectedSpace.mp
+      <| (convex_Ioo 0 1).isPathConnected ⟨2⁻¹, by norm_num⟩
+    exact isPathConnected_range hf
+
+  have hUS : U ⊆ S := by
+    rintro _ ⟨t', ht', rfl⟩ ⟨v, hv⟩
+    exact vertexMk_notMem_edgePath_Ioo v e ⟨t', ht', hv.symm⟩
+  have hxU : edgePath e t ∈ U := mem_image_of_mem _ ht
+  rw [(PathComponentPartition S).eq_partOf_of_mem hT hx, pathComponentPartition_partOf, eq_comm]
+  ext y
+  refine ⟨fun hyU ↦ ?_, fun ⟨P, hP⟩ ↦ ?_⟩
+  · obtain ⟨P, hP⟩ := hU_pathConn.joinedIn _ hxU _ hyU
+    exact ⟨P, fun s ↦ hUS (hP s)⟩
+  let PT : I → S := fun s => ⟨P s, hP s⟩
+  have hPT : Continuous PT := P.continuous.subtype_mk hP
+  let A : Set I := PT ⁻¹' (S ↓∩ U)
+  have h0 : (0 : I) ∈ A := by simpa [A, PT]
+  have h1 : (1 : I) ∈ A :=
+    (show IsClopen A from hU_clopen.preimage hPT).eq_univ ⟨0, h0⟩ ▸ mem_univ 1
+  simp only [mem_preimage, Path.target, A, PT] at h1
+  exact h1
+
+lemma Realization.graphLike (T : Set G.Realization)
+    (hT : T ∈ PathComponentPartition (range vertexMk)ᶜ) : Nonempty (T ≃ₜ Ioo (0 : ℝ) 1) := by
+  obtain ⟨e, rfl⟩ := pathComponent_eq_edge T hT
+  let f : Ioo (0 : ℝ) 1 → G.Realization := fun x ↦ edgePath e ⟨x.val, ⟨x.prop.1.le, x.prop.2.le⟩⟩
+  have hf_cont : Continuous f :=
+    (edgePath e).continuous.comp (continuous_subtype_val.subtype_mk _)
+  have h_inj : Injective f := by
+    intro x y hxy
+    simpa [Subtype.ext_iff] using edgePath_inj_on_Ioo x.prop hxy
+  have h_range : range f = edgePath e '' Ioo (0 : I) 1 := by
+    ext y
+    simp only [mem_range, mem_image]
+    constructor
+    · rintro ⟨x, rfl⟩
+      exact ⟨⟨x.val, ⟨x.prop.1.le, x.prop.2.le⟩⟩, ⟨⟨x.prop.1, x.prop.2⟩, rfl⟩⟩
+    · rintro ⟨t, ht, rfl⟩
+      use ⟨t.val, ⟨ht.1, ht.2⟩⟩
+
+  let E : Ioo (0 : ℝ) 1 ≃ (edgePath e '' Ioo (0 : I) 1) := Equiv.ofBijective
+    (fun x ↦ ⟨f x, h_range ▸ mem_range_self x⟩)
+    ⟨fun x y hxy ↦ h_inj (Subtype.mk.inj hxy), fun ⟨y, hy⟩ ↦ by
+      obtain ⟨x, rfl⟩ := (h_range.symm ▸ hy : y ∈ range f)
+      exact ⟨x, rfl⟩⟩
+
+  refine ⟨E.toHomeomorphOfContinuousOpen (hf_cont.subtype_mk _) (fun U hU ↦ ?_) |>.symm⟩
+  have hX0 : (0 : I) ∉ Subtype.val ⁻¹' (Subtype.val '' U) := by
+    rintro ⟨u, hu, h_eq⟩
+    linarith [u.prop.1, show u.val = 0 from h_eq]
+  have hX1 : (1 : I) ∉ Subtype.val ⁻¹' (Subtype.val '' U) := by
+    rintro ⟨u, hu, h_eq⟩
+    linarith [u.prop.2, show u.val = 1 from h_eq]
+  have h3 : IsOpen (edgePath e '' Subtype.val ⁻¹' (Subtype.val '' U)) :=
+    (isOpen_edgePath_image e hX0 hX1).mpr <| (isOpen_Ioo.isOpenMap_subtype_val U hU).preimage
+      continuous_subtype_val
+  have h4 : edgePath e '' Subtype.val ⁻¹' (Subtype.val '' U) = Subtype.val '' (E '' U) := by
+    ext y
+    simp only [mem_image, mem_preimage, Subtype.exists, exists_and_right, exists_eq_right]
+    refine ⟨?_, by grind⟩
+    rintro ⟨t, htI, ⟨ht, htU⟩, rfl⟩
+    exact ⟨⟨t, htI, ht, rfl⟩, ⟨t, ht, htU, rfl⟩⟩
+  have h5 : E '' U = Subtype.val ⁻¹' (Subtype.val '' (E '' U)) := by
+    ext ⟨y, hy⟩
+    simp
+  convert h3.preimage continuous_subtype_val
+  rw [h5, h4]
 
 end Graph

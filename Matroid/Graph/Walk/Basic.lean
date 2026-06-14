@@ -690,11 +690,11 @@ lemma toGraph_concat (w : WList α β) (e u) :
   | nil v => refine Graph.ext (by simp [toGraph_cons, pair_comm]) fun f x y ↦ by grind
   | cons v f w ih => ext a x y <;> grind
 
-@[simp]
+@[simp, grind =]
 lemma toGraph_vertexSet (w : WList α β) : V(w.toGraph) = V(w) := by
   induction w with simp_all [toGraph_cons]
 
-@[simp]
+@[simp, grind =]
 lemma toGraph_edgeSet (w : WList α β) : E(w.toGraph) = E(w) := by
   induction w with simp_all [toGraph_cons]
 

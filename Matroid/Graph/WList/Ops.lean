@@ -11,7 +11,7 @@ def concat : WList α β → β → α → WList α β
 | nil x, e, y => cons x e (nil y)
 | cons x e w, f, y => cons x e (w.concat f y)
 
-@[simp]
+@[simp, grind =]
 lemma concat_length : (w.concat e v).length = w.length + 1 := by
   induction w with | nil => rfl | cons => simpa [concat]
 
@@ -271,11 +271,19 @@ lemma append_edge {w₁ w₂ : WList α β} : (w₁ ++ w₂).edge = w₁.edge ++
 lemma append_edgeSet (w₁ w₂ : WList α β) : E(w₁ ++ w₂) = E(w₁) ∪ E(w₂) := by
   ext; simp
 
-@[simp]
+@[simp, grind =]
 lemma append_length : (w₁ ++ w₂).length = w₁.length + w₂.length := by
   induction w₁ with simp_all [add_right_comm]
 
-@[simp]
+lemma idxOf_append_right_of_notMem [DecidableEq α] {P Q : WList α β} {uf : α} (huf : uf ∉ P) :
+    (P ++ Q).idxOf uf = P.length + Q.idxOf uf := by
+  induction P with
+  | nil y => simp [nil_append, nil_length]
+  | cons y e P ih =>
+    rw [mem_cons_iff, not_or, ← ne_eq] at huf
+    grind [cons_append, idxOf_cons_ne huf.1.symm, ih huf.2]
+
+@[simp, grind =]
 lemma append_nil (h : w.last = x) : w ++ (nil x) = w := by
   induction w with simp_all
 
@@ -287,11 +295,11 @@ lemma append_first_of_eq (h : w₁.last = w₂.first) : (w₁ ++ w₂).first = w
 lemma append_first_of_nonempty (h : w₁.Nonempty) : (w₁ ++ w₂).first = w₁.first := by
   induction w₁ with simp_all
 
-@[simp]
+@[simp, grind =]
 lemma append_last : (w₁ ++ w₂).last = w₂.last := by
   induction w₁ with simp_all
 
-@[simp]
+@[simp, grind =]
 protected lemma append_concat (w₁ w₂ : WList α β) (e) (x) :
     w₁ ++ (w₂.concat e x) = (w₁ ++ w₂).concat e x := by
   rw [WList.concat_eq_append, WList.concat_eq_append, ← append_assoc, append_last]
@@ -315,6 +323,11 @@ lemma edgeSet_disjoint_of_append_nodup (h : (w₁ ++ w₂).edge.Nodup) : Disjoin
 lemma mem_of_mem_append (hx : x ∈ w₁ ++ w₂) : x ∈ w₁ ∨ x ∈ w₂ := by
   rw [← mem_vertex, append_vertex, List.mem_append] at hx
   exact hx.imp (w₁.vertex.dropLast_subset ·) id
+
+@[simp]
+lemma mem_append_iff (w₁ w₂ : WList α β) (x : α) :
+    x ∈ w₁ ++ w₂ ↔ x ∈ w₁.vertex.dropLast ∨ x ∈ w₂ := by
+  rw [← mem_vertex, append_vertex, List.mem_append, mem_vertex]
 
 @[simp]
 lemma mem_append_iff_of_eq (h : w₁.last = w₂.first) (x : α) : x ∈ w₁ ++ w₂ ↔ x ∈ w₁ ∨ x ∈ w₂ := by
@@ -413,35 +426,35 @@ lemma Nonempty.reverse (hw : w.Nonempty) : w.reverse.Nonempty :=
 lemma reverse_nil_iff (w : WList α β) : w.reverse.Nil ↔ w.Nil := by
   induction w with simp_all
 
-@[simp]
+@[simp, grind =]
 lemma reverse_first : (reverse w).first = w.last := by
   induction w with
   | nil x => simp [reverse]
   | cons x e w ih => simp [reverse, ih]
 
-@[simp]
+@[simp, grind =]
 lemma reverse_last : (reverse w).last = w.first := by
   induction w with
   | nil x => simp [reverse]
   | cons x e w ih => simp [reverse]
 
-@[simp]
+@[simp, grind =]
 lemma reverse_vertex : (reverse w).vertex = w.vertex.reverse := by
   induction w with
   | nil x => simp [reverse]
   | cons x e w ih => simp [reverse, ih]
 
-@[simp]
+@[simp, grind =]
 lemma reverse_edge {w : WList α β} : (reverse w).edge = w.edge.reverse := by
   induction w with
   | nil x => simp [reverse]
   | cons x e w ih => simp [reverse, ih]
 
-@[simp]
+@[simp, grind =]
 lemma reverse_edgeSet : E(reverse w) = E(w) := by
   ext; simp
 
-@[simp]
+@[simp, grind =]
 lemma reverse_length {w : WList α β} : (reverse w).length = w.length := by
   induction w with
   | nil x => simp [reverse]
@@ -456,7 +469,7 @@ lemma reverse_append {w₁ w₂ : WList α β} (h_eq : w₁.last = w₂.first) :
   rw [WList.concat_eq_append, WList.concat_eq_append, ← append_assoc]
   simp
 
-@[simp]
+@[simp, grind =]
 lemma concat_reverse (w : WList α β) (e) (x) : (w.concat e x).reverse = cons x e w.reverse := by
   rw [WList.concat_eq_append, reverse_append (by simp)]
   simp
@@ -465,14 +478,14 @@ lemma Nonempty.firstEdge_concat (hw : w.Nonempty) :
     (concat_nonempty w e x).firstEdge = hw.firstEdge := by
   induction w with | nil u => simp at hw | cons => simp
 
-@[simp]
+@[simp, grind =]
 lemma reverse_reverse (w : WList α β) : w.reverse.reverse = w := by
   induction w with | nil => simp | cons => simpa
 
 lemma reverse_inj (h : w₁.reverse = w₂.reverse) : w₁ = w₂ := by
   rw [← reverse_reverse w₁, h, reverse_reverse]
 
-@[simp]
+@[simp, grind =]
 lemma reverse_inj_iff : w₁.reverse = w₂.reverse ↔ w₁ = w₂ :=
   ⟨reverse_inj, fun h ↦ by rw [h]⟩
 
@@ -483,19 +496,19 @@ lemma reverse_injective : Injective (reverse : WList α β → WList α β) :=
 lemma reverse_eq_comm : w₁.reverse = w₂ ↔ w₁ = w₂.reverse := by
   rw [← reverse_reverse w₂, reverse_inj_iff, reverse_reverse]
 
-@[simp]
+@[simp, grind =]
 lemma reverse_nontrivial_iff : w.reverse.Nontrivial ↔ w.Nontrivial := by
   rw [← one_lt_length_iff, reverse_length, one_lt_length_iff]
 
 alias ⟨_, Nontrivial.reverse⟩ := reverse_nontrivial_iff
 
-@[simp]
+@[simp, grind =]
 lemma mem_reverse : x ∈ w.reverse ↔ x ∈ w := by
   induction w with
   | nil => simp
   | cons u e w ih => simp [ih, or_comm]
 
-@[simp]
+@[simp, grind =]
 lemma reverse_vertexSet (w : WList α β) : V(w.reverse) = V(w) := by
   simp [WList.vertexSet]
 
@@ -506,7 +519,7 @@ lemma DInc.reverse (h : w.DInc e x y) : w.reverse.DInc e y x := by
     simp
   | cons _ _ _ ih => exact ih.concat ..
 
-@[simp]
+@[simp, grind =]
 lemma dInc_reverse_iff : w.reverse.DInc e x y ↔ w.DInc e y x :=
   ⟨fun h ↦ by simpa using h.reverse, DInc.reverse⟩
 
@@ -516,7 +529,7 @@ lemma dInc_iff_eq_of_dInc_of_vertex_nodup_right (hw : w.vertex.Nodup) (hv : w.DI
   rw [← dInc_reverse_iff, hw_def', dInc_iff_eq_of_dInc_of_vertex_nodup_left (by simpa [← hw_def'])]
   simpa [← hw_def']
 
-@[simp]
+@[simp, grind =]
 lemma isLink_reverse_iff : w.reverse.IsLink e x y ↔ w.IsLink e x y := by
   simp [isLink_iff_dInc, or_comm]
 

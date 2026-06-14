@@ -51,6 +51,7 @@ import Matroid.Extension.Guts
 import Matroid.Extension.Minor
 import Matroid.Extension.ModularCut
 import Matroid.Extension.Parallel
+-- import Matroid.Extension.Pert
 -- import Matroid.Extension.Perturbation
 -- import Matroid.Extension.Principal
 import Matroid.Extension.ProjectBy
@@ -95,6 +96,7 @@ import Matroid.Graph.Degree.Defs
 import Matroid.Graph.Degree.Leaf
 import Matroid.Graph.Degree.Max
 import Matroid.Graph.Distance
+-- import Matroid.Graph.EdgeColoring
 import Matroid.Graph.Finite
 import Matroid.Graph.Forest
 import Matroid.Graph.Hom
@@ -111,6 +113,8 @@ import Matroid.Graph.Minor.Defs
 -- import Matroid.Graph.Path
 -- import Matroid.Graph.Planarity.CWComplex.DualGraph
 -- import Matroid.Graph.Planarity.CWComplex.Operations
+-- import Matroid.Graph.Planarity.CombMap.Basic
+-- import Matroid.Graph.Planarity.CombMap.Equiv
 -- import Matroid.Graph.Planarity.CycleList.Bar
 -- import Matroid.Graph.Planarity.CycleList.Basic
 -- import Matroid.Graph.Planarity.Defs
@@ -122,6 +126,7 @@ import Matroid.Graph.Planarity.GraphContinuum.Basic
 import Matroid.Graph.Planarity.Realization.Basic
 import Matroid.Graph.Planarity.Realization.CWComplex
 import Matroid.Graph.Planarity.Realization.Celluar
+-- import Matroid.Graph.Planarity.Realization.CombMap
 import Matroid.Graph.Planarity.Realization.Metric
 import Matroid.Graph.Planarity.Realization.Subgraph
 import Matroid.Graph.Planarity.Topology.Circle
@@ -141,6 +146,7 @@ import Matroid.Graph.Subgraph.Inter
 import Matroid.Graph.Subgraph.Lemma
 import Matroid.Graph.Subgraph.Union
 -- import Matroid.Graph.Suppress
+-- import Matroid.Graph.TopologicalMinor
 import Matroid.Graph.Tree
 import Matroid.Graph.WList.Cycle
 import Matroid.Graph.WList.Decompose
@@ -150,6 +156,7 @@ import Matroid.Graph.WList.Sublist
 import Matroid.Graph.WList.TakeDrop
 import Matroid.Graph.Walk.Basic
 import Matroid.Graph.Walk.Cycle
+-- import Matroid.Graph.Walk.Dart
 -- import Matroid.Graph.Walk.OrientationWalk
 import Matroid.Graph.Walk.Path
 import Matroid.Graphic

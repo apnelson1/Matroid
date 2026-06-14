@@ -123,6 +123,13 @@ lemma lt_of_le_of_vertexSet_ssubset (hle : G ≤ H) (h : V(G) ⊂ V(H)) : G < H 
 lemma lt_of_le_of_edgeSet_ssubset (hle : G ≤ H) (h : E(G) ⊂ E(H)) : G < H := by
   grind [hle.lt_iff_ne]
 
+lemma exists_edge_or_vertex_of_lt (h : G < H) : (∃ e ∈ E(H), e ∉ E(G)) ∨ ∃ v ∈ V(H), v ∉ V(G) := by
+  have := h.ne
+  contrapose! this
+  refine ext_of_le_le h.le le_rfl ?_ ?_
+  · grind [h.le.vertexSet_mono]
+  grind [h.le.edgeSet_mono]
+
 lemma sum_ncard_lt_of_lt [Finite α] [Finite β] (h : G < H) :
     V(G).ncard + E(G).ncard < V(H).ncard + E(H).ncard := by
   obtain hV | hE := vertexSet_ssubset_or_edgeSet_ssubset_of_lt h

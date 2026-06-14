@@ -7,30 +7,37 @@ variable {α β : Type*} {u v x y z : α} {e e' f g : β} {S T U: Set α}
 
 namespace WList
 
-/- This is a subwalk of `w` from the last vertex in `S`, `s`, to the first vertex in `T` after
-  `s`, if any such vertex exists. Otherwise, it returns `w`.
+/- This is a subwalk of `w` from the vertex in `S` to the vertex in `T` with all intermediate
+  vertices not in `S` or `T`, if such subwalk exists. Otherwise, it starts/ends at the boundary of
+  the given walk. If there are multiple such subwalks, it returns the last one.
   In the case where `w` is a path with some vertex in `S` before some vertex in `T`,
   its result satisfies `w.IsPathFrom S T`. -/
 def betweenSets (w : WList α β) (S T : Set α) [DecidablePred (· ∈ S)] [DecidablePred (· ∈ T)] :
     WList α β := (w.suffixFromLast (· ∈ S)).prefixUntil (· ∈ T)
+
+variable {S T : Set α} [DecidablePred (· ∈ S)] [DecidablePred (· ∈ T)]
 
 @[simp]
 lemma betweenSets_isInfix (w : WList α β) (S T : Set α) [DecidablePred (· ∈ S)]
     [DecidablePred (· ∈ T)] : (w.betweenSets S T).IsInfix w :=
   (prefixUntil_isPrefix _ _).isInfix.trans (w.suffixFromLast_isSuffix (· ∈ S)).isInfix
 
-lemma betweenSets_first_mem [DecidablePred (· ∈ S)] [DecidablePred (· ∈ T)]
-    (hw : ∃ x ∈ w, x ∈ S) : (w.betweenSets S T).first ∈ S := by
+@[grind =]
+lemma betweenSets_first_mem_iff (w : WList α β) (S T : Set α) [DecidablePred (· ∈ S)]
+    [DecidablePred (· ∈ T)] : (w.betweenSets S T).first ∈ S ↔ ∃ x ∈ w, x ∈ S := by
+  rw [betweenSets, prefixUntil_first]
+  exact suffixFromLast_prop_first_iff ..
+
+lemma betweenSets_first_mem (hw : ∃ x ∈ w, x ∈ S) : (w.betweenSets S T).first ∈ S := by
   rw [betweenSets, prefixUntil_first]
   exact suffixFromLast_prop_first hw
 
-lemma betweenSets_first_eq_of_mem [DecidablePred (· ∈ S)] [DecidablePred (· ∈ T)]
-    (hv : v ∈ w.betweenSets S T) (hvS : v ∈ S) : (w.betweenSets S T).first = v := by
+lemma betweenSets_first_eq_of_mem  (hv : v ∈ w.betweenSets S T) (hvS : v ∈ S) :
+    (w.betweenSets S T).first = v := by
   rw [betweenSets, prefixUntil_first]
   exact suffixFromLast_first_eq_of_prop ((prefixUntil_isPrefix _ _).mem hv) hvS
 
-lemma betweenSets_first_eq_iff_mem [DecidablePred (· ∈ S)] [DecidablePred (· ∈ T)]
-    (hw : ∃ x ∈ w, x ∈ S) :
+lemma betweenSets_first_eq_iff_mem (hw : ∃ x ∈ w, x ∈ S) :
     (w.betweenSets S T).first = v ↔ v ∈ V(w.betweenSets S T) ∧ v ∈ S :=
   ⟨fun h ↦ ⟨h ▸ first_mem, h ▸ betweenSets_first_mem hw⟩,
     fun ⟨hv, hvS⟩ ↦ betweenSets_first_eq_of_mem hv hvS⟩
@@ -44,17 +51,16 @@ lemma betweenSets_vertex_tail_not_prop (w : WList α β) (S T : Set α) [Decidab
 /- When there are multiple `S` to `T` segments in `w`, `w.betweenSets S T` will return the
   last such segment. This is an arbitrary choice and it means that `betweenSets_first_mem`
   only requires having some vertex from `S` in `w`, whereas for this lemma, it is more strict. -/
-lemma betweenSets_last_mem [DecidablePred (· ∈ S)] [DecidablePred (· ∈ T)]
-    (hw : ∃ u ∈ w.suffixFromLast (· ∈ S), u ∈ T) : (w.betweenSets S T).last ∈ T := by
+lemma betweenSets_last_mem (hw : ∃ u ∈ w.suffixFromLast (· ∈ S), u ∈ T) :
+    (w.betweenSets S T).last ∈ T := by
   rw [betweenSets]
   exact prefixUntil_prop_last hw
 
-lemma betweenSets_last_eq_of_mem [DecidablePred (· ∈ S)] [DecidablePred (· ∈ T)]
-    (hv : v ∈ w.betweenSets S T) (hvT : v ∈ T) : (w.betweenSets S T).last = v :=
+lemma betweenSets_last_eq_of_mem (hv : v ∈ w.betweenSets S T) (hvT : v ∈ T) :
+    (w.betweenSets S T).last = v :=
   prefixUntil_last_eq_of_prop hv hvT
 
-lemma betweenSets_last_eq_iff_mem [DecidablePred (· ∈ S)] [DecidablePred (· ∈ T)]
-    (hw : ∃ u ∈ w.suffixFromLast (· ∈ S), u ∈ T) :
+lemma betweenSets_last_eq_iff_mem (hw : ∃ u ∈ w.suffixFromLast (· ∈ S), u ∈ T) :
     (w.betweenSets S T).last = v ↔ v ∈ V(w.betweenSets S T) ∧ v ∈ T :=
   ⟨fun h ↦ ⟨h ▸ last_mem, h ▸ betweenSets_last_mem hw⟩,
     fun ⟨hv, hvT⟩ ↦ betweenSets_last_eq_of_mem hv hvT⟩
@@ -62,6 +68,16 @@ lemma betweenSets_last_eq_iff_mem [DecidablePred (· ∈ S)] [DecidablePred (· 
 lemma betweenSets_vertex_dropLast_not_prop (w : WList α β) (S T : Set α) [DecidablePred (· ∈ S)]
     [DecidablePred (· ∈ T)] : ∀ x ∈ (w.betweenSets S T).vertex.dropLast, x ∉ T :=
   fun _ ↦ prefixUntil_vertex_dropLast_not_prop
+
+lemma betweenSets_isPrefix_iff (S T : Set α) [DecidablePred (· ∈ S)] [DecidablePred (· ∈ T)]
+    (hnd : w.vertex.Nodup) : (w.betweenSets S T).IsPrefix w ↔ ∀ x ∈ w.vertex.tail, x ∉ S := by
+  rw [← suffixFromLast_eq_self_iff w (· ∈ S)]
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · refine (w.suffixFromLast_isSuffix (· ∈ S)).eq_of_first_mem hnd ?_
+    have hf : (w.suffixFromLast (· ∈ S)).first = w.first := by simpa [betweenSets] using h.first_eq
+    exact hf ▸ first_mem
+  rw [betweenSets, h]
+  exact prefixUntil_isPrefix ..
 
 def breakAt_aux (w : WList α β) (P : α → Prop) [DecidablePred P] (e' : β) (w' : WList α β)
     (L : List (WList α β)) : List (WList α β) :=
@@ -411,8 +427,8 @@ lemma exists_infix_of_exists_prop {p q : α → Prop} (hp : ∃ x ∈ w, p x) (h
       have hfilt : x ∈ w.vertex.filter (fun b => decide (q b)) := by simp [hxw, hqx]
       exact ⟨x, mem_vertex.mp (List.mem_filter.mp (h.symm ▸ hfilt)).1, hqx⟩
     let w' := w.suffixFrom p |>.prefixUntilLast q
-    have hw'f : p w'.first := by simp [w', suffixFrom_prop_first hp]
-    have hw'l : q w'.last := by simp [w', prefixUntilLast_prop_last hp']
+    have hw'f : p w'.first := by simpa [w'] using suffixFrom_prop_first hp
+    have hw'l : q w'.last := by simpa [w'] using prefixUntilLast_prop_last hp'
     obtain ⟨w'', hinfix, hpw''f, hqw''l, hpw'', hqw''⟩ := exists_infix_of_prop hw'f hw'l
     refine ⟨w'', ?_, Or.inl ⟨hpw''f, hqw''l, hpw'', hqw''⟩⟩
     exact hinfix.trans <| ((w.suffixFrom p).prefixUntilLast_isPrefix q).isInfix.trans
@@ -422,8 +438,8 @@ lemma exists_infix_of_exists_prop {p q : α → Prop} (hp : ∃ x ∈ w, p x) (h
     have hfilt : x ∈ w.vertex.filter (fun b => decide (p b)) := by simp [hxw, hpx]
     exact ⟨x, mem_vertex.mp (List.mem_filter.mp (h.symm ▸ hfilt)).1, hpx⟩
   let w' := w.suffixFrom q |>.prefixUntilLast p
-  have hw'f : q w'.first := by simp [w', suffixFrom_prop_first hq]
-  have hw'l : p w'.last := by simp [w', prefixUntilLast_prop_last hq']
+  have hw'f : q w'.first := by simpa [w'] using suffixFrom_prop_first hq
+  have hw'l : p w'.last := by simpa [w'] using prefixUntilLast_prop_last hq'
   obtain ⟨w'', hinfix, hqw''f, hpw''l, hqw'', hpw''⟩ := exists_infix_of_prop hw'f hw'l
   refine ⟨w'', ?_, Or.inr ⟨hqw''f, hpw''l, hqw'', hpw''⟩⟩
   exact hinfix.trans <| ((w.suffixFrom q).prefixUntilLast_isPrefix p).isInfix.trans

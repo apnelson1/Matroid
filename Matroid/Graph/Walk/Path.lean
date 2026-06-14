@@ -195,8 +195,9 @@ lemma IsPath.edge_nodup (h : G.IsPath P) : P.edge.Nodup :=
 lemma IsPath.of_le (hP : G.IsPath P) (hle : G ≤ H) : H.IsPath P :=
   ⟨hP.isWalk.of_le hle, hP.nodup⟩
 
-lemma IsPath.vertexSet_subset (hP : G.IsPath P) : V(P) ⊆ V(G) :=
-  hP.isWalk.vertexSet_subset
+lemma IsPath.vertexSet_subset (hP : G.IsPath P) : V(P) ⊆ V(G) := hP.isWalk.vertexSet_subset
+
+lemma IsPath.edgeSet_subset (hP : G.IsPath P) : E(P) ⊆ E(G) := hP.isWalk.edgeSet_subset
 
 lemma IsPath.induce (hP : G.IsPath P) (hX : V(P) ⊆ X) : (G[X]).IsPath P :=
   ⟨hP.isWalk.induce hX, hP.nodup⟩
@@ -231,7 +232,7 @@ lemma isPath_induce_iff' (hP : P.Nonempty) : G[X].IsPath P ↔ G.IsPath P ∧ V(
   rw [isPath_iff, isWalk_induce_iff' hP, and_assoc, isPath_iff]
   tauto
 
-@[simp]
+@[simp, grind =]
 lemma isPath_deleteVerts_iff : (G - X).IsPath P ↔ G.IsPath P ∧ Disjoint V(P) X := by
   rw [deleteVerts_def, isPath_induce_iff diff_subset, subset_diff, and_congr_right_iff,
     and_iff_right_iff_imp]
@@ -251,7 +252,7 @@ lemma IsPath.isPath_le_of_nonempty (h : G.IsPath w) (hle : H ≤ G) (hE : E(w) �
 lemma isPath_restrict_iff {F : Set β} : (G ↾ F).IsPath P ↔ G.IsPath P ∧ E(P) ⊆ F := by
   simp [isPath_iff, and_right_comm]
 
-@[simp]
+@[simp, grind =]
 lemma isPath_deleteEdges_iff {F : Set β} : (G ＼ F).IsPath P ↔ G.IsPath P ∧ Disjoint E(P) F := by
   rw [isPath_iff, isWalk_deleteEdges_iff, isPath_iff, and_right_comm]
 

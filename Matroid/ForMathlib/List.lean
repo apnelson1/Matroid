@@ -52,6 +52,36 @@ lemma mem_dropLast_of_mem_ne {ι} {x : ι} {l : List ι} (hne : l ≠ []) (hmem 
     (hxne : x ≠ l.getLast hne) : x ∈ l.dropLast := by
   obtain rfl | ⟨l', y, rfl⟩ := l.eq_nil_or_concat <;> grind
 
+lemma mem_iff_eq_head_or_mem_tail {α} {x : α} {l : List α} (hne : l ≠ []) :
+    x ∈ l ↔ x = l.head hne ∨ x ∈ l.tail := by
+  match l with
+  | [] => simp at hne
+  | head :: tail => simp
+
+lemma mem_iff_mem_dropLast_or_eq_getLast {α} {x : α} {l : List α} (hne : l ≠ []) :
+    x ∈ l ↔ x ∈ l.dropLast ∨ x = l.getLast hne := by
+  induction l using List.reverseRec with
+  | nil => simp at hne
+  | append_singleton l a _ => simp
+
+lemma Nodup.eq_head_or_mem_tail_ne {α} {x : α} {l : List α} (hnd : l.Nodup) (hx : x ∈ l) :
+    x = l.head (ne_nil_of_mem hx) ∨ x ≠ l.head (ne_nil_of_mem hx) ∧ x ∈ l.tail := by
+  match l with | [] => simp at hx | a :: as => grind
+
+@[grind =]
+lemma Nodup.mem_iff_eq_head_or_mem_tail {α} {x : α} {l : List α} (hnd : l.Nodup) (hne : l ≠ []) :
+    x ∈ l ↔ x = l.head hne ∨ x ≠ l.head hne ∧ x ∈ l.tail := by
+  match l with | [] => simp at hne | a :: as => grind
+
+lemma Nodup.eq_getLast_or_mem_dropLast_ne {α} {x : α} {l : List α} (hnd : l.Nodup) (hx : x ∈ l) :
+    x = l.getLast (ne_nil_of_mem hx) ∨ x ≠ l.getLast (ne_nil_of_mem hx) ∧ x ∈ l.dropLast := by
+  induction l using List.reverseRec with | nil => simp at hx | append_singleton l a _ => grind
+
+@[grind =]
+lemma Nodup.mem_iff_eq_getLast_or_mem_dropLast {α} {x : α} {l : List α} (hnd : l.Nodup)
+    (hne : l ≠ []) : x ∈ l ↔ x = l.getLast hne ∨ x ≠ l.getLast hne ∧ x ∈ l.dropLast := by
+  induction l using List.reverseRec with | nil => simp at hne | append_singleton l a _ => grind
+
 lemma IsSuffix.eq_of_first_mem {α} {l₁ l₂ : List α} (h : l₁.IsSuffix l₂) (hnd : l₂.Nodup)
     (hne : l₂ ≠ []) (hl : l₂.head hne ∈ l₁) : l₁ = l₂ := by
   match h with

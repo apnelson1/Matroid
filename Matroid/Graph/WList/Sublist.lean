@@ -92,10 +92,12 @@ lemma IsSublist.edge_subset (h : w₁.IsSublist w₂) : E(w₁) ⊆ E(w₂) :=
 lemma IsSublist.mem_edge (h : w₁.IsSublist w₂) (he : e ∈ w₁.edge) : e ∈ w₂.edge :=
   h.edge_subset he
 
+@[grind →]
 lemma IsSublist.nonempty (h : w₁.IsSublist w₂) (hne : w₁.Nonempty) : w₂.Nonempty := by
   obtain ⟨e, he⟩ := nonempty_iff_exists_edge.mp hne
   exact nonempty_iff_exists_edge.mpr ⟨e, h.mem_edge he⟩
 
+@[grind →]
 lemma IsSublist.length_le (h : w₁.IsSublist w₂) : w₁.length ≤ w₂.length := by
   rw [← length_edge, ← length_edge]
   exact h.edge_sublist.length_le
@@ -161,6 +163,50 @@ lemma IsSublist.concat₂ (h : w₁.IsSublist w₂) (hlast : w₁.last = w₂.la
 lemma isSublist_concat_self (w : WList α β) (e : β) (x : α) : w.IsSublist (w.concat e x) :=
   (isSublist_refl (w := w)).concat ..
 
+lemma IsSublist.append_right (h : w₁.IsSublist w₂) (hw : w₂.last = w.first) :
+    w₁.IsSublist (w₂ ++ w) := by
+  induction h generalizing w with
+  | nil h => simp [nil_isSublist_iff, mem_append_iff_of_eq hw, h]
+  | cons x e h ih =>
+    rw [cons_append]
+    exact cons x e (ih hw)
+  | cons₂ x e h h_eq ih =>
+    rw [cons_append]
+    exact cons₂ x e (ih hw) <| h_eq.trans <| Eq.symm (append_first_of_eq hw)
+
+lemma IsSublist.append_left (h : w₁.IsSublist w₂) (w : WList α β) :
+    w₁.IsSublist (w ++ w₂) := by
+  induction w with
+  | nil => simp [h]
+  | cons x e w ih =>
+    rw [cons_append]
+    exact cons x e ih
+
+@[gcongr]
+lemma IsSublist.append_right₂ (h : w₁.IsSublist w₂) (hlast : w₁.last = w₂.last)
+    (hw : w₂.last = w.first) : (w₁ ++ w).IsSublist (w₂ ++ w) := by
+  induction h generalizing w with
+  | @nil y w₂ h => exact (isSublist_refl w).append_left w₂
+  | @cons x e w₁ w₂ h ih =>
+    rw [cons_append]
+    exact (ih (by simpa using hlast) (by simpa using hw)).cons x e
+  | @cons₂ x e w₁ w₂ h h_eq ih =>
+    refine (ih (by simpa using hlast) (by simpa using hw)).cons₂ x e ?_
+    simp only [last_cons] at hlast hw
+    rwa [append_first_of_eq (hlast.trans hw), append_first_of_eq hw]
+
+@[gcongr]
+lemma IsSublist.append_left₂ (h : w₁.IsSublist w₂) (hfirst : w₁.first = w₂.first)
+    (w : WList α β) : (w ++ w₁).IsSublist (w ++ w₂) := by
+  induction w with
+  | nil => simpa using h
+  | cons x e w ih =>
+    rw [cons_append, cons_append]
+    refine ih.cons₂ x e ?_
+    match w with
+    | .nil u => simpa using hfirst
+    | .cons u e w => simp
+
 @[gcongr]
 lemma IsSublist.reverse (h : w₁.IsSublist w₂) : w₁.reverse.IsSublist w₂.reverse := by
   induction h with
@@ -211,6 +257,8 @@ inductive IsPrefix : WList α β → WList α β → Prop
   | nil (w : WList α β) : IsPrefix (nil w.first) w
   | cons (x : _) (e) (w₁ w₂ : WList α β) (h : IsPrefix w₁ w₂) : IsPrefix (cons x e w₁) (cons x e w₂)
 
+attribute [gcongr] IsPrefix.cons
+
 lemma IsPrefix.first_eq (h : IsPrefix w₁ w₂) : w₁.first = w₂.first := by
   induction h with simp
 
@@ -219,11 +267,20 @@ lemma isPrefix_append_right (hw : w₁.last = w₂.first) : w₁.IsPrefix (w₁ 
   | nil => convert IsPrefix.nil w₂
   | cons u e w₁ ih => simpa using (ih hw).cons ..
 
+@[gcongr]
+lemma IsPrefix.append_left (h : w₁.IsPrefix w₂) (w : WList α β) : (w ++ w₁).IsPrefix (w ++ w₂) := by
+  induction w with
+  | nil u => simpa
+  | cons u e w ih =>
+    rw [cons_append]
+    exact cons u e (w ++ w₁) (w ++ w₂) ih
+
 lemma isPrefix_iff_exists_eq_append : w₁.IsPrefix w₂ ↔
     ∃ w₁', w₁.last = w₁'.first ∧ w₁ ++ w₁' = w₂ := by
   refine ⟨fun h ↦ ?_, fun ⟨w₁', hL, hEq⟩ ↦ hEq ▸ isPrefix_append_right hL⟩
   induction h with | nil => simp | cons => simpa
 
+@[grind →]
 lemma IsPrefix.isSublist (h : w₁.IsPrefix w₂) : w₁.IsSublist w₂ := by
   induction h with | nil => simp | cons _ _ _ _ h ih => exact ih.cons₂ _ _ h.first_eq
 
@@ -257,6 +314,7 @@ lemma isPrefix_nil_iff : w.IsPrefix (nil x) ↔ w = nil x :=
 lemma nil_isPrefix_iff : (nil x).IsPrefix w ↔ w.first = x :=
   ⟨fun h ↦ by cases h with rfl, by rintro rfl; exact IsPrefix.nil w⟩
 
+@[trans]
 lemma IsPrefix.trans (h : w₁.IsPrefix w₂) (h' : w₂.IsPrefix w₃) : w₁.IsPrefix w₃ := by
   induction h' generalizing w₁ with
   | nil w => simp_all
@@ -316,6 +374,8 @@ inductive IsSuffix : WList α β → WList α β → Prop
   | nil (w : WList α β) : IsSuffix (nil w.last) w
   | concat (e x w₁ w₂ : _) (h : IsSuffix w₁ w₂) : IsSuffix (w₁.concat e x) (w₂.concat e x)
 
+attribute [gcongr] IsSuffix.concat
+
 lemma IsSuffix.reverse_isPrefix_reverse (h : w₁.IsSuffix w₂) : w₁.reverse.IsPrefix w₂.reverse := by
   induction h with | nil => simp | concat e x w₁ w₂ h ih => simp [ih.cons]
 
@@ -337,6 +397,7 @@ lemma reverse_isSuffix_reverse_iff : w₁.reverse.IsSuffix w₂.reverse ↔ w₁
 lemma isSuffix_refl (w : WList α β) : w.IsSuffix w := by
   simpa using (isPrefix_refl (w := w.reverse)).reverse_isSuffix_reverse
 
+@[grind →]
 lemma IsSuffix.isSublist (h : w₁.IsSuffix w₂) : w₁.IsSublist w₂ :=
   h.reverse_isPrefix_reverse.isSublist.of_reverse
 
@@ -402,6 +463,20 @@ lemma isSuffix_iff_exists_eq_append : w₁.IsSuffix w₂ ↔
   refine ⟨w'.reverse, ?_, ?_⟩
   · simpa [reverse_last, reverse_first] using hL.symm
   · rw [← reverse_reverse w₂, ← hEq, reverse_append hL, reverse_reverse]
+
+@[gcongr]
+lemma IsSuffix.append_right (h : w₁.IsSuffix w₂) (w : WList α β) :
+    (w₁ ++ w).IsSuffix (w₂ ++ w) := by
+  induction w using concat_induction with
+  | nil u =>
+    match h with
+    | .nil w => simp
+    | .concat e x w₁ w₂ h =>
+      simp only [WList.concat_append, ← WList.concat_eq_append]
+      exact h.concat e u
+  | concat w e x ih =>
+    simp only [WList.append_concat]
+    apply ih.concat ..
 
 lemma IsSuffix.eq_of_first_mem (h : w₁.IsSuffix w₂) (hnd : w₂.vertex.Nodup) (hl : w₂.first ∈ w₁) :
     w₁ = w₂ := by

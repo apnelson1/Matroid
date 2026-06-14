@@ -13,6 +13,7 @@ variable {α β γ : Type*} {f : α →. β} {φ : β → γ} {S T : Set β} {a 
 
 attribute [grind <=] mem_unique
 attribute [simp, grind .] preimage_subset_dom
+attribute [grind =] dom_coe
 attribute [gcongr] preimage_mono
 
 lemma mem_preimage_self (h : a ∈ f.Dom) : a ∈ f.preimage {(f a).get h} := by
@@ -30,6 +31,11 @@ lemma image_subset_ran {S : Set α} : f.image S ⊆ f.ran := by
   intro a
   simp only [mem_image_iff, ran, mem_setOf_eq, forall_exists_index, and_imp]
   grind
+
+@[simp, grind =]
+lemma ran_coe (f : α → β) : (PFun.lift f).ran = range f := by
+  ext x
+  simp [ran, eq_comm]
 
 @[simp]
 lemma dom_restrict {S : Set α} (hS : S ⊆ f.Dom) : (f.restrict hS).Dom = S := by
@@ -169,19 +175,17 @@ lemma otherDart_ne (h : d ∈ M.fₑ.Dom) : M.otherDart d ≠ d := by
 @[grind →]
 lemma preimage_singleton_pair (hd : e ∈ M.fₑ d) (hd' : e ∈ M.fₑ d') (hne : d ≠ d') :
     M.fₑ.preimage {e} = {d, d'} := by
-  have htwo := M.preimage_encard (M.mem_edgeSet_of_mem_fₑ hd)
-  rw [encard_eq_two] at htwo
-  rcases htwo with ⟨x, y, hxy, hpair⟩
+  obtain ⟨x, y, hxy, hpair⟩ := encard_eq_two.mp <| M.preimage_encard (M.mem_edgeSet_of_mem_fₑ hd)
   replace hd : d ∈ M.fₑ.preimage {e} := by simpa
   replace hd' : d' ∈ M.fₑ.preimage {e} := by simpa
   grind
 
 @[simp, grind =]
 lemma fₑ_otherDart (d : D) : M.fₑ (M.otherDart d) = M.fₑ d := by
-  by_cases h : d ∈ M.fₑ.Dom
-  · have : (M.fₑ d).get h ∈ M.fₑ (M.otherDart d) := by simpa using M.mem_preimage_other h
-    exact (eq_of_mem h this).symm
-  simp [h]
+  obtain hndom | h := em' (d ∈ M.fₑ.Dom)
+  · simp [hndom]
+  have : (M.fₑ d).get h ∈ M.fₑ (M.otherDart d) := by simpa using M.mem_preimage_other h
+  exact (eq_of_mem h this).symm
 
 lemma otherDart_invol (d : D) : M.otherDart (M.otherDart d) = d := by
   obtain h | h := em' (d ∈ M.fₑ.Dom)
@@ -237,6 +241,78 @@ def copy (M : DartStructure G D) (h : G = H) : DartStructure H D where
   dom_fᵥ := M.dom_fᵥ
   ran_fᵥ := h ▸ M.ran_fᵥ
   inc_iff_exists_dart := h ▸ M.inc_iff_exists_dart
+
+def dartFiber (v : V) (e : E) : Set D := M.fₑ.preimage {e} ∩ M.fᵥ.preimage {v}
+
+lemma fᵥ_preimage_eq_iUnion_dartFiber (v : V) :
+    M.fᵥ.preimage {v} = ⋃ e ∈ E(G, v), M.dartFiber v e := by
+  ext d
+  refine ⟨fun hdv ↦ ?_, fun hd ↦ ?_⟩
+  · have hdom := M.dom_fᵥ ▸ M.fᵥ.preimage_subset_dom {v} hdv
+    exact mem_iUnion.2 ⟨(M.fₑ d).get hdom, mem_iUnion.2
+      ⟨(M.inc_iff_exists_dart _ _).2 ⟨d, Part.get_mem hdom, by simpa [PFun.mem_preimage] using hdv⟩,
+      ⟨by simpa [dartFiber, PFun.mem_preimage] using Part.get_mem hdom, hdv⟩⟩⟩
+  simp only [mem_iUnion] at hd
+  exact hd.choose_spec.2.2
+
+lemma dartFiber_pairwiseDisjoint (v : V) : (E(G, v)).PairwiseDisjoint (M.dartFiber v) := by
+  refine fun e he f hf hne ↦ disjoint_left.2 fun d hd hfd ↦ ?_
+  have hed : e ∈ M.fₑ d := by simpa [dartFiber, PFun.mem_preimage] using hd.1
+  have hfd' : f ∈ M.fₑ d := by simpa [dartFiber, PFun.mem_preimage] using hfd.1
+  exact hne <| Part.mem_unique hed hfd'
+
+lemma _root_.Graph.IsLoopAt.dartFiber_eq_preimage {v} (h : G.IsLoopAt e v) :
+    M.dartFiber v e = M.fₑ.preimage {e} := by
+  ext d
+  refine ⟨fun hd ↦ hd.1, fun hd ↦ ?_⟩
+  have hdom := M.fₑ.preimage_subset_dom {e} hd
+  have hdomv : d ∈ M.fᵥ.Dom := by rwa [M.dom_fᵥ]
+  have hx := h.eq_of_inc ((M.inc_iff_exists_dart _ _).2 ⟨d, by simpa [PFun.mem_preimage] using hd,
+    Part.get_mem hdomv⟩)
+  exact ⟨hd, by simpa [PFun.mem_preimage, hx] using Part.get_mem hdomv⟩
+
+lemma dartFiber_encard_isLoopAt {v e} (h : G.IsLoopAt e v) :
+    (M.dartFiber v e).encard = 2 := by
+  rw [h.dartFiber_eq_preimage, M.preimage_encard h.edge_mem]
+
+lemma _root_.Graph.IsNonloopAt.dartFiber_eq_singleton {v e} (h : G.IsNonloopAt e v) :
+    ∃ d, M.dartFiber v e = {d} := by
+  obtain ⟨d, hed, hvd⟩ := (M.inc_iff_exists_dart e v).1 h.inc
+  use d
+  let w := h.inc.other
+  have hwne : w ≠ v := by simpa [w] using h.other_ne
+  obtain ⟨d', hed', hwd'⟩ := (M.inc_iff_exists_dart e w).1 (h.inc.choose_spec.inc_right)
+  have hd'ne : d ≠ d' := by
+    rintro rfl
+    exact hwne <| Part.mem_unique hwd' hvd
+  have hpair' : M.fₑ.preimage {e} = {d, d'} := M.preimage_singleton_pair hed hed' hd'ne
+  ext x
+  refine ⟨fun hx ↦ (hpair' ▸ hx.1).resolve_right fun h ↦ ?_, ?_⟩
+  · rintro rfl
+    simp [dartFiber, hed, hvd]
+  have := by simpa only [PFun.mem_preimage, mem_singleton_iff, exists_eq_left] using hx.2
+  exact (hwne <| Part.mem_unique hwd' (h ▸ this)).elim
+
+lemma dartFiber_encard_isNonloopAt {v e} (h : G.IsNonloopAt e v) :
+    (M.dartFiber v e).encard = 1 := by
+  obtain ⟨d, hfiber⟩ := h.dartFiber_eq_singleton M
+  simp [hfiber]
+
+lemma preimage_fᵥ_encard_eq_eDegree (M : DartStructure G D) [G.LocallyFinite] (v : V) :
+    (M.fᵥ.preimage {v}).encard = G.eDegree v := by
+  rw [eDegree_eq_encard_add_encard, M.fᵥ_preimage_eq_iUnion_dartFiber v,
+    (G.finite_incEdges v).encard_biUnion (M.dartFiber_pairwiseDisjoint v),
+    incEdges_eq_isLoopAt_union_isNonloopAt, finsum_mem_union disjoint_isLoopAt_isNonLoopAt
+    G.finite_setOf_isLoopAt G.finite_setOf_isNonloopAt, finsum_mem_congr (s := {e | G.IsLoopAt e v})
+    rfl fun e ↦ M.dartFiber_encard_isLoopAt, finsum_mem_congr (s := {e | G.IsNonloopAt e v})
+    rfl fun e ↦ M.dartFiber_encard_isNonloopAt, finsum_mem_const, finsum_mem_const,
+    nsmul_eq_mul, nsmul_eq_mul, mul_one, mul_comm, G.finite_setOf_isLoopAt.cast_ncard_eq,
+    G.finite_setOf_isNonloopAt.cast_ncard_eq]
+
+lemma preimage_fᵥ_ncard_eq_degree (M : DartStructure G D) [G.LocallyFinite] (v : V) :
+    (M.fᵥ.preimage {v}).ncard = G.degree v := by
+  unfold degree ncard
+  rw [preimage_fᵥ_encard_eq_eDegree]
 
 section Subgraph
 
@@ -395,7 +471,7 @@ lemma fₑ_of_minorMap : (M.of_minorMap F).fₑ = M.fₑ.codRestrict E(G) := by
   simp only [of_minorMap, fₑ_of_le, fₑ_contract, codRestrict_codRestrict]
   congr 1
   rw [inter_eq_left, subset_diff, disjoint_iUnion_right]
-  use F.edgeSet_mono, F.edge_disj
+  exact ⟨F.edgeSet_mono, F.edge_disj⟩
 
 @[simp]
 lemma fᵥ_of_minorMap : (M.of_minorMap F).fᵥ =
@@ -423,6 +499,12 @@ lemma fᵥ_of_isMinor (M : DartStructure H D) (h : G ≤m H) : (M.of_isMinor h).
 
 end Minor
 
+lemma dom_fₑ_finite (M : DartStructure G D) [G.Finite] : M.fₑ.Dom.Finite := by
+  convert G.edgeSet_finite.biUnion fun e heG ↦ finite_of_encard_eq_coe (M.preimage_encard heG)
+  ext d
+  simp only [mem_dom, mem_iUnion, PFun.mem_preimage, mem_singleton_iff, exists_eq_left, exists_prop]
+  exact exists_congr fun e ↦ iff_and_self.mpr <| mem_edgeSet_of_mem_fₑ M
+
 def LocallyFinite (M : DartStructure G D) := ∀ v, (M.fᵥ.preimage {v}).Finite
 
 lemma IsSubgraph.LocallyFinite (h : H ≤ G) (hM : M.LocallyFinite) :
@@ -431,6 +513,206 @@ lemma IsSubgraph.LocallyFinite (h : H ≤ G) (hM : M.LocallyFinite) :
   simp only [fᵥ_of_le, preimage_restrict]
   exact (hM v).inter_of_left (M.fₑ.preimage E(H))
 
+lemma LocallyFinite.of_finite (M : DartStructure G D) [G.Finite] : M.LocallyFinite :=
+  fun v ↦ M.dom_fₑ_finite.subset fun _ hd ↦ M.dom_fᵥ ▸ M.fᵥ.preimage_subset_dom {v} hd
+
+lemma LocallyFinite.of_locallyFinite (M : DartStructure G D) [G.LocallyFinite] :
+    M.LocallyFinite := by
+  intro v
+  have := G.forall_eDegree_ne_top_iff.mpr inferInstance v
+  rwa [← M.preimage_fᵥ_encard_eq_eDegree, encard_ne_top_iff] at this
+
 end DartStructure
+
+/-- `Graph.Dart` is a type for darts or length 1 walks of `Graph`. Every edge of a graph is composed
+  of two darts: for loops, there are `fwd` and `bwd` darts, and for non-loops, there are two `dir`
+  darts. -/
+inductive IncidenceType (α β : Type*) : Type _ where
+  | dir : β → ∀ (u v : α), u ≠ v → IncidenceType α β
+  | fwd : β → α → IncidenceType α β
+  | bwd : β → α → IncidenceType α β
+
+open IncidenceType
+
+variable {d : IncidenceType V E}
+
+/-- The edge of a `IncidenceType`. -/
+@[expose]
+def IncidenceType.edge (d : IncidenceType V E) : E :=
+  match d with
+  | .dir e _ _ _ => e
+  | .fwd e _ => e
+  | .bwd e _ => e
+
+@[simp, grind =]
+lemma IncidenceType.range_edge [Nonempty V] :
+    range (IncidenceType.edge (V := V) (E := E)) = univ := by
+  ext e
+  simp only [mem_range, mem_univ, iff_true]
+  exact ⟨fwd e (Classical.arbitrary V), rfl⟩
+
+/-- The source of a `IncidenceType`. -/
+@[expose]
+def IncidenceType.source (d : IncidenceType V E) : V :=
+  match d with
+  | .dir _ u _ _ => u
+  | .fwd _ v => v
+  | .bwd _ v => v
+
+@[simp, grind =]
+lemma IncidenceType.range_source [Nonempty E] :
+    range (IncidenceType.source (V := V) (E := E)) = univ := by
+  ext v
+  simp only [mem_range, mem_univ, iff_true]
+  exact ⟨fwd (Classical.arbitrary E) v, rfl⟩
+
+/-- The target of a `IncidenceType`. -/
+@[expose]
+def IncidenceType.target (d : IncidenceType V E) : V :=
+  match d with
+  | .dir _ _ v _ => v
+  | .fwd _ v => v
+  | .bwd _ v => v
+
+@[simp, grind =]
+lemma IncidenceType.range_target [Nonempty E] :
+    range (IncidenceType.target (V := V) (E := E)) = univ := by
+  ext v
+  simp only [mem_range, mem_univ, iff_true]
+  exact ⟨bwd (Classical.arbitrary E) v, rfl⟩
+
+lemma IncidenceType.dir_of_ne (hne : d.source ≠ d.target) :
+    d = dir d.edge d.source d.target hne := by
+  cases d <;> grind [source, target, edge]
+
+lemma IncidenceType.fwd_or_bwd_of_eq (heq : d.source = d.target) :
+    d = fwd d.edge d.source ∨ d = bwd d.edge d.target := by
+  cases d <;> grind [source, target, edge]
+
+section inc12
+
+variable [DecidableEq V] (e : E) (u v : V)
+
+/-- The first incidence of a link. -/
+def inc1 := if h : u = v then fwd e u else dir e u v h
+
+/-- The second incidence of a link. -/
+def inc2 := if h : u = v then bwd e u else dir e v u (Ne.symm h)
+
+@[simp, grind =]
+lemma inc1_edge : (inc1 e u v).edge = e := by
+  by_cases huv : u = v <;> simp [inc1, huv, edge]
+
+@[simp, grind =]
+lemma inc2_edge : (inc2 e u v).edge = e := by
+  by_cases huv : u = v <;> simp [inc2, huv, edge]
+
+@[simp, grind =]
+lemma inc1_source : (inc1 e u v).source = u := by
+  by_cases huv : u = v <;> simp [inc1, huv, source]
+
+@[simp, grind =]
+lemma inc2_source : (inc2 e u v).source = v := by
+  by_cases huv : u = v <;> simp [inc2, huv, source]
+
+@[simp, grind =]
+lemma inc1_target : (inc1 e u v).target = v := by
+  by_cases huv : u = v <;> simp [inc1, huv, target]
+
+@[simp, grind =]
+lemma inc2_target : (inc2 e u v).target = u := by
+  by_cases huv : u = v <;> simp [inc2, huv, target]
+
+@[simp, grind .]
+lemma inc1_ne_inc2 : inc1 e u v ≠ inc2 e u v := by
+  by_cases huv : u = v <;> simp [inc1, inc2, huv]
+
+omit [DecidableEq V]
+lemma isLink_iff_exists_incidenceType : G.IsLink e u v ↔ ∃ i j : IncidenceType V E, i ≠ j ∧
+    G.IsLink i.edge i.source i.target ∧ G.IsLink j.edge j.source j.target ∧
+    (G.IsLink i.edge i.source i.target ∧ i.source = u ∧ i.edge = e) ∧
+    (G.IsLink j.edge j.source j.target ∧ j.source = v ∧ j.edge = e) := by
+  classical
+  refine ⟨fun h => ?_, fun ⟨i, j, hij, hi, hj, hi', hj'⟩ => ?_⟩
+  · refine ⟨inc1 e u v, inc2 e u v, inc1_ne_inc2 e u v, ?_, ?_,
+      ⟨?_, inc1_source e u v, inc1_edge e u v⟩, ?_, inc2_source e u v, inc2_edge e u v⟩
+    all_goals simp [h, h.symm]
+  obtain ⟨-, rfl, rfl⟩ := hi'
+  obtain ⟨-, rfl, he⟩ := hj'
+  have := hi.eq_and_eq_or_eq_and_eq (he ▸ hj)
+  obtain heq | hne := eq_or_ne i.source i.target
+  · grind
+  obtain ⟨hs, ht⟩ | ⟨hs, ht⟩ := this.symm
+  · grind
+  have hjne : j.source ≠ j.target := by grind
+  grind [dir_of_ne hne, dir_of_ne hjne]
+
+end inc12
+
+section dartStructure
+
+private def dart_fₑ (G : Graph V E) : IncidenceType V E →. E :=
+  fun d ↦ Part.mk (G.IsLink d.edge d.source d.target) fun _ ↦ d.edge
+
+private def dart_fᵥ (G : Graph V E) : IncidenceType V E →. V :=
+  fun d ↦ Part.mk (G.IsLink d.edge d.source d.target) fun _ ↦ d.source
+
+@[simp]
+lemma mem_dart_fₑ_iff (d : IncidenceType V E) :
+    e ∈ dart_fₑ G d ↔ G.IsLink d.edge d.source d.target ∧ d.edge = e := by
+  simp [dart_fₑ, mem_mk_iff]
+
+@[simp]
+lemma mem_dart_fᵥ_iff {v : V} (d : IncidenceType V E) :
+    v ∈ dart_fᵥ G d ↔ G.IsLink d.edge d.source d.target ∧ d.source = v := by
+  simp [dart_fᵥ, mem_mk_iff]
+
+@[simp]
+lemma mem_dart_fₑ_preimage_iff {d : IncidenceType V E} :
+    d ∈ (dart_fₑ G).preimage {e} ↔ G.IsLink d.edge d.source d.target ∧ d.edge = e := by
+  simp [PFun.mem_preimage, mem_dart_fₑ_iff, mem_singleton_iff, eq_comm]
+
+variable [DecidableEq V]
+
+lemma dart_fₑ_preimage_eq_pair {u v : V} (h : G.IsLink e u v) :
+    (dart_fₑ G).preimage {e} = {inc1 e u v, inc2 e u v} := by
+  ext d
+  rw [mem_dart_fₑ_preimage_iff, mem_insert_iff, mem_singleton_iff, iff_comm]
+  refine ⟨?_,  fun ⟨hlink, hed⟩ ↦ ?_⟩
+  · rintro (rfl | rfl)
+    · exact ⟨by simpa [inc1_edge, inc1_source, inc1_target] using h, inc1_edge e u v⟩
+    exact ⟨by simpa [inc2_edge, inc2_source, inc2_target] using h.symm, inc2_edge e u v⟩
+  subst e
+  obtain rfl | hne := eq_or_ne u v
+  · cases d <;> grind [h.eq_and_eq_or_eq_and_eq hlink, inc1, inc2, edge, source, target]
+  obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := h.eq_and_eq_or_eq_and_eq hlink
+  · exact Or.inl ((dir_of_ne hne).trans (by grind [inc1]))
+  exact Or.inr ((dir_of_ne hne.symm).trans (by grind [inc2]))
+
+def IncidenceType.dartStructure (G : Graph V E) :
+    DartStructure G (IncidenceType V E) where
+  fₑ := dart_fₑ G
+  ran_fₑ := by
+    ext e
+    simp only [ran, mem_dart_fₑ_iff, mem_setOf_eq, edge_mem_iff_exists_isLink]
+    exact ⟨fun ⟨d, h, he⟩ ↦ ⟨d.source, d.target, he ▸ h⟩, fun ⟨u, v, h⟩ ↦ ⟨inc1 e u v, by
+      simpa [inc1_edge, inc1_source, inc1_target] using h, inc1_edge e u v⟩⟩
+  preimage_encard e he := by
+    obtain ⟨u, v, huv⟩ := exists_isLink_of_mem_edgeSet he
+    rw [dart_fₑ_preimage_eq_pair huv, encard_pair (inc1_ne_inc2 e u v)]
+  fᵥ := dart_fᵥ G
+  dom_fᵥ := by
+    ext d
+    simp [mem_dom, mem_dart_fₑ_iff, mem_dart_fᵥ_iff]
+  ran_fᵥ v hv := by
+    obtain ⟨d, hlink, rfl⟩ := hv
+    exact hlink.left_mem
+  inc_iff_exists_dart e v := by
+    simp only [Inc, mem_dart_fₑ_iff, mem_dart_fᵥ_iff]
+    refine ⟨fun ⟨y, h⟩ ↦ ?_, fun ⟨d, ⟨hlink, he⟩, ⟨_, hv⟩⟩ ↦ ⟨d.target, hv ▸ he ▸ hlink⟩⟩
+    exact ⟨inc1 e v y, ⟨by simpa [inc1_edge, inc1_source, inc1_target] using h, inc1_edge e v y⟩,
+      ⟨by simpa [inc1_edge, inc1_source, inc1_target] using h, inc1_source e v y⟩⟩
+
+end dartStructure
 
 end Graph

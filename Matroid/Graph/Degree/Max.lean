@@ -1,4 +1,5 @@
 import Matroid.Graph.Forest
+import Matroid.Graph.Walk.Cycle
 
 variable {α β : Type*} {x y z u v w : α} {e f : β} {G H C : Graph α β} {F F₁ F₂ : Set β}
   {X Y : Set α} {d : ℕ}
@@ -125,3 +126,25 @@ lemma IsCycle.isCompOf_of_maxDegreeLE (hC : C.IsCycle) (hmax : G.MaxDegreeLE 2)
     exact hmax.degree_le x
   rw [Set.ext_iff] at this
   exact this e |>.mpr hex |>.edge_mem
+
+lemma IsCycle.deleteVerts_singleton_isPathGraph (hC : C.IsCycle) (hnt : V(C).Nontrivial)
+    (hx : x ∈ V(C)) : (C - {x}).IsPathGraph := by
+  obtain ⟨Cw, hCw, rfl, rfl⟩ := hC.exists_isCyclicWalk_of_vertex hx
+  have hntCw : Cw.Nontrivial := by
+    rw [hCw.nontrivial_iff_vertexSet_nontrivial]
+    simpa using hnt
+  obtain ⟨P, hP, hPeq⟩ := hCw.exists_isPath_toGraph_eq_delete_vertex hntCw first_mem
+  use P, ?_, hPeq.symm
+  apply_fun vertexSet at hPeq
+  simp only [toGraph_vertexSet, Set.ext_iff, mem_vertexSet_iff] at hPeq
+  grind
+
+lemma IsCycle.deleteEdges_singleton_isPathGraph (hC : C.IsCycle) (he : e ∈ E(C)) :
+    (C ＼ {e}).IsPathGraph := by
+  obtain ⟨u, v, huv⟩ := exists_isLink_of_mem_edgeSet he
+  obtain ⟨Cw, hCw, rfl, rfl⟩ := huv.exists_cons_isCyclicWalk_eq_of_IsCycle hC
+  obtain ⟨P, hP, hPeq⟩ := hCw.exists_isPath_toGraph_eq_delete_edge (by simp : e ∈ _)
+  use P, ?_, hPeq.symm
+  apply_fun edgeSet at hPeq
+  simp only [toGraph_edgeSet, Set.ext_iff] at hPeq
+  grind

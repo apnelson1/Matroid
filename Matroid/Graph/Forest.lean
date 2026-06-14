@@ -164,6 +164,11 @@ def IsCycle (G : Graph α β) : Prop := Minimal (fun G ↦ ¬ G.IsForest) G
 lemma isCycle_iff : G.IsCycle ↔ Minimal (fun G : Graph α β ↦ ∃ e ∈ E(G), ¬ G.IsBridge e) G := by
   simp [IsCycle, IsForest]
 
+lemma IsCycle.isForest_of_lt (hG : G.IsCycle) (hH : H < G) : H.IsForest := by
+  by_contra! hnotF
+  obtain rfl := Minimal.eq_of_le hG hnotF hH.le
+  simp at hH
+
 lemma IsCycle.edgeSet_nonempty (hG : G.IsCycle) : E(G).Nonempty := by
   obtain ⟨e, he, hb⟩ := isCycle_iff.mp hG |>.prop
   use e
@@ -242,42 +247,157 @@ lemma IsCycle.exists_isCyclicWalk_of_vertex (hG : G.IsCycle) (hx : x ∈ V(G)) :
   obtain ⟨C, hC, rfl, rfl⟩ := he.exists_cons_isCyclicWalk_eq_of_IsCycle hG
   use (cons x e C), hC, rfl
 
-lemma IsCycle.exists_two_trails (hG : G.IsCycle) (hx : x ∈ V(G)) (hy : y ∈ V(G)) :
-    ∃ P Q : WList α β, G.IsTrail P ∧ G.IsTrail Q ∧ P.first = x ∧ P.last = y ∧ Q.first = y ∧
-    Q.last = x ∧ (P ++ Q).toGraph = G := by
+/-- Without assuming `x ≠ y`, output maybe a trivial path and the entire cycle. See
+`IsCycle.exists_two_paths_of_ne`. -/
+lemma IsCycle.exists_isPath_isTrail (hG : G.IsCycle) (hx : x ∈ V(G)) (hy : y ∈ V(G)) :
+    ∃ P Q : WList α β, G.IsPath P ∧ G.IsTrail Q ∧ P.first = x ∧ P.last = y ∧ Q.first = y ∧
+    Q.last = x ∧ G.IsCyclicWalk (P ++ Q) := by
   classical
-  obtain ⟨P, hP, rfl, rfl⟩ := hG.exists_isCyclicWalk_of_vertex hx
+  obtain ⟨P, hP, rfl, rfl⟩ := hG.exists_isCyclicWalk_of_vertex hx; clear hx
   refine ⟨P.prefixUntilVertex y, P.suffixFromVertex y, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · exact hP.isTrail.sublist (P.prefixUntilVertex_isPrefix y).isSublist
+  · rw [← hP.ne_iff_isPath_of_isSublist (P.prefixUntilVertex_isPrefix y).isSublist,
+      prefixUntilVertex, ne_eq, prefixUntil_eq_self_iff]
+    simp only [toGraph_vertexSet, mem_vertexSet_iff, not_forall, Decidable.not_not] at hy ⊢
+    obtain hyP | rfl := mem_iff_eq_mem_dropLast_or_eq_last.mp hy
+    · have hhh' : y ∈ P.dropLast.vertex := by simpa [mem_vertex] using hyP
+      simpa [hP.nonempty.vertex_dropLast] using hhh'
+    rw [← hP.isClosed]
+    simp [List.mem_dropLast_iff_idxOf_lt]
+    rw [List.idxOf_eq_zero_iff_head_eq P.vertex_ne_nil |>.mpr (by simp)]
+    exact hP.nonempty.length_pos
   · exact hP.isTrail.sublist (P.suffixFromVertex_isSuffix y).isSublist
   · exact P.prefixUntilVertex_first _
   · exact P.prefixUntilVertex_last (by simpa using hy)
   · exact P.suffixFromVertex_first (by simpa using hy)
   · exact hP.isClosed ▸ P.suffixFromVertex_last y
-  rw [P.prefixUntilVertex_append_suffixFromVertex y]
+  rwa [P.prefixUntilVertex_append_suffixFromVertex y]
 
+-- Idea: Define IsCycle.vertexCycle : Cycle α and partition cycle using a subcycle of vertexCycle.
+-- and edge version too.
 lemma IsCycle.exists_two_paths_of_ne (hG : G.IsCycle) (hx : x ∈ V(G)) (hy : y ∈ V(G)) (hxy : x ≠ y):
     ∃ P Q : WList α β, G.IsPath P ∧ G.IsPath Q ∧ P.first = x ∧ P.last = y ∧ Q.first = y ∧
-    Q.last = x ∧ (P ++ Q).toGraph = G := by
+    Q.last = x ∧ G.IsCyclicWalk (P ++ Q) := by
   classical
   obtain ⟨P, hP, rfl, rfl⟩ := hG.exists_isCyclicWalk_of_vertex hx
   clear hx
   refine ⟨P.prefixUntilVertex y, P.suffixFromVertex y, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · apply hP.eq_or_isPath_of_isSublist (P.prefixUntilVertex_isPrefix y).isSublist |>.resolve_left
-    rw [prefixUntilVertex, prefixUntil_eq_self_iff]
+  · rw [← hP.ne_iff_isPath_of_isSublist (P.prefixUntilVertex_isPrefix y).isSublist,
+      prefixUntilVertex, ne_eq, prefixUntil_eq_self_iff]
     simp only [toGraph_vertexSet, mem_vertexSet_iff] at hy
     obtain hhh := mem_iff_eq_mem_dropLast_or_eq_last.mp hy |>.resolve_right (hP.isClosed ▸ hxy.symm)
-    push Not
     have hhh' : y ∈ P.dropLast.vertex := by simpa [mem_vertex] using hhh
-    simpa [dropLast_vertex hP.nonempty] using hhh'
-  · apply hP.eq_or_isPath_of_isSublist (P.suffixFromVertex_isSuffix y).isSublist |>.resolve_left
-    rw [suffixFromVertex, suffixFrom_eq_self_iff]
+    simpa [hP.nonempty.vertex_dropLast] using hhh'
+  · rw [← hP.ne_iff_isPath_of_isSublist (P.suffixFromVertex_isSuffix y).isSublist]
     simp [hP.nonempty, hxy]
   · exact P.prefixUntilVertex_first _
   · exact P.prefixUntilVertex_last (by simpa using hy)
   · exact P.suffixFromVertex_first (by simpa using hy)
   · exact hP.isClosed ▸ P.suffixFromVertex_last y
-  rw [P.prefixUntilVertex_append_suffixFromVertex y]
+  rwa [P.prefixUntilVertex_append_suffixFromVertex y]
+
+lemma IsPath.isPrefix_of_isTrail_toGraph_of_first {P Q : WList α β} (hP : G.IsPath P)
+    (hQ : P.toGraph.IsTrail Q) (hfirst : Q.first = P.first) : Q.IsPrefix P := by
+  match P, Q with
+  | nil u, nil v => simpa using hfirst
+  | nil u, cons v e w => simp [cons_isTrail_iff, WList.toGraph] at hQ
+  | cons u e w, nil v => simp [hfirst.symm]
+  | cons u e P, cons v f Q => _
+  simp only [first_cons] at hfirst
+  subst v
+  obtain ⟨hQ_tail_big, hf, hfQ⟩ := by simpa only [cons_isTrail_iff] using hQ
+  obtain ⟨-, hP_tail, hnP⟩ := by simpa only [cons_isPath_iff] using hP
+  obtain ⟨rfl, hQ_first⟩ : f = e ∧ Q.first = P.first := by
+    rw [hP.isWalk.wellFormed.toGraph_isLink, isLink_cons_iff'] at hf
+    obtain ⟨rfl, (⟨-, hQ_first⟩ | ⟨h_eq, rfl⟩)⟩ | hfW' := hf
+    · exact ⟨rfl.symm, hQ_first⟩
+    · exact (hnP (h_eq ▸ first_mem)).elim
+    exact (hnP hfW'.left_mem).elim
+  refine (hP_tail.isPrefix_of_isTrail_toGraph_of_first ?_ hQ_first).cons u f Q P
+  refine hQ_tail_big.isTrail_le (by simp [toGraph_cons]) (fun g hg ↦ ?_) (by simp [hQ_first])
+  exact (hQ_tail_big.edgeSet_subset hg).elim id fun hg_eq ↦
+    (hfQ (hg_eq ▸ by simpa only [WList.mem_edgeSet_iff] using hg)).elim
+
+lemma _root_.WList.IsPrefix.isPrefix_of_isPrefix_of_length_le {w₁ w₂ P : WList α β}
+    (h₁ : w₁.IsPrefix P) (h₂ : w₂.IsPrefix P) (hle : w₁.length ≤ w₂.length) : w₁.IsPrefix w₂ := by
+  rw [← show w₂.take w₁.length = w₁ from
+    by rw [h₂.eq_take_length, take_take, min_eq_left hle, h₁.take_eq]]
+  exact take_isPrefix w₂ w₁.length
+
+lemma IsCycle.isPrefix_of_isTrail_of_length_le {w₁ w₂ : WList α β} (hG : G.IsCycle)
+    (h₁ : G.IsTrail (cons x e w₁)) (h₂ : G.IsTrail (cons x e w₂)) (hle : w₁.length ≤ w₂.length) :
+    w₁.IsPrefix w₂ := by
+  rw [cons_isTrail_iff] at h₁ h₂
+  obtain ⟨C, hC, hC_first, hC_eq⟩ := h₁.2.1.exists_cons_isCyclicWalk_eq_of_IsCycle hG
+  have hC_le : C.toGraph ≤ G := by simp [← hC_eq]
+  have edge_subset {w : WList α β} (hw : G.IsTrail w) (he : e ∉ w.edge) : E(w) ⊆ E(C.toGraph) := by
+    rintro f hf
+    have hfG := hw.edgeSet_subset hf
+    simp only [← hC_eq, toGraph_cons, edgeSet_union, edgeSet_singleEdge, mem_union,
+      mem_singleton_iff] at hfG
+    exact hfG.elim id fun hfe ↦ (he <| by simpa [WList.mem_edgeSet_iff, hfe] using hf).elim
+  have hC_path := hC.tail_isPath
+  have hw₂_first : w₂.first = C.first := (h₂.2.1.right_unique h₁.2.1).trans hC_first.symm
+  exact IsPrefix.isPrefix_of_isPrefix_of_length_le
+    (hC_path.isPrefix_of_isTrail_toGraph_of_first (h₁.1.isTrail_le hC_le (edge_subset h₁.1 h₁.2.2)
+      (by simp [toGraph_vertexSet, ← hC_first])) hC_first.symm)
+    (hC_path.isPrefix_of_isTrail_toGraph_of_first (h₂.1.isTrail_le hC_le (edge_subset h₂.1 h₂.2.2)
+      (by simp [toGraph_vertexSet, hw₂_first])) hw₂_first) hle
+
+lemma IsCycle.exists_isCyclicWalk_isPrefix_of_isTrail (hG : G.IsCycle) (hP : G.IsTrail P) :
+    ∃ C : WList α β, G.IsCyclicWalk C ∧ P.IsPrefix C ∧ C.toGraph = G := by
+  obtain ⟨x, rfl⟩ | hne := P.exists_eq_nil_or_nonempty
+  · obtain ⟨Cw, hCw, rfl, rfl⟩ := hG.exists_isCyclicWalk_of_vertex (by simpa using hP)
+    refine ⟨Cw, hCw, by simp, rfl⟩
+  obtain ⟨x, e, w, rfl⟩ := hne.exists_cons
+  obtain ⟨hw, he, hew⟩ := by simpa only [cons_isTrail_iff] using hP
+  obtain ⟨Cw, hCw, hf, rfl⟩ := he.exists_cons_isCyclicWalk_eq_of_IsCycle hG
+  have hwPre : w.IsPrefix Cw := by
+    refine hCw.tail_isPath.isPrefix_of_isTrail_toGraph_of_first ?_ (by simpa using hf.symm)
+    refine hw.isTrail_le (by simp) ?_ (by simp [← hf, toGraph_vertexSet])
+    grind [hw.isWalk.edgeSet_subset]
+  use (cons x e Cw), hCw, hwPre.cons ..
+
+lemma IsCycle.exists_path_of_exists_prop {p q : α → Prop} (hG : G.IsCycle) (hp : ∃ x ∈ V(G), p x)
+    (hq : ∃ x ∈ V(G), q x) : ∃ P : WList α β, G.IsPath P ∧ p P.first ∧ q P.last ∧
+      (∀ x ∈ P.vertex.tail, ¬ p x) ∧ (∀ x ∈ P.vertex.dropLast, ¬ q x) := by
+  obtain ⟨Cw, hCw, rfl⟩ := hG.exists_isCyclicWalk_eq
+  obtain ⟨P, hP, (⟨hpP, hqP, hPtl, hPdl⟩ | ⟨hqP, hpP, hPtl, hPdl⟩)⟩ :=
+    Cw.exists_infix_of_exists_prop (by simpa using hp) (by simpa using hq) <;>
+    have hP' : Cw.toGraph.IsPath P := by
+      rw [← hCw.ne_iff_isPath_of_isSublist hP.isSublist, ne_eq]
+      rintro rfl
+      refine hPtl P.last ?_ (hCw.isClosed ▸ by assumption)
+      rw [← hCw.nonempty.vertex_tail, mem_vertex, ← tail_last]
+      exact last_mem
+  · use P, hP', hpP, hqP, hPtl, hPdl
+  use P.reverse, hP'.reverse, reverse_first ▸ hpP, reverse_last ▸ hqP, by simpa, by simpa
+
+lemma IsCycle.exists_compl_path_of_isTrail (hG : G.IsCycle) (hP : G.IsTrail P) (hne : P.Nonempty) :
+    ∃ Q : WList α β, G.IsPath Q ∧ P.last = Q.first ∧ P.first = Q.last ∧
+    G.IsCyclicWalk (P ++ Q) := by
+  obtain ⟨Cw, hCw, hwPre, rfl⟩ := hG.exists_isCyclicWalk_isPrefix_of_isTrail hP
+  obtain ⟨x, e, w, rfl⟩ := hne.exists_cons
+  obtain ⟨Q, hQ, rfl⟩ := isPrefix_iff_exists_eq_append.mp hwPre
+  exact ⟨Q, (tail_cons .. ▸ hCw.tail_isPath).of_append_right, hQ, by simpa using hCw.isClosed, hCw⟩
+
+lemma IsCycle.exists_compl_path (hG : G.IsCycle) (hP : G.IsPath P) (hne : P.Nonempty) :
+    ∃ Q : WList α β, G.IsPath Q ∧ Q.Nonempty ∧ P.last = Q.first ∧ P.first = Q.last ∧
+    G.IsCyclicWalk (P ++ Q) := by
+  obtain ⟨Cw, hCw, hwPre, rfl⟩ := hG.exists_isCyclicWalk_isPrefix_of_isTrail hP.isTrail
+  obtain ⟨x, e, w, rfl⟩ := hne.exists_cons
+  obtain ⟨Q, hQ, rfl⟩ := isPrefix_iff_exists_eq_append.mp hwPre
+  refine ⟨Q, (tail_cons .. ▸ hCw.tail_isPath).of_append_right, ?_, hQ, by simpa using hCw.isClosed,
+    hCw⟩
+  by_contra! hnil
+  rw [hnil.eq_nil_first, append_nil hQ] at hP hCw
+  exact (hCw.ne_iff_isPath_of_isSublist le_rfl).mpr hP rfl
+
+lemma IsCycle.exists_compl_trail (hG : G.IsCycle) (hP : G.IsTrail P) : ∃ Q : WList α β,
+    G.IsTrail Q ∧ P.last = Q.first ∧ P.first = Q.last ∧ G.IsCyclicWalk (P ++ Q) := by
+  obtain ⟨Cw, hCw, hwPre, rfl⟩ := hG.exists_isCyclicWalk_isPrefix_of_isTrail hP
+  obtain ⟨Q, hQ, rfl⟩ := isPrefix_iff_exists_eq_append.mp hwPre
+  refine ⟨Q, hCw.isTrail.sublist (WList.isSuffix_append_left ..).isSublist, hQ, ?_, hCw⟩
+  simpa [WList.IsClosed, hQ] using hCw.isClosed
 
 @[simp]
 lemma singleEdge_isForest (hxy : x ≠ y) (e : β) : (Graph.singleEdge x y e).IsForest := by

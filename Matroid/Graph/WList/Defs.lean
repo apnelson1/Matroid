@@ -269,6 +269,7 @@ lemma Nil.first_eq_last (h : w.Nil) : w.first = w.last := by
 
 lemma nil_iff_eq_nil : Nil w ↔ ∃ x, w = nil x := by
   induction w with simp
+alias ⟨Nil.exists_eq_nil, _⟩ := nil_iff_eq_nil
 
 lemma first_eq_last_iff (hnodup : w.vertex.Nodup) : w.first = w.last ↔ w.Nil :=
   ⟨fun h ↦ by cases w with simp_all, Nil.first_eq_last⟩
@@ -418,11 +419,11 @@ def length : WList α β → ℕ
 | nil _ => 0
 | cons _ _ w => w.length + 1
 
-@[simp]
+@[simp, grind =]
 lemma length_edge (w : WList α β) : w.edge.length = w.length := by
   induction w with simp_all [length, edge]
 
-@[simp]
+@[simp, grind =]
 lemma length_vertex (w : WList α β) : w.vertex.length = w.length + 1 := by
   induction w with simp_all [length, vertex]
 
@@ -430,10 +431,11 @@ lemma length_vertex (w : WList α β) : w.vertex.length = w.length + 1 := by
 
 @[simp, grind =] lemma nil_length : (nil x : WList α β).length = 0 := rfl
 
-@[simp]
+@[simp, grind =]
 lemma length_eq_zero : w.length = 0 ↔ w.Nil := by
   induction w with simp
 
+@[grind =]
 lemma length_ne_zero_iff : w.length ≠ 0 ↔ w.Nonempty := by
   simp
 
@@ -445,6 +447,7 @@ lemma length_pos_iff : 0 < w.length ↔ w.Nonempty := by
 lemma one_le_length_iff : 1 ≤ w.length ↔ w.Nonempty := by
   rw [Nat.one_le_iff_ne_zero, Nat.ne_zero_iff_zero_lt, length_pos_iff]
 
+@[grind →]
 lemma Nonempty.length_pos (hw : w.Nonempty) : 0 < w.length :=
   length_pos_iff.2 hw
 
@@ -460,7 +463,7 @@ lemma encard_vxSet_of_nodup (h : w.vertex.Nodup) : V(w).encard = w.length + 1 :=
 lemma one_lt_length_iff : 1 < w.length ↔ w.Nontrivial := by
   cases w with | nil => simp | cons _ _ w => cases w with simp
 
-@[simp]
+@[simp, grind =_]
 lemma two_le_length_iff : 2 ≤ w.length ↔ w.Nontrivial := by
   cases w with | nil => simp | cons _ _ w => cases w with simp
 

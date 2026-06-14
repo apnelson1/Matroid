@@ -451,6 +451,7 @@ Let W' be a cover of G \ f with |W'| = ν(G). [cite: 22]
 Since no edge of M is incident at v, it follows that W' does not contain v. [cite: 22]
 So W' contains u and is a cover of G. [cite: 22]
 -/
+
 theorem Konig'sTheorem [H.Simple] [H.Finite] (hB : H.Bipartite) : τ(H) = ν(H) := by
   refine of_not_exists_minimal (P := fun H ↦ τ(H) = ν(H)) fun G hle _ hMin ↦ ?_
   push Not at hMin
@@ -464,7 +465,7 @@ theorem Konig'sTheorem [H.Simple] [H.Finite] (hB : H.Bipartite) : τ(H) = ν(H) 
     have hν : ν(G) = 0 := by
       have := G.matchingNumber_le_coverNumber; enat_to_nat! <;> omega
     grind only [hMin.1]
-  simp [minimal_iff_forall_lt] at hMin
+  simp only [ne_eq, minimal_iff_forall_lt, Decidable.not_not] at hMin
   have hcon : G.Connected := by
     /- Otherwise, by def of `Connected`, there is a strictly smaller component of `G`.
     `τ` and `ν` are additive over the components so at least one component must have `τ` or `ν`
@@ -514,7 +515,7 @@ theorem Konig'sTheorem [H.Simple] [H.Finite] (hB : H.Bipartite) : τ(H) = ν(H) 
     have W_encard : (insert v W').encard = W'.encard + 1 := by
       refine W'.encard_insert_of_notMem ?_
       have := hW'.subset
-      simp at this
+      simp only [vertexSet_deleteVerts] at this
       grind only [= subset_def, = mem_diff, = mem_singleton_iff]
     have := W_cover.le_encard
     rw [W_encard, hW'.encard, hMin.2 hlt] at this
@@ -538,7 +539,7 @@ theorem Konig'sTheorem [H.Simple] [H.Finite] (hB : H.Bipartite) : τ(H) = ν(H) 
     rw [hM.encard, ν_eq]
   have no_touch {f} (hf : f ∈ M) : ¬ G.Inc f v := by
     have := hM.subset hf
-    simp at this
+    simp only [edgeSet_deleteVerts, mem_singleton_iff, mem_setOf_eq] at this
     obtain ⟨x, y, hxy⟩ := this
     intro bad
     obtain ⟨w, hw⟩ := bad
@@ -569,7 +570,7 @@ theorem Konig'sTheorem [H.Simple] [H.Finite] (hB : H.Bipartite) : τ(H) = ν(H) 
   have hMG' : (G ＼ {f}).IsMatching M := by
     refine hMG.anti_left deleteEdges_le ?_
     have := hf.edge_mem
-    simp at this ⊢
+    simp only [edgeSet_deleteEdges, mem_diff] at this ⊢
     grind [hMG.subset]
 
   have G'_matchingNumber : ν(G ＼ {f}) = ν(G) := by
@@ -626,7 +627,8 @@ theorem Konig'sTheorem [H.Simple] [H.Finite] (hB : H.Bipartite) : τ(H) = ν(H) 
     · simpa using hW'.subset
     intro edge hedge
     obtain (h|h) := em' (edge = f)
-    · replace h : edge ∈ E(G ＼ {f}) := by grind
+    · clear! M u v G'_coverNumber G'_matchingNumber hlt hle hMin hcon hnonempty hB x e
+      replace h : edge ∈ E(G ＼ {f}) := by grind
       apply hW'.cover at h
       exact setIncEdges_mono deleteEdges_le _ h
     symm at h
