@@ -66,7 +66,7 @@ lemma ConnBetween.exists_isPath (h : G.ConnBetween x y) :
     ∃ P, G.IsPath P ∧ P.first = x ∧ P.last = y := by
   classical
   obtain ⟨W, hW, rfl, rfl⟩ := h
-  exact ⟨W.dedup, by simp [hW.dedup_isPath]⟩
+  exact ⟨W.dedup, by simp [hW.dedup]⟩
 
 lemma connBetween_iff_exists_isPath :
     G.ConnBetween x y ↔ ∃ P, G.IsPath P ∧ P.first = x ∧ P.last = y :=

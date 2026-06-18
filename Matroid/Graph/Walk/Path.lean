@@ -1,4 +1,6 @@
-import Matroid.Graph.WList.Decompose
+import Matroid.Graph.WList.TakeDrop.Decompose
+import Matroid.Graph.WList.TakeDrop.Dedup
+import Matroid.Graph.WList.TakeDrop.EdgeRemove
 import Matroid.Graph.Walk.Basic
 
 variable {α β ι : Type*} {x y z u v : α} {e f : β} {G H : Graph α β}
@@ -180,8 +182,8 @@ lemma concat_isPath_iff : G.IsPath (P.concat e x) ↔ G.IsPath P ∧ G.IsLink e 
   rw [← reverse_isPath_iff, concat_reverse, cons_isPath_iff]
   simp +contextual [iff_def, IsLink.symm]
 
-lemma IsWalk.dedup_isPath [DecidableEq α] (h : G.IsWalk P) : G.IsPath P.dedup :=
-  ⟨h.dedup, P.dedup_vertex_nodup⟩
+lemma IsWalk.dedup [DecidableEq α] (h : G.IsWalk P) : G.IsPath P.dedup :=
+  ⟨h.sublist P.dedup_isSublist, P.dedup_vertex_nodup⟩
 
 lemma IsPath.noloop [DecidableEq α] (h : G.IsPath P) : P.NoLoop :=
   noLoop_of_vertex_nodup h.nodup

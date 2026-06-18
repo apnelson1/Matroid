@@ -126,7 +126,6 @@ import Matroid.Graph.Planarity.GraphContinuum.Basic
 import Matroid.Graph.Planarity.Realization.Basic
 import Matroid.Graph.Planarity.Realization.CWComplex
 import Matroid.Graph.Planarity.Realization.Celluar
--- import Matroid.Graph.Planarity.Realization.CombMap
 import Matroid.Graph.Planarity.Realization.Metric
 import Matroid.Graph.Planarity.Realization.Subgraph
 import Matroid.Graph.Planarity.Topology.Circle
@@ -149,11 +148,17 @@ import Matroid.Graph.Subgraph.Union
 -- import Matroid.Graph.TopologicalMinor
 import Matroid.Graph.Tree
 import Matroid.Graph.WList.Cycle
-import Matroid.Graph.WList.Decompose
 import Matroid.Graph.WList.Defs
 import Matroid.Graph.WList.Ops
 import Matroid.Graph.WList.Sublist
-import Matroid.Graph.WList.TakeDrop
+import Matroid.Graph.WList.TakeDrop.Decompose
+import Matroid.Graph.WList.TakeDrop.Dedup
+import Matroid.Graph.WList.TakeDrop.Defs
+import Matroid.Graph.WList.TakeDrop.Drop
+import Matroid.Graph.WList.TakeDrop.EdgeRemove
+import Matroid.Graph.WList.TakeDrop.Loop
+import Matroid.Graph.WList.TakeDrop.Post
+import Matroid.Graph.WList.TakeDrop.PrefixSuffix
 import Matroid.Graph.Walk.Basic
 import Matroid.Graph.Walk.Cycle
 -- import Matroid.Graph.Walk.Dart

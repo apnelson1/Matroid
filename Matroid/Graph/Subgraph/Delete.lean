@@ -412,6 +412,18 @@ lemma IsSubgraph.induce_restrict_eq (h : H ≤ G) : G[V(H)] ↾ E(H) = H := by
   obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet he
   exact ⟨x, y, hxy.of_le h, hxy.left_mem, hxy.right_mem⟩
 
+@[simp]
+lemma IsSubgraph.restrict_induce_eq (h : H ≤ G) : (G ↾ E(H))[V(H)] = H := by
+  rw [restrict_induce, h.induce_restrict_eq]
+
+lemma IsSubgraph.vertexSet_diff_subset_isolatedSet_restrict (h : H ≤ G) :
+    V(G) \ V(H) ⊆ Isol(G ↾ E(H)) := by
+  intro x ⟨hx, hxH⟩
+  simp only [mem_isolatedSet_iff, isolated_iff, restrict_inc, not_and, vertexSet_restrict, hx,
+    and_true]
+  intro e hex he
+  grind [exists_isLink_of_mem_edgeSet he]
+
 lemma induce_isInducedSubgraph (hX : X ⊆ V(G)) : G[X] ≤i G := ⟨by simpa, by simp_all⟩
 
 lemma IsInducedSubgraph.vertexSet_induce_eq (h : H ≤i G) : G[V(H)] = H := by

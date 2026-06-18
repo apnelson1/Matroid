@@ -156,9 +156,8 @@ lemma deleteVerts_isTour_iff (X : Set α) (C : WList α β) :
   exact this.1
 
 /-- Dedup preserves being a trail (walk with distinct edges). -/
-lemma IsTrail.dedup [DecidableEq α] (hC : G.IsTrail C) : G.IsTrail C.dedup where
-  isWalk := hC.isWalk.dedup
-  edge_nodup := hC.edge_nodup.sublist C.dedup_isSublist.edge_sublist
+lemma IsTrail.dedup [DecidableEq α] (hC : G.IsTrail C) : G.IsTrail C.dedup :=
+  hC.isWalk.dedup.isTrail
 
 /-- Applying dedup to the tail of a tour gives a cycle. -/
 lemma IsTour.dedup_tail_isCyclicWalk [DecidableEq α] (hC : G.IsTour (cons x e w)) :

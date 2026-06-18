@@ -1,4 +1,6 @@
-import Matroid.Graph.WList.TakeDrop
+import Matroid.Graph.WList.TakeDrop.PrefixSuffix
+import Matroid.Graph.WList.TakeDrop.Drop
+import Matroid.Graph.WList.TakeDrop.Loop
 import Matroid.Graph.Subgraph.Delete
 
 /-
@@ -650,9 +652,6 @@ end Subgraph
 @[simp]
 lemma reverse_isWalk_iff : G.IsWalk w.reverse ↔ G.IsWalk w :=
   ⟨fun h ↦ by simpa using h.reverse, IsWalk.reverse⟩
-
-lemma IsWalk.dedup [DecidableEq α] (h : G.IsWalk w) : G.IsWalk w.dedup :=
-  h.sublist w.dedup_isSublist
 
 lemma IsWalk.nontrivial_of_ne_not_adj (h : G.IsWalk w) (hne : w.first ≠ w.last)
     (hadj : ¬ G.Adj w.first w.last) : w.Nontrivial := by

@@ -38,7 +38,7 @@ theorem twoPaths (hP : G.IsPath P) (hQ : G.IsPath Q) (hPQ : P ≠ Q) (h0 : P.fir
     have hR_ex : ∃ R, G.IsPath R ∧ e ∉ R.edge ∧
         R.first = Q.first ∧ R.last = P.first ∧ E(R) ⊆ E(P) ∪ E(Q) := by
       refine ⟨(Q ++ P.reverse).dedup, ?_, ?_, ?_, by simp, ?_⟩
-      · exact IsWalk.dedup_isPath (hQ.isWalk.append hP.2.1.isWalk.reverse (by simpa using h1.symm))
+      · exact IsWalk.dedup (hQ.isWalk.append hP.2.1.isWalk.reverse (by simpa using h1.symm))
       · rw [← mem_edgeSet_iff]
         refine notMem_subset (t := E(Q ++ P.reverse)) ((dedup_isSublist _).edge_subset) ?_
         simp [heQ, heP]

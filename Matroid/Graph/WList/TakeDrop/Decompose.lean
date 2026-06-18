@@ -1,4 +1,4 @@
-import Matroid.Graph.WList.TakeDrop
+import Matroid.Graph.WList.TakeDrop.PrefixSuffix
 
 open Set Function List Nat WList
 
