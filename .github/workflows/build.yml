@@ -5,16 +5,83 @@ on:
   pull_request:
   workflow_dispatch:
 
-permissions:
-  contents: read
+env:
+  LAKE_ARTIFACT_CACHE: true
+  LAKE_CACHE_DIR: .lake/cache
+  LAKE_CONFIG: .lake/lake-cache.toml
+  MATROID_CACHE_REPO: apnelson1/Matroid
+  R2_BUCKET_NAME: matroid-lake-cache
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      pages: write
     steps:
       - name: Checkout project
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
 
       - name: Build and lint the project
         id: build-lean
         uses: leanprover/lean-action@f807b338d95de7813c5c50d018f1c23c9b93b4ec # v1.2.0
+
+      - name: Upload Lake cache to R2
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        continue-on-error: true
+        env:
+          LAKE_CACHE_KEY: ${{ secrets.R2_ACCESS_KEY_ID }}:${{ secrets.R2_SECRET_ACCESS_KEY }}
+        run: |
+          mkdir -p .lake
+          cat > "$LAKE_CONFIG" <<EOF
+          cache.defaultUploadService = "matroid-r2"
+
+          [[cache.service]]
+          name = "matroid-r2"
+          kind = "s3"
+          artifactEndpoint = "https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com/${R2_BUCKET_NAME}/artifacts"
+          revisionEndpoint = "https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com/${R2_BUCKET_NAME}/revisions"
+          EOF
+
+          lake build -o .lake/outputs.jsonl
+          lake cache put .lake/outputs.jsonl --service=matroid-r2 --repo="$MATROID_CACHE_REPO"
+
+      - name: Build project documentation
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.actor == (vars.DOCGEN_DEPLOY_ACTOR != '' && vars.DOCGEN_DEPLOY_ACTOR || github.repository_owner)
+        id: build-docgen
+        uses: leanprover-community/docgen-action@main
+        with:
+          deploy: false
+          build-page: false
+          # The doc cache can replay a stale top-level docs facet without the Matroid HTML pages.
+          use-github-cache: false
+          # Uncomment the next line if you wish to build a blueprint alongside your repository.
+          # blueprint: true
+
+      - name: Check generated Matroid docs
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.actor == (vars.DOCGEN_DEPLOY_ACTOR != '' && vars.DOCGEN_DEPLOY_ACTOR || github.repository_owner)
+        run: |
+          target="docs/docs/Matroid/Graph/Planarity/Realization/Basic.html"
+          if [ -f "$target" ]; then
+            target_exists=true
+          else
+            target_exists=false
+          fi
+          if [ "$target_exists" != true ]; then
+            echo "::error::Missing expected generated documentation page: $target"
+            exit 1
+          fi
+
+      - name: Upload documentation artifact
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.actor == (vars.DOCGEN_DEPLOY_ACTOR != '' && vars.DOCGEN_DEPLOY_ACTOR || github.repository_owner)
+        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
+        with:
+          path: docs/
+
+      - name: Deploy to GitHub Pages
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.actor == (vars.DOCGEN_DEPLOY_ACTOR != '' && vars.DOCGEN_DEPLOY_ACTOR || github.repository_owner)
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
