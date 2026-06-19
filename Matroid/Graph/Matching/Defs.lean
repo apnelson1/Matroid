@@ -1,5 +1,4 @@
 import Matroid.Graph.Degree.Max
-import Matroid.Graph.Bipartite
 import Matroid.Parallel
 
 namespace Graph

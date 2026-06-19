@@ -429,4 +429,101 @@ lemma incEdges_of_degree [G.LocallyFinite] (hle : H ≤ G) (h : H.degree x = G.d
     exact ncard_le_ncard (fun e he ↦ he.of_le hle) hlfin
   · exact ncard_le_ncard (fun e he ↦ he.of_le hle) hnlfin
 
+/-! ### Isolated vertices -/
+
+lemma Isolated.eDegree (h : G.Isolated x) : G.eDegree x = 0 := by
+  simp [eDegree_eq_tsum_mem, h.not_inc]
+
+@[simp ←]
+lemma isolated_iff_eDegree (hx : x ∈ V(G)) : G.Isolated x ↔ G.eDegree x = 0 := by
+  simp [isolated_iff, hx, eDegree_eq_tsum_mem]
+
+lemma Isolated.degree (h : G.Isolated x) : G.degree x = 0 := by
+  rw [Graph.degree, h.eDegree, ENat.toNat_zero]
+
+@[simp ←]
+lemma isolated_iff_degree [G.LocallyFinite] (hx : x ∈ V(G)) : G.Isolated x ↔ G.degree x = 0 := by
+  rw [← ENat.coe_inj, natCast_degree_eq, isolated_iff_eDegree hx, Nat.cast_zero]
+
+
+/-! ### Leaves -/
+
+lemma IsPendant.eDegree (h : G.IsPendant e x) : G.eDegree x = 1 := by
+  have hrw : {e | G.IsNonloopAt e x} = {e} := by
+    simp +contextual only [Set.ext_iff, mem_setOf_eq, mem_singleton_iff, iff_def, h.isNonloopAt,
+      implies_true, and_true]
+    exact fun f hf ↦ h.edge_unique hf.inc
+  simp [eDegree_eq_encard_add_encard, h.not_isLoopAt, hrw]
+
+
+lemma Inc.isPendant_of_eDegree_le_one (h : G.Inc e x) (hdeg : G.eDegree x ≤ 1) :
+    G.IsPendant e x := by
+  replace hdeg := hdeg.antisymm h.one_le_eDegree
+  have hnl : ∀ f, ¬ G.IsLoopAt f x := fun f hf ↦ by
+    have := hf.two_le_eDegree.trans_eq hdeg
+    enat_to_nat
+    lia
+  refine ⟨h.isLoopAt_or_isNonloopAt.elim (fun h ↦ (hnl _ h).elim) id, fun f hf ↦ ?_⟩
+  rw [inc_iff_isLoopAt_or_isNonloopAt, or_iff_right (hnl _)] at h hf
+  rw [eDegree_eq_encard_add_encard] at hdeg
+  have hss := encard_le_one_iff_subsingleton.1 <| le_add_self.trans hdeg.le
+  exact hss hf h
+
+lemma Inc.isPendant_of_degree_eq_one (h : G.Inc e x) (hdeg : G.degree x = 1) : G.IsPendant e x := by
+  refine h.isPendant_of_eDegree_le_one ?_
+  simp only [degree, ENat.toNat_eq_iff_eq_coe, Nat.cast_one] at hdeg
+  exact hdeg.le
+
+lemma Inc.isPendant_of_degree_le_one [G.LocallyFinite] (h : G.Inc e x) (hdeg : G.degree x ≤ 1) :
+    G.IsPendant e x :=
+  h.isPendant_of_eDegree_le_one <| by rwa [← natCast_degree_eq, ENat.coe_le_one]
+
+lemma IsPendant.edgeSet_delete_vertex_eq (h : G.IsPendant e x) : E(G - {x}) = E(G) \ {e} := by
+  ext f
+  simp only [edgeSet_deleteVerts, mem_singleton_iff, mem_setOf_eq, mem_diff]
+  refine ⟨fun ⟨z, y, h'⟩ ↦ ⟨h'.1.edge_mem, ?_⟩, fun ⟨hfE, hfe⟩ ↦ ?_⟩
+  · rintro rfl
+    cases h.isNonloopAt.inc.eq_or_eq_of_isLink h'.1 <;> simp_all
+  obtain ⟨y, hyx, hy⟩ := h.isNonloopAt
+  obtain ⟨z, w, hzw⟩ := exists_isLink_of_mem_edgeSet hfE
+  refine ⟨z, w, hzw, fun h_eq ↦ hfe ?_, fun h_eq ↦ hfe ?_⟩
+  · exact h.edge_unique ((h_eq ▸ hzw).inc_left)
+  exact h.edge_unique (h_eq ▸ hzw.inc_right)
+
+lemma IsPendant.eq_addEdge (h : G.IsPendant e x) :
+    ∃ y ∈ V(G), G.IsLink e x y ∧ y ≠ x ∧ e ∉ E(G - {x}) ∧ G = (G - {x}).addEdge e x y := by
+  obtain ⟨y, hne, hexy⟩ := h.isNonloopAt
+  refine ⟨y, hexy.right_mem, hexy, hne, ?_, ext_of_le_le le_rfl ?_ ?_ ?_⟩
+  · rw [h.edgeSet_delete_vertex_eq]
+    simp
+  · exact Graph.union_le (by simpa) (by simp)
+  · rw [vertexSet_addEdge, vertexSet_deleteVerts, ← union_singleton, union_assoc]
+    simp [insert_eq_of_mem hexy.right_mem, insert_eq_of_mem hexy.left_mem]
+  rw [edgeSet_addEdge, h.edgeSet_delete_vertex_eq, insert_diff_singleton,
+    insert_eq_of_mem hexy.edge_mem]
+
+lemma IsPendant.exists_eq_addEdge (h : G.IsPendant e x) :
+    ∃ (y : α) (H : Graph α β), x ∉ V(H) ∧ y ∈ V(H) ∧ e ∉ E(H) ∧ G = H.addEdge e x y := by
+  obtain ⟨y, hyV, -, hyx, -, h_eq⟩ := h.eq_addEdge
+  refine ⟨y, _, by simp, by simp [hyV, hyx], ?_, h_eq⟩
+  rw [h.edgeSet_delete_vertex_eq]
+  simp
+
+@[simp]
+lemma eDegree_eq_one_iff : G.eDegree v = 1 ↔ G.IsLeaf v := by
+  refine ⟨fun h ↦ ?_, fun ⟨e, h⟩ ↦ h.eDegree⟩
+  obtain ⟨e, he⟩ | hn := em <| ∃ e, G.Inc e v
+  · exact ⟨e, he.isPendant_of_eDegree_le_one h.le⟩
+  simp [← eDegree_eq_zero_iff_inc, h] at hn
+
+@[simp]
+lemma degree_eq_one_iff : G.degree v = 1 ↔ G.IsLeaf v := by
+  simp [← eDegree_eq_one_iff, degree]
+
+lemma IsLeaf.eDegree (h : G.IsLeaf v) : G.eDegree v = 1 := by
+  simpa
+
+lemma IsLeaf.degree (h : G.IsLeaf v) : G.degree v = 1 := by
+  simpa
+
 end Graph

@@ -1,6 +1,5 @@
 import Matroid.Graph.WList.TakeDrop.Decompose
-import Matroid.Graph.WList.TakeDrop.Dedup
-import Matroid.Graph.WList.TakeDrop.EdgeRemove
+import Matroid.Graph.WList.TakeDrop.Lemmas
 import Matroid.Graph.Walk.Basic
 
 variable {α β ι : Type*} {x y z u v : α} {e f : β} {G H : Graph α β}

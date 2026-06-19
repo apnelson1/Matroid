@@ -13,7 +13,6 @@ lemma prefixUntil_eq_nil (hP : P w.first) : w.prefixUntil P = nil w.first := by
   | .nil u => rfl
   | .cons u e w' => simpa [prefixUntil]
 
-
 @[simp]
 lemma prefixUntil_first (w : WList α β) (P : α → Prop) [DecidablePred P] :
     (w.prefixUntil P).first = w.first := by

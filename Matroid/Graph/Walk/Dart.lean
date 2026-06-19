@@ -2,6 +2,7 @@ import Mathlib.GroupTheory.Perm.Basic
 import Mathlib.GroupTheory.OrderOfElement
 import Matroid.Graph.Minor.Defs
 import Mathlib.Data.PFun
+import Matroid.ForMathlib.Topology.ENat
 
 open Set PFun Part Equiv
 
@@ -298,18 +299,16 @@ lemma dartFiber_encard_isNonloopAt {v e} (h : G.IsNonloopAt e v) :
   obtain ⟨d, hfiber⟩ := h.dartFiber_eq_singleton M
   simp [hfiber]
 
-lemma preimage_fᵥ_encard_eq_eDegree (M : DartStructure G D) [G.LocallyFinite] (v : V) :
+lemma preimage_fᵥ_encard_eq_eDegree (M : DartStructure G D) (v : V) :
     (M.fᵥ.preimage {v}).encard = G.eDegree v := by
   rw [eDegree_eq_encard_add_encard, M.fᵥ_preimage_eq_iUnion_dartFiber v,
-    (G.finite_incEdges v).encard_biUnion (M.dartFiber_pairwiseDisjoint v),
-    incEdges_eq_isLoopAt_union_isNonloopAt, finsum_mem_union disjoint_isLoopAt_isNonLoopAt
-    G.finite_setOf_isLoopAt G.finite_setOf_isNonloopAt, finsum_mem_congr (s := {e | G.IsLoopAt e v})
-    rfl fun e ↦ M.dartFiber_encard_isLoopAt, finsum_mem_congr (s := {e | G.IsNonloopAt e v})
-    rfl fun e ↦ M.dartFiber_encard_isNonloopAt, finsum_mem_const, finsum_mem_const,
-    nsmul_eq_mul, nsmul_eq_mul, mul_one, mul_comm, G.finite_setOf_isLoopAt.cast_ncard_eq,
-    G.finite_setOf_isNonloopAt.cast_ncard_eq]
+    ← ENat.tsum_encard_eq_encard_biUnion (M.dartFiber_pairwiseDisjoint v),
+    incEdges_eq_isLoopAt_union_isNonloopAt, tsum_union_disjoint (f := (M.dartFiber v · |>.encard))
+    G.disjoint_isLoopAt_isNonLoopAt, tsum_congr (fun e ↦ M.dartFiber_encard_isLoopAt e.prop),
+    tsum_congr (fun e ↦ M.dartFiber_encard_isNonloopAt e.prop), ENat.tsum_const, ENat.tsum_const,
+    one_mul, ENat.card_coe_set_eq, ENat.card_coe_set_eq]
 
-lemma preimage_fᵥ_ncard_eq_degree (M : DartStructure G D) [G.LocallyFinite] (v : V) :
+lemma preimage_fᵥ_ncard_eq_degree (M : DartStructure G D) (v : V) :
     (M.fᵥ.preimage {v}).ncard = G.degree v := by
   unfold degree ncard
   rw [preimage_fᵥ_encard_eq_eDegree]
@@ -505,22 +504,13 @@ lemma dom_fₑ_finite (M : DartStructure G D) [G.Finite] : M.fₑ.Dom.Finite := 
   simp only [mem_dom, mem_iUnion, PFun.mem_preimage, mem_singleton_iff, exists_eq_left, exists_prop]
   exact exists_congr fun e ↦ iff_and_self.mpr <| mem_edgeSet_of_mem_fₑ M
 
-def LocallyFinite (M : DartStructure G D) := ∀ v, (M.fᵥ.preimage {v}).Finite
+lemma locallyFinite_iff_fᵥ_preimage_finite (M : DartStructure G D) :
+    G.LocallyFinite ↔ ∀ v, (M.fᵥ.preimage {v}).Finite:= by
+  simp_rw [← forall_eDegree_ne_top_iff, ← M.preimage_fᵥ_encard_eq_eDegree, encard_ne_top_iff]
 
-lemma IsSubgraph.LocallyFinite (h : H ≤ G) (hM : M.LocallyFinite) :
-    (M.of_le h).LocallyFinite := by
-  intro v
-  simp only [fᵥ_of_le, preimage_restrict]
-  exact (hM v).inter_of_left (M.fₑ.preimage E(H))
-
-lemma LocallyFinite.of_finite (M : DartStructure G D) [G.Finite] : M.LocallyFinite :=
-  fun v ↦ M.dom_fₑ_finite.subset fun _ hd ↦ M.dom_fᵥ ▸ M.fᵥ.preimage_subset_dom {v} hd
-
-lemma LocallyFinite.of_locallyFinite (M : DartStructure G D) [G.LocallyFinite] :
-    M.LocallyFinite := by
-  intro v
-  have := G.forall_eDegree_ne_top_iff.mpr inferInstance v
-  rwa [← M.preimage_fᵥ_encard_eq_eDegree, encard_ne_top_iff] at this
+lemma fᵥ_preimage_finite [G.LocallyFinite] (M : DartStructure G D) (v : V) :
+    (M.fᵥ.preimage {v}).Finite :=
+  M.locallyFinite_iff_fᵥ_preimage_finite.mp inferInstance v
 
 end DartStructure
 

@@ -1,5 +1,5 @@
 import Matroid.Graph.Connected.Basic
-import Matroid.Graph.Degree.Leaf
+import Matroid.Graph.Degree.Basic
 
 open Set Function Nat WList Sum
 

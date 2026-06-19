@@ -1,5 +1,5 @@
-import Matroid.Graph.WList.TakeDrop.PrefixSuffix
-import Matroid.Graph.WList.TakeDrop.Drop
+import Matroid.Graph.WList.TakeDrop.Pred
+import Matroid.Graph.WList.TakeDrop.Index
 
 variable {α β : Type*} {x y z u v : α} {e f : β} {w w₁ w₂ : WList α β} {m n : ℕ}
 

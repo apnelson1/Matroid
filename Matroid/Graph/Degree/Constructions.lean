@@ -1,5 +1,4 @@
 import Matroid.Graph.Degree.Defs
-import Matroid.Graph.Degree.Leaf
 
 variable {α β : Type*} {x y z a b u v w : α} {e f : β} {G H : Graph α β} {P C : WList α β}
 
@@ -163,6 +162,36 @@ lemma IsLink.eDegree_delete_of_ne (h : G.IsLink e x y) (hx : z ≠ x) (hy : z �
 lemma IsLink.degree_delete_of_ne (h : G.IsLink e x y) (hx : z ≠ x) (hy : z ≠ y) :
     (G ＼ {e}).degree z = G.degree z := by
   simp [degree, h.eDegree_delete_of_ne hx hy]
+
+
+/-! ### Trails -/
+
+lemma IsTrail.eq_first_or_last_of_degree_eq_one {P} (hP : G.IsTrail P) (hx : x ∈ P)
+    (hdeg : G.IsLeaf x) : x = P.first ∨ x = P.last := by
+  by_contra! h
+  obtain ⟨e₁, y₁, h₁⟩ := exists_left_edge hx h.1
+  obtain ⟨e₂, y₂, h₂⟩ := exists_right_edge hx h.2
+  have hinc₁ : G.Inc e₁ x := (hP.isWalk.isLink_of_dInc h₁).inc_right
+  have hinc₂ : G.Inc e₂ x := (hP.isWalk.isLink_of_dInc h₂).inc_left
+  obtain rfl := hdeg.eq_of_inc_inc hinc₁ hinc₂
+  obtain ⟨rfl, rfl⟩ := (dInc_iff_eq_of_dInc_of_edge_nodup hP.edge_nodup h₁).mp h₂
+  exact hdeg.not_isLoopAt e₁ (hP.isWalk.isLink_of_dInc h₁)
+
+lemma IsTrail.eq_first_or_last_of_eDegree_le_one {P} (hP : G.IsTrail P) (hxP : x ∈ P)
+    (hdeg : G.eDegree x ≤ 1) : x = P.first ∨ x = P.last := by
+  have hx : x ∈ V(G) := hP.vertexSet_subset hxP
+  simp only [le_iff_lt_or_eq, ENat.lt_one_iff_eq_zero, hx, ← isolated_iff_eDegree,
+    eDegree_eq_one_iff] at hdeg
+  obtain h | h := hdeg
+  · exact Or.inl <| h.eq_first_of_mem hP.isWalk hxP
+  exact hP.eq_first_or_last_of_degree_eq_one hxP h
+
+lemma IsTrail.disjoint_of_degree_le_one {w X} (hw : G.IsTrail w) (hX : ∀ x ∈ X, G.eDegree x ≤ 1)
+    (hf : w.first ∉ X) (hl : w.last ∉ X) : Disjoint V(w) X := by
+  rw [disjoint_comm, disjoint_iff_forall_notMem]
+  intro x hxX hxw
+  apply hw.eq_first_or_last_of_eDegree_le_one hxw (hX x hxX) |>.elim <;> grind
+
 
 /-! ### Paths -/
 

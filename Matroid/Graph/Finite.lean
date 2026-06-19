@@ -225,6 +225,16 @@ lemma encard_delete_vertexSet_lt [G.Finite] (hX : (V(G) ∩ X).Nonempty) :
   rw [vertexSet_deleteVerts]
   exact (G.vertexSet_finite.subset diff_subset).encard_lt_encard (by simpa)
 
+lemma ncard_delete_vertex_lt [G.Finite] (hx : x ∈ V(G)) :
+    V(G - ({x} : Set α)).ncard < V(G).ncard := by
+  rw [vertexSet_deleteVerts]
+  exact ncard_lt_ncard (by simpa) G.vertexSet_finite
+
+lemma ncard_delete_vertexSet_lt [G.Finite] (hX : (V(G) ∩ X).Nonempty) :
+    V(G - X).ncard < V(G).ncard := by
+  rw [vertexSet_deleteVerts]
+  exact ncard_lt_ncard (by simpa) G.vertexSet_finite
+
 /-- Used for well-founded induction on finite graphs by number of edges -/
 lemma encard_delete_edge_lt [G.Finite] (he : e ∈ E(G)) :
     E(G ＼ {e}).encard < E(G).encard := by
@@ -235,6 +245,16 @@ lemma encard_delete_edgeSet_lt [G.Finite] (hF : (E(G) ∩ F).Nonempty) :
     E(G ＼ F).encard < E(G).encard := by
   rw [edgeSet_deleteEdges]
   exact (G.edgeSet_finite.subset diff_subset).encard_lt_encard (by simpa)
+
+lemma ncard_delete_edge_lt [G.Finite] (he : e ∈ E(G)) :
+    E(G ＼ {e}).ncard < E(G).ncard := by
+  rw [edgeSet_deleteEdges]
+  exact ncard_lt_ncard (by simpa) G.edgeSet_finite
+
+lemma ncard_delete_edgeSet_lt [G.Finite] (hF : (E(G) ∩ F).Nonempty) :
+    E(G ＼ F).ncard < E(G).ncard := by
+  rw [edgeSet_deleteEdges]
+  exact ncard_lt_ncard (by simpa) G.edgeSet_finite
 
 lemma of_not_exists_minimal {P : Graph α β → Prop} [G.Finite]
     (h : ∀ H, H ≤ G → H.Finite → ¬ Minimal (¬ P ·) H) : P G := by

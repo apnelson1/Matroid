@@ -1,4 +1,5 @@
 import Matroid.Graph.Matching.Defs
+import Matroid.Graph.Bipartite
 
 variable {α β : Type*} {G H C : Graph α β} {S X Y : Set α} {M M' : Set β} {u v x y z : α} {e f : β}
   {hM : G.IsMatching M} {P P' : WList α β}
@@ -15,49 +16,40 @@ def pathCover : WList α β → Set α
 
 lemma pathCover_subset (P : WList α β) : P.pathCover ⊆ V(P) := by
   match P with
-  | nil _ => simp [pathCover]
-  | cons _ _ (nil v) => simp [pathCover]
-  | cons _ _ (cons v _ w) =>
-    simp only [pathCover, cons_vertexSet]
-    exact subset_trans (insert_subset_insert w.pathCover_subset) <| subset_insert ..
+  | nil _ => grind [pathCover]
+  | cons _ _ (nil v) => grind [pathCover]
+  | cons _ _ (cons v _ w) => grind [pathCover, w.pathCover_subset]
 
 lemma pathCover_inc {P : WList α β} (hw : P.WellFormed) (he : e ∈ E(P)) :
     e ∈ E(P.toGraph, P.pathCover) := by
   match P with
-  | nil _ => simp at he
+  | nil _ => grind
   | cons u f (nil v) =>
     simp only [cons_edgeSet, nil_edgeSet, insert_empty_eq, mem_singleton_iff,
-      mem_setIncEdges_iff] at he ⊢
-    subst f
-    use v, by simp [pathCover], u
-    simp [-toGraph_cons, hw.toGraph_isLink, isLink_cons_iff']
+      mem_setIncEdges_iff, hw.toGraph_inc] at he ⊢
+    exact ⟨v, by grind [pathCover], he ▸ WList.inc_cons_right ..⟩
   | cons u e₁ (cons v e₂ w) =>
     simp only [cons_edgeSet, mem_insert_iff, mem_edgeSet_iff] at he
     obtain rfl | rfl | h := he <;> simp only [pathCover, mem_setIncEdges_iff, mem_insert_iff,
-    exists_eq_or_imp]
-    · left
-      use u
-      simp [-toGraph_cons, hw, isLink_cons_iff']
-    · left
-      use w.first
-      simp [-toGraph_cons, hw, isLink_cons_iff']
+    exists_eq_or_imp, hw.toGraph_inc]
+    · exact Or.inl <| WList.inc_cons_right ..
+    · exact Or.inl <| (WList.inc_cons_left ..).cons ..
     right
     have hwW : w.WellFormed := hw.of_cons.of_cons
-    obtain ⟨x, hx, y, h⟩ := pathCover_inc hwW h
-    rw [hwW.toGraph_isLink] at h
-    use x, hx, y
-    simp [-toGraph_cons, hw.toGraph_isLink, isLink_cons_iff', h]
+    obtain ⟨x, hx, h⟩ := pathCover_inc hwW h
+    rw [hwW.toGraph_inc] at h
+    exact ⟨x, hx, (h.cons ..).cons ..⟩
 
 lemma pathCover_isCover (hw : P.WellFormed) : P.toGraph.IsCover P.pathCover where
   subset := by
     rw [toGraph_vertexSet]
     exact P.pathCover_subset
-  cover e he := pathCover_inc hw (by simpa using he)
+  cover e he := pathCover_inc hw (by grind)
 
 lemma pathCover_ncard {P : WList α β} (hw : P.vertex.Nodup) :
     P.pathCover.ncard = V(P).ncard / 2 := by
   match P with
-  | nil _ => simp [pathCover]
+  | nil _ => simp only [pathCover, ncard_empty, nil_vertexSet, ncard_singleton, Nat.reduceDiv]
   | cons _ _ (nil v) =>
     simp only [pathCover, ncard_singleton, cons_vertexSet, nil_vertexSet]
     simp only [cons_vertex, nil_vertex, List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false,
@@ -69,8 +61,8 @@ lemma pathCover_ncard {P : WList α β} (hw : P.vertex.Nodup) :
     obtain ⟨⟨hne, huw⟩, hvw, hw⟩ := hw
     have : w.pathCover.Finite := w.vertexSet_finite.subset w.pathCover_subset
     rw [ncard_insert_of_notMem (fun h ↦ hvw <| w.pathCover_subset h) this,
-      ncard_insert_of_notMem (by simp [hne, huw]) (by simp),
-      ncard_insert_of_notMem (by simpa) (by simp), pathCover_ncard hw]
+      ncard_insert_of_notMem (by grind) (by grind [finite_insert, vertexSet_finite]),
+      ncard_insert_of_notMem (s := V(w)) hvw w.vertexSet_finite, pathCover_ncard hw]
     omega
 
 def pathMatching : WList α β → Set β
@@ -86,22 +78,13 @@ lemma pathMatching_subset (P : WList α β) : P.pathMatching ⊆ E(P) := by
     simp only [pathMatching, cons_edgeSet]
     exact insert_subset_insert <| w.pathMatching_subset.trans <| subset_insert ..
 
-
 -- this is so annoying, `toGraph` is _slightly_ off of being "inductively do `addEdge`".
 lemma toGraph_cons_addEdge {w} (h : (cons u e w).WellFormed) :
     (cons u e w).toGraph = w.toGraph.addEdge e u w.first := by
-  simp only [toGraph_cons, Graph.addEdge]
-  have compat : Compatible (Graph.singleEdge u w.first e) w.toGraph := by
-    refine (cons u e w).toGraph.compatible_of_le_le ?_ ?_
-    · simp [-toGraph_cons]
-      -- simp leaves us in this state:
-      -- (cons u e w).toGraph.IsLink e u w.first
-      rw [h.toGraph_isLink]
-      -- grind fails this??
-      exact IsLink.cons_left u e w
-    · -- TODO: not a simp lemma?
-      simp [toGraph_cons]
-  rw [compat.union_comm]
+  rw [toGraph_cons, Graph.addEdge, Compatible.union_comm]
+  refine compatible_of_le_le ((isSuffix_cons_self ..).isSublist.toGraph_le h) ?_
+  simp only [singleEdge_le_iff, h.toGraph_isLink]
+  exact IsLink.cons_left u e w
 
 end WList
 
@@ -270,8 +253,7 @@ lemma incEdges_addEdge_of_notMem_right (e : β) (x y : α) (hy : y ∉ V(G)) :
 
 private
 lemma gah (hM : G.IsMatching M) (hx : E(G ↾ M, x).encard = 0) (hy : E(G ↾ M, y).encard = 0)
-    (he : e ∉ M) :
-    (G.addEdge e x y).IsMatching (insert e M) := by
+    (he : e ∉ M) : (G.addEdge e x y).IsMatching (insert e M) := by
   refine isMatching_of_encard_incEdges_le_one ?_ ?_ ?_
   · grind [hM.subset]
   simp only [vertexSet_addEdge, mem_union, mem_insert_iff, mem_singleton_iff]
@@ -294,8 +276,7 @@ lemma gah (hM : G.IsMatching M) (hx : E(G ↾ M, x).encard = 0) (hy : E(G ↾ M,
   rw [addEdge_restrict_commutes, addEdge_incEdges_encard_of_ne he' hux huy]
   assumption
 
-private
-lemma gah2 (hM : G.IsMatching M) (he : e ∉ M) : (G.addEdge e x y).IsMatching M := by
+private lemma gah2 (hM : G.IsMatching M) (he : e ∉ M) : (G.addEdge e x y).IsMatching M := by
   rw [isMatching_iff_restrict_isMatching] at hM
   refine IsMatching.mono_left (G := G ↾ M) ?_ hM
   rw [← deleteEdge_addEdge]
@@ -308,44 +289,42 @@ lemma gah2 (hM : G.IsMatching M) (he : e ∉ M) : (G.addEdge e x y).IsMatching M
 
 lemma IsPath.pathMatching_isMatching (hP : G.IsPath P) : P.toGraph.IsMatching P.pathMatching := by
   fun_induction WList.pathMatching with
-  | case1 => simp
-  | case2 => simp
+  | case1 => exact isMatching_empty
+  | case2 => grind
   | case3 u e v f w IH =>
-    have w_isPath : G.IsPath w := by simp at hP; grind
-    specialize IH w_isPath
-    have : (cons u e (cons v f w)).toGraph = (cons v f w).toGraph.addEdge e u v := by
-      -- TODO: should have `IsPath.wellformed`
-      simp [toGraph_cons_addEdge hP.isWalk.wellFormed]
-    rw [this]; clear this
-    have hP' : G.IsPath (cons v f w) := by
-      rw [cons_isPath_iff] at hP; grind
+    specialize IH hP.of_cons.of_cons
+    rw [toGraph_cons_addEdge hP.isWalk.wellFormed]
     have f_not_in : f ∉ w.pathMatching := by
       grind [hP.edge_nodup, pathMatching_subset]
     refine gah ?_ ?_ ?_ ?_
-    · rw [toGraph_cons_addEdge hP'.isWalk.wellFormed]
+    · rw [toGraph_cons_addEdge hP.of_cons.isWalk.wellFormed]
       refine gah2 IH f_not_in
     · have : u ∉ V((cons v f w).toGraph) := by
-        simp at hP ⊢; grind
+        simp only [cons_isPath_iff, first_cons, mem_cons_iff, not_or, toGraph_cons, vertexSet_union,
+          toGraph_vertexSet, vertexSet_singleEdge, union_insert, union_singleton, mem_vertexSet_iff,
+          first_mem, insert_eq_of_mem, mem_insert_iff] at hP ⊢
+        grind
       grw [← ENat.le_zero, encard_inc_le_eDegree, ENat.le_zero]
       exact eDegree_eq_zero_of_notMem this
-    · simp only [encard_eq_zero, incEdges_restrict]
-      have v_not_in : v ∉ V(w.toGraph) := by
-        -- TODO: needs grind tags
-        grind [cons_isPath_iff, toGraph_vertexSet]
-      rw [toGraph_cons_addEdge hP'.isWalk.wellFormed,
+    ·
+      simp only [encard_eq_zero, incEdges_restrict]
+      have v_not_in : v ∉ V(w.toGraph) := by grind [cons_isPath_iff]
+      rw [toGraph_cons_addEdge hP.of_cons.isWalk.wellFormed, first_cons,
         incEdges_addEdge_of_notMem_left _ _ _ v_not_in]
       grind
-    · grind [hP.edge_nodup, pathMatching_subset]
+    grind [hP.edge_nodup, pathMatching_subset]
 
 lemma pathMatching_ncard {P : WList α β} (hvertex_nodup : P.vertex.Nodup)
-    (hedge_nodup : P.edge.Nodup) :
-    P.pathMatching.ncard = V(P).ncard / 2 := by
+    (hedge_nodup : P.edge.Nodup) : P.pathMatching.ncard = V(P).ncard / 2 := by
   match P with
-  | nil _ => simp [pathMatching]
+  | nil _ => simp only [pathMatching, ncard_empty, nil_vertexSet, ncard_singleton, Nat.reduceDiv]
   | cons u _ (nil v) =>
-    simp_all [pathMatching]
+    simp only [pathMatching, ncard_singleton, cons_vertexSet, nil_vertexSet]
+    grind [Set.ncard_pair]
   | cons u e (cons v f w) =>
-    simp_all [pathMatching]
+    simp_all only [cons_vertex, List.nodup_cons, List.mem_cons, mem_vertex, not_or, cons_edge,
+      pathMatching, cons_vertexSet, mem_insert_iff, mem_vertexSet_iff, or_self, not_false_eq_true,
+      finite_insert, WList.vertexSet_finite, ncard_insert_of_notMem]
     have IH := pathMatching_ncard (P := w) (by grind) (by grind)
     have pathMatching_finite : w.pathMatching.Finite :=
       w.edgeSet_finite.subset w.pathMatching_subset
@@ -367,12 +346,9 @@ lemma IsPathGraph.konig (h : G.IsPathGraph) : τ(G) = ν(G) := by
 lemma pathCover_odd {w : WList α β} (h : Odd w.length) : w.last ∈ w.pathCover := by
   match w with
   | nil _ => simp at h
-  | cons _ _ (nil v) =>
-    simp [pathCover]
+  | cons _ _ (nil v) => simp [pathCover]
   | cons u e (cons v f w) =>
-    replace h : Odd w.length := by
-      -- TODO: grind tag
-      grind [cons_length]
+    replace h : Odd w.length := by grind
     have IH := pathCover_odd h
     grind [pathCover]
 
@@ -398,7 +374,7 @@ lemma IsCycle.konig (hB : G.Bipartite) (h : G.IsCycle) : τ(G) = ν(G) := by
       refine WList.IsSuffix.subset (tail_isSuffix C)
     have := pathCover.cover
     intro e he
-    simp
+    rw [mem_setIncEdges_iff]
     obtain (heC|heC) := em (e ∈ E(C.tail.toGraph))
     · apply this at heC
       obtain ⟨x, hx, hinc⟩ := heC
@@ -407,13 +383,13 @@ lemma IsCycle.konig (hB : G.Bipartite) (h : G.IsCycle) : τ(G) = ν(G) := by
     cases C with
     | nil => simp at C_nontrivial
     | cons u f w =>
-    replace heC : e = f := by
-      simp at heC he
+    obtain rfl : e = f := by
+      simp only [tail_cons, toGraph_edgeSet, mem_edgeSet_iff, toGraph_cons, edgeSet_union,
+        edgeSet_singleEdge, union_singleton, mem_insert_iff] at heC he
       grind
-    subst f
     have w_odd : Odd w.length := by grind [cons_length]
-    refine ⟨u, ?_, by simp [-toGraph_cons, hC.isWalk.wellFormed.toGraph_inc]⟩
-    simp [show (u = w.last) by (have := hC.isClosed; simp at this; assumption)]
+    refine ⟨u, ?_, hC.isWalk.wellFormed.toGraph_inc ▸ w.inc_cons_left u e⟩
+    simp only [show (u = w.last) from hC.isClosed, tail_cons]
     exact pathCover_odd w_odd
   refine matchingNumber_le_coverNumber.antisymm' <| le_trans (b := ↑(V(C.tail).ncard / 2)) ?_ ?_
   · rw [← pathCover_ncard hC.nodup]
@@ -462,8 +438,7 @@ theorem Konig'sTheorem [H.Simple] [H.Finite] (hB : H.Bipartite) : τ(H) = ν(H) 
   obtain (hempty|hnonempty) := em' (V(G).Nonempty)
   · replace hempty : V(G).encard = 0 := by simpa only [encard_eq_zero, ← not_nonempty_iff_eq_empty]
     have hτ : τ(G) = 0 := by have := G.coverNumber_le_vertexSet_encard; enat_to_nat! <;> omega
-    have hν : ν(G) = 0 := by
-      have := G.matchingNumber_le_coverNumber; enat_to_nat! <;> omega
+    have hν : ν(G) = 0 := le_zero_iff.mp (hτ ▸ G.matchingNumber_le_coverNumber)
     grind only [hMin.1]
   simp only [ne_eq, minimal_iff_forall_lt, Decidable.not_not] at hMin
   have hcon : G.Connected := by
@@ -499,8 +474,7 @@ theorem Konig'sTheorem [H.Simple] [H.Finite] (hB : H.Bipartite) : τ(H) = ν(H) 
   Hence, W' ∪ {v} is a cover of G with cardinality ν(G) at most. [cite: 17]
   -/
   obtain (ν_ne|ν_eq) := em' (ν(G - {v}) = ν(G))
-  · have ν_le : ν(G - {v}) ≤ ν(G) :=
-      matchingNumber_mono deleteVerts_le
+  · have ν_le : ν(G - {v}) ≤ ν(G) := matchingNumber_mono deleteVerts_le
     obtain ⟨W', hW'⟩ := (G - {v}).exists_isMinCover
     have hlt : G - {v} < G := deleteVerts_singleton_lt huv.right_mem
     have W_cover : G.IsCover (insert v W') := by
@@ -508,10 +482,7 @@ theorem Konig'sTheorem [H.Simple] [H.Finite] (hB : H.Bipartite) : τ(H) = ν(H) 
       intro e he
       simp only [mem_setIncEdges_iff, mem_insert_iff, exists_eq_or_imp]
       rw [← G.deleteVerts_singleton_edgeSet v] at he
-      obtain (he|he) := he
-        <;> [right; left]
-      · exact setIncEdges_mono hlt.le _ <| hW'.cover he
-      exact he
+      exact he.symm.imp id (setIncEdges_mono hlt.le _ <| hW'.cover ·)
     have W_encard : (insert v W').encard = W'.encard + 1 := by
       refine W'.encard_insert_of_notMem ?_
       have := hW'.subset
@@ -520,10 +491,7 @@ theorem Konig'sTheorem [H.Simple] [H.Finite] (hB : H.Bipartite) : τ(H) = ν(H) 
     have := W_cover.le_encard
     rw [W_encard, hW'.encard, hMin.2 hlt] at this
     have hle := G.matchingNumber_le_coverNumber
-    have τ_finite : τ(G) < ⊤ := by
-      have : V(G).encard < ⊤ := encard_lt_top_iff.mpr ‹G.Finite›.vertexSet_finite
-      have := G.coverNumber_le_vertexSet_encard
-      enat_to_nat!
+    clear! u W' e hB
     enat_to_nat! <;> omega
 
   /-
@@ -581,11 +549,9 @@ theorem Konig'sTheorem [H.Simple] [H.Finite] (hB : H.Bipartite) : τ(H) = ν(H) 
     refine lt_of_le_of_edgeSet_ssubset deleteEdges_le ?_
     rw [ssubset_iff_subset_ne]
     refine ⟨edgeSet_mono deleteEdges_le, ?_⟩
-    simp
+    simp only [edgeSet_deleteEdges, ne_eq, sdiff_eq_left, disjoint_singleton_right, not_not]
     exact edgeSet_mono deleteEdges_le hf.edge_mem
-  have G'_coverNumber : τ(G ＼ {f}) = ν(G) := by
-    rw [← G'_matchingNumber]
-    refine hMin.2 hlt
+  have G'_coverNumber : τ(G ＼ {f}) = ν(G) := G'_matchingNumber ▸ hMin.2 hlt
   obtain ⟨W', hW'⟩ := (G ＼ {f}).exists_isMinCover
 
   -- "Since no edge of M is incident at v, it follows that W' does not contain v.
@@ -615,24 +581,18 @@ theorem Konig'sTheorem [H.Simple] [H.Finite] (hB : H.Bipartite) : τ(H) = ν(H) 
   -- Since uv ∈ E(G), and f ≠ uv, therefore uv ∈ E(G \ f).
   -- Since W' doesn't contain v, it must therefore contain u.
   have huW' : u ∈ W' := by
-    have hne : e ≠ f := by
-      rintro rfl
-      have := hf.of_le deleteEdges_le |>.right_unique huv
-      contradiction
+    have hne : e ≠ f := by grind
     have heG' : e ∈ E(G ＼ {f}) := by grind [edgeSet_deleteEdges]
     grind only [hW'.mem_or_mem_of_isLink (huv.of_le_of_mem deleteEdges_le heG')]
   -- So W' also covers f (since f = ux), so W' is a cover of G
   have hW'G : G.IsCover W' := by
-    refine ⟨?_, ?_⟩
-    · simpa using hW'.subset
-    intro edge hedge
-    obtain (h|h) := em' (edge = f)
+    refine ⟨?_, fun edge hedge ↦ ?_⟩
+    · simpa only [vertexSet_deleteEdges] using hW'.subset
+    obtain (h | rfl) := em' (edge = f)
     · clear! M u v G'_coverNumber G'_matchingNumber hlt hle hMin hcon hnonempty hB x e
       replace h : edge ∈ E(G ＼ {f}) := by grind
       apply hW'.cover at h
       exact setIncEdges_mono deleteEdges_le _ h
-    symm at h
-    obtain rfl := h
     refine ⟨u, huW', ?_⟩
     exact hf.of_le deleteEdges_le |>.inc_left
 

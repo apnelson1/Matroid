@@ -1,6 +1,5 @@
 import Matroid.ForMathlib.Partition.Rep
 import Matroid.Graph.Map
-import Matroid.Graph.Connected.Construction
 import Matroid.Graph.Connected.Basic
 
 

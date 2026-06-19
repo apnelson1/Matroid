@@ -1,6 +1,6 @@
-import Matroid.Graph.WList.TakeDrop.PrefixSuffix
-import Matroid.Graph.WList.TakeDrop.Drop
-import Matroid.Graph.WList.TakeDrop.Loop
+import Matroid.Graph.WList.TakeDrop.Pred
+import Matroid.Graph.WList.TakeDrop.Index
+import Matroid.Graph.WList.Remove
 import Matroid.Graph.Subgraph.Delete
 
 /-

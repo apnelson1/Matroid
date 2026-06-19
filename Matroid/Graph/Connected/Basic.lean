@@ -853,3 +853,116 @@ lemma maxDegreeLE_iff_forall_component {d : ℕ} :
   intro v H hH hvH
   rw [← G.eq_sUnion_components, ← hH.isClosedSubgraph.eDegree_eq hvH]
   exact h H hH v
+
+section NoEdge
+
+variable {X Y : Set α}
+
+@[simp]
+lemma noEdge_isComplete_iff : (Graph.noEdge X β).IsComplete ↔ X.Subsingleton := by
+  refine ⟨fun h x hx y hy => ?_, fun h x hx y hy hne => (hne <| h hx hy).elim⟩
+  by_contra! hne
+  obtain ⟨e, he⟩ := h x hx y hy hne
+  simpa using he.edge_mem
+
+@[simp]
+lemma IsWalk.nil_of_noEdge (h : (Graph.noEdge X β).IsWalk W) : W.Nil := by
+  match W with
+  | .nil u => simp
+  | .cons u e w => simp at h
+
+@[simp]
+lemma connBetween_noEdge_iff : (Graph.noEdge X β).ConnBetween x y ↔ x = y ∧ x ∈ X := by
+  refine ⟨?_, ?_⟩
+  · rintro ⟨w, hw, rfl, rfl⟩
+    match hw.nil_of_noEdge with | .nil x => simp_all
+  rintro ⟨rfl, hx⟩
+  simpa
+
+@[simp]
+lemma noEdge_preconnected_iff : (Graph.noEdge X β).Preconnected ↔ X.Subsingleton := by
+  refine ⟨fun h => ?_, fun h x y hx hy => ?_⟩
+  · by_contra! ht
+    obtain ⟨x, hx, y, hy, hne⟩ := ht
+    simpa [hne] using h x y hx hy
+  simp only [vertexSet_noEdge] at hx hy
+  obtain rfl := h hx hy
+  simpa
+
+@[simp]
+lemma noEdge_connected_iff : (Graph.noEdge X β).Connected ↔ ∃ v, X = {v} := by
+  rw [connected_iff, noEdge_preconnected_iff, vertexSet_noEdge]
+  simp only [exists_eq_singleton_iff_nonempty_subsingleton]
+
+@[simp]
+lemma IsSepBetween.ne_of_noEdge (h : (Graph.noEdge X β).IsSepBetween x y Y) (hx : x ∈ X) :
+    x ≠ y := by
+  rintro rfl
+  simpa [hx, h.left_not_mem] using h.not_connBetween
+
+lemma isSepBetween_noEdge_of_ne (hne : x ≠ y) (hY : Y ⊆ X \ {x, y}) :
+    (Graph.noEdge X β).IsSepBetween x y Y where
+  subset := subset_diff.mp hY |>.1
+  left_not_mem := (disjoint_iff_forall_notMem ..).mp (subset_diff.mp hY).2.symm (by simp)
+  right_not_mem := (disjoint_iff_forall_notMem ..).mp (subset_diff.mp hY).2.symm (by simp)
+  not_connBetween := by
+    rintro ⟨W, hW, rfl, rfl⟩
+    rw [isWalk_deleteVerts_iff] at hW
+    exact hne hW.1.nil_of_noEdge.first_eq_last
+
+@[simp]
+lemma isEdgeSep_noEdge_iff : (Graph.noEdge X β).IsEdgeSep F ↔ F = ∅ ∧ X.encard ≠ 1 := by
+  refine ⟨fun ⟨hF, h⟩ => ?_, ?_⟩
+  · obtain rfl : F = ∅ := by simpa using hF
+    simpa [encard_eq_one] using h
+  rintro ⟨rfl, hne⟩
+  simpa [encard_eq_one] using hne
+
+@[simp]
+lemma isEdgeSep_bot_iff : (⊥ : Graph α β).IsEdgeSep F ↔ F = ∅ := by
+  rw [← noEdge_empty, isEdgeSep_noEdge_iff]
+  simp
+
+@[simp]
+lemma noEdge_connBetweenGE_iff (n : ℕ) : (Graph.noEdge X β).ConnBetweenGE x y n ↔
+    n = 0 ∨ (x = y ∧ x ∈ X) := by
+  refine ⟨fun h => ?_, ?_⟩
+  · rw [or_iff_not_imp_right, not_and']
+    rintro hne
+    by_cases hxX : x ∈ X
+    · simpa using h (isSepBetween_noEdge_of_ne (hne hxX) (by simp : ∅ ⊆ _))
+    simpa [hxX] using h.left_mem
+  rintro (rfl | ⟨rfl, hx⟩)
+  · simp
+  exact connBetweenGE_self hx n
+
+@[simp]
+lemma noEdge_preconnGE_iff (n : ℕ) : (Graph.noEdge X β).PreconnGE n ↔ n = 0 ∨ X.Subsingleton := by
+  refine ⟨fun h => ?_, ?_⟩
+  · rw [or_iff_not_imp_right, not_subsingleton_iff]
+    rintro ⟨x, hx, y, hy, hne⟩
+    simpa using h hx hy (isSepBetween_noEdge_of_ne hne (by simp : ∅ ⊆ _))
+  rintro (rfl | hss) u v hu hv C hC
+  · simp
+  obtain rfl := hss hu hv
+  exact (hC.ne_of_noEdge hu rfl).elim
+
+@[simp]
+lemma noEdge_ConnGE_iff (n : ℕ) : (Graph.noEdge X β).ConnGE n ↔ n = 0 ∨ (n = 1 ∧ ∃ x, X = {x}):= by
+  obtain hc | hc := em ((Graph.noEdge X β).IsComplete) |>.symm
+  · rw [← preconnGE_iff_connGE_of_not_isComplete hc, noEdge_preconnGE_iff]
+    constructor
+    · rintro (rfl | hss)
+      · tauto
+      simp [hss] at hc
+    rintro (rfl | ⟨rfl, x, rfl⟩) <;> simp
+  rw [hc.connGE_iff]
+  rw [noEdge_isComplete_iff] at hc
+  simp only [vertexSet_noEdge, hc, true_and]
+  obtain (rfl | ⟨x, rfl⟩) := hc.eq_empty_or_singleton
+  · simp
+  simp only [encard_singleton, singleton_eq_singleton_iff, exists_eq', and_true,
+    ENat.coe_le_one, ENat.coe_lt_one]
+  lia
+
+end NoEdge

@@ -420,8 +420,6 @@ lemma take_take_comm (w : WList α β) (m n : ℕ) : (w.take n).take m = (w.take
     simp only [take_cons_succ]
     exact (ih _).cons x e
 
-
-
 @[simp]
 lemma drop_length (w : WList α β) (n : ℕ) : (w.drop n).length = w.length - n := by
   match w, n with

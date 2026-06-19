@@ -42,6 +42,7 @@ extending basic graph functionality for use in matroid theory.
 -/
 
 attribute [simp] Graph.vertexSet_eq_empty_iff
+attribute [grind .] IsLink.right_unique
 
 @[simp]
 lemma IsLink.other_eq (h : G.IsLink e x y) : Inc.other ⟨y, h⟩ = y := by

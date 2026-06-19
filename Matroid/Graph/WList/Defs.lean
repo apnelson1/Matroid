@@ -644,6 +644,8 @@ protected inductive IsLink : WList α β → β → α → α → Prop
   | cons_right (x e w : _) : (cons x e w).IsLink e w.first x
   | cons (u f : _) {w e x y} (hw : w.IsLink e x y) : (cons u f w).IsLink e x y
 
+attribute [grind .] IsLink.cons_left IsLink.cons_right IsLink.cons
+
 @[simp]
 protected lemma IsLink.not_nil : ¬ (nil u (β := β)).IsLink e x y := by
   rintro (_ | _ | _)
@@ -772,6 +774,25 @@ protected lemma inc_cons_left (x : α) (e : β) (w : WList α β) : (cons x e w)
 @[simp, grind .]
 protected lemma inc_cons_right (x : α) (e : β) (w : WList α β) : (cons x e w).Inc e w.first :=
   ⟨x, IsLink.cons_right x e w⟩
+
+@[simp, grind .]
+protected lemma Inc.cons (u : α) (f : β) {w : WList α β} {e : β} {x : α} (hw : w.Inc e x) :
+    (cons u f w).Inc e x := by
+  obtain ⟨y, hy⟩ := hw
+  exact ⟨y, IsLink.cons u f hy⟩
+
+protected lemma Inc.of_cons (hw : (cons u f w).Inc e x) (hef : e ≠ f) : w.Inc e x := by
+  obtain ⟨y, hy⟩ := hw
+  exact ⟨y, hy.of_cons hef⟩
+
+@[simp, grind =]
+lemma inc_cons_iff : (cons u f w).Inc e x ↔ (f = e ∧ (x = u ∨ x = w.first)) ∨ w.Inc e x := by
+  refine ⟨fun ⟨y, hy⟩ ↦ ?_, ?_⟩
+  · grind [Inc, isLink_cons_iff']
+  rintro (⟨rfl, rfl | rfl⟩ | h)
+  · exact ⟨w.first, IsLink.cons_left x f w⟩
+  · exact ⟨u, IsLink.cons_right u f w⟩
+  exact Inc.cons u f h
 
 @[simp, grind .]
 protected lemma IsLink.inc_left (h : w.IsLink e x y) : w.Inc e x :=

@@ -1,7 +1,6 @@
-import Matroid.Graph.WList.TakeDrop.PrefixSuffix
-import Matroid.Graph.WList.TakeDrop.Drop
-import Matroid.Graph.WList.TakeDrop.Dedup
-import Matroid.Graph.WList.TakeDrop.Loop
+import Matroid.Graph.WList.TakeDrop.Index
+import Matroid.Graph.WList.TakeDrop.Pred
+import Matroid.Graph.WList.Remove
 
 open Set Function List Nat WList
 
@@ -43,28 +42,6 @@ lemma IsPrefix.tail (h : w₁.IsPrefix w₂) (hne : w₁.Nonempty) : w₁.tail.I
   rw [isInfix_iff_exists_isPrefix_isSuffix] at h ⊢
   obtain ⟨w, h₁, h₂⟩ := h
   use w.dropLast, h₁.dropLast, h₂.dropLast (h₁.isSublist.nonempty hne)
-
-lemma dedup_isSublist_deloop [DecidableEq α] (w : WList α β) :
-    w.dedup.IsSublist w.deloop := by
-  match w with
-  | nil x => simp
-  | cons u e w' =>
-    by_cases huw : u ∈ w'
-    · have hle := (w'.suffixFromVertex_isSuffix u).length_le
-      rw [dedup_cons_of_mem huw, deloop_cons_eq_ite]
-      split_ifs with heq
-      · subst heq
-        exact (w'.suffixFromVertex w'.first).dedup_isSublist_deloop.trans
-          (deloop_isSublist_mono (w'.suffixFromVertex_isSuffix _).isSublist)
-      exact (w'.suffixFromVertex u).dedup_isSublist_deloop.trans
-      <| (deloop_isSublist_mono (w'.suffixFromVertex_isSuffix _).isSublist).cons ..
-    rw [dedup_cons_of_notMem huw, deloop_cons_eq_ite]
-    split_ifs with heq
-    · subst heq
-      exact absurd (w'.deloop_first ▸ first_mem : w'.first ∈ w'.deloop) (mt mem_deloop_iff.mp huw)
-    exact w'.dedup_isSublist_deloop.cons₂ _ _ (by simp)
-termination_by w.length
-
 
 @[simp]
 lemma take_prefixUntilVertex [DecidableEq α] (hx : x ∈ w) :
@@ -112,5 +89,100 @@ lemma take_length_prefixUntilVertex [DecidableEq α] (hx : x ∈ w) :
     w.take (w.prefixUntilVertex x).length = w.prefixUntilVertex x := by
   rw [prefixUntilVertex_length hx, take_prefixUntilVertex hx]
 
+
+section Dedup
+
+variable [DecidableEq α]
+
+lemma dedup_cons_eq_ite (x : α) (e : β) (w : WList α β) :
+    (cons x e w).dedup = if x ∈ w then dedup (w.suffixFromVertex x) else cons x e w.dedup := by
+  simp [dedup]
+
+lemma dedup_cons_of_mem (hxw : x ∈ w) (e) : (cons x e w).dedup = dedup (w.suffixFromVertex x) := by
+  simp [dedup, hxw]
+
+lemma dedup_cons_of_notMem (hxw : x ∉ w) (e) :
+    (cons x e w).dedup = cons x e (dedup w) := by
+  simp [dedup, hxw]
+
+@[simp]
+lemma dedup_first (w : WList α β) : w.dedup.first = w.first := by
+  cases w with
+  | nil => simp
+  | cons u e w =>
+    have hle := (w.suffixFromVertex_isSuffix u).length_le
+    simp only [dedup, apply_ite, first_cons, ite_eq_right_iff]
+    rw [dedup_first]
+    exact fun huw ↦ suffixFrom_prop_first (P := (· = u)) ⟨_, huw, rfl⟩
+termination_by w.length
+
+@[simp]
+lemma dedup_last (w : WList α β) : w.dedup.last = w.last := by
+  cases w with
+  | nil => simp
+  | cons u e w =>
+    have hle := (w.suffixFromVertex_isSuffix u).length_le
+    simp only [last_cons]
+    by_cases huw : u ∈ w
+    · rw [dedup_cons_of_mem huw, dedup_last, suffixFromVertex_last]
+    rw [dedup_cons_of_notMem huw, last_cons, dedup_last]
+termination_by w.length
+
+lemma dedup_isSublist (w : WList α β) : w.dedup.IsSublist w := by
+  cases w with
+  | nil => simp
+  | cons u e w =>
+    have hle := (w.suffixFromVertex_isSuffix u).length_le
+    by_cases huw : u ∈ w
+    · rw [dedup_cons_of_mem huw]
+      refine (w.suffixFromVertex _).dedup_isSublist.trans ?_
+      exact (w.suffixFromVertex_isSuffix _).isSublist.trans <| by simp
+    rw [dedup_cons_of_notMem huw]
+    exact (dedup_isSublist w).cons₂ _ _ (by simp)
+termination_by w.length
+
+lemma dedup_vertex_nodup (w : WList α β) : w.dedup.vertex.Nodup := by
+  cases w with
+  | nil => simp
+  | cons u e w =>
+    have hle := (w.suffixFromVertex_isSuffix u).length_le.eq_or_lt
+    by_cases huw : u ∈ w
+    · rw [dedup_cons_of_mem huw]
+      apply dedup_vertex_nodup
+    simp only [dedup_cons_of_notMem huw, cons_vertex, nodup_cons, mem_vertex]
+    exact ⟨mt w.dedup_isSublist.sublist.mem huw, w.dedup_vertex_nodup⟩
+termination_by w.length
+
+lemma dedup_eq_self (hw : w.vertex.Nodup) : w.dedup = w := by
+  induction w with
+  | nil => simp
+  | cons u e w ih =>
+    simp only [cons_vertex, nodup_cons, mem_vertex] at hw
+    rw [dedup_cons_of_notMem hw.1, ih hw.2]
+
+lemma dedup_eq_self_iff : w.dedup = w ↔ w.vertex.Nodup :=
+  ⟨fun h ↦ by rw [← h]; exact dedup_vertex_nodup w, dedup_eq_self⟩
+
+lemma dedup_isSublist_deloop (w : WList α β) : w.dedup.IsSublist w.deloop := by
+  match w with
+  | nil x => simp
+  | cons u e w' =>
+    by_cases huw : u ∈ w'
+    · have hle := (w'.suffixFromVertex_isSuffix u).length_le
+      rw [dedup_cons_of_mem huw, deloop_cons_eq_ite]
+      split_ifs with heq
+      · subst heq
+        exact (w'.suffixFromVertex w'.first).dedup_isSublist_deloop.trans
+          (deloop_isSublist_mono (w'.suffixFromVertex_isSuffix _).isSublist)
+      exact (w'.suffixFromVertex u).dedup_isSublist_deloop.trans
+      <| (deloop_isSublist_mono (w'.suffixFromVertex_isSuffix _).isSublist).cons ..
+    rw [dedup_cons_of_notMem huw, deloop_cons_eq_ite]
+    split_ifs with heq
+    · subst heq
+      exact absurd (w'.deloop_first ▸ first_mem : w'.first ∈ w'.deloop) (mt mem_deloop_iff.mp huw)
+    exact w'.dedup_isSublist_deloop.cons₂ _ _ (by simp)
+termination_by w.length
+
+end Dedup
 
 end WList
