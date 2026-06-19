@@ -1,6 +1,7 @@
 name = "Matroid"
 keywords = ["math"]
 defaultTargets = ["Matroid"]
+enableArtifactCache = true
 
 [leanOptions]
 pp.unicode.fun = true # pretty-prints `fun a ↦ b`
@@ -9,7 +10,6 @@ pp.proofs.withType = false
 linter.docPrime = false
 linter.style.longLine = true
 linter.unusedSimpArgs = true
-enableArtifactCache = true
 
 [[require]]
 name = "loogle"
