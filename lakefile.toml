@@ -9,6 +9,7 @@ pp.proofs.withType = false
 linter.docPrime = false
 linter.style.longLine = true
 linter.unusedSimpArgs = true
+enableArtifactCache = true
 
 [[require]]
 name = "loogle"

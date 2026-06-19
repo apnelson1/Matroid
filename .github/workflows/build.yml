@@ -11,6 +11,7 @@ env:
   LAKE_CONFIG: .lake/lake-cache.toml
   MATROID_CACHE_REPO: apnelson1/Matroid
   R2_BUCKET_NAME: matroid-lake-cache
+  R2_PUBLIC_URL: https://pub-8410780127634ed2b09f7b7f09c7f4e5.r2.dev
 
 jobs:
   build:
@@ -25,9 +26,34 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Build and lint the project
-        id: build-lean
-        uses: leanprover/lean-action@f807b338d95de7813c5c50d018f1c23c9b93b4ec # v1.2.0
+      - name: Set up Lean
+        uses: leanprover/lean-action@v1
+        with:
+          auto-config: false
+          build: false
+          test: false
+          lint: false
+          use-github-cache: false
+
+      - name: Configure Lake cache services
+        run: |
+          mkdir -p .lake
+          cat > "$LAKE_CONFIG" <<EOF
+          cache.defaultService = "matroid-r2-public"
+
+          [[cache.service]]
+          name = "matroid-r2-public"
+          kind = "s3"
+          artifactEndpoint = "${R2_PUBLIC_URL}/artifacts"
+          revisionEndpoint = "${R2_PUBLIC_URL}/revisions"
+          EOF
+
+      - name: Download Lake cache from R2
+        continue-on-error: true
+        run: lake cache get --service=matroid-r2-public --repo="$MATROID_CACHE_REPO"
+
+      - name: Build the project
+        run: lake build
 
       - name: Upload Lake cache to R2
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -35,8 +61,8 @@ jobs:
         env:
           LAKE_CACHE_KEY: ${{ secrets.R2_ACCESS_KEY_ID }}:${{ secrets.R2_SECRET_ACCESS_KEY }}
         run: |
-          mkdir -p .lake
-          cat > "$LAKE_CONFIG" <<EOF
+          cat >> "$LAKE_CONFIG" <<EOF
+
           cache.defaultUploadService = "matroid-r2"
 
           [[cache.service]]
