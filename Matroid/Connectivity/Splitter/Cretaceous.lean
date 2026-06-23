@@ -310,36 +310,27 @@ lemma Separation.coindependent_inter_contraction_coloopless_minor {N : Matroid �
     rw [he, codep_def, ← not_indep_iff] at hc₁
     simp [empty_indep] at hc₁
 
-lemma Separation.exists_basis_contraction_coloopless_minor {N : Matroid α} (hP : P.eConn ≤ 1)
-    (hNc : (M ／ P i).Coindep (N.E ∩ (P !i))) (hC : (M ＼ (N.E ∪ P i)).Indep C) :
-    ∃ B, (M ／ P i).IsBase B ∧ (C \ B).Subsingleton ∧ B ∩ N.E = ∅ := by
-  have hC₁ : (M ↾ (P !i)).Indep C := by simp_all [delete_indep_iff]
-  have aux := Separation.exists_subsingleton_independent_in_contraction_of_eConn_one (hC₁) (hP)
-  obtain ⟨s, hs₁, hs₂⟩ := aux
-  have hd : Disjoint (C \ s) (N.E ∩ (P !i)) := by
-    grind only [→ Indep.subset_ground, = disjoint_left, = disjoint_comm, = delete_ground,
-    = subset_def, = mem_inter_iff, = mem_diff, = mem_union, #801a]
-  have aux := Indep.exists_isBase_disjoint_of_coindep (hs₂) (hNc) (hd)
-  obtain ⟨B, hB₁, hB₂, hB₃⟩ := aux
-  clear hs₂ hC₁ hd
+lemma Separation.indep_coindep_exists_basis_contraction_minor
+    (hC : C ⊆ P !i) (hD : D ⊆ P !i) (hCD : Disjoint C D)
+    (hCi : M.Indep C) (hDc : M.Coindep ((P !i) \ C)) :
+    ∃ B, (M ／ P i).IsBase B ∧ M ／ C ＼ D ≤m M ／ B := by
+  rw [coindep_iff_compl_spanning
+    (by grind only [= subset_def, → Indep.subset_ground, = dual_ground]),
+    diff_diff_eq_sdiff_union (subset_trans hC P.subset), P.compl_eq, Bool.not_not,
+    union_comm] at hDc
+  have h₁ : (M ／ (P i)).Spanning C := by
+    rw [contract_spanning_iff]
+    exact ⟨hDc, by grind only [= subset_def, !Separation.disjoint_bool, = disjoint_left,
+      = disjoint_comm, #758b, #def2]⟩
+  rw [spanning_iff_exists_isBase_subset] at h₁
+  obtain ⟨B, hB, hBC⟩ := h₁
   use B
-  simp [hB₁]
-  constructor
-  · have aux₁ : C \ B ⊆ s := by grind only [= subset_def, = mem_diff, #a11b]
-    have aux₂ := Subsingleton.eq_or_eq_of_subset (hs₁) (aux₁)
-    rcases aux₂ with aux₃ | aux₄
-    · simp [aux₃, subsingleton_empty]
-    · simpa [aux₄]
-  · grind only [= disjoint_left, → IsBase.subset_ground, = contract_ground, = subset_def,
-    = Separation.compl_eq, = mem_inter_iff, = mem_empty_iff_false, #bc5b, #d9f8, #ee00]
+  refine ⟨hB, ?_⟩
+  have h₁ := delete_isMinor_delete_of_subset (M ／ C) (show ∅ ⊆ D by simp only [empty_subset])
+  rw [delete_empty] at h₁
+  exact IsMinor.trans h₁ (contract_isMinor_of_subset (M) (hBC))
 
-lemma Separation.forall_circuits_meeting_basis_largeside {N : Matroid α} (hP : P.eConn ≤ 1)
-    (hPi : (N.E ∩ (P !i)).Subsingleton) (hC : M.Indep C) (hD : M.Coindep D) (hCD : Disjoint C D)
-    (hCDP : C ∪ D  = (P !i) \ N.E) (hNM : N ≤m M ／ C ＼ D) (hB : (M ／ P i).IsBase B)
-    (hBC : (C \ B).Subsingleton) (hBN : B ∩ N.E = ∅) :
-    ∀ C₀, (M ＼ (D \ B)).IsCircuit C₀ → ¬C₀ ⊆ P i ∪ N.E ∪ C → C₀ ⊆ B ∪ C := by
-  sorry
-
+/-
 lemma IsMinor.contract_disjoint_base_of_eConn_eq_one {N : Matroid α} (hP : P.eConn ≤ 1)
     (hN : Coloopless N) (hNM : N ≤m M) (hPi: (N.E ∩ (P !i)).Subsingleton) :
     ∃ X, (M ／ (P i)).IsBase X ∧ N ≤m (M ／ X) := by
@@ -434,6 +425,7 @@ lemma IsMinor.contract_disjoint_base_of_eConn_eq_one {N : Matroid α} (hP : P.eC
       grind only [→ Indep.subset_ground, = subset_def, = delete_ground, = mem_diff, = mem_union,
         #f739, #cc79, #138f, #801a]
     · exact hdCDB
+-/
 
 lemma splitter_no_triangle (hM : M.TutteConnected 3) (hN : N.TutteConnected 3) (fNM : N <i M)
     (hTriad : ∀ e T, M.IsDeletable N e → M.IsTriad T → e ∉ T)
