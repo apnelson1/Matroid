@@ -143,3 +143,10 @@ lemma Nonspanning.of_contract (h : (M ／ C).Nonspanning X) : M.Nonspanning X :=
   rw [← (M ／ C).dual_dual, nonspanning_dual_iff (by simpa using h.subset_ground), dual_ground,
     dual_contract, contract_ground] at h
   exact (M.dual_dual ▸ M.dual_ground ▸ h.of_delete.nonspanning_compl_dual).subset <| by grind
+
+lemma Cyclic.contract {A : Set α} (hA : M.Cyclic A) (C : Set α) : (M ／ C).Cyclic (A \ C) := by
+  rw [cyclic_iff_forall_mem_closure_diff_singleton] at ⊢ hA
+  intro e ⟨heA, heC⟩
+  grw [diff_diff_comm, contract_closure_eq, diff_union_self, mem_diff, and_iff_left heC,
+    ← subset_union_left]
+  exact hA e heA

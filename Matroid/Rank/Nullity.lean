@@ -119,6 +119,7 @@ lemma nullity_singleton_eq_ite' [Decidable (M.IsNonloop e)] :
     simp_rw [M.not_isLoop_iff he]
   rw [← nullity_restrict_univ, IsLoop.nullity_eq (by simp [he]), if_neg (fun h ↦ he h.mem_ground)]
 
+@[gcongr]
 lemma nullity_le_of_subset (M : Matroid α) (hXY : X ⊆ Y) : M.nullity X ≤ M.nullity Y := by
   rw [← M.nullity_restrict_of_subset hXY, ← M.nullity_restrict_self Y]
   obtain ⟨I, hI⟩ := (M ↾ Y).exists_isBasis X
@@ -384,5 +385,27 @@ lemma Indep.exists_subset_supset_nullity_eq {k : ℕ∞} (hI : M.Indep I) (hIX :
 lemma exists_subset_nullity_eq {k : ℕ∞} (hk : k ≤ M.nullity X) : ∃ Y ⊆ X, M.nullity Y = k := by
   obtain ⟨Y, hYX, -, rfl⟩ := M.empty_indep.exists_subset_supset_nullity_eq (empty_subset X) hk
   exact ⟨_, hYX, rfl⟩
+
+lemma IsCircuit.two_le_nullity_union_of_ne {C C' : Set α} (hC : M.IsCircuit C)
+    (hC' : M.IsCircuit C') (hCC' : C ≠ C') : 2 ≤ M.nullity (C ∪ C') := by
+  have hr := M.nullity_supermodular C C'
+  have hi : M.Indep (C ∩ C') :=
+    hC.ssubset_indep <| by grind [inter_ssubset_left_iff, hC.eq_of_subset_isCircuit hC']
+  rw [hC.nullity_eq, hC'.nullity_eq, hi.nullity_eq, add_zero] at hr
+  assumption
+
+lemma Cyclic.two_le_nullity_union_of_ne {C C' : Set α} (hC : M.Cyclic C) (hCne : C.Nonempty)
+    (hC' : M.Cyclic C') (hC'ne : C'.Nonempty) (hCC' : C ≠ C') : 2 ≤ M.nullity (C ∪ C') := by
+  wlog hnot : ¬ (C ⊆ C') generalizing C C' with aux
+  · grw [union_comm, aux hC' hC'ne hC hCne] <;> grind
+  obtain ⟨C₀, hC₀C, hC₀, hC₀ss⟩ : ∃ C₀ ⊆ C, M.IsCircuit C₀ ∧ ¬ (C₀ ⊆ C') := by
+    contrapose! hnot
+    rw [hC.eq_sUnion]
+    grind
+  have hssu : C₀ ∩ C' ⊂ C₀ := by simpa
+  have hr := M.nullity_supermodular C₀ C'
+  grw [hC₀.nullity_eq, ← (hC'.dep_of_nonempty hC'ne).one_le_nullity,
+    (hC₀.ssubset_indep hssu).nullity_eq, add_zero, hC₀C] at hr
+  assumption
 
 end Matroid

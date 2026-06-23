@@ -84,6 +84,14 @@ lemma isNonColoop_of_mem [M.Coloopless] (he : e ∈ M.E) : M.IsNonColoop e := by
   have hM : M✶.Loopless := Coloopless.dual_loopless
   exact isNonloop_of_loopless he
 
+lemma Loopless.subsingleton_indep (hM : M.Loopless) (hX : X.Subsingleton)
+    (hXE : X ⊆ M.E := by aesop_mat) : M.Indep X :=
+  M.subsingleton_indep hX
+
+lemma Coloopless.subsingleton_coindep (hM : M.Coloopless) (hX : X.Subsingleton)
+    (hXE : X ⊆ M.E := by aesop_mat) : M.Coindep X :=
+  hM.dual_loopless.subsingleton_indep hX
+
 @[simp]
 lemma mem_loops_iff : e ∈ M.loops ↔ M.IsLoop e := Iff.rfl
 

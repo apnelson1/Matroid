@@ -149,7 +149,23 @@ lemma Separation.isCircuit_union_inter_of_eConn_le_one {C₁ C₂} (hC₁ : M.Is
     (C := fun i ↦ bif (b == i) then C₁ else C₂) (by grind) hP (by grind)
   simpa [Set.iUnion_bool' _ b, inter_comm (P _)] using hwin
 
-
+/-- If `I` is an independent set of connectivity at most one, then all circuits that intersect `I`
+intersect it in the same way. -/
+lemma Indep.exists_forall_inter_circuit_eq {I : Set α} (hI : M.Indep I) (hIconn : M.eConn I ≤ 1) :
+    ∃ J ⊆ I, ∀ C, M.IsCircuit C → (C ∩ I).Nonempty → C ∩ I = J := by
+  by_cases! hC : ¬ ∃ C, M.IsCircuit C ∧ (C ∩ I).Nonempty
+  · use ∅; grind
+  obtain ⟨C, hC, hCne⟩ := hC
+  refine ⟨C ∩ I, inter_subset_right, fun C' hC' hC'ne ↦ by_contra fun hne ↦ ?_⟩
+  have hIconn : (M ／ (M.E \ I)).nullity I ≤ 1 := by
+    grw [← nullity_project_eq_nullity_contract, project_nullity_eq_nullity_add_eLocalConn,
+      hI.nullity_eq, ← eConn_eq_eLocalConn, hIconn, zero_add]
+  have hrwC : C \ (M.E \ I) = C ∩ I := by grind
+  have hrwC' : C' \ (M.E \ I) = C' ∩ I := by grind
+  have h2 := (hC.cyclic.contract (M.E \ I)).two_le_nullity_union_of_ne (hrwC ▸ hCne)
+    (hC'.cyclic.contract (M.E \ I)) (hrwC' ▸ hC'ne) <| by rwa [hrwC, hrwC', ne_comm]
+  grw [hrwC, hrwC', inter_subset_right, inter_subset_right, union_self, hIconn] at h2
+  simp at h2
 
 /- Two-sum -/
 

@@ -93,6 +93,10 @@ lemma Cyclic.dep_of_nonempty (hA : M.Cyclic A) (hA : A.Nonempty) : M.Dep A := by
   obtain ⟨C, hCA, hC, -⟩ := hA.exists_of_mem he
   exact hC.dep.superset hCA
 
+lemma Cyclic.eq_sUnion (hA : M.Cyclic A) : A = ⋃₀ {C | M.IsCircuit C ∧ C ⊆ A} := by
+  obtain ⟨Cs, rfl, hCs⟩ := hA
+  grind
+
 lemma cyclic_iff_forall_exists : M.Cyclic A ↔ ∀ e ∈ A, ∃ C ⊆ A, M.IsCircuit C ∧ e ∈ C := by
   refine ⟨fun h e he ↦ h.exists_of_mem he, fun h ↦ ?_⟩
   choose! Cs hCs using h
