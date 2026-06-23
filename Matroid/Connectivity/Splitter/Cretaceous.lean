@@ -119,200 +119,50 @@ lemma Separation.contract_exists_disjoint_base_of_eConn_eq_one {N : Matroid α}
   -- `e` is a non-coloop of `N`, and therefore a non-coloop of the major `M`.
   have hNe := hN.isNonloop_of_mem <| show e ∈ N.E by grind [he.symm.subset]
   simpa [he] using hNe.of_isMinor hNM.dual
-
 lemma Separation.isCircuit_union_inter_of_eConn_le_one_bool {C : Bool → Set α}
     (hC : ∀ j, M.IsCircuit (C j)) (hP : P.eConn ≤ 1) (hCP : ∀ i j, (C i ∩ P j).Nonempty) :
     ∀ i j k, M.IsCircuit ((C j ∩ P i) ∪ (C k ∩ P !i)) := by
   intro i j k
-  by_cases! aux₁ : j = k
-  · rw [← aux₁]
-    have h : (C j ∩ P i ∪ C j ∩ P !i) = C j := by
-      rw [← inter_union_distrib_left, Separation.union_bool_eq, inter_eq_self_of_subset_left]
-      exact (hC j).subset_ground
-    rw [h]
-    exact hC j
-  · rw [← Bool.not_eq] at aux₁
-    rw [← aux₁]
-    by_cases! aux₂ : j = i
-    · rw [aux₂, inter_comm, inter_comm (C !i)]
-      have hwin₁ := P.isCircuit_iUnion_inter_of_eConn_le_one (hC) (hP) (hCP)
-      rwa [Set.iUnion_bool' _ i] at hwin₁
-    · rw [← Bool.not_eq, Bool.not_eq_eq_eq_not] at aux₂
-      rw [aux₂, Bool.not_not]
-      nth_rw 2 [← Bool.not_not i]
-      rw [← Separation.symm_apply, ← Separation.symm_apply P, union_comm,
-        inter_comm, inter_comm (C !i)]
-      have hCP₂ : ∀ (i j : Bool), (C i ∩ P.symm j).Nonempty := by
-        intro i j
-        rw [Separation.symm_apply P j]
-        exact hCP i !j
-      have hwin₂ := P.symm.isCircuit_iUnion_inter_of_eConn_le_one (hC) (by simpa) (hCP₂)
-      rwa [Set.iUnion_bool' _ i] at hwin₂
+  obtain rfl | rfl := j.eq_or_eq_not k
+  · specialize hC j
+    rwa [← inter_union_distrib_left, P.union_bool_eq, inter_eq_self_of_subset_left hC.subset_ground]
+  exact P.isCircuit_union_inter_of_eConn_le_one (hC !k) (hC k) hP (fun i ↦ hCP ..)
+    (fun i ↦ hCP ..) i
 
 lemma Separation.unique_circuit_of_eConn_le_one {C : Bool → Set α}
     (hC : ∀ j, (M ↾ (X ∪ (P i))).IsCircuit (C j)) (hX : (M ↾ (P !i)).Indep X)
     (hP : P.eConn ≤ 1) (he : ∀ j, (C j ∩ X).Nonempty) : ((C true) ∩ X) = ((C false) ∩ X) := by
-  rw [restrict_indep_iff] at hX
-  have hCX : ∀ j, (C j) ∩ (P !i) = (C j) ∩ X := by grind only [!Separation.disjoint_bool,
-    = subset_def, = disjoint_left, → IsCircuit.subset_ground, = restrict_ground_eq, = mem_inter_iff,
-    = mem_union, #3682, #7d79, #36d6, #5a77, #5fc7, #0014]
-  have hC₁ : ∀ j, M.IsCircuit (C j) ∧ (C j) ⊆ X ∪ (P i) := by
-    intro j
-    rw [← restrict_isCircuit_iff]
-    exact hC j
-  clear hC
-  revert hC₁
-  intro hC
-  have hC₁ : ∀ j, M.IsCircuit (C j) := by
-    intro j
-    exact (hC j).1
-  have heCP : ∀ j k, ((C j) ∩ (P k)).Nonempty := by
-    intro j k
-    by_cases! aux : k = i
-    · subst aux
-      refine Circuit.nonempty_circuit_union_of_independent (hX.1) (hC₁ j) ((hC j).2)
-    · rw [← Bool.not_eq, Bool.not_eq_eq_eq_not] at aux
-      rw [aux, hCX j]
-      exact he j
-  clear he
-  have hC₂ : ∀ j k, M.IsCircuit (((C j) ∩ X) ∪ ((C k) ∩ (P i))) := by
-    intro j k
-    rw [← hCX j]
-    have aux := Separation.isCircuit_union_inter_of_eConn_le_one_bool
-        hC₁ hP heCP (!i) (j) (k)
-    rwa [Bool.not_not] at aux
-  clear hCX hC₁
-  by_contra! hcon
-  have hx : ∃ x, x ∈ (C true ∩ X) \ (C false ∩ X) := by
-    rw [← nonempty_def, diff_nonempty, subset_iff_ssubset_or_eq, not_or]
-    constructor
-    · have : ¬((C true) ∩ X) ⊂ ((C false) ∩ X) := by
-        have := IsCircuit.not_ssubset (hC₂ false true) (hC₂ true true)
-        grind only [→ Indep.subset_ground, = ssubset_def, = subset_def, → IsCircuit.subset_ground,
-          = mem_inter_iff, = mem_union, #4000, #139e, #54cb, #4989, #2bd4, #8aa3, #6f4a, #022d,
-          #06a3]
-      grind only [#53bc]
-    · exact hcon
-  clear hcon
-  obtain ⟨x, hx₁⟩ := hx
-  obtain ⟨y, hy₁, hy₂⟩ := heCP true i
-  obtain ⟨D₁, hD₁, hD₂, hD₃⟩ := IsCircuit.strong_elimination
-      ((hC true).1) (hC₂ false true) (hy₁) (by grind only [= mem_union, = mem_inter_iff])
-      (by grind only [= mem_diff, = mem_inter_iff])
-      (show x ∉ (C false ∩ X) ∪ (C true ∩ (P i)) by grind only [= subset_def,
-        !Separation.disjoint_bool, = mem_union, = mem_diff, = mem_inter_iff, = disjoint_left, #36d6,
-        #def2])
-  have hD₄ : ∀ j, (D₁ ∩ (P j)).Nonempty := by
-    intro j
-    by_cases! aux : j = i
-    · rw [aux]
-      refine Circuit.nonempty_circuit_union_of_independent (hX.1) (hD₂)
-          (show D₁ ⊆ X ∪ P i by grind only [= subset_def, = mem_union, = mem_diff, = mem_inter_iff])
-    · rw [← Bool.not_eq, Bool.not_eq_eq_eq_not] at aux
-      simp_rw [aux, nonempty_def, mem_inter_iff]
-      use x
-      constructor
-      · exact hD₃
-      · rw [mem_diff, mem_inter_iff] at hx₁
-        refine mem_of_subset_of_mem (hX.2) hx₁.1.2
-  clear hx₁ hD₃
-  have hD₃ := Separation.isCircuit_union_inter_of_eConn_le_one ((hC true).1) (hD₂) (hP)
-      (heCP true) (hD₄) (!i)
-  rw [Bool.not_not] at hD₃
-  have hcon : ((C true ∩ P !i) ∪ D₁ ∩ P i) ⊂ C true := by grind only [= subset_def,
-    !Separation.disjoint_bool, = ssubset_def, → IsCircuit.subset_ground, = disjoint_left,
-    = mem_union, = mem_inter_iff, = mem_diff, = mem_singleton_iff]
-  have := IsCircuit.not_ssubset ((hC true).1) (hD₃)
-  contradiction
+  have hi : (M ↾ (X ∪ P i)).Indep X := by
+    rw [restrict_indep_iff, and_iff_left subset_union_left]
+    exact hX.of_restrict
+  have hconn : (M ↾ (X ∪ P i)).eConn X ≤ 1 := by
+    grw [← eConn_compl, restrict_ground_eq, union_diff_cancel_left, eConn_restrict_le,
+      P.eConn_eq, hP]
+    grw [hX.subset_ground, restrict_ground_eq, (P.disjoint_bool _).symm.inter_eq]
+  obtain ⟨J, hJX, hJ⟩ := hi.exists_forall_inter_circuit_eq hconn
+  rw [hJ _ (hC _) (he _), hJ _ (hC _) (he _)]
 
 lemma Separation.exists_subsingleton_independent_in_contraction_of_eConn_one
     (hX : (M ↾ (P !i)).Indep X) (hP : P.eConn ≤ 1) :
     ∃ s : Set α, s.Subsingleton ∧ (M ／ (P i)).Indep (X \ s) := by
-  rw [restrict_indep_iff] at hX
-  by_cases hcases : (M ／ (P i)).Indep X
-  · use ∅
-    simpa [subsingleton_empty]
-  · rw [← Indep.skew_iff_contract_indep (hX.1) (by simp only [Separation.subset_ground]),
-      skew_iff_forall_isCircuit (by grind only [= subset_def, !Separation.disjoint_bool,
-        = disjoint_left, = disjoint_comm, #36d6, #def2])] at hcases
-    push Not at hcases
-    obtain ⟨Y, hY₁, hY₂, _, hY₃⟩ := hcases
-    have hy : ∃ y, y ∈ X ∩ Y := by
-      rw [not_subset] at hY₃
-      obtain ⟨a, ha⟩ := hY₃
-      use a
-      grind only [= subset_def, = mem_inter_iff, = mem_union, #f1e5]
-    obtain ⟨y, hy⟩ := hy
-    use {y}
-    simp [subsingleton_singleton]
-    by_contra hc
-    rw [← Indep.skew_iff_contract_indep (by simp [(hX.1).subset])
-        (by simp only [Separation.subset_ground]),
-        skew_iff_forall_isCircuit
-        (by grind only [= subset_def, !Separation.disjoint_bool, = disjoint_left, = disjoint_comm,
-        = mem_diff, #36d6, #def2])
-        (by grind only [→ Indep.subset_ground, = subset_def, = mem_diff, #139e])] at hc
-    push Not at hc
-    obtain ⟨Z, hZ₁, hZ₂, _, hZ₃⟩ := hc
-    let C := fun j ↦ bif j then Y else Z
-    have hC : ∀ j, (M ↾ (X ∪ (P i))).IsCircuit (C j) := by
-      intro j
-      rw [restrict_isCircuit_iff]
-      by_cases hj : j
-      · simp [hj, C]
-        exact And.intro hY₁ hY₂
-      · rw [Bool.not_eq_true] at hj
-        simp [hj, C]
-        grind only [= subset_def, = mem_union, = mem_diff, #9295]
-    have he : ∀ j, (C j ∩ X).Nonempty := by
-      intro j
-      by_cases hec : j
-      · simp [hec, C, nonempty_def]
-        rw [not_subset] at hY₃
-        grind only [= subset_def, = mem_inter_iff, #26bf]
-      · rw [Bool.not_eq_true] at hec
-        simp [hec, C, nonempty_def]
-        rw [not_subset] at hZ₃
-        grind only [= subset_def, = mem_union, = mem_diff, #d7c4, #3379, #9295]
-    rw [← restrict_indep_iff] at hX
-    have aux₁ := Separation.unique_circuit_of_eConn_le_one (hC) (hX) (hP) (he)
-    simp [C, Set.ext_iff] at aux₁
-    specialize aux₁ (x := y)
-    rw [mem_inter_iff] at hy
-    grind only [→ Indep.subset_ground, !Separation.disjoint_bool, = subset_def,
-      = restrict_ground_eq, = disjoint_left, = mem_union, = mem_diff, = mem_singleton_iff, #9295,
-      #b487, #def2]
+  have hn : (M ／ P i).nullity X ≤ 1 := by
+    grw [← nullity_project_eq_nullity_contract, project_nullity_eq_nullity_add_eLocalConn,
+      hX.of_restrict.nullity_eq, zero_add, M.eLocalConn_mono_left hX.subset_ground,
+      restrict_ground_eq, eLocalConn_comm, ← P.eConn_eq_eLocalConn, hP]
+  obtain ⟨B, hB⟩ := (M ／ P i).exists_isBasis' X
+  refine ⟨X \ B, ?_, ?_⟩
+  · rwa [← encard_le_one_iff_subsingleton, ← hB.nullity_eq]
+  rw [diff_diff_cancel_left hB.subset]
+  exact hB.indep
 
 lemma Separation.coindependent_inter_contraction_coloopless_minor {N : Matroid α}
     (hN : Coloopless N) (hNM : N ≤m M) (hPi : (N.E ∩ (P !i)).Subsingleton) :
     (M ／ P i).Coindep (N.E ∩ (P !i)) := by
-  by_contra hc₁
-  rw [not_coindep_iff] at hc₁
-  by_cases he : (N.E ∩ P !i).Nonempty
-  · have aux := And.intro he hPi
-    rw [← Set.exists_eq_singleton_iff_nonempty_subsingleton] at aux
-    obtain ⟨a, ha⟩ := aux
-    rw [ha, codep_iff, coindep_contract_iff, not_and_or] at hc₁
-    simp at hc₁
-    rcases hc₁.1 with ⟨ha₁⟩
-    · have ha₂ : a ∈ M.E ∩ N.E := by
-        constructor
-        · refine mem_of_subset_of_mem (P.subset' (!i)) hc₁.2
-        · rw [← singleton_subset_iff, ← ha, subset_def, inter_def]
-          grind => instantiate only [usr mem_setOf_eq]
-      rw [not_isNonColoop_iff] at ha₁
-      have aux := ha₁.of_isMinor (show a ∈ N.E by simp [ha₂.2]) hNM
-      rw [← dual_isLoop_iff_isColoop] at aux
-      rw [coloopless_iff, loopless_iff_forall_not_isLoop] at hN
-      grind only [= dual_ground, = mem_inter_iff, #4c6f]
-    · grind only [!Separation.disjoint_bool, = disjoint_left, #def2]
-  · rw [not_nonempty_iff_eq_empty] at he
-    rw [he, codep_def, ← not_indep_iff] at hc₁
-    simp [empty_indep] at hc₁
+  rw [coindep_contract_iff, and_iff_left ((P.disjoint_bool i).symm.mono_left inter_subset_right)]
+  exact (hN.subsingleton_coindep hPi).of_isMinor hNM.dual
 
 lemma Separation.indep_coindep_exists_basis_contraction_minor
-    (hC : C ⊆ P !i) (hD : D ⊆ P !i) (hCD : Disjoint C D)
-    (hCi : M.Indep C) (hDc : M.Coindep ((P !i) \ C)) :
+    (hC : C ⊆ P !i) (hDc : M.Coindep ((P !i) \ C)) :
     ∃ B, (M ／ P i).IsBase B ∧ M ／ C ＼ D ≤m M ／ B := by
   rw [coindep_iff_compl_spanning
     (by grind only [= subset_def, → Indep.subset_ground, = dual_ground]),
