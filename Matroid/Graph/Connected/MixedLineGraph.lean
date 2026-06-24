@@ -89,13 +89,8 @@ lemma mixedLineGraph_deleteEdges : L'(G ＼ F) = L'(G) - (Sum.inr '' F : Set (α
   ext a b c
   · simp only [vertexSet_mixedLineGraph, vertexSet_deleteEdges, edgeSet_deleteEdges,
       vertexSet_deleteVerts, image_diff Sum.inr_injective, union_diff_distrib]
-    convert Iff.rfl
-    apply Disjoint.sdiff_eq_left
-    simp
-  cases b <;> cases c <;> simp only [mixedLineGraph_isLink, deleteEdges_inc, Sym2.eq,
-    Sym2.rel_iff', Prod.mk.injEq, Sum.inl.injEq, reduceCtorEq, and_false, Prod.swap_prod_mk,
-    or_self, deleteVerts_isLink_iff, mem_image, exists_false, not_false_eq_true, and_self,
-    and_true, Sum.inr.injEq, false_and, or_self, and_false, exists_eq_right] <;> aesop
+    grind
+  grind [Sym2.eq, Prod.mk.injEq, Prod.swap_prod_mk]
 
 lemma mixedLineGraph_deleteVerts : L'(G - X) = L'(G) - (Sum.inl '' X ∪ Sum.inr '' E(G, X)) := by
   ext a b c
@@ -107,20 +102,9 @@ lemma mixedLineGraph_deleteVerts : L'(G - X) = L'(G) - (Sum.inl '' X ∪ Sum.inr
       simp
     rw [disjoint_image_inl_image_inr.symm.sdiff_eq_left, ← image_diff Sum.inr_injective]
   cases b <;> cases c <;> simp only [mixedLineGraph_isLink, deleteVerts_inc_iff,
-    mem_setIncEdges_iff, not_exists, not_and, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq,
-    Sum.inl.injEq, reduceCtorEq, and_false, Prod.swap_prod_mk, or_self, deleteVerts_isLink_iff,
-    mem_union, mem_image, exists_eq_right, exists_false, or_false, false_and, Sum.inr.injEq,
-    exists_eq_right, false_or, not_exists, not_and]
-  · refine ⟨?_, ?_⟩
-    · rintro ⟨⟨hav, ha2⟩, rfl, rfl⟩
-      simpa [hav, and_self, true_and, mt (ha2 a.1) (not_not_intro hav)]
-    rintro ⟨⟨hinc, rfl, rfl⟩, ha1, hX⟩
-    simpa [hinc]
-  refine ⟨?_, ?_⟩
-  · rintro ⟨⟨hinc, hX⟩, rfl, rfl⟩
-    simpa [hinc, mt (hX a.1)]
-  rintro ⟨⟨hinc, rfl, rfl⟩, hX, ha1⟩
-  simpa [hinc]
+    mem_setIncEdges_iff, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq, Sum.inl.injEq, reduceCtorEq,
+    and_false, Prod.swap_prod_mk, or_self, deleteVerts_isLink_iff, mem_union, mem_image,
+    exists_eq_right, exists_false, or_false, false_and, Sum.inr.injEq] <;> grind
 
 @[simp]
 def mixedLineGraph_walkMap : WList α β → WList (α ⊕ β) (α × β)
@@ -129,15 +113,11 @@ def mixedLineGraph_walkMap : WList α β → WList (α ⊕ β) (α × β)
 
 @[simp]
 lemma mixedLineGraph_walkMap_first : (mixedLineGraph_walkMap W).first = Sum.inl W.first := by
-  induction W with
-  | nil x => simp
-  | cons x e w ih => simp
+  cases W <;> rw [mixedLineGraph_walkMap] <;> grind
 
 @[simp]
 lemma mixedLineGraph_walkMap_last : (mixedLineGraph_walkMap W).last = Sum.inl W.last := by
-  induction W with
-  | nil x => simp
-  | cons x e w ih => simpa
+  induction W <;> rw [mixedLineGraph_walkMap] <;> grind
 
 @[simp]
 lemma inl_mem_mixedLineGraph_walkMap_iff (W : WList α β) :
@@ -179,8 +159,13 @@ lemma mixedLineGraph_walkmap_reverse (W : WList α β) :
 @[simp]
 lemma IsWalk.mixedLineGraph_walkMap (hW : G.IsWalk W) :L'(G).IsWalk (mixedLineGraph_walkMap W) := by
   induction hW with
-  | nil hx => simpa
-  | cons hw h ih => simp [ih, h.inc_left, h.inc_right]
+  | nil hx =>
+    rw [Graph.mixedLineGraph_walkMap, nil_isWalk_iff, vertexSet_mixedLineGraph, mem_union]
+    grind
+  | cons hw h ih =>
+    simp only [Graph.mixedLineGraph_walkMap, cons_isWalk_iff, mixedLineGraph_isLink,
+      mixedLineGraph_walkMap_first]
+    grind [h.inc_left, h.inc_right]
 
 @[simp]
 lemma IsPath.mixedLineGraph_walkMap {P} (hP : G.IsPath P) :
@@ -262,7 +247,9 @@ lemma WalkOfMixedLineGraph_first [DecidableEq α] {w : WList (α ⊕ β) (α × 
     (WalkOfMixedLineGraph w h hf hl).first = s := by
   match w with
   | .nil (inl s) => simpa using hf
-  | .cons (inl s) e (.nil (inl t)) => simp at h
+  | .cons (inl s) e (.nil (inl t)) =>
+    rw [cons_isWalk_iff] at h
+    exact (mixedLineGraph_vertex_not_adj _ _ _ h.1.adj).elim
   | .cons (inl s) (a, b) (.cons v (c, d) w) =>
     simp only [cons_isWalk_iff, first_cons, mixedLineGraph_isLink, Sym2.eq, Sym2.rel_iff',
       Prod.mk.injEq, inl.injEq, Prod.swap_prod_mk, reduceCtorEq, and_false, or_false] at h
@@ -281,7 +268,9 @@ lemma WalkOfMixedLineGraph_last [DecidableEq α] {w : WList (α ⊕ β) (α × �
     (WalkOfMixedLineGraph w h hf hl).last = t := by
   match w with
   | .nil (inl s) => simpa using hl
-  | .cons (inl s) e (.nil (inl t)) => simp at h
+  | .cons (inl s) e (.nil (inl t)) =>
+    rw [cons_isWalk_iff] at h
+    exact (mixedLineGraph_vertex_not_adj _ _ _ h.1.adj).elim
   | .cons (inl s) (a, b) (.cons v (c, d) w) =>
     simp only [cons_isWalk_iff, first_cons, mixedLineGraph_isLink, Sym2.eq, Sym2.rel_iff',
       Prod.mk.injEq, inl.injEq, Prod.swap_prod_mk, reduceCtorEq, and_false, or_false] at h
@@ -300,7 +289,9 @@ lemma mem_walkOfMixedLineGraph_iff [DecidableEq α] {w : WList (α ⊕ β) (α �
     x ∈ WalkOfMixedLineGraph w h hf hl ↔ inl x ∈ w := by
   match w with
   | .nil (inl s) => simp
-  | .cons (inl s) e (.nil (inl t)) => simp at h
+  | .cons (inl s) e (.nil (inl t)) =>
+    rw [cons_isWalk_iff] at h
+    exact (mixedLineGraph_vertex_not_adj _ _ _ h.1.adj).elim
   | .cons (inl s) (a, b) (.cons v (c, d) w) =>
     simp only [cons_isWalk_iff, first_cons, mixedLineGraph_isLink, Sym2.eq, Sym2.rel_iff',
       Prod.mk.injEq, inl.injEq, Prod.swap_prod_mk, reduceCtorEq, and_false, or_false] at h
@@ -314,7 +305,7 @@ lemma mem_walkOfMixedLineGraph_iff [DecidableEq α] {w : WList (α ⊕ β) (α �
       simp only [mem_walkOfMixedLineGraph_iff, mem_cons_iff, inl.injEq, reduceCtorEq, false_or,
         iff_or_self]
       exact fun h ↦ (h ▸ hh) ▸ first_mem
-    simp [mem_walkOfMixedLineGraph_iff]
+    simp only [mem_cons_iff, mem_walkOfMixedLineGraph_iff, inl.injEq, reduceCtorEq, false_or]
 
 @[simp]
 lemma mem_of_mem_walkOfMixedLineGraph_edge [DecidableEq α] {w : WList (α ⊕ β) (α × β)} {s t}
@@ -322,7 +313,9 @@ lemma mem_of_mem_walkOfMixedLineGraph_edge [DecidableEq α] {w : WList (α ⊕ �
     (he : e ∈ (WalkOfMixedLineGraph w h hf hl).edge) : inr e ∈ w := by
   match w with
   | .nil (inl s) => simp at he
-  | .cons (inl s) e (.nil (inl t)) => simp at h
+  | .cons (inl s) e (.nil (inl t)) =>
+    rw [cons_isWalk_iff] at h
+    exact (mixedLineGraph_vertex_not_adj _ _ _ h.1.adj).elim
   | .cons (inl s) (a, b) (.cons v (c, d) w) =>
     simp only [cons_isWalk_iff, first_cons, mixedLineGraph_isLink, Sym2.eq, Sym2.rel_iff',
       Prod.mk.injEq, inl.injEq, Prod.swap_prod_mk, reduceCtorEq, and_false, or_false] at h
@@ -343,7 +336,9 @@ lemma IsWalk.WalkOfMixedLineGraph [DecidableEq α] {w : WList (α ⊕ β) (α ×
     G.IsWalk (WalkOfMixedLineGraph w h hf hl) := by
   match w with
   | .nil (inl s) => simpa using h
-  | .cons (inl s) e (.nil (inl t)) => simp at h
+  | .cons (inl s) e (.nil (inl t)) =>
+    rw [cons_isWalk_iff] at h
+    exact (mixedLineGraph_vertex_not_adj _ _ _ h.1.adj).elim
   | .cons (inl s) (a, b) (.cons v (c, d) w) =>
     simp only [cons_isWalk_iff, first_cons, mixedLineGraph_isLink, Sym2.eq, Sym2.rel_iff',
       Prod.mk.injEq, inl.injEq, Prod.swap_prod_mk, reduceCtorEq, and_false, or_false] at h
@@ -364,7 +359,9 @@ lemma IsPath.WalkOfMixedLineGraph [DecidableEq α] {w : WList (α ⊕ β) (α ×
   use h.isWalk.WalkOfMixedLineGraph hf hl
   match w with
   | .nil (inl s) => simp
-  | .cons (inl s) e (.nil (inl t)) => simp at h
+  | .cons (inl s) e (.nil (inl t)) =>
+    rw [cons_isPath_iff] at h
+    exact (mixedLineGraph_vertex_not_adj _ _ _ h.1.adj).elim
   | .cons (inl s) (a, b) (.cons v (c, d) w) =>
     simp only [cons_isPath_iff, mixedLineGraph_isLink, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq,
       Prod.swap_prod_mk, first_cons, inl.injEq, reduceCtorEq, and_false, or_false, mem_cons_iff,
@@ -469,29 +466,30 @@ lemma Preconnected.mixedLineGraph (h : G.Preconnected) : L'(G).Preconnected := b
     Sum.inl.injEq, Sum.inr.injEq, exists_eq_right, reduceCtorEq, and_false, exists_false, or_false,
     false_or] at ha hb
   · obtain ⟨W, hW, rfl, rfl⟩ := h a b ha hb
-    use mixedLineGraph_walkMap W, hW.mixedLineGraph_walkMap
-    simp
+    use mixedLineGraph_walkMap W, hW.mixedLineGraph_walkMap, mixedLineGraph_walkMap_first,
+      mixedLineGraph_walkMap_last
   · obtain ⟨W, hWne, hW, rfl, rfl⟩ := h.exists_isWalk_first_lastEdge ha hb
     use (mixedLineGraph_walkMap W).dropLast, (hW.mixedLineGraph_walkMap).dropLast, by simp
     obtain ⟨w, e, x, rfl⟩ := hWne.exists_concat
-    simp
+    simp only [mixedLineGraph_walkMap_concat, dropLast_concat, concat_last, lastEdge_concat]
   · obtain ⟨W, hWne, hW, rfl, rfl⟩ := h.exists_isWalk_first_lastEdge hb ha
     use (mixedLineGraph_walkMap W).dropLast.reverse, (hW.mixedLineGraph_walkMap).dropLast.reverse,
-      ?_, by simp
+      ?_, by simp only [reverse_last, dropLast_first, mixedLineGraph_walkMap_first]
     obtain ⟨w, e, x, rfl⟩ := hWne.exists_concat
-    simp
+    rw [mixedLineGraph_walkMap_concat, dropLast_concat, concat_reverse, first_cons,
+      lastEdge_concat]
   · obtain ⟨W, ⟨x, e, w⟩, hW, rfl, rfl⟩ := h.exists_isWalk_firstEdge_lastEdge ha hb
     use (mixedLineGraph_walkMap (cons x e w)).tail.dropLast,
     (hW.mixedLineGraph_walkMap).tail.dropLast, by simp, ?_
     simp only [mixedLineGraph_walkMap, tail_cons]
     obtain ⟨y, rfl⟩ | h := w.exists_eq_nil_or_nonempty
-    · simp
+    · simp only [nil_first, mixedLineGraph_walkMap, dropLast_cons_nil, nil_last, lastEdge_cons_nil]
     obtain ⟨w, f, y, rfl⟩ := h.exists_concat
     simp only [concat_first, mixedLineGraph_walkMap_concat]
-    rw [← cons_concat, dropLast_concat]
-    simp [(w.concat_nonempty f y).lastEdge_cons]
+    rw [← cons_concat, dropLast_concat, (w.concat_nonempty f y).lastEdge_cons, last_cons,
+      concat_last, lastEdge_concat]
 
 lemma notMem_iff_forall_mem_ne (S : Set α) (x : α) : (∀ y ∈ S, y ≠ x) ↔ x ∉ S := by
-  aesop
+  grind
 
 end Graph

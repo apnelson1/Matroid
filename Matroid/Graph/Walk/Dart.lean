@@ -112,6 +112,11 @@ lemma preimage_map (S : Set γ) : (PFun.map φ f).preimage S = f.preimage (φ �
   simp only [mem_preimage, mem_map]
   grind
 
+@[simp]
+lemma ran_eq_empty_iff_dom_eq_empty (f : α →. β) : f.ran = ∅ ↔ f.Dom = ∅ := by
+  simp only [ran, Set.ext_iff, mem_setOf_eq, mem_empty_iff_false, mem_dom]
+  grind
+
 end PFun
 
 namespace Graph
