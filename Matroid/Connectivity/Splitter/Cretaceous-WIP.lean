@@ -281,6 +281,9 @@ lemma splitter_small_case {N : Matroid α} (hM : M.TutteConnected 3)
     (hN : N.TutteConnected 3) (hNM : N <m M) (hs : M.E.encard < 4) :
     ∃ e, (M.IsDeletable N e ∧ (M ＼ {e}).TutteConnected 3)
     ∨ (M.IsContractible N e ∧ (M ／ {e}).TutteConnected 3) := by
+  rw [show (3 : ENat) = 2 + 1 by rfl, show (4 : ENat) = 2*2 by rfl] at *
+  have hMu := TutteConnected.isUniform_of_encard_le hM (le_of_lt hs)
+  have hNu := hMu.minor (hNM.isMinor)
   sorry
 
 lemma exists_nonmem_of_closure_coclosure_of_eConn_le_one (hs : M.Simple)
