@@ -406,6 +406,11 @@ lemma eRelRk_restrict (M : Matroid α) (R X Y : Set α) :
     _ (by simp) (by simp)]
   rfl
 
+lemma eRelRk_project_eq_eRelRk_contract (M : Matroid α) (C X Y : Set α) :
+    (M.project C).eRelRk X Y = (M.contract C).eRelRk X Y := by
+  rw [eRelRk_eq_eRk_contract, eRelRk_eq_eRk_contract, ← eRk_project_eq_eRk_contract,
+    project_project, contract_contract, eRk_project_eq_eRk_contract]
+
 lemma RankPos.of_delete (h : (M ＼ D).RankPos) : M.RankPos := by
   rw [← eRank_ne_zero_iff, ← ENat.one_le_iff_ne_zero] at *
   grw [h, eRank_delete_le]

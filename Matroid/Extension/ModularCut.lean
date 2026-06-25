@@ -445,6 +445,16 @@ lemma restrict_copy {M N : Matroid α} (U : M.ModularCut) (R : Set α) (hMN : M 
   subst hMN
   rfl
 
+@[simp]
+lemma restrict_eq_top_iff {R : Set α} : U.restrict R = ⊤ ↔ U = ⊤ := by
+  rw [ModularCut.eq_top_iff, mem_restrict_iff,   and_iff_right (isFlat_loops ..),
+    restrict_loops_eq', ← closure_inter_ground, union_inter_distrib_right, diff_inter_self,
+    union_empty, closure_inter_ground, closure_eq_loops_of_subset (by simp), ModularCut.eq_top_iff]
+
+@[simp]
+lemma restrict_eq_bot_iff {R : Set α} : U.restrict R = ⊥ ↔ M.closure R ∉ U := by
+  rw [ModularCut.eq_bot_iff, mem_restrict_iff, and_iff_right (ground_isFlat ..), restrict_ground_eq]
+
 /-- a `ModularCut` in `M` gives a `ModularCut` in `M ＼ D` for any `D`. -/
 protected def delete (U : M.ModularCut) (D : Set α) : (M ＼ D).ModularCut :=
   U.restrict (M.E \ D)

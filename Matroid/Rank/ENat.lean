@@ -101,26 +101,9 @@ lemma Dep.eRk_add_one_le_encard (h : M.Dep X) : M.eRk X + 1 ≤ X.encard := by
   have hi := (M.isRkFinite_of_finite hfin).indep_of_encard_le_eRk (Order.le_of_lt_add_one hlt)
   exact hi.not_dep h
 
-
--- lemma dual_eRk_add_eRank (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
-  --   M✶.eRk X + M.eRank = M.eRk (M.E \ X) + X.encard := by
-  -- obtain ⟨I, hI⟩ := M✶.exists_isBasis X
-  -- obtain ⟨B, hB, rfl⟩ := hI.exists_isBasis_inter_eq_of_superset hX
-  -- have hB' : M✶.IsBase B := isBasis_ground_iff.1 hB
-  -- have hd : M.IsBasis (M.E \ B ∩ (M.E \ X)) (M.E \ X) := by
-  --   simpa using hB'.inter_isBasis_iff_compl_inter_isBasis_dual.1 hI
-  -- rw [← hB'.compl_isBase_of_dual.encard_eq_eRank, hI.eRk_eq_encard, hd.eRk_eq_encard,
-  --   ← encard_union_eq (by tauto_set), ← encard_union_eq (by tauto_set)]
-  -- exact congr_arg _ (by tauto_set)
-
--- lemma dual_eRk_add_eRank' (M : Matroid α) (X : Set α) :
---     M✶.eRk X + M.eRank = M.eRk (M.E \ X) + (X ∩ M.E).encard := by
---   rw [← diff_inter_self_eq_diff, ← dual_eRk_add_eRank .., ← dual_ground, eRk_inter_ground]
-
--- lemma eRank_add_dual_eRank (M : Matroid α) : M.eRank + M✶.eRank = M.E.encard := by
---   obtain ⟨B, hB⟩ := M.exists_isBase
---   rw [← hB.encard_eq_eRank, ← hB.compl_isBase_dual.encard_eq_eRank,
---     ← encard_union_eq disjoint_sdiff_right, union_diff_cancel hB.subset_ground]
+lemma IsNonloop.subset_closure_of_eRk_le_one (he : M.IsNonloop e) (hX : M.eRk X ≤ 1) (heX : e ∈ X)
+    (hXE : X ⊆ M.E := by aesop_mat) : X ⊆ M.closure {e} :=
+  (he.indep.isBasis_of_eRk_ge (by simp) (by simpa) <| by grw [hX, he.eRk_eq]).subset_closure
 
 end Basic
 
