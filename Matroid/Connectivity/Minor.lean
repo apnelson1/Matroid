@@ -120,6 +120,31 @@ lemma eLocalConn_union_eq_eLocalConn_project_add_eLocalConn (M : Matroid α) (X 
     add_comm, eLocalConn_comm, ← (M.project C).eLocalConn_closure_left, project_closure,
     ← (M.project C).eLocalConn_closure_left (X := X ∪ C), project_closure, union_assoc, union_self]
 
+lemma eLocalConn_eq_eLocalConn_project_add_eLocalConn_of_subset_left (M : Matroid α) (hCX : C ⊆ X)
+    (Y : Set α) : M.eLocalConn X Y = (M.project C).eLocalConn X Y + M.eLocalConn Y C := by
+  rw [← union_eq_self_of_subset_right hCX, eLocalConn_union_eq_eLocalConn_project_add_eLocalConn,
+    union_eq_self_of_subset_right hCX]
+
+lemma eLocalConn_eq_eLocalConn_project_add_eLocalConn_of_subset_right {Y : Set α} (M : Matroid α)
+    (X : Set α) (hY : C ⊆ Y) :
+      M.eLocalConn X Y = (M.project C).eLocalConn X Y + M.eLocalConn X C := by
+    rw [eLocalConn_comm, eLocalConn_eq_eLocalConn_project_add_eLocalConn_of_subset_left _ hY,
+      eLocalConn_comm]
+
+lemma eLocalConn_project_le_of_subset_left (M : Matroid α) (hCX : C ⊆ X) (Y : Set α) :
+    (M.project C).eLocalConn X Y ≤ M.eLocalConn X Y := by
+  grw [← M.eLocalConn_add_project_eLocalConn_of_subset hCX Y, ← le_add_self]
+
+lemma eLocalConn_project_le_of_subset_right {Y : Set α} (M : Matroid α) (X : Set α) (hCY : C ⊆ Y) :
+    (M.project C).eLocalConn X Y ≤ M.eLocalConn X Y := by
+  grw [eLocalConn_comm, eLocalConn_project_le_of_subset_left M hCY, eLocalConn_comm]
+
+lemma eLocalConn_project_le_of_subset {Y : Set α} (M : Matroid α) (hCXY : C ⊆ X ∪ Y) :
+    (M.project C).eLocalConn X Y ≤ M.eLocalConn X Y := by
+  grw [← inter_eq_self_of_subset_left hCXY, inter_union_distrib_left, ← project_project,
+    eLocalConn_project_le_of_subset_right _ _ inter_subset_right,
+    eLocalConn_project_le_of_subset_left _ inter_subset_right]
+
 end Local
 
 section Multi
@@ -549,6 +574,29 @@ lemma eConn_eq_eConn_contract_disjoint_add (M : Matroid α) (hdj : Disjoint X C)
       contract_ground, inter_assoc, inter_eq_self_of_subset_right diff_subset]
   rw [← M.eConn_compl X, eConn_eq_eConn_contract_subset_add _ (subset_diff.2 ⟨hC, hdj.symm⟩),
     diff_diff_cancel_left hX, diff_diff_comm, ← contract_ground, eConn_compl]
+
+/-- Given a partition `(C, D)` of `M.E \ X`, the connectivity for `X` is the sum of its
+connectivities in `M ／ C` and `M ＼ D`.-/
+lemma eConn_eq_eConn_contract_add_eConn_delete (M : Matroid α) (hXC : Disjoint X C)
+    (hXD : Disjoint X D) (hCD : Disjoint C D) (hXCD : X ∪ C ∪ D = M.E) :
+    M.eConn X = (M ／ C).eConn X + (M ＼ D).eConn X := by
+  convert eConn_eq_eConn_contract_disjoint_add _ hXC using 2
+  rw [eConn_eq_eLocalConn, delete_ground, eLocalConn_delete_eq_of_disjoint _ hXD (by grind), ← hXCD]
+  convert rfl
+  grind
+
+lemma eConn_eq_eLocalConn_add_eLocalConn_dual (M : Matroid α) (hXC : Disjoint X C)
+    (hXD : Disjoint X D) (hCD : Disjoint C D) (hXCD : X ∪ C ∪ D = M.E) :
+    M.eConn X = M.eLocalConn X C + M✶.eLocalConn X D := by
+  rw [← M.eConn_dual]
+  convert M✶.eConn_eq_eConn_contract_add_eConn_delete hXD hXC hCD.symm (by grind) using 2
+  · rw [← eConn_dual, dual_contract_dual, eConn_eq_eLocalConn,
+      eLocalConn_delete_eq_of_disjoint _ hXD (by grind)]
+    convert rfl
+    grind
+  rw [eConn_eq_eLocalConn, eLocalConn_delete_eq_of_disjoint _ hXC (by grind)]
+  convert rfl
+  grind
 
 lemma Skew.eConn_contract_diff_eq_self (h : M.Skew X C) : (M ／ C).eConn (X \ C) = M.eConn X := by
   nth_rw 1 [← inter_union_diff C X, eConn_contract_eq_eConn_project, ← project_closure_eq,

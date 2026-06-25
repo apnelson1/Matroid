@@ -97,6 +97,17 @@ section Swap
 
 variable {e f : α}
 
+theorem Equiv.bijOn_swap' [DecidableEq α] {S : Set α} (hef : e ∈ S ↔ f ∈ S) :
+    BijOn (Equiv.swap e f) S S := by
+  by_cases heS : e ∈ S
+  · exact Equiv.bijOn_swap heS <| by rwa [← hef]
+  rw [EqOn.bijOn_iff (f₂ := id)]
+  · exact bijOn_id S
+  refine fun x hx ↦ ?_
+  rw [swap_apply_of_ne_of_ne (by rintro rfl; contradiction), id_eq]
+  rintro rfl
+  simp [heS, hx] at hef
+
 theorem Equiv.swap_image_eq_self [DecidableEq α] {S : Set α} (hef : e ∈ S ↔ f ∈ S) :
     (Equiv.swap e f) '' S = S := by
   ext x

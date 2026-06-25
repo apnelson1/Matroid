@@ -99,6 +99,13 @@ lemma IsBasis'.project_eq_project (hI : M.IsBasis' I X) : M.project X = M.projec
     (insert_subset heX hI.subset)] at hdj
   simp [heJ] at hdj
 
+@[simp]
+lemma project_isLoop_iff : (M.project X).IsLoop e ↔ e ∈ M.closure X := by
+  rw [isLoop_iff, project_loops]
+
+lemma project_isNonloop_iff : (M.project X).IsNonloop e ↔ e ∉ M.closure X ∧ e ∈ M.E := by
+  rw [isNonloop_iff, project_isLoop_iff, project_ground]
+
 lemma IsBasis.project_eq_project (hI : M.IsBasis I X) : M.project X = M.project I :=
   hI.isBasis'.project_eq_project
 

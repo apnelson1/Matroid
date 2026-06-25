@@ -87,6 +87,13 @@ lemma Dep.contract_of_disjoint {D : Set α} (hD : M.Dep D) (hDC : Disjoint D C) 
     rwa [delete_dep_iff, and_iff_left disjoint_sdiff_left, hDC.sdiff_eq_left]
   exact hDC.sdiff_eq_left ▸ aux.contract_of_delete
 
+lemma contract_eq_contract_delete_of_subset_closure (hXY : X ⊆ Y) (hYX : Y ⊆ M.closure X) :
+    M ／ Y = M ／ X ＼ (Y \ X) := by
+  obtain ⟨I, hIX⟩ := M.exists_isBasis' X
+  have hIY : M.IsBasis I Y := hIX.isBasis_closure_right.isBasis_subset (hIX.subset.trans hXY) hYX
+  rw [hIY.contract_eq_contract_delete, hIX.contract_eq_contract_delete, delete_delete,
+    union_comm, diff_union_diff_cancel hXY hIX.subset]
+
 /-- Contracting a set whose intersection with `D` is independent never turns a dependent set `D`
 into an independent set. -/
 lemma Dep.contract_of_indep {D : Set α} (hD : M.Dep D) (hI : M.Indep (D ∩ I)) :
@@ -150,3 +157,41 @@ lemma Cyclic.contract {A : Set α} (hA : M.Cyclic A) (C : Set α) : (M ／ C).Cy
   grw [diff_diff_comm, contract_closure_eq, diff_union_self, mem_diff, and_iff_left heC,
     ← subset_union_left]
   exact hA e heA
+
+/-- If `e` is a nonloop of both `M` and `N`, and `M` and `N` agree after removing `e`
+in both ways, then `M = N`. -/
+lemma ext_contractElem_deleteElem (heM : M.IsNonloop e) (heN : N.IsNonloop e)
+    (hc : M ／ {e} = N ／ {e}) (hd : M ＼ {e} = N ＼ {e}) : M = N := by
+  have hE : M.E = N.E := by
+    rw [← insert_diff_self_of_mem heM.mem_ground, ← delete_ground, hd, delete_ground,
+      insert_diff_self_of_mem heN.mem_ground]
+  refine ext_indep hE fun I hIE ↦ ?_
+  by_cases heI : e ∈ I
+  · have hi := congr_arg (fun M : Matroid α ↦ M.Indep (I \ {e})) hc
+    simpa [heM.contractElem_indep_iff, heN.contractElem_indep_iff, insert_eq_of_mem heI] using hi
+  simpa [heI] using congr_arg (fun M : Matroid α ↦ M.Indep I) hd
+
+/-- A version of `ext_contractElem_deleteElem` with slightly weaker assumptions. -/
+lemma ext_contractElem_deleteElem' (heM : e ∈ M.E) (heN : e ∈ N.E)
+    (heMl : M.IsLoop e → N.IsNonColoop e) (heNl : N.IsLoop e → M.IsNonColoop e)
+    (hc : M ／ {e} = N ／ {e}) (hd : M ＼ {e} = N ＼ {e}) : M = N := by
+  wlog he : M.IsNonloop e → N.IsNonloop e generalizing M N with aux
+  · simp only [Classical.not_imp, not_isNonloop_iff heN] at he
+    rw [← dual_inj, aux (M := N✶) (N := M✶) heN heM (by simp [he.1])
+      (by simp [(heNl he.2).not_isColoop])]
+    · rw [← dual_inj, dual_contract_dual, dual_contract_dual, hd]
+    rw [← dual_inj, dual_delete_dual, dual_delete_dual, hc]
+    simp [heNl he.2]
+  have hE : M.E = N.E := by
+    rw [← insert_diff_self_of_mem heM, ← delete_ground, hd, delete_ground,
+      insert_diff_self_of_mem heN]
+  obtain helM | henlM := M.isLoop_or_isNonloop e
+  · obtain helN | henlN := N.isLoop_or_isNonloop e
+    · rw [← M.delete_restrict_ground_of_subset_loops (L := {e}) (by simpa), hd, hE,
+        delete_restrict_ground_of_subset_loops (by simpa)]
+    obtain ⟨B, hB⟩ := (heMl helM).exists_isBase_notMem
+    refine False.elim <| (hB.1.insert_dep ⟨henlN.mem_ground, hB.2⟩).not_indep ?_
+    rw [← disjoint_singleton_right, ← (heMl helM).coindep.delete_isBase_iff, ← hd,
+      ← contract_eq_delete_of_subset_loops (by simpa), hc] at hB
+    exact (henlN.contractElem_indep_iff.1 hB.indep).2
+  rw [ext_contractElem_deleteElem henlM (he henlM) hc hd]

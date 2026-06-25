@@ -514,6 +514,16 @@ lemma Skew.symm (h : M.Skew X Y) : M.Skew Y X := by
 lemma skew_comm : M.Skew X Y ↔ M.Skew Y X :=
   ⟨Skew.symm, Skew.symm⟩
 
+lemma isSkewFamily_bool_iff (i : Bool) {X : Bool → Set α} :
+    M.IsSkewFamily X ↔ M.Skew (X i) (X !i) := by
+  obtain rfl | rfl := i
+  · rw [skew_comm, Skew]
+    convert Iff.rfl
+    grind
+  rw [Skew]
+  convert Iff.rfl
+  grind
+
 lemma IsSkewFamily.skew_of_ne (h : M.IsSkewFamily Xs) (hij : i ≠ j) : M.Skew (Xs i) (Xs j) := by
   rw [Skew]
   convert h.comp (t := fun b ↦ bif b then i else j) <| Bool.injective_iff.2 hij.symm

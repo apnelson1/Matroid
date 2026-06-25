@@ -43,6 +43,8 @@ lemma isNonColoop_dual : M✶.IsNonColoop e ↔ M.IsNonloop e := by
 lemma isNonloop_dual : M✶.IsNonloop e ↔ M.IsNonColoop e := by
   simp [IsNonColoop]
 
+alias ⟨_, IsNonColoop.isNonloop_dual⟩ := isNonloop_dual
+
 lemma not_isColoop_iff (he : e ∈ M.E := by aesop_mat) : ¬ M.IsColoop e ↔ M.IsNonColoop e := by
   rw [IsNonColoop, IsColoop, not_isLoop_iff]
 
@@ -52,6 +54,21 @@ lemma not_isNonColoop_iff (he : e ∈ M.E := by aesop_mat) : ¬ M.IsNonColoop e 
 lemma isNonColoop_iff : M.IsNonColoop e ↔ ¬ M.IsColoop e ∧ e ∈ M.E := by
   rw [IsNonColoop, isNonloop_iff]
   rfl
+
+lemma IsNonColoop.coindep (h : M.IsNonColoop e) : M.Coindep {e} :=
+  h.indep
+
+lemma IsNonColoop.exists_isBase_notMem (h : M.IsNonColoop e) : ∃ B, M.IsBase B ∧ e ∉ B := by
+  simp only [isNonColoop_iff, isColoop_iff_forall_mem_isBase, not_forall, exists_prop] at h
+  exact h.1
+
+lemma IsLoop.isNonColoop (h : M.IsLoop e) : M.IsNonColoop e := by
+  rw [isNonColoop_iff]
+  exact ⟨h.not_isColoop, h.mem_ground⟩
+
+lemma isColoop_or_isNonColoop (M : Matroid α) (e : α) (he : e ∈ M.E := by aesop_mat) :
+    M.IsColoop e ∨ M.IsNonColoop e :=
+  M✶.isLoop_or_isNonloop e
 
 /-- A matroid is coloopless if its dual is loopless. -/
 @[mk_iff]

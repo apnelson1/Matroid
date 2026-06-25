@@ -1,4 +1,5 @@
 import Matroid.Extension.ModularCut
+import Matroid.ForMathlib.Other
 
 universe u
 
@@ -455,5 +456,32 @@ lemma extendBy_isNonloop_iff : (M.extendBy e U).IsNonloop e ↔ U ≠ ⊤ := by
 
 lemma extendBy_isNonloop_dual_iff (he : e ∉ M.E) : (M.extendBy e U)✶.IsNonloop e ↔ U ≠ ⊥ := by
   rw [← not_isLoop_iff, dual_isLoop_iff_isColoop, extendBy_isColoop_iff _ he]
+
+lemma extendBy_restrict_of_notMem {R : Set α} (he : e ∉ R) : (M.extendBy e U) ↾ R = M ↾ R := by
+  rw [← restrict_inter_ground_restrict, extendBy_ground, inter_insert_of_notMem he,
+    ← delete_compl (R := R ∩ M.E) _, extendBy_ground, insert_diff_of_notMem _ (by simp [he]),
+    ← singleton_union, ← delete_delete, extendBy_deleteElem', diff_inter_self_eq_diff,
+    ← M.restrict_inter_ground_restrict, delete_delete, delete_eq_restrict]
+  · congr
+    grind
+  grind [extendBy_ground]
+
+lemma extendBy_delete_of_mem {D : Set α} (he : e ∈ D) : (M.extendBy e U) ＼ D = M ＼ D := by
+  rw [delete_eq_restrict, extendBy_restrict_of_notMem (by simp [he]), extendBy_ground,
+    insert_diff_of_mem _ he, delete_eq_restrict]
+
+lemma mapEquiv_extendBy [DecidableEq α] (U : M.ModularCut) (he : e ∉ M.E) (hf : f ∉ M.E) :
+    (M.extendBy e U).mapEquiv (Equiv.swap e f) = M.extendBy f U := by
+  obtain rfl | hef := eq_or_ne e f
+  · simp [mapEquiv_eq_map]
+  refine Eq.symm <| ext_indep ?_ fun I (hI : I ⊆ insert f M.E) ↦ ?_
+  · rw [extendBy_E, mapEquiv_ground_eq, extendBy_E, image_insert_eq,
+      Equiv.swap_apply_left, (Equiv.bijOn_swap' (by simp [he, hf])).image_eq]
+  simp only [extendBy_Indep, mapEquiv_indep_iff, Equiv.symm_swap]
+  by_cases! hfI : f ∉ I
+  · rw [(Equiv.bijOn_swap' (by grind)).image_eq, extIndep_iff_of_notMem (by grind),
+      extIndep_iff_of_notMem (by grind)]
+  rw [extIndep_iff_of_mem hfI, extIndep_iff_of_mem (by grind), Equiv.swap_comm,
+    Equiv.swap_image_eq_exchange hfI (by grind), insert_diff_self_of_notMem (by grind)]
 
 end Matroid.ModularCut

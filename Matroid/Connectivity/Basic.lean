@@ -590,12 +590,14 @@ lemma eRk_inter_le_eLocalConn (M : Matroid α) (X Y : Set α) : M.eRk (X ∩ Y) 
   rw [← hI.encard_eq_eRk, hIX.1.eLocalConn_eq hIY.1]
   exact (encard_le_encard (subset_inter hIX.2 hIY.2)).trans le_self_add
 
+@[gcongr]
 lemma eLocalConn_mono_left {X' : Set α} (M : Matroid α) (hX : X' ⊆ X) (Y : Set α) :
     M.eLocalConn X' Y ≤ M.eLocalConn X Y := by
   obtain ⟨J, hJ⟩ := M.exists_isBasis' Y
   rw [hJ.eLocalConn_eq_nullity_project_left, hJ.eLocalConn_eq_nullity_project_left]
   apply nullity_project_mono _ hX
 
+@[gcongr]
 lemma eLocalConn_mono_right {Y' : Set α} (M : Matroid α) (X : Set α) (hY : Y' ⊆ Y) :
     M.eLocalConn X Y' ≤ M.eLocalConn X Y := by
   grw [eLocalConn_comm, eLocalConn_mono_left M hY, eLocalConn_comm]
