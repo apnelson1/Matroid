@@ -2,6 +2,7 @@ import Mathlib.Data.Set.Defs
 import Mathlib.Logic.Equiv.Basic
 import Mathlib.Combinatorics.Matroid.Minor.Order
 import Mathlib.Combinatorics.Matroid.Map
+import Mathlib.Tactic.IntervalCases
 import Matroid.ForMathlib.Set
 import Matroid.Connectivity.Separation.Two
 import Matroid.Triangle
@@ -292,10 +293,54 @@ lemma exists_nonmem_of_closure_coclosure_of_eConn_le_one (hs : M.Simple)
   sorry
 
 lemma simple_cosimple_of_deletion_no_triangle_splitter  {N : Matroid α}
-    (hM : M.TutteConnected 3) (hNM : N <m M)
-    (hTriangle : ∀ e T, M.IsContractible N e → M.IsTriangle T → e ∉ T)
+    (hs : M.Simple) (hcs : M✶.Simple) (hNM : N <m M)
+    (hTriad : ∀ e T, M.IsDeletable N e → M.IsTriad T → e ∉ T)
     (he : N ≤m M ＼ {e}) : (M ＼ {e}).Simple ∧ (M ＼ {e})✶.Simple := by
-  sorry
+  constructor
+  · have h₁ : (M ↾ M.E).Simple := by simp_all only [restrict_ground_eq_self]
+    have h₂ := h₁.subset (show (M ＼ {e}).E ⊆ M.E by simp_all only
+      [restrict_ground_eq_self, delete_ground, diff_subset_iff,
+      singleton_union, subset_insert])
+    rwa [delete_ground, restrict_compl] at h₂
+  · by_contra! hc₁
+    rw [simple_iff_forall_isCircuit] at hc₁
+    push Not at hc₁
+    obtain ⟨C, hC₁, hC₂⟩ := hc₁
+    have hC₃ : ¬M✶.IsCircuit C := by
+      by_contra! hc₂
+      rw [simple_iff_forall_isCircuit] at hcs
+      specialize hcs C hc₂
+      grind only
+    rw [dual_delete] at hC₁
+    have hC₄ := IsCircuit.exists_subset_isCircuit_of_contract hC₁
+    obtain ⟨C', hC₅, hC₆, hC₇⟩ := hC₄
+    have hC₈ : C' = C ∪ {e} := by
+      grind only [show C' ≠ C by grind only, = subset_def, = mem_union, = mem_singleton_iff,
+      #e4a5, #b350, #e4b1, #0cb6, #1c9a39f9c783f075, #9255]
+    rw [hC₈] at hC₅
+    clear hC₃ hC₆ hC₇ hC₈
+    have hC₉ : (C ∪ {e}).encard = C.encard + 1 := by
+      rw [encard_union_eq (by grind)]
+      simp only [encard_singleton]
+    by_cases! hC₁₀ : C.encard = 0
+    · rw [encard_eq_zero] at hC₁₀
+      subst hC₁₀
+      have := empty_not_isCircuit (M✶ ／ {e})
+      tauto
+    · by_cases! hC₁₁ : C.encard ≤ 1
+      · rw [nonempty_iff_empty_ne, ne_comm, ne_eq] at hC₁₀
+        rw [encard_le_one_iff_eq] at hC₁₁
+        have hC₁₂ := Or.resolve_left hC₁₁ hC₁₀
+        obtain ⟨x, hx⟩ := hC₁₂
+        subst hx
+        rw [union_singleton] at hC₅
+        rw [simple_iff_forall_isCircuit] at hcs
+        specialize hcs {e, x} hC₅
+        grw [encard_insert_le, encard_singleton] at hcs
+        enat_to_nat!
+        lia
+      ·
+        sorry
 
 lemma flexible_elements_of_eConn_eq_one {N : Matroid α} (hN : N.TutteConnected 3) (hNM : M ≤m M)
     (hP : P.eConn ≤ 1) (hPi : (N.E ∩ (P !i)).Subsingleton) (hx : x ∈ (P !i) \ M.closure (P i))
