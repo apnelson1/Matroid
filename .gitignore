@@ -5,3 +5,4 @@ lakefile.olean
 lakefile.olean.trace
 .cursor/*
 ToDo/.obsidian/*
+.DS_Store

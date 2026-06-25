@@ -15,8 +15,6 @@ variable {α β : Type*} {G : Graph α β}
 structure Embedding (G : Graph α β) (E : Type*) [TopologicalSpace E] : Type _ where
   toFun : G.Realization → E
   embedding : Topology.IsEmbedding toFun
-  -- cellular : ∀ x ∉ range toFun,
-  --   Nonempty ((connectedComponentIn (range toFun)ᶜ x) ≃ₜ ball (0 : ℂ) 1)
 
 namespace Embedding
 
