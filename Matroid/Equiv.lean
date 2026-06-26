@@ -209,33 +209,15 @@ noncomputable def isoComap (M : Matroid β) (f : α → β) (hf : BijOn f (f ⁻
     M.comap f ≂ M :=
   (Iso.ofEq <| (comapOn_preimage_eq M f).symm).trans (isoComapOn M f hf)
 
--- noncomputable def isoMapSetEmbedding (M : Matroid α) (f : M.E ↪ β) : M ≂ M.mapSetEmbedding f
--- where
---   toEquiv := (Equiv.ofInjective f f.injective)
---   indep_image_iff' I := by
---     rw [mapSetEmbedding_indep_iff, and_iff_left]
---     · convert Iff.rfl
---       ext ⟨x, hx⟩
---       refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
---       · simp only [mapSetEmbedding_ground, mem_preimage, mem_image, Subtype.exists, mem_range,
---         exists_and_right, exists_eq_right, EmbeddingLike.apply_eq_iff_eq, Subtype.mk.injEq,
---         exists_prop] at h
-
-
-
-
---       -- change f ⁻¹' ((Equiv.ofInjective f f.injective) '' I) = _
---       -- simp [Equiv.ofInjective, Equiv.ofLeftInverse]
-
-
---     simp only [mapSetEmbedding_ground, image_subset_iff]
---     intro x
---     simp
-
--- noncomputable def isoMapSetEquiv (M : Matroid α) {E : Set β} (f : M.E ≃ E) :
---     M ≂ M.mapSetEquiv f where
---   toEquiv := f
---   indep_image_iff' := by simp
+noncomputable def isoMapSetEmbedding (M : Matroid α) (f : M.E ↪ β) : M ≂ M.mapSetEmbedding f where
+  toEquiv := (Equiv.ofInjective f f.injective)
+  indep_image_iff' I := by
+    rw [mapSetEmbedding_indep_iff, and_iff_left]
+    · convert Iff.rfl
+      convert congr_arg (preimage f) <| Equiv.ofInjective_image f f.injective I
+      grind
+    simp only [mapSetEmbedding_ground, subset_def, mem_image, mem_range]
+    grind
 
 /-- If `M` and `N` are isomorphic and `α → β` is nonempty, then `N` is a map of `M`.
 Useful for getting out of subtype hell. -/
@@ -286,6 +268,8 @@ lemma Iso.finite_iff (e : M ≂ N) : M.Finite ↔ N.Finite :=
 lemma Iso.finitary_iff (e : M ≂ N) : M.Finitary ↔ N.Finitary :=
   ⟨fun h ↦ h.of_iso e, fun h ↦ h.of_iso e.symm⟩
 
+lemma nonempty_iso_comm : Nonempty (M ≂ N) ↔ Nonempty (N ≂ M) :=
+  ⟨fun ⟨h⟩ ↦ ⟨h.symm⟩, fun ⟨h⟩ ↦ ⟨h.symm⟩⟩
 
 end map
 

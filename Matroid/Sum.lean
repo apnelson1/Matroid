@@ -287,7 +287,7 @@ lemma IsBasis.disjointSum_isBasis_union {I J X Y : Set α} {M N : Matroid α} (h
 lemma disjointSum_eq_disjointSigma (M N : Matroid α) (hMN : Disjoint M.E N.E) :
     M.disjointSum N hMN = Matroid.disjointSigma (fun b ↦ bif b then M else N)
     (by simp [Function.onFun, Pairwise, hMN, hMN.symm]) := by
-  refine ext_indep (by simp) fun I hI ↦ ?_
+  refine ext_indep (by simp [iUnion_bool]) fun I hI ↦ ?_
   simp only [disjointSum_indep_iff, and_comm, disjointSigma_indep_iff, Bool.apply_cond,
     Bool.cond_prop, Bool.forall_bool, Bool.false_eq_true, ↓reduceIte, cond_false, cond_true,
     iUnion_bool]
@@ -355,7 +355,7 @@ lemma disjointSum_spanning_iff (hMN : Disjoint M.E N.E) {X : Set α} :
     (disjointSum M N hMN).Spanning X ↔
       M.Spanning (X ∩ M.E) ∧ N.Spanning (X ∩ N.E) ∧ X ⊆ M.E ∪ N.E := by
     rw [disjointSum_eq_disjointSigma, disjointSigma_spanning_iff]
-    simp [and_comm, and_assoc]
+    simp [and_comm, and_assoc, iUnion_bool]
 
 lemma disjointSum_dep_iff (hMN : Disjoint M.E N.E) {X : Set α} :
     (disjointSum M N hMN).Dep X ↔ (M.Dep (X ∩ M.E) ∨ N.Dep (X ∩ N.E)) ∧ X ⊆ M.E ∪ N.E := by
@@ -447,7 +447,7 @@ lemma sum_dep_iff (M : Matroid α) (N : Matroid β) (X : Set (α ⊕ β)) :
 lemma sum_closure_eq (M : Matroid α) (N : Matroid β) (X : Set (α ⊕ β)) :
     (M.sum N).closure X = inl '' (M.closure (inl ⁻¹' X)) ∪ inr '' (N.closure (inr ⁻¹' X)) := by
   rw [sum_eq_disjointSum, disjointSum_eq_disjointSigma, disjointSigma_closure]
-  simp
+  simp [iUnion_bool]
 
 @[simp]
 lemma inl_mem_sum_closure_iff {e : α} {X : Set (α ⊕ β)} :

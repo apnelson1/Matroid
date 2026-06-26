@@ -345,6 +345,14 @@ lemma eConn_induce_of_delete (P : (M ＼ D).Separation) (i : Bool) :
     (P.induce M i).eConn = P.eConn + M✶.eLocalConn (P !i) D :=
   eConn_induce_of_remove (b := false) P i
 
+lemma eConn_induce_project_eq (P : M.Separation) (C : Set α) :
+    (P.induce (M.project C)).eConn = (P.induce (M ／ C)).eConn := by
+  rw [eConn_eq_eLocalConn _ true, eConn_eq_eLocalConn _ true]
+  -- simp [eLocalConn_project_eq_eLocalConn_contract]
+  rw [induce_apply_subset _ (by simp), induce_apply_subset _ (by simp),
+    eLocalConn_inter_ground, eLocalConn_project_eq_eLocalConn_contract,
+    induce_apply_subset _ (by simp), induce_apply_subset _ (by simp), eLocalConn_inter_ground]
+
 lemma eConn_induce_contract_le (P : M.Separation) (C : Set α) :
     (P.induce (M ／ C)).eConn ≤ P.eConn := by
   grw [← Separation.eConn_eq _ false, ← P.eConn_eq false, induce_apply_contract,
@@ -446,7 +454,7 @@ lemma exists_of_isRestriction_of_forall_mem_closure (P : N.Separation) (hNM : N 
     exact (hφ x hxE).1
   refine ⟨Separation.mk (fun i ↦ φ ⁻¹' {i} ∩ M.E) ?_ ?_, ?_⟩
   · simp +contextual [Pairwise, disjoint_left]
-  · simp [← union_inter_distrib_right, ← preimage_union, subset_def]
+  · simp [← union_inter_distrib_right, ← preimage_union, subset_def, iUnion_bool]
   simp only [↓mk_apply, subset_inter_iff, aux, P.subset_ground.trans hNM.subset, and_self,
     closure_inter_ground, true_and]
   refine ⟨fun _ ↦ auxcl, ?_⟩
@@ -455,7 +463,6 @@ lemma exists_of_isRestriction_of_forall_mem_closure (P : N.Separation) (hNM : N 
   rw [hNM.eLocalConn_eq_of_subset, ← M.eLocalConn_closure_closure, auxcl, auxcl,
     eLocalConn_closure_closure]
 
-set_option backward.isDefEq.respectTransparency false in
 /-- If `N` simplifies `M`, then each separation of `N` extends naturally to one of `M`. -/
 lemma exists_of_simplifies (P : N.Separation) (hNM : N ≤si M) : ∃ (Q : M.Separation),
     (∀ i, (P i ⊆ Q i ∧ M.closure (Q i) = M.closure (P i))) ∧ Q.eConn = P.eConn := by
@@ -463,7 +470,7 @@ lemma exists_of_simplifies (P : N.Separation) (hNM : N ≤si M) : ∃ (Q : M.Sep
   obtain ⟨f, hfN, hef⟩ := hNM.exists_of_isNonloop he
   obtain ⟨i, hi⟩ := P.exists_mem hfN
   use i
-  grw [← singleton_subset_iff.2 hi]
+  refine mem_of_mem_of_subset ?_ <| M.closure_subset_closure <| singleton_subset_iff.2 hi
   exact hef.mem_closure
 
 lemma indep_of_contract {I} (hI : I ⊆ M.E) (hi : M.Indep (I ∩ P i))
@@ -472,3 +479,86 @@ lemma indep_of_contract {I} (hI : I ⊆ M.E) (hi : M.Indep (I ∩ P i))
     contract_isMinor_of_subset _ (show I ∩ P i ⊆ P i from inter_subset_right)
   rw [hi.contract_indep_iff, union_comm, P.union_inter_left _] at hic
   exact hic.2
+
+/-- The guts of a separation comprises the points spanned by both sides. -/
+def guts (P : M.Separation) : Set α := ⋂ i, M.closure (P i)
+
+lemma guts_eq_inter_bool (P : M.Separation) (i : Bool) :
+    P.guts = M.closure (P i) ∩ M.closure (P !i) := by
+  rw [Separation.guts, iInter_bool' _ i]
+
+@[simp, grind =]
+lemma guts_symm (P : M.Separation) : P.symm.guts = P.guts := by
+  rw [guts_eq_inter_bool _ true, P.symm_apply, P.symm_apply, ← guts_eq_inter_bool]
+
+lemma guts_isFlat (P : M.Separation) : M.IsFlat P.guts := by
+  rw [guts_eq_inter_bool _ true]
+  exact (M.closure_isFlat ..).inter (M.closure_isFlat ..)
+
+lemma closure_inter_subset_guts (P : M.Separation) (i : Bool) :
+    M.closure (P i) ∩ P (!i) ⊆ P.guts := by
+  grw [M.subset_closure (P !i), guts_eq_inter_bool]
+
+@[simp, grind! .]
+lemma guts_subset_closure (P : M.Separation) (i : Bool) : P.guts ⊆ M.closure (P i) := by
+  grw [guts_eq_inter_bool P i, inter_subset_left]
+
+lemma eRk_guts_le : M.eRk P.guts ≤ P.eConn := by
+  nth_grw 1 [eConn_eq_eLocalConn _ true, ← M.eRk_project_add_eLocalConn_eq _ (P false),
+    guts_subset_closure P false, (eRk_eq_zero_iff).2 (by simp), zero_add,
+    guts_subset_closure P true, eLocalConn_closure_left, Bool.not_true]
+
+lemma guts_induce_contract_of_subset_guts (hX : X ⊆ P.guts) :
+    (P.induce (M ／ X)).guts = P.guts \ X := by
+  rw [guts_eq_inter_bool _ true, contract_closure_eq,
+    contract_closure_eq, induce_apply_contract, induce_apply_contract, ← diff_inter_distrib_right,
+    diff_union_self, diff_union_self, ← closure_union_closure_left_eq,
+    union_eq_self_of_subset_right (by grind), ← closure_union_closure_left_eq,
+    union_eq_self_of_subset_right (by grind), closure_closure, closure_closure,
+    ← guts_eq_inter_bool]
+
+/-- Contracting a subset `X` of the guts of `P` reduces connectivity by the rank of `X`. -/
+lemma eConn_induce_contract_add_of_subset_guts (hX : X ⊆ P.guts) :
+    (P.induce (M ／ X)).eConn + M.eRk X = P.eConn := by
+  wlog hXP : X ⊆ P true generalizing X P M with aux
+  · rw [← aux (M := M) (P := P) (X := X ∩ P true) (by grind) (by grind), eq_comm,
+      ← eConn_symm, ← aux (M := M ／ (X ∩ P true)) (X := X ∩ P false)]
+    · rw [induce_symm_of_subset _ (by simp), induce_induce _ (by grind),
+        contract_contract, add_assoc, eRk_contract_add_eRk, union_comm (X ∩ P false),
+        ← inter_union_distrib_left, P.union_eq, contract_inter_ground_eq,
+        eRk_inter_ground, ← induce_symm_of_subset _ (by simp), eConn_symm]
+    · rw [guts_symm, guts_induce_contract_of_subset_guts (by grind), subset_diff]
+      grind
+    grind [Separation.symm_apply, induce_apply_contract]
+  rw [eConn_eq_eConn_induce_contract_add _ hXP, ← eLocalConn_closure_left,
+    eLocalConn_comm, M.eLocalConn_subset (by grind)]
+
+/-- The intersection of the coclosures of the two sides of a separation. -/
+def coguts (P : M.Separation) := (P.induce M✶).guts
+
+lemma coguts_eq_inter_bool (P : M.Separation) (i : Bool) :
+    P.coguts = M✶.closure (P i) ∩ M✶.closure (P !i) := by
+  rw [Separation.coguts, guts_eq_inter_bool _ i, induce_dual_apply, induce_dual_apply]
+
+@[simp, grind =]
+lemma coguts_symm (P : M.Separation) : P.symm.coguts = P.coguts := by
+  rw [coguts, ← induce_symm_of_subset _ (by simp), guts_symm, coguts]
+
+lemma coguts_isFlat_dual (P : M.Separation) : M✶.IsFlat P.coguts :=
+  guts_isFlat (P.induce M✶)
+
+lemma closure_inter_subset_coguts (P : M.Separation) (i : Bool) :
+    M✶.closure (P i) ∩ P (!i) ⊆ P.coguts := by
+  grw [M✶.subset_closure (P !i), coguts_eq_inter_bool _ i]
+
+@[simp, grind! .]
+lemma coguts_subset_closure (P : M.Separation) (i : Bool) : P.coguts ⊆ M✶.closure (P i) := by
+  grw [coguts, guts_subset_closure _ i, induce_dual_apply]
+
+@[simp]
+lemma guts_induce_dual : (P.induce M✶).guts = P.coguts := rfl
+
+@[simp]
+lemma coguts_induce_dual : (P.induce M✶).coguts = P.guts := by
+  rw [coguts, guts_eq_inter_bool _ true, induce_dual_apply, induce_dual_apply,
+    induce_dual_apply, induce_dual_apply, dual_dual, guts_eq_inter_bool]

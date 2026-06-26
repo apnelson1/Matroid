@@ -887,7 +887,7 @@ lemma skew_iff_forall_isCircuit (hdj : Disjoint X Y) (hX : X ⊆ M.E := by aesop
     (hY : Y ⊆ M.E := by aesop_mat) :
     M.Skew X Y ↔ ∀ C, M.IsCircuit C → C ⊆ X ∪ Y → C ⊆ X ∨ C ⊆ Y := by
   rw [Skew, isSkewFamily_iff_forall_isCircuit]
-  · simp [or_comm]
+  · simp [or_comm, iUnion_bool]
   · simp [hX, hY]
   rwa [pairwise_disjoint_on_bool]
 
@@ -902,7 +902,8 @@ lemma Skew.subset_or_subset_of_isCircuit (h : M.Skew X Y) {C : Set α} (hC : M.I
 
 lemma Skew.subset_of_isCircuit_of_mem_left (h : M.Skew X Y) {C : Set α} (hC : M.IsCircuit C)
     (hCXY : C ⊆ X ∪ Y) (he : e ∈ C) (heX : e ∈ X) : C ⊆ X := by
-  simpa using h.subset_of_isCircuit_of_mem hC (i := true) (e := e) (by simpa) he (by simpa)
+  simpa using h.subset_of_isCircuit_of_mem hC (i := true) (e := e) (by simpa [iUnion_bool])
+    he (by simpa)
 
 lemma isSkewFamily_iff_forall_skew_compl_singleton {Xs : η → Set α} :
     M.IsSkewFamily Xs ↔ ∀ i, M.Skew (Xs i) (⋃ j ∈ ({i} : Set η)ᶜ, Xs j) := by
@@ -1015,7 +1016,7 @@ lemma Skew.isModularPair_union_union_of_subset {Z : Set α} (hXY : M.Skew X Y) (
     M.IsModularPair (X ∪ Z) (Y ∪ Z) := by
   rw [Skew] at hXY
   rw [IsModularPair]
-  convert hXY.isModularFamily_union_of_subset (Z := Z) (by simpa) using 2 with i
+  convert hXY.isModularFamily_union_of_subset (Z := Z) (by simpa [iUnion_bool]) using 2 with i
   grind
 
 lemma Skew.restrict (hXY : M.Skew X Y) (R : Set α) : (M ↾ R).Skew (X ∩ R) (Y ∩ R) := by

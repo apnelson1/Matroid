@@ -16,7 +16,8 @@ lemma IsFlat.spanning_iff (hF : M.IsFlat F) : M.Spanning F ↔ F = M.E :=
   ⟨hF.eq_ground_of_spanning, by simp +contextual [M.ground_spanning]⟩
 
 lemma IsFlat.inter (hF₁ : M.IsFlat F₁) (hF₂ : M.IsFlat F₂) : M.IsFlat (F₁ ∩ F₂) := by
-  simpa [hF₁, hF₂] using IsFlat.iInter (M := M) (Fs := fun b : Bool ↦ if b then F₁ else F₂)
+  simpa [hF₁, hF₂, iInter_bool] using
+    IsFlat.iInter (M := M) (Fs := fun b : Bool ↦ if b then F₁ else F₂)
 
 end Spanning
 
@@ -434,7 +435,7 @@ lemma disjointSigma_isFlat_iff {M : ι → Matroid α} (hdj : Pairwise (Disjoint
 @[simp]
 lemma disjointSum_isFlat_iff {M N : Matroid α} (hdj : Disjoint M.E N.E) :
     (M.disjointSum N hdj).IsFlat F ↔ M.IsFlat (F ∩ M.E) ∧ N.IsFlat (F ∩ N.E) ∧ F ⊆ M.E ∪ N.E := by
-  simp [disjointSum_eq_disjointSigma, and_assoc, and_comm]
+  simp [iUnion_bool, disjointSum_eq_disjointSigma, and_assoc, and_comm]
 
 @[simp]
 lemma sum_isFlat_iff {β : Type*} {N : Matroid β} (F : Set (α ⊕ β)) :

@@ -93,6 +93,10 @@ lemma IsFiniteRankUniform.restrict (hM : M.IsFiniteRankUniform a) {R : Set α} (
   refine ⟨?_, hM.isUniform.minor (restrict_isMinor _ hRX)⟩
   rw [eRank_restrict, hM.eq_unifOn, unifOn_eRk_eq _ _ hRX, min_eq_right haR]
 
+lemma IsFiniteRankUniform.map (hM : M.IsFiniteRankUniform a) {β : Type*} {f : α → β}
+    (hf : InjOn f M.E) : (M.map f hf).IsFiniteRankUniform a :=
+  ⟨by simpa using hM.eRank_eq, hM.isUniform.map hf⟩
+
 /-- A uniform matroid whose rank is finite is one of the obvious ones. -/
 lemma IsUniform.isFiniteRankUniform [M.RankFinite] (hM : M.IsUniform) :
     ∃ a, M.IsFiniteRankUniform a :=
@@ -119,7 +123,23 @@ lemma isFiniteRankUniform_zero_iff : M.IsFiniteRankUniform 0 ↔ M.eRank = 0 := 
   rw [eRank_eq_zero_iff.1 h]
   simp
 
+theorem nonempty_iso_unifOn_iff {β : Type*} {X : Set β} {a : ℕ} (haX : a ≤ X.encard) :
+    Nonempty (M ≂ (unifOn X a)) ↔ M.IsFiniteRankUniform a ∧ Nonempty (X ≃ M.E) := by
+  refine ⟨fun ⟨i⟩ ↦ ⟨⟨unifOn_eRank_eq' haX ▸ i.eRank_eq, ?_⟩, ⟨i.1.symm⟩⟩, fun ⟨h, ⟨i⟩⟩ ↦ ?_⟩
+  · obtain rfl | hne := X.eq_empty_or_nonempty
+    · obtain rfl : M = emptyOn α := by simpa [ground_eq_empty_iff] using i.1.encard_eq
+      simp [isUniform_iff_forall_spanning_of_isCircuit]
+    have aux : (unifOn X a).Nonempty := by rwa [← ground_nonempty_iff, unifOn_ground_eq]
+    obtain ⟨f, hf, h⟩ := i.symm.exists_eq_map'
+    rw [h]
+    exact (isUniform_unifOn ..).map ..
+  refine ⟨i.symm, fun I ↦ ?_⟩
+  simp only [h.indep_iff, Subtype.val_injective.encard_image, image_subset_iff,
+    Subtype.coe_preimage_self, subset_univ, and_true, unifOn_ground_eq, unifOn_indep_iff]
+  rw [Function.Injective.encard_image (fun x ↦ by simp)]
+
 /-- The restriction of `M` to `X` is a rank-`a` uniform matroid -/
+@[mk_iff]
 structure IsFiniteRankUniformOn (M : Matroid α) (a : ℕ) (X : Set α) : Prop where
   isFiniteRankUniform : (M ↾ X).IsFiniteRankUniform a
   subset_ground : X ⊆ M.E
@@ -129,7 +149,7 @@ attribute [grind →] IsFiniteRankUniformOn.subset_ground
 lemma IsFiniteRankUniformOn.eRk (h : M.IsFiniteRankUniformOn a X) : M.eRk X = a := by
   rw [← M.eRank_restrict, h.isFiniteRankUniform.eRank_eq]
 
-lemma IsFiniteRankUniform.isFiniteRankUniformOn_of_restrict
+lemma IsFiniteRankUniform.isFiniteRankUniformOn_of_restrict'
     (h : (M ↾ X).IsFiniteRankUniform a) (ha : a ≠ 0) : M.IsFiniteRankUniformOn a X := by
   refine ⟨h, fun e heX ↦ (Indep.subset_ground ?_ (mem_singleton ..))⟩
   rw [isFiniteRankUniform_iff_forall_indep_iff] at h
@@ -144,6 +164,13 @@ lemma isFiniteRankUniformOn_zero_iff : M.IsFiniteRankUniformOn 0 X ↔ X ⊆ M.l
   · exact (eRk_eq_zero_iff h.subset_ground).1 h.isFiniteRankUniform.eRank_eq
   · grw [isFiniteRankUniform_zero_iff, eRank_restrict, eRk_eq_zero_iff', inter_subset_left, h]
   grw [← loops_subset_ground, h]
+
+lemma IsFiniteRankUniform.isFiniteRankUniformOn_of_restrict (h : (M ↾ X).IsFiniteRankUniform a)
+    (hXE : X ⊆ M.E := by aesop_mat) : M.IsFiniteRankUniformOn a X := by
+  obtain rfl | hne := eq_or_ne a 0
+  · simp only [isFiniteRankUniform_zero_iff, eRank_restrict] at h
+    rwa [isFiniteRankUniformOn_zero_iff, ← eRk_eq_zero_iff]
+  exact h.isFiniteRankUniformOn_of_restrict' hne
 
 lemma isFiniteRankUniformOn_iff_indep (ha : a ≠ 0) :
     M.IsFiniteRankUniformOn a X ↔ a ≤ X.encard ∧ ∀ I ⊆ X, M.Indep I ↔ I.encard ≤ a := by
@@ -294,33 +321,49 @@ lemma isUniform_of_eRank_lt_girth (hM : M.eRank < M.girth) : M.IsUniform := by
   have _ : M.RankFinite := by rw [← eRank_lt_top_iff]; enat_to_nat!
   refine isUniform_of_eRank_add_one_le_girth <| Order.add_one_le_of_lt hM
 
+theorem nonempty_iso_unif_iff' :
+    Nonempty (M ≂ (unif a (a + b))) ↔ M.IsFiniteUniform a b := by
+  rw [unif, nonempty_iso_unifOn_iff (by simp), ← Finite.encard_eq_iff_nonempty_equiv' (by simp),
+    encard_univ, ENat.card_eq_coe_fintype_card, Fintype.card_fin, isFiniteUniform_iff, eq_comm]
+  simp only [Nat.cast_add, and_congr_right_iff, iff_self_and]
+  intro hr he
+  rw [← eRank_add_eRank_dual, hr.eRank_eq] at he
+  enat_to_nat!; lia
+
+theorem nonempty_iso_unif_iff (hab : a ≤ b) :
+    Nonempty (M ≂ (unif a b)) ↔ M.IsFiniteRankUniform a ∧ M.E.encard = b := by
+  obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hab
+  rw [nonempty_iso_unif_iff']
+  refine ⟨fun h ↦ ⟨h.toIsFiniteRankUniform, h.encard_eq⟩, fun h ↦ ⟨h.1, h.2, ?_⟩⟩
+  rw [← eRank_add_eRank_dual, h.1.eRank_eq] at h
+  enat_to_nat!; lia
+
+theorem nonempty_iso_unif_iff'' :
+    Nonempty (M ≂ (unif a b)) ↔ M.IsFiniteRankUniform (min a b) ∧ M.E.encard = b := by
+  rw [unif_eq_unif_min, nonempty_iso_unif_iff (by simp)]
 
 set_option backward.isDefEq.respectTransparency false in
-theorem nonempty_iso_unif_iff :
+theorem nonempty_iso_unif_iff''' :
     Nonempty (M ≂ (unif a b)) ↔ ∃ E, (M = unifOn E a ∧ E.encard = b) := by
-  refine ⟨fun ⟨e⟩ ↦ ⟨M.E, ?_⟩, ?_⟩
-  · rw [eq_unifOn_iff, and_iff_right rfl, and_iff_left <| by simpa using e.toEquiv.encard_eq]
-    refine fun I ↦ ?_
-    obtain (hIE | hIE) := em' <| I ⊆ M.E
-    · exact iff_of_false (fun h ↦ hIE h.subset_ground) (by simp [hIE])
-    rw [and_iff_left hIE]
-    have hwin := e.indep_image_iff (I := M.E ↓∩ I)
-    simp only [Subtype.image_preimage_coe, inter_eq_self_of_subset_right hIE, unif_ground_eq,
-      unif_indep_iff] at hwin
-    rwa [Subtype.val_injective.encard_image, (EmbeddingLike.injective' _).encard_image,
-      encard_preimage_of_injective_subset_range Subtype.val_injective (by simpa)] at hwin
-  rintro ⟨E, rfl, hE⟩
-  obtain ⟨e⟩ := Fin.nonempty_equiv_iff_encard_eq.2 hE
-  refine ⟨e.trans (Equiv.Set.univ (Fin b)).symm, fun I ↦ ?_⟩
-  simp only [unifOn_indep_iff, Subtype.val_injective.encard_image, image_subset_iff, unif_ground_eq,
-    Equiv.Set.univ, Equiv.trans_apply, Equiv.coe_fn_symm_mk, unif_indep_iff]
-  rw [Function.Injective.encard_image (fun _ _ ↦ by simp), and_iff_left_iff_imp]
-  exact fun _ ⟨_,hx⟩ _ ↦ hx
+  rw [nonempty_iso_unif_iff'']
+  refine ⟨fun h ↦ ⟨M.E, ?_, h.2⟩, ?_⟩
+  · nth_rw 1 [h.1.eq_unifOn]
+    refine ext_indep rfl fun I (hI : I ⊆ M.E) ↦ ?_
+    simp only [unifOn_indep_iff, and_congr_left_iff]
+    refine fun h' ↦ ⟨fun hle ↦ hle.trans (by simp),
+      fun hle ↦ (le_min hle (encard_le_encard hI)).trans ?_⟩
+    rw [h.2]
+    simp only [inf_le_iff, Nat.cast_le, le_inf_iff, Std.le_refl, true_and, and_true]
+    grind
+  rintro ⟨E, rfl, hb⟩
+  simp [hb, isFiniteRankUniform_iff, min_comm, le_antisymm_iff, show a ≤ b ∨ b ≤ a by lia]
 
-theorem nonempty_iso_unif_iff' :
-    Nonempty (M ≂ (unif a b)) ↔ (M = unifOn M.E a ∧ M.E.encard = b) := by
-  rw [nonempty_iso_unif_iff]
-  exact ⟨by rintro ⟨E, rfl, h⟩; simp [h], fun h ↦ ⟨M.E, by simpa⟩⟩
+
+
+-- theorem nonempty_iso_unif_iff' :
+--     Nonempty (M ≂ (unif a b)) ↔ (M = unifOn M.E a ∧ M.E.encard = b) := by
+--   rw [nonempty_iso_unif_iff]
+--   exact ⟨by rintro ⟨E, rfl, h⟩; simp [h], fun h ↦ ⟨M.E, by simpa⟩⟩
 
 
 lemma eq_unifOn_of_eRank_le_one [M.Loopless] (hM : M.eRank ≤ 1) : ∃ E, M = unifOn E 1 := by
@@ -359,10 +402,7 @@ lemma unifOn_one_dual (E : Set α) : (unifOn E 1)✶ = circuitOn E := by
 
 theorem nonempty_iso_line_iff {n : ℕ} :
     Nonempty (M ≂ unif 2 n) ↔ M.Simple ∧ M.eRank ≤ 2 ∧ M.E.encard = n := by
-  simp [nonempty_iso_unif_iff', ← and_assoc, eq_unifOn_two_iff, and_comm]
-
-
-  -- simp [nonempty_iso_unif_iff', ← and_assoc, eq_unifOn_two_iff, and_comm]
+  simp [nonempty_iso_unif_iff''', ← and_assoc, eq_unifOn_two_iff, and_comm]
 
 lemma eRank_le_one_iff : M.eRank ≤ 1 ↔ ∃ (E₀ E₁ : Set α) (h : Disjoint E₀ E₁),
     M = (loopyOn E₀).disjointSum (unifOn E₁ 1) h := by

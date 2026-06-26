@@ -352,6 +352,11 @@ instance unif_simple (a b : ℕ) : Simple (unif (a + 2) b) := by
 theorem unif_eq_freeOn (h : b ≤ a) : unif a b = freeOn univ := by
   simpa [eq_freeOn_iff]
 
+theorem unif_eq_unif_min : unif a b = unif (min a b) b := by
+  obtain hlt | hge := lt_or_ge a b
+  · rw [min_eq_left hlt.le]
+  rw [unif_eq_freeOn hge, min_eq_right hge, unif_eq_freeOn rfl.le]
+
 /-- The expression for dual of a uniform matroid.
   The junk case where `b < a` still works because the subtraction truncates. -/
 theorem unif_dual (a b : ℕ) : (unif a b)✶ = unif (b - a) b := by
@@ -523,13 +528,19 @@ lemma IsUniform.closure_not_spanning (hM : M.IsUniform) (hIE : I ⊆ M.E) (hIs :
   rw [(hIe.subset (subset_insert _ _)).mem_closure_iff_of_notMem heI] at he
   exact he.not_indep hIe
 
+lemma IsUniform.map (hM : M.IsUniform) {β : Type*} {f : α → β} (hf : InjOn f M.E) :
+    (M.map f hf).IsUniform := by
+  rw [isUniform_iff_forall_spanning_of_isCircuit]
+  intro C hC
+  obtain ⟨C, hC', rfl⟩ := (map_isCircuit_iff ..).1 hC
+  rw [map_spanning_iff]
+  exact ⟨C, hM.spanning_of_dep hC'.dep, rfl⟩
 
 lemma maximal_right_of_forall_ge {α : Type*} {P Q : α → Prop} {a : α} [PartialOrder α]
     (hP : ∀ ⦃x y⦄, P x → x ≤ y → P y) (h : Maximal (fun x ↦ P x ∧ Q x) a) : Maximal Q a :=
   ⟨h.prop.2, fun _ hb hab ↦ h.le_of_ge ⟨hP h.prop.1 hab, hb⟩ hab⟩
 
 end Infinite
-
 
 @[simps!] def uniformMatroidOfBase (E : Set α) (IsBase : Set α → Prop)
     (exists_isBase : ∃ B, IsBase B)
@@ -621,6 +632,7 @@ lemma unifOn_map {β : Type*} (E : Set α) (f : α → β) (hf : InjOn f E) (a :
     and_iff_left hIE, and_iff_left hI]
 
 end LowRank
+
 
 
 

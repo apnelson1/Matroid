@@ -553,7 +553,7 @@ lemma eConn_eq_eConn_contract_subset_add (M : Matroid α) (hCX : C ⊆ X) :
       ← hI.closure_eq_closure, eLocalConn_closure_right, eLocalConn_closure_right,
       aux (hI.subset.trans hCX) hI.indep]
   have hrw := M.multiConn_project_add_disjoint (X := fun b ↦ bif b then X else M.E \ X)
-    (by simp [hC.subset_ground.trans subset_union_right])
+    (by simp [iUnion_bool, hC.subset_ground.trans subset_union_right])
     (by simp [pairwise_disjoint_on_bool, disjoint_sdiff_right]) hC
   grw [eq_comm, eConn_eq_eLocalConn, project_ground, eLocalConn_eq_multiConn,
     eConn_eq_eLocalConn, eLocalConn_eq_multiConn (Y := M.E \ X), ← hrw]

@@ -187,7 +187,7 @@ section Set
 /-- The modular cut corresponding the guts of a separation between a set `X` and its complement. -/
 def gutsModularCutSet (M : Matroid α) (X : Set α) : M.ModularCut :=
     M.gutsModularCut (IndexedPartition.ofSubset
-      (show X ∩ M.E ⊆ M.E from inter_subset_right) true) (by simp [inter_comm X])
+      (show X ∩ M.E ⊆ M.E from inter_subset_right) true) (by simp [iUnion_bool, inter_comm X])
 
 @[simp]
 lemma gutsModularCutSet_inter_ground : M.gutsModularCutSet (X ∩ M.E) = M.gutsModularCutSet X := by

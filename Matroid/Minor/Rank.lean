@@ -465,6 +465,10 @@ lemma eRank_contract_add_eRk (M : Matroid α) (C : Set α) : (M ／ C).eRank + M
     eRank_def, ← eRelRk_empty_left, eRelRk_add_cancel _ (empty_subset _) inter_subset_right,
     eRelRk_empty_left]
 
+lemma eRk_contract_add_eRk (M : Matroid α) (X C : Set α) :
+    (M ／ C).eRk X + M.eRk C = M.eRk (X ∪ C) := by
+  rw [← eRelRk_eq_eRk_contract, eRelRk_add_eRk_eq]
+
 lemma IsNonloop.eRank_contractElem_add_one (M : Matroid α) (he : M.IsNonloop e) :
     (M ／ {e}).eRank + 1 = M.eRank := by
   rw [← M.eRank_contract_add_eRk {e}, he.eRk_eq]

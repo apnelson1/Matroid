@@ -70,7 +70,7 @@ lemma IsSkewFamily.nullity_iUnion_eq {X : ι → Set α} (hX : M.IsSkewFamily X)
 
 lemma Skew.nullity_union_eq (hXY : M.Skew X Y) (hdj : Disjoint X Y) :
     M.nullity (X ∪ Y) = M.nullity X + M.nullity Y := by
-  simpa using IsSkewFamily.nullity_iUnion_eq hXY <| by rwa [pairwise_disjoint_on_bool]
+  simpa [iUnion_bool] using IsSkewFamily.nullity_iUnion_eq hXY <| by rwa [pairwise_disjoint_on_bool]
 
 lemma tsum_nullity_eq_nullity_iUnion_iff_isSkewFamily {X : ι → Set α}
     (hX : Pairwise (Disjoint on X)) (hXE : ∀ i, X i ⊆ M.E) (hfin : M.nullity (⋃ i, X i) < ⊤) :
@@ -103,10 +103,10 @@ lemma nullity_union_eq_iff (hdj : Disjoint X Y) (hfin : M.nullity (X ∪ Y) ≠ 
     (hXE : X ⊆ M.E := by aesop_mat) (hYE : Y ⊆ M.E := by aesop_mat) :
     M.nullity (X ∪ Y) = M.nullity X + M.nullity Y ↔ M.Skew X Y := by
   rw [Skew, ← tsum_nullity_eq_nullity_iUnion_iff_isSkewFamily]
-  · simp
+  · simp [iUnion_bool]
   · rwa [pairwise_on_bool Disjoint.symm]
   · simp [hXE, hYE]
-  simpa [lt_top_iff_ne_top]
+  simpa [lt_top_iff_ne_top, iUnion_bool]
 
 lemma not_skew_iff_nullity_lt_nullity_project (hfin : M.nullity Y ≠ ⊤) (hdj : Disjoint X Y)
     (hX : X ⊆ M.E := by aesop_mat) (hY : Y ⊆ M.E := by aesop_mat) :

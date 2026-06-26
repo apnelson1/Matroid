@@ -521,9 +521,9 @@ lemma IsModularPair.exists_isMutualBasis_isBase (h : M.IsModularPair X Y) : ∃ 
     M.IsBasis (Y ∩ B) Y ∧ M.IsBasis (X ∩ Y ∩ B) (X ∩ Y) := by
   rw [IsModularPair] at h
   obtain ⟨B, hB, hB'⟩ := h.exists_isMutualBasis_isBase
-  exact ⟨B, hB, by simpa using hB'.isBasis_iUnion,
+  exact ⟨B, hB, by simpa [iUnion_bool] using hB'.isBasis_iUnion,
     by simpa using hB'.isBasis_inter true, by simpa using hB'.isBasis_inter false,
-    by simpa using hB'.isBasis_iInter⟩
+    by simpa [iInter_bool] using hB'.isBasis_iInter⟩
 
 lemma IsModularPair.exists_common_isBasis (h : M.IsModularPair X Y) : ∃ I,
     M.IsBasis I (X ∪ Y) ∧ M.IsBasis (I ∩ X) X ∧

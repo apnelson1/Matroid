@@ -864,6 +864,15 @@ lemma eLocalConn_add_eRelRk_union_eq_eRk (M : Matroid α) (X Y : Set α) :
     eRelRk_eq_eRk_project, ← eRk_closure_eq, hcl, eRk_closure_eq, add_comm,
     eRk_add_nullity_eq_encard]
 
+lemma eRk_project_add_eLocalConn_eq (M : Matroid α) (X Y : Set α) :
+    (M.project Y).eRk X + M.eLocalConn X Y = M.eRk X := by
+  rw [← M.eLocalConn_add_eRelRk_union_eq_eRk X Y, add_comm, ← eRelRk_eq_union_right,
+    eRelRk_eq_eRk_project]
+
+lemma eRk_contract_add_eLocalConn_eq (M : Matroid α) (X Y : Set α) :
+    (M ／ Y).eRk X + M.eLocalConn X Y = M.eRk X := by
+  rw [← eRk_project_eq_eRk_contract, eRk_project_add_eLocalConn_eq]
+
 lemma IsHyperplane.eLocalConn_add_one_eq {H X : Set α} (hH : M.IsHyperplane H) (hXH : ¬ (X ⊆ H))
     (hXE : X ⊆ M.E := by aesop_mat) : M.eLocalConn X H + 1 = M.eRk X := by
   rw [← M.eLocalConn_add_eRelRk_union_eq_eRk X H, ← eRelRk_closure_right,

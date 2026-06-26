@@ -229,10 +229,10 @@ lemma union_diff_diff (A B : Set α) : (A ∪ B) \ (A \ B) = B := by
 
 variable {s t r : Set α}
 
-@[simp] lemma iUnion_bool {s : Bool → Set α} : ⋃ i, s i = s true ∪ s false :=
+lemma iUnion_bool {s : Bool → Set α} : ⋃ i, s i = s true ∪ s false :=
   Set.ext <| by simp [or_comm]
 
-@[simp] lemma iInter_bool {s : Bool → Set α} : ⋂ i, s i = s true ∩ s false :=
+lemma iInter_bool {s : Bool → Set α} : ⋂ i, s i = s true ∩ s false :=
   Set.ext <| by simp [and_comm]
 
 @[simp] lemma pair_nontrivial_iff {x y : α} : ({x,y} : Set α).Nontrivial ↔ x ≠ y :=
@@ -253,6 +253,9 @@ lemma pairwise_disjoint_on_bool'' {α : Type*} {f : Bool → Set α} (b : Bool) 
 
 lemma iUnion_bool' {α : Type*} (f : Bool → Set α) (b : Bool) : ⋃ i, f i = f b ∪ f !b := by
   cases b <;> simp [iUnion_bool, union_comm]
+
+lemma iInter_bool' {α : Type*} (f : Bool → Set α) (b : Bool) : ⋂ i, f i = f b ∩ f !b := by
+  cases b <;> simp [iInter_bool, inter_comm]
 
 lemma diff_singleton_diff_eq (s t : Set α) (x : α) : (s \ {x}) \ t = s \ (insert x t) := by
   rw [diff_diff, singleton_union]

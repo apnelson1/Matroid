@@ -215,7 +215,7 @@ lemma parallelSum_indep_iff_of_notMem_notMem {N : Matroid β} {f : β} (he : M.I
 and `P` is a `2`-separation, in which case this is one side of the `2`-sum corresponding to `P`.
 If `P` is a `1`-separation, then `f` is a loop.  -/
 def Separation.twoSummand (P : M.Separation) (i : Bool) (f : α) : Matroid α :=
-  (M ↾ P i).extendBy f ((M.gutsModularCut P (by simp)).restrict (P i))
+  (M ↾ P i).extendBy f ((M.gutsModularCut P (by simp [iUnion_bool])).restrict (P i))
 
 @[simp]
 lemma Separation.twoSummand_ground (P : M.Separation) (i : Bool) (f : α) :
@@ -225,7 +225,7 @@ lemma Separation.twoSummand_deleteElem (hfP : f ∉ P i) : ((P.twoSummand i f) �
   rw [twoSummand, ModularCut.extendBy_deleteElem _ hfP]
 
 lemma Separation.gutsModularCut_eq_top_iff :
-    (M.gutsModularCut P (by simp)) = ⊤ ↔ P.eConn = 0 := by
+    (M.gutsModularCut P (by simp [iUnion_bool])) = ⊤ ↔ P.eConn = 0 := by
   rw [Matroid.gutsModularCut_eq_top_iff, isSkewFamily_bool_iff true, ← eConn_eq_zero_iff_skew]
 
 lemma Separation.twoSummand_isNonloop (hP : P.eConn = 1) : (P.twoSummand i f).IsNonloop f := by
@@ -242,7 +242,7 @@ lemma Separation.twoSummand_isNonColoop (hfP : f ∉ P i) : (P.twoSummand i f).I
 lemma Separation.twoSummand_contractElem (hP : P.eConn = 1) (hfP : f ∉ P i) :
     (P.twoSummand i f) ／ {f} = M ／ (P (!i)) := by
   rw [twoSummand, ModularCut.extendBy_contractElem _ hfP]
-  have aux : (M.gutsModularCut P (by simp)).restrict (P i) ≠ ⊤ := by
+  have aux : (M.gutsModularCut P (by simp [iUnion_bool])).restrict (P i) ≠ ⊤ := by
     rw [Ne, ModularCut.restrict_eq_top_iff, P.gutsModularCut_eq_top_iff, hP]
     simp
   refine ext_indep (by simp) fun I hI ↦ ?_

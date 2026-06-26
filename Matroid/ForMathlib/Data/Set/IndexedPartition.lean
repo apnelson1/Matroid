@@ -407,11 +407,11 @@ protected lemma ext_bool_iff {P P' : s.IndexedPartition Bool} (b : Bool) : P = P
 
 @[simp]
 protected lemma union_eq' : P false ∪ P true = s := by
-  simp [← P.iUnion_eq, union_comm]
+  simp [← P.iUnion_eq, iUnion_bool, union_comm]
 
 @[simp]
 protected lemma union_eq : P true ∪ P false = s := by
-  simp [← P.iUnion_eq]
+  simp [← P.iUnion_eq, iUnion_bool]
 
 @[simp]
 protected lemma union_bool_eq (b : Bool) : P b ∪ P (!b) = s := by
@@ -445,7 +445,7 @@ protected def _root_.Set.Disjoint.toIndexedPartition
     (disjoint : Disjoint r s) (union_eq : r ∪ s = t) : t.IndexedPartition Bool where
   toFun b := bif b then r else s
   pairwise_disjoint' := by rwa [pairwise_disjoint_on_bool']
-  iUnion_eq' := by simpa
+  iUnion_eq' := by simpa [iUnion_bool]
 
 @[simp]
 protected lemma _root_.Set.Disjoint.toIndexedPartition_true {disjoint : Disjoint r s}
@@ -463,7 +463,7 @@ protected lemma mem_or_mem (P : s.IndexedPartition Bool) {a : α} (ha : a ∈ s)
 protected def symm (P : s.IndexedPartition Bool) : s.IndexedPartition Bool where
   toFun b := P !b
   pairwise_disjoint' := P.pairwise_disjoint.comp_of_injective fun _ _ ↦ by simp
-  iUnion_eq' := by simp
+  iUnion_eq' := by simp [iUnion_bool]
 
 protected lemma symm_true (P : s.IndexedPartition Bool) : P.symm true = P false := rfl
 

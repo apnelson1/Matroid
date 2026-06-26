@@ -286,7 +286,7 @@ def IsoMinor.strictIsoMinor_of_not_surjective (i : N ≤i M) (hi : ¬ Surjective
       simp [← he]
 
 /-- If `N ≂ M₀` and `M₀ ≤m M` then `N ≤i M`. -/
-@[simps] def Iso.transIsoMinor {M₀ : Matroid α} (e : N ≂ M₀) (hM₀ : M₀ ≤m M) : N ≤i M where
+@[simps] def Iso.transIsMinor {M₀ : Matroid α} (e : N ≂ M₀) (hM₀ : M₀ ≤m M) : N ≤i M where
   toFun x := (inclusion hM₀.subset) (e x)
   inj' := by rintro ⟨x, hx⟩ ⟨y, hy⟩; simp [Subtype.val_inj]
   exists_isMinor' := ⟨M₀, hM₀, by simp, fun I ↦ by simp [e.indep_image_iff]⟩
@@ -345,6 +345,19 @@ Useful for computability and defeq.  -/
     refine ⟨(i₁.trans_iso e).trans_isMinor h, fun x ↦ ?_⟩
     simp only [comp_apply, ← h']
     rfl )
+
+@[simps!] def IsoMinor.ofDual (N : Matroid β) (M : Matroid α) (i : N✶ ≤i M✶) : N ≤i M :=
+  ((Iso.ofEq N.dual_dual).symm.isoMinor.trans i.dual).trans ((Iso.ofEq M.dual_dual).isoMinor)
+
+@[simp]
+lemma nonempty_isoMinor_dual_iff {N : Matroid β} {M : Matroid α} :
+    Nonempty (N✶ ≤i M✶) ↔ Nonempty (N ≤i M) :=
+  ⟨fun ⟨i⟩ ↦ ⟨i.ofDual⟩, fun ⟨i⟩ ↦ ⟨i.dual⟩⟩
+
+lemma nonempty_isoMinor_iff : Nonempty (N ≤i M) ↔ ∃ M₀, M₀ ≤m M ∧ Nonempty (N ≂ M₀) := by
+  refine ⟨fun ⟨e⟩ ↦ ?_, fun ⟨M₀, hM₀, ⟨h⟩⟩ ↦ ⟨h.isoMinor.trans hM₀.isoMinor⟩⟩
+  obtain ⟨M₀, hM₀, i, h⟩ := e.exists_iso
+  exact ⟨M₀, hM₀, ⟨i⟩⟩
 
 @[simps!]
 def IsoMinor.trans_strictIsoMinor {α₁ α₂ α₃ : Type*} {M₁ : Matroid α₁} {M₂ : Matroid α₂}
@@ -583,19 +596,40 @@ lemma StrictIsoMinor.exists_isDeletable_or_isContractible (i : N <i M) : ∃ e,
 --     M ≤i freeOn E ↔ M = freeOn M.E ∧ M.E.encard ≤ E.encard := by
 --   simp [Matroid.isoMinor_freeOn_iff, ← hE.encard_le_iff_nonempty_embedding']
 
--- theorem freeOn_isoMinor_iff {E : Set α} {M : Matroid β} :
---     freeOn E ≤i M ↔ ∃ (f : E ↪ β), M.Indep (range f) := by
---   simp_rw [IsoMinor, IsIso.comm (M := freeOn E), isIso_freeOn_iff]
---   refine ⟨fun ⟨M₀, hM₀M, hM₀free, ⟨e⟩⟩ ↦ ?_, fun ⟨f, hf⟩ ↦ ?_⟩
---   · use e.symm.toEmbedding.trans (Function.Embedding.subtype _)
---     refine Indep.of_isMinor ?_ hM₀M
---     nth_rw 1 [hM₀free ]
---     simp only [freeOn_indep_iff]
---     rintro _ ⟨x,hx,rfl⟩
---     simp
---   refine ⟨M ↾ (range f), M.restrict_isMinor hf.subset_ground, ?_⟩
---   rw [restrict_ground_eq, ← indep_iff_restrict_eq_freeOn, and_iff_right hf]
---   exact ⟨(Equiv.ofInjective f f.2).symm⟩
+theorem freeOn_isoMinor_iff {E : Set α} {M : Matroid β} :
+    Nonempty (freeOn E ≤i M) ↔ ∃ (f : E ↪ β), M.Indep (range f) := by
+  refine ⟨fun ⟨(f : E → M.E), hf, N, hNM, hNE, hN⟩ ↦ ?_, fun ⟨f, hf⟩ ↦ ?_⟩
+  · refine ⟨Embedding.trans ⟨f, hf⟩ (Embedding.setSubtype M.E), ?_⟩
+    simp only [freeOn_ground, freeOn_indep_iff, image_subset_iff, coe_preimage_self, subset_univ,
+      true_iff] at hN
+    convert (hN univ).of_isMinor hNM using 1
+    ext
+    simp only [mem_range, Embedding.trans_apply, Embedding.coeFn_mk, Embedding.setSubtype_apply,
+      Subtype.exists, image_univ, mem_image, exists_and_right, exists_eq_right]
+    grind
+  refine ⟨(Set.inclusion hf.subset_ground) ∘ (rangeFactorization f), ?_, ?_⟩
+  · exact (inclusion_injective _).comp <| rangeFactorization_injective.2 f.injective
+  refine ⟨M ↾ range f, restrict_isMinor _ hf.subset_ground, ?_, fun I ↦ ?_⟩
+  · simp [range_comp, rangeFactorization_surjective.range_eq]
+    ext
+    simp only [mem_range, Subtype.exists, mem_image, mem_setOf_eq, exists_and_left, exists_prop,
+      exists_eq_right_right, iff_self_and, forall_exists_index]
+    grind
+  simp only [freeOn_ground, freeOn_indep_iff, image_subset_iff, coe_preimage_self, comp_apply,
+    image_image, rangeFactorization_coe, restrict_indep_iff, preimage_range, iff_and_self]
+  exact fun _ ↦ hf.subset <| by grind
+
+theorem freeOn_isoMinor_iff_of_finite {E : Set α} (hE : E.Finite) :
+    Nonempty (freeOn E ≤i M) ↔ E.encard ≤ M.eRank := by
+  rw [freeOn_isoMinor_iff]
+  refine ⟨fun ⟨f, hf⟩ ↦ ?_, fun h ↦ ?_⟩
+  · grw [← hf.encard_le_eRank, ← f.injective.encard_range, ENat.card_coe_set_eq]
+  obtain ⟨B, hB⟩ := M.exists_isBase
+  obtain ⟨f'⟩ := hE.encard_le_iff_nonempty_embedding.1 (hB.encard_eq_eRank ▸ h)
+  refine ⟨f'.trans (Embedding.setSubtype _), hB.indep.subset ?_⟩
+  refine fun x hx ↦ ?_
+  simp only [mem_range, Embedding.trans_apply, Embedding.setSubtype_apply, Subtype.exists] at hx
+  grind
 
 -- theorem freeOn_isoMinor_iff_of_finite {E : Set α} (hE : E.Finite) :
 --     freeOn E ≤i M ↔ E.encard ≤ M.eRank := by

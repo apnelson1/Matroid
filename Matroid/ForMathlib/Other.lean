@@ -73,6 +73,10 @@ theorem Set.Finite.encard_eq_iff_nonempty_equiv {s : Set α} {t : Set β} (ht : 
   obtain ⟨f, hf⟩ := ht.exists_bijOn_of_encard_eq h.symm
   exact Nonempty.intro <| (hf.equiv _).symm
 
+theorem Set.Finite.encard_eq_iff_nonempty_equiv' {s : Set α} {t : Set β} (hs : s.Finite) :
+    s.encard = t.encard ↔ Nonempty (s ≃ t) := by
+  rw [eq_comm, hs.encard_eq_iff_nonempty_equiv]
+  exact ⟨fun ⟨i⟩ ↦ ⟨i.symm⟩, fun ⟨i⟩ ↦ ⟨i.symm⟩⟩
 
 
 

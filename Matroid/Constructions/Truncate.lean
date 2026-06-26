@@ -559,6 +559,24 @@ lemma circuitOn_singleton (e : α) : circuitOn {e} = loopyOn {e} := by
   rw [← singleton_isCircuit, circuitOn_isCircuit_iff]
   simp
 
+@[simp]
+lemma circuitOn_contract (C X : Set α) : (circuitOn C) ／ X = circuitOn (C \ X) := by
+  wlog hXC : X ⊆ C generalizing X with aux
+  · rw [← contract_inter_ground_eq, circuitOn_ground, aux _ inter_subset_right,
+      diff_inter_self_eq_diff]
+  obtain rfl | hssu := hXC.eq_or_ssubset
+  · rw [diff_self, circuitOn_empty, ← contract_ground_self (circuitOn X), circuitOn_ground]
+  nth_rw 1 [← IsCircuit.restrict_eq_circuitOn (M := circuitOn C ／ X) (C := C \ X),
+    ← restrict_ground_eq_self (circuitOn C ／ X), contract_ground, circuitOn_ground]
+  refine IsCircuit.contract_isCircuit (M := circuitOn C) ?_ hssu
+  exact circuitOn_ground_isCircuit <| nonempty_of_ssubset' hssu
+
+lemma circuitOn_delete {D : Set α} (hD : (C ∩ D).Nonempty) :
+    (circuitOn C) ＼ D = freeOn (C \ D) := by
+  rw [eq_freeOn_iff, and_iff_right (by simp), delete_indep_iff, and_iff_left disjoint_sdiff_left,
+    circuitOn_indep_iff (hD.mono inter_subset_left)]
+  simpa
+
 end circuitOn
 
 

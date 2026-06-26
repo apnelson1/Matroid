@@ -48,6 +48,18 @@ lemma spanning_compl_dual_iff (hXE : X ⊆ M.E := by aesop_mat) :
     M✶.Spanning (M.E \ X) ↔ M.Indep X := by
   rw [spanning_iff_compl_coindep, dual_coindep_iff, dual_ground, diff_diff_cancel_left hXE]
 
+lemma map_spanning_iff {β : Type*} {X : Set β} {f : α → β} (hf : InjOn f M.E) :
+    (M.map f hf).Spanning X ↔ ∃ X₀, M.Spanning X₀ ∧ X = f '' X₀ := by
+  rw [spanning_iff, map_closure_eq, map_ground]
+  refine ⟨fun ⟨h, h'⟩ ↦ ?_, ?_⟩
+  · obtain ⟨X₀, hX₀E, hX₀, rfl⟩ := SurjOn.exists_subset_injOn_image_eq h'
+    refine ⟨X₀, ?_, rfl⟩
+    rwa [hf.image_eq_image_iff (M.closure_subset_ground _) rfl.subset,
+      ← closure_inter_ground, hf.preimage_image_inter hX₀E, ← spanning_iff_closure_eq] at h
+  rintro ⟨X, hX, rfl⟩
+  grw [← closure_inter_ground, hf.preimage_image_inter hX.subset_ground, hX.closure_eq,
+    hX.subset_ground]
+  simp
 @[mk_iff]
 structure IsSpanningRestriction (N M : Matroid α) : Prop where
   isRestriction : N ≤r M

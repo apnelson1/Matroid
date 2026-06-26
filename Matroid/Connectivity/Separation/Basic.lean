@@ -113,7 +113,7 @@ protected def mk' (A B : Set α) (disjoint : Disjoint A B) (union_eq : A ∪ B =
     M.Separation where
   toFun i := bif i then A else B
   pairwise_disjoint' := by rwa [pairwise_disjoint_on_bool]
-  iUnion_eq' := by simpa
+  iUnion_eq' := by simpa [iUnion_bool]
 
 @[simp]
 protected lemma mk'_true {A B : Set α} {hdj} {hu : A ∪ B = M.E} :

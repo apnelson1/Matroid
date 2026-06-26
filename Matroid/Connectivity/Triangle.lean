@@ -89,8 +89,6 @@ lemma IsTriangle.small_of_isTriangle_isTriad {a b c d : α} (habc : M.IsTriangle
     show ({a, b, c, d} : Set α) \ {d} = {a, b, c} by grind]
   simp [habc.three_elements, two_add_one_eq_three]
 
-
-
 lemma IsTriangle.triad_of_isTriangle_isTriad {a b c d : α} (habc : M.IsTriangle {a, b, c})
     (habd : M.IsTriangle {a, b, d}) (hbcd : M.IsTriad {b, c, d}) (ha : (M ／ {a}).Connected) :
     M.IsTriad {a, c, d} := by

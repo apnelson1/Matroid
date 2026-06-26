@@ -201,7 +201,7 @@ lemma Compatible.edgeSet_inter (h : G.Compatible H) : E(G ∩ H) = E(G) ∩ E(H)
   exact le_antisymm (fun e he ↦ he.1) fun e he ↦ ⟨he, h.eqOn he⟩
 
 lemma inter_eq_iInter : G ∩ H = Graph.iInter (fun b ↦ bif b then G else H) :=
-  Graph.ext (by simp [Bool.apply_cond]) (by simp [and_comm])
+  Graph.ext (by simp [Bool.apply_cond, iInter_bool]) (by simp [and_comm])
 
 lemma le_inter_iff : H ≤ G₁ ∩ G₂ ↔ H ≤ G₁ ∧ H ≤ G₂ := by
   simp [inter_eq_iInter, and_comm]
