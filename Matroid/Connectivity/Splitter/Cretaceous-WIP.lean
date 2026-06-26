@@ -292,55 +292,77 @@ lemma exists_nonmem_of_closure_coclosure_of_eConn_le_one (hs : M.Simple)
     ∃ e ∈ P !i, e ∉ M.closure (P i) ∧ e ∉ M✶.closure (P i) := by
   sorry
 
+lemma circuit_of_element_contraction (hC : (M ／ {e}).IsCircuit C) :
+    M.IsCircuit C ∨ M.IsCircuit (C ∪ {e}) := by
+  by_cases! he : e ∈ M.E
+  · by_cases! hl : M.IsLoop e
+    · rw [contract_eq_delete_of_subset_loops (by rwa [singleton_subset_iff, mem_loops_iff])] at hC
+      rw [circuit_iff_delete_of_disjoint (D := {e}), delete_delete, union_self] at hC
+      · rw [← circuit_iff_delete_of_disjoint (by grind only [→ IsCircuit.subset_ground,
+        = disjoint_left, = disjoint_comm, = delete_ground, = subset_def, = mem_diff, #305c])] at hC
+        exact Or.inl hC
+      · sorry
+    · sorry
+  · have h : Disjoint {e} M.E := by grind only [= disjoint_left, = mem_singleton_iff]
+    rw [← contract_eq_self_iff] at h
+    rw [h] at hC
+    exact Or.inl hC
+
+lemma exists_circuit_contract_elem_girth_decrease (hg₁ : k ≤ M.girth) (hg₂ : (M ／ {e}).girth < k) :
+    ∃ C, M.IsCircuit C ∧ C.encard = k ∧ e ∈ C := by
+  by_cases! he : e ∈ M.E
+  · rw [girth_lt_iff] at hg₂
+    obtain ⟨C, hC₁, hC₂⟩ := hg₂
+    use C ∪ {e}
+    have h₁ := circuit_of_element_contraction hC₁
+    have h₂ : M.IsCircuit (C ∪ {e}) := by
+      by_contra! hc
+      have h₃ := Or.resolve_right h₁ hc
+      rw [le_girth_iff] at hg₁
+      specialize hg₁ C h₃
+      grind only
+    constructor
+    · exact h₂
+    · constructor
+      · rw [le_girth_iff] at hg₁
+        specialize hg₁ (C ∪ {e}) h₂
+        rw [union_singleton, encard_insert_of_notMem (by grind only [→ IsCircuit.subset_ground,
+          = contract_ground, = subset_def, = mem_diff, = mem_singleton_iff, #524e])] at hg₁
+        rw [union_singleton, encard_insert_of_notMem (by grind only [→ IsCircuit.subset_ground,
+          = contract_ground, = subset_def, = mem_diff, = mem_singleton_iff, #524e])]
+        sorry
+      · simp only [union_singleton, mem_insert_iff, true_or]
+  · have h : Disjoint {e} M.E := by grind only [= disjoint_left, = mem_singleton_iff]
+    rw [← contract_eq_self_iff] at h
+    rw [h] at hg₂
+    grind only
+
 lemma simple_cosimple_of_deletion_no_triangle_splitter  {N : Matroid α}
-    (hs : M.Simple) (hcs : M✶.Simple) (hNM : N <m M)
-    (hTriad : ∀ e T, M.IsDeletable N e → M.IsTriad T → e ∉ T)
-    (he : N ≤m M ＼ {e}) : (M ＼ {e}).Simple ∧ (M ＼ {e})✶.Simple := by
+    (hs : M.Simple) (hcs : M✶.Simple) (hTriad : ∀ e T, M.IsDeletable N e → M.IsTriad T → e ∉ T)
+    (he : e ∈ M.E) (heN : N ≤m M ＼ {e}) : (M ＼ {e}).Simple ∧ (M ＼ {e})✶.Simple := by
+  have hg : 3 ≤ M✶.girth := by rwa [three_le_girth_iff]
+  have hed : M.IsDeletable N e := by
+    exact ⟨by simp_all only [singleton_subset_iff], ⟨heN.isoMinor⟩⟩
   constructor
   · have h₁ : (M ↾ M.E).Simple := by simp_all only [restrict_ground_eq_self]
     have h₂ := h₁.subset (show (M ＼ {e}).E ⊆ M.E by simp_all only
       [restrict_ground_eq_self, delete_ground, diff_subset_iff,
       singleton_union, subset_insert])
     rwa [delete_ground, restrict_compl] at h₂
-  · by_contra! hc₁
-    rw [simple_iff_forall_isCircuit] at hc₁
-    push Not at hc₁
-    obtain ⟨C, hC₁, hC₂⟩ := hc₁
-    have hC₃ : ¬M✶.IsCircuit C := by
-      by_contra! hc₂
-      rw [simple_iff_forall_isCircuit] at hcs
-      specialize hcs C hc₂
-      grind only
-    rw [dual_delete] at hC₁
-    have hC₄ := IsCircuit.exists_subset_isCircuit_of_contract hC₁
-    obtain ⟨C', hC₅, hC₆, hC₇⟩ := hC₄
-    have hC₈ : C' = C ∪ {e} := by
-      grind only [show C' ≠ C by grind only, = subset_def, = mem_union, = mem_singleton_iff,
-      #e4a5, #b350, #e4b1, #0cb6, #1c9a39f9c783f075, #9255]
-    rw [hC₈] at hC₅
-    clear hC₃ hC₆ hC₇ hC₈
-    have hC₉ : (C ∪ {e}).encard = C.encard + 1 := by
-      rw [encard_union_eq (by grind)]
-      simp only [encard_singleton]
-    by_cases! hC₁₀ : C.encard = 0
-    · rw [encard_eq_zero] at hC₁₀
-      subst hC₁₀
-      have := empty_not_isCircuit (M✶ ／ {e})
-      tauto
-    · by_cases! hC₁₁ : C.encard ≤ 1
-      · rw [nonempty_iff_empty_ne, ne_comm, ne_eq] at hC₁₀
-        rw [encard_le_one_iff_eq] at hC₁₁
-        have hC₁₂ := Or.resolve_left hC₁₁ hC₁₀
-        obtain ⟨x, hx⟩ := hC₁₂
-        subst hx
-        rw [union_singleton] at hC₅
-        rw [simple_iff_forall_isCircuit] at hcs
-        specialize hcs {e, x} hC₅
-        grw [encard_insert_le, encard_singleton] at hcs
-        enat_to_nat!
-        lia
-      ·
-        sorry
+  · by_contra! hc
+    rw [← three_le_girth_iff] at hc
+    push Not at hc
+    rw [show (3 : ENat) = 2 + 1 by rfl, ENat.lt_add_one_iff (by simp [ENat.ofNat_ne_top])] at hc
+    rw [dual_delete, ← ENat.lt_add_one_iff (by simp [ENat.ofNat_ne_top]),
+        show 2 + 1 = (3 : ENat) by rfl] at hc
+    have aux := exists_circuit_contract_elem_girth_decrease hg hc
+    obtain ⟨C, hC₁, hC₂, hC₃⟩ := aux
+    have hT : M.IsTriad C := by
+      constructor
+      · exact hC₁
+      · exact hC₂
+    specialize hTriad e C hed hT
+    contradiction
 
 lemma flexible_elements_of_eConn_eq_one {N : Matroid α} (hN : N.TutteConnected 3) (hNM : M ≤m M)
     (hP : P.eConn ≤ 1) (hPi : (N.E ∩ (P !i)).Subsingleton) (hx : x ∈ (P !i) \ M.closure (P i))
