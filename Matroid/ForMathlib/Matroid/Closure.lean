@@ -74,6 +74,7 @@ lemma nonspanning_compl_iff (hXE : X ⊆ M.E := by aesop_mat) :
 lemma Codep.nonspanning_compl (h : M.Codep X) : M.Nonspanning (M.E \ X) := by
   rwa [nonspanning_compl_iff]
 
+@[gcongr]
 lemma Nonspanning.subset (h : M.Nonspanning X) (hYX : Y ⊆ X) : M.Nonspanning Y :=
   ⟨fun hY ↦ h.not_spanning (hY.superset hYX), hYX.trans h.subset_ground⟩
 

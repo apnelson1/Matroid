@@ -463,3 +463,6 @@ lemma Separation.isoMinor_contract_of_notMem_closure (hP : P.eConn = 1) (hNM : N
   rw [← P.twoSummand_mapEquiv (e := f) (f := g) (i := i) (by grind) (by grind)] at hf
   let i' := (P.twoSummand i g).isoMapEquiv (Equiv.swap g f)
   exact ⟨(h2.isoMinor.trans_iso i').trans hf.isoMinor⟩
+
+-- lemma IsTutteSeparation ((hP : P.eConn = 1) (hMs : M.Simple) (hMs : M✶.Simple) :
+--     ∃

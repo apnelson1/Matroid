@@ -74,6 +74,14 @@ lemma IsVerticalSeparation.eRk_ge (h : P.IsVerticalSeparation) (b : Bool) :
     P.eConn + 1 ≤ M.eRk (P b) := by
   grw [← M.eConn_add_nullity_dual_eq_eRk (P b), (h.codep b).one_le_nullity, P.eConn_eq]
 
+lemma IsVerticalSeparation.isVerticalSeparation_toggle_of_subset_guts (h : P.IsVerticalSeparation)
+    (hX : X ⊆ P.guts) : (P.toggle X).IsVerticalSeparation := by
+  refine isVerticalSeparation_iff_forall_nonspanning.2 fun i ↦ ?_
+  grw [toggle_apply, symmDiff_subset_union, hX, ← nonspanning_closure_iff,
+    ← closure_union_closure_left_eq, union_eq_self_of_subset_right (guts_subset_closure ..),
+    closure_closure, nonspanning_closure_iff]
+  exact h.nonspanning i
+
 /-! ### Cyclic Separations -/
 
 /-- A cyclic separation is one with both sides dependent. -/
@@ -790,5 +798,97 @@ lemma TutteConnected.faithful_of_tutteConnected_contract (h : M.TutteConnected (
     (hN : (M ／ {e}).TutteConnected (k + 1)) (P : M.Separation) (hP : P.eConn ≤ k)
     (hP' : ∀ i, k < (P i).encard) : P.Faithful (M ／ {e}) :=
   h.faithful_of_tutteConnected_remove (b := true) hN P hP hP'
+
+/-- In each side of minimal separation of a vertically `(k + 1)`-connected matroid,
+the nonguts elements span the guts (otherwise, we would get a lower-order separation). -/
+lemma VerticallyConnected.guts_subset_closure_diff (hM : M.VerticallyConnected (k + 1))
+    (hP : P.IsVerticalSeparation) (hPconn : P.eConn ≤ k) (i : Bool) :
+    P.guts ⊆ M.closure (P i \ P.guts) := by
+  by_contra hcon
+  refine hM.not_isVerticalSeparation (P := P.toggle (P i ∩ P.guts)) ?_
+    (hP.isVerticalSeparation_toggle_of_subset_guts inter_subset_right)
+  by_contra! hlt
+  have hle := P.eConn_toggle_le_of_subset_guts (X := P i ∩ P.guts) inter_subset_right
+  suffices (P.toggle (P i ∩ P.guts)).eConn + 1 ≤ P.eConn by enat_to_nat!; lia
+  grw [P.eConn_eq_eLocalConn i, Separation.eConn_eq_eLocalConn _ i,
+    toggle_apply_eq_diff _ inter_subset_left, toggle_apply_eq_union _ (by simp),
+    ← eLocalConn_closure_right, ← closure_union_closure_left_eq,
+    union_eq_self_of_subset_right (show P i ∩ P.guts ⊆ M.closure (P !i) by grind),
+    eLocalConn_closure_right, eLocalConn_closure_right]
+  obtain ⟨I, J, hI, hJ, hIJ⟩ :=
+    M.exists_isBasis_subset_isBasis (show P i \ (P i ∩ P.guts) ⊆ P i from diff_subset)
+  rw [hI.eLocalConn_eq_nullity_project_right, hJ.eLocalConn_eq_nullity_project_right,
+    ← diff_union_of_subset hIJ, union_comm, nullity_union_eq_nullity_add_encard_diff]
+  · grw [diff_diff, union_self, one_le_encard_iff_nonempty.2]
+    rw [diff_nonempty]
+    refine fun hJI ↦ hcon ?_
+    grw [← diff_self_inter, ← hI.closure_eq_closure, ← hJI, hJ.closure_eq_closure,
+      guts_subset_closure]
+  have hJI := hI.inter_eq_of_subset_indep hIJ hJ.indep
+  nth_grw 1 [← hJI, diff_self_inter, diff_self_inter, project_closure, ← subset_union_right,
+    diff_subset_iff, guts_subset_closure P (!i), diff_union_self, ← M.subset_closure (P !i),
+    P.union_bool_eq, hJ.indep.subset_ground]
+
+lemma VerticallyConnected.guts_inter_coindep_restrict (hM : M.VerticallyConnected (k + 1))
+    (hP : P.IsVerticalSeparation) (hPconn : P.eConn ≤ k) (i : Bool) :
+    (M ↾ P i).Coindep (P.guts ∩ P i) := by
+  nth_grw 1 [coindep_iff_subset_closure_compl, restrict_ground_eq, diff_inter_self_eq_diff,
+    restrict_closure_eq _ diff_subset, hM.guts_subset_closure_diff hP hPconn i]
+
+lemma CyclicallyConnected.coguts_diff_indep_contract (hM : M.CyclicallyConnected (k + 1))
+    (hP : P.IsCyclicSeparation) (hPconn : P.eConn ≤ k) (i : Bool) :
+    (M ／ P i).Indep (P.coguts \ P i) := by
+  have h := hM.dual_verticallyConnected.guts_inter_coindep_restrict (P := P.induce M✶) (i := !i)
+    (by simpa) (by simpa)
+  rwa [induce_dual_apply, ← delete_compl, dual_ground, P.compl_eq, ← dual_contract,
+    dual_coindep_iff, i.not_not, guts_induce_dual, ← P.diff_eq_inter_bool] at h
+
+lemma Separation.IsTutteSeparation.isVerticalSeparation_of_girth (hP : P.IsTutteSeparation)
+    (hPgirth : P.eConn + 1 < M.girth) : P.IsVerticalSeparation := by
+  refine isVerticalSeparation_iff_forall_nonspanning.2 fun j ↦ ?_
+  by_contra! hcon
+  rw [not_nonspanning_iff] at hcon
+  refine (hP.dep_of_spanning hcon).not_indep ?_
+  rw [← P.eConn_eq j, hcon.eConn_eq, P.compl_eq] at hPgirth
+  refine indep_of_eRk_add_one_lt_girth <| by lia
+
+lemma Separation.IsTutteSeparation.isCyclicSeparation_of_girth (hP : P.IsTutteSeparation)
+    (hPgirth : P.eConn + 1 < M✶.girth) : P.IsCyclicSeparation :=
+  isVerticalSeparation_dual_iff.1 <| hP.dual.isVerticalSeparation_of_girth (by simpa)
+
+/-- If `P` is a minimal separation in a `(k + 1)`-Tutte-connected matroid with no short circuits or
+cocircuits, then each side of `P` contains an element in neither the guts nor the coguts of `P`. -/
+lemma TutteConnected.exists_notMem_guts_notMem_coguts (h : M.TutteConnected (k + 1))
+    (hP : P.IsTutteSeparation) (hMg : k + 2 ≤ M.girth) (hMg' : k + 2 ≤ M✶.girth) (hPk : P.eConn ≤ k)
+    (i : Bool) : ∃ e ∈ P i, e ∉ P.guts ∧ e ∉ P.coguts := by
+  obtain rfl | hlt := eq_top_or_lt_top k
+  · exact False.elim <| h.not_isTutteSeparation (by simp) hP
+  by_contra! hcon
+  have hu : P i ⊆ P.guts ∪ P.coguts := by grind
+  have hci : M.Coindep P.coguts := by
+    refine indep_of_eRk_add_one_lt_girth ?_
+    grw [← guts_induce_dual, eRk_guts_le, eConn_induce_dual]
+    enat_to_nat! <;> lia
+  have hss : P i ⊆ P.guts := by
+    nth_grw 1 [← inter_eq_self_of_subset_right hu, union_inter_distrib_right, union_subset_iff,
+      and_iff_right inter_subset_left, guts_eq_inter_bool _ i, subset_inter_iff, inter_subset_right,
+      and_iff_right (by grind), coindep_iff_subset_closure_compl.1 (hci.subset inter_subset_left),
+      ← P.union_bool_eq i, union_diff_distrib, diff_inter_self_eq_diff,
+      (show Disjoint (P !i) (P.coguts ∩ P i) by grind).sdiff_eq_left]
+    refine closure_subset_closure_of_subset_closure <| union_subset ?_ (by grind)
+    grw [hu, union_diff_right, diff_subset, guts_subset_closure]
+  have hi : M.Indep (P i) := by
+    refine indep_of_eRk_add_one_lt_girth ?_
+    grw [hss, eRk_guts_le]
+    enat_to_nat! <;> lia
+  refine (hP.codep_of_indep hi).not_coindep <| Coindep.subset ?_ hss
+  nth_grw 1 [coindep_iff_subset_closure_compl, ← P.union_bool_eq i,
+    h.verticallyConnected.guts_subset_closure_diff (P := P)
+    (hP.isVerticalSeparation_of_girth (by enat_to_nat! <;> lia)) hPk i, ← subset_union_left]
+
+
+
+
+
 
 end Matroid

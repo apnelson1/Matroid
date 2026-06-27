@@ -495,6 +495,10 @@ lemma guts_isFlat (P : M.Separation) : M.IsFlat P.guts := by
   rw [guts_eq_inter_bool _ true]
   exact (M.closure_isFlat ..).inter (M.closure_isFlat ..)
 
+@[simp, grind! .,  aesop unsafe 10% (rule_sets := [Matroid])]
+lemma guts_subset_ground : P.guts ⊆ M.E :=
+  P.guts_isFlat.subset_ground
+
 lemma closure_inter_subset_guts (P : M.Separation) (i : Bool) :
     M.closure (P i) ∩ P (!i) ⊆ P.guts := by
   grw [M.subset_closure (P !i), guts_eq_inter_bool]
@@ -547,6 +551,10 @@ lemma coguts_symm (P : M.Separation) : P.symm.coguts = P.coguts := by
 lemma coguts_isFlat_dual (P : M.Separation) : M✶.IsFlat P.coguts :=
   guts_isFlat (P.induce M✶)
 
+@[simp, grind! .,  aesop unsafe 10% (rule_sets := [Matroid])]
+lemma coguts_subset_ground : P.coguts ⊆ M.E :=
+  P.coguts_isFlat_dual.subset_ground
+
 lemma closure_inter_subset_coguts (P : M.Separation) (i : Bool) :
     M✶.closure (P i) ∩ P (!i) ⊆ P.coguts := by
   grw [M✶.subset_closure (P !i), coguts_eq_inter_bool _ i]
@@ -562,3 +570,33 @@ lemma guts_induce_dual : (P.induce M✶).guts = P.coguts := rfl
 lemma coguts_induce_dual : (P.induce M✶).coguts = P.guts := by
   rw [coguts, guts_eq_inter_bool _ true, induce_dual_apply, induce_dual_apply,
     induce_dual_apply, induce_dual_apply, dual_dual, guts_eq_inter_bool]
+
+lemma eConn_toggle_le_of_subset_guts (hX : X ⊆ P.guts) : (P.toggle X).eConn ≤ P.eConn := by
+  nth_grw 1 [P.eConn_eq_eLocalConn true, ← eLocalConn_closure_closure, eConn_eq_eLocalConn _ true,
+    toggle_apply, symmDiff_subset_union, toggle_apply, symmDiff_subset_union, hX, hX,
+    union_subset (M.subset_closure (P true)) (guts_subset_closure P true),
+    union_subset (M.subset_closure (P !true)) (guts_subset_closure P !true)]
+
+/-- Move all the elements of `P !i` spanned by `P i` to side `i`. -/
+def closureShift (P : M.Separation) (i : Bool) : M.Separation := M.ofSetSep (M.closure (P i)) i
+
+@[simp]
+lemma closureShift_apply_self (P : M.Separation) (i : Bool) :
+    (P.closureShift i) i = M.closure (P i) := by
+  rw [closureShift, ofSetSep_apply_self]
+
+@[simp]
+lemma closureShift_apply_not (P : M.Separation) (i : Bool) :
+    (P.closureShift i) (!i) = P (!i) \ M.closure (P i) := by
+  rw [closureShift, ofSetSep_apply_not, ← P.union_bool_eq i, union_diff_distrib,
+    diff_eq_empty.2 (M.subset_closure ..), empty_union]
+
+@[simp]
+lemma closureShift_not_apply (P : M.Separation) (i : Bool) :
+    (P.closureShift (!i)) i = P i \ M.closure (P (!i)) := by
+  simpa using P.closureShift_apply_not !i
+
+lemma closureShift_eConn_le (P : M.Separation) (i : Bool) :
+    (P.closureShift i).eConn ≤ P.eConn := by
+  grw [eConn_eq_eLocalConn _ i, closureShift_apply_not, closureShift_apply_self,
+    eLocalConn_closure_left, diff_subset, ← eConn_eq_eLocalConn]

@@ -999,7 +999,6 @@ lemma diff_eq_inter_bool (P : M.Separation) (i : Bool) (hX : X ⊆ M.E := by aes
 
 end Cross
 
-
 def toggle (P : M.Separation) (X : Set α) : M.Separation where
   toFun i := (P i) ∆ (X ∩ M.E)
   pairwise_disjoint' := by
@@ -1031,6 +1030,19 @@ lemma toggle_apply_eq_union (P : M.Separation) (hX : X ⊆ P (!i)) : P.toggle X 
   rfl
 
 @[simp]
+lemma toggle_toggle (P : M.Separation) (X Y : Set α) :
+    (P.toggle X).toggle Y = P.toggle (X ∆ Y) := by
+  refine Separation.ext_bool (i := true) ?_
+  simp only [toggle_apply', symmDiff_assoc, symmDiff_right_inj]
+  grind
+
+lemma toggle_union_of_disjoint (P : M.Separation) (hdj : Disjoint X Y) :
+    P.toggle (X ∪ Y) = (P.toggle X).toggle Y := by
+  rw [toggle_toggle]
+  convert rfl using 2
+  grind
+
+@[simp]
 lemma toggle_empty (P : M.Separation) : P.toggle ∅ = P :=
   Separation.ext <| by simp [P.toggle_apply]
 
@@ -1047,6 +1059,10 @@ lemma toggle_induce_of_ground_subset (P : M.Separation) (hN : N.E ⊆ M.E) :
 lemma toggle_induce (P : M.Separation) (hX : X ⊆ M.E := by aesop_mat) :
     (P.toggle X).induce N i = (P.induce N i).toggle X :=
   P.toggle_induce_of_inter_subset <| by grw [inter_subset_left, hX]
+
+@[simp]
+lemma toggle_symm (P : M.Separation) : P.symm.toggle X = (P.toggle X).symm :=
+  Separation.ext <| by simp [toggle_apply']
 
 lemma eConn_eq_zero_iff_skew {P : M.Separation} {i : Bool} : P.eConn = 0 ↔ M.Skew (P i) (P !i) := by
   rw [← M.eLocalConn_eq_zero P.subset_ground P.subset_ground, Separation.eConn]
