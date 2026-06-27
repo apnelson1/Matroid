@@ -321,24 +321,21 @@ lemma exists_circuit_contract_elem_girth_decrease (k : ENat) (hk : k ≠ ⊤) (h
     rw [h] at hg₂
     grind only
 
-lemma simple_cosimple_of_deletion_no_triangle_splitter  {N : Matroid α} (hs : M.Simple)
+lemma simple_cosimple_of_elem_deletion {N : Matroid α} (hs : M.Simple)
     (hcs : M✶.Simple) (hT : ∀ e T, Nonempty (N ≤i (M ＼ {e})) → M.IsTriad T → e ∉ T)
-    (heN : N ≤m M ＼ {e}) : (M ＼ {e}).Simple ∧ (M ＼ {e})✶.Simple := by
+    (heN : N ≤m M ＼ {e}) (b : Bool) : ((M ＼ {e}).bDual b).Simple:= by
   have hg : 3 ≤ M✶.girth := by rwa [three_le_girth_iff]
-  constructor
-  · have h₁ : (M ↾ M.E).Simple := by simp_all only [restrict_ground_eq_self]
-    have h₂ := h₁.subset (show (M ＼ {e}).E ⊆ M.E by simp_all only
-      [restrict_ground_eq_self, delete_ground, diff_subset_iff,
-      singleton_union, subset_insert])
-    rwa [delete_ground, restrict_compl] at h₂
-  · by_contra! hc
+  by_cases! hb : b
+  · subst hb
+    rw [bDual_true]
+    by_contra! hc
     rw [← three_le_girth_iff] at hc
     push Not at hc
     rw [show (3 : ENat) = 2 + 1 by rfl, ENat.lt_add_one_iff (by simp [ENat.ofNat_ne_top])] at hc
     rw [dual_delete, ← ENat.lt_add_one_iff (by simp [ENat.ofNat_ne_top]),
-        show 2 + 1 = (3 : ENat) by rfl] at hc
+         show 2 + 1 = (3 : ENat) by rfl] at hc
     have aux := exists_circuit_contract_elem_girth_decrease (k := 3)
-        (show (3 : ENat) ≠ ⊤ by simp [ENat.ofNat_ne_top]) hg hc
+         (show (3 : ENat) ≠ ⊤ by simp [ENat.ofNat_ne_top]) hg hc
     obtain ⟨C, hC₁, hC₂, hC₃⟩ := aux
     have hT₁ : M.IsTriad C := by
       constructor
@@ -346,11 +343,29 @@ lemma simple_cosimple_of_deletion_no_triangle_splitter  {N : Matroid α} (hs : M
       · exact hC₂
     specialize hT e C ⟨heN.isoMinor⟩ hT₁
     contradiction
+  · rw [ne_eq, Bool.not_eq_true] at hb
+    rw [hb, bDual_false]
+    have h₁ : (M ↾ M.E).Simple := by simp_all only [restrict_ground_eq_self]
+    have h₂ := h₁.subset (show (M ＼ {e}).E ⊆ M.E by grind only [= delete_ground,
+      = subset_def, = mem_diff])
+    rwa [delete_ground, restrict_compl] at h₂
 
-#check Separation.isoMinor_contract_of_notMem_closure
+-- #check TutteConnected.exists_notMem_guts_notMem_coguts
 
-lemma splitter_no_triangle_minor {N : Matroid α} (hM : M.TutteConnected (2 + 1)) (hME : 4 ≤ M.E.encard)
-    (hN : N.TutteConnected (2 + 1)) (hNM : N <m M)
+-- #check Separation.isoMinor_contract_of_notMem_closure
+
+-- lemma foo {N : Matroid α} (hM : M.TutteConnected 2) (hsi : M.Simple) (hsi' : M✶.Simple)
+--     (hP : P.IsTutteSeparation) (hPconn : P.eConn ≤ 1) (hNM : N ≤m M) (hN : N.Loopless)
+--     (hN' : N.Coloopless) (hss : ((P !i) ∩ N.E).Subsingleton) :
+--     ∃ e, ∀ b, Nonempty (N ≤i M.remove b {e}) := by sorry
+
+lemma exists_flexible' {N : Matroid α} (hM : M.TutteConnected 3) (h4 : 4 ≤ M.E.encard)
+    (hMe : ¬ (M ＼ {e}).TutteConnected 3) (hsi' : (M ＼ {e})✶.Simple)
+    (hNM : N ≤m M ＼ {e}) (hN : N.TutteConnected 3) (hnt : N.E.Nontrivial) :
+      ∃ f, ∀ b, Nonempty (N ≤i M.remove b {f}) := by sorry
+
+lemma splitter_no_triangle_minor {N : Matroid α} (hM : M.TutteConnected (2 + 1))
+    (hME : 4 ≤ M.E.encard) (hN : N.TutteConnected (2 + 1)) (hNM : N <m M)
     (hr : ∀ e b T, Nonempty (N ≤i M.remove b {e}) → (M.bDual !b).IsTriangle T → e ∉ T) :
     ∃ e b, Nonempty (N ≤i M.remove b {e}) ∧ (M.remove b {e}).TutteConnected (2 + 1) := by
   obtain ⟨e, heM, heN⟩ := hNM.exists_isMinor_contractElem_or_deleteElem
@@ -370,17 +385,56 @@ lemma splitter_no_triangle_minor {N : Matroid α} (hM : M.TutteConnected (2 + 1)
     · rwa [← nonempty_isoMinor_dual_iff, remove_dual, dual_dual, dual_dual] at he₁
     · rwa [show b = !!b by simp only [Bool.not_not], ← remove_dual, tutteConnected_dual_iff] at he₂
   · clear heN hNM
-    by_cases! hc : ¬(M ＼ {e}).TutteConnected (2 + 1)
-    · rw [not_tutteConnected_iff_exists] at hc
-      obtain ⟨P, hP₁, hP₂⟩ := hc
-      -- obtain ⟨j, hi⟩ := IsMinor.exists_smallside_of_separation hed
-      sorry
+    by_cases! hc : (M ＼ {e}).TutteConnected 3
     · use e
       use false
+      rw [remove_false]
       constructor
-      · rw [remove_false]
-        exact ⟨hed.isoMinor⟩
-      · rwa [remove_false]
+      · exact ⟨hed.isoMinor⟩
+      · rwa [show 2 + 1 = (3 : ENat) by rfl]
+    · have hMsi : M.Simple := by
+        exact hM.simple hME
+      have hMsi' : M✶.Simple := by
+        sorry
+      have hsi' : (M ＼ {e})✶.Simple := by
+        have := simple_cosimple_of_elem_deletion (N := N) (e := e) hMsi hMsi'
+        sorry
+      have h := exists_flexible' (N := N) (M := M) (e := e) hM hME hc
+      sorry
+
+
+    -- have hsi : M.Simple := by
+    --     rw [← show (3 : ENat) = 2 + 1 by rfl] at hM
+    --     exact hM.simple hME
+    -- have hsi' : M✶.Simple := by
+    --   rw [← show (3 : ENat) = 2 + 1 by rfl] at hM
+    --   exact hM.dual.simple hME
+    -- by_cases! hc : ¬(M ＼ {e}).TutteConnected (2 + 1)
+    -- · rw [not_tutteConnected_iff_exists] at hc
+    --   obtain ⟨P, hP₁, hP₂⟩ := hc
+    --   rw [show (2 : ENat) = 1 + 1 by rfl] at hN
+    --   rw [show (2 : ENat) = 1 + 1 by rfl, ENat.add_le_add_iff_right
+    --       (by simp only [ne_eq, ENat.one_ne_top, not_false_eq_true])] at hP₁
+    --   have hs := IsMinor.exists_smallside_of_separation (k := 1) (P := P) hed hN hP₁
+    --   obtain ⟨i, hi⟩ := hs
+    --   rw [encard_le_one_iff_subsingleton] at hi
+    --   have := hM.mono (j := 2) (by simp only [self_le_add_right])
+    --   have hMe : (M ＼ {e}).TutteConnected 2 := by
+    --     have h4 : 2 * 2 < M.E.encard + 1 := by
+    --       by_cases! aux : M.E.encard = ⊤
+    --       · rw [aux, top_add]
+    --         enat_to_nat!
+    --       · rwa [show (4 : ENat) = 2 * 2 by rfl, ← ENat.lt_add_one_iff (aux)] at hME
+    --     have h := TutteConnected.removeElem (k := 2) (M := M) hM h4
+    --     specialize h false e
+    --     rwa [remove_false] at h
+
+    -- · use e
+    --   use false
+    --   constructor
+    --   · rw [remove_false]
+    --     exact ⟨hed.isoMinor⟩
+    --   · rwa [remove_false]
 
   /-
   We are under the hypotheses that if M/e has an N-minor, then e is not in a triangle, and
