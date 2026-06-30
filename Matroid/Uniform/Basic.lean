@@ -283,6 +283,51 @@ lemma unifOn_isCocircuit_iff {n : ℕ} {K : Set α} (hnE : n ≤ E.encard) :
   rw [← isHyperplane_compl_iff_isCocircuit, unifOn_isHyperplane_iff hnE]
   simp [hKE]
 
+lemma unifOn_loopless_iff {n : ℕ} :
+    (unifOn E n).Loopless ↔ (n = 0 → E = ∅) := by
+  refine ⟨?_, fun h ↦ ?_⟩
+  · rintro h rfl
+    simpa using h
+  obtain rfl | n := n
+  · simpa using h rfl
+  simp [loopless_iff_forall_isNonloop, ← indep_singleton]
+
+lemma unifOn_coloopless_iff {n : ℕ} : (unifOn E n).Coloopless ↔ (E.Nonempty → n < E.encard) := by
+  simp_rw [coloopless_iff_forall, ← coindep_singleton, unifOn_ground_eq]
+  obtain hlt | hle := lt_or_ge (n : ℕ∞) E.encard
+  · refine iff_of_true (fun e heE ↦ ?_) fun _ ↦ hlt
+    rwa [unifOn_coindep_iff'' hlt.le, ← ENat.add_one_le_add_one_iff,
+      encard_diff_singleton_add_one heE, and_iff_right (Order.add_one_le_of_lt hlt),
+      singleton_subset_iff]
+  simp [unifOn_eq_of_le hle, ← eq_empty_iff_forall_notMem, nonempty_iff_ne_empty,
+    hle.not_gt]
+
+lemma unifOn_simple_iff {n : ℕ} :
+    (unifOn E n).Simple ↔ (n = 0 ∧ E = ∅) ∨ (n = 1 ∧ E.Subsingleton) ∨ 2 ≤ n := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · obtain rfl | rfl | n := n
+    · simp [unifOn_loopless_iff.1 h.loopless]
+    · have h : ∀ ⦃e f : α⦄, e ∈ E → f ∈ E → e = f := by
+        simpa +contextual [simple_iff_forall_pair_indep, pair_subset_iff, eq_comm,
+          encard_le_one_iff_subsingleton] using h
+      exact .inr (.inl ⟨rfl, fun x hxE y hyE ↦ h hxE hyE ⟩)
+    exact .inr <| .inr <| by simp
+  simp +contextual only [simple_iff_forall_pair_indep, unifOn_ground_eq, unifOn_indep_iff,
+    pair_subset_iff, and_self, and_true]
+  obtain ⟨rfl, rfl⟩ | ⟨rfl, h⟩ | h := h
+  · simp
+  · exact fun e f he hf ↦ by simpa [encard_le_one_iff_subsingleton, eq_comm] using h he hf
+  exact fun e f he hf ↦ (encard_pair_le e f).trans <| by simpa
+
+@[simp]
+lemma unifOn_map {β : Type*} (E : Set α) (f : α → β) (hf : InjOn f E) (a : ℕ) :
+    (unifOn E a).map f hf = unifOn (f '' E) a := by
+  refine ext_indep rfl fun I hI ↦ ?_
+  simp only [map_ground, unifOn_ground_eq] at hI
+  obtain ⟨I, hIE, rfl⟩ := subset_image_iff.1 hI
+  rw [map_image_indep_iff hIE, unifOn_indep_iff, unifOn_indep_iff, (hf.mono hIE).encard_image,
+    and_iff_left hIE, and_iff_left hI]
+
 section unif
 
 variable {a b a' b' : ℕ}
@@ -595,41 +640,6 @@ lemma uniformMatroidOfBase_uniform (E : Set α) (IsBase : Set α → Prop)
 
 section LowRank
 
-
-lemma unifOn_loopless_iff {n : ℕ} :
-    (unifOn E n).Loopless ↔ (n = 0 → E = ∅) := by
-  refine ⟨?_, fun h ↦ ?_⟩
-  · rintro h rfl
-    simpa using h
-  obtain rfl | n := n
-  · simpa using h rfl
-  simp [loopless_iff_forall_isNonloop, ← indep_singleton]
-
-lemma unifOn_simple_iff {n : ℕ} :
-    (unifOn E n).Simple ↔ (n = 0 ∧ E = ∅) ∨ (n = 1 ∧ E.Subsingleton) ∨ 2 ≤ n := by
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · obtain rfl | rfl | n := n
-    · simp [unifOn_loopless_iff.1 h.loopless]
-    · have h : ∀ ⦃e f : α⦄, e ∈ E → f ∈ E → e = f := by
-        simpa +contextual [simple_iff_forall_pair_indep, pair_subset_iff, eq_comm,
-          encard_le_one_iff_subsingleton] using h
-      exact .inr (.inl ⟨rfl, fun x hxE y hyE ↦ h hxE hyE ⟩)
-    exact .inr <| .inr <| by simp
-  simp +contextual only [simple_iff_forall_pair_indep, unifOn_ground_eq, unifOn_indep_iff,
-    pair_subset_iff, and_self, and_true]
-  obtain ⟨rfl, rfl⟩ | ⟨rfl, h⟩ | h := h
-  · simp
-  · exact fun e f he hf ↦ by simpa [encard_le_one_iff_subsingleton, eq_comm] using h he hf
-  exact fun e f he hf ↦ (encard_pair_le e f).trans <| by simpa
-
-@[simp]
-lemma unifOn_map {β : Type*} (E : Set α) (f : α → β) (hf : InjOn f E) (a : ℕ) :
-    (unifOn E a).map f hf = unifOn (f '' E) a := by
-  refine ext_indep rfl fun I hI ↦ ?_
-  simp only [map_ground, unifOn_ground_eq] at hI
-  obtain ⟨I, hIE, rfl⟩ := subset_image_iff.1 hI
-  rw [map_image_indep_iff hIE, unifOn_indep_iff, unifOn_indep_iff, (hf.mono hIE).encard_image,
-    and_iff_left hIE, and_iff_left hI]
 
 end LowRank
 

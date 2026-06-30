@@ -221,6 +221,19 @@ lemma IsFiniteRankUniform.restrict_insert_iff (h : (M ↾ X).IsFiniteRankUniform
   grw [← eRk_insert_closure_eq, insert_eq_of_mem he, eRk_closure_eq, hX] at hI
   exact hI.not_gt hgt
 
+lemma IsFiniteRankUniform.contract (h : M.IsFiniteRankUniform a) (hC : C ⊆ M.E)
+    (hab : a = b + C.encard) : (M ／ C).IsFiniteRankUniform b := by
+  have hCi : M.Indep C := by
+    grw [h.indep_iff, and_iff_left hC, hab, ← le_add_self]
+  have hr : M.eRk C ≠ ⊤ := by rw [hCi.eRk_eq_encard]; enat_to_nat!
+  rw [isFiniteRankUniform_iff, and_iff_left (h.isUniform.contract C),
+    ← (ENat.add_left_injective_of_ne_top hr).eq_iff,
+    eRank_contract_add_eRk, h.eRank_eq, hab, hCi.eRk_eq_encard]
+
+lemma IsFiniteRankUniform.contractElem (h : M.IsFiniteRankUniform (a + 1)) (he : e ∈ M.E) :
+    (M ／ {e}).IsFiniteRankUniform a :=
+  h.contract (a := a + 1) (by simpa) <| by simp
+
 /-- `M.IsFiniteUniform a b n` means that `M` is a finite uniform matroid of rank `a` and corank `b`,
 with `n` elements.
 
@@ -237,6 +250,18 @@ lemma IsFiniteUniform.finite (hM : M.IsFiniteUniform a b n) : M.Finite :=
 lemma IsFiniteUniform.add_eq {a b n : ℕ} (h : M.IsFiniteUniform a b n) : a + b = n := by
   rw [← ENat.coe_inj, ← h.encard_eq, ← eRank_add_eRank_dual, h.eRank_eq, h.eRank_dual_eq,
     ENat.coe_add]
+
+lemma IsFiniteUniform.isFiniteUniform_add (h : M.IsFiniteUniform a b n) :
+    M.IsFiniteUniform a b (a + b) := by
+  rwa [h.add_eq]
+
+lemma IsFiniteUniform.isFiniteUniform_add' (h : M.IsFiniteUniform a b) :
+    M.IsFiniteUniform a b (a + b) :=
+  h
+
+lemma IsFiniteUniform.congr₃ (h : M.IsFiniteUniform a b n) {m : ℕ} (hm : m = a + b) :
+    M.IsFiniteUniform a b m := by
+  rwa [hm, h.add_eq]
 
 @[simp]
 lemma IsFiniteUniform.sub_eq_left (h : M.IsFiniteUniform a b n) : n - a = b := by
@@ -265,6 +290,9 @@ lemma isFiniteUniform_dual_iff : M✶.IsFiniteUniform a b n ↔ M.IsFiniteUnifor
 
 alias ⟨IsFiniteUniform.of_dual, IsFiniteUniform.dual⟩ := isFiniteUniform_dual_iff
 
+lemma IsFiniteUniform.dual' (h : M.IsFiniteUniform a b) : M✶.IsFiniteUniform b a :=
+  h.dual.isFiniteUniform_add
+
 lemma isFiniteUniform_unifOn {E : Set α} (hE : E.Finite) (a : ℕ) (haE : a ≤ E.encard) :
     ∃ b n, (unifOn E a).IsFiniteUniform a b n ∧ n = E.encard := by
   have : (unifOn E a).Finite := ⟨hE⟩
@@ -275,6 +303,30 @@ lemma IsFiniteUniform.dual_eq_self (h : M.IsFiniteUniform a a b) : M✶ = M := b
   obtain ⟨E, rfl, ha⟩ := h.exists_eq_unifOn
   rw [unifOn_dual_eq']
   rw [← unifOn_ground_eq E, h.encard_eq, ← h.add_eq, Nat.cast_add]
+
+lemma IsFiniteUniform.contractElem (h : M.IsFiniteUniform (a + 1) b (n + 1)) (he : e ∈ M.E) :
+    (M ／ {e}).IsFiniteUniform a b n := by
+  have hcard : (M ／ {e}).E.encard = ↑n := by
+    rw [contract_ground, ← ENat.add_one_inj, encard_diff_singleton_add_one he, h.encard_eq,
+      ENat.coe_add, ENat.coe_one]
+  refine ⟨h.toIsFiniteRankUniform.contractElem he, hcard, ?_⟩
+  have hrd := (M ／ {e}).eRank_add_eRank_dual
+  rw [hcard, (h.toIsFiniteRankUniform.contractElem he).eRank_eq] at hrd
+  have ha := h.add_eq
+  enat_to_nat!
+  lia
+
+lemma IsFiniteUniform.deleteElem (h : M.IsFiniteUniform a (b + 1) (n + 1)) (he : e ∈ M.E) :
+    (M ＼ {e}).IsFiniteUniform a b n := by
+  simpa using (h.dual.contractElem he).dual
+
+lemma IsFiniteUniform.contractElem' (h : M.IsFiniteUniform (a + 1) b) (he : e ∈ M.E) :
+    (M ／ {e}).IsFiniteUniform a b :=
+  IsFiniteUniform.contractElem (h.congr₃ (add_right_comm ..)) he
+
+lemma IsFiniteUniform.deleteElem' (h : M.IsFiniteUniform a (b + 1)) (he : e ∈ M.E) :
+    (M ＼ {e}).IsFiniteUniform a b := by
+  simpa using (h.dual'.contractElem' he).dual'
 
 /-- A finite-rank uniform matroid is one of the obvious ones - maybe use `IsFiniteRankUniform`
 instead  -/

@@ -152,6 +152,7 @@ lemma unifOn_tutteConnected_top_iff {E : Set α} {k : ℕ} (hkE : k ≤ E.encard
   have hcard := encard_diff_add_encard_of_subset hX
   enat_to_nat!; lia
 
+
 set_option backward.isDefEq.respectTransparency false in
 /-- For finite `r`, a rank-`r` uniform matroid is `k`-Tutte-connected if and only if either
 it has size `2r-1, 2r` or `2r+1`, or `k` is at most the rank and at most the corank. -/
@@ -188,6 +189,70 @@ lemma unifOn_tutteConnected_iff {E : Set α} {r : ℕ} (hrE : r ≤ E.encard) :
     simpa [(hPsep false).le] using P.subset_ground
   rw [unifOn_isCircuit_iff] at hC
   simpa [hC.1]
+
+lemma IsFiniteRankUniform.tutteConnected_iff {a : ℕ} (ha : M.IsFiniteRankUniform a) :
+    M.TutteConnected (k + 1) ↔ (k ≤ a ∧ k + a ≤ M.E.encard)
+    ∨ M.IsFiniteUniform a a (2 * a)
+    ∨ (1 ≤ a ∧ M.IsFiniteUniform a (a - 1) (2 * a - 1))
+    ∨ M.IsFiniteUniform a (a + 1) (2 * a + 1) := by
+  obtain ⟨E, rfl, haE⟩ := ha.exists_eq_unifOn
+  rw [unifOn_tutteConnected_iff haE, unifOn_ground_eq]
+  convert Iff.rfl
+  · refine ⟨fun h ↦ h.encard_eq, fun h ↦ ⟨ha, by simpa, ?_⟩⟩
+    rw [unifOn_dual_eq' (j := a) (by simp [h, two_mul]), unifOn_eRank_eq' (by enat_to_nat! <;> lia)]
+  · rw [isFiniteUniform_iff _ _ _ _, and_iff_right ha]
+    refine ⟨fun h ↦ ?_, fun h ↦ ⟨by enat_to_nat! <;> lia, ?_, ?_⟩⟩
+    · rw [unifOn_ground_eq] at h
+      enat_to_nat! <;> lia
+    · rw [unifOn_ground_eq]
+      enat_to_nat! <;> lia
+    rw [unifOn_dual_eq' (j := a - 1), unifOn_eRank_eq' (by enat_to_nat! <;> lia)]
+    enat_to_nat! <;> lia
+  rw [isFiniteUniform_iff _ _ _ _, and_iff_right ha, unifOn_ground_eq, Nat.cast_add, Nat.cast_mul,
+    Nat.cast_ofNat, Nat.cast_one, and_iff_left_iff_imp]
+  intro hE
+  rw [unifOn_dual_eq' (j := a + 1) (by enat_to_nat! <;> lia), unifOn_eRank_eq'
+    (by enat_to_nat! <;> lia)]
+
+lemma IsFiniteUniform.tutteConnected_iff {a b : ℕ} (ha : M.IsFiniteUniform a b) :
+    M.TutteConnected (k + 1) ↔ (k ≤ a ∧ k ≤ b) ∨ a = b ∨ a = b + 1 ∨ b = a + 1 := by
+  -- rw [ha.toIsFiniteRankUniform.tutteConnected_iff]
+  convert ha.toIsFiniteRankUniform.tutteConnected_iff using 2
+  · refine and_congr_right_iff.2 fun hka ↦ ?_
+    rw [ha.encard_eq, add_comm, ENat.coe_add, ENat.add_le_add_iff_left (by simp)]
+  convert Iff.rfl using 2
+  · refine ⟨fun h ↦ ?_, fun h ↦ (h.symm ▸ ha).congr₃ <| two_mul ..⟩
+    rw [← ENat.coe_inj, ← ha.eRank_dual_eq, h.eRank_dual_eq]
+  convert Iff.rfl using 2
+  · refine ⟨fun h ↦ ⟨by lia, ?_⟩, fun h ↦ ?_⟩
+    · rw [h, Nat.add_one_sub_one]
+      exact (h.symm ▸ ha).congr₃ <| by lia
+    rw [← ENat.coe_inj, ENat.coe_add, ← ha.eRank_dual_eq, h.2.eRank_dual_eq]
+    enat_to_nat! <;> lia
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · exact (h.symm ▸ ha).congr₃ <| by lia
+  rw [← ENat.coe_inj, ← ha.eRank_dual_eq, h.eRank_dual_eq]
+
+/-- In a `3`-connected matroid with at most four elements,
+either `M ／ e` is `3`-connected for all `e`, or `M ＼ e` is `3`-connected for all `e`. -/
+lemma TutteConnected.exists_forall_remove_of_encard_le_four (hM : M.TutteConnected 3)
+    (hM4 : M.E.encard ≤ 4) : ∃ i, ∀ e, (M.remove i {e}).TutteConnected 3 := by
+  suffices aux : ∃ i, ∀ e ∈ M.E, (M.remove i {e}).TutteConnected 3
+  · obtain ⟨i, h⟩ := aux
+    refine ⟨i, fun e ↦ ?_⟩
+    by_cases! he : e ∉ M.E
+    · rwa [remove_singleton_of_notMem he]
+    exact h e he
+  rw [show (3 : ℕ∞) = 2 + 1 from rfl] at *
+  obtain ⟨a, ⟨h, ha⟩ | ⟨h, ha⟩ | ⟨h, ha⟩⟩ :=  hM.isFiniteUniform_of_encard_le' (k := 2) hM4
+  · refine ⟨true, fun e he ↦ ?_⟩
+    obtain rfl | a := a
+    · simp [show M.E = ∅ from by simpa using h.encard_eq] at he
+    simp [(h.isFiniteUniform_add.contractElem' he).tutteConnected_iff]
+  · refine ⟨false, fun e he ↦ ?_⟩
+    simp [(h.isFiniteUniform_add.deleteElem' he).tutteConnected_iff]
+  refine ⟨true, fun e he ↦ ?_⟩
+  simp [(h.isFiniteUniform_add.contractElem' he).tutteConnected_iff]
 
 /-- This might be true without `Tame`. -/
 lemma IsUniform.tutteConnected_iff [M.Tame] (h : M.IsUniform) :

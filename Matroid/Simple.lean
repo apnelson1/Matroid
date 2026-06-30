@@ -2,6 +2,7 @@ import Matroid.Parallel
 import Matroid.Minor.Iso
 import Matroid.ForMathlib.Card
 import Matroid.Closure
+import Matroid.ForMathlib.Tactic.ENatToNat
 
 open Set Set.Notation
 
@@ -117,6 +118,10 @@ lemma three_le_girth_iff : 3 ≤ M.girth ↔ M.Simple := by
 lemma three_le_girth (M : Matroid α) [M.Simple] : 3 ≤ M.girth := by
   rwa [three_le_girth_iff]
 
+lemma two_lt_girth (M : Matroid α) [M.Simple] : 2 < M.girth := by
+  grw [← three_le_girth]
+  simp
+
 lemma Simple.three_le_girth (hM : M.Simple) : 3 ≤ M.girth := by
   rwa [three_le_girth_iff]
 
@@ -153,6 +158,23 @@ lemma Simple.of_iso {β : Type*} {N : Matroid β} (hM : M.Simple) (i : M ≂ N) 
   · rw [eq_emptyOn N]; infer_instance
   obtain ⟨f, hf, rfl⟩ := i.exists_eq_map
   exact hM.map hf
+
+lemma Simple.delete (hM : M.Simple) (D : Set α) : (M ＼ D).Simple := by
+  rw [← three_le_girth_iff] at hM ⊢
+  grw [← girth_le_girth_delete, hM]
+
+instance simple_delete [M.Simple] (D : Set α) : (M ＼ D).Simple :=
+  Simple.delete (by assumption) _
+
+lemma Simple.contractElem_loopless (hM : M.Simple) (e : α) : (M ／ {e}).Loopless := by
+  grw [← two_le_girth_iff]
+  have hg := M.girth_le_girth_contract_add {e}
+  grw [eRk_singleton_le] at hg
+  rw [← three_le_girth_iff] at hM
+  enat_to_nat!; lia
+
+instance contractElem_loopless [M.Simple] (e : α) : (M ／ {e}).Loopless :=
+  Simple.contractElem_loopless (by assumption) e
 
 lemma simple_iff_forall_parallel_class [Loopless M] :
     M.Simple ↔ ∀ P ∈ M.parallelClasses, encard P = 1 := by

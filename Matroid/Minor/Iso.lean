@@ -376,6 +376,10 @@ def StrictIsoMinor.trans_isoMinor {α₁ α₂ α₃ : Type*} {M₁ : Matroid α
   inj' x := IsEmpty.elim' (by simp) x
   exists_isMinor' := ⟨emptyOn β, by simp, by ext; simp, by simp⟩
 
+theorem nonempty_emptyOn_isoMinor {β : Type*} (M : Matroid β) (α : Type*) :
+    Nonempty (emptyOn α ≤i M) :=
+  ⟨emptyOn_isoMinor α M⟩
+
 noncomputable def IsoRestr.isoMinor (e : N ≤ir M) : N ≤i M :=
   have hex := e.exists_restr_iso
   hex.choose_spec.choose.isoMinor.trans <| hex.choose_spec.choose_spec.choose.isMinor.isoMinor

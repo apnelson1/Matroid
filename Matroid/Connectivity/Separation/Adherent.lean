@@ -1,4 +1,5 @@
 import Matroid.Connectivity.Separation.Internal
+import Matroid.Connectivity.Separation.Infinite
 
 variable {α : Type*} {M N : Matroid α} {j k : ℕ∞} {d k : ℕ∞} {A X Y : Set α} {P : M.Separation}
   {b : Bool}
@@ -127,22 +128,38 @@ lemma TutteConnected.contract_or_delete_internallyConnected_three (hM : M.TutteC
     (.inl ∘ fun h ↦ h.internallyConnected_of_tutteConnected_three hM)
     (.inr ∘ fun h ↦ h.internallyConnected_of_tutteConnected_three hM)
 
+lemma TutteConnected.exists_remove_internallyConnected_three (hM : M.TutteConnected 3)
+    (e : α) : ∃ b, (M.remove b {e}).InternallyConnected 3 := by
+  obtain h | h := hM.contract_or_delete_internallyConnected_three e
+  · exact ⟨true, h⟩
+  exact ⟨false, h⟩
 
--- lemma TutteConnected.exists_contract_verticallyConnected_three [M.RankFinite]
---     (h : M.TutteConnected 3) : ∃ e ∈ M.E, (M ／ {e}).VerticallyConnected 3 := sorry
+/-- If `e` is in no triangle or triad of a `3`-connected matroid `M`, then `M ／ e` or `M ＼ e`
+is `3`-connected. -/
+lemma TutteConnected.exists_removeElem_tutteConnected_three (hM : M.TutteConnected 3) {e : α}
+    (he : ∀ T b, (M.bDual b).IsTriangle T → e ∉ T) : ∃ i, (M.remove i {e}).TutteConnected 3 := by
+  by_cases! heE : e ∉ M.E
+  · exact ⟨true, by rwa [remove_singleton_of_notMem heE]⟩
+  obtain hlt | hle := lt_or_ge M.E.encard 4
+  · obtain ⟨i, hi⟩ := hM.exists_forall_remove_of_encard_le_four hlt.le
+    refine ⟨i, hi _⟩
+  obtain ⟨b, h⟩ := hM.exists_remove_internallyConnected_three e
+  have hsi (d) : ((M.remove b {e}).bDual d).Simple := by
+    obtain rfl | rfl := d.eq_or_eq_not b
+    · simpa using ((hM.bDual d).simple (by simpa)).delete {e}
+    simp only [bDual_remove, Bool.not_bne, bne_self_eq_false, Bool.not_false, remove_true]
+    exact ((hM.bDual !b).simple (by simpa)).contractElem_simple_of_notMem_triangle fun T hT ↦
+      he T (!b) hT
+  exact ⟨b, @h.tutteConnected_three _ _ (hsi false) (hsi true)⟩
 
--- lemma VerticallyConnected.exists_contract_verticallyConnected_three [M.RankFinite]
---     (h : M.VerticallyConnected 3) : ∃ e ∈ M.E, (M ／ {e}).VerticallyConnected 3 := by
---   obtain ⟨N, hN⟩ := M.exists_isSimplification
---   have := hN.isRestriction.rankFinite
---   obtain ⟨e, he, hMe⟩ :=
---     (hN.tutteConnected_of_verticallyConnected_three h).exists_contract_verticallyConnected_three
---   exact ⟨e, hN.isRestriction.subset he,
---     (hN.simplifies.contract (by simpa)).verticallyConnected_iff.1 hMe⟩
-
-
-
-
-
+lemma TutteConnected.exists_contractElem_or_deleteElem_tutteConnected_three
+    (hM : M.TutteConnected 3) {e : α} (he : ∀ T, M.IsTriangle T → e ∉ T)
+    (he' : ∀ T, M.IsTriad T → e ∉ T) :
+    (M ／ {e}).TutteConnected 3 ∨ (M ＼ {e}).TutteConnected 3 := by
+  have aux := hM.exists_removeElem_tutteConnected_three ?_ (e := e)
+  · simpa [or_comm] using aux
+  rintro T (rfl | rfl) h
+  · exact he T h
+  exact he' T h
 
 end Matroid

@@ -106,6 +106,18 @@ lemma InternallyConnected.exists_encard_le_of_eConn_le (h : M.InternallyConnecte
   refine ⟨i, ?_⟩
   grw [hle, ← hP, ← le_self_add]
 
+lemma InternallyConnected.tutteConnected_of_girth_gt (hM : M.InternallyConnected (k + 1))
+    (hg : k < M.girth) (hg' : k < M✶.girth) : M.TutteConnected (k + 1) := by
+  refine tutteConnected_iff_forall.2 fun P hP hPsep ↦ ?_
+  obtain ⟨i, hi⟩ := hM.exists_encard_le_of_eConn_le hP
+  exact (indep_of_card_lt_girth (hi.trans_lt hg')).not_dep
+    <| hPsep.codep_of_indep <| indep_of_card_lt_girth (hi.trans_lt hg)
+
+/-- A simple, cosimple internally `3`-connected matroid is `3`-connected. -/
+lemma InternallyConnected.tutteConnected_three [M.Simple] [M✶.Simple]
+    (hM : M.InternallyConnected 3) : M.TutteConnected 3 :=
+  InternallyConnected.tutteConnected_of_girth_gt hM (two_lt_girth ..) (two_lt_girth ..)
+
 lemma InternallyConnected.exists_isParallel_or_isParallel_dual_of_eConn_eq_one
     (hM : M.InternallyConnected 3) (P : M.Separation) (hP : P.eConn = 1) : ∃ i,
     ((P i).Subsingleton) ∨ ∃ e f, e ≠ f ∧ P i = {e,f} ∧ (M.Parallel e f ∨ M✶.Parallel e f) := by

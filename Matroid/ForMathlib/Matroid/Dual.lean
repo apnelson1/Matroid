@@ -18,6 +18,11 @@ lemma Coindep.subset {I J : Set α} (h : M.Coindep I) (hJI : J ⊆ I) : M.Coinde
 /-- `M.Codep D` means that `D` is a subset of `M.E` that is dependent in `M✶`. -/
 def Codep (M : Matroid α) (D : Set α) : Prop := M✶.Dep D
 
+@[simp]
+lemma map_codep_iff {β : Type*} {f : α → β} {hf : InjOn f M.E} {I : Set β} :
+    (M.map f hf).Codep I ↔ ∃ I₀, M.Codep I₀ ∧ I = f '' I₀ := by
+  simp [Codep, map_dual, map_dep_iff]
+
 lemma Coindep.not_codep (hD : M.Coindep D) : ¬ M.Codep D :=
   Indep.not_dep hD
 

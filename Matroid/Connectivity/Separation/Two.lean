@@ -464,5 +464,18 @@ lemma Separation.isoMinor_contract_of_notMem_closure (hP : P.eConn = 1) (hNM : N
   let i' := (P.twoSummand i g).isoMapEquiv (Equiv.swap g f)
   exact ⟨(h2.isoMinor.trans_iso i').trans hf.isoMinor⟩
 
--- lemma IsTutteSeparation ((hP : P.eConn = 1) (hMs : M.Simple) (hMs : M✶.Simple) :
---     ∃
+lemma Separation.isoMinor_contract_of_notMem_guts (hP : P.eConn = 1) (hNM : N ≤m M)
+    (hl : N.Loopless) (hl' : N.Coloopless) (hss : (P (!i) ∩ N.E).Subsingleton)
+    (hecl : e ∉ P i) (heguts : e ∉ P.guts) : Nonempty (N ≤i (M ／ {e})) := by
+  refine P.isoMinor_contract_of_notMem_closure hP hNM hl hl' hss fun hecl' ↦ ?_
+  grw [P.guts_eq_inter_bool i, mem_inter_iff, and_iff_right hecl', ← M.subset_closure (P !i)]
+    at heguts
+  grw [M.closure_subset_ground, ← P.union_bool_eq i] at hecl'
+  grind
+
+lemma Separation.isoMinor_delete_of_notMem_coguts (hP : P.eConn = 1) (hNM : N ≤m M)
+    (hl : N.Loopless) (hl' : N.Coloopless) (hss : (P (!i) ∩ N.E).Subsingleton)
+    (hecl : e ∉ P i) (heguts : e ∉ P.coguts) : Nonempty (N ≤i (M ＼ {e})) := by
+  rw [← nonempty_isoMinor_dual_iff, dual_delete]
+  exact (P.induce M✶).isoMinor_contract_of_notMem_guts (e := e) (i := i) (by simpa)
+    hNM.dual (by simpa) (by simpa) (by simpa) (by simpa) (by simpa)

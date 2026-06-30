@@ -66,6 +66,9 @@ lemma IsLoop.isNonColoop (h : M.IsLoop e) : M.IsNonColoop e := by
   rw [isNonColoop_iff]
   exact ⟨h.not_isColoop, h.mem_ground⟩
 
+lemma coindep_singleton : M.Coindep {e} ↔ M.IsNonColoop e :=
+  indep_singleton
+
 lemma isColoop_or_isNonColoop (M : Matroid α) (e : α) (he : e ∈ M.E := by aesop_mat) :
     M.IsColoop e ∨ M.IsNonColoop e :=
   M✶.isLoop_or_isNonloop e
@@ -80,6 +83,10 @@ instance dual_loopless [M.Coloopless] : M✶.Loopless :=
 
 instance dual_coloopless [M.Loopless] : M✶.Coloopless :=
   ⟨by simpa⟩
+
+lemma coloopless_iff_forall : M.Coloopless ↔ ∀ e ∈ M.E, M.IsNonColoop e := by
+  rw [coloopless_iff, loopless_iff_forall_isNonloop]
+  rfl
 
 @[simp]
 lemma coloops_eq_empty (M : Matroid α) [M.Coloopless] : M.coloops = ∅ := by
@@ -96,6 +103,10 @@ lemma coloops_eq_empty_iff : M.coloops = ∅ ↔ M.Coloopless := by
 lemma dual_loopless_iff : M✶.Loopless ↔ M.Coloopless := by
   refine ⟨fun h ↦ ⟨h⟩, fun h ↦ ⟨?_⟩⟩
   simp
+
+@[simp]
+lemma dual_coloopless_iff : M✶.Coloopless ↔ M.Loopless := by
+  nth_rw 1 [iff_comm, ← M.dual_dual, dual_loopless_iff]
 
 lemma isNonColoop_of_mem [M.Coloopless] (he : e ∈ M.E) : M.IsNonColoop e := by
   have hM : M✶.Loopless := Coloopless.dual_loopless

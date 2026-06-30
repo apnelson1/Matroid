@@ -1,5 +1,6 @@
 import Matroid.Connectivity.Separation.Abstract
 import Matroid.Triangle
+import Matroid.Constructions.Small
 
 open Set Matroid.Separation Function
 
@@ -131,11 +132,12 @@ lemma not_isTutteSeparation_iff_exists :
   simp_rw [isTutteSeparation_iff_forall, not_forall, not_or, Separation.not_dep_iff,
     Separation.not_codep_iff]
 
--- lemma not_isTutteSeparation_iff' : ¬ P.IsTutteSeparation ↔
---     (M.Indep P.left ∧ M.Spanning P.right) ∨ (M.Spanning P.left ∧ M.Indep P.right) := by
---   rw [isTutteSeparation_iff', ← not_spanning_iff, ← not_indep_iff, ← not_spanning_iff,
---     ← not_indep_iff]
---   tauto
+lemma IsTutteSeparation.map {β : Type*} (hP : P.IsTutteSeparation) (f : α → β) (hf : InjOn f M.E) :
+    (P.map f hf).IsTutteSeparation := by
+  simp only [isTutteSeparation_iff_forall, Separation.map_apply, map_dep_iff, map_codep_iff]
+  intro i
+  obtain hd | hcd := isTutteSeparation_iff_forall.1 hP i <;> grind
+
 lemma isTutteSeparation_of_encard (h : P.eConn < (P i).encard) (h' : P.eConn < (P !i).encard) :
     P.IsTutteSeparation := by
   rwa [isTutteSeparation_iff_lt_encard (fun hP ↦ by simp [hP] at h), i.forall_bool',
@@ -408,6 +410,10 @@ lemma TutteConnected.loopless (h : M.TutteConnected k) (hk : 2 ≤ k) (hnt : M.E
   have : M.Nonempty := ⟨hnt.nonempty⟩
   exact (h.connected hk).loopless hnt
 
+lemma TutteConnected.coloopless (h : M.TutteConnected k) (hk : 2 ≤ k) (hnt : M.E.Nontrivial) :
+    M.Coloopless := by
+  simpa using h.dual.loopless hk (by simpa)
+
 lemma Separation.Nontrivial.one_le_eConn_of_tutteConnected (hP : P.Nontrivial)
     (hM : M.TutteConnected 2) : 1 ≤ P.eConn := by
   have hne : M.Nonempty := ⟨⟨(hP.nonempty true).some, P.subset (hP.nonempty true).some_mem⟩⟩
@@ -437,6 +443,22 @@ lemma TutteConnected.exists_subsingleton_of_isTutteSeparation (hM : M.TutteConne
 lemma emptyOn_tutteConnected (α : Type*) (k : ℕ∞) : (emptyOn α).TutteConnected k := by
   obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
   simp [← freeOn_empty, freeOn_tutteConnected_iff]
+
+lemma TutteConnected.of_map {β : Type*} {f : α → β} (hf : InjOn f M.E)
+    (hM : (M.map f hf).TutteConnected k) : M.TutteConnected k := by
+  obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
+  rw [tutteConnected_iff_forall] at hM ⊢
+  exact fun P hP hPsep ↦ hM (P.map f hf) (by rwa [map_eConn]) <| hPsep.map _ hf
+
+lemma TutteConnected.map {β : Type*} (hM : M.TutteConnected k) (f : α → β) (hf : InjOn f M.E) :
+    (M.map f hf).TutteConnected k := by
+  obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one
+  · simp
+  obtain he | hne := isEmpty_or_nonempty α
+  · simp [M.eq_emptyOn]
+  obtain ⟨g, hg, hMg⟩ := (M.isoMap f hf).symm.exists_eq_map
+  rw [hMg] at hM
+  exact hM.of_map
 
 lemma Connected.tutteConnected_two (hM : M.Connected) : (M.TutteConnected 2) := by
   obtain rfl | hne := M.eq_emptyOn_or_nonempty; simp
@@ -517,6 +539,59 @@ lemma TutteConnected.isUniform_of_encard_le (h : M.TutteConnected (k + 1))
   refine h.not_isTutteSeparation (P := M.ofSetSep X true) (by simpa) ?_
   simp [isTutteSeparation_iff' true, hnot.1, hnot.2]
 
+/-- Every `(k + 1)`-connected matroid on at most `2k` elements is uniform. -/
+lemma TutteConnected.isFiniteUniform_of_encard_le (h : M.TutteConnected (k + 1))
+    (hle : M.E.encard ≤ 2 * k) (hk : k ≠ ⊤) :
+    ∃ a b n, M.IsFiniteUniform a b n ∧ a ≤ b + 1 ∧ b ≤ a + 1 ∧ n ≤ 2 * k := by
+  wlog hr : M.eRank ≤ M✶.eRank generalizing M with aux
+  · have hrr := M.eRank_add_eRank_dual
+    obtain ⟨b, a, n, hu, hba, hab, hn⟩ :=
+      aux h.dual (by simpa) (by rw [dual_dual]; enat_to_nat!; lia)
+    exact ⟨a, b, n, hu.of_dual, hab, hba, hn⟩
+  have hfin : M.Finite := by
+    grw [finite_iff, ← encard_lt_top_iff, hle]
+    enat_to_nat
+  obtain ⟨a, b, n, hu, ha, hb, hn⟩ :=
+    (h.isUniform_of_encard_le hle).exists_isFiniteUniform_of_finite
+  refine ⟨a, b, n, hu, by enat_to_nat! <;> lia, ?_⟩
+  by_contra! hcon
+  have hrr := M.eRank_add_eRank_dual
+  obtain ⟨X, hXE, hXcard⟩ :=
+    exists_subset_encard_eq (k := a + 1) (s := M.E) (by enat_to_nat! <;> lia)
+  have hss := encard_diff_add_encard_of_subset hXE
+  have hconn : M.eConn X = a := by
+    have hc := M.eRk_add_eRk_compl_eq X
+    rwa [Spanning.eRk_eq, Spanning.eRk_eq, hu.eRank_eq, ENat.add_eq_add_left_iff,
+      or_iff_left (by simp), eq_comm] at hc
+    · rw [hu.spanning_iff, and_iff_left diff_subset]
+      have := encard_diff_add_encard_of_subset hXE
+      enat_to_nat! <;> lia
+    rw [hu.spanning_iff, and_iff_left hXE]
+    simp [hXcard]
+  have := h.encard_eq_or_encard_compl_eq (X := X) (by enat_to_nat! <;> lia)
+  enat_to_nat! <;> lia
+
+/-- A `(k + 1)`-connected matroid on at most `2k` elements is a uniform matroid with
+`(r, r✶) ∈ {(a, a), (a, a + 1), (a + 1, a)}` for some `a ≤ k`. -/
+lemma TutteConnected.isFiniteUniform_of_encard_le' {k : ℕ} (h : M.TutteConnected (k + 1))
+    (hle : M.E.encard ≤ 2 * k)  :
+    ∃ a, (M.IsFiniteUniform a a (2 * a) ∧ a ≤ k) ∨
+    (M.IsFiniteUniform a (a + 1) (2 * a + 1) ∧ a < k) ∨
+    (M.IsFiniteUniform (a + 1) a (2 * a + 1) ∧ a < k) := by
+  obtain ⟨a, b, n, hM, hab, hba, hn⟩ := h.isFiniteUniform_of_encard_le hle (by simp)
+  obtain rfl := hM.add_eq
+  obtain rfl | hlt := hab.eq_or_lt
+  · refine ⟨b, .inr <| .inr ⟨?_, by enat_to_nat!; lia⟩⟩
+    convert hM using 1
+    lia
+  obtain rfl | hlt' := hba.eq_or_lt
+  · refine ⟨a, .inr <| .inl ⟨?_, by enat_to_nat!; lia⟩⟩
+    convert hM using 1
+    lia
+  obtain rfl : a = b := by enat_to_nat!; lia
+  refine ⟨a, .inl ⟨?_, by enat_to_nat!; lia⟩⟩
+  convert hM using 1
+  exact two_mul ..
 
 /-- If a `(k + 1)`-connected matroid `M` has a finite `(k + 1)`-element circuit/cocircuit,
 then `M` is a self-dual uniform matroid of rank `k`. -/
@@ -617,5 +692,27 @@ lemma TutteConnected.eConn_cross_le_of_eConn_le_eConn_le_card_ge' (hM : M.TutteC
     {P Q : M.Separation} (hP : P.eConn ≤ k) (hQ : Q.eConn ≤ k) {b c : Bool}
     (hcard : k ≤ (P (!b) ∩ Q (!c)).encard) : (P.cross Q b c i).eConn ≤ k := by
   simpa using hM.eConn_cross_le_of_eConn_le_eConn_le_card_ge hP hQ hcard i
+
+lemma TutteConnected.eq_unifOn_of_encard_le_three (hM : M.TutteConnected (2 + 1))
+    (hnt : M.E.Nontrivial) (hcard : M.E.encard ≤ 3) :
+    ∃ i : ℕ, 0 < i ∧ i < M.E.encard ∧ M = unifOn M.E i := by
+  have hl := hM.loopless (by simp) hnt
+  have hcl := hM.coloopless (by simp) hnt
+  have hne : M.Nonempty := (ground_nonempty_iff _).1 hnt.nonempty
+  rw [← two_le_encard_iff_nontrivial] at hnt
+  obtain h2 | h3 : M.E.encard = 2 ∨ M.E.encard = 3 := by enat_to_nat!; lia
+  · refine ⟨1, by simp, by simp [h2], ?_⟩
+    obtain ⟨a, b, hab, rfl⟩ := eq_circuitOn_of_encard_ground_le_two h2.le
+    rw [circuitOn_eq_unifOn (n := 1), unifOn_ground_eq]
+    simp [encard_pair hab, one_add_one_eq_two]
+  obtain ⟨a, b, c, hab, hac, hbc, rfl | rfl⟩ := eq_unifOn_of_encard_ground_eq_three h3
+  · exact ⟨1, by simp, by rw [h3]; simp, rfl⟩
+  refine ⟨2, by simp, by rw [h3]; simp, ?_⟩
+  rw [circuitOn_ground, circuitOn_eq_unifOn]
+  exact h3.symm
+
+
+
+
 
 end Matroid

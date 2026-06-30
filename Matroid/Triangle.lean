@@ -345,6 +345,15 @@ lemma isTriangle_delete_iff {D} : (M ＼ D).IsTriangle T ↔ M.IsTriangle T ∧ 
 lemma isTriad_contract_iff {C} : (M ／ C).IsTriad T ↔ M.IsTriad T ∧ Disjoint T C := by
   grind [isTriad_iff, contract_isCocircuit_iff]
 
+lemma Simple.contractElem_simple_of_notMem_triangle (hM : M.Simple)
+    (he : ∀ T, M.IsTriangle T → e ∉ T) : (M ／ {e}).Simple := by
+  refine simple_iff_loopless_eq_of_parallel_forall.2 ⟨(hM.contractElem_loopless e),
+    fun x y hxy ↦ by_contra fun hne ↦ ?_⟩
+  specialize he {x, y, e}
+  rw [← parallel_iff_eq (M := M) hxy.mem_ground_left.1] at hne
+  rw [isTriangle_iff_parallel_contract hne, imp_iff_right hxy] at he
+  simp at he
+
 
 -- lemma IsTriangle.isFiniteRankUniform_two_four_of_isTriangle_not_parallel {a b c d : α}
 --     (habc : M.IsTriangle {a, b, c}) (habd : M.IsTriangle {a, b, d}) (hcd : ¬ M.Parallel c d) :
