@@ -31,7 +31,7 @@ lemma exists_disjointSum_loopyOn_freeOn (M : Matroid α) : ∃ (M₀ : Matroid �
   simp
 
 /-- A one-element matroid is a loop or a coloop. -/
-lemma encard_ground_eq_one_iff_eq (hM : M.E.encard = 1) :
+lemma eq_of_encard_ground_eq_one (hM : M.E.encard = 1) :
     ∃ a, M = loopyOn {a} ∨ M = freeOn {a} := by
   obtain ⟨a, ha⟩ := encard_eq_one.1 hM
   obtain ⟨B, hB⟩ := M.exists_isBase
@@ -39,6 +39,12 @@ lemma encard_ground_eq_one_iff_eq (hM : M.E.encard = 1) :
   · exact ⟨a, .inl <| by rwa [empty_isBase_iff, ha] at hB⟩
   refine ⟨a, .inr ?_⟩
   rwa [← ha, ← ground_indep_iff_isBase, ground_indep_iff_eq_freeOn, ha] at hB
+
+lemma eq_bDual_of_encard_ground_eq_one (hM : M.E.encard = 1) :
+    ∃ a b, M = (loopyOn {a}).bDual b := by
+  obtain ⟨a, rfl | rfl⟩ := eq_of_encard_ground_eq_one hM
+  · exact ⟨a, false, rfl⟩
+  exact ⟨a, true, rfl⟩
 
 /-- A nonempty, loopless, coloopless matroid on at most two elements is a two-element circuit. -/
 lemma eq_circuitOn_of_encard_ground_le_two [M.Loopless] [M.Coloopless] [M.Nonempty]

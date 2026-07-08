@@ -548,6 +548,26 @@ lemma VerticallyConnected.tutteConnected_of_girth_ge (h : M.VerticallyConnected 
   rw [← hi, Indep.eRk_eq_encard]
   exact indep_of_eRk_add_one_lt_girth <| by enat_to_nat!; lia
 
+lemma CyclicallyConnected.eRank_ge (h : M.CyclicallyConnected (k + 1))
+    (hle : 2 * k ≤ M.E.encard) : k ≤ M.eRank := by
+  by_contra! hcon
+  obtain ⟨E, rfl⟩ | ⟨C, hC⟩ := M.exists_isCircuit_or_exists_eq_freeOn.symm
+  · simp only [eRank_freeOn, freeOn_ground] at hcon hle
+    enat_to_nat!; lia
+  refine h.not_isCyclicSeparation (P := M.ofSetSep C true) ?_ ?_
+  · grw [eConn_ofSetSep, eConn_le_eRk, eRk_le_eRank]
+    enat_to_nat! <;> lia
+  rw [isCyclicSeparation_iff_forall, Bool.forall_bool, ofSetSep_true_false, ofSetSep_apply_self,
+    and_iff_left hC.dep, ← not_indep_iff]
+  intro hi
+  grw [← encard_diff_add_encard_of_subset hC.subset_ground, hi.encard_le_eRank,
+    ← hC.eRk_add_one_eq, eRk_le_eRank] at hle
+  enat_to_nat! <;> lia
+
+lemma VerticallyConnected.eRank_dual_ge (h : M.VerticallyConnected (k + 1))
+    (hle : 2 * k ≤ M.E.encard) : k ≤ M✶.eRank :=
+  h.dual_cyclicallyConnected.eRank_ge hle
+
 /-- This needs the strict inequality in the hypothesis, since nothing like this can be true
 for `k = ⊤`. This is also false for matroids like `U₂,₅` if there is no lower bound on size. -/
 lemma tutteConnected_iff_verticallyConnected_girth (hlt : 2 * k < M.E.encard + 1) :

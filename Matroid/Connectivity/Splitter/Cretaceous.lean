@@ -182,26 +182,44 @@ lemma Separation.indep_coindep_exists_basis_contraction_minor
   rw [delete_empty] at h₁
   exact IsMinor.trans h₁ (contract_isMinor_of_subset (M) (hBC))
 
--- lemma exists_flexible {N : Matroid α} (hM : M.TutteConnected 2) (hsi : M.Simple) (hsi' : M✶.Simple)
---     (hP : P.IsTutteSeparation) (hPconn : P.eConn ≤ 1) (hNM : N ≤m M) (hN : N.Loopless)
---     (hN' : N.Coloopless) (hss : ((P !i) ∩ N.E).Subsingleton) :
---     ∃ e, ∀ b, Nonempty (N ≤i M.remove b {e}) := by
---   obtain hlt | hPconn := hPconn.lt_or_eq
---   · exact False.elim <| hM.not_isTutteSeparation (k := 1) (Order.add_one_le_of_lt hlt) hP
---   rw [← three_le_girth_iff] at hsi hsi'
---   obtain ⟨e, he, heg, hecg⟩ := hM.exists_notMem_guts_notMem_coguts hP hsi hsi' hPconn.le (!i)
---   refine ⟨e, fun i ↦ ?_⟩
---   obtain rfl | rfl := i
---   · exact P.isoMinor_delete_of_notMem_coguts hPconn hNM hN hN' hss (by grind) hecg
---   exact P.isoMinor_contract_of_notMem_guts hPconn hNM hN hN' hss (by grind) heg
+/-- If `N` is a nonempty-or-singleton minor of a `3`-connected matroid `M` on at least four
+elements, then there is an element of `M` that is both deletable and contractible for `N`. -/
+lemma TutteConnected.exists_flexible_of_subsingleton {N : Matroid α} (hM : M.TutteConnected 3)
+    (h4 : 4 ≤ M.E.encard) (hNM : N ≤m M) (hN : N.E.Subsingleton) :
+    ∃ f ∈ M.E, ∀ b, N ≤m M.remove b {f} := by
+  obtain ⟨f, hf⟩ : (M.E \ N.E).Nonempty := by
+    rw [← encard_le_one_iff_subsingleton] at hN
+    grw [← one_le_encard_iff_nonempty, ← ENat.add_le_add_iff_right (k := N.E.encard),
+      encard_diff_add_encard_of_subset hNM.subset, ← h4, hN]
+    · enat_to_nat; lia
+    grw [← lt_top_iff_ne_top, hN]
+    simp
+  refine ⟨f, hf.1, fun b ↦ ?_⟩
+  obtain h0 | ⟨e, he0⟩ := hN.eq_empty_or_singleton
+  · rw [ground_eq_empty_iff] at h0
+    simp [h0]
+  obtain ⟨a, d, rfl⟩ := eq_bDual_of_encard_ground_eq_one (M := N) (by simp [he0])
+  rw [bDual_isMinor_iff, bDual_remove, loopyOn_isMinor_iff, coindep_singleton]
+  have hc := (hM.bDual d).removeElem (k := 2) (by rw [bDual_ground]; enat_to_nat!; lia) (d != b) f
+  refine (hc.coloopless rfl.le ?_).isNonColoop_of_mem ?_
+  · grw [remove_ground, bDual_ground, ← two_le_encard_iff_nontrivial, ← ENat.add_one_le_add_one_iff,
+      ← encard_le_encard_diff_singleton_add_one, ← h4]
+    enat_to_nat; lia
+  obtain rfl : a = e := by simpa using he0
+  simp only [bDual_ground, loopyOn_ground, mem_diff, mem_singleton_iff] at hf
+  simp [show a ∈ M.E by simpa using hNM.subset, Ne.symm hf.2]
 
-/-- If `M ＼ {e}` has `N` as a minor, and is cosimple but not `3`-connected, then it has a
-flexible element. -/
+/-- If `M ＼ {e}` has `N` as a minor, and is cosimple but not `3`-connected,
+then `M` has a isomorphism-flexible element for `N`. -/
 lemma exists_flexible {N : Matroid α} (hM : M.TutteConnected 3) (h4 : 4 ≤ M.E.encard)
     (hMe : ¬ (M ＼ {e}).TutteConnected 3) (hsi' : (M ＼ {e})✶.Simple)
-    (hNM : N ≤m M ＼ {e}) (hN : N.TutteConnected 3) (hnt : N.E.Nontrivial) :
-      ∃ f, ∀ b, Nonempty (N ≤i M.remove b {f}) := by
+    (hNM : N ≤m M ＼ {e}) (hN : N.TutteConnected 3) :
+      ∃ f ∈ M.E, ∀ b, Nonempty (N ≤i M.remove b {f}) := by
   rw [show (3 : ℕ∞) = 1 + 1 + 1 from rfl] at *
+  obtain hss | hnt := N.E.subsingleton_or_nontrivial
+  · obtain ⟨f, hf, h⟩ := hM.exists_flexible_of_subsingleton (by enat_to_nat!; lia)
+      (hNM.trans <| delete_isMinor ..) hss
+    exact ⟨f, hf, fun b ↦ ⟨(h b).isoMinor⟩⟩
   have hM2 : (M ＼ {e}).TutteConnected (1 + 1) := (hM.deleteElem (e := e) (by enat_to_nat!; lia))
   obtain ⟨P, hPconn, hP⟩ := hM2.exists_of_not_tutteConnected_add_one hMe
   rw [ENat.add_one_inj] at hPconn
@@ -210,7 +228,7 @@ lemma exists_flexible {N : Matroid α} (hM : M.TutteConnected 3) (h4 : 4 ≤ M.E
   obtain ⟨i, hi⟩ := hN.exists_subsingleton_of_isTutteSeparation (P := P.induce N)
     (by grw [← hPconn, P.eConn_induce_le_of_isMinor hNM])
   obtain ⟨f, hf, hfg, hfcg⟩ := hM2.exists_notMem_guts_notMem_coguts hP hsi hsi' hPconn.le i
-  use f
+  refine ⟨f, by grind, ?_⟩
   have hNl := hN.loopless (le_self_add ..) hnt
   have hNcl := hN.coloopless (le_self_add ..) hnt
   rw [induce_apply_subset _ hNM.subset] at hi
@@ -224,14 +242,6 @@ lemma exists_flexible {N : Matroid α} (hM : M.TutteConnected 3) (h4 : 4 ≤ M.E
     (by simpa using hi) (by grind) hfg
   exact ⟨φ.trans_isMinor ((delete_isMinor ..).contract_isMinor_contract (by grind))⟩
 
-
-  -- have := exists_flexible hM2 ((hM.simple h4).delete _) hsi' hP
---   _
-
--- (hsi : M.Simple) (hsi' : M✶.Simple)
---     (hP : P.IsTutteSeparation) (hPconn : P.eConn ≤ 1) (hNM : N ≤m M) (hN : N.Loopless)
---     (hN' : N.Coloopless) (hss : ((P !i) ∩ N.E).Subsingleton) :
---     ∃ e, ∀ b, Nonempty (N ≤i M.remove b {e}) := by
 
 lemma splitter_no_triangle (hM : M.TutteConnected 3) (hN : N.TutteConnected 3) (fNM : N <i M)
     (hTriad : ∀ e T, M.IsDeletable N e → M.IsTriad T → e ∉ T)

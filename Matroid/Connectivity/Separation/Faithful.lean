@@ -197,6 +197,24 @@ lemma faithful_delete_of_subset_closure (hD : D ⊆ P i) (hDcl : D ⊆ M.closure
     grw [coindep_iff_subset_closure_compl, ← diff_subset_diff_left (P.subset (i := i)), ← hDcl]
   rwa [faithful_delete_iff_subset_closure_of_subset hDi hD]
 
+lemma faithful_iff_of_isSpanningRestriction (hNM : N ≤sr M) (hss : M.E ⊆ P i ∪ N.E) :
+    P.Faithful N ↔ M.E ⊆ M.closure (P i ∩ N.E) ∪ N.E := by
+  obtain ⟨D, hD, rfl⟩ := hNM.exists_eq_delete
+  rw [delete_ground, union_comm, ← diff_subset_iff, diff_diff_cancel_left hD.subset_ground] at hss
+  rw [faithful_delete_iff_subset_closure_of_subset hD hss, delete_ground, union_comm,
+    ← diff_subset_iff, diff_diff_cancel_left hD.subset_ground, ← inter_diff_assoc,
+    inter_eq_self_of_subset_left P.subset_ground]
+
+lemma induce_faithful_iff_of_isSpanningRestriction (hNM : N ≤sr M) {P : N.Separation} :
+    (P.induce M i).Faithful N ↔ M.E ⊆ M.closure (P i) ∪ N.E := by
+  rw [faithful_iff_of_isSpanningRestriction hNM (i := i)]
+  · nth_rw 1 [induce_apply_self, ← P.union_bool_eq i, inter_union_distrib_left,
+      disjoint_sdiff_left.inter_eq, union_empty, inter_eq_self_of_subset_right
+      (by grw [← hNM.subset, P.compl_not_eq])]
+  rw [induce_apply_self, ← P.union_bool_eq i, union_comm (P i), ← union_assoc,
+    diff_union_of_subset (P.subset_ground.trans hNM.subset)]
+  grind
+
 set_option backward.isDefEq.respectTransparency false in
 lemma faithful_delete_of_forall_subset_closure (hDcl : ∀ i, P i ∩ D ⊆ M.closure (P i \ D)) :
     P.Faithful (M ＼ D) := by
@@ -421,6 +439,12 @@ lemma Faithful.eConn_eq_of_contract {P : (M ／ C).Separation}
     (h : (P.induce M i).Faithful (M ／ C)) : (P.induce M i).eConn = P.eConn :=
   h.eConn_eq_of_remove (b := true)
 
+lemma Faithful.eConn_eq_of_isMinor {P : N.Separation} (hNM : N ≤m M)
+    (h : (P.induce M i).Faithful N) : (P.induce M i).eConn = P.eConn := by
+  rw [← h.eConn_induce_eq]
+  convert rfl
+  rw [induce_induce_eq_self _ hNM.subset]
+
 end Faithful
 
 end Separation
@@ -558,5 +582,7 @@ lemma IsFaithfulMono.isLawfulDG {w} (h : IsFaithfulMono (α := α) w) {t : ℕ�
   intro N M P hP i hle
   grw [h i hP, hle, P.eConn_eq, ← hP.eConn_induce_eq, ← Separation.eConn_eq _ i,
     Separation.induce_apply_subset _ hP.isMinor.subset]
+
+
 
 end Matroid

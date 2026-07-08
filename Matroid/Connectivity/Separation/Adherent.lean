@@ -138,10 +138,13 @@ lemma TutteConnected.exists_remove_internallyConnected_three (hM : M.TutteConnec
 is `3`-connected. -/
 lemma TutteConnected.exists_removeElem_tutteConnected_three (hM : M.TutteConnected 3) {e : α}
     (he : ∀ T b, (M.bDual b).IsTriangle T → e ∉ T) : ∃ i, (M.remove i {e}).TutteConnected 3 := by
+  rw [show (3 : ℕ∞) = 2 + 1 from rfl] at *
   by_cases! heE : e ∉ M.E
   · exact ⟨true, by rwa [remove_singleton_of_notMem heE]⟩
   obtain hlt | hle := lt_or_ge M.E.encard 4
-  · obtain ⟨i, hi⟩ := hM.exists_forall_remove_of_encard_le_four hlt.le
+  · have hU := hM.isUniform_of_encard_le (by enat_to_nat!; lia)
+    obtain ⟨i, hi⟩ := hM.exists_forall_remove_of_isUniform (k := 2) hU
+      (by grw [finite_iff, ← encard_lt_top_iff, hlt]; simp)
     refine ⟨i, hi _⟩
   obtain ⟨b, h⟩ := hM.exists_remove_internallyConnected_three e
   have hsi (d) : ((M.remove b {e}).bDual d).Simple := by

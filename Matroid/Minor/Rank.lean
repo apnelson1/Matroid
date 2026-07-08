@@ -2,6 +2,7 @@ import Matroid.Minor.Order
 import Matroid.Rank.Nat
 import Matroid.Rank.Nullity
 import Matroid.ForMathlib.ENat
+import Matroid.Bool
 
 open Set
 
@@ -528,6 +529,13 @@ lemma eRank_contract_eq_zero_iff (hX : X ⊆ M.E := by aesop_mat) :
 lemma Spanning.eRank_contract (hX : M.Spanning X) : (M ／ X).eRank = 0 := by
   rwa [eRank_contract_eq_zero_iff]
 
+lemma contractElem_eRank_add_one_ge_eRank (M : Matroid α) (e : α) :
+    M.eRank ≤ (M ／ {e}).eRank + 1 := by
+  by_cases! heE : e ∉ M.E
+  · grw [contractElem_eq_self heE, ← le_self_add]
+  grw [eRank_contract_eq_eRelRk_ground, ← eRk_ground, ← eRelRk_empty_left, add_comm,
+    ← eRelRk_add_cancel (Y := {e}) _ (by simp) (by simpa), eRelRk_empty_left, eRk_singleton_le]
+
 end Contract
 
 section Rank
@@ -565,6 +573,16 @@ lemma delete_eRank_add_eRk_ge_eRank (M : Matroid α) (D : Set α) :
   rw [← eRk_ground, ← eRk_ground, delete_eRk_eq _ (by simpa using disjoint_sdiff_left),
     delete_ground]
   exact le_trans (by simp) <| M.eRk_union_le_eRk_add_eRk (M.E \ D) D
+
+lemma deleteElem_eRank_add_one_ge_eRank (M : Matroid α) (e : α) :
+    M.eRank ≤ (M ＼ {e}).eRank + 1 := by
+  grw [delete_eRank_add_eRk_ge_eRank (D := {e}), eRk_singleton_le]
+
+lemma removeElem_eRank_add_one_ge_eRank (M : Matroid α) (e : α) (b : Bool) :
+    M.eRank ≤ (M.remove b {e}).eRank + 1 := by
+  obtain rfl | rfl := b
+  · exact M.deleteElem_eRank_add_one_ge_eRank e
+  exact M.contractElem_eRank_add_one_ge_eRank e
 
 lemma delete_rank_add_rk_ge_rank (M : Matroid α) (D : Set α) : M.rank ≤ (M ＼ D).rank + M.rk D := by
   obtain h | h := M.rankFinite_or_rankInfinite

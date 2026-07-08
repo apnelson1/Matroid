@@ -194,3 +194,16 @@ theorem nonempty_circuitOn_isoMinor_iff_of_finite {β : Type*} {E : Set α} {M :
     (he : E.Nonempty) (hEfin : E.Finite) :
     Nonempty (circuitOn E ≤i M) ↔ ∃ C, M.IsCircuit C ∧ E.encard ≤ C.encard := by
   simp_rw [nonempty_circuitOn_isoMinor_iff he, hEfin.encard_le_iff_nonempty_embedding]
+
+lemma IsFiniteUniform.nonempty_isoMinor_iff {β : Type*} {N : Matroid β} {a' b' n' : ℕ}
+    (hM : M.IsFiniteUniform a b n) (hN : N.IsFiniteUniform a' b' n') :
+    Nonempty (N ≤i M) ↔ (a' ≤ a ∧ b' ≤ b) := by
+  refine ⟨fun ⟨i⟩ ↦ ?_, fun h ↦ ?_⟩
+  · grw [← ENat.coe_le_coe, ← ENat.coe_le_coe, ← hN.eRank_eq, ← hM.eRank_eq, ← hN.eRank_dual_eq,
+      ← hM.eRank_dual_eq, i.eRank_le, i.dual.eRank_le]
+    simp
+  obtain ⟨e⟩ := hM.nonempty_iso_unif
+  obtain ⟨f⟩ := hN.nonempty_iso_unif
+  refine ⟨f.isoMinor.trans (IsoMinor.trans (Nonempty.some ?_) e.symm.isoMinor)⟩
+  rw [unif_isoMinor_unif_iff' hN.le_left hM.le_left, ← hM.add_eq, ← hN.add_eq]
+  lia

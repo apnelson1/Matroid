@@ -7,6 +7,10 @@ open Set
 
 namespace Matroid
 
+lemma isBase_iff_indep_spanning {B : Set α} : M.IsBase B ↔ M.Indep B ∧ M.Spanning B := by
+  rw [isBase_iff_indep_closure_eq, spanning_iff, ← and_assoc]
+  grind
+
 lemma coindep_iff_subset_closure_compl : M.Coindep X ↔ X ⊆ M.closure (M.E \ X) := by
   by_cases hXE : X ⊆ M.E
   · rw [coindep_iff_compl_spanning, spanning_iff, and_iff_left diff_subset]
@@ -89,9 +93,22 @@ lemma IsSpanningRestriction.trans {M₁ M₂ M₃ : Matroid α} (h : M₁ ≤sr 
   ⟨h.isRestriction.trans h'.isRestriction,
     h'.spanning_of_spanning <| h.spanning_of_spanning M₁.ground_spanning⟩
 
+lemma IsSpanningRestriction.exists_eq_restrict (h : N ≤sr M) : ∃ R, M.Spanning R ∧ N = M ↾ R :=
+  ⟨N.E, h.spanning, h.isRestriction.eq_restrict.symm⟩
+
 @[simp]
 lemma restrict_isSpanningRestriction_iff : (M ↾ X) ≤sr M ↔ M.Spanning X :=
   ⟨fun h ↦ by simpa using h.spanning, fun h ↦ ⟨restrict_isRestriction .., h⟩⟩
+
+lemma IsSpanningRestriction.isBase_iff (h : N ≤sr M) {B : Set α} (hBE : B ⊆ N.E := by aesop_mat) :
+    M.IsBase B ↔ N.IsBase B := by
+  rw [isBase_iff_indep_spanning, isBase_iff_indep_spanning, h.isRestriction.indep_iff,
+    h.spanning_iff]
+  grind
+
+lemma IsSpanningRestriction.isBase_of_isBase {B : Set α} (h : N ≤sr M) (hB : N.IsBase B) :
+    M.IsBase B := by
+  rwa [h.isBase_iff]
 
 lemma Spanning.restrict_isSpanningRestriction (h : M.Spanning X) : M ↾ X ≤sr M := by
   simpa

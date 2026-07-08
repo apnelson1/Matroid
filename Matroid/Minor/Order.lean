@@ -265,6 +265,48 @@ lemma Nonspanning.of_isMinor (h : N.Nonspanning X) (hN : N ≤m M) : M.Nonspanni
   obtain ⟨C, D, hC, hD, hCD, rfl⟩ := hN
   exact h.of_delete.of_contract
 
+lemma IsMinor.closure_inter_subset_closure (hN : N ≤m M) (hX : X ⊆ N.E) :
+    M.closure X ∩ N.E ⊆ N.closure X := by
+  obtain ⟨C, D, hC, hD, hCD, rfl⟩ := hN.exists_contract_indep_delete_coindep
+  grw [contract_delete_ground, delete_closure_eq, contract_closure_eq, diff_diff, subset_diff,
+    and_iff_left (by grind), (show Disjoint X D by grind).sdiff_eq_left, inter_subset_left,
+    ← subset_union_left]
+
+lemma Spanning.of_isMinor (hX : M.Spanning X) (hN : N ≤m M) (hXN : X ⊆ N.E) : N.Spanning X := by
+  grw [spanning_iff_ground_subset_closure, ← hN.closure_inter_subset_closure hXN,
+    hX.closure_eq, inter_eq_self_of_subset_right hN.subset]
+
+lemma IsSpanningRestriction.isMinor (h : N ≤sr M) : N ≤m M :=
+  h.isRestriction.isMinor
+
+/-- If `X` is spanning in `M`, and independent in a minor `N` of `M`, then `N` is a spanning
+restriction of `M`. -/
+lemma IsMinor.isSpanningRestriction_of_indep_spanning {X : Set α} (hNM : N ≤m M) (hNX : N.Indep X)
+    (hMX : M.Spanning X) : N ≤sr M := by
+  obtain ⟨C, D, hC, hD, hCD, rfl⟩ := hNM.exists_contract_indep_delete_coindep
+  rw [delete_indep_iff, hC.contract_indep_iff] at hNX
+  have hX : X = X ∪ C := (hMX.isBase_of_indep (hNX.1.2.subset subset_union_left)).eq_of_subset_indep
+    hNX.1.2 subset_union_left
+  rw [eq_comm, union_eq_left, ← diff_eq_empty, hNX.1.1.sdiff_eq_right] at hX
+  rw [hX, contract_empty]
+  exact hD.delete_isSpanningRestriction
+
+lemma IsSpanningRestriction.isSpanningRestriction_left_of_isMinor_isMinor {M₁ M₂ M₃ : Matroid α}
+    (h : M₁ ≤sr M₃) (h₁₂ : M₁ ≤m M₂) (h₂₃ : M₂ ≤m M₃) : M₁ ≤sr M₂ :=
+  ⟨h.isRestriction.isRestriction_left_of_isMinor_isMinor h₁₂ h₂₃,
+    h.spanning.of_isMinor h₂₃ h₁₂.subset⟩
+
+lemma IsSpanningRestriction.isSpanningRestriction_right_of_isMinor_isMinor {M₁ M₂ M₃ : Matroid α}
+    (h : M₁ ≤sr M₃) (h₁₂ : M₁ ≤m M₂) (h₂₃ : M₂ ≤m M₃) : M₂ ≤sr M₃ := by
+  obtain ⟨B, hB⟩ := M₁.exists_isBase
+  exact h₂₃.isSpanningRestriction_of_indep_spanning (hB.indep.of_isMinor h₁₂)
+    (h.spanning_of_spanning hB.spanning)
+
+
+
+
+  -- have : M₁ ≤r M₂ := by exact IsRestriction.isRestriction_left_of_isMinor_isMinor this h₁₂ h₂₃
+
 -- /-- Classically choose an independent contract-set from a proof that `N` is a minor of `M`. -/
 -- def IsMinor.C (h : N ≤m M) : Set α :=
 --   h.exists_contract_indep_delete_coindep.choose
@@ -332,6 +374,15 @@ lemma isMinor_loopyOn_iff : M ≤m loopyOn E ↔ M = loopyOn M.E ∧ M.E ⊆ E :
   obtain ⟨F, h, rfl⟩ := h
   simpa
 
+@[simp]
+lemma freeOn_isMinor_iff : freeOn E ≤m M ↔ M.Indep E := by
+  refine ⟨fun h ↦ Indep.of_isMinor (by simp) h, fun h ↦ ?_⟩
+  rw [← h.restrict_eq_freeOn]
+  exact restrict_isMinor _ h.subset_ground
+
+@[simp]
+lemma loopyOn_isMinor_iff : loopyOn E ≤m M ↔ M.Coindep E := by
+  rw [← dual_isMinor_iff, loopyOn_dual_eq, freeOn_isMinor_iff]
 
 end Constructions
 

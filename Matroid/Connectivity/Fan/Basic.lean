@@ -33,9 +33,9 @@ statement `M.IsFan [e, f, g] false false`.
 If, additionally, `{f, g, h}` is a triad of `M`, then the fan `e, f, g, h` corresponds to the
 statement `M.IsFan [e, f, g, h] false true`. -/
 inductive IsFan : Matroid α → List α → Bool → Bool → Prop
-  | of_pair (M b e f) (he : ∀ i, (M.bDual i).IsNonloop e)
+  | of_pair (M : Matroid α) (b e f) (he : ∀ i, (M.bDual i).IsNonloop e)
       (hf : ∀ i, (M.bDual i).IsNonloop f) (hne : e ≠ f) : IsFan M [e, f] b (!b)
-  | cons_triangle (M e x y F b c) (h : IsFan M (x :: y :: F) b c) (heF : e ∉ F)
+  | cons_triangle (M : Matroid α) e x y F b c (h : IsFan M (x :: y :: F) b c) (heF : e ∉ F)
       (hT : (M.bDual (!b)).IsTriangle {e, x, y}) : IsFan M (e :: x :: y :: F) (!b) c
 
 lemma IsFan.cons (h : M.IsFan (x :: y :: F) b c) (heF : e ∉ F)
@@ -371,10 +371,13 @@ lemma IsFan.eRk_le (h : M.IsFan F b c) (hlen : 3 ≤ F.length) :
     cases F with
     | nil =>
       cases b
-      · grw [eRk_le_encard, setOf_three, hT.three_elements, h.bool_right_eq]
-        rfl
-      grw [setOf_three, IsTriangle.eRk (by simpa using hT), h.bool_right_eq]
-      rfl
+      · grw [eRk_le_encard, setOf_three, hT.three_elements, h.bool_right_eq,
+          show (2 : ℕ∞) * 3 ≤ 3 + 1 + 1 + 1 from rfl.le]
+        simp
+      grw [setOf_three, IsTriangle.eRk (by simpa using hT), h.bool_right_eq,
+        show (2 : ℕ∞) * 2 ≤ 3 + 1 from rfl.le]
+      simp
+
     | cons p F =>
       simp_rw [List.mem_cons (b := e), setOf_or, setOf_eq_eq_singleton, singleton_union]
       cases b
@@ -385,10 +388,12 @@ lemma IsFan.eRk_le (h : M.IsFan F b c) (hlen : 3 ≤ F.length) :
       · simp [h.bool_right_eq]
       exact mem_of_mem_of_subset hT.mem_closure₁ <| M.closure_subset_closure <| by grind
 
-lemma IsFiniteRankUniform.exists_isFan (h : M.IsFiniteRankUniform 2 4) (b : Bool) :
+lemma IsFiniteRankUniform.exists_isFan (h : M.IsFiniteUniform 2 2) (b : Bool) :
     ∃ F, M.IsFan F b (!b) ∧ {e | e ∈ F} = M.E := by
   obtain ⟨x, y, z, w, hxy, hxz, hxw, hyz, hyw, hzw, hE⟩ := encard_eq_four.1 h.encard_eq
   refine ⟨[x, y, z, w], ?_, by simp [hE, Set.ext_iff]⟩
+  rw [isFan_four_iff]
+  simp [h.isTriangle_iff, h.dual_eq_self]
   grind [encard_eq_three, isFan_four_iff, h.bDual_eq_self, h.isTriangle_iff]
 
 lemma IsFan.contract_disjoint_aux (hF : M.IsFan F false c) (h4 : 4 ≤ F.length)

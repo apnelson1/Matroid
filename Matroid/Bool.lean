@@ -51,6 +51,9 @@ lemma bDual_bDual_self (M : Matroid α) (b : Bool) : (M.bDual b).bDual b = M := 
 lemma eq_bDual_iff_bDual_eq (M N : Matroid α) (d : Bool) : M.bDual d = N ↔ M = N.bDual d := by
   cases d with simp [eq_dual_iff_dual_eq]
 
+lemma bDual_isMinor_iff {d : Bool} {N : Matroid α} : N.bDual d ≤m M ↔ N ≤m M.bDual d := by
+  cases d with simp [isMinor_dual_iff_dual_isMinor]
+
 /-- If `b` is false, then `M ＼ X`, and if `b` is true, then `M ／ X`. Used in self-dual settings. -/
 def remove (M : Matroid α) (b : Bool) (X : Set α) := bif b then M ／ X else M ＼ X
 
@@ -103,15 +106,18 @@ lemma remove_singleton_eq_self : M.remove b {e} = M ↔ e ∉ M.E := by
 lemma remove_singleton_of_notMem (he : e ∉ M.E) : M.remove b {e} = M := by
   simpa
 
+lemma IsStrictMinor.exists_isMinor_removeElem {N : Matroid α} (hNM : N <m M) :
+    ∃ e ∈ M.E, ∃ i, N ≤m M.remove i {e} := by
+  obtain ⟨C, D, hC, hD, hCD, hne, rfl⟩ := hNM.exists_eq_contract_delete_disjoint
+  obtain ⟨e, heC⟩ | ⟨e, heD⟩ : C.Nonempty ∨ D.Nonempty := by simpa using hne
+  · exact ⟨e, hC heC, true, (delete_isMinor ..).trans (contract_isMinor_of_subset _ (by simpa))⟩
+  refine ⟨e, hD heD, false,
+    (delete_isMinor_delete_of_subset (D := {e}) (D' := D) _ (by simpa)).trans ?_⟩
+  exact contract_delete_isMinor_delete _ <| hCD.mono_right <| by simpa
+
 lemma IsStrictMinor.exists_eq_remove_singleton {N : Matroid α} (hNM : N <m M)
     (hE : (M.E \ N.E).Subsingleton) : ∃ b e, N = M.remove b {e} := by
-  obtain ⟨C, D, hC, hD, hCD, hne, rfl⟩ := hNM.exists_eq_contract_delete_disjoint
-  rw [delete_ground, contract_ground, diff_diff, diff_diff_cancel_left (by grind)] at hE
-  obtain ⟨e, he⟩ := (or_iff_left hE.not_nontrivial).1 hne.exists_eq_singleton_or_nontrivial
-  nth_rw 1 [← union_diff_cancel_left hCD.inter_eq.subset, he,
-    ← union_diff_cancel_right hCD.inter_eq.subset, he]
-  obtain heC | heD := singleton_subset_iff.1 he.symm.subset
-  · rw [sdiff_eq_left.2 (by grind), diff_eq_empty.2 (by simpa), delete_empty, ← remove_true]
-    use true, e
-  rw [diff_eq_empty.2 (by simpa), sdiff_eq_left.2 (by grind), contract_empty, ← remove_false]
-  use false, e
+  obtain ⟨e, he, b, h⟩ := hNM.exists_isMinor_removeElem
+  refine ⟨b, e, Eq.symm <| h.eq_of_ground_subset ?_⟩
+  grw [remove_ground, diff_subset_comm]
+  exact hE.subset_of_nonempty_inter ⟨e, ⟨he, by grind⟩, rfl⟩

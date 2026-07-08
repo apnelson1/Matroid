@@ -573,6 +573,17 @@ lemma IsUniform.closure_not_spanning (hM : M.IsUniform) (hIE : I ⊆ M.E) (hIs :
   rw [(hIe.subset (subset_insert _ _)).mem_closure_iff_of_notMem heI] at he
   exact he.not_indep hIe
 
+lemma IsUniform.of_iso (hM : M.IsUniform) {β : Type*} {N : Matroid β} (e : M ≂ N) :
+    N.IsUniform := by
+  rw [isUniform_iff] at hM ⊢
+  intro X hXE
+  convert hM (X := Subtype.val '' e.symm '' (N.E ↓∩ X)) (by simp)
+  · simp [e.indep_image_iff, inter_eq_self_of_subset_right hXE]
+  simp [e.spanning_iff, inter_eq_self_of_subset_right hXE]
+
+lemma Iso.isUniform_iff {β : Type*} {N : Matroid β} (e : M ≂ N) : M.IsUniform ↔ N.IsUniform :=
+  ⟨fun h ↦ h.of_iso e, fun h ↦ h.of_iso e.symm⟩
+
 lemma IsUniform.map (hM : M.IsUniform) {β : Type*} {f : α → β} (hf : InjOn f M.E) :
     (M.map f hf).IsUniform := by
   rw [isUniform_iff_forall_spanning_of_isCircuit]

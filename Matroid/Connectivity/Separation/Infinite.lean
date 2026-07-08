@@ -153,6 +153,20 @@ lemma unifOn_tutteConnected_top_iff {E : Set α} {k : ℕ} (hkE : k ≤ E.encard
   enat_to_nat!; lia
 
 
+/-- `U₃,₈` (for example) is `(3 + 1)`-connected with rank `3`, but not `(4 + 1)` connected;
+hence the bound is tight. -/
+lemma TutteConnected.tutteConnected_top_of_eRank_add_one_le
+    (h : M.TutteConnected (k + 1)) (hle : M.eRank + 1 ≤ k) : M.TutteConnected ⊤ := by
+  rw [tutteConnected_top_iff_forall]
+  refine fun P hP ↦ h.not_isTutteSeparation ?_ hP
+  grw [← P.eConn_eq true, eConn_le_eRk, eRk_le_eRank, hle]
+
+/-- `U₅,₈` (for example) is `(3 + 1)`-connected with corank `3`, but not `(4 + 1)` connected.
+hence the bound is tight. -/
+lemma TutteConnected.tutteConnected_top_of_eRank_dual_add_one_le
+    (h : M.TutteConnected (k + 1)) (hle : M✶.eRank + 1 ≤ k) : M.TutteConnected ⊤ := by
+  simpa using h.dual.tutteConnected_top_of_eRank_add_one_le hle
+
 set_option backward.isDefEq.respectTransparency false in
 /-- For finite `r`, a rank-`r` uniform matroid is `k`-Tutte-connected if and only if either
 it has size `2r-1, 2r` or `2r+1`, or `k` is at most the rank and at most the corank. -/
@@ -214,12 +228,12 @@ lemma IsFiniteRankUniform.tutteConnected_iff {a : ℕ} (ha : M.IsFiniteRankUnifo
   rw [unifOn_dual_eq' (j := a + 1) (by enat_to_nat! <;> lia), unifOn_eRank_eq'
     (by enat_to_nat! <;> lia)]
 
-lemma IsFiniteUniform.tutteConnected_iff {a b : ℕ} (ha : M.IsFiniteUniform a b) :
+lemma IsFiniteUniform.tutteConnected_iff {a b n : ℕ} (ha : M.IsFiniteUniform a b n) :
     M.TutteConnected (k + 1) ↔ (k ≤ a ∧ k ≤ b) ∨ a = b ∨ a = b + 1 ∨ b = a + 1 := by
   -- rw [ha.toIsFiniteRankUniform.tutteConnected_iff]
   convert ha.toIsFiniteRankUniform.tutteConnected_iff using 2
   · refine and_congr_right_iff.2 fun hka ↦ ?_
-    rw [ha.encard_eq, add_comm, ENat.coe_add, ENat.add_le_add_iff_left (by simp)]
+    rw [ha.encard_eq, add_comm, ← ha.add_eq, ENat.coe_add, ENat.add_le_add_iff_left (by simp)]
   convert Iff.rfl using 2
   · refine ⟨fun h ↦ ?_, fun h ↦ (h.symm ▸ ha).congr₃ <| two_mul ..⟩
     rw [← ENat.coe_inj, ← ha.eRank_dual_eq, h.eRank_dual_eq]
@@ -233,26 +247,78 @@ lemma IsFiniteUniform.tutteConnected_iff {a b : ℕ} (ha : M.IsFiniteUniform a b
   · exact (h.symm ▸ ha).congr₃ <| by lia
   rw [← ENat.coe_inj, ← ha.eRank_dual_eq, h.eRank_dual_eq]
 
-/-- In a `3`-connected matroid with at most four elements,
-either `M ／ e` is `3`-connected for all `e`, or `M ＼ e` is `3`-connected for all `e`. -/
-lemma TutteConnected.exists_forall_remove_of_encard_le_four (hM : M.TutteConnected 3)
-    (hM4 : M.E.encard ≤ 4) : ∃ i, ∀ e, (M.remove i {e}).TutteConnected 3 := by
-  suffices aux : ∃ i, ∀ e ∈ M.E, (M.remove i {e}).TutteConnected 3
-  · obtain ⟨i, h⟩ := aux
-    refine ⟨i, fun e ↦ ?_⟩
-    by_cases! he : e ∉ M.E
-    · rwa [remove_singleton_of_notMem he]
-    exact h e he
-  rw [show (3 : ℕ∞) = 2 + 1 from rfl] at *
-  obtain ⟨a, ⟨h, ha⟩ | ⟨h, ha⟩ | ⟨h, ha⟩⟩ :=  hM.isFiniteUniform_of_encard_le' (k := 2) hM4
-  · refine ⟨true, fun e he ↦ ?_⟩
-    obtain rfl | a := a
-    · simp [show M.E = ∅ from by simpa using h.encard_eq] at he
-    simp [(h.isFiniteUniform_add.contractElem' he).tutteConnected_iff]
-  · refine ⟨false, fun e he ↦ ?_⟩
-    simp [(h.isFiniteUniform_add.deleteElem' he).tutteConnected_iff]
-  refine ⟨true, fun e he ↦ ?_⟩
-  simp [(h.isFiniteUniform_add.contractElem' he).tutteConnected_iff]
+lemma IsUniform.tutteConnected_iff_of_finite (ha : M.IsUniform) (hfin : M.Finite):
+    M.TutteConnected (k + 1) ↔ (k ≤ M.eRank ∧ k ≤ M✶.eRank) ∨ M.eRank = M✶.eRank ∨
+    M.eRank = M✶.eRank + 1 ∨ M✶.eRank = M.eRank + 1 := by
+  obtain ⟨a, b, n, hM, ha, hb, hn⟩ := ha.exists_isFiniteUniform_of_finite
+  simp only [hM.tutteConnected_iff, ← ha, ← hb, Nat.cast_inj]
+  enat_to_nat
+
+/-- A `(k + 1)`-connected matroid on at most `2 * k + 1` elements is infinitely tutte-connected. -/
+lemma TutteConnected.tutteConnected_top_of_encard_add_one_le
+    (h : M.TutteConnected (k + 1)) (hlt : M.E.encard ≤ 2 * k + 1) : M.TutteConnected ⊤ := by
+  obtain rfl | hne := eq_or_ne k ⊤
+  · simpa using h
+  lift k to ℕ using hne
+  rw [show (⊤ : ℕ∞) = ⊤ + 1 by simp]
+  obtain ⟨a, hak, hU | hU | hU⟩ := h.isFiniteUniform_of_encard_le' hlt
+  all_goals
+  rw [hU.isFiniteUniform_add.tutteConnected_iff]
+  simp
+
+lemma TutteConnected.girth_ge_of_not_tutteConnected_top (h : M.TutteConnected k)
+    (h_top : ¬ M.TutteConnected ⊤) : k ≤ M.girth := by
+  obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
+  refine h.girth_ge ?_
+  contrapose! h_top
+  exact h.tutteConnected_top_of_encard_add_one_le <| by enat_to_nat!; lia
+
+-- /-- In a `3`-connected matroid with at most five elements,
+-- either `M ／ e` is `3`-connected for all `e`, or `M ＼ e` is `3`-connected for all `e`. -/
+-- lemma TutteConnected.exists_forall_remove_of_encard_le_five (hM : M.TutteConnected 3)
+--     (hM4 : M.E.encard ≤ 5) : ∃ i, ∀ e, (M.remove i {e}).TutteConnected 3 := by
+--   suffices aux : ∃ i, ∀ e ∈ M.E, (M.remove i {e}).TutteConnected 3
+--   · obtain ⟨i, h⟩ := aux
+--     refine ⟨i, fun e ↦ ?_⟩
+--     by_cases! he : e ∉ M.E
+--     · rwa [remove_singleton_of_notMem he]
+--     exact h e he
+--   rw [show (3 : ℕ∞) = 2 + 1 from rfl] at *
+--   obtain ⟨a, ha, h | h | h⟩ :=  hM.isFiniteUniform_of_encard_le' (k := 2) hM4
+--   · refine ⟨true, fun e he ↦ ?_⟩
+--     obtain rfl | a := a
+--     · simp [show M.E = ∅ from by simpa using h.encard_eq] at he
+--     simp [(h.isFiniteUniform_add.contractElem' he).tutteConnected_iff]
+--   · refine ⟨false, fun e he ↦ ?_⟩
+--     simp [(h.isFiniteUniform_add.deleteElem' he).tutteConnected_iff]
+--   refine ⟨true, fun e he ↦ ?_⟩
+--   simp [(h.isFiniteUniform_add.contractElem' he).tutteConnected_iff]
+
+-- lemma bar {N : Matroid α} (hMU : M.IsUniform) (hM : M.TutteConnected (k + 1)) (hNM : N <m M)
+--     (hN : N.TutteConnected (k + 1)) :
+--     ∃ e ∈ M.E, ∃ i, N ≤m M.remove i {e} ∧ (M.remove i {e}).TutteConnected (k + 1) := by
+--   _
+
+-- lemma bar {N : Matroid α} (hM : M.TutteConnected 3) (hM5 : M.E.encard ≤ 5) (hNM : N <m M)
+--     (hN : N.TutteConnected 3) : ∃ e ∈ M.E, ∃ i, N ≤m M.remove i {e} ∧
+--     (M.remove i {e}).TutteConnected 3 := by
+--   wlog hMr : M.eRank ≤ 2 generalizing M N with aux
+--   · have hrr := M.eRank_add_eRank_dual
+--     obtain ⟨e, heE, b, hd, hc⟩ := aux hM.dual (by simpa) hNM.dual hN.dual (by enat_to_nat!; lia)
+--     rw [dual_remove] at hc hd
+--     exact ⟨e, heE, !b, hd.of_dual, hc.of_dual⟩
+
+--   have hNfin : N.Finite := by
+--     grw [finite_iff, ← encard_lt_top_iff, encard_le_encard hNM.isMinor.subset, hM5]
+--     simp
+--   obtain ⟨e, heE, rfl | rfl, heM⟩ := hNM.exists_isMinor_removeElem
+--   obtain ⟨a, ha2, h | h | h⟩ := hM.isFiniteUniform_of_encard_le' (k := 2) hM5
+--   · obtain rfl | a := a
+--     · have hNcard := h.encard_eq ▸ hNM.encard_ground_lt
+--       simp at hNcard
+--   ·
+
+--   sorry
 
 /-- This might be true without `Tame`. -/
 lemma IsUniform.tutteConnected_iff [M.Tame] (h : M.IsUniform) :
@@ -284,6 +350,27 @@ lemma IsUniform.tutteConnected_iff [M.Tame] (h : M.IsUniform) :
     rw [P.eConn_eq, P.compl_eq, Bool.not_true] at hconn
     enat_to_nat! <;> lia
   rwa [← hC.eRk_add_one_eq, (h.spanning_of_dep hC.dep).eRk_eq, ENat.add_one_le_add_one_iff]
+
+lemma TutteConnected.exists_forall_remove_of_isUniform (hM : M.TutteConnected (k + 1))
+    (hU : M.IsUniform) (hfin : M.Finite) : ∃ i, ∀ e, (M.remove i {e}).TutteConnected (k + 1) := by
+  wlog hr : M.eRank ≤ M✶.eRank generalizing M with aux
+  · obtain ⟨i, hi⟩ := aux hM.dual hU.dual M.dual_finite (by rw [dual_dual]; enat_to_nat! <;> lia)
+    exact ⟨!i, fun e ↦ by simpa using (hi e).dual⟩
+  suffices aux : ∀ e ∈ M.E, (M ＼ {e}).TutteConnected (k + 1)
+  · refine ⟨false, fun e ↦ ?_⟩
+    by_cases! he : e ∉ M.E
+    · rwa [remove_singleton_of_notMem he]
+    exact aux e he
+  obtain ⟨a, b, hu, ha, hb⟩ := hU.exists_isFiniteUniform_of_finite'
+  rw [hu.tutteConnected_iff, or_iff_right (show a ≠ b + 1 by enat_to_nat! <;> lia)] at hM
+  intro e he
+  obtain rfl | b := b
+  · have hM : M.E = ∅ := by
+      rw [← encard_eq_zero, ← M.eRank_add_eRank_dual]
+      enat_to_nat! <;> lia
+    simp [hM] at he
+  rw [(hu.deleteElem' he).tutteConnected_iff]
+  enat_to_nat! <;> lia
 
 /-- Every tame, infinitely Tutte-connected matroid is finite. -/
 lemma TutteConnected.finite_of_tame [M.Tame] (hM : M.TutteConnected ⊤) : M.Finite := by

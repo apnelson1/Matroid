@@ -121,7 +121,7 @@ lemma altBetween_insert_drop_two {L : List α} {p q : ℕ} (hpq : p ≤ q)
 
 lemma mem_extract_iff_getElem {L : List α} : x ∈ L.extract p q ↔ ∃ (i : ℕ) (hi : i < L.length),
     p ≤ i ∧ i < q ∧ L[i] = x := by
-  simp only [extract_eq_drop_take, mem_take_iff_getElem, getElem_drop, length_drop, lt_inf_iff,
+  simp only [extract_eq_take_drop, mem_take_iff_getElem, getElem_drop, length_drop, lt_inf_iff,
     exists_and_left]
   refine ⟨by grind, ?_⟩
   rintro ⟨i, hpi, hiq, hi, rfl⟩
@@ -447,7 +447,7 @@ lemma IsFan.joints_dropLast_indep (hF : M.IsFan F b c) :
   obtain rfl | rfl := c
   · obtain h2 | h3 := hF.two_le_length.eq_or_lt'
     · obtain ⟨e, f, rfl⟩ := length_eq_two.1 h2
-      simp only [dropLast_cons₂, dropLast_singleton, length_cons, length_nil, zero_add]
+      simp only [dropLast_cons_cons, dropLast_singleton, length_cons, length_nil, zero_add]
       exact (hF.isNonloop (e := e) (by simp)).indep.subset <|
         (altBetween_subset ..).trans <| by simp
     exact (hF.dropLast (by lia)).joints_indep'' (by simp)

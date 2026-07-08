@@ -27,8 +27,6 @@ lemma seqConnected_tutteWeight_iff {f} (hf : f ⊤ = ⊤) :
   exact ⟨i, by rwa [← ENat.add_le_add_iff_left htop, ← P.eConn_eq i,
     M.eConn_add_tutteWeight_eq, P.eConn_eq]⟩
 
-
-
 namespace Separation
 
 abbrev IsTutteSeparation (P : M.Separation) := IsPredSeparation (fun _ ↦ TutteDegen) P
@@ -36,6 +34,9 @@ abbrev IsTutteSeparation (P : M.Separation) := IsPredSeparation (fun _ ↦ Tutte
 lemma isTutteSeparation_iff_forall : P.IsTutteSeparation ↔ ∀ i, M.Dep (P i) ∨ M.Codep (P i) := by
   simp_rw [IsTutteSeparation, IsPredSeparation, tutteDegen_iff, Classical.not_and_iff_not_or_not]
   simp
+
+lemma isTutteSeparation_iff_forall' : P.IsTutteSeparation ↔ ∀ i, M.Indep (P i) → M.Codep (P i) := by
+  simp_rw [isTutteSeparation_iff_forall, or_iff_not_imp_left, P.not_dep_iff]
 
 lemma isTutteSeparation_iff (i : Bool) :
     P.IsTutteSeparation ↔ (M.Dep (P i) ∨ M.Codep (P i)) ∧ (M.Dep (P !i) ∨ M.Codep (P !i)) := by
@@ -493,39 +494,9 @@ lemma TutteConnected.girth_ge_of_exists_eConn_ge (h : M.TutteConnected (k + 1))
   grw [← encard_diff_add_encard_of_subset (P.subset_ground (i := true)), P.compl_true, hP,
     ← M.eConn_le_encard, ← M.eConn_le_encard, P.eConn_eq, P.eConn_eq, two_mul]
 
-/-- `U₃,₈` (for example) is `(3 + 1)`-connected with rank `3`, but not `(4 + 1)` connected;
-hence the bound is tight. -/
-lemma TutteConnected.tutteConnected_top_of_eRank_add_one_le
-    (h : M.TutteConnected (k + 1)) (hle : M.eRank + 1 ≤ k) : M.TutteConnected ⊤ := by
-  rw [tutteConnected_top_iff_forall]
-  refine fun P hP ↦ h.not_isTutteSeparation ?_ hP
-  grw [← P.eConn_eq true, eConn_le_eRk, eRk_le_eRank, hle]
-
-/-- `U₅,₈` (for example) is `(3 + 1)`-connected with corank `3`, but not `(4 + 1)` connected.
-hence the bound is tight. -/
-lemma TutteConnected.tutteConnected_top_of_eRank_dual_add_one_le
-    (h : M.TutteConnected (k + 1)) (hle : M✶.eRank + 1 ≤ k) : M.TutteConnected ⊤ := by
-  simpa using h.dual.tutteConnected_top_of_eRank_add_one_le hle
-
-lemma TutteConnected.tutteConnected_top_of_encard_add_one_le
-    (h : M.TutteConnected (k + 1)) (hlt : M.E.encard + (1 : ℕ∞) ≤ 2 * k) : M.TutteConnected ⊤ := by
-  wlog hle : M.eRank ≤ M✶.eRank generalizing M with aux
-  · simpa using aux h.dual (by simpa) (by simpa using (not_le.1 hle).le)
-  obtain hle | hlt' := le_or_gt (M.eRank + 1) k
-  · exact h.tutteConnected_top_of_eRank_add_one_le hle
-  grw [← M.eRank_add_eRank_dual] at hlt
-  enat_to_nat! <;> lia
-
-lemma TutteConnected.girth_ge_of_not_tutteConnected_top (h : M.TutteConnected k)
-    (h_top : ¬ M.TutteConnected ⊤) : k ≤ M.girth := by
-  obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
-  refine h.girth_ge ?_
-  contrapose! h_top
-  exact h.tutteConnected_top_of_encard_add_one_le (Order.add_one_le_of_lt h_top)
-
 /-- Every `(k + 1)`-connected matroid on at most `2k` elements is uniform. -/
 lemma TutteConnected.isUniform_of_encard_le (h : M.TutteConnected (k + 1))
-    (hle : M.E.encard ≤ 2 * k) : M.IsUniform := by
+    (hle : M.E.encard ≤ 2 * k + 1) : M.IsUniform := by
   intro X hXE
   by_contra! hnot
   rw [not_indep_iff, not_spanning_iff] at hnot
@@ -541,8 +512,8 @@ lemma TutteConnected.isUniform_of_encard_le (h : M.TutteConnected (k + 1))
 
 /-- Every `(k + 1)`-connected matroid on at most `2k` elements is uniform. -/
 lemma TutteConnected.isFiniteUniform_of_encard_le (h : M.TutteConnected (k + 1))
-    (hle : M.E.encard ≤ 2 * k) (hk : k ≠ ⊤) :
-    ∃ a b n, M.IsFiniteUniform a b n ∧ a ≤ b + 1 ∧ b ≤ a + 1 ∧ n ≤ 2 * k := by
+    (hle : M.E.encard ≤ 2 * k + 1) (hk : k ≠ ⊤) :
+    ∃ a b n, M.IsFiniteUniform a b n ∧ a ≤ b + 1 ∧ b ≤ a + 1 ∧ n ≤ 2 * k + 1 := by
   wlog hr : M.eRank ≤ M✶.eRank generalizing M with aux
   · have hrr := M.eRank_add_eRank_dual
     obtain ⟨b, a, n, hu, hba, hab, hn⟩ :=
@@ -574,22 +545,21 @@ lemma TutteConnected.isFiniteUniform_of_encard_le (h : M.TutteConnected (k + 1))
 /-- A `(k + 1)`-connected matroid on at most `2k` elements is a uniform matroid with
 `(r, r✶) ∈ {(a, a), (a, a + 1), (a + 1, a)}` for some `a ≤ k`. -/
 lemma TutteConnected.isFiniteUniform_of_encard_le' {k : ℕ} (h : M.TutteConnected (k + 1))
-    (hle : M.E.encard ≤ 2 * k)  :
-    ∃ a, (M.IsFiniteUniform a a (2 * a) ∧ a ≤ k) ∨
-    (M.IsFiniteUniform a (a + 1) (2 * a + 1) ∧ a < k) ∨
-    (M.IsFiniteUniform (a + 1) a (2 * a + 1) ∧ a < k) := by
+    (hle : M.E.encard ≤ 2 * k + 1) : ∃ a ≤ k, M.IsFiniteUniform a a (2 * a) ∨
+    M.IsFiniteUniform a (a + 1) (2 * a + 1) ∨
+    M.IsFiniteUniform (a + 1) a (2 * a + 1) := by
   obtain ⟨a, b, n, hM, hab, hba, hn⟩ := h.isFiniteUniform_of_encard_le hle (by simp)
   obtain rfl := hM.add_eq
   obtain rfl | hlt := hab.eq_or_lt
-  · refine ⟨b, .inr <| .inr ⟨?_, by enat_to_nat!; lia⟩⟩
+  · refine ⟨b, by enat_to_nat!; lia, .inr <| .inr ?_⟩
     convert hM using 1
     lia
   obtain rfl | hlt' := hba.eq_or_lt
-  · refine ⟨a, .inr <| .inl ⟨?_, by enat_to_nat!; lia⟩⟩
+  · refine ⟨a,  by enat_to_nat!; lia, .inr <| .inl ?_⟩
     convert hM using 1
     lia
   obtain rfl : a = b := by enat_to_nat!; lia
-  refine ⟨a, .inl ⟨?_, by enat_to_nat!; lia⟩⟩
+  refine ⟨a, by enat_to_nat!; lia, .inl ?_⟩
   convert hM using 1
   exact two_mul ..
 
@@ -674,12 +644,6 @@ lemma tutteConnected_iff_seqConnected' : M.TutteConnected k ↔
   obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one <;>
   simp [tutteConnected_iff_seqConnected]
 
--- lemma NumConnected.eConn_union_le_of_eConn_le_eConn_le_ge {w : Matroid α → Set α → ℕ∞}
---     (hw : ∀ M ⦃X Y⦄, X ⊆ Y → M.eConn X + w M X ≤ M.eConn Y + w M Y)
---     (hM : M.NumConnected (fun M X ↦ w M X = 0) (k + 1)) {P Q : M.Separation} (hP : P.eConn ≤ k)
---     (hQ : Q.eConn ≤ k) {b c j : Bool} (hwt : k ≤ (P.cross Q b c i).eConn + w M (P b ∩ Q c)) :
---     (P.cross Q (!b) (!c) j).eConn ≤ k := by
-
 lemma TutteConnected.eConn_cross_le_of_eConn_le_eConn_le_card_ge (hM : M.TutteConnected (k + 1))
     {P Q : M.Separation} (hP : P.eConn ≤ k) (hQ : Q.eConn ≤ k) {b c : Bool}
     (hcard : k ≤ (P b ∩ Q c).encard) (i) : (P.cross Q (!b) (!c) i).eConn ≤ k := by
@@ -692,6 +656,53 @@ lemma TutteConnected.eConn_cross_le_of_eConn_le_eConn_le_card_ge' (hM : M.TutteC
     {P Q : M.Separation} (hP : P.eConn ≤ k) (hQ : Q.eConn ≤ k) {b c : Bool}
     (hcard : k ≤ (P (!b) ∩ Q (!c)).encard) : (P.cross Q b c i).eConn ≤ k := by
   simpa using hM.eConn_cross_le_of_eConn_le_eConn_le_card_ge hP hQ hcard i
+
+/-- If `N` is between two `k`-connected matroids in the spanning restriction order,
+then `N` is itself `k`-connected. -/
+lemma TutteConnected.tutteConnected_of_tutteConnected_isSpanningRestriction
+    {M₀ N : Matroid α} (hM₀ : M₀.TutteConnected k) (hM : M.TutteConnected k)
+    (hM₀M : M₀ ≤sr M) (hM₀N : M₀ ≤m N) (hNM : N ≤m M) : N.TutteConnected k := by
+  obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
+  obtain rfl | hne := eq_or_ne N M
+  · assumption
+  replace hNM := hM₀M.isSpanningRestriction_right_of_isMinor_isMinor hM₀N hNM
+  replace hM₀N := hM₀M.isSpanningRestriction_left_of_isMinor_isMinor hM₀N hNM.isRestriction.isMinor
+  rw [tutteConnected_iff_forall] at *
+  refine fun P hP hPsep ↦ hM₀ (P.induce M₀) ?_ ?_
+  · grw [eConn_induce_le_of_isMinor _ hM₀N.isRestriction.isMinor, hP]
+  have hPE {i} : P i ⊆ M.E := P.subset_ground.trans hNM.subset
+  simp_rw [isTutteSeparation_iff_forall', ← Separation.nonspanning_not_iff,
+    nonspanning_iff, and_iff_left (P.induce M₀).subset_ground, induce_apply_subset _ hM₀N.subset]
+    at hPsep ⊢
+  intro i hi hs
+  specialize hPsep i
+  rw [and_iff_left (by grind), imp_not_comm, imp_iff_right
+    <| (hM₀N.spanning_of_spanning hs).superset inter_subset_left] at hPsep
+  refine hM (P.induce M !i) ?_ ?_
+  · grw [Faithful.eConn_eq_of_isMinor hNM.isMinor, hP]
+    rw [induce_faithful_iff_of_isSpanningRestriction hNM, Spanning.closure_eq,
+      union_eq_self_of_subset_right hNM.subset]
+    exact (hM₀M.spanning_of_spanning hs).superset inter_subset_left hPE
+  refine isTutteSeparation_iff_forall'.2 fun j hi ↦ ?_
+  obtain rfl | rfl := j.eq_or_eq_not i
+  · rw [induce_not_apply, inter_eq_self_of_subset_left hPE] at hi
+    rw [hNM.isRestriction.indep_iff, and_iff_left P.subset_ground] at hPsep
+    contradiction
+  rw [induce_apply_self, i.not_not] at ⊢ hi
+  have hb := (hM₀M.spanning_of_spanning hs).isBase_of_indep (hi.subset (by grind))
+  have heq := (hb.eq_of_subset_indep hi (by grind)).symm.subset
+  grw [diff_subset_iff, P.subset_ground, P.subset_ground,
+    union_eq_self_of_subset_right inter_subset_left] at heq
+  simp [hNM.isMinor.eq_of_ground_subset heq] at hne
+
+lemma TutteConnected.tutteConnected_of_contract_contract {I J : Set α} (hM : M.TutteConnected k)
+    (hJ : M.Indep J) (hMJ : (M ／ J).TutteConnected k) (hIJ : I ⊆ J) :
+    (M ／ I).TutteConnected k := by
+  have hsr := hJ.coindep.delete_isSpanningRestriction
+  rw [← tutteConnected_dual_iff] at ⊢ hMJ
+  refine hMJ.tutteConnected_of_tutteConnected_isSpanningRestriction hM.dual (by simpa) ?_ ?_
+  · exact (contract_isMinor_of_subset _ hIJ).dual
+  exact (contract_isMinor ..).dual
 
 lemma TutteConnected.eq_unifOn_of_encard_le_three (hM : M.TutteConnected (2 + 1))
     (hnt : M.E.Nontrivial) (hcard : M.E.encard ≤ 3) :
@@ -710,6 +721,8 @@ lemma TutteConnected.eq_unifOn_of_encard_le_three (hM : M.TutteConnected (2 + 1)
   refine ⟨2, by simp, by rw [h3]; simp, ?_⟩
   rw [circuitOn_ground, circuitOn_eq_unifOn]
   exact h3.symm
+
+
 
 
 

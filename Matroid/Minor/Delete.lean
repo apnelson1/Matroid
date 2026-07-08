@@ -210,5 +210,7 @@ lemma delete_restrict_ground_eq_disjointSum (hD : D ⊆ M.E) :
     (M ＼ D) ↾ M.E = (M ＼ D).disjointSum (loopyOn D) disjoint_sdiff_left := by
   rw [disjointSum_loopyOn, delete_ground, diff_union_of_subset hD]
 
+lemma IsSpanningRestriction.exists_eq_delete (h : N ≤sr M) : ∃ D, M.Coindep D ∧ N = M ＼ D :=
+  ⟨M.E \ N.E, h.spanning.compl_coindep, by rw [delete_compl h.subset, h.isRestriction.eq_restrict]⟩
 
 end Delete

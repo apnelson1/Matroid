@@ -376,6 +376,7 @@ def StrictIsoMinor.trans_isoMinor {α₁ α₂ α₃ : Type*} {M₁ : Matroid α
   inj' x := IsEmpty.elim' (by simp) x
   exists_isMinor' := ⟨emptyOn β, by simp, by ext; simp, by simp⟩
 
+@[simp]
 theorem nonempty_emptyOn_isoMinor {β : Type*} (M : Matroid β) (α : Type*) :
     Nonempty (emptyOn α ≤i M) :=
   ⟨emptyOn_isoMinor α M⟩
