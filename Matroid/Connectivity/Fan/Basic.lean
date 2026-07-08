@@ -392,9 +392,7 @@ lemma IsFiniteRankUniform.exists_isFan (h : M.IsFiniteUniform 2 2) (b : Bool) :
     ∃ F, M.IsFan F b (!b) ∧ {e | e ∈ F} = M.E := by
   obtain ⟨x, y, z, w, hxy, hxz, hxw, hyz, hyw, hzw, hE⟩ := encard_eq_four.1 h.encard_eq
   refine ⟨[x, y, z, w], ?_, by simp [hE, Set.ext_iff]⟩
-  rw [isFan_four_iff]
-  simp [h.isTriangle_iff, h.dual_eq_self]
-  grind [encard_eq_three, isFan_four_iff, h.bDual_eq_self, h.isTriangle_iff]
+  grind [isFan_four_iff, encard_eq_three, h.isTriangle_iff, h.bDual_eq_self]
 
 lemma IsFan.contract_disjoint_aux (hF : M.IsFan F false c) (h4 : 4 ≤ F.length)
     (hX : Disjoint {e | e ∈ F} X) (hb : F[0] ∉ M.closure X) (hXE : X ⊆ M.E):

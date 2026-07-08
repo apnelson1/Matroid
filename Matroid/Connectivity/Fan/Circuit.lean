@@ -787,58 +787,58 @@ lemma IsFan.exists_isCircuit_first_mem_of_length_odd (hF : M.IsFan F false c)
       simpa [hF.nodup.getElem_inj_iff] using hC'ss hiC'
     all_goals grind
 
-lemma foo {M : Matroid α} {F : List α} (hF : M.IsFan F true false)
-    (hT : M.IsTriad {F[F.length - 2], F[F.length - 1], F[0]})
-    (hconn : (M ＼ {F[0]}).Connected) : M.IsTriangle {F[F.length - 1], F[0], F[1]} := by
-  obtain ⟨n, hn⟩ : ∃ n, F.length = 2 * n + 4 := sorry
-  simp only [hn, Nat.reduceSubDiff, Nat.add_one_sub_one] at hT ⊢
-  have hF4 : 4 ≤ F.length := sorry
+-- lemma foo {M : Matroid α} {F : List α} (hF : M.IsFan F true false)
+--     (hT : M.IsTriad {F[F.length - 2], F[F.length - 1], F[0]})
+--     (hconn : (M ＼ {F[0]}).Connected) : M.IsTriangle {F[F.length - 1], F[0], F[1]} := by
+--   obtain ⟨n, hn⟩ : ∃ n, F.length = 2 * n + 4 := sorry
+--   simp only [hn, Nat.reduceSubDiff, Nat.add_one_sub_one] at hT ⊢
+--   have hF4 : 4 ≤ F.length := sorry
 
-  have hE : M.E = {e | e ∈ F} := by
-    refine hF.subset_ground.antisymm' fun x hx ↦ by_contra fun hfX ↦ ?_
-    obtain ⟨C, hC, hxC, h1C⟩ := hconn.exists_isCircuit_of_ne (e := x) (f := F[1]) (by grind)
-      (by grind [hF.nodup.getElem_inj_iff]) (by grind)
-    simp only [delete_isCircuit_iff, disjoint_singleton_right] at hC
-    by_cases h1 : F[2 * n + 3] ∈ C
-    · have hC_eq := hF.eq_interval_of_notMem_mem_mem (by lia) (by lia)
-        rfl (by simp) hC.1 (by grind) h1C h1
-      simp only [hC_eq, zero_add, altBetween, exists_and_left, Set.mem_insert_iff] at hxC
-      grind
-    rw [hT.reverse.mem_iff_mem_of_isCocircuit (by simpa using hC.1) hC.2] at h1
-    obtain ⟨j, _, _, _, rfl⟩ :=
-      hF.exists_eq_interval_of_notMem_mem_add_one (i := 0) (t := 2 * n + 2) (C := C)
-      (by lia) (by lia) rfl (by simp) hC.1 hC.2 h1C h1
-    simp only [zero_add, altBetween, Bool.not_true, exists_and_left, Set.mem_insert_iff] at hxC
-    grind
-  have hnp : ¬M.Parallel F[1] F[2 * n + 3] := by
-    intro hC
-    simpa [hF.nodup.getElem_inj_iff] using hT.isCocircuit.mem_iff_mem_of_parallel hC
-  rw [pair_comm, insert_comm, isTriangle_iff_parallel_contract hnp]
-  by_contra hcon
+--   have hE : M.E = {e | e ∈ F} := by
+--     refine hF.subset_ground.antisymm' fun x hx ↦ by_contra fun hfX ↦ ?_
+--     obtain ⟨C, hC, hxC, h1C⟩ := hconn.exists_isCircuit_of_ne (e := x) (f := F[1]) (by grind)
+--       (by grind [hF.nodup.getElem_inj_iff]) (by grind)
+--     simp only [delete_isCircuit_iff, disjoint_singleton_right] at hC
+--     by_cases h1 : F[2 * n + 3] ∈ C
+--     · have hC_eq := hF.eq_interval_of_notMem_mem_mem (by lia) (by lia)
+--         rfl (by simp) hC.1 (by grind) h1C h1
+--       simp only [hC_eq, zero_add, altBetween, exists_and_left, Set.mem_insert_iff] at hxC
+--       grind
+--     rw [hT.reverse.mem_iff_mem_of_isCocircuit (by simpa using hC.1) hC.2] at h1
+--     obtain ⟨j, _, _, _, rfl⟩ :=
+--       hF.exists_eq_interval_of_notMem_mem_add_one (i := 0) (t := 2 * n + 2) (C := C)
+--       (by lia) (by lia) rfl (by simp) hC.1 hC.2 h1C h1
+--     simp only [zero_add, altBetween, Bool.not_true, exists_and_left, Set.mem_insert_iff] at hxC
+--     grind
+--   have hnp : ¬M.Parallel F[1] F[2 * n + 3] := by
+--     intro hC
+--     simpa [hF.nodup.getElem_inj_iff] using hT.isCocircuit.mem_iff_mem_of_parallel hC
+--   rw [pair_comm, insert_comm, isTriangle_iff_parallel_contract hnp]
+--   by_contra hcon
 
-  have := (hF.dual.contract_head (by lia) (by simp)).dual
-  simp at this
-  -- by_cases hpara : (M ／ {F[0]}).Parallel F[2 * n + 3] F[1]
-  -- · rw [parallel_iff_isCircuit (by simp [hF.nodup.getElem_inj_iff])] at hpara
+--   have := (hF.dual.contract_head (by lia) (by simp)).dual
+--   simp at this
+--   -- by_cases hpara : (M ／ {F[0]}).Parallel F[2 * n + 3] F[1]
+--   -- · rw [parallel_iff_isCircuit (by simp [hF.nodup.getElem_inj_iff])] at hpara
 
-    -- rw [← hF.mem_iff_mem₁₂] at h1
-    -- have := hF.exists_eq_interval_of_notMem_mem_add_one (i := 0) ()
+--     -- rw [← hF.mem_iff_mem₁₂] at h1
+--     -- have := hF.exists_eq_interval_of_notMem_mem_add_one (i := 0) ()
 
 
 
-/-- If `F = [a, b, ..., y, z]` is an even-length fan with `a` a joint,
-and `y, z, a` is a triangle, then `z, a, b` is a triad, provided that `M ／ a` is connected.
-This hypothesis is necessary, since otherwise a `2`-sum with guts `a` would give a problem. -/
-lemma bar {M : Matroid α} {F : List α} (hF : M.IsFan F false true)
-    (hT : M.IsTriangle {F[F.length - 2], F[F.length - 1], F[0]})
-    (hconn : (M ／ {F[0]}).Connected) : M.IsTriad {F[F.length - 1], F[0], F[1]} := by
-  have hE : M.E = {e | e ∈ F} := by
-    refine hF.subset_ground.antisymm' fun x hx ↦ by_contra fun (hxF : x ∉ F) ↦ ?_
-    have := hconn.to_dual.exists_isCircuit_of_ne (e := x) (f := F[1]) ?_ ?_
-    sorry
-    sorry
-    sorry
-  sorry
+-- /-- If `F = [a, b, ..., y, z]` is an even-length fan with `a` a joint,
+-- and `y, z, a` is a triangle, then `z, a, b` is a triad, provided that `M ／ a` is connected.
+-- This hypothesis is necessary, since otherwise a `2`-sum with guts `a` would give a problem. -/
+-- lemma bar {M : Matroid α} {F : List α} (hF : M.IsFan F false true)
+--     (hT : M.IsTriangle {F[F.length - 2], F[F.length - 1], F[0]})
+--     (hconn : (M ／ {F[0]}).Connected) : M.IsTriad {F[F.length - 1], F[0], F[1]} := by
+--   have hE : M.E = {e | e ∈ F} := by
+--     refine hF.subset_ground.antisymm' fun x hx ↦ by_contra fun (hxF : x ∉ F) ↦ ?_
+--     have := hconn.to_dual.exists_isCircuit_of_ne (e := x) (f := F[1]) ?_ ?_
+--     sorry
+--     sorry
+--     sorry
+--   sorry
 --   have hF4 : 4 ≤ F.length := by
 --     by_contra! hcon
 --     obtain hF2 | hF3 : F.length = 2 ∨ F.length = 3 := by grind [hF.two_le_length]
