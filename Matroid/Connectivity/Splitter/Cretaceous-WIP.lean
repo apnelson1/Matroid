@@ -67,24 +67,20 @@ lemma exists_circuit_contract_elem_girth_decrease (k : ENat) (hk : k ≠ ⊤) (h
     grind only
 
 lemma simple_cosimple_elem_removal {N : Matroid α} (hMsi : M.Simple) (hMsi' : M✶.Simple)
-  (hr : ∀ e b T, Nonempty (N ≤i M.remove b {e}) → (M.bDual !b).IsTriangle T → e ∉ T) :
-  ∀ b, Nonempty (N ≤i M.remove b {e}) → ((M.remove b {e}).Simple ∧ (M.remove b {e})✶.Simple) := by
-intro b
+  (hr : ∀ e b T, Nonempty (N ≤i M.remove b {e}) → (M.bDual !b).IsTriangle T → e ∉ T) (b : Bool) :
+  Nonempty (N ≤i M.remove b {e}) → ((M.remove b {e}).Simple ∧ (M.remove b {e})✶.Simple) := by
 wlog! hb : b = false generalizing N M b with aux
 · intro hn'
-  rw [Bool.ne_false_iff] at hb
-  rw [hb, remove_true, ← nonempty_isoMinor_dual_iff] at hn'
-  rw [hb, remove_true]
   have hr' : ∀ e b T, Nonempty (N✶ ≤i M✶.remove b {e}) → (M✶.bDual !b).IsTriangle T → e ∉ T := by
     intro e b T hn' hT
     rw [dual_remove, nonempty_isoMinor_dual_iff] at hn'
     rw [bDual_dual] at hT
     refine hr e (!b) T hn' hT
-  specialize aux (N := N✶) (M := M✶) hMsi' (by grind only [= dual_dual]) hr' false
-    (by simp only)
-  rw [remove_false, ← dual_contract, dual_dual] at aux
-  apply aux at hn'
-  exact ⟨hn'.2, hn'.1⟩
+  specialize aux (N := N✶) (M := M✶) hMsi' (by grind only [= dual_dual]) hr' false (by simp only)
+  rw [remove_false, ← dual_contract, ← nonempty_isoMinor_dual_iff, dual_dual, dual_dual] at aux
+  rw [Bool.ne_false_iff] at hb
+  rw [hb, remove_true] at hn' ⊢
+  exact ⟨(aux hn').2, (aux hn').1⟩
 · rw [hb, remove_false] at *
   intro hn
   constructor
@@ -96,17 +92,9 @@ wlog! hb : b = false generalizing N M b with aux
         (k := 3) (by simp only [ne_eq, ENat.ofNat_ne_top, not_false_eq_true]) hgM aux
       specialize hr e false C
       rw [remove_false, Bool.not_false, bDual_true] at *
-      have hC₄ : M✶.IsTriangle C := by exact ⟨hC₁, hC₂⟩
-      have := hr hn hC₄
-      contradiction
-    rw [← dual_delete, le_girth_iff] at hgMe
-    by_contra! aux
-    rw [simple_iff_forall_isCircuit] at aux
-    push Not at aux
-    obtain ⟨C, hC₁, hC₂⟩ := aux
-    specialize hgMe C hC₁
-    grw [hC₂] at hgMe
-    enat_to_nat; lia
+      apply hr hn ⟨hC₁, hC₂⟩
+      exact hC₃
+    rwa [← dual_delete, three_le_girth_iff] at hgMe
 
 lemma splitter_no_triangle_minor {N : Matroid α} (hM : M.TutteConnected 3) (h4 : 4 ≤ M.E.encard)
     (hNM : N <m M) (hN : N.TutteConnected 3)
@@ -114,22 +102,19 @@ lemma splitter_no_triangle_minor {N : Matroid α} (hM : M.TutteConnected 3) (h4 
     ∃ e b, Nonempty (N ≤i M.remove b {e}) ∧ (M.remove b {e}).TutteConnected 3 := by
   obtain ⟨e, heM, heN⟩ := hNM.exists_isMinor_contractElem_or_deleteElem
   wlog hed : N ≤m M ＼ {e} generalizing M N with aux
-  · have hec := Or.resolve_right heN hed
+  · have hec := (Or.resolve_right heN hed).dual
+    rw [dual_contract] at hec
     have hr' : ∀ e b T, Nonempty (N✶ ≤i M✶.remove b {e}) → (M✶.bDual !b).IsTriangle T → e ∉ T := by
       intro e b T hni
-      specialize hr e (!b) T
-      rw [← nonempty_isoMinor_dual_iff, dual_dual, remove_dual, dual_dual] at hni
-      specialize hr hni
+      rw [← nonempty_isoMinor_dual_iff, remove_dual, dual_dual, dual_dual] at hni
+      specialize hr e (!b) T hni
       rwa [bDual_dual]
-    have hec := hec.dual
-    rw [dual_contract] at hec
     specialize aux (M := M✶) (N := N✶) hM.dual h4 hNM.dual hN.dual hr' heM (Or.inr hec) hec
     obtain ⟨e, b, hni, hnT⟩ := aux
     use e, (!b)
     constructor
     · rwa [← nonempty_isoMinor_dual_iff, remove_dual, Bool.not_not]
-    · rw [← dual_dual M, dual_remove, Bool.not_not]
-      exact hnT.dual
+    · rwa [dual_remove, tutteConnected_dual_iff] at hnT
   · clear heN
     by_cases! het : (M ＼ {e}).TutteConnected 3
     · use e, false
@@ -149,9 +134,7 @@ lemma splitter_no_triangle_minor {N : Matroid α} (hM : M.TutteConnected 3) (h4 
         · have aux₂ := simple_cosimple_elem_removal (N := N) (e := f) (hM.simple h4)
             (hM.dual.simple h4) hr true (hf₂ true)
           rw [← remove_true] at hf₃
-          have : (M.remove true {f}).Simple := aux₂.1
-          have : (M.remove true {f})✶.Simple := aux₂.2
-          exact InternallyConnected.tutteConnected_three hf₃
+          exact @InternallyConnected.tutteConnected_three α (M.remove true {f}) aux₂.1 aux₂.2 hf₃
       · use false
         have hf₄ := Or.resolve_left aux hf₃
         constructor
@@ -159,6 +142,4 @@ lemma splitter_no_triangle_minor {N : Matroid α} (hM : M.TutteConnected 3) (h4 
         · have aux₂ := simple_cosimple_elem_removal (N := N) (e := f) (hM.simple h4)
               (hM.dual.simple h4) hr false (hf₂ false)
           rw [← remove_false] at hf₄
-          have : (M.remove false {f}).Simple := aux₂.1
-          have : (M.remove false {f})✶.Simple := aux₂.2
-          exact InternallyConnected.tutteConnected_three hf₄
+          exact @InternallyConnected.tutteConnected_three α (M.remove false {f}) aux₂.1 aux₂.2 hf₄
