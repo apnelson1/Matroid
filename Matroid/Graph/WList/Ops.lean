@@ -474,6 +474,11 @@ lemma concat_reverse (w : WList α β) (e) (x) : (w.concat e x).reverse = cons x
   rw [WList.concat_eq_append, reverse_append (by simp)]
   simp
 
+@[simp]
+lemma zip_reverse (a : List α) (b : List β) (h : b.length + 1 = a.length) :
+    (WList.zip a b h).reverse = WList.zip a.reverse b.reverse (by simpa) :=
+  ext_vertex_edge (by simp) (by simp)
+
 lemma Nonempty.firstEdge_concat (hw : w.Nonempty) :
     (concat_nonempty w e x).firstEdge = hw.firstEdge := by
   induction w with | nil u => simp at hw | cons => simp

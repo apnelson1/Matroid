@@ -76,6 +76,11 @@ lemma isHyperplane_iff_maximal_nonspanning :
       (M.closure_subset_ground _).ssubset_of_ne ?_⟩)
   rwa [spanning_iff, and_iff_left hSE] at hS
 
+lemma IsHyperplane.eq_of_subset_nonspanning (hH : M.IsHyperplane H) (hX : M.Nonspanning X)
+    (hHX : H ⊆ X) : H = X := by
+  rw [isHyperplane_iff_maximal_nonspanning] at hH
+  exact hH.eq_of_subset hX hHX
+
 @[simp]
 lemma isCocircuit_compl_iff_isHyperplane (hH : H ⊆ M.E := by aesop_mat) :
     M.IsCocircuit (M.E \ H) ↔ M.IsHyperplane H := by

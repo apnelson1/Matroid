@@ -341,6 +341,10 @@ lemma Nonempty.firstEdge_mem (hw : w.Nonempty) : hw.firstEdge w ∈ w.edge := by
 lemma Nonempty.edge_ne_nil (hw : w.Nonempty) : w.edge ≠ [] := by
   cases hw with simp
 
+@[simp]
+lemma edge_ne_nil_iff : w.edge ≠ [] ↔ w.Nonempty := by
+  cases w with simp
+
 lemma Nonempty.firstEdge_eq_head (hw : w.Nonempty) :
     hw.firstEdge = w.edge.head hw.edge_ne_nil := by
   cases hw with simp
@@ -365,6 +369,19 @@ lemma Nonempty.first_ne_last_of_nodup (hne : w.Nonempty) (hv : w.vertex.Nodup) :
   simp only [first_cons, last_cons, ne_eq]
   contrapose! hxw
   exact hxw ▸ last_mem
+
+@[elab_as_elim]
+lemma induction_nonempty {motive : (w : WList α β) → (hw : w.Nonempty) → Prop}
+  (edge : (u v : α) → (e : β) → motive (cons u e (WList.nil v)) (by simp))
+  (cons : (u : α) → (e : β) → (w : WList α β) → (hw : w.Nonempty) →
+    motive w hw → motive (cons u e w) (by simp)) {w : WList α β} (hw : w.Nonempty) :
+    motive w hw := by
+  induction w with
+  | nil u => simp at hw
+  | cons u e w ih =>
+    cases w with
+    | nil x => exact edge ..
+    | cons x f w => exact cons _ _ _ (by simp) (ih (by simp))
 
 /-! ### Nontriviality -/
 
@@ -824,6 +841,26 @@ lemma WellFormed.of_cons (hw : (cons u f w).WellFormed) : w.WellFormed := by
   have := @hw e x₁ x₂ y₁ y₂
   simpa [isLink_cons_iff', h₁, h₂] using this
 
+lemma wellFormed_cons_iff :
+    (cons u e w).WellFormed ↔ w.WellFormed ∧ ∀ x y, w.IsLink e x y → s(x, y) = s(u, w.first) := by
+  refine ⟨fun h ↦ ⟨h.of_cons, fun x y h' ↦ ?_⟩, fun h f x₁ x₂ y₁ y₂ h₁ h₂ ↦ ?_⟩
+  · exact h (e := e) (h'.cons ..) <| by simp [isLink_cons_iff]
+  simp_rw [isLink_cons_iff] at h₁ h₂
+  obtain (⟨rfl, h₁⟩ | h₁) := h₁
+  · grind
+  obtain (⟨rfl, h₂⟩ | h₂) := h₂
+  · grind
+  exact h.1 h₁ h₂
+
+lemma wellFormed_of_nodup (hw : w.edge.Nodup) : w.WellFormed := by
+  induction w with
+  | nil u => simp
+  | cons u e w ih =>
+    simp only [cons_edge, nodup_cons] at hw
+    simp only [wellFormed_cons_iff, ih hw.2, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq,
+      Prod.swap_prod_mk, true_and]
+    exact fun _ _ h ↦ False.elim <| hw.1 h.edge_mem
+
 /-- The set of ends of `e` in `w` -/
 def endsOf (w : WList α β) (e : β) : Set α := {x | ∃ y, w.IsLink e x y}
 
@@ -865,6 +902,10 @@ lemma get_eq_getD_vertex (w : WList α β) (n) : w.get n = w.vertex.getD n w.las
   | zero => simp
   | succ n IH => cases w with simp [IH]
 
+lemma get_eq_getElem_vertex (w : WList α β) {n} (hn : n ≤ w.length) :
+    w.get n = w.vertex[n]'(by simpa) := by
+  grind [get_eq_getD_vertex]
+
 lemma DInc_get_get_succ {n : ℕ} (hn : n < w.length) :
     have hw : n < w.edge.length := by simpa using hn
     w.DInc (w.edge[n]) (w.get n) (w.get (n+1)) := by
@@ -879,6 +920,29 @@ lemma DInc_get_get_succ {n : ℕ} (hn : n < w.length) :
 lemma exists_dInc_get_get_succ {n : ℕ} (hn : n < w.length) :
     ∃ e, w.DInc e (w.get n) (w.get (n+1)) :=
   ⟨_, DInc_get_get_succ hn⟩
+
+lemma dinc_iff_get {w : WList α β} {e : β} {x y : α} : w.DInc e x y ↔ ∃ (i : ℕ) (hi : i < w.length),
+    w.get i = x ∧ w.get (i + 1) = y ∧ w.edge[i]'(by simpa) = e := by
+  induction w with
+  | nil u => simp
+  | cons u f w ih =>
+    simp only [dInc_cons_iff, ih, exists_and_left, get_cons_add, cons_edge, cons_length,
+      Order.lt_add_one_iff]
+    refine ⟨?_, ?_⟩
+    · rintro (⟨rfl, rfl, rfl⟩ | ⟨i, rfl, rfl, h⟩)
+      · exact ⟨0, by simp⟩
+      exact ⟨i + 1, by simpa⟩
+    rintro ⟨rfl | i, rfl, rfl, h, rfl⟩
+    · simp
+    exact .inr ⟨i, by simpa using h⟩
+
+lemma isLink_iff_get : w.IsLink e x y ↔ ∃ (i : ℕ) (hi : i < w.length),
+    w.edge[i]'(by simpa) = e ∧ s(w.get i, w.get (i + 1)) = s(x, y) := by
+  grind [isLink_iff_dInc, dinc_iff_get]
+
+lemma isLink_iff_vertex_get : w.IsLink e x y ↔ ∃ (i : ℕ) (hi : i < w.length),
+    w.edge[i]'(by simpa) = e ∧ s(w.vertex[i]'(by grind), w.vertex[i + 1]'(by grind)) = s(x, y) := by
+  grind [isLink_iff_get, get_eq_getD_vertex]
 
 variable [DecidableEq α]
 
@@ -1026,6 +1090,86 @@ lemma idxOf_eq_length_iff (h : w.vertex.Nodup) : w.idxOf x = w.length ↔ x = w.
   exact h.1 w.last_mem
 
 end indices
+
+/-- Build a `WList` from given lists of edges and vertices of appropriate lengths -/
+protected def zip : (a : List α) → (b : List β) → (hab : b.length + 1 = a.length) → WList α β
+  | [], _, h => by simp at h
+  | x :: a, [], h => WList.nil x
+  | x :: a, e :: b, h => cons x e (WList.zip a b (by simpa using h))
+
+@[simp]
+lemma zip_nil (a : List α) {hab : ([] : List β).length + 1 = a.length} :
+    WList.zip a [] hab = WList.nil (a.head (by grind [← List.length_eq_zero_iff])) := by
+  cases a with
+  | nil =>
+    simp at hab
+  | cons x a =>
+    simp only [show a = [] by simpa using hab, head_cons]
+    rfl
+
+@[simp]
+lemma zip_cons_cons (a : List α) (b : List β) (x : α) (e : β)
+    {hab : (e :: b).length + 1 = (x :: a).length} :
+    WList.zip (x :: a) (e :: b) hab = cons x e (WList.zip a b (by simpa using hab)) :=
+  rfl
+
+@[simp]
+lemma zip_vertex (a : List α) (b : List β) (h : b.length + 1 = a.length) :
+    (WList.zip a b h).vertex = a := by
+  induction a generalizing b with
+  | nil => simp at h
+  | cons x a ih =>
+    cases b with
+    | nil => simp [show a = [] by simpa using h]
+    | cons e b => simp [cons_vertex, ih b (by simpa using h)]
+
+@[simp]
+lemma zip_edge (a : List α) (b : List β) (h : b.length + 1 = a.length) :
+    (WList.zip a b h).edge = b := by
+  induction b generalizing a with
+  | nil => simp
+  | cons e b ih =>
+    cases a with
+    | nil => simp at h
+    | cons x a => simp [ih a (by simpa using h)]
+
+@[simp]
+lemma eq_zip (w : WList α β) : WList.zip w.vertex w.edge (by simp) = w := by
+  induction w with | nil => simp | cons => simpa
+
+@[simp]
+lemma zip_length (a : List α) (b : List β) (h : b.length + 1 = a.length) :
+    (WList.zip a b h).length = b.length := by
+  rw [← length_edge, zip_edge]
+
+@[simp]
+lemma mem_zip {a : List α} {b : List β} (h : b.length + 1 = a.length) {x : α} :
+    x ∈ (WList.zip a b h) ↔ x ∈ a := by
+  rw [← mem_vertex, zip_vertex]
+
+@[simp]
+lemma zip_vertexSet (a : List α) (b : List β) (h : b.length + 1 = a.length) :
+    V(WList.zip a b h) = {x | x ∈ a} := by
+  simp [Set.ext_iff, mem_vertexSet_iff, mem_zip]
+
+@[simp]
+lemma zip_edgeSet (a : List α) (b : List β) (h : b.length + 1 = a.length) :
+    E(WList.zip a b h) = {e | e ∈ b} := by
+  simp [Set.ext_iff, mem_edgeSet_iff]
+
+@[simp]
+lemma zip_first (a : List α) (b : List β) (h : b.length + 1 = a.length) :
+    (WList.zip a b h).first = a.head (by grind) := by
+  simp [← vertex_head]
+
+@[simp]
+lemma zip_last (a : List α) (b : List β) (h : b.length + 1 = a.length) :
+    (WList.zip a b h).last = a.getLast (by grind) := by
+  simp [← vertex_getLast]
+
+lemma zip_get_eq_getD (a : List α) (b : List β) (h : b.length + 1 = a.length) (i : ℕ) :
+    (WList.zip a b h).get i = a.getD i (a.getLast (by grind)) := by
+  rw [get_eq_getD_vertex, zip_vertex, zip_last]
 
 end WList
 

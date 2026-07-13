@@ -622,9 +622,10 @@ lemma disjointSum_isCircuit_iff {α : Type*} {M N : Matroid α} (hdj) {C : Set �
   all_goals simp [preimage_image_eq _ Sum.inl_injective, preimage_image_eq _ Sum.inr_injective,
     inter_eq_self_of_subset_right hC.subset_ground, hC, image_image]
 
-
-
 end Sum
+
+
+
 
 
 end Matroid

@@ -615,6 +615,18 @@ lemma IsWalk.eq_append_cons_of_edge_mem (hW : G.IsWalk W) (heW : e ∈ W.edge) :
   refine ⟨W₁, W₂, hW.prefix (isPrefix_append_right rfl), hW.suffix ?_, heW₁, rfl⟩
   exact IsSuffix.trans (isSuffix_cons_self W₂ e W₁.last) <| isSuffix_append_left ..
 
+lemma isWalk_iff_forall_isLink_get_of_nonempty (hW : W.Nonempty) : G.IsWalk W ↔
+    ∀ i (hi : i < W.length), G.IsLink (W.edge[i]'(by simpa)) (W.get i) (W.get (i + 1)) := by
+  induction hW using induction_nonempty with
+  | edge u v e => simpa using Graph.IsLink.right_mem (G := G)
+  | cons u e w hw ih =>
+    simp only [cons_isWalk_iff, ih, cons_length, Order.lt_add_one_iff, cons_edge, get_cons_add]
+    refine ⟨fun h ↦ ?_,
+      fun h ↦ ⟨by simpa using h 0, fun i hi ↦ by simpa using h (i + 1) (by simpa)⟩⟩
+    rintro (rfl | i)
+    · simp [h.1]
+    simpa using h.2 i
+
 end Subgraph
 
 

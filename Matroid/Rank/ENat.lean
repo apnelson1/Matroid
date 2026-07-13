@@ -259,10 +259,3 @@ lemma IsRkFinite.mem_closure_iff (h : M.IsRkFinite X) (he : e ∈ M.E := by aeso
 lemma IsRkFinite.mem_closure_iff_le (h : M.IsRkFinite X) (he : e ∈ M.E := by aesop_mat) :
     e ∈ M.closure X ↔ M.eRk (Insert.insert e X) ≤ M.eRk X := by
   rw [h.mem_closure_iff, le_antisymm_iff, and_iff_left (M.eRk_subset_le (subset_insert ..))]
-
-  -- refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  -- ·
-  -- rw [hI.indep.mem_closure_iff_of_notMem heI]
-
-  -- obtain ⟨B, rfl, hfB⟩ := exists_image_eq_injOn_of_subset_range (hB.subset_ground.trans hM)
-  -- have := exists_image_eq_and_injOn _(hB.subset_ground.trans hM)

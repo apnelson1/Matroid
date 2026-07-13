@@ -1,4 +1,5 @@
 import Matroid.BaseExchange
+import Matroid.NonspanningCircuit
 import Matroid.Uniform.Basic
 
 variable {α : Type*} {M : Matroid α} {E I H B X : Set α} {e f : α} {Hs T : Set (Set α)}
@@ -136,6 +137,11 @@ lemma relax_spanning_iff {S} (h : M.IsLawfulRelaxation T) :
   rwa [← diff_diff_cancel_left hSE, ← hX, diff_diff_cancel_left (by grind)]
 
 @[simp]
+lemma relax_dep_iff {D} (h : M.IsLawfulRelaxation T) :
+    (M.relax T h).Dep D ↔ M.Dep D ∧ D ∉ T := by
+  rw [dep_iff, relax_Indep, relax_E, dep_iff, not_or, and_assoc, and_right_comm, and_assoc]
+
+@[simp]
 lemma relax_eRank_eq (h : M.IsLawfulRelaxation T) : (M.relax T h).eRank = M.eRank := by
   obtain ⟨B, hB⟩ := M.exists_isBase
   rw [← hB.encard_eq_eRank, ← IsBase.encard_eq_eRank (B := B)]
@@ -144,6 +150,47 @@ lemma relax_eRank_eq (h : M.IsLawfulRelaxation T) : (M.relax T h).eRank = M.eRan
 @[simp]
 lemma relax_empty (M : Matroid α) : M.relax ∅ (by simp [IsLawfulRelaxation]) = M := by
   simp [ext_iff_indep]
+
+lemma relax_nonspanning_iff (h : M.IsLawfulRelaxation T) :
+    (M.relax T h).Nonspanning X ↔ M.Nonspanning X ∧ X ∉ T := by
+  by_cases! hXE : ¬ (X ⊆ M.E)
+  · refine iff_of_false (fun h ↦ hXE h.subset_ground) fun h ↦ hXE <| h.1.subset_ground
+  rw [nonspanning_iff, spanning_iff_compl_coindep, Coindep, relax_dual]
+  simp only [relax_E, relax_Indep, mem_image, not_or, dual_ground, diff_subset_iff,
+    subset_union_right, not_indep_iff, dep_dual_iff, not_exists, not_and]
+  rw [codep_compl_iff, and_assoc, and_congr_right_iff, and_iff_left hXE, iff_def,
+    and_iff_right (by grind)]
+  refine fun hX hXT Y hXY heq ↦ hXT ?_
+  rwa [← diff_diff_cancel_left hXE, ← heq, diff_diff_cancel_left (h.ssubset_ground hXY).subset]
+
+lemma relax_isCircuit_iff (h : M.IsLawfulRelaxation T) {C : Set α} :
+    (M.relax T h).IsCircuit C ↔ (M.IsCircuit C ∧ C ∉ T) ∨ (C ⊆ M.E ∧ ∃ e ∈ C, C \ {e} ∈ T) := by
+  by_cases! hXE : ¬ (C ⊆ M.E); grind
+  simp_rw [isCircuit_iff_dep_forall_diff_singleton_indep, relax_dep_iff, relax_Indep]
+  refine ⟨fun ⟨⟨hC, hCT⟩, h⟩ ↦ ?_, ?_⟩
+  · simp only [hC, true_and, hCT, not_false_eq_true, and_true, hC.subset_ground]
+    grind
+  rintro (h | ⟨-, e, heC, heCT⟩)
+  · grind
+  refine ⟨⟨(h heCT).isCircuit.dep.superset diff_subset, fun hCT ↦ ?_⟩, fun f hfC ↦ ?_⟩
+  · grind [(h heCT).isCircuit.eq_of_subset_isCircuit (h hCT).isCircuit diff_subset]
+  rw [or_iff_not_imp_left, not_indep_iff (by grind)]
+  obtain rfl | hef := eq_or_ne e f; simp [heCT]
+  have hb := (h heCT).isBase_of_isExchange (B := C \ {f}) (by grind)
+    (isExchange_diff_singleton_diff_singleton heC hfC hef)
+  grind [hb.indep.not_dep]
+
+lemma relax_isNonspanningCircuit_iff (h : M.IsLawfulRelaxation T) {C : Set α} :
+    (M.relax T h).IsNonspanningCircuit C ↔ M.IsNonspanningCircuit C ∧ C ∉ T := by
+  by_cases! hXE : ¬ (C ⊆ M.E)
+  · refine iff_of_false (fun h ↦ hXE h.subset_ground) fun h ↦ hXE <| h.1.subset_ground
+  rw [isNonspanningCircuit_iff, relax_nonspanning_iff, isNonspanningCircuit_iff,
+    relax_isCircuit_iff, and_assoc, and_assoc, and_congr_right_iff, and_comm (a := (C ∉ T)),
+    and_congr_left_iff]
+  intro hCnsp hCT
+  rw [and_iff_right hXE, or_iff_left, and_iff_left hCT]
+  rintro ⟨e, heC, hCeT⟩
+  grind [(h hCeT).isHyperplane.eq_of_subset_nonspanning hCnsp diff_subset]
 
 instance rankPos_relax [M.RankPos] (h : M.IsLawfulRelaxation T) : (M.relax T h).RankPos := by
   rwa [← eRank_ne_zero_iff, relax_eRank_eq, eRank_ne_zero_iff]
@@ -189,8 +236,6 @@ lemma IsLawfulRelaxation.contract_delete (h : M.IsLawfulRelaxation T) (C D : Set
   rw [contract_ground, diff_diff, union_diff_cancel hHT.2.1.subset]
   exact hHT.2.2
 
-
-
 /-- Relaxation commutes with deletion; if `T` is a set of circuit-hyperplanes of `M`,
 and `T₀` is the subset of `T` that survive as circuit-hyperplanes in a deletion `M ＼ D`,
 then the relaxation of `T₀` in `M ＼ D` is obtained from that of `T` in `M` by deleting `D`.
@@ -230,6 +275,8 @@ lemma relax_delete_of_coindep (h : M.IsLawfulRelaxation T) {D} (hD : M.Coindep D
 lemma relax_contract_of_indep (h : M.IsLawfulRelaxation T) {C} (hC : M.Indep C) :
     (M.relax T h) ／ C = (M ／ C).relax ((· \ C) '' {H | H ∈ T ∧ C ⊂ H}) (h.contract C) :=
   relax_contract h (fun hCT ↦ hC.not_dep (h hCT).isCircuit.dep) hC.subset_ground
+
+
 
 end Relax
 

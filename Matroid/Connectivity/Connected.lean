@@ -96,6 +96,15 @@ lemma ConnectedTo.of_restrict {R : Set α} (hR : R ⊆ M.E) (hef : (M ↾ R).Con
   rw [restrict_isCircuit_iff] at hC
   exact hC.1.mem_connectedTo_mem heC hfC
 
+lemma connectedTo_restrict_iff {R : Set α} (hR : R ⊆ M.E := by aesop_mat) :
+    (M ↾ R).ConnectedTo e f ↔ (e = f ∧ e ∈ R) ∨ ∃ C ⊆ R, M.IsCircuit C ∧ e ∈ C ∧ f ∈ C := by
+  simp_rw [ConnectedTo, restrict_ground_eq, restrict_isCircuit_iff hR]
+  grind
+
+lemma connectedTo_restrict_iff_of_ne {R : Set α} (hef : e ≠ f) (hR : R ⊆ M.E := by aesop_mat) :
+    (M ↾ R).ConnectedTo e f ↔ ∃ C ⊆ R, M.IsCircuit C ∧ e ∈ C ∧ f ∈ C := by
+  rw [connectedTo_restrict_iff, iff_false_intro hef, false_and, false_or]
+
 lemma ConnectedTo.of_delete {D : Set α} (hef : (M ＼ D).ConnectedTo e f) : M.ConnectedTo e f := by
   rw [delete_eq_restrict] at hef; apply hef.of_restrict diff_subset
 
@@ -191,6 +200,11 @@ lemma IsCircuit.subset_of_mem_connPartition (hC : M.IsCircuit C) (hK : K ∈ M.C
 structure Connected (M : Matroid α) : Prop where
   nonempty : M.Nonempty
   forall_connectedTo : ∀ ⦃e f⦄, e ∈ M.E → f ∈ M.E → M.ConnectedTo e f
+
+lemma connected_iff_of_nonempty (hM : M.Nonempty) :
+    M.Connected ↔ ∀ e f, e ∈ M.E → f ∈ M.E → e ≠ f → M.ConnectedTo e f := by
+  rw [connected_iff, and_iff_right hM]
+  grind [connectedTo_self]
 
 lemma Connected.connectedTo (hM : M.Connected) (x y : α) (hx : x ∈ M.E := by aesop_mat)
     (hy : y ∈ M.E := by aesop_mat) : M.ConnectedTo x y :=

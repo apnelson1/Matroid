@@ -138,6 +138,8 @@ lemma IsRestriction.closure_eq {N : Matroid α} (hNM : N ≤r M)
   rw [hNM.closure_eq', inter_eq_self_of_subset_left hX]
 -- lemma closure_iUnion_closure_eq_closure_iUnion'
 
+
+
 -- lemma closure_iUnion_congr' {α : Type*} {ι : Sort*} {κ : ι → Sort*} (M : Matroid α)
 --     {X Y : (i : ι) → κ i → Set α}
 --     (hXY : ∀ i (j : κ i), M.closure (X i j) = M.closure (Y i j)) :

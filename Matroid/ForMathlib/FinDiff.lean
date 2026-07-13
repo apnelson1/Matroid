@@ -54,6 +54,10 @@ lemma isExchange_insert_diff (heX : e ∈ X) (hfX : f ∉ X) : IsExchange X ((in
   rw [← insert_diff_singleton_comm (by grind)]
   exact isExchange_diff_insert heX hfX
 
+lemma isExchange_diff_singleton_diff_singleton (heX : e ∈ X) (hfX : f ∈ X) (hef : e ≠ f) :
+    (X \ {e}).IsExchange (X \ {f}) := by
+  convert isExchange_insert_insert (X := X \ {e, f}) (by simp) (by simp) hef.symm using 1 <;> grind
+
 lemma IsExchange.diff_eq_singleton (h : X.IsExchange Y) : ∃ e, X \ Y = {e} := by
   cases h with | insert_insert' X e => exact ⟨e, by grind⟩
 
