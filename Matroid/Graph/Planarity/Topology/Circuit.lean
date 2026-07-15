@@ -71,12 +71,9 @@ lemma mem_arc_choose_ends_of_range_sdiff_preconnected [T2Space α] {f : C(I, α)
   · exact Or.inr <| congrArg f ht1
   have htIoo : t ∈ Ioo (0 : I) 1 :=
     ⟨lt_of_le_of_ne t.2.1 (fun h => ht0 h.symm), lt_of_le_of_ne t.2.2 ht1⟩
-  have hnot : ¬ IsPreconnected (univ \ {t} : Set I) :=
-    not_isPreconnected_unitInterval_sdiff_mem_Ioo htIoo
-  have hf_emb : IsClosedEmbedding f := f.continuous.isClosedEmbedding hf
-  have hrng : range f \ {f t} = f '' (univ \ {t}) := by
-    rw [← image_univ, image_diff hf, image_singleton]
-  exact absurd (hf_emb.isInducing.isPreconnected_image.mp (hrng ▸ hconn)) hnot
+  rw [← image_univ, ← image_singleton, ← image_diff hf] at hconn
+  exact (not_isPreconnected_unitInterval_sdiff_mem_Ioo htIoo
+    <| f.continuous.isClosedEmbedding hf |>.isInducing.isPreconnected_image.mp hconn).elim
 
 end UnitIntervalArc
 

@@ -156,17 +156,24 @@ noncomputable def deleteEdges [G.LocallyFinite] (M : CombinatorialMap G D) (F : 
 
 noncomputable def φ (M : CombinatorialMap G D) : Equiv.Perm D := M.σ * M.α
 
-@[simp] lemma φ_apply (M : CombinatorialMap G D) (d : D) : M.φ d = M.σ (M.α d) := rfl
+@[simp] lemma phi_apply (M : CombinatorialMap G D) (d : D) : M.φ d = M.σ (M.α d) := rfl
 
-lemma φ_fixed_of_notMem_dom (M : CombinatorialMap G D) {d : D} (hd : d ∉ M.fₑ.Dom) :
+lemma phi_fixed_of_notMem_dom (M : CombinatorialMap G D) {d : D} (hd : d ∉ M.fₑ.Dom) :
     IsFixedPt M.φ d := by
   unfold IsFixedPt
-  rw [φ_apply, DartStructure.α_apply, M.otherDart_of_notMem_dom hd, M.sigma_id hd]
+  rw [phi_apply, DartStructure.α_apply, M.otherDart_of_notMem_dom hd, M.sigma_id hd]
+
+lemma phi_finiteOrbit [G.Finite] (M : CombinatorialMap G D) : M.φ.finiteOrbit :=
+  M.sigma_finiteOrbit.mul_of_finite_support_right <| M.α_apply_ne_eq_dom_fₑ ▸ M.dom_fₑ_finite
 
 def faceCycles (M : CombinatorialMap G D) : Set (Cycle D) :=
   periodicOrbit M.φ '' M.fₑ.Dom
 
-
+lemma faceCycles_ne_nil [G.Finite] (M : CombinatorialMap G D) :
+    ∀ f ∈ M.faceCycles, f ≠ Cycle.nil := by
+  rintro f ⟨d, hd, rfl⟩
+  rw [ne_eq, periodicOrbit_eq_nil_iff_not_periodic_pt, not_not]
+  exact M.phi_finiteOrbit ▸ mem_univ d
 
 section Contract
 
@@ -290,7 +297,17 @@ lemma noEdge_eulerCharacteristic (hX : X.Finite) (M : CombinatorialMap (Graph.no
   have hD : M.fₑ.Dom = ∅ := by
     rw [← ran_eq_empty_iff_dom_eq_empty, M.ran_fₑ]
     rfl
-  sorry
+  have hface : M.faceCycles.ncard = 0 := by
+    unfold faceCycles
+    rw [hD, image_empty, ncard_empty]
+  have hcomp : (Graph.noEdge X E).Components.ncard = X.ncard := by
+    rw [components_eq_walkable_image, vertexSet_noEdge]
+    apply InjOn.ncard_image
+    rintro x hx y hy haby
+    rw [walkable_eq_walkable_iff_mem hx, mem_walkable_iff, connBetween_comm,
+      connBetween_noEdge_iff] at haby
+    exact haby.1
+  rw [hface, hcomp, Nat.cast_zero, add_zero, sub_self]
 
 lemma EulerCharacteristic.induce_isol (h : V(G) \ Isol(G) ⊆ X) (M : CombinatorialMap G D) [G.Finite]
     (hX : X.Finite) : letI : (G[X]).Finite := vertexSet_finite_iff.mp hX

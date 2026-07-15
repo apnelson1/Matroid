@@ -7,6 +7,8 @@ variable {α β : Type*} {u v x y z : α} {e e' f g : β} {S T U: Set α}
 
 namespace WList
 
+section vertex
+
 variable {P : α → Prop} [DecidablePred P]
 lemma prefixUntil_eq_nil (hP : P w.first) : w.prefixUntil P = nil w.first := by
   match w with
@@ -598,6 +600,103 @@ lemma suffixFrom_eq_suffixFromLast_of_nodup [DecidableEq α] (hnd : w.vertex.Nod
 lemma suffixFromLast_vertex_tail_not_prop (hx : x ∈ (w.suffixFromLast P).vertex.tail) : ¬ P x := by
   simp only [suffixFromLast, reverse_vertex, tail_reverse, List.mem_reverse] at hx
   exact prefixUntil_vertex_dropLast_not_prop hx
+
+end vertex
+
+section edge
+
+variable {Q : β → Prop} [DecidablePred Q]
+
+lemma prefixUntilEdge_isPrefix_dropLast {w : WList α β} (hQ : ∃ e ∈ E(w), Q e) :
+    (w.prefixUntilEdge Q).IsPrefix w.dropLast := by
+  match w with
+  | .nil u => simp
+  | .cons u e (nil v) =>
+    simp only [cons_edgeSet, nil_edgeSet, insert_empty_eq, mem_singleton_iff, exists_eq_left] at hQ
+    simp [hQ]
+  | .cons u e (cons v f w) => _
+  have hQ' : Q e ∨ ∃ e_1 ∈ E(cons v f w), Q e_1 := by simp_all
+  by_cases hQe : Q e
+  · simp [hQe]
+  simp only [hQe, not_false_eq_true, prefixUntilEdge_cons_false, dropLast_cons_cons]
+  exact (prefixUntilEdge_isPrefix_dropLast (hQ'.resolve_left hQe)).cons ..
+
+lemma prefixUntilEdge_vertex_isPrefix_dropLast {w : WList α β} (hQ : ∃ e ∈ E(w), Q e) :
+    (w.prefixUntilEdge Q).vertex <+ w.vertex.dropLast := by
+  match w with
+  | .nil u => simp at hQ
+  | .cons u e (nil v) =>
+    simp only [cons_edgeSet, nil_edgeSet, insert_empty_eq, mem_singleton_iff, exists_eq_left] at hQ
+    simp [hQ]
+  | .cons u e (cons v f w) => _
+  have hQ' : Q e ∨ ∃ e_1 ∈ E(cons v f w), Q e_1 := by simp_all
+  by_cases hQe : Q e
+  · simp [hQe]
+  simp only [hQe, not_false_eq_true, prefixUntilEdge_cons_false, cons_vertex,
+    List.dropLast_cons_cons, cons_sublist_cons]
+  exact prefixUntilEdge_vertex_isPrefix_dropLast (hQ'.resolve_left hQe)
+
+lemma suffixFromEdge_isSuffix_tail {w : WList α β} (hQ : ∃ e ∈ E(w), Q e) :
+    (w.suffixFromEdge Q).IsSuffix w.tail := by
+  match w with
+  | .nil u => simp at hQ
+  | .cons u e w =>
+    by_cases hQe : Q e
+    · simp [hQe]
+    simp only [hQe, not_false_eq_true, suffixFromEdge_cons_false, tail_cons]
+    exact suffixFromEdge_isSuffix w Q
+
+lemma suffixFromEdge_vertex_isSuffix_tail {w : WList α β} (hQ : ∃ e ∈ E(w), Q e) :
+    (w.suffixFromEdge Q).vertex <:+ w.vertex.tail := by
+  match w with
+  | .nil u => simp at hQ
+  | .cons u e w => simpa using (suffixFromEdge_isSuffix_tail hQ).suffix
+
+lemma prefixUntilEdgeLabel_edge_notMem [DecidableEq β] :
+    e ∉ (w.prefixUntilEdgeLabel e).edge := by
+  induction w with
+  | nil u => simp [prefixUntilEdgeLabel]
+  | cons u f w ih =>
+    obtain rfl | hf := eq_or_ne e f
+    · simp [prefixUntilEdgeLabel, prefixUntilEdge]
+    simpa only [prefixUntilEdgeLabel, prefixUntilEdge, hf.symm, ↓reduceIte, cons_edge, mem_cons, hf,
+      false_or]
+
+lemma prefixUntilEdgeLabel_append_cons_suffixFromEdgeLabel [DecidableEq β] (he : e ∈ w.edge) :
+    w.prefixUntilEdgeLabel e ++ cons (w.prefixUntilEdgeLabel e).last e
+      (w.suffixFromEdgeLabel e) = w := by
+  induction w with
+  | nil u => simp at he
+  | cons u f w ih =>
+    obtain rfl | hef := eq_or_ne e f
+    · simp [prefixUntilEdgeLabel, suffixFromEdgeLabel]
+    simp only [prefixUntilEdgeLabel, suffixFromEdgeLabel, cons_edge, mem_cons, hef,
+      false_or] at ih he ⊢
+    simpa only [hef.symm, not_false_eq_true, prefixUntilEdge_cons_false, last_cons,
+      suffixFromEdge_cons_false, cons_append, cons.injEq, true_and] using ih he
+
+lemma suffixFromEdgeLabel_edge_notMem [DecidableEq β] (hnd : w.edge.Nodup) :
+    e ∉ (w.suffixFromEdgeLabel e).edge := by
+  obtain hF | hT := em' (e ∈ w.edge)
+  · exact mt (w.suffixFromEdge_isSuffix (· = e) |>.edge_subset ·) hF
+  have hre := prefixUntilEdgeLabel_append_cons_suffixFromEdgeLabel hT
+  rw [← hre, append_edge, cons_edge, List.nodup_append, List.nodup_cons] at hnd
+  exact hnd.2.1.1
+
+lemma isLink_prefixUntilEdgeLabel_suffixFromEdgeLabel [DecidableEq β] (he : e ∈ w.edge) :
+    w.IsLink e (w.prefixUntilEdgeLabel e).last (w.suffixFromEdgeLabel e).first := by
+  induction w with
+  | nil u => simp at he
+  | cons u f w ih =>
+    obtain rfl | hf := eq_or_ne e f
+    · have h := IsLink.cons_left u e w
+      simpa [prefixUntilEdgeLabel, suffixFromEdgeLabel, prefixUntilEdge, suffixFromEdge,
+        ↓reduceIte] using h
+    simp only [cons_edge, mem_cons, hf, false_or, prefixUntilEdgeLabel, prefixUntilEdge, hf.symm,
+    ↓reduceIte, last_cons, suffixFromEdgeLabel, suffixFromEdge] at he ⊢
+    exact (ih he).cons u f
+
+end edge
 
 lemma IsSublist.exists_append_append (hw₀ : w₀.IsSublist w) (hw : w.vertex.Nodup) :
     ∃ w₁ w₂, w₁.last = w₀.first ∧ w₀.last = w₂.first ∧ w = w₁ ++ w₀ ++ w₂ := by

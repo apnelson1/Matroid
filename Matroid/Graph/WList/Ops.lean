@@ -534,6 +534,9 @@ lemma dInc_iff_eq_of_dInc_of_vertex_nodup_right (hw : w.vertex.Nodup) (hv : w.DI
   rw [← dInc_reverse_iff, hw_def', dInc_iff_eq_of_dInc_of_vertex_nodup_left (by simpa [← hw_def'])]
   simpa [← hw_def']
 
+lemma DInc.left_mem_vertex_dropLast (h : w.DInc e x y) : x ∈ w.vertex.dropLast := by
+  simpa [reverse_vertex, List.tail_reverse] using h.reverse.right_mem_vertex_tail
+
 @[simp, grind =]
 lemma isLink_reverse_iff : w.reverse.IsLink e x y ↔ w.IsLink e x y := by
   simp [isLink_iff_dInc, or_comm]

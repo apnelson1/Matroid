@@ -54,6 +54,12 @@ lemma mem_iff_eq_first_or_mem_tail : x ∈ w ↔ x = w.first ∨ x ∈ w.tail :=
   · simp
   exact w.tail_isSuffix.mem hx
 
+lemma mem_iff_eq_vertex_first_or_mem_tail : x ∈ w ↔ x = w.first ∨ x ∈ w.vertex.tail := by
+  refine ⟨by induction w with simp_all, ?_⟩
+  rintro (rfl | hx)
+  · simp
+  exact mem_of_mem_tail hx
+
 lemma IsSublist.le_tail_of_ne_first {w₀} (h : w₀ ≤ w) (hne : w₀.first ≠ w.first) : w₀ ≤ w.tail := by
   induction h with
   | nil h =>
@@ -185,6 +191,10 @@ lemma append_dropLast (w₁ : WList α β) (hw₂ : w₂.Nonempty) :
 lemma mem_iff_eq_mem_dropLast_or_eq_last : u ∈ w ↔ u ∈ w.dropLast ∨ u = w.last := by
   rw [← mem_reverse, mem_iff_eq_first_or_mem_tail, or_comm, reverse_tail, mem_reverse,
     reverse_first]
+
+lemma mem_iff_eq_mem_vertex_dropLast_or_eq_last : u ∈ w ↔ u ∈ w.vertex.dropLast ∨ u = w.last := by
+  rw [← mem_reverse, mem_iff_eq_vertex_first_or_mem_tail, or_comm, reverse_vertex, tail_reverse,
+    List.mem_reverse, reverse_first]
 
 lemma eq_last_or_mem_dropLast (h : x ∈ w) : x = w.last ∨ x ∈ w.dropLast := by
   grind [mem_iff_eq_mem_dropLast_or_eq_last]

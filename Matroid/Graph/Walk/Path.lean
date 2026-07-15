@@ -362,7 +362,6 @@ lemma IsPath.not_nontrivial_of_isLink {P : WList α β} {e : β} {x y s t : α} 
 
 /-! ### Fixed ends. (To be cleaned up) -/
 
-
 @[mk_iff]
 structure IsTrailFrom (G : Graph α β) (S T : Set α) (W : WList α β) : Prop extends
   G.IsTrail W, G.IsWalkFrom S T W

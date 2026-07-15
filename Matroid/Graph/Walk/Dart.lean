@@ -238,6 +238,14 @@ noncomputable def swap (e : E) : Equiv.Perm D where
 lemma swap_eq_α (hd : e ∈ M.fₑ d) : M.swap e d = M.α d := by
   simp [hd, swap]
 
+lemma α_apply_ne_eq_dom_fₑ : {d | M.α d ≠ d} = M.fₑ.Dom := by
+  ext d
+  simp only [Set.mem_setOf_eq, DartStructure.α_apply]
+  exact ⟨fun h ↦ by_contra fun hd ↦ h (M.otherDart_of_notMem_dom hd), M.otherDart_ne⟩
+
+lemma α_apply_ne_iff_mem_dom_fₑ : M.α d ≠ d ↔ d ∈ M.fₑ.Dom := by
+  simp [← α_apply_ne_eq_dom_fₑ]
+
 @[simps]
 def copy (M : DartStructure G D) (h : G = H) : DartStructure H D where
   fₑ := M.fₑ

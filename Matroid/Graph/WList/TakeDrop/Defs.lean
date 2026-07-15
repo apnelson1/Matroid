@@ -9,6 +9,8 @@ namespace WList
 
 /-! # Cutting wLists Off -/
 
+section pred
+
 variable {P : α → Prop} [DecidablePred P]
 
 /-- Take the prefix ending at the first vertex satisfying a predicate `P`
@@ -75,6 +77,98 @@ lemma suffixFromVertex_nil [DecidableEq α] : (nil (β := β) u).suffixFromVerte
 lemma suffixFromVertex_isSuffix [DecidableEq α] (w : WList α β) (x : α) :
     (w.suffixFromVertex x).IsSuffix w := suffixFrom_isSuffix ..
 
+variable {Q : β → Prop} [DecidablePred Q]
+
+/-- Take the prefix ending at the tail of the first edge satisfying `Q`.
+Equal to `w` if no edge satisfies `Q`. -/
+def prefixUntilEdge (w : WList α β) (Q : β → Prop) [DecidablePred Q] : WList α β :=
+  match w with
+  | nil x => nil x
+  | cons x e w => if Q e then nil x else cons x e (prefixUntilEdge w Q)
+
+@[simp] lemma prefixUntilEdge_nil : (nil u (β := β)).prefixUntilEdge Q = nil u := rfl
+
+@[grind =]
+lemma prefixUntilEdge_cons (w) :
+    (cons x e w).prefixUntilEdge Q = if Q e then nil x else cons x e (w.prefixUntilEdge Q) :=
+  rfl
+
+@[simp]
+lemma prefixUntilEdge_cons_true (he : Q e) : (cons x e w).prefixUntilEdge Q = nil x := by
+  grind
+
+@[simp]
+lemma prefixUntilEdge_cons_false (he : ¬ Q e) :
+    (cons x e w).prefixUntilEdge Q = cons x e (w.prefixUntilEdge Q) := by
+  grind
+
+lemma prefixUntilEdge_isPrefix (w : WList α β) (Q : β → Prop) [DecidablePred Q] :
+    (w.prefixUntilEdge Q).IsPrefix w := by
+  induction w with
+  | nil u => simp
+  | cons u e w ih =>
+    simp only [prefixUntilEdge_cons]
+    split_ifs
+    · simp
+    exact ih.cons ..
+
+lemma prefixUntilEdge_length_lt (hQ : ∃ e ∈ E(w), Q e) :
+    (w.prefixUntilEdge Q).length < w.length := by
+  induction w with
+  | nil u => simp at hQ
+  | cons u e w ih =>
+    simp only [cons_edgeSet, Set.mem_insert_iff, mem_edgeSet_iff, exists_eq_or_imp] at hQ
+    grind
+
+/-- Take the suffix starting at the head of the first edge satisfying `Q`.
+Equal to `nil w.last` if no edge satisfies `Q`. -/
+def suffixFromEdge (w : WList α β) (Q : β → Prop) [DecidablePred Q] : WList α β :=
+  match w with
+  | nil x => nil x
+  | cons _ e w => if Q e then w else suffixFromEdge w Q
+
+@[simp] lemma suffixFromEdge_nil : (nil u (β := β)).suffixFromEdge Q = nil u := rfl
+
+@[grind =]
+lemma suffixFromEdge_cons (w) :
+    (cons x e w).suffixFromEdge Q = if Q e then w else w.suffixFromEdge Q := rfl
+
+@[simp]
+lemma suffixFromEdge_cons_true (he : Q e) : (cons x e w).suffixFromEdge Q = w := by
+  grind [suffixFromEdge]
+
+@[simp]
+lemma suffixFromEdge_cons_false (he : ¬ Q e) :
+    (cons x e w).suffixFromEdge Q = (w.suffixFromEdge Q) := by
+  grind
+
+lemma suffixFromEdge_isSuffix (w : WList α β) (Q : β → Prop) [DecidablePred Q] :
+    (w.suffixFromEdge Q).IsSuffix w := by
+  induction w with
+  | nil u => simp
+  | cons u e w ih =>
+    simp only [suffixFromEdge_cons]
+    split_ifs
+    · simp
+    exact ih.trans (by simp)
+
+lemma suffixFromEdge_length_lt (hQ : ∃ e ∈ E(w), Q e) : (w.suffixFromEdge Q).length < w.length := by
+  induction w with
+  | nil u => simp at hQ
+  | cons u e w ih =>
+    simp only [cons_edgeSet, Set.mem_insert_iff, mem_edgeSet_iff, exists_eq_or_imp] at hQ
+    grind
+
+/-- The prefix of `w` ending just before the first occurrence of edge `e`.
+Equal to `w` if `e ∉ w.edge`. -/
+def prefixUntilEdgeLabel [DecidableEq β] (w : WList α β) (e : β) : WList α β :=
+  w.prefixUntilEdge (· = e)
+
+/-- The suffix of `w` starting just after the first occurrence of edge `e`.
+Equal to `nil w.last` if `e ∉ w.edge`. -/
+def suffixFromEdgeLabel [DecidableEq β] (w : WList α β) (e : β) : WList α β :=
+  w.suffixFromEdge (· = e)
+
 /-- Take the prefix of `w` ending at the last occurence of `x` in `w`.
 Equal to `w` if `x ∉ w`. -/
 def prefixUntilLast (w : WList α β) (P : α → Prop) [DecidablePred P] : WList α β :=
@@ -85,7 +179,9 @@ If `P` never occurs, this is all of `w`. -/
 def suffixFromLast (w : WList α β) (P : α → Prop) [DecidablePred P] : WList α β :=
   (w.reverse.prefixUntil P).reverse
 
-section drop
+end pred
+
+section index
 
 /-- Remove the first vertex and edge from a wList -/
 def tail : WList α β → WList α β
@@ -155,7 +251,7 @@ lemma drop_nil (x : α) (n : ℕ) : (nil x (β := β)).drop n = nil x := by
 lemma drop_cons_succ (x e) (w : WList α β) (n : ℕ) :
   (cons x e w).drop (n+1) = w.drop n := rfl
 
-end drop
+end index
 
 section dedup
 

@@ -550,6 +550,11 @@ lemma DInc.left_mem (h : w.DInc e x y) : x ∈ w.vertex := by
 lemma DInc.right_mem (h : w.DInc e x y) : y ∈ w.vertex := by
   induction h with simp_all
 
+lemma DInc.right_mem_vertex_tail (h : w.DInc e x y) : y ∈ w.vertex.tail := by
+  induction h with
+  | cons_left => simp
+  | cons _ _ h _ => exact h.right_mem
+
 lemma DInc.edge_mem (h : w.DInc e x y) : e ∈ w.edge := by
   induction h with simp_all
 
