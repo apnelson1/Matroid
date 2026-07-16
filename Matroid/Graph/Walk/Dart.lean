@@ -1,123 +1,12 @@
 import Mathlib.GroupTheory.Perm.Basic
 import Mathlib.GroupTheory.OrderOfElement
 import Matroid.Graph.Minor.Defs
-import Mathlib.Data.PFun
+import Matroid.ForMathlib.Data.PFun
 import Matroid.ForMathlib.Topology.ENat
 
 open Set PFun Part Equiv
 
 variable {V E D : Type*} {G H : Graph V E} {e : E} {d d' : D}
-
-namespace PFun
-
-variable {α β γ : Type*} {f : α →. β} {φ : β → γ} {S T : Set β} {a b : α} {x y : β}
-
-attribute [grind <=] mem_unique
-attribute [simp, grind .] preimage_subset_dom
-attribute [grind =] dom_coe
-attribute [gcongr] preimage_mono
-
-lemma mem_preimage_self (h : a ∈ f.Dom) : a ∈ f.preimage {(f a).get h} := by
-  simp only [mem_preimage, mem_singleton_iff, exists_eq_left]
-  exact get_mem h
-
-lemma preimage_inter' {S T : Set β} : f.preimage (S ∩ T) = f.preimage S ∩ f.preimage T := by
-  grind
-
-@[simp]
-lemma mem_image_iff {S : Set α} : x ∈ f.image S ↔ ∃ a ∈ S, x ∈ f a := by
-  simp [image, graph']
-
-lemma image_subset_ran {S : Set α} : f.image S ⊆ f.ran := by
-  intro a
-  simp only [mem_image_iff, ran, mem_setOf_eq, forall_exists_index, and_imp]
-  grind
-
-@[simp, grind =]
-lemma ran_coe (f : α → β) : (PFun.lift f).ran = range f := by
-  ext x
-  simp [ran, eq_comm]
-
-@[simp]
-lemma dom_restrict {S : Set α} (hS : S ⊆ f.Dom) : (f.restrict hS).Dom = S := by
-  ext a
-  simp only [mem_dom, mem_restrict, exists_and_left, and_iff_left_iff_imp]
-  exact fun haS ↦ dom_iff_mem.mp (hS haS)
-
-@[simp]
-lemma ran_restrict {S : Set α} (hS : S ⊆ f.Dom) : (f.restrict hS).ran = f.image S := by
-  ext a
-  simp [ran]
-
-@[simp]
-lemma preimage_restrict {S : Set α} (hS : S ⊆ f.Dom) :
-    (f.restrict hS).preimage T = f.preimage T ∩ S := by
-  ext a
-  simp only [mem_preimage, mem_restrict]
-  grind
-
-@[simp]
-lemma restrict_restrict {S T : Set α} (hS : S ⊆ f.Dom) (hT : T ⊆ (f.restrict hS).Dom) :
-    (f.restrict hS).restrict hT = f.restrict (p := S ∩ T) (by grind) := by
-  ext a x
-  grind [mem_restrict]
-
-def codRestrict (f : α →. β) (S : Set β) : α →. β :=
-  f.restrict (preimage_subset_dom f S)
-
-@[simp, grind =]
-lemma mem_codRestrict : x ∈ (f.codRestrict S) a ↔ x ∈ f a ∧ x ∈ S := by
-  simp only [codRestrict, mem_restrict, mem_preimage]
-  grind
-
-@[simp, grind =]
-lemma ran_codRestrict : (f.codRestrict S).ran = f.ran ∩ S := by
-  ext x
-  simp only [ran, codRestrict, mem_restrict]
-  grind
-
-@[simp, grind =]
-lemma dom_codRestrict : (f.codRestrict S).Dom = f.Dom ∩ f.preimage S := by
-  ext a
-  simp only [codRestrict, mem_dom, mem_restrict, mem_inter_iff]
-  grind
-
-@[simp] lemma preimage_codRestrict : (f.codRestrict S).preimage T = f.preimage (T ∩ S) := by grind
-
-@[simp]
-lemma codRestrict_codRestrict : (f.codRestrict S).codRestrict T = f.codRestrict (T ∩ S) := by
-  simp only [codRestrict, restrict_restrict]
-  congr
-  grind [preimage_restrict]
-
-@[simp]
-lemma dom_map : (PFun.map φ f).Dom = f.Dom := by
-  ext a
-  simp only [mem_dom, PFun.map, Part.mem_map_iff]
-  grind
-
-@[simp]
-lemma mem_map (a : α) (c : γ) : c ∈ (PFun.map φ f) a ↔ ∃ b ∈ f a, φ b = c := by
-  simp [PFun.map]
-
-@[simp]
-lemma ran_map : (PFun.map φ f).ran = φ '' f.ran := by
-  ext c
-  simp only [ran, mem_map]
-  grind
-
-@[simp]
-lemma preimage_map (S : Set γ) : (PFun.map φ f).preimage S = f.preimage (φ ⁻¹' S) := by
-  ext a
-  simp only [mem_preimage, mem_map]
-  grind
-
-@[simp]
-lemma ran_eq_empty_iff_dom_eq_empty (f : α →. β) : f.ran = ∅ ↔ f.Dom = ∅ := by
-  simp only [ran, Set.ext_iff, mem_setOf_eq, mem_empty_iff_false, mem_dom]
-  grind
-
-end PFun
 
 namespace Graph
 
@@ -205,7 +94,7 @@ lemma otherDart_invol (d : D) : M.otherDart (M.otherDart d) = d := by
   have he' : (M.fₑ (M.otherDart d)).get hdom' = e := by
     refine Part.get_eq_of_mem ?_ _
     have := (M.preimage_diff_eq_other h).symm.subset (Set.mem_singleton (M.otherDart d))
-    simpa [PFun.mem_preimage, e] using mem_of_mem_diff this
+    simp [e]
   have hdom₀ := M.otherDart_eq_choose h ▸ hdom'
   have hspec := (M.exists_singleton_preimage_diff hdom₀).choose_spec
   rw [congr_arg M.otherDart (M.otherDart_eq_choose h), M.otherDart_eq_choose hdom₀]
@@ -265,7 +154,7 @@ lemma fᵥ_preimage_eq_iUnion_dartFiber (v : V) :
   · have hdom := M.dom_fᵥ ▸ M.fᵥ.preimage_subset_dom {v} hdv
     exact mem_iUnion.2 ⟨(M.fₑ d).get hdom, mem_iUnion.2
       ⟨(M.inc_iff_exists_dart _ _).2 ⟨d, Part.get_mem hdom, by simpa [PFun.mem_preimage] using hdv⟩,
-      ⟨by simpa [dartFiber, PFun.mem_preimage] using Part.get_mem hdom, hdv⟩⟩⟩
+      ⟨by simp, hdv⟩⟩⟩
   simp only [mem_iUnion] at hd
   exact hd.choose_spec.2.2
 
@@ -283,7 +172,7 @@ lemma _root_.Graph.IsLoopAt.dartFiber_eq_preimage {v} (h : G.IsLoopAt e v) :
   have hdomv : d ∈ M.fᵥ.Dom := by rwa [M.dom_fᵥ]
   have hx := h.eq_of_inc ((M.inc_iff_exists_dart _ _).2 ⟨d, by simpa [PFun.mem_preimage] using hd,
     Part.get_mem hdomv⟩)
-  exact ⟨hd, by simpa [PFun.mem_preimage, hx] using Part.get_mem hdomv⟩
+  exact ⟨hd, by simp [hx]⟩
 
 lemma dartFiber_encard_isLoopAt {v e} (h : G.IsLoopAt e v) :
     (M.dartFiber v e).encard = 2 := by

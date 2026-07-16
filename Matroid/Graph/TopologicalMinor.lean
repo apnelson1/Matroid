@@ -299,8 +299,7 @@ noncomputable def minorMap (h : G.TopologicalMinor H) : minorMap G H where
     · have hpre : H[{v.val} ∪ ⋃ f : E(G), h.branchVerts f v.val].IsWalk
           ((h.map e).prefixUntilEdgeLabel e.val) := by
         refine ((h.map_isTrail e).isWalk.prefix
-          ((h.map e).prefixUntilEdge_isPrefix (· = e))).induce ?_
-        rintro z hz
+          ((h.map e).prefixUntilEdge_isPrefix (· = e))).induce fun z hz ↦ ?_
         simp only [mem_union, mem_singleton_iff, mem_iUnion]
         exact Or.inr ⟨e, Or.inl <| by simpa [branchVerts, hfirst] using hz⟩
       refine hpre.isWalk_le restrict_le (fun f hf ↦ ?_) <| by
@@ -312,8 +311,7 @@ noncomputable def minorMap (h : G.TopologicalMinor H) : minorMap G H where
     · have hsuf : H[{v.val} ∪ ⋃ f : E(G), h.branchVerts f v.val].IsWalk
           ((h.map e).suffixFromEdgeLabel e.val) := by
         refine ((h.map_isTrail e).isWalk.suffix
-          ((h.map e).suffixFromEdge_isSuffix (· = e))).induce ?_
-        rintro z hz
+          ((h.map e).suffixFromEdge_isSuffix (· = e))).induce fun z hz ↦ ?_
         simp only [mem_union, mem_singleton_iff, mem_iUnion]
         exact Or.inr ⟨e, Or.inr <| by simpa [branchVerts, hlast] using hz⟩
       refine hsuf.isWalk_le restrict_le (fun f hf ↦ ?_) <| by
@@ -327,5 +325,7 @@ noncomputable def minorMap (h : G.TopologicalMinor H) : minorMap G H where
 lemma isMinor (h : G.TopologicalMinor H) : G ≤m H := by
   classical
   exact ⟨h.minorMap⟩
+
+
 
 end Graph.TopologicalMinor.minor
