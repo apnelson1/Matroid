@@ -1,40 +1,24 @@
-import Mathlib.Data.Set.Defs
-import Mathlib.Logic.Equiv.Basic
-import Mathlib.Combinatorics.Matroid.Minor.Order
-import Mathlib.Combinatorics.Matroid.Map
-import Mathlib.Tactic.IntervalCases
-import Matroid.ForMathlib.Set
-import Matroid.Connectivity.Separation.Two
 import Matroid.Connectivity.Separation.Adherent
-import Matroid.Triangle
-import Matroid.Graph.Basic
 import Matroid.Connectivity.Splitter.Cretaceous
 
 open Set Matroid Function Separation
 
--- lemma Equiv.swap_eqOn_compl {α : Type*} [DecidableEq α] (x y : α) :
---     EqOn (Equiv.swap x y) (Equiv.refl α) {x, y}ᶜ :=
---   fun a ha ↦ by grind
-
--- lemma Equiv.swap_image_eq_self
-
 namespace Matroid
 
-variable {α β : Type*} {e f x y : α} {B C D C' D' I X Y Z s : Set α} {b i j k l : Bool} {k : ℕ∞}
-    {M : Matroid α} {N : Matroid β} {P : M.Separation}
+variable {α β : Type*} {e f : α} {C : Set α} {b : Bool} {k : ℕ∞} {M : Matroid α}
+    {N : Matroid β} {P : M.Separation}
 
 lemma circuit_of_element_contraction (hC : (M ／ {e}).IsCircuit C) :
     M.IsCircuit C ∨ M.IsCircuit (C ∪ {e}) := by
-  have h₁ := IsCircuit.exists_subset_isCircuit_of_contract hC
-  obtain ⟨C₁, hC₁, hC₂, hC₃⟩ := h₁
-  by_cases! h₂ : C₁ = C
+  obtain ⟨C₁, hC₁, hC₂, hC₃⟩ := IsCircuit.exists_subset_isCircuit_of_contract hC
+  by_cases! h₁ : C₁ = C
   · apply Or.inl
-    rwa [h₂] at hC₁
+    rwa [h₁] at hC₁
   · apply Or.inr
-    have h₃ : C ∪ {e} ⊆ C₁ := by
+    have h₂ : C ∪ {e} ⊆ C₁ := by
       grind only [= subset_def, = mem_union, = mem_singleton_iff, #2a2c, #4326, #8c6e, #2acb]
-    have h₄ := subset_antisymm hC₃ h₃
-    rwa [h₄] at hC₁
+    have h₃ := subset_antisymm hC₃ h₂
+    rwa [h₃] at hC₁
 
 lemma exists_circuit_contract_elem_girth_decrease (k : ENat) (hk : k ≠ ⊤) (hg₁ : k ≤ M.girth)
     (hg₂ : (M ／ {e}).girth < k) : ∃ C, M.IsCircuit C ∧ C.encard = k ∧ e ∈ C := by
@@ -59,7 +43,7 @@ lemma exists_circuit_contract_elem_girth_decrease (k : ENat) (hk : k ≠ ⊤) (h
         rw [union_singleton, encard_insert_of_notMem (by grind only [→ IsCircuit.subset_ground,
           = contract_ground, = subset_def, = mem_diff, = mem_singleton_iff, #524e])]
         enat_to_nat!
-        grind only
+        lia
       · simp only [union_singleton, mem_insert_iff, true_or]
   · have h : Disjoint {e} M.E := by grind only [= disjoint_left, = mem_singleton_iff]
     rw [← contract_eq_self_iff] at h
@@ -85,11 +69,11 @@ wlog! hb : b = false generalizing N M b with aux
   intro hn
   constructor
   · simp only [simple_delete]
-  · have hgM := hMsi'.three_le_girth
-    have hgMe : 3 ≤ (M✶ ／ {e}).girth := by
+  · have hgMe : 3 ≤ (M✶ ／ {e}).girth := by
       by_contra! aux
       obtain ⟨C, hC₁, hC₂, hC₃⟩ := exists_circuit_contract_elem_girth_decrease
-        (k := 3) (by simp only [ne_eq, ENat.ofNat_ne_top, not_false_eq_true]) hgM aux
+        (k := 3) (by simp only [ne_eq, ENat.ofNat_ne_top, not_false_eq_true])
+            hMsi'.three_le_girth aux
       specialize hr e false C
       rw [remove_false, Bool.not_false, bDual_true] at *
       apply hr hn ⟨hC₁, hC₂⟩
