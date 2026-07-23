@@ -135,3 +135,15 @@ lemma IsStrictMinor.exists_eq_remove_singleton {N : Matroid α} (hNM : N <m M)
   refine ⟨b, e, Eq.symm <| h.eq_of_ground_subset ?_⟩
   grw [remove_ground, diff_subset_comm]
   exact hE.subset_of_nonempty_inter ⟨e, ⟨he, by grind⟩, rfl⟩
+
+lemma IsMinor.exists_isMinor_removeElem {N : Matroid α} (hNM : N ≤m M) (he : e ∉ N.E) :
+    ∃ b, N ≤m M.remove b {e} := by
+  obtain ⟨C, D, hC, hD, hCD, rfl⟩ := hNM.exists_eq_contract_delete_disjoint
+  by_cases heC : e ∈ C
+  · exact ⟨true, (delete_isMinor ..).trans (contract_isMinor_of_subset _ (by simpa))⟩
+  by_cases heD : e ∈ D
+  · refine ⟨false, (contract_delete_isMinor_delete _ hCD).trans ?_⟩
+    exact (delete_isRestriction_of_subset _ (by simpa)).isMinor
+  refine ⟨false, ?_⟩
+  rw [remove_singleton_of_notMem (by simpa [heC, heD] using he)]
+  exact contract_delete_isMinor ..

@@ -302,7 +302,7 @@ lemma tutte_triangle_weak (hM : M.TutteConnected 3) (hT : M.IsTriangle {e,f,g})
     @fun _ ↦ (hP _).2.2, by convert hT using 1; grind⟩, rfl⟩
 
 /-- If `{e, f, g}` is a triangle in a `3`-connected matroid `M` with at least four elements,
-and neither `M ＼ {e}` nor `M ＼ {f}` is connected, then `M` has a triad containing `e` and
+and neither `M ＼ {e}` nor `M ＼ {f}` is `3`-connected, then `M` has a triad containing `e` and
 exactly one of `f` and `g`. -/
 theorem tutte_triangle (hM : M.TutteConnected 3) (hT : M.IsTriangle {e, f, g})
     (hcard : 4 ≤ M.E.encard) (he : ¬ (M ＼ {e}).TutteConnected 3)

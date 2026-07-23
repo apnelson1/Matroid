@@ -39,6 +39,11 @@ lemma Simple.loopless (hM : M.Simple) : M.Loopless := by
 theorem Simple.isNonloop_of_mem (_ : M.Simple) (he : e ∈ M.E) : M.IsNonloop e :=
   isNonloop_of_loopless he
 
+lemma Parallel'.eq [Simple M] (h : M.Parallel' e f) : e = f := by
+  obtain ⟨he, hf⟩ | h := h.isLoop_or_parallel
+  · exact False.elim <| M.not_isLoop e he
+  exact h.eq
+
 lemma simple_iff_loopless_eq_of_parallel_forall:
     Simple M ↔ (M.Loopless ∧ ∀ e f, M.Parallel e f → e = f) :=
   ⟨fun h ↦ ⟨by infer_instance, fun _ _ ↦ Parallel.eq⟩,

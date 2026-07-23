@@ -335,6 +335,32 @@ lemma Parallel'.mem_closure_iff_mem_closure (h : M.Parallel' e f) {X : Set α} :
   · simp [he.mem_closure, hf.mem_closure]
   exact h.mem_closure_iff_mem_closure
 
+lemma Parallel'.restrict (hef : M.Parallel' e f) {R : Set α} (heR : e ∈ R) (hfR : f ∈ R) :
+    (M ↾ R).Parallel' e f :=
+  ⟨heR, hfR,
+    by simp [singleton_inter_of_mem heR, singleton_inter_of_mem hfR, hef.closure_eq_closure]⟩
+
+lemma Parallel'.delete (hef : M.Parallel' e f) {D : Set α} (heD : e ∉ D) (hfD : f ∉ D) :
+    (M ＼ D).Parallel' e f := by
+  rw [← restrict_compl]
+  exact hef.restrict ⟨hef.mem_ground_left, heD⟩ ⟨hef.mem_ground_right, hfD⟩
+
+lemma Parallel'.contract (hef : M.Parallel' e f) {C : Set α} (heC : e ∉ C) (hfC : f ∉ C) :
+    (M ／ C).Parallel' e f := by
+  refine ⟨⟨hef.mem_ground_left, heC⟩, ⟨hef.mem_ground_right, hfC⟩, ?_⟩
+  simp only [contract_closure_eq, ← closure_union_closure_left_eq M {e}, hef.closure_eq_closure,
+    closure_union_closure_left_eq]
+
+lemma Parallel'.of_isMinor (hef : M.Parallel' e f) (hNM : N ≤m M) (heN : e ∈ N.E) (hfN : f ∈ N.E) :
+    N.Parallel' e f := by
+  obtain ⟨C, D, hC, hD, hCD, rfl⟩ := hNM.exists_contract_indep_delete_coindep
+  exact (hef.contract (by grind) (by grind)).delete (by grind) (by grind)
+
+lemma Parallel.project (hef : M.Parallel' e f) (X : Set α) : (M.project X).Parallel' e f := by
+  refine ⟨hef.mem_ground_left, hef.mem_ground_right, ?_⟩
+  simp only [project_closure, ← closure_union_closure_left_eq M {e}, hef.closure_eq_closure,
+    closure_union_closure_left_eq]
+
 end Parallel'
 
 section Iso
@@ -497,18 +523,22 @@ lemma Parallel'.eq_mapEquiv_swap (h : M.Parallel' e f) [DecidableEq α] :
       ← h.symm.indep_substitute_iff hfI heI]
   rw [Equiv.swap_image_eq_self (by simp [hfI, heI])]
 
+lemma Parallel'.contract_pair_eq (hef : M.Parallel' e f) : M ／ {e, f} = M ／ {e} ＼ {f} := by
+  obtain rfl | hne := eq_or_ne e f
+  · rw [pair_eq_singleton, deleteElem_eq_self (by simp)]
+  rw [← singleton_union, ← contract_contract, contract_eq_delete_of_subset_loops (X := {f})]
+  simp [hef.symm.mem_closure, hne.symm]
+
 lemma Parallel'.contract_delete_comm (hef : M.Parallel' e f) :
     M ／ {e} ＼ {f} = M ／ {f} ＼ {e} := by
-  obtain ⟨he, hf⟩ | hef := hef.isLoop_or_parallel
-  · rw [contract_eq_delete_of_subset_loops (by simpa),
-      contract_eq_delete_of_subset_loops (by simpa), delete_comm]
-  obtain rfl | hne := eq_or_ne e f; simp
-  refine ext_indep (by simp [diff_diff_comm]) fun I hI ↦ ?_
-  suffices M.Indep (insert e I) ↔ M.Indep (insert f I) by
-    simpa [hef.isNonloop_left.contractElem_indep_iff, hef.isNonloop_right.contractElem_indep_iff,
-      show e ∉ I by grind, show f ∉ I by grind]
-  rw [hef.parallel'.indep_substitute_iff (by simp) (by grind), insert_diff_self_of_notMem
-    (by grind)]
+  rw [← hef.contract_pair_eq, ← hef.symm.contract_pair_eq, pair_comm]
+
+lemma Parallel'.deleteElem_eq_mapEquiv [DecidableEq α] (hef : M.Parallel' e f) :
+    M ＼ {e} = (M ＼ {f}).mapEquiv (Equiv.swap e f) := by
+  have hrw := M.delete_map ((Equiv.swap e f).injective.injOn) (D := {f})
+    (by simpa using hef.mem_ground_right)
+  simpa [← mapEquiv_eq_map, hef.eq_mapEquiv_swap, image_singleton,
+    Equiv.swap_apply_right, eq_comm] using hrw
 
 end Swap
 

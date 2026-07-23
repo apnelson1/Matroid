@@ -566,9 +566,8 @@ lemma IsCyclicFan.isNonspanningCircuit_iff_isNonspanningCircuit {N : Matroid α}
     ← nonspanning_iff_eRk_lt hC.subset_ground]
   exact hC.nonspanning
 
-lemma foo {N : Matroid α} [NeZero n] (hM : M.Connected) (hN : N.Connected) (hJM : M.IsCyclicFan n J)
-    (hJN : N.IsCyclicFan n J) :
-      (M = N)
+lemma IsCyclicFan.eq_or_eq_relax {N : Matroid α} [NeZero n] (hM : M.Connected) (hN : N.Connected)
+    (hJM : M.IsCyclicFan n J) (hJN : N.IsCyclicFan n J) : (M = N)
     ∨ (∃ (h : M.IsCircuitHyperplane (range (J true))), N = M.relax _ (IsLawfulRelaxation.single h))
     ∨ (∃ (h : N.IsCircuitHyperplane (range (J true))), M = N.relax _ (IsLawfulRelaxation.single h))
     := by
