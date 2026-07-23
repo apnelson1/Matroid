@@ -39,7 +39,3 @@ lemma Nonspanning.indep_iff_forall_subset_not_isCircuit {I : Set α} (hI : M.Non
     M.Indep I ↔ ∀ C, M.IsCircuit C → M.Nonspanning C → ¬ (C ⊆ I) := by
   rw [Matroid.indep_iff_forall_subset_not_isCircuit]
   grind [Nonspanning.subset]
-
-lemma Spanning.isCircuit_iff (hC : M.Spanning C) :
-    M.IsCircuit C ↔ ∀ e ∈ C, M.Indep (C \ {e}) := by
-  sorry

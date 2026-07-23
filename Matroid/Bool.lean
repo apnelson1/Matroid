@@ -54,6 +54,16 @@ lemma eq_bDual_iff_bDual_eq (M N : Matroid α) (d : Bool) : M.bDual d = N ↔ M 
 lemma bDual_isMinor_iff {d : Bool} {N : Matroid α} : N.bDual d ≤m M ↔ N ≤m M.bDual d := by
   cases d with simp [isMinor_dual_iff_dual_isMinor]
 
+lemma IsMinor.bDual {N : Matroid α} (hNM : N ≤m M) (b : Bool) : N.bDual b ≤m M.bDual b := by
+  cases b with
+  | false => assumption
+  | true => exact hNM.dual
+
+lemma IsStrictMinor.bDual {N : Matroid α} (hNM : N <m M) (b : Bool) : N.bDual b <m M.bDual b := by
+  cases b with
+  | false => assumption
+  | true => exact hNM.dual
+
 /-- If `b` is false, then `M ＼ X`, and if `b` is true, then `M ／ X`. Used in self-dual settings. -/
 def remove (M : Matroid α) (b : Bool) (X : Set α) := bif b then M ／ X else M ＼ X
 
@@ -74,6 +84,10 @@ lemma dual_remove (M : Matroid α) (X : Set α) (b : Bool) : M✶.remove b X = (
 lemma bDual_remove (M : Matroid α) (X : Set α) (b c : Bool) :
     (M.remove c X).bDual b = (M.bDual b).remove (b != c) X := by
   cases c <;> cases b <;> simp
+
+lemma remove_bDual (M : Matroid α) (X : Set α) (b c : Bool) :
+    (M.bDual b).remove c X = (M.remove (b != c) X).bDual b := by
+  simp
 
 @[simp, grind =]
 lemma remove_ground (M : Matroid α) (X : Set α) (b : Bool) : (M.remove b X).E = M.E \ X := by

@@ -300,7 +300,8 @@ def IsoMinor.strictIsoMinor_of_not_surjective (i : N ≤i M) (hi : ¬ Surjective
   IsoMinor.ofExistsIso (inclusion h.subset) ⟨M, h, Iso.refl, fun _ ↦ rfl⟩
 
 /-- If `N ≤i M` then `N✶ ≤i M✶`. -/
-@[simps!] def IsoMinor.dual (N : Matroid β) (M : Matroid α) (i : N ≤i M) : N✶ ≤i M✶ :=
+@[simps!]
+def IsoMinor.dual (i : N ≤i M) : N✶ ≤i M✶ :=
   IsoMinor.ofExistsIso i (by
     obtain ⟨M₀, hM₀, e, h⟩ := i.exists_iso
     exact ⟨M₀✶, hM₀.dual, e.dual, h⟩)
@@ -308,6 +309,16 @@ def IsoMinor.strictIsoMinor_of_not_surjective (i : N ≤i M) (hi : ¬ Surjective
 @[simps!]
 def StrictIsoMinor.dual (e : N <i M) : N✶ <i M✶ :=
   e.isoMinor.dual.strictIsoMinor_of_not_surjective e.not_surjective
+
+def IsoMinor.bDual (i : N ≤i M) (b : Bool) : N.bDual b ≤i M.bDual b :=
+  match b with
+  | true => i.dual
+  | false => i
+
+def StrictIsoMinor.bDual (i : N <i M) (b : Bool) : N.bDual b <i M.bDual b :=
+  match b with
+  | true => i.dual
+  | false => i
 
 /-- If `M₁ ≤i M₂` and `M₂ ≂ M₃` then `M₁ ≤i M₃`. -/
 def IsoMinor.trans_iso {α₁ α₂ α₃ : Type*} {M₁ : Matroid α₁} {M₂ : Matroid α₂} {M₃ : Matroid α₃}
@@ -349,10 +360,38 @@ Useful for computability and defeq.  -/
 @[simps!] def IsoMinor.ofDual (N : Matroid β) (M : Matroid α) (i : N✶ ≤i M✶) : N ≤i M :=
   ((Iso.ofEq N.dual_dual).symm.isoMinor.trans i.dual).trans ((Iso.ofEq M.dual_dual).isoMinor)
 
+@[simps!] def StrictIsoMinor.ofDual (N : Matroid β) (M : Matroid α) (i : N✶ <i M✶) : N <i M :=
+  i.isoMinor.ofDual.strictIsoMinor_of_not_surjective i.not_surjective
+
+def IsoMinor.ofbDual {b : Bool} (i : (N.bDual b) ≤i (M.bDual b)) : N ≤i M :=
+  match b with
+  | true => i.ofDual
+  | false => i
+
+def StrictIsoMinor.ofbDual {b : Bool} (i : (N.bDual b) <i (M.bDual b)) : N <i M :=
+  match b with
+  | true => i.ofDual
+  | false => i
+
 @[simp]
 lemma nonempty_isoMinor_dual_iff {N : Matroid β} {M : Matroid α} :
     Nonempty (N✶ ≤i M✶) ↔ Nonempty (N ≤i M) :=
   ⟨fun ⟨i⟩ ↦ ⟨i.ofDual⟩, fun ⟨i⟩ ↦ ⟨i.dual⟩⟩
+
+@[simp]
+lemma nonempty_strictIsoMinor_dual_iff {N : Matroid β} {M : Matroid α} :
+    Nonempty (N✶ <i M✶) ↔ Nonempty (N <i M) :=
+  ⟨fun ⟨i⟩ ↦ ⟨i.ofDual⟩, fun ⟨i⟩ ↦ ⟨i.dual⟩⟩
+
+@[simp]
+lemma nonempty_isoMinor_bDual_iff {N : Matroid β} {M : Matroid α} (b : Bool) :
+    Nonempty (N.bDual b ≤i M.bDual b) ↔ Nonempty (N ≤i M) :=
+  ⟨fun ⟨i⟩ ↦ ⟨i.ofbDual⟩, fun ⟨i⟩ ↦ ⟨i.bDual b⟩⟩
+
+@[simp]
+lemma nonempty_strictIsoMinor_bDual_iff {N : Matroid β} {M : Matroid α} (b : Bool) :
+    Nonempty (N.bDual b <i M.bDual b) ↔ Nonempty (N <i M) :=
+  ⟨fun ⟨i⟩ ↦ ⟨i.ofbDual⟩, fun ⟨i⟩ ↦ ⟨i.bDual b⟩⟩
 
 lemma nonempty_isoMinor_iff : Nonempty (N ≤i M) ↔ ∃ M₀, M₀ ≤m M ∧ Nonempty (N ≂ M₀) := by
   refine ⟨fun ⟨e⟩ ↦ ?_, fun ⟨M₀, hM₀, ⟨h⟩⟩ ↦ ⟨h.isoMinor.trans hM₀.isoMinor⟩⟩

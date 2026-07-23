@@ -182,7 +182,7 @@ lemma Separation.indep_coindep_exists_basis_contraction_minor
   rw [delete_empty] at h₁
   exact IsMinor.trans h₁ (contract_isMinor_of_subset (M) (hBC))
 
-/-- If `N` is a nonempty-or-singleton minor of a `3`-connected matroid `M` on at least four
+/-- If `N` is an empty-or-singleton minor of a `3`-connected matroid `M` on at least four
 elements, then there is an element of `M` that is both deletable and contractible for `N`. -/
 lemma TutteConnected.exists_flexible_of_subsingleton {N : Matroid α} (hM : M.TutteConnected 3)
     (h4 : 4 ≤ M.E.encard) (hNM : N ≤m M) (hN : N.E.Subsingleton) :

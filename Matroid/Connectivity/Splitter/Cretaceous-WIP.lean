@@ -8,6 +8,34 @@ namespace Matroid
 variable {α β : Type*} {e f : α} {C : Set α} {b : Bool} {k : ℕ∞} {M : Matroid α}
     {N : Matroid β} {P : M.Separation}
 
+/-- A golfed version of the main result here. This uses `exists_flexible` as well as
+`Simple.contractElem_simple_of_notMem_triangle` and `exists_removeElem_tutteConnected_three` to
+avoid reasoning directly about girth. -/
+lemma splitter_no_triangle_minor' {N : Matroid α} (hM : M.TutteConnected 3) (h4 : 4 ≤ M.E.encard)
+    (hNM : N <m M) (hN : N.TutteConnected 3) (hr : ∀ e b, e ∈ M.E → Nonempty (N ≤i M.remove b {e}) →
+      ∀ T, (M.bDual !b).IsTriangle T → e ∉ T) :
+    ∃ e b, e ∈ M.E ∧ Nonempty (N ≤i M.remove b {e}) ∧ (M.remove b {e}).TutteConnected 3 := by
+  -- Let `e` be a `b`-removable element for `N`. If removing `e` keeps `3`-connectedness, we win.
+  obtain ⟨e, heM, b, heN⟩ := hNM.exists_isMinor_removeElem
+  by_cases htc : (M.remove b {e}).TutteConnected 3
+  · exact ⟨e, b, heM, ⟨heN.isoMinor⟩, htc⟩
+  -- by hypothesis, `e` is in no triangle of `(M.bDual !b)`, so `(M.bDual !b) ／ {e}` is simple.
+  have hs' := ((hM.bDual (!b)).simple (by simpa using h4)).contractElem_simple_of_notMem_triangle
+    <| hr e b heM ⟨heN.isoMinor⟩
+  -- ... and therefore we can find a flexible element `f` for `N`.
+  rw [← tutteConnected_bDual_iff (b := b), bDual_remove, bne_self_eq_false, remove_false] at htc
+  obtain ⟨f, hfM, hb⟩ := exists_flexible (hM.bDual b) (e := e) (by simpa) htc (by simpa)
+    (by simpa using heN.bDual b) (hN.bDual b)
+  replace hb : ∀ d, Nonempty (N ≤i (M.remove d {f})) := by
+    simp_rw [remove_bDual, nonempty_isoMinor_bDual_iff] at hb
+    exact fun d ↦ by simpa using hb (b != d)
+  -- by the triangle hypothesis, we can remove `f` in one way or the other to stay `3`-connected,
+  -- so we win by the flexibility of `f`.
+  have aux (T : Set α) (d : Bool) (hT : (M.bDual d).IsTriangle T) : f ∉ T :=
+    hr f (!d) (by simpa using hfM) (hb _) T (by simpa)
+  obtain ⟨d, hd⟩ := hM.exists_removeElem_tutteConnected_three aux
+  exact ⟨f, d, by simpa using hfM, (hb _), hd⟩
+
 lemma circuit_of_element_contraction (hC : (M ／ {e}).IsCircuit C) :
     M.IsCircuit C ∨ M.IsCircuit (C ∪ {e}) := by
   obtain ⟨C₁, hC₁, hC₂, hC₃⟩ := IsCircuit.exists_subset_isCircuit_of_contract hC
@@ -49,6 +77,7 @@ lemma exists_circuit_contract_elem_girth_decrease (k : ENat) (hk : k ≠ ⊤) (h
     rw [← contract_eq_self_iff] at h
     rw [h] at hg₂
     grind only
+
 
 lemma simple_cosimple_elem_removal {N : Matroid α} (hMsi : M.Simple) (hMsi' : M✶.Simple)
   (hr : ∀ e b T, Nonempty (N ≤i M.remove b {e}) → (M.bDual !b).IsTriangle T → e ∉ T) (b : Bool) :
