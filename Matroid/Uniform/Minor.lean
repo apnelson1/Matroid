@@ -32,6 +32,7 @@ theorem unif_isoMinor_unif_iff' {a₁ a₂ b₁ b₂ : ℕ} (h₁ : a₁ ≤ b�
   obtain ⟨d₂, rfl⟩ := Nat.exists_eq_add_of_le h₂
   rw [add_tsub_cancel_left, add_tsub_cancel_left, unif_isoMinor_unif_iff]
 
+set_option backward.isDefEq.respectTransparency false in
 lemma unif_isoRestr_unifOn {a : ℕ} (hbb : b ≤ E.encard) :
     Nonempty (unif a b ≤ir (unifOn E a)) := by
   have hle : (unif a b).E.encard ≤ E.encard := by simpa
@@ -130,7 +131,7 @@ theorem nonempty_loopyOn_isoMinor_iff {β : Type*} {E : Set α} {M : Matroid β}
     Nonempty (loopyOn E ≤i M) ↔ ∃ (f : E ↪ β), M.Coindep (range f) := by
   rw [← unifOn_zero,
     IsFiniteRankUniform.nonempty_isoMinor_iff (unifOn_isFiniteRankUniform (by simp))]
-  simp_rw [isFiniteRankUniformOn_zero_iff, contract_loops_eq, unifOn_ground_eq, subset_diff]
+  simp_rw [isFiniteRankUniformOn_zero_iff, contract_loops_eq, unifOn_ground_eq, subset_sdiff]
   refine ⟨fun ⟨C, X, hC, ⟨hCX, hXC⟩, ⟨e⟩⟩  ↦ ?_, fun ⟨f, hf⟩ ↦ ?_⟩
   · have hXc : M.Coindep X := by
       nth_grw 1 [coindep_iff_subset_closure_compl, hCX, show C ⊆ M.E \ X by grind]
@@ -199,8 +200,8 @@ lemma IsFiniteUniform.nonempty_isoMinor_iff {β : Type*} {N : Matroid β} {a' b'
     (hM : M.IsFiniteUniform a b n) (hN : N.IsFiniteUniform a' b' n') :
     Nonempty (N ≤i M) ↔ (a' ≤ a ∧ b' ≤ b) := by
   refine ⟨fun ⟨i⟩ ↦ ?_, fun h ↦ ?_⟩
-  · grw [← ENat.coe_le_coe, ← ENat.coe_le_coe, ← hN.eRank_eq, ← hM.eRank_eq, ← hN.eRank_dual_eq,
-      ← hM.eRank_dual_eq, i.eRank_le, i.dual.eRank_le]
+  · grw [← ENat.natCast_le_natCast, ← ENat.natCast_le_natCast, ← hN.eRank_eq, ← hM.eRank_eq,
+      ← hN.eRank_dual_eq, ← hM.eRank_dual_eq, i.eRank_le, i.dual.eRank_le]
     simp
   obtain ⟨e⟩ := hM.nonempty_iso_unif
   obtain ⟨f⟩ := hN.nonempty_iso_unif

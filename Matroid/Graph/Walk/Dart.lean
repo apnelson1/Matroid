@@ -39,7 +39,7 @@ private lemma exists_singleton_preimage_diff (h : d ∈ M.fₑ.Dom) :
   have heG : (M.fₑ d).get h ∈ E(G) := by
     rw [← M.ran_fₑ]
     exact ⟨d, get_mem h⟩
-  have := (M.preimage_encard heG).symm ▸ encard_diff_singleton_of_mem hmem
+  have := (M.preimage_encard heG).symm ▸ encard_sdiff_singleton_of_mem hmem
   rw [show (2 : ℕ∞) - 1 = 1 by enat_to_nat] at this
   exact encard_eq_one.mp this
 
@@ -57,7 +57,7 @@ lemma preimage_diff_eq_other (h : d ∈ M.fₑ.Dom) :
 
 private lemma mem_preimage_other (h : d ∈ M.fₑ.Dom) :
     M.otherDart d ∈ M.fₑ.preimage {((M.fₑ d).get h)} :=
-  mem_of_mem_diff ((M.preimage_diff_eq_other h).symm.subset (mem_singleton _))
+  mem_of_mem_sdiff ((M.preimage_diff_eq_other h).symm.subset (mem_singleton _))
 
 @[simp]
 lemma otherDart_of_notMem_dom (h : d ∉ M.fₑ.Dom) : M.otherDart d = d := by
@@ -129,7 +129,7 @@ lemma swap_eq_α (hd : e ∈ M.fₑ d) : M.swap e d = M.α d := by
 
 lemma α_apply_ne_eq_dom_fₑ : {d | M.α d ≠ d} = M.fₑ.Dom := by
   ext d
-  simp only [Set.mem_setOf_eq, DartStructure.α_apply]
+  simp only [Set.mem_ofPred_eq, DartStructure.α_apply]
   exact ⟨fun h ↦ by_contra fun hd ↦ h (M.otherDart_of_notMem_dom hd), M.otherDart_ne⟩
 
 lemma α_apply_ne_iff_mem_dom_fₑ : M.α d ≠ d ↔ d ∈ M.fₑ.Dom := by
@@ -246,7 +246,7 @@ lemma preimage_fₑ_edgeSet_diff (F : Set E) :
 
 @[simps!]
 def deleteEdges (M : DartStructure G D) (F : Set E) : DartStructure (G ＼ F) D :=
-  M.restrict (E(G) \ F) |>.copy (G.restrict_edgeSet_diff_eq_deleteEdges F)
+  M.restrict (E(G) \ F) |>.copy (G.restrict_edgeSet_sdiff_eq_deleteEdges F)
 
 @[simp]
 lemma dom_fₑ_deleteEdges (F : Set E) : (M.deleteEdges F).fₑ.Dom = M.fₑ.Dom \ M.fₑ.preimage F := by
@@ -255,7 +255,7 @@ lemma dom_fₑ_deleteEdges (F : Set E) : (M.deleteEdges F).fₑ.Dom = M.fₑ.Dom
 @[simp]
 lemma preimage_fᵥ_deleteEdges (F : Set E) (X : Set V) :
     (M.deleteEdges F).fᵥ.preimage X = M.fᵥ.preimage X \ M.fₑ.preimage F := by
-  rw [fᵥ_deleteEdges, preimage_restrict, preimage_fₑ_edgeSet_diff, ← inter_diff_assoc,
+  rw [fᵥ_deleteEdges, preimage_restrict, preimage_fₑ_edgeSet_diff, ← inter_sdiff_assoc,
     ← M.dom_fᵥ, inter_eq_left.mpr (preimage_subset_dom ..)]
 
 @[simps]
@@ -300,7 +300,7 @@ lemma preimage_fᵥ_deleteVerts (X Y : Set V) :
   have hE : E(G[V(G) \ X]) = E(G) \ E(G, X) := by
     rw [← deleteVerts_def, deleteVerts_edgeSet_diff]
   simp only [fᵥ_deleteVerts, preimage_restrict, hE, dom_codRestrict, preimage_fₑ_edgeSet_diff]
-  rw [inter_eq_right.mpr diff_subset, ← inter_diff_assoc, ← M.dom_fᵥ,
+  rw [inter_eq_right.mpr sdiff_subset, ← inter_sdiff_assoc, ← M.dom_fᵥ,
     inter_eq_left.mpr (preimage_subset_dom ..)]
 
 def of_le (h : H ≤ G) (M : DartStructure G D) : DartStructure H D :=
@@ -371,7 +371,7 @@ noncomputable def of_minorMap (M : DartStructure H D) (F : minorMap G H) : DartS
 lemma fₑ_of_minorMap : (M.of_minorMap F).fₑ = M.fₑ.codRestrict E(G) := by
   simp only [of_minorMap, fₑ_of_le, fₑ_contract, codRestrict_codRestrict]
   congr 1
-  rw [inter_eq_left, subset_diff, disjoint_iUnion_right]
+  rw [inter_eq_left, subset_sdiff, disjoint_iUnion_right]
   exact ⟨F.edgeSet_mono, F.edge_disj⟩
 
 @[simp]
@@ -379,10 +379,10 @@ lemma fᵥ_of_minorMap : (M.of_minorMap F).fᵥ =
     (M.fᵥ.map F.repFun).restrict (M.dom_fᵥ ▸ M.fₑ.preimage_subset_dom E(G)) := by
   simp only [of_minorMap, fᵥ_of_le, fᵥ_contract, fₑ_contract, PFun.restrict_restrict]
   congr 1
-  rw [preimage_codRestrict, ← inter_diff_assoc, inter_eq_left.mpr F.edgeSet_mono,
+  rw [preimage_codRestrict, ← inter_sdiff_assoc, inter_eq_left.mpr F.edgeSet_mono,
     F.disjoint_edgeSet_iUnion.sdiff_eq_left, inter_eq_right]
   apply PFun.preimage_mono
-  rw [subset_diff]
+  rw [subset_sdiff]
   use F.edgeSet_mono, F.disjoint_edgeSet_iUnion
 
 noncomputable def of_isMinor (M : DartStructure H D) (h : G ≤m H) : DartStructure G D :=
@@ -586,7 +586,7 @@ def IncidenceType.dartStructure (G : Graph V E) :
   fₑ := dart_fₑ G
   ran_fₑ := by
     ext e
-    simp only [ran, mem_dart_fₑ_iff, mem_setOf_eq, edge_mem_iff_exists_isLink]
+    simp only [ran, mem_dart_fₑ_iff, mem_ofPred_eq, edge_mem_iff_exists_isLink]
     exact ⟨fun ⟨d, h, he⟩ ↦ ⟨d.source, d.target, he ▸ h⟩, fun ⟨u, v, h⟩ ↦ ⟨inc1 e u v, by
       simpa [inc1_edge, inc1_source, inc1_target] using h, inc1_edge e u v⟩⟩
   preimage_encard e he := by

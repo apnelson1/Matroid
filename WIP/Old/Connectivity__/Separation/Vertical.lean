@@ -63,7 +63,7 @@ lemma isVerticalSeparation_iff_eRk (h : P.eConn ≠ ⊤) :
 lemma isVerticalSeparation_iff_nullity_dual :
     P.IsVerticalSeparation ↔ ∀ b, 1 ≤ M✶.nullity (P b) := by
   convert isVerticalSeparation_iff_forall with b
-  simp [ENat.one_le_iff_ne_zero]
+  simp [Order.one_le_iff_ne_zero]
 
 lemma isVerticalSeparation_of_lt_lt (h : P.eConn < M.eRk (P b)) (h' : P.eConn < M.eRk (P !b)) :
     P.IsVerticalSeparation := by
@@ -197,9 +197,9 @@ lemma isStrictSeparation_iff_eRk (hP : P.eConn ≠ ⊤) : P.IsStrictSeparation �
   rw [and_comm]
   convert isStrictSeparation_iff with b b
   · rw [← ENat.add_one_le_iff hP, ← M.eConn_add_nullity_eq_eRk_dual (P b)]
-    simp [hP, ENat.one_le_iff_ne_zero]
+    simp [hP, Order.one_le_iff_ne_zero]
   rw [← ENat.add_one_le_iff hP, ← M.eConn_add_nullity_dual_eq_eRk (P b)]
-  simp [hP, ENat.one_le_iff_ne_zero]
+  simp [hP, Order.one_le_iff_ne_zero]
 
 /-- A Tutte separation with connectivity zero is either strict,
 or has one side only loops or coloops. -/

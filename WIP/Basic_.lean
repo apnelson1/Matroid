@@ -468,7 +468,7 @@ lemma Rep.range_subset_span_isBase (v : M.Rep 𝔽 W) (hB : M.IsBase B) : range 
 
 lemma Rep.span_range_eq_span_isBase (v : M.Rep 𝔽 W) (hB : M.IsBase B) :
      span 𝔽 (range (Set.restrict B v)) = span 𝔽 (range v) := by
-  rw [range_restrict, eq_comm]
+  rw [range_domRestrict, eq_comm]
   exact span_eq_of_le _ (v.range_subset_span_isBase hB) (span_mono (image_subset_range _ _))
 
 /-- A representation is `FullRank` if its vectors span the space -/
@@ -688,8 +688,8 @@ lemma Rep.subset_span_of_isBasis (v : M.Rep 𝔽 W) (h : M.IsBasis I X) : v '' X
 lemma Rep.span_eq_span_inter_ground (v : M.Rep 𝔽 W) (X : Set α) :
     span 𝔽 (v '' X) = span 𝔽 (v '' (X ∩ M.E)) := by
   apply (span_mono (image_mono <| inter_subset_left)).antisymm'
-  rw [← span_insert_zero (s := v '' (X ∩ M.E)), ← inter_union_diff X M.E, image_union,
-    inter_union_diff]
+  rw [← span_insert_zero (s := v '' (X ∩ M.E)), ← inter_union_sdiff X M.E, image_union,
+    inter_union_sdiff]
   apply span_mono (union_subset (subset_insert _ _) _)
   rintro _ ⟨e, he, rfl⟩
   left

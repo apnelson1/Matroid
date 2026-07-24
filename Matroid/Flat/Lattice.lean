@@ -31,6 +31,7 @@ def flatClosure (M : Matroid α) (X : Set α) : M.FlatOf := ⟨_, M.closure_isFl
 lemma FlatOf.coe_subset_ground (F : M.FlatOf) : (F : Set α) ⊆ M.E :=
   F.coe_isFlat.subset_ground
 
+set_option backward.isDefEq.respectTransparency false in
 instance flatPartialOrder (M : Matroid α) : PartialOrder M.FlatOf where
   le F₁ F₂ := (F₁ : Set α) ⊆ F₂
   le_refl _ := Subset.rfl
@@ -287,10 +288,10 @@ lemma Covby.eRk_eq_of_ssubset_of_subset (h : F ⋖[M] F') (hFX : F ⊂ X) (hXF' 
     M.eRk X = M.eRk F + 1 := by
   obtain ⟨e, heX, heF⟩ := exists_of_ssubset hFX
   rw [← h.eRk_eq, le_antisymm_iff, and_iff_right (M.eRk_mono hXF'), h.eRk_eq,
-    ← h.isFlat_left.eRk_insert_eq_add_one ⟨(h.subset_ground_right (hXF'.subset heX)), heF⟩]
+    ← h.isFlat_left.eRk_insert_eq_add_one ⟨(h.subset_ground_right (hXF' heX)), heF⟩]
   exact M.eRk_mono (insert_subset heX hFX.subset)
 
-attribute [norm_cast] ENat.coe_add ENat.coe_one
+attribute [norm_cast] ENat.natCast_add ENat.natCast_one
 
 lemma CovBy.rk_eq_of_isRkFinite (h : F ⋖[M] F') (hFin : M.IsRkFinite F) : M.rk F' = M.rk F + 1 := by
   have hFin' : M.IsRkFinite F' := by
@@ -298,7 +299,8 @@ lemma CovBy.rk_eq_of_isRkFinite (h : F ⋖[M] F') (hFin : M.IsRkFinite F) : M.rk
     rw [← eRk_lt_top_iff] at hFin
     exact lt_tsub_iff_right.mp hFin
   have her := h.eRk_eq
-  rwa [← hFin.cast_rk_eq, ← hFin'.cast_rk_eq, ← ENat.coe_one, ← ENat.coe_add, ENat.coe_inj] at her
+  rwa [← hFin.cast_rk_eq, ← hFin'.cast_rk_eq, ← ENat.natCast_one, ← ENat.natCast_add,
+    ENat.natCast_inj] at her
 
 lemma closure_covBy_iff :
     (M.closure X) ⋖[M] F ↔ ∃ e ∈ M.E \ M.closure X, F = M.closure (insert e X) := by
@@ -339,12 +341,12 @@ lemma IsFlat.wCovby_of_subset_closure_insert (hF₀ : M.IsFlat F₀) (hF₁ : M.
 lemma Indep.closure_diff_covBy (hI : M.Indep I) (he : e ∈ I) :
     M.closure (I \ {e}) ⋖[M] M.closure I := by
   simpa [closure_insert_closure_eq_closure_insert, he] using
-    (M.closure_isFlat _).covBy_closure_insert (notMem_closure_diff_of_mem hI he)
+    (M.closure_isFlat _).covBy_closure_insert (notMem_closure_sdiff_of_mem hI he)
       (hI.subset_ground he)
 
 lemma Indep.covBy_closure_insert (hI : M.Indep I) (he : e ∈ M.E \ M.closure I) :
     M.closure I ⋖[M] M.closure (insert e I) := by
-  simpa [notMem_of_mem_diff_closure he] using
+  simpa [notMem_of_mem_sdiff_closure he] using
     (hI.insert_indep_iff.2 <| .inl he).closure_diff_covBy (.inl rfl)
 
 lemma CovBy.eq_closure_insert_of_mem_diff (h : F ⋖[M] F') (he : e ∈ F' \ F) :
@@ -360,7 +362,7 @@ lemma IsFlat.covBy_iff_eRelRk_eq_one (hF₀ : M.IsFlat F₀) (hF : M.IsFlat F) :
   · rintro ⟨e, ⟨he, heE⟩, rfl⟩
     refine ⟨M.subset_closure_of_subset (subset_insert _ _), ⟨e, ⟨?_, heE⟩, rfl.subset⟩⟩
     exact M.mem_closure_of_mem (mem_insert _ _)
-  · apply diff_subset_diff_left hF.subset_ground he
+  · apply sdiff_subset_sdiff_left hF.subset_ground he
   exact hF.closure_subset_iff_subset.2 <| insert_subset he.1 hss
 
 lemma IsFlat.covBy_iff_eRelRk_eq_one_of_subset (hF₀ : M.IsFlat F₀) (hF : M.IsFlat F)
@@ -371,8 +373,9 @@ lemma IsFlat.covBy_iff_rk_eq_add_one [RankFinite M] (hF₀ : M.IsFlat F₀) (hF 
     F₀ ⋖[M] F ↔ F₀ ⊆ F ∧ M.rk F = M.rk F₀ + 1 := by
   rw [hF₀.covBy_iff_eRelRk_eq_one hF, and_congr_right_iff]
   intro hss
-  rw [(M.isRkFinite_set _).eRelRk_eq_sub hss, eq_comm, ← cast_rk_eq, ← cast_rk_eq, ← ENat.coe_sub,
-    ← ENat.coe_one, ENat.coe_inj, eq_tsub_iff_add_eq_of_le (M.rk_mono hss), eq_comm, add_comm]
+  rw [(M.isRkFinite_set _).eRelRk_eq_sub hss, eq_comm, ← cast_rk_eq, ← cast_rk_eq,
+    ← ENat.natCast_sub, ← ENat.natCast_one, ENat.natCast_inj, eq_tsub_iff_add_eq_of_le
+    (M.rk_mono hss), eq_comm, add_comm]
 
 lemma CovBy.eRelRk_eq_one (h : F₀ ⋖[M] F₁) : M.eRelRk F₀ F₁ = 1 :=
   ((h.isFlat_left.covBy_iff_eRelRk_eq_one h.isFlat_right).1 h).2
@@ -428,11 +431,11 @@ lemma IsFlat.exists_covBy_right_of_ssubset (hF₀ : M.IsFlat F₀) (hF₁ : M.Is
     exact hss.ne rfl
   obtain ⟨e, heJ, heI⟩ := exists_of_ssubset hssu
   refine ⟨M.closure (J \ {e}), hI.subset_closure.trans
-    (M.closure_subset_closure (subset_diff_singleton hIJ heI)), ?_⟩
+    (M.closure_subset_closure (subset_sdiff_singleton hIJ heI)), ?_⟩
   convert (M.closure_isFlat (J \ {e})).covBy_closure_insert ?_ (hJ.indep.subset_ground heJ)
-  · rw [closure_insert_closure_eq_closure_insert, insert_diff_singleton, insert_eq_of_mem heJ,
+  · rw [closure_insert_closure_eq_closure_insert, insert_sdiff_singleton, insert_eq_of_mem heJ,
       hF₁.eq_closure_of_isBasis hJ]
-  exact hJ.indep.notMem_closure_diff_of_mem heJ
+  exact hJ.indep.notMem_closure_sdiff_of_mem heJ
 
 lemma CovBy.covBy_closure_union_of_inter_covBy (h₀ : F₀ ∩ F₁ ⋖[M] F₀) (h₁ : F₀ ∩ F₁ ⋖[M] F₁) :
     F₀ ⋖[M] M.closure (F₀ ∪ F₁) := by
@@ -445,6 +448,7 @@ lemma CovBy.covBy_closure_union_of_inter_covBy (h₀ : F₀ ∩ F₁ ⋖[M] F₀
   exact h₀.isFlat_right.covBy_closure_insert (fun h ↦ he₁.2 ⟨h, he₁.1⟩)
     (h₁.isFlat_right.subset_ground he₁.1)
 
+set_option backward.isDefEq.respectTransparency false in
 instance {M : Matroid α} : IsWeakUpperModularLattice M.FlatOf where
   covBy_sup_of_inf_covBy_covBy := by
     rintro ⟨F₀, hF₀⟩ ⟨F₁, hF₁⟩
@@ -501,14 +505,16 @@ lemma CovBy.insert_isBasis (hFF' : F ⋖[M] F') (hI : M.IsBasis I F) (he : e ∈
     (forall_nonempty := by
       rintro _ ⟨_, hF₁, rfl⟩; exact nonempty_iff_ne_empty.mp <| exists_of_ssubset hF₁.ssubset)
 
+set_option backward.isDefEq.respectTransparency false in
 @[simp]
 lemma IsFlat.covByPartition_supp (hF : M.IsFlat F) : hF.covByPartition.supp = M.E \ F := by
   simp only [covByPartition, Partition.supp_ofPairwiseDisjoint', sSup_eq_sUnion, sUnion_image,
-    mem_setOf_eq, Set.ext_iff, mem_iUnion, mem_diff, exists_and_left, exists_prop]
+    mem_ofPred_eq, Set.ext_iff, mem_iUnion, mem_sdiff, exists_and_left, exists_prop]
   exact fun e ↦ ⟨fun ⟨F', heF', hlt, h⟩ ↦ ⟨hlt.isFlat_right.subset_ground heF', h⟩,
     fun ⟨he,heF⟩ ↦ ⟨M.closure (insert e F), M.mem_closure_of_mem (mem_insert _ _),
     hF.covBy_closure_insert heF, heF⟩⟩
 
+set_option backward.isDefEq.respectTransparency false in
 @[simp] lemma IsFlat.mem_covByPartition_iff {X : Set α} (hF : M.IsFlat F) :
     X ∈ hF.covByPartition ↔ ∃ F', ((F ⋖[M] F') ∧ F' \ F = X) := by
   simp [IsFlat.covByPartition]
@@ -525,17 +531,17 @@ lemma IsFlat.covByPartition_supp (hF : M.IsFlat F) : hF.covByPartition.supp = M.
       (and_iff_left inter_subset_left)]
     rintro f ⟨rfl, hf⟩
     exact by_contra fun hfF ↦ (hF.covByPartition_supp ▸ he) ⟨hf, hfF⟩
-  rw [← closure_inter_ground, hrw, hF.closure, diff_self, hF.covByPartition.partOf_eq_empty he]
+  rw [← closure_inter_ground, hrw, hF.closure, sdiff_self, hF.covByPartition.partOf_eq_empty he]
 
 @[simp] lemma IsFlat.rel_covByPartition_iff (hF : M.IsFlat F) {e f : α} :
     hF.covByPartition e f ↔
       e ∈ M.E \ F ∧ f ∈ M.E \ F ∧ M.closure (insert e F) = M.closure (insert f F) := by
-  simp only [hF.covByPartition.rel_iff_partOf_eq_partOf', partOf_covByPartition_eq, mem_diff,
+  simp only [hF.covByPartition.rel_iff_partOf_eq_partOf', partOf_covByPartition_eq, mem_sdiff,
     exists_prop, and_congr_right_iff, hF.covByPartition_supp]
   refine fun _ _  ↦ ⟨fun h ↦ ?_, fun h ↦ by rw [h]⟩
   rw [← union_eq_self_of_subset_right (M.closure_subset_closure (subset_insert e F)),
     ← union_eq_self_of_subset_right (M.closure_subset_closure (subset_insert f F)), hF.closure,
-    ← diff_union_self, h, diff_union_self]
+    ← sdiff_union_self, h, sdiff_union_self]
 
 lemma IsFlat.rel_covByPartition_iff' (hF : M.IsFlat F) (he : e ∈ M.E \ F) :
     hF.covByPartition e f ↔ M.closure (insert e F) = M.closure (insert f F) := by

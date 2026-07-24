@@ -120,8 +120,8 @@ lemma BijOn.insert_notMem (h : BijOn f s t) (hx : x ∉ s) (hx' : f x ∉ t) :
   simpa [h.bijOn_insert_iff hx]
 
 lemma BijOn.diff_singleton (h : BijOn f s t) (hx : x ∈ s) : BijOn f (s \ {x}) (t \ {f x}) := by
-  convert h.subset_left diff_subset
-  rw [h.injOn.image_diff, h.image_eq, inter_eq_self_of_subset_right (by simpa), image_singleton]
+  convert h.subset_left sdiff_subset
+  rw [h.injOn.image_sdiff, h.image_eq, inter_eq_self_of_subset_right (by simpa), image_singleton]
 
 lemma BijOn.bijOn_update [DecidableEq α] (h : BijOn f s t) (hx : x ∈ s) (hy : y ∉ t) :
     BijOn (Function.update f x y) s (Insert.insert y (t \ {f x})) := by
@@ -137,7 +137,8 @@ variable {f : α → β} {x : α} {y : β}
 @[simp] lemma injective_const_iff : Injective (fun (_ : α) ↦ y) ↔ Subsingleton α :=
   ⟨fun h ↦ ⟨fun _ _ ↦ h rfl⟩, fun _ _ _ _ ↦ Subsingleton.elim ..⟩
 
-@[simp] lemma restrict_const (s : Set α) (y : β) : (s.restrict (fun _ : α ↦ y)) = fun _ ↦ y := rfl
+@[simp] lemma domRestrict_const (s : Set α) (y : β) :
+  (s.domRestrict (fun _ : α ↦ y)) = fun _ ↦ y := rfl
 
 @[simps] def Equiv.sumSet {s t : Set α} [DecidablePred (· ∈ s)] (h : Disjoint s t) :
     s ⊕ t ≃ ↥(s ∪ t) where
@@ -153,7 +154,7 @@ variable {f : α → β} {x : α} {y : β}
     simp [show x ∉ s from fun hxs ↦ h.ne_of_mem hxs hx rfl]
 
 @[simp] lemma Equiv.sumSet_symm_sum_elim {s t : Set α} [DecidablePred (· ∈ s)] (h : Disjoint s t)
-    {f : α → β} {x : ↥(s ∪ t)} : Sum.elim (s.restrict f) (t.restrict f)
+    {f : α → β} {x : ↥(s ∪ t)} : Sum.elim (s.domRestrict f) (t.domRestrict f)
       ((Equiv.sumSet h).symm x) = f x := by
   by_cases h : x.1 ∈ s <;> simp [h]
 

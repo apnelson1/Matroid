@@ -29,7 +29,7 @@ lemma IsWalk.isPath_of_length_eq_eDist (hP : G.IsWalk P)
     (hlen : P.length = G.eDist P.first P.last) : G.IsPath P := by
   classical
   rw [isPath_iff, and_iff_right hP, ← dedup_eq_self_iff]
-  refine P.dedup_isSublist.eq_of_length_ge <| (ENat.coe_le_coe).1 ?_
+  refine P.dedup_isSublist.eq_of_length_ge <| (ENat.natCast_le_natCast).1 ?_
   rw [hlen, ← dedup_first, ← dedup_last]
   apply (hP.sublist P.dedup_isSublist).eDist_le_length
 
@@ -84,7 +84,7 @@ lemma Adj.eDist_le_one (hxy : G.Adj x y) : G.eDist x y ≤ 1 := by
   simpa using he.walk_isWalk.eDist_le_length
 
 lemma Adj.eDist_eq_one_of_ne (hxy : G.Adj x y) (hne : x ≠ y) : G.eDist x y = 1 :=
-  hxy.eDist_le_one.antisymm <| by simp [ENat.one_le_iff_ne_zero, hne]
+  hxy.eDist_le_one.antisymm <| by simp [Order.one_le_iff_ne_zero, hne]
 
 lemma eDist_triangle (G : Graph α β) (x y z : α) : G.eDist x z ≤ G.eDist x y + G.eDist y z := by
   wlog hxy : G.ConnBetween x y
@@ -164,7 +164,7 @@ lemma dist_triangle (hxy : G.ConnBetween x y) (z) :
     G.dist x z ≤ G.dist x y + G.dist y z := by
   by_cases hxz : G.ConnBetween x z
   · have hyz : G.ConnBetween y z := hxy.symm.trans hxz
-    rw [← ENat.coe_le_coe, Nat.cast_add, hxy.cast_dist, hyz.cast_dist,
+    rw [← ENat.natCast_le_natCast, Nat.cast_add, hxy.cast_dist, hyz.cast_dist,
       (hxy.trans hyz).cast_dist]
     exact eDist_triangle G x y z
   simp [Graph.dist, eDist_eq_top_iff.2 hxz]
@@ -179,13 +179,13 @@ structure IsShortestPath (G : Graph α β) (P : WList α β) : Prop where
 
 lemma IsShortestPath.length_eq_dist (hP : G.IsShortestPath P) :
     P.length = G.dist P.first P.last := by
-  rw [← ENat.coe_inj, hP.length_eq_eDist,
+  rw [← ENat.natCast_inj, hP.length_eq_eDist,
     hP.isPath.isWalk.connBetween_first_last.cast_dist]
 
 lemma IsWalk.isShortestPath_of_length_le (hP : G.IsWalk P)
     (heDist : P.length ≤ G.dist P.first P.last) : G.IsShortestPath P := by
   have hlen : P.length = G.eDist P.first P.last := by
-    rw [← hP.connBetween_first_last.cast_dist, ENat.coe_inj]
+    rw [← hP.connBetween_first_last.cast_dist, ENat.natCast_inj]
     exact heDist.antisymm <| hP.dist_le_length
   exact ⟨hP.isPath_of_length_eq_eDist hlen, hlen⟩
 

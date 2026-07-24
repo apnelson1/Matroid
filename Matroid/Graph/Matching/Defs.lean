@@ -43,7 +43,7 @@ lemma le_matchingNumber_of_mem_matchingNumberSet {n} (hn : n ∈ G.matchingNumbe
 
 lemma IsMaxMatching.encard (h : G.IsMaxMatching M) : M.encard = ν(G) := by
   refine IsGreatest.csSup_eq ⟨h.encard_mem_matchingNumberSet, ?_⟩ |>.symm
-  simp only [upperBounds, matchingNumberSet, mem_setOf_eq, forall_exists_index, and_imp]
+  simp only [upperBounds, matchingNumberSet, mem_ofPred_eq, forall_exists_index, and_imp]
   grind only [max]
 
 lemma IsMatching.isMaxMatching_of_encard_eq (hM : G.IsMatching M) (h : M.encard = ν(G)) :
@@ -317,7 +317,7 @@ lemma IsCover.of_deleteVerts (h : (G - X).IsCover S) : G.IsCover ((V(G) ∩ X) �
         refine hexy.of_le_of_mem deleteVerts_le ?_
         -- TODO: add grind tags for these simps; in general whenever the pattern
         -- `simp; grind` shows up, add grind tags to those simp lemmas
-        simp only [edgeSet_deleteVerts, mem_setOf_eq]; grind
+        simp only [edgeSet_deleteVerts, mem_ofPred_eq]; grind
       grind [h.mem_or_mem_of_isLink hexy]
     refine ⟨x, ?_, hexy.inc_left⟩
     have : x ∈ V(G) := hexy.left_mem
@@ -429,7 +429,7 @@ lemma exists_isMaxMatching' (G : Graph α β) (hν : ν(G) ≠ ⊤) : ∃ M, G.I
       have hi_le : i ≤ ν(G) := le_matchingNumber_of_mem_matchingNumberSet hi
       have hj_le : j ≤ ν(G) := le_matchingNumber_of_mem_matchingNumberSet hj
       enat_to_nat!
-      simp only [ENat.toNat_coe] at heq
+      simp only [ENat.toNat_natCast] at heq
       assumption
     have im_eq : ENat.toNat '' G.matchingNumberSet ⊆ {i | i ≤ ν(G).toNat} := by
       intro i hi
@@ -469,7 +469,7 @@ lemma IsMatching.mapToCover_range_eq_of_encard_eq [G.Finite] (hS : G.IsCover S)
     simp only [ncard_image_of_injective _ Subtype.val_injective,
       ncard_range_of_injective (hM.mapToCover_inj hS), Nat.card_coe_set_eq]
   rwa [← subset_iff_eq_of_ncard_le ?_ S_finite]
-  simp only [← S_finite.cast_ncard_eq, ← M_finite.cast_ncard_eq, ENat.coe_inj] at h
+  simp only [← S_finite.cast_ncard_eq, ← M_finite.cast_ncard_eq, ENat.natCast_inj] at h
   rw [this, h]
 
 -- TODO: rename
@@ -528,7 +528,7 @@ lemma IsMatching.union {H₁ H₂ : Graph α β} {M₁ M₂ : Set β} (hM₁ : H
         (hdisj : H.StronglyDisjoint K) : ∀ ⦃e⦄, e ∈ M → V(H ∪ K, e) = V(H, e) := by
       intro e he
       ext x
-      simp only [endSet, mem_setOf_eq, hdisj.compatible.union_inc_iff]
+      simp only [endSet, mem_ofPred_eq, hdisj.compatible.union_inc_iff]
       refine ⟨?_, by grind⟩
       rintro (_ | h) <;> [assumption ; exfalso]
       grind [h.edge_mem, hdisj.edge, hM.subset he]
@@ -631,7 +631,7 @@ lemma IsMatching.covering_edge_inc (hM : G.IsMatching M) (x : V(G, M)) :
   generalize_proofs pf
   grind only [pf.choose_spec]
 
-@[simp, grind →]
+-- @[simp, grind →]
 lemma IsMatching.covering_edge_unique (hM : G.IsMatching M) (heM : e ∈ M) (hex : G.Inc e x) :
     e = hM.covering_edge ⟨x, by grind⟩ := by
   simp only [covering_edge, and_imp]
@@ -682,7 +682,7 @@ lemma _root_.WList.nonempty_iff_toGraph_edgeSet_nonempty {w : WList α β} :
   set p := hP.choose
   change {x | P.IsLeaf x} = {p.first, p.last}
   ext x
-  refine ⟨?_, ?_⟩ <;>simp only [mem_setOf_eq, mem_insert_iff, mem_singleton_iff]
+  refine ⟨?_, ?_⟩ <;>simp only [mem_ofPred_eq, mem_insert_iff, mem_singleton_iff]
   · exact fun hx ↦ hx.eq_first_or_eq_last_of_mem_path hp
       (by rw [← WList.mem_vertexSet_iff, ← WList.toGraph_vertexSet, ← heq]; exact hx.mem)
   rw [heq, ← nonempty_iff_toGraph_edgeSet_nonempty] at hne

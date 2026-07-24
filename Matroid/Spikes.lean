@@ -39,12 +39,12 @@ lemma basis_freeLift_iff (M : Matroid α) [M✶.RankPos] (hB' : B ⊆ M.E := by 
     · simp at hen
       exact hen hein
     have : (insert e (M.E \ B)) ⊆ M.E := by
-      refine insert_subset hein diff_subset
+      refine insert_subset hein sdiff_subset
     have h1 := M.dual_isBase_iff.1 heB
     have hf : (M.E \ insert e (M.E \ B)) = (B \ {e}) := by
-      simp_all only [truncate_ground_eq, dual_ground, mem_diff, not_and, not_not, dual_isBase_iff]
+      simp_all only [truncate_ground_eq, dual_ground, mem_sdiff, not_and, not_not, dual_isBase_iff]
       ext x : 1
-      simp_all only [mem_diff, mem_insert_iff, not_or, not_and, not_not, mem_singleton_iff]
+      simp_all only [mem_sdiff, mem_insert_iff, not_or, not_and, not_not, mem_singleton_iff]
       apply Iff.intro
       · intro a
         simp_all only [not_false_eq_true, and_self]
@@ -62,13 +62,13 @@ lemma basis_freeLift_iff (M : Matroid α) [M✶.RankPos] (hB' : B ⊆ M.E := by 
     rwa [hrw]
   apply (M✶.truncate).dual_isBase_iff.2
   apply truncate_isBase_iff.2
-  refine ⟨ e, Set.notMem_diff_of_mem heB , ?_ ⟩
+  refine ⟨ e, Set.notMem_sdiff_of_mem heB , ?_ ⟩
   apply M.dual_isBase_iff.2
   have hrw : M✶.truncate.E = M.E := by exact rfl
   rw [hrw]
   have hrw : M.E \ insert e (M.E \ B) = B \ {e}  := by
     ext x : 1
-    simp_all only [mem_diff, mem_insert_iff, not_or, not_and, not_not, mem_singleton_iff]
+    simp_all only [mem_sdiff, mem_insert_iff, not_or, not_and, not_not, mem_singleton_iff]
     apply Iff.intro
     · intro a
       simp_all only [not_false_eq_true, and_self]
@@ -105,14 +105,14 @@ lemma truncate_freeLift_comm (M : Matroid α) [M.RankPos] [M✶.RankPos] :
       obtain ⟨f, hf⟩ := hBe.nonempty
       refine ⟨ f, hf, ?_ ⟩
       apply M.truncate_isBase_iff.2
-      refine ⟨ f, Set.notMem_diff_of_mem rfl, ?_ ⟩
+      refine ⟨ f, Set.notMem_sdiff_of_mem rfl, ?_ ⟩
       simp
       rwa [insert_eq_of_mem hf ]
     refine ⟨ e, mem_of_mem_insert_of_ne heB hxe, ?_ ⟩
     apply truncate_isBase_iff.2
     refine ⟨x, ?_, ?_ ⟩
     · simpa [hxe.symm]
-    rwa [insert_diff_singleton_comm hxe.symm]
+    rwa [insert_sdiff_singleton_comm hxe.symm]
   intro hTL
   apply truncate_isBase_iff.2
   obtain ⟨x, hxB, htB⟩ := ((M.truncate).basis_freeLift_iff hBE).1 hTL
@@ -133,7 +133,7 @@ lemma truncate_freeLift_comm (M : Matroid α) [M.RankPos] [M✶.RankPos] :
     refine ⟨ (IsBase.subset_ground hBe) (mem_insert e (B \ {x})), hBE ⟩
   apply (M.basis_freeLift_iff hE).2
   refine ⟨x, mem_insert_of_mem e hxB, ?_ ⟩
-  rwa [← insert_diff_singleton_comm hne]
+  rwa [← insert_sdiff_singleton_comm hne]
 
 def preFreeSpike (ι : Type*) (α : Type*) : Matroid (ι × α ) :=
     (freeOn (univ : Set ι)).comap Prod.fst
@@ -215,7 +215,7 @@ lemma pre_free_Bool_self_dual (ι : Type*) : preFreeSpike ι Bool = (preFreeSpik
     refine ⟨ ?_, ?_ ⟩
     · rw[←hcom, preFreeSpike_ground]
       ext x
-      simp only [mem_image, mem_diff, mem_univ, true_and, Prod.exists, exists_and_right,
+      simp only [mem_image, mem_sdiff, mem_univ, true_and, Prod.exists, exists_and_right,
       exists_eq_right]
       constructor
       · intro h
@@ -228,8 +228,8 @@ lemma pre_free_Bool_self_dual (ι : Type*) : preFreeSpike ι Bool = (preFreeSpik
     rw [preFreeSpike_ground]
     intro x hx y hy hxy
     have h1: x.2 = y.2 := by
-      simp only [mem_diff, mem_univ, true_and] at hx
-      simp only [mem_diff, mem_univ, true_and] at hy
+      simp only [mem_sdiff, mem_univ, true_and] at hx
+      simp only [mem_sdiff, mem_univ, true_and] at hy
       by_contra hxny
       have hx:  (x.1, x.2) ∉ B := hx
       have hy:  (y.1, y.2) ∉ B := hy
@@ -253,7 +253,7 @@ lemma pre_free_Bool_self_dual (ι : Type*) : preFreeSpike ι Bool = (preFreeSpik
   constructor
   · rw [← hcom]
     ext x
-    simp only [mem_image, mem_diff, mem_univ, true_and, Prod.exists, exists_and_right,
+    simp only [mem_image, mem_sdiff, mem_univ, true_and, Prod.exists, exists_and_right,
     exists_eq_right]
     constructor
     · intro h
@@ -277,6 +277,7 @@ lemma pre_free_Bool_self_dual (ι : Type*) : preFreeSpike ι Bool = (preFreeSpik
     exact h1 hx
   exact Prod.ext hxy h1
 
+set_option backward.isDefEq.respectTransparency false in
 lemma freeSpike_self_dual (ι : Type*) :
     (preFreeSpike ι Bool).freeLift.truncate = ((preFreeSpike ι Bool).freeLift.truncate)✶ := by
   obtain hι | hι := isEmpty_or_nonempty ι
@@ -507,7 +508,7 @@ def Twolegs {ι : Type*} (i j : ι) : Set (ι × Bool) := {(i, true),(i,false),(
 --       obtain ⟨x, hxB, hx1 ⟩ := hnx
 --       use x
 --       refine ⟨?_, ?_ ⟩
---       · refine notMem_diff_of_mem hxB
+--       · refine notMem_sdiff_of_mem hxB
 --       apply ((circuitOn univ).comap Prod.fst).dual_isBase_iff.2
 --       rw [←freeSpike_def ι]
 --       rw [double_circuitOn_ground_set ι, freeSpike_ground_set ι]
@@ -519,7 +520,7 @@ def Twolegs {ι : Type*} (i j : ι) : Set (ι × Bool) := {(i, true),(i,false),(
 --         cases hcases with
 --         | inl h2 =>
 --           rw [←h2]
---           refine ⟨ notMem_diff_of_mem rfl, ?_ ⟩
+--           refine ⟨ notMem_sdiff_of_mem rfl, ?_ ⟩
 --           have h3 : (x.1, false) ∉ B := by
 --             have huse := hij x.1 hx1
 --             rw [ double_circuitOn_ground_set ι] at huse
@@ -535,9 +536,9 @@ def Twolegs {ι : Type*} (i j : ι) : Set (ι × Bool) := {(i, true),(i,false),(
 --             have hc1 := hij x.1 hx1
 --             rw [double_circuitOn_ground_set ι] at hc1
 --             have hg1 : (x.1, false) ∉ univ \ insert e B := by
---               refine notMem_diff_of_mem (mem_insert_of_mem e h)
+--               refine notMem_sdiff_of_mem (mem_insert_of_mem e h)
 --             have hg2 : ((x.1, true) ∉ univ \ insert e B) := by
---               refine notMem_diff_of_mem ?_
+--               refine notMem_sdiff_of_mem ?_
 --               rw [←h2 ]
 --               exact mem_insert_of_mem e hxB
 --             have hcon1:= (xor_iff_or_and_not_and
@@ -553,12 +554,12 @@ def Twolegs {ι : Type*} (i j : ι) : Set (ι × Bool) := {(i, true),(i,false),(
 --               exact Classical.not_imp.mp fun a ↦ hg2 (a hg1)
 --               --apply not_and_or.1
 --             exact hcon2 hcon1
---           simp_all only [subset_univ, dual_isBase_iff, ne_eq, mem_diff, mem_univ,
+--           simp_all only [subset_univ, dual_isBase_iff, ne_eq, mem_sdiff, mem_univ,
 --             mem_insert_iff, not_or, true_and,
 --             not_and, not_not, mem_singleton_iff, false_and, not_false_eq_true]
 --         | inr h2 =>
 --           rw [←h2]
---           refine ⟨ ?_, notMem_diff_of_mem rfl⟩
+--           refine ⟨ ?_, notMem_sdiff_of_mem rfl⟩
 
 --           sorry
 --       intro j hj1

@@ -29,18 +29,18 @@ instance [h : M.Loopless] {D : Set α} : (M ＼ D).Loopless :=
 lemma removeLoops_eq_delete (M : Matroid α) : M.removeLoops = M ＼ M.loops := by
   rw [← restrict_compl, removeLoops]
   convert rfl using 2
-  simp [Set.ext_iff, isNonloop_iff, mem_diff, and_comm]
+  simp [Set.ext_iff, isNonloop_iff, mem_sdiff, and_comm]
 
 lemma removeLoops_del_eq_removeLoops (h : X ⊆ M.loops) :
     (M ＼ X).removeLoops = M.removeLoops := by
   rw [removeLoops_eq_delete, delete_delete, removeLoops_eq_delete, loops, delete_closure_eq,
-    empty_diff, union_diff_self, closure_empty, union_eq_self_of_subset_left h]
+    empty_sdiff, union_sdiff_self, closure_empty, union_eq_self_of_subset_left h]
 
 @[simp]
 lemma sum_delete {α β : Type*} (M : Matroid α) (N : Matroid β) (D : Set (α ⊕ β)) :
     (M.sum N) ＼ D = (M ＼ .inl ⁻¹' D).sum (N ＼ .inr ⁻¹' D) := by
   refine ext_indep ?_ fun I hI ↦ ?_
-  · simp only [delete_ground, sum_ground, image_diff Sum.inl_injective]
+  · simp only [delete_ground, sum_ground, image_sdiff Sum.inl_injective]
     grind
   simp only [delete_indep_iff, sum_indep_iff]
   nth_rw 1 [← image_preimage_inl_union_image_preimage_inr D]
@@ -48,28 +48,29 @@ lemma sum_delete {α β : Type*} (M : Matroid α) (N : Matroid β) (D : Set (α 
 
 lemma disjointSigma_delete {ι : Type*} (M : ι → Matroid α) h (D : Set α):
     Matroid.disjointSigma M h ＼ D = Matroid.disjointSigma (fun i ↦ (M i ＼ D))
-      (h.mono fun _ _ ↦ Disjoint.mono diff_subset diff_subset) := by
-  refine ext_indep (by simp [iUnion_diff]) fun I hI ↦ ?_
-  simp only [delete_indep_iff, disjointSigma_indep_iff, delete_ground, ← iUnion_diff, subset_diff]
+      (h.mono fun _ _ ↦ Disjoint.mono sdiff_subset sdiff_subset) := by
+  refine ext_indep (by simp [iUnion_sdiff]) fun I hI ↦ ?_
+  simp only [delete_indep_iff, disjointSigma_indep_iff, delete_ground, ← iUnion_sdiff, subset_sdiff]
   by_cases! hID : ¬ Disjoint I D
   · simp [hID]
-  simp [← inter_diff_assoc, inter_diff_right_comm, hID.sdiff_eq_left,
+  simp [← inter_sdiff_assoc, inter_sdiff_right_comm, hID.sdiff_eq_left,
     hID.mono_left inter_subset_left, hID]
 
+set_option backward.isDefEq.respectTransparency false in
 lemma disjointSum_delete {M N : Matroid α} (hMN : Disjoint M.E N.E) :
     (M.disjointSum N hMN) ＼ D = (M ＼ D).disjointSum (N ＼ D)
-      (hMN.mono diff_subset diff_subset) := by
+      (hMN.mono sdiff_subset sdiff_subset) := by
   rw [disjointSum_eq_disjointSigma, disjointSigma_delete, disjointSum_eq_disjointSigma]
   convert rfl with i
   cases i with simp
 
 lemma disjointSum_delete_left {M N : Matroid α} (hMN : Disjoint M.E N.E) (hD : D ⊆ M.E) :
-    (M.disjointSum N hMN) ＼ D = (M ＼ D).disjointSum N (hMN.mono_left diff_subset) := by
+    (M.disjointSum N hMN) ＼ D = (M ＼ D).disjointSum N (hMN.mono_left sdiff_subset) := by
   rw! [disjointSum_delete, ← N.delete_inter_ground_eq, (hMN.mono_left hD).inter_eq, delete_empty]
   rfl
 
 lemma disjointSum_delete_right {M N : Matroid α} (hMN : Disjoint M.E N.E) (hD : D ⊆ N.E) :
-    (M.disjointSum N hMN) ＼ D = M.disjointSum (N ＼ D) (hMN.mono_right diff_subset) := by
+    (M.disjointSum N hMN) ＼ D = M.disjointSum (N ＼ D) (hMN.mono_right sdiff_subset) := by
   rw [disjointSum_comm, disjointSum_delete_left hMN.symm hD, disjointSum_comm]
 
 lemma Dep.delete_of_disjoint (hX : M.Dep X) (hXD : Disjoint X D) : (M ＼ D).Dep X := by
@@ -78,15 +79,17 @@ lemma Dep.delete_of_disjoint (hX : M.Dep X) (hXD : Disjoint X D) : (M ＼ D).Dep
 lemma Dep.of_delete (h : (M ＼ D).Dep X) : M.Dep X :=
   (delete_dep_iff.1 h).1
 
+set_option backward.isDefEq.respectTransparency false in
 lemma removeLoops_disjointSum (M : Matroid α) : M = M.removeLoops.disjointSum (loopyOn M.loops)
     (by simp [removeLoops_eq_delete, disjoint_sdiff_left]) := by
   refine ext_indep ?_ ?_
   · simp [removeLoops_ground_eq_diff, union_eq_self_of_subset_right M.loops_subset_ground]
-  simp only [disjointSum_indep_iff, removeLoops_ground_eq, setOf_isNonloop_eq, removeLoops_indep_eq,
-    loopyOn_ground, loopyOn_indep_iff, diff_union_of_subset M.loops_subset_ground]
+  simp only [disjointSum_indep_iff, removeLoops_ground_eq, setOfPred_isNonloop_eq,
+    removeLoops_indep_eq, loopyOn_ground, loopyOn_indep_iff,
+    sdiff_union_of_subset M.loops_subset_ground]
   simp +contextual only [and_true]
   exact fun I hIE ↦ ⟨fun hI ↦ ⟨hI.inter_right _, hI.disjoint_loops.inter_eq⟩,
-    fun hI ↦ hI.1.subset <| subset_inter rfl.subset <| subset_diff.2 ⟨hIE,
+    fun hI ↦ hI.1.subset <| subset_inter rfl.subset <| subset_sdiff.2 ⟨hIE,
       disjoint_iff_inter_eq_empty.2 hI.2⟩⟩
 
 @[simp]
@@ -94,7 +97,7 @@ lemma loopyOn_delete (E X : Set α) : (loopyOn E) ＼ X = loopyOn (E \ X) := by
   rw [← restrict_compl, loopyOn_restrict, loopyOn_ground]
 
 @[simp] lemma freeOn_delete (E X : Set α) : (freeOn E) ＼ X = freeOn (E \ X) := by
-  simp [ext_iff_indep, subset_diff]
+  simp [ext_iff_indep, subset_sdiff]
 
 lemma delete_restrict_eq_restrict (M : Matroid α) {D R : Set α} (hDR : Disjoint D R) :
     M ＼ D ↾ R = M ↾ R := by
@@ -109,8 +112,8 @@ lemma delete_restrict_ground_of_subset_loops {L} (hL : L ⊆ M.loops) : (M ＼ L
 lemma IsRestriction.delete (h : N ≤r M) (D : Set α) : N ＼ D ≤r M ＼ D := by
   obtain ⟨R, hR, rfl⟩ := h
   rw [delete_eq_restrict, delete_eq_restrict, restrict_ground_eq,
-    restrict_restrict_eq _ diff_subset]
-  exact IsRestriction.of_subset M <| diff_subset_diff_left hR
+    restrict_restrict_eq _ sdiff_subset]
+  exact IsRestriction.of_subset M <| sdiff_subset_sdiff_left hR
 
 lemma restrict_comap {β : Type*} (M : Matroid β) (f : α → β) (R : Set β) :
     (M ↾ R).comap f = M.comap f ↾ (f ⁻¹' R) := by
@@ -120,7 +123,7 @@ lemma restrict_comap {β : Type*} (M : Matroid β) (f : α → β) (R : Set β) 
 
 lemma delete_comap {β : Type*} (M : Matroid β) (f : α → β) (D : Set β) :
     (M ＼ D).comap f = M.comap f ＼ (f ⁻¹' D) := by
-  rw [delete_eq_restrict, restrict_comap, preimage_diff, ← comap_ground_eq, delete_eq_restrict]
+  rw [delete_eq_restrict, restrict_comap, preimage_sdiff, ← comap_ground_eq, delete_eq_restrict]
 
 lemma restrict_map {β : Type*} {f : α → β} (hf : InjOn f M.E) (hR : R ⊆ M.E) :
     (M ↾ R).map f (hf.mono hR) = M.map f hf ↾ (f '' R) := by
@@ -133,8 +136,8 @@ lemma restrict_map {β : Type*} {f : α → β} (hf : InjOn f M.E) (hR : R ⊆ M
   rwa [← heq]
 
 lemma delete_map {β : Type*} {f : α → β} (hf : InjOn f M.E) (hD : D ⊆ M.E) :
-    (M ＼ D).map f (hf.mono diff_subset) = M.map f hf ＼ (f '' D) := by
-  simp_rw [delete_eq_restrict, restrict_map hf diff_subset, image_diff_of_injOn hf hD, map_ground]
+    (M ＼ D).map f (hf.mono sdiff_subset) = M.map f hf ＼ (f '' D) := by
+  simp_rw [delete_eq_restrict, restrict_map hf sdiff_subset, image_sdiff_of_injOn hf hD, map_ground]
 
 -- This belongs in `Constructions`.
 lemma indep_iff_restrict_eq_freeOn : M.Indep I ↔ (M ↾ I = freeOn I) := by
@@ -157,8 +160,8 @@ lemma Coindep.delete_nonspanning_iff (hD : M.Coindep D) :
     (M ＼ D).Nonspanning X ↔ M.Nonspanning X ∧ Disjoint X D := by
   wlog hX : X ⊆ (M ＼ D).E generalizing with aux
   · exact iff_of_false (fun h ↦ hX h.subset_ground)
-      fun h ↦ hX <| subset_diff.2 ⟨h.1.subset_ground, h.2⟩
-  obtain ⟨hXE, hdj⟩ := subset_diff.1 hX
+      fun h ↦ hX <| subset_sdiff.2 ⟨h.1.subset_ground, h.2⟩
+  obtain ⟨hXE, hdj⟩ := subset_sdiff.1 hX
   rw [and_iff_left hdj, ← not_spanning_iff, hD.delete_spanning_iff, and_iff_left hdj,
     not_spanning_iff]
 
@@ -166,10 +169,10 @@ lemma Coindep.delete_coindep_iff (hD : M.Coindep D) :
     (M ＼ D).Coindep X ↔ M.Coindep (X ∪ D) ∧ Disjoint X D := by
   wlog hX : X ⊆ (M ＼ D).E generalizing with aux
   · exact iff_of_false (fun h ↦ hX h.subset_ground)
-      (fun h ↦ hX <| subset_diff.2 ⟨subset_union_left.trans h.1.subset_ground, h.2⟩)
-  have hX' := subset_diff.1 hX
+      (fun h ↦ hX <| subset_sdiff.2 ⟨subset_union_left.trans h.1.subset_ground, h.2⟩)
+  have hX' := subset_sdiff.1 hX
   rw [coindep_iff_compl_spanning, coindep_iff_compl_spanning, hD.delete_spanning_iff, delete_ground,
-    diff_diff, union_comm, and_iff_left hX'.2, and_iff_left (by grind)]
+    sdiff_sdiff, union_comm, and_iff_left hX'.2, and_iff_left (by grind)]
 
 lemma Coindep.delete_codep_iff (hD : M.Coindep D) :
     (M ＼ D).Codep X ↔ M.Codep (X ∪ D) ∧ Disjoint X D := by
@@ -181,7 +184,7 @@ lemma girth_le_girth_delete (M : Matroid α) (D : Set α) : M.girth ≤ (M ＼ D
 
 lemma Nonspanning.of_delete (h : (M ＼ D).Nonspanning X) : M.Nonspanning X := by
   rw [nonspanning_iff, spanning_iff_closure_eq] at *
-  rw [delete_closure_eq, delete_ground, subset_diff, h.2.2.sdiff_eq_left] at h
+  rw [delete_closure_eq, delete_ground, subset_sdiff, h.2.2.sdiff_eq_left] at h
   grind
 
 lemma Nonspanning.of_isRestriction (h : N.Nonspanning X) (hNM : N ≤r M) :
@@ -195,7 +198,7 @@ lemma Coindep.delete_isSpanningRestriction (hX : M.Coindep X) : M ＼ X ≤sr M 
 lemma delete_isSpanningRestriction_iff (hX : X ⊆ M.E := by aesop_mat) :
     M ＼ X ≤sr M ↔ M.Coindep X := by
   refine ⟨fun h ↦ ?_, Coindep.delete_isSpanningRestriction⟩
-  rw [← diff_diff_cancel_left hX]
+  rw [← sdiff_sdiff_cancel_left hX]
   exact h.spanning.compl_coindep
 
 lemma IsRestriction.eq_delete (h : N ≤r M) : N = M ＼ (M.E \ N.E) := by
@@ -206,9 +209,10 @@ lemma IsRestriction.eq_of_isRestriction_of_ground_eq {N'} (h : N ≤r M) (h' : N
     (hE : N.E = N'.E) : N = N' := by
   rw [← h.eq_restrict, ← h'.eq_restrict, hE]
 
+set_option backward.isDefEq.respectTransparency false in
 lemma delete_restrict_ground_eq_disjointSum (hD : D ⊆ M.E) :
     (M ＼ D) ↾ M.E = (M ＼ D).disjointSum (loopyOn D) disjoint_sdiff_left := by
-  rw [disjointSum_loopyOn, delete_ground, diff_union_of_subset hD]
+  rw [disjointSum_loopyOn, delete_ground, sdiff_union_of_subset hD]
 
 lemma IsSpanningRestriction.exists_eq_delete (h : N ≤sr M) : ∃ D, M.Coindep D ∧ N = M ＼ D :=
   ⟨M.E \ N.E, h.spanning.compl_coindep, by rw [delete_compl h.subset, h.isRestriction.eq_restrict]⟩

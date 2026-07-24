@@ -18,7 +18,7 @@ def parallelClasses (M : Matroid α) : Partition (Set α) :=
 @[simp]
 lemma parallelClasses_supp (M : Matroid α) : M.parallelClasses.supp = {e | M.IsNonloop e} := by
   rw [parallelClasses, IsFlat.covByPartition_supp]
-  exact M.setOf_isNonloop_eq.symm
+  exact M.setOfPred_isNonloop_eq.symm
 
 @[simp]
 lemma mem_parallelClasses_supp_iff : e ∈ M.parallelClasses.supp ↔ M.IsNonloop e := by
@@ -86,12 +86,12 @@ lemma setOf_parallel_eq_closure_diff_loops (M : Matroid α) (e : α) :
   · rw [Parallel, parallelClasses, loops,
       Partition.setOf_rel_eq_partOf, (M.closure_isFlat ∅).partOf_covByPartition_eq,
       closure_insert_closure_eq_closure_insert, insert_empty_eq]
-  rw [not_isNonloop_iff_closure.1 he, diff_self, eq_empty_iff_forall_notMem]
+  rw [not_isNonloop_iff_closure.1 he, sdiff_self, eq_empty_iff_forall_notMem]
   exact fun f hf ↦ he (Parallel.isNonloop_left hf)
 
 lemma closure_eq_parallel_class_union_loops (M : Matroid α) (e : α) :
     M.closure {e} = {f | M.Parallel e f} ∪ M.loops := by
-  rw [setOf_parallel_eq_closure_diff_loops, diff_union_self, loops,
+  rw [setOf_parallel_eq_closure_diff_loops, sdiff_union_self, loops,
     union_eq_self_of_subset_right (M.closure_mono (empty_subset _))]
 
 lemma IsNonloop.parallel_self (h : M.IsNonloop e) : M.Parallel e e :=
@@ -106,24 +106,25 @@ lemma IsLoop.not_parallel (h : M.IsLoop e) (f : α) : ¬ M.Parallel e f :=
 lemma IsNonloop.parallel_iff_mem_closure (he : M.IsNonloop e) :
     M.Parallel e f ↔ e ∈ M.closure {f} := by
   refine ⟨Parallel.mem_closure, fun h ↦ ?_⟩
-  rw [closure_eq_parallel_class_union_loops, mem_union,  mem_setOf_eq, parallel_comm] at h
+  rw [closure_eq_parallel_class_union_loops, mem_union,  mem_ofPred_eq, parallel_comm] at h
   exact h.elim id (fun h' ↦ (he.not_isLoop h').elim)
 
 lemma Loopless.parallel_class_eq_closure (h : M.Loopless) (e : α) :
     {f | M.Parallel e f} = M.closure {e} := by
-  rw [setOf_parallel_eq_closure_diff_loops, h.loops_eq_empty, diff_empty]
+  rw [setOf_parallel_eq_closure_diff_loops, h.loops_eq_empty, sdiff_empty]
 
 lemma Parallel.dep_of_ne (h : M.Parallel e f) (hne : e ≠ f) : M.Dep {e,f} := by
   rw [pair_comm, ← h.isNonloop_left.indep.mem_closure_iff_of_notMem hne.symm]
   exact h.symm.mem_closure
 
 lemma parallel_iff_isCircuit (hef : e ≠ f) : M.Parallel e f ↔ M.IsCircuit {e,f} := by
-  refine ⟨fun h ↦ isCircuit_iff_dep_forall_diff_singleton_indep.2 ⟨h.dep_of_ne hef, ?_⟩, fun h ↦ ?_⟩
+  refine ⟨fun h ↦ isCircuit_iff_dep_forall_sdiff_singleton_indep.2 ⟨h.dep_of_ne hef, ?_⟩,
+    fun h ↦ ?_⟩
   · rintro x (rfl | rfl)
-    · rw [pair_diff_left hef]; exact h.isNonloop_right.indep
-    · rw [pair_diff_right hef]; exact h.isNonloop_left.indep
+    · rw [pair_sdiff_left hef]; exact h.isNonloop_right.indep
+    · rw [pair_sdiff_right hef]; exact h.isNonloop_left.indep
   rw [IsNonloop.parallel_iff_mem_closure]
-  · convert h.mem_closure_diff_singleton_of_mem (mem_insert _ _); rw [pair_diff_left hef]
+  · convert h.mem_closure_sdiff_singleton_of_mem (mem_insert _ _); rw [pair_sdiff_left hef]
   apply h.isNonloop_of_mem_of_one_lt_card _ (mem_insert _ _)
   rw [encard_pair hef]
   enat_to_nat
@@ -172,8 +173,8 @@ lemma IsNonloop.parallel_iff_forall_mem_of_mem_of_isCocircuit
   rw [henl.parallel_iff_dep hf hne, ← not_indep_iff (by grind)]
   intro hindep
   obtain ⟨B, hB, hefB⟩ := hindep.exists_isBase_superset
-  refine (h _ (hB.compl_closure_diff_singleton_isCocircuit (e := e) (by grind)) ?_).2 ?_
-  · exact ⟨henl.mem_ground, hB.indep.notMem_closure_diff_of_mem (by grind)⟩
+  refine (h _ (hB.compl_closure_sdiff_singleton_isCocircuit (e := e) (by grind)) ?_).2 ?_
+  · exact ⟨henl.mem_ground, hB.indep.notMem_closure_sdiff_of_mem (by grind)⟩
   grw [← subset_closure _ _ (by grind)]
   grind
 
@@ -198,7 +199,7 @@ lemma IsNonloop.exists_isCircuit_mem_notMem (henl : M✶.IsNonloop e) (hnp : ¬ 
   exact ⟨C, by simpa using hC, heC, notMem_subset hC.subset_ground hf⟩
 
 lemma Parallel.isLoop_contractElem (hef : M.Parallel e f) (hne : e ≠ f) : (M ／ {e}).IsLoop f := by
-  rw [isLoop_iff, contract_loops_eq, mem_diff]
+  rw [isLoop_iff, contract_loops_eq, mem_sdiff]
   exact ⟨hef.symm.mem_closure, hne.symm⟩
 
 lemma restrict_parallel_iff {R : Set α} :
@@ -211,7 +212,7 @@ lemma delete_parallel_iff {D : Set α} :
     (M ＼ D).Parallel e f ↔ M.Parallel e f ∧ e ∉ D ∧ f ∉ D := by
   rw [delete_eq_restrict, restrict_parallel_iff, and_congr_right_iff]
   intro h
-  rw [mem_diff, and_iff_right h.mem_ground_left, mem_diff, and_iff_right h.mem_ground_right]
+  rw [mem_sdiff, and_iff_right h.mem_ground_left, mem_sdiff, and_iff_right h.mem_ground_right]
 
 lemma contract_parallel_iff {C : Set α} :
     (M ／ C).Parallel e f ↔ f ∈ M.closure (insert e C) ∧ f ∉ M.closure C := by
@@ -219,7 +220,7 @@ lemma contract_parallel_iff {C : Set α} :
   · obtain ⟨hfcl, hfC⟩: f ∈ M.closure (insert e C) ∧ f ∉ C := by simpa using h.symm.mem_closure
     exact ⟨hfcl, (contract_isNonloop_iff.1 h.isNonloop_right).2⟩
   rw [parallel_comm, IsNonloop.parallel_iff_mem_closure, contract_closure_eq, singleton_union,
-    mem_diff, and_iff_right h1]
+    mem_sdiff, and_iff_right h1]
   · contrapose! h2
     exact mem_closure_of_mem' M h2
   simp [mem_ground_of_mem_closure h1, h2]
@@ -361,6 +362,7 @@ lemma closure_image_of_forall_parallel' (φ : α → α) (h_para : ∀ e, M.Para
   rw [← closure_range_of_forall_parallel'_subtype (fun x : X ↦ φ x) (fun x ↦ h_para x),
     image_eq_range]
 
+set_option backward.isDefEq.respectTransparency false in
 /-- If `φ : X ≃ Y` is such that `e` and `φ e` are always `Parallel'`, then `φ` determines a
 matroid isomorphism between `M ↾ X` and `M ↾ Y`. -/
 def isoOfMapParallelRestr {X Y : Set α} (φ : X ≃ Y) (h_para : ∀ e : X,  M.Parallel' e (φ e)) :
@@ -369,7 +371,7 @@ def isoOfMapParallelRestr {X Y : Set α} (φ : X ≃ Y) (h_para : ∀ e : X,  M.
   ( by
       have hXE : X ⊆ M.E := fun x hx ↦ (h_para ⟨x,hx⟩).mem_ground_left
       simp only [restrict_ground_eq, restrict_closure_eq', image_val_inter_self_left_eq_coe,
-        preimage_union, preimage_inter, Subtype.coe_preimage_self, inter_univ, preimage_diff]
+        preimage_union, preimage_inter, Subtype.coe_preimage_self, inter_univ, preimage_sdiff]
       intro Z
       rw [image_image]
       have hc := closure_image_of_forall_parallel'_subtype _ h_para Z
@@ -378,7 +380,7 @@ def isoOfMapParallelRestr {X Y : Set α} (φ : X ≃ Y) (h_para : ∀ e : X,  M.
       -- [closure_image_of_forall_parallel'_subtype _ h_para, image_image]
       have hYE : Y ⊆ M.E := fun y hy ↦ by simpa using (h_para (φ.symm ⟨y,hy⟩)).mem_ground_right
 
-      simp [preimage_val_eq_univ_of_subset hXE, diff_eq_empty.2 hYE]
+      simp [preimage_val_eq_univ_of_subset hXE, sdiff_eq_empty.2 hYE]
       ext x
       simp only [mem_inter_iff, mem_image, mem_preimage]
       constructor
@@ -479,7 +481,7 @@ lemma Parallel'.indep_substitute_iff (h_para : M.Parallel' e f) (he : e ∈ I) (
   refine ⟨fun hI ↦ hI.parallel'_substitute h_para he, fun hI ↦ ?_⟩
   convert hI.parallel'_substitute h_para.symm (mem_insert _ _)
   have hef : e ≠ f := by rintro rfl; exact hf he
-  simp [insert_diff_singleton_comm hef, insert_eq_of_mem he, diff_singleton_eq_self hf]
+  simp [insert_sdiff_singleton_comm hef, insert_eq_of_mem he, sdiff_singleton_eq_self hf]
 
 lemma Parallel'.eq_mapEquiv_swap (h : M.Parallel' e f) [DecidableEq α] :
     M.mapEquiv (Equiv.swap e f) = M := by
@@ -503,11 +505,11 @@ lemma Parallel'.contract_delete_comm (hef : M.Parallel' e f) :
   · rw [contract_eq_delete_of_subset_loops (by simpa),
       contract_eq_delete_of_subset_loops (by simpa), delete_comm]
   obtain rfl | hne := eq_or_ne e f; simp
-  refine ext_indep (by simp [diff_diff_comm]) fun I hI ↦ ?_
+  refine ext_indep (by simp [sdiff_sdiff_comm]) fun I hI ↦ ?_
   suffices M.Indep (insert e I) ↔ M.Indep (insert f I) by
     simpa [hef.isNonloop_left.contractElem_indep_iff, hef.isNonloop_right.contractElem_indep_iff,
       show e ∉ I by grind, show f ∉ I by grind]
-  rw [hef.parallel'.indep_substitute_iff (by simp) (by grind), insert_diff_self_of_notMem
+  rw [hef.parallel'.indep_substitute_iff (by simp) (by grind), insert_sdiff_self_of_notMem
     (by grind)]
 
 end Swap
@@ -549,7 +551,7 @@ lemma Indep.image_paraMap {φ : α → α} (hI : M.Indep I) (h_para : ∀ e ∈ 
 
 lemma Indep.of_image_paraMap {φ : α → α} (hI : M.Indep (φ '' I)) (hφ : InjOn φ I)
     (h_para : ∀ e ∈ I, M.Parallel' e (φ e)) : M.Indep I := by
-  rwa [indep_iff_range_indep_of_paraMap hφ.injective (by simpa), range_restrict]
+  rwa [indep_iff_range_indep_of_paraMap hφ.injective (by simpa), range_domRestrict]
 
 lemma indep_image_iff_of_injOn_paraMap {φ : α → α} (hφ : InjOn φ I)
     (h : ∀ e ∈ I, M.Parallel' e (φ e)) : M.Indep (φ '' I) ↔ M.Indep I :=
@@ -581,7 +583,7 @@ lemma mem_parallelClasses_iff {P : Set α} :
 @[simps] def parallelPointEquiv (M : Matroid α) : ↑(M.parallelClasses) ≃ {P // M.IsPoint P} where
   toFun P := ⟨P ∪ M.loops, by
     obtain ⟨e, he, h⟩ := mem_parallelClasses_iff_eq_closure_diff_loops.1 P.prop
-    rw [h, diff_union_self, loops, union_eq_self_of_subset_right
+    rw [h, sdiff_union_self, loops, union_eq_self_of_subset_right
       (M.closure_subset_closure (empty_subset _))]
     exact he.closure_isPoint ⟩
   invFun P := ⟨P \ M.loops, by

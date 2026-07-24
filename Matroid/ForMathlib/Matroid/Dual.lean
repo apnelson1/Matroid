@@ -8,7 +8,7 @@ lemma Set.diff_diff_invOn_Iic (s : Set α) : InvOn (s \ ·) (s \ ·) (Iic s) (Ii
   ⟨fun t ht ↦ by simpa, fun t ht ↦ by simpa⟩
 
 lemma Set.diff_bijOn_subset (s : Set α) : BijOn (s \ ·) (Iic s) (Iic s) :=
-  s.diff_diff_invOn_Iic.bijOn (fun _ _ ↦ diff_subset) fun _ _ ↦ diff_subset
+  s.diff_diff_invOn_Iic.bijOn (fun _ _ ↦ sdiff_subset) fun _ _ ↦ sdiff_subset
 
 namespace Matroid
 
@@ -21,7 +21,7 @@ def Codep (M : Matroid α) (D : Set α) : Prop := M✶.Dep D
 @[simp]
 lemma map_codep_iff {β : Type*} {f : α → β} {hf : InjOn f M.E} {I : Set β} :
     (M.map f hf).Codep I ↔ ∃ I₀, M.Codep I₀ ∧ I = f '' I₀ := by
-  simp [Codep, map_dual, map_dep_iff]
+  simp [Codep, map_dual, M✶.map_dep_iff (hf := hf)]
 
 lemma Coindep.not_codep (hD : M.Coindep D) : ¬ M.Codep D :=
   Indep.not_dep hD

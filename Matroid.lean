@@ -22,6 +22,7 @@ import Matroid.Connectivity.Extension
 -- import Matroid.Connectivity.Fan.Circuit
 -- import Matroid.Connectivity.Fan.CircuitIndex
 -- import Matroid.Connectivity.Fan.Cyclic
+-- import Matroid.Connectivity.Fan.Wheel
 import Matroid.Connectivity.Minor
 import Matroid.Connectivity.Nat
 import Matroid.Connectivity.Separation.Abstract
@@ -33,9 +34,12 @@ import Matroid.Connectivity.Separation.Internal
 import Matroid.Connectivity.Separation.Minor
 import Matroid.Connectivity.Separation.Tutte
 import Matroid.Connectivity.Separation.Two
+-- import Matroid.Connectivity.Separation.Two-WIP
 import Matroid.Connectivity.Separation.Vertical
+-- import Matroid.Connectivity.Separation._vert_diag
 import Matroid.Connectivity.Skew
 -- import Matroid.Connectivity.Splitter.Cretaceous
+-- import Matroid.Connectivity.Splitter.Cretaceous-WIP
 import Matroid.Connectivity.Splitter.TutteTriangle
 import Matroid.Connectivity.Triangle
 import Matroid.Constructions.Matching
@@ -89,6 +93,7 @@ import Matroid.Graph.Connected.Vertex.Basic
 import Matroid.Graph.Connected.Vertex.Defs
 import Matroid.Graph.Connected.Vertex.VertexEnsemble
 import Matroid.Graph.Constructions.Basic
+-- import Matroid.Graph.Constructions.Cycle
 -- import Matroid.Graph.Constructions.Random
 import Matroid.Graph.Degree.Basic
 import Matroid.Graph.Degree.Constructions
@@ -163,6 +168,7 @@ import Matroid.Graph.Walk.Cycle
 import Matroid.Graph.Walk.Path
 import Matroid.Graphic
 -- import Matroid.Induction
+-- import Matroid.Inter
 import Matroid.Intersection
 import Matroid.Loop
 import Matroid.Minor.Contract
@@ -173,6 +179,7 @@ import Matroid.Minor.Rank
 import Matroid.Modular.Basic
 import Matroid.Modular.Flat
 -- import Matroid.Modular.Sum
+-- import Matroid.NonspanningCircuit
 import Matroid.OnUniv
 import Matroid.Order.Discrepancy
 import Matroid.Order.Quotient

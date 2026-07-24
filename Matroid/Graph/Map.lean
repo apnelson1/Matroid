@@ -21,9 +21,9 @@ def ofPFun (f : β →. Sym2 α) : Graph α β where
       Part.mem_some_iff, exists_eq, implies_true, and_true]
     rintro s hs
     induction s with | h u v => use u, v, Part.eq_some_iff.mpr hs
-  isLink_symm e he x y hxy := by
+  isLink_symm e he := ⟨fun x y hxy ↦ by
     simp only [Part.coe_some] at hxy ⊢
-    rw [hxy, Part.some_inj, Sym2.eq_swap]
+    rw [hxy, Part.some_inj, Sym2.eq_swap]⟩
   eq_or_eq_of_isLink_of_isLink e a b c d hab hcd := by
     have : a = c ∧ b = d ∨ a = d ∧ b = c := by simpa using hab.symm.trans hcd
     tauto
@@ -37,9 +37,9 @@ def map {α' : Type*} (f : α → α') (G : Graph α β) : Graph α' β where
   vertexSet := f '' V(G)
   edgeSet := E(G)
   IsLink e x' y' := ∃ x y, G.IsLink e x y ∧ x' = f x ∧ y' = f y
-  isLink_symm := by
-    rintro e he - - ⟨x, y, h, rfl, rfl⟩
-    exact ⟨y, x, h.symm, rfl, rfl⟩
+  isLink_symm e he := ⟨by
+    rintro - - ⟨x, y, h, rfl, rfl⟩
+    exact ⟨y, x, h.symm, rfl, rfl⟩⟩
   eq_or_eq_of_isLink_of_isLink := by
     rintro e - - - - ⟨x, y, hxy, rfl, rfl⟩ ⟨z, w, hzw, rfl, rfl⟩
     obtain rfl | rfl := hxy.left_eq_or_eq hzw <;> simp
@@ -76,7 +76,7 @@ lemma IsLink.map (h : G.IsLink e u v) (f : α → α') : (f ''ᴳ G).IsLink e (f
 @[simp]
 lemma map_isLoopAt : (f ''ᴳ G).IsLoopAt e x ↔ ∃ u v, G.IsLink e u v ∧ x = f u ∧ x = f v := Iff.rfl
 
-@[gcongr]
+@[gcongr only]
 lemma map_congr_left_of_eqOn (h : EqOn f g V(G)) : (f ''ᴳ G) = (g ''ᴳ G) := by
   apply Graph.ext ?_ fun e x y ↦ ?_
   · rw [vertexSet_map, vertexSet_map]
@@ -214,14 +214,14 @@ lemma map_deleteVerts_isInducedSubgraph : (f ''ᴳ G) - (f '' X) ≤i f ''ᴳ (G
       forall_exists_index]
     grind
   isLink_of_mem_mem e x y := by
-    simp only [map_isLink, deleteVerts_isLink_iff, vertexSet_deleteVerts, vertexSet_map, mem_diff,
+    simp only [map_isLink, deleteVerts_isLink_iff, vertexSet_deleteVerts, vertexSet_map, mem_sdiff,
       mem_image, not_exists, not_and, and_imp, forall_exists_index]
     grind
 
 @[simp]
 lemma map_deleteVerts_preimage {X : Set α'} : f ''ᴳ (G - (f ⁻¹' X)) = (f ''ᴳ G) - X := by
   ext a b c
-  · simp only [vertexSet_map, vertexSet_deleteVerts, mem_image, mem_diff, mem_preimage]
+  · simp only [vertexSet_map, vertexSet_deleteVerts, mem_image, mem_sdiff, mem_preimage]
     grind
   · simp only [map_isLink, deleteVerts_isLink_iff, mem_preimage, ← exists_and_right, and_assoc]
     grind
@@ -336,9 +336,9 @@ noncomputable def edgePreimg {β' : Type*} (G : Graph α β) (σ : β' → β) :
   vertexSet := V(G)
   edgeSet := σ ⁻¹' E(G)
   IsLink e x y := ∃ e', σ e = e' ∧ G.IsLink e' x y
-  isLink_symm := by
-    rintro e he a b ⟨-, rfl, hbtw'⟩
-    exact ⟨σ e, rfl, hbtw'.symm⟩
+  isLink_symm e he := ⟨by
+    rintro a b ⟨-, rfl, hbtw'⟩
+    exact ⟨σ e, rfl, hbtw'.symm⟩⟩
   eq_or_eq_of_isLink_of_isLink := by
     rintro e a b c d ⟨-, rfl, hbtw₁⟩ ⟨-, rfl, hbtw₂⟩
     exact G.eq_or_eq_of_isLink_of_isLink hbtw₁ hbtw₂
@@ -362,9 +362,9 @@ def edgeMap (G : Graph α β) (σ : β → β')
   vertexSet := V(G)
   edgeSet := σ '' E(G)
   IsLink e x y := ∃ e', σ e' = e ∧ G.IsLink e' x y
-  isLink_symm := by
-    rintro e he x y ⟨f, rfl, hbtw⟩
-    exact ⟨f, rfl, hbtw.symm⟩
+  isLink_symm e he := ⟨by
+    rintro x y ⟨f, rfl, hbtw⟩
+    exact ⟨f, rfl, hbtw.symm⟩⟩
   eq_or_eq_of_isLink_of_isLink := by
     rintro e a b c d ⟨f, rfl, hbtw₁⟩ ⟨g, hfeqg, hbtw₂⟩
     exact G.eq_or_eq_of_isLink_of_isLink hbtw₁ <|

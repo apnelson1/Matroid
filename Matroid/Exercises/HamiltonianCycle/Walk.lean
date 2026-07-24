@@ -173,7 +173,7 @@ lemma pathSet_finite (G : Graph α β) [G.Finite] : G.PathSet.Finite := by
       exact P.prop.isTrail.length_le_ncard⟩)
   have f_inj : Function.Injective f := by
     intro ⟨P, hp⟩ ⟨Q, hq⟩ heq
-    simp only [PathSet, mem_setOf_eq] at hp hq
+    simp only [PathSet, mem_ofPred_eq] at hp hq
     obtain ⟨hV, hE⟩ := by
       simpa [Prod.mk.injEq, Subtype.mk.injEq, f, IsWalk.vertexAttach, IsWalk.edgeAttach] using heq
     apply_fun List.unattach at hV hE

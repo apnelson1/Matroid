@@ -82,7 +82,7 @@ def induce (μ : ConnSystem α R) (hF : μ.E ⊆ F) : ConnSystem α R where
   toFun_inter_ground X := by
     rw [← μ.conn_inter_ground, inter_assoc, inter_eq_self_of_subset_right hF, μ.conn_inter_ground]
   toFun_compl X hXF := by
-    rw [← μ.conn_inter_ground, ← inter_diff_right_comm, inter_eq_self_of_subset_right hF,
+    rw [← μ.conn_inter_ground, ← inter_sdiff_right_comm, inter_eq_self_of_subset_right hF,
       μ.conn_compl]
   toFun_submod _ _ _ _ := μ.conn_submod ..
 
@@ -101,7 +101,7 @@ def Normal (μ : ConnSystem α R) : Prop := μ ∅ = 0
 lemma Normal.conn_empty (hμ : μ.Normal) : μ ∅ = 0 := hμ
 
 lemma Normal.conn_ground (hμ : μ.Normal) : μ μ.E = 0 := by
-  rw [← μ.conn_compl, diff_self, hμ.conn_empty]
+  rw [← μ.conn_compl, sdiff_self, hμ.conn_empty]
 
 end normal
 

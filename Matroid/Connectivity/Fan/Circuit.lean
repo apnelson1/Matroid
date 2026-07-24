@@ -89,7 +89,7 @@ lemma altBetween_add_two (hpq : p ≤ q) (hq : q.bodd = !b) (hqn : q + 1 < L.len
 
 lemma List.Nodup.getElem_mem_altBetween_iff (hL : L.Nodup) {hi : i < L.length} :
     L[i] ∈ L.altBetween p q b ↔ p ≤ i ∧ i < q ∧ i.bodd = b := by
-  simp only [altBetween, exists_and_left, mem_setOf_eq]
+  simp only [altBetween, exists_and_left, mem_ofPred_eq]
   grind [hL.getElem_inj_iff]
 
 lemma getElem_mem_altBetween {hi : i < L.length} (hpi : p ≤ i) (hiq : i < q) (hib : i.bodd = b) :
@@ -109,7 +109,7 @@ lemma altBetween_insert_drop_two {L : List α} {p q : ℕ} (hpq : p ≤ q)
     (hplt : p + 1 < L.length) (hp : p.bodd = !b) :
     insert L[p + 1] ((L.drop 2).altBetween p q b) = L.altBetween p (q + 2) b := by
   simp only [altBetween, getElem_drop, length_drop, exists_and_left, Set.ext_iff,
-    Set.mem_insert_iff, mem_setOf_eq, iff_def, forall_exists_index, and_imp]
+    Set.mem_insert_iff, mem_ofPred_eq, iff_def, forall_exists_index, and_imp]
   refine fun i ↦ ⟨?_, ?_⟩
   · rintro (rfl | ⟨i, hpi, hiq, rfl, hilt, rfl⟩)
     · exact ⟨p + 1, by lia, by lia, by simpa, by lia, rfl⟩
@@ -140,7 +140,7 @@ lemma altBetween_subset_extract (L : List α) (p q : ℕ) (b : Bool) :
 lemma altBetween_cons_false (L : List α) (q : ℕ) :
     (e :: L).altBetween 0 (q + 1) false = insert e (L.altBetween 0 q true) := by
   simp only [altBetween, zero_le, Order.lt_add_one_iff, true_and, length_cons, exists_and_left,
-    Set.ext_iff, mem_setOf_eq, Set.mem_insert_iff]
+    Set.ext_iff, mem_ofPred_eq, Set.mem_insert_iff]
   refine fun x ↦ ⟨?_, ?_⟩
   · rintro ⟨rfl | i, hiq, hi, hiL, rfl⟩
     · simp
@@ -154,7 +154,7 @@ lemma altBetween_cons_false (L : List α) (q : ℕ) :
 lemma altBetween_cons_true (L : List α) (q : ℕ) :
     (e :: L).altBetween 0 (q + 1) true = L.altBetween 0 q false := by
   simp only [altBetween, zero_le, Order.lt_add_one_iff, true_and, length_cons, exists_and_left]
-  simp only [Set.ext_iff, mem_setOf_eq, iff_def, forall_exists_index, and_imp]
+  simp only [Set.ext_iff, mem_ofPred_eq, iff_def, forall_exists_index, and_imp]
   refine fun x ↦ ⟨?_, ?_⟩
   · rintro (rfl | i) hiq hi hiL rfl
     · simp at hi
@@ -239,7 +239,7 @@ lemma IsFan.extract_subset_closure_altBetween (hF : M.IsFan F b c) (hi : i.bodd 
     {x | x ∈ F.extract i j} ⊆ M.closure (F.altBetween i j b) := by
   obtain rfl | j := j; simp
   simp_rw [Set.subset_def, mem_extract_iff_getElem]
-  simp only [exists_and_left, mem_setOf_eq, forall_exists_index, and_imp]
+  simp only [exists_and_left, mem_ofPred_eq, forall_exists_index, and_imp]
   rintro e x hix hxj hlt rfl
   obtain rfl | rfl := b.eq_or_eq_not x.bodd
   · refine mem_closure_of_mem' _ ?_ (by grind)
@@ -253,7 +253,7 @@ lemma IsFan.joints_indep (hF : M.IsFan F b c)
     (h_pair : b = false → c = false → ¬ M.Parallel F[0] F[F.length - 1]) :
     M.Indep {e | ∃ (i : ℕ) (hi : i < F.length), i.bodd = b ∧ F[i] = e} := by
   rw [indep_iff_forall_subset_not_isCircuit']
-  simp only [exists_and_left, Set.subset_def, mem_setOf_eq, forall_exists_index, and_imp]
+  simp only [exists_and_left, Set.subset_def, mem_ofPred_eq, forall_exists_index, and_imp]
   refine ⟨fun C hFC hC ↦ ?_, by grind [hF.get_mem_ground]⟩
   obtain ⟨n, hn⟩ := Nat.exists_eq_add_of_le' hF.two_le_length
   have hodd : ∀ (i : ℕ) (hi : i < F.length), F[i] ∈ C → i.bodd = b := by grind
@@ -283,7 +283,7 @@ lemma IsFan.joints_indep' (hF : M.IsFan F b c)
     M.Indep (F.get '' {i | i.1.bodd = b}) := by
   convert hF.joints_indep h_pair
   refine Set.ext fun i ↦ ?_
-  simp only [get_eq_getElem, mem_image, mem_setOf_eq, and_comm (a := _ = b)]
+  simp only [get_eq_getElem, mem_image, mem_ofPred_eq, and_comm (a := _ = b)]
   constructor
   · rintro ⟨⟨x ,hx⟩, rfl, rfl⟩; grind
   rintro ⟨i, hi, rfl, rfl⟩
@@ -379,7 +379,7 @@ lemma IsFan.contract_head (hF : M.IsFan F false c) (h3 : 3 ≤ F.length)
       (by grind [altBetween])
     refine hsk.closure_skew_right.mono_right ?_
     simp only [length_cons, altBetween_cons_false]
-    grw [insert_diff_self_of_notMem (by grind [altBetween_subset, hF.nodup]),
+    grw [insert_sdiff_self_of_notMem (by grind [altBetween_subset, hF.nodup]),
       ← altBetween_mono _ (p' := i) (q' := i + 3) (by lia) (by lia),
       ← hF'.extract_subset_closure_altBetween (by simpa) (by simpa) (by lia)]
     grind [insert_subset_iff, hF'.nodup.getElem_mem_extract_iff]
@@ -401,7 +401,7 @@ lemma IsFan.contract_head_three (hF : M.IsFan F b c) (h3 : F.length = 3)
   · rintro (rfl | rfl)
     · obtain rfl | rfl := b
       · exact hT.parallel_contract₁.isNonloop_left
-      simp only [bDual_false, contract_isNonloop_iff, mem_diff]
+      simp only [bDual_false, contract_isNonloop_iff, mem_sdiff]
       rw [← hT.isNonloop_of_bDual₂.parallel_iff_mem_closure, parallel_comm,
         and_iff_right (IsTriad.mem_ground₂ hT)]
       exact hnp₁ rfl
@@ -454,7 +454,7 @@ lemma IsFan.isCircuit_interval (hF : M.IsFan F b c) (hij : i < j) (hjF : j < F.l
       (by simp) (by simp) ?_ using 1
     · simp_rw [show i + (2 * d + 4) = (i + 2 * d + 2) + 2 by ring]
       rw [altBetween_add_two (by lia) (by simp) (by lia), insert_comm (b := F[i + 2 * d + 2]),
-        union_diff_distrib, insert_diff_self_of_notMem, insert_diff_self_of_notMem]
+        union_sdiff_distrib, insert_sdiff_self_of_notMem, insert_sdiff_self_of_notMem]
       · grind
       · simp [hF.nodup.getElem_inj_iff]
       simp [hF.nodup.getElem_inj_iff, hF.nodup.getElem_mem_altBetween_iff, add_assoc]
@@ -464,7 +464,7 @@ lemma IsFan.isCircuit_interval (hF : M.IsFan F b c) (hij : i < j) (hjF : j < F.l
         ⊆ M.closure (F.altBetween i (i + 2 * d + 2 + 1) i.bodd) := by
       grw [← hF.extract_subset_closure_altBetween rfl (by simp) (by lia),
         insert_subset_iff, insert_subset_iff, altBetween_subset_iff]
-      simp_rw [mem_setOf, hF.nodup.getElem_mem_extract_iff]
+      simp_rw [mem_ofPred, hF.nodup.getElem_mem_extract_iff]
       grind
     grw [← eLocalConn_closure_right, insert_comm (a := F[i + 2 * d + 2]),
       M.eLocalConn_mono_left hcl, closure_insert_eq_of_mem_closure, eLocalConn_closure_closure,
@@ -612,7 +612,7 @@ lemma IsFan.exists_isCircuit_subset_first_last (hF : M.IsFan F false false)
       (by simp [hF.nodup.getElem_inj_iff])
     obtain ⟨C₀, hC₀ss, hC₀, h0C₀⟩ := elim
     refine ⟨C₀, hC₀, h0C₀, ?_, fun i hi hiC₀ ↦ by grind [hF.nodup.getElem_inj_iff]⟩
-    grw [hC₀ss, hC₀'ss, diff_subset]
+    grw [hC₀ss, hC₀'ss, sdiff_subset]
     grind [Set.union_subset_iff, insert_subset_iff]
 
 /-- For any odd-length fan `F = [a, b, ..., z]` in which `a` is a joint

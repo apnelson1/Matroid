@@ -125,7 +125,7 @@ lemma left_isSetCut (G : Graph α β) (S T : Set α) : G.IsSetCut S T (V(G) ∩ 
   ST_disconnects := by
     simp only [SetConnected, deleteVerts_vertexSet_inter, not_exists, not_and]
     rintro s hs t ht h
-    have := by simpa only [vertexSet_deleteVerts, mem_diff] using h.left_mem
+    have := by simpa only [vertexSet_deleteVerts, mem_sdiff] using h.left_mem
     exact this.2 hs
 
 lemma right_isSetCut (G : Graph α β) (S T : Set α) : G.IsSetCut S T (V(G) ∩ T) where
@@ -133,7 +133,7 @@ lemma right_isSetCut (G : Graph α β) (S T : Set α) : G.IsSetCut S T (V(G) ∩
   ST_disconnects := by
     simp only [SetConnected, deleteVerts_vertexSet_inter, not_exists, not_and]
     rintro s hs t ht h
-    have := by simpa only [vertexSet_deleteVerts, mem_diff] using h.right_mem
+    have := by simpa only [vertexSet_deleteVerts, mem_sdiff] using h.right_mem
     exact this.2 ht
 
 @[symm]
@@ -203,12 +203,12 @@ lemma IsSetCut.of_deleteVerts' (hC : (G - X).IsSetCut S T C) :
     G.IsSetCut (S ∪ X) (T ∪ X) ((X ∩ V(G)) ∪ C) where
   subset_vertexSet := by
     simp only [union_subset_iff, inter_subset_right, true_and]
-    exact hC.subset_vertexSet.trans <| (G.vertexSet_deleteVerts X) ▸ diff_subset
+    exact hC.subset_vertexSet.trans <| (G.vertexSet_deleteVerts X) ▸ sdiff_subset
   ST_disconnects := by
     rintro ⟨s, hs, t, ht, h⟩
     have hl := h.left_mem
     have hr := h.right_mem
-    simp only [vertexSet_deleteVerts, mem_diff, mem_union, mem_inter_iff, not_or, not_and] at hl hr
+    simp only [vertexSet_deleteVerts, mem_sdiff, mem_union, mem_inter_iff, not_or, not_and] at hl hr
     obtain hs | hs := hs.symm
     · tauto
     obtain ht | ht := ht.symm
@@ -272,7 +272,7 @@ lemma IsSetCut.subset_of_self (hC : G.IsSetCut S S U) : V(G) ∩ S ⊆ U := by
 lemma isSetCut_self_iff (hU : U ⊆ V(G)) : G.IsSetCut S S U ↔ V(G) ∩ S ⊆ U := by
   refine ⟨fun h => h.subset_of_self, fun h => ⟨hU, ?_⟩⟩
   rintro ⟨s, hsS, t, htS, hcon⟩
-  obtain ⟨hs, hsU⟩ := by simpa only [vertexSet_deleteVerts, mem_diff] using hcon.left_mem
+  obtain ⟨hs, hsU⟩ := by simpa only [vertexSet_deleteVerts, mem_sdiff] using hcon.left_mem
   exact hsU <| h ⟨hs, hsS⟩
 
 lemma IsSepBetween.isSetCut (hC : G.IsSepBetween s t C) :
@@ -383,7 +383,7 @@ private lemma inc_vert_foo : ∀ e ∈ E(G) ∩ F, ∃ x ∈ inc_vert '' (E(G) �
   use e, heF, he
 
 open Notation in
-noncomputable def IsEdgeSetCut.isSetCut (hF : G.IsEdgeSetCut S T F) :
+theorem IsEdgeSetCut.isSetCut (hF : G.IsEdgeSetCut S T F) :
     G.IsSetCut S T (inc_vert '' (E(G) ↓∩ F)) where
   subset_vertexSet := by
     rintro x ⟨e, he, rfl⟩
@@ -609,13 +609,15 @@ lemma SetConnGE.deleteVerts (h : G.SetConnGE S T n) (X : Set α) :
     (G - X).SetConnGE S T (n - (X ∩ V(G)).encard).toNat := by
   intro C hC
   have := by simpa only using h (hC.of_deleteVerts)
-  exact (ENat.coe_toNat_le_self _).trans <| tsub_le_iff_left.mpr <| this.trans <| encard_union_le ..
+  exact (ENat.natCast_toNat_le_self _).trans <| tsub_le_iff_left.mpr <| this.trans
+    <| encard_union_le ..
 
 lemma SetConnGE.deleteVerts' (h : G.SetConnGE S T n) (X : Set α) :
     (G - X).SetConnGE (S \ X) (T \ X) (n - (X ∩ V(G)).encard).toNat := by
   intro C hC
   have := by simpa only using h ((hC.of_deleteVerts').subset (by simp) (by simp))
-  exact (ENat.coe_toNat_le_self _).trans <| tsub_le_iff_left.mpr <| this.trans <| encard_union_le ..
+  exact (ENat.natCast_toNat_le_self _).trans <| tsub_le_iff_left.mpr <| this.trans
+    <| encard_union_le ..
 
 lemma SetConnGE.subset (h : G.SetConnGE S T n) (hS : S ⊆ S') (hT : T ⊆ T') : G.SetConnGE S' T' n :=
   fun _ hC ↦ h (hC.subset hS hT)
@@ -623,7 +625,7 @@ lemma SetConnGE.subset (h : G.SetConnGE S T n) (hS : S ⊆ S') (hT : T ⊆ T') :
 lemma setConnGE_inter_ncard (hFin : (V(G) ∩ S ∩ T).Finite) :
     G.SetConnGE S T (V(G) ∩ S ∩ T).ncard := by
   intro C hC
-  rw [Set.ncard_def, ENat.coe_toNat (by simpa)]
+  rw [Set.ncard_def, ENat.natCast_toNat (by simpa)]
   exact encard_le_encard (hC.inter_subset)
 
 lemma SetConnGE.left_encard_le (h : G.SetConnGE S T n) : n ≤ (V(G) ∩ S).encard :=
@@ -648,13 +650,12 @@ lemma SetConnGE.left_bound_anti (hS : S.Finite) (h : G.SetConnGE S T S.ncard) (h
   rw [encard_ne_top_iff] at hCFin
   have hSG := h.subset_of_left_bound hS
   have := G.left_isSetCut (S \ U) T |>.left_union hC
-  rw [diff_union_self, union_eq_left.mpr hU, inter_eq_right.mpr (diff_subset.trans hSG)] at this
+  rw [sdiff_union_self, union_eq_left.mpr hU, inter_eq_right.mpr (sdiff_subset.trans hSG)] at this
   replace h := h this |>.trans <| encard_union_le (S \ U) C
-  rw [add_comm, encard_diff hU (hS.subset hU)] at h
+  rw [add_comm, encard_sdiff hU (hS.subset hU)] at h
   rw [← hCFin.cast_ncard_eq, ← hS.cast_ncard_eq, ← (hS.subset hU).cast_ncard_eq] at *
   norm_cast at h ⊢
   have := ncard_le_ncard hU hS
-  norm_cast at *
   lia
 
 lemma SetConnGE.right_bound_anti (hT : T.Finite) (h : G.SetConnGE S T T.ncard) (hU : U ⊆ T) :

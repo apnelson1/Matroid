@@ -29,8 +29,8 @@ lemma IsUpperTriangular.isBase_left (h : M.IsUpperTriangular a b) : M.IsBase (ra
   rw [spanning_iff_ground_subset_closure h.indep_left.subset_ground, ← h.union_eq, union_subset_iff,
     and_iff_right (M.subset_closure _ h.indep_left.subset_ground)]
   rintro _ ⟨i, hi, rfl⟩
-  refine mem_of_mem_of_subset ((h.isCircuit i).mem_closure_diff_singleton_of_mem (mem_insert ..)) ?_
-  grw [insert_diff_self_of_notMem, image_subset_range]
+  refine mem_of_mem_of_subset ((h.isCircuit i).mem_closure_sdiff_singleton_of_mem (mem_insert ..)) ?_
+  grw [insert_sdiff_self_of_notMem, image_subset_range]
   grw [image_subset_range]
   simp [h.apply_ne]
 
@@ -54,17 +54,17 @@ lemma IsUpperTriangular.isBase_right (h : M.IsUpperTriangular a b) : M.IsBase (r
   intro k
   induction k using Fin.induction with
   | zero =>
-    refine ((h.isCircuit 0).diff_singleton_indep (e := a 0) (by grind)).subset ?_
+    refine ((h.isCircuit 0).sdiff_singleton_indep (e := a 0) (by grind)).subset ?_
     simp [Set.Iic, h.apply_ne.symm]
   | succ i ih =>
-    rw [← Iio_insert, image_insert_eq, Indep.insert_indep_iff_of_notMem, mem_diff, and_iff_right]
+    rw [← Iio_insert, image_insert_eq, Indep.insert_indep_iff_of_notMem, mem_sdiff, and_iff_right]
     · intro hcl
       have hss : M.closure (b '' Iio i.succ) ⊆ M.closure (a '' Iio i.succ) := by
         refine closure_subset_closure_of_subset_closure ?_
         rintro _ ⟨j, hjmem : j < i.succ, rfl⟩
         refine mem_of_mem_of_subset
-          ((h.isCircuit j).mem_closure_diff_singleton_of_mem (mem_insert ..)) ?_
-        grw [insert_diff_self_of_notMem (by simp [h.apply_ne])]
+          ((h.isCircuit j).mem_closure_sdiff_singleton_of_mem (mem_insert ..)) ?_
+        grw [insert_sdiff_self_of_notMem (by simp [h.apply_ne])]
         exact M.closure_subset_closure <| image_mono <| by grind
       specialize hss hcl
       rw [(h.indep_left.subset (image_subset_range ..)).mem_closure_iff_of_notMem
@@ -106,12 +106,12 @@ lemma IsUpperTriangular.dual (h : M.IsUpperTriangular a b) :
   union_eq := by
     rw [Fin.rev_surjective.range_comp, Fin.rev_surjective.range_comp, dual_ground, h.union_eq]
   isBase_left := by
-    rw [Fin.rev_surjective.range_comp, ← diff_diff_cancel_left (h.isBase_left.subset_ground),
-      ← h.union_eq, union_diff_cancel_left h.disjoint.inter_eq.subset, h.union_eq]
+    rw [Fin.rev_surjective.range_comp, ← sdiff_sdiff_cancel_left (h.isBase_left.subset_ground),
+      ← h.union_eq, union_sdiff_cancel_left h.disjoint.inter_eq.subset, h.union_eq]
     exact h.isBase_right.compl_isBase_dual
   isBase_right := by
-    rw [Fin.rev_surjective.range_comp, ← diff_diff_cancel_left (h.isBase_right.subset_ground),
-      ← h.union_eq, union_diff_cancel_right h.disjoint.inter_eq.subset, h.union_eq]
+    rw [Fin.rev_surjective.range_comp, ← sdiff_sdiff_cancel_left (h.isBase_right.subset_ground),
+      ← h.union_eq, union_sdiff_cancel_right h.disjoint.inter_eq.subset, h.union_eq]
     exact h.isBase_left.compl_isBase_dual
   closure_eq i := by
     ext e
@@ -133,10 +133,10 @@ lemma IsUpperTriangular.minor (h : M.IsUpperTriangular a b) (φ : Fin m ↪o Fin
   disjoint := h.disjoint.mono (range_comp_subset_range ..) (range_comp_subset_range ..)
   union_eq := by
     rw [range_comp, range_comp, contract_delete_ground, ← h.union_eq,
-      ← diff_diff, union_diff_distrib, image_compl_eq_range_diff_image h.inj_left,
-      diff_diff_cancel_left (image_subset_range ..), Disjoint.sdiff_eq_left (a := range b),
-      union_diff_distrib, Disjoint.sdiff_eq_left, image_compl_eq_range_diff_image h.inj_right,
-      diff_diff_cancel_left (image_subset_range ..)]
+      ← sdiff_sdiff, union_sdiff_distrib, image_compl_eq_range_sdiff_image h.inj_left,
+      sdiff_sdiff_cancel_left (image_subset_range ..), Disjoint.sdiff_eq_left (a := range b),
+      union_sdiff_distrib, Disjoint.sdiff_eq_left, image_compl_eq_range_sdiff_image h.inj_right,
+      sdiff_sdiff_cancel_left (image_subset_range ..)]
     · exact h.disjoint.mono (by simp) (by simp)
     exact h.disjoint.symm.mono (by simp) (by simp)
   isBase_left := by

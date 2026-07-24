@@ -384,7 +384,7 @@ lemma IsShift.comap_contract_eq (h : M.IsShift C f) : M ／ C = (M.comap f) ／ 
     ← closure_biUnion_closure_eq_closure_biUnion, iUnion₂_congr hrw,
     closure_biUnion_closure_eq_closure_biUnion, ← biUnion_distrib_union _ hne,
     ← image_iUnion₂, biUnion_of_singleton]
-  simp only [Set.ext_iff, mem_diff, mem_preimage, and_congr_left_iff]
+  simp only [Set.ext_iff, mem_sdiff, mem_preimage, and_congr_left_iff]
   refine fun x hxC ↦ ?_
   refine ⟨fun hxcl ↦ ?_, fun hxcl ↦ ?_⟩
   · rw [← closure_insert_eq_of_mem_closure hxcl, ← union_insert, ← closure_union_closure_right_eq,

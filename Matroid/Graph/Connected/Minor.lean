@@ -93,7 +93,7 @@ lemma ConnGE.contract_isLink {n : ℕ} (hG : G.ConnGE (n + 1)) (hl : G.IsLink e 
     right
     rw [IsLink.vertexSet_contract]
     apply lt_of_lt_of_le ?_ <| encard_le_encard (subset_insert ..)
-    rw [encard_diff_singleton_of_mem hl.right_mem]
+    rw [encard_sdiff_singleton_of_mem hl.right_mem]
     enat_to_nat!
     omega
 
@@ -114,7 +114,7 @@ lemma ConnGE.exists_isSepSet_endpoints_of_not_connGE_contract_isLink {n : ℕ} (
   have hTsep : G.IsSep (hl.repFun ⁻¹' S) := (hl.contract_eq ▸ hSsep).of_contract hl.isRepFun
   rw [hl.repFun_preimage] at hTsep
   split_ifs at hTsep with hxS; swap
-  · simpa using hG.le_cut hTsep |>.trans (encard_le_encard diff_subset) |>.trans hScard
+  · simpa using hG.le_cut hTsep |>.trans (encard_le_encard sdiff_subset) |>.trans hScard
   refine ⟨_, hTsep, ?_, by simp [hxS], by simp⟩
   exact (encard_insert_le ..).trans <| ENat.add_one_le_add_one_iff.mpr hScard
 
@@ -133,7 +133,7 @@ theorem exists_contract_connGE_three [G.Finite] (hG : G.ConnGE 3) (hV : 5 ≤ V(
     have hxy : x ≠ y := by simpa [y] using hnl.other_ne.symm
     have hAdj : G.Adj x y := hl.adj
     have hnV : ((3 : ℕ) : ℕ∞) < V(hl.contract).encard := by
-      rw [hl.vertexSet_contract_of_ne hxy, encard_diff_singleton_of_mem hl.right_mem]
+      rw [hl.vertexSet_contract_of_ne hxy, encard_sdiff_singleton_of_mem hl.right_mem]
       enat_to_nat!
       omega
     obtain ⟨T, hTsep, hTcard, hxT, hyT⟩ :=
@@ -143,14 +143,14 @@ theorem exists_contract_connGE_three [G.Finite] (hG : G.ConnGE 3) (hV : 5 ≤ V(
     norm_num1 at hTcard
     replace hTcard : T.encard = 3 := hTcard.antisymm <| hG.le_cut hTsep
     have hT'card : (T \ ({x, y} : Set α)).encard = 1 := by
-      rw [← diff_singleton_diff_eq, encard_diff_singleton_of_mem (by simpa [hxy.symm]),
-      encard_diff_singleton_of_mem hxT, hTcard]
+      rw [← sdiff_singleton_sdiff_eq, encard_sdiff_singleton_of_mem (by simpa [hxy.symm]),
+      encard_sdiff_singleton_of_mem hxT, hTcard]
       rfl
     obtain ⟨z, hz⟩ := encard_eq_one.mp hT'card
     obtain rfl : (T : Set α) = ({x, y, z} : Set α) := by grind
     clear hxT hyT
 
-    simp only [mem_insert_iff, mem_singleton_iff, true_or, insert_diff_of_mem, or_true,
+    simp only [mem_insert_iff, mem_singleton_iff, true_or, insert_sdiff_of_mem, or_true,
       sdiff_eq_left, disjoint_singleton_left, not_or, ← ne_eq] at hz
     -- Pick a vertex outside the separator and take its walkable component.
     have hlt : ({x, y, z} : Set α).encard < V(G).encard := by
@@ -177,7 +177,7 @@ theorem exists_contract_connGE_three [G.Finite] (hG : G.ConnGE 3) (hV : 5 ≤ V(
   -- `z ≠ w` since `z ∉ C` and `w ∈ C`
   have hzwne : z ≠ w := by
     rintro rfl
-    obtain ⟨-, -, -, hzC⟩ := by simpa only [vertexSet_deleteVerts, subset_diff,
+    obtain ⟨-, -, -, hzC⟩ := by simpa only [vertexSet_deleteVerts, subset_sdiff,
       disjoint_insert_right, disjoint_singleton_right] using vertexSet_mono hC.le
     exact hzC hwC
 
@@ -192,17 +192,17 @@ theorem exists_contract_connGE_three [G.Finite] (hG : G.ConnGE 3) (hV : 5 ≤ V(
   norm_num1 at hTcard
   replace hTcard : T.encard = 3 := hTcard.antisymm <| hG.le_cut hTsep
   have hTdiff : (T \ {w, z}).encard = 1 := by
-    rw [← diff_singleton_diff_eq, encard_diff_singleton_of_mem (by simpa [hzwne] using hzT: z ∈ _),
-      encard_diff_singleton_of_mem hwT, hTcard]
+    rw [← sdiff_singleton_sdiff_eq, encard_sdiff_singleton_of_mem
+      (by simpa [hzwne] using hzT: z ∈ _), encard_sdiff_singleton_of_mem hwT, hTcard]
     rfl
   obtain ⟨w', hw'⟩ := encard_eq_one.mp hTdiff
   obtain rfl : T = ({w, z, w'} : Set α) := by grind
   simp_all only [mem_insert_iff, mem_singleton_iff, true_or, or_true, hzwne.symm, false_or,
-    encard_singleton, or_false, insert_diff_of_mem, sdiff_eq_left, disjoint_singleton_left, not_or,
+    encard_singleton, or_false, insert_sdiff_of_mem, sdiff_eq_left, disjoint_singleton_left, not_or,
     ← ne_eq]
 
   have hor : x ∉ ({w, z, w'} : Set α) ∨ y ∉ ({w, z, w'} : Set α) := by
-    obtain ⟨-, hxC, hyC, hzC⟩ := by simpa only [vertexSet_deleteVerts, subset_diff,
+    obtain ⟨-, hxC, hyC, hzC⟩ := by simpa only [vertexSet_deleteVerts, subset_sdiff,
       disjoint_insert_right, disjoint_singleton_right] using vertexSet_mono hC.le
     by_contra! h
     simp only [mem_insert_iff, mem_singleton_iff] at h
@@ -237,7 +237,7 @@ theorem exists_contract_connGE_three [G.Finite] (hG : G.ConnGE 3) (hV : 5 ≤ V(
   have h := hC'.of_deleteVerts (S := {x, y, z}) <| by
     rw [connBetween_comm] at hxuconn
     simp only [disjoint_insert_right, ← connBetween_iff_mem_walkable_of_mem, hxuconn,
-      not_false_eq_true, disjoint_singleton_right, vertexSet_deleteVerts, mem_diff, mem_insert_iff,
+      not_false_eq_true, disjoint_singleton_right, vertexSet_deleteVerts, mem_sdiff, mem_insert_iff,
       mem_singleton_iff, true_or, or_true, not_true_eq_false, and_false,
       not_connBetween_of_right_not_mem, and_true, true_and]
     by_cases hy : y ∈ ({w, z, w'} : Set α)

@@ -19,7 +19,7 @@ lemma Function.mem_supported_iff {x : α → M} : x ∈ supported M R s ↔ ∀ 
 lemma Function.mem_supported {x : α → M} :
     x ∈ Function.supported M R s ↔ x.support ⊆ s := by
   simp only [supported, Submodule.mem_mk, AddSubmonoid.mem_mk, AddSubsemigroup.mem_mk,
-    Set.mem_setOf_eq, Function.support_subset_iff, ne_eq]
+    Set.mem_ofPred_eq, Function.support_subset_iff, ne_eq]
   -- `grind` works.
   exact ⟨fun h i hi ↦ by_contra fun h' ↦ hi (h _ h'), fun h i his ↦ by_contra fun h' ↦ his (h _ h')⟩
 
@@ -58,8 +58,9 @@ lemma Function.supportedEquivFun_symm_apply_notMem {i : α} (hi : i ∉ s) (x : 
 open Finsupp
 
 /-- Forget that a function in `Finsupp.supported M R s` has finite support. -/
-@[simps] def Finsupp.supportedCoeFunSupported (M R : Type*) [Semiring R] [AddCommMonoid M]
-    [Module R M] (s : Set α) : Finsupp.supported M R s →ₗ[R] Function.supported M R s where
+@[simps] noncomputable def Finsupp.supportedCoeFunSupported (M R : Type*) [Semiring R]
+    [AddCommMonoid M] [Module R M] (s : Set α) :
+    Finsupp.supported M R s →ₗ[R] Function.supported M R s where
   toFun x := ⟨Finsupp.lcoeFun (R := R) x.1, (Finsupp.mem_supported' ..).1 x.2 ⟩
   map_add' := by aesop
   map_smul' := by aesop
@@ -109,7 +110,7 @@ noncomputable def Finsupp.lEmbDomain {α β M : Type*} (R : Type*) [Semiring R] 
     simp only [RingHom.id_apply, coe_smul, Pi.smul_apply]
     obtain ⟨a, rfl⟩ | hb := em <| b ∈ Set.range f
     · simp
-    simp [embDomain_notin_range _ _ _ hb]
+    simp [embDomain_of_notMem_range _ _ _ hb]
 
 @[simp]
 lemma Finsupp.toENat_rank_supported (R : Type*) [Semiring R] [StrongRankCondition R] (s : Set α) :

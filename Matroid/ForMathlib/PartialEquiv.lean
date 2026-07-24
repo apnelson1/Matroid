@@ -108,12 +108,11 @@ theorem PartialEquiv.insert_apply_mem (e : PartialEquiv α β) (ha : a ∉ e.sou
   exact fun h ↦ ha <| h ▸ hi
 
 @[simp] theorem insert_symm (e : PartialEquiv α β) (ha : a ∉ e.source) (hb : b ∉ e.target) :
-    (e.insert ha hb).symm = e.symm.insert hb ha := by
-  ext <;> simp
+    (e.insert ha hb).symm = e.symm.insert hb ha := rfl
 
 theorem PartialEquiv.insert_apply_symm_mem (e : PartialEquiv α β) (ha : a ∉ e.source)
     (hb : b ∉ e.target) {j : β} (hj : j ∈ e.target) : (e.insert ha hb).symm j = e.symm j := by
-  rw [insert_symm, insert_apply_mem]
+  rw [insert_symm, e.symm.insert_apply_mem hb ha]
   exact hj
 
 /-- `φ ≤ φ'` means that the source and target of `φ` are contained in those of `φ'`, and that

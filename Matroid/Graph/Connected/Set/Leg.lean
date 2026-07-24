@@ -25,8 +25,9 @@ lemma Q_mem (h : P.IsRightLeg A S T) : h.Q ∈ A.paths :=
 lemma first_mem_path (h : P.IsRightLeg A S T) : P.first ∈ h.Q := by
   exact mem_of_vertex ..
 
-def ofIsPathFrom (hAST : A.between S T) (hP : G.IsPathFrom S T P) (hex : ∃ u ∈ P, u ∈ A.vertexSet)
-    [DecidablePred (· ∈ A.vertexSet)] : IsRightLeg (P.suffixFromLast (· ∈ A.vertexSet)) A S T where
+theorem ofIsPathFrom (hAST : A.between S T) (hP : G.IsPathFrom S T P)
+    (hex : ∃ u ∈ P, u ∈ A.vertexSet) [DecidablePred (· ∈ A.vertexSet)] :
+    IsRightLeg (P.suffixFromLast (· ∈ A.vertexSet)) A S T where
   toIsPathFrom := hP.suffixFromLast hex
   between := hAST
   inter_left := by
@@ -63,9 +64,7 @@ lemma Q1_first (h : P.IsRightLeg A S T) : h.Q1.first = h.Q.first := by
 @[simp]
 lemma Q1_last (h : P.IsRightLeg A S T) : h.Q1.last = P.first := by
   classical
-  unfold Q1
-  have := h.Q.prefixUntil_prop_last (P := (· == P.first)) <| by simp
-  simpa only [beq_iff_eq] using this
+  exact h.Q.prefixUntilVertex_last h.first_mem_path
 
 @[simp]
 lemma Q1_subset_vertexSet (h : P.IsRightLeg A S T) : V(h.Q1) ⊆ A.vertexSet :=
@@ -112,9 +111,7 @@ lemma Q2_isPath (h : P.IsRightLeg A S T) : G.IsPath h.Q2 := by
 @[simp]
 lemma Q2_first (h : P.IsRightLeg A S T) : h.Q2.first = P.first := by
   classical
-  unfold Q2
-  have := h.Q.suffixFrom_prop_first (P := (· == P.first)) <| by simp
-  simpa only [beq_iff_eq] using this
+  exact h.Q.suffixFromVertex_first h.first_mem_path
 
 @[simp]
 lemma Q2_last (h : P.IsRightLeg A S T) : h.Q2.last = h.Q.last := by
@@ -231,16 +228,16 @@ lemma shorten_between (h : P.IsRightLeg A S T) : h.shorten.between S (T ∪ V(h.
   suffices (A.path_remove h.Q).between S (T ∪ V(h.bQ2)) by
     exact this hQ
   refine h.between.path_remove h.Q |>.right ?_
-  rw [symmDiff_of_le subset_union_left, union_diff_left]
-  exact (h.path_remove_Q_disjoint_bQ2).mono_right diff_subset
+  rw [symmDiff_of_le subset_union_left, union_sdiff_left]
+  exact (h.path_remove_Q_disjoint_bQ2).mono_right sdiff_subset
 
+set_option backward.isDefEq.respectTransparency false in
 @[simp]
 lemma shorten_last (h : P.IsRightLeg A S T) :
     last '' h.shorten.paths = insert P.first ((last '' A.paths) \ {h.Q.last}) := by
-  simp only [shorten, shorten_paths, image_insert_eq, Q1_last, A.last_injOn.image_diff]
-  congr
-  rw [inter_eq_right.mpr (by simp)]
-  simp
+  classical
+  simp only [shorten]
+  rw [A.shorten_last, Q1_last]
 
 end IsRightLeg
 end WList

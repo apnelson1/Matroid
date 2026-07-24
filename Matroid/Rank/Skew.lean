@@ -45,11 +45,11 @@ lemma tsum_nullity_le (M : Matroid α) {X : ι → Set α} (hX : Pairwise (Disjo
   obtain ⟨I, hI⟩ := M.exists_isBasis (⋃ i, X i)
   choose Is hIs using
     fun i ↦ (hI.indep.inter_right (X i)).subset_isBasis_of_subset inter_subset_right
-  grw [tsum_congr (fun i ↦ (hIs i).1.nullity_eq), hI.nullity_eq, iUnion_diff,
+  grw [tsum_congr (fun i ↦ (hIs i).1.nullity_eq), hI.nullity_eq, iUnion_sdiff,
     ENat.tsum_encard_eq_encard_iUnion]
   refine encard_le_encard <| iUnion_mono fun i ↦ ?_
-  · grw [← diff_inter_self_eq_diff (t := I), (hIs i).2]
-  exact hX.mono fun i j h ↦ h.mono diff_subset diff_subset
+  · grw [← sdiff_inter_self_eq_sdiff (t := I), (hIs i).2]
+  exact hX.mono fun i j h ↦ h.mono sdiff_subset sdiff_subset
 
 lemma IsSkewFamily.nullity_iUnion_eq {X : ι → Set α} (hX : M.IsSkewFamily X)
     (h : Pairwise (Disjoint on X)) : M.nullity (⋃ i, X i) = ∑' i, M.nullity (X i) := by
@@ -61,12 +61,12 @@ lemma IsSkewFamily.nullity_iUnion_eq {X : ι → Set α} (hX : M.IsSkewFamily X)
     grw [← inter_eq_self_of_subset_right hI.subset, iUnion_inter, iUnion_mono (fun i ↦ (hIs i).2)]
   obtain rfl : I = ⋃ i, Is i :=
     hI.eq_of_subset_indep hi hss (iUnion_mono (fun i ↦ (hIs i).1.subset))
-  rw [hI.nullity_eq, iUnion_diff, tsum_congr (fun i ↦ (hIs i).1.nullity_eq),
+  rw [hI.nullity_eq, iUnion_sdiff, tsum_congr (fun i ↦ (hIs i).1.nullity_eq),
     ENat.tsum_encard_eq_encard_iUnion]
   · convert rfl using 2
-    apply iUnion_congr fun i ↦ subset_antisymm ?_ (diff_subset_diff_right (subset_iUnion ..))
-    grw [← diff_inter_self_eq_diff (t := ⋃ i, Is i), inter_comm, (hIs i).2]
-  exact h.mono fun i j h ↦ h.mono diff_subset diff_subset
+    apply iUnion_congr fun i ↦ subset_antisymm ?_ (sdiff_subset_sdiff_right (subset_iUnion ..))
+    grw [← sdiff_inter_self_eq_sdiff (t := ⋃ i, Is i), inter_comm, (hIs i).2]
+  exact h.mono fun i j h ↦ h.mono sdiff_subset sdiff_subset
 
 lemma Skew.nullity_union_eq (hXY : M.Skew X Y) (hdj : Disjoint X Y) :
     M.nullity (X ∪ Y) = M.nullity X + M.nullity Y := by
@@ -79,18 +79,18 @@ lemma tsum_nullity_eq_nullity_iUnion_iff_isSkewFamily {X : ι → Set α}
   choose Is hIs using
     fun i ↦ (hI.indep.inter_left (X i)).subset_isBasis_of_subset inter_subset_left
   have hrw (i) : (X i \ I).encard = (X i \ Is i).encard + (Is i \ I).encard := by
-    rw [← encard_union_eq, diff_union_diff_cancel' (hIs i).2]
+    rw [← encard_union_eq, sdiff_union_sdiff_cancel' (hIs i).2]
     · exact (hIs i).1.subset.trans subset_union_left
-    exact disjoint_sdiff_left.mono_right diff_subset
-  rw [hI.nullity_eq, iUnion_diff,
-    ← ENat.tsum_encard_eq_encard_iUnion (hX.mono fun _ _ h ↦ h.mono diff_subset diff_subset)]
+    exact disjoint_sdiff_left.mono_right sdiff_subset
+  rw [hI.nullity_eq, iUnion_sdiff,
+    ← ENat.tsum_encard_eq_encard_iUnion (hX.mono fun _ _ h ↦ h.mono sdiff_subset sdiff_subset)]
     at hfin ⊢
   have hfin' : ∑' i, (X i \ Is i).encard < ⊤ := by
     refine lt_of_le_of_lt (tsum_le_tsum fun i ↦ (encard_le_encard ?_)) hfin
-    grw [← diff_self_inter (t := I), (hIs i).2]
+    grw [← sdiff_self_inter (t := I), (hIs i).2]
   rw [tsum_congr (fun i ↦ (hIs i).1.nullity_eq), tsum_congr hrw, tsum_add,
     ENat.add_eq_left_iff, tsum_eq_zero, or_iff_right hfin'.ne]
-  simp only [encard_eq_zero, diff_eq_empty]
+  simp only [encard_eq_zero, sdiff_eq_empty]
   refine ⟨fun h ↦ ?_, fun h i ↦ ?_⟩
   · exact Indep.isSkewFamily_of_disjoint_isBases (hI.indep.subset (iUnion_subset h))
       (hX.mono fun i j h ↦ h.mono (hIs i).1.subset (hIs j).1.subset) (fun i ↦ (hIs i).1)
@@ -104,7 +104,7 @@ lemma nullity_union_eq_iff (hdj : Disjoint X Y) (hfin : M.nullity (X ∪ Y) ≠ 
     M.nullity (X ∪ Y) = M.nullity X + M.nullity Y ↔ M.Skew X Y := by
   rw [Skew, ← tsum_nullity_eq_nullity_iUnion_iff_isSkewFamily]
   · simp [iUnion_bool]
-  · rwa [pairwise_on_bool Disjoint.symm]
+  · rwa [pairwise_on_bool]
   · simp [hXE, hYE]
   simpa [lt_top_iff_ne_top, iUnion_bool]
 
@@ -125,9 +125,9 @@ lemma not_skew_iff_nullity_lt_nullity_project (hfin : M.nullity Y ≠ ⊤) (hdj 
     and_iff_right (hdj.mono hI.subset hJ.subset)] at h
   rw [hI.project_eq_project, hJ'Y.nullity_eq, hJ.nullity_eq]
   apply hfin.encard_lt_encard
-  rw [← diff_union_diff_cancel hJ.subset hJ'.subset, ssubset_union_left_iff,
-    subset_diff, and_iff_right (diff_subset.trans hJ.subset), disjoint_iff_inter_eq_empty,
-    ← inter_diff_right_comm, inter_self, diff_eq_empty]
+  rw [← sdiff_union_sdiff_cancel hJ.subset hJ'.subset, ssubset_union_left_iff,
+    subset_sdiff, and_iff_right (sdiff_subset.trans hJ.subset), disjoint_iff_inter_eq_empty,
+    ← inter_sdiff_right_comm, inter_self, sdiff_eq_empty]
   intro hss
   obtain rfl : J = J' := hss.antisymm hJ'.subset
   replace hJ' := hJ'.indep
@@ -173,7 +173,7 @@ lemma nullity_biUnion_mono {X Y : ι → Set α} {I : Set ι} (hX : I.PairwiseDi
       exact ⟨j, I \ {j}, by simp [hj], by simp, hsk⟩
     -- Let `J = I \ {j}`.
     simp only [hIJ, mem_insert_iff, forall_eq_or_imp] at hn hcl
-    rw [hIJ, PairwiseDisjoint, pairwise_insert_of_symmetric_of_notMem (fun _ _ h ↦ h.symm) hjJ]
+    rw [hIJ, PairwiseDisjoint, pairwise_insert_of_symm_of_notMem hjJ]
       at hX hY
     simp_rw [Function.onFun, ← disjoint_iUnion_right] at hX hY
     -- by the choice of `J`, the union of `Y i` over `J` has lower nullity than the union over `I`

@@ -196,12 +196,12 @@ lemma branchVerts_inter_vertexSet : h.branchVerts e v ∩ V(G) ⊆ {v} := by
   · have hxdl := h.map e |>.prefixUntilEdge_vertex_isPrefix_dropLast (by use e, h.mem_map e)
       |>.mem h1
     have := h.map_ends e |>.notMem_of_mem_right hx
-    rw [mem_setOf_eq, ← List.tail_dropLast] at this
+    rw [mem_ofPred_eq, ← List.tail_dropLast] at this
     rw [List.mem_iff_eq_head_or_mem_tail (List.ne_nil_of_mem hxdl)] at hxdl
     rw [hxdl.resolve_right this, ← vertex_head, mem_singleton_iff, List.head_dropLast]
   have hxT := (h.map e |>.suffixFromEdge_vertex_isSuffix_tail (by use e, h.mem_map e)).mem h2
   have := h.map_ends e |>.notMem_of_mem_right hx
-  rw [mem_setOf_eq] at this
+  rw [mem_ofPred_eq] at this
   rw [List.mem_iff_mem_dropLast_or_eq_getLast (List.ne_nil_of_mem hxT)] at hxT
   rw [hxT.resolve_left this, ← vertex_getLast, mem_singleton_iff, List.getLast_tail]
 

@@ -27,7 +27,7 @@ lemma IsBase.ncard (hB : M.IsBase B) : B.ncard = M.rank := by
   rw [rank_def, ← eRk_toNat_eq_rk, ncard_def, hB.encard_eq_eRank, eRank_def]
 
 lemma IsRkFinite.cast_rk_eq (hX : M.IsRkFinite X) : (M.rk X : ℕ∞) = M.eRk X := by
-  rw [rk, coe_toNat (by rwa [eRk_ne_top_iff])]
+  rw [rk, natCast_toNat (by rwa [eRk_ne_top_iff])]
 
 lemma rk_eq_zero_of_not_isRkFinite (hX : ¬ M.IsRkFinite X) : M.rk X = 0 := by
   simp [rk, eRk_eq_top_iff.2 hX]
@@ -49,26 +49,26 @@ lemma rk_eq_of_eRk_eq (h : M.eRk X = M.eRk Y) : M.rk X = M.rk Y := by
 
 lemma IsRkFinite.eRk_eq_eRk_iff (hX : M.IsRkFinite X) (hY : M.IsRkFinite Y) :
     M.eRk X = M.eRk Y ↔ M.rk X = M.rk Y := by
-  rw [← hX.cast_rk_eq, ← hY.cast_rk_eq, ENat.coe_inj]
+  rw [← hX.cast_rk_eq, ← hY.cast_rk_eq, ENat.natCast_inj]
 
 lemma IsRkFinite.eRk_le_eRk_iff (hX : M.IsRkFinite X) (hY : M.IsRkFinite Y) :
     M.eRk X ≤ M.eRk Y ↔ M.rk X ≤ M.rk Y := by
-  rw [← hX.cast_rk_eq, ← hY.cast_rk_eq, ENat.coe_le_coe]
+  rw [← hX.cast_rk_eq, ← hY.cast_rk_eq, ENat.natCast_le_natCast]
 
 @[simp] lemma eRk_eq_eRk_iff [RankFinite M] : M.eRk X = M.eRk Y ↔ M.rk X = M.rk Y :=
   (M.isRkFinite_set X).eRk_eq_eRk_iff (M.isRkFinite_set Y)
 
 @[simp] lemma eRk_le_eRk_iff [RankFinite M] : M.eRk X ≤ M.eRk Y ↔ M.rk X ≤ M.rk Y := by
-  rw [← cast_rk_eq, ← cast_rk_eq, ENat.coe_le_coe]
+  rw [← cast_rk_eq, ← cast_rk_eq, ENat.natCast_le_natCast]
 
 @[simp] lemma eRk_eq_coe_iff [RankFinite M] {n : ℕ} : M.eRk X = n ↔ M.rk X = n := by
-  rw [← cast_rk_eq, ENat.coe_inj]
+  rw [← cast_rk_eq, ENat.natCast_inj]
 
 @[simp] lemma eRk_le_coe_iff [RankFinite M] {n : ℕ} : M.eRk X ≤ n ↔ M.rk X ≤ n := by
-  rw [← cast_rk_eq, ENat.coe_le_coe]
+  rw [← cast_rk_eq, ENat.natCast_le_natCast]
 
 @[simp] lemma coe_le_eRk_iff [RankFinite M] {n : ℕ} : (n : ℕ∞) ≤ M.eRk X ↔ n ≤ M.rk X := by
-  rw [← cast_rk_eq, ENat.coe_le_coe]
+  rw [← cast_rk_eq, ENat.natCast_le_natCast]
 
 lemma IsRkFinite.rk_le_rk_of_eRk_le_eRk (hY : M.IsRkFinite Y) (hle : M.eRk X ≤ M.eRk Y) :
     M.rk X ≤ M.rk Y := by
@@ -104,7 +104,7 @@ lemma rk_compl_union_of_disjoint (M : Matroid α) (hXY : Disjoint X Y) :
 
 lemma le_rk_iff [RankFinite M] {n : ℕ} : n ≤ M.rk X ↔ ∃ I, I ⊆ X ∧ M.Indep I ∧ I.ncard = n := by
   simp_rw [← coe_le_eRk_iff, le_eRk_iff,]
-  refine ⟨fun ⟨I, hIX, hI, hc⟩ ↦ ⟨I, hIX, hI, by rw [ncard_def, hc, toNat_coe]⟩,
+  refine ⟨fun ⟨I, hIX, hI, hc⟩ ↦ ⟨I, hIX, hI, by rw [ncard_def, hc, toNat_natCast]⟩,
     fun ⟨I, hIX, hI, hc⟩ ↦ ⟨I, hIX, hI, ?_⟩⟩
   rw [hI.finite.encard_eq_coe, ← hc]; rfl
 
@@ -112,7 +112,7 @@ lemma rk_le_iff [RankFinite M] {n : ℕ} : M.rk X ≤ n ↔ ∀ {I}, I ⊆ X →
   simp_rw [← eRk_le_coe_iff, eRk_le_iff, encard_le_coe_iff]
   refine ⟨fun h I hIX hI ↦ ?_, fun h I hIX hI ↦ ⟨hI.finite, ⟨_, hI.finite.encard_eq_coe, h hIX hI⟩⟩⟩
   obtain ⟨-, m, hm, hmn⟩ := h hIX hI
-  rwa [ncard_def, hm, toNat_coe]
+  rwa [ncard_def, hm, toNat_natCast]
 
 lemma rk_mono (M : Matroid α) [RankFinite M] : Monotone M.rk := by
   rintro X Y (hXY : X ⊆ Y)
@@ -120,8 +120,8 @@ lemma rk_mono (M : Matroid α) [RankFinite M] : Monotone M.rk := by
   exact M.eRk_mono hXY
 
 lemma IsRkFinite.rk_le_of_subset (hY : M.IsRkFinite Y) (hXY : X ⊆ Y) : M.rk X ≤ M.rk Y := by
-  rw [rk, rk, ← ENat.coe_le_coe, coe_toNat (hY.subset hXY).eRk_lt_top.ne,
-    coe_toNat hY.eRk_lt_top.ne]
+  rw [rk, rk, ← ENat.natCast_le_natCast, natCast_toNat (hY.subset hXY).eRk_lt_top.ne,
+    natCast_toNat hY.eRk_lt_top.ne]
   exact M.eRk_mono hXY
 
 lemma rk_le_of_subset (M : Matroid α) [RankFinite M] (hXY : X ⊆ Y) : M.rk X ≤ M.rk Y :=
@@ -161,7 +161,7 @@ lemma Indep.ncard_le_rank [RankFinite M] (hI : M.Indep I) : I.ncard ≤ M.rank :
 lemma Indep.isBase_of_ncard [RankFinite M] (hI : M.Indep I) (hIcard : M.rank ≤ I.ncard) :
     M.IsBase I :=
   hI.isBase_of_eRk_ge hI.finite <| by
-    rwa [hI.eRk_eq_encard, ← cast_rank_eq, ← hI.finite.cast_ncard_eq, ENat.coe_le_coe]
+    rwa [hI.eRk_eq_encard, ← cast_rank_eq, ← hI.finite.cast_ncard_eq, ENat.natCast_le_natCast]
 
 lemma Indep.isBase_of_card [RankFinite M] {I : Finset α} (hI : M.Indep I)
     (hIcard : M.rank ≤ I.card) : M.IsBase I :=
@@ -197,13 +197,14 @@ lemma rk_le_finset_card (M : Matroid α) (X : Finset α) : M.rk X ≤ X.card := 
 
 lemma rk_singleton_le (M : Matroid α) (e : α) : M.rk {e} ≤ 1 := by
   convert M.rk_le_finset_card {e}
-  simp
+  · simp only [Finset.coe_singleton]
+  exact Finset.card_singleton e
 
 lemma IsBasis.rk_eq_rk (h : M.IsBasis I X) : M.rk I = M.rk X :=
   h.isBasis'.rk_eq_rk
 
 lemma rk_eq_zero_iff [RankFinite M] (hX : X ⊆ M.E) : M.rk X = 0 ↔ X ⊆ M.loops := by
-  rw [← eRk_eq_coe_iff, coe_zero, eRk_eq_zero_iff]
+  rw [← eRk_eq_coe_iff, natCast_zero, eRk_eq_zero_iff]
 
 @[simp]
 lemma rk_loops (M : Matroid α) : M.rk M.loops = 0 := by
@@ -218,7 +219,7 @@ lemma IsLoop.rk_eq (he : M.IsLoop e) : M.rk {e} = 0 := by
   rfl
 
 lemma IsCircuit.rk_add_one_eq {C : Finset α} (hC : M.IsCircuit C) : M.rk C + 1 = C.card := by
-  rw [← ENat.coe_inj, Nat.cast_add, ← encard_coe_eq_coe_finsetCard,
+  rw [← ENat.natCast_inj, Nat.cast_add, ← encard_coe_eq_coe_finsetCard,
     ← hC.eRk_add_one_eq, cast_rk_eq_eRk_of_finite _ (by simp), Nat.cast_one]
 
 /-- The `ℕ`-valued rank function is submodular.
@@ -226,7 +227,7 @@ Due to junk values, we only need that `X` is finite-rank.  -/
 lemma IsRkFinite.submod (hX : M.IsRkFinite X) (Y : Set α) :
     M.rk (X ∩ Y) + M.rk (X ∪ Y) ≤ M.rk X + M.rk Y := by
   by_cases hY : M.IsRkFinite Y
-  · rw [← ENat.coe_le_coe, Nat.cast_add, Nat.cast_add, hX.cast_rk_eq, hY.cast_rk_eq,
+  · rw [← ENat.natCast_le_natCast, Nat.cast_add, Nat.cast_add, hX.cast_rk_eq, hY.cast_rk_eq,
       hX.inter_right.cast_rk_eq, (hX.union hY).cast_rk_eq]
     apply eRk_inter_add_eRk_union_le
   rw [rk_eq_zero_of_not_isRkFinite hY, add_zero,
@@ -250,7 +251,7 @@ lemma rk_submod_insert (M : Matroid α) [RankFinite M] (X Y : Set α) :
 
 lemma rk_submod_compl (M : Matroid α) [RankFinite M] (X Y : Set α) :
     M.rk (M.E \ (X ∪ Y)) + M.rk (M.E \ (X ∩ Y)) ≤ M.rk (M.E \ X) + M.rk (M.E \ Y) := by
-  rw [← diff_inter_diff, diff_inter]
+  rw [← sdiff_inter_sdiff, sdiff_inter]
   apply rk_submod
 
 lemma rk_submod_insert_compl (M : Matroid α) [RankFinite M] (X Y : Set α) :
@@ -263,7 +264,7 @@ lemma Indep.exists_insert_of_ncard_lt [RankFinite M] {J : Set α} (hI : M.Indep 
     (hcard : I.ncard < J.ncard) : ∃ e ∈ J \ I, M.Indep (insert e I) := by
   apply hI.exists_insert_of_encard_lt hJ
   rw [← hJ.finite.cast_ncard_eq, ← hI.finite.cast_ncard_eq]
-  exact ENat.coe_lt_coe.mpr hcard
+  exact ENat.natCast_lt_natCast.mpr hcard
 
 @[simp] lemma rank_map {β : Type*} (M : Matroid α) (f : α → β) (hf : InjOn f M.E) :
     (M.map f hf).rank = M.rank := by

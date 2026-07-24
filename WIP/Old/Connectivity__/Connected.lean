@@ -92,7 +92,7 @@ lemma ConnectedTo.of_restrict {R : Set α} (hR : R ⊆ M.E) (hef : (M ↾ R).Con
   exact hC.1.mem_connectedTo_mem heC hfC
 
 lemma ConnectedTo.of_delete {D : Set α} (hef : (M ＼ D).ConnectedTo e f) : M.ConnectedTo e f := by
-  rw [delete_eq_restrict] at hef; apply hef.of_restrict diff_subset
+  rw [delete_eq_restrict] at hef; apply hef.of_restrict sdiff_subset
 
 lemma ConnectedTo.of_contract {C : Set α} (hef : (M ／ C).ConnectedTo e f) : M.ConnectedTo e f := by
   replace hef := hef.to_dual
@@ -109,19 +109,19 @@ private lemma connectedTo_of_indep_isHyperplane_of_not_isColoop {I : Set α} (hI
   have hB : M.IsBase (insert e I) := by
     refine Indep.isBase_of_spanning ?_ (hI'.spanning_of_ssuperset (ssubset_insert heI.2))
     · rwa [hI.insert_indep_iff_of_notMem heI.2, hI'.isFlat.closure]
-  simp only [hB.isColoop_iff_forall_notMem_fundCircuit (.inr hfI), mem_diff, mem_insert_iff, not_or,
+  simp only [hB.isColoop_iff_forall_notMem_fundCircuit (.inr hfI), mem_sdiff, mem_insert_iff, not_or,
     and_imp, not_forall, not_not, exists_prop] at hf
   obtain ⟨x, hx, hxe, hxI, hfC⟩ := hf
   have hxi : M.Indep ((insert x I) \ {e}) := by
-    rw [diff_singleton_eq_self (by simp [Ne.symm hxe, heI.2]), hI.insert_indep_iff_of_notMem hxI,
+    rw [sdiff_singleton_eq_self (by simp [Ne.symm hxe, heI.2]), hI.insert_indep_iff_of_notMem hxI,
       hI'.isFlat.closure]
     exact ⟨hx, hxI⟩
   have hC := IsBase.fundCircuit_isCircuit hB hx (by simp [hxe, hxI])
 
   refine hC.mem_connectedTo_mem (by_contra fun heC ↦ ?_) hfC
 
-  have hss := subset_diff_singleton (fundCircuit_subset_insert _ x (insert e I)) heC
-  simp only [insert_comm, mem_singleton_iff, insert_diff_of_mem] at hss
+  have hss := subset_sdiff_singleton (fundCircuit_subset_insert _ x (insert e I)) heC
+  simp only [insert_comm, mem_singleton_iff, insert_sdiff_of_mem] at hss
   exact hC.dep.not_indep (hxi.subset hss)
 
 lemma ConnectedTo.trans {e₁ e₂ : α} (h₁ : M.ConnectedTo e₁ f) (h₂ : M.ConnectedTo f e₂) :
@@ -136,13 +136,13 @@ lemma ConnectedTo.trans {e₁ e₂ : α} (h₁ : M.ConnectedTo e₁ f) (h₂ : M
 
   by_cases he₂K₁ : e₂ ∈ K₁; exact (hK₁.mem_connectedTo_mem he₁K₁ he₂K₁)
 
-  have hC₂i : M.Indep (C₂ \ K₁) := (hC₂.diff_singleton_indep hfC₂).subset
-      (subset_diff_singleton diff_subset (by simp [hfK₁]))
+  have hC₂i : M.Indep (C₂ \ K₁) := (hC₂.sdiff_singleton_indep hfC₂).subset
+      (subset_sdiff_singleton sdiff_subset (by simp [hfK₁]))
 
   have hH := hK₁.compl_isHyperplane
 
   obtain ⟨J, hJ, he₂J⟩ :=
-    hC₂i.subset_isBasis_of_subset (diff_subset_diff_left hC₂.subset_ground) hH.subset_ground
+    hC₂i.subset_isBasis_of_subset (sdiff_subset_sdiff_left hC₂.subset_ground) hH.subset_ground
 
   refine (connectedTo_of_indep_isHyperplane_of_not_isColoop ?_
     (hH.isBasis_isHyperplane_delete hJ) ?_ ?_ ?_).of_delete
@@ -152,8 +152,8 @@ lemma ConnectedTo.trans {e₁ e₂ : α} (h₁ : M.ConnectedTo e₁ f) (h₂ : M
   · exact he₂J ⟨he₂C₂, he₂K₁⟩
 
   refine IsCircuit.not_isColoop_of_mem ?_ he₂C₂
-  rwa [delete_isCircuit_iff, and_iff_right hC₂, disjoint_iff_inter_eq_empty, ← inter_diff_assoc,
-    diff_eq_empty, ← inter_diff_assoc, inter_eq_self_of_subset_left hC₂.subset_ground]
+  rwa [delete_isCircuit_iff, and_iff_right hC₂, disjoint_iff_inter_eq_empty, ← inter_sdiff_assoc,
+    sdiff_eq_empty, ← inter_sdiff_assoc, inter_eq_self_of_subset_left hC₂.subset_ground]
 
 @[mk_iff]
 structure Connected (M : Matroid α) : Prop where
@@ -221,10 +221,10 @@ lemma eq_disjointSum_of_not_connected [hne : M.Nonempty] (h : ¬ M.Connected) :
   obtain ⟨e, he, f, hf, hne, hef⟩ := not_connected_iff_exists.1 h
   refine ⟨M ↾ {x | M.ConnectedTo e x}, M ＼ {x | M.ConnectedTo e x}, disjoint_sdiff_right,
     ⟨e, by simpa⟩, ⟨f, by simp [hf, hef]⟩, ext_isCircuit ?_ fun C hC ↦ ?_⟩
-  · simp only [disjointSum_ground_eq, restrict_ground_eq, delete_ground, union_diff_self]
+  · simp only [disjointSum_ground_eq, restrict_ground_eq, delete_ground, union_sdiff_self]
     rw [union_eq_self_of_subset_left setOf_connectedTo_right_subset_ground]
   simp only [disjointSum_isCircuit_iff, restrict_isCircuit_iff (R := {x | M.ConnectedTo e x}),
-    subset_def, mem_setOf_eq, delete_isCircuit_iff, disjoint_left, or_iff_not_imp_right, not_and,
+    subset_def, mem_ofPred_eq, delete_isCircuit_iff, disjoint_left, or_iff_not_imp_right, not_and,
     not_forall, not_not, exists_prop]
   refine ⟨fun h hC₁ ↦ ⟨h, fun x hx ↦ ?_⟩, by tauto⟩
   obtain ⟨y, hyC, hey⟩ := hC₁ h
@@ -291,7 +291,7 @@ lemma cSet_inter_image_Iic {Cs : ℕ ↪ Set α} {e} {i : ℕ} {C} (heC : e 0 �
   · obtain ⟨-, heC⟩ : _ ∧ e (i+1) ∈ C := by simpa [cSet, h'] using hC
     rw [insert_inter_of_mem (mem_image_of_mem _ (by simp)),
       insert_eq_of_mem (mem_inter heC <| mem_image_of_mem _ (by simp))]
-  simp only [cSet, h', ↓reduceIte, mem_diff, mem_setOf_eq, not_and] at hC
+  simp only [cSet, h', ↓reduceIte, mem_sdiff, mem_ofPred_eq, not_and] at hC
   rw [Finset.range_add_one, Finset.coe_insert, image_insert_eq, inter_comm,
     insert_inter_of_notMem (hC.2 hC.1), inter_comm]
 
@@ -408,7 +408,7 @@ lemma ConnectedTo.delete_or_contract (hM : M.ConnectedTo x y) (hxe : x ≠ e) (h
 theorem Connected.delete_or_contract (hM : M.Connected) (hnt : M.E.Nontrivial) (e : α) :
     (M ＼ {e}).Connected ∨ (M ／ {e}).Connected := by
 
-  simp only [connected_iff, ← ground_nonempty_iff, delete_ground, Set.mem_diff,
+  simp only [connected_iff, ← ground_nonempty_iff, delete_ground, Set.mem_sdiff,
     Set.mem_singleton_iff, and_imp, contract_ground, or_iff_not_imp_left, not_forall,
     exists_and_left, exists_prop, true_and, show (M.E \ { e }).Nonempty from hnt.exists_ne e,
     forall_exists_index, and_imp]

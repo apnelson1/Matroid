@@ -18,12 +18,12 @@ lemma Sum.preimage_inr_image_swap (X : Set (α ⊕ β)) :
 @[simp]
 lemma Sum.image_inr_diff (X Y : Set β) (α : Type*) :
     Sum.inr (α := α) '' (X \ Y) = Sum.inr '' X \ Sum.inr '' Y :=
-  Set.image_diff Sum.inr_injective ..
+  Set.image_sdiff Sum.inr_injective ..
 
 @[simp]
 lemma Sum.image_inl_diff (X Y : Set α) (β : Type*) :
     Sum.inl (β := β) '' (X \ Y) = Sum.inl '' X \ Sum.inl '' Y :=
-  Set.image_diff Sum.inl_injective ..
+  Set.image_sdiff Sum.inl_injective ..
 
 
 namespace Matroid
@@ -61,8 +61,8 @@ def twoSum (M : Matroid α) (N : Matroid β) (e : α) (f : β) : Matroid (α ⊕
 @[simp]
 lemma twoSum_ground_eq (M : Matroid α) (N : Matroid β) (e : α) (f : β) :
     (M.twoSum N e f).E = (.inl '' (M.E \ {e})) ∪ (.inr '' (N.E \ {f})) := by
-  simp only [twoSum, delete_ground, projectBy_ground, sum_ground, image_diff Sum.inl_injective,
-    image_singleton, image_diff Sum.inr_injective]
+  simp only [twoSum, delete_ground, projectBy_ground, sum_ground, image_sdiff Sum.inl_injective,
+    image_singleton, image_sdiff Sum.inr_injective]
   grind
 
 lemma twoSum_indep_iff (M : Matroid α) (N : Matroid β) (he : M.IsNonloop e)
@@ -126,7 +126,7 @@ lemma twoSum_comm (M : Matroid α) (N : Matroid β) (e : α) (f : β) :
     M.twoSum N e f = (N.twoSum M f e).mapEquiv (Equiv.sumComm ..) := by
   refine ext_indep ?_ fun I hI ↦ ?_
   · simp only [twoSum_ground_eq, Sum.image_inl_diff, image_singleton, Sum.image_inr_diff,
-      mapEquiv_ground_eq, image_union, image_diff (Equiv.injective _)]
+      mapEquiv_ground_eq, image_union, image_sdiff (Equiv.injective _)]
     simp only [Equiv.sumComm_apply, image_image, Sum.swap_inl, Sum.swap_inr]
     grind
   have heI : .inl e ∉ I := notMem_subset hI <| by simp
@@ -187,10 +187,10 @@ def twoSumAt (M N : Matroid α) (hMNe : M.E ∩ N.E = {e}) : Matroid α :=
 @[simp]
 lemma twoSumAt_ground (M N : Matroid α) (hMNe : M.E ∩ N.E = {e}) :
     (M.twoSumAt N hMNe).E = (M.E ∪ N.E) \ {e} := by
-  rw [twoSumAt, map_ground, twoSum_ground_eq, image_diff Sum.inl_injective,
-    image_diff Sum.inr_injective, image_union, image_diff_of_injOn (by simp [InjOn]),
-    image_diff_of_injOn (by simp [InjOn])]
-  · simp [image_image, union_diff_distrib]
+  rw [twoSumAt, map_ground, twoSum_ground_eq, image_sdiff Sum.inl_injective,
+    image_sdiff Sum.inr_injective, image_union, image_sdiff_of_injOn (by simp [InjOn]),
+    image_sdiff_of_injOn (by simp [InjOn])]
+  · simp [image_image, union_sdiff_distrib]
   · grw [← hMNe, inter_subset_right]
   grw [← hMNe, inter_subset_left]
 

@@ -443,12 +443,12 @@ theorem card_eq_eNatCard_toNat (α : Type*) : Nat.card α = (ENat.card α).toNat
 
 @[simp]
 protected theorem cast_card (α : Type*) [Finite α] : (Nat.card α : ℕ∞) = ENat.card α := by
-  rw [Nat.card, ENat.coe_toNat_eq_self]
+  rw [Nat.card, ENat.natCast_toNat_eq_self]
   simpa
 
 @[simp]
 theorem card_eq_fintype_card [Fintype α] : Nat.card α = Fintype.card α := by
-  rw [card_eq_eNatCard_toNat, ENat.card_eq_coe_fintypeCard, ENat.toNat_coe]
+  rw [card_eq_eNatCard_toNat, ENat.card_eq_coe_fintypeCard, ENat.toNat_natCast]
 
 /-- Because this theorem takes `Fintype α` as a non-instance argument, it can be used in particular
 when `Fintype.card` ends up with different instance than the one found by inference -/
@@ -594,7 +594,7 @@ def equivFinOfCardPos {α : Type*} (h : Nat.card α ≠ 0) : α ≃ Fin (Nat.car
   · simp only [card_eq_zero_of_infinite, ne_eq, not_true_eq_false] at h
 
 theorem card_of_subsingleton (a : α) [Subsingleton α] : Nat.card α = 1 := by
-  rw [← ENat.coe_inj, Nat.cast_card]
+  rw [← ENat.natCast_inj, Nat.cast_card]
   exact ENat.card_of_subsingleton a
 
 theorem card_eq_one_iff_unique : Nat.card α = 1 ↔ Subsingleton α ∧ Nonempty α := by

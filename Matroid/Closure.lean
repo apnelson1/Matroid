@@ -13,10 +13,10 @@ lemma isBase_iff_indep_spanning {B : Set α} : M.IsBase B ↔ M.Indep B ∧ M.Sp
 
 lemma coindep_iff_subset_closure_compl : M.Coindep X ↔ X ⊆ M.closure (M.E \ X) := by
   by_cases hXE : X ⊆ M.E
-  · rw [coindep_iff_compl_spanning, spanning_iff, and_iff_left diff_subset]
+  · rw [coindep_iff_compl_spanning, spanning_iff, and_iff_left sdiff_subset]
     refine ⟨fun h ↦ by rwa [h], fun h ↦ ?_⟩
     nth_grw 1 [subset_antisymm_iff, and_iff_right (M.closure_subset_ground ..),
-      ← diff_union_of_subset hXE, union_subset_iff, and_iff_left h, ← M.subset_closure (M.E \ X)]
+      ← sdiff_union_of_subset hXE, union_subset_iff, and_iff_left h, ← M.subset_closure (M.E \ X)]
   exact iff_of_false (fun h ↦ hXE h.subset_ground)
     (fun h ↦ hXE (h.trans (M.closure_subset_ground ..)))
 
@@ -50,7 +50,7 @@ lemma spanning_dual_iff  (hXE : X ⊆ M.E := by aesop_mat) :
 
 lemma spanning_compl_dual_iff (hXE : X ⊆ M.E := by aesop_mat) :
     M✶.Spanning (M.E \ X) ↔ M.Indep X := by
-  rw [spanning_iff_compl_coindep, dual_coindep_iff, dual_ground, diff_diff_cancel_left hXE]
+  rw [spanning_iff_compl_coindep, dual_coindep_iff, dual_ground, sdiff_sdiff_cancel_left hXE]
 
 lemma map_spanning_iff {β : Type*} {X : Set β} {f : α → β} (hf : InjOn f M.E) :
     (M.map f hf).Spanning X ↔ ∃ X₀, M.Spanning X₀ ∧ X = f '' X₀ := by

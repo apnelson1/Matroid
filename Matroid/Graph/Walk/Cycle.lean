@@ -131,8 +131,8 @@ lemma restrict_isTour_iff (F : Set β) (C : WList α β) :
 lemma deleteEdges_isTour_iff (F : Set β) (C : WList α β) :
     (G ＼ F).IsTour C ↔ G.IsTour C ∧ Disjoint E(C) F := by
   refine ⟨fun h ↦ ⟨h.of_le deleteEdges_le, ?_⟩, fun ⟨h, hss⟩ ↦
-    h.of_le_of_subset (by simp) (by simp [subset_diff, hss, h.isWalk.edgeSet_subset])⟩
-  have := by simpa only [edgeSet_deleteEdges, subset_diff] using h.isWalk.edgeSet_subset
+    h.of_le_of_subset (by simp) (by simp [subset_sdiff, hss, h.isWalk.edgeSet_subset])⟩
+  have := by simpa only [edgeSet_deleteEdges, subset_sdiff] using h.isWalk.edgeSet_subset
   use this.2
 
 @[simp]
@@ -140,7 +140,7 @@ lemma induce_isTour_iff (X : Set α) (C : WList α β) : (G[X]).IsTour C ↔ G.I
   refine ⟨fun h ↦ ⟨?_, h.isWalk.vertexSet_subset⟩, fun ⟨h, hss⟩ ↦ ?_⟩
   · refine ⟨⟨?_, h.edge_nodup⟩, h.nonempty, h.isClosed⟩
     obtain ⟨x, hx, rfl⟩ | ⟨hC, hCX⟩ := by
-      simpa only [isWalk_induce_iff, mem_diff] using h.isWalk
+      simpa only [isWalk_induce_iff, mem_sdiff] using h.isWalk
     · simpa using h.nonempty
     exact hC
   refine ⟨⟨?_, h.edge_nodup⟩, h.nonempty, h.isClosed⟩
@@ -241,7 +241,7 @@ lemma IsCyclicWalk.tail_dropLast_vertexSet (hC : G.IsCyclicWalk C) (hnt : C.Nont
   cases C with
   | nil => simp at hC
   | cons u e w =>
-    simp only [tail_cons, cons_vertexSet, first_cons, Set.mem_singleton_iff, Set.insert_diff_of_mem]
+    simp only [tail_cons, cons_vertexSet, first_cons, mem_singleton_iff, insert_sdiff_of_mem]
     rw [dropLast_vertexSet_of_nodup (by simpa using hC.tail_isPath.nodup) (by simpa using hnt),
       show u = w.last from hC.isClosed]
 
@@ -385,8 +385,8 @@ lemma restrict_isCyclicWalk_iff (F : Set β) (C : WList α β) :
 lemma deleteEdges_isCyclicWalk_iff (F : Set β) (C : WList α β) :
     (G ＼ F).IsCyclicWalk C ↔ G.IsCyclicWalk C ∧ Disjoint E(C) F := by
   refine ⟨fun h ↦ ⟨h.of_le deleteEdges_le, ?_⟩,
-    fun ⟨h, hss⟩ ↦ h.isCycle_of_le (by simp) (by simp [subset_diff, hss, h.isWalk.edgeSet_subset])⟩
-  have := by simpa only [edgeSet_deleteEdges, subset_diff] using h.isWalk.edgeSet_subset
+    fun ⟨h, hss⟩ ↦ h.isCycle_of_le (by simp) (by simp [subset_sdiff, hss, h.isWalk.edgeSet_subset])⟩
+  have := by simpa only [edgeSet_deleteEdges, subset_sdiff] using h.isWalk.edgeSet_subset
   use this.2
 
 @[simp]

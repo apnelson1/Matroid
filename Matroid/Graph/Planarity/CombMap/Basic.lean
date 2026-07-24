@@ -27,7 +27,7 @@ lemma cyclePerm_isCycleOn (hS : S.Countable) : (cyclePerm S hS).IsCycleOn S :=
 
 lemma cyclePerm_fixed_of_notMem (hS : S.Countable) (hd : d ∉ S) : cyclePerm S hS d = d := by
   by_contra hne
-  have hmem : d ∈ {x | cyclePerm S hS x ≠ x} := by simpa [Set.mem_setOf_eq, ne_eq] using hne
+  have hmem : d ∈ {x | cyclePerm S hS x ≠ x} := by simpa [Set.mem_ofPred_eq, ne_eq] using hne
   exact hd ((hS.exists_cycleOn).choose_spec.2 hmem)
 
 end CyclePerm
@@ -265,7 +265,7 @@ noncomputable def contractσ (M : CombinatorialMap G D) (C : Set E) (hφ : M.φ.
 --     rw [DartStructure.preimage_fᵥ_contract]
 --     refine ⟨?_, ?_⟩
 --     · sorry
---     simp only [mem_diff, PFun.mem_preimage, Set.mem_preimage, mem_singleton_iff, not_exists,
+--     simp only [mem_sdiff, PFun.mem_preimage, Set.mem_preimage, mem_singleton_iff, not_exists,
 --       not_and, and_imp, forall_exists_index]
 --     rintro d u rfl hud hCd d' v hvu hvd' hCd'
 --     simp [contractσ, SameCycle]
@@ -278,7 +278,7 @@ end Contract
 --   fₑ d := (M.fₑ d).map φ
 --   ran_fₑ := by
 --     ext e
---     simp only [ran, mem_map_iff, mem_setOf_eq]
+--     simp only [ran, mem_map_iff, mem_ofPred_eq]
 
 
 noncomputable def EulerCharacteristic [G.Finite] (M : CombinatorialMap G D) : ℤ :=

@@ -114,13 +114,13 @@ lemma contract_deleteEdges_comm : (H /[C, φ]) ＼ F = (H ＼ F) /[C, φ] := by
 
 lemma edgeSet_disjoint_of_le_contract {φ : α → α} (h : G ≤ G /[C, φ]) : Disjoint E(G) C := by
   apply_fun edgeSet (α := α) (β := β) at h using edgeSet_monotone (α := α) (β := β)
-  simpa [subset_diff] using h
+  simpa [subset_sdiff] using h
 
 lemma edgeSet_disjoint_of_le_contract_ge {φ : α → α} (h : G ≤ H /[E(I), φ]) :
     Disjoint E(G) E(I) := by
   refine disjoint_left.mpr fun e heG heI => ?_
   have := edgeSet_mono h heG
-  simp only [contract, edgeSet_map, edgeSet_deleteEdges, mem_diff] at this
+  simp only [contract, edgeSet_map, edgeSet_deleteEdges, mem_sdiff] at this
   exact this.2 heI
 
 @[simp]
@@ -235,8 +235,7 @@ variable [DecidableEq α]
 def repFun (_ : G.IsLink e x y) : α → α :=
   fun v ↦ if v = y then x else v
 
-noncomputable def isRepFun (he : G.IsLink e x y) :
-    (G ↾ {e}).connPartition.IsRepFun he.repFun where
+theorem isRepFun (he : G.IsLink e x y) : (G ↾ {e}).connPartition.IsRepFun he.repFun where
   apply_of_notMem v hv := by
     unfold repFun
     split_ifs with hveq
@@ -309,10 +308,10 @@ def contract (G : Graph α β) (e : β) (he : G.IsLink e x y) : Graph α β wher
   edgeSet := E(G) \ {e}
   IsLink f u v := ∃ a b, (G.IsLink f a b ∧ f ≠ e) ∧
     (a = y ∧ x = u ∨ a ≠ y ∧ a = u) ∧ (b = y ∧ x = v ∨ b ≠ y ∧ b = v)
-  isLink_symm f hf u v h := by
+  isLink_symm f hf := ⟨fun u v h ↦ by
     classical
     have huv := contract_isLink_isLink_lemma.mpr h
-    exact contract_isLink_isLink_lemma.mp huv.symm
+    exact contract_isLink_isLink_lemma.mp huv.symm⟩
   eq_or_eq_of_isLink_of_isLink f a b c d h1 h2 := by
     classical
     exact eq_or_eq_of_isLink_of_isLink _ (contract_isLink_isLink_lemma.mpr h1)
@@ -344,13 +343,13 @@ lemma contract_vertex_encard_eq_add_one [G.Finite] (he : G.IsLink e x y) (hxy : 
     V(G).encard = V(G /(e, he)).encard + 1 := by
   classical
   have hy : y ∈ V(G) := he.right_mem
-  -- `encard_diff_singleton_add_one` is in `Mathlib.Data.Set.Card`.
+  -- `encard_sdiff_singleton_add_one` is in `Mathlib.Data.Set.Card`.
   have hV : V(G /(e, he)) = V(G) \ ({y} : Set α) := he.vertexSet_contract_of_ne hxy
   have henc : (V(G) \ ({y} : Set α)).encard = V(G /(e, he)).encard := by
     simpa using (congrArg Set.encard hV).symm
   calc
     V(G).encard = (V(G) \ ({y} : Set α)).encard + 1 := by
-      simpa using (encard_diff_singleton_add_one (s := V(G)) (a := y) hy).symm
+      simpa using (encard_sdiff_singleton_add_one (s := V(G)) (a := y) hy).symm
     _ = V(G /(e, he)).encard + 1 := by simp [henc]
 
 /-! ### Equality to a map/delete presentation -/
@@ -360,7 +359,7 @@ lemma contract_deleteVerts_of_notMem (he : G.IsLink e x y) (hx : x ∉ X) :
         he (by simp [hx, he.left_mem]) (by simp [he.right_mem]) |>.contract) := by
   ext a b c <;>
   · simp +contextual only [vertexSet_deleteVerts, vertexSet_contract, deleteVerts_isLink_iff,
-    contract_isLink, mem_diff, mem_insert_iff, mem_singleton_iff]
+    contract_isLink, mem_sdiff, mem_insert_iff, mem_singleton_iff]
     grind
 
 variable [DecidableEq α]
@@ -380,7 +379,7 @@ lemma _root_.Graph.IsLoopAt.contract_eq (he : G.IsLoopAt e x) :
   conv_rhs => rw [← (G ＼ {e}).map_id]
   rw [he.contract_eq_map_deleteEdges]
   refine map_congr_left_of_eqOn (fun u _hu ↦ ?_)
-  by_cases hux : u = x <;> simp [hux]
+  by_cases hux : u = x <;> simp [hux, repFun]
 
 lemma contract_eq (he : G.IsLink e x y) : G /(e, he) = G /[({e} : Set β), he.repFun] := by
   rw [he.contract_eq_map_deleteEdges, map_deleteEdges_comm]
@@ -395,7 +394,7 @@ lemma contract_deleteEdges_comm (he : G.IsLink e x y) (heF : e ∉ F) :
     (G /(e, he)) ＼ F = G ＼ F /(e, ⟨he, heF⟩) := by
   simp_rw [contract_eq]
   rw [Graph.contract_deleteEdges_comm]
-  congr 1
+  exact (contract_eq (⟨he, heF⟩ : (G ＼ F).IsLink e x y)).symm
 
 lemma contract_contract_comm_of_ne (he : G.IsLink e x y) (hf : G.IsLink f u v) (hyv : y ≠ v)
     (hor : x ≠ v ∨ y ≠ u) (hef : e ≠ f) :
@@ -471,7 +470,7 @@ lemma minorMap_ext {F₁ F₂ : minorMap G H} (hmap : F₁.map = F₂.map) : F�
 
 instance : FunLike (minorMap G H) V(G) (Graph α β) where
   coe f := f.map
-  coe_injective' _ _ := minorMap_ext
+  coe_injective _ _ := minorMap_ext
 
 set_option backward.isDefEq.respectTransparency false in
 lemma minorMap.ne_bot (F : minorMap G H) (x : V(G)) : F.map x ≠ ⊥ := by
@@ -537,6 +536,7 @@ def minorMap.of_le (h : G ≤ H) : minorMap G H where
   link e x y hxy := ⟨x, y, h.isLink_mono hxy, by simp⟩
   conn v := by simp
 
+set_option backward.isDefEq.respectTransparency false in
 def minorMap.of_contract (hφ : (G ↾ C).connPartition.IsRepFun φ) : minorMap (G /[C, φ]) G where
   map v := (G ↾ C).walkable v.val
   map_le v := walkable_isClosedSubgraph.le.trans restrict_le
@@ -546,7 +546,7 @@ def minorMap.of_contract (hφ : (G ↾ C).connPartition.IsRepFun φ) : minorMap 
     obtain ⟨v, ⟨y, hy, rfl⟩⟩ := v
     simpa [hφ.apply_eq_apply_iff_rel (by simpa : x ∈ _), hφ] using huv
   edge_disj v := by
-    simp only [edgeSet_contract, vertexSet_contract]
+    simp only [edgeSet_contract]
     refine disjoint_sdiff_inter.mono_right (walkable_isCompOf ?_).le.edgeSet_mono
     rw [vertexSet_restrict]
     exact contract_vertex_mono hφ restrict_le v.prop
@@ -560,10 +560,10 @@ def minorMap.of_contract (hφ : (G ↾ C).connPartition.IsRepFun φ) : minorMap 
     · simpa using hφ.rel_apply (by simpa using huv.left_mem) |>.symm
     · simpa using hφ.rel_apply (by simpa using huv.right_mem) |>.symm
   conn v := by
-    simp only [vertexSet_contract]
     refine walkable_connected ?_
-    have := by simpa only [connPartition_supp, vertexSet_restrict] using hφ.image_subset_supp
-    exact this v.prop
+    have hsup : φ '' V(G) ⊆ V(G) := by
+      simpa only [connPartition_supp, vertexSet_restrict] using hφ.image_subset_supp
+    simpa [vertexSet_contract] using hsup v.prop
 
 @[simps]
 def minorMap.anti_left (F : minorMap H I) (hGH: G ≤ H) : minorMap G I where
@@ -604,13 +604,13 @@ lemma minorMap.vertexSet_intermediate (F : minorMap G H) : V(F.intermediate) = �
 @[simp]
 lemma minorMap.edgeSet_intermediate (F : minorMap G H) :
     E(F.intermediate) = E(G) ∪ ⋃ x, E(F.map x) := by
-  rw [intermediate, edgeSet_restrict, inter_eq_right, edgeSet_induce_eq_diff, subset_diff,
+  rw [intermediate, edgeSet_restrict, inter_eq_right, edgeSet_induce_eq_diff, subset_sdiff,
     union_subset_iff]
   refine ⟨⟨F.edgeSet_mono, ?_⟩, ?_⟩
   · simp only [iUnion_coe_set, iUnion_subset_iff]
     intro x hx
     exact F.map_le ⟨x, hx⟩ |>.edgeSet_mono
-  simp only [disjoint_iff_forall_notMem, mem_setIncEdges_iff, mem_diff, not_exists, not_and,
+  simp only [disjoint_iff_forall_notMem, mem_setIncEdges_iff, mem_sdiff, not_exists, not_and,
     and_imp]
   exact fun _ he _ _ hy hey ↦ hy <| F.mem_iUnion_of_edge_mem he hey
 

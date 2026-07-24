@@ -38,9 +38,9 @@ lemma foo (M : Matroid α) [Finitary M] [DecidableEq α] (hB : M.IsBase B) (hM :
   use fun x y ↦ v x y
   refine ext_indep ?_ ?_
   · suffices M.E = B ∪ {x | x ∈ M.E ∧ x ∉ B} by simpa [ofReducedMatrix]
-    simp [← mem_diff, union_eq_self_of_subset_left hB.subset_ground]
+    simp [← mem_sdiff, union_eq_self_of_subset_left hB.subset_ground]
   simp only [ofReducedMatrix, mapEmbedding_indep_iff, ofFun_indep_iff, subset_univ, and_true,
-    Embedding.sumSet_range, union_diff_self]
+    Embedding.sumSet_range, union_sdiff_self]
   intro I hIE
   rw [v.indep_iff]
   sorry

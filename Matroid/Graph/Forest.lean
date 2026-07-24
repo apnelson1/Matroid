@@ -136,12 +136,12 @@ lemma IsCyclicWalk.toGraph_eq_of_le {C C₀ : WList α β} (hC : G.IsCyclicWalk 
     rw [hP_eq, hC.isWalk.toGraph_eq_induce_restrict, hC₀.isWalk.toGraph_eq_induce_restrict,
       restrict_deleteVerts, induce_deleteVerts]
     refine (restrict_mono_right _ hCE).trans (restrict_mono_left (induce_mono_right _ ?_) _)
-    simpa [subset_diff, hCV] using hxC₀
+    simpa [subset_sdiff, hCV] using hxC₀
   obtain ⟨P, hP, hPC⟩ := hC.exists_isPath_toGraph_eq_delete_edge <| by simpa using heC
   refine hC₀.toGraph_not_isForest <| hP.toGraph_isForest.anti ?_
   rw [hPC, hC.isWalk.toGraph_eq_induce_restrict, hC₀.isWalk.toGraph_eq_induce_restrict,
     restrict_deleteEdges]
-  have hss : E(C₀) ⊆ E(C) \ {e} := subset_diff_singleton hCE (by simpa using heC₀)
+  have hss : E(C₀) ⊆ E(C) \ {e} := subset_sdiff_singleton hCE (by simpa using heC₀)
   refine (restrict_mono_right _ hss).trans ?_
   rw [← restrict_induce, ← restrict_induce]
   exact induce_mono_right _ hCV
@@ -443,7 +443,7 @@ lemma isForest_of_minimal_connected (hF : Minimal (fun F ↦ (G ↾ F).Connected
   rw [isForest_iff_not_isCyclicWalk]
   intro C hC
   obtain ⟨e, he⟩ := hC.nonempty.edgeSet_nonempty
-  refine hF.notMem_of_prop_diff_singleton (x := e) ?_ (hC.isWalk.edgeSet_subset he).2
+  refine hF.notMem_of_prop_sdiff_singleton (x := e) ?_ (hC.isWalk.edgeSet_subset he).2
   rw [← restrict_deleteEdges]
   exact hF.prop.deleteEdges_singleton_connected <| hC.not_isBridge_of_mem he
 
@@ -467,6 +467,7 @@ lemma IsForest.simple (hG : G.IsForest) : G.Simple where
     simpa [isCyclicWalk_iff, isTour_iff, he.left_mem, hf.symm, he, he.adj.ne.symm] using
       hG (cons x e (cons y f (nil x)))
 
+set_option backward.isDefEq.respectTransparency false in
 lemma isForest_iff_isTrail_eq_eq : G.IsForest ↔ ∀ ⦃P Q⦄, G.IsTrail P → G.IsTrail Q →
     P.first = Q.first → P.last = Q.last → P = Q := by
   refine ⟨fun hG P Q hP hQ hfirst hlast ↦ hG.eq_of_isTrail_eq_eq hP hQ hfirst hlast, fun h ↦ ?_⟩
@@ -564,13 +565,13 @@ lemma IsTree.encard_vertexSet {T : Graph α β} (h : T.IsTree) : V(T).encard = E
   have hxV := he.isNonloopAt.vertex_mem
   have hlt := encard_delete_vertex_lt hxV
   have := he.isLeaf.delete_isTree h
-  rw [← encard_diff_singleton_add_one hxV, ← vertexSet_deleteVerts,
+  rw [← encard_sdiff_singleton_add_one hxV, ← vertexSet_deleteVerts,
     (he.isLeaf.delete_isTree h).encard_vertexSet, he.edgeSet_delete_vertex_eq,
-    encard_diff_singleton_add_one he.isNonloopAt.edge_mem]
+    encard_sdiff_singleton_add_one he.isNonloopAt.edge_mem]
 termination_by V(T).encard
 
 lemma IsTree.ncard_vertexSet [T.Finite] (h : T.IsTree) : V(T).ncard = E(T).ncard + 1 := by
-  rw [← ENat.coe_inj, T.vertexSet_finite.cast_ncard_eq, h.encard_vertexSet,
+  rw [← ENat.natCast_inj, T.vertexSet_finite.cast_ncard_eq, h.encard_vertexSet,
     Nat.cast_add, T.edgeSet_finite.cast_ncard_eq, Nat.cast_one]
 
 lemma IsForest.encard_vertexSet (hG : G.IsForest) :
@@ -587,7 +588,7 @@ lemma IsForest.encard_vertexSet (hG : G.IsForest) :
 
 lemma IsForest.ncard_vertexSet [G.Finite] (hG : G.IsForest) :
     V(G).ncard = E(G).ncard + G.Components.ncard := by
-  rw [← ENat.coe_inj, G.vertexSet_finite.cast_ncard_eq, hG.encard_vertexSet, Nat.cast_add,
+  rw [← ENat.natCast_inj, G.vertexSet_finite.cast_ncard_eq, hG.encard_vertexSet, Nat.cast_add,
     G.edgeSet_finite.cast_ncard_eq, Finite.cast_ncard_eq]
   exact G.finite_setOf_le.subset fun C hC ↦ hC.le
 
@@ -600,6 +601,6 @@ lemma IsForest.encard_edgeSet_add_one_le (hG : G.IsForest) (hne : V(G).Nonempty)
 
 lemma IsForest.ncard_edgeSet_lt [G.Finite] (hG : G.IsForest) (hne : V(G).Nonempty) :
     E(G).ncard < V(G).ncard := by
-  rw [Nat.lt_iff_add_one_le, ← ENat.coe_le_coe, Nat.cast_add, G.vertexSet_finite.cast_ncard_eq,
-    G.edgeSet_finite.cast_ncard_eq]
+  rw [Nat.lt_iff_add_one_le, ← ENat.natCast_le_natCast, Nat.cast_add,
+    G.vertexSet_finite.cast_ncard_eq, G.edgeSet_finite.cast_ncard_eq]
   exact hG.encard_edgeSet_add_one_le hne

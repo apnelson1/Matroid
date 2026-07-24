@@ -26,16 +26,6 @@ lemma Rep.supported_finiteDimensional [M.Finite] (_ : M.Rep 𝔽 W) :
   have := M.ground_finite.to_subtype
   Module.Finite.equiv (Finsupp.supportedEquivFinsupp M.E).symm
 
-instance Rep.cycleSpace_finiteDimensional [M.Finite] (v : M.Rep 𝔽 W) :
-    FiniteDimensional 𝔽 v.cycleSpace := by
-  have := v.supported_finiteDimensional
-  exact Submodule.finiteDimensional_inf_right ..
-
-instance Rep.supportedCycleSpace_finiteDimensional' [M.Finite] (v : M.Rep 𝔽 W) :
-    FiniteDimensional 𝔽 v.supportedCycleSpace := by
-  have := v.supported_finiteDimensional
-  infer_instance
-
 lemma Rep.mem_cycleSpace_iff (v : M.Rep 𝔽 W) :
     c ∈ v.cycleSpace ↔ c.linearCombination 𝔽 v = 0 ∧ support c ⊆ M.E := by
   simp [Rep.cycleSpace, Finsupp.mem_supported]
@@ -58,6 +48,21 @@ noncomputable def Rep.cycleSpaceEquiv (v : M.Rep 𝔽 W) :
     by simpa using (Finsupp.mem_supported ..).1 x.1.2⟩⟩
   left_inv _ := rfl
   right_inv _ := rfl
+
+/-- Nested `Submodule` carriers do not get `AddCommGroup` by instance search; provide it. -/
+noncomputable instance Rep.supportedCycleSpace.addCommGroup (v : M.Rep 𝔽 W) :
+    AddCommGroup v.supportedCycleSpace :=
+  letI : AddCommGroup ↥(Finsupp.supported 𝔽 𝔽 M.E) := inferInstance
+  Submodule.addCommGroup _
+
+instance Rep.cycleSpace_finiteDimensional [M.Finite] (v : M.Rep 𝔽 W) :
+    FiniteDimensional 𝔽 v.cycleSpace := by
+  have := v.supported_finiteDimensional
+  exact Submodule.finiteDimensional_inf_right ..
+
+instance Rep.supportedCycleSpace_finiteDimensional' [M.Finite] (v : M.Rep 𝔽 W) :
+    FiniteDimensional 𝔽 v.supportedCycleSpace :=
+  Module.Finite.equiv v.cycleSpaceEquiv
 
 @[simp]
 lemma Rep.supportedCycleSpace_comp (v : M.Rep 𝔽 W) (φ : W →ₗ[𝔽] W') (hφ) :
@@ -98,6 +103,7 @@ lemma Rep.standardRep'_cycleSpace (v : M.Rep 𝔽 W) (hB : M.IsBase B) :
     (v.standardRep' hB).cycleSpace = v.cycleSpace := by
   simp [standardRep']
 
+set_option backward.isDefEq.respectTransparency false in
 @[simp]
 lemma Rep.standardRep_cycleSpace (v : M.Rep 𝔽 W) (hB : M.IsBase B) :
     (v.standardRep hB).cycleSpace = v.cycleSpace := by
@@ -134,10 +140,10 @@ lemma Rep.exists_finsupp_of_isCircuit (v : M.Rep 𝔽 W) (hC : M.IsCircuit C) :
   have hC' := hC.not_indep
   rw [v.indep_iff, linearDepOn_iff'] at hC'
   obtain ⟨c, hcsupp, hc, hc0⟩ := hC'
-  refine ⟨c, subset_antisymm (by simpa using hcsupp) fun e heC ↦ ?_, hc⟩
+  refine ⟨c, subset_antisymm (by simpa [Finsupp.mem_supported] using hcsupp) fun e heC ↦ ?_, hc⟩
   simp only [Finset.mem_coe, Finsupp.mem_support_iff, ne_eq]
-  refine fun hc' ↦ hc0 <| (linearIndepOn_iff.1 <| v.onIndep <| hC.diff_singleton_indep heC) c ?_ hc
-  simpa [Finsupp.mem_supported, subset_diff_singleton_iff, hc']
+  refine fun hc' ↦ hc0 <| (linearIndepOn_iff.1 <| v.onIndep <| hC.sdiff_singleton_indep heC) c ?_ hc
+  simpa [Finsupp.mem_supported, subset_sdiff_singleton_iff, hc']
 
 lemma Rep.exists_mem_cycleSpace_of_isCircuit (v : M.Rep 𝔽 W) (hC : M.IsCircuit C) :
     ∃ w ∈ v.cycleSpace, w.support = C := by
@@ -260,6 +266,7 @@ lemma Rep.standardRep'_cocycleSpace (v : M.Rep 𝔽 W) (hB : M.IsBase B) :
     (v.standardRep' hB).cocycleSpace = v.cocycleSpace := by
   simp [cocycleSpace]
 
+set_option backward.isDefEq.respectTransparency false in
 @[simp]
 lemma Rep.standardRep_cocycleSpace (v : M.Rep 𝔽 W) (hB : M.IsBase B) :
     (v.standardRep hB).cocycleSpace = v.cocycleSpace := by
@@ -270,9 +277,12 @@ lemma Rep.mem_cocycleSpace_iff_of_support (v : M.Rep 𝔽 W) {x : α → 𝔽} (
   simp only [Rep.cocycleSpace, Finsupp.dualFunMap, mem_inf, mem_map, mem_dualAnnihilator,
     Rep.mem_cycleSpace_iff, and_imp, LinearMap.coe_mk, AddHom.coe_mk, mem_mySupported_iff]
   refine ⟨fun h y hy hyE ↦ ?_, fun h ↦ ⟨⟨_, h, by simp⟩, hx⟩⟩
-  obtain ⟨⟨z,hz, rfl⟩, hsupp⟩ := h
+  obtain ⟨⟨z, hz, rfl⟩, hsupp⟩ := h
   rw [← hz y hy hyE]
-  convert (z.map_finsupp_linearCombination (g := fun a : α ↦ Finsupp.single a 1) y).symm
+  have hy' : y = Finsupp.linearCombination 𝔽 (fun a ↦ Finsupp.single a 1) y := by
+    ext a
+    simp [Finsupp.linearCombination_apply]
+  rw [hy', z.map_finsupp_linearCombination]
   simp [Finsupp.linearCombination]
 
 lemma Rep.mem_cocycleSpace_iff (v : M.Rep 𝔽 W) {x : α → 𝔽} :
@@ -312,7 +322,13 @@ instance Rep.cocycleSpace_finiteDimensional [M.Finite] (v : M.Rep 𝔽 W) :
     FiniteDimensional 𝔽 v.cocycleSpace := by
   classical
   rw [cocycleSpace_eq']
-  have := v.supported_finiteDimensional
+  have := M.ground_finite.to_subtype
+  -- `Dual` of a nested `Submodule` carrier does not get `FiniteDimensional` by instance search;
+  -- transfer it along `supportedEquivFinsupp.dualMap`.
+  have : FiniteDimensional 𝔽 (Module.Dual 𝔽 ↥(Finsupp.supported 𝔽 𝔽 M.E)) :=
+    Module.Finite.equiv (Finsupp.supportedEquivFinsupp (R := 𝔽) (M := 𝔽) M.E).dualMap
+  have : FiniteDimensional 𝔽 v.supportedCycleSpace.dualAnnihilator :=
+    FiniteDimensional.finiteDimensional_submodule _
   exact Module.Finite.map v.supportedCycleSpace.dualAnnihilator (Finsupp.dualSupportedFunMap 𝔽 M.E)
 
 -- lemma foo [M.Finite] (v : M.Rep 𝔽 W) :

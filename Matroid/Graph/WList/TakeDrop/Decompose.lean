@@ -300,7 +300,8 @@ lemma breakAt_reverse_getLast (w : WList α β) (P : α → Prop) [DecidablePred
       ↓reduceIte, prefixUntil]
     · suffices (w.breakAt_aux P e (nil u) [] ++ [nil u]).getLast (by simp) = nil u by
         convert this using 2
-        rw [breakAt_aux_append]
+        · rw [breakAt_aux_append]
+        rfl
       simp
     rw [breakAt_aux_getLast, WList.concat_eq_append]
     simp

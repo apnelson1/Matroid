@@ -87,7 +87,7 @@ lemma isCycleSet_pair_iff_parallel [G.Loopless] {e f : β} (hef : e ≠ f) :
       apply_fun encard at hC₀_eq
       rw [encard_pair hef, (show E(C₀) = {x | x ∈ C₀.edge} by rfl), hC₀.edge_nodup.encard_toSet_eq,
         length_edge] at hC₀_eq
-      exact ENat.coe_inj.mp hC₀_eq
+      exact ENat.natCast_inj.mp hC₀_eq
     obtain ⟨x, y, e', f', hxy, he'f', rfl⟩ := hC₀.length_eq_two_iff.1 hlen
     simp only [cons_edgeSet, nil_edgeSet, insert_empty_eq, pair_eq_pair_iff] at hC₀_eq
     have hl1 : G.IsLink e' x y := by grind [cons_isWalk_iff, hC₀.isWalk]
@@ -152,8 +152,8 @@ lemma isBridge (hF : G.IsAcyclicSet F) (he : e ∈ F) : (G ↾ F).IsBridge e := 
 
 lemma of_deleteEdges_isBond {B} (hB : G.IsBond B) (hF : (G ＼ B).IsAcyclicSet F)
     (he : e ∈ B) : G.IsAcyclicSet (insert e F) := by
-  have hFE := hF.1.trans diff_subset
-  simp only [isAcyclicSet_iff, edgeSet_deleteEdges, subset_diff, hFE, true_and,
+  have hFE := hF.1.trans sdiff_subset
+  simp only [isAcyclicSet_iff, edgeSet_deleteEdges, subset_sdiff, hFE, true_and,
     deleteEdges_restrict, insert_subset_iff, hB.subset he, and_self] at hF ⊢
   obtain ⟨hFB, hFf⟩ := hF
   replace hFf : ((G ↾ insert e F) ＼ {e}).IsForest := by
@@ -178,13 +178,13 @@ lemma IsClosedSubgraph.isAcyclicSet_union (hI : G.IsAcyclicSet I) (hJ : G.IsAcyc
     rw [union_comm]
     refine this (H := G - V(H)) (I := J) (J := I) ?_ ?_ h.compl hJ hI he heIJ
       (heIJ.resolve_right heI) <;> simpa [-edgeSet_deleteVerts, h.compl_edgeSet,
-      diff_diff_cancel_left h.edgeSet_mono]
+      sdiff_sdiff_cancel_left h.edgeSet_mono]
   refine hI he heI |>.anti_of_mem (restrict_mono_left h.le I) (by simp [heI, hIH heI])
   |>.of_isClosedSubgraph ?_
   convert h.inter_le restrict_le
   refine ext_of_le_le restrict_le H.inter_le_left (by simp [h.vertexSet_mono]) ?_
   have hcompat : Compatible H (G ↾ (I ∪ J)) := compatible_of_le_le h.le restrict_le
-  rw [subset_diff, disjoint_comm] at hJH
+  rw [subset_sdiff, disjoint_comm] at hJH
   simp [hcompat.edgeSet_inter, inter_union_distrib_left, ← inter_assoc, hJH.2.inter_eq,
     inter_eq_left.mpr h.edgeSet_mono]
 
@@ -203,8 +203,8 @@ lemma IsMaximalAcyclicSet.insert_not_isBridge (he : e ∈ E(G) \ F) (hF : G.IsMa
     rw [isAcyclicSet_iff]
     simp only [insert_subset_iff, he.1, hF.prop.1, and_self, true_and]
     refine IsForest.of_deleteEdges_singleton hb ?_
-    simp only [restrict_deleteEdges, mem_singleton_iff, insert_diff_of_mem, he.2,
-      not_false_eq_true, diff_singleton_eq_self]
+    simp only [restrict_deleteEdges, mem_singleton_iff, insert_sdiff_of_mem, he.2,
+      not_false_eq_true, sdiff_singleton_eq_self]
     exact isAcyclicSet_iff.mp hF.prop |>.2
   exact he.2 <| insert_eq_self.mp (hF.eq_of_subset hef (by grind)).symm
 
@@ -221,6 +221,6 @@ lemma IsMaximalAcyclicSet.connBetween_iff (hF : G.IsMaximalAcyclicSet F) :
     exact ConnBetween.trans hxS (IsLink.connBetween ⟨hyS, hxy⟩)
   have := hF.insert_not_isBridge ⟨hxy.edge_mem, heF⟩
   rw [IsLink.isBridge_iff_not_connBetween (by simpa), not_not] at this
-  simp only [restrict_deleteEdges, mem_singleton_iff, insert_diff_of_mem, heF, not_false_eq_true,
-    diff_singleton_eq_self] at this
+  simp only [restrict_deleteEdges, mem_singleton_iff, insert_sdiff_of_mem, heF, not_false_eq_true,
+    sdiff_singleton_eq_self] at this
   exact hyS (ConnBetween.trans hxS this)

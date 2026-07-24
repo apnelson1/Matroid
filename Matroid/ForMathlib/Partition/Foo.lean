@@ -161,11 +161,11 @@ lemma foo_bot : foo P ⊥ = ⊥ := by
 
 @[simp]
 lemma foo_le_supp : foo P a ≤ P.supp := by
-  simp only [foo, Partition.cover_supp, Partition.mem_parts, sSup_le_iff, Set.mem_setOf_eq, and_imp]
+  simp only [foo, Partition.cover_supp, Partition.mem_parts, sSup_le_iff, Set.mem_ofPred_eq, and_imp]
   exact fun _ hbP _ ↦ P.le_supp_of_mem hbP
 
 lemma foo_le_of_le_of_mem (haPb : a ⊓ P.supp ≤ b) (hbP : b ∈ P) : foo P a ≤ b := by
-  simp only [foo, cover_supp, mem_parts, sSup_le_iff, Set.mem_setOf_eq, and_imp]
+  simp only [foo, cover_supp, mem_parts, sSup_le_iff, Set.mem_ofPred_eq, and_imp]
   refine fun x hxP hdj ↦ (P.eq_of_not_disjoint hxP hbP ?_).le
   contrapose! hdj
   refine disjoint_iff_inf_le.mpr <| hdj inf_le_right (le_trans ?_ haPb)
@@ -201,7 +201,7 @@ variable [Order.Frame α] {P Q R : Partition α}
 
 lemma foo_le_iff_of_mem (hbP : b ∈ P) : P.foo a ≤ b ↔ a ⊓ P.supp ≤ b := by
   refine ⟨fun h => ?_, (foo_le_of_le_of_mem · hbP)⟩
-  simp only [foo, cover_supp, mem_parts, sSup_le_iff, Set.mem_setOf_eq, and_imp] at h
+  simp only [foo, cover_supp, mem_parts, sSup_le_iff, Set.mem_ofPred_eq, and_imp] at h
   simp_rw [supp, inf_sSup_eq, iSup_le_iff]
   rintro p hpP
   by_cases hap : Disjoint a p
@@ -227,14 +227,14 @@ lemma foo_eq_self_of_mem (haP : a ∈ P) : P.foo a = a := by
 
 @[simp]
 lemma foo_eq_bot_iff : P.foo a = ⊥ ↔ Disjoint a P.supp := by
-  simp only [foo, supp, cover_parts, sSup_eq_bot, Set.mem_setOf_eq, and_imp, disjoint_sSup_iff,
+  simp only [foo, supp, cover_parts, sSup_eq_bot, Set.mem_ofPred_eq, and_imp, disjoint_sSup_iff,
     mem_parts]
   refine forall₂_congr fun p hpP => ?_
   simp_all [P.ne_bot_of_mem hpP]
 
 lemma inf_foo_eq_inf_supp : a ⊓ P.foo a = a ⊓ P.supp := by
   refine le_antisymm (inf_le_inf le_rfl foo_le_supp) ?_
-  simp only [supp, inf_sSup_eq, mem_parts, foo, cover_parts, Set.mem_setOf_eq, iSup_le_iff]
+  simp only [supp, inf_sSup_eq, mem_parts, foo, cover_parts, Set.mem_ofPred_eq, iSup_le_iff]
   rintro p hpP
   by_cases hap : Disjoint a p
   · rw [hap.eq_bot]
@@ -262,7 +262,7 @@ lemma foo_left_mono (hPQ : P ≤ Q) : P.foo a ≤ Q.foo a :=
 lemma foo_right_mono (hab : a ≤ b) : P.foo a ≤ P.foo b := by
   simp_rw [foo, supp]
   refine sSup_le_sSup ?_
-  simp only [cover_parts, Set.setOf_subset_setOf, and_imp]
+  simp only [cover_parts, Set.ofPred_subset_ofPred, and_imp]
   rintro p hpP hap
   use hpP
   contrapose! hap

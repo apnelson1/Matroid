@@ -83,7 +83,7 @@ lemma halfSpace_closure (hn : n ≠ 0) (r : ℝ) : closure (halfSpace n r) = {z 
   let t : ℝ := (ε / 2) / ‖n‖
   have htpos : 0 < t := div_pos (half_pos εpos) hnpos
   refine ⟨z - t • n, ?_, ?_⟩
-  · simp only [halfSpace, mem_setOf_eq, inner_sub_right, inner_smul_right,
+  · simp only [halfSpace, mem_ofPred_eq, inner_sub_right, inner_smul_right,
     inner_self_eq_norm_sq_to_K, RCLike.ofReal_real_eq_id, id_eq, sub_lt_self_iff]
     linarith [mul_pos htpos (sq_pos_of_pos hnpos)]
   · simpa [norm_smul, t, div_mul_cancel₀ _ hnpos.ne', abs_of_nonneg εpos.le]
@@ -113,7 +113,7 @@ lemma hyperplane_disjoint_halfSpace_neg (n : α) (r : ℝ) :
 lemma halfSpace_disjoint_halfSpace_neg (n : α) (r : ℝ) :
     Disjoint (halfSpace n r) (halfSpace (-n) (-r)) := by
   refine disjoint_left.2 fun z hz₁ hz₂ ↦ ?_
-  simp only [halfSpace, mem_setOf_eq, inner_neg_left, neg_lt_neg_iff] at hz₁ hz₂
+  simp only [halfSpace, mem_ofPred_eq, inner_neg_left, neg_lt_neg_iff] at hz₁ hz₂
   linarith
 
 -- lemma ball_diff_hyperplane_two_regions (n x : α) (r : ℝ) :
@@ -132,7 +132,7 @@ lemma mem_closure_halfSpace_inter_ball (hn : n ≠ 0) {p : α} (hp : p ∈ hyper
 lemma mem_closure_halfSpace_neg_inter_ball (hn : n ≠ 0) {p : α} (hp : p ∈ hyperplane n ⟪n, x⟫)
     (hpB : p ∈ ball x r) : p ∈ closure (ball x r ∩ halfSpace (-n) (-⟪n, x⟫)) := by
   have hp' : p ∈ hyperplane (-n) ⟪-n, x⟫ := by
-    simpa [hyperplane, mem_setOf_eq, inner_neg_left, neg_inj] using hp
+    simpa [hyperplane, mem_ofPred_eq, inner_neg_left, neg_inj] using hp
   rw [← inner_neg_left]
   exact mem_closure_halfSpace_inter_ball (neg_ne_zero.mpr hn) hp' hpB
 
@@ -229,7 +229,7 @@ lemma isPreconnected_ball_diff_subset_hyperplane (hn : n ≠ 0) (hS_sub : S ⊆ 
     · exact ⟨hq1.1, fun hS ↦ halfSpace_disjoint_hyperplane n ⟪n, x⟫ |>.le_bot ⟨hq1.2, hS_sub hS⟩⟩
     · exact ⟨hq2.1, (hyperplane_disjoint_halfSpace_neg n ⟪n, x⟫ |>.symm.le_bot ⟨hq2.2, hS_sub ·⟩)⟩
     · exact ⟨hpB, hp_not_S⟩
-  exact U_conn.subset_closure h_sub (diff_subset.trans h_dense)
+  exact U_conn.subset_closure h_sub (sdiff_subset.trans h_dense)
 
 end RealVectorSpace
 
@@ -286,7 +286,7 @@ lemma normalVector_ne_zero_iff (u : ℝ²) : normalVector u ≠ 0 ↔ u ≠ 0 :=
 --   rw [segment_eq_segmentTangent] at hzxy
 --   simp only [vadd_eq_add, mem_image, mem_Icc] at hzxy
 --   obtain ⟨t, ht, rfl⟩ := hzxy
---   simp only [hyperplane, mem_setOf_eq, inner_add_right, inner_smul_right, segmentNormal_orthogonal,
+--   simp only [hyperplane, mem_ofPred_eq, inner_add_right, inner_smul_right, segmentNormal_orthogonal,
 --     mul_zero, zero_add]
 
 lemma isPreconnected_dial (x u : ℝ²) (r : ℝ) : IsPreconnected (ball x r \ halfRay u x) := by
@@ -300,7 +300,7 @@ lemma isPreconnected_dial (x u : ℝ²) (r : ℝ) : IsPreconnected (ball x r \ h
     rw [inter_eq_left.mpr (by simpa)]
     simp only [hyperplane, inner, RCLike.inner_apply, conj_trivial, Fin.sum_univ_two, Fin.isValue,
       Matrix.cons_val_zero, mul_one, Matrix.cons_val_one, Matrix.cons_val_fin_one, mul_zero,
-      add_zero, ssubset_def, subset_inter_iff, singleton_subset_iff, mem_setOf_eq, mem_ball,
+      add_zero, ssubset_def, subset_inter_iff, singleton_subset_iff, mem_ofPred_eq, mem_ball,
       dist_self, hr, and_self, subset_singleton_iff, mem_inter_iff, and_imp, not_forall, true_and]
     use !₂[x 0, x 1 + r / 2], by simp, ?_, ?_
     · simp [dist_eq_norm, norm]
@@ -308,7 +308,7 @@ lemma isPreconnected_dial (x u : ℝ²) (r : ℝ) : IsPreconnected (ball x r \ h
         (r / 2).rpow_rpow_inv (by positivity) (by positivity)]
       linarith
     simp [PiLp.ext_iff, (show r ≠ 0 by positivity)]
-  rw [← diff_inter_self_eq_diff]
+  rw [← sdiff_inter_self_eq_sdiff]
   refine isPreconnected_ball_diff_subset_hyperplane ((normalVector_ne_zero_iff u).mpr hu) ?_ ?_
   · refine subset_trans inter_subset_left ?_
     rintro z ⟨t, ht, rfl⟩
@@ -336,7 +336,7 @@ lemma exists_angle_fst_ne {S : Set ℝ²} (hS : S.Finite) :
       bad_angles u v = {θ | (θ.cos • (u - v) + θ.sin • B.rightAngleRotation (u - v)) 0 = 0} := by
     ext θ
     simp only [Fin.isValue, B.rotation_apply, PiLp.add_apply, PiLp.smul_apply, smul_eq_mul,
-      mem_setOf_eq, map_sub, PiLp.sub_apply, bad_angles]
+      mem_ofPred_eq, map_sub, PiLp.sub_apply, bad_angles]
     rw [← sub_eq_zero]
     ring_nf
 

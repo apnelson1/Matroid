@@ -122,7 +122,7 @@ lemma isTutteSeparation_of_lt_encard (h : ∀ i, P.eConn < (P i).encard) : P.IsT
 
 lemma isTutteSeparation_iff_nullity :
     P.IsTutteSeparation ↔ ∀ i, 1 ≤ M.nullity (P i) + M✶.nullity (P i) := by
-  simp only [ENat.one_le_iff_ne_zero, ne_eq, add_eq_zero, nullity_eq_zero,
+  simp only [Order.one_le_iff_ne_zero, ne_eq, add_eq_zero, nullity_eq_zero,
     Classical.not_and_iff_not_or_not, dual_ground,
     Separation.subset_ground, not_indep_iff, dep_dual_iff, isTutteSeparation_iff_forall]
 
@@ -403,8 +403,8 @@ lemma TutteConnected.girth_ge (h : M.TutteConnected (k + 1)) (hlt : 2 * k ≤ M.
   have h' := Or.imp Eq.le Eq.le <| h.encard_eq_or_encard_compl_eq (X := C) hle
   nth_grw 1 [M.eConn_le_eRk, ← hC.eRk_add_one_eq, or_iff_right
     ((by simpa using M.isRkFinite_of_finite hCfin))] at h'
-  have aux := encard_diff_add_encard_of_subset hC.subset_ground
-  grw [← encard_diff_add_encard_of_subset hC.subset_ground] at hlt
+  have aux := encard_sdiff_add_encard_of_subset hC.subset_ground
+  grw [← encard_sdiff_add_encard_of_subset hC.subset_ground] at hlt
   have := M.eConn_le_encard C
   enat_to_nat! <;> lia
 
@@ -412,7 +412,7 @@ lemma TutteConnected.girth_ge_of_exists_eConn_ge (h : M.TutteConnected (k + 1))
     (hP : ∃ (P : M.Separation), k ≤ P.eConn) : k + 1 ≤ M.girth := by
   obtain ⟨P, hP⟩ := hP
   refine h.girth_ge ?_
-  grw [← encard_diff_add_encard_of_subset (P.subset_ground (i := true)), P.compl_true, hP,
+  grw [← encard_sdiff_add_encard_of_subset (P.subset_ground (i := true)), P.compl_true, hP,
     ← M.eConn_le_encard, ← M.eConn_le_encard, P.eConn_eq, P.eConn_eq, two_mul]
 
 
@@ -453,9 +453,9 @@ lemma TutteConnected.isUniform_of_encard_le (h : M.TutteConnected (k + 1))
   by_contra! hnot
   rw [not_indep_iff, not_spanning_iff] at hnot
   wlog hXcard : X.encard ≤ k generalizing M X with aux
-  · refine aux h.dual (by simpa) (X := M.E \ X) diff_subset ?_ ?_
+  · refine aux h.dual (by simpa) (X := M.E \ X) sdiff_subset ?_ ?_
     · rwa [dep_dual_iff, codep_compl_iff, nonspanning_compl_dual_iff, and_comm]
-    have := encard_diff_add_encard_of_subset hXE
+    have := encard_sdiff_add_encard_of_subset hXE
     enat_to_nat!
     omega
   have hXconn : M.eConn X + 1 ≤ k := by grw [eConn_le_eRk, hnot.1.eRk_add_one_le_encard, hXcard]
@@ -479,7 +479,7 @@ lemma IsCircuit.exists_eq_unifOn_of_isCocircuit_of_tutteConnected {C : Set α} (
   rw [← ENat.add_one_eq_add_one_iff, hC.eConn_add_one_eq, ← ENat.add_one_eq_add_one_iff,
     ← hC'.eRk_add_one_eq, or_iff_right (by simpa [add_assoc]), hCconn] at hcard
   have hEcard : M.E.encard = 2 * (k + 1) := by
-    rw [← encard_diff_add_encard_of_subset hC.subset_ground, hCk, hcard]
+    rw [← encard_sdiff_add_encard_of_subset hC.subset_ground, hCk, hcard]
     enat_to_nat; lia
   have hgirth : k + 1 < M.girth := by
     grw [← hM.girth_ge (by simp [hEcard])]
@@ -490,7 +490,7 @@ lemma IsCircuit.exists_eq_unifOn_of_isCocircuit_of_tutteConnected {C : Set α} (
   have hrank : M.eRank = k + 1 := by
     rw [← Coindep.delete_eRank_eq (X := M.E \ C), delete_compl, eRank_restrict,
       ← ENat.add_one_eq_add_one_iff, ← hCk, hC.eRk_add_one_eq]
-    exact indep_of_card_lt_girth (by enat_to_nat! <;> lia) diff_subset
+    exact indep_of_card_lt_girth (by enat_to_nat! <;> lia) sdiff_subset
   have hfin : M.Finite := by
     rw [finite_iff, ← encard_lt_top_iff]
     enat_to_nat!
@@ -577,7 +577,7 @@ lemma TutteConnected.eConn_union_le_of_eConn_le_eConn_le_card_ge (hM : M.TutteCo
   -- · have hle := hgirth.trans (M.girth_le_girth_contract_add C)
   --   · rwa [add_right_comm, WithTop.add_le_add_iff_right
   --       (M.isRkFinite_of_finite hfin).eRk_lt_top.ne] at hle
-  -- grw [hC.eRk_eq_encard, ← encard_diff_add_encard_of_subset hCE, ← contract_ground] at hnt
+  -- grw [hC.eRk_eq_encard, ← encard_sdiff_add_encard_of_subset hCE, ← contract_ground] at hnt
   -- enat_to_nat! <;> omega
 
 

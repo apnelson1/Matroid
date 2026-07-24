@@ -55,11 +55,11 @@ lemma IsTriangle.nonempty (h : M.IsTriangle T) : T.Nonempty := by
 
 lemma IsTriangle.nontrivial_diff_singleton (h : M.IsTriangle T) (e) : (T \ {e}).Nontrivial := by
   grw [← two_le_encard_iff_nontrivial, ← ENat.add_one_le_add_one_iff,
-    ← encard_le_encard_diff_singleton_add_one, h.three_elements]
+    ← encard_le_encard_sdiff_singleton_add_one, h.three_elements]
   rfl
 
 lemma IsTriangle.nontrivial (h : M.IsTriangle T) : T.Nontrivial :=
-  (h.nontrivial_diff_singleton h.nonempty.some).mono diff_subset
+  (h.nontrivial_diff_singleton h.nonempty.some).mono sdiff_subset
 
 lemma IsTriangle.finite (h : M.IsTriangle T) : T.Finite := by
   simp [← encard_lt_top_iff, h.three_elements]
@@ -120,13 +120,13 @@ lemma IsTriad.reverse (h : M.IsTriad {e, f, g}) : M.IsTriad {g, f, e} :=
   h.rotate_left.swap_left
 
 lemma IsTriangle.indep₁₂ (h : M.IsTriangle {e, f, g}) : M.Indep {e,f} :=
-  (h.isCircuit.diff_singleton_indep (e := g) (by simp)).subset <| by grind [h.ne₁₂, h.ne₂₃, h.ne₁₃]
+  (h.isCircuit.sdiff_singleton_indep (e := g) (by simp)).subset <| by grind [h.ne₁₂, h.ne₂₃, h.ne₁₃]
 
 lemma IsTriangle.indep₁₃ (h : M.IsTriangle {e, f, g}) : M.Indep {e,g} :=
-  (h.isCircuit.diff_singleton_indep (e := f) (by simp)).subset <| by grind [h.ne₁₂, h.ne₂₃, h.ne₁₃]
+  (h.isCircuit.sdiff_singleton_indep (e := f) (by simp)).subset <| by grind [h.ne₁₂, h.ne₂₃, h.ne₁₃]
 
 lemma IsTriangle.indep₂₃ (h : M.IsTriangle {e, f, g}) : M.Indep {f,g} :=
-  (h.isCircuit.diff_singleton_indep (e := e) (by simp)).subset <| by grind [h.ne₁₂, h.ne₂₃, h.ne₁₃]
+  (h.isCircuit.sdiff_singleton_indep (e := e) (by simp)).subset <| by grind [h.ne₁₂, h.ne₂₃, h.ne₁₃]
 
 @[aesop unsafe 20% (rule_sets := [Matroid])]
 lemma IsTriangle.mem_ground₁ (h : M.IsTriangle {e, f, g}) : e ∈ M.E :=
@@ -141,8 +141,8 @@ lemma IsTriangle.mem_ground₃ (h : M.IsTriangle {e, f, g}) : g ∈ M.E :=
   h.subset_ground <| by simp
 
 lemma IsTriangle.mem_closure₁ (h : M.IsTriangle {e, f, g}) : e ∈ M.closure {f,g} := by
-  have h' := h.isCircuit.mem_closure_diff_singleton_of_mem (e := e) (by simp)
-  rwa [insert_diff_self_of_notMem (by simp [h.ne₁₂, h.ne₁₃])] at h'
+  have h' := h.isCircuit.mem_closure_sdiff_singleton_of_mem (e := e) (by simp)
+  rwa [insert_sdiff_self_of_notMem (by simp [h.ne₁₂, h.ne₁₃])] at h'
 
 lemma IsTriangle.mem_closure₂ (h : M.IsTriangle {e, f, g}) : f ∈ M.closure {e,g} :=
   IsTriangle.mem_closure₁ (M := M) <| by convert h using 1; grind

@@ -138,12 +138,12 @@ lemma IsLoopAt.eDegree_delete_add_two (h : G.IsLoopAt e x) :
     aesop
   rw [eDegree_eq_encard_add_encard, eDegree_eq_encard_add_encard, h.isNonloopAt_delete,
     add_right_comm, hrw, encard_insert_of_notMem, mul_add, mul_one]
-  simp only [mem_setOf_eq]
+  simp only [mem_ofPred_eq]
   exact fun (h : IsLoopAt _ _ _) ↦ h.edge_mem.2 rfl
 
 lemma IsLoopAt.degree_delete_add_two [G.LocallyFinite] (h : G.IsLoopAt e x) :
     (G ＼ {e}).degree x + 2 = G.degree x := by
-  rw [← ENat.coe_inj, natCast_degree_eq, ← h.eDegree_delete_add_two]
+  rw [← ENat.natCast_inj, natCast_degree_eq, ← h.eDegree_delete_add_two]
   simp
 
 lemma Inc.degree_delete_lt [G.LocallyFinite] (he : G.Inc e x) :
@@ -180,7 +180,7 @@ lemma IsTrail.eq_first_or_last_of_degree_eq_one {P} (hP : G.IsTrail P) (hx : x �
 lemma IsTrail.eq_first_or_last_of_eDegree_le_one {P} (hP : G.IsTrail P) (hxP : x ∈ P)
     (hdeg : G.eDegree x ≤ 1) : x = P.first ∨ x = P.last := by
   have hx : x ∈ V(G) := hP.vertexSet_subset hxP
-  simp only [le_iff_lt_or_eq, ENat.lt_one_iff_eq_zero, hx, ← isolated_iff_eDegree,
+  simp only [le_iff_lt_or_eq, Order.lt_one_iff, hx, ← isolated_iff_eDegree,
     eDegree_eq_one_iff] at hdeg
   obtain h | h := hdeg
   · exact Or.inl <| h.eq_first_of_mem hP.isWalk hxP

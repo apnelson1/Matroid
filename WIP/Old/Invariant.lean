@@ -280,7 +280,7 @@ end Invariant
 --   · obtain ⟨e, heX, hel⟩ := exists_of_ssubset hss
 --     refine (hel <|
 --       (hX (insert e X) ⟨insert_subset heX hXss, ?_⟩ (by simp)).symm.subset (mem_insert _ _)).elim
---     rw [mem_setOf_eq, hPX, ← union_singleton, ← delete_delete, ← deleteElem,
+--     rw [mem_ofPred_eq, hPX, ← union_singleton, ← delete_delete, ← deleteElem,
 --       pred_delete_isLoop_iff (P := P)]
 --     rwa [delete_isLoop_iff, and_iff_left hel]
 --   rw [hPX, removeLoops_eq_delete]

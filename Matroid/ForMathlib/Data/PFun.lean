@@ -41,7 +41,7 @@ lemma mem_image_iff {S : Set α} : x ∈ f.image S ↔ ∃ a ∈ S, x ∈ f a :=
 
 lemma image_subset_ran {S : Set α} : f.image S ⊆ f.ran := by
   intro a
-  simp only [mem_image_iff, ran, mem_setOf_eq, forall_exists_index, and_imp]
+  simp only [mem_image_iff, ran, mem_ofPred_eq, forall_exists_index, and_imp]
   grind
 
 @[simp, grind =]
@@ -125,5 +125,5 @@ lemma preimage_map (S : Set γ) : (PFun.map φ f).preimage S = f.preimage (φ �
 
 @[simp]
 lemma ran_eq_empty_iff_dom_eq_empty (f : α →. β) : f.ran = ∅ ↔ f.Dom = ∅ := by
-  simp only [ran, Set.ext_iff, mem_setOf_eq, mem_empty_iff_false, mem_dom]
+  simp only [ran, Set.ext_iff, mem_ofPred_eq, mem_empty_iff_false, mem_dom]
   grind

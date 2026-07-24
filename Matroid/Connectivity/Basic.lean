@@ -88,7 +88,7 @@ lemma multiConn_eq_nullity_iUnion_add_tsum (hI : ∀ i, M.IsBasis' (I i) (X i)) 
   rw [nullity_eq_nullity_add_encard_diff (X := ⋃ i, (fun e ↦ (e, φ e)) '' I i), nullity_comap]
   · have hrw (e : ⋃ i, I i) :
         {i | e.1 ∈ I i}.encard - 1 = ((e.1, ·) '' {i | e.1 ∈ I i ∧ i ≠ φ e}).encard := by
-      rw [(Prod.mk_right_injective e.1).encard_image, ← encard_diff_singleton_of_mem hmem]
+      rw [(Prod.mk_right_injective e.1).encard_image, ← encard_sdiff_singleton_of_mem hmem]
       rfl
     simp_rw [image_iUnion, image_image, image_id', hrw]
     rw [ENat.tsum_encard_eq_encard_iUnion]
@@ -384,10 +384,10 @@ lemma multiConn_cond {I J X Y : Set α} (hIX : M.IsBasis' I X) (hJY : M.IsBasis'
   simp only [multiConn_eq_comap_nullity hb, iUnion_bool, cond_true, cond_false]
   have hI : (M.comap Prod.fst).Indep ((·, true) '' I) := hIX.indep.comap hinv
   rw [← hI.nullity_project_of_disjoint aux_dj, nullity_eq_nullity_add_encard_diff
-    (X := (·, false) '' (J \ I)) (image_mono diff_subset),
+    (X := (·, false) '' (J \ I)) (image_mono sdiff_subset),
     hI.nullity_project_of_disjoint aux_dj, nullity_comap, image_union,
-    hinv.image_image, hinv.image_image, union_diff_self, InjOn.image_diff (by simp),
-    diff_diff_right_self, inter_eq_self_of_subset_right (image_mono inter_subset_left),
+    hinv.image_image, hinv.image_image, union_sdiff_self, InjOn.image_sdiff (by simp),
+    sdiff_sdiff_right_self, inter_eq_self_of_subset_right (image_mono inter_subset_left),
     Injective.encard_image (Prod.mk_left_injective false), inter_comm]
   · rw [injOn_union aux_dj, and_iff_right hinv.injOn_image, and_iff_right hinv.injOn_image]
     aesop
@@ -475,17 +475,17 @@ lemma eLocalConn_eq_encard_of_diff {F : Set α} (hXY : Disjoint X Y) (hI : M.IsB
     (hJ : M.IsBasis' J Y) (hFIJ : F ⊆ I ∪ J)  (hF : M.IsBasis' ((I ∪ J) \ F) (X ∪ Y)) :
     M.eLocalConn X Y = F.encard := by
   have hF' : M.IsBasis ((I ∪ J) \ F) (I ∪ J) := by
-    refine hF.isBasis_inter_ground.isBasis_subset diff_subset
+    refine hF.isBasis_inter_ground.isBasis_subset sdiff_subset
       (subset_inter (union_subset_union hI.subset hJ.subset)
       (union_subset hI.indep.subset_ground hJ.indep.subset_ground))
-  rw [hI.eLocalConn_eq hJ, hF'.nullity_eq, diff_diff_cancel_left hFIJ,
+  rw [hI.eLocalConn_eq hJ, hF'.nullity_eq, sdiff_sdiff_cancel_left hFIJ,
     (hXY.mono hI.subset hJ.subset).inter_eq, encard_empty, zero_add]
 
 lemma eLocalConn_eq_encard_of_diff' {F : Set α} (hXY : Disjoint X Y) (hI : M.IsBasis' I X)
     (hJ : M.IsBasis' J Y) (hFI : F ⊆ I)  (hF : M.IsBasis' ((I \ F) ∪ J) (X ∪ Y)) :
     M.eLocalConn X Y = F.encard := by
   apply eLocalConn_eq_encard_of_diff hXY hI hJ (hFI.trans subset_union_left)
-  rwa [union_diff_distrib, (sdiff_eq_left (x := J)).2 ]
+  rwa [union_sdiff_distrib, (sdiff_eq_left (x := J)).2 ]
   exact (hXY.symm.mono hJ.subset (hFI.trans hI.subset))
 
 @[simp] lemma eLocalConn_closure_right (M : Matroid α) (X Y : Set α) :
@@ -525,11 +525,11 @@ lemma eLocalConn_self (M : Matroid α) (X : Set α) : M.eLocalConn X X = M.eRk X
 lemma eLocalConn_of_subset_coloops (M : Matroid α) (X : Set α) (hY : Y ⊆ M.coloops) :
     M.eLocalConn X Y = (X ∩ Y).encard := by
   nth_rw 1 [(M.coloops_indep.subset hY).isBasis_self.eLocalConn_eq_nullity_project_left X,
-    ← diff_union_inter Y X, nullity_union_eq_nullity_add_encard_diff,
+    ← sdiff_union_inter Y X, nullity_union_eq_nullity_add_encard_diff,
     disjoint_sdiff_inter.symm.sdiff_eq_left, inter_comm, Indep.nullity_eq, zero_add]
   · rw [project_indep_iff]
     exact (M ／ X).coloops_indep.subset <| by grw [contract_coloops_eq, hY]
-  grw [project_closure, diff_union_self, M.subset_closure (Y ∩ X) _, inter_comm,
+  grw [project_closure, sdiff_union_self, M.subset_closure (Y ∩ X) _, inter_comm,
     inter_subset_left, ← subset_union_right]
   grw [inter_subset_left, hY, coloops_subset_ground]
 
@@ -557,7 +557,7 @@ lemma eLocalConn_union_right_of_subset_loops {L : Set α} (hL : L ⊆ M.loops) :
 
 lemma eLocalConn_diff_left_of_subset_loops {L : Set α} (hL : L ⊆ M.loops) :
     M.eLocalConn (X \ L) Y = M.eLocalConn X Y := by
-  rw [← eLocalConn_union_left_of_subset_loops hL, diff_union_self,
+  rw [← eLocalConn_union_left_of_subset_loops hL, sdiff_union_self,
     eLocalConn_union_left_of_subset_loops hL]
 
 lemma eLocalConn_diff_right_of_subset_loops {L : Set α} (hL : L ⊆ M.loops) :
@@ -638,8 +638,8 @@ lemma eLocalConn_restrict_of_subset (M : Matroid α) {R : Set α} (hXR : X ⊆ R
 
 lemma eLocalConn_delete_eq (M : Matroid α) (X Y D : Set α) :
     (M ＼ D).eLocalConn X Y = M.eLocalConn (X \ D) (Y \ D) := by
-  rw [delete_eq_restrict, eLocalConn_restrict_eq, ← inter_diff_assoc, inter_diff_right_comm,
-    ← inter_diff_assoc, inter_diff_right_comm, eLocalConn_inter_ground]
+  rw [delete_eq_restrict, eLocalConn_restrict_eq, ← inter_sdiff_assoc, inter_sdiff_right_comm,
+    ← inter_sdiff_assoc, inter_sdiff_right_comm, eLocalConn_inter_ground]
 
 lemma eLocalConn_delete_eq_of_disjoint (M : Matroid α) {D : Set α} (hXD : Disjoint X D)
     (hYD : Disjoint Y D) : (M ＼ D).eLocalConn X Y = M.eLocalConn X Y := by
@@ -765,7 +765,7 @@ lemma IsCircuit.eLocalConn_subset_compl {C : Set α} (hC : M.IsCircuit C) (hI : 
   obtain ⟨e, heC, heI⟩ := exists_of_ssubset hIC
   have hi' : C \ I ⊂ C := by simpa [inter_eq_self_of_subset_right hIC.subset]
   rw [(hC.ssubset_indep hIC).isBasis_self.eLocalConn_eq (hC.ssubset_indep hi').isBasis_self,
-    disjoint_sdiff_right.inter_eq, encard_empty, zero_add, union_diff_cancel hIC.subset,
+    disjoint_sdiff_right.inter_eq, encard_empty, zero_add, union_sdiff_cancel hIC.subset,
     hC.nullity_eq]
 
 /-- If two circuits intersect in an element `e` and have connectivity at most one,
@@ -775,13 +775,13 @@ lemma IsCircuit.union_isCircuit_of_inter_eq_singleton {C₁ C₂ : Set α} {e : 
     (hc : M.eLocalConn C₁ C₂ ≤ 1) :  M.IsCircuit ((C₁ ∪ C₂) \ {e}) := by
   suffices aux : ∀ f ∈ C₁ ∪ C₂, f ≠ e → f ∈ M.closure (((C₁ ∪ C₂) \ {e}) \ {f}) by
     obtain ⟨C, hCss, hC⟩ := hC₁.elimination hC₂ hne e
-    grw [(hC₁.diff_singleton_isBasis (e := e) (by grind)).eLocalConn_eq
-      (hC₂.diff_singleton_isBasis (e := e) (by grind)), ← union_diff_distrib, ← le_add_self] at hc
+    grw [(hC₁.sdiff_singleton_isBasis (e := e) (by grind)).eLocalConn_eq
+      (hC₂.sdiff_singleton_isBasis (e := e) (by grind)), ← union_sdiff_distrib, ← le_add_self] at hc
     convert hC
     refine hCss.antisymm' fun f hf ↦ by_contra fun hfC ↦ ?_
     specialize aux f hf.1 hf.2
     have hn := (nullity_union_eq_nullity_add_encard_diff (singleton_subset_iff.2 aux)).ge
-    grw [diff_union_self, disjoint_sdiff_right.sdiff_eq_left,
+    grw [sdiff_union_self, disjoint_sdiff_right.sdiff_eq_left,
       union_eq_self_of_subset_right (singleton_subset_iff.2 hf), hc, encard_singleton,
       ← nullity_le_of_subset (X := C) _ (by grind), hC.nullity_eq] at hn
     norm_num at hn
@@ -789,11 +789,11 @@ lemma IsCircuit.union_isCircuit_of_inter_eq_singleton {C₁ C₂ : Set α} {e : 
   wlog hfC : f ∈ C₁ generalizing C₁ C₂ with aux
   · exact union_comm _ _ ▸ aux hC₂ hC₁ hne.symm heC₂ heC₁ (by rwa [eLocalConn_comm])
       (by rwa [union_comm]) (by grind)
-  grw [← closure_insert_eq_of_mem_closure (e := e), diff_diff_comm,
-    insert_diff_self_of_mem (by grind), ← subset_union_left, hC₁.closure_diff_singleton_eq,
+  grw [← closure_insert_eq_of_mem_closure (e := e), sdiff_sdiff_comm,
+    insert_sdiff_self_of_mem (by grind), ← subset_union_left, hC₁.closure_sdiff_singleton_eq,
     ← M.subset_closure C₁]
   · assumption
-  grw [← subset_union_right, diff_singleton_eq_self (a := f), ← hC₂.subset_closure_diff_singleton]
+  grw [← subset_union_right, sdiff_singleton_eq_self (a := f), ← hC₂.subset_closure_sdiff_singleton]
   · exact heC₂
   rintro ⟨hfC₂, -⟩
   grw [← eRk_inter_le_eLocalConn, ← pair_subset (a := e) (b := f) (s := C₁ ∩ C₂)
@@ -884,7 +884,7 @@ lemma eLocalConn_le_add_eRelRk_left (M : Matroid α) (hXY : X ⊆ Y) (Z : Set α
   obtain ⟨J, hJ, rfl⟩ := hIX.exists_isBasis'_inter_eq_of_superset hXY
   rw [hJ.eLocalConn_eq_nullity_project_right, hIX.eLocalConn_eq_nullity_project_right,
     hJ.eRelRk_eq_encard_diff_of_subset hXY hIX]
-  nth_grw 1 [← inter_union_diff J X, nullity_union_le_nullity_add_encard_diff,
+  nth_grw 1 [← inter_union_sdiff J X, nullity_union_le_nullity_add_encard_diff,
     sdiff_eq_left.2 disjoint_sdiff_inter]
 
 lemma eLocalConn_le_add_eRelRk_right (M : Matroid α) (hXY : X ⊆ Y) (Z : Set α) :

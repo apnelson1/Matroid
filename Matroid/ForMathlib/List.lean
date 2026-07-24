@@ -314,7 +314,7 @@ theorem splitBy_append_of_not_rel {r : α → α → Bool} {l₁ l₂ : List α}
 --       have hboundary : ¬ r ((a :: b :: m).getLast (by simp)) ((L'.flatten).head hne_flat) := by
 --         have := isChain_getLast_head_splitBy r (a :: b :: as)
 --         rw [habms, ← cons_head_tail (by grind : ms ≠ [])] at this
---         obtain ⟨_, hmsh, hf⟩ := this.rel_head
+--         obtain ⟨_, hmsh, hf⟩ := this.rel
 --         simp only [ne_eq, reduceCtorEq, not_false_eq_true, getLast_cons, Bool.not_eq_true]
 --         simp_rw [head_flatten_eq_head_head hne_flat (hl'.head hneL' ▸ hmsh), hl'.head hneL']
 --         exact hf
@@ -334,7 +334,7 @@ theorem splitBy_append_of_not_rel {r : α → α → Bool} {l₁ l₂ : List α}
 --       have hboundary : ¬ r ([a].getLast (by simp)) ((L'.flatten).head hne_flat) := by
 --         have := isChain_getLast_head_splitBy r (a :: b :: as)
 --         rw [splitBy_cons_cons_of_not_rel _ hab, hm] at this
---         obtain ⟨_, hmsh, hf⟩ := this.rel_head
+--         obtain ⟨_, hmsh, hf⟩ := this.rel
 --         simp only [getLast_singleton, Bool.not_eq_true]
 --         simp_rw [head_flatten_eq_head_head hne_flat (by simp [hl'.head hneL', hm]),
 -- hl'.head hneL',

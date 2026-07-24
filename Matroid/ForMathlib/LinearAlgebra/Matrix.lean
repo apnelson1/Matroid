@@ -531,7 +531,7 @@ lemma fromBlocks_zero₁₁_linearIndependent_rows_iff_of_span (hB : span R (ran
     simp [Finsupp.linearCombination_apply, Finsupp.sum]
   ext i
   convert DFunLike.congr_fun h <| Function.Embedding.inr i
-  rw [Finsupp.sub_apply, Finsupp.embDomain_apply, Finsupp.embDomain_notin_range _ _ _ (by simp),
+  rw [Finsupp.sub_apply, Finsupp.embDomain_apply, Finsupp.embDomain_of_notMem_range _ _ _ (by simp),
     sub_zero]
 
 /-- If `C` has full column space, then the block matrix `[[0,B],[C,D]]` has

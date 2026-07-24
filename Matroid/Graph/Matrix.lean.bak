@@ -117,7 +117,6 @@ lemma coeff_walk_cons_stable (hw : G.IsWalk (w.cons x e)) (hf : f ∈ w.edge) (D
     (D.coeff_walk hw 𝔽 f) = (D.coeff_walk (by simp at hw; tauto : G.IsWalk w) 𝔽 f) := by
   simp [orientation.coeff_walk, hf, w.dIncLast_cons_of_mem hf]
 
-set_option backward.isDefEq.respectTransparency false in
 lemma signedIncMatrix_isTrail (hw : G.IsTrail w) (hne : w.Nonempty) (D : orientation G) :
     (∑ e ∈ w.edge.toFinset, (D.coeff_walk hw.isWalk 𝔽 e) • (D.signedIncMatrix 𝔽 e)) =
     (update (0 : α → 𝔽) w.last (1 : 𝔽)) - (update (0 : α → 𝔽) w.first (1 : 𝔽)) := by

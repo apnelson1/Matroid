@@ -72,7 +72,7 @@ lemma contract_deleteEdges_comm : (H /[C, φ]) ＼ F = (H ＼ F) /[C, φ] := by
 
 lemma edgeSet_disjoint_of_le_contract {φ : α → α} (h : G ≤ G /[C, φ]) : Disjoint E(G) C := by
   apply_fun edgeSet (α := α) (β := β) at h using edgeSet_monotone (α := α) (β := β)
-  simpa [subset_diff] using h
+  simpa [subset_sdiff] using h
 
 @[simp]
 lemma contract_eq_map_of_disjoint (hdj : Disjoint E(G) C) : G /[C, φ] = φ ''ᴳ G := by

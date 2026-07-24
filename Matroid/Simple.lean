@@ -46,7 +46,7 @@ lemma simple_iff_loopless_eq_of_parallel_forall:
 
 lemma parallel_class_eq [Simple M] (he : e ∈ M.E := by aesop_mat) :
     {f | M.Parallel e f} = {e} := by
-  simp_rw [parallel_iff_eq he, setOf_eq_eq_singleton']
+  simp_rw [parallel_iff_eq he, ofPred_eq_eq_singleton']
 
 @[simp] lemma closure_singleton_eq [Simple M] (he : e ∈ M.E := by aesop_mat) :
     M.closure {e} = {e} := by
@@ -61,7 +61,7 @@ lemma simple_iff_closure_subset_self_forall [RankPos M] :
     rw [loopless_iff_forall_not_isLoop]
     intro e _ hel
     obtain ⟨f, hf⟩ := M.exists_isNonloop
-    obtain (rfl : e = f) := (h f hf).subset (hel.mem_closure _)
+    obtain (rfl : e = f) := (h f hf) (hel.mem_closure _)
     exact hf.not_isLoop hel
   rw [simple_iff_loopless_eq_of_parallel_forall, and_iff_right hl]
   exact fun e f hp ↦ (h _ hp.isNonloop_right) hp.mem_closure
@@ -190,7 +190,7 @@ lemma simple_iff_forall_parallel_class [Loopless M] :
 lemma simple_iff_parallelClasses_eq_discrete' :
     M.Simple ↔ M.Loopless ∧ M.parallelClasses = Partition.discrete {e | M.IsNonloop e} := by
   refine ⟨fun h ↦ ⟨by infer_instance, Partition.eq_of_rel_iff_rel ?_⟩, fun ⟨_,h⟩ ↦ ?_⟩
-  · simp only [Partition.rel_discrete_iff, mem_setOf_eq,
+  · simp only [Partition.rel_discrete_iff, mem_ofPred_eq,
       show M.parallelClasses = M.Parallel from rfl]
     refine fun x y ↦ ⟨fun hpara ↦ ⟨hpara.eq, hpara.isNonloop_left⟩, ?_⟩
     rintro ⟨rfl, nl⟩
@@ -242,9 +242,9 @@ lemma Simple.subset {X Y : Set α} (hY : (M ↾ Y).Simple) (hXY : X ⊆ Y) : (M 
 lemma Loopless.of_restrict_contract {C : Set α} (hC : (M ↾ C).Loopless) (h : (M ／ C).Loopless) :
     M.Loopless := by
   rw [loopless_iff] at *
-  rw [contract_loops_eq, diff_eq_empty] at h
+  rw [contract_loops_eq, sdiff_eq_empty] at h
   rw [restrict_loops_eq', union_empty_iff] at hC
-  rw [← inter_union_diff (s := M.loops) (t := C), hC.1, empty_union, diff_eq_empty]
+  rw [← inter_union_sdiff (s := M.loops) (t := C), hC.1, empty_union, sdiff_eq_empty]
   exact (M.closure_subset_closure <| empty_subset C).trans h
 
 lemma Simple.of_restrict_contract {C : Set α} (hC : (M ↾ C).Simple) (h : (M ／ C).Simple) :
@@ -390,7 +390,7 @@ lemma Simple.simplifies_iff_eq (h : M.Simple) : N ≤si M ↔ N = M :=
 lemma Simplifies.contract {C : Set α} (h : N ≤si M) (hC : C ⊆ N.E) : N ／ C ≤si M ／ C := by
   refine ⟨h.isRestriction.contract hC, fun e he ↦ ?_⟩
   obtain ⟨f, hfE, hef⟩ := h.exists_of_isNonloop he.of_contract
-  simp only [contract_isNonloop_iff, mem_diff] at he
+  simp only [contract_isNonloop_iff, mem_sdiff] at he
   refine ⟨f, ⟨hfE, fun hfC ↦ he.2 ?_⟩, ?_⟩
   · exact mem_of_mem_of_subset hef.mem_closure <| M.closure_mono <| by simpa
   rw [parallel_comm, contract_parallel_iff, and_iff_left he.2]
@@ -437,17 +437,17 @@ lemma Simplifies.exists_eq_comapOn (h : N ≤si M) :
   refine ⟨φ, ext_closure fun X ↦ ?_, fun e he ↦ ((hφ e).2.1 he).symm,
     fun x hx ↦ ((hφ x).2.2 hx).symm, ?_, hidem⟩
   · rw [comapOn, restrict_closure_eq', comap_closure_eq, subset_antisymm_iff,
-      union_subset_iff, comap_ground_eq, diff_subset_iff, diff_eq_compl_inter,
+      union_subset_iff, comap_ground_eq, sdiff_subset_iff, sdiff_eq_compl_inter,
         ← union_inter_distrib_right, subset_inter_iff, and_iff_left (M.closure_subset_ground ..),
-        h.isRestriction.closure_eq', hrw inter_subset_right, union_comm, ← diff_subset_iff,
-        diff_compl, preimage_inter, subset_inter_iff, and_iff_left inter_subset_right,
+        h.isRestriction.closure_eq', hrw inter_subset_right, union_comm, ← sdiff_subset_iff,
+        sdiff_compl, preimage_inter, subset_inter_iff, and_iff_left inter_subset_right,
         closure_inter_ground]
     suffices ∀ x ∈ M.E, φ x ∈ N.E ∨ x ∈ M.closure X by simpa +contextual [subset_def, aux']
     intro e he
     obtain hel | henl := M.isLoop_or_isNonloop e
     · simp [hel.mem_closure]
     exact .inl ((hφ e).1 henl).1
-  simp only [Set.ext_iff, mem_image, mem_setOf_eq, h.isRestriction.isNonloop_iff]
+  simp only [Set.ext_iff, mem_image, mem_ofPred_eq, h.isRestriction.isNonloop_iff]
   refine fun x ↦ ⟨?_, fun ⟨hx, hxN⟩ ↦ ⟨φ x, ?_⟩⟩
   · rintro ⟨y, hy, rfl⟩
     exact ⟨((hφ y).1 hy).2.isNonloop_right, ((hφ y).1 hy).1⟩
@@ -457,8 +457,8 @@ lemma Simplifies.exists_eq_comap [M.Loopless] (h : N ≤si M) :
     ∃ (φ : α → α), M = N.comap φ ∧ EqOn id φ N.E ∧ φ '' M.E = N.E ∧ φ ⁻¹' N.E = M.E
       ∧ ∀ e, φ (φ e) = φ e := by
   obtain ⟨φ, hM, hφN, hinl, him, hidem⟩ := h.exists_eq_comapOn
-  rw [M.setOf_isNonloop_eq, loops_eq_empty, diff_empty, N.setOf_isNonloop_eq,
-    h.isRestriction.loopless.loops_eq_empty, diff_empty] at him
+  rw [M.setOfPred_isNonloop_eq, loops_eq_empty, sdiff_empty, N.setOfPred_isNonloop_eq,
+    h.isRestriction.loopless.loops_eq_empty, sdiff_empty] at him
   have aux : M.E = φ ⁻¹' N.E := by
     ext e
     simp only [mem_preimage]
@@ -505,8 +505,8 @@ lemma IsSimplification.repFun_apply_mem_ground (h : N.IsSimplification M) (he : 
 lemma IsSimplification.simple (h : N.IsSimplification M) : N.Simple := by
   obtain ⟨f, rfl⟩ := h
   rw [simple_iff_loopless_eq_of_parallel_forall]
-  simp only [restrict_parallel_iff, mem_image, mem_setOf_eq, and_imp, forall_exists_index,
-    loopless_iff_forall_isNonloop, restrict_ground_eq, mem_image, mem_setOf_eq,
+  simp only [restrict_parallel_iff, mem_image, mem_ofPred_eq, and_imp, forall_exists_index,
+    loopless_iff_forall_isNonloop, restrict_ground_eq, mem_image, mem_ofPred_eq,
     restrict_isNonloop_iff, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
   refine ⟨fun x hx ↦ ⟨f.apply_mem' mem_parallelClasses_supp_iff hx, ⟨x, hx, rfl⟩⟩, ?_⟩
   rintro _ _ hxy x - rfl y - rfl
@@ -573,6 +573,7 @@ lemma IsSimplification.eq_of_simplifies_ge {N₀ : Matroid α} (h : N.IsSimplifi
     hN₀.exists_of_isNonloop <| (h.simple.isNonloop_of_mem heN).of_isRestriction h.isRestriction
   rwa [h.eq_of_parallel heN (hN₀N.subset hfN₀) hef]
 
+set_option backward.isDefEq.respectTransparency false in
 /-- A simplification of `M` is the restriction of `M` to a transversal of its parallel classes. -/
 lemma isSimplification_iff : N.IsSimplification M ↔ N.Loopless ∧ N ≤r M ∧
     ∀ ⦃e⦄, M.IsNonloop e → ∃! f ∈ N.E, M.Parallel e f := by
@@ -592,7 +593,7 @@ lemma isSimplification_iff : N.IsSimplification M ↔ N.Loopless ∧ N ≤r M �
   refine Set.ext fun x ↦ ⟨?_, fun h ↦ ?_⟩
   · rintro ⟨x,(hx : M.IsNonloop x),rfl⟩; simp [hx, (hf hx).1.1]
   have hx := ((isNonloop_of_loopless h).of_isRestriction hr)
-  simp only [Partition.RepFun.mk_apply, mem_image, mem_setOf_eq]
+  simp only [Partition.RepFun.mk_apply, mem_image, mem_ofPred_eq]
   exact ⟨x, hx, by rw [dif_pos hx, ← (hf hx).2 _ ⟨h, hx.parallel_self⟩]⟩
 
 /-- `N` is a simplification of `M` if `N` is minimal in the restriction order simplifying `M`. -/
@@ -647,7 +648,7 @@ lemma IsSimplification.delete (hN : N.IsSimplification M) (hD : D ⊆ N.E) :
     (N ＼ D).IsSimplification (M ＼ ⋃ e ∈ D, {f | M.Parallel e f}) := by
   rw [isSimplification_iff, and_iff_right (hN.simple.loopless.delete D)]
   simp only [delete_isNonloop_iff, mem_iUnion, exists_prop, not_exists, not_and, delete_ground,
-    mem_diff, delete_parallel_iff, and_imp, mem_setOf_eq]
+    mem_sdiff, delete_parallel_iff, and_imp, mem_ofPred_eq]
   refine ⟨?_, fun e he hcl ↦ ?_⟩
   · obtain ⟨R, hR, rfl⟩ := hN.isRestriction.exists_eq_restrict
     have hD_eq : D = (⋃ e ∈ D, {f | M.Parallel e f}) ∩ (M ↾ R).E := by
@@ -655,7 +656,7 @@ lemma IsSimplification.delete (hN : N.IsSimplification M) (hD : D ⊆ N.E) :
       · nth_rw 1 [← biUnion_of_singleton D]
         refine biUnion_mono rfl.subset fun e heD ↦ ?_
         simp [(hN.simple.isNonloop_of_mem (hD heD)).of_restrict]
-      simp only [restrict_ground_eq, subset_def, mem_inter_iff, mem_iUnion, mem_setOf_eq,
+      simp only [restrict_ground_eq, subset_def, mem_inter_iff, mem_iUnion, mem_ofPred_eq,
         exists_prop, and_imp, forall_exists_index]
       refine fun e f hfD hef heR ↦ ?_
       rwa [← hN.simple.eq_of_parallel_of_mem (hD hfD) heR hef]
@@ -695,7 +696,7 @@ lemma IsSimplification.exists_of_isStrictRestriction (hN : N.IsSimplification M)
   · exact .inl ⟨e, he, heN⟩
   obtain ⟨f, hN⟩ := hN
   refine .inr ⟨e, f e, f.rel_apply' mem_parallelClasses_supp_iff he, heM, heN, ?_⟩
-  simp only [hN, restrict_ground_eq, mem_image, mem_setOf_eq]
+  simp only [hN, restrict_ground_eq, mem_image, mem_ofPred_eq]
   exact ⟨e, he, rfl⟩
 
 lemma IsSimplification.isSpanningRestriction (hN : N.IsSimplification M) : N ≤sr M :=
@@ -717,7 +718,7 @@ lemma IsSimplification.eRank_eq (hN : N.IsSimplification M) : N.eRank = M.eRank 
 
 lemma IsSimplification.ground_eq_biUnion_setOf_parallel [M.Loopless] (hNM : N.IsSimplification M) :
     M.E = ⋃ e ∈ N.E, {x | M.Parallel e x} := by
-  simp only [subset_antisymm_iff, subset_def, mem_iUnion, mem_setOf_eq, exists_prop,
+  simp only [subset_antisymm_iff, subset_def, mem_iUnion, mem_ofPred_eq, exists_prop,
     forall_exists_index, and_imp]
   refine ⟨fun x hx ↦ ?_, fun _ _ _ ↦ Parallel.mem_ground_right⟩
   obtain ⟨f, hf⟩ := hNM.exists_unique (isNonloop_of_loopless hx)
@@ -727,7 +728,7 @@ lemma IsSimplification.ground_eq_biUnion_setOf_parallel_union_loops (hNM : N.IsS
     M.E = (⋃ e ∈ N.E, {x | M.Parallel e x}) ∪ M.loops := by
   have hrw := hNM.isSimplification_removeLoops.ground_eq_biUnion_setOf_parallel
   simp_rw [removeLoops_parallel_iff, removeLoops_eq_delete, delete_ground] at hrw
-  rw [← diff_union_of_subset M.loops_subset_ground, hrw]
+  rw [← sdiff_union_of_subset M.loops_subset_ground, hrw]
 
 lemma IsSimplification.ground_eq_biUnion_closure [M.RankPos] (hNM : N.IsSimplification M) :
     M.E = ⋃ e ∈ N.E, M.closure {e} := by
@@ -815,7 +816,7 @@ lemma simplification_isSimplification (M : Matroid α) : M.simplification.IsSimp
   let f := M.removeLoops.parallelClasses.nonempty_repFun.some
   refine ⟨Partition.RepFun.mk' _ f mem_parallelClasses_supp_iff
     (fun a ha ↦ f.apply_of_notMem (by simpa))
-    (fun a ha ↦ by simpa [mem_setOf_eq, parallelClasses_rel_eq] using f.rel_apply (by simpa))
+    (fun a ha ↦ by simpa [mem_ofPred_eq, parallelClasses_rel_eq] using f.rel_apply (by simpa))
     (fun a b hab ↦ f.apply_eq_apply (by simpa)), ?_⟩
   simp only [simplification, removeLoops_isNonloop_iff]
   rw [removeLoops_restrict_eq_restrict]
@@ -871,7 +872,7 @@ lemma IsMinor.exists_isMinor_isSimplification (hNM : N ≤m M) (hN : N.Simple) :
     ∃ M₀, N ≤m M₀ ∧ IsSimplification M₀ M := by
   obtain ⟨I, hI, hr, -⟩ := hNM.exists_spanning_isRestriction_contract
   have hN' := hr.eq_restrict ▸
-    M.contract_restrict_eq_restrict_contract (subset_diff.1 hr.subset).2.symm
+    M.contract_restrict_eq_restrict_contract (subset_sdiff.1 hr.subset).2.symm
   have h : (M ↾ (N.E ∪ I)).Simple := by
     apply Indep.simple_of_contract_simple (I := I) _ (by rwa [← hN'])
     refine restrict_indep_iff.2 ⟨hI, subset_union_right⟩
@@ -911,7 +912,7 @@ end minor
 --     ∃ c, M.ParallelChoiceFunction c ∧ N ≤m M.simplificationWrt c := by
 --   obtain ⟨I, hI, hr, -⟩ := hN.exists_contract_spanning_restrict
 --   have hN' := hr.eq_restrict ▸
---     M.contract_restrict_eq_restrict_contract _ _ (subset_diff.1 hr.subset).2.symm
+--     M.contract_restrict_eq_restrict_contract _ _ (subset_sdiff.1 hr.subset).2.symm
 --   have h : (M ↾ (N.E ∪ I)).Simple := by
 --     apply Indep.simple_of_contract_simple (I := I) _ (by rwa [← hN'])
 --     refine restrict_indep_iff.2 ⟨hI, subset_union_right⟩
@@ -920,7 +921,7 @@ end minor
 --   refine ⟨c, hc, ?_⟩
 --   rw [← hr.eq_restrict]
 --   apply IsMinor.trans ?_ hrc.minor
---   rw [contract_restrict_eq_restrict_contract _ _ _ (subset_diff.1 hr.subset).2.symm]
+--   rw [contract_restrict_eq_restrict_contract _ _ _ (subset_sdiff.1 hr.subset).2.symm]
 --   apply contract_minor
 
 -- lemma minor_iff_minor_simplification {α β : Type*} {N : Matroid α} [Simple N] {M : Matroid β} :

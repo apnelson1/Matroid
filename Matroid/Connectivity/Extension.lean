@@ -10,6 +10,7 @@ section Extension
 
 variable {ι : Type*}
 
+set_option backward.isDefEq.respectTransparency false in
 lemma ModularCut.multiconn_add_eq_multiConn_projectBy_add (U : M.ModularCut)
     (X : ι → Set α) [DecidablePred (· ∈ U)] (hU : U ≠ ⊤) :
     M.multiConn X + (if M.closure (⋃ i, X i) ∈ U then 1 else 0) =
@@ -44,6 +45,7 @@ lemma ModularCut.multiconn_add_eq_multiConn_projectBy_add (U : M.ModularCut)
     or_iff_right heX]
   simp
 
+set_option backward.isDefEq.respectTransparency false in
 /-- The formula relating the dual connectivity and the dual connectivity for the projection
 by a modular cut. -/
 lemma ModularCut.multiconn_dual_add_eq_multiConn_projectBy_dual_add (U : M.ModularCut)
@@ -63,7 +65,7 @@ lemma ModularCut.multiconn_dual_add_eq_multiConn_projectBy_dual_add (U : M.Modul
       ⟨none, by simp⟩
     rw [map_dual, multiConn_map_image _ _ _ (by simpa), U.projectBy_map, map_ground,
       map_dual, map_closure_eq, multiConn_map_image _ _ _ (by simpa)] at aux
-    simp_rw [← image_iUnion, ← image_diff ho, map_closure_eq, preimage_image_eq _ ho,
+    simp_rw [← image_iUnion, ← image_sdiff ho, map_closure_eq, preimage_image_eq _ ho,
       U.image_mem_map_iff _ _  (closure_subset_ground ..)] at aux
     exact aux
   obtain ⟨e, he⟩ := h
@@ -72,7 +74,7 @@ lemma ModularCut.multiconn_dual_add_eq_multiConn_projectBy_dual_add (U : M.Modul
     ← multiConn_project_eq_multiConn_contract, eq_comm, ← ite_not]
   simp_rw [← U.mem_closure_extendBy_dual_iff he (hXE _),
       ← U.mem_closure_extendBy_dual_iff he (iUnion_subset hXE), eq_comm (a := _ + ite ..),
-      ENat.encard_eq_tsum_ite, mem_setOf_eq]
+      ENat.encard_eq_tsum_ite, mem_ofPred_eq]
   have hni : (M.extendBy e U)✶.Indep {e} := by
     rwa [indep_singleton, U.extendBy_isNonloop_dual_iff he]
   convert (M.extendBy e U)✶.multiConn_project_add_tsum_eLocalConn_eq (C := {e}) (X := X) with i <;>

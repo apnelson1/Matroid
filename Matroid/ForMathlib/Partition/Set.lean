@@ -93,7 +93,7 @@ private lemma le_of_rel_le' (h : P.Rel ≤ Q.Rel) : P ≤ Q := by
 
 instance : FunLike (Partition (Set α)) α (α → Prop) where
   coe := Rel
-  coe_injective' _ _ h := le_antisymm (le_of_rel_le' h.le) (le_of_rel_le' h.ge)
+  coe_injective _ _ h := le_antisymm (le_of_rel_le' h.le) (le_of_rel_le' h.ge)
 
 lemma Rel.exists (h : P x y) : ∃ t ∈ P, x ∈ t ∧ y ∈ t :=
   h
@@ -113,11 +113,8 @@ lemma rel_self_of_mem_supp (hx : x ∈ P.supp) : P x x := by
   obtain ⟨t, ht, hxt⟩ := mem_supp_iff.mp hx
   exact rel_self_of_mem ht hxt
 
-lemma rel_symmectric (P : Partition (Set α)) : Symmetric P :=
-  fun _ _ ⟨t, ht, ha, hb⟩ ↦ ⟨t, ht, hb, ha⟩
-
 instance (P : Partition (Set α)) : Std.Symm P where
-  symm := P.rel_symmectric
+  symm _ _ := fun ⟨t, ht, ha, hb⟩ ↦ ⟨t, ht, hb, ha⟩
 
 instance (P : Partition (Set α)) : IsTrans α P where
   trans := by
@@ -220,7 +217,7 @@ lemma rel_inj_iff : ⇑P = ⇑Q ↔ P = Q :=
 lemma rel_le_of_isInducedSubpartition (h : P ≤ip Q) : ⇑P ≤ ⇑Q :=
   rel_le_of_le h.le
 
-lemma rel_le_of_subset (h : P ⊆ Q) : ⇑P ≤ ⇑Q :=
+lemma rel_le_of_subset (h : P.subset Q) : ⇑P ≤ ⇑Q :=
   rel_le_of_le <| le_of_subset h
 
 /-- A transitive, symmetric Binary relation `r` induces a partition of the set of elements on
@@ -404,7 +401,7 @@ lemma delete_rel (P : Partition (Set α)) (S : Set (Set α)) :
 lemma cover_rel (P : Partition (Set α)) (S : Set α) :
     ⇑(P.cover S) = Relation.Domp P (P.induce S) := by
   ext x y
-  simp only [cover, mem_parts, not_disjoint_iff, restrict_apply, mem_sUnion, mem_setOf_eq,
+  simp only [cover, mem_parts, not_disjoint_iff, restrict_apply, mem_sUnion, mem_ofPred_eq,
     induce_rel]
   refine ⟨fun ⟨⟨s, ⟨hsP, z, hzS, hzs⟩, hxs⟩, t, htP, hxt, hyt⟩ ↦ ?_,
     fun ⟨a, hxa, b, ⟨hbS, haS, hba⟩, hby⟩ ↦ ⟨?_, (hxa.trans (hba.symm)).trans hby⟩⟩
@@ -415,7 +412,7 @@ lemma cover_rel (P : Partition (Set α)) (S : Set α) :
 
 @[simp]
 lemma cover_rel_of_left_mem (P : Partition (Set α)) (hx : x ∈ S) : P.cover S x y ↔ P x y := by
-  simp only [cover, mem_parts, not_disjoint_iff, restrict_apply, mem_sUnion, mem_setOf_eq,
+  simp only [cover, mem_parts, not_disjoint_iff, restrict_apply, mem_sUnion, mem_ofPred_eq,
     and_assoc, and_iff_right_iff_imp]
   rintro ⟨t, ht, hxt, hyt⟩
   use t, ht, by use x
@@ -427,16 +424,16 @@ lemma cover_rel_of_right_mem (P : Partition (Set α)) (hy : y ∈ S) : P.cover S
 lemma subset_cover_supp (h : S ⊆ P.supp) : S ⊆ (P.cover S).supp := by
   rintro x hxS
   obtain ⟨t, ht, hxt⟩ := h hxS
-  simp only [cover_supp, mem_parts, sSup_eq_sUnion, mem_sUnion, mem_setOf_eq,
+  simp only [cover_supp, mem_parts, sSup_eq_sUnion, mem_sUnion, mem_ofPred_eq,
     and_assoc, not_disjoint_iff]
   use t, ht, ?_
   use x
 
-lemma rel_of_subset_mem (hPQ : P ⊆ Q) (hx : x ∈ P.supp) (hxy : Q x y) : P x y := by
+lemma rel_of_subset_mem (hPQ : P.subset Q) (hx : x ∈ P.supp) (hxy : Q x y) : P x y := by
   obtain ⟨S, hS, rfl⟩ := subset_iff_restrict.mp hPQ
   exact Q.rel_of_restrict_rel hPQ hx hxy
 
-lemma subset_iff_rel : P ⊆ Q ↔ ∀ ⦃x y⦄, x ∈ P.supp → (P x y ↔ Q x y) := by
+lemma subset_iff_rel : P.subset Q ↔ ∀ ⦃x y⦄, x ∈ P.supp → (P x y ↔ Q x y) := by
   refine ⟨fun h x y hx => ⟨rel_le_of_subset h x y, rel_of_subset_mem h hx⟩, fun h s hs => ?_⟩
   rw [← fibers_rel_eq, mem_fibers_iff] at hs ⊢
   obtain ⟨x, hx, rfl⟩ := hs
@@ -500,7 +497,7 @@ protected def discrete (S : Set α) : Partition (Set α) where
     rintro _ ⟨a, haS, rfl⟩ T hTa hT
     have hS : sSup (singleton '' S \ {{a}}) = S \ {a} := by
       ext x
-      simp +contextual only [sSup_eq_sUnion, mem_sUnion, mem_diff, mem_image, mem_singleton_iff,
+      simp +contextual only [sSup_eq_sUnion, mem_sUnion, mem_sdiff, mem_image, mem_singleton_iff,
         iff_def, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂, singleton_eq_singleton_iff,
         not_false_eq_true, and_self, implies_true, true_and]
       rintro hxS hne
@@ -615,20 +612,21 @@ lemma discrete_of_le_discrete (hS : P ≤ Partition.discrete S) : P = Partition.
   exact (discrete_atomic S).atomic_of_le hS
 
 lemma discrete_subset_discrete_of_subset (hST : S ⊆ T) :
-    Partition.discrete S ⊆ Partition.discrete T := by
+    (Partition.discrete S).subset (Partition.discrete T) := by
   rintro s hsS
   obtain ⟨x, hx, rfl⟩ := hsS
   use x, hST hx
 
 @[simp]
-lemma discrete_subset_discrete_iff : Partition.discrete S ⊆ Partition.discrete T ↔ S ⊆ T :=
+lemma discrete_subset_discrete_iff : (Partition.discrete S).subset (Partition.discrete T) ↔ S ⊆ T :=
   ⟨fun h x => by simpa using @h {x}, discrete_subset_discrete_of_subset⟩
 
 lemma discrete_mono (hST : S ⊆ T) : Partition.discrete S ≤ Partition.discrete T := by
   rw [← (discrete_atomic T).subset_iff_le]
   exact discrete_subset_discrete_of_subset hST
 
-lemma discrete_subset_iff_rel : Partition.discrete S ⊆ P ↔ ∀ x y, x ∈ S → (x = y ↔ P x y) := by
+lemma discrete_subset_iff_rel :
+    (Partition.discrete S).subset P ↔ ∀ x y, x ∈ S → (x = y ↔ P x y) := by
   simp +contextual [subset_iff_rel]
 
 @[simp]
@@ -657,7 +655,7 @@ lemma atomic_of_supp_singleton (hP : P.supp = {a}) : P.Atomic := by
 lemma discrete_le_iff : Partition.discrete S ≤ P ↔ S ⊆ P.supp := by
   refine ⟨fun h x hx => ?_, fun h t ht => ?_⟩
   · obtain ⟨t, htP, hxt⟩ := h {x} (mem_discrete_of_mem_supp hx)
-    simp only [le_eq_subset, singleton_subset_iff] at hxt
+    simp only [singleton_subset_iff] at hxt
     exact mem_supp_iff.mpr ⟨t, htP, hxt⟩
   obtain ⟨a, haP, rfl⟩ := (by simpa using ht); clear ht
   exact ⟨P.partOf a, partOf_mem (h haP), by simp [rel_self_iff_mem_supp, h haP]⟩
@@ -681,7 +679,7 @@ lemma agree_of_atomic (hP : P.Atomic) (hQ : Q.Atomic) : P.Agree Q := by
   have hsSup : sSupIndep (P.parts ∪ Q.parts) := by
     rw [hP, hQ, discrete_parts, discrete_parts, ← Set.image_union]
     rintro s ⟨a, (haP | haQ), rfl⟩ <;> simp only [sSup_eq_sUnion, disjoint_singleton_left,
-      mem_sUnion, mem_diff, mem_image, mem_union, mem_singleton_iff, not_exists, not_and, and_imp,
+      mem_sUnion, mem_sdiff, mem_image, mem_union, mem_singleton_iff, not_exists, not_and, and_imp,
       forall_exists_index, forall_apply_eq_imp_iff₂, singleton_eq_singleton_iff]
     all_goals exact fun _ _ h1 h2 ↦ h1 h2.symm
   use ofIndependent hsSup (by rw [mem_union, not_or]; exact ⟨P.bot_not_mem, Q.bot_not_mem⟩), ?_ <;>

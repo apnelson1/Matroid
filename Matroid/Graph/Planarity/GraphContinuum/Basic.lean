@@ -38,7 +38,7 @@ lemma disjoint_verts_of_mem_edges (he : e ∈ E(G)) : Disjoint e V(G) := by
   refine subset_trans (inter_subset_inter (subset_compl_verts_of_mem_edges he) Subset.rfl) ?_
   simp
 
-lemma isOpen_edge [LocPathConnectedSpace G] (he : e ∈ E(G)) (hV : IsClosed V(G)) : IsOpen e :=
+lemma isOpen_edge [LocallyPathConnectedSpace G] (he : e ∈ E(G)) (hV : IsClosed V(G)) : IsOpen e :=
   hV.isOpen_compl.pathComponentPartition_isOpen he
 
 lemma not_isClosed_edge (he : e ∈ E(G)) : ¬ IsClosed e := by
@@ -62,7 +62,7 @@ def Inc (e : Set G) (v : G) : Prop := e ∈ E(G) ∧ v ∈ V(G) ∩ closure e
 lemma Inc.edge_mem (h : Inc e v) : e ∈ E(G) := h.1
 lemma Inc.vertex_mem (h : Inc e v) : v ∈ V(G) := h.2.1
 
--- lemma exists_inc_of_mem_edges [LocPathConnectedSpace G] (he : e ∈ E(G)) : ∃ v, Inc e v := by
+-- lemma exists_inc_of_mem_edges [LocallyPathConnectedSpace G] (he : e ∈ E(G)) : ∃ v, Inc e v := by
 --   -- simp only [Inc, he, mem_inter_iff, true_and, ← not_disjoint_iff]
 --   -- by_contra! hdj
 --   -- have hconn : IsConnected (closure e) := (isPathConnected_edge he).isConnected.closure

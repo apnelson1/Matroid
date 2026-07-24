@@ -33,7 +33,7 @@ lemma loopyOn_isPaving {E : Set α} : (loopyOn E).IsPaving :=
 lemma freeOn_isPaving {E : Set α} : (freeOn E).IsPaving :=
   IsUniform.isPaving <| by simp
 
-def IsPaving.contract (hM : M.IsPaving) (C : Set α) : (M ／ C).IsPaving := by
+theorem IsPaving.contract (hM : M.IsPaving) (C : Set α) : (M ／ C).IsPaving := by
   rw [IsPaving, truncate_contract]
   exact hM.truncate_isUniform.contract C
 
@@ -51,20 +51,20 @@ lemma IsPaving.isCircuit_of_isBase_of_finDiff_of_not_isBase (hM : M.IsPaving) (h
     (hBC : B.FinDiff C) (hC : ¬ M.IsBase C) (hCE : C ⊆ M.E := by aesop_mat) : M.IsCircuit C := by
   obtain ⟨E, rfl⟩ | hpos := M.exists_eq_loopyOn_or_rankPos
   · simp only [loopyOn_isBase_iff] at hC hB
-    simpa [hB] using hBC.diff_nonempty_of_ne (by grind)
+    simpa [hB] using hBC.sdiff_nonempty_of_ne (by grind)
   obtain ⟨e, he⟩ := hB.nonempty
   obtain ⟨f, hf⟩ := hBC.nonempty_of_nonempty hB.nonempty
   have hb' : M.truncate.IsBase (C \ {f}) := hM.truncate_isUniform.isBase_of_isBase_of_finDiff
-    (hB.diff_singleton_truncate_isBase he) (hBC.finDiff_diff_diff_singleton he hf) <| by grind
+    (hB.diff_singleton_truncate_isBase he) (hBC.finDiff_sdiff_sdiff_singleton he hf) <| by grind
   have hC' := hM.truncate_isUniform.insert_isCircuit_of_isBase hb' (e := f) (by grind)
-  rw [insert_diff_self_of_mem hf, truncate_isCircuit_iff, or_iff_left hC] at hC'
+  rw [insert_sdiff_self_of_mem hf, truncate_isCircuit_iff, or_iff_left hC] at hC'
   exact hC'.1
 
 lemma IsPaving.isCircuit_insert_diff_singleton_of_isBase_of_not_isBase (hM : M.IsPaving)
     (hB : M.IsBase B) (heB : e ∈ M.E \ B) (hfB : f ∈ B) (hB' : ¬ M.IsBase (insert e (B \ {f}))) :
     M.IsCircuit (insert e (B \ {f})) :=
   hM.isCircuit_of_isBase_of_finDiff_of_not_isBase hB
-    (isExchange_diff_insert hfB heB.2).finDiff hB' <| by grind
+    (isExchange_sdiff_insert hfB heB.2).finDiff hB' <| by grind
 
 lemma isPaving_iff_forall_isCircuit : M.IsPaving ↔ ∀ C, M.IsCircuit C → (M ／ C).eRank ≤ 1 := by
   refine ⟨fun h C hC ↦ h.eRank_contract_le_one_of_dep hC.dep, fun h ↦ ?_⟩
@@ -78,7 +78,7 @@ lemma isPaving_iff_forall_isCircuit : M.IsPaving ↔ ∀ C, M.IsCircuit C → (M
   obtain ⟨C, hCX, hC⟩ := hXd.exists_isCircuit_subset
   grw [← h C hC, (contract_isMinor_of_subset _ hCX).eRank_le]
 
-def IsPaving.exists_insert_of_dep (hM : M.IsPaving) (hD : M.Dep D) :
+theorem IsPaving.exists_insert_of_dep (hM : M.IsPaving) (hD : M.Dep D) :
     ∃ e ∈ M.E, M.Spanning (insert e D) := by
   obtain ⟨E, rfl⟩ := M.eq_loopyOn_or_rankPos'
   · simp only [loopyOn_ground, spanning_iff, loopyOn_closure_eq, true_and]
@@ -97,7 +97,7 @@ lemma IsPaving.exists_isExchange_isBase_subset_of_dep (hM : M.IsPaving) (hD : M.
   obtain ⟨f, hfD, hfB⟩ := not_subset.1 hnss
   by_cases hBD : B ⊆ D
   · exact ⟨B, hB, .inl hBD⟩
-  exact ⟨B, hB, .inr ⟨(insert f (B \ {e})), isExchange_diff_insert (by grind) hfB, (by grind)⟩⟩
+  exact ⟨B, hB, .inr ⟨(insert f (B \ {e})), isExchange_sdiff_insert (by grind) hfB, (by grind)⟩⟩
 
 lemma IsPaving.exists_finDiff_isBase_subset_of_dep (hM : M.IsPaving) (hD : M.Dep D) :
     ∃ B X, M.IsBase B ∧ FinDiff B X ∧ X ⊆ D := by
@@ -121,7 +121,7 @@ lemma paving_iff_forall_isCircuit :
   obtain ⟨e, he⟩ := hX.nonempty
   exact ⟨e, hX.subset_ground he, by simp [he, hX.spanning]⟩
 
-def IsPaving.exists_insert_of_dep_of_ssubset (hM : M.IsPaving) (hD : M.Dep D) (hDE : D ⊂ M.E) :
+theorem IsPaving.exists_insert_of_dep_of_ssubset (hM : M.IsPaving) (hD : M.Dep D) (hDE : D ⊂ M.E) :
     ∃ e ∈ M.E \ D, M.Spanning (insert e D) := by
   obtain ⟨e, he, heD⟩ := hM.exists_insert_of_dep hD
   by_cases he' : e ∈ D
@@ -172,7 +172,7 @@ lemma IsPaving.eRank_le_eRk_add_one_of_dep (hM : M.IsPaving) (h : M.Dep D) :
   grw [← eRk_ground, ← M.eRelRk_add_eRk_of_subset h.subset_ground, hM.eRelRk_ground_le_of_dep h,
     add_comm]
 
-def IsPaving.delete (hM : M.IsPaving) (D : Set α) : (M ＼ D).IsPaving := by
+theorem IsPaving.delete (hM : M.IsPaving) (D : Set α) : (M ＼ D).IsPaving := by
   suffices aux : ∀ D ⊆ M.E, (M ＼ D).IsPaving
   · convert aux (D ∩ M.E) inter_subset_right using 1; simp [delete_inter_ground_eq]
   clear D
@@ -184,18 +184,19 @@ def IsPaving.delete (hM : M.IsPaving) (D : Set α) : (M ＼ D).IsPaving := by
   rw [delete_eq_restrict]
   refine (hM.restrict_uniform_of_nonspanning ?_).truncate
   rwa [nonspanning_compl_iff, ← not_coindep_iff]
-def IsPaving.isMinor (hM : M.IsPaving) (hNM : N ≤m M) : N.IsPaving := by
+
+theorem IsPaving.isMinor (hM : M.IsPaving) (hNM : N ≤m M) : N.IsPaving := by
   obtain ⟨C, D, -, -, -, rfl⟩ := hNM
   exact (hM.contract _).delete _
 
 lemma IsPaving.exists_diff_indep_of_nonspanning (hM : M✶.IsPaving) (hXs : M.Nonspanning X)
     (hne : X.Nonempty) : ∃ f ∈ X, M.Indep (X \ {f}) := by
   have hd : M✶.Dep (M.E \ X) := by rwa [← codep_def, codep_compl_iff]
-  have hssu : M.E \ X ⊂ M.E := diff_ssubset hXs.subset_ground hne
+  have hssu : M.E \ X ⊂ M.E := hXs.subset_ground.sdiff_ssubset_of_nonempty hne
   obtain ⟨f, hf, h⟩ := hM.exists_insert_of_dep_of_ssubset hd hssu
-  rw [spanning_dual_iff, ← union_singleton, ← diff_diff,
-    diff_diff_cancel_left hXs.subset_ground] at h
-  simp only [dual_ground, sdiff_sdiff_right_self, inf_eq_inter, mem_inter_iff] at hf
+  rw [spanning_dual_iff, ← union_singleton, ← sdiff_sdiff,
+    sdiff_sdiff_cancel_left hXs.subset_ground] at h
+  simp only [dual_ground, sdiff_sdiff_right_self, mem_inter_iff] at hf
   exact ⟨f, hf.2, h⟩
 
 lemma IsPaving.encard_eq_or_eq_of_isCircuit (hM : M.IsPaving) (hC : M.IsCircuit C) :
@@ -212,10 +213,10 @@ lemma IsPaving.exists_isCircuit_of_isBase [M✶.RankPos] (hM : M.IsPaving) (hB :
   obtain ⟨e, heE, heB⟩ := exists_of_ssubset hssu
   obtain ⟨C, hCss, hC⟩ := (hB.insert_dep ⟨heE, heB⟩).exists_isCircuit_subset
   refine ⟨C, hC, ?_, ?_⟩
-  · exact Subsingleton.anti (by simp [insert_diff_eq_singleton heB]) (diff_subset_diff_left hCss)
+  · exact Subsingleton.anti (by simp [insert_sdiff_eq_singleton heB]) (sdiff_subset_sdiff_left hCss)
   rw [show B \ C = B \ (C \ {e}) by tauto_set!, ← encard_le_one_iff_subsingleton,
-    ← hB.indep.eRelRk_of_subset (by simpa [diff_subset_iff]), ← eRelRk_closure_left,
-    hC.closure_diff_singleton_eq, eRelRk_closure_left, ← eRelRk_closure_right, hB.closure_eq]
+    ← hB.indep.eRelRk_of_subset (by simpa [sdiff_subset_iff]), ← eRelRk_closure_left,
+    hC.closure_sdiff_singleton_eq, eRelRk_closure_left, ← eRelRk_closure_right, hB.closure_eq]
   exact hM.eRelRk_ground_le_of_dep hC.dep
 
 /-- Every spanning set in a non-free paving matroid nearly contains a circuit. -/
@@ -223,14 +224,14 @@ lemma IsPaving.exists_isCircuit_of_spanning [M✶.RankPos] (hM : M.IsPaving) (hX
     ∃ C, M.IsCircuit C ∧ (C \ X).Subsingleton := by
   obtain ⟨B, hB, hBX⟩ := hX.exists_isBase_subset
   obtain ⟨C, hC, h, -⟩ := hM.exists_isCircuit_of_isBase hB
-  exact ⟨C, hC, h.anti <| diff_subset_diff_right hBX⟩
+  exact ⟨C, hC, h.anti <| sdiff_subset_sdiff_right hBX⟩
 
 /-- Every independent set in a non-free paving matroid is nearly contained in a circuit. -/
 lemma IsPaving.exists_isCircuit_of_indep {I : Set α} [M✶.RankPos] (hM : M.IsPaving)
     (hI : M.Indep I) : ∃ C, M.IsCircuit C ∧ (I \ C).Subsingleton := by
   obtain ⟨B, hB, hIB⟩ := hI.exists_isBase_superset
   obtain ⟨C, hC, -, h⟩ := hM.exists_isCircuit_of_isBase hB
-  exact ⟨C, hC, h.anti <| diff_subset_diff_left hIB⟩
+  exact ⟨C, hC, h.anti <| sdiff_subset_sdiff_left hIB⟩
 
 lemma isPaving_iff_girth_ge [M.Finitary] : M.IsPaving ↔ M.eRank ≤ M.girth := by
   rw [isPaving_iff_forall_isCircuit, le_girth_iff]
@@ -284,7 +285,7 @@ lemma IsSparsePaving.isCircuitHyperplane_of_dep_of_nonspanning (hM : M.IsSparseP
   have hd := hM.isPaving_dual.exists_finDiff_isBase_subset_of_dep (D := M.E \ C)
   rw [dep_dual_iff, codep_compl_iff, imp_iff_right hCs] at hd
   obtain ⟨B', Y, hB', hB'Y, hYC⟩ := hd
-  have hfd := hB'Y.diff_right (show B' ⊆ M.E from hB'.subset_ground) (hYC.trans diff_subset)
+  have hfd := hB'Y.sdiff_right (show B' ⊆ M.E from hB'.subset_ground) (hYC.trans sdiff_subset)
   -- This means that `X ⊆ C ⊆ M.E \ Y`, and both `X` and `M.E \ Y` have finite exchange distance
   -- from bases of `M`. But these sets form an antichain, so `X = C = M.E \ Y`.
   obtain rfl : X = M.E \ Y := M.isAntichain_setOf_finDiff_isBase.eq (a := X) (b := M.E \ Y)
@@ -312,9 +313,9 @@ theorem isSparsePaving_iff_forall_indep_or_spanning_or_isCircuitHyperplane :
       IsHyperplane.truncate_spanning]
   simp only [IsPaving, isUniform_iff, truncate_ground_eq, truncate_indep_iff']
   intro X hXE
-  specialize h (M.E \ X) diff_subset
+  specialize h (M.E \ X) sdiff_subset
   rw [← coindep_iff_compl_spanning, Coindep, ← dual_coindep_iff, coindep_iff_compl_spanning,
-    dual_ground, diff_diff_cancel_left (by simpa), ← isCircuitHyperplane_dual_iff] at h
+    dual_ground, sdiff_sdiff_cancel_left (by simpa), ← isCircuitHyperplane_dual_iff] at h
   grind [IsBase.spanning, Spanning.truncate_spanning, IsCircuitHyperplane.isHyperplane,
       IsHyperplane.truncate_spanning]
 
@@ -325,7 +326,7 @@ theorem IsSparsePaving.isBase_or_isCircuitHyperplane_of_finDiff (h : M.IsSparseP
   intro hnb
   have hc := h.isPaving.isCircuit_of_isBase_of_finDiff_of_not_isBase hB hBX hnb
   have hcc := h.isPaving_dual.isCircuit_of_isBase_of_finDiff_of_not_isBase
-    hB.compl_isBase_dual (hBX.diff_right hB.subset_ground hX)
+    hB.compl_isBase_dual (hBX.sdiff_right hB.subset_ground hX)
     (by rwa [← base_iff_dual_isBase_compl])
   rw [← isCocircuit_def, isCocircuit_compl_iff_isHyperplane] at hcc
   exact ⟨hc, hcc⟩
@@ -334,7 +335,7 @@ section Relax
 
 lemma IsSparsePaving.relax_all_isUniform (h : M.IsSparsePaving) :
     (M.relax {C | M.IsCircuitHyperplane C} (IsLawfulRelaxation.all M)).IsUniform := by
-  simp only [isUniform_iff, relax_E, relax_Indep, mem_setOf_eq, relax_spanning_iff]
+  simp only [isUniform_iff, relax_E, relax_Indep, mem_ofPred_eq, relax_spanning_iff]
   grind [h.indep_or_spanning_or_isCircuitHyperplane]
 
 
@@ -359,13 +360,14 @@ def finiteRankSparsePavingOn (E : Set α) (H : Set (Set α)) (r : ℕ)
       grw [← card_eq B hBH, (ssubset_ground B hBH)],
     by grind [Set.Pairwise], fun hEH ↦ (ssubset_ground E hEH).ne rfl, by grind [Nonempty.ne_empty]⟩
 
+set_option backward.isDefEq.respectTransparency false in
 lemma IsSparsePaving.exists_eq_finiteRankSparsePavingOn [M.RankFinite] (hM : M.IsSparsePaving) :
     ∃ (E : Set α) (r : ℕ) (T : Set (Set α)) (card_eq : _) (exchange : _) (nonempty : _)
         (ssubset_ground : _), M.eRank = r ∧ E = M.E ∧
         M = finiteRankSparsePavingOn E T r card_eq exchange nonempty ssubset_ground := by
   have h := (IsLawfulRelaxation.all M).isLawfulTightening_relax
   obtain ⟨E, k, hkE, h_eq, hk⟩ := hM.relax_all_isUniform.exists_eq_unifOn
-  obtain rfl : k = M.rank := by simpa [← ENat.coe_inj] using hk.symm
+  obtain rfl : k = M.rank := by simpa [← ENat.natCast_inj] using hk.symm
   refine ⟨M.E, M.rank, {H | M.IsCircuitHyperplane H},
     fun C hC ↦ by simp [h.encard_eq_eRank_of_mem hC], h.pairwise_not_isExchange,
       fun _ ↦ h.nonempty, fun _ ↦ h.ssubset_ground, by simp, by simp, ?_⟩
@@ -377,7 +379,7 @@ lemma IsSparsePaving.exists_eq_finiteRankSparsePavingOn [M.RankFinite] (hM : M.I
 
 
   -- refine ⟨M.E, M.rank, {H | M.IsCircuitHyperplane H}, ?_⟩
-  -- simp [cast_rank_eq, finiteRankSparsePavingOn, true_and, mem_setOf_eq]
+  -- simp [cast_rank_eq, finiteRankSparsePavingOn, true_and, mem_ofPred_eq]
 
 
 

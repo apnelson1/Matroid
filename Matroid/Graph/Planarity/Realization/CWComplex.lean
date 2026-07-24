@@ -108,6 +108,8 @@ lemma image_map_closedBall (e : E(G)) :
   rw [norm_le_one_iff_fin_1, Real.norm_eq_abs, abs_le]
   grind
 
+
+set_option backward.isDefEq.respectTransparency false in
 noncomputable instance : Topology.CWComplex (univ : Set G.Realization) where
   cell := Realization.cell G
   map := Realization.map G
@@ -177,7 +179,11 @@ noncomputable instance : Topology.CWComplex (univ : Set G.Realization) where
   closed' A _ h := by
     rw [isClosed_coinduced, isClosed_sum_iff, isClosed_sigma_iff]
     refine ⟨isClosed_discrete _, fun e ↦ ?_⟩
-    simpa [image_map_closedBall] using (h 1 ⟨e⟩).preimage (edgePath e).continuous
+    have hA : IsClosed ((edgePath e) ⁻¹' (A ∩ range (edgePath e))) :=
+      image_map_closedBall _ ▸ (h 1 ⟨e⟩).preimage (edgePath e).continuous
+    convert hA
+    ext t
+    simp [edgePath]
   union' := by
     ext x
     simp only [mem_iUnion, mem_univ, iff_true]

@@ -67,9 +67,9 @@ lemma exists_circuit_contract_elem_girth_decrease (k : ENat) (hk : k ≠ ⊤) (h
       · rw [le_girth_iff] at hg₁
         specialize hg₁ (C ∪ {e}) h₂
         rw [union_singleton, encard_insert_of_notMem (by grind only [→ IsCircuit.subset_ground,
-          = contract_ground, = subset_def, = mem_diff, = mem_singleton_iff, #524e])] at hg₁
+          = contract_ground, = subset_def, = mem_sdiff, = mem_singleton_iff, #524e])] at hg₁
         rw [union_singleton, encard_insert_of_notMem (by grind only [→ IsCircuit.subset_ground,
-          = contract_ground, = subset_def, = mem_diff, = mem_singleton_iff, #524e])]
+          = contract_ground, = subset_def, = mem_sdiff, = mem_singleton_iff, #524e])]
         enat_to_nat!
         lia
       · simp only [union_singleton, mem_insert_iff, true_or]

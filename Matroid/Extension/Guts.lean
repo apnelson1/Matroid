@@ -59,10 +59,10 @@ def gutsModularCut (M : Matroid α) (X : ι → Set α) (Xu : ⋃ i, X i = M.E) 
         ?_ inter_subset_right hne).notMem_of_mem_left (a := x) ⟨⟨hxB, hxG₁⟩, hxi⟩ hxj
       refine Indep.inter_right ?_ _
       rw [project_indep_iff, hG₁B.contract_indep_iff_of_disjoint disjoint_sdiff_right,
-        inter_comm, diff_union_inter]
+        inter_comm, sdiff_union_inter]
       exact hB.indep
     rw [project_indep_iff, h₂.contract_indep_iff_of_disjoint]
-    · exact hB.indep.subset <| by simpa using fun i ↦ inter_subset_left.trans diff_subset
+    · exact hB.indep.subset <| by simpa using fun i ↦ inter_subset_left.trans sdiff_subset
     simpa using fun i ↦ disjoint_sdiff_right.mono_right inter_subset_left
 
 @[simp]
@@ -95,8 +95,8 @@ lemma multiConn_projectBy_gutsModularCut_add_one (M : Matroid α) {X : ι → Se
     from .inr <| by simpa [mem_gutsModularCut_iff, Xu, hXsk]
   refine fun i ↦ isSkewFamily_of_nearly_all_loops (i₀ := i) ?_ fun j hji ↦ ?_
   · grw [project_ground, ← Xu, ← subset_iUnion]
-  grw [project_loops, ← Xu, ← subset_closure _ _ (by grw [Xu, diff_subset]),
-    subset_diff, and_iff_left (hdj hji), ← subset_iUnion]
+  grw [project_loops, ← Xu, ← subset_closure _ _ (by grw [Xu, sdiff_subset]),
+    subset_sdiff, and_iff_left (hdj hji), ← subset_iUnion]
 
 /-- Projecting through the guts modular cut of a partition drops its dual connectivity by `1`.
 The truncated subtraction is really the right thing here, though there is no good API for it. -/
@@ -165,7 +165,7 @@ theorem exists_contract_skew_delete_eq_of_card_eq_dual_multiConn (M : Matroid α
     obtain ⟨P, haP, rfl, hPd⟩ := exists_splice_of_delete_eq_contractElem (by simpa) hQd
     refine ⟨P, ?_, ?_, ?_⟩
     · simp [insert_subset_iff, haP (by simp),
-        show (A : Set α) ⊆ P.E from hAQ.trans diff_subset]
+        show (A : Set α) ⊆ P.E from hAQ.trans sdiff_subset]
     · rw [Finset.coe_cons, ← union_singleton, ← delete_delete, hPd,
         ModularCut.extendBy_deleteElem _ haE]
     rwa [Finset.coe_cons, ← singleton_union, ← contract_contract]
@@ -178,7 +178,7 @@ theorem multiConn_dual_le_encard_of_delete_isSkewFamily {X : ι → Set α} (hX 
     isSkewFamily_delete_iff_of_disjoint, ← multiConn_eq_zero_iff] at h_con
   · grw [dual_delete, ← multiConn_project_eq_multiConn_contract,
       P✶.multiConn_project_le_multiConn_add (X := X), eRk_le_encard, h_con, zero_add]
-  · grw [← iUnion_subset_iff, hX, delete_ground, dual_ground, diff_subset]
+  · grw [← iUnion_subset_iff, hX, delete_ground, dual_ground, sdiff_subset]
   grw [← disjoint_iUnion_left, hX, delete_ground]
   exact disjoint_sdiff_left
 
@@ -213,7 +213,7 @@ lemma closure_mem_gutsModularCutSet_iff (hX : X ⊆ M.E := by aesop_mat) :
 lemma closure_self_mem_gutsModularCut_set (M : Matroid α) (X : Set α) :
     M.closure X ∈ M.gutsModularCutSet X := by
   rw [mem_gutsModularCutSet_iff', and_iff_right (by simp)]
-  exact (skew_project_self (closure_subset_ground ..) diff_subset).mono_left <|
+  exact (skew_project_self (closure_subset_ground ..) sdiff_subset).mono_left <|
     inter_ground_subset_closure ..
 
 @[simp]
@@ -224,8 +224,8 @@ lemma gutsModularCutSet_ne_bot : M.gutsModularCutSet X ≠ ⊥ := by
 lemma gutsModularCutSet_compl : M.gutsModularCutSet (M.E \ X) = M.gutsModularCutSet X := by
   rw [← gutsModularCutSet_inter_ground (X := X)]
   ext F hF
-  rw [mem_gutsModularCutSet_iff diff_subset, mem_gutsModularCutSet_iff inter_subset_right,
-    skew_comm, diff_inter_self_eq_diff, inter_comm X]
+  rw [mem_gutsModularCutSet_iff sdiff_subset, mem_gutsModularCutSet_iff inter_subset_right,
+    skew_comm, sdiff_inter_self_eq_sdiff, inter_comm X]
   simp
 
 lemma gutsModularCutSet_eq_principal_compl (hX : M.Spanning X) :
@@ -233,13 +233,13 @@ lemma gutsModularCutSet_eq_principal_compl (hX : M.Spanning X) :
   refine ModularCut.ext fun F hF ↦ ?_
   rw [mem_gutsModularCutSet_iff hX.subset_ground, ModularCut.mem_principal_iff,
     and_iff_right hF, and_iff_right hF, skew_iff_closure_skew_left, project_closure,
-    hX.closure_eq_of_superset (by simp), skew_iff_of_subset_right diff_subset, project_loops,
+    hX.closure_eq_of_superset (by simp), skew_iff_of_subset_right sdiff_subset, project_loops,
     hF.closure]
 
 lemma gutsModularCutSet_eq_principal (hX : M.Coindep X) :
     M.gutsModularCutSet X = ModularCut.principal M X := by
   rw [← gutsModularCutSet_compl, gutsModularCutSet_eq_principal_compl hX.compl_spanning,
-    diff_diff_cancel_left hX.subset_ground]
+    sdiff_sdiff_cancel_left hX.subset_ground]
 
 lemma gutsModularCutSet_eq_top_iff (hXE : X ⊆ M.E := by aesop_mat) :
     M.gutsModularCutSet X = ⊤ ↔ M.Skew X (M.E \ X) := by

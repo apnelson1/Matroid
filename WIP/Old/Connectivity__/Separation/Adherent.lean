@@ -55,7 +55,7 @@ lemma adheresTo_contract_or_delete (M : Matroid α) (e : α) :
     (M ／ {e}).AdheresTo M ∨ (M ＼ {e}).AdheresTo M := by
   wlog he : e ∈ M.E with aux
   · simp [contractElem_eq_self he, M.adheresTo_self]
-  rw [adheresTo_iff_of_subset diff_subset, adheresTo_iff_of_subset diff_subset]
+  rw [adheresTo_iff_of_subset sdiff_subset, adheresTo_iff_of_subset sdiff_subset]
   simp only [SplitsIn]
   by_contra! hcon
   obtain ⟨⟨P, hP⟩, Q, hQ⟩ := hcon
@@ -96,7 +96,7 @@ lemma AdheresTo.connected_of_connected [N.Nonempty] (hNM : N.AdheresTo M) (hM : 
   rw [← tutteConnected_two_iff, ← one_add_one_eq_two, tutteConnected_iff_seqConnected'] at hM ⊢
   refine (hNM.seqConnected_add_two_mul ?_ hM).mono fun n k ↦ ?_
   · refine monotone_const.indicator_monotone (fun _ ↦ le_top) fun x y hx hxy ↦ ?_
-    grw [mem_setOf, ← hxy]
+    grw [mem_ofPred, ← hxy]
     assumption
   obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one <;> simp
 

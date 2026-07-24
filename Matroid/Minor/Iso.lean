@@ -13,7 +13,7 @@ section Iso
 /-- Deletions of isomorphic matroids are isomorphic. -/
 def Iso.delete (e : Iso M N) (D : Set α) :
     Iso (M ＼ D) (N ＼ (↑(e '' M.E ↓∩ D) : Set β)) :=
-  e.restrict diff_subset diff_subset (by aesop)
+  e.restrict sdiff_subset sdiff_subset (by aesop)
 
 /-- Contractions of isomorphic matroids are isomorphic. -/
 def Iso.contract (e : Iso M N) (C : Set α) :
@@ -31,7 +31,7 @@ scoped infix:65 " ≤ir " => IsoRestr
 
 instance : FunLike (N ≤ir M) N.E M.E where
   coe f := f.toFun
-  coe_injective' f g := by cases f; cases g; simp
+  coe_injective f g := by cases f; cases g; simp
 
 instance : EmbeddingLike (N ≤ir M) N.E M.E where
   injective' f := f.inj'
@@ -89,8 +89,9 @@ def IsoRestr.trans {α₁ α₂ α₃ : Type*} {M₁ : Matroid α₁} {M₂ : Ma
   indep_iff' I := by rw [← i₁.indep_image_iff, ← i₂.indep_image_iff]; simp [image_image]
 
 @[simp]
-def IsoRestr.trans_apply {α₁ α₂ α₃ : Type*} {M₁ : Matroid α₁} {M₂ : Matroid α₂} {M₃ : Matroid α₃}
-    (i₁ : M₁ ≤ir M₂) (i₂ : M₂ ≤ir M₃) (x : M₁.E) : (i₁.trans i₂) x = i₂ (i₁ x) := rfl
+theorem IsoRestr.trans_apply {α₁ α₂ α₃ : Type*} {M₁ : Matroid α₁} {M₂ : Matroid α₂}
+    {M₃ : Matroid α₃} (i₁ : M₁ ≤ir M₂) (i₂ : M₂ ≤ir M₃) (x : M₁.E) : (i₁.trans i₂) x = i₂ (i₁ x) :=
+  rfl
 
 @[simp]
 lemma IsoRestr.range_trans {α₁ α₂ α₃ : Type*} {M₁ : Matroid α₁} {M₂ : Matroid α₂} {M₃ : Matroid α₃}
@@ -199,11 +200,11 @@ scoped infix:65 " <i " => StrictIsoMinor
 
 instance : FunLike (N ≤i M) N.E M.E where
   coe f := f.toFun
-  coe_injective' f g := by cases f; cases g; simp
+  coe_injective f g := by cases f; cases g; simp
 
 instance : FunLike (N <i M) N.E M.E where
   coe f := f.toFun
-  coe_injective' f g := by cases f; cases g; simp
+  coe_injective f g := by cases f; cases g; simp
 
 instance {α β : Type*} {N : Matroid α} {M : Matroid β} : EmbeddingLike (N ≤i M) N.E M.E where
   injective' f := f.inj'
@@ -528,7 +529,7 @@ lemma StrictIsoMinor.exists_isDeletable_or_isContractible (i : N <i M) : ∃ e,
 --   · simpa using h
 --   obtain ⟨C, D, hC, hD, hCD, rfl⟩ := h
 --   exact ⟨_, contract_delete_isMinor _ _ _,
---     ((i.contract hC).delete (subset_diff.2 ⟨hD, hCD.symm⟩)).isIso⟩
+--     ((i.contract hC).delete (subset_sdiff.2 ⟨hD, hCD.symm⟩)).isIso⟩
 
 -- theorem IsMinor.isoMinor {M N : Matroid α} (h : N ≤m M) : N ≤i M :=
 --   ⟨N, h, (Iso.refl N).isIso⟩
@@ -640,6 +641,7 @@ lemma StrictIsoMinor.exists_isDeletable_or_isContractible (i : N <i M) : ∃ e,
 --     M ≤i freeOn E ↔ M = freeOn M.E ∧ M.E.encard ≤ E.encard := by
 --   simp [Matroid.isoMinor_freeOn_iff, ← hE.encard_le_iff_nonempty_embedding']
 
+set_option backward.isDefEq.respectTransparency false in
 theorem freeOn_isoMinor_iff {E : Set α} {M : Matroid β} :
     Nonempty (freeOn E ≤i M) ↔ ∃ (f : E ↪ β), M.Indep (range f) := by
   refine ⟨fun ⟨(f : E → M.E), hf, N, hNM, hNE, hN⟩ ↦ ?_, fun ⟨f, hf⟩ ↦ ?_⟩
@@ -656,7 +658,7 @@ theorem freeOn_isoMinor_iff {E : Set α} {M : Matroid β} :
   refine ⟨M ↾ range f, restrict_isMinor _ hf.subset_ground, ?_, fun I ↦ ?_⟩
   · simp [range_comp, rangeFactorization_surjective.range_eq]
     ext
-    simp only [mem_range, Subtype.exists, mem_image, mem_setOf_eq, exists_and_left, exists_prop,
+    simp only [mem_range, Subtype.exists, mem_image, mem_ofPred_eq, exists_and_left, exists_prop,
       exists_eq_right_right, iff_self_and, forall_exists_index]
     grind
   simp only [freeOn_ground, freeOn_indep_iff, image_subset_iff, coe_preimage_self, comp_apply,

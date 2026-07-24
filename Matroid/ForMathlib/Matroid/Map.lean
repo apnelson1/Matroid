@@ -42,12 +42,12 @@ lemma comap_restrict_range_inter (M : Matroid β) (f : α → β) :
 @[simp] lemma comapOn_map (M : Matroid β) {R : Set α} {f : α → β} (hf : InjOn f R) :
     (M.comapOn R f).map f hf = M ↾ (f '' R) := by
   refine ext_indep rfl fun I hI ↦ ?_
-  simp only [map_indep_iff, comapOn_indep_iff, restrict_indep_iff]
+  change (∃ I₀, (M.comapOn R f).Indep I₀ ∧ I = f '' I₀) ↔ M.Indep I ∧ I ⊆ f '' R
   refine ⟨?_, fun ⟨hI, hIR⟩ ↦ ?_⟩
-  · rintro ⟨I, ⟨hind,-,hss⟩, rfl⟩
+  · rintro ⟨I₀, ⟨⟨hind, -⟩, hss⟩, rfl⟩
     exact ⟨hind, image_mono hss⟩
   obtain ⟨I₀, hI₀R, hbij⟩ := SurjOn.exists_bijOn_subset hIR
-  exact ⟨I₀, ⟨by rwa [hbij.image_eq], hbij.injOn, hI₀R⟩, hbij.image_eq.symm⟩
+  exact ⟨I₀, ⟨⟨by rwa [hbij.image_eq], hbij.injOn⟩, hI₀R⟩, hbij.image_eq.symm⟩
 
 -- lemma map_eq_comap (M : Matroid α) {f : α → β} {g : β → α} (hfg :  g f M.E)
 --     (hEg : range g ⊆ M.E) : M.map f hfg.injOn = M.comap g := by
@@ -153,8 +153,8 @@ lemma comapOn_dual {f : α → β} {X : Set α} {N : Matroid β} (h_bij : BijOn 
     (N.comapOn X f)✶ = N✶.comapOn X f := by
   refine ext_isBase rfl fun B (hB : B ⊆ X) ↦ ?_
   rw [dual_isBase_iff, comapOn_isBase_iff_of_bijOn (by simpa), comapOn_ground_eq,
-    comapOn_isBase_iff_of_bijOn (by simpa), and_iff_left diff_subset, and_iff_left hB,
-    dual_isBase_iff', ← h_bij.image_eq, image_diff_of_injOn h_bij.injOn hB,
+    comapOn_isBase_iff_of_bijOn (by simpa), and_iff_left sdiff_subset, and_iff_left hB,
+    dual_isBase_iff', ← h_bij.image_eq, image_sdiff_of_injOn h_bij.injOn hB,
     and_iff_left (image_mono hB)]
 
 lemma comap_dual {f : α → β} {N : Matroid β} (h_bij : BijOn f (f ⁻¹' N.E) N.E) :
@@ -175,6 +175,7 @@ lemma restrictSubtype_ground_closure (M : Matroid α) (Y : Set M.E) :
     (M.restrictSubtype M.E).closure Y = M.closure ((↑) '' Y) := by
   rw [M.restrictSubtype_closure M.E, inter_eq_self_of_subset_left <| M.closure_subset_ground ..]
 
+set_option backward.isDefEq.respectTransparency false in
 @[simp]
 lemma map_coindep_iff {f : α → β} {hf : InjOn f M.E} {I : Set β} :
     (M.map f hf).Coindep I ↔ ∃ I₀, M.Coindep I₀ ∧ I = f '' I₀ := by

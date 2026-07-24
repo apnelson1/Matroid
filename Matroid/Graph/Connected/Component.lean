@@ -73,7 +73,7 @@ lemma walkable_isClosedSubgraph : G.walkable u ≤c G := by
   · obtain ⟨W, hW, rfl, rfl⟩ := hx
     exact hW.last_mem
   · rintro e x ⟨y, hl⟩ ⟨W, hW, rfl, rfl⟩
-    simp only [edgeSet_induce, mem_setOf_eq, walkable]
+    simp only [edgeSet_induce, mem_ofPred_eq, walkable]
     use W.last, y, hl, ⟨W, hW, rfl, rfl⟩, W.concat e y, ?_, concat_first, concat_last
     simp only [concat_isWalk_iff, hW, hl, and_self]
 
@@ -88,7 +88,7 @@ lemma mem_walkable_self_iff : x ∈ V(G.walkable x) ↔ x ∈ V(G) :=
 @[simp]
 lemma walkable_eq_bot (hx : x ∉ V(G)) : G.walkable x = ⊥ := by
   simp_rw [walkable, ← vertexSet_eq_empty_iff, vertexSet_induce, Set.eq_empty_iff_forall_notMem,
-    mem_setOf_eq]
+    mem_ofPred_eq]
   rintro y ⟨W, hW, rfl, rfl⟩
   exact hx hW.first_mem
 
@@ -213,7 +213,7 @@ def connPartition (G : Graph α β) : Partition (Set α) where
   parts := (fun x : Graph α β ↦ V(x)) '' G.Components
   indep := by
     rintro _ ⟨H, hH, rfl⟩
-    simp only [sSup_eq_sUnion, disjoint_sUnion_right, mem_diff, mem_image,
+    simp only [sSup_eq_sUnion, disjoint_sUnion_right, mem_sdiff, mem_image,
       mem_components_iff_isCompOf, mem_singleton_iff, and_imp, forall_exists_index,
       forall_apply_eq_imp_iff₂]
     rintro H₀ hH₀co hne
@@ -271,9 +271,11 @@ lemma eq_sUnion_components (G : Graph α β) : G = Graph.sUnion G.Components
   apply_fun Subtype.val at h
   rw [ClosedSubgraph.coe_sSup, eq_comm] at h
   convert h
+  · rfl
   ext H
   simp only [mem_components_iff_isCompOf, ClosedSubgraph.isAtom_iff_isCompOf, mem_image,
-    mem_setOf_eq, Subtype.exists, exists_and_left, exists_prop, exists_eq_right_right, iff_self_and]
+    mem_ofPred_eq, Subtype.exists, exists_and_left, exists_prop, exists_eq_right_right,
+    iff_self_and]
   exact (·.isClosedSubgraph)
 
 @[simp]
@@ -382,23 +384,3 @@ lemma ClosedSubgraph.le_of_mem_orderIso_set_components (H H' : G.ClosedSubgraph)
 --   · have hle : H' ≤ H := by
 --       rw [← orderIso_set_components_sSup H]
 --       exact CompleteLattice.le_sSup _ H' h
-
-
-
-
-
-
--- def connBetweenPartition (G : Graph α β) : Partition (V(G)) where
---   parts := {V(H.val) | H ∈ G.Components}
---   indep := by
---     rintro V ⟨H, hH, rfl⟩
---     simp only [sSup_eq_sUnion, disjoint_sUnion_right, mem_diff, mem_setOf_eq, mem_singleton_iff,
---       and_imp, forall_exists_index]
---     rintro W H₀ hH₀co rfl
---     have := not_imp_comm.mp <| G.components_pairwiseDisjoint_id.elim hH hH₀co
---     rwa [H.vertexSet_inj, eq_comm, (id H).disjoint_iff_vertexSet_disjoint] at this
---   bot_notMem := by simp
---   sSup_eq' := by
---     simp only [sSup_eq_sUnion, sUnion_eq_biUnion, mem_setOf_eq, iUnion_exists, biUnion_and',
---       iUnion_iUnion_eq_right]
---     rw [← ClosedSubgraph.vertexSet_sSup, components_sUnion]

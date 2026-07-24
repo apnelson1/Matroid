@@ -45,13 +45,9 @@ lemma Iso.image_dep (e : M ≂ N) {D : Set M.E} (hD : M.Dep ↑D) : N.Dep ↑(e 
 
 @[simps] def Iso.symm (e : M ≂ N) : Iso N M where
   toEquiv := e.toEquiv.symm
-  indep_image_iff' := by
-    intro I
-    have : I = e '' (Equiv.symm e '' I) := by
-      exact Eq.symm <| Equiv.image_symm_image e.toEquiv I
-    rw [← Equiv.image_symm_image e.toEquiv I]
-    convert (e.indep_image_iff (I := e.toEquiv.symm '' I)).symm
-    simp
+  indep_image_iff' I := by
+    nth_rw 1 [← Equiv.image_symm_image e.toEquiv I]
+    exact (e.indep_image_iff' _).symm
 
 @[simp] lemma Iso.apply_symm_apply (e : M ≂ N) (x : N.E) : e (e.symm x) = x :=
   Equiv.apply_symm_apply e.toEquiv x
@@ -193,6 +189,7 @@ noncomputable def isoMapEquiv (M : Matroid α) (f : α ≃ β) : M ≂ (M.mapEqu
     rw [Equiv.symm_apply_eq]
     rfl
 
+set_option backward.isDefEq.respectTransparency false in
 noncomputable def isoComapOn (M : Matroid β) (f : α → β) {E : Set α} (hf : BijOn f E M.E) :
     (M.comapOn E f) ≂ M where
   toEquiv := BijOn.equiv f hf
@@ -200,25 +197,22 @@ noncomputable def isoComapOn (M : Matroid β) (f : α → β) {E : Set α} (hf :
     rw [comapOn_indep_iff, and_iff_right (hf.injOn.mono <| Subtype.coe_image_subset _ I),
       image_image, image_image]
     simp [BijOn.equiv]
-    rw [and_iff_left]
-    · convert Iff.rfl
-      aesop
-    exact subset_univ I
 
 noncomputable def isoComap (M : Matroid β) (f : α → β) (hf : BijOn f (f ⁻¹' M.E) M.E) :
     M.comap f ≂ M :=
   (Iso.ofEq <| (comapOn_preimage_eq M f).symm).trans (isoComapOn M f hf)
 
+set_option backward.isDefEq.respectTransparency false in
 noncomputable def isoMapSetEmbedding (M : Matroid α) (f : M.E ↪ β) : M ≂ M.mapSetEmbedding f where
-  toEquiv := (Equiv.ofInjective f f.injective)
+  toEquiv := Equiv.ofInjective f f.injective
   indep_image_iff' I := by
-    rw [mapSetEmbedding_indep_iff, and_iff_left]
-    · convert Iff.rfl
-      convert congr_arg (preimage f) <| Equiv.ofInjective_image f f.injective I
-      grind
-    simp only [mapSetEmbedding_ground, subset_def, mem_image, mem_range]
-    grind
+    rw [mapSetEmbedding_indep_iff']
+    refine ⟨fun h ↦ ⟨I, h, Equiv.ofInjective_image f f.injective I⟩, ?_⟩
+    rintro ⟨I₀, hI₀, heq⟩
+    rwa [(InjOn.image_eq_image_iff f.injective.injOn (subset_univ _) (subset_univ _)).1
+        ((Equiv.ofInjective_image f f.injective I).symm.trans heq)]
 
+set_option backward.isDefEq.respectTransparency false in
 /-- If `M` and `N` are isomorphic and `α → β` is nonempty, then `N` is a map of `M`.
 Useful for getting out of subtype hell. -/
 lemma Iso.exists_eq_map (e : M ≂ N) [Nonempty (α → β)] : ∃ (f : α → β) (h : _), N = M.map f h := by
@@ -283,7 +277,8 @@ def Iso.dual (e : M ≂ N) : M✶ ≂ N✶ :=
     intro B
     simp_rw [show M.E = Subtype.val '' (univ : Set M.E) by simp,
       show N.E = Subtype.val '' (univ : Set N.E) by simp]
-    rw [← image_val_diff, ← image_val_diff, e.isBase_image_iff, image_diff, image_univ, e.range_eq]
+    rw [← image_val_sdiff, ← image_val_sdiff, e.isBase_image_iff, image_sdiff, image_univ,
+      e.range_eq]
     · rfl
     exact (Equiv.injective (e : M.E ≃ N.E)))
 
@@ -325,16 +320,16 @@ def isoOfForallImageclosure {β : Type*} {N : Matroid β} (e : M.E ≃ N.E)
     (h : ∀ X : Set M.E, N.closure ↑(e '' X) = e '' (M.E ↓∩ M.closure ↑X)) : M ≂ N where
   toEquiv := e
   indep_image_iff' I := by
-    rw [indep_iff_forall_notMem_closure_diff, indep_iff_forall_notMem_closure_diff]
+    rw [indep_iff_forall_notMem_closure_sdiff, indep_iff_forall_notMem_closure_sdiff]
     simp only [mem_image, Subtype.exists, exists_and_right, exists_eq_right, forall_exists_index]
     refine ⟨fun h' x hx y hy ⟨hyI, hyx⟩ hxI ↦ h' hy hyI ?_,
       fun h' x hx hxI h'' ↦ h' (e ⟨x,hx⟩).2 x hx ⟨hxI, rfl⟩ ?_⟩
     · have h_eq : (↑(e '' I) : Set β) \ {x} = ↑(e '' ((M.E ↓∩ I) \ {⟨y,hy⟩})) := by
-        simp [image_diff e.injective, hyx]
+        simp [image_sdiff e.injective, hyx]
       have h'' : ∃ hx', ↑(e.symm ⟨x, hx'⟩) ∈ M.closure (↑I \ {y}) := by simpa [h_eq, h] using hxI
       simpa [← hyx, Equiv.symm_apply_apply, exists_prop, and_iff_right hx] using h''
     have h_eq : ((↑(e '' I) : Set β) \ {↑(e ⟨x, hx⟩)}) = ↑(e '' (I \ {⟨x,hx⟩})) := by
-      simp [image_diff e.injective]
+      simp [image_sdiff e.injective]
     rw [h_eq, h]
     simpa
 
@@ -379,15 +374,14 @@ lemma exists_iso_onUniv {α : Type u} (M : Matroid α) :
   rw [restrictSubtype, restrict_ground_eq_self]
   exact ⟨(M.isoComap _ (by simp [BijOn, SurjOn, Subtype.val_injective.injOn])).symm⟩
 
+set_option backward.isDefEq.respectTransparency false in
 lemma Iso.spanning_iff (i : M ≂ N) (X : Set M.E) :
     M.Spanning X ↔ N.Spanning ↑(i '' X) := by
-  rw [spanning_iff_compl_coindep, spanning_iff_compl_coindep]
-  convert i.dual.indep_image_iff (I := Xᶜ) using 1
-  · simp [coindep_def]
-  rw [coindep_def]
-  convert Iff.rfl
-  have hwin := i.dual_image' Xᶜ
-  apply_fun (image Subtype.val) at hwin
-  convert hwin
-  rw [image_compl_eq (show Function.Bijective i from i.toEquiv.bijective)]
-  simp
+  rw [spanning_iff_compl_coindep, spanning_iff_compl_coindep, coindep_def, coindep_def]
+  have hM : M.E \ Subtype.val '' X = Subtype.val '' (Xᶜ : Set M✶.E) := by simp
+  have hN : N.E \ Subtype.val '' (i '' X) = Subtype.val '' ((i '' X)ᶜ : Set N✶.E) := by simp
+  rw [hM, hN]
+  convert i.dual.indep_image_iff (I := (Xᶜ : Set M✶.E)) using 2
+  rw [dual_image'']
+  congr 1
+  exact (image_compl_eq (show Function.Bijective (i : M.E → N.E) from i.toEquiv.bijective)).symm

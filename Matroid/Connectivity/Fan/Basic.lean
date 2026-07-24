@@ -409,8 +409,8 @@ lemma IsFan.contract_disjoint_aux (hF : M.IsFan F false c) (h4 : 4 ≤ F.length)
     (by grind [hF.nodup.getElem_inj_iff])
   by_cases h1 : F[1] ∈ C
   · simp [← hT.isCircuit.eq_of_subset_isCircuit hC (by grind), hdj.inter_eq] at hCX
-  grw [← diff_subset_iff.2 hCss, ← union_singleton, ← diff_diff, Disjoint.sdiff_eq_left (a := C)
-    (by grind), hC.closure_diff_singleton_eq]
+  grw [← sdiff_subset_iff.2 hCss, ← union_singleton, ← sdiff_sdiff, Disjoint.sdiff_eq_left (a := C)
+    (by grind), hC.closure_sdiff_singleton_eq]
   exact M.mem_closure_of_mem h0C
 
 /- Contractions preserve the property of being a fan, unless one of the ends is a joint
@@ -463,13 +463,13 @@ lemma IsFan.minor {N : Matroid α} (hF : M.IsFan F b c) (h4 : 4 ≤ F.length) (h
   have hCF := hF.contract_disjoint h4 (X := C) (by grind) ?_ ?_
   · have hwin := (hCF.dual.contract_disjoint (X := D) h4 (by grind) ?_ ?_).dual
     · simpa using hwin
-    · simp only [Bool.not_eq_eq_eq_not, Bool.not_false, dual_contract, delete_closure_eq, mem_diff,
+    · simp only [Bool.not_eq_eq_eq_not, Bool.not_false, dual_contract, delete_closure_eq, mem_sdiff,
         not_and, not_not, hCD.sdiff_eq_right]
       rintro rfl hcl
       refine False.elim <| h_first.not_isLoop ?_
       grind [bDual_true, dual_delete, dual_contract, contract_isLoop_iff_mem_closure,
         delete_closure_eq, hCD.sdiff_eq_right]
-    simp only [Bool.not_eq_eq_eq_not, Bool.not_false, dual_contract, delete_closure_eq, mem_diff]
+    simp only [Bool.not_eq_eq_eq_not, Bool.not_false, dual_contract, delete_closure_eq, mem_sdiff]
     rintro rfl hcl
     refine h_last.not_isLoop ?_
     grind [bDual_true, dual_delete, dual_contract, contract_isLoop_iff_mem_closure,
@@ -547,7 +547,7 @@ lemma IsFan.minor {N : Matroid α} (hF : M.IsFan F b c) (h4 : 4 ≤ F.length) (h
 --               (by simpa [IsTriad] using hT) (by simpa)
 --             obtain ⟨F, hF, hFE⟩ := unifOn_two_four_isFan hE4 b
 --             have hF : F.length = 4 := by
---               rw [← ENat.coe_inj, ← hF.nodup.encard_toSet_eq, hFE, hE4, Nat.cast_ofNat]
+--               rw [← ENat.natCast_inj, ← hF.nodup.encard_toSet_eq, hFE, hE4, Nat.cast_ofNat]
 --             apply_fun (Matroid.bDual · b) at hME
 --             simp only [bDual_bDual, bne_self_eq_false, bDual_false] at hME
 --             exact ⟨F.reverse, true, by simpa [hME], by grind⟩

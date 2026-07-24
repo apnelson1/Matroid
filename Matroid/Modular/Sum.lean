@@ -16,7 +16,7 @@ private lemma FE.defect_inter_le_aux (h : M.FE T) (hX : X ⊆ M.E) (hY : Y ⊆ M
     (hYX : Y ⊆ (X ∪ T)) :
     (M.project ((X ∩ Y ∩ T))).eLocalConn (X ∩ T) (Y ∩ T) ≤ (M.project (X ∩ Y)).eLocalConn X Y := by
   set N := M.project (X ∩ Y ∩ T) with hN
-  rw [← diff_union_inter (X ∩ Y) T,
+  rw [← sdiff_union_inter (X ∩ Y) T,
     union_comm, ← project_project, ← hN, N.eLocalConn_project_eq_eLocalConn_contract_diff,
     show X \ ((X ∩ Y) \ T) = X ∩ T by grind, show Y \ ((X ∩ Y) \ T) = Y ∩ T by grind,
     ← eLocalConn_project_eq_eLocalConn_contract]
@@ -74,8 +74,8 @@ lemma FE.foo [M.RankFinite] (hTE : T ⊆ M.E)
   -- wlog hCT : Disjoint C T generalizing X Y C with aux
   -- · specialize aux (X ∪ (C ∩ T)) (Y ∪ (C ∩ T)) (C \ T) (union_subset hX inter_subset_right)
   --     (union_subset hY inter_subset_right) (by grind) disjoint_sdiff_left
-  --   rw [union_assoc, inter_union_diff, union_assoc, inter_union_diff,
-  --     ← inter_union_distrib_right, union_assoc, inter_union_diff] at aux
+  --   rw [union_assoc, inter_union_sdiff, union_assoc, inter_union_sdiff,
+  --     ← inter_union_distrib_right, union_assoc, inter_union_sdiff] at aux
 
 
 
@@ -111,7 +111,7 @@ lemma foo (hTE : T ⊆ M.E)
     M.FullyEmbedded T := by
   refine ⟨hTE, fun X Y hXE hYE hXYT hYXT ↦ ?_⟩
   set N := M.project (X ∩ Y ∩ T) with hN
-  rw [← inter_inter_distrib_right, inter_assoc, ← diff_union_inter (X ∩ Y) T, ← inter_assoc,
+  rw [← inter_inter_distrib_right, inter_assoc, ← sdiff_union_inter (X ∩ Y) T, ← inter_assoc,
     union_comm, ← project_project, ← hN, N.eLocalConn_project_eq_eLocalConn_contract_diff,
     show X \ ((X ∩ Y) \ T) = X ∩ T by grind, show Y \ ((X ∩ Y) \ T) = Y ∩ T by grind,
     ← eLocalConn_project_eq_eLocalConn_contract]

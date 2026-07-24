@@ -448,7 +448,7 @@ lemma IsCyclicFan.isCircuit (h : M.IsCyclicFan n J) {d : ℕ} (hd : d + 1 < n) (
   simp only [mem_image, mem_Iic, List.altBetween, Bool.not_true, Bool.bne_true, ZMod.natCast_val,
     ZMod.cast_id', id_eq, Bool.toNat_true, Nat.div2_succ, Nat.succ_eq_add_one, List.getElem_map,
     List.getElem_range, List.length_map, List.length_range, exists_and_left, exists_prop,
-    mem_setOf_eq]
+    mem_ofPred_eq]
   constructor
   · rintro ⟨j, hjd, rfl⟩
     exact ⟨2 * j + 2, by lia, by lia, by simp, by lia, by simp⟩
@@ -503,7 +503,7 @@ lemma IsCyclicFan.exists_btw_of_isNonspanningCircuit [NeZero n] (h : M.IsCyclicF
   have hssC : insert (J false p) (insert (J false (p + 1)) (range (J true) \ {J true p})) ⊆ C := by
     grind
   grw [← hssC, encard_insert_of_notMem (by grind [h.inj]), encard_insert_of_notMem
-    (by grind [h.disjoint_range]), ← encard_le_encard_diff_singleton_add_one, h.encard_range] at hle
+    (by grind [h.disjoint_range]), ← encard_le_encard_sdiff_singleton_add_one, h.encard_range] at hle
   simp at hle
 
 lemma IsCyclicFan.eq_of_isNonspanningCircuit [NeZero n] (h : M.IsCyclicFan n J)

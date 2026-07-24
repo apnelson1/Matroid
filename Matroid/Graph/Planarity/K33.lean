@@ -198,7 +198,7 @@ lemma K33_K5_lemma_aux2 (hCG : C ≤ G) (hC : C.IsCycle) (hu : u ∉ V(C)) (hv :
     intro x hxC
     obtain ⟨P, hP, hPeq⟩ := hC.deleteVerts_singleton_isPathGraph (hu2.mono inter_subset_right) hxC
     have := congr_arg vertexSet hPeq
-    simp only [vertexSet_deleteVerts, toGraph_vertexSet, Set.ext_iff, mem_diff, mem_singleton_iff,
+    simp only [vertexSet_deleteVerts, toGraph_vertexSet, Set.ext_iff, mem_sdiff, mem_singleton_iff,
       mem_vertexSet_iff] at this
     obtain ⟨P', hP'in, ⟨huf, hvl, hP'tl, hP'dl⟩ | ⟨hvl, huf, hP'tl, hP'dl⟩⟩ :=
       P.exists_infix_of_exists_prop (p := G.Adj u) (q := G.Adj v) (by grind [hu2.exists_ne x])

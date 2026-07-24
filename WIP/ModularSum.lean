@@ -52,7 +52,7 @@ def foo (M : ι → Matroid α) (hN : ∀ i, N ≤r M i) (h_inter : ∀ ⦃i j�
 -- lemma ModularSumIndep.subset {F I J : Set α} (hJ : M.ModularSumIndep N F J) (hIJ : I ⊆ J) :
 --     M.ModularSumIndep N F I := by
 --   refine ⟨hJ.1.subset (inter_subset_inter_left _ hIJ), ?_, hIJ.trans hJ.2.2⟩
---   refine (hJ.2.1.of_minor ?_).subset (diff_subset_diff_left (inter_subset_inter_left _ hIJ))
+--   refine (hJ.2.1.of_minor ?_).subset (sdiff_subset_sdiff_left (inter_subset_inter_left _ hIJ))
 --   exact contract_minor_of_subset  _ <| M.closure_subset_closure hIJ
 
 -- def foo (M N : Matroid α) (F : Set α) (hFE : F = M.E ∩ N.E) (hF : M ↾ F = N ↾ F) (hMF : M.ModularSet F) : IndepMatroid α where

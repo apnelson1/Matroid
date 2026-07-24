@@ -66,7 +66,7 @@ protected lemma g_mem_ground (Δ : M.TriangleDeletePair) : Δ.g ∈ M.E :=
 /-- `g` must be on the `false` side of each separation of `Δ`, since otherwise the `true`
 side would span the triangle and we would have a `2`-separation of `M`. -/
 protected lemma g_mem_false (Δ : M.TriangleDeletePair) {b} : Δ.g ∈ Δ.P b false := by
-  rw [← Separation.compl_true, delete_ground, mem_diff, mem_diff, mem_singleton_iff,
+  rw [← Separation.compl_true, delete_ground, mem_sdiff, mem_sdiff, mem_singleton_iff,
     and_iff_right Δ.g_mem_ground, and_iff_right Δ.triangle.ne₁₂]
   exact fun hmem ↦ Δ.notMem_closure b true <| mem_of_mem_of_subset Δ.triangle.mem_closure₂ <|
     M.closure_subset_closure <| pair_subset hmem Δ.mem
@@ -105,10 +105,10 @@ protected lemma Q_apply' (Δ : M.TriangleDeletePair) {b i} : Δ.Q b i = Δ.P b i
   rw [TriangleDeletePair.Q, induce_apply_delete_of_delete _ (by simp)]
 
 protected lemma Q_apply (Δ : M.TriangleDeletePair) {b i} : Δ.Q b i = Δ.P b i \ {Δ.x (!b)} := by
-  rw [Δ.Q_apply', Bool.range_bool _ b, ← union_singleton, ← diff_diff, sdiff_eq_left.2 (by simp)]
+  rw [Δ.Q_apply', Bool.range_bool _ b, ← union_singleton, ← sdiff_sdiff, sdiff_eq_left.2 (by simp)]
 
 protected lemma g_mem_false_Q (Δ : M.TriangleDeletePair) {b} : Δ.g ∈ Δ.Q b false := by
-  rw [Δ.Q_apply, mem_diff_singleton, and_iff_right Δ.g_mem_false]
+  rw [Δ.Q_apply, mem_sdiff_singleton, and_iff_right Δ.g_mem_false]
   exact Δ.triangle.ne₁₃
 
 protected lemma P_nontrivial (Δ : M.TriangleDeletePair) {b} : (Δ.P b).Nontrivial := by
@@ -117,7 +117,7 @@ protected lemma P_nontrivial (Δ : M.TriangleDeletePair) {b} : (Δ.P b).Nontrivi
 
 @[simp]
 protected lemma eConn_eq (Δ : M.TriangleDeletePair) {b} : (Δ.P b).eConn = 1 :=
-  Δ.conn_le.antisymm <| ENat.one_le_iff_ne_zero.2 fun h0 ↦
+  Δ.conn_le.antisymm <| Order.one_le_iff_ne_zero.2 fun h0 ↦
     (Δ.delete_connected.trivial_of_eConn_eq_zero h0).not_nontrivial Δ.P_nontrivial
 
 protected lemma P_apply_nontrivial (Δ : M.TriangleDeletePair) {b i} : (Δ.P b i).Nontrivial :=
@@ -129,7 +129,7 @@ protected lemma Q_nontrivial (Δ : M.TriangleDeletePair) {b} : (Δ.Q b).Nontrivi
 
 protected lemma Q_inter_eq (Δ : M.TriangleDeletePair) (i j) :
     Δ.Q true i ∩ Δ.Q false j = Δ.P true i ∩ Δ.P false j := by
-  rw [Δ.Q_apply', Δ.Q_apply', diff_inter_diff_right, sdiff_eq_left.2 (by simp)]
+  rw [Δ.Q_apply', Δ.Q_apply', sdiff_inter_sdiff_right, sdiff_eq_left.2 (by simp)]
 
 /-- For the next few lemmas, we assume that `M ＼ {e,f}` is connected.
 We first show that each `P b` is faithful to `M ＼ {e,f}`, since otherwise its connectivity
@@ -157,7 +157,7 @@ protected lemma inter_true_true_nonempty (Δ : M.TriangleDeletePair)
   have hss : Δ.Q false true ⊆ Δ.Q true false := by
     grind [(Δ.Q true).union_inter_right (Δ.Q false true) (Δ.Q false).subset true]
   have h1 := Δ.mem_closure hc (b := true)
-  grw [Bool.not_true, hss, Δ.Q_apply, diff_subset] at h1
+  grw [Bool.not_true, hss, Δ.Q_apply, sdiff_subset] at h1
   exact Δ.notMem_closure true false h1
 
 /-- Using the fact that `Q b false` always contains `g`, and `Q b true` always spans `x !b`,
@@ -190,8 +190,7 @@ protected lemma cross_induce_faithful (Δ : M.TriangleDeletePair)
 
 protected lemma eConn_Q_eq (Δ : M.TriangleDeletePair) (hc : (M ＼ range Δ.x).TutteConnected 2) {b} :
     (Δ.Q b).eConn = 1 := by
-  convert (Δ.faithful_delete hc (b := b)).eConn_induce_eq using 1
-  simp
+  rw [TriangleDeletePair.Q, (Δ.faithful_delete hc (b := b)).eConn_induce_eq, Δ.eConn_eq]
 
 /-- By an uncrossing argument with submodularity, it follows that if `b` or `c` is `true`
 and `P true b ∩ P false c` is nonempty, then the opposite intersection `P true !b ∩ P false !b`
@@ -220,7 +219,7 @@ protected lemma exists_encard_le_two (Δ : M.TriangleDeletePair)
   simp only [Bool.not_true] at hss0
   by_contra! hcon
   have hcon1 := hcon false
-  grw [← encard_diff_add_encard_inter (t := Δ.P false false),
+  grw [← encard_sdiff_add_encard_inter (t := Δ.P false false),
     encard_le_one_iff_subsingleton.2 hss0, (Δ.P false).diff_eq_inter_bool _ _] at hcon1
   · replace hcon1 := Order.add_one_le_of_lt hcon1
     rw [ENat.add_one_le_add_one_iff, two_le_encard_iff_nontrivial, Bool.not_false] at hcon1
@@ -232,8 +231,8 @@ protected lemma exists_encard_le_two (Δ : M.TriangleDeletePair)
       sdiff_eq_left.2] at h'
     · exact Δ.P_apply_nontrivial.not_subsingleton <| h' ▸ hss0
     simp [← Separation.compl_true, show Δ.x true ∈ Δ.P false true from Δ.mem' (b := true)]
-  nth_grw 1 [delete_ground, subset_diff_singleton_iff, (Δ.P true).subset, delete_ground,
-    and_iff_right diff_subset]
+  nth_grw 1 [delete_ground, subset_sdiff_singleton_iff, (Δ.P true).subset, delete_ground,
+    and_iff_right sdiff_subset]
   exact (Δ.P true).disjoint_false_true.notMem_of_mem_right <| Δ.mem
 
 /-- Meanwhile, if `M ＼ {e, f}` is disconnected with a separation `R`, then adding `e` and `f`
@@ -292,11 +291,13 @@ lemma tutte_triangle_weak (hM : M.TutteConnected 3) (hT : M.IsTriangle {e,f,g})
   have hsep (i) : ∃ (P : (M ＼ {x i}).Separation),
        P.eConn ≤ 1 ∧ P.IsTutteSeparation ∧ x (!i) ∈ P true := by
     cases i
-    · rw [not_tutteConnected_iff_exists_mem (e := e) (by simp [hT.ne₁₂, hT.mem_ground₁]) true] at hf
+    · dsimp only [x]
+      rw [not_tutteConnected_iff_exists_mem (e := e) (by simp [hT.ne₁₂, hT.mem_ground₁]) true] at hf
       simpa using hf
-    rw [not_tutteConnected_iff_exists_mem (e := f)
-      (by simp [hT.ne₁₂.symm, hT.mem_ground₂]) true] at he
-    simpa using he
+    · dsimp only [x]
+      rw [not_tutteConnected_iff_exists_mem (e := f)
+        (by simp [hT.ne₁₂.symm, hT.mem_ground₂]) true] at he
+      simpa using he
   choose P hP using hsep
   exact ⟨⟨hcard, hM, fun i ↦ bif i then e else f, g, P, @fun _ ↦ (hP _).2.1, @fun _ ↦ (hP _).1,
     @fun _ ↦ (hP _).2.2, by convert hT using 1; grind⟩, rfl⟩

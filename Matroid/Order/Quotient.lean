@@ -45,7 +45,7 @@ lemma Quotient.weakLE (h : N ≤q M) : N ≤w M := by
   rw [weakLE_iff, and_iff_left h.ground_eq]
   intro I hI
   have hIE : I ⊆ M.E := hI.subset_ground.trans h.ground_eq.subset
-  rw [indep_iff_forall_notMem_closure_diff] at hI ⊢
+  rw [indep_iff_forall_notMem_closure_sdiff] at hI ⊢
   exact fun e heI hecl ↦ hI heI <| h.closure_subset_closure (I \ {e}) hecl
 
 theorem quotient_of_forall_closure_subset_closure (hE : M₁.E = M₂.E)
@@ -78,11 +78,11 @@ lemma Quotient.cyclic_of_isCircuit (hQ : M₂ ≤q M₁) {C : Set α} (hC : M₁
   rw [cyclic_iff_forall_exists]
   intro e heC
   have hcl := hQ.closure_subset_closure (C \ {e})
-  rw [hC.closure_diff_singleton_eq] at hcl
+  rw [hC.closure_sdiff_singleton_eq] at hcl
   have heN := (M₁.subset_closure C hC.subset_ground).trans hcl heC
   have hCN : C ⊆ M₂.E := hC.subset_ground.trans_eq hQ.ground_eq.symm
-  rwa [mem_closure_iff_mem_or_exists_isCircuit (diff_subset.trans hCN), or_iff_right (by simp),
-    insert_diff_singleton, insert_eq_of_mem heC] at heN
+  rwa [mem_closure_iff_mem_or_exists_isCircuit (sdiff_subset.trans hCN), or_iff_right (by simp),
+    insert_sdiff_singleton, insert_eq_of_mem heC] at heN
 
 /-- If every circuit of `M₁` is cyclic (a union of circuits) in `M₂`, then `M₂ ≤q M₁`. -/
 lemma quotient_of_forall_cyclic_of_isCircuit (hE : M₁.E = M₂.E)
@@ -95,9 +95,9 @@ lemma quotient_of_forall_cyclic_of_isCircuit (hE : M₁.E = M₂.E)
   · exact mem_of_mem_of_subset heI <| hI.subset.trans (M₂.subset_closure X (hXE.trans hE.subset))
   specialize h (M₁.fundCircuit e I) (hI.indep.fundCircuit_isCircuit he heI)
   obtain ⟨C, hCI, hC, heC⟩ := h.exists_of_mem (M₁.mem_fundCircuit e I)
-  refine mem_of_mem_of_subset (hC.mem_closure_diff_singleton_of_mem heC)
+  refine mem_of_mem_of_subset (hC.mem_closure_sdiff_singleton_of_mem heC)
     (M₂.closure_subset_closure ?_)
-  rw [diff_singleton_subset_iff]
+  rw [sdiff_singleton_subset_iff]
   exact hCI.trans ((fundCircuit_subset_insert _ e I).trans (insert_subset_insert hI.subset))
 
 lemma Quotient.dual (hQ : M₂ ≤q M₁) : M₁✶ ≤q M₂✶ := by
@@ -124,7 +124,7 @@ lemma Quotient.nonspanning_of_nonspanning (hQ : M₂ ≤q M₁) {S : Set α} (hS
 lemma Quotient.contract (hQ : M₂ ≤q M₁) (C : Set α) : M₂ ／ C ≤q M₁ ／ C := by
   refine quotient_of_forall_closure_subset_closure (by simp [hQ.ground_eq]) fun X _ ↦ ?_
   simp_rw [contract_closure_eq]
-  exact diff_subset_diff_left <| hQ.closure_subset_closure (X ∪ C)
+  exact sdiff_subset_sdiff_left <| hQ.closure_subset_closure (X ∪ C)
 
 lemma Quotient.delete (hQ : M₂ ≤q M₁) (D : Set α) : M₂ ＼ D ≤q M₁ ＼ D := by
   rw [← quotient_dual_iff, dual_delete, dual_delete]
@@ -132,7 +132,7 @@ lemma Quotient.delete (hQ : M₂ ≤q M₁) (D : Set α) : M₂ ＼ D ≤q M₁ 
 
 theorem contract_quotient_delete (N : Matroid α) (X : Set α) : N ／ X ≤q N ＼ X := by
   simp only [(N.delete_inter_ground_eq X).symm, quotient_iff, isFlat_contract_iff',
-    isFlat_delete_iff, and_imp, contract_ground, delete_ground, diff_inter_self_eq_diff, and_true]
+    isFlat_delete_iff, and_imp, contract_ground, delete_ground, sdiff_inter_self_eq_sdiff, and_true]
   exact fun _ hF hdj ↦ ⟨_, hF, by simp [hdj.sdiff_eq_left]⟩
 
 lemma Quotient.restrict (hQ : M₂ ≤q M₁) (R : Set α) : M₂ ↾ R ≤q M₁ ↾ R := by
@@ -208,34 +208,34 @@ lemma Quotient.eq_of_isBase_indep [Finitary M₂] (hQ : M₂ ≤q M₁) {B : Set
   obtain ⟨B', hB', hssB', hB'ss⟩ := hCi.exists_isBase_subset_union_isBase hB₁
 
   -- extend `C \ {e}` to a basis `B''` of `B'` in `M₂`.
-  obtain ⟨B'', hB'', hssB''⟩ := (hC.diff_singleton_indep heC).subset_isBasis_of_subset
-    (diff_subset.trans hssB') (hB'.subset_ground.trans_eq hQ.ground_eq.symm)
+  obtain ⟨B'', hB'', hssB''⟩ := (hC.sdiff_singleton_indep heC).subset_isBasis_of_subset
+    (sdiff_subset.trans hssB') (hB'.subset_ground.trans_eq hQ.ground_eq.symm)
 
   have hB''ss := hB''.subset
   replace hB'' := hB''.isBase_of_spanning <| hQ.spanning_of_spanning hB'.spanning
 
   have hrw1 : B' \ B = C \ B
-  · refine subset_antisymm ?_ (diff_subset_diff_left hssB')
-    rw [← union_diff_right (s := C)]
-    exact diff_subset_diff_left hB'ss
+  · refine subset_antisymm ?_ (sdiff_subset_sdiff_left hssB')
+    rw [← union_sdiff_right (s := C)]
+    exact sdiff_subset_sdiff_left hB'ss
 
   have hrw2 : B'' \ B = (C \ {e}) \ B
-  · rw [subset_antisymm_iff, and_iff_left (diff_subset_diff_left hssB''),
-      diff_subset_iff, union_diff_self, ← diff_singleton_eq_self heB, ← union_diff_distrib,
-      subset_diff_singleton_iff, union_comm, and_iff_right (hB''ss.trans hB'ss)]
+  · rw [subset_antisymm_iff, and_iff_left (sdiff_subset_sdiff_left hssB''),
+      sdiff_subset_iff, union_sdiff_self, ← sdiff_singleton_eq_self heB, ← union_sdiff_distrib,
+      subset_sdiff_singleton_iff, union_comm, and_iff_right (hB''ss.trans hB'ss)]
     exact fun heB'' ↦ hC.dep.not_indep
       (hB''.indep.subset (by simpa [heC] using insert_subset heB'' hssB''))
 
-  have hcard := hB'.encard_diff_comm hB₁
+  have hcard := hB'.encard_sdiff_comm hB₁
 
-  rw [hrw1, ← encard_diff_singleton_add_one (show e ∈ C \ B from ⟨heC, heB⟩),
-    diff_diff_comm, ← hrw2, hB''.encard_diff_comm hB₂] at hcard
+  rw [hrw1, ← encard_sdiff_singleton_add_one (show e ∈ C \ B from ⟨heC, heB⟩),
+    sdiff_sdiff_comm, ← hrw2, hB''.encard_sdiff_comm hB₂] at hcard
 
-  replace hcard := hcard.trans_le <| encard_mono <| diff_subset_diff_right hB''ss
+  replace hcard := hcard.trans_le <| encard_mono <| sdiff_subset_sdiff_right hB''ss
 
   have hfin : (B \ B'').encard ≠ ⊤
-  · rw [hB₂.encard_diff_comm hB'', hrw2, encard_ne_top_iff]
-    exact hC.finite.diff.diff
+  · rw [hB₂.encard_sdiff_comm hB'', hrw2, encard_ne_top_iff]
+    exact hC.finite.sdiff.sdiff
 
   rw [ENat.add_one_le_iff hfin] at hcard
   exact hcard.ne rfl
@@ -289,8 +289,8 @@ lemma Quotient.intCast_rank_sub_mono [RankFinite M₁] (hQ : M₂ ≤q M₁) (hX
     (M₂.rk Y : ℤ) - M₂.rk X ≤ (M₁.rk Y : ℤ) - M₁.rk X := by
   have _ : RankFinite M₂ := hQ.rankFinite
   rw [← Nat.cast_sub (M₂.rk_mono hXY), ← Nat.cast_sub (M₁.rk_mono hXY), Nat.cast_le,
-    ← ENat.coe_le_coe, ENat.coe_sub, cast_rk_eq, ENat.coe_sub, cast_rk_eq, cast_rk_eq ,
-    cast_rk_eq, ← (M₁.isRkFinite_set X).eRelRk_eq_sub hXY,
+    ← ENat.natCast_le_natCast, ENat.natCast_sub, cast_rk_eq, ENat.natCast_sub, cast_rk_eq,
+    cast_rk_eq, cast_rk_eq, ← (M₁.isRkFinite_set X).eRelRk_eq_sub hXY,
     ← (M₂.isRkFinite_set X).eRelRk_eq_sub hXY]
   exact eRelRk_le hQ X Y
 
@@ -315,16 +315,16 @@ lemma exists_project_indep_coindep (P : Matroid α) (X : Set α) :
     exact ⟨Q, Y, hYi, hYc, by simpa using hc, by simpa [delete_inter_ground_eq] using hd⟩
   obtain ⟨I, hI⟩ := P.exists_isBasis X
   obtain ⟨J, hJ⟩ := (P ＼ (X \ I))✶.exists_isBasis I
-    (by simp [subset_diff, hI.indep.subset_ground, disjoint_sdiff_right])
+    (by simp [subset_sdiff, hI.indep.subset_ground, disjoint_sdiff_right])
   refine ⟨P ＼ (X \ I) ／ (I \ J), J, ?_, ?_, ?_, ?_⟩
   · have hi : (P ＼ (X \ I)).Indep I := hI.indep.indep_delete_of_disjoint disjoint_sdiff_right
-    rwa [Indep.contract_indep_iff, and_iff_right disjoint_sdiff_right, union_diff_cancel hJ.subset]
-    exact hi.subset diff_subset
+    rwa [Indep.contract_indep_iff, and_iff_right disjoint_sdiff_right, union_sdiff_cancel hJ.subset]
+    exact hi.subset sdiff_subset
   · have hwin := hJ.indep.indep_delete_of_disjoint (D := I \ J) disjoint_sdiff_right
     rwa [← dual_coindep_iff, dual_delete_dual] at hwin
-  · rw [contract_contract, diff_union_of_subset hJ.subset,
+  · rw [contract_contract, sdiff_union_of_subset hJ.subset,
       ← contract_delete_comm _ disjoint_sdiff_right, hI.contract_eq_contract_delete]
   have hrw := congr_arg Matroid.dual <| hJ.contract_eq_contract_delete
-  rwa [dual_contract_dual, delete_delete, diff_union_of_subset hI.subset,
+  rwa [dual_contract_dual, delete_delete, sdiff_union_of_subset hI.subset,
     dual_delete, dual_contract, dual_dual, eq_comm,
     ← contract_delete_comm _ disjoint_sdiff_left] at hrw

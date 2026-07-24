@@ -56,14 +56,22 @@ lemma adheresTo_contract_or_delete (M : Matroid α) (e : α) :
     (M ／ {e}).AdheresTo M ∨ (M ＼ {e}).AdheresTo M := by
   wlog he : e ∈ M.E with aux
   · simp [contractElem_eq_self he, M.adheresTo_self]
-  rw [adheresTo_iff_of_subset diff_subset, adheresTo_iff_of_subset diff_subset]
+  rw [adheresTo_iff_of_subset sdiff_subset, adheresTo_iff_of_subset sdiff_subset]
   simp only [SplitsIn]
   by_contra! hcon
   obtain ⟨⟨P, hP⟩, Q, hQ⟩ := hcon
-  replace hP : ∀ i, ∃ j, P.eConn < M.eConn (P i ∩ Q j) :=
-    by simpa [Set.inter_comm] using fun i ↦ hP i <| Q.toBipartition.induce P.subset
-  replace hQ : ∀ i, ∃ j, Q.eConn < M.eConn (P j ∩ Q i) :=
-    by simpa using fun i ↦ hQ i <| P.toBipartition.induce Q.subset
+  replace hP : ∀ i, ∃ j, P.eConn < M.eConn (P i ∩ Q j) := fun i ↦ by
+    have hPiE : P i ⊆ (M ＼ {e}).E := by
+      simpa [contract_ground, delete_ground] using P.subset' i
+    obtain ⟨j, hj⟩ := hP i (Q.toBipartition.induce hPiE)
+    refine ⟨j, ?_⟩
+    rwa [IndexedPartition.induce_apply, Set.inter_comm, Q.toBipartition_apply] at hj
+  replace hQ : ∀ i, ∃ j, Q.eConn < M.eConn (P j ∩ Q i) := fun i ↦ by
+    have hQiE : Q i ⊆ (M ／ {e}).E := by
+      simpa [contract_ground, delete_ground] using Q.subset' i
+    obtain ⟨j, hj⟩ := hQ i (P.toBipartition.induce hQiE)
+    refine ⟨j, ?_⟩
+    rwa [IndexedPartition.induce_apply, P.toBipartition_apply] at hj
   simp_rw [Bool.forall_bool, Bool.exists_bool] at hP hQ
   have h1 := P.eConn_inter_add_eConn_inter_le_add_of_singleton Q.symm true
   have h2 := P.eConn_inter_add_eConn_inter_le_add_of_singleton Q false
@@ -85,7 +93,7 @@ lemma AdheresTo.seqConnected_add_two_mul {f : ℕ∞ → ℕ∞} (hNM : N.Adhere
     exists_or_forall_not (fun j ↦ (M.E \ P₀ j).encard ≤ M.eConn (P₀ j) + f (M.eConn (P₀ j)))
   · use !i
     grw [← hf (hP₀ j), ← hP₀, ← hj, two_mul, ← le_add_self, ← P.compl_eq]
-    exact encard_le_encard (diff_subset_diff hNM.subset P₀.subset)
+    exact encard_le_encard (sdiff_subset_sdiff hNM.subset P₀.subset)
   simp_rw [or_iff_right (h _)] at aux
   refine ⟨i, ?_⟩
   grw [← P₀.union_eq, encard_union_eq P₀.disjoint_true_false, aux, hf (hP₀ _), aux, hf (hP₀ _),
@@ -97,7 +105,7 @@ lemma AdheresTo.connected_of_connected [N.Nonempty] (hNM : N.AdheresTo M) (hM : 
   rw [← tutteConnected_two_iff, ← one_add_one_eq_two, tutteConnected_iff_seqConnected'] at hM ⊢
   refine (hNM.seqConnected_add_two_mul ?_ hM).mono fun n k ↦ ?_
   · refine monotone_const.indicator_monotone (fun _ ↦ le_top) fun x y hx hxy ↦ ?_
-    grw [mem_setOf, ← hxy]
+    grw [mem_ofPred, ← hxy]
     assumption
   obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one <;> simp
 
@@ -111,7 +119,7 @@ lemma AdheresTo.internallyConnected_of_tutteConnected_three (hNM : N.AdheresTo M
   obtain rfl | hne := eq_or_ne n ⊤
   · simp
   obtain hle | hlt := le_or_gt n 1
-  · obtain rfl | rfl := ENat.le_one_iff_eq_zero_or_eq_one.1 hle <;> simp
+  · obtain rfl | rfl := Order.le_one_iff.1 hle <;> simp
   simp [indicator_apply, hne, hlt]
 
 lemma Connected.contract_or_delete_connected (hM : M.Connected) (hnt : M.E.Nontrivial) (e : α) :

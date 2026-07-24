@@ -116,14 +116,17 @@ lemma Rep.standardRep_fullRank' (v : M.Rep 𝔽 W) (hB : M.IsBase B) : (v.standa
 noncomputable def Rep.standardRep (v : M.Rep 𝔽 W) (hB : M.IsBase B) : M.Rep 𝔽 (B → 𝔽) :=
   (v.standardRep' hB).comp Finsupp.lcoeFun (by simp [Submodule.disjoint_def, Finsupp.lcoeFun])
 
+set_option backward.isDefEq.respectTransparency false in
 lemma Rep.standardRep_eq_one (v : M.Rep 𝔽 W) (hB : M.IsBase B) (e : B) :
     (v.standardRep hB) e e = 1 := by
   simp [standardRep]
 
+set_option backward.isDefEq.respectTransparency false in
 lemma Rep.standardRep_eq_zero (v : M.Rep 𝔽 W) (hB : M.IsBase B) (e f : B) (hef : e ≠ f) :
     (v.standardRep hB) e f = 0 := by
   simp [standardRep, v.standardRep_eq_zero' hB _ _ hef]
 
+set_option backward.isDefEq.respectTransparency false in
 lemma Rep.standardRep_eq_mapEquiv [RankFinite M] (v : M.Rep 𝔽 W) (hB : M.IsBase B) :
     v.standardRep hB = (v.standardRep' hB).compEquiv
       (@Finsupp.linearEquivFunOnFinite _ _ _ hB.finite.to_subtype ..) := by
@@ -205,9 +208,10 @@ lemma Rep.FunStandard.IsBase [M.RankFinite] (hv : v.FunStandard i) : M.IsBase (r
   have h1 : M.Indep (range i) := by
     rw [v.indep_iff, linearIndepOn_range_iff hv.injective]
     convert (Finsupp.basisSingleOne (ι := β) (R := 𝔽)).linearIndependent.map
-      (f := Finsupp.lcoeFun) (by simp)
-    ext x y
-    simp [Finsupp.single, Pi.single, hv.apply_eq_single]
+      (f := Finsupp.lcoeFun (R := 𝔽)) (by simp [Finsupp.ker_lcoeFun])
+    · ext x y
+      simp [Finsupp.single, Pi.single, hv.apply_eq_single]
+    · rfl
   have hβ : Finite β := h1.finite.of_injective_finite_range hv.injective
   refine h1.isBase_of_spanning ?_
   rw [v.spanning_iff, le_antisymm_iff, and_iff_right (span_mono (image_subset_range ..))]
@@ -333,20 +337,20 @@ lemma Rep.IsStandard.isCircuit_insert_support {v : M.Rep 𝔽 (B →₀ 𝔽)} (
   · rw [hv.mem_closure_iff (by simp) heE]
     simp
   intro f hf hecl
-  rw [hv.mem_closure_iff (diff_subset.trans (by simp)) heE] at hecl
-  simp only [preimage_diff, Subtype.val_injective, preimage_image_eq] at hecl
+  rw [hv.mem_closure_iff (sdiff_subset.trans (by simp)) heE] at hecl
+  simp only [preimage_sdiff, Subtype.val_injective, preimage_image_eq] at hecl
   obtain ⟨f,h,rfl⟩ := ((image_mono hecl) hf)
   simp at h
 
 lemma Rep.IsStandard.image_val_support_eq {v : M.Rep 𝔽 (B →₀ 𝔽)} (hv : v.IsStandard) (he : e ∉ B) :
     ((v e).support : Set B) = (M.fundCircuit e B) ∩ B := by
   obtain heE | heE := em' (e ∈ M.E)
-  · rw [v.eq_zero_of_notMem_ground heE, ← fundCircuit_diff_eq_inter _ he,
+  · rw [v.eq_zero_of_notMem_ground heE, ← fundCircuit_sdiff_eq_inter _ he,
       fundCircuit_eq_of_notMem_ground heE]
     simp
   suffices hrw : insert e ((↑) '' ((v e).support : Set B)) = M.fundCircuit e B
-  · rw [← fundCircuit_diff_eq_inter _ he, ← hrw, insert_diff_of_mem _ (by simp),
-      diff_singleton_eq_self (by simp [he])]
+  · rw [← fundCircuit_sdiff_eq_inter _ he, ← hrw, insert_sdiff_of_mem _ (by simp),
+      sdiff_singleton_eq_self (by simp [he])]
   refine IsCircuit.eq_fundCircuit_of_subset ?_ hv.isBase.indep (insert_subset_insert (by simp))
   exact isCircuit_insert_support hv he heE
 
@@ -357,11 +361,11 @@ lemma Rep.IsStandard.isCocircuit_insert_support {v : M.Rep 𝔽 (B →₀ 𝔽)}
     rw [h_eq, isCocircuit_compl_iff_isHyperplane]
     exact hv.isBase.isHyperplane_of_closure_diff_singleton e.2
   ext x
-  simp only [mem_support, ne_eq, mem_diff]
+  simp only [mem_support, ne_eq, mem_sdiff]
   obtain hxE | hxE := em' (x ∈ M.E)
   · simp [hxE, v.eq_zero_of_notMem_ground hxE]
-  rw [hv.mem_closure_iff diff_subset hxE]
-  simp [subset_diff, hxE, disjoint_iff_forall_ne]
+  rw [hv.mem_closure_iff sdiff_subset hxE]
+  simp [subset_sdiff, hxE, disjoint_iff_forall_ne]
 
 
 end IsStandard

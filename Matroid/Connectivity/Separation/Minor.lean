@@ -10,11 +10,11 @@ namespace Matroid.Separation
 
 @[simp, aesop unsafe 10% (rule_sets := [Matroid])]
 lemma subset_ground_of_delete (P : (M ＼ D).Separation) (i : Bool) : P i ⊆ M.E :=
-  P.subset_ground.trans diff_subset
+  P.subset_ground.trans sdiff_subset
 
 @[simp, aesop unsafe 10% (rule_sets := [Matroid])]
 lemma left_subset_ground_of_contract (P : (M ／ C).Separation) (i : Bool) : P i ⊆ M.E :=
-  P.subset_ground.trans diff_subset
+  P.subset_ground.trans sdiff_subset
 
 @[simp]
 lemma disjoint_contract (P : (M ／ C).Separation) (i : Bool) : Disjoint (P i) C := by
@@ -28,8 +28,8 @@ lemma disjoint_delete (P : (M ＼ D).Separation) (i : Bool) : Disjoint (P i) D :
 
 lemma compl_remove {b} (P : (M.remove b X).Separation) (hX : X ⊆ M.E := by aesop_mat) (i : Bool) :
     M.E \ P i = P (!i) ∪ X := by
-  grw [← P.compl_eq, remove_ground, diff_diff_comm, diff_union_self, eq_comm, union_eq_left,
-    subset_diff, and_iff_right hX, P.subset_ground]
+  grw [← P.compl_eq, remove_ground, sdiff_sdiff_comm, sdiff_union_self, eq_comm, union_eq_left,
+    subset_sdiff, and_iff_right hX, P.subset_ground]
   exact disjoint_sdiff_right.mono_right <| (remove_ground ..).subset
 
 lemma compl_delete (P : (M ＼ D).Separation) (hD : D ⊆ M.E := by aesop_mat) (i : Bool) :
@@ -50,11 +50,11 @@ lemma compl_contract_not (P : (M ／ C).Separation) (hC : C ⊆ M.E := by aesop_
 
 @[simp]
 lemma apply_inter_ground_of_delete (P : (M ＼ D).Separation) (i : Bool) : P i ∩ M.E = P i :=
-  inter_eq_self_of_subset_left <| P.subset.trans diff_subset
+  inter_eq_self_of_subset_left <| P.subset.trans sdiff_subset
 
 @[simp]
 lemma apply_inter_ground_of_contract (P : (M ／ C).Separation) (i : Bool) : P i ∩ M.E = P i :=
-  inter_eq_self_of_subset_left <| P.subset.trans diff_subset
+  inter_eq_self_of_subset_left <| P.subset.trans sdiff_subset
 
 @[simp]
 lemma apply_inter_ground_of_remove (P : (M.remove b X).Separation) (i : Bool) : P i ∩ M.E = P i :=
@@ -62,11 +62,11 @@ lemma apply_inter_ground_of_remove (P : (M.remove b X).Separation) (i : Bool) : 
 
 @[simp]
 lemma compl_union_contract (P : (M ／ C).Separation) (i : Bool) : M.E \ (P i ∪ C) = P !i := by
-  rw [← P.compl_eq, Set.union_comm, contract_ground, diff_diff]
+  rw [← P.compl_eq, Set.union_comm, contract_ground, sdiff_sdiff]
 
 @[simp]
 lemma compl_union_delete (P : (M ＼ D).Separation) (i : Bool) : M.E \ (P i ∪ D) = P !i := by
-  rw [← P.compl_eq, Set.union_comm, delete_ground, diff_diff]
+  rw [← P.compl_eq, Set.union_comm, delete_ground, sdiff_sdiff]
 
 lemma compl_delete_singleton (P : (M ＼ {e}).Separation) (he : e ∈ M.E := by aesop_mat) (i : Bool) :
     M.E \ (P i) = insert e (P (!i)) := by
@@ -86,7 +86,7 @@ lemma eConn_inter_add_eConn_inter_le_add (P : (M ／ X).Separation) (Q : (M ＼ 
   convert M.eConn_inter_add_eConn_union_union_le (C := P i) (D := Q i) (X := X) (by simp) (by simp)
     using 2
   · rw [union_assoc, X.union_comm, union_union_distrib_right, ← Q.compl_contract_not,
-      ← P.compl_delete_not, dual_ground, ← diff_inter, eConn_compl]
+      ← P.compl_delete_not, dual_ground, ← sdiff_inter, eConn_compl]
   simp
 
 /-- The Bixby-Coullard inequality for pairs of separations. -/
@@ -99,14 +99,14 @@ set_option backward.isDefEq.respectTransparency false in
 @[simp]
 lemma induce_apply_remove (P : M.Separation) (X : Set α) (b i j : Bool) :
     P.induce (M.remove b X) i j = P j \ X := by
-  grw [induce_apply_subset _ (by simp), remove_ground, ← inter_diff_assoc,
+  grw [induce_apply_subset _ (by simp), remove_ground, ← inter_sdiff_assoc,
     P.inter_ground_left]
 
 lemma induce_apply_remove_of_remove (P : (M.remove b X).Separation) (hXY : X ⊆ Y) (i j : Bool) :
     P.induce (M.remove b Y) i j = P j \ Y := by
-  rw [induce_apply_subset _ (by grind), remove_ground, ← inter_diff_assoc,
+  rw [induce_apply_subset _ (by grind), remove_ground, ← inter_sdiff_assoc,
     inter_eq_self_of_subset_left]
-  grw [P.subset, remove_ground, diff_subset]
+  grw [P.subset, remove_ground, sdiff_subset]
 
 @[simp]
 lemma induce_apply_delete (P : M.Separation) (D : Set α) (i j : Bool) :
@@ -130,14 +130,14 @@ set_option backward.isDefEq.respectTransparency false in
 @[simp]
 lemma induce_apply_contract_delete (P : M.Separation) (C D : Set α) (i j : Bool) :
     P.induce (M ／ C ＼ D) i j = P j \ (C ∪ D) := by
-  rw [induce_apply_subset _ (by grind), delete_ground, contract_ground, ← inter_diff_assoc,
-    ← inter_diff_assoc, P.inter_ground_left, diff_diff]
+  rw [induce_apply_subset _ (by grind), delete_ground, contract_ground, ← inter_sdiff_assoc,
+    ← inter_sdiff_assoc, P.inter_ground_left, sdiff_sdiff]
 
 lemma induce_apply_of_remove_eq_cond {b} (P : (M.remove b X).Separation) (i j : Bool)
     (hX : X ⊆ M.E := by aesop_mat) :
     P.induce M i j = bif j == i then P j ∪ X else P j := by
-  rw [induce_apply_eq_cond, remove_ground, diff_diff_cancel_left hX, inter_eq_self_of_subset_left]
-  grw [P.subset, remove_ground, diff_subset]
+  rw [induce_apply_eq_cond, remove_ground, sdiff_sdiff_cancel_left hX, inter_eq_self_of_subset_left]
+  grw [P.subset, remove_ground, sdiff_subset]
 
 @[simp]
 lemma induce_apply_of_remove_self {b} (P : (M.remove b X).Separation) (i : Bool)
@@ -204,7 +204,7 @@ lemma induce_union_remove (P : M.Separation) (X Y : Set α) (b : Bool) :
 @[simp]
 lemma induce_induce_remove (P : M.Separation) (X : Set α) (i b : Bool) :
     (P.induce N i).induce (N.remove b X) = P.induce (N.remove b X) i :=
-  Separation.ext_bool (!i) <| by simp [inter_diff_assoc]
+  Separation.ext_bool (!i) <| by simp [inter_sdiff_assoc]
 
 lemma induce_contract_congr (P : M.Separation) (hC : C ∩ M.E = C' ∩ M.E) :
     P.induce (M ／ C) = (P.induce (M ／ C')).copy
@@ -300,13 +300,14 @@ lemma eConn_induce_dual_contract (P : M.Separation) (X : Set α) :
     (P.induce (M✶ ／ X)).eConn = (P.induce (M ＼ X)).eConn := by
   rw [← induce_dual_eConn]
   convert rfl
-  simp
+  simp [dual_contract]
 
 @[simp]
 lemma eConn_induce_dual_delete (P : M.Separation) (X : Set α) :
     (P.induce (M✶ ＼ X)).eConn = (P.induce (M ／ X)).eConn := by
   rw [← induce_dual_eConn]
   convert rfl
+  simp [dual_delete]
 
 lemma induce_contract_delete (P : M.Separation) (C D : Set α) :
     P.induce (M ／ C ＼ D) = (P.induce (M ／ C)).induce (M ／ C ＼ D) :=
@@ -393,10 +394,10 @@ lemma eConn_induce_of_delete_le_eConn_add_eRelRk (P : (M ＼ D).Separation) (i :
     (P.induce M i).eConn ≤ P.eConn + M.eRelRk (P i) (P i ∪ D) := by
   wlog hD : D ⊆ M.E generalizing D with aux
   · rw [← eRelRk_inter_ground_right, union_inter_distrib_right,
-      inter_eq_self_of_subset_left (P.subset.trans diff_subset)]
+      inter_eq_self_of_subset_left (P.subset.trans sdiff_subset)]
     simpa using aux (D := D ∩ M.E) (P.copy (by simp)) inter_subset_right
   grw [eConn_induce_of_delete, eRelRk_eq_eRk_diff_contract,
-    union_diff_cancel_left (P.disjoint_delete i).inter_eq.subset,
+    union_sdiff_cancel_left (P.disjoint_delete i).inter_eq.subset,
     ← eRelRk_eq_eRk_contract, eRelRk_eq_union_right, eLocalConn_comm,
     eLocalConn_le_dual_eRelRk _ (disjoint_delete P !i).symm, Matroid.dual_dual, dual_ground,
     union_comm, P.compl_union_delete, P.compl_delete_not, Bool.not_not, union_comm]
@@ -432,6 +433,7 @@ lemma eConn_induce_le_eConn_add_one_of_deleteElem (P : (M ＼ {e}).Separation) (
     (P.induce M i).eConn ≤ P.eConn + 1 := by
   grw [eConn_induce_of_delete, eLocalConn_le_eRk_right, eRk_singleton_le]
 
+set_option backward.isDefEq.respectTransparency false in
 /-- If `P` is a separation of a restriction of `M`, and each element of `M` is spanned by
 one side of `P`, then `P` extends to a separation of `M` with the same connectivity. -/
 lemma exists_of_isRestriction_of_forall_mem_closure (P : N.Separation) (hNM : N ≤r M)
@@ -454,11 +456,13 @@ lemma exists_of_isRestriction_of_forall_mem_closure (P : N.Separation) (hNM : N 
     exact (hφ x hxE).1
   refine ⟨Separation.mk (fun i ↦ φ ⁻¹' {i} ∩ M.E) ?_ ?_, ?_⟩
   · simp +contextual [Pairwise, disjoint_left]
-  · simp [← union_inter_distrib_right, ← preimage_union, subset_def, iUnion_bool]
-  simp only [↓mk_apply, subset_inter_iff, aux, P.subset_ground.trans hNM.subset, and_self,
+  · ext x
+    simp only [mem_iUnion, mem_inter_iff, mem_preimage, mem_singleton_iff]
+    exact ⟨fun ⟨_, _, hx⟩ ↦ hx, fun hx ↦ ⟨φ x, rfl, hx⟩⟩
+  simp only [mk_apply, subset_inter_iff, aux, P.subset_ground.trans hNM.subset, and_self,
     closure_inter_ground, true_and]
   refine ⟨fun _ ↦ auxcl, ?_⟩
-  simp only [eConn_eq_eLocalConn_true_false, ↓mk_apply, eLocalConn_inter_ground_right,
+  simp only [eConn_eq_eLocalConn_true_false, mk_apply, eLocalConn_inter_ground_right,
     eLocalConn_inter_ground_left]
   rw [hNM.eLocalConn_eq_of_subset, ← M.eLocalConn_closure_closure, auxcl, auxcl,
     eLocalConn_closure_closure]
@@ -515,8 +519,8 @@ lemma eRk_guts_le : M.eRk P.guts ≤ P.eConn := by
 lemma guts_induce_contract_of_subset_guts (hX : X ⊆ P.guts) :
     (P.induce (M ／ X)).guts = P.guts \ X := by
   rw [guts_eq_inter_bool _ true, contract_closure_eq,
-    contract_closure_eq, induce_apply_contract, induce_apply_contract, ← diff_inter_distrib_right,
-    diff_union_self, diff_union_self, ← closure_union_closure_left_eq,
+    contract_closure_eq, induce_apply_contract, induce_apply_contract, ← sdiff_inter_distrib_right,
+    sdiff_union_self, sdiff_union_self, ← closure_union_closure_left_eq,
     union_eq_self_of_subset_right (by grind), ← closure_union_closure_left_eq,
     union_eq_self_of_subset_right (by grind), closure_closure, closure_closure,
     ← guts_eq_inter_bool]
@@ -531,7 +535,7 @@ lemma eConn_induce_contract_add_of_subset_guts (hX : X ⊆ P.guts) :
         contract_contract, add_assoc, eRk_contract_add_eRk, union_comm (X ∩ P false),
         ← inter_union_distrib_left, P.union_eq, contract_inter_ground_eq,
         eRk_inter_ground, ← induce_symm_of_subset _ (by simp), eConn_symm]
-    · rw [guts_symm, guts_induce_contract_of_subset_guts (by grind), subset_diff]
+    · rw [guts_symm, guts_induce_contract_of_subset_guts (by grind), subset_sdiff]
       grind
     grind [Separation.symm_apply, induce_apply_contract]
   rw [eConn_eq_eConn_induce_contract_add _ hXP, ← eLocalConn_closure_left,
@@ -588,8 +592,8 @@ lemma closureShift_apply_self (P : M.Separation) (i : Bool) :
 @[simp]
 lemma closureShift_apply_not (P : M.Separation) (i : Bool) :
     (P.closureShift i) (!i) = P (!i) \ M.closure (P i) := by
-  rw [closureShift, ofSetSep_apply_not, ← P.union_bool_eq i, union_diff_distrib,
-    diff_eq_empty.2 (M.subset_closure ..), empty_union]
+  rw [closureShift, ofSetSep_apply_not, ← P.union_bool_eq i, union_sdiff_distrib,
+    sdiff_eq_empty.2 (M.subset_closure ..), empty_union]
 
 @[simp]
 lemma closureShift_not_apply (P : M.Separation) (i : Bool) :
@@ -599,4 +603,4 @@ lemma closureShift_not_apply (P : M.Separation) (i : Bool) :
 lemma closureShift_eConn_le (P : M.Separation) (i : Bool) :
     (P.closureShift i).eConn ≤ P.eConn := by
   grw [eConn_eq_eLocalConn _ i, closureShift_apply_not, closureShift_apply_self,
-    eLocalConn_closure_left, diff_subset, ← eConn_eq_eLocalConn]
+    eLocalConn_closure_left, sdiff_subset, ← eConn_eq_eLocalConn]

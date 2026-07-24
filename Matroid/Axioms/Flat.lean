@@ -28,18 +28,18 @@ lemma IsFlat.subset_ground (hF : M.IsFlat F) : F ⊆ M.E :=
     ⋂₀ {F | X ∩ M.E ⊆ F ∧ M.IsFlat F}
 
 lemma closure_subset_closure (M : FlatMatroid α) (hXY : X ⊆ Y) : M.closure X ⊆ M.closure Y := by
-  simp only [closure, subset_sInter_iff, mem_setOf_eq, and_imp]
+  simp only [closure, subset_sInter_iff, mem_ofPred_eq, and_imp]
   exact fun F hYF hF ↦ sInter_subset_of_mem  ⟨(inter_subset_inter_left M.E hXY).trans hYF, hF⟩
 
 lemma closure_closure (M : FlatMatroid α) (X : Set α) : M.closure (M.closure X) = M.closure X := by
-  simp only [subset_antisymm_iff, subset_sInter_iff, mem_setOf_eq, and_imp]
+  simp only [subset_antisymm_iff, subset_sInter_iff, mem_ofPred_eq, and_imp]
   refine ⟨fun F hXF hF ↦ sInter_subset_of_mem ⟨inter_subset_left.trans ?_, hF⟩, ?_⟩
   · exact sInter_subset_of_mem ⟨hXF, hF⟩
   refine fun F hssF hF ↦ ?_
   convert hssF using 1
   simp only [left_eq_inter]
   refine (sInter_subset_of_mem ?_).trans hF.subset_ground
-  simp only [mem_setOf_eq, hF, and_true]
+  simp only [mem_ofPred_eq, hF, and_true]
   exact subset_trans (by simp +contextual) hssF
 
 lemma subset_closure (hX : X ⊆ M.E) : X ⊆ M.closure X := by
@@ -49,7 +49,7 @@ lemma subset_closure (hX : X ⊆ M.E) : X ⊆ M.closure X := by
 lemma closure_inter_ground (M : FlatMatroid α) (X : Set α) :
     M.closure (X ∩ M.E) = M.closure X := by
   refine (M.closure_subset_closure inter_subset_left).antisymm (subset_sInter fun F hF ↦ ?_)
-  simp only [inter_assoc, inter_self, mem_setOf_eq] at hF
+  simp only [inter_assoc, inter_self, mem_ofPred_eq] at hF
   exact sInter_subset_of_mem <| by simpa
 
 lemma closure_subset_ground (M : FlatMatroid α) (X : Set α) : M.closure X ⊆ M.E :=
@@ -155,14 +155,14 @@ protected def closureMatroid (M : FlatMatroid α) : ClosureMatroid α where
     simp_rw [indep_iff, and_congr_left_iff]
     refine fun I hI ↦ ⟨fun h e heI hecl ↦ ?_, fun h e heI ↦ ⟨_, M.closure_isFlat (I \ {e}), ?_⟩⟩
     · obtain ⟨F, hF, hfI⟩ := h e heI
-      simp only [closure, mem_sInter, mem_setOf_eq, and_imp] at hecl
+      simp only [closure, mem_sInter, mem_ofPred_eq, and_imp] at hecl
       have := hfI.subset ⟨heI, (hecl F ?_ hF)⟩
       · simp at this
-      rw [inter_eq_self_of_subset_left (diff_subset.trans hI), ← hfI]
+      rw [inter_eq_self_of_subset_left (sdiff_subset.trans hI), ← hfI]
       simp
-    rw [subset_antisymm_iff, subset_diff, disjoint_singleton_right, mem_inter_iff,
+    rw [subset_antisymm_iff, subset_sdiff, disjoint_singleton_right, mem_inter_iff,
       and_iff_right heI, and_iff_right inter_subset_left, subset_inter_iff,
-      and_iff_right diff_subset, and_iff_left (M.subset_closure (diff_subset.trans hI))]
+      and_iff_right sdiff_subset, and_iff_left (M.subset_closure (sdiff_subset.trans hI))]
     exact h e heI
   indep_maximal := M.indep_maximal
   closure_inter_inter_ground := fun X ↦ by

@@ -20,7 +20,7 @@ lemma prefixUntil_first (w : WList α β) (P : α → Prop) [DecidablePred P] :
     (w.prefixUntil P).first = w.first := by
   cases w with simp [apply_ite]
 
-@[simp, grind .]
+-- @[simp, grind .]
 lemma prefixUntil_prop_last_iff (w : WList α β) (P : α → Prop) [DecidablePred P] :
     P (w.prefixUntil P).last ↔ ∃ x ∈ w, P x := by
   induction w with | nil u => simp | cons u e w ih => grind
@@ -184,6 +184,7 @@ lemma prefixUntil_eq_prefixUntilVertex_last_of_nodup [DecidableEq α] (hnd : w.v
   rw [prefixUntil_eq_self_of_forall (by simpa using h)]
   refine (prefixUntilVertex_isPrefix w w.last).eq_of_last_mem hnd ?_
   convert (last_mem : (w.prefixUntil (· = w.last)).last ∈ w.prefixUntil (· = w.last)) using 1
+  · rfl
   exact (prefixUntil_prop_last (P := (· = w.last)) ⟨w.last, last_mem, rfl⟩).symm
 
 @[simp]
@@ -219,7 +220,7 @@ lemma prefixUntilVertex_length [DecidableEq α] (hx : x ∈ w) :
 lemma suffixFrom_last (w : WList α β) : (w.suffixFrom P).last = w.last := by
   induction w with simp_all [apply_ite]
 
-@[simp, grind .]
+-- @[simp, grind .]
 lemma suffixFrom_prop_first_iff (w : WList α β) (P : α → Prop) [DecidablePred P] :
     P (w.suffixFrom P).first ↔ ∃ x ∈ w, P x := by
   induction w with | nil u => simp | cons u e w ih => grind
@@ -420,7 +421,7 @@ lemma sufixFromVertex_length [DecidableEq α] (w : WList α β) (x : α) (hx : x
 @[simp]
 lemma suffixFromVertex_first_eq [DecidableEq α] (w : WList α β) :
     w.suffixFromVertex w.first = w := by
-  induction w with (simp_all [suffixFromVertex])
+  induction w <;> simp_all [suffixFromVertex, suffixFrom]
 
 lemma suffixFromVertex_second_eq [DecidableEq α] (e) (hx : x ≠ w.first) :
     (cons x e w).suffixFromVertex w.first = w := by
@@ -449,7 +450,7 @@ lemma prefixUntilLast_isPrefix (w : WList α β) (P : α → Prop) [DecidablePre
   rw [← reverse_isSuffix_reverse_iff, prefixUntilLast, reverse_reverse]
   apply suffixFrom_isSuffix
 
-@[simp, grind .]
+-- @[simp, grind .]
 lemma prefixUntilLast_prop_last_iff (w : WList α β) (P : α → Prop) [DecidablePred P] :
     P (w.prefixUntilLast P).last ↔ ∃ x ∈ w, P x := by
   rw [prefixUntilLast, reverse_last]

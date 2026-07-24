@@ -111,11 +111,11 @@ variable {V I E Gr R : Type*} {G : Gr} [HyperGraphLike V I E Gr] {u u' v v' w : 
 section HyperGraphLike
 
 lemma IsSource.mem (h : IsSource G i) : i ∈ I(G) := by
-  rw [incs_def, mem_setOf_eq, isIncident_iff]
+  rw [incs_def, mem_ofPred_eq, isIncident_iff]
   exact Or.inl h
 
 lemma IsTarget.mem (h : IsTarget G i) : i ∈ I(G) := by
-  rw [incs_def, mem_setOf_eq, isIncident_iff]
+  rw [incs_def, mem_ofPred_eq, isIncident_iff]
   exact Or.inr h
 
 @[ext] theorem incs_ext (i₁ i₂ : I(G)) (h : i₁.val = i₂.val) : i₁ = i₂ := Subtype.ext h
@@ -156,7 +156,7 @@ lemma IsIncident.unique_or_bot (G : Gr) (i : I) :
   · exact Or.inl (unique_isIncident_of_mem_incs hi)
   right
   ext e v
-  simp only [incs_def, mem_setOf_eq, not_exists, Pi.bot_apply, «Prop».bot_eq_false,
+  simp only [incs_def, mem_ofPred_eq, not_exists, Pi.bot_apply, «Prop».bot_eq_false,
     iff_false] at hi ⊢
   exact hi e v
 

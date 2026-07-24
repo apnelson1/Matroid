@@ -80,7 +80,7 @@ lemma Connected.isPathGraph_of_maxDegreeLE [G.EdgeFinite] (hG : G.Connected)
       have := (hG.degreePos hv.vertexSet_nontrivial).one_le_degree hw
       omega
     have hhs := G.handshake_degree_subtype
-    rw [← finsum_mem_add_diff (s := {v}) (by simpa using hv.mem) (by simp)] at hhs
+    rw [← finsum_mem_add_sdiff (s := {v}) (by simpa using hv.mem) (by simp)] at hhs
     simp only [mem_singleton_iff, finsum_cond_eq_left, hv.degree] at hhs
     rw [finsum_mem_congr (s := V(G) \ {v}) rfl (g := 2) (by simpa)] at hhs
     simp_rw [Pi.ofNat_apply, finsum_mem_const, smul_eq_mul] at hhs

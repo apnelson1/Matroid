@@ -21,7 +21,7 @@ lemma core_def (M : Matroid α) (X : Set α) : M.core X = ((X \ M.loops) \ M.col
 
 @[simp]
 lemma core_subset (M : Matroid α) (X : Set α) : M.core X ⊆ X :=
-  inter_subset_left.trans <| diff_subset.trans diff_subset
+  inter_subset_left.trans <| sdiff_subset.trans sdiff_subset
 
 @[simp, aesop safe (rule_sets := [Matroid])]
 lemma core_subset_ground (M : Matroid α) (X : Set α) : M.core X ⊆ M.E :=
@@ -38,12 +38,12 @@ lemma core_empty (M : Matroid α) : M.core ∅ = ∅ := by
 
 @[simp]
 lemma core_dual (M : Matroid α) (X : Set α) : M✶.core X = M.core X := by
-  rw [core_def, coloops, dual_dual, diff_diff_comm, dual_ground]
+  rw [core_def, coloops, dual_dual, sdiff_sdiff_comm, dual_ground]
   rfl
 
 @[simp]
 lemma removeLoops_core (M : Matroid α) (X : Set α) : M.removeLoops.core X = M.core X := by
-  rw [core_def, removeLoops_ground_eq, setOf_isNonloop_eq, core_def, loops_eq_empty,
+  rw [core_def, removeLoops_ground_eq, setOfPred_isNonloop_eq, core_def, loops_eq_empty,
     removeLoops_coloops_eq]
   tauto_set
 
@@ -73,11 +73,11 @@ lemma core_diff (M : Matroid α) (X Y : Set α) : M.core (X \ Y) = M.core X \ M.
   tauto_set
 
 lemma core_subset_core (M : Matroid α) (hXY : X ⊆ Y) : M.core X ⊆ M.core Y := by
-  rw [← diff_eq_empty, ← core_diff, diff_eq_empty.2 hXY, core_empty]
+  rw [← sdiff_eq_empty, ← core_diff, sdiff_eq_empty.2 hXY, core_empty]
 
 @[simp]
 lemma core_subset_inter_ground (M : Matroid α) (X : Set α) : M.core X ⊆ X ∩ M.E :=
-  inter_subset_inter_left _ <| diff_subset.trans diff_subset
+  inter_subset_inter_left _ <| sdiff_subset.trans sdiff_subset
 
 @[simp]
 lemma core_delete_subset (M : Matroid α) (X D : Set α) : (M ＼ D).core X ⊆ M.core X := by

@@ -83,7 +83,7 @@ lemma spanning_of_gutsProject_spanning_of_superset (hci : (M.gutsProject X).Span
   contrapose! hci
   rw [gutsProject, ModularCut.projectBy_spanning_iff (by simp) (by grind),
     closure_mem_gutsModularCutSet_iff (by grind), or_iff_right hci, not_and, not_not]
-  exact fun _ ↦ (skew_of_subset_loops (by grind [project_loops]) diff_subset)
+  exact fun _ ↦ (skew_of_subset_loops (by grind [project_loops]) sdiff_subset)
 
 /-- The matroid obtained from `M` by lifting the points of `X` outside the span of `M.E \ X`.
 The restriction to `X` or its complement remains unchanged, but `X` becomes codependent.  -/
@@ -121,5 +121,5 @@ lemma localLift_codep_self (hX : X ⊆ M.E) (hXr : M.eRk X ≠ 0) : (M.localLift
     closure_mem_gutsModularCutSet_iff, Ne, gutsModularCutSet_eq_top_iff, not_and,
     not_imp_not, Classical.not_imp]
   refine fun (hXi : M.Coindep X) ↦
-    ⟨(skew_of_subset_loops (by grind [project_loops]) diff_subset), ?_⟩
+    ⟨(skew_of_subset_loops (by grind [project_loops]) sdiff_subset), ?_⟩
   rwa [← eLocalConn_eq_zero, ← eConn_eq_eLocalConn, eConn_dual, hXi.eConn_eq]

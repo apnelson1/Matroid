@@ -32,9 +32,9 @@ end WList
 namespace Graph
 
 lemma lineGraph_deleteVerts_deleteEdges (F : Set β) : L(G ＼ F) = L(G) - F := by
-  refine Graph.ext (by ext e; simp [vertexSet_LineGraph, edgeSet_deleteEdges, mem_diff]) ?_
+  refine Graph.ext (by ext e; simp [vertexSet_LineGraph, edgeSet_deleteEdges, mem_sdiff]) ?_
   intro a e f
-  simp_rw [← restrict_edgeSet_diff_eq_deleteEdges, LineGraph_isLink, deleteVerts_isLink_iff,
+  simp_rw [← restrict_edgeSet_sdiff_eq_deleteEdges, LineGraph_isLink, deleteVerts_isLink_iff,
     LineGraph_isLink, restrict_inc]
   grind
 

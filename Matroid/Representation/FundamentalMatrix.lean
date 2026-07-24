@@ -1,8 +1,7 @@
 import Matroid.Representation.StandardRep
 
 variable {α β W W' 𝔽 R : Type*} {e f x : α} {I E B X Y : Set α} {M : Matroid α} [DivisionRing 𝔽]
-[DivisionRing R]
-  [AddCommGroup W] [Module 𝔽 W] [AddCommGroup W'] [Module 𝔽 W'] [M.Finitary]
+  [DivisionRing R] [AddCommGroup W] [Module 𝔽 W] [AddCommGroup W'] [Module 𝔽 W'] [M.Finitary]
 
 
 open Function Set Submodule FiniteDimensional BigOperators Matrix Set.Notation
@@ -40,7 +39,7 @@ lemma IsBase.fundCircuit_eq_insert_map [DecidableEq α] (hB : M.IsBase B) :
     M.fundCircuit e B = insert e ((hB.coords e).map (Embedding.setSubtype B)) := by
   by_cases heB : e ∈ B
   · simp [fundCircuit_eq_of_mem heB, Set.ext_iff, coords]
-  simp [hB.coords_toSet, inter_comm B, ← fundCircuit_diff_eq_inter _ heB,
+  simp [hB.coords_toSet, inter_comm B, ← fundCircuit_sdiff_eq_inter _ heB,
     insert_eq_of_mem (mem_fundCircuit ..)]
 
 /-- The column of the `B`-fundamental matrix of `M` corresponding to `e`, as a `Finsupp`. -/
@@ -66,9 +65,24 @@ lemma IsBase.fundCoord_of_notMem_ground (hB : M.IsBase B) (he : e ∉ M.E) :
 lemma IsBase.support_fundCoord_subset (hB : M.IsBase B) : support (hB.fundCoord R) ⊆ M.E :=
   support_subset_iff'.2 fun _ ↦ hB.fundCoord_of_notMem_ground
 
+-- AI generated; Please review/golf.
 lemma IsBase.fundCoord_support (hB : M.IsBase B) :
     (↑) '' ((hB.fundCoord R e).support : Set B) = (M.fundCircuit e B) ∩ B := by
-  simp [Set.ext_iff, fundCoord, IsBase.coords, Finsupp.indicator]
+  ext x
+  simp only [mem_image, Finsupp.mem_support_iff, SetLike.mem_coe, mem_inter_iff, fundCoord]
+  constructor
+  · rintro ⟨y, hy, rfl⟩
+    have hy' : y ∈ (hB.coords e : Set B) := by
+      by_contra h
+      exact hy (Finsupp.indicator_of_notMem (mt Finset.mem_coe.mpr h) _)
+    rw [coords_toSet, mem_preimage] at hy'
+    exact ⟨hy', y.2⟩
+  · intro ⟨hxC, hxB⟩
+    refine ⟨⟨x, hxB⟩, ?_, rfl⟩
+    have : ⟨x, hxB⟩ ∈ (hB.coords e : Set B) := by
+      rwa [coords_toSet, mem_preimage]
+    rw [Finsupp.indicator_of_mem (Finset.mem_coe.mp this)]
+    exact one_ne_zero
 
 lemma IsBase.mem_fundCoord_support (hB : M.IsBase B) (e : B) {f : α} :
     e ∈ (hB.fundCoord R f).support ↔ e.1 ∈ M.fundCircuit f B := by

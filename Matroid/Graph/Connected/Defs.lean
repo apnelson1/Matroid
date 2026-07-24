@@ -12,7 +12,7 @@ lemma isLeast_empty {α : Type*} [LE α] {m : α} : ¬ IsLeast ∅ m := by
 
 theorem diff_nonempty_of_encard_lt_encard {s t : Set α} (h : s.encard < t.encard) :
     (t \ s).Nonempty := by
-  rw [Set.nonempty_iff_ne_empty, Ne, diff_eq_empty]
+  rw [Set.nonempty_iff_ne_empty, Ne, sdiff_eq_empty]
   exact fun h' ↦ h.not_ge (encard_le_encard h')
 
 namespace Graph
@@ -233,7 +233,7 @@ lemma mem_or_mem (S : G.Separation) (hxV : x ∈ V(G)) : x ∈ S.left ∨ x ∈ 
 
 lemma edge_induce_disjoint (S : G.Separation) : Disjoint E(G[S.left]) E(G[S.right]) := by
   refine disjoint_left.2 fun e he he' ↦ ?_
-  simp only [edgeSet_induce, mem_setOf_eq] at he he'
+  simp only [edgeSet_induce, mem_ofPred_eq] at he he'
   obtain ⟨x, y, hexy, hx, hy⟩ := he
   obtain ⟨x', y', hexy', hx', hy'⟩ := he'
   obtain rfl | rfl := hexy.left_eq_or_eq hexy'
@@ -282,7 +282,7 @@ def of_not_connBetween (h : ¬ G.ConnBetween x y) (hx : x ∈ V(G)) (hy : y ∈ 
     ext z
     by_cases hz : G.ConnBetween x z <;> simp [hz]
   not_adj a b ha hb hab := by
-    simp only [mem_setOf_eq] at ha hb
+    simp only [mem_ofPred_eq] at ha hb
     exact hb.2 <| ha.2.trans hab.connBetween
 
 lemma not_connBetween (S : G.Separation) (hx : x ∈ S.left) (hy : y ∈ S.right) :
@@ -292,7 +292,7 @@ lemma not_connBetween (S : G.Separation) (hx : x ∈ S.left) (hy : y ∈ S.right
   obtain ⟨e, x, y, hinc, hx, hy⟩ := exists_dInc_prop_not_prop hx hy
   exact hy <| S.left_mem_of_adj hx (hW.isLink_of_dInc hinc).adj
 
-def isSepBetween_of_deleteVerts (S : (G - X).Separation) (hx : x ∈ S.left)
+theorem isSepBetween_of_deleteVerts (S : (G - X).Separation) (hx : x ∈ S.left)
     (hy : y ∈ S.right) : G.IsSepBetween x y (V(G) ∩ X) := by
   refine ⟨inter_subset_left, ?_, ?_, ?_⟩
   · simp [(S.left_subset hx).2]
@@ -405,7 +405,7 @@ lemma isSep_of_not_connected (h : ¬ (G - S).Connected) : G.IsSep (V(G) ∩ S) :
 
 lemma IsSep.of_deleteVerts (h : (G - X).IsSep S) : G.IsSep (S ∪ (V(G) ∩ X)) where
   subset_vx := by
-    have : S ⊆ V(G) ∧ Disjoint S X := by simpa [subset_diff] using h.subset_vx
+    have : S ⊆ V(G) ∧ Disjoint S X := by simpa [subset_sdiff] using h.subset_vx
     simp [this.1]
   not_connected := by
     rw [union_comm, ← deleteVerts_deleteVerts, deleteVerts_vertexSet_inter]
@@ -424,7 +424,7 @@ lemma IsComplete.isSep_iff_subset (h : G.IsComplete) : G.IsSep S ↔ S = V(G) :=
   refine ⟨fun hS => hS.subset_vx.antisymm ?_, ?_⟩
   · have := h.isInducedSubgraph (G.deleteVerts_isInducedSubgraph S)
     |>.connected_iff.not.mp hS.not_connected
-    simpa only [vertexSet_deleteVerts, not_nonempty_iff_eq_empty, diff_eq_empty] using this
+    simpa only [vertexSet_deleteVerts, not_nonempty_iff_eq_empty, sdiff_eq_empty] using this
   rintro rfl
   exact vertexSet_isSep
 
@@ -540,8 +540,8 @@ lemma preconnGE_iff_forall_preconnected :
   · rw [preconnected_iff_isEmpty_separation]
     by_contra! hS
     obtain ⟨S⟩ := hS
-    have hcut := h (diff_subset <| S.left_subset S.nonempty_left.some_mem)
-        (diff_subset <| S.right_subset S.nonempty_right.some_mem)
+    have hcut := h (sdiff_subset <| S.left_subset S.nonempty_left.some_mem)
+        (sdiff_subset <| S.right_subset S.nonempty_right.some_mem)
         (S.isSepBetween_of_deleteVerts (X := X) S.nonempty_left.some_mem S.nonempty_right.some_mem)
     exact hcut.trans (encard_le_encard inter_subset_right) |>.not_gt hX
   · by_contra! hCn
@@ -553,7 +553,7 @@ lemma preconnGE_iff_forall_preconnected :
 lemma preconnGE_iff_forall_setConnGE : G.PreconnGE n ↔ ∀ S T : Set α, S ⊆ V(G) → T ⊆ V(G) →
     G.SetConnGE S T (min ↑n (min S.encard T.encard)).toNat := by
   refine ⟨fun h S T hS hT C hC ↦ ?_, fun h s t hs ht C hC ↦ ?_⟩
-  · rw [ENat.coe_toNat (by simp)]
+  · rw [ENat.natCast_toNat (by simp)]
     by_contra! hCcd
     obtain ⟨hCn, hCS, hCT⟩ := (by simpa using hCcd); clear hCcd
     obtain ⟨s, hs, hsC⟩ := diff_nonempty_of_encard_lt_encard hCS
@@ -574,7 +574,7 @@ lemma preconnGE_iff_forall_setConnGE : G.PreconnGE n ↔ ∀ S T : Set α, S ⊆
   have hTC : insert t C ⊆ V(G) := by
     simpa [insert_subset_iff] using And.intro ht hC.subset
   have hcd := h _ _ hSC hTC hC.isSetCut
-  rw [ENat.coe_toNat (by simp)] at hcd
+  rw [ENat.natCast_toNat (by simp)] at hcd
   simpa [hsC.not_ge, htC.not_ge] using hcd
 
 /-- Minimum `C.encard` over vertex cuts `C` of `G`, as an `ℕ∞`. -/
@@ -709,7 +709,7 @@ lemma preconnGE_iff_connGE_of_not_isComplete (h : ¬ G.IsComplete) (n : ℕ) :
   refine ⟨fun hn ↦ ⟨fun C hC ↦ ?_ , ?_⟩, fun hn ↦ hn.pre⟩
   · have := hC.not_connected
     rw [connected_iff, not_and_or] at this
-    simp only [vertexSet_deleteVerts, not_nonempty_iff_eq_empty, diff_eq_empty] at this
+    simp only [vertexSet_deleteVerts, not_nonempty_iff_eq_empty, sdiff_eq_empty] at this
     obtain hsu | hne := this
     · obtain ⟨x, hx, y, hy, hne, hxy⟩ := by simpa [IsComplete] using h
       exact connBetweenGE_le_encard (hn hx hy) hne hxy |>.trans <| encard_le_encard hsu
@@ -746,9 +746,9 @@ lemma ConnGE.of_deleteEdges (h : (G ＼ F).ConnGE n) : G.ConnGE n :=
 lemma ConnGE.deleteVerts (h : G.ConnGE n) (hFin : (V(G) ∩ X).Finite) :
     (G - X).ConnGE (n - (V(G) ∩ X).encard).toNat where
   le_cut C hC := by
-    rw [ENat.coe_toNat (by simp), tsub_le_iff_right, ← encard_union_eq]
+    rw [ENat.natCast_toNat (by simp), tsub_le_iff_right, ← encard_union_eq]
     exact h.le_cut hC.of_deleteVerts
-    · have := by simpa only [vertexSet_deleteVerts, subset_diff] using hC.subset_vx
+    · have := by simpa only [vertexSet_deleteVerts, subset_sdiff] using hC.subset_vx
       exact this.2.mono_right inter_subset_right
   le_card := by
     rw [inter_comm] at hFin
@@ -756,10 +756,10 @@ lemma ConnGE.deleteVerts (h : G.ConnGE n) (hFin : (V(G) ∩ X).Finite) :
     · left
       exact hss
     have : V(G - X).encard = V(G).encard - (X ∩ V(G)).encard := by
-      rw [vertexSet_deleteVerts, ← diff_inter_self_eq_diff, encard_diff inter_subset_right hFin]
+      rw [vertexSet_deleteVerts, ← sdiff_inter_self_eq_sdiff, encard_sdiff inter_subset_right hFin]
     rw [not_subsingleton_iff, ← one_lt_encard_iff_nontrivial, this] at hss
     refine h.le_card.imp (fun h a ha b hb ↦ h ha.1 hb.1) (fun h ↦ ?_)
-    rw [ENat.coe_toNat (by simp), this, inter_comm]
+    rw [ENat.natCast_toNat (by simp), this, inter_comm]
     enat_to_nat! <;> omega
 
 -- lemma ConnGE.deleteEdges_singleton (h : G.ConnGE (n+1)) (e : β) :

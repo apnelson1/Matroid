@@ -133,5 +133,5 @@ lemma IsStrictMinor.exists_eq_remove_singleton {N : Matroid α} (hNM : N <m M)
     (hE : (M.E \ N.E).Subsingleton) : ∃ b e, N = M.remove b {e} := by
   obtain ⟨e, he, b, h⟩ := hNM.exists_isMinor_removeElem
   refine ⟨b, e, Eq.symm <| h.eq_of_ground_subset ?_⟩
-  grw [remove_ground, diff_subset_comm]
+  grw [remove_ground, sdiff_subset_comm]
   exact hE.subset_of_nonempty_inter ⟨e, ⟨he, by grind⟩, rfl⟩

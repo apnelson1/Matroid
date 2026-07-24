@@ -23,10 +23,10 @@ theorem numPoints_eq_encard_ground_simplification (M : Matroid α) :
 
 theorem encard_ground_eq_sum_encard_lines_through [Simple M] {e : α} (he : e ∈ M.E) :
     M.E.encard = 1 + ∑' L : {L // M.IsLine L ∧ e ∈ L}, ((L : Set α) \ {e}).encard := by
-  rw [← encard_diff_add_encard_of_subset (singleton_subset_iff.2 he), add_comm, encard_singleton]
+  rw [← encard_sdiff_add_encard_of_subset (singleton_subset_iff.2 he), add_comm, encard_singleton]
   apply congr_arg (1 + ·)
   convert (ENat.tsum_encard_eq_encard_sUnion (M ／ e).parallelClasses.pairwiseDisjoint).symm using 1
-  · simp only [contractElem, Partition.sUnion_eq, contract_nonloop_iff, mem_diff]
+  · simp only [contractElem, Partition.sUnion_eq, contract_nonloop_iff, mem_sdiff]
     congr
     rw [closure_singleton_eq]
   convert ENat.tsum_comp_eq_tsum_of_equiv (M ／ e).parallelPointEquiv.symm (g := fun x ↦ x.1.encard)
@@ -34,7 +34,7 @@ theorem encard_ground_eq_sum_encard_lines_through [Simple M] {e : α} (he : e �
   rw [← ENat.tsum_comp_eq_tsum_of_equiv (isNonloop_of_loopless he).lineContractPointEquiv]
   refine tsum_congr (fun ⟨P,hP⟩ ↦ ?_)
   simp [IsNonloop.lineContractPointEquiv, closure_singleton_eq he,
-    diff_singleton_eq_self (fun heP ↦ (hP.subset_ground heP).2 rfl)]
+    sdiff_singleton_eq_self (fun heP ↦ (hP.subset_ground heP).2 rfl)]
 
 theorem kung {q : ℕ} (M : Matroid α) (hM : ¬ (unif 2 (q+2) ≤i M)) :
     M.numPoints ≤ ∑' i : {i : ℕ // i ≤ M.eRank}, q ^ (i : ℕ) := by

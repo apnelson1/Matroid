@@ -76,8 +76,8 @@ lemma isPoint_singleton_iff [M.Nonempty] : M.IsPoint {e} ↔ ∀ f ∈ M.E, M.In
 
 lemma IsPoint.loopless_of_singleton (h : M.IsPoint {e}) : M.Loopless := by
   rw [loopless_iff, ← subset_empty_iff, loops]
-  nth_rw 2 [← diff_eq_empty.2 h.isFlat.closure.subset]
-  rw [subset_diff_singleton_iff]
+  nth_rw 2 [← sdiff_eq_empty.2 h.isFlat.closure.subset]
+  rw [subset_sdiff_singleton_iff]
   exact ⟨M.closure_subset_closure (empty_subset _), h.isNonloop.not_isLoop⟩
 
 lemma isPoint_contract_iff (hC : C ⊆ M.E := by aesop_mat) :
@@ -105,25 +105,25 @@ lemma isPoint_contract_iff (hC : C ⊆ M.E := by aesop_mat) :
   invFun P := ⟨P \ C, by
     obtain ⟨P, hP⟩ := P
     rw [← closure_inter_ground] at hP
-    rwa [diff_eq_diff_inter_of_subset hP.subset_ground_right, ← contract_inter_ground_eq,
-      isPoint_contract_iff, and_iff_left disjoint_sdiff_left, union_diff_self,
+    rwa [sdiff_eq_sdiff_inter_of_subset hP.subset_ground_right, ← contract_inter_ground_eq,
+      isPoint_contract_iff, and_iff_left disjoint_sdiff_left, union_sdiff_self,
       union_eq_self_of_subset_left, closure_inter_ground]
     exact (M.subset_closure _).trans hP.subset ⟩
   left_inv := by
     rintro ⟨P,hP⟩
     simp only [Subtype.mk.injEq]
     rw [← contract_inter_ground_eq, isPoint_contract_iff] at hP
-    rw [← closure_inter_ground, diff_eq_diff_inter_of_subset
+    rw [← closure_inter_ground, sdiff_eq_sdiff_inter_of_subset
       (union_subset _ (M.closure_subset_ground _)),
-      subset_antisymm_iff, diff_subset_iff, union_subset_iff, subset_diff,
+      subset_antisymm_iff, sdiff_subset_iff, union_subset_iff, subset_sdiff,
       and_iff_right subset_union_right, and_iff_right hP.1.subset, and_iff_left hP.2]
     · exact subset_union_left
     exact subset_union_right.trans hP.1.subset_ground_right
   right_inv := by
     rintro ⟨P, hP⟩
     simp only [Subtype.mk.injEq]
-    rw [diff_eq_diff_inter_of_subset hP.subset_ground_right, ← closure_inter_ground,
-      diff_union_eq_union_of_subset P (M.subset_closure (C ∩ M.E)),
+    rw [sdiff_eq_sdiff_inter_of_subset hP.subset_ground_right, ← closure_inter_ground,
+      sdiff_union_eq_union_of_subset P (M.subset_closure (C ∩ M.E)),
       union_eq_left, closure_inter_ground]
     exact hP.subset
 

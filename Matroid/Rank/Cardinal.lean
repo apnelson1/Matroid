@@ -40,7 +40,7 @@ since the equicardinality of bases in general matroids is independent of ZFC
 (see the module docstring of `Mathlib.Combinatorics.Matroid.Basic`).
 Lemmas like `Matroid.IsBase.cardinalMk_diff_comm` become true for all matroids
 only if they are weakened by replacing `Cardinal.mk`
-with the cruder `ℕ∞`-valued `Set.encard`; see, for example, `Matroid.IsBase.encard_diff_comm`.
+with the cruder `ℕ∞`-valued `Set.encard`; see, for example, `Matroid.IsBase.encard_sdiff_comm`.
 
 # Implementation Details
 
@@ -96,8 +96,8 @@ theorem cRank_eq_zero_iff : M.cRank = 0 ↔ M = loopyOn M.E := by
 theorem cRk_eq_zero_iff' : M.cRk X = 0 ↔ X ∩ M.E ⊆ M.loops := by
   rw [cRk, cRank_eq_zero_iff, ← closure_empty_eq_ground_iff, restrict_closure_eq', empty_inter,
     restrict_ground_eq, subset_antisymm_iff, loops]
-  simp only [union_subset_iff, inter_subset_right, diff_subset, and_self, true_and]
-  rw [union_comm, ← diff_subset_iff, diff_diff_right_self, subset_inter_iff,
+  simp only [union_subset_iff, inter_subset_right, sdiff_subset, and_self, true_and]
+  rw [union_comm, ← sdiff_subset_iff, sdiff_sdiff_right_self, subset_inter_iff,
     and_iff_left inter_subset_left]
 
 theorem cRk_le_one_iff [Nonempty α] (hX : X ⊆ M.E := by aesop_mat) :
@@ -157,7 +157,7 @@ lemma IsBase.nonempty_embedding_of_isBase_isChain (hB : M.IsBase B) (hB' : M.IsB
     intro X hX
     obtain ⟨B'', hB'', hss, hB''X⟩ :=
       (hB.indep.subset (hS X hX)).exists_isBase_subset_union_isBase hB'
-    exact ⟨B'' \ X, by grind, disjoint_sdiff_right, by rwa [union_diff_cancel hss]⟩
+    exact ⟨B'' \ X, by grind, disjoint_sdiff_right, by rwa [union_sdiff_cancel hss]⟩
   choose! Y hY using h
   refine ⟨fun T ↦ B' ↓∩ Y T.1, ?_⟩
   rintro ⟨T, hT⟩ ⟨T', hT'⟩ h_eq
@@ -182,7 +182,7 @@ lemma Indep.nonempty_embedding_set_of_isBase (hI : M.Indep I) (hB : M.IsBase B) 
   obtain ⟨f⟩ : Nonempty (B' ↪ S) := by
     refine ⟨fun a ↦ ⟨{x ∈ B' | r.le x a}, mem_range_self _⟩, ?_⟩
     rintro ⟨a, ha⟩ ⟨b, hb⟩
-    simp only [Subtype.mk.injEq, Set.ext_iff, mem_setOf_eq]
+    simp only [Subtype.mk.injEq, Set.ext_iff, mem_ofPred_eq]
     grind
   obtain ⟨g⟩ := hB'.nonempty_embedding_of_isBase_isChain hB S (by grind) hS
   let f' := Function.Embedding.trans ⟨inclusion hIB', inclusion_injective ..⟩ f

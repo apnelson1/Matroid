@@ -227,10 +227,10 @@ lemma dIncFirst_concat [DecidableEq β] (w : WList α β) (he : e ∈ (w.concat 
 @[simp]
 lemma append_notation : append w₁ w₂ = w₁ ++ w₂ := rfl
 
-@[simp]
+@[simp, grind =]
 lemma nil_append : nil x ++ w₂ = w₂ := rfl
 
-@[simp]
+@[simp, grind =]
 lemma cons_append : cons x e w₁ ++ w₂ = cons x e (w₁ ++ w₂) := rfl
 
 lemma append_assoc (w₁ w₂ w₃ : WList α β) : (w₁ ++ w₂) ++ w₃ = w₁ ++ (w₂ ++ w₃) := by
@@ -281,7 +281,7 @@ lemma idxOf_append_right_of_notMem [DecidableEq α] {P Q : WList α β} {uf : α
   | nil y => simp [nil_append, nil_length]
   | cons y e P ih =>
     rw [mem_cons_iff, not_or, ← ne_eq] at huf
-    grind [cons_append, idxOf_cons_ne huf.1.symm, ih huf.2]
+    grind [idxOf_cons_ne huf.1.symm, ih huf.2]
 
 @[simp, grind =]
 lemma append_nil (h : w.last = x) : w ++ (nil x) = w := by
@@ -520,8 +520,7 @@ lemma reverse_vertexSet (w : WList α β) : V(w.reverse) = V(w) := by
 lemma DInc.reverse (h : w.DInc e x y) : w.reverse.DInc e y x := by
   induction h with
   | cons_left x e w =>
-    convert dInc_concat _ _ _ using 1
-    simp
+    simpa [reverse_cons, reverse_last] using dInc_concat w.reverse e x
   | cons _ _ _ ih => exact ih.concat ..
 
 @[simp, grind =]

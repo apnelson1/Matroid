@@ -8,16 +8,16 @@ variable {α β ι ι' : Type*} {G H : Graph α β} {s t u v x x₁ x₂ y y₁ 
 namespace Graph
 
 @[simps (attr := grind =)]
-def IsSetCut.isSepBetween_of_neighbor (hC : (G - ({s, t} : Set α)).IsSetCut (N(G, s) \ {s})
+theorem IsSetCut.isSepBetween_of_neighbor (hC : (G - ({s, t} : Set α)).IsSetCut (N(G, s) \ {s})
     (N(G, t) \ {t}) C) (hne : s ≠ t) (hadj : ¬ G.Adj s t) : G.IsSepBetween s t C where
   subset := by
-    have : C ⊆ V(G) ∧ s ∉ C ∧ t ∉ C := by simpa [subset_diff] using hC.subset_vertexSet
+    have : C ⊆ V(G) ∧ s ∉ C ∧ t ∉ C := by simpa [subset_sdiff] using hC.subset_vertexSet
     exact this.1
   left_not_mem := by
-    have : C ⊆ V(G) ∧ s ∉ C ∧ t ∉ C := by simpa [subset_diff] using hC.subset_vertexSet
+    have : C ⊆ V(G) ∧ s ∉ C ∧ t ∉ C := by simpa [subset_sdiff] using hC.subset_vertexSet
     exact this.2.1
   right_not_mem := by
-    have : C ⊆ V(G) ∧ s ∉ C ∧ t ∉ C := by simpa [subset_diff] using hC.subset_vertexSet
+    have : C ⊆ V(G) ∧ s ∉ C ∧ t ∉ C := by simpa [subset_sdiff] using hC.subset_vertexSet
     exact this.2.2
   not_connBetween hst := hC.ST_disconnects <| G.deleteVerts_deleteVerts_comm _ _ ▸
       (hst.neighbor_setConnected hne <| (hadj <| ·.of_le deleteVerts_le)).subset
@@ -27,10 +27,10 @@ lemma connBetweenGE_iff_setConnGE (hne : s ≠ t) (hadj : ¬ G.Adj s t) :
     G.ConnBetweenGE s t n ↔ (G - ({s, t} : Set α)).SetConnGE (N(G, s) \ {s}) (N(G, t) \ {t}) n := by
   refine ⟨fun h C hC => ?_, fun h C hC => ?_⟩
   · obtain ⟨hCsub, hCs, hCt⟩ : C ⊆ V(G) ∧ s ∉ C ∧ t ∉ C := by
-      simpa [subset_diff] using hC.subset_vertexSet
+      simpa [subset_sdiff] using hC.subset_vertexSet
     simpa using h (hC.isSepBetween_of_neighbor (s := s) (t := t) hne hadj)
   refine h ⟨?_, ?_⟩
-  · simp only [vertexSet_deleteVerts, subset_diff, disjoint_insert_right, disjoint_singleton_right]
+  · simp only [vertexSet_deleteVerts, subset_sdiff, disjoint_insert_right, disjoint_singleton_right]
     exact ⟨hC.subset, hC.left_not_mem, hC.right_not_mem⟩
   have hh := hC.not_connBetween
   contrapose! hh
@@ -73,7 +73,7 @@ noncomputable def VertexEnsemble.ofSetEnsemble (x y : α) (hxy : x ≠ y)
     simp only [cons_concat, cons_isPath_iff, concat_isPath_iff, concat_first, mem_concat, not_or]
     generalize_proofs huN hu huf hv
     have := A.valid (A.of_vertex_mem_setEnsemble hu) |>.vertexSet_subset
-    simp only [vertexSet_deleteVerts, subset_diff, disjoint_insert_right, mem_vertexSet_iff,
+    simp only [vertexSet_deleteVerts, subset_sdiff, disjoint_insert_right, mem_vertexSet_iff,
       disjoint_singleton_right] at this
     refine ⟨?_, ⟨A.valid (A.of_vertex_mem_setEnsemble hu) |>.of_le deleteVerts_le, ?_, this.2.2⟩,
       this.2.1, hxy⟩
@@ -120,7 +120,14 @@ def VertexEnsemble.extend_singleEdge [DecidableEq ι] (k : ι)
     by_cases h : i = k
     · simp [h]
     simp [h, A.last_eq ⟨i, h⟩]
-  internallyDisjoint i j hne := by by_cases h : i = k <;> by_cases h' : j = k <;> simp_all
+  internallyDisjoint i j hne := by
+    simp only
+    split_ifs with hi hj hj
+    · simp
+    · simp
+    · simp
+    refine A.internallyDisjoint ?_
+    grind
 
 @[simp]
 lemma VertexEnsemble.extend_singleEdge_of_eq [DecidableEq ι] (k : ι)

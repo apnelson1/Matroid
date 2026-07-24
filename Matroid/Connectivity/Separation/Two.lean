@@ -21,18 +21,18 @@ lemma IsBase.exists_isBase_contract_inter_of_eConn_le_one {B} (hB : M.IsBase B) 
   have hcard : (J false \ B).encard + (J true \ B).encard ≤ 1 := by
     rwa [← P.eConn_eq false, (hJ false).1.eConn_eq (J := J true) (by simpa using hb),
       nullity_eq_nullity_add_encard_diff (X := B), hB.indep.nullity_eq, zero_add,
-      union_diff_distrib, encard_union_eq (by grind)] at hP
+      union_sdiff_distrib, encard_union_eq (by grind)] at hP
     · grind [P.union_inter_left B (i := false)]
     grind [hB.closure_eq]
   -- In fact, there is some `i` for which `J i` is no bigger than `B ∩ P i`.
   obtain ⟨i, hi⟩ : ∃ i, J i = B ∩ P i := by
     simp_rw [subset_antisymm_iff, and_iff_left hss, subset_inter_iff, and_iff_left hb.subset,
-      ← diff_eq_empty, ← encard_eq_zero, Bool.exists_bool]
+      ← sdiff_eq_empty, ← encard_eq_zero, Bool.exists_bool]
     enat_to_nat!; lia
   -- and this is the one that works
   use i
-  grw [hb.contract_eq_contract_delete, delete_isBase_iff, contract_ground, diff_diff,
-    union_diff_cancel hb.subset, P.compl_eq, isBasis_iff_indep_subset_closure,
+  grw [hb.contract_eq_contract_delete, delete_isBase_iff, contract_ground, sdiff_sdiff,
+    union_sdiff_cancel hb.subset, P.compl_eq, isBasis_iff_indep_subset_closure,
     and_iff_right inter_subset_right, contract_closure_eq, hb.indep.contract_indep_iff,
     hi, union_comm, P.union_inter_left B]
   grind [hB.closure_eq, hB.indep]
@@ -100,16 +100,16 @@ lemma IsMinor.eq_mapEquiv [DecidableEq α] (hPconn : P.eConn ≤ 1)
   rw [restrict_indep_iff, mapEquiv_indep_iff, restrict_indep_iff, Equiv.symm_swap, and_iff_left hI]
   -- if `x = y`, this implies the result.
   obtain rfl | hne := eq_or_ne x y
-  · simp only [Equiv.swap_self, Equiv.refl_apply, image_id', hI, and_true]
+  · simp only [Equiv.swap_self, Equiv.coe_refl, image_id, hI, and_true]
     by_cases hxI : x ∈ I
-    · rw [← insert_diff_self_of_mem hxI,
-        IsMinor.contract_insert_indep_iff hPconn (by grind) hX hx hxX hY hy hyY]
-    rw [IsMinor.indep_iff_indep hX.indep hY.indep (I := I) (by grind)]
+    · rw [← insert_sdiff_self_of_mem hxI]
+      exact (IsMinor.contract_insert_indep_iff hPconn (by grind) hX hx hxX hY hy hyY).symm
+    exact (IsMinor.indep_iff_indep hX.indep hY.indep (I := I) (by grind)).symm
   -- otherwise, the previous lemma does it.
   by_cases hyI : y ∈ I
   · rw [Equiv.swap_comm, Equiv.swap_image_eq_exchange hyI, and_iff_left (by grind),
       ← IsMinor.contract_insert_indep_iff (X := Y) (e := y) hPconn (by grind) hY hy hyY hX hx hxX,
-      insert_diff_self_of_mem hyI]
+      insert_sdiff_self_of_mem hyI]
     exact notMem_subset hI <| by grind
   have hxI : x ∉ I := by grind
   rw [Equiv.swap_image_eq_self (iff_of_false hxI hyI), and_iff_left (by grind),
@@ -118,27 +118,27 @@ lemma IsMinor.eq_mapEquiv [DecidableEq α] (hPconn : P.eConn ≤ 1)
 lemma Separation.isCircuit_iUnion_inter_of_eConn_le_one {C : Bool → Set α}
     (hC : ∀ i, M.IsCircuit (C i)) (hP : P.eConn ≤ 1) (hCP : ∀ i j, (C i ∩ P j).Nonempty) :
     M.IsCircuit (⋃ i, (P i ∩ C i)) := by
-  rw [isCircuit_iff_dep_forall_diff_singleton_indep,
+  rw [isCircuit_iff_dep_forall_sdiff_singleton_indep,
     Separation.dep_iff_of_eConn_le_one hP (iUnion_subset (by grind))]
-  simp_rw [Separation.indep_iff_of_eConn_le_one' (I := _ \ _) hP, diff_inter_right_comm]
+  simp_rw [Separation.indep_iff_of_eConn_le_one' (I := _ \ _) hP, sdiff_inter_right_comm]
   simp_rw [iUnion_inter_right_inter_eq_of_pairwise_disjoint P.pairwise_disjoint, mem_iUnion]
   have hdep (i j) : (M ／ P j).Dep ((P !j) ∩ C i) := by
     rw [inter_comm, ← P.diff_eq_inter_bool _ (by grind)]
     refine (hC i).contract_dep_of_not_subset ?_
-    rw [← diff_eq_empty, P.diff_eq_inter_bool _ (by grind)]
+    rw [← sdiff_eq_empty, P.diff_eq_inter_bool _ (by grind)]
     exact (hCP ..).ne_empty
   refine ⟨fun hCi i ↦ hdep .., fun e ⟨i, heP, heC⟩ ↦ ?_⟩
-  refine ⟨⟨fun j ↦ Indep.diff ?_ _, !i, ?_⟩, diff_subset.trans (iUnion_subset <| by grind)⟩
+  refine ⟨⟨fun j ↦ Indep.sdiff ?_ _, !i, ?_⟩, sdiff_subset.trans (iUnion_subset <| by grind)⟩
   · refine (hC j).ssubset_indep ?_
-    rw [inter_ssubset_right_iff, ← diff_eq_empty, P.diff_eq_inter_bool _ (by grind)]
+    rw [inter_ssubset_right_iff, ← sdiff_eq_empty, P.diff_eq_inter_bool _ (by grind)]
     exact (hCP ..).ne_empty
-  have hC' := (hC i).diff_singleton_indep heC
+  have hC' := (hC i).sdiff_singleton_indep heC
   rw [P.indep_iff_of_eConn_le_one hP (by grind)] at hC'
-  simp_rw [diff_inter_right_comm, inter_comm (C i)] at hC'
+  simp_rw [sdiff_inter_right_comm, inter_comm (C i)] at hC'
   obtain ⟨j, hj⟩ := hC'.2
   obtain rfl | rfl := j.eq_or_eq_not !i
   · simpa using hj
-  rw [← diff_inter_right_comm, diff_singleton_eq_self (by grind), i.not_not] at hj
+  rw [← sdiff_inter_right_comm, sdiff_singleton_eq_self (by grind), i.not_not] at hj
   exact False.elim <| (hdep i i).not_indep hj
 
 /-- If `C₁` and `C₂` are circuits intersecting both sides of a `2`-separation `P` of `M`,
@@ -247,8 +247,6 @@ lemma Separation.twoSummand_contractElem (hP : P.eConn = 1) (hfP : f ∉ P i) :
     simp
   refine ext_indep (by simp) fun I hI ↦ ?_
   replace hI : I ⊆ P i := by simpa using hI
-  let Q := P.induce (M.project (M.closure I ∩ P i))
-  have hPQ (j : Bool) : P j = Q j := by simp [Q, induce_apply_subset]
   rw [ModularCut.projectBy_indep_iff_of_ne_top aux, restrict_indep_iff, and_iff_left hI,
     restrict_closure_eq _ hI, ModularCut.mem_restrict_iff, closure_mem_gutsModularCut_iff,
     and_iff_right ((M.closure_isFlat I).isFlat_restrict (P i)), isSkewFamily_bool_iff i,
@@ -258,7 +256,7 @@ lemma Separation.twoSummand_contractElem (hP : P.eConn = 1) (hfP : f ∉ P i) :
   rw [eConn_eq_eLocalConn _ i, ← M.eLocalConn_add_project_eLocalConn_of_subset
       (show M.closure I ∩ P i ⊆ P i from inter_subset_right) (P !i)] at hP1
   refine ⟨fun h ↦ ?_, fun h h0 ↦ ?_⟩
-  · grw [← Ne, ← ENat.one_le_iff_ne_zero, ← hP1, ENat.add_le_right_iff, eLocalConn_eq_zero,
+  · grw [← Ne, ← Order.one_le_iff_ne_zero, ← hP1, ENat.add_le_right_iff, eLocalConn_eq_zero,
       or_iff_left (by enat_to_nat!)] at h
     exact h.mono_left (by grind)
   replace hP1 := hP1.ge
@@ -292,9 +290,9 @@ lemma Separation.contract_restrict_insert_eq_twoSummand {X : Set α} (hP : P.eCo
   · simp [hfB, P.subset_ground hfP]
   · exact twoSummand_isNonloop hP
   · rw [twoSummand_contractElem hP hf', restrict_contract_eq_contract_restrict _ (by simp),
-      insert_diff_self_of_notMem hf', contract_eq_contract_delete_of_subset_closure
+      insert_sdiff_self_of_notMem hf', contract_eq_contract_delete_of_subset_closure
       (show insert f X ⊆ P !i by grind), contract_contract, union_singleton,
-      Matroid.delete_eq_restrict, contract_ground, diff_diff, union_diff_cancel (by grind),
+      Matroid.delete_eq_restrict, contract_ground, sdiff_sdiff, union_sdiff_cancel (by grind),
       P.compl_not_eq]
     rw [← singleton_union, ← project_closure]
     refine IsNonloop.subset_closure_of_eRk_le_one ?_ ?_ hfP
@@ -307,7 +305,7 @@ lemma Separation.contract_restrict_insert_eq_twoSummand {X : Set α} (hP : P.eCo
         eRelRk_eq_zero_iff'.2, add_zero]
     grw [project_ground, inter_self, project_closure, union_comm, hX.1.closure_eq]
   rw [twoSummand_deleteElem hf', Matroid.delete_eq_restrict, restrict_ground_eq,
-    insert_diff_self_of_notMem hf', restrict_restrict_eq _ (subset_insert ..),
+    insert_sdiff_self_of_notMem hf', restrict_restrict_eq _ (subset_insert ..),
     hsk.contract_restrict_eq]
 
 /-- If `N` is a minor of `M` that intersects one side of a two-separation in a unique element `f`,
@@ -316,7 +314,7 @@ lemma Separation.isMinor_twoSummand (hP : P.eConn = 1) (hNM : N ≤m M) (hf : P 
     (hfnl : N.IsNonloop f) (hfncl : N.IsNonColoop f) : N ≤m P.twoSummand i f := by
   have ⟨hfj, hfN⟩ : f ∈ P (!i) ∧ f ∈ N.E := by simpa using hf.symm.subset
   have hle : 1 ≤ N.eConn {f} := by
-    rw [ENat.one_le_iff_ne_zero, Ne, eConn_singleton_eq_zero_iff hfN]
+    rw [Order.one_le_iff_ne_zero, Ne, eConn_singleton_eq_zero_iff hfN]
     simp [hfnl.not_isLoop, hfncl.not_isColoop]
   obtain ⟨C, D, hC, hD, hCD, rfl⟩ := hNM.exists_contract_indep_delete_coindep
   have hfC : f ∉ C := by grind
@@ -324,8 +322,8 @@ lemma Separation.isMinor_twoSummand (hP : P.eConn = 1) (hNM : N ≤m M) (hf : P 
   /- since `f` is neither a loop nor a coloop of the minor, we know that `P i` and `P !i`
     aren't skew after projecting `C ∩ P !i` -/
   grw [Matroid.eConn_eq_eLocalConn, eLocalConn_mono_left _ (singleton_subset_iff.2 hfj),
-    eLocalConn_delete_le, ← hf, diff_inter_self_eq_diff, contract_delete_ground,
-    diff_diff_comm, P.compl_not_eq, eLocalConn_mono_right _ _ diff_subset, eLocalConn_comm,
+    eLocalConn_delete_le, ← hf, sdiff_inter_self_eq_sdiff, contract_delete_ground,
+    sdiff_sdiff_comm, P.compl_not_eq, eLocalConn_mono_right _ _ sdiff_subset, eLocalConn_comm,
     ← contract_inter_ground_eq, ← P.union_bool_eq i, inter_union_distrib_left,
     ← eLocalConn_project_eq_eLocalConn_contract, union_comm, ← project_project,
     eLocalConn_project_le_of_subset_left _ (by simp)] at hle
@@ -337,17 +335,17 @@ lemma Separation.isMinor_twoSummand (hP : P.eConn = 1) (hNM : N ≤m M) (hf : P 
   /- An easy computation. `grind` seems to fail. -/
   have hrw : (M.E \ insert f D) ⊆ C ∩ P (!i) ∪ P i := by
     grw [← singleton_union, ← hf, contract_delete_ground,
-      diff_subset_iff, ← union_assoc, union_right_comm _ D, inter_comm,
-      ← union_inter_distrib_right, union_comm C, ← diff_diff,
-      diff_union_of_subset (by grind), inter_union_distrib_right,
-      diff_union_of_subset (by grind), ← subset_union_left (t := D),
+      sdiff_subset_iff, ← union_assoc, union_right_comm _ D, inter_comm,
+      ← union_inter_distrib_right, union_comm C, ← sdiff_sdiff,
+      sdiff_union_of_subset (by grind), inter_union_distrib_right,
+      sdiff_union_of_subset (by grind), ← subset_union_left (t := D),
       inter_eq_self_of_subset_right P.subset_ground, P.union_bool_eq']
   /- `C ∩ P !i` is spanning, because of the fact that `D` is coindependent and `f` is not a
   coloop of `N`.-/
   have hsp : (M ／ P i).Spanning (C ∩ P !i) := by
     grw [contract_spanning_iff, and_iff_left (by grind)]
     refine (Coindep.compl_spanning ?_).superset hrw
-    rw [Coindep, hD.insert_indep_iff_of_notMem (by grind), mem_diff, and_iff_right (by grind)]
+    rw [Coindep, hD.insert_indep_iff_of_notMem (by grind), mem_sdiff, and_iff_right (by grind)]
     refine fun hfD' ↦ hfncl.not_isColoop ?_
     rwa [contract_delete_comm _ hCD, contract_isColoop_iff, IsColoop, dual_delete,
       contract_isLoop_iff_mem_closure, and_iff_right hfD', and_iff_left hfC]
@@ -356,12 +354,12 @@ lemma Separation.isMinor_twoSummand (hP : P.eConn = 1) (hNM : N ≤m M) (hf : P 
     grw [inter_subset_left]
     exact fun hfcl ↦ hfnl.not_isLoop <| by simp [hfcl, hfC, hfD]
   nth_rw 1 [← P.contract_restrict_insert_eq_twoSummand hP hfj hsp hsk.symm hfcl,
-    contract_delete_comm _ hCD, ← inter_union_diff C (P !i), ← contract_contract]
+    contract_delete_comm _ hCD, ← inter_union_sdiff C (P !i), ← contract_contract]
   refine (contract_isMinor ..).trans ?_
   rw [← contract_delete_comm _ (hCD.mono_left inter_subset_left), Matroid.delete_eq_restrict]
   refine (IsRestriction.of_subset _ ?_).isMinor
-  grw [contract_ground, diff_subset_iff, diff_subset_iff, union_insert, union_comm D,
-    ← union_insert, ← union_assoc, union_comm, ← diff_subset_iff, hrw]
+  grw [contract_ground, sdiff_subset_iff, sdiff_subset_iff, union_insert, union_comm D,
+    ← union_insert, ← union_assoc, union_comm, ← sdiff_subset_iff, hrw]
 
 lemma Separation.eq_restrict_or_contract_of_ground_eq
     (hP : P.eConn ≤ 1) (hNM : N ≤m M) (hNE : N.E = P i) : N = M ↾ P i ∨ N = M ／ P !i := by
@@ -369,17 +367,17 @@ lemma Separation.eq_restrict_or_contract_of_ground_eq
   rw [← P.eConn_eq (i := i), M.eConn_eq_eLocalConn_add_eLocalConn_dual (by grind) (by grind) hCD
     (by grind)] at hP
   have hCDu : C ∪ D = P !i := by
-    rw [← P.compl_eq, ← hNE, contract_delete_ground, diff_diff_cancel_left (by grind)]
+    rw [← P.compl_eq, ← hNE, contract_delete_ground, sdiff_sdiff_cancel_left (by grind)]
   by_cases hsk : M.Skew (P i) C
   · left
-    rw [← hsk.symm.contract_restrict_eq, Matroid.delete_eq_restrict, contract_ground, diff_diff,
+    rw [← hsk.symm.contract_restrict_eq, Matroid.delete_eq_restrict, contract_ground, sdiff_sdiff,
       ← contract_delete_ground, hNE]
-  rw [← eLocalConn_eq_zero, ← Ne, ← ENat.one_le_iff_ne_zero] at hsk
+  rw [← eLocalConn_eq_zero, ← Ne, ← Order.one_le_iff_ne_zero] at hsk
   grw [← hsk, ENat.add_le_left_iff, or_iff_right (by simp), eLocalConn_eq_zero] at hP
   right
   rw [← dual_inj, dual_contract, M✶.delete_eq_restrict, dual_ground, P.compl_not_eq,
     ← hP.symm.contract_restrict_eq, dual_contract_delete, ← contract_delete_comm _ hCD.symm,
-    Matroid.delete_eq_restrict, contract_ground, dual_ground, diff_diff, union_comm, hCDu,
+    Matroid.delete_eq_restrict, contract_ground, dual_ground, sdiff_sdiff, union_comm, hCDu,
     P.compl_not_eq]
 
 lemma isMinor_twoSummand' (hP : P.eConn = 1) (hNM : N ≤m M) (hl : N.Loopless) (hl' : N.Coloopless)
@@ -391,7 +389,7 @@ lemma isMinor_twoSummand' (hP : P.eConn = 1) (hNM : N ≤m M) (hl : N.Loopless) 
     exact hl'.dual_loopless.isNonloop_of_mem hfN
   rw [← disjoint_iff_inter_eq_empty] at hdj
   have hNi : N.E ⊆ P i := by
-    rwa [← P.compl_not_eq, subset_diff, disjoint_comm, and_iff_right hNM.subset]
+    rwa [← P.compl_not_eq, subset_sdiff, disjoint_comm, and_iff_right hNM.subset]
   obtain ⟨N', hNN', hN'M, hN'E⟩ := hNM.exists_isMinor_of_subset_subset hNi P.subset_ground
   obtain ⟨f, hfi⟩ : (P !i).Nonempty := by simpa [hP] using M.eConn_le_encard (P !i)
   refine ⟨f, hfi, ?_⟩
@@ -427,7 +425,7 @@ lemma exists_twoSummand_isMinor_contract (hP : P.eConn = 1) (hC : C ⊆ P !i) (h
     rw [contract_comm, contract_indep_iff_indep_skew _] at hI
     rw [skew_comm, skew_iff_contract_restrict_eq_restrict,
       union_comm, ← contract_contract, hI.2.contract_restrict_eq, hCP.contract_restrict_eq]
-    grind [subset_diff]
+    grind [subset_sdiff]
   obtain ⟨f, hfP, hfcl⟩ : ∃ f ∈ P !i, f ∉ M.closure (I ∪ C) := by
     by_contra! hcon
     grw [← eLocalConn_eq_zero, ← le_zero_iff, ← eLocalConn_closure_right,
@@ -443,7 +441,7 @@ lemma exists_twoSummand_isMinor_contract (hP : P.eConn = 1) (hC : C ⊆ P !i) (h
     ← contract_contract]
   refine (restrict_isMinor _ ?_).trans <| contract_isMinor ..
   grw [← subset_closure _ _] at hfcl
-  grw [contract_contract, union_comm, contract_ground, subset_diff, disjoint_insert_left,
+  grw [contract_contract, union_comm, contract_ground, subset_sdiff, disjoint_insert_left,
     and_iff_right hfcl, hIP, insert_subset_iff]
   grind
 

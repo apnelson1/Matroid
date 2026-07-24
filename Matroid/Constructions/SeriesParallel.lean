@@ -79,8 +79,8 @@ lemma seriesParallelDuo_indep_iff (hdj : Disjoint S P) (hS : S.Nonempty) (hP : P
   rw [seriesParallelDuo_nonempty_eq hS hP, truncate_indep_iff, freeLift_indep_iff,
     freeLift_isBase_iff]
   simp only [hne, disjointSum_ground_eq, freeOn_ground, loopyOn_ground, mem_inter_iff, mem_union,
-    disjointSum_indep_iff, diff_inter_right_comm, freeOn_indep_iff, diff_singleton_subset_iff,
-    loopyOn_indep_iff, diff_eq_empty, subset_singleton_iff, and_imp, forall_const,
+    disjointSum_indep_iff, sdiff_inter_right_comm, freeOn_indep_iff, sdiff_singleton_subset_iff,
+    loopyOn_indep_iff, sdiff_eq_empty, subset_singleton_iff, and_imp, forall_const,
     disjointSum_isBase_iff, freeOn_isBase_iff, loopyOn_isBase_iff, not_and, forall_exists_index]
   refine ⟨fun ⟨⟨e, he, hdj, hI⟩, h2⟩ ↦ ?_, fun ⟨hIss, hIP, hss⟩ ↦ ⟨?_, by grind⟩⟩
   · have hISP : I ⊆ S ∪ P := by grind
@@ -153,18 +153,18 @@ lemma seriesParallelDuo_isCircuit_iff (hS : S.Nonempty) (hP : P.Nonempty) (hdj :
     disjointSum_ground_eq]
   simp only [freeLift_spanning_iff, disjointSum_spanning_iff, freeOn_ground, freeOn_spanning_iff,
     inter_eq_right, loopyOn_ground, loopyOn_spanning_iff, inter_subset_right,
-    diff_singleton_subset_iff, show ∀ x, C ⊆ insert x (S ∪ P) by grind, and_self, and_true,
+    sdiff_singleton_subset_iff, show ∀ x, C ⊆ insert x (S ∪ P) by grind, and_self, and_true,
     disjointSum_ground_eq, hCSP, not_exists, not_and, disjointSum_isBase_iff, freeOn_isBase_iff,
     loopyOn_isBase_iff, ne_eq]
 
 
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · obtain hC | ⟨e, heC, hSC, hCP⟩ := h
-    · simp only [isCircuit_iff_dep_forall_diff_singleton_indep, freeLift_dep_iff, hCne,
+    · simp only [isCircuit_iff_dep_forall_sdiff_singleton_indep, freeLift_dep_iff, hCne,
       disjointSum_dep_iff, freeOn_ground, freeOn_not_dep, loopyOn_ground, loopyOn_dep_iff,
-      inter_subset_right, and_true, false_or, diff_singleton_subset_iff,
+      inter_subset_right, and_true, false_or, sdiff_singleton_subset_iff,
       hCSP.trans (subset_insert ..), disjointSum_ground_eq, hCSP, true_and, freeLift_indep_iff,
-      mem_inter_iff, mem_diff, mem_singleton_iff, mem_union, disjointSum_indep_iff,
+      mem_inter_iff, mem_sdiff, mem_singleton_iff, mem_union, disjointSum_indep_iff,
       freeOn_indep_iff, loopyOn_indep_iff] at hC
 
     rw [← disjoint_iff_inter_eq_empty] at hCP
@@ -187,9 +187,9 @@ lemma seriesParallelDuo_isCircuit_iff (hS : S.Nonempty) (hP : P.Nonempty) (hdj :
 
 
 
-  -- simp only [isCircuit_iff_dep_forall_diff_singleton_indep, dep_iff,
+  -- simp only [isCircuit_iff_dep_forall_sdiff_singleton_indep, dep_iff,
   --   seriesParallelDuo_indep_iff hdj hS hP, not_and, Classical.not_imp, seriesParallelDuo_E,
-  --   diff_singleton_subset_iff, forall_mem_and, ne_eq]
+  --   sdiff_singleton_subset_iff, forall_mem_and, ne_eq]
   -- refine ⟨fun ⟨h1, h2, h3, h4⟩ ↦ ?_, fun h ↦ ?_⟩
   -- · obtain hss | hnt := (C ∩ P).subsingleton_or_nontrivial
   --   · obtain he | ⟨x, hCPX⟩ := hss.eq_empty_or_singleton

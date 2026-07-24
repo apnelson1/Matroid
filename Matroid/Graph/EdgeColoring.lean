@@ -21,7 +21,7 @@ structure EdgeColoring (G : Graph α β) (κ : Type*) where
 to be syntactically treated like one. -/
 instance : FunLike (G.EdgeColoring κ) β κ where
   coe c := c.toFun
-  coe_injective' c c' h := by grind [cases EdgeColoring]
+  coe_injective c c' h := by grind [cases EdgeColoring]
 
 /- This line can be ignored-/
 initialize_simps_projections EdgeColoring (toFun → coe)

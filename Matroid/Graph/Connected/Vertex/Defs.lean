@@ -170,7 +170,7 @@ lemma Adj.not_isSepBetween (h : G.Adj s t) : ¬ G.IsSepBetween s t X := by
   refine fun hX ↦ hX.not_connBetween <| Adj.connBetween <| ?_
   simpa [deleteVerts_adj_iff, hX.left_not_mem, hX.right_not_mem] using h
 
-def isSepBetween_empty (h : ¬ G.ConnBetween s t) : G.IsSepBetween s t ∅ := by
+theorem isSepBetween_empty (h : ¬ G.ConnBetween s t) : G.IsSepBetween s t ∅ := by
   refine ⟨by simp, by simp, by simp, ?_⟩
   simpa using h
 
@@ -200,28 +200,28 @@ lemma IsComplete.not_isSepBetween (h : G.IsComplete) (hs : s ∈ V(G)) (ht : t �
   apply Adj.connBetween
   exact (G.deleteVerts_adj_iff X).2 ⟨h s hs t ht hne, hX.left_not_mem, hX.right_not_mem⟩
 
-def isSepBetween_of_not_adj (hne : s ≠ t) (hnst : ¬ G.Adj s t) :
+theorem isSepBetween_of_not_adj (hne : s ≠ t) (hnst : ¬ G.Adj s t) :
     G.IsSepBetween s t (V(G) \ {s, t}) := by
-  refine ⟨diff_subset, by simp, by simp, ?_⟩
+  refine ⟨sdiff_subset, by simp, by simp, ?_⟩
   contrapose! hnst
   obtain ⟨W, hW, rfl, rfl⟩ := hnst.exists_isPath
   match W with
   | .nil u => simp at hne
   | .cons u e (nil v) =>
-    simp only [first_cons, last_cons, nil_last, cons_isPath_iff, nil_isPath_iff,
-      vertexSet_deleteVerts, sdiff_sdiff_right_self, inf_eq_inter, mem_inter_iff, mem_insert_iff,
-      mem_singleton_iff, or_true, and_true, nil_first, deleteVerts_isLink_iff, mem_diff, true_or,
-      not_true_eq_false, and_false, not_false_eq_true, and_self, mem_nil_iff] at hW ⊢
+    simp only [first_cons, last_cons, nil_last, cons_isPath_iff, nil_first, deleteVerts_isLink_iff,
+      mem_sdiff, mem_insert_iff, mem_singleton_iff, true_or, not_true_eq_false, and_false,
+      not_false_eq_true, or_true, and_self, and_true, nil_isPath_iff, vertexSet_deleteVerts,
+      sdiff_sdiff_right_self, mem_inter_iff, mem_nil_iff] at hW ⊢
     use e, hW.1
   | cons u e (cons v f w) =>
     simp_all only [first_cons, last_cons, ne_eq, cons_isPath_iff, isPath_deleteVerts_iff,
-      deleteVerts_isLink_iff, mem_diff, mem_insert_iff, mem_singleton_iff, not_or, not_and,
+      deleteVerts_isLink_iff, mem_sdiff, mem_insert_iff, mem_singleton_iff, not_or, not_and,
       not_not, or_false, not_true_eq_false, and_false, not_false_eq_true, true_and, mem_cons_iff]
     obtain ⟨⟨huv, -⟩, ⟨⟨-, hvwl, -⟩, ⟨-, -⟩, -⟩, hne, -⟩ := hW
     obtain rfl := hvwl huv.right_mem (hne ·.symm)
     use e
 
-def isSepBetween_of_deleteVerts (h : ¬ (G - X).ConnBetween s t) (hs : s ∉ X) (ht : t ∉ X) :
+theorem isSepBetween_of_deleteVerts (h : ¬ (G - X).ConnBetween s t) (hs : s ∉ X) (ht : t ∉ X) :
     G.IsSepBetween s t (V(G) ∩ X) := by
   refine ⟨inter_subset_left, by simp [hs], by simp [ht], ?_⟩
   simpa [deleteVerts_vertexSet_inter] using h
@@ -237,7 +237,7 @@ lemma not_isEdgeCutBetween_self (hs : s ∈ V(G)) : ¬ G.IsEdgeCutBetween F s s 
   rintro ⟨-, h⟩
   simp [hs] at h
 
-def isEdgeCutBetween_empty (h : ¬ G.ConnBetween s t) : G.IsEdgeCutBetween ∅ s t where
+theorem isEdgeCutBetween_empty (h : ¬ G.ConnBetween s t) : G.IsEdgeCutBetween ∅ s t where
   subset_edgeSet := empty_subset _
   not_connBetween := by simpa
 
@@ -393,7 +393,7 @@ def VertexEnsemble.vertexSet (P : G.VertexEnsemble s t ι) : Set α :=
 
 lemma VertexEnsemble.subset_vertexSet_of_mem (P : G.VertexEnsemble s t ι) (i : ι) :
     V(P.f i) \ {s, t} ⊆ P.vertexSet :=
-  diff_subset_diff_left <| subset_iUnion (fun i ↦ V(P.f i)) i
+  sdiff_subset_sdiff_left <| subset_iUnion (fun i ↦ V(P.f i)) i
 
 @[simps (attr := grind =)]
 def VertexEnsemble.sum (P : G.VertexEnsemble s t ι) (Q : G.VertexEnsemble s t ι')
@@ -413,7 +413,7 @@ def VertexEnsemble.sum (P : G.VertexEnsemble s t ι) (Q : G.VertexEnsemble s t �
   | Sum.inl i, Sum.inr j => by
     simp only
     have := h.mono (P.subset_vertexSet_of_mem i) (Q.subset_vertexSet_of_mem j)
-    rw [disjoint_iff_inter_eq_empty, diff_inter_diff_right, diff_eq_empty] at this
+    rw [disjoint_iff_inter_eq_empty, sdiff_inter_sdiff_right, sdiff_eq_empty] at this
     apply this.antisymm
     simp only [subset_inter_iff]
     exact ⟨by simp [← P.first_eq i, first_mem, ← P.last_eq i, last_mem, pair_subset],
@@ -421,7 +421,7 @@ def VertexEnsemble.sum (P : G.VertexEnsemble s t ι) (Q : G.VertexEnsemble s t �
   | Sum.inr i, Sum.inl j => by
     simp only
     have := h.mono (P.subset_vertexSet_of_mem j) (Q.subset_vertexSet_of_mem i)
-    rw [disjoint_iff_inter_eq_empty, diff_inter_diff_right, diff_eq_empty, inter_comm] at this
+    rw [disjoint_iff_inter_eq_empty, sdiff_inter_sdiff_right, sdiff_eq_empty, inter_comm] at this
     apply this.antisymm
     simp only [subset_inter_iff]
     exact ⟨by simp [← Q.first_eq i, first_mem, ← Q.last_eq i, last_mem, pair_subset],
@@ -519,7 +519,7 @@ lemma connBetweenGE_zero (G : Graph α β) (s t : α) : G.ConnBetweenGE s t 0 :=
   simp [ConnBetweenGE]
 
 lemma ConnBetweenGE.anti_right (hle : n ≤ m) (h : G.ConnBetweenGE s t m) : G.ConnBetweenGE s t n :=
-  fun _ hC ↦ le_trans (ENat.coe_le_coe.2 hle) (h hC)
+  fun _ hC ↦ le_trans (ENat.natCast_le_natCast.2 hle) (h hC)
 
 @[symm]
 lemma ConnBetweenGE.symm (h : G.ConnBetweenGE s t n) : G.ConnBetweenGE t s n :=
@@ -579,7 +579,7 @@ lemma connBetweenGE_le_encard_sub_two (h : G.ConnBetweenGE s t n) (hne : s ≠ t
     (hadj : ¬ G.Adj s t) : n ≤ V(G).encard - 2 := by
   by_cases hst : s ∈ V(G) ∧ t ∈ V(G)
   · refine (connBetweenGE_le_diff_encard h hne hadj).trans ?_
-    rw [← encard_diff_add_encard_of_subset (Set.pair_subset hst.1 hst.2), encard_pair hne]
+    rw [← encard_sdiff_add_encard_of_subset (Set.pair_subset hst.1 hst.2), encard_pair hne]
     exact ENat.le_sub_of_add_le_right (by simp) <| refl _
   rw [not_and_or] at hst
   obtain hs | ht := hst
@@ -590,7 +590,7 @@ lemma connBetweenGE_le_encard_sub_two (h : G.ConnBetweenGE s t n) (hne : s ≠ t
 
 lemma connBetweenGE_le_encard (h : G.ConnBetweenGE s t n) (hne : s ≠ t) (hadj : ¬ G.Adj s t) :
     n ≤ V(G).encard :=
-  (connBetweenGE_le_diff_encard h hne hadj).trans <| encard_le_encard diff_subset
+  (connBetweenGE_le_diff_encard h hne hadj).trans <| encard_le_encard sdiff_subset
 
 def EdgeConnBetweenGE (G : Graph α β) (s t : α) (n : ℕ) : Prop :=
   ∀ ⦃F : Set β⦄, G.IsEdgeCutBetween F s t → n ≤ F.encard
@@ -614,7 +614,7 @@ lemma edgeConnBetweenGE_zero (G : Graph α β) (s t : α) : G.EdgeConnBetweenGE 
 
 lemma EdgeConnBetweenGE.anti_right (hle : n ≤ m) (h : G.EdgeConnBetweenGE s t m) :
     G.EdgeConnBetweenGE s t n :=
-  fun _ hF ↦ le_trans (ENat.coe_le_coe.2 hle) (h hF)
+  fun _ hF ↦ le_trans (ENat.natCast_le_natCast.2 hle) (h hF)
 
 lemma edgeConnBetweenGE_one_iff : G.EdgeConnBetweenGE s t 1 ↔ G.ConnBetween s t := by
   refine ⟨fun h => ?_, fun h F hF => ?_⟩

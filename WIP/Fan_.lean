@@ -357,7 +357,7 @@ lemma IsFan.indep_bDual (h : M.IsFan J b c) (d : Bool) (hd : ¬ (b = c ∧ c = d
     obtain h0 | ⟨K, u, hKu⟩ := (J false).eq_nil_or_concat; simp [h.ne_nil h0]
     obtain hC' : C ⊆ insert u {a | a ∈ K} := by simpa [hKu, setOf_or] using hCss
     obtain h0 | ⟨e, heC, heK⟩ := Set.disjoint_or_nonempty_inter C {x | x ∈ K}
-    · rw [← union_singleton, ← diff_subset_iff, h0.sdiff_eq_left] at hC'
+    · rw [← union_singleton, ← sdiff_subset_iff, h0.sdiff_eq_left] at hC'
       exfalso
       exact ((h.isNonloop_of_mem (d := false) (by simp [hKu])).indep.subset hC').not_dep hC.dep
     obtain ⟨i, hi, hiC⟩ := (exists_mem_iff_getElem (p := (· ∈ C))).1 ⟨e, heK, heC⟩

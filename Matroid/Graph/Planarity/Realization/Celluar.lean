@@ -22,7 +22,7 @@ variable {E : Type*} [TopologicalSpace E] {φ : Embedding G E}
 
 instance : FunLike (Embedding G E) G.Realization E where
   coe := Embedding.toFun
-  coe_injective' φ₁ φ₂ h := by cases φ₁; cases φ₂; simpa
+  coe_injective φ₁ φ₂ h := by cases φ₁; cases φ₂; simpa
 
 @[reducible]
 def Faces (φ : Embedding G E) := ConnectedComponents ↑((range φ.toFun)ᶜ)

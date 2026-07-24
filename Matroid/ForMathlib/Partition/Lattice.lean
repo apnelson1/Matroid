@@ -24,7 +24,7 @@ variable [Order.Frame α] {s t u : α} {S T : Set α} {P Q : Partition α} {Ps :
 @[simp]
 lemma sSup_supp : (sSup Ps).supp = ⨆ P ∈ Ps, P.supp := by
   change (sSup' Ps).supp = _
-  simp only [supp, sSup', sSup_sSup_image, sUnion_disjParts, sSup_diff_singleton_bot]
+  simp only [supp, sSup', sSup_sSup_image, sUnion_disjParts, sSup_sdiff_singleton_bot]
   rw [← iSup_image, ← sSup_sUnion, sUnion_image]
 
 @[simp]
@@ -47,7 +47,7 @@ lemma sup_supp (P Q : Partition α) : (P ⊔ Q).supp = P.supp ⊔ Q.supp := by
 -- @[simp]
 -- lemma sInf_supp (S : Set (Partition α)) : (sInf S).supp = ⨅ P ∈ S, P.supp := by
 --   change (sInf' S).supp = _
---   simp only [supp, sInf', ofIndependent_parts, sSup_diff_singleton_bot]
+--   simp only [supp, sInf', ofIndependent_parts, sSup_sdiff_singleton_bot]
 
 
 
@@ -67,7 +67,7 @@ lemma sup_supp (P Q : Partition α) : (P ⊔ Q).supp = P.supp ⊔ Q.supp := by
 lemma inf_supp (P Q : Partition α) : (P ⊓ Q).supp = P.supp ⊓ Q.supp := by
   change (Partition.bind _ _ _).supp = _
   simp only [supp, Partition.bind, induce_parts, sSup_iUnion, sSup_inf_sSup, biSup_prod,
-    sSup_diff_singleton_bot, sSup_image, iSup_subtype]
+    sSup_sdiff_singleton_bot, sSup_image, iSup_subtype]
   rfl
 
 @[simp]
@@ -105,8 +105,8 @@ lemma sSup_insert_bot (Ps : Set (Partition α)) : sSup (insert ⊥ Ps) = sSup Ps
   simp
 
 @[simp]
-lemma sSup_diff_singleton_bot (Ps : Set (Partition α)) : sSup (Ps \ {⊥}) = sSup Ps := by
-  rw [← sSup_insert_bot, insert_diff_singleton, sSup_insert_bot]
+lemma sSup_sdiff_singleton_bot (Ps : Set (Partition α)) : sSup (Ps \ {⊥}) = sSup Ps := by
+  rw [← sSup_insert_bot, insert_sdiff_singleton, sSup_insert_bot]
 
 lemma mem_sSup_of_mem (hPs : Ps.Nonempty) (ha : ∀ P ∈ Ps, a ∈ P) : a ∈ sSup Ps := by
   obtain ⟨P0, hP0⟩ := hPs
@@ -134,7 +134,7 @@ lemma mem_sInf_of_mem (hPs : Ps.Nonempty) (hP : ∀ P ∈ Ps, a ∈ P) : a ∈ s
   have : Nonempty Ps := hPs.to_subtype
   obtain ⟨P0, hP0S⟩ := hPs
   change _ ∈ sInf' _
-  simp only [sInf', mem_ofIndependent_iff, mem_diff, mem_image, mem_pi, mem_univ, mem_parts,
+  simp only [sInf', mem_ofIndependent_iff, mem_sdiff, mem_image, mem_pi, mem_univ, mem_parts,
     forall_const, Subtype.forall, mem_singleton_iff, P0.ne_bot_of_mem (hP P0 hP0S),
     not_false_eq_true, and_true]
   use fun _ ↦ a, hP, iInf_const
@@ -374,7 +374,7 @@ lemma mem_iInf_iff_of_agree [Nonempty ι] {Pι : ι → Partition α}
 --     (sSup Ps).induce a = sSup ((Partition.induce · a) '' Ps) := by
 --   ext x
 --   rw [← mem_parts, induce_parts, sSup_parts_of_agree hPs, ← mem_parts, sSup_parts_of_agree]
---   simp only [mem_diff, mem_image, mem_iUnion, mem_parts, exists_prop, mem_singleton_iff,
+--   simp only [mem_sdiff, mem_image, mem_iUnion, mem_parts, exists_prop, mem_singleton_iff,
 --     iUnion_exists, biUnion_and', iUnion_iUnion_eq_right, induce_parts]
 --   tauto
 --   rintro - ⟨P, hP, rfl⟩ - ⟨Q, hQ, rfl⟩ _

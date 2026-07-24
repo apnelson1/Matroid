@@ -135,7 +135,7 @@ lemma IsSparsePaving.rankFinite_or_rankFinite_dual [M.Tame] (h : M.IsSparsePavin
   · obtain ⟨K, hK, hCK⟩ := h.isPaving.exists_isCircuit_of_indep hi
     have hfin := hK.inter_finite_of_isCocircuit hC
     have hcon := h.isPaving_dual.eRank_le_eRk_add_one_of_dep hC.dep
-    grw [M✶.eRank_eq_top, hC.eRk_add_one_eq, ← encard_diff_add_encard_inter C K,
+    grw [M✶.eRank_eq_top, hC.eRk_add_one_eq, ← encard_sdiff_add_encard_inter C K,
       inter_comm, encard_le_one_iff_subsingleton.2 hCK] at hcon
     simp [hfin.not_infinite] at hcon
   obtain ⟨K, hKC, hK⟩ := hd.exists_isCircuit_subset

@@ -307,7 +307,7 @@ theorem rows_linearIndependent_skew_union {R : Type*} [CommSemiring R] {s s' : S
     simp
   · rintro x hx
     simp only [Finsupp.support_filter, Finsupp.mem_support_iff, ne_eq, Finset.coe_filter,
-      mem_setOf_eq] at hx
+      mem_ofPred_eq] at hx
     exact hx.2
   refine h c ?_ ?_
   · ext ⟨j,hj⟩
@@ -338,7 +338,7 @@ theorem exists_rowBasis_superset {A : Matrix m n R} {s₀ : Set m}
     (hs₀ : LinearIndependent R (A.rowSubmatrix s₀).rowFun) : ∃ s, A.RowBasis s ∧ s₀ ⊆ s := by
   obtain ⟨s, hss, -, h1,h2⟩ := exists_linearIndependent_extension' hs₀ (subset_univ _)
   refine ⟨s, ⟨h2, le_antisymm (span_mono ?_) ?_⟩, hss⟩
-  · rw [rowFun_rowSubmatrix_eq, range_restrict]
+  · rw [rowFun_rowSubmatrix_eq, range_domRestrict]
     apply image_subset_range
   rw [image_univ, image_eq_range_submatrix] at h1
   rwa [rowSpace, rowSpace, Submodule.span_le, rowFun]
@@ -366,7 +366,7 @@ theorem rowBasis_iff_maximal_linearIndependent : A.RowBasis s ↔
   simp only
   obtain (hjs | hjs) := em (j ∈ s)
   · apply subset_span;
-    simp only [rowFun_rowSubmatrix_eq, range_restrict, mem_image]
+    simp only [rowFun_rowSubmatrix_eq, range_domRestrict, mem_image]
     exact ⟨j,hjs,rfl⟩
   by_contra hsp
   have heq := (h <| (linearIndependent_insert' hjs).2 ⟨hli, fun hsp' ↦ hsp ?_⟩) (subset_insert _ _)

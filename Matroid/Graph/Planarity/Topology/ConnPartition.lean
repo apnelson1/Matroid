@@ -48,12 +48,12 @@ lemma pathComponentPartition_parts (S : Set α) :
   ext T
   rw [mem_parts, mem_pathComponentPartition_iff, mem_image]
 
-lemma IsOpen.pathComponentPartition_isOpen [LocPathConnectedSpace α]
+lemma IsOpen.pathComponentPartition_isOpen [LocallyPathConnectedSpace α]
     (hT : T ∈ PathComponentPartition S) (h : IsOpen S) : IsOpen T := by
   obtain ⟨v, hv, rfl⟩ := mem_pathComponentPartition_iff S T |>.mp hT
   exact h.pathComponentIn v
 
-lemma frontier_subset_of_mem_pathComponentPartition [LocPathConnectedSpace α]
+lemma frontier_subset_of_mem_pathComponentPartition [LocallyPathConnectedSpace α]
     (hT : T ∈ PathComponentPartition S) (h : IsOpen S) : frontier T ⊆ Sᶜ := by
   rintro u ⟨huc, hui⟩
   rw [(h.pathComponentPartition_isOpen hT).interior_eq] at hui
@@ -70,7 +70,7 @@ lemma IsPathConnected.exists_part_pathComponentPartition (h : T ⊆ S) (hT : IsP
   obtain ⟨x, hx⟩ := hT.nonempty
   use (PathComponentPartition S).partOf x, ?_, fun y hyT ↦ ?_
   · exact (PathComponentPartition S).partOf_mem <| by simp [h hx]
-  simp only [pathComponentPartition_partOf, pathComponentIn, mem_setOf_eq]
+  simp only [pathComponentPartition_partOf, pathComponentIn, mem_ofPred_eq]
   exact hT.joinedIn _ hx _ hyT |>.mono h
 
 structure AdjRegion (S T₁ T₂ : Set α) : Prop where

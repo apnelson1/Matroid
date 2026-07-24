@@ -60,19 +60,19 @@ protected lemma Indep.augment {J : Set α} (hI : M.Indep I) (hIfin : I.Finite) (
     intro y hy
     by_cases hJ' : M.Indep (insert x (J \ {y}))
     · have hlt : ((insert x (J \ {y})) \ I).ncard < (J \ I).ncard := by
-        rw [insert_diff_of_mem _ hxI, diff_diff_comm]
-        exact ncard_diff_singleton_lt_of_mem hy hJfin.diff
+        rw [insert_sdiff_of_mem _ hxI, sdiff_sdiff_comm]
+        exact ncard_sdiff_singleton_lt_of_mem hy hJfin.sdiff
       have hcard : I.ncard < (insert x (J \ {y})).ncard :=
         hIJ.trans_eq <| (ncard_exchange hxJ hy.1).symm
-      obtain ⟨e, rfl | heJ, heI, hi⟩ := Indep.augment hI hIfin hJ' (hJfin.diff.insert _) hcard
+      obtain ⟨e, rfl | heJ, heI, hi⟩ := Indep.augment hI hIfin hJ' (hJfin.sdiff.insert _) hcard
       · exact (heI hxI).elim
       exact False.elim <| hcon e heJ.1 heI hi
     obtain ⟨C, hCss, hC⟩ : ∃ C ⊆ insert x (J \ {y}), M.IsCircuit C := by
-      simpa [indep_iff, insert_subset (hI.subset_ground hxI) (diff_subset.trans hJ.subset_ground)]
+      simpa [indep_iff, insert_subset (hI.subset_ground hxI) (sdiff_subset.trans hJ.subset_ground)]
       using hJ'
     rw [subset_insert_iff,
-      or_iff_right (fun h ↦ (hJ.subset diff_subset).not_isCircuit_of_subset h hC)] at hCss
-    refine ⟨C, hC, hCss.1, fun hyC ↦ (hCss.2 ⟨hyC, ?_⟩).2 rfl, hCss.2.trans diff_subset⟩
+      or_iff_right (fun h ↦ (hJ.subset sdiff_subset).not_isCircuit_of_subset h hC)] at hCss
+    refine ⟨C, hC, hCss.1, fun hyC ↦ (hCss.2 ⟨hyC, ?_⟩).2 rfl, hCss.2.trans sdiff_subset⟩
     rintro rfl
     exact hy.2 hxI
   -- Take such a circuit `Ca` for some arbitrary `a ∈ J \ I`, and then choose `b ∈ Ca \ {x}`
@@ -83,12 +83,12 @@ protected lemma Indep.augment {J : Set α} (hI : M.Indep I) (hIfin : I.Finite) (
   obtain ⟨Ca, hCa, hxCa, haCa, hCaJ⟩ := h_ex a ⟨haJ, haI⟩
   obtain ⟨b, hbCa, hbI⟩ : ∃ b ∈ Ca, b ∉ I := not_subset.1 fun h ↦ hI.not_isCircuit_of_subset h hCa
   obtain ⟨Cb, hCb, hxCb, hbCb, hCbJ⟩ :=
-    h_ex b ⟨hCaJ (mem_diff_singleton.2 ⟨hbCa, fun hbx ↦ hbI <| hbx ▸ hxI⟩), hbI⟩
+    h_ex b ⟨hCaJ (mem_sdiff_singleton.2 ⟨hbCa, fun hbx ↦ hbI <| hbx ▸ hxI⟩), hbI⟩
   obtain ⟨C, hC, hxC, hC'⟩ := M.circuit_elimination hCa hCb (by rintro rfl; contradiction) hxCa hxCb
   refine hJ.not_isCircuit_of_subset ?_ hC
-  rw [← diff_singleton_eq_self hxC]
-  refine (diff_subset_diff_left hC').trans ?_
-  rw [union_diff_distrib]
+  rw [← sdiff_singleton_eq_self hxC]
+  refine (sdiff_subset_sdiff_left hC').trans ?_
+  rw [union_sdiff_distrib]
   exact union_subset hCaJ hCbJ
 termination_by (J \ I).ncard
 
@@ -183,7 +183,7 @@ protected def ofNonspanningCircuit
             exact hC₃.1
           · refine⟨hC₃.2.1, hC₃.2.2⟩
         · obtain ⟨f, hfC, hfC₁⟩ : (C \ C₁).Nonempty := by
-            rw [diff_nonempty]
+            rw [sdiff_nonempty]
             exact fun hss ↦ hC₁.2 _ hss hNSC
 
           have hef : f ≠ e := by rintro rfl; contradiction
@@ -197,7 +197,7 @@ protected def ofNonspanningCircuit
               · by_contra hcon
                 have hc1 : e ∉ C₁ \ {e} ∪ {f} := by simp [hef.symm]
                 exact hc1 (mem_of_mem_of_subset hcon hC2)
-              · have he1 : C₁ \ {e} ⊆ C₁ := diff_subset
+              · have he1 : C₁ \ {e} ⊆ C₁ := sdiff_subset
                 have he2 : {f} ⊆ C := by simpa
                 rw [union_comm C C₁]
                 exact fun ⦃a⦄ a_1 ↦ (union_subset_union he1 he2) (hC2 a_1)
@@ -205,13 +205,13 @@ protected def ofNonspanningCircuit
             constructor
             · right
               refine ⟨ ?_, ?_, ?_, ?_ ⟩
-              · simpa using hC₁fin.diff
+              · simpa using hC₁fin.sdiff
               · simp only [union_singleton]
                 rwa [ncard_exchange hfC₁ heC1]
               · apply union_subset
                 · have h2 : C₁ \ {e} ⊆ C₁ := by
-                    simp only [diff_singleton_subset_iff, subset_insert]
-                  exact diff_subset.trans hC₁.1
+                    simp only [sdiff_singleton_subset_iff, subset_insert]
+                  exact sdiff_subset.trans hC₁.1
                   -- exact?
                   -- exact fun ⦃a⦄ a_1 ↦ (hC₁) (h2 a_1)
                 simp only [singleton_subset_iff]
@@ -224,11 +224,11 @@ protected def ofNonspanningCircuit
             · refine ⟨ ?_, ?_ ⟩
               · simp [hef.symm]
               · rw [union_comm C C₁]
-                apply union_subset_union diff_subset
+                apply union_subset_union sdiff_subset
                 simpa only [singleton_subset_iff]
       · have hex : ∃ f, f ∈ C₁ \ C := by
           by_contra! hc
-          simp only [mem_diff, not_and, not_not] at hc
+          simp only [mem_sdiff, not_and, not_not] at hc
           obtain ( hSC1 | hS1 ) := hC1
           · exact (hS.2.2.2 C₁ hc) hSC1
 
@@ -240,7 +240,7 @@ protected def ofNonspanningCircuit
         have hef : f ≠ e := by
           by_contra hs
           rw [←hs] at heC
-          exact (notMem_of_mem_diff hf) heC
+          exact (notMem_of_mem_sdiff hf) heC
         by_cases hsub : (∃ C₃, IsNonspanningCircuit C₃ ∧ C₃ ⊆ (C\{e}) ∪ {f} )
         · obtain ⟨C₃, hC3ns, hC2 ⟩ := hsub
           use C₃
@@ -252,7 +252,7 @@ protected def ofNonspanningCircuit
               have hc1 : e ∉ C \ {e} ∪ {f} := by
                 simp [hef.symm]
               exact hc1 (mem_of_mem_of_subset hcon hC2)
-            · have he1 : C \ {e} ⊆ C := diff_subset
+            · have he1 : C \ {e} ⊆ C := sdiff_subset
               have he2 : {f} ⊆ C₁ := by simpa using hf.1
               have := union_subset_union he1 he2
               exact fun ⦃a⦄ a_1 ↦ (union_subset_union he1 he2) (hC2 a_1)
@@ -260,28 +260,28 @@ protected def ofNonspanningCircuit
           constructor
           · right
             refine ⟨ ?_, ?_, ?_, ?_ ⟩
-            · simpa using hS.1.diff.insert f
+            · simpa using hS.1.sdiff.insert f
 
             ·
               rw [union_singleton, ncard_exchange hf.2 heC]
               exact hS.2.1
             · apply union_subset
               · have : C \ {e} ⊆ C := by
-                  simp only [diff_singleton_subset_iff, subset_insert]
+                  simp only [sdiff_singleton_subset_iff, subset_insert]
                 exact fun ⦃a⦄ a_1 ↦ (hS.2.2.1 ) (this a_1)
               · have h1 : C₁ ⊆ E := by
                   obtain ( hSC1 | hS1 ) := hC1
                   · exact ground_set C₁ hSC1
                   · exact hS1.2.2.1
                 simp only [singleton_subset_iff]
-                exact mem_of_mem_of_subset (mem_of_mem_diff hf) h1
+                exact mem_of_mem_of_subset (mem_of_mem_sdiff hf) h1
             · intro C₂ hC2
               by_contra! hcon
               have hC2c : ∃ C₃, IsNonspanningCircuit C₃ ∧ C₃ ⊆ C \ {e} ∪ {f} := by
                 use C₂
               exact hsub hC2c
           refine ⟨ ?_,
-          union_subset_union diff_subset (singleton_subset_iff.mpr (mem_of_mem_diff hf))⟩
+          union_subset_union sdiff_subset (singleton_subset_iff.mpr (mem_of_mem_sdiff hf))⟩
           · simp [hef.symm]
 
     circuit_subset_ground := by
@@ -406,7 +406,7 @@ TODO : Give better API for `Set`-valued predicates.
 --     use ((insert e K).erase f)
 --     refine ⟨⟨hKfe_subset, M.indep_iff.mpr ⟨?_, hK_indep'⟩, (by rwa [hKfe_card])⟩, ?_⟩
 --     · simp only [coe_erase, coe_insert]
---       exact Set.diff_subset.trans <| Set.insert_subset (hI.subset_ground heI)
+--       exact Set.sdiff_subset.trans <| Set.insert_subset (hI.subset_ground heI)
 -- hK_indep.subset_ground
 --     have hssu : (I \ (insert e K).erase f) ⊂ I \ K := by
 --       rw [sdiff_erase_notMem hfI, Finset.ssubset_iff_subset_ne, Ne, Finset.ext_iff, not_forall]
@@ -482,7 +482,7 @@ TODO : Give better API for `Set`-valued predicates.
 
 -- @[simp] lemma matroid_isCircuit_iff [DecidableEq α] : M.matroid.IsCircuit C ↔ M.IsCircuit C := by
 --   simp only [Matroid.isCircuit_def, Matroid.Dep, matroid_Indep, IndepMatroid.ofFinset_indep',
---     not_forall, Classical.not_imp, minimal_subset_iff, Set.mem_setOf_eq, coe_subset, and_imp,
+--     not_forall, Classical.not_imp, minimal_subset_iff, Set.mem_ofPred_eq, coe_subset, and_imp,
 --     forall_exists_index, exists_prop, matroid_E]
 --   refine ⟨fun ⟨⟨⟨D, hDC, hD⟩, hCE⟩, hmin⟩ ↦ ?_,
 --     fun h ↦ ⟨⟨⟨C, Subset.rfl,h.not_indep⟩, h.subset_ground⟩, fun X D hDX hD hX hXC ↦ ?_⟩⟩

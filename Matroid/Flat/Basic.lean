@@ -95,7 +95,7 @@ lemma isFlat_iff_ssubset_closure_insert_forall (hF : F ⊆ M.E := by aesop_mat) 
 lemma isFlat_iff_forall_isCircuit' :
     M.IsFlat F ↔ (∀ C e, M.IsCircuit C → e ∈ C → C ⊆ insert e F → e ∈ F) ∧ F ⊆ M.E := by
   refine ⟨fun h ↦ ⟨fun C e hC heC hCss ↦ ?_, h.subset_ground⟩, fun ⟨h, hFE⟩ ↦ ?_⟩
-  · exact mem_of_mem_of_subset (hC.mem_closure_diff_singleton_of_mem heC)
+  · exact mem_of_mem_of_subset (hC.mem_closure_sdiff_singleton_of_mem heC)
       <| h.closure_subset_of_subset (by simpa)
   rw [isFlat_iff_subset_closure_self]
   refine fun e heF ↦ by_contra fun heF' ↦ heF' ?_
@@ -133,7 +133,7 @@ lemma IsFlat.eRk_insert_eq_add_one (hF : M.IsFlat F) (he : e ∈ M.E \ F) :
 
 lemma IsFlat.rk_insert_eq_add_one (hF : M.IsFlat F) (hfin : M.IsRkFinite F) (he : e ∈ M.E \ F) :
     M.rk (insert e F) = M.rk F + 1 := by
-  rw [← ENat.coe_inj, (hfin.insert _).cast_rk_eq, hF.eRk_insert_eq_add_one he,
+  rw [← ENat.natCast_inj, (hfin.insert _).cast_rk_eq, hF.eRk_insert_eq_add_one he,
     Nat.cast_add, hfin.cast_rk_eq, Nat.cast_one]
 
 lemma IsFlat.rk_lt_of_superset (hF : M.IsFlat F) (hFX : F ⊂ X) (hfin : M.IsRkFinite X)
@@ -148,7 +148,7 @@ lemma IsFlat.subset_of_eRelRk_eq_zero (hF : M.IsFlat F) (hr : M.eRelRk F X = 0)
 
 lemma IsFlat.one_le_eRelRk_of_ssubset (hF : M.IsFlat F) (hss : F ⊂ X)
     (hX : X ⊆ M.E := by aesop_mat) : 1 ≤ M.eRelRk F X :=
-  ENat.one_le_iff_ne_zero.2 (fun h_eq ↦ hss.not_subset <| hF.subset_of_eRelRk_eq_zero h_eq)
+  Order.one_le_iff_ne_zero.2 (fun h_eq ↦ hss.not_subset <| hF.subset_of_eRelRk_eq_zero h_eq)
 
 lemma exists_insert_rk_eq_of_not_isFlat (hFE : F ⊆ M.E) (hnF : ¬ M.IsFlat F) :
     ∃ e ∈ M.E \ F, M.rk (insert e F) = M.rk F := by
@@ -173,7 +173,7 @@ lemma finite_setOf_isFlat (M : Matroid α) [M.Finite] : {F | M.IsFlat F}.Finite 
 
 lemma uniqueBaseOn_isFlat_iff {I E : Set α} (hIE : I ⊆ E) :
     (uniqueBaseOn E I).IsFlat F ↔ F ⊆ I := by
-  simp [isFlat_iff_closure_eq, diff_eq_empty.2 hIE, inter_assoc, inter_eq_self_of_subset_right hIE]
+  simp [isFlat_iff_closure_eq, sdiff_eq_empty.2 hIE, inter_assoc, inter_eq_self_of_subset_right hIE]
 
 @[simp] lemma loopyOn_isFlat_iff {E : Set α} : (loopyOn E).IsFlat F ↔ F = E := by
   simp [isFlat_iff_closure_eq, eq_comm]
@@ -231,7 +231,7 @@ lemma isFlat_comap_iff_exists {β : Type*} {f : α → β} {F : Set α} {M : Mat
 this needs `ENatTopology`
 lemma IsFlat.ground_encard_eq_tsum (hF₀ : M.IsFlat F₀) :
     M.E.encard = F₀.encard + ∑' F : {F // F₀ ⋖[M] F}, ((F : Set α) \ F₀).encard := by
-  rw [← encard_diff_add_encard_of_subset hF₀.subset_ground, add_comm]
+  rw [← encard_sdiff_add_encard_of_subset hF₀.subset_ground, add_comm]
   apply congr_arg (_ + ·)
   have hcard := ENat.tsum_encard_eq_encard_sUnion hF₀.covByPartition.pairwiseDisjoint
   simp only [SetLike.coe_sort_coe, Partition.sUnion_eq] at hcard
@@ -239,21 +239,21 @@ lemma IsFlat.ground_encard_eq_tsum (hF₀ : M.IsFlat F₀) :
     ← hcard]
   apply tsum_congr
   rintro ⟨_, ⟨F, hF : F₀ ⋖[M] F, rfl⟩⟩
-  rw [hF₀.equivCovByPartition_apply_coe, diff_union_self, union_diff_right]
+  rw [hF₀.equivCovByPartition_apply_coe, sdiff_union_self, union_sdiff_right]
 -/
 
 section Minor
 
 lemma isFlat_contract (X C : Set α) : (M ／ C).IsFlat (M.closure (X ∪ C) \ C) := by
-  rw [isFlat_iff_closure_eq, contract_closure_eq, diff_union_self,
+  rw [isFlat_iff_closure_eq, contract_closure_eq, sdiff_union_self,
     ← M.closure_union_closure_right_eq, union_eq_self_of_subset_right
     (M.closure_subset_closure subset_union_right), closure_closure]
 
 @[simp] lemma isFlat_contract_iff (hC : C ⊆ M.E := by aesop_mat) :
     (M ／ C).IsFlat F ↔ M.IsFlat (F ∪ C) ∧ Disjoint F C := by
-  rw [isFlat_iff_closure_eq, contract_closure_eq, subset_antisymm_iff, subset_diff, diff_subset_iff,
-    union_comm C, ← and_assoc, and_congr_left_iff, isFlat_iff_closure_self, subset_antisymm_iff,
-    and_congr_right_iff]
+  rw [isFlat_iff_closure_eq, contract_closure_eq, subset_antisymm_iff, subset_sdiff,
+    sdiff_subset_iff, union_comm C, ← and_assoc, and_congr_left_iff, isFlat_iff_closure_self,
+    subset_antisymm_iff, and_congr_right_iff]
   exact fun _ _ ↦
     ⟨fun h ↦ M.subset_closure _ (union_subset (h.trans (M.closure_subset_ground _)) hC),
     fun h ↦ subset_union_left.trans h⟩
@@ -283,7 +283,7 @@ lemma IsNonloop.contractElem_isFlat_iff (he : M.IsNonloop e) :
   toFun F := ⟨F ∪ C, by simp [subset_union_right, F.prop.union_isFlat_of_contract]⟩
   invFun F := ⟨F \ C, by simp
     [isFlat_contract_iff hC, union_eq_self_of_subset_right F.prop.2, disjoint_sdiff_left, F.prop.1]⟩
-  left_inv := by rintro ⟨-, hF⟩; simp [(subset_diff.1 hF.subset_ground).2]
+  left_inv := by rintro ⟨-, hF⟩; simp [(subset_sdiff.1 hF.subset_ground).2]
   right_inv := by rintro ⟨F, hF⟩; simp [hF.2]
 
 lemma isFlat_restrict_iff {R : Set α} (hR : R ⊆ M.E := by aesop_mat) :
@@ -291,15 +291,15 @@ lemma isFlat_restrict_iff {R : Set α} (hR : R ⊆ M.E := by aesop_mat) :
   refine ⟨fun h ↦ ⟨M.closure F, M.closure_isFlat F, ?_⟩, ?_⟩
   · nth_rw 1 [← h.closure]
     have hFR : F ⊆ R := h.subset_ground
-    simp [inter_eq_self_of_subset_left hFR, diff_eq_empty.2 hR]
+    simp [inter_eq_self_of_subset_left hFR, sdiff_eq_empty.2 hR]
   rintro ⟨F, hF, rfl⟩
   rw [isFlat_iff_subset_closure_self]
-  suffices M.closure (F ∩ R) ∩ R ⊆ F by simpa [inter_assoc, diff_eq_empty.2 hR]
+  suffices M.closure (F ∩ R) ∩ R ⊆ F by simpa [inter_assoc, sdiff_eq_empty.2 hR]
   exact inter_subset_left.trans (hF.closure_subset_of_subset inter_subset_left)
 
 lemma isFlat_delete_iff {D : Set α} :
     (M ＼ D).IsFlat F ↔ ∃ F', M.IsFlat F' ∧ F = F' \ D := by
-  simp_rw [delete_eq_restrict, isFlat_restrict_iff diff_subset, ← inter_diff_assoc]
+  simp_rw [delete_eq_restrict, isFlat_restrict_iff sdiff_subset, ← inter_sdiff_assoc]
   constructor <;>
   · rintro ⟨F, hF, rfl⟩
     refine ⟨F, hF, ?_⟩
@@ -309,10 +309,10 @@ lemma isFlat_delete_iff' {D : Set α} :
     (M ＼ D).IsFlat F ↔ M.closure F ⊆ F ∪ D ∧ Disjoint F D ∧ F ⊆ M.E := by
   obtain hE | hE := em' (F ⊆ M.E \ D)
   · rw [iff_false_intro (show ¬ (M ＼ D).IsFlat F from fun h ↦ hE h.subset_ground), false_iff,
-      and_comm (a := Disjoint _ _), ← subset_diff]
+      and_comm (a := Disjoint _ _), ← subset_sdiff]
     simp [hE]
-  have hE' := subset_diff.1 hE
-  rw [isFlat_iff_subset_closure_self, delete_closure_eq, diff_subset_iff, union_comm,
+  have hE' := subset_sdiff.1 hE
+  rw [isFlat_iff_subset_closure_self, delete_closure_eq, sdiff_subset_iff, union_comm,
     hE'.2.sdiff_eq_left , and_iff_left hE'.symm]
 
 lemma isFlat_restrict_iff' {R : Set α} :
@@ -320,13 +320,13 @@ lemma isFlat_restrict_iff' {R : Set α} :
   by_cases hFR : F ⊆ R
   · rw [isFlat_iff_closure_eq, M.restrict_closure_eq', inter_eq_self_of_subset_left hFR, eq_comm]
   refine iff_of_false (fun h ↦ hFR h.subset_ground) fun h ↦ hFR ?_
-  rw [h, union_subset_iff, and_iff_left diff_subset]
+  rw [h, union_subset_iff, and_iff_left sdiff_subset]
   exact inter_subset_right
 
 lemma IsFlat.isFlat_restrict' (hF : M.IsFlat F) (R : Set α) :
     (M ↾ R).IsFlat ((F ∩ R) ∪ (R \ M.E)) := by
   rw [isFlat_restrict_iff', ← closure_inter_ground, union_inter_distrib_right,
-    diff_inter_self, union_empty, closure_inter_ground]
+    sdiff_inter_self, union_empty, closure_inter_ground]
   convert rfl using 2
   simp only [subset_antisymm_iff, subset_inter_iff, inter_subset_right, and_true]
   nth_rw 2 [← hF.closure]
@@ -335,14 +335,14 @@ lemma IsFlat.isFlat_restrict' (hF : M.IsFlat F) (R : Set α) :
 
 lemma IsFlat.isFlat_restrict (hF : M.IsFlat F) (R : Set α) (hR : R ⊆ M.E := by aesop_mat) :
     (M ↾ R).IsFlat (F ∩ R) := by
-  simpa [diff_eq_empty.2 hR] using hF.isFlat_restrict' R
+  simpa [sdiff_eq_empty.2 hR] using hF.isFlat_restrict' R
 
 lemma IsFlat.closure_subset_of_isFlat_restrict {R : Set α} (hF : (M ↾ R).IsFlat F) :
     M.closure F ⊆ F ∪ (M.E \ R) := by
   rw [isFlat_restrict_iff'] at hF
   nth_rw 2 [hF]
-  rw [union_assoc, ← diff_subset_iff, diff_self_inter, diff_subset_iff, ← union_assoc,
-    union_eq_self_of_subset_right diff_subset, union_diff_self]
+  rw [union_assoc, ← sdiff_subset_iff, sdiff_self_inter, sdiff_subset_iff, ← union_assoc,
+    union_eq_self_of_subset_right sdiff_subset, union_sdiff_self]
   exact (M.closure_subset_ground F).trans subset_union_right
 
 lemma IsFlat.exists_of_delete {D : Set α} (hF : (M ＼ D).IsFlat F) :
@@ -361,7 +361,7 @@ lemma IsFlat.closure_subset_of_delete {D : Set α} (hF : (M ＼ D).IsFlat F) : M
   rintro ⟨heF, (hF | hF)⟩ <;> exact ⟨_, hF, by simp [heF]⟩
 
 lemma IsFlat.contract_subset_isFlat (hF : M.IsFlat F) (hC : C ⊆ F) : (M ／ C).IsFlat (F \ C) := by
-  rw [isFlat_iff_closure_eq, contract_closure_eq, diff_union_of_subset hC, hF.closure]
+  rw [isFlat_iff_closure_eq, contract_closure_eq, sdiff_union_of_subset hC, hF.closure]
 
 end Minor
 
@@ -389,11 +389,11 @@ lemma IsFlat.iInter_mem_of_directed_of_isRkFinite {ι : Type*} {F : ι → Set �
     exact hj.rk_le_of_subset inter_subset_left
 
   obtain ⟨k₁, hk₁⟩ := hmin ⟨(M.rk (F j)), hub⟩
-  obtain ⟨k, hkk₁ : _ ⊆ _, hkj : _ ⊆ _⟩ := h_dir k₁ j
+  obtain ⟨k, hkk₁, hkj⟩ := h_dir k₁ j
   refine ⟨k, (iInter_subset _ _).antisymm' (subset_iInter fun i ↦ ?_)⟩
 
   by_contra hnss
-  obtain ⟨i', hki' : _ ⊆ _, hii' : _ ⊆ _⟩ := h_dir k i
+  obtain ⟨i', hki', hii'⟩ := h_dir k i
   have hss : F j ∩ F i' ⊂ F j ∩ F k₁
   · obtain ⟨e, hek, hei⟩ := not_subset.1 hnss
     refine (inter_subset_inter_right _ (hki'.trans hkk₁)).ssubset_of_ne fun h_eq ↦ hei ?_
@@ -432,6 +432,7 @@ lemma disjointSigma_isFlat_iff {M : ι → Matroid α} (hdj : Pairwise (Disjoint
   simp_rw [isFlat_iff_closure_eq, disjointSigma_closure, (h.1 _).closure, ← inter_iUnion,
     inter_eq_self_of_subset_left h.2]
 
+set_option backward.isDefEq.respectTransparency false in
 @[simp]
 lemma disjointSum_isFlat_iff {M N : Matroid α} (hdj : Disjoint M.E N.E) :
     (M.disjointSum N hdj).IsFlat F ↔ M.IsFlat (F ∩ M.E) ∧ N.IsFlat (F ∩ N.E) ∧ F ⊆ M.E ∪ N.E := by
@@ -484,7 +485,7 @@ end Sum
 --   exact ⟨hF, hXF⟩,
 -- end )
 -- (begin
---   simp only [mem_diff, mem_sInter, mem_set_of_eq, and_imp, not_forall, exists_prop,
+--   simp only [mem_sdiff, mem_sInter, mem_set_of_eq, and_imp, not_forall, exists_prop,
 --     forall_exists_index],
 --   refine λ X e f h F₀ hF₀ hXF₀ hfF₀, ⟨λ Ff hFf hfXf, _,
 --     ⟨F₀, hF₀, hXF₀, λ heF₀, hfF₀ (h _ hF₀ (insert_subset.mpr ⟨heF₀,hXF₀⟩))⟩⟩,

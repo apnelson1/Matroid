@@ -153,8 +153,9 @@ lemma isRegular_of_ne_top [IsCancelMul (Submonoid.neTop M)] (hx : x ≠ ⊤) : I
   obtain rfl | hz := eq_or_ne z ⊤
   · simp [hx, hy] at hyz
   have hwin := mul_right_inj (G := Submonoid.neTop M) (a := ⟨x, hx⟩) (b := ⟨y, hy⟩) (c := ⟨z, hz⟩)
-  simp_rw [Subtype.mk_eq_mk, (Submonoid.neTop M).mk_mul_mk _ _ hx hy,
-    (Submonoid.neTop M).mk_mul_mk _ _ hx hz, Subtype.mk.injEq] at hwin
+  simp_rw [(Submonoid.neTop M).mk_mul_mk _ _ hx hy, (Submonoid.neTop M).mk_mul_mk _ _ hx hz,
+    Subtype.mk.injEq] at hwin
+  rw [Subtype.mk_eq_mk (a := y) (a' := z) (h := hy) (h' := hz)] at hwin
   exact hwin.1 hyz
 
 @[to_additive]
@@ -165,9 +166,9 @@ lemma mul_le_mul_iff_left_of_ne_top' [IsOrderedCancelMonoid (Submonoid.neTop M)]
   obtain rfl | hz := eq_or_ne z ⊤
   · simp
   have hwin := mul_le_mul_iff_left (α := Submonoid.neTop M) ⟨x, hx⟩ (b := ⟨y, hy⟩) (c := ⟨z, hz⟩)
-  simp only [Subtype.mk_le_mk] at hwin
-  rw [← hwin]
-  rfl
+  simp_rw [(Submonoid.neTop M).mk_mul_mk _ _ hx hy, (Submonoid.neTop M).mk_mul_mk _ _ hx hz,
+    Subtype.mk_le_mk] at hwin
+  exact hwin
 
 @[to_additive]
 lemma mul_le_mul_iff_right_of_ne_top' [IsOrderedCancelMonoid (Submonoid.neTop M)] (hx : x ≠ ⊤) :
@@ -242,14 +243,14 @@ def orderAddMonoidIsoNeTop (M : Type*) [AddCommMonoid M] [Preorder M] :
     (AddSubmonoid.neTop (WithTop M)) ≃+o M where
   toFun x := WithTop.untop x.1 x.2
   invFun x := ⟨x, by simp [AddSubmonoid.neTop]⟩
-  left_inv x := by simp
-  right_inv x := by simp
+  left_inv x := Subtype.ext (WithTop.coe_untop _ _)
+  right_inv x := WithTop.untop_coe _
   map_add' x y := by
     match x, y with
     | ⟨⊤, h⟩, _ => simp [AddSubmonoid.neTop] at h
     | _, ⟨⊤, h⟩ => simp [AddSubmonoid.neTop] at h
     | ⟨(x : M), hx⟩, ⟨(y : M), hy⟩ => norm_cast
-  map_le_map_iff' := by simp
+  map_le_map_iff' {a b} := WithTop.untop_le_untop_iff a.2 b.2
 
 instance [AddCommMonoid M] [IsCancelAdd M] [Preorder M] :
     IsCancelAdd (AddSubmonoid.neTop (WithTop M)) := by
@@ -287,8 +288,8 @@ def orderRingIsoNeTop (R : Type*) [DecidableEq R] [Semiring R] [PartialOrder R]
     Subsemiring.neTop (WithTop R) ≃+*o R where
   invFun x := ⟨x, by simp [Subsemiring.neTop]⟩
   toFun x := WithTop.untop x.1 x.2
-  left_inv x := by simp
-  right_inv x := by simp
+  left_inv x := Subtype.ext (WithTop.coe_untop _ _)
+  right_inv x := WithTop.untop_coe _
   map_mul' x y := by
     match x, y with
     | ⟨⊤, h⟩, _ => simp [Subsemiring.neTop] at h
@@ -299,7 +300,7 @@ def orderRingIsoNeTop (R : Type*) [DecidableEq R] [Semiring R] [PartialOrder R]
     | ⟨⊤, h⟩, _ => simp [Subsemiring.neTop] at h
     | _, ⟨⊤, h⟩ => simp [Subsemiring.neTop] at h
     | ⟨(x : R), hx⟩, ⟨(y : R), hy⟩ => norm_cast
-  map_le_map_iff' := by simp
+  map_le_map_iff' {a b} := WithTop.untop_le_untop_iff a.2 b.2
 
 end Ring
 

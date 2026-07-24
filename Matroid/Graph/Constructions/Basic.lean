@@ -49,7 +49,7 @@ protected def singleEdge (u v : α) (e : β) : Graph α β where
   vertexSet := {u,v}
   edgeSet := {e}
   IsLink e' x y := e' = e ∧ ((x = u ∧ y = v) ∨ (x = v ∧ y = u))
-  isLink_symm := by tauto
+  isLink_symm e he := ⟨by tauto⟩
   eq_or_eq_of_isLink_of_isLink := by aesop
   edge_mem_iff_exists_isLink := by tauto
   left_mem_of_isLink := by tauto
@@ -149,14 +149,13 @@ def CompleteGraph (n : ℕ) : Graph ℕ (Sym2 ℕ) where
   vertexSet := Set.Iio n
   edgeSet := {s | (∀ i ∈ s, i < n) ∧ ¬ s.IsDiag}
   IsLink e x y := x < n ∧ y < n ∧ x ≠ y ∧ e = s(x, y)
-  isLink_symm e he x y := by beta_reduce; rw [Sym2.eq_swap]; tauto
+  isLink_symm e he := ⟨fun x y ↦ by rw [Sym2.eq_swap]; tauto⟩
   eq_or_eq_of_isLink_of_isLink e x y z w h := by
     simp only [h, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq, Prod.swap_prod_mk]
     tauto
   edge_mem_iff_exists_isLink e := by
-    induction e with
-    | h x y =>
-    simp +contextual only [mem_setOf_eq, Sym2.mem_iff, forall_eq_or_imp, forall_eq,
+    induction e with | h x y =>
+    simp +contextual only [mem_ofPred_eq, Sym2.mem_iff, forall_eq_or_imp, forall_eq,
       Sym2.mk_isDiag_iff, ne_eq, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq, Prod.swap_prod_mk,
       exists_and_left, iff_def, and_imp, forall_exists_index]
     refine ⟨fun hx hy hne ↦ ?_, fun a ha b hb hne heq ↦ ?_⟩
@@ -169,7 +168,7 @@ lemma inc_completeGraph (n x : ℕ) (e : Sym2 ℕ) :
     (CompleteGraph n).Inc e x ↔ x ∈ e ∧ e ∈ E(CompleteGraph n) := by
   induction e with | h u v => _
   simp only [Inc, CompleteGraph_isLink, ne_eq, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq,
-    Prod.swap_prod_mk, exists_and_left, Sym2.mem_iff, edgeSet_CompleteGraph, mem_setOf_eq,
+    Prod.swap_prod_mk, exists_and_left, Sym2.mem_iff, edgeSet_CompleteGraph, mem_ofPred_eq,
     forall_eq_or_imp, forall_eq, Sym2.mk_isDiag_iff]
   grind
 
@@ -200,7 +199,7 @@ lemma encard_edgeSet_completeGraph (n : ℕ) : E(CompleteGraph n).encard = n.cho
 lemma neighbors_completeGraph (n : ℕ) (x : ℕ) (hx : x < n) :
     N(CompleteGraph n, x) = Set.Iio n \ {x} := by
   ext y
-  simp only [Neighbor, mem_setOf_eq, mem_diff, mem_singleton_iff, mem_Iio]
+  simp only [Neighbor, mem_ofPred_eq, mem_sdiff, mem_singleton_iff, mem_Iio]
   refine ⟨fun hadj ↦ ?_, fun ⟨hy, hne⟩ ↦ (completeGraph_adj n x y hx hy).mpr (Ne.symm hne)⟩
   have hy : y < n := by simpa [vertexSet_CompleteGraph, mem_Iio] using hadj.right_mem
   refine ⟨hy, ?_⟩
@@ -211,7 +210,7 @@ lemma neighbors_completeGraph (n : ℕ) (x : ℕ) (hx : x < n) :
 lemma encard_neighbors_completeGraph (n : ℕ) (x : ℕ) (hx : x < n) :
     N(CompleteGraph n, x).encard = n - 1 := by
   have hiio : (Set.Iio n : Set ℕ).encard = n := encard_vertexSet_completeGraph n
-  rw [neighbors_completeGraph n x hx, Set.encard_diff_singleton_of_mem (Set.mem_Iio.mpr hx), hiio]
+  rw [neighbors_completeGraph n x hx, Set.encard_sdiff_singleton_of_mem (Set.mem_Iio.mpr hx), hiio]
 
 @[simp]
 lemma incEdges_completeGraph (n : ℕ) (x : ℕ) (hx : x < n) :
@@ -268,10 +267,7 @@ def CompleteBipartiteGraph (m n : ℕ) : Graph (ℕ ⊕ ℕ) (ℕ × ℕ) where
   IsLink e x y :=
     e.1 < m ∧ e.2 < n ∧
       ((x = Sum.inl e.1 ∧ y = Sum.inr e.2) ∨ (x = Sum.inr e.2 ∧ y = Sum.inl e.1))
-  isLink_symm e he x y h := by
-    rcases h.2.2 with hxy | hxy
-    · exact ⟨h.1, h.2.1, Or.inr ⟨hxy.2, hxy.1⟩⟩
-    · exact ⟨h.1, h.2.1, Or.inl ⟨hxy.2, hxy.1⟩⟩
+  isLink_symm e he := ⟨by grind⟩
   eq_or_eq_of_isLink_of_isLink := by
     rintro e x y z w ⟨_, _, hxy | hxy⟩ ⟨_, _, hzw | hzw⟩ <;> aesop
   edge_mem_iff_exists_isLink e := by
@@ -297,7 +293,7 @@ lemma encard_vertexSet_completeBipartiteGraph (m n : ℕ) :
       {x | match x with | Sum.inl i => i < m | Sum.inr j => j < n} =
         Sum.inl '' Iio m ∪ Sum.inr '' Iio n := by
     ext x
-    cases x <;> simp [mem_image, mem_union, mem_Iio, mem_setOf_eq, exists_eq_right]
+    cases x <;> simp [mem_image, mem_union, mem_Iio, mem_ofPred_eq, exists_eq_right]
   rw [hV, encard_union_eq disjoint_image_inl_image_inr, Sum.inl_injective.encard_image,
     Sum.inr_injective.encard_image, ← (finite_Iio m).cast_ncard_eq, ← (finite_Iio n).cast_ncard_eq,
     ncard_Iio_nat, ncard_Iio_nat]
@@ -308,7 +304,7 @@ lemma encard_edgeSet_completeBipartiteGraph (m n : ℕ) :
   simp only [edgeSet_CompleteBipartiteGraph]
   have hE : {e : ℕ × ℕ | e.1 < m ∧ e.2 < n} = Iio m ×ˢ Iio n := by
     ext e
-    simp [mem_prod, mem_setOf_eq, mem_Iio]
+    simp [mem_prod, mem_ofPred_eq, mem_Iio]
   rw [hE, encard_prod, ← (finite_Iio m).cast_ncard_eq, ← (finite_Iio n).cast_ncard_eq,
     ncard_Iio_nat, ncard_Iio_nat]
 
@@ -319,7 +315,7 @@ def StarGraph (v : α) (f : β →. α) : Graph α β where
   edgeSet := f.Dom
   IsLink e x y := ∃ (he : e ∈ f.Dom), s(v, f.fn e he) = s(x, y)
   edge_mem_iff_exists_isLink e := ⟨fun h ↦ ⟨v, f.fn e h, h, rfl⟩, fun ⟨x, y, he, h⟩ ↦ he⟩
-  isLink_symm e he x y h := by beta_reduce; rwa [Sym2.eq_swap]
+  isLink_symm e he := ⟨fun x y h ↦ by rwa [Sym2.eq_swap]⟩
   eq_or_eq_of_isLink_of_isLink e x y z w h1 h2 := by
     obtain ⟨he, h⟩ := h1
     obtain ⟨_, h'⟩ := h2
@@ -343,10 +339,9 @@ lemma starGraph_inc_iff (v : α) (f : β →. α) (e : β) (x : α) :
     right
     apply Part.get_mem
   obtain ⟨rfl, y, hy⟩ | hx := h
-  · use y, ⟨y, hy⟩
-    simp [Part.get_eq_of_mem hy]
-  · use v, ⟨x, hx⟩
-    simp [Part.get_eq_of_mem hx]
+  · grind
+  use v, ⟨x, hx⟩
+  grind [Part.get_eq_of_mem]
 
 @[simp]
 lemma starGraph_adj_iff (v : α) (f : β →. α) (x y : α) :
@@ -358,9 +353,7 @@ lemma starGraph_adj_iff (v : α) (f : β →. α) (x y : α) :
     · use h.1, e
       rw [← h.2]
       apply Part.get_mem
-  obtain ⟨rfl, e, h⟩ | ⟨rfl, e, h⟩ := h <;>
-  · use e, ⟨_, h⟩
-    simp [Part.get_eq_of_mem h]
+  obtain ⟨rfl, e, h⟩ | ⟨rfl, e, h⟩ := h <;> use e, ⟨_, h⟩ <;> grind [Part.get_eq_of_mem]
 
 -- /-! ### Graph constructor from a list of pairs of vertices -/
 
@@ -371,7 +364,7 @@ def fromList (S : Set α) (l : List (α × α)) : Graph α ℕ where
   vertexSet := S ∪ {x | ∃ p ∈ l, x = p.1 ∨ x = p.2}
   edgeSet := Finset.range l.length
   IsLink e x y := ∃ p, l[e]? = some p ∧ s(x,y) = s(p.1, p.2)
-  isLink_symm e x y h1 h2 := by beta_reduce; rwa [Sym2.eq_swap]
+  isLink_symm e he := ⟨fun x y h1 ↦ by rwa [Sym2.eq_swap]⟩
   eq_or_eq_of_isLink_of_isLink e x y z w h₁ h₂ := by aesop
   edge_mem_iff_exists_isLink e := by
     simp only [Finset.coe_range, mem_Iio, Prod.mk.eta, Sym2.eq, Sym2.rel_iff', and_comm,
@@ -384,7 +377,7 @@ def fromList (S : Set α) (l : List (α × α)) : Graph α ℕ where
   left_mem_of_isLink e x y h := by
     obtain ⟨p, hep, hs⟩ := h
     right
-    simp only [Prod.mk.eta, Sym2.eq, Sym2.rel_iff', Prod.exists, mem_setOf_eq] at hs ⊢
+    simp only [Prod.mk.eta, Sym2.eq, Sym2.rel_iff', Prod.exists, mem_ofPred_eq] at hs ⊢
     obtain rfl | hp := hs
     · use x, y, List.mem_of_getElem? hep, by tauto
     · use y, x, ?_, by tauto
@@ -396,7 +389,7 @@ def OfSimpleGraph (G : SimpleGraph α) : Graph α (Sym2 α) where
   vertexSet := univ
   edgeSet := {s | ∃ x y, G.Adj x y ∧ s(x, y) = s}
   IsLink e x y := G.Adj x y ∧ s(x, y) = e
-  isLink_symm e he x y h := by use h.1.symm, Sym2.eq_swap ▸ h.2
+  isLink_symm e he := ⟨fun x y h ↦ by use h.1.symm, Sym2.eq_swap ▸ h.2⟩
   eq_or_eq_of_isLink_of_isLink e x y z w h1 h2 := by
     have : x = z ∧ y = w ∨ x = w ∧ y = z := by simpa using h1.2.trans h2.2.symm
     tauto
@@ -407,9 +400,9 @@ def OfSimpleGraphSet {S : Set α} (G : SimpleGraph S) : Graph α (Sym2 α) where
   vertexSet := S
   edgeSet := {s | ∃ x y, G.Adj x y ∧ s(x.val, y.val) = s}
   IsLink e x y := ∃ (hx : x ∈ S) (hy : y ∈ S), G.Adj ⟨x, hx⟩ ⟨y, hy⟩ ∧ s(x, y) = e
-  isLink_symm e he x y h := by
+  isLink_symm e he := ⟨fun x y h ↦ by
     obtain ⟨hx, hy, h, rfl⟩ := h
-    use hy, hx, h.symm, Sym2.eq_swap
+    use hy, hx, h.symm, Sym2.eq_swap⟩
   eq_or_eq_of_isLink_of_isLink e x y z w h1 h2 := by
     obtain ⟨-, -, -, rfl⟩ := h1
     obtain ⟨-, -, -, heq⟩ := h2
@@ -431,11 +424,11 @@ def LineGraph (G : Graph α β) : Graph β (Sym2 β) where
   edgeSet := (fun (p : β × β) ↦ Sym2.mk p.1 p.2) ''
     { (e, f) | (e ≠ f) ∧ ∃ x, G.Inc e x ∧ G.Inc f x }
   IsLink a e f := s(e, f) = a ∧ e ≠ f ∧ ∃ x, G.Inc e x ∧ G.Inc f x
-  edge_mem_iff_exists_isLink a := by simp only [and_comm, mem_image, mem_setOf_eq, Prod.exists]
-  isLink_symm a ha e f hef := by
-    simp_all only [mem_image, mem_setOf_eq, Prod.exists]
+  edge_mem_iff_exists_isLink a := by simp only [and_comm, mem_image, mem_ofPred_eq, Prod.exists]
+  isLink_symm a ha := ⟨fun e f hef ↦ by
+    simp_all only [mem_image, mem_ofPred_eq, Prod.exists]
     simp_rw [and_comm, Sym2.eq_swap]
-    simp [hef.1, hef.2.1.symm, hef.2.2]
+    simp [hef.1, hef.2.1.symm, hef.2.2]⟩
   eq_or_eq_of_isLink_of_isLink := by
     rintro a e f g h ⟨rfl, hef, h⟩ ⟨heq, hgf, h'⟩
     simp only [Sym2.eq, Sym2.rel_iff', Prod.mk.injEq, Prod.swap_prod_mk] at heq
@@ -449,7 +442,7 @@ scoped notation "L(" G ")" => LineGraph G
 @[simp]
 lemma lineGraph_inc (G : Graph α β) (s : Sym2 β) (e : β) : L(G).Inc s e ↔ s ∈ E(L(G)) ∧ e ∈ s := by
   unfold Inc
-  simp +contextual only [LineGraph_isLink, edgeSet_LineGraph, mem_image, mem_setOf_eq, Prod.exists,
+  simp +contextual only [LineGraph_isLink, edgeSet_LineGraph, mem_image, mem_ofPred_eq, Prod.exists,
     iff_def, forall_exists_index, and_imp]
   refine ⟨fun a hs hne x he ha ↦ ?_, fun a b hne x ha hb hs hes ↦ ?_⟩ <;> subst s
   · exact ⟨⟨e, a, ⟨hne, x, he, ha⟩, rfl⟩, by simp⟩
@@ -489,7 +482,7 @@ def mixedLineGraph (G : Graph α β) : Graph (α ⊕ β) (α × β) where
   vertexSet := Sum.inl '' V(G) ∪ Sum.inr '' E(G)
   edgeSet := {(a, b) | G.Inc b a}
   IsLink e x y := G.Inc e.2 e.1 ∧ s(Sum.inl e.1, Sum.inr e.2) = s(x, y)
-  isLink_symm e he x y h := ⟨h.1, by simp [h.2]⟩
+  isLink_symm e he := ⟨fun x y h ↦ ⟨h.1, by simp [h.2]⟩⟩
   eq_or_eq_of_isLink_of_isLink e a b c d hab hcd := by
     have : a = c ∧ b = d ∨ a = d ∧ b = c := by simpa using hab.2.symm.trans hcd.2
     tauto

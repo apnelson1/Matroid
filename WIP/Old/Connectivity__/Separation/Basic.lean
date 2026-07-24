@@ -136,7 +136,7 @@ lemma bSymm_bSymm (P : M.Separation) (b c : Bool) : (P.bSymm b).bSymm c = P.bSym
 protected lemma subset_ground (P : M.Separation) : P i ⊆ M.E := P.subset
 
 lemma apply_eq_iff : P i = M.E ↔ P (!i) = ∅ := by
-  rw [← P.compl_eq, diff_eq_empty, subset_antisymm_iff, and_iff_right P.subset]
+  rw [← P.compl_eq, sdiff_eq_empty, subset_antisymm_iff, and_iff_right P.subset]
 
 /-- Transfer a separation across a matroid equality. -/
 protected def copy {M' : Matroid α} (P : M.Separation) (h_eq : M = M') : M'.Separation where
@@ -363,7 +363,7 @@ end Separation
 --   (P.left ∩ R) ((P.right ∩ R) ∪ (R \ M.E))
 --   (disjoint_union_right.2 ⟨(P.disjoint.mono inter_subset_left inter_subset_left),
 --       disjoint_sdiff_right.mono_left (inter_subset_left.trans P.left_subset_ground)⟩)
---   (by rw [← union_assoc, ← union_inter_distrib_right, P.union_eq, inter_comm, inter_union_diff,
+--   (by rw [← union_assoc, ← union_inter_distrib_right, P.union_eq, inter_comm, inter_union_sdiff,
 --     restrict_ground_eq])
 
 -- lemma eConn_restrict_eq (P : M.Separation) (R : Set α) :
@@ -371,7 +371,7 @@ end Separation
 --   simp only [eConn, Separation.restrict, eLocalConn_restrict_eq, Separation.mk'_left,
 --     Separation.mk'_right]
 --   rw [union_inter_distrib_right, inter_assoc, inter_assoc, inter_self,
---     inter_eq_self_of_subset_left diff_subset, ← eLocalConn_inter_ground_right,
+--     inter_eq_self_of_subset_left sdiff_subset, ← eLocalConn_inter_ground_right,
 --     union_inter_distrib_right, disjoint_sdiff_left.inter_eq, union_empty,
 --     eLocalConn_inter_ground_right]
 
@@ -641,4 +641,4 @@ lemma _root_.Matroid.Connected.trivial_of_eConn_eq_zero (h : M.Connected) (hP : 
 lemma Nontrivial.one_le_eConn_of_connected (hP : P.Nontrivial) (hM : M.Connected) :
     1 ≤ P.eConn := by
   contrapose! hP
-  simpa using hM.trivial_of_eConn_eq_zero <| ENat.lt_one_iff_eq_zero.1 hP
+  simpa using hM.trivial_of_eConn_eq_zero <| Order.lt_one_iff.1 hP

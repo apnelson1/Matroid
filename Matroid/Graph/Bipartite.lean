@@ -1,7 +1,7 @@
 import Matroid.Graph.Tree
 
 variable {α β : Type*} {G H T : Graph α β} {u v x y z : α} {e e' f g : β} {X : Set α} {F : Set β}
-{P C W : WList α β} {n : ℕ}
+  {P C W : WList α β} {n : ℕ}
 
 open Set WList Function
 
@@ -245,7 +245,7 @@ noncomputable def Bipartition.union (G H : Graph α β) (B₁ : G.Bipartition) (
     simp only [mem_insert_iff, mem_singleton_iff] at hi
     obtain rfl : i = H ＼ E(G) := hi.resolve_left h
     exact B₂.of_le deleteEdges_le) (by
-    rw [Set.pairwise_pair_of_symmetric Std.Symm.symm]
+    rw [Set.pairwise_pair_of_symm]
     exact fun _ ↦ hGH.anti_right deleteEdges_le)
 
 /-- Rather than switching the entire bipartition, we can switch the bipartition for the component

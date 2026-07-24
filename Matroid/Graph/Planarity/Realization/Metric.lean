@@ -70,9 +70,12 @@ private lemma iInf_distToVtx_add (x y : PreRealization G) :
     conv in G.distToVtx (inr ⟨e, t⟩) _ + G.distToVtx y _ =>
       rw [distToVtx, add_comm _ (ENNReal.ofReal _), add_comm _ (ENNReal.ofReal _)]
       exact (min_add_add_right _ _ _).symm
-    convert iInf_inf_eq <;> simp_rw [add_assoc, ← ENNReal.add_iInf]
-    <;> change _ = _ + (⨅ v, distToVtx G (Sum.inl _) v  + _)
-    <;> refine congr_arg (ENNReal.ofReal _ + ·) <| by rw [iInf_distToVtx_add]
+    convert iInf_inf_eq
+    · rfl
+    all_goals
+    · simp_rw [add_assoc, ← ENNReal.add_iInf]
+      change _ = _ + (⨅ v, distToVtx G (Sum.inl _) v  + _)
+      exact congr_arg (ENNReal.ofReal _ + ·) <| by rw [iInf_distToVtx_add]
 
 @[simp]
 private lemma preRealizationEDist_inl_left (u : V(G)) (x : PreRealization G) :
@@ -236,7 +239,7 @@ private lemma preRealizationEDist_zero_iff (x y : PreRealization G) :
     norm_cast
     simp [Subtype.coe_inj]
   | .inl v, .inr ⟨e, t⟩ =>
-    simp only [preRealizationEDist_inl_left, distToVtx, min_eq_zero_iff, add_eq_zero,
+    simp only [preRealizationEDist_inl_left, distToVtx, min_eq_zero, add_eq_zero,
       ofReal_eq_zero, unitInterval.val_le_zero_iff, tsub_le_iff_right, zero_add,
       unitInterval.one_le_val_iff, glueRel_inl_iff_glueRelAux, glueRelAux_inr_iff, inl.injEq,
       exists_eq_left']
@@ -244,7 +247,7 @@ private lemma preRealizationEDist_zero_iff (x y : PreRealization G) :
     simp only [eDist_eq_zero_iff, Subtype.coe_inj, Subtype.coe_prop, and_true]
     tauto
   | .inr ⟨e, t⟩, .inl v =>
-    simp only [preRealizationEDist_inl_right, distToVtx, min_eq_zero_iff, add_eq_zero,
+    simp only [preRealizationEDist_inl_right, distToVtx, min_eq_zero, add_eq_zero,
       ofReal_eq_zero, unitInterval.val_le_zero_iff, tsub_le_iff_right, zero_add,
       unitInterval.one_le_val_iff, glueRel_inr_inl]
     norm_cast
@@ -252,7 +255,7 @@ private lemma preRealizationEDist_zero_iff (x y : PreRealization G) :
     tauto
   | .inr ⟨e₁, t₁⟩, .inr ⟨e₂, t₂⟩ =>
     simp only [preRealizationEDist, iInf_distToVtx_add]
-    simp only [directDist, distToVtx, min_eq_zero_iff, add_eq_zero, ofReal_eq_zero,
+    simp only [directDist, distToVtx, min_eq_zero, add_eq_zero, ofReal_eq_zero,
       unitInterval.val_le_zero_iff, tsub_le_iff_right, zero_add, unitInterval.one_le_val_iff,
       glueRel_inr_inr_iff, glueRel_inl_iff_glueRelAux, glueRelAux_inr_iff, inl.injEq,
       exists_eq_left', Subtype.exists]

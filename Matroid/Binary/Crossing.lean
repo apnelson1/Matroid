@@ -52,7 +52,7 @@ lemma CrossingBinary.iso {N : Matroid β} (hM : M.CrossingBinary) (i : M ≂ N) 
   have hfin : (Subtype.val '' (⇑i.symm '' N.E ↓∩ ↑X)).Finite
   · simp [← encard_ne_top_iff, hcard_eq]
   convert hM.even_of_finite (i.symm.isCrossing_image hX') hfin
-  rw [← ENat.coe_inj, ← encard_coe_eq_coe_finsetCard, ← hcard_eq,
+  rw [← ENat.natCast_inj, ← encard_coe_eq_coe_finsetCard, ← hcard_eq,
     ← encard_coe_eq_coe_finsetCard]
   simp
 
@@ -109,13 +109,13 @@ lemma exist_isCocircuits_of_rank_two (hr : M.eRank = 2) (hel : ¬ M.IsColoop e) 
   · convert hN.delete (D := {e}) (by simpa)
     simp only [mem_singleton_iff, iUnion_iUnion_eq_left]
     rw [setOf_parallel_eq_closure_diff_loops, he.loopless_of_singleton.loops_eq_empty,
-      he.isFlat.closure, diff_empty]
+      he.isFlat.closure, sdiff_empty]
   -- Since `M` has no `U_{2,4}`-minor, we have `|N| ≤ 3` and so `|N \ e| ≤ 2`.
   replace hU := hU.minor hN.isRestriction.isMinor
   rw [no_line_minor_iff_of_eRank_le_two (hN.isRestriction.isMinor.eRank_le.trans_eq hr),
     hN.simple.simplification_eq_self, show ((4 : ℕ) : ℕ∞) = (2 : ℕ∞) + 1 + 1 by norm_num,
     ENat.lt_add_one_iff (by norm_num),
-    ← encard_diff_singleton_add_one (he.mem_simplification hN),
+    ← encard_sdiff_singleton_add_one (he.mem_simplification hN),
     ENat.add_one_le_add_one_iff, ← delete_ground] at hU
   -- Since `N ＼ e` has rank two and at most two elements,
   -- it must have a two-element ground set `{a,b}`.
@@ -141,11 +141,11 @@ lemma exist_isCocircuits_of_rank_two (hr : M.eRank = 2) (hel : ¬ M.IsColoop e) 
     simp
   -- Each such closure is the complement of a hyperplane, so is a cocircuit. We're done.
   refine ⟨_, _, ?_, ?_, hdj, hucl⟩
-  · rw [← isHyperplane_compl_iff_isCocircuit, ← hucl, union_diff_left, hdj.sdiff_eq_right,
-      ← pair_diff_left hab]
+  · rw [← isHyperplane_compl_iff_isCocircuit, ← hucl, union_sdiff_left, hdj.sdiff_eq_right,
+      ← pair_sdiff_left hab]
     exact hIM.isHyperplane_of_closure_diff_singleton (by simp)
-  rw [← isHyperplane_compl_iff_isCocircuit, ← hucl, union_diff_right, hdj.sdiff_eq_left,
-    ← pair_diff_right hab]
+  rw [← isHyperplane_compl_iff_isCocircuit, ← hucl, union_sdiff_right, hdj.sdiff_eq_left,
+    ← pair_sdiff_right hab]
   exact hIM.isHyperplane_of_closure_diff_singleton (by simp)
 
 /-- If `C` is a spanning/cospanning circuit/cocircuit of finite odd cardinality in a matroid `M`
@@ -171,8 +171,8 @@ lemma exists_smaller_of_odd_isCircuit_isCocircuit (hfin : C.Finite) (hCc : M.IsC
   -- Now contract all but one element of `M.E \ C`.
   set N := M ／ ((M.E \ C) \ {f}) with hN
   have hNE : C = N.E \ {f} := by
-    rw [hN, contract_ground, diff_diff, diff_union_self, union_singleton,
-      insert_eq_self.2 hf, diff_diff_cancel_left hCc.subset_ground]
+    rw [hN, contract_ground, sdiff_sdiff, sdiff_union_self, union_singleton,
+      insert_eq_self.2 hf, sdiff_sdiff_cancel_left hCc.subset_ground]
   have hNM : N ≤m M := contract_isMinor _ _
   -- Since `f` is in the coindependent set `M.E \ C`, it is not a coloop of `M` or `N`.
   have hfl : ¬ N.IsColoop f
@@ -180,13 +180,13 @@ lemma exists_smaller_of_odd_isCircuit_isCocircuit (hfin : C.Finite) (hCc : M.IsC
       (hCs.compl_coindep.indep.isNonloop_of_mem hf).not_isLoop
   -- `N` has rank two, since we contracted all but one element of an independent hyperplane.
   have hNr : N.eRank = 2
-  · rw [hN, eRank_contract_eq_eRelRk_ground, ← eRelRk_add_cancel _ diff_subset diff_subset,
-      hCh.eRelRk_eq_one, hCi.eRelRk_of_subset diff_subset, diff_diff_cancel_left (by simpa),
+  · rw [hN, eRank_contract_eq_eRelRk_ground, ← eRelRk_add_cancel _ sdiff_subset sdiff_subset,
+      hCh.eRelRk_eq_one, hCi.eRelRk_of_subset sdiff_subset, sdiff_sdiff_cancel_left (by simpa),
       encard_singleton, one_add_one_eq_two]
   -- Since the hyperplane was independent, the remaining element is a flat.
   have hfP : N.IsPoint {f}
-  · rw [IsPoint, isFlat_iff_closure_self, hN, contract_closure_eq, union_diff_cancel (by simpa)]
-    simp [hCh.isFlat.closure, hf.1, hf.2, hCi.notMem_closure_diff_of_mem hf]
+  · rw [IsPoint, isFlat_iff_closure_self, hN, contract_closure_eq, union_sdiff_cancel (by simpa)]
+    simp [hCh.isFlat.closure, hf.1, hf.2, hCi.notMem_closure_sdiff_of_mem hf]
   -- Therefore `C = (N ＼ f).E` is the union of two disjoint cocircuits.
   obtain ⟨C₁, C₂, hC₁, hC₂, hdj, hu⟩ := exist_isCocircuits_of_rank_two hNr hfl hfP (h_bin.minor hNM)
   -- We may assume that both are even, which contradicts oddness of `C`.
@@ -217,20 +217,20 @@ lemma IsCrossing.exists_isMinor_isCircuit_isCocircuit (hX : M.IsCrossing X) (hXn
   have hdj2 : Disjoint (C ∩ K) (C \ K) := disjoint_sdiff_right.mono_left inter_subset_right
   set N₁ := M ／ (C \ K) ＼ (K \ C) with hN₁
   have hXE : C ∩ K ⊆ N₁.E := by
-    rw [hN₁, delete_ground, contract_ground, diff_diff, subset_diff,
+    rw [hN₁, delete_ground, contract_ground, sdiff_sdiff, subset_sdiff,
       and_iff_right (inter_subset_left.trans hC.subset_ground)]
     simp [hdj1, hdj2]
   obtain ⟨N₂, hN₂N₁, hN₂r, hN₂r', hsp, hcsp⟩ :=
     N₁.exists_isMinor_restrict_corestrict_eq_spanning_cospanning hXE
   refine ⟨N₂, hN₂N₁.trans (contract_delete_isMinor ..), ?_, ?_, hsp, hcsp⟩
   · rw [isCircuit_iff_restr_eq_circuitOn hXne, hN₂r, ← isCircuit_iff_restr_eq_circuitOn hXne,
-      hN₁, delete_isCircuit_iff, and_iff_left hdj1, ← diff_self_inter]
-    apply hC.contract_diff_isCircuit hXne inter_subset_left
+      hN₁, delete_isCircuit_iff, and_iff_left hdj1, ← sdiff_self_inter]
+    apply hC.contract_sdiff_isCircuit hXne inter_subset_left
   rw [IsCocircuit, isCircuit_iff_restr_eq_circuitOn hXne, hN₂r',
     ← isCircuit_iff_restr_eq_circuitOn hXne, ← isCocircuit_def, hN₁,
     contract_delete_comm _ disjoint_sdiff_sdiff, contract_isCocircuit_iff, and_iff_left hdj2,
-    ← diff_inter_self_eq_diff, isCocircuit_def, dual_delete]
-  exact hK.isCircuit.contract_diff_isCircuit hXne inter_subset_right
+    ← sdiff_inter_self_eq_sdiff, isCocircuit_def, dual_delete]
+  exact hK.isCircuit.contract_sdiff_isCircuit hXne inter_subset_right
 
 lemma exists_uniformMinor_of_odd_isCrossing {M : Matroid α} {X : Finset α} (hX : M.IsCrossing X)
     (h_odd : Odd X.card) : ¬ M.NoUniformMinor 2 4  := by
@@ -282,7 +282,7 @@ lemma Even.add_even [Semiring α] {a b : α} (ha : Even a) (hb : Even b) : Even 
 --   obtain ⟨C, rfl⟩ := (hAfin.subset hCA).exists_finset_coe
 --   have hcard {K'} (hK' : M.IsCocircuit K') :
 --       Even (((A \ C : Finset α) : Set α) ∩ K').encard ↔ Even (A ∩ K' : Set α).encard := by
---     rw [← diff_union_of_subset hCA, union_inter_distrib_right, encard_union_eq (by tauto_set),
+--     rw [← sdiff_union_of_subset hCA, union_inter_distrib_right, encard_union_eq (by tauto_set),
 --       ENat.even_add, iff_true_intro (hM.even_of_isCrossing (hC.isCrossing_inter hK')), iff_true,
 --       Finset.coe_sdiff]
 --     · simp only [ne_eq, encard_eq_top_iff, not_infinite]
@@ -291,12 +291,12 @@ lemma Even.add_even [Semiring α] {a b : α} (ha : Even a) (hb : Even b) : Even 
 --     exact hAfin.subset (by tauto_set)
 
 --   have hssu : A \ C ⊂ A := by
---     have := diff_ssubset hCA hC.nonempty
+--     have := sdiff_ssubset hCA hC.nonempty
 --     norm_cast at this
 --   have h_even := IH _ hssu ?_ (Finset.finite_toSet ..)
 --   · rwa [← hcard hK]
 --   rw [cyclic_iff_forall_inter_isCocircuit_encard_ne
---(by simp [diff_subset.trans hA.subset_ground])]
+--(by simp [sdiff_subset.trans hA.subset_ground])]
 --   intro K' hK' h1
 --   have hne : ¬ Even (((A \ C : Finset α) : Set α) ∩ K').encard := by
 --     rw [h1, ← Nat.cast_one, ENat.even_natCast]
@@ -316,7 +316,7 @@ lemma Even.add_even [Semiring α] {a b : α} (ha : Even a) (hb : Even b) : Even 
 
 
 
-  -- have := IH (A \ C) (Finset.diff_subset.ss)
+  -- have := IH (A \ C) (Finset.sdiff_subset.ss)
 
 
 
@@ -339,7 +339,7 @@ lemma Even.add_even [Semiring α] {a b : α} (ha : Even a) (hb : Even b) : Even 
 --       sorry
 --     have := CrossingBinary.cyclic_iff_forall_inter_isCocircuit_even
 
---     -- rw [← hssu, ← union_diff_self, union_inter_distrib_right, encard_union_eq]
+--     -- rw [← hssu, ← union_sdiff_self, union_inter_distrib_right, encard_union_eq]
 --     -- ·
 
 --   obtain ⟨r, hr⟩ := h K hK

@@ -47,9 +47,9 @@ def cycleMatroid (G : Graph α β) : Matroid β :=
       have hss : E(C) ⊆ (E(C₁) ∪ E(C₂)) \ {e} := by
         apply_fun Graph.edgeSet at hP₁C₁ hP₂C₂
         simp only [WList.toGraph_edgeSet, edgeSet_deleteEdges] at hP₁C₁ hP₂C₂
-        rwa [union_diff_distrib, ← hP₁C₁, ← hP₂C₂]
+        rwa [union_sdiff_distrib, ← hP₁C₁, ← hP₂C₂]
       refine ⟨E(C), ⟨C, hC, rfl⟩, notMem_subset hss (by simp), fun x hx ↦ ?_⟩
-      simpa using (hss.trans diff_subset) hx )
+      simpa using (hss.trans sdiff_subset) hx )
     (by
       rintro _ ⟨C, hC, rfl⟩
       exact C.edgeSet_finite )
@@ -89,10 +89,10 @@ lemma cycleMatroid_coindep : G.cycleMatroid.Coindep F ↔
     (show F ⊆ E(G) from hFE), true_and]
   refine ⟨fun ⟨B, hB, hBF⟩ x y ↦ ⟨fun hxy ↦ ?_, fun hxy ↦ hxy.mono deleteEdges_le⟩, fun h ↦ ?_⟩
   · rw [← IsMaximalAcyclicSet.connBetween_iff hB] at hxy
-    rw [subset_diff] at hBF
+    rw [subset_sdiff] at hBF
     exact hxy.mono <| by simp [inter_eq_right.mpr hBF.1, hBF.2]
   obtain ⟨B, hB⟩ := (G ＼ F).exists_isMaximalAcyclicSet
-  have hBF := by simpa [subset_diff] using hB.prop.subset
+  have hBF := by simpa [subset_sdiff] using hB.prop.subset
   use B, ⟨hB.prop.mono deleteEdges_le, fun R hR hBR ↦ ?_⟩, hB.prop.1
   by_contra! hRB
   obtain ⟨e, heR, heB⟩ := not_subset.mp hRB
@@ -102,14 +102,14 @@ lemma cycleMatroid_coindep : G.cycleMatroid.Coindep F ↔
   rw [restrict_deleteEdges] at hRexy
   have := (IsMaximalAcyclicSet.connBetween_iff hB).mpr <| (h x y).mp hxy.connBetween
   simp only [deleteEdges_restrict, hBF.2.sdiff_eq_left] at this
-  exact hRexy <| this.mono <| restrict_mono_right _ <| by simpa [subset_diff, heB]
+  exact hRexy <| this.mono <| restrict_mono_right _ <| by simpa [subset_sdiff, heB]
 
 lemma cycleMatroid_spanning : G.cycleMatroid.Spanning F ↔
     F ⊆ E(G) ∧ (∀ x y, G.ConnBetween x y ↔ (G ↾ F).ConnBetween x y) := by
   wlog hFE : F ⊆ E(G)
   · grind
   rw [spanning_iff_compl_coindep, cycleMatroid_coindep, cycleMatroid_E]
-  simp only [diff_subset, ← restrict_edgeSet_diff_eq_deleteEdges, hFE, diff_diff_cancel_left,
+  simp only [sdiff_subset, ← restrict_edgeSet_sdiff_eq_deleteEdges, hFE, sdiff_sdiff_cancel_left,
     true_and]
 
 @[simp, grind =]
@@ -178,9 +178,9 @@ lemma cycleMatroid_contract {φ} (hφ : H.connPartition.IsRepFun φ) (hHG : H �
     (G /[E(H), φ]).cycleMatroid = G.cycleMatroid ／ E(H) := by
   apply_fun dual using dual_injective
   refine ext_indep rfl fun I hI ↦ ?_
-  simp only [dual_ground, cycleMatroid_E, edgeSet_contract, subset_diff] at hI
+  simp only [dual_ground, cycleMatroid_E, edgeSet_contract, subset_sdiff] at hI
   have hHGI : H ≤ G ＼ I := by simpa [hI.2.symm]
-  simp only [← coindep_def, cycleMatroid_coindep, edgeSet_contract, subset_diff, hI.1, hI.2,
+  simp only [← coindep_def, cycleMatroid_coindep, edgeSet_contract, subset_sdiff, hI.1, hI.2,
     and_self, true_and, dual_contract, delete_indep_iff, and_true]
   refine ⟨fun h x y ↦ ?_, fun h x y ↦ ?_⟩
   · rw [← contract_connBetween_iff hφ hHG, h, contract_deleteEdges_comm,
@@ -196,7 +196,7 @@ lemma cycleMatroid_deleteVerts_isolatedSet (G : Graph α β) :
     (G - Isol(G)).cycleMatroid = G.cycleMatroid := by
   refine ext_isCircuit ?_ fun I hI ↦ ?_
   · rw [cycleMatroid_E, cycleMatroid_E, deleteVerts_edgeSet_diff, setincEdges_isolatedSet,
-      diff_empty]
+      sdiff_empty]
   rw [cycleMatroid_isCircuit, cycleMatroid_isCircuit]
   refine ⟨fun h ↦ h.of_isLink (fun e x y hxy ↦ ?_), fun h ↦ h.of_isLink (fun e x y hxy ↦ ?_)⟩
   · exact hxy.1
@@ -263,7 +263,7 @@ lemma cycleMatroid_loops : G.cycleMatroid.loops = ⋃ x, G.loopSet x := by
 lemma cycleMatroid_loopless_iff : G.cycleMatroid.Loopless ↔ G.Loopless := by
   refine ⟨fun ⟨h⟩ ↦ ⟨fun e x hex ↦ ?_⟩, fun ⟨h⟩ ↦ ⟨?_⟩⟩
   · rw [cycleMatroid_loops] at h
-    simp only [loopSet, Set.ext_iff, mem_iUnion, mem_setOf_eq, mem_empty_iff_false, iff_false,
+    simp only [loopSet, Set.ext_iff, mem_iUnion, mem_ofPred_eq, mem_empty_iff_false, iff_false,
       not_exists] at h
     exact h _ _ hex
   simp [cycleMatroid_loops, loopSet]
@@ -278,11 +278,11 @@ lemma cycleMatroid_isLoop (G : Graph α β) (e : β) :
 -- def edgeBasedVertexSep (G : Graph α β) (F : Set β) : Set α := V(G, F) ∩ V(G, E(G) \ F)
 
 lemma IsClosedSubgraph.cycleMatroid_skew (h : H ≤c G) : G.cycleMatroid.Skew E(H) (E(G) \ E(H)) := by
-  rw [skew_iff_exist_isBases, union_diff_cancel h.edgeSet_mono]
+  rw [skew_iff_exist_isBases, union_sdiff_cancel h.edgeSet_mono]
   obtain ⟨I, hI⟩ := exists_isBasis G.cycleMatroid E(H) h.edgeSet_mono
-  obtain ⟨J, hJ⟩ := exists_isBasis G.cycleMatroid (E(G) \ E(H)) diff_subset
+  obtain ⟨J, hJ⟩ := exists_isBasis G.cycleMatroid (E(G) \ E(H)) sdiff_subset
   use I, J, disjoint_sdiff_right.mono hI.subset hJ.subset, ?_
-  rw [← union_diff_cancel h.edgeSet_mono]
+  rw [← union_sdiff_cancel h.edgeSet_mono]
   refine hI.union_isBasis_union hJ ?_
   have hIH : I ⊆ E(H) := by simpa using hI.subset
   have hJH : J ⊆ E(G) \ E(H) := by simpa using hJ.subset
@@ -314,6 +314,7 @@ lemma cycleMatroid_disjointSum (h : (V(G) ∩ V(H)).Subsingleton) (hdj : Disjoin
   have := (skew_iff_restrict_union_eq (by simp) (by simp) hdj).mp <| hc.cycleMatroid_union_skew h
   rw [Matroid.restrict_eq_self_iff.mpr (by simp)] at this
   convert this
+  congr 1
   · exact (cycleMatroid_isRestriction_of_le (G.left_le_union H)).eq_restrict.symm
   · exact (cycleMatroid_isRestriction_of_le hc.right_le_union).eq_restrict.symm
 
@@ -324,7 +325,7 @@ lemma components_cycleMatroid_isSkewFamily (G : Graph α β) :
   convert H.prop.isClosedSubgraph.cycleMatroid_skew
   ext e
   simp only [mem_compl_iff, mem_singleton_iff, Subtype.ext_iff, ← ne_eq, iUnion_coe_set,
-    mem_components_iff_isCompOf, mem_iUnion, exists_prop, mem_diff]
+    mem_components_iff_isCompOf, mem_iUnion, exists_prop, mem_sdiff]
   refine ⟨fun ⟨H', hH'c, hH'H, heH'⟩ ↦ ⟨hH'c.le.edgeSet_mono heH',
     hH'c.stronglyDisjoint_of_ne H.prop hH'H |>.edge.notMem_of_mem_left heH'⟩, fun ⟨heG, heH⟩ ↦ ?_⟩
   obtain ⟨K, hKG, heK⟩ := exists_IsCompOf_edge_mem heG
@@ -433,7 +434,7 @@ lemma IsCompOf.joinAtMap_injOn {H : Graph α β} (hH : H.IsCompOf G) (hf : G.con
     intro hxH hxfv
     simpa using hf.notMem_image_supp_of_rel_of_ne_apply
       (by simpa using (hH.connected.connBetween hxH hvH).mono hH.le) hxfv
-  rw [← Set.insert_diff_self_of_mem (?_ : f v ∈ V(H)), injOn_insert (by simp)]
+  rw [← Set.insert_sdiff_self_of_mem (?_ : f v ∈ V(H)), injOn_insert (by simp)]
   refine ⟨fun x ⟨hx, hxf⟩ y ⟨hy, hyf⟩ heq ↦ ?_, ?_⟩ <;> grind [hH.le.vertexSet_mono, joinAtMap]
   have : G.ConnBetween v (f v) := by
     simpa using hf.rel_apply (by simpa using hH.le.vertexSet_mono hvH)
@@ -555,7 +556,7 @@ lemma cycleMatroid_isFlat (hFE : F ⊆ E(G)) (hF : ∀ H : Graph α β, H.IsComp
   obtain ⟨P, hP, hP_eq, rfl, rfl⟩ := hW.exists_isPath_toGraph_eq_delete_edge_of_isLink hxy_W
   have hP_walk : (G ↾ F).IsWalk P := by
     simp only [isWalk_restrict_iff, hP.isWalk, true_and]
-    rwa [← toGraph_edgeSet, hP_eq, edgeSet_deleteEdges, toGraph_edgeSet, diff_subset_iff]
+    rwa [← toGraph_edgeSet, hP_eq, edgeSet_deleteEdges, toGraph_edgeSet, sdiff_subset_iff]
   set H := (G ↾ F).walkable P.first
   have hH_comp : H.IsCompOf (G ↾ F) := walkable_isCompOf hP_walk.first_mem
   have hxH : P.first ∈ V(H) := mem_walkable_self_iff.mpr hP_walk.first_mem
@@ -572,7 +573,7 @@ lemma orientation.isAcyclicSet_linearIndepOn {𝔽 : Type*} [Field 𝔽] [Decida
     [DecidablePred (· ∈ E(G))] {I : Set β} (hI : G.IsAcyclicSet I) (D : orientation G) :
     LinearIndepOn 𝔽 (signedIncMatrix D 𝔽) I := by
   classical
-  rw [linearIndepOn_iff'']
+  apply linearIndepOn_iff''.mpr
   rintro t g htI hg₀ hgI
   induction ht : t.card generalizing t with
   | zero =>
@@ -589,25 +590,26 @@ lemma orientation.isAcyclicSet_linearIndepOn {𝔽 : Type*} [Field 𝔽] [Decida
     obtain ⟨e₀, x₀, hPendant⟩ := hF.exists_isPendant hne
     have het := hPendant.isNonloopAt.edge_mem
     simp only [edgeSet_restrict, mem_inter_iff, SetLike.mem_coe] at het
-    rw [← insert_sdiff_self_of_mem het.2, sum_insert (by simp)] at hgI
+    rw [← Finset.insert_sdiff_self_of_mem het.2, sum_insert (by simp)] at hgI
     have hgI' := congr_fun hgI x₀
-    simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, sum_apply, Pi.zero_apply] at hgI'
+    simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, Finset.sum_apply, Pi.zero_apply] at hgI'
     rw [← (signedIncMatrix D 𝔽).col_apply x₀] at hgI'
     let D' : (G ↾ (t : Set β)).orientation := D.anti restrict_le
     have := D'.signedIncMatrix_pendent_col_support (𝔽 := 𝔽) hPendant
     simp only [support_eq_iff, mem_singleton_iff, Matrix.col_apply, forall_eq, ← ne_eq] at this
     rw [signedIncMatrix_anti_submatrix _ hPendant.edge_mem] at this
     have hforall : ∀ x ∈ t \ {e₀}, g x * signedIncMatrix D 𝔽 x x₀ = 0 := by
-      simp only [mem_sdiff, Finset.mem_singleton, and_imp]
+      simp only [Finset.mem_sdiff, Finset.mem_singleton, and_imp]
       rintro x hxt hxe₀
       suffices D.signedIncMatrix 𝔽 x x₀ = 0 by rw [this, mul_zero]
       by_cases hxG : x ∈ E(G)
       · have := this.2 x hxe₀
         rw [signedIncMatrix_anti_submatrix _ (by simp [hxt, hxG])] at this
         convert this
+        rfl
       simp [signedIncMatrix_apply_of_not_mem hxG]
     rw [sum_eq_zero hforall, add_zero, mul_eq_zero, Matrix.col_apply] at hgI'
-    replace hgI' : g e₀ = 0 := hgI'.resolve_right (by convert this.1)
+    replace hgI' : g e₀ = 0 := hgI'.resolve_right (by convert this.1; rfl)
     simp only [hgI', zero_smul, zero_add, sdiff_singleton_eq_erase] at hgI
     specialize ih (t.erase e₀) (by simp [subset_insert_iff.mpr (Or.inl htI)]) ?_ hgI
       (by simp [het.2, ht])
@@ -637,7 +639,7 @@ noncomputable def cycleMatroidRep (𝔽 : Type*) [Field 𝔽] : G.cycleMatroid.R
     generalize_proofs hD
     rw [cycleMatroid_indep]
     refine ⟨hD.some.isAcyclicSet_linearIndepOn, fun h ↦ ?_⟩
-    rw [linearIndepOn_iff''] at h
+    replace h := linearIndepOn_iff''.mp h
     wlog hIE : I ⊆ E(G)
     · obtain ⟨e₀, he₀I, he₀E⟩ := not_subset.mp hIE
       let g₀ : β → 𝔽 := fun x₀ => if x₀ = e₀ then 1 else 0
@@ -658,7 +660,8 @@ noncomputable def cycleMatroidRep (𝔽 : Type*) [Field 𝔽] : G.cycleMatroid.R
       convert hD.some.signedIncMatrix_isCyclicWalk (𝔽 := 𝔽) hC'₀_G using 1
       refine sum_congr rfl (fun x₀ hx₀ ↦ ?_)
       simp only [g₀, hx₀, ↓reduceIte]
-    have h_zero := h C'₀.edge.toFinset g₀ (by simpa using hCI) (fun i hi ↦ if_neg hi) hh e₀
+    have h_zero := h C'₀.edge.toFinset g₀ (fun i hi ↦ hCI <|by simpa using hi)
+      (fun i hi ↦ if_neg hi) hh e₀
       he₀_finset
     simp only [g₀, he₀_finset, ↓reduceIte] at h_zero
     exact hD.some.coeff_isCycleWalk_not_zero hC'₀_G he₀ 𝔽 h_zero
