@@ -369,7 +369,7 @@ lemma IsCycle.konig (hB : G.Bipartite) (h : G.IsCycle) : τ(G) = ν(G) := by
   replace pathCover : C.toGraph.IsCover C.tail.pathCover := by
     constructor
     · refine le_trans pathCover.subset ?_
-      simp only [toGraph_vertexSet, le_eq_subset]
+      simp only [toGraph_vertexSet]
       -- TODO: there should be some `∀ (w : WList α β), V(w.tail) ⊆ V(w)`
       refine WList.IsSuffix.subset (tail_isSuffix C)
     have := pathCover.cover

@@ -180,7 +180,8 @@ lemma unifOn_tutteConnected_iff {E : Set α} {r : ℕ} (hrE : r ≤ E.encard) :
       · simp [hle, hle']
       refine .inr <| h.tutteConnected_top_of_eRank_dual_add_one_le <| Order.add_one_le_of_lt ?_
       rwa [← unifOn_ground_eq E, ← (unifOn E r).eRank_add_eRank_dual, add_comm,
-        unifOn_eRank_eq, min_eq_right hrE, WithTop.add_lt_add_iff_right (ENat.natCast_ne_top _)] at hlt'
+        unifOn_eRank_eq, min_eq_right hrE,
+        WithTop.add_lt_add_iff_right (ENat.natCast_ne_top _)] at hlt'
     · refine .inr <| h.tutteConnected_top_of_eRank_add_one_le <| Order.add_one_le_of_lt ?_
       rwa [unifOn_eRank_eq, min_eq_right hrE]
   by_cases hconn : (unifOn E r).TutteConnected ⊤
