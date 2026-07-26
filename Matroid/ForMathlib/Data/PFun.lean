@@ -2,7 +2,7 @@ import Mathlib.Data.PFun
 
 namespace PFun
 
-open Set Part
+open Set
 
 variable {α β γ : Type*} (f : α →. β) {φ : β → γ} {S T : Set β} {a b : α} {x y : β}
 
@@ -96,8 +96,10 @@ lemma dom_codRestrict : (f.codRestrict S).Dom = f.Dom ∩ f.preimage S := by
 @[simp] lemma preimage_codRestrict : (f.codRestrict S).preimage T = f.preimage (T ∩ S) := by grind
 
 @[simp]
-lemma codRestrict_codRestrict : (f.codRestrict S).codRestrict T = f.codRestrict (T ∩ S) := by
-  simp only [codRestrict, restrict_restrict]
+lemma codRestrict_codRestrict :
+    (f.codRestrict S).codRestrict T = f.codRestrict (T ∩ S) := by
+  unfold codRestrict
+  rw [restrict_restrict]
   congr
   grind [preimage_restrict]
 

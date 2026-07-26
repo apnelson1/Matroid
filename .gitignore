@@ -4,5 +4,5 @@ lake-manifest.json
 lakefile.olean
 lakefile.olean.trace
 .cursor/*
-ToDo/.obsidian/*
+resources/*
 .DS_Store

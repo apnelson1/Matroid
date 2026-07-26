@@ -18,9 +18,7 @@ import Matroid.Connectivity.Connected
 import Matroid.Connectivity.Core
 import Matroid.Connectivity.Extension
 -- import Matroid.Connectivity.Fan.Basic
--- import Matroid.Connectivity.Fan.Basic_
 -- import Matroid.Connectivity.Fan.Circuit
--- import Matroid.Connectivity.Fan.CircuitIndex
 -- import Matroid.Connectivity.Fan.Cyclic
 -- import Matroid.Connectivity.Fan.Wheel
 import Matroid.Connectivity.Minor
@@ -114,24 +112,20 @@ import Matroid.Graph.Matching.Konigs
 import Matroid.Graph.Matrix
 import Matroid.Graph.Minor.Conn
 import Matroid.Graph.Minor.Defs
--- import Matroid.Graph.Path
 -- import Matroid.Graph.Planarity.CWComplex.DualGraph
--- import Matroid.Graph.Planarity.CWComplex.Operations
 -- import Matroid.Graph.Planarity.CombMap.Basic
 -- import Matroid.Graph.Planarity.CombMap.Equiv
--- import Matroid.Graph.Planarity.CycleList.Bar
 -- import Matroid.Graph.Planarity.CycleList.Basic
 -- import Matroid.Graph.Planarity.Defs
 -- import Matroid.Graph.Planarity.Drawing
 import Matroid.Graph.Planarity.GraphContinuum.Basic
--- import Matroid.Graph.Planarity.GraphContinuum.EdgeCircuit
--- import Matroid.Graph.Planarity.GraphContinuum.EdgeEndpoints
 -- import Matroid.Graph.Planarity.K33
 import Matroid.Graph.Planarity.Realization.Basic
 import Matroid.Graph.Planarity.Realization.CWComplex
 import Matroid.Graph.Planarity.Realization.Celluar
 import Matroid.Graph.Planarity.Realization.Metric
 import Matroid.Graph.Planarity.Realization.Subgraph
+import Matroid.Graph.Planarity.Realization.Weak
 import Matroid.Graph.Planarity.Topology.Circle
 import Matroid.Graph.Planarity.Topology.Circuit
 import Matroid.Graph.Planarity.Topology.ConnPartition
@@ -148,19 +142,18 @@ import Matroid.Graph.Subgraph.Delete
 import Matroid.Graph.Subgraph.Inter
 import Matroid.Graph.Subgraph.Lemma
 import Matroid.Graph.Subgraph.Union
--- import Matroid.Graph.Suppress
 -- import Matroid.Graph.TopologicalMinor
 import Matroid.Graph.Tree
 import Matroid.Graph.WList.Cycle
 import Matroid.Graph.WList.Defs
 import Matroid.Graph.WList.Ops
--- import Matroid.Graph.WList.Remove
+import Matroid.Graph.WList.Remove
 import Matroid.Graph.WList.Sublist
--- import Matroid.Graph.WList.TakeDrop.Decompose
--- import Matroid.Graph.WList.TakeDrop.Defs
--- import Matroid.Graph.WList.TakeDrop.Index
--- import Matroid.Graph.WList.TakeDrop.Lemmas
--- import Matroid.Graph.WList.TakeDrop.Pred
+import Matroid.Graph.WList.TakeDrop.Decompose
+import Matroid.Graph.WList.TakeDrop.Defs
+import Matroid.Graph.WList.TakeDrop.Index
+import Matroid.Graph.WList.TakeDrop.Lemmas
+import Matroid.Graph.WList.TakeDrop.Pred
 import Matroid.Graph.Walk.Basic
 import Matroid.Graph.Walk.Cycle
 -- import Matroid.Graph.Walk.Dart

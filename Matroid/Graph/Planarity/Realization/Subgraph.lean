@@ -1,4 +1,4 @@
-import Matroid.Graph.Planarity.Realization.Basic
+import Matroid.Graph.Planarity.Realization.Weak
 import Matroid.Graph.Planarity.Topology.Path
 
 variable {α β E : Type*} [MetricSpace E] {G H : Graph α β} {S T : Set α}
@@ -166,7 +166,6 @@ lemma IsSubgraph.RealizationEmbedding_isEmbedding (h : H ≤ G) :
         Quotient.mk' ∘ h.RealizationEmbeddingAux := by
       ext x
       simp only [Quotient.mk', comp_apply, Quotient.map_mk]
-      rfl
     rw [this, preimage_comp]
     exact h.RealizationEmbeddingAux.continuous.isOpen_preimage _ ht
   injective := h.RealizationEmbedding_injective
@@ -174,3 +173,18 @@ lemma IsSubgraph.RealizationEmbedding_isEmbedding (h : H ≤ G) :
 def IsSubgraph.realizationContinuousMap (h : H ≤ G) : C(H.Realization, G.Realization) where
   toFun := h.RealizationEmbedding
   continuous_toFun := h.RealizationEmbedding_isEmbedding.continuous
+
+/-- The inclusion of a subgraph between weak realizations. -/
+def IsSubgraph.weakRealizationEmbedding (h : H ≤ G) :
+    Realization.Weak H → Realization.Weak G :=
+  h.RealizationEmbedding
+
+lemma IsSubgraph.weakRealizationEmbedding_isEmbedding (h : H ≤ G) :
+    Topology.IsEmbedding h.weakRealizationEmbedding :=
+  h.RealizationEmbedding_isEmbedding
+
+/-- The inclusion of a subgraph as a continuous map between weak realizations. -/
+def IsSubgraph.weakRealizationContinuousMap (h : H ≤ G) :
+    C(Realization.Weak H, Realization.Weak G) where
+  toFun := h.weakRealizationEmbedding
+  continuous_toFun := h.weakRealizationEmbedding_isEmbedding.continuous

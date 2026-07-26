@@ -263,11 +263,11 @@ lemma mem_edgeFun_mem_endPoint_iff_isIncident (G : Gr) (i : I) (e : E) (v : V) :
   rwa [PFun.fn_apply, PFun.fn_apply, Part.get_eq_of_mem hei, Part.get_eq_of_mem hvi] at this
 
 /-- The order of an edge is the number of incidences of the edge. -/
-@[expose]
+-- @[expose]
 noncomputable def order (G : Gr) (e : E) : ℕ∞ := (edgeFun G |>.preimage {e}).encard
 
 /-- The degree of a vertex is the number of incidences of the vertex. -/
-@[expose]
+-- @[expose]
 noncomputable def degree (G : Gr) (v : V) : ℕ∞ := (endPoint G |>.preimage {v}).encard
 
 lemma edgeFun_preimage_singleton_injOn (h : ∀ e ∈ E(G), order G e ≠ 0) :

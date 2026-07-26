@@ -124,8 +124,6 @@ private theorem not_glueRelAux_inr_interior (ht : t ≠ 0 ∧ t ≠ 1) (y : PreR
 
 instance glueRel (G : Graph α β) : Setoid (PreRealization G) := EqvGen.setoid (glueRelAux G)
 
-instance (G : Graph α β) : Setoid (PreRealization G) := EqvGen.setoid (glueRelAux G)
-
 instance : Std.Symm G.glueRel where
   symm _ _ h := EqvGen.symm _ _ h
 
