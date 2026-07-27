@@ -5,122 +5,137 @@ import Mathlib.Data.ZMod.Basic
 
 section Cycle
 
-variable {α β : Type*}
+attribute [simp] NeZero.ne Nat.pos_of_neZero
+
+-- #check List.Vector.inductionOn
+
+-- lemma Vector.inductionOn {α : Type*} {n : ℕ} {C : Vector α n → Sort*} {n : ℕ}
+--   (v : Vector α n) (nil : C ([] : Vector α n))
+--   (cons : {n : ℕ} → {x : α} → {w : List.Vector α n} → C w → C (x ::ᵥ w)) : C v
+
+-- variable {α β : Type*}
+
+-- namespace WList
+
+-- variable {n : ℕ} [NeZero n] {a : Vector α n} {b : Vector β n}
+
+-- def circuitZip {n : ℕ} [NeZero n] (a : Vector α n) (b : Vector β n) (_ : b.toList.Nodup) :
+--     WList α β := WList.zip (a.toList ++ [a.head]) b.toList (by simp)
+
+-- @[simp]
+-- lemma circuitZip_vertex {hb} : (circuitZip a b hb).vertex = a.toList ++
+--     [a.head] := by
+--   simp [circuitZip]
+
+-- @[simp]
+-- lemma circuitZip_edge {hb} : (circuitZip a b hb).edge = b.toList := by
+--   simp [circuitZip]
+
+-- @[simp]
+-- lemma circuitZip_wellFormed {hb} : (circuitZip a b hb).WellFormed :=
+--   WList.wellFormed_of_nodup <| by simpa
+
+-- @[simp]
+-- lemma circuitZip_vertex_getElem {hb} {i : ℕ} (hi : i + 1 < (circuitZip a b hb).vertex.length) :
+--     (circuitZip a b hb).vertex[i] = a[i]'(by simpa using hi) := by
+--   induction i with
+--   | zero => simp
+--   | succ i ih =>
+--     cases a with
+--     | mk toArray size_toArray =>
+
+
+-- variable {n : ℕ} {a : ZMod n → α} {b : ZMod n → β}
+
+-- -- lemma foo [NeZero n] : ((List.range n).map (fun (i : ℕ) ↦ a i)).Nodup ↔ a.Injective := by
+-- --   obtain rfl | n := n
+-- --   · exact False.elim <| NeZero.ne 0 rfl
+-- --   simp only [List.nodup_iff_injective_getElem, List.getElem_map, List.getElem_range]
+-- --   simp +contextual [Function.Injective, ZMod]
+-- --   refine ⟨?_, fun h ↦ ?_⟩
+-- --   ·
+-- --     have := h (a₁ := i.cast (by simp)) (a₂ := j.cast (by simp))
+-- --     simp at this
+
+
+
+
+
+-- def cycleZip' {n : ℕ} (a : ZMod n → α) (b : ZMod n → β) (_ : b.Injective) : WList α β :=
+--     WList.zip
+--       ((List.range n).map (fun (i : ℕ) ↦ a i) ++ [a 0])
+--       ((List.range n).map (fun (i : ℕ) ↦ b i)) (by simp)
+
+-- @[simp]
+-- lemma cycleZip'_vertex {hb} :
+--     (cycleZip' a b hb).vertex = (List.range n).map (fun (i : ℕ) ↦ a i) ++ [a 0] := by
+--   simp [cycleZip']
+
+-- @[simp]
+-- lemma cycleZip'_edge {hb} : (cycleZip' a b hb).edge = (List.range n).map (fun (i : ℕ) ↦ b i) := by
+--   simp [cycleZip']
+
+-- @[simp]
+-- lemma cycleZip'_wellFormed {hb} : (cycleZip' a b hb).WellFormed := by
+--   refine WList.wellFormed_of_nodup ?_
+--   rw [cycleZip'_edge]
+--   refine List.nodup_range.map_on <|
+--     by simp +contextual [hb.eq_iff, ZMod.natCast_eq_natCast_iff', Nat.mod_eq_of_lt]
+
+-- @[simp]
+-- lemma cycleZip'_length {hb} : (cycleZip' a b hb).length = n := by
+--   simp [← WList.length_edge]
+
+-- @[simp]
+-- lemma cycleZip'_nonempty [NeZero n] {hb} : (cycleZip' a b hb).Nonempty := by
+--   simp [← WList.length_ne_zero_iff, NeZero.ne n]
+
+-- @[simp]
+-- lemma cycleZip_first {hb} : (cycleZip' a b hb).first = a 0 := by
+--   cases n with simp [← vertex_head]
+
+-- @[simp]
+-- lemma cycleZip_vertex_getElem {hb} {i : ℕ} (hi : i < (cycleZip' a b hb).vertex.length) :
+--     (cycleZip' a b hb).vertex[i] = a i := by
+--   obtain rfl | hlt := (show i ≤ n by simpa using hi).eq_or_lt
+--   · simp
+--   simp only [cycleZip'_vertex]
+--   rw [List.getElem_append_left (by simpa)]
+--   simp
+
+-- @[simp]
+-- lemma cycleZip_last {hb} : (cycleZip' a b hb).last = a 0 := by
+--   cases n with simp [← vertex_getLast]
+
+-- lemma cycleZip_edge_getElem {hb} {i : ℕ} (hi : i < (cycleZip' a b hb).edge.length) :
+--     (cycleZip' a b hb).edge[i] = b i := by
+--   simp
+
+-- @[simp]
+-- lemma cycleZip'_isClosed {hb} : (cycleZip' a b hb).IsClosed := by
+--   simp [IsClosed]
+
+
+-- @[simp]
+-- lemma cycleZip_tail_vertex_rotate {hb} [NeZero n] :
+--     (cycleZip' a b hb).tail.vertex.rotate 1 = := by
+
+
+-- @[simp]
+-- lemma cycleZip_tail_vertex_nodup_iff {hb} [NeZero n] :
+--     (cycleZip' a b hb).tail.vertex.Nodup ↔ a.Injective := by
+--   cases n with
+--   | zero => exact False.elim <| NeZero.ne 0 rfl
+--   | succ n =>
+--     rw [← List.nodup_reverse]
+--     simp
 
 namespace WList
 
-variable {n : ℕ} [NeZero n] {a : List.Vector α n} {b : List.Vector β n}
+variable {α β : Type*} {a : List α} {b : List β}
 
-def circuitZip {n : ℕ} [NeZero n] (a : List.Vector α n) (b : List.Vector β n) (_ : b.toList.Nodup) :
-    WList α β := WList.zip (a.toList ++ [a.toList.head (by
-      rw [← List.length_pos_iff, a.toList_length, ne_zero_iff_pos]
-    )]) b.toList (by simp)
-
-@[simp]
-lemma circuitZip_vertex {hb} : (circuitZip a b hb).vertex = a.toList ++ [a.head] := by
-  simp [circuitZip]
-
-@[simp]
-lemma circuitZip_edge {hb} : (circuitZip a b hb).edge = b.toList := by
-  simp [circuitZip]
-
-@[simp]
-lemma circuitZip_wellFormed {hb} : (circuitZip a b hb).WellFormed :=
-  WList.wellFormed_of_nodup <| by simpa
-
-@[simp]
-lemma circuitZip_vertex_getElem {hb} {i : ℕ} (hi : i + 1 < (circuitZip a b hb).vertex.length) :
-    (circuitZip a b hb).vertex[i] = a[i]'(by simpa using hi) := by
-  cases a using vector_in
-
-variable {n : ℕ} {a : ZMod n → α} {b : ZMod n → β}
-
--- lemma foo [NeZero n] : ((List.range n).map (fun (i : ℕ) ↦ a i)).Nodup ↔ a.Injective := by
---   obtain rfl | n := n
---   · exact False.elim <| NeZero.ne 0 rfl
---   simp only [List.nodup_iff_injective_getElem, List.getElem_map, List.getElem_range]
---   simp +contextual [Function.Injective, ZMod]
---   refine ⟨?_, fun h ↦ ?_⟩
---   ·
---     have := h (a₁ := i.cast (by simp)) (a₂ := j.cast (by simp))
---     simp at this
-
-
-
-
-
-def cycleZip' {n : ℕ} (a : ZMod n → α) (b : ZMod n → β) (_ : b.Injective) : WList α β :=
-    WList.zip
-      ((List.range n).map (fun (i : ℕ) ↦ a i) ++ [a 0])
-      ((List.range n).map (fun (i : ℕ) ↦ b i)) (by simp)
-
-@[simp]
-lemma cycleZip'_vertex {hb} :
-    (cycleZip' a b hb).vertex = (List.range n).map (fun (i : ℕ) ↦ a i) ++ [a 0] := by
-  simp [cycleZip']
-
-@[simp]
-lemma cycleZip'_edge {hb} : (cycleZip' a b hb).edge = (List.range n).map (fun (i : ℕ) ↦ b i) := by
-  simp [cycleZip']
-
-@[simp]
-lemma cycleZip'_wellFormed {hb} : (cycleZip' a b hb).WellFormed := by
-  refine WList.wellFormed_of_nodup ?_
-  rw [cycleZip'_edge]
-  refine List.nodup_range.map_on <|
-    by simp +contextual [hb.eq_iff, ZMod.natCast_eq_natCast_iff', Nat.mod_eq_of_lt]
-
-@[simp]
-lemma cycleZip'_length {hb} : (cycleZip' a b hb).length = n := by
-  simp [← WList.length_edge]
-
-@[simp]
-lemma cycleZip'_nonempty [NeZero n] {hb} : (cycleZip' a b hb).Nonempty := by
-  simp [← WList.length_ne_zero_iff, NeZero.ne n]
-
-@[simp]
-lemma cycleZip_first {hb} : (cycleZip' a b hb).first = a 0 := by
-  cases n with simp [← vertex_head]
-
-@[simp]
-lemma cycleZip_vertex_getElem {hb} {i : ℕ} (hi : i < (cycleZip' a b hb).vertex.length) :
-    (cycleZip' a b hb).vertex[i] = a i := by
-  obtain rfl | hlt := (show i ≤ n by simpa using hi).eq_or_lt
-  · simp
-  simp only [cycleZip'_vertex]
-  rw [List.getElem_append_left (by simpa)]
-  simp
-
-@[simp]
-lemma cycleZip_last {hb} : (cycleZip' a b hb).last = a 0 := by
-  cases n with simp [← vertex_getLast]
-
-lemma cycleZip_edge_getElem {hb} {i : ℕ} (hi : i < (cycleZip' a b hb).edge.length) :
-    (cycleZip' a b hb).edge[i] = b i := by
-  simp
-
-@[simp]
-lemma cycleZip'_isClosed {hb} : (cycleZip' a b hb).IsClosed := by
-  simp [IsClosed]
-
-
-@[simp]
-lemma cycleZip_tail_vertex_rotate {hb} [NeZero n] :
-    (cycleZip' a b hb).tail.vertex.rotate 1 = := by
-
-
-@[simp]
-lemma cycleZip_tail_vertex_nodup_iff {hb} [NeZero n] :
-    (cycleZip' a b hb).tail.vertex.Nodup ↔ a.Injective := by
-  cases n with
-  | zero => exact False.elim <| NeZero.ne 0 rfl
-  | succ n =>
-    rw [← List.nodup_reverse]
-    simp
-
-
-variable {a : List α} {b : List β}
-
+/-- Given two lists of equal length, the closed `WList` obtained by zipping them together and
+adding the first element at the end. -/
 def cycleZip (a : List α) (b : List β) (hab : a.length = b.length) (ha : a ≠ []) (_ : b.Nodup) :
     WList α β :=
   WList.zip (a.concat (a.head ha)) b (by simpa using hab.symm)
@@ -165,7 +180,7 @@ end WList
 
 namespace Graph
 
-variable {n : ℕ}
+variable {n : ℕ} {α β : Type*}
 
 def circuitOn' {n : ℕ} (a : ZMod n → α) (b : ZMod n → β) (hb : b.Injective) : Graph α β :=
   match n with
@@ -174,8 +189,6 @@ def circuitOn' {n : ℕ} (a : ZMod n → α) (b : ZMod n → β) (hb : b.Injecti
     ((List.range (n + 1)).map fun (i : ℕ) ↦ a i) ((List.range (n + 1)).map fun (i : ℕ) ↦ b i)
     (by simp) (by simp) (List.nodup_range.map_on <| by
       simp +contextual [hb.eq_iff, ZMod.natCast_eq_natCast_iff', Nat.mod_eq_of_lt]))
-
-
 
 /-- The cycle graph determined by two nonempty lists of equal length,
 where the edge list has no repeats.

@@ -598,6 +598,26 @@ lemma eConn_eq_eLocalConn_add_eLocalConn_dual (M : Matroid α) (hXC : Disjoint X
   convert rfl
   grind
 
+lemma eConn_union_eq_of_subset_closure_subset_closure_dual {Y : Set α} (hY : Y ⊆ M.closure X)
+    (hY' : Y ⊆ M✶.closure X) (hXY : Disjoint X Y) : M.eConn (X ∪ Y) + Y.encard = M.eConn X := by
+  wlog hX : X ⊆ M.E generalizing X with aux
+  · rw [← M.eConn_inter_ground X, ← aux (X := X ∩ M.E) (by simpa)
+      (by rwa [← dual_ground, closure_inter_ground]) (by grind) inter_subset_right,
+      eq_comm, ← eConn_inter_ground, show (X ∩ M.E ∪ Y) ∩ M.E = (X ∪ Y) ∩ M.E by tauto_set,
+       eConn_inter_ground]
+  rw [eq_comm, M.eConn_eq_eLocalConn_add_eLocalConn_dual (C := M.E \ (X ∪ Y)) (by grind) hXY
+    (by grind) (by grind), add_comm, ← eLocalConn_closure_left, eLocalConn_comm,
+    eLocalConn_subset _ hY', add_comm, ← eLocalConn_closure_left,
+    ← union_eq_self_of_subset_right hY, ← eLocalConn_closure_left, closure_union_closure_left_eq,
+    eLocalConn_closure_left, ← eConn_eq_eLocalConn, Indep.eRk_eq_encard]
+  nth_grw 1 [← coindep_def, coindep_iff_subset_closure_compl, hY, ← closure_inter_ground]
+  exact M.closure_subset_closure <| by grind
+
+lemma eConn_insert_add_one_eq {e : α} (he : e ∈ M.closure X) (he' : e ∈ M✶.closure X)
+    (heX : e ∉ X) : M.eConn (insert e X) + 1 = M.eConn X := by
+  rw [← union_singleton, ← M.eConn_union_eq_of_subset_closure_subset_closure_dual (X := X)
+    (Y := {e}) (by simpa) (by simpa) (by simpa), encard_singleton]
+
 lemma Skew.eConn_contract_diff_eq_self (h : M.Skew X C) : (M ／ C).eConn (X \ C) = M.eConn X := by
   nth_rw 1 [← inter_union_sdiff C X, eConn_contract_eq_eConn_project, ← project_closure_eq,
     union_comm, closure_union_eq_closure_of_subset_loops _ _ h.symm.inter_subset_loops,

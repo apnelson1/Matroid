@@ -128,6 +128,12 @@ lemma eConn_ground (M : Matroid α) : M.eConn M.E = 0 := by
 lemma eConn_dual (M : Matroid α) : M✶.eConn = M.eConn :=
   ConnSystem.ext rfl fun X _ ↦ M.eConnAux_dual X
 
+@[simp]
+lemma eConn_bDual (M : Matroid α) (b : Bool) : (M.bDual b).eConn = M.eConn := by
+  cases b with
+  | false => rfl
+  | true => exact M.eConn_dual
+
 lemma IsBasis'.eConn_eq (hIX : M.IsBasis' I X) (hJX : M.IsBasis' J (M.E \ X)) :
     M.eConn X = M.nullity (I ∪ J) := by
   rw [eConn_eq_eLocalConn, hIX.eLocalConn_eq_of_disjoint hJX disjoint_sdiff_right]

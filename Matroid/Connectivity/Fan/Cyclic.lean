@@ -225,6 +225,7 @@ lemma IsCyclicFan.exists_isCyclicFan_dual (h : M.IsCyclicFan n J) :
     ∃ J', M✶.IsCyclicFan n J' ∧ ∀ b, range (J' b) = range (J !b) := by
   refine ⟨_, h.dual_neg, fun b ↦ ?_⟩
   convert range_comp (Equiv.neg (ZMod n)) (g := J (!b)) using 1
+  · rfl
   rw [Equiv.range_eq_univ, image_univ]
 
 lemma IsCyclicFan.exists_isCyclicFan_dual' (h : M.IsCyclicFan n J) :
@@ -415,7 +416,8 @@ lemma IsCyclicFan.isFan_rotate [NeZero n] {J} (h : M.IsCyclicFan n J) (b : Bool)
   · simpa [add_comm] using (h.add p).isFan
   convert M.dual_dual ▸ ((h.dual.add p).isFan).dual using 4 with v w
   · simp
-  cases hv : v.bodd with simp [hv, add_comm, add_assoc]
+  · cases hv : v.bodd with simp [hv, add_comm, add_assoc]
+  rfl
 
 lemma IsCyclicFan.restrict_connected [NeZero n] (h : M.IsCyclicFan n J) :
     (M ↾ (⋃ i, range (J i))).Connected := by

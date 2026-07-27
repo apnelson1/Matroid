@@ -236,7 +236,8 @@ lemma IsFan.isTriangle_getElem (h : M.IsFan F b c) (i) (hi : i + 2 < F.length) :
   | cons_triangle e x y F b c h heF hT ih =>
     obtain rfl | i := i
     · simpa
-    simpa using ih i <| by simpa using hi
+    specialize ih i (by simpa using hi)
+    simpa
 
 lemma IsFan.isTriangle_getElem_of_eq (h : M.IsFan F b c) (i) (hi : i + 2 < F.length)
     (hib : i.bodd = b) : M.IsTriangle {F[i], F[i + 1], F[i + 2]} := by
@@ -267,7 +268,11 @@ lemma isFan_of_forall_triangle (hF : 3 ≤ F.length) (hnd : F.Nodup)
     | cons a F ih =>
       have hwin := (ih f g a (b := !b) (by simp) (by grind) ?_).cons_not (e := e) (by grind) ?_
       · cases b with simpa using hwin
-      · exact fun i hi ↦ by simpa using hT (i + 1) (by grind)
+      · refine fun i hi ↦ ?_
+        have := hT (i + 1) (by grind)
+        simp at this
+        simp
+        assumption
       simpa using hT 0 (by simp)
 
 lemma isFan_of_eq_of_forall_triangle (hF : 3 ≤ F.length) (hnd : F.Nodup)
@@ -297,6 +302,12 @@ lemma isFan_four_iff : M.IsFan [x, e, f, g] b c ↔ c = !b ∧
   · exact h.isTriangle_bDual (by simp)
   · grind [h.nodup]
   simpa [hcb] using hT.isFan.cons (by simpa using hxg) (by simpa)
+
+lemma IsFan.swap_middle (h : M.IsFan F b c) (h4 : F.length = 4) :
+    M.IsFan [F[0], F[2], F[1], F[3]] b c := by
+  obtain ⟨p, q, r, s, rfl⟩ := length_eq_four.1 h4
+  simp only [isFan_four_iff, ne_eq, getElem_cons_zero, getElem_cons_succ] at *
+  exact ⟨h.1, h.2.1.swap_left, h.2.2.1.swap_right, h.2.2.2⟩
 
 /-- Induct by stripping two layers off the front of a fan to get a fan of the same type. -/
 @[elab_as_elim]
@@ -377,9 +388,8 @@ lemma IsFan.eRk_le (h : M.IsFan F b c) (hlen : 3 ≤ F.length) :
       grw [setOf_three, IsTriangle.eRk (by simpa using hT), h.bool_right_eq,
         show (2 : ℕ∞) * 2 ≤ 3 + 1 from rfl.le]
       simp
-
     | cons p F =>
-      simp_rw [List.mem_cons (b := e), setOf_or, setOf_eq_eq_singleton, singleton_union]
+      simp_rw [List.mem_cons (b := e), ofPred_or, ofPred_eq_eq_singleton, singleton_union]
       cases b
       · grw [eRk_insert_le_add_one, mul_add, ih (by grind)]
         simp [h.bool_right_eq]

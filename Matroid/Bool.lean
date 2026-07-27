@@ -89,6 +89,22 @@ lemma remove_bDual (M : Matroid α) (X : Set α) (b c : Bool) :
     (M.bDual b).remove c X = (M.remove (b != c) X).bDual b := by
   simp
 
+lemma bDual_delete (M : Matroid α) (X : Set α) (b : Bool) :
+    (M.bDual b) ＼ X = (M.remove b X).bDual b := by
+  cases b with simp
+
+lemma bDual_contract (M : Matroid α) (X : Set α) (b : Bool) :
+    (M.bDual b) ／ X = (M.remove (!b) X).bDual b := by
+  cases b with simp
+
+lemma delete_bDual (M : Matroid α) (X : Set α) (b : Bool) :
+    (M ＼ X).bDual b = (M.bDual b).remove b X := by
+  cases b with simp
+
+lemma contract_bDual (M : Matroid α) (X : Set α) (b : Bool) :
+    (M ／ X).bDual b = (M.bDual b).remove (!b) X := by
+  cases b with simp
+
 @[simp, grind =]
 lemma remove_ground (M : Matroid α) (X : Set α) (b : Bool) : (M.remove b X).E = M.E \ X := by
   cases b <;> rfl
