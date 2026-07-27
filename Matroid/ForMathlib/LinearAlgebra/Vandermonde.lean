@@ -50,7 +50,9 @@ lemma rectVandermonde_rows_linearIndependent [Fintype α] (hcard : Fintype.card 
   convert ((Matrix.linearIndependent_rows_of_det_ne_zero hdet).restrict_scalars' R).comp _
     ((castLE_injective hcard).comp e.symm.injective)
   ext a i x
-  simp [v', w', projVandermonde, rectVandermonde]
+  change (Algebra.linearMap R (Polynomial R) (rectVandermonde v w n a i)).coeff x =
+    (v' ((castLE hcard (e.symm a))) ^ (i : ℕ) * w' ((castLE hcard (e.symm a))) ^ i.rev.1).coeff x
+  simp [v', w', rectVandermonde_apply, Algebra.linearMap_apply, castLE, ← map_pow, ← map_mul]
 
 /-- A set `s` of rows of `rectVandermonde v w n` is linearly independent if and only if its
 cardinality doesn't exceed the number of columns, there is no co-ordinate in `s` on which
@@ -83,12 +85,13 @@ lemma rectVandermonde_linearIndepOn_iff {v w : α → R} {s : Set α} (hn : n �
       | succ k => simp [rectVandermonde_apply, hvi0, hvj0]
     simp [hne] at h
   have hsfin := (s.finite_of_encard_le_coe hle).fintype
-  rw [← linearIndependent_set_coe_iff]
-  refine rectVandermonde_rows_linearIndependent ?_ (by aesop) (by aesop)
-  rwa [Set.encard_eq_coe_toFinset_card, Set.toFinset_card, ENat.coe_le_coe] at hle
+  refine linearIndependent_set_coe_iff.mpr <|
+    rectVandermonde_rows_linearIndependent ?_ (by grind) (by grind)
+  rwa [Set.encard_eq_coe_toFinset_card, Set.toFinset_card, ENat.natCast_le_natCast] at hle
 
 lemma rectVandermonde_linearIndepOn_iff₀ {v w : α → R} {s : Set α}
-    (hvw : ∀ i ∈ s, v i = 0 → w i ≠ 0) : LinearIndepOn R (rectVandermonde v w n) s ↔ s.encard ≤ n ∧
+    (hvw : ∀ i ∈ s, v i = 0 → w i ≠ 0) :
+    LinearIndepOn R (fun i ↦ rectVandermonde v w n i) s ↔ s.encard ≤ n ∧
     (∀ ⦃i j⦄, i ∈ s → j ∈ s → v j * w i = v i * w j → i = j) := by
   obtain rfl | hne := eq_or_ne n 1
   · refine ⟨fun h ↦ ?_, fun ⟨hcard, h⟩ ↦ ?_⟩
@@ -96,22 +99,28 @@ lemma rectVandermonde_linearIndepOn_iff₀ {v w : α → R} {s : Set α}
       refine ⟨hscard, ?_⟩
       rw [Set.encard_le_one_iff] at hscard
       aesop
-    obtain rfl | ⟨x, rfl⟩ := Set.encard_le_one_iff_eq.1 hcard <;>
-    simp [rectVandermonde, funext_iff]
+    obtain rfl | ⟨x, rfl⟩ := Set.encard_le_one_iff_eq.1 hcard
+    · simp
+    rw [linearIndepOn_singleton_iff]
+    intro hx
+    simpa [rectVandermonde_apply] using congr_fun hx 0
   rw [rectVandermonde_linearIndepOn_iff hne, and_iff_right hvw]
 
 /-- A version of `rectVandermonde_linearIndepOn_iff` for the 'non-projective' Vandermonde matrix
 with rows of the form `[1,x,...,x^(n-1)]`. In this case, linear independence is just injectivity. -/
 lemma rectVandermonde_one_linearIndepOn_iff {v : α → K} {s : Set α} :
-    LinearIndepOn K (rectVandermonde v 1 n) s ↔ s.encard ≤ n ∧ Set.InjOn v s := by
+    LinearIndepOn K (fun i ↦ rectVandermonde v 1 n i) s ↔ s.encard ≤ n ∧ Set.InjOn v s := by
   obtain rfl | rfl | n := n
   · simp +contextual [rectVandermonde, LinearIndepOn]
   · refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
     · have hcard : s.encard ≤ 1 := by simpa using h.encard_le_toENat_rank
       exact ⟨hcard, (Set.encard_le_one_iff_subsingleton.1 hcard).injOn _⟩
     simp only [zero_add, Nat.cast_one, Set.encard_le_one_iff_subsingleton] at h
-    obtain rfl | ⟨x, rfl⟩ := h.1.eq_empty_or_singleton <;>
-    simp [rectVandermonde, funext_iff]
+    obtain rfl | ⟨x, rfl⟩ := h.1.eq_empty_or_singleton
+    · simp
+    rw [linearIndepOn_singleton_iff]
+    intro hx
+    simpa [rectVandermonde_apply] using congr_fun hx 0
   rw [rectVandermonde_linearIndepOn_iff (by simp)]
   simp only [Pi.one_apply, one_ne_zero, ne_eq, mul_one, Set.InjOn, and_congr_right_iff]
   aesop

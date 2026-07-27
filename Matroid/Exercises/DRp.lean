@@ -21,7 +21,7 @@ lemma Exercise_for_DRP' (M : Matroid α) [RankFinite M] (X Y : Set α) (e : α) 
   -- Now `zify` and simplify.
   zify
   --deleteElem,contractElem,
-  simp only [intCast_conn_eq, delete_ground, diff_singleton_diff_eq,
+  simp only [intCast_conn_eq, delete_ground, sdiff_singleton_sdiff_eq,
     contract_rk_cast_int_eq, union_singleton, contract_ground, insert_diff_insert,
     contract_rank_cast_int_eq]
   -- Rewrite this particular annoying term. If `e ∈ M.E` is assumed, this can be taken
@@ -57,7 +57,7 @@ lemma Exercise_for_DRP (M : Matroid α) [RankFinite M] (X Y : Set α) (e : α) (
     sorry
   have hconE : M.rank - 1 = ((M ／ {e}).rk (M.E \ {e}) : ℤ ) := by
     sorry
-    -- This may be useful to finsih: rw [insert_diff_self_of_mem he, ←rank_def M]
+    -- This may be useful to finsih: rw [insert_sdiff_self_of_mem he, ←rank_def M]
   --End of the contractions. We are now going to get the equations of submodularity,
   --there is two of them
   have hsub1 : (M.rk ( X ∪ Y ∪ {e}) : ℤ ) + (M.rk ( X ∩ Y) : ℤ)
@@ -114,12 +114,12 @@ theorem TLT (M : Matroid α) [M.Finite] (hXY : Disjoint X Y) (hXE : X ⊆ M.E) (
   -- 2 inductive step cases that they are equal
 
   have minor_delConnBetween: (M ＼ {e}).connBetween X Y ≤ M.connBetween X Y := by
-    rw [← ENat.coe_le_coe, M.coe_connBetween X Y hXY, (M ＼ {e}).coe_connBetween X Y hXY]
+    rw [← ENat.natCast_le_natCast, M.coe_connBetween X Y hXY, (M ＼ {e}).coe_connBetween X Y hXY]
     --simp only [deleteElem]
     apply M.eConnBetween_delete_le X Y {e}
 
   have minor_contrConnBetween: (M ／ {e}).connBetween X Y ≤ M.connBetween X Y := by
-    rw [← ENat.coe_le_coe, M.coe_connBetween X Y hXY, (M ／ {e}).coe_connBetween X Y hXY]
+    rw [← ENat.natCast_le_natCast, M.coe_connBetween X Y hXY, (M ／ {e}).coe_connBetween X Y hXY]
     --simp only [contractElem]
     apply M.eConnBetween_contract_le X Y {e}
 
@@ -147,16 +147,16 @@ theorem TLT (M : Matroid α) [M.Finite] (hXY : Disjoint X Y) (hXE : X ⊆ M.E) (
   have use_t2: ∃ N, (N ≤m (M ＼ {e}) ∧ N.E = X ∪ Y ∧ N.conn X = (M ＼ {e}).connBetween X Y) := by
     apply t2
     --simp only [deleteElem, delete_ground]
-    exact subset_diff_singleton hXE e_not_in_x
+    exact subset_sdiff_singleton hXE e_not_in_x
     --simp only [deleteElem, delete_ground]
-    exact subset_diff_singleton hYE e_not_in_y
+    exact subset_sdiff_singleton hYE e_not_in_y
 
   have use_t1: ∃ N, (N ≤m (M ／ {e}) ∧ N.E = X ∪ Y ∧ N.conn X = (M ／ {e}).connBetween X Y) := by
     apply t1
     --simp only [contractElem, delete_ground]
-    exact subset_diff_singleton hXE e_not_in_x
+    exact subset_sdiff_singleton hXE e_not_in_x
     --simp only [contractElem, delete_ground]
-    exact subset_diff_singleton hYE e_not_in_y
+    exact subset_sdiff_singleton hYE e_not_in_y
 
   --The following two sorrys are the easy case by induction I recommend one of you does this 5 sorry
   by_cases hde : M.connBetween X Y ≤ (M ＼ {e}).connBetween X Y
@@ -208,12 +208,12 @@ theorem TLT (M : Matroid α) [M.Finite] (hXY : Disjoint X Y) (hXE : X ⊆ M.E) (
 
     have X_sub_mdel : X ⊆ (M ＼ {e}).E := by
       --rw [@deleteElem, @delete_ground]
-      refine subset_diff_singleton hXE ?_
+      refine subset_sdiff_singleton hXE ?_
       exact he_not_in_X
 
     have Y_sub_mdel : Y ⊆ (M ＼ {e}).E := by
       --rw [@deleteElem, @delete_ground]
-      refine subset_diff_singleton hYE ?_
+      refine subset_sdiff_singleton hYE ?_
       exact he_not_in_Y
 
     obtain ⟨Q, hQ, hQconn⟩ := exists_partition_conn_eq_connBetween hXY X_sub_mdel Y_sub_mdel
@@ -226,12 +226,12 @@ theorem TLT (M : Matroid α) [M.Finite] (hXY : Disjoint X Y) (hXE : X ⊆ M.E) (
 
     have X_sub_mdel : X ⊆ (M ／ {e}).E := by
      -- rw [@contractElem, @contract_ground]
-      refine subset_diff_singleton hXE ?_
+      refine subset_sdiff_singleton hXE ?_
       exact he_not_in_X
 
     have Y_sub_mdel : Y ⊆ (M ／ {e}).E := by
       --rw [@contractElem, @contract_ground]
-      refine subset_diff_singleton hYE ?_
+      refine subset_sdiff_singleton hYE ?_
       exact he_not_in_Y
 
     obtain ⟨R, hR, hRconn⟩ := exists_partition_conn_eq_connBetween hXY X_sub_mdel Y_sub_mdel
@@ -250,19 +250,19 @@ theorem TLT (M : Matroid α) [M.Finite] (hXY : Disjoint X Y) (hXE : X ⊆ M.E) (
 
   have hS : ∃ S ⊆ M.E \ (insert e Y), X ⊆ S ∧ (M ＼ {e}).conn S ≤ M.connBetween X Y - 1 := by
     have hSY : Pdel.1 ⊆ M.E \ (insert e Y) := by
-      rw [@subset_diff]
+      rw [@subset_sdiff]
       apply And.intro
       have hPdel_sub : Pdel.left ⊆ (M ＼ {e}).E := Partition.left_subset_ground Pdel
       have hMeSub : (M ＼ {e}).E ⊆ M.E := by
         --rw [@deleteElem, @delete_ground]
-        exact diff_subset
+        exact sdiff_subset
       exact fun ⦃a⦄ a_1 ↦ hMeSub (hPdel_sub a_1)
       refine disjoint_insert_right.mpr ?_
       apply And.intro
       have h_ePdel : Pdel.left ⊆ M.E \ {e} := Partition.left_subset_ground Pdel
       contrapose! h_ePdel
       refine not_subset.mpr ?_
-      have h_e : e ∉ M.E \ {e} := notMem_diff_of_mem rfl
+      have h_e : e ∉ M.E \ {e} := notMem_sdiff_of_mem rfl
 
       exact ⟨e, h_ePdel , h_e⟩
       exact Partition.SepOf.disjoint_left hPdel
@@ -282,19 +282,19 @@ theorem TLT (M : Matroid α) [M.Finite] (hXY : Disjoint X Y) (hXE : X ⊆ M.E) (
 
   have hT : ∃ T ⊆ M.E \ (insert e Y), X ⊆ T ∧ (M ／ {e}).conn T ≤ M.connBetween X Y - 1 := by
     have hTY : Pcon.left ⊆ M.E \ (insert e Y) := by
-      rw [@subset_diff]
+      rw [@subset_sdiff]
       apply And.intro
       have hPcon_sub : Pcon.left ⊆ (M ／ {e}).E := Partition.left_subset_ground Pcon
       have hMeSub : (M ／ {e}).E ⊆ M.E := by
         --rw [@contractElem, @contract_ground]
-        exact diff_subset
+        exact sdiff_subset
       exact fun ⦃a⦄ a_1 ↦ hMeSub (hPcon_sub a_1)
       refine disjoint_insert_right.mpr ?_
       apply And.intro
       have h_ePcon : Pcon.left ⊆ M.E \ {e} := Partition.left_subset_ground Pcon
       contrapose! h_ePcon
       refine not_subset.mpr ?_
-      have h_e : e ∉ M.E \ {e} := notMem_diff_of_mem rfl
+      have h_e : e ∉ M.E \ {e} := notMem_sdiff_of_mem rfl
       exact ⟨e, h_ePcon , h_e⟩
       exact Partition.SepOf.disjoint_left hPcon
 
@@ -340,7 +340,7 @@ theorem TLT (M : Matroid α) [M.Finite] (hXY : Disjoint X Y) (hXE : X ⊆ M.E) (
       contrapose! hSY
       refine not_subset.mpr ?_
       have h_e : e ∉ M.E \ (insert e Y) := by
-        simp only [mem_diff, mem_insert_iff, true_or, not_true_eq_false, and_false,
+        simp only [mem_sdiff, mem_insert_iff, true_or, not_true_eq_false, and_false,
           not_false_eq_true]
      -- sorry
       exact ⟨e, hSY , h_e⟩
@@ -349,7 +349,7 @@ theorem TLT (M : Matroid α) [M.Finite] (hXY : Disjoint X Y) (hXE : X ⊆ M.E) (
       contrapose! hTY
       refine not_subset.mpr ?_
       have h_e : e ∉ M.E \ (insert e Y) := by
-        simp only [mem_diff, mem_insert_iff, true_or, not_true_eq_false, and_false,
+        simp only [mem_sdiff, mem_insert_iff, true_or, not_true_eq_false, and_false,
           not_false_eq_true]
       exact ⟨e, hTY , h_e⟩
 
@@ -368,9 +368,9 @@ theorem TLT (M : Matroid α) [M.Finite] (hXY : Disjoint X Y) (hXE : X ⊆ M.E) (
     have : x ∈ S := hx.1
     have : x ∈ T := hx.2
     -- S is contained in M.E \ Y, which is a subset of M.E
-    have hS : S ⊆ M.E := subset_trans hSY (diff_subset)
+    have hS : S ⊆ M.E := subset_trans hSY (sdiff_subset)
     -- T is contained in M.E \ Y, which is a subset of M.E
-    have hT : T ⊆ M.E := subset_trans hTY (diff_subset)
+    have hT : T ⊆ M.E := subset_trans hTY (sdiff_subset)
     exact hS ‹x ∈ S›
 
   have h_Union_subset : (insert e (S ∪ T)) ⊆ M.E := by
@@ -378,15 +378,15 @@ theorem TLT (M : Matroid α) [M.Finite] (hXY : Disjoint X Y) (hXE : X ⊆ M.E) (
     apply And.intro
     · exact heE  -- e ∈ M.E from context
     · apply union_subset
-      · exact subset_trans hSY (diff_subset)  -- S ⊆ M.E
-      · exact subset_trans hTY (diff_subset)  -- T ⊆ M.E
+      · exact subset_trans hSY (sdiff_subset)  -- S ⊆ M.E
+      · exact subset_trans hTY (sdiff_subset)  -- T ⊆ M.E
 
   set P1 := M.partition (S ∩ T) h_ST_subset
   set P2 := M.partition (insert e (S ∪ T)) h_Union_subset
 
   have hdisj : Disjoint ((M.E \ {e}) \ Y) Y := disjoint_sdiff_left
-  rw [← union_singleton, @union_comm, ← @diff_diff] at hSY
-  rw [← union_singleton, @union_comm, ← @diff_diff] at hTY
+  rw [← union_singleton, @union_comm, ← @sdiff_sdiff] at hSY
+  rw [← union_singleton, @union_comm, ← @sdiff_sdiff] at hTY
 
   have hdisj_YS : Disjoint S Y := disjoint_of_subset hSY (fun ⦃a⦄ a ↦ a) hdisj
   have hdisj_YT : Disjoint T Y := disjoint_of_subset hTY (fun ⦃a⦄ a ↦ a) hdisj

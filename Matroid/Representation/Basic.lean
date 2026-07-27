@@ -21,7 +21,7 @@ namespace Matroid
 
 instance : FunLike (M.Rep 𝔽 W) α W where
   coe v := v.to_fun
-  coe_injective' := by rintro ⟨f,h⟩ ⟨f', h'⟩; simp
+  coe_injective := by rintro ⟨f,h⟩ ⟨f', h'⟩; simp
 
 @[simp] lemma Rep.to_fun_eq_coe (v : M.Rep 𝔽 W) : v.to_fun = (v : α → W) := rfl
 
@@ -162,8 +162,8 @@ lemma Rep.span_closure_congr_iff (v : M.Rep 𝔽 W) :
 --   obtain ⟨c, h, hc, h0⟩ := linearDepOn_iff.1 hC'
 --   refine ⟨c, subset_antisymm (by simpa using h) fun e heC ↦ ?_, hc⟩
 --   contrapose! h0
---   refine (linearIndepOn_iff.1 <| v.indep_iff.1 <| hC.diff_singleton_indep heC) _ ?_ hc
---   simpa [Finsupp.mem_supported, subset_diff_singleton_iff, h0] using h
+--   refine (linearIndepOn_iff.1 <| v.indep_iff.1 <| hC.sdiff_singleton_indep heC) _ ?_ hc
+--   simpa [Finsupp.mem_supported, subset_sdiff_singleton_iff, h0] using h
 
 lemma Rep.skew_iff_span_disjoint (v : M.Rep 𝔽 W) (hXE : X ⊆ M.E) (hYE : Y ⊆ M.E) :
     M.Skew X Y ↔ Disjoint (span 𝔽 (v '' X)) (span 𝔽 (v '' Y)) := by
@@ -192,7 +192,7 @@ lemma Rep.skew_iff_span_disjoint (v : M.Rep 𝔽 W) (hXE : X ⊆ M.E) (hYE : Y �
     fun hi ↦ hI fun _ heI ↦ h_support <| hi.ne_zero heI
 
 @[simp] lemma Rep.ofGround_apply (f : α → W) (hs : support f ⊆ M.E)
-  (hf : ∀ I ⊆ M.E, (M.Indep I ↔ LinearIndependent 𝔽 (I.restrict f))) (a : α) :
+  (hf : ∀ I ⊆ M.E, (M.Indep I ↔ LinearIndependent 𝔽 (I.domRestrict f))) (a : α) :
     Rep.ofGround f hs hf a = f a := rfl
 
 /-- A function from `M.E` to a module determines a representation -/

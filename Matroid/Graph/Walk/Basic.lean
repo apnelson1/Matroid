@@ -505,7 +505,7 @@ lemma Isolated.isWalk_nil_of_mem (hisol : G.Isolated x) (hw : G.IsWalk w) (hx : 
     simp only [cons_isWalk_iff] at hw
     exact (hisol.not_isLink hw.1).elim
 
-@[simp]
+-- @[simp]
 lemma Isolated.eq_nil_of_mem (hisol : G.Isolated x) (hw : G.IsWalk w) (hx : x ∈ w) : w = nil x :=
   hisol.isWalk_nil_of_mem hw hx |>.eq_nil_of_mem hx
 
@@ -547,7 +547,7 @@ lemma isWalk_induce_iff : G[X].IsWalk w ↔ (∃ x ∈ X \ V(G), w = nil x) ∨ 
   refine (em (Disjoint V(w) (X \ V(G))) |>.symm).imp (fun h1 ↦ ?_) (fun hw ↦ ?_)
   · obtain ⟨x, hxw, hxX⟩ := not_disjoint_iff.mp h1
     exact ⟨x, hxX, (G.diff_subset_isolatedSet_induce X hxX).eq_nil_of_mem h hxw⟩
-  rw [disjoint_comm, disjoint_diff_iff, inter_eq_right.mpr <| by exact h.vertexSet_subset] at hw
+  rw [disjoint_comm, disjoint_sdiff_iff, inter_eq_right.mpr <| by exact h.vertexSet_subset] at hw
   exact ⟨h.isWalk_isInducedSubgraph hileX (by simp [hw, hwX]) |>.of_le hile.le, hwX⟩
 
 lemma IsWalk.vertexSet_subset_of_induce (hw : G[X].IsWalk w) : V(w) ⊆ X :=
@@ -555,7 +555,7 @@ lemma IsWalk.vertexSet_subset_of_induce (hw : G[X].IsWalk w) : V(w) ⊆ X :=
 
 @[simp]
 lemma isWalk_deleteVerts_iff : (G - X).IsWalk w ↔ G.IsWalk w ∧ Disjoint V(w) X := by
-  rw [deleteVerts_def, isWalk_induce_iff_of_subset diff_subset, subset_diff, and_congr_right_iff,
+  rw [deleteVerts_def, isWalk_induce_iff_of_subset sdiff_subset, subset_sdiff, and_congr_right_iff,
     and_iff_right_iff_imp]
   exact fun h _ ↦ h.vertexSet_subset
 
@@ -578,7 +578,7 @@ lemma IsWalk.edgeSet_subset_of_restrict (hw : (G ↾ F).IsWalk w) : E(w) ⊆ F :
 
 @[simp]
 lemma isWalk_deleteEdges_iff {F : Set β} : (G ＼ F).IsWalk w ↔ G.IsWalk w ∧ Disjoint E(w) F := by
-  simp only [← restrict_edgeSet_diff_eq_deleteEdges, isWalk_restrict_iff, subset_diff,
+  simp only [← restrict_edgeSet_sdiff_eq_deleteEdges, isWalk_restrict_iff, subset_sdiff,
     and_congr_right_iff, and_iff_right_iff_imp]
   exact fun h _ ↦ h.edgeSet_subset
 

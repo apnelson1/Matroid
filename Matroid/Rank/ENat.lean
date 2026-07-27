@@ -132,7 +132,7 @@ end Constructions
 
 lemma eRk_eq_iSup_finset_eRk (M : Matroid α) (X : Set α) :
     M.eRk X = ⨆ Y ∈ {S : Finset α | (S : Set α) ⊆ X}, M.eRk Y := by
-  simp only [mem_setOf_eq, le_antisymm_iff, iSup_le_iff]
+  simp only [mem_ofPred_eq, le_antisymm_iff, iSup_le_iff]
   refine ⟨?_, fun S hSX ↦ M.eRk_mono hSX⟩
 
   by_cases hX : M.IsRkFinite X

@@ -24,13 +24,13 @@ lemma Connected.contract_delete_connected_of_mem_triangle_of_series {T} (hM : M.
     (M ／ {e} ＼ {f}).Connected := by
   have hMnt := hT.nontrivial.mono hT.subset_ground
   have hnt' := ((hT.nontrivial_diff_singleton e).mono
-    (diff_subset_diff_left hT.subset_ground))
+    (sdiff_subset_sdiff_left hT.subset_ground))
   obtain ⟨g, hge, hgf, rfl⟩ :=
     exists_eq_of_encard_eq_three_of_mem_of_mem hT.three_elements heT hfT hef
   obtain hd | hc := hM.delete_or_contract hMnt e
   · rw [← connected_dual_iff] at hd
     refine False.elim <| ((hd.loopless hnt').isNonloop_of_mem (e := f) ?_).not_isLoop ?_
-    · simp only [dual_delete, contract_ground, dual_ground, mem_diff, mem_singleton_iff]
+    · simp only [dual_delete, contract_ground, dual_ground, mem_sdiff, mem_singleton_iff]
       grind
     exact dual_delete .. ▸ h_series.isLoop_contractElem hef
   refine (hc.delete_or_contract hnt' f).elim id fun hd ↦ ?_
@@ -84,7 +84,7 @@ lemma IsTriangle.small_of_isTriangle_isTriad {a b c d : α} (habc : M.IsTriangle
       habc.isNonloop₁.eLocalConn_eq_one_iff.2 hacl, ← one_add_one_eq_two,
       ENat.add_one_le_add_one_iff, ENat.add_le_right_iff, or_iff_left (by simp)] at hconn
     rw [ha.eq_ground_of_eConn_eq_zero hconn (by simp) (by grind [hbcd.subset_ground]),
-      contract_ground, insert_diff_self_of_mem habc.mem_ground₁]
+      contract_ground, insert_sdiff_self_of_mem habc.mem_ground₁]
   rw [← circuitOn_eq_unifOn, ← habc.isCircuit.restrict_eq_circuitOn, delete_eq_restrict, hE,
     show ({a, b, c, d} : Set α) \ {d} = {a, b, c} by grind]
   simp [habc.three_elements, two_add_one_eq_three]

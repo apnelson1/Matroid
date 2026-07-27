@@ -117,7 +117,8 @@ lemma Projector.map_aux {γ : Type*} (P : N.Projector M β) (f : β → γ) (hf 
   generalize_proofs h1
   rw [contract_map h1 (by simp [Projector.pivot])] at heq
   convert heq
-  ext (a | b) <;> simp [Projector.pivot]
+  · ext (a | b) <;> simp [Projector.pivot]
+  rfl
 
 @[simps]
 def Projector.map {γ : Type u} (P : N.Projector M β) (f : β → γ) (hf : InjOn f P.pivot) :
@@ -141,7 +142,7 @@ lemma Projector.dual_pivot (P : N.Projector M β) : P.dual.pivot = P.pivot := rf
 --   -- let R := P.carrier ／ {.inr e}
 --   have hc := P.contract_image_pivot
 --   have hd := P.delete_image_pivot
---   rw [← insert_diff_self_of_mem he, image_insert_eq, ← union_singleton, ← delete_delete] at hd
+--   rw [← insert_sdiff_self_of_mem he, image_insert_eq, ← union_singleton, ← delete_delete] at hd
 
 
 --   let V := ModularCut.ofDeleteElem (P.carrier ＼ Sum.inr '' (P.pivot \ {e})) (.inr e)
@@ -155,22 +156,22 @@ lemma Projector.dual_pivot (P : N.Projector M β) : P.dual.pivot = P.pivot := rf
 
 
 
-
+set_option backward.isDefEq.respectTransparency false in
 lemma Projector.delete_contract_aux (M : Matroid α) (X : Set α) :
     M.comapOn (Sum.inl '' (M.E \ X) ∪ Sum.inr '' (X ∩ M.E)) (Sum.elim id id) ＼ range Sum.inr =
     (M ＼ X).mapEmbedding Embedding.inl := by
   have hrw : (Sum.inl '' (M.E \ X) ∪ Sum.inr '' (X ∩ M.E)) \ range Sum.inr
-      = Sum.inl '' (M.E \ X) := by rw [union_diff_distrib,
-      Disjoint.sdiff_eq_left (by simp [disjoint_left]), diff_eq_empty.2 (image_subset_range ..),
+      = Sum.inl '' (M.E \ X) := by rw [union_sdiff_distrib,
+      Disjoint.sdiff_eq_left (by simp [disjoint_left]), sdiff_eq_empty.2 (image_subset_range ..),
       union_empty]
   refine ext_indep (by simp [hrw]) ?_
-  simp +contextual [ hrw, image_image, Embedding.inl, Sum.inl_injective.preimage_image,
-      subset_diff, InjOn]
+  simp +contextual [hrw, image_image, Embedding.inl, Sum.inl_injective.preimage_image,
+      subset_sdiff, InjOn]
 
 lemma Projector.bijOn_aux {X : Set α} (hX : X ⊆ M.E) :
     BijOn (Sum.elim id (Subtype.val : X → α)) (Sum.inl '' (M.E \ X) ∪ range Sum.inr) M.E := by
   refine ⟨?_, ?_, ?_⟩
-  · simp [subset_def ▸ hX, (mapsTo_id _).mono_left diff_subset]
+  · simp [subset_def ▸ hX, (mapsTo_id _).mono_left sdiff_subset]
   · simp_rw [InjOn]
     aesop
   simp [SurjOn, image_union, ← range_comp, image_image]
@@ -234,8 +235,8 @@ def Projector.deleteContract (M : Matroid α) (X : Set α) : (M ／ X).Projector
 
 lemma Projector.deleteContract_pivot' (M : Matroid α) (X : Set α) :
     (Projector.deleteContract M X).pivot = Subtype.val ⁻¹' (X ∩ M.E) := by
-  simp only [pivot, deleteContract, copy_map, copy_coe, map_carrier, deleteContract'_carrier,
-    diff_inter_self_eq_diff, map_ground, comapOn_ground_eq]
+  simp only [pivot, deleteContract, map_carrier, copy_coe, deleteContract'_carrier,
+    sdiff_inter_self_eq_sdiff, map_ground, comapOn_ground_eq]
   aesop
 
 lemma Projector.deleteContract_pivot (M : Matroid α) (X : Set α) (hXE : X ⊆ M.E := by aesop_mat) :
@@ -266,8 +267,8 @@ lemma Projector.contract_contract_coe (P : M.Projector N β) (C : Set α) :
 @[simp]
 lemma Projector.contract_projector_pivot (P : M.Projector N β) (C : Set α) :
     (P.contract_contract C).pivot = P.pivot := by
-  rw [pivot, contract_contract_coe, contract_ground, preimage_diff, preimage_inr_image_inl,
-    diff_empty, pivot]
+  rw [pivot, contract_contract_coe, contract_ground, preimage_sdiff, preimage_inr_image_inl,
+    sdiff_empty, pivot]
 
 /-- Given a projector for `M` and `N`, the correseponding projector for `M ＼ D` and `N ＼ D`. -/
 def Projector.delete_delete (P : M.Projector N β) (D : Set α) :
@@ -294,20 +295,20 @@ lemma exists_indep_coindep_of_delete_contract (M : Matroid α) (X : Set α) :
     use N, hN, I, hss.trans inter_subset_left, hI, hI', hd, hc
   obtain ⟨K, hK⟩ := M.exists_isBasis X
   obtain ⟨I, hI⟩ := (M ＼ (X \ K))✶.exists_isBasis K
-    (subset_diff.2 ⟨hK.indep.subset_ground, disjoint_sdiff_right⟩)
+    (subset_sdiff.2 ⟨hK.indep.subset_ground, disjoint_sdiff_right⟩)
   refine ⟨M ＼ (X \ K) ／ (K \ I), I, delete_contract_isMinor .., ?_, ?_, ?_, ?_, ?_⟩
   · grw [hI.subset, hK.subset]
   · rw [Indep.contract_indep_iff, and_iff_right disjoint_sdiff_right, delete_indep_iff,
-      union_diff_cancel hI.subset, and_iff_right hK.indep]
+      union_sdiff_cancel hI.subset, and_iff_right hK.indep]
     · exact disjoint_sdiff_right
-    rw [delete_indep_iff, and_iff_left (disjoint_sdiff_right.mono_left diff_subset)]
-    exact hK.indep.diff I
+    rw [delete_indep_iff, and_iff_left (disjoint_sdiff_right.mono_left sdiff_subset)]
+    exact hK.indep.sdiff I
   · simpa [Coindep, disjoint_sdiff_right] using hI.indep
   · rw [← dual_inj]
     rw [dual_delete, dual_contract, ← contract_delete_comm _ disjoint_sdiff_right,
       ← hI.contract_eq_contract_delete, dual_delete, contract_contract,
-      diff_union_of_subset hK.subset, dual_delete]
-  rw [contract_contract, diff_union_of_subset hI.subset,
+      sdiff_union_of_subset hK.subset, dual_delete]
+  rw [contract_contract, sdiff_union_of_subset hI.subset,
     ← contract_delete_comm _ disjoint_sdiff_right, hK.contract_eq_contract_delete]
 
 lemma delete_isProjection_contract (M : Matroid α) (X : Set α) : (M ／ X).IsProjection (M ＼ X) :=
@@ -336,8 +337,8 @@ lemma Projector.exists_set_projector {β : Type u} (Q : N.Projector M β) :
     simp only [SurjOn, Sum.map, CompTriple.comp_eq, image_union, image_image, Sum.elim_inl,
       ← range_comp]
     rw [image_preimage_eq_inter_range, Sum.elim_comp_inr, range_comp, Subtype.range_val,
-      union_comm, ← diff_subset_iff, ← M'.delete_ground, hd, delete_ground,
-      subset_inter_iff, and_iff_right diff_subset, diff_subset_iff, Q.coe_ground_eq_union,
+      union_comm, ← sdiff_subset_iff, ← M'.delete_ground, hd, delete_ground,
+      subset_inter_iff, and_iff_right sdiff_subset, sdiff_subset_iff, Q.coe_ground_eq_union,
       union_comm]
     simp
   refine ⟨J, hJss, ⟨M'.comapOn (Sum.inl '' M.E ∪ range .inr) (Sum.map id Subtype.val), ?_, ?_⟩,
@@ -345,18 +346,19 @@ lemma Projector.exists_set_projector {β : Type u} (Q : N.Projector M β) :
   · refine Matroid.map_inj (Sum.map id Subtype.val) (by simp [InjOn]) ?_
     rw [contract_map (by simp) (by simp), map_comapOn hbij]
     simp only [Sum.map, CompTriple.comp_eq, ← range_comp, Sum.elim_comp_inr]
-    simp only [range_comp, Subtype.range_coe_subtype, setOf_mem_eq, map_map, Sum.elim_comp_inl]
+    simp only [range_comp, Subtype.range_coe_subtype, ofPred_mem_eq, map_map, Sum.elim_comp_inl]
     rw [hc, Q.contract_image_pivot]
   · refine Matroid.map_inj (Sum.map id Subtype.val) (by simp [InjOn]) ?_
     rw [delete_map (by simp) (by simp), map_comapOn hbij, map_map]
     simp only [Sum.map, CompTriple.comp_eq, ← range_comp, Sum.elim_comp_inr, Sum.elim_comp_inl]
-    simp only [range_comp, Subtype.range_coe_subtype, setOf_mem_eq, hd, Q.delete_image_pivot]
+    simp only [range_comp, Subtype.range_coe_subtype, ofPred_mem_eq, hd, Q.delete_image_pivot]
   · suffices M'.Indep (range (Sum.inr ∘ Subtype.val)) by simpa [Sum.map, ← range_comp]
     simpa [range_comp]
   suffices M'.Coindep (range (Sum.inr ∘ Subtype.val)) by
     simpa [Coindep, comapOn_dual_eq_of_bijOn hbij, ← range_comp]
   simpa [range_comp]
 
+set_option backward.isDefEq.respectTransparency false in
 /-- For every type `α`, matroids `M N` on `α`, and projector `P` for `N` and `M`,
 there is a projector `Q` on a type `β` in the same universe as `α`,
 such that the pivot of `Q` is all of `β`, is independent and coindependent in `Q`,
@@ -426,6 +428,7 @@ lemma IsProjection.Quotient (h : N.IsProjection M) : N ≤q M := by
   simp_rw [← P.contract_comap_eq, ← P.delete_comap_eq]
   exact ((P : Matroid (α ⊕ β)).contract_quotient_delete (range .inr)).comap Sum.inl
 
+set_option backward.isDefEq.respectTransparency false in
 /-- The modular cut corresponding to a projector by a unit type. Projecting `M` by this modular
 cut gives `N`. -/
 def Projector.modularCut (P : N.Projector M Unit) : M.ModularCut :=
@@ -436,6 +439,7 @@ def Projector.modularCut (P : N.Projector M Unit) : M.ModularCut :=
       grind
     grind
 
+set_option backward.isDefEq.respectTransparency false in
 lemma Projector.projectBy_modularCut (P : N.Projector M Unit) : M.projectBy P.modularCut = N := by
   rw [Projector.modularCut, ModularCut.projectBy_copy]
   refine Matroid.map_inj (Sum.inl : α → α ⊕ Unit) (by simp) ?_
@@ -445,6 +449,7 @@ lemma Projector.projectBy_modularCut (P : N.Projector M Unit) : M.projectBy P.mo
     rw [map_comap (by grind)]
   grind
 
+set_option backward.isDefEq.respectTransparency false in
 def Projector.modularCutOfMem (P : N.Projector M β) (e : β) : M.ModularCut :=
   have hinj : InjOn (fun x ↦ ()) (deleteContract P.carrier {Sum.inr e}).pivot := by
     grw [deleteContract_pivot', preimage_inter]
@@ -466,7 +471,7 @@ def Projector.modularCutOfMem (P : N.Projector M β) (e : β) : M.ModularCut :=
 --   delete_eq' := by
 --     simp [modularCutOfMem, Projector.modularCut]
 --     rw [map_comap]
---     · rw [contract_delete_diff]
+--     · rw [contract_delete_sdiff]
 
 --       convert rfl
 --       · set s : ((α ⊕ β) ⊕ ({(.inr e)} : Set (α ⊕ β))) → (α ⊕ β) ⊕ Unit := Sum.map id (fun _ ↦ ())
@@ -496,8 +501,8 @@ def Projector.modularCutOfMem (P : N.Projector M β) (e : β) : M.ModularCut :=
 --           rw [map_comap]
 --           · have := (deleteContract P.carrier {Sum.inr e}).contract_eq
 --           simp only [deleteContract, copy_map, copy_coe, map_carrier, deleteContract'_carrier,
---             diff_inter_self_eq_diff, map_ground, contract_ground, comapOn_ground_eq,
---             image_subset_iff, diff_subset_iff, singleton_union, union_subset_iff, mem_preimage,
+--             sdiff_inter_self_eq_sdiff, map_ground, contract_ground, comapOn_ground_eq,
+--             image_subset_iff, sdiff_subset_iff, singleton_union, union_subset_iff, mem_preimage,
 --             Sum.map_inl, id_eq, mem_insert_iff, reduceCtorEq, mem_range, Sum.inl.injEq, exists_eq,
 --             or_true, insert_eq_of_mem]
 --           grind
@@ -506,8 +511,8 @@ def Projector.modularCutOfMem (P : N.Projector M β) (e : β) : M.ModularCut :=
 --       grind
 
 --     simp only [deleteContract, copy_map, copy_coe, map_carrier, deleteContract'_carrier,
---       diff_inter_self_eq_diff, delete_ground, comap_ground_eq, contract_ground, map_ground,
---       comapOn_ground_eq, preimage_diff, diff_subset_iff]
+--       sdiff_inter_self_eq_sdiff, delete_ground, comap_ground_eq, contract_ground, map_ground,
+--       comapOn_ground_eq, preimage_sdiff, sdiff_subset_iff]
 --     grind
 
 
@@ -518,11 +523,11 @@ def Projector.refl_set (M : Matroid α) {β : Type*} (X : Set β) : M.Projector 
   carrier := M.sum (loopyOn X)
   contract_eq' := by
     rw [sum_contract, preimage_inl_range_inr, contract_empty, loopyOn_contract,
-      preimage_range, diff_univ, loopyOn_empty]
+      preimage_range, sdiff_univ, loopyOn_empty]
     exact ext_indep (by simp) <| by simp [image_eq_image Sum.inl_injective]
   delete_eq' := by
     rw [sum_delete, preimage_inl_range_inr, delete_empty, loopyOn_delete, preimage_range,
-      diff_univ, loopyOn_empty]
+      sdiff_univ, loopyOn_empty]
     exact ext_indep (by simp) <| by simp [image_eq_image Sum.inl_injective]
 
 @[simp]
@@ -545,9 +550,9 @@ def projector_project (M : Matroid α) (X : Set α) : (M.project X).Projector M 
       preimage_union, Sum.preimage_image_inl, preimage_inl_image_inr, union_empty, project_closure]
     rw [image_union, preimage_sumElim]
     simp only [Sum.image_elim_image_inl, id_eq, image_id', preimage_id_eq]
-    rw [union_diff_distrib, Disjoint.sdiff_eq_left (by simp), diff_eq_empty.2 (by simp),
+    rw [union_sdiff_distrib, Disjoint.sdiff_eq_left (by simp), sdiff_eq_empty.2 (by simp),
       union_empty, ← image_univ, Sum.image_elim_image_inr, image_univ, Subtype.range_coe_subtype,
-      setOf_mem_eq]
+      ofPred_mem_eq]
   delete_eq' := by
     refine ext_indep ?_ fun I hI ↦ ?_
     · simp only [delete_ground, comap_ground_eq, map_ground]

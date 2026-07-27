@@ -71,7 +71,7 @@ lemma MinorSepDuo.removeBoth_eq_remove (S : M.MinorSepDuo rem w f) (hrem : rem i
 /-- The separation formed from `S.removeSep i` by removing `pt !i` in the intended way. -/
 def MinorSepDuo.downSep (S : M.MinorSepDuo rem w f) (i : Bool) : S.removeBoth.Separation :=
   ((S.removeSep i).remove {S.pt !i} (rem !i)).copy' (by
-    cases i <;> grind [remove_ground, diff_diff, union_singleton, removeBoth])
+    cases i <;> grind [remove_ground, sdiff_sdiff, union_singleton, removeBoth])
 
 lemma MinorSep.downSep_eq_copy (S : M.MinorSepDuo rem w f) (hi : S.pt i ≠ S.pt (!i)) :
   S.downSep i = ((S.removeSep i).remove {S.pt !i} (rem !i)).copy
@@ -281,7 +281,7 @@ lemma MinorSepDuo.notMem_closure_of_delete (S : M.MinorSepDuo rem w f) (hw : IsF
   refine fun hcl ↦ (S.eConn_deleteSep_lt hb i).not_ge ?_
   have hf : ((S.deleteSep hb).ofDelete j).Faithful (M ＼ {S.pt b}) := by
     rwa [Separation.faithful_delete_iff_subset_closure_of_subset (i := j) hnl.indep,
-      Separation.ofDelete_apply_self, union_diff_cancel_right, singleton_subset_iff]
+      Separation.ofDelete_apply_self, union_sdiff_cancel_right, singleton_subset_iff]
     · simp [deleteSep_apply]
     grw [Separation.ofDelete_apply_self, ← subset_union_right]
   grw [← hf.eConn_delete_eq, Separation.ofDelete_delete] at hi

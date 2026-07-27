@@ -116,24 +116,24 @@ lemma IsMutualBasis.switch (hB : M.IsMutualBasis B Xs) (hIX : M.IsBasis I (⋂ i
     M.IsMutualBasis ((B \ ⋂ i, Xs i) ∪ I) Xs := by
   obtain hι | hι := isEmpty_or_nonempty ι
   · refine ⟨?_, by simp⟩
-    rw [iInter_of_empty, diff_univ, empty_union]
+    rw [iInter_of_empty, sdiff_univ, empty_union]
     exact hIX.indep
   set J := (⋂ i, Xs i) ∩ B with hJ
 
   have hJB : M.IsBasis J _ := hB.isBasis_iInter
   set B' := B \ J ∪ I with hB'
   have hB'E : B' ⊆ M.E :=
-    union_subset (diff_subset.trans hB.indep.subset_ground) hIX.indep.subset_ground
+    union_subset (sdiff_subset.trans hB.indep.subset_ground) hIX.indep.subset_ground
   have hdj : Disjoint (B \ J) I
   · rw [disjoint_iff_forall_ne]
     rintro e heBJ _ heI rfl
-    apply hB.indep.notMem_closure_diff_of_mem heBJ.1
+    apply hB.indep.notMem_closure_sdiff_of_mem heBJ.1
     refine mem_of_mem_of_subset ?_ <| M.closure_subset_closure
-      (show J ⊆ B \ {e} from subset_diff_singleton inter_subset_right heBJ.2)
+      (show J ⊆ B \ {e} from subset_sdiff_singleton inter_subset_right heBJ.2)
     rw [hJB.closure_eq_closure, ← hIX.closure_eq_closure]
     exact (M.subset_closure I) heI
 
-  simp_rw [isMutualBasis_iff, show B \ ⋂ i, Xs i = B \ J by rw [hJ, diff_inter_self_eq_diff]]
+  simp_rw [isMutualBasis_iff, show B \ ⋂ i, Xs i = B \ J by rw [hJ, sdiff_inter_self_eq_sdiff]]
   refine ⟨?_, fun i ↦ ?_⟩
   · refine (hB.indep.isBasis_closure.switch_subset_of_isBasis_closure (I₀ := J) (J₀ := I)
       inter_subset_right (hIX.subset.trans ?_) ?_).indep
@@ -142,8 +142,8 @@ lemma IsMutualBasis.switch (hB : M.IsMutualBasis B Xs) (hIX : M.IsBasis I (⋂ i
     exact hIX.isBasis_closure_right
   have hiX : I ⊆ Xs i := hIX.subset.trans (iInter_subset Xs i)
   have hJX : J ⊆ Xs i := inter_subset_left.trans (iInter_subset Xs i)
-  rw [inter_union_distrib_left, ← inter_diff_assoc, inter_eq_self_of_subset_right hiX,  inter_comm,
-    ← diff_inter_self_eq_diff, ← inter_assoc, inter_eq_self_of_subset_left
+  rw [inter_union_distrib_left, ← inter_sdiff_assoc, inter_eq_self_of_subset_right hiX,  inter_comm,
+    ← sdiff_inter_self_eq_sdiff, ← inter_assoc, inter_eq_self_of_subset_left
     (show J ⊆ B from inter_subset_right), inter_eq_self_of_subset_left hJX, inter_comm]
   refine IsBasis.switch_subset_of_isBasis_closure (hB.isBasis_inter i)
     (subset_inter hJX inter_subset_right) hiX ?_
@@ -175,7 +175,7 @@ lemma IsMutualBasis.isMutualBasis_of_compl {Xs : ι → Set α} (hXs : ∀ i, Xs
     (h : M.IsMutualBasis B (fun i ↦ M.E \ Xs i)) (hB : M.IsBase B) :
     M✶.IsMutualBasis (M.E \ B) Xs := by
   convert h.isMutualBasis_compl_dual hB with i
-  rw [diff_diff_cancel_left (hXs i)]
+  rw [sdiff_sdiff_cancel_left (hXs i)]
 
 
 end IsMutualBasis
@@ -252,7 +252,7 @@ lemma IsModularFamily.restrict {R : Set α} (h : M.IsModularFamily Xs) (hXR : �
 
 lemma IsModularFamily.delete {D : Set α} (h : M.IsModularFamily Xs) (hXD : ∀ i, Disjoint (Xs i) D) :
     (M ＼ D).IsModularFamily Xs :=
-  h.restrict fun i ↦ subset_diff.2 ⟨h.subset_ground_of_mem i, hXD i⟩
+  h.restrict fun i ↦ subset_sdiff.2 ⟨h.subset_ground_of_mem i, hXD i⟩
 
 lemma IsModularFamily.ofRestrict' {R : Set α}
     (h : (M ↾ R).IsModularFamily Xs) : M.IsModularFamily (fun i ↦ (Xs i) ∩ M.E) := by
@@ -368,7 +368,7 @@ lemma IsModularFamily.contract (h : M.IsModularFamily Xs) {C : Set α}
 
   obtain ⟨I, hI⟩ := M.exists_isBasis' C
   rw [hI.contract_eq_contract_delete]
-  refine IsModularFamily.delete ?_ fun i ↦ disjoint_sdiff_left.mono_right diff_subset
+  refine IsModularFamily.delete ?_ fun i ↦ disjoint_sdiff_left.mono_right sdiff_subset
   have hu := h.isModularFamily_of_forall_subset_closure (Ys := fun i ↦ (Xs i ∪ C))
     (fun _ ↦ subset_union_left)
     (fun i ↦ union_subset (M.subset_closure _ (h.subset_ground_of_mem i)) (hC i))
@@ -381,11 +381,11 @@ lemma IsModularFamily.contract (h : M.IsModularFamily Xs) {C : Set α}
   refine hi.isModularFamily fun i ↦ (hi.inter_left _).isBasis_of_subset_of_subset_closure
     inter_subset_left ?_
 
-  rw [contract_closure_eq, inter_union_distrib_right, diff_union_of_subset hIB,
+  rw [contract_closure_eq, inter_union_distrib_right, sdiff_union_of_subset hIB,
     union_inter_distrib_right, inter_eq_self_of_subset_left hIB,
     closure_union_congr_right hI.closure_eq_closure, inter_union_distrib_right,
-    diff_union_self, ← inter_union_distrib_right, diff_subset_iff, union_comm,
-    diff_union_eq_union_of_subset _ hI.subset]
+    sdiff_union_self, ← inter_union_distrib_right, sdiff_subset_iff, union_comm,
+    sdiff_union_eq_union_of_subset _ hI.subset]
   have hXb := (hB.isBasis_inter i).subset_closure
 
   refine (subset_union_left.trans (hXb.trans ?_))
@@ -445,6 +445,7 @@ lemma isModularFamily_disjointSigma_iff (Xs : ι → Set α) {M : η → Matroid
   rw [← inter_eq_self_of_subset_right (hB c).indep.subset_ground, ← inter_assoc]
   exact (hB c).isBasis_inter i
 
+set_option backward.isDefEq.respectTransparency false in
  lemma isModularFamily_disjointSum_iff {Xs : ι → Set α} {M N : Matroid α} (hdj) :
     (M.disjointSum N hdj).IsModularFamily Xs ↔
       (M.IsModularFamily (fun i ↦ Xs i ∩ M.E)) ∧ (N.IsModularFamily (fun i ↦ Xs i ∩ N.E)) ∧
@@ -551,6 +552,7 @@ lemma isModularPair_of_subset (hXY : X ⊆ Y) (hY : Y ⊆ M.E) : M.IsModularPair
     inter_subset_left]
 
 lemma Indep.isModularPair_of_union (hi : M.Indep (I ∪ J)) : M.IsModularPair I J := by
+  rw [IsModularPair]
   simpa only [iUnion_subset_iff, Bool.forall_bool, cond_false, subset_union_right, cond_true,
     subset_union_left, and_self, forall_true_left] using
     hi.isModularFamily_of_subsets (Js := fun i ↦ bif i then I else J)
@@ -637,10 +639,10 @@ lemma IsRkFinite.isModularPair_iff_eRk (hXfin : M.IsRkFinite X) (hYfin : M.IsRkF
   obtain ⟨IY, hIY, hY⟩ := hIi.indep.subset_isBasis_of_subset
     (hIi.subset.trans inter_subset_right)
   refine ⟨IX, IY, hIX, hIY, ?_⟩
-  rw [hIi.eRk_eq_encard, hIX.eRk_eq_encard, ← encard_diff_add_encard_of_subset hX,
+  rw [hIi.eRk_eq_encard, hIX.eRk_eq_encard, ← encard_sdiff_add_encard_of_subset hX,
     add_comm (encard _), add_assoc, add_right_inj_of_ne_top hifin, hIY.eRk_eq_encard,
     ← encard_union_add_encard_inter, ← union_eq_self_of_subset_left hY, ← union_assoc,
-    diff_union_self, union_eq_self_of_subset_right hX] at hr
+    sdiff_union_self, union_eq_self_of_subset_right hX] at hr
   refine IsBasis.indep <| (hXfin.union hYfin).isBasis_of_subset_closure_of_subset_of_encard_le ?_
     (union_subset_union hIX.subset hIY.subset) (le_of_add_le_left hr.le)
   rw [← M.closure_union_closure_left_eq, ← M.closure_union_closure_right_eq]
@@ -651,7 +653,7 @@ lemma IsRkFinite.isModularPair_iff_eRk (hXfin : M.IsRkFinite X) (hYfin : M.IsRkF
 lemma IsRkFinite.isModularPair_iff_rk (hXfin : M.IsRkFinite X) (hYfin : M.IsRkFinite Y)
     (hXE : X ⊆ M.E := by aesop_mat) (hYE : Y ⊆ M.E := by aesop_mat) :
     M.IsModularPair X Y ↔ M.rk X + M.rk Y = M.rk (X ∩ Y) + M.rk (X ∪ Y) := by
-  rw [hXfin.isModularPair_iff_eRk hYfin, ← ENat.coe_inj, ← hXfin.cast_rk_eq,
+  rw [hXfin.isModularPair_iff_eRk hYfin, ← ENat.natCast_inj, ← hXfin.cast_rk_eq,
     ← hYfin.cast_rk_eq, ← hXfin.inter_right.cast_rk_eq, ← (hXfin.union hYfin).cast_rk_eq,
     Nat.cast_add, Nat.cast_add]
 
@@ -744,6 +746,7 @@ lemma isModularPair_disjointSigma_iff (X Y : Set α) {M : η → Matroid α} {hd
   convert Iff.rfl using 5 with i j
   grind
 
+set_option backward.isDefEq.respectTransparency false in
 lemma isModularPair_disjointSum_iff (X Y : Set α) {M N : Matroid α} {hdj} :
     (M.disjointSum N hdj).IsModularPair X Y ↔ M.IsModularPair (X ∩ M.E) (Y ∩ M.E) ∧
       N.IsModularPair (X ∩ N.E) (Y ∩ N.E) ∧ X ∪ Y ⊆ M.E ∪ N.E := by

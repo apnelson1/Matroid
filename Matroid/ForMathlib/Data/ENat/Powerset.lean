@@ -134,7 +134,7 @@ lemma powersetENcard_succ_insert (hxs : x ∉ s) (k : ℕ∞) : (insert x s).pow
   · refine fun t ⟨hts, ht⟩ ↦ ?_
     by_cases hxt : x ∈ t
     · refine .inr <| (mem_image ..).2 ⟨t \ {x}, ⟨by grind, ?_⟩, by grind⟩
-      rw [← ENat.add_one_inj, ← ht, encard_diff_singleton_add_one hxt]
+      rw [← ENat.add_one_inj, ← ht, encard_sdiff_singleton_add_one hxt]
     exact .inl ⟨by grind, ht⟩
   rintro _ ⟨t, ⟨ht, ht'⟩, rfl⟩
   exact ⟨insert_subset_insert ht, by rw [encard_insert_of_notMem (by grind), ht']⟩
@@ -153,7 +153,7 @@ lemma Infinite.powersetENcard_infinite (hs : s.Infinite) {k : ℕ∞} (hk : k �
   | zero => simp
   | succ m ih =>
     obtain ⟨x, hx⟩ := hs.nonempty
-    grw [← insert_diff_self_of_mem hx, powersetENcard_succ_insert (by simp),
+    grw [← insert_sdiff_self_of_mem hx, powersetENcard_succ_insert (by simp),
       encard_union_eq (powersetENcard_insert_disjoint (by simp)), ← ih (hs.diff (by simp)) _ hk,
       ← one_le_encard_iff_nonempty.2, Nat.cast_add_one]
     exact image_nonempty.2 <| (s \ {x}).exists_subset_encard_eq (k := k) (by simp [hs.diff])
@@ -179,5 +179,5 @@ lemma sUnion_powersetENcard_eq (s : Set α) (hk : k ≠ 0) (hks : k ≤ s.encard
     ⋃₀ (s.powersetENcard k) = s := by
   refine subset_antisymm (sUnion_subset (by grind [powersetENcard])) fun x hxs ↦ ?_
   obtain ⟨r, hxr, hrs, rfl⟩ := exists_superset_subset_encard_eq (s := {x}) (t := s) (by simpa)
-    (by simpa [ENat.one_le_iff_ne_zero]) hks
+    (by simpa [Order.one_le_iff_ne_zero]) hks
   exact mem_sUnion.2 ⟨r, ⟨hrs, rfl⟩, by simpa using hxr⟩

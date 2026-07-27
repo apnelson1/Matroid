@@ -35,14 +35,14 @@ lemma StronglyPreservable.exists_preserve_eq {μ} (hμ : StronglyPreservable μ)
   have h' := hμ.base_preservable hB'.compl_isBase_dual (X := X) (k := k)
   rw [hμ.dual, hVconn, imp_iff_right rfl.le] at h'
   obtain ⟨U, hUE, hUdj, hUcard, hUconn⟩ := h'
-  simp only [restrict_ground_eq, union_diff_left, hVB.sdiff_eq_left] at hUdj
-  rw [dual_ground, restrict_ground_eq, union_comm, ← diff_subset_iff, hUdj.sdiff_eq_left] at hUE
+  simp only [restrict_ground_eq, union_sdiff_left, hVB.sdiff_eq_left] at hUdj
+  rw [dual_ground, restrict_ground_eq, union_comm, ← sdiff_subset_iff, hUdj.sdiff_eq_left] at hUE
   refine ⟨U, V, hUE, hVE, hVB, hUcard, hVcard, ?_⟩
-  rw [← hUconn, ← hμ.dual, restrict_ground_eq, union_diff_cancel_left (by grind), dual_delete,
+  rw [← hUconn, ← hμ.dual, restrict_ground_eq, union_sdiff_cancel_left (by grind), dual_delete,
     dual_contract, ← contract_delete_comm _ (by grind), delete_eq_restrict, contract_ground,
-    dual_ground, diff_diff, diff_diff_cancel_left (by grind [hB.subset_ground]),
-    ← dual_delete, delete_compl, union_diff_distrib, diff_diff_cancel_left hUE,
-    (hVB.mono_right diff_subset).sdiff_eq_left, union_comm U]
+    dual_ground, sdiff_sdiff, sdiff_sdiff_cancel_left (by grind [hB.subset_ground]),
+    ← dual_delete, delete_compl, union_sdiff_distrib, sdiff_sdiff_cancel_left hUE,
+    (hVB.mono_right sdiff_subset).sdiff_eq_left, union_comm U]
 
 lemma StronglyPreservable.exists_preserve_le {μ} (hμ : StronglyPreservable μ)
     (hB : M.IsBase B) (hk : k ≤ μ M X) :
@@ -56,14 +56,14 @@ lemma StronglyPreservable.exists_preserve_le {μ} (hμ : StronglyPreservable μ)
   refine (contract_isMinor_of_subset _ (by grind)).delete_isMinor_delete_of_subset (by grind) ?_
   grind [contract_ground]
 
-lemma StronglyPreservable.exists_finite_counterexample_of_lt_sum {ι : Type*} [Fintype ι] {μ}
-    (hμ : StronglyPreservable μ) (M : Matroid α) (g : Matroid α → ℕ∞) (hg : Monotone g)
-    (X : ι → Set α) (h_lt : g M < ∑ i, μ M (X i)) :
-    ∃ N, N ≤m M ∧ N.Finite ∧ g N < ∑ i, μ N (X i) := by
+lemma StronglyPreservable.exists_finite_counterexample_of_lt_sum' {ι : Type*} [Fintype ι]
+    {μ : ι → Matroid α → Set α → ℕ∞} (hμ : ∀ i, StronglyPreservable (μ i)) (M : Matroid α)
+    (g : Matroid α → ℕ∞) (hg : Monotone g) (X : ι → Set α) (h_lt : g M < ∑ i, μ i M (X i)) :
+    ∃ N, N ≤m M ∧ N.Finite ∧ g N < ∑ i, μ i N (X i) := by
   obtain ⟨B, hB⟩ := M.exists_isBase
-  obtain ⟨s, hs⟩ | hfinY := exists_or_forall_not (fun i ↦ μ M (X i) = ⊤)
+  obtain ⟨s, hs⟩ | hfinY := exists_or_forall_not (fun i ↦ μ i M (X i) = ⊤)
   · obtain ⟨U, V, hUV, hE, hVB, hUcard, hVcard, hconn⟩ :=
-      hμ.exists_preserve_eq (k := g M + 1) (X := X s) hB (by simp [hs])
+      (hμ s).exists_preserve_eq (k := g M + 1) (X := X s) hB (by simp [hs])
     set N := M ／ (B \ U) ＼ ((M.E \ B) \ V) with hN_def
     have hNM : N ≤ M := contract_delete_isMinor ..
     have hNE : N.E = U ∪ V := by
@@ -73,12 +73,12 @@ lemma StronglyPreservable.exists_finite_counterexample_of_lt_sum {ι : Type*} [F
     refine ⟨N, hNM, ?_, ?_⟩
     · grw [finite_iff, hNE, finite_union, ← encard_lt_top_iff, ← encard_lt_top_iff, hUcard, hVcard]
       simpa using h_lt.trans_le le_top
-    grw [hg hNM, ← Finset.single_le_sum_of_canonicallyOrdered (f := fun i ↦ μ N (X i))
+    grw [hg hNM, ← Finset.single_le_sum_of_canonicallyOrdered (f := fun i ↦ μ i N (X i))
       (Finset.mem_univ s), hconn]
     simp [(h_lt.trans_le le_top).ne]
   simp_rw [← lt_top_iff_ne_top] at hfinY
   choose U V hYUB hYVE hYVdj hUYcard hVYcard hVY
-    using fun i ↦ hμ.exists_preserve_le hB (X := X i) rfl.le
+    using fun i ↦ (hμ i).exists_preserve_le hB (X := X i) rfl.le
   set P := ⋃ i, U i with hP
   set Q := ⋃ i, V i with hQ
   have hPfin : P.Finite := by
@@ -95,8 +95,14 @@ lemma StronglyPreservable.exists_finite_counterexample_of_lt_sum {ι : Type*} [F
   · rw [hN, delete_ground, contract_ground]
     tauto_set
   grw [hg hNM]
-  refine h_lt.trans_le <| Finset.sum_le_sum fun i _ ↦ hVY _ _ diff_subset _ diff_subset ?_ ?_ <;>
+  refine h_lt.trans_le <| Finset.sum_le_sum fun i _ ↦ hVY _ _ sdiff_subset _ sdiff_subset ?_ ?_ <;>
   exact disjoint_sdiff_left.mono_right <| subset_iUnion ..
+
+lemma StronglyPreservable.exists_finite_counterexample_of_lt_sum {ι : Type*} [Fintype ι] {μ}
+    (hμ : StronglyPreservable μ) (M : Matroid α) (g : Matroid α → ℕ∞) (hg : Monotone g)
+    (X : ι → Set α) (h_lt : g M < ∑ i, μ M (X i)) :
+    ∃ N, N ≤m M ∧ N.Finite ∧ g N < ∑ i, μ N (X i) :=
+  StronglyPreservable.exists_finite_counterexample_of_lt_sum' (fun _ ↦ hμ) _ _ hg _ h_lt
 
 lemma StronglyPreservable.exists_finite_counterexample_of_sum_lt_sum (hμ : StronglyPreservable μ)
     {ι η : Type*} [Fintype ι] [Fintype η]

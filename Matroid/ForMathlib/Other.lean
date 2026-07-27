@@ -25,10 +25,10 @@ lemma WithBot.eq_bot_iff_forall_ge {α : Type*} [Preorder α] [NoMinOrder α] {x
 --   simp at h
 
 @[simp] lemma ENat.lt_one_iff (n : ℕ∞) : n < 1 ↔ n = 0 := by
-  rw [← not_iff_not, not_lt, ENat.one_le_iff_ne_zero]
+  rw [← not_iff_not, not_lt, Order.one_le_iff_ne_zero]
 
 -- @[simp] theorem zero_ne_top : (0 : ℕ∞) ≠ ⊤ :=
---   ENat.coe_toNat_eq_self.mp rfl
+--   ENat.natCast_toNat_eq_self.mp rfl
 
 
 
@@ -42,7 +42,7 @@ lemma biUnion_insert_eq {X : Set α} (hX : X.Nonempty) (Y : Set α) :
     ⋃ (x ∈ X), (insert x Y) = X ∪ Y := by
   have := hX.to_subtype
   simp_rw [← singleton_union, biUnion_eq_iUnion, ← iUnion_union, iUnion_singleton_eq_range,
-    Subtype.range_coe_subtype, setOf_mem_eq]
+    Subtype.range_coe_subtype, ofPred_mem_eq]
 
 
 theorem Equiv.exists_bijOn [Nonempty β] {s : Set α} {t : Set β} (e : s ≃ t) :
@@ -125,7 +125,7 @@ theorem Equiv.swap_image_eq_exchange [DecidableEq α] {S : Set α} (he : e ∈ S
     (Equiv.swap e f) '' S = insert f (S \ {e}) := by
   ext x
   rw [image_eq_preimage_symm, mem_preimage, Equiv.symm_swap, Equiv.swap_apply_def,
-    mem_insert_iff, mem_diff]
+    mem_insert_iff, mem_sdiff]
   split_ifs with hxe hxf
   · subst hxe
     simp [he, hf, (show x ≠ f by rintro rfl; exact hf he)]
@@ -140,7 +140,7 @@ end Swap
 -- theorem filter_preimage_eq {e f : α} [DecidableEq α] {S : Set α} (he : e ∈ S) (hf : f ∈ S)
 --     (h_ne : e ≠ f) : (fun x ↦ if (x = e) then f else x) ⁻¹' (S \ {e}) = S := by
 --   ext x
---   simp only [preimage_diff, mem_diff, mem_preimage, mem_singleton_iff]
+--   simp only [preimage_sdiff, mem_sdiff, mem_preimage, mem_singleton_iff]
 --   split_ifs with hxe
 --   · subst hxe
 --     exact iff_of_true ⟨hf, h_ne.symm⟩ he

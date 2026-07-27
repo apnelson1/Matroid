@@ -37,8 +37,8 @@ noncomputable def pair (a b : α) : Partition α where
     if ¬ Disjoint a b then {a ⊔ b} else {a, b} \ {⊥}
   indep x := by
     split_ifs with h
-    · simp only [mem_diff, mem_insert_iff, mem_singleton_iff, and_imp]
-      rw [diff_diff_comm]
+    · simp only [mem_sdiff, mem_insert_iff, mem_singleton_iff, and_imp]
+      rw [sdiff_sdiff_comm]
       rintro (rfl | rfl) hbot
       · simpa [h.ne hbot]
       · simp [(h.symm.ne hbot).symm, h.symm]
@@ -124,7 +124,7 @@ lemma pair_parts_nontrivial_iff :
   refine ⟨fun ⟨x, hx, y, hy, hne⟩ ↦ ?_, fun ⟨h, hne⟩ ↦ ⟨a, h ▸ (by simp), b, h ▸ (by simp), hne⟩⟩
   obtain (hab | hab) := (em <| Disjoint a b).symm
   · simp_all
-  simp only [pair_parts, hab, not_true_eq_false, ↓reduceIte, mem_diff, mem_insert_iff,
+  simp only [pair_parts, hab, not_true_eq_false, ↓reduceIte, mem_sdiff, mem_insert_iff,
     mem_singleton_iff, sdiff_eq_left, disjoint_singleton_right, not_or, ← ne_eq] at hx hy ⊢
   obtain ⟨(rfl | rfl), hx⟩ := hx <;> obtain ⟨(rfl | rfl), hy⟩ := hy <;>
     simp [hx.symm, hy.symm, hne, hne.symm] <;> simp at hne
@@ -217,7 +217,7 @@ variable [Order.Frame α] {P Q R : Partition α} {Qs : ∀ a ∈ P, Partition α
     have hdj1 := (Qs a haP).indep hba
     have hdj2 := (P.indep haP).mono_left <| ((Qs a haP).le_supp_of_mem hba).trans hasupp
     refine (hdj1.sup_right hdj2).mono_right ?_
-    simp only [mem_iUnion, Subtype.exists, sSup_le_iff, mem_diff,
+    simp only [mem_iUnion, Subtype.exists, sSup_le_iff, mem_sdiff,
       mem_singleton_iff, and_imp, forall_exists_index]
     rintro t' x hx (ht' : t' ∈ Qs x hx) hne
     obtain hxsupp := hQs x hx
@@ -353,7 +353,7 @@ def inter (P Q : Partition α) : Partition α where
   parts := P.parts ∩ Q.parts
   indep x hx := by
     refine P.indep hx.1 |>.mono_right (sSup_le_sSup ?_)
-    simp only [diff_singleton_subset_iff, insert_diff_singleton]
+    simp only [sdiff_singleton_subset_iff, insert_sdiff_singleton]
     exact inter_subset_left.trans <| subset_insert x P.parts
   bot_not_mem h := P.bot_not_mem h.1
 
@@ -416,7 +416,7 @@ lemma subset_infer_iff : R ⊆ infer P Q ↔ R ⊆ P ∧ R ≤ Q :=
 @[simp]
 lemma infer_subset_induce : infer P Q ⊆ P.induce Q.supp := by
   rintro a ⟨haP, t, htQ, hta⟩
-  simp only [induce_parts, mem_diff, mem_image, mem_parts, mem_singleton_iff, P.ne_bot_of_mem haP,
+  simp only [induce_parts, mem_sdiff, mem_image, mem_parts, mem_singleton_iff, P.ne_bot_of_mem haP,
     not_false_eq_true, and_true]
   exact ⟨a, haP, inf_eq_right.mpr <| le_trans hta <| le_supp_of_mem htQ⟩
 
@@ -500,18 +500,18 @@ def sInf' (P : Set (Partition α)) : Partition α :=
     refine P₁.val.eq_of_not_disjoint hf hg ?_
     contrapose! hfg
     exact hfg.mono (iInf_le_iff.mpr fun b a ↦ a P₁) (iInf_le_iff.mpr fun b a ↦ a P₁))
-    (notMem_diff_of_mem rfl)
+    (notMem_sdiff_of_mem rfl)
 
 lemma exists_mem_sInf'_iff {Ps : Set (Partition α)} {q : α → Prop} :
     (∃ a ∈ sInf' Ps, q a) ↔ ∃ f, iInf f ≠ ⊥ ∧ (∀ p : Ps, f p ∈ p.val) ∧ q (iInf f) := by
-  simp only [sInf', mem_ofIndependent_iff, mem_diff, mem_image, mem_pi, mem_univ, mem_parts,
+  simp only [sInf', mem_ofIndependent_iff, mem_sdiff, mem_image, mem_pi, mem_univ, mem_parts,
     forall_const, Subtype.forall, mem_singleton_iff, and_assoc, exists_exists_and_eq_and, ne_eq]
   tauto
 
 @[simp]
 lemma sInf'_empty : sInf' ∅ = (⊤ : Partition α) := by
   apply Partition.ext fun a ↦ ?_
-  simp only [sInf', mem_ofIndependent_iff, mem_diff, mem_image, mem_pi, mem_univ, mem_parts,
+  simp only [sInf', mem_ofIndependent_iff, mem_sdiff, mem_image, mem_pi, mem_univ, mem_parts,
     forall_const, IsEmpty.forall_iff, true_and, mem_singleton_iff, mem_top_iff, ne_eq,
     and_congr_left_iff]
   intro ha
@@ -527,7 +527,7 @@ lemma le_sInf' {Ps : Set (Partition α)} (Q : Partition α) (h : ∀ P ∈ Ps, Q
 
 lemma sInf'_le {Ps : Set (Partition α)} (P : Partition α) (hP : P ∈ Ps) : sInf' Ps ≤ P := by
   intro a haPs
-  obtain ⟨⟨f, hf, rfl⟩, habot⟩ := by simpa only [sInf', mem_ofIndependent_iff, mem_diff, mem_pi,
+  obtain ⟨⟨f, hf, rfl⟩, habot⟩ := by simpa only [sInf', mem_ofIndependent_iff, mem_sdiff, mem_pi,
     mem_image, mem_univ, mem_parts, forall_const, Subtype.forall, mem_singleton_iff] using haPs
   use f ⟨P, hP⟩, hf P hP, iInf_le_iff.mpr fun b a ↦ a ⟨P, hP⟩
 
@@ -553,7 +553,7 @@ def disjParts (S : Set α) : Partition (Set α) :=
 lemma sUnion_disjParts : ⋃₀ (disjParts S).parts = S \ {⊥} := by
   ext a
   simp +contextual only [disjParts, ofRel_parts, sUnion_fibers, transClosure_domain, mem_domain_iff,
-    Relation.restrict, mem_diff, mem_singleton_iff, iff_def, forall_exists_index, true_and, and_imp]
+    Relation.restrict, mem_sdiff, mem_singleton_iff, iff_def, forall_exists_index, true_and, and_imp]
   refine ⟨fun _ hdj _ _ => left_ne_bot_of_not_disjoint hdj, fun _ hbot => ?_⟩
   use a, ?_
   rwa [disjoint_self]
@@ -607,7 +607,7 @@ lemma disjParts_insert_bot (S : Set α) : disjParts (insert ⊥ S) = disjParts S
 
 @[simp]
 lemma disjParts_diff_singleton_bot (S : Set α) : disjParts (S \ {⊥}) = disjParts S := by
-  rw [← disjParts_insert_bot, insert_diff_singleton, disjParts_insert_bot]
+  rw [← disjParts_insert_bot, insert_sdiff_singleton, disjParts_insert_bot]
 
 lemma disjParts_indiscrete_of_top_mem [Nontrivial α] (h : ⊤ ∈ S) :
     disjParts S = indiscrete (S \ {⊥}) (Nonempty.ne_empty ⟨⊤, h, by simp⟩) := by
@@ -651,7 +651,7 @@ lemma disjParts_eq_sUnion_of_agree (hPs : Ps.Pairwise Agree) :
     simp [h.choose.ne_bot_of_mem h.choose_spec.2]
   rw [h1]
   refine and_congr_right fun ha ↦ Eq.congr ?_ rfl
-  simp only [ha, and_true, Set.ext_iff, mem_setOf_eq, mem_singleton_iff]
+  simp only [ha, and_true, Set.ext_iff, mem_ofPred_eq, mem_singleton_iff]
   obtain ⟨Pa, hPa, haPa⟩ := ha
   refine fun b => ⟨fun ⟨hba, Pb, hPb, hbPb⟩ => (hPs.of_refl hPb hPa).eq_of_not_disjoint hbPb haPa
     hba, ?_⟩
@@ -662,7 +662,7 @@ lemma disjParts_eq_sUnion_of_agree (hPs : Ps.Pairwise Agree) :
 lemma singleton_mem_disjParts_iff :
     {a} ∈ disjParts S ↔ ∀ b, (¬Disjoint b a ∧ b ∈ S ∧ a ∈ S ↔ b = a) := by
   rw [← eq_partOf_iff_mem (show a ∈ {a} by rfl), eq_comm]
-  simp only [partOf, fiber, disjParts, rel_ofRel_eq, Set.ext_iff, mem_setOf_eq, mem_singleton_iff]
+  simp only [partOf, fiber, disjParts, rel_ofRel_eq, Set.ext_iff, mem_ofPred_eq, mem_singleton_iff]
   refine ⟨fun h b => ⟨fun hab => ?_, ?_⟩, fun h b => ⟨fun hba => ?_, ?_⟩⟩
   · exact (h _).mp (Relation.TransGen.single hab)
   · rintro rfl
@@ -727,7 +727,7 @@ def sSup' (Ps : Set (Partition α)) : Partition α where
   parts := sSup '' (disjParts (⋃ a ∈ Ps, a.parts)).parts
   indep := by
     rintro _ ⟨S, hS, rfl⟩
-    rw [← image_singleton, ← image_diff_of_injOn (sSup_injOn_disjParts) (by simpa),
+    rw [← image_singleton, ← image_sdiff_of_injOn (sSup_injOn_disjParts) (by simpa),
       sSup_disjoint_iff]
     rintro a haS
     rw [disjoint_comm, sSup_disjoint_iff]
@@ -751,7 +751,7 @@ lemma le_sSup' {Ps : Set (Partition α)} (P : Partition α) (hP : P ∈ Ps) : P 
   · exact (P.bot_not_mem <| habot ▸ haP).elim
   have : a ∈ ⋃₀ (disjParts (⋃ a ∈ Ps, a.parts)).parts := by
     rw [sUnion_disjParts]
-    simp only [mem_diff, mem_iUnion, mem_parts, exists_prop, mem_singleton_iff, habot,
+    simp only [mem_sdiff, mem_iUnion, mem_parts, exists_prop, mem_singleton_iff, habot,
       not_false_eq_true, and_true]
     use P
   obtain ⟨S, hS, haS⟩ := by simpa [← sUnion_disjParts] using this

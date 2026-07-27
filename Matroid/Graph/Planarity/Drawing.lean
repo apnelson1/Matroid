@@ -27,7 +27,7 @@ lemma vertical_ray_drawing_inter_finite (c y0 : ℝ) (L : List (EuclideanSpace �
   simp only [List.drawing, inter_iUnion]
   refine Finite.biUnion' (List.finite_toSet _) fun x hx ↦ ?_
   refine (vertical_ray_segment_inter_subsingleton c y0 x.1 x.2 ?_).finite
-  apply hL.forall (Symmetric.comap (fun a b ↦ Ne.symm) _)
+  apply hL.forall (Std.Symm.comap (fun a b ↦ Ne.symm) _)
   sorry
   sorry
   sorry

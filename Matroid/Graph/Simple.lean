@@ -62,7 +62,7 @@ lemma setLinkEdges_singleton_compl_eq_incEdges (G : Graph α β) [G.Loopless] (x
 lemma IsComplete.neighbors [G.Loopless] (h : G.IsComplete) (hx : x ∈ V(G)) :
     N(G, x) = V(G) \ {x} := by
   ext y
-  simp only [Neighbor, mem_setOf_eq, mem_diff, mem_singleton_iff]
+  simp only [Neighbor, mem_ofPred_eq, mem_sdiff, mem_singleton_iff]
   exact ⟨fun hadj ↦ ⟨hadj.right_mem, hadj.ne.symm⟩, fun ⟨hy, hne⟩ ↦ h x hx y hy (Ne.symm hne)⟩
 
 instance [G.Loopless] (X : Set α) : G[X].Loopless where
@@ -97,7 +97,7 @@ def loopRemove (G : Graph α β) : Graph α β := G ↾ {e | ∀ x, ¬ G.IsLoopA
 
 instance : (loopRemove G).Loopless where
   not_isLoopAt e x := by
-    simp only [loopRemove, restrict_isLoopAt, mem_setOf_eq, not_and, not_forall, not_not]
+    simp only [loopRemove, restrict_isLoopAt, mem_ofPred_eq, not_and, not_forall, not_not]
     exact fun h ↦ ⟨x, h⟩
 
 lemma loopRemove_le (G : Graph α β) : loopRemove G ≤ G := restrict_le
@@ -106,17 +106,17 @@ lemma loopRemove_isSpanningSubgraph (G : Graph α β) : loopRemove G ≤s G :=
   restrict_isSpanningSubgraph
 
 lemma loopRemove_deleteEdges (G : Graph α β) : loopRemove G = G ＼ ⋃ x ∈ V(G), G.loopSet x := by
-  rw [loopRemove, ← restrict_inter_edgeSet, ← restrict_edgeSet_diff_eq_deleteEdges, inter_comm]
+  rw [loopRemove, ← restrict_inter_edgeSet, ← restrict_edgeSet_sdiff_eq_deleteEdges, inter_comm]
   apply congrArg
   ext e
-  simp only [mem_inter_iff, mem_setOf_eq, mem_diff, mem_iUnion, mem_loopSet, exists_prop,
+  simp only [mem_inter_iff, mem_ofPred_eq, mem_sdiff, mem_iUnion, mem_loopSet, exists_prop,
     not_exists, not_and, and_congr_right_iff]
   exact fun he ↦ ⟨fun h v hv ↦ h v, fun h v hv ↦ h v hv.left_mem hv⟩
 
 @[simp]
 lemma loopRemove_edgeSet : E(loopRemove G) = {e ∈ E(G) | ∀ x, ¬ G.IsLoopAt e x} := by
   simp only [loopRemove, edgeSet_restrict]
-  rw [setOf_and]
+  rw [ofPred_and]
   rfl
 
 lemma loopRemove_edgeSet_diff : E(loopRemove G) = E(G) \ (⋃ x ∈ V(G), G.loopSet x) := by
@@ -125,7 +125,7 @@ lemma loopRemove_edgeSet_diff : E(loopRemove G) = E(G) \ (⋃ x ∈ V(G), G.loop
 @[simp]
 lemma loopRemove_isLink : (loopRemove G).IsLink e x y ↔ G.IsLink e x y ∧ x ≠ y := by
   rw [and_comm]
-  simp only [loopRemove, restrict_isLink, mem_setOf_eq, ne_eq, and_congr_left_iff]
+  simp only [loopRemove, restrict_isLink, mem_ofPred_eq, ne_eq, and_congr_left_iff]
   intro h
   rw [iff_not_comm]
   simp only [not_forall, not_not]
@@ -158,7 +158,7 @@ lemma IsPath.loopRemove (hP : G.IsPath P) : (loopRemove G).IsPath P := by
 
 lemma loopRemove_isSpanningSubgraph_deleteEdges_isLoopAt (G : Graph α β) (x : α) :
     loopRemove G ≤s (G ＼ {e | G.IsLoopAt e x}) := by
-  rw [← restrict_edgeSet_diff_eq_deleteEdges]
+  rw [← restrict_edgeSet_sdiff_eq_deleteEdges]
   apply restrict_isSpanningSubgraph_restrict
   intro e ⟨he, hel⟩
   use he, he, hel x
@@ -238,14 +238,14 @@ noncomputable def incAdjEquiv (G : Graph α β) [G.Simple] (x : α) :
   invFun y := G.adjIncFun x y
   left_inv := by
     rintro ⟨e, he⟩
-    simp only [Subtype.mk.injEq, adjIncFun]
+    simp only [adjIncFun]
     generalize_proofs h h'
-    exact (h.choose_spec.unique_edge h'.choose_spec).symm
+    exact Subtype.ext (h.choose_spec.unique_edge h'.choose_spec).symm
   right_inv := by
     rintro ⟨y, hy⟩
-    simp only [Subtype.mk.injEq, adjIncFun]
+    simp only [adjIncFun]
     generalize_proofs h h'
-    exact (h.choose_spec.right_unique h'.choose_spec).symm
+    exact Subtype.ext (h.choose_spec.right_unique h'.choose_spec).symm
 
 @[simp]
 lemma isLink_incAdjEquiv (e : E(G, x)) : G.IsLink e.1 x (G.incAdjEquiv x e) := by
@@ -319,7 +319,8 @@ end Simple
 lemma eq_banana [G.Loopless] (hV : V(G) = {a,b}) : G = banana a b E(G) := by
   refine Graph.ext_inc (by simpa) fun e x ↦ ?_
   simp only [banana_inc]
-  refine ⟨fun h ↦ ⟨h.edge_mem, by simpa using (show x ∈ {a,b} from hV ▸ h.vertex_mem)⟩, ?_⟩
+  refine ⟨fun h ↦ ⟨h.edge_mem, by
+    simpa using (show x ∈ ({a, b} : Set α) from hV ▸ h.vertex_mem)⟩, ?_⟩
   suffices aux : ∀ c, V(G) = {x,c} → e ∈ E(G) → G.Inc e x by
     rintro ⟨he, rfl | rfl⟩
     · exact aux _ hV he
@@ -383,7 +384,7 @@ instance completeBipartiteGraph_simple {m n : ℕ} : (CompleteBipartiteGraph m n
 lemma encard_setLinkEdges_singleton_compl_completeGraph (n : ℕ) (x : ℕ) (hx : x < n) :
     δ(CompleteGraph n, {x}).encard = n - 1 := by
   rw [setLinkEdges_singleton_compl_eq_incEdges, encard_incEdges,
-    encard_neighbors_completeGraph _ _ hx, ENat.coe_sub, Nat.cast_one]
+    encard_neighbors_completeGraph _ _ hx, ENat.natCast_sub, Nat.cast_one]
 
 section Simplify
 
@@ -401,7 +402,7 @@ lemma simplify_edgeSet_diff (hφ : G.parallelClasses.IsRepFun φ) :
     E(G.simplify φ) = φ '' E(G) \ ⋃ x ∈ V(G), G.loopSet x := by
   simp only [simplify, edgeSet_restrict, loopRemove_edgeSet_diff]
   ext e
-  simp only [mem_inter_iff, mem_diff, mem_iUnion, mem_loopSet, exists_prop, and_comm, not_exists,
+  simp only [mem_inter_iff, mem_sdiff, mem_iUnion, mem_loopSet, exists_prop, and_comm, not_exists,
     not_and, mem_image, and_congr_right_iff, and_iff_right_iff_imp, forall_exists_index, and_imp]
   rintro f rfl hf h
   simpa using hφ.apply_mem (by simpa using hf)
@@ -410,7 +411,7 @@ lemma simplify_edgeSet (hφ : G.parallelClasses.IsRepFun φ) :
     E(G.simplify φ) = φ '' (E(G) \ (⋃ x ∈ V(G), G.loopSet x)) := by
   ext e
   rw [simplify_edgeSet_diff hφ]
-  simp only [mem_diff, mem_image, and_comm, mem_iUnion, mem_loopSet, exists_prop, not_exists,
+  simp only [mem_sdiff, mem_image, and_comm, mem_iUnion, mem_loopSet, exists_prop, not_exists,
     not_and]
   refine ⟨?_, ?_⟩
   · rintro ⟨⟨f, rfl, hf⟩, h⟩
@@ -428,9 +429,7 @@ lemma simplify_edgeSet (hφ : G.parallelClasses.IsRepFun φ) :
 
 lemma simplify_eq_restrict (hφ : G.parallelClasses.IsRepFun φ) :
     G.simplify φ = G ↾ φ '' (E(G) \ (⋃ x ∈ V(G), G.loopSet x)) := by
-  apply G.ext_of_le_le (restrict_le.trans <| loopRemove_le G) restrict_le rfl
-  convert simplify_edgeSet hφ
-  simp only [edgeSet_restrict, inter_eq_right, image_subset_iff]
-  refine fun e he ↦ ?_
-  simp only [mem_preimage]
-  simpa using hφ.apply_mem <| by simpa using he.1
+  refine G.ext_of_le_le (restrict_le.trans <| loopRemove_le G) restrict_le ?_ ?_
+  · simp [simplify]
+  rw [simplify_edgeSet hφ, edgeSet_restrict, eq_comm, inter_eq_right]
+  exact (image_mono sdiff_subset).trans <| hφ.image_subset (by simp [parallelClasses_supp])

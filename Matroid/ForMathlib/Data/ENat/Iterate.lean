@@ -18,7 +18,7 @@ lemma iterateDepth_eq_zero {f : α → α} {P : α → Prop} {a : α} : iterateD
 
 lemma iterateDepth_apply_add_one (f : α → α) {P : α → Prop} {a : α} (ha : ¬ P a) :
     ENat.iterateDepth f P (f a) + 1 = ENat.iterateDepth f P a := by
-  simp only [iterateDepth, le_antisymm_iff, le_sInf_iff, Set.mem_image, Set.mem_setOf_eq,
+  simp only [iterateDepth, le_antisymm_iff, le_sInf_iff, Set.mem_image, Set.mem_ofPred_eq,
     forall_exists_index, and_imp]
   refine ⟨fun m n hP hnm hmn ↦ ?_, ?_⟩
   · grw [← hnm]
@@ -26,7 +26,7 @@ lemma iterateDepth_apply_add_one (f : α → α) {P : α → Prop} {a : α} (ha 
     | zero => simp [ha] at hP
     | succ n =>
     · simp only [Nat.cast_add, Nat.cast_one, add_one_le_add_one_iff]
-      refine sInf_le <| by simpa [ENat.coe_inj]
+      refine sInf_le <| by simpa [ENat.natCast_inj]
   obtain he | hne := {i | P (f^[i] (f a))}.eq_empty_or_nonempty
   · simp [he]
   generalize hk : sInf ((↑) '' {i : ℕ | P (f^[i] (f a))} : Set ℕ∞) = k
@@ -48,7 +48,7 @@ lemma iterateDepth_eq_self_of_forall_apply_eq_add_one {f : α → α} (d : α �
     cases k with
     | top => simp
     | coe k =>
-    · suffices d (f^[k] a) = 0 from sInf_le <| by simpa [ENat.coe_inj]
+    · suffices d (f^[k] a) = 0 from sInf_le <| by simpa [ENat.natCast_inj]
       induction k generalizing a with
       | zero => simpa using hk
       | succ n IH =>

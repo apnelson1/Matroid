@@ -111,11 +111,11 @@ variable {V I E Gr R : Type*} {G : Gr} [HyperGraphLike V I E Gr] {u u' v v' w : 
 section HyperGraphLike
 
 lemma IsSource.mem (h : IsSource G i) : i ∈ I(G) := by
-  rw [incs_def, mem_setOf_eq, isIncident_iff]
+  rw [incs_def, mem_ofPred_eq, isIncident_iff]
   exact Or.inl h
 
 lemma IsTarget.mem (h : IsTarget G i) : i ∈ I(G) := by
-  rw [incs_def, mem_setOf_eq, isIncident_iff]
+  rw [incs_def, mem_ofPred_eq, isIncident_iff]
   exact Or.inr h
 
 @[ext] theorem incs_ext (i₁ i₂ : I(G)) (h : i₁.val = i₂.val) : i₁ = i₂ := Subtype.ext h
@@ -156,7 +156,7 @@ lemma IsIncident.unique_or_bot (G : Gr) (i : I) :
   · exact Or.inl (unique_isIncident_of_mem_incs hi)
   right
   ext e v
-  simp only [incs_def, mem_setOf_eq, not_exists, Pi.bot_apply, «Prop».bot_eq_false,
+  simp only [incs_def, mem_ofPred_eq, not_exists, Pi.bot_apply, «Prop».bot_eq_false,
     iff_false] at hi ⊢
   exact hi e v
 
@@ -263,11 +263,11 @@ lemma mem_edgeFun_mem_endPoint_iff_isIncident (G : Gr) (i : I) (e : E) (v : V) :
   rwa [PFun.fn_apply, PFun.fn_apply, Part.get_eq_of_mem hei, Part.get_eq_of_mem hvi] at this
 
 /-- The order of an edge is the number of incidences of the edge. -/
-@[expose]
+-- @[expose]
 noncomputable def order (G : Gr) (e : E) : ℕ∞ := (edgeFun G |>.preimage {e}).encard
 
 /-- The degree of a vertex is the number of incidences of the vertex. -/
-@[expose]
+-- @[expose]
 noncomputable def degree (G : Gr) (v : V) : ℕ∞ := (endPoint G |>.preimage {v}).encard
 
 lemma edgeFun_preimage_singleton_injOn (h : ∀ e ∈ E(G), order G e ≠ 0) :

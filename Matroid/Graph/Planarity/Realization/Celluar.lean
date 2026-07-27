@@ -1,6 +1,7 @@
 import Mathlib.Geometry.Manifold.Instances.Sphere
 import Mathlib.Topology.CWComplex.Classical.Graph
 import Matroid.Graph.Planarity.Realization.CWComplex
+import Matroid.Graph.Planarity.Realization.Weak
 import Matroid.Graph.Planarity.Topology.Circuit
 import Matroid.Graphic
 import Matroid.ForMathlib.Analysis.Normed.Module.Connected
@@ -13,16 +14,16 @@ namespace Graph
 variable {α β : Type*} {G : Graph α β}
 
 structure Embedding (G : Graph α β) (E : Type*) [TopologicalSpace E] : Type _ where
-  toFun : G.Realization → E
+  toFun : Realization.Weak G → E
   embedding : Topology.IsEmbedding toFun
 
 namespace Embedding
 
 variable {E : Type*} [TopologicalSpace E] {φ : Embedding G E}
 
-instance : FunLike (Embedding G E) G.Realization E where
+instance : FunLike (Embedding G E) (Realization.Weak G) E where
   coe := Embedding.toFun
-  coe_injective' φ₁ φ₂ h := by cases φ₁; cases φ₂; simpa
+  coe_injective φ₁ φ₂ h := by cases φ₁; cases φ₂; simpa
 
 @[reducible]
 def Faces (φ : Embedding G E) := ConnectedComponents ↑((range φ.toFun)ᶜ)
@@ -56,13 +57,15 @@ lemma faceMk_eq_connectedComponentIn (f : Faces φ) (x : E)
 
 def drawing (φ : Embedding G E) : Set E := range φ.toFun
 
-lemma vertexMK_mem_drawing (v : V(G)) : φ (vertexMk v) ∈ drawing φ := by
-  use vertexMk v
+lemma vertexMK_mem_drawing (v : V(G)) :
+    φ (Realization.Weak.vertexMk G v) ∈ drawing φ := by
+  use Realization.Weak.vertexMk G v
   rfl
 
-lemma edge_subset_drawing (e : E(G)) : range (φ ∘ edgePath e) ⊆ drawing φ := by
+lemma edge_subset_drawing (e : E(G)) :
+    range (φ ∘ Realization.Weak.edgePath G e) ⊆ drawing φ := by
   rintro x ⟨t, ht, rfl⟩
-  use (edgePath e) t
+  use Realization.Weak.edgePath G e t
   rfl
 
 end Embedding

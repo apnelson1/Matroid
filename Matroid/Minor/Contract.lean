@@ -21,8 +21,9 @@ lemma contract_eq_loopyOn_of_spanning (h : M.Spanning C) : M ／ C = loopyOn (M.
 @[simp] lemma contract_ground_self (M : Matroid α) : M ／ M.E = emptyOn α := by
   simp [← ground_eq_empty_iff]
 
+set_option backward.isDefEq.respectTransparency false in
 lemma contract_map {β : Type*} {M : Matroid α} {f : α → β} (hf : InjOn f M.E) {C : Set α}
-    (hC : C ⊆ M.E) : (M ／ C).map f (hf.mono diff_subset) = (M.map f hf) ／ (f '' C) := by
+    (hC : C ⊆ M.E) : (M ／ C).map f (hf.mono sdiff_subset) = (M.map f hf) ／ (f '' C) := by
   simp_rw [← M.dual_delete_dual C]
   rw [← map_dual, delete_map (by simpa) (by simpa), ← map_dual, ← dual_contract, dual_dual]
 
@@ -49,9 +50,9 @@ lemma contractElem_of_notMem_ground (he : e ∉ M.E) : M ／ {e} = M := by
 lemma contract_nonspanning_iff (hC : C ⊆ M.E := by aesop_mat) :
     (M ／ C).Nonspanning X ↔ M.Nonspanning (X ∪ C) ∧ Disjoint X C := by
   wlog hXC : X ⊆ (M ／ C).E generalizing X with aux
-  · refine iff_of_false (fun h ↦ hXC h.subset_ground) fun ⟨h1, h2⟩ ↦ hXC <| subset_diff.2 ⟨?_, h2⟩
+  · refine iff_of_false (fun h ↦ hXC h.subset_ground) fun ⟨h1, h2⟩ ↦ hXC <| subset_sdiff.2 ⟨?_, h2⟩
     grw [dual_ground, ← h1.subset_ground, ← subset_union_left]
-  obtain ⟨hXE, hdj⟩ := subset_diff.1 hXC
+  obtain ⟨hXE, hdj⟩ := subset_sdiff.1 hXC
   rw [and_iff_left hdj, nonspanning_iff, contract_spanning_iff, and_iff_left hdj, and_iff_left hXC,
     ← not_spanning_iff]
 
@@ -92,15 +93,15 @@ lemma contract_eq_contract_delete_of_subset_closure (hXY : X ⊆ Y) (hYX : Y ⊆
   obtain ⟨I, hIX⟩ := M.exists_isBasis' X
   have hIY : M.IsBasis I Y := hIX.isBasis_closure_right.isBasis_subset (hIX.subset.trans hXY) hYX
   rw [hIY.contract_eq_contract_delete, hIX.contract_eq_contract_delete, delete_delete,
-    union_comm, diff_union_diff_cancel hXY hIX.subset]
+    union_comm, sdiff_union_sdiff_cancel hXY hIX.subset]
 
 /-- Contracting a set whose intersection with `D` is independent never turns a dependent set `D`
 into an independent set. -/
 lemma Dep.contract_of_indep {D : Set α} (hD : M.Dep D) (hI : M.Indep (D ∩ I)) :
     (M ／ I).Dep (D \ I) := by
-  nth_rw 1 [← inter_union_diff I D, inter_comm, ← contract_contract]
+  nth_rw 1 [← inter_union_sdiff I D, inter_comm, ← contract_contract]
   refine Dep.contract_of_disjoint ?_ disjoint_sdiff_sdiff
-  rwa [hI.isBasis_self.contract_dep_iff, diff_union_inter, disjoint_comm,
+  rwa [hI.isBasis_self.contract_dep_iff, sdiff_union_inter, disjoint_comm,
     and_iff_left disjoint_sdiff_inter]
 
 lemma Codep.of_contract (h : (M ／ C).Codep X) : M.Codep X :=
@@ -128,6 +129,7 @@ lemma removeLoops_removeColoops_comm (M : Matroid α) :
   rw [removeColoops_eq_delete, removeLoops_coloops_eq, removeLoops_eq_delete,
     removeLoops_eq_delete, removeColoops_loops_eq, removeColoops_eq_delete, delete_comm]
 
+set_option backward.isDefEq.respectTransparency false in
 lemma removeColoops_disjointSum (M : Matroid α) :
      M = M.removeColoops.disjointSum (freeOn M.coloops)
       (by simp [removeColoops_eq_delete, disjoint_sdiff_left]) := by
@@ -137,12 +139,12 @@ lemma removeColoops_disjointSum (M : Matroid α) :
 
 lemma IsRestriction.contract (h : N ≤r M) (hC : C ⊆ N.E) : N ／ C ≤r M ／ C := by
   obtain ⟨R, hR, rfl⟩ := h
-  exact ⟨R \ C, diff_subset_diff_left hR, by rwa [restrict_contract_eq_contract_restrict]⟩
+  exact ⟨R \ C, sdiff_subset_sdiff_left hR, by rwa [restrict_contract_eq_contract_restrict]⟩
 
 lemma IsSpanningRestriction.contract (h : N ≤sr M) (hC : C ⊆ N.E) : N ／ C ≤sr M ／ C := by
   refine ⟨h.isRestriction.contract hC, ?_⟩
   rw [contract_spanning_iff (hC.trans h.subset), contract_ground, and_iff_left disjoint_sdiff_left,
-    diff_union_self]
+    sdiff_union_self]
   exact h.spanning.superset subset_union_left <| union_subset h.subset <| hC.trans h.subset
 
 lemma Nonspanning.of_contract (h : (M ／ C).Nonspanning X) : M.Nonspanning X := by
@@ -154,7 +156,7 @@ lemma Nonspanning.of_contract (h : (M ／ C).Nonspanning X) : M.Nonspanning X :=
 lemma Cyclic.contract {A : Set α} (hA : M.Cyclic A) (C : Set α) : (M ／ C).Cyclic (A \ C) := by
   rw [cyclic_iff_forall_mem_closure_diff_singleton] at ⊢ hA
   intro e ⟨heA, heC⟩
-  grw [diff_diff_comm, contract_closure_eq, diff_union_self, mem_diff, and_iff_left heC,
+  grw [sdiff_sdiff_comm, contract_closure_eq, sdiff_union_self, mem_sdiff, and_iff_left heC,
     ← subset_union_left]
   exact hA e heA
 
@@ -163,8 +165,8 @@ in both ways, then `M = N`. -/
 lemma ext_contractElem_deleteElem (heM : M.IsNonloop e) (heN : N.IsNonloop e)
     (hc : M ／ {e} = N ／ {e}) (hd : M ＼ {e} = N ＼ {e}) : M = N := by
   have hE : M.E = N.E := by
-    rw [← insert_diff_self_of_mem heM.mem_ground, ← delete_ground, hd, delete_ground,
-      insert_diff_self_of_mem heN.mem_ground]
+    rw [← insert_sdiff_self_of_mem heM.mem_ground, ← delete_ground, hd, delete_ground,
+      insert_sdiff_self_of_mem heN.mem_ground]
   refine ext_indep hE fun I hIE ↦ ?_
   by_cases heI : e ∈ I
   · have hi := congr_arg (fun M : Matroid α ↦ M.Indep (I \ {e})) hc
@@ -183,8 +185,8 @@ lemma ext_contractElem_deleteElem' (heM : e ∈ M.E) (heN : e ∈ N.E)
     rw [← dual_inj, dual_delete_dual, dual_delete_dual, hc]
     simp [heNl he.2]
   have hE : M.E = N.E := by
-    rw [← insert_diff_self_of_mem heM, ← delete_ground, hd, delete_ground,
-      insert_diff_self_of_mem heN]
+    rw [← insert_sdiff_self_of_mem heM, ← delete_ground, hd, delete_ground,
+      insert_sdiff_self_of_mem heN]
   obtain helM | henlM := M.isLoop_or_isNonloop e
   · obtain helN | henlN := N.isLoop_or_isNonloop e
     · rw [← M.delete_restrict_ground_of_subset_loops (L := {e}) (by simpa), hd, hE,

@@ -94,10 +94,10 @@ lemma unique_neighbor_of_eDegree_eq_one (hx : G.eDegree x = 1) (hxy : G.Adj x y)
     enat_to_nat!
     omega
   rw [no_loops, mul_zero, zero_add, eq_comm] at heq
-  simp only [encard_eq_zero, Set.ext_iff, mem_setOf_eq, mem_empty_iff_false, iff_false] at no_loops
+  simp only [encard_eq_zero, Set.ext_iff, mem_ofPred_eq, mem_empty_iff_false, iff_false] at no_loops
   have h : {e | G.Inc e x}.Subsingleton := by
     intro e he f hf
-    simp only [inc_iff_isLoopAt_or_isNonloopAt, no_loops, false_or, mem_setOf_eq] at he hf
+    simp only [inc_iff_isLoopAt_or_isNonloopAt, no_loops, false_or, mem_ofPred_eq] at he hf
     exact encard_le_one_iff.mp heq.le e f he hf
   have hh : N(G, x).Subsingleton := by
     rw [← encard_le_one_iff_subsingleton] at h ⊢

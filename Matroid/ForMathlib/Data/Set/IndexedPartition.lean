@@ -26,7 +26,7 @@ variable {ι η : Type*} {i j : ι} {P : s.IndexedPartition ι} {Q : t.IndexedPa
 
 instance : FunLike (s.IndexedPartition ι) ι (Set α) where
   coe := IndexedPartition.toFun
-  coe_injective' := by rintro ⟨f,h⟩ ⟨f', h'⟩; simp
+  coe_injective := by rintro ⟨f,h⟩ ⟨f', h'⟩; simp
 
 initialize_simps_projections Set.IndexedPartition (toFun → apply)
 
@@ -80,8 +80,8 @@ lemma existsUnique_mem (P : s.IndexedPartition ι) {a : α} (ha : a ∈ s) :
   exact ⟨i, hi, by grind⟩
 
 lemma single_eq_diff_iUnion (P : s.IndexedPartition ι) (i : ι) : P i = s \ (⋃ j ≠ i, P j) := by
-  simp only [subset_antisymm_iff, subset_diff, P.subset, disjoint_iUnion_right, true_and,
-    diff_subset_iff]
+  simp only [subset_antisymm_iff, subset_sdiff, P.subset, disjoint_iUnion_right, true_and,
+    sdiff_subset_iff]
   refine ⟨fun j hj ↦ (P.disjoint hj).symm, ?_⟩
   simp_rw [← P.iUnion_eq, iUnion_subset_iff]
   intro j
@@ -95,25 +95,44 @@ protected lemma ext' {P Q : s.IndexedPartition ι} {j : ι} (h : ∀ i ≠ j, P 
   · exact h _ hne
   rwa [single_eq_diff_iUnion, single_eq_diff_iUnion, iUnion₂_congr]
 
-noncomputable def equivSubtype (s : Set α) (ι : Type*) : (s.IndexedPartition ι) ≃ (↑s → ι) where
-  toFun P s := (P.exists_mem s.prop).choose
-  invFun f := by
-    refine ⟨fun i ↦ Subtype.val '' (f⁻¹' {i}), fun i j hne ↦ ?_, ?_⟩
-    · simp only [Subtype.val_injective, disjoint_image_iff]
-      exact Disjoint.preimage f <| by grind
+/-- Reconstruct a partition from an indexing function on a subtype. -/
+def ofSubtypeFun (f : ↑s → ι) : s.IndexedPartition ι where
+  toFun := fun i ↦ Subtype.val '' (f ⁻¹' {i})
+  pairwise_disjoint' := fun i j hne ↦ by
+    simp only [Subtype.val_injective, disjoint_image_iff]
+    exact Disjoint.preimage f (by simp [hne])
+  iUnion_eq' := by
     ext a
     simp
+
+@[simp]
+lemma ofSubtypeFun_apply (f : ↑s → ι) (i : ι) : ofSubtypeFun f i = Subtype.val '' (f ⁻¹' {i}) := rfl
+
+noncomputable def equivSubtype (s : Set α) (ι : Type*) : (s.IndexedPartition ι) ≃ (↑s → ι) where
+  toFun P x := (P.exists_mem x.prop).choose
+  invFun f := {
+    toFun := fun i ↦ Subtype.val '' (f ⁻¹' {i})
+    pairwise_disjoint' := fun i j hne ↦ by
+      simp only [Subtype.val_injective, disjoint_image_iff]
+      exact Disjoint.preimage f (by simp [hne])
+    iUnion_eq' := by
+      ext a
+      simp}
   left_inv P := by
-    ext i
-    simp only [IndexedPartition.mk_apply, mem_image, mem_preimage, mem_singleton_iff,
-      Subtype.exists, exists_and_right, exists_eq_right]
-    refine ⟨?_, fun hx ↦ ⟨P.subset hx, ?_⟩⟩
-    · rintro ⟨hx, rfl⟩
-      generalize_proofs h
-      exact h.choose_spec
-    generalize_proofs h
-    exact P.eq_of_mem_of_mem h.choose_spec hx
-  right_inv f := by simp
+    ext i a
+    constructor
+    · rintro ⟨⟨a, ha⟩, hmem, rfl⟩
+      simp only [mem_preimage, mem_singleton_iff] at hmem
+      convert (P.exists_mem ha).choose_spec
+      exact hmem.symm
+    · intro ha
+      refine ⟨⟨a, P.subset ha⟩, ?_, rfl⟩
+      simp only [mem_preimage, mem_singleton_iff]
+      exact P.eq_of_mem_of_mem (P.exists_mem (P.subset ha)).choose_spec ha
+  right_inv f := by
+    ext x
+    exact (ofSubtypeFun f).eq_of_mem_of_mem
+      ((ofSubtypeFun f).exists_mem x.prop).choose_spec ⟨x, by simp, rfl⟩
 
 noncomputable def equivPFun (ι : Type*) : (Σ s : Set α, s.IndexedPartition ι) ≃ (α →. ι) :=
   (Equiv.sigmaCongrRight (equivSubtype · ι)).trans PFun.equivSubtype.symm
@@ -306,20 +325,20 @@ lemma le_expand [DecidableEq ι] (P : s.IndexedPartition ι) (h : s ⊆ t) (i : 
 
 /-- Remove the elements of `t` from each cell of a partition of `s` to get a partition of `s \ t`.-/
 protected def diff (P : s.IndexedPartition ι) (t : Set α) : (s \ t).IndexedPartition ι :=
-  P.induce diff_subset
+  P.induce sdiff_subset
 
 @[simp, simp↓]
 lemma diff_apply (P : s.IndexedPartition ι) (t : Set α) (i : ι) : (P.diff t) i = P i \ t := by
-  rw [IndexedPartition.diff, IndexedPartition.induce_apply, ← inter_diff_assoc,
+  rw [IndexedPartition.diff, IndexedPartition.induce_apply, ← inter_sdiff_assoc,
     inter_eq_self_of_subset_left P.subset]
 
 @[simp]
 lemma subset_of_diff (P : (s \ t).IndexedPartition ι) (i : ι) : P i ⊆ s :=
-  P.subset.trans diff_subset
+  P.subset.trans sdiff_subset
 
 @[simp]
 lemma disjoint_of_diff (P : (s \ t).IndexedPartition ι) (i : ι) : Disjoint (P i) t :=
-  (subset_diff.1 P.subset).2
+  (subset_sdiff.1 P.subset).2
 
 /-- A partition is `Trivial` if it has at most one nonempty cell. -/
 protected def Trivial (P : s.IndexedPartition ι) : Prop := ∃ i, P i = s
@@ -349,8 +368,8 @@ protected structure Nontrivial (P : s.IndexedPartition ι) : Prop where
 
 lemma Nontrivial.ssubset [Nontrivial ι] (h : P.Nontrivial) {i : ι} : P i ⊂ s := by
   obtain ⟨j, hne⟩ := exists_ne i
-  refine ssubset_of_subset_of_ssubset ?_ <| diff_ssubset (P.subset (i := j)) (h.nonempty j)
-  rw [subset_diff, and_iff_right P.subset]
+  refine ssubset_of_subset_of_ssubset ?_ <| P.subset.sdiff_ssubset_of_nonempty (h.nonempty j)
+  rw [subset_sdiff, and_iff_right P.subset]
   exact P.pairwise_disjoint hne.symm
 
 @[simps]
@@ -436,7 +455,7 @@ protected lemma disjoint_bool (b : Bool) : Disjoint (P b) (P (!b)) := by
 
 @[simp]
 protected lemma compl_eq (P : s.IndexedPartition Bool) (b : Bool) : s \ (P b) = P (!b) := by
-  simp_rw [← P.union_bool_eq b, union_diff_cancel_left (P.disjoint_bool b).inter_eq.subset]
+  simp_rw [← P.union_bool_eq b, union_sdiff_cancel_left (P.disjoint_bool b).inter_eq.subset]
 
 protected lemma compl_not_eq (P : s.IndexedPartition Bool) (b : Bool) : s \ (P (!b)) = P b := by
   rw [P.compl_eq, Bool.not_not]
@@ -502,7 +521,7 @@ lemma trivial_of_eq (h : P i = s) : P.Trivial :=
   ⟨_, h⟩
 
 lemma trivial_of_eq_empty (h : P i = ∅) : P.Trivial :=
-  trivial_of_eq (i := !i) <| by rw [← P.compl_eq, h, diff_empty]
+  trivial_of_eq (i := !i) <| by rw [← P.compl_eq, h, sdiff_empty]
 
 lemma trivial_iff_eq_empty_or_eq_empty : P.Trivial ↔ P false = ∅ ∨ P true = ∅ := by
   refine ⟨fun h ↦ ?_, fun h ↦ Or.elim h trivial_of_eq_empty trivial_of_eq_empty⟩
@@ -531,7 +550,7 @@ lemma Trivial.exists_eq_empty (h : P.Trivial) : ∃ b, P b = ∅ := by
 
 lemma Trivial.exists_eq_eq (h : P.Trivial) : ∃ b, P b = ∅ ∧ P (!b) = s := by
   obtain ⟨i, hi⟩ := h.exists_eq_empty
-  exact ⟨i, hi, by rw [← P.compl_eq, hi, diff_empty]⟩
+  exact ⟨i, hi, by rw [← P.compl_eq, hi, sdiff_empty]⟩
 
 lemma Trivial.symm (h : P.Trivial) : P.symm.Trivial := by
   rwa [trivial_iff_eq_empty_or_eq_empty, or_comm, P.symm_true, P.symm_false,
@@ -648,7 +667,7 @@ lemma cross_apply_self (P Q : s.IndexedPartition Bool) : P.cross Q b c i i = P b
 @[simp]
 lemma cross_apply_not (P Q : s.IndexedPartition Bool) : P.cross Q b c i (!i) = P (!b) ∪ Q (!c) := by
   rw [← IndexedPartition.compl_not_eq, Bool.not_not, cross_apply_self,
-    ← IndexedPartition.compl_eq, ← IndexedPartition.compl_eq, ← diff_inter]
+    ← IndexedPartition.compl_eq, ← IndexedPartition.compl_eq, ← sdiff_inter]
 
 @[simp]
 lemma cross_not_apply (P Q : s.IndexedPartition Bool) : P.cross Q b c (!i) i = P (!b) ∪ Q (!c) := by
@@ -695,8 +714,8 @@ lemma Nontrivial.cross_trivial_iff (hP : P.Nontrivial) (b c i : Bool) :
     (P.cross Q b c i).Trivial ↔ P b ⊆ Q !c ∨ Q c ⊆ P !b := by
   grw [IndexedPartition.trivial_def_bool i, IndexedPartition.cross_apply_self, or_iff_not_imp_left,
     ← Ne, cross_apply_not, union_empty_iff, iff_false_intro (hP.nonempty _).ne_empty, false_and,
-    imp_false, not_not, ← Q.compl_eq, ← P.compl_eq, subset_diff, and_iff_right P.subset,
-    subset_diff, and_iff_right Q.subset, disjoint_comm, or_self, disjoint_iff_inter_eq_empty,
+    imp_false, not_not, ← Q.compl_eq, ← P.compl_eq, subset_sdiff, and_iff_right P.subset,
+    subset_sdiff, and_iff_right Q.subset, disjoint_comm, or_self, disjoint_iff_inter_eq_empty,
     inter_comm]
 
 lemma cross_trivial_iff (P Q : s.IndexedPartition Bool) (b c : Bool) :

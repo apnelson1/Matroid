@@ -30,11 +30,11 @@ def IsNonloop.contract_isFlat_equiv (he : M.IsNonloop e) (k : ℕ) :
       simp [hF.1.1, hF.2] ⟩
     invFun := fun F ↦ ⟨F \ {e}, by
       obtain ⟨F, hF⟩ := F
-      rw [he.contract_isFlat_iff, insert_diff_singleton, insert_eq_of_mem hF.2.2,
+      rw [he.contract_isFlat_iff, insert_sdiff_singleton, insert_eq_of_mem hF.2.2,
         ← WithTop.add_right_cancel_iff WithTop.one_ne_top, and_iff_right hF.1,
         he.contract_eRk_add_one_eq, and_iff_right (fun h ↦ h.2 rfl)]
-      simp only [mem_diff, mem_singleton_iff, not_true, and_false,
-        insert_diff_singleton, insert_eq_of_mem hF.2.2]
+      simp only [mem_sdiff, mem_singleton_iff, not_true, and_false,
+        insert_sdiff_singleton, insert_eq_of_mem hF.2.2]
       exact hF.2.1 ⟩
     left_inv := fun ⟨F, hF⟩ ↦ by simp [show e ∉ F from fun heF ↦ (hF.1.subset_ground heF).2 rfl]
     right_inv := fun ⟨F, hF⟩ ↦ by simp [hF.2.2]

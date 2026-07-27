@@ -28,9 +28,9 @@ def Quotient.modularCut [N.Finitary] (h : N ≤q M) : M.ModularCut :=
     obtain ⟨B, hB, hBu, hBF, hBF', hBi⟩ := hmod.exists_isMutualBasis_isBase
     have hBi := hB.indep
     have h1 : (M.project F).Indep (B \ F) := by rwa [project_indep_iff,
-      hBF.contract_indep_iff_of_disjoint disjoint_sdiff_right, inter_comm, diff_union_inter]
+      hBF.contract_indep_iff_of_disjoint disjoint_sdiff_right, inter_comm, sdiff_union_inter]
     have h1' : (M.project F').Indep (B \ F') := by rwa [project_indep_iff,
-      hBF'.contract_indep_iff_of_disjoint disjoint_sdiff_right, inter_comm, diff_union_inter]
+      hBF'.contract_indep_iff_of_disjoint disjoint_sdiff_right, inter_comm, sdiff_union_inter]
     set I := B ∩ (F' \ F) with hI_def
     rw [hF'e] at h1'
     have hI : (N.project (F ∩ F')).Indep I := by
@@ -47,13 +47,13 @@ def Quotient.modularCut [N.Finitary] (h : N ≤q M) : M.ModularCut :=
   (h_chain := by
     refine fun Fs hFs hCne hmod hchain ↦ ⟨?_, ?_⟩
     · exact IsFlat.sInter hCne.nonempty fun F hF ↦ (hFs hF).1
-    simp only [subset_def, mem_setOf_eq] at hFs
+    simp only [subset_def, mem_ofPred_eq] at hFs
     obtain ⟨B, hB, hBmut⟩ := hmod.exists_isMutualBasis_isBase
     simp only [isMutualBasis_iff, Subtype.forall] at hBmut
     refine Eq.symm <| (h.project_quotient_project _).eq_of_closure_indep (X := B \ ⋂₀ Fs) ?_ ?_
     · simp [hB.spanning.closure_eq_of_superset subset_union_left]
     rw [indep_iff_forall_subset_not_isCircuit', project_ground, h.ground_eq,
-      and_iff_left (diff_subset.trans hB.subset_ground)]
+      and_iff_left (sdiff_subset.trans hB.subset_ground)]
     intro C hCss hC
     have aux (e) (he : e ∈ C) : ∃ F ∈ Fs, e ∉ F := by simpa using (hCss he).2
     choose! F' hF' using aux
@@ -66,7 +66,7 @@ def Quotient.modularCut [N.Finitary] (h : N ≤q M) : M.ModularCut :=
     have hCi : (N.project F₀).Indep C := by
       rw [← (hFs _ hF₀).2, (hBmut.2 F₀ hF₀).project_eq_project, project_indep_iff,
         (hBmut.1.inter_left F₀).contract_indep_iff, inter_comm, disjoint_left]
-      refine ⟨?_, hBmut.1.subset (union_subset (hCss.trans diff_subset) inter_subset_left)⟩
+      refine ⟨?_, hBmut.1.subset (union_subset (hCss.trans sdiff_subset) inter_subset_left)⟩
       rintro e heC ⟨heB, heF₀⟩
       exact (hF' e heC).2 <| hF₀le (F' e) (mem_image_of_mem _ heC) heF₀
     refine hC.not_indep (hCi.of_project_subset (sInter_subset_of_mem hF₀)))
@@ -146,9 +146,9 @@ lemma Quotient.exists_eq_contract_eq_delete_of_discrepancy_finite' (hQ : N ≤q 
   · obtain rfl | hne := eq_or_ne M N
     · refine ⟨M ↾ (M.E ∪ insert a X), subset_union_right, ?_⟩
       rw [contract_eq_delete_of_subset_loops, delete_eq_restrict, and_self,
-        restrict_ground_eq, union_diff_cancel_right hX.symm.inter_eq.le,
+        restrict_ground_eq, union_sdiff_cancel_right hX.symm.inter_eq.le,
         restrict_restrict_eq _ subset_union_left, restrict_ground_eq_self]
-      grw [restrict_loops_eq', ← subset_union_right, union_diff_cancel_left hX.symm.inter_eq.le]
+      grw [restrict_loops_eq', ← subset_union_right, union_sdiff_cancel_left hX.symm.inter_eq.le]
     have htop : hQ.modularCut ≠ ⊤ := by simpa using hne.symm
     obtain ⟨haE : a ∉ M.E, hdj : Disjoint X M.E⟩ := by simpa using hX
     set M' := M.projectBy hQ.modularCut with hM'
@@ -170,13 +170,13 @@ lemma Quotient.exists_eq_contract_eq_delete_of_discrepancy_finite' (hQ : N ≤q 
         encard_insert_of_notMem haX] at h_discr
       obtain ⟨x, hxK, hxJ⟩ := exists_of_ssubset hJK
       grw [← ENat.add_le_add_iff_right (k := 1) (by simp), ← h_discr,
-        ← encard_insert_of_notMem (show x ∉ J \ I from notMem_subset diff_subset hxJ)]
+        ← encard_insert_of_notMem (show x ∉ J \ I from notMem_subset sdiff_subset hxJ)]
       exact encard_le_encard
-        (insert_subset ⟨hxK, notMem_subset hIJ hxJ⟩ (diff_subset_diff_left hJK.subset))
+        (insert_subset ⟨hxK, notMem_subset hIJ hxJ⟩ (sdiff_subset_sdiff_left hJK.subset))
     obtain ⟨Q, hQE, rfl, hQdel⟩ := IH hQ' (by simpa) hd
     rw [hM', ← ModularCut.extendBy_contractElem _ haE] at hQdel
     obtain ⟨P, himp, rfl, hPM⟩ := exists_splice_of_delete_eq_contractElem haX hQdel
-    refine ⟨P, insert_subset (himp (by simp)) (hQE.trans diff_subset), by simp, ?_⟩
+    refine ⟨P, insert_subset (himp (by simp)) (hQE.trans sdiff_subset), by simp, ?_⟩
     rw [← union_singleton, ← delete_delete, hPM, ModularCut.extendBy_deleteElem _ haE]
 
 /-- If `N` is a finitary quotient of `M`, and the number of nonelements of the ground

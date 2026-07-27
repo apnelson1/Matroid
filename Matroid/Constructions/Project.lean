@@ -25,9 +25,9 @@ lemma project_closure (M : Matroid α) (C X : Set α) :
   · rw [← project_inter_ground, ← closure_inter_ground, project_ground, aux _ _ _ (by simp),
       ← union_inter_distrib_right, closure_inter_ground]
   rw [project, restrict_closure_eq', inter_eq_self_of_subset_left h.2, contract_closure_eq,
-    contract_ground, diff_diff_cancel_left h.1,
-    inter_eq_self_of_subset_left (diff_subset.trans (M.closure_subset_ground _)),
-    diff_union_self, union_eq_left]
+    contract_ground, sdiff_sdiff_cancel_left h.1,
+    inter_eq_self_of_subset_left (sdiff_subset.trans (M.closure_subset_ground _)),
+    sdiff_union_self, union_eq_left]
   apply M.subset_closure_of_subset' subset_union_right h.1
 
 lemma project_closure_eq_project_closure_union (M : Matroid α) (C X : Set α) :
@@ -76,7 +76,7 @@ lemma Indep.of_project_subset {C' : Set α} (hI : (M.project C).Indep I) (hC' : 
 
 @[simp]
 lemma project_delete_self (M : Matroid α) (C : Set α) : (M.project C) ＼ C = M ／ C :=
-  ext_indep rfl <| by simp +contextual [project_indep_iff, subset_diff]
+  ext_indep rfl <| by simp +contextual [project_indep_iff, subset_sdiff]
 
 @[simp]
 lemma project_loops (M : Matroid α) (C : Set α) : (M.project C).loops = M.closure C := by
@@ -116,12 +116,12 @@ lemma project_isBasis'_eq : (M.project C).IsBasis' = (M ／ C).IsBasis' := by
 lemma project_isBasis_iff (hdj : Disjoint X C) :
     (M.project C).IsBasis I X ↔ (M ／ C).IsBasis I X := by
   rw [isBasis_iff_isBasis'_subset_ground, isBasis_iff_isBasis'_subset_ground, project_isBasis'_eq,
-    project_ground, contract_ground, subset_diff, and_iff_left hdj]
+    project_ground, contract_ground, subset_sdiff, and_iff_left hdj]
 
 lemma project_isBase_eq : (M.project C).IsBase = (M ／ C).IsBase := by
   ext B
   rw [← isBasis_ground_iff, project_ground, ← isBasis'_iff_isBasis, project_isBasis'_eq,
-    isBasis'_iff_isBasis_inter_ground, contract_ground, inter_eq_self_of_subset_right diff_subset,
+    isBasis'_iff_isBasis_inter_ground, contract_ground, inter_eq_self_of_subset_right sdiff_subset,
     ← contract_ground, isBasis_ground_iff]
 
 @[simp]
@@ -185,7 +185,7 @@ lemma Dep.project {D : Set α} (hD : M.Dep D) (C : Set α) : (M.project C).Dep D
 lemma Indep.project_isBasis'_iff (hI : M.Indep I) :
     (M.project I).IsBasis' J X ↔ M.IsBasis' (I ∪ J) (I ∪ X) ∧ Disjoint I J := by
   have hss : I ⊆ M.closure (I ∪ X) := M.subset_closure_of_subset' subset_union_left
-  have hdj (h : Disjoint I J) : (J ⊆ I ∪ X ↔ J ⊆ X) := by rw [← diff_subset_iff, h.sdiff_eq_right]
+  have hdj (h : Disjoint I J) : (J ⊆ I ∪ X ↔ J ⊆ X) := by rw [← sdiff_subset_iff, h.sdiff_eq_right]
   simp only [isBasis'_iff_isBasis_closure, project_closure, isBasis_iff_indep_subset_closure,
     hI.project_indep_iff, union_subset_iff, subset_union_left, disjoint_comm (a := J),
     union_comm (b := I)]
@@ -201,9 +201,9 @@ lemma Indep.project_isBasis_iff (hI : M.Indep I) :
 lemma project_isBasis'_iff_contract_isBasis' :
     (M.project C).IsBasis' I X ↔ (M ／ C).IsBasis' I (X \ C) := by
   rw [project, isBasis'_restrict_iff, isBasis'_iff_isBasis_inter_ground, iff_comm,
-     isBasis'_iff_isBasis_inter_ground, contract_ground, ← diff_inter_distrib_right,
-     inter_assoc, inter_eq_self_of_subset_right diff_subset, inter_diff_assoc, iff_self_and]
-  exact fun h ↦ h.indep.subset_ground.trans diff_subset
+     isBasis'_iff_isBasis_inter_ground, contract_ground, ← sdiff_inter_distrib_right,
+     inter_assoc, inter_eq_self_of_subset_right sdiff_subset, inter_sdiff_assoc, iff_self_and]
+  exact fun h ↦ h.indep.subset_ground.trans sdiff_subset
 
 lemma project_isFlat_iff {F : Set α} (hC : C ⊆ M.E := by aesop_mat) :
     (M.project C).IsFlat F ↔ M.IsFlat F ∧ C ⊆ F := by
@@ -233,8 +233,8 @@ lemma loopify_inter_ground (M : Matroid α) (D : Set α) : M.loopify (D ∩ M.E)
 lemma loopify_closure (M : Matroid α) (D : Set α) :
     (M.loopify D).closure X = M.closure (X \ D) ∪ (D ∩ M.E) := by
   simp only [loopify, restrict_closure_eq', delete_closure_eq, delete_ground,
-    sdiff_sdiff_right_self, inf_eq_inter]
-  rw [inter_comm, ← inter_union_distrib_left, inter_comm, diff_union_self, inter_diff_right_comm,
+    sdiff_sdiff_right_self]
+  rw [inter_comm, ← inter_union_distrib_left, inter_comm, sdiff_union_self, inter_sdiff_right_comm,
     closure_inter_ground, union_inter_distrib_right,
     inter_eq_self_of_subset_left (closure_subset_ground ..)]
 
@@ -251,15 +251,15 @@ lemma loopify_delete (M : Matroid α) (D : Set α) : M.loopify D ＼ D = M ＼ D
 
 lemma loopify_eq_loopify_iff {M N : Matroid α} {D} :
     M.loopify D = N.loopify D ↔ M.E = N.E ∧ M ＼ D = N ＼ D := by
-  simp +contextual [ext_iff_indep, loopify_indep_iff_delete_indep, subset_diff]
+  simp +contextual [ext_iff_indep, loopify_indep_iff_delete_indep, subset_sdiff]
 
 lemma IsBasis'.project_eq_loopify_project (h : M.IsBasis' I X) :
     M.project X = (M.loopify (X \ I)).project I := by
   refine ext_closure fun Y ↦ ?_
-  grw [project_closure, project_closure, loopify_closure, union_diff_distrib,
+  grw [project_closure, project_closure, loopify_closure, union_sdiff_distrib,
     disjoint_sdiff_right.sdiff_eq_left, closure_union_congr_right h.closure_eq_closure,
     show Y \ (X \ I) ∪ X = Y ∪ X by grind, eq_comm, union_eq_left, ← subset_union_right,
-    diff_subset, inter_ground_subset_closure]
+    sdiff_subset, inter_ground_subset_closure]
 
 lemma IsBasis.project_eq_loopify_project (h : M.IsBasis I X) :
     M.project X = (M.loopify (X \ I)).project I :=

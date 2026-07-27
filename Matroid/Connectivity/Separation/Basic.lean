@@ -31,7 +31,7 @@ protected def Separation (M : Matroid α) := M.E.IndexedPartition Bool
 set_option backward.isDefEq.respectTransparency false in
 instance : FunLike M.Separation Bool (Set α) where
   coe P i := IndexedPartition.toFun P i
-  coe_injective' P Q := by simp
+  coe_injective P Q := by simp
 
 -- protected def Separation.mk ()
 
@@ -91,7 +91,7 @@ protected lemma iUnion_eq (P : M.Separation) : ⋃ i, P i = M.E :=
 
 lemma disjoint_iff_subset_not {P : M.Separation} (hX : X ⊆ M.E := by aesop_mat) :
     Disjoint X (P i) ↔ X ⊆ P !i := by
-  rw [← P.compl_eq, subset_diff, and_iff_right hX]
+  rw [← P.compl_eq, subset_sdiff, and_iff_right hX]
 
 lemma disjoint_not_iff_subset {P : M.Separation} (hX : X ⊆ M.E := by aesop_mat) :
     Disjoint X (P !i) ↔ X ⊆ P i := by
@@ -99,7 +99,7 @@ lemma disjoint_not_iff_subset {P : M.Separation} (hX : X ⊆ M.E := by aesop_mat
 
 lemma not_mem_iff_mem_not {P : M.Separation} {x} (hx : x ∈ M.E := by aesop_mat) :
     x ∉ P i ↔ x ∈ P !i := by
-  rw [← P.compl_eq, mem_diff, and_iff_right hx]
+  rw [← P.compl_eq, mem_sdiff, and_iff_right hx]
 
 protected def mk (f : Bool → Set α) (dj : Pairwise (Disjoint on f)) (iUnion_eq : ⋃ i, f i = M.E) :
     M.Separation :=
@@ -163,7 +163,7 @@ lemma bSymm_bSymm (P : M.Separation) (b c : Bool) : (P.bSymm b).bSymm c = P.bSym
 protected lemma subset_ground (P : M.Separation) : P i ⊆ M.E := P.subset
 
 lemma apply_eq_iff : P i = M.E ↔ P (!i) = ∅ := by
-  rw [← P.compl_eq, diff_eq_empty, subset_antisymm_iff, and_iff_right P.subset]
+  rw [← P.compl_eq, sdiff_eq_empty, subset_antisymm_iff, and_iff_right P.subset]
 
 /-- Transfer a separation across a matroid equality. -/
 protected def copy {M' : Matroid α} (P : M.Separation) (h_eq : M = M') : M'.Separation where
@@ -234,11 +234,11 @@ lemma induce_apply_self : P.induce N i i = N.E \ P (!i) := by
 
 lemma induce_apply_subset (P : M.Separation) (hNM : N.E ⊆ M.E) (i j : Bool) :
     P.induce N i j = P j ∩ N.E := by
-  rw [induce_apply_eq_cond, diff_eq_empty.2 hNM, union_empty, Bool.cond_self]
+  rw [induce_apply_eq_cond, sdiff_eq_empty.2 hNM, union_empty, Bool.cond_self]
 
 lemma induce_eq_induce_of_subset (P : M.Separation) (hNM : N.E ⊆ M.E) :
     P.induce N i = P.induce N :=
-  Separation.ext_bool false <| by simp [induce_apply_eq_cond, diff_eq_empty.2 hNM]
+  Separation.ext_bool false <| by simp [induce_apply_eq_cond, sdiff_eq_empty.2 hNM]
 
 -- @[simp]
 -- lemma induce_dual_eq_dual (P : M.Separation) (i : Bool) : P.induce M✶ i = P.dual :=
@@ -280,7 +280,7 @@ lemma induce_symm_of_subset (P : M.Separation) (hNM : N.E ⊆ M.E) :
 lemma induce_induce {N' : Matroid α} (P : M.Separation) (hN' : N'.E ⊆ N.E) :
     (P.induce N i).induce N' = P.induce N' i := by
   refine Separation.ext_bool (!i) ?_
-  simp [induce_apply_eq_cond, inter_assoc, inter_eq_self_of_subset_right hN', diff_eq_empty.2 hN']
+  simp [induce_apply_eq_cond, inter_assoc, inter_eq_self_of_subset_right hN', sdiff_eq_empty.2 hN']
 
 lemma induce_induce_of_subset {N' : Matroid α} (P : M.Separation) {i} (hss : M.E ⊆ N.E) :
     (P.induce N i).induce N' i = P.induce N' i := by
@@ -300,7 +300,7 @@ lemma induce_induce_eq_self (P : M.Separation) (hss : M.E ⊆ N.E) (i : Bool) :
 lemma induce_induce_eq_self_of_subset_union (P : M.Separation) (hN : N.E ⊆ M.E) {i : Bool}
     (hi : P (!i) ⊆ N.E) : (P.induce N).induce M i = P :=
   Separation.ext_bool (!i) <| by
-    simpa [induce_apply_eq_cond, diff_eq_empty.2 hN, inter_assoc, inter_eq_self_of_subset_left hN]
+    simpa [induce_apply_eq_cond, sdiff_eq_empty.2 hN, inter_assoc, inter_eq_self_of_subset_left hN]
 
 
 -- protected def dual (P : M.Separation) : M✶.Separation := P.copy' rfl
@@ -596,7 +596,7 @@ end Separation
 --   (P.left ∩ R) ((P.right ∩ R) ∪ (R \ M.E))
 --   (disjoint_union_right.2 ⟨(P.disjoint.mono inter_subset_left inter_subset_left),
 --       disjoint_sdiff_right.mono_left (inter_subset_left.trans P.left_subset_ground)⟩)
---   (by rw [← union_assoc, ← union_inter_distrib_right, P.union_eq, inter_comm, inter_union_diff,
+--   (by rw [← union_assoc, ← union_inter_distrib_right, P.union_eq, inter_comm, inter_union_sdiff,
 --     restrict_ground_eq])
 
 -- lemma eConn_restrict_eq (P : M.Separation) (R : Set α) :
@@ -604,7 +604,7 @@ end Separation
 --   simp only [eConn, Separation.restrict, eLocalConn_restrict_eq, Separation.mk'_left,
 --     Separation.mk'_right]
 --   rw [union_inter_distrib_right, inter_assoc, inter_assoc, inter_self,
---     inter_eq_self_of_subset_left diff_subset, ← eLocalConn_inter_ground_right,
+--     inter_eq_self_of_subset_left sdiff_subset, ← eLocalConn_inter_ground_right,
 --     union_inter_distrib_right, disjoint_sdiff_left.inter_eq, union_empty,
 --     eLocalConn_inter_ground_right]
 
@@ -669,7 +669,7 @@ lemma Separation.disjointSumSep_apply_false (hMN : Disjoint M.E N.E) :
 lemma Separation.disjointSumSep_apply_true (hMN : Disjoint M.E N.E) :
     disjointSumSep M N hMN true = N.E := by
   rw [← Separation.compl_false, disjointSumSep_apply_false, disjointSum_ground_eq,
-    union_diff_cancel_left hMN.inter_eq.subset]
+    union_sdiff_cancel_left hMN.inter_eq.subset]
 
 namespace Separation
 
@@ -1115,13 +1115,13 @@ lemma _root_.Matroid.Connected.eq_ground_of_eConn_eq_zero (hM : M.Connected) (hX
   obtain ⟨b | b, hb⟩ :=
     (hM.trivial_of_eConn_eq_zero (P := M.ofSetSep X true) (by simpa)).exists_eq_ground
   · rw [← hb] at hXE
-    simp [subset_diff, hne.ne_empty] at hXE
+    simp [hne.ne_empty] at hXE
   simpa using hb
 
 lemma Nontrivial.one_le_eConn_of_connected (hP : P.Nontrivial) (hM : M.Connected) :
     1 ≤ P.eConn := by
   contrapose! hP
-  simpa using hM.trivial_of_eConn_eq_zero <| ENat.lt_one_iff_eq_zero.1 hP
+  simpa using hM.trivial_of_eConn_eq_zero <| Order.lt_one_iff.1 hP
 
 @[simp]
 lemma sum_ofSumSep_eConn {α β : Type*} (M : Matroid α) (N : Matroid β) :

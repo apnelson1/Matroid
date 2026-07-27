@@ -27,7 +27,7 @@ lemma Circuit.nonempty_circuit_union_of_independent (hX : M.Indep X)
     (hC : M.IsCircuit C) (hCXP : C ⊆ X ∪ D) : (C ∩ D).Nonempty := by
   have hCX : ¬ (C ⊆ X) := fun hCX ↦ hC.not_indep <| hX.subset hCX
   contrapose! hCX
-  rwa [union_comm, ← diff_subset_iff, ← diff_self_inter, hCX, diff_empty] at hCXP
+  rwa [union_comm, ← sdiff_subset_iff, ← sdiff_self_inter, hCX, sdiff_empty] at hCXP
 
 -- Next lemma belongs in IndepAxioms.lean
 
@@ -63,8 +63,8 @@ lemma delete_contract_eq_delete_of_subset (hP : P.eConn = 0) (hX : X ⊆ P i) :
     (M ＼ (P i \ X)) ／ X = M ＼ (P i) := by
   rw [eConn_eq_zero_iff_skew (i := i)] at hP
   rw [delete_eq_restrict, delete_eq_restrict, restrict_contract_eq_contract_restrict,
-    diff_diff, diff_union_of_subset hX, P.compl_eq, (hP.mono_left hX).contract_restrict_eq]
-  grw [diff_diff_right, ← subset_union_right,
+    sdiff_sdiff, sdiff_union_of_subset hX, P.compl_eq, (hP.mono_left hX).contract_restrict_eq]
+  grw [sdiff_sdiff_right, ← subset_union_right,
     inter_eq_self_of_subset_right (hX.trans P.subset_ground)]
 
 lemma IsMinor.isMinor_delete_smallside_of_eConn_eq_zero {N : Matroid α} (hNM : N ≤m M)
@@ -138,7 +138,7 @@ lemma Separation.unique_circuit_of_eConn_le_one {C : Bool → Set α}
     rw [restrict_indep_iff, and_iff_left subset_union_left]
     exact hX.of_restrict
   have hconn : (M ↾ (X ∪ P i)).eConn X ≤ 1 := by
-    grw [← eConn_compl, restrict_ground_eq, union_diff_cancel_left, eConn_restrict_le,
+    grw [← eConn_compl, restrict_ground_eq, union_sdiff_cancel_left, eConn_restrict_le,
       P.eConn_eq, hP]
     grw [hX.subset_ground, restrict_ground_eq, (P.disjoint_bool _).symm.inter_eq]
   obtain ⟨J, hJX, hJ⟩ := hi.exists_forall_inter_circuit_eq hconn
@@ -154,7 +154,7 @@ lemma Separation.exists_subsingleton_independent_in_contraction_of_eConn_one
   obtain ⟨B, hB⟩ := (M ／ P i).exists_isBasis' X
   refine ⟨X \ B, ?_, ?_⟩
   · rwa [← encard_le_one_iff_subsingleton, ← hB.nullity_eq]
-  rw [diff_diff_cancel_left hB.subset]
+  rw [sdiff_sdiff_cancel_left hB.subset]
   exact hB.indep
 
 lemma Separation.coindependent_inter_contraction_coloopless_minor {N : Matroid α}
@@ -190,7 +190,7 @@ lemma TutteConnected.exists_flexible_of_subsingleton {N : Matroid α} (hM : M.Tu
   obtain ⟨f, hf⟩ : (M.E \ N.E).Nonempty := by
     rw [← encard_le_one_iff_subsingleton] at hN
     grw [← one_le_encard_iff_nonempty, ← ENat.add_le_add_iff_right (k := N.E.encard),
-      encard_diff_add_encard_of_subset hNM.subset, ← h4, hN]
+      encard_sdiff_add_encard_of_subset hNM.subset, ← h4, hN]
     · enat_to_nat; lia
     grw [← lt_top_iff_ne_top, hN]
     simp
@@ -203,10 +203,10 @@ lemma TutteConnected.exists_flexible_of_subsingleton {N : Matroid α} (hM : M.Tu
   have hc := (hM.bDual d).removeElem (k := 2) (by rw [bDual_ground]; enat_to_nat!; lia) (d != b) f
   refine (hc.coloopless rfl.le ?_).isNonColoop_of_mem ?_
   · grw [remove_ground, bDual_ground, ← two_le_encard_iff_nontrivial, ← ENat.add_one_le_add_one_iff,
-      ← encard_le_encard_diff_singleton_add_one, ← h4]
+      ← encard_le_encard_sdiff_singleton_add_one, ← h4]
     enat_to_nat; lia
   obtain rfl : a = e := by simpa using he0
-  simp only [bDual_ground, loopyOn_ground, mem_diff, mem_singleton_iff] at hf
+  simp only [bDual_ground, loopyOn_ground, mem_sdiff, mem_singleton_iff] at hf
   simp [show a ∈ M.E by simpa using hNM.subset, Ne.symm hf.2]
 
 /-- If `M ＼ {e}` has `N` as a minor, and is cosimple but not `3`-connected,

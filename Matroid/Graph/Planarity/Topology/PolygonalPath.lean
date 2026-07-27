@@ -32,7 +32,7 @@ lemma segment_diff_endpoints {𝕜 : Type*} {E : Type*} [Ring 𝕜] [LinearOrder
     [IsStrictOrderedRing 𝕜] [AddCommGroup E] [Module 𝕜 E] {x y : E} [DenselyOrdered 𝕜]
     [Module.IsTorsionFree 𝕜 E] (hxy : x ≠ y) : segment 𝕜 x y \ {x, y} = openSegment 𝕜 x y := by
   ext z
-  simp only [mem_diff, mem_insert_iff, mem_singleton_iff, not_or, ← ne_eq]
+  simp only [mem_sdiff, mem_insert_iff, mem_singleton_iff, not_or, ← ne_eq]
   refine ⟨fun ⟨h, hzx, hzy⟩ ↦ mem_openSegment_of_ne_left_right hzx.symm hzy.symm h, fun h ↦ ?_⟩
   use openSegment_subset_segment _ _ _ h, ?_, ?_ <;> rintro rfl <;> simp [hxy] at h
 
@@ -428,7 +428,7 @@ lemma closedSimple.cons_simple (h : P.closedSimple) :
   rw [closedSimple, toPath, Path.trans_injOn_ico_iff] at h
   obtain ⟨hP, hQ, hdj⟩ := h
   simp only [Path.range_segment] at hdj
-  rwa [← disjoint_sdiff_comm, diff_diff, union_singleton, segment_diff_endpoints has.ne.symm] at hdj
+  rwa [← disjoint_sdiff_comm, sdiff_sdiff, union_singleton, segment_diff_endpoints has.ne.symm] at hdj
 
 lemma closedSimple_iff_cons_simple (P : PolygonalPath x x) : P.closedSimple ↔ ∃ b P',
     P = cons x b P' ∧ P'.simple ∧ Disjoint (openSegment ℝ x b) P'.toSet ∧
@@ -816,7 +816,7 @@ lemma exists_crossings [T1Space α] (hfin : (range P ∩ frontier U).Finite) (hx
 
   refine ⟨tz', ?_, ?_⟩
   · apply csInf_mem_closure (by use 1; simp [h1inW, htz_lt_one]) hbdd
-    simp only [mem_setOf_eq, isClosed_closure, true_and]
+    simp only [mem_ofPred_eq, isClosed_closure, true_and]
     exact inter_subset_right.trans subset_closure
   suffices (P '' (Icc tz tz')).Subsingleton by
     exact this (by use tz', by simpa) (by use tz, by simpa)

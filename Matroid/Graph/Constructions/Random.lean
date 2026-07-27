@@ -28,13 +28,13 @@ def randomGraph : Graph ℕ (Sym2 ℕ) where
       Prod.swap_prod_mk] at h₁ h₂
     tauto
   edge_mem_iff_exists_isLink e := by
-    simp only [mem_setOf_eq, exists_and_left, iff_def, and_imp, forall_exists_index]
+    simp only [mem_ofPred_eq, exists_and_left, iff_def, and_imp, forall_exists_index]
     exact imp_and.mp fun h ↦ ⟨⟨h, ⟨e.out.1, e.out.2, by simp⟩⟩, fun _ _ _ ↦ h⟩
   left_mem_of_isLink e x y h := mem_univ _
 
 @[simp]
 lemma randomGraph_inc (e x) : randomGraph.Inc e x ↔ e ∈ E(randomGraph) ∧ x ∈ e := by
-  simp_rw [randomGraph_edgeSet, mem_setOf_eq, Inc, randomGraph_isLink, exists_and_left]
+  simp_rw [randomGraph_edgeSet, mem_ofPred_eq, Inc, randomGraph_isLink, exists_and_left]
   rfl
 
 @[simp]

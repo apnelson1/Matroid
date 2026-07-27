@@ -13,12 +13,12 @@ lemma PolygonalPath.simple.epsilon_inter_subset_segment {P : PolygonalPath x y} 
   let g := ⋃ s ∈ {s | s ∈ P.vPairs} \ {(a, c)}, segment ℝ s.1 s.2
   have hgcl : IsClosed g := by apply Finite.isClosed_biUnion <;> simp
   have hb : b ∈ gᶜ := by
-    simp only [mem_diff, mem_setOf_eq, mem_singleton_iff, ← ne_eq, compl_iUnion, mem_iInter,
+    simp only [mem_sdiff, mem_ofPred_eq, mem_singleton_iff, ← ne_eq, compl_iUnion, mem_iInter,
       mem_compl_iff, and_imp, g]
     exact fun s hsP hne hbs ↦ hne <| hacUnique s ⟨hsP, hbs⟩
   have hPg : P.toSet = g ∪ segment ℝ a c := by
     rw [P.toSet_eq_biUnion, ← biUnion_singleton (a, c) (fun s ↦ segment ℝ s.1 s.2),
-      ← biUnion_union, diff_union_self, union_eq_left.mpr (by simpa)]
+      ← biUnion_union, sdiff_union_self, union_eq_left.mpr (by simpa)]
     rfl
   obtain ⟨ε, hεpos, hε⟩ := Metric.isOpen_iff.mp hgcl.isOpen_compl b hb
   rw [subset_compl_iff_disjoint_left] at hε
@@ -33,12 +33,12 @@ lemma PolygonalPath.closedSimple.epsilon_inter_subset_segment (hbP : b ∈ P.toS
   let g := ⋃ s ∈ {s | s ∈ P.vPairs} \ {(a, c)}, segment ℝ s.1 s.2
   have hgcl : IsClosed g := by apply Finite.isClosed_biUnion <;> simp
   have hb : b ∈ gᶜ := by
-    simp only [mem_diff, mem_setOf_eq, mem_singleton_iff, ← ne_eq, compl_iUnion, mem_iInter,
+    simp only [mem_sdiff, mem_ofPred_eq, mem_singleton_iff, ← ne_eq, compl_iUnion, mem_iInter,
       mem_compl_iff, and_imp, g]
     exact fun s hsP hne hbs ↦ hne <| hacUnique s ⟨hsP, hbs⟩
   have hPg : P.toSet = g ∪ segment ℝ a c := by
     rw [P.toSet_eq_biUnion, ← biUnion_singleton (a, c) (fun s ↦ segment ℝ s.1 s.2),
-      ← biUnion_union, diff_union_self, union_eq_left.mpr (by simpa)]
+      ← biUnion_union, sdiff_union_self, union_eq_left.mpr (by simpa)]
     rfl
   obtain ⟨ε, hεpos, hε⟩ := Metric.isOpen_iff.mp hgcl.isOpen_compl b hb
   rw [subset_compl_iff_disjoint_left] at hε

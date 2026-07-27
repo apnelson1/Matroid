@@ -21,7 +21,7 @@ lemma coverNumber_le_choose_of_eRank_le {a b : ℕ} (ha : a ≠ 0)
   have hforall (X) (hX : X ∈ U) : X.encard ≤ b := by
     simpa [ENat.lt_coe_add_one_iff] using hM.lt_of_isoMinor (restrict_isMinor _ hX.1).isoMinor hX.2
   have hfin : (encard '' U).Finite := by
-    refine ENat.finite_of_sSup_lt_top (lt_of_le_of_lt ?_ (ENat.coe_lt_top b))
+    refine ENat.finite_of_sSup_lt_top (lt_of_le_of_lt ?_ (ENat.natCast_lt_top b))
     grw [sSup_image, iSup₂_le_iff.2 hforall]
   obtain ⟨X, hX⟩ := Finite.exists_maximalFor' encard U hfin ⟨B, hBU⟩
   have hcov : (X.powersetENcard a).IsCover X (M.RkLE a) := by
@@ -32,13 +32,13 @@ lemma coverNumber_le_choose_of_eRank_le {a b : ℕ} (ha : a ≠ 0)
     grw [← encard_lt_top_iff, hforall _ hX.prop]
     simp
   have hss : M.E ⊆ ⋃ Y ∈ X.powersetENcard a, M.closure Y := by
-    rw [← diff_union_of_subset hX.prop.1, union_subset_iff, and_comm]
+    rw [← sdiff_union_of_subset hX.prop.1, union_subset_iff, and_comm]
     refine ⟨?_, ?_⟩
     · grw [← iUnion₂_mono (s := fun Y _ ↦ Y), ← sUnion_eq_biUnion,
       sUnion_powersetENcard_eq _ (by simpa)]
       · grw [← hX.le hBU, hB.encard_eq_eRank, hr, ← le_self_add]
       exact fun Y ⟨hY, _⟩ ↦ M.subset_closure _ (hY.trans hX.prop.1)
-    simp only [mem_powersetENcard_iff, subset_def (s := M.E \ X), mem_diff, mem_iUnion, exists_prop,
+    simp only [mem_powersetENcard_iff, subset_def (s := M.E \ X), mem_sdiff, mem_iUnion, exists_prop,
       and_imp]
     by_contra! hcon
     obtain ⟨e, heE, heX, he⟩ := hcon

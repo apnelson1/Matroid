@@ -64,7 +64,7 @@ lemma isThick_two (M : Matroid α) : M.IsThick 2 X := by
     simp only [le_top]
   rw [← hTe]
   by_contra hc
-  obtain ⟨Y, hY⟩ := encard_eq_one.mp ((ENat.one_le_iff_ne_zero.mpr (encard_ne_zero.mpr
+  obtain ⟨Y, hY⟩ := encard_eq_one.mp ((Order.one_le_iff_ne_zero.mpr (encard_ne_zero.mpr
     (hT.nonempty hX ))).antisymm' (Order.le_of_lt_succ (Std.not_le.mp hc)))
   have hc1 : (M ↾ X).Spanning Y := by
     rw [← sUnion_singleton (s := Y), ←hY, hT.sUnion_eq]
@@ -93,7 +93,7 @@ lemma IsThick.minor_mono (hTXd : M.IsThick d X) (hNM : N ≤m M) (hX : X ⊆ N.E
     apply (restrict_spanning_iff (M := M ／ C ) (R := X) hY (hR := by grind )).2
     rw [restrict_spanning_iff hY (hR := by grind)] at hc
     rw [@contract_closure_eq]
-    refine subset_diff.2 ⟨by grw [←closure_subset_closure M (subset_union_left), hc], by grind⟩
+    refine subset_sdiff.2 ⟨by grw [←closure_subset_closure M (subset_union_left), hc], by grind⟩
   exact hYns.1 hcon
 
 lemma IsThick.contract_mono (hTXd : M.IsThick d X) (hC : C ⊆ X ) :
@@ -127,7 +127,7 @@ lemma IsThick_le_eRk {M : Matroid α} {a b : ℕ} (ht : M.IsThick (Nat.choose (b
   have hle := rankCoverNumber_le_binomial_subset ha hb
     (hM.minor (IsRestriction.isMinor (restrict_isRestriction M X))) hlt
   grw [← nonspanning_le_rankCoverNumber hlt, ←(isThick_iff hne).1 ht, ENat.epow_one,
-    ENat.coe_le_coe] at hle
+    ENat.natCast_le_natCast] at hle
   have : b.choose a < (b + 1).choose a := by
     rw [Nat.choose_succ_left (n := b) (k := a) (by grind) ]
     simp only [lt_add_iff_pos_left]

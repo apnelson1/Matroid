@@ -10,7 +10,40 @@ import Mathlib.Data.List.Induction
 
 namespace List
 
-variable {α : Type*}
+variable {α : Type*} {l : List α}
+
+lemma toSet_cons_eq {a : α} : {x | x ∈ a :: l} = insert a {x | x ∈ l} := by
+  simp [Set.ext_iff]
+
+lemma toSet_concat_eq {a : α} : {x | x ∈ l ++ [a]} = insert a {x | x ∈ l} := by
+  simp [Set.ext_iff, or_comm]
+
+lemma toSet_append_eq {l' : List α} : {x | x ∈ l ++ l'} = {x | x ∈ l} ∪ {x | x ∈ l'} := by
+  simp [Set.ext_iff]
+
+lemma Nodup.toSet_tail_eq (hl : l.Nodup) (h0 : l ≠ []) :
+    {x | x ∈ l.tail} = {x | x ∈ l} \ {l.head h0} := by
+  nth_rw 2 [← cons_head_tail h0]
+  rw [toSet_cons_eq, Set.insert_sdiff_self_of_notMem]
+  cases hl with grind
+
+lemma Nodup.toSet_dropLast_eq (hl : l.Nodup) (h0 : l ≠ []) :
+    {x | x ∈ l.dropLast} = {x | x ∈ l} \ {l.getLast h0} := by
+  have := (nodup_reverse.2 hl).toSet_tail_eq (by simpa)
+  simp only [tail_reverse, mem_reverse, head_reverse] at this
+  assumption
+
+lemma getElem_mem_dropLast {i} (hi : i < l.length - 1) : l[i] ∈ l.dropLast := by
+  rw [← l.getElem_dropLast (by simpa using hi)]
+  exact getElem_mem ..
+
+@[simp]
+lemma toSet_nonempty_iff : {x | x ∈ l}.Nonempty ↔ l ≠ [] := by
+  cases l with
+  | nil => simp
+  | cons head tail =>
+    rw [toSet_cons_eq]
+    simp
 
 lemma Nodup.countP_eq_card {α} {l : List α} {P : α → Prop} [DecidableEq α] [DecidablePred P]
     (h : l.Nodup) : countP P l = (l.toFinset.filter P).card := by
@@ -314,7 +347,7 @@ theorem splitBy_append_of_not_rel {r : α → α → Bool} {l₁ l₂ : List α}
 --       have hboundary : ¬ r ((a :: b :: m).getLast (by simp)) ((L'.flatten).head hne_flat) := by
 --         have := isChain_getLast_head_splitBy r (a :: b :: as)
 --         rw [habms, ← cons_head_tail (by grind : ms ≠ [])] at this
---         obtain ⟨_, hmsh, hf⟩ := this.rel_head
+--         obtain ⟨_, hmsh, hf⟩ := this.rel
 --         simp only [ne_eq, reduceCtorEq, not_false_eq_true, getLast_cons, Bool.not_eq_true]
 --         simp_rw [head_flatten_eq_head_head hne_flat (hl'.head hneL' ▸ hmsh), hl'.head hneL']
 --         exact hf
@@ -334,7 +367,7 @@ theorem splitBy_append_of_not_rel {r : α → α → Bool} {l₁ l₂ : List α}
 --       have hboundary : ¬ r ([a].getLast (by simp)) ((L'.flatten).head hne_flat) := by
 --         have := isChain_getLast_head_splitBy r (a :: b :: as)
 --         rw [splitBy_cons_cons_of_not_rel _ hab, hm] at this
---         obtain ⟨_, hmsh, hf⟩ := this.rel_head
+--         obtain ⟨_, hmsh, hf⟩ := this.rel
 --         simp only [getLast_singleton, Bool.not_eq_true]
 --         simp_rw [head_flatten_eq_head_head hne_flat (by simp [hl'.head hneL', hm]),
 -- hl'.head hneL',
@@ -453,6 +486,51 @@ lemma exists_eq_or_eq_concat_of_sublist_range_add_one {L : List ℕ} {n : ℕ}
   obtain rfl | rfl := by simpa using h3
   · simp [h1]
   simp[ h1]
+
+def filterIdx (L : List α) (p : ℕ → Bool) (start : ℕ := 0) (stop : ℕ := L.length) : List α :=
+  ((L.zipIdx.extract start stop).filter fun x ↦ p x.2).map Prod.fst
+
+lemma filterIdx_nil (p : ℕ → Bool) {start stop : ℕ} :
+    ([] : List α).filterIdx p start stop = [] := by
+  simp [filterIdx]
+
+lemma filterIdx_eq (L : List α) (p : ℕ → Bool) :
+    L.filterIdx p = (L.zipIdx.filter fun x ↦ p x.2).map Prod.fst := by
+  simp [filterIdx, take_of_length_le]
+
+lemma filterIdx_cons_pos (L : List α) (a : α) {p : ℕ → Bool} (hp : p 0 = true):
+    (a :: L).filterIdx p = a :: (L.filterIdx (fun x ↦ p (x + 1))) := by
+  rw [filterIdx_eq, filterIdx_eq]
+  simp only [zipIdx_cons, zero_add, zipIdx_succ, hp, filter_cons_of_pos, filter_map, map_cons,
+    map_map, cons.injEq, true_and]
+  convert rfl <;> rfl
+
+lemma filterIdx_cons_neg (L : List α) (a : α) {p : ℕ → Bool} (hp : p 0 = false):
+    (a :: L).filterIdx p = L.filterIdx (fun x ↦ p (x + 1)) := by
+  rw [filterIdx_eq, filterIdx_eq]
+  simp only [zipIdx_cons, zero_add, zipIdx_succ, hp, Bool.false_eq_true, not_false_eq_true,
+    filter_cons_of_neg, filter_map, map_map]
+  convert rfl <;> rfl
+
+lemma filterIdx_cons (L : List α) (a : α) (p : ℕ → Bool) :
+    (a :: L).filterIdx p = bif p 0 then a :: (L.filterIdx (fun x ↦ p (x + 1)))
+      else (L.filterIdx (fun x ↦ p (x + 1))) := by
+  cases h : p 0 with
+  | false => rw [filterIdx_cons_neg _ _ h, cond_false]
+  | true => rw [filterIdx_cons_pos _ _ h, cond_true]
+
+lemma filterIdx_length (L : List α) (p : ℕ → Bool) :
+    (L.filterIdx p).length = ((range L.length).filter p).length := by
+  rw [filterIdx_eq, length_map, range_eq_range', ← zipIdx_map_snd 0 L, ← length_map Prod.snd,
+    filter_map]
+  rfl
+
+-- lemma filterIdx_length' (L : List α) (p : ℕ → Bool) (start stop : ℕ) :
+--     (L.filterIdx p).length = (List.range' start stop)
+
+-- lemma filterIdx_bodd_length (L : List α) :
+--     2 * (L.filterIdx Nat.bodd).length = L.length + L.length.bodd.toNat := by
+--   _
 
 /-- Take every other element of a list `L`,
 with the `Bool` indicating whether to take the first element.-/
@@ -687,6 +765,7 @@ lemma Nodup.getFinset_card (hnd : L.Nodup) {F : Finset ℕ}
     rw [getFinset_finset_insert _ hF.1, Finset.card_insert_of_notMem has,
       Finset.card_insert_of_notMem, ih hF.2]
     grind [hnd.getElem_inj_iff, mem_getFinset_iff]
+
 
 
 -- @[simp]

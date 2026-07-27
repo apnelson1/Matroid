@@ -264,7 +264,8 @@ lemma IsPrefix.first_eq (h : IsPrefix w₁ w₂) : w₁.first = w₂.first := by
 
 lemma isPrefix_append_right (hw : w₁.last = w₂.first) : w₁.IsPrefix (w₁ ++ w₂) := by
   induction w₁ with
-  | nil => convert IsPrefix.nil w₂
+  | nil =>
+    convert IsPrefix.nil w₂ <;> grind
   | cons u e w₁ ih => simpa using (ih hw).cons ..
 
 @[gcongr]
@@ -701,7 +702,7 @@ lemma appendList_first [Inhabited α] {L : List (WList α β)} (hne : L ≠ [])
   | l₁ :: l₂ :: L =>
     have : l₁.last = ((l₂ :: L)⁺).first := by
       rw [appendList_first (by simp) (isChain_of_isChain_cons h), head_cons]
-      exact h.rel_head
+      exact h.rel
     rw [appendList_cons this, append_first_of_eq this, head_cons]
 
 @[simp]
@@ -713,7 +714,7 @@ lemma appendList_reverse [Inhabited α] {L : List (WList α β)} (h : L.IsChain 
   | l₁ :: l₂ :: L =>
     have hrel : l₁.last = (l₂ :: L)⁺.first := by
       rw [appendList_first (by simp) (isChain_of_isChain_cons h)]
-      exact h.rel_head
+      exact h.rel
     apply_fun reverse using reverse_injective
     rw [reverse_reverse, appendList_cons hrel, List.map_cons, List.reverse_cons', appendList_concat,
       reverse_append ?_, reverse_reverse, ← appendList_reverse (isChain_of_isChain_cons h),
@@ -724,7 +725,7 @@ lemma appendList_reverse [Inhabited α] {L : List (WList α β)} (h : L.IsChain 
 @[simp]
 lemma appendList_cons_cons [Inhabited α] {l₁ l₂ : WList α β} {L : List (WList α β)}
     (h : (l₁ :: l₂ :: L).IsChain (·.last = ·.first)) : (l₁ :: l₂ :: L)⁺ = l₁ ++ (l₂ :: L)⁺ := by
-  rw [appendList_cons (by simp [isChain_of_isChain_cons h, h.rel_head])]
+  rw [appendList_cons (by simp [isChain_of_isChain_cons h, h.rel])]
 
 @[simp]
 lemma appendList_edge [Inhabited α] (L : List (WList α β)) :
@@ -771,7 +772,7 @@ lemma head_first_eq_first {w : WList α β} {L : List (WList α β)} (h : w.Deco
   match l, L' with
   | nil u, [] => simp [hl, h.append]
   | nil u, l' :: L' =>
-    obtain rfl := nil_last ▸ (hl ▸ h.chain_eq).rel_head
+    obtain rfl := nil_last ▸ (hl ▸ h.chain_eq).rel
     simpa [hl] using (hl ▸ h).nil_cons (by simp) |>.head_first_eq_first
   | cons u e w', [] =>
     subst L
@@ -804,7 +805,7 @@ lemma head_isPrefix (h : w.DecomposeTo L) : (L.head h.nonempty).IsPrefix w := by
     simp only [foldl_cons]
     rw [List.foldl_assoc]
     apply WList.isPrefix_append_right
-    rw [h.chain_eq.rel_head]
+    rw [h.chain_eq.rel]
     have := h.append ▸ h
     simp only [foldl_cons, appendList, nil_append] at this
     rw [List.foldl_assoc] at this

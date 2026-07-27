@@ -492,20 +492,20 @@ instance [IsPreorder α r] : IsPreorder α rᵀ where
 instance [IsLinearOrder α r] : IsLinearOrder α rᵀ where
   total a b := (total_of r b a)
 
-lemma sSup_symmtric {s : Set (α → α → Prop)} (hs : ∀ r ∈ s, Std.Symm r) : Symmetric (sSup s) := by
-  rintro a b h
-  induction h with
-  | intro w h =>
-    simp only [mem_range, eq_iff_iff, Subtype.exists, exists_prop, exists_exists_and_eq_and,
-      binary_relation_sSup_iff s] at h ⊢
-    obtain ⟨⟨r, hrs, hrw⟩, hw⟩ := h
-    have := hs r hrs
-    exact ⟨r, hrs, symm <| hrw.mpr hw⟩
+lemma sSup_symmtric {s : Set (α → α → Prop)} (hs : ∀ r ∈ s, Std.Symm r) : Std.Symm (sSup s) where
+  symm a b h := by
+    induction h with
+    | intro w h =>
+      simp only [mem_range, eq_iff_iff, Subtype.exists, exists_prop, exists_exists_and_eq_and,
+        binary_relation_sSup_iff s] at h ⊢
+      obtain ⟨⟨r, hrs, hrw⟩, hw⟩ := h
+      have := hs r hrs
+      exact ⟨r, hrs, symm <| hrw.mpr hw⟩
 
-lemma sInf_symmtric {s : Set (α → α → Prop)} (hs : ∀ r ∈ s, Std.Symm r) : Symmetric (sInf s) := by
-  rintro a b
-  simp_rw [binary_relation_sInf_iff s]
-  exact fun h r hrs => let := hs r hrs; symm (h r hrs)
+lemma sInf_symmtric {s : Set (α → α → Prop)} (hs : ∀ r ∈ s, Std.Symm r) : Std.Symm (sInf s) where
+  symm a b h := by
+    simp_rw [binary_relation_sInf_iff s] at h ⊢
+    exact fun r hrs => let := hs r hrs; symm (h r hrs)
 
 instance {s : ι → α → α → Prop} [∀ i, Std.Symm (s i)] : Std.Symm (⨆ i, s i) where
   symm a b h := by
@@ -558,14 +558,10 @@ def SymmClosure : ClosureOperator (α → α → Prop) where
 lemma symmClosure_apply (r : α → α → Prop) (a b : α) :
     SymmClosure r a b ↔ r a b ∨ r b a := Iff.rfl
 
-lemma symmClosure_symmetric (r : α → α → Prop) : Symmetric (SymmClosure r) :=
-  fun _ _ ↦ Or.symm
-
 instance : Std.Symm (SymmClosure r) where
-  symm := symmClosure_symmetric r
+  symm _ _ := Or.symm
 
-lemma SymmClosure.symm (hr : SymmClosure r a b) : SymmClosure r b a :=
-  symmClosure_symmetric r hr
+lemma SymmClosure.symm (hr : SymmClosure r a b) : SymmClosure r b a := _root_.symm hr
 
 @[simp]
 lemma symmClosure_domain (r : α → α → Prop) : domain (SymmClosure r) = domain r ∪ codomain r := by
@@ -594,7 +590,7 @@ lemma symmClosure_eq_self (r : α → α → Prop) [Std.Symm r] : SymmClosure r 
 
 def TransClosure : ClosureOperator (α → α → Prop) where
   toFun := TransGen
-  monotone' _ _ h _ _ h' := TransGen.mono h h'
+  monotone' _ _ h _ _ h' := TransGen.mono h _ _ h'
   le_closure' _ _ _ := TransGen.single
   idempotent' _ := by
     ext a b
@@ -689,7 +685,7 @@ instance [Std.Symm r] [IsTrans α r] : foo r where
 
 instance [Std.Symm r] [foo r] : foo rᵀ where
   isfoo _ _ h := by
-    rw [Symmetric.flip_eq Std.Symm.symm] at h ⊢
+    rw [Std.Symm.flip_eq] at h ⊢
     exact refl_of_right h
 
 instance [foo r] [foo s] : foo (r ⊔ s) where
@@ -781,12 +777,8 @@ lemma comp_self (r : α → α → Prop) [IsTrans α r] [foo r] : Comp r r = r :
   ext x y
   exact ⟨fun ⟨u, hxu, huy⟩ => trans_of r hxu huy, fun h => ⟨y, h, refl_of_right h⟩⟩
 
-lemma domp_symm (r s : α → α → Prop) [Std.Symm r] [Std.Symm s] : Symmetric (Domp r s) := by
-  rintro a b ⟨d, had, c, hcd, hcb⟩
-  exact ⟨c, symm hcb, d, symm hcd, symm had⟩
-
 instance [Std.Symm r] [Std.Symm s] : Std.Symm (Domp r s) where
-  symm := domp_symm r s
+  symm _ _ := fun ⟨d, had, c, hcd, hcb⟩ => ⟨c, symm hcb, d, symm hcd, symm had⟩
 
 instance [Std.Symm r] [IsTrans α s] [H : Trans s r s] : IsTrans α (Domp r s) where
   trans a b c := by
@@ -842,11 +834,8 @@ lemma restrict_le (r : α → α → Prop) (S : Set α) : restrict r S ≤ r :=
 lemma restrict_subset (r : α → α → Prop) {S T : Set α} (h : S ⊆ T) :
     restrict r S ≤ restrict r T := fun _ _ ⟨hr, hx, hy⟩ => ⟨hr, h hx, h hy⟩
 
-lemma restrict_symmetric (r : α → α → Prop) [Std.Symm r] (S : Set α) :
-    Symmetric (restrict r S) := fun _ _ ⟨hr, ha, hb⟩ => ⟨symm hr, hb, ha⟩
-
 instance [Std.Symm r] {S : Set α} : Std.Symm (restrict r S) where
-  symm := restrict_symmetric r S
+  symm _ _ := fun ⟨hr, ha, hb⟩ => ⟨symm hr, hb, ha⟩
 
 lemma restrict_eq_self (r : α → α → Prop) [Std.Symm r] {S : Set α} (hS : domain r ⊆ S) :
     restrict r S = r := by

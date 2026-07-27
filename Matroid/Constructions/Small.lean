@@ -9,6 +9,7 @@ namespace Matroid
 variable {α : Type*} {M M' : Matroid α} {e f : α} {I : Set α} {a : ℕ}
 
 
+set_option backward.isDefEq.respectTransparency false in
 /-- Every matroid is the disjoint sum of a loopless, coloopless matroid, a rank-zero matroid,
 and a free matroid. -/
 lemma exists_disjointSum_loopyOn_freeOn (M : Matroid α) : ∃ (M₀ : Matroid α) (L K : Set α)
@@ -94,6 +95,7 @@ lemma eq_unifOn_of_encard_ground_eq_three [M.Loopless] [M.Coloopless] (hM : M.E.
   rw [encard_insert_of_notMem (by grind), encard_pair hbc]
   rfl
 
+set_option backward.isDefEq.respectTransparency false in
 /-- Every two-element matroid is either uniform, or the sum of a loop and a coloop. -/
 lemma eq_of_encard_ground_eq_two (hM2 : M.E.encard = 2) : ∃ (e f : α) (_hef : e ≠ f),
     M = loopyOn {e, f} ∨ M = freeOn {e, f} ∨ M = circuitOn {e, f}
@@ -101,12 +103,15 @@ lemma eq_of_encard_ground_eq_two (hM2 : M.E.encard = 2) : ∃ (e f : α) (_hef :
   have : M.Nonempty := ⟨nonempty_of_ofNat_le_encard hM2.symm.le⟩
   obtain ⟨M₀, L, K, hML, hMK, hLK, hM₀, hM₀', hM⟩ := M.exists_disjointSum_loopyOn_freeOn
   obtain rfl | hne := M₀.eq_emptyOn_or_nonempty
-  · rw [hM, emptyOn_disjointSum, disjointSum_encard_ground, loopyOn_ground, freeOn_ground] at hM2
+  · rw [hM, emptyOn_disjointSum] at hM2
+    simp only [disjointSum_ground_eq, loopyOn_ground, freeOn_ground] at hM2
+    rw [encard_union_eq hLK] at hM2
     obtain ⟨e, f, hef, ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩⟩ :=
       exists_of_encard_add_encard_eq_two hM2 hLK
     all_goals grind [loopyOn_empty, disjointSum_emptyOn, freeOn_empty, emptyOn_disjointSum]
-  rw [hM, disjointSum_encard_ground, disjointSum_encard_ground, loopyOn_ground,
-    freeOn_ground] at hM2
+  rw [hM] at hM2
+  simp only [disjointSum_ground_eq, loopyOn_ground, freeOn_ground] at hM2
+  rw [encard_union_eq (by simp [hML, hMK]), encard_union_eq hLK] at hM2
   obtain ⟨e, f, hef, rfl⟩ := eq_circuitOn_of_encard_ground_le_two (M := M₀)
     (by enat_to_nat! <;> lia)
   obtain ⟨rfl, rfl⟩ : L = ∅ ∧ K = ∅ := by simpa [encard_pair hef] using hM2
@@ -114,7 +119,7 @@ lemma eq_of_encard_ground_eq_two (hM2 : M.E.encard = 2) : ∃ (e f : α) (_hef :
 
 -- lemma isFiniteRankUniform_of_eRank_le_one [M.Nonempty] [M.Loopless] (hM : M.eRank ≤ 1) :
 --     M.IsFiniteRankUniform 1 := by
---   rw [isFiniteRankUniform_iff_eq_unifOn, ENat.coe_one, one_le_encard_iff_nonempty,
+--   rw [isFiniteRankUniform_iff_eq_unifOn, ENat.natCast_one, one_le_encard_iff_nonempty,
 --     and_iff_left M.ground_nonempty, ext_iff_indep, unifOn_ground_eq, and_iff_right rfl]
 --   simp +contextual only [unifOn_indep_iff, Nat.cast_one, and_true]
 --   exact fun I hIE ↦ ⟨fun hI ↦ hI.encard_le_eRank.trans hM,
@@ -131,6 +136,7 @@ lemma eq_freeOn_of_eRank_le_one_of_simple [M.Nonempty] [M.Simple] (hM : M.eRank 
   exact False.elim <| (encard_pair hxy.symm ▸ (M.pair_indep hx hy).encard_le_eRank.trans_lt
     (by enat_to_nat!; lia)).ne rfl
 
+set_option backward.isDefEq.respectTransparency false in
 /-- There are nine isomorphism classes of three-element matroids. -/
 lemma encard_eq_three_iff_eq (hM : M.E.encard = 3) : ∃ (a b c : α) (hab : a ≠ b) (hac : a ≠ c)
     (hbc : b ≠ c),
@@ -147,8 +153,9 @@ lemma encard_eq_three_iff_eq (hM : M.E.encard = 3) : ∃ (a b c : α) (hab : a �
     ∨ (M = (circuitOn {a, b}).disjointSum (freeOn {c})
         (by grind [freeOn_ground, circuitOn_ground])) := by
   obtain ⟨M₀, L, K, hML, hMK, hLK, hM₀, hM₀', hMs⟩ := M.exists_disjointSum_loopyOn_freeOn
-  rw! [hMs, disjointSum_encard_ground, disjointSum_encard_ground, loopyOn_ground,
-    freeOn_ground] at hM
+  rw! [hMs] at hM
+  simp only [disjointSum_ground_eq, loopyOn_ground, freeOn_ground] at hM
+  rw [encard_union_eq (by simp [hML, hMK]), encard_union_eq hLK] at hM
   obtain rfl | hM₀ne := M₀.eq_emptyOn_or_nonempty
   · rw [emptyOn_ground, encard_empty, zero_add] at hM
     obtain ⟨a, b, c, hab, hac, hbc, ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩⟩ :=
@@ -190,6 +197,7 @@ lemma isFiniteRankUniform_or_freeOn_of_eRank_le_two [M.Nonempty] [M.Simple] (hM 
   · exact .inl <| isFiniteRankUniform_of_eRank_eq_two h2
   exact .inr <| M.eq_freeOn_of_eRank_le_one_of_simple (Order.le_of_lt_add_one h2)
 
+set_option backward.isDefEq.respectTransparency false in
 /-- The only nonempty, simple, cosimple matroid on at most four elements is `U₂,₄`. -/
 lemma isFiniteUniform_two_four_of_encard_ground_le_four_simple_simple_dual (hME : M.E.encard ≤ 4)
     [M.Nonempty] [M.Simple] [M✶.Simple] : M.IsFiniteUniform 2 2 4 := by
@@ -325,6 +333,7 @@ lemma extendedUnifOn_eRank_eq (P : Set (Set α)) (L : Set α) (hP : P.PairwiseDi
     (hPne : ∀ S ∈ P, S.Nonempty) (haP : a ≤ P.encard) : (extendedUnifOn P L a hP).eRank = a := by
   rw [extendedUnifOn, multiExtend_eRank_eq _ _ _ (by simpa), unifOn_eRank_eq' haP]
 
+set_option backward.isDefEq.respectTransparency false in
 /-- Every matroid of rank at most two is obtained from a uniform matroid by parallel extensions
 and adding loops. -/
 lemma eq_extendedUnifOn_of_eRank_le_two (hM : M.eRank ≤ 2) : ∃ (P : Set (Set α)) (L : Set α)
@@ -336,20 +345,22 @@ lemma eq_extendedUnifOn_of_eRank_le_two (hM : M.eRank ≤ 2) : ∃ (P : Set (Set
   · rintro _ ⟨e, he, rfl⟩
     exact ⟨e, by simp [hN.isNonloop_of_mem he]⟩
   · rintro _ ⟨e, he, rfl⟩
-    simp only [disjoint_left, mem_setOf_eq, ← isLoop_iff]
+    simp only [disjoint_left, mem_ofPred_eq, ← isLoop_iff]
     exact fun _ h ↦ h.isNonloop_right.not_isLoop
   nth_rw 1 [← hN.multiExtend_eq, extendedUnifOn]
   have hNs := hN.simple
   obtain ⟨E, rfl⟩ := N.eq_unifOn_of_eRank_le_two <| hN.eRank_eq.trans_le hM
   convert Eq.symm <| multiExtend_map (unifOn E 2) (fun e ↦ {f | M.Parallel e f})
     hN.setOf_parallel_injOn id M.loops hN.image_setOf_parallel_pairwiseDisjoint
-  simp
+  · rfl
+  · rw [unifOn_ground_eq (E := E)]
+    exact (unifOn_map E (fun e ↦ {f | M.Parallel e f}) hN.setOf_parallel_injOn 2).symm
 
 lemma extendedUnifOn_delete_loops {L₀ : Set α} (hL₀ : L₀ ⊆ M.loops) (P : Set (Set α)) (L : Set α)
     (hP : P.PairwiseDisjoint id) (hdel : M ＼ L₀ = extendedUnifOn P L a hP) :
     M = extendedUnifOn P (L ∪ L₀) a hP := by
   refine ext_indep ?_ fun I hI ↦ ?_
-  · rw [← union_diff_cancel (hL₀.trans M.loops_subset_ground), ← delete_ground, hdel]
+  · rw [← union_sdiff_cancel (hL₀.trans M.loops_subset_ground), ← delete_ground, hdel]
     simp [union_comm L₀, union_assoc]
   rw [← delete_restrict_ground_of_subset_loops hL₀, hdel]
   simp [hI]
@@ -372,11 +383,13 @@ lemma extendedUnifOn_singleton_empty (P : Set α) :
 --     (extendedUnifOn P L a hP).Simple ↔ 2 ≤ a ∧ L = ∅ ∧ ∀ S ∈ P, S.Subsingleton := by
 --   _
 
+set_option backward.isDefEq.respectTransparency false in
 @[simp]
 lemma extendedUnifOn_eq_unifOn (P : Set α) : extendedUnifOn ((fun x ↦ {x}) '' P) ∅ a
       (by simp +contextual [PairwiseDisjoint, Set.Pairwise, Function.onFun, eq_comm])
       = unifOn P a :=
-  ext_indep (by simp) <| by simp [(subsingleton_singleton.anti inter_subset_right), and_comm]
+  ext_indep (by simp [extendedUnifOn_ground, sUnion_image, biUnion_of_singleton]) <|
+    by simp [subsingleton_singleton.anti inter_subset_right, and_comm]
 
 lemma eq_extendedUnifOn_of_eRank_le_one (hM : M.eRank ≤ 1) :
     M = extendedUnifOn {{e | M.IsNonloop e}} M.loops 1 (by simp) := by
@@ -390,17 +403,19 @@ lemma extendedUnifOn_eq_restrict (P : Set (Set α)) (L : Set α) (hdj : P.Pairwi
     extendedUnifOn P L a hdj = extendedUnifOn P ∅ a hdj ↾ (⋃₀ P ∪ L) :=
   ext_indep (by simp) <| by simp +contextual
 
+set_option backward.isDefEq.respectTransparency false in
 lemma extendedUnifOn_eq_disjointSum (P : Set (Set α)) (L : Set α) (hdj : P.PairwiseDisjoint id)
     (hL : ∀ S ∈ P, Disjoint S L) :
     extendedUnifOn P L a hdj = (extendedUnifOn P ∅ a hdj).disjointSum (loopyOn L) (by simpa) := by
   rw [extendedUnifOn_eq_restrict, disjointSum_loopyOn, extendedUnifOn_ground, union_empty]
 
+set_option backward.isDefEq.respectTransparency false in
 lemma eq_disjointSum_of_rank_le_one (hM : M.eRank ≤ 1) :
     M = (unifOn {e | M.IsNonloop e} 1).disjointSum (loopyOn M.loops)
       M.loops_disjoint_setOf_isNonloop.symm := by
   nth_rw 1 [eq_extendedUnifOn_of_eRank_le_one hM, extendedUnifOn_eq_restrict,
     restrict_superset_ground_eq_disjointSum (by simp)]
-  rw! [extendedUnifOn_singleton_empty, sUnion_singleton, unifOn_ground_eq, union_diff_left,
+  rw! [extendedUnifOn_singleton_empty, sUnion_singleton, unifOn_ground_eq, union_sdiff_left,
     M.loops_disjoint_setOf_isNonloop.sdiff_eq_left]
   rfl
 

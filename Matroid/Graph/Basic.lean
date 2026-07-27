@@ -106,7 +106,7 @@ lemma IsLoopAt.endSet_eq (h : G.IsLoopAt e x) : V(G, e) = {x} := by
 
 @[simp, grind →]
 lemma endSet_eq_of_notMem (he : e ∉ E(G)) : V(G, e) = ∅ := by
-  simp only [endSet, eq_empty_iff_forall_notMem, mem_setOf_eq]
+  simp only [endSet, eq_empty_iff_forall_notMem, mem_ofPred_eq]
   exact fun x hx ↦ he hx.edge_mem
 
 lemma inc_iff_isLoopAt_or_isNonloopAt : G.Inc e x ↔ G.IsLoopAt e x ∨ G.IsNonloopAt e x :=
@@ -149,7 +149,7 @@ lemma incVertexSet_encard_le (G : Graph α β) (F : Set β) : V(G, F).encard ≤
   simp only [nsmul_eq_mul, mul_comm]
   rw [ENat.mul_le_mul_left_iff _ (by simp)]
   · refine le_trans ?_ (encard_eq_coe_toFinset_card F).ge
-    refine ENat.coe_le_coe.mpr <| Finset.card_le_card <| by simp
+    refine ENat.natCast_le_natCast.mpr <| Finset.card_le_card <| by simp
   simp
 
   -- ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true,
@@ -270,7 +270,7 @@ lemma neighbor_subset_of_ne_not_adj (hne : x ≠ y) (hadj : ¬ G.Adj x y) :
     N(G, x) \ {x} ⊆ V(G) \ {x, y} := by
   rintro z ⟨hz, hne⟩
   rw [mem_singleton_iff] at hne
-  simp only [mem_diff, hz.right_mem, mem_insert_iff, hne, mem_singleton_iff, false_or,
+  simp only [mem_sdiff, hz.right_mem, mem_insert_iff, hne, mem_singleton_iff, false_or,
     true_and]
   rintro rfl
   exact hadj hz
@@ -447,7 +447,7 @@ lemma setLinkEdges_subset_setIncEdges_right (G : Graph α β) (S T : Set α) :
 lemma setLinkEdges_singleton_eq_setOf_isNonloopAt (v : α) :
     δ(G, {v}) = {e | G.IsNonloopAt e v} := by
   ext e
-  simp only [mem_setLinkEdges_iff, mem_singleton_iff, mem_diff, IsNonloopAt, ne_eq, mem_setOf_eq]
+  simp only [mem_setLinkEdges_iff, mem_singleton_iff, mem_sdiff, IsNonloopAt, ne_eq, mem_ofPred_eq]
   constructor
   · rintro ⟨x, rfl, y, ⟨_, hy_ne⟩, hlink⟩
     exact ⟨y, hy_ne, hlink⟩
@@ -507,7 +507,7 @@ lemma incEdges_empty_iff (hv : v ∈ V(G)) : E(G, v) = ∅ ↔ G.Isolated v := b
 
 @[simp]
 lemma SetIncEdges_empty_iff {S} (hS : S ⊆ V(G)) : E(G, S) = ∅ ↔ S ⊆ Isol(G) := by
-  simp only [SetIncEdges, eq_empty_iff_forall_notMem, mem_setOf_eq, not_exists, not_and]
+  simp only [SetIncEdges, eq_empty_iff_forall_notMem, mem_ofPred_eq, not_exists, not_and]
   refine ⟨fun h x hxS ↦ ?_, fun h e x hxS ↦ (h hxS |>.not_inc ·)⟩
   simp only [mem_isolatedSet_iff, isolated_iff, hS hxS, and_true]
   exact fun e ↦ h e x hxS

@@ -25,7 +25,7 @@ protected theorem tsum_eq_top_of_support_infinite (hf : f.support.Infinite) : �
   refine ⟨hfin.toFinset, hbt.trans_le ?_⟩
   rw [hfin.encard_eq_coe_toFinset_card, Finset.card_eq_sum_ones, Nat.cast_sum]
   refine Finset.sum_le_sum fun i hi ↦ ?_
-  simp only [Nat.cast_one, ENat.one_le_iff_ne_zero]
+  simp only [Nat.cast_one, Order.one_le_iff_ne_zero]
   exact htf <| by simpa using hi
 
 protected theorem tsum_const_eq_top {ι : Type*} [Infinite ι] {c : ℕ∞} (hc : c ≠ 0) :
@@ -89,7 +89,7 @@ protected theorem encard_support_le_tsum : f.support.encard ≤ ∑' x, f x := b
   refine tsum_le_tsum fun x ↦ ?_
   rw [indicator_apply]
   split_ifs with h
-  · simpa [ENat.one_le_iff_ne_zero]
+  · simpa [Order.one_le_iff_ne_zero]
   simp
 
 protected theorem tsum_ite_const {P : α → Prop} {s t : ℕ∞} [DecidablePred P] :
@@ -134,15 +134,14 @@ theorem tsum_encard_eq_encard_biUnion_iff {ι} {s : ι → Set α} {t : Set ι}
     exists_prop] at hndj
   obtain ⟨a, ha, b, hb, hab, x, hxa, hxb⟩ := hndj
   have h1 := tsum_insert (a := a) (s := t \ {a}) (f := fun i ↦ (s i).encard) (by simp)
-  rw [tsum_congr_set_coe (insert_diff_self_of_mem ha) (f := fun i ↦ (s i).encard), h] at h1
+  rw [tsum_congr_set_coe (insert_sdiff_self_of_mem ha) (f := fun i ↦ (s i).encard), h] at h1
   have h2 := biUnion_insert a (t \ {a}) s
-  rw [insert_diff_self_of_mem ha] at h2
-  simp only at h1
+  rw [insert_sdiff_self_of_mem ha] at h2
   have hle := add_le_add_right (encard_biUnion_le_tsum_encard (s := s) (I := t \ {a})) (s a).encard
   rw [← h1, ← encard_union_add_encard_inter, h2, ENat.add_le_left_iff, encard_eq_top_iff,
     encard_eq_zero, ← disjoint_iff_inter_eq_empty, disjoint_left, ← h2,
     or_iff_right hfin.not_infinite] at hle
-  simp only [mem_diff, mem_singleton_iff, mem_iUnion, exists_prop, not_exists, not_and,
+  simp only [mem_sdiff, mem_singleton_iff, mem_iUnion, exists_prop, not_exists, not_and,
     and_imp, not_imp_not] at hle
   exact hab (hle hxa b hb hxb).symm
 

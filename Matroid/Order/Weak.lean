@@ -98,9 +98,10 @@ lemma contract_weakLE_delete (M : Matroid α) (X : Set α) : M ／ X ≤w M ＼ 
   obtain ⟨I, hI⟩ := M.exists_isBasis' X
   rw [hI.contract_eq_contract_delete]
   simp only [weakLE_iff, delete_indep_iff, hI.indep.contract_indep_iff, and_imp, delete_ground,
-    contract_ground, diff_diff, union_diff_self, union_eq_self_of_subset_left hI.subset, and_true]
+    contract_ground, sdiff_sdiff, union_sdiff_self, union_eq_self_of_subset_left hI.subset,
+    and_true]
   refine fun J hJI hi hJ'  ↦ ⟨hi.subset subset_union_left, ?_⟩
-  simpa only [diff_union_self, disjoint_union_right, and_iff_left hJI] using hJ'.union_right hJI
+  simpa only [sdiff_union_self, disjoint_union_right, and_iff_left hJI] using hJ'.union_right hJI
 
 lemma WeakLE.exists_isBasis'_subset_isBasis' (h : N ≤w M) (X : Set α) :
     ∃ I J, N.IsBasis' I X ∧ M.IsBasis' J X ∧ I ⊆ J := by

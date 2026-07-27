@@ -13,8 +13,11 @@ namespace Representable
 lemma encard_le_of_unifOn_two (h : (unifOn E 2).Representable 𝔽) : E.encard ≤ ENat.card 𝔽 + 1 := by
   obtain hlt | hle := lt_or_ge E.encard (2 : ℕ)
   · exact (show E.encard ≤ 1 from Order.le_of_lt_add_one hlt).trans (by simp)
-  convert h.encard_le_of_simple
-  simp [unifOn_rank_eq hle]
+  have hbound := h.encard_le_of_simple
+  simp only [unifOn_ground_eq] at hbound
+  rwa [unifOn_rank_eq hle, Finset.sum_range_succ, Finset.sum_range_one, pow_zero, pow_one,
+    add_comm (1 : ℕ∞)] at hbound
+
 
 lemma encard_le_of_unif_two {a : ℕ} (h : (unif 2 a).Representable 𝔽) : a ≤ ENat.card 𝔽 + 1 :=  by
   simpa using h.encard_le_of_unifOn_two

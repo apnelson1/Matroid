@@ -14,7 +14,7 @@
 --     use n
 --     rintro x ⟨Y, ⟨hY,-,-⟩, rfl⟩
 --     obtain ⟨n₀, heq, hle⟩ := hP Y hY
---     rwa [ncard_def, heq, ENat.toNat_coe]
+--     rwa [ncard_def, heq, ENat.toNat_natCast]
 --     -- have := (hP Y hY).2
 --   obtain ⟨Y, hY, hY'⟩ := Finite.exists_maximal_wrt' ncard _ hfin ⟨I, hI, rfl.subset, hIX⟩
 --   refine' ⟨Y, hY, fun J ⟨hJ, hIJ, hJX⟩ (hYJ : Y ⊆ J) ↦ (_ : J ⊆ Y)⟩
@@ -68,7 +68,7 @@
 --     Matroid α :=
 --   matroid_of_indep_of_bdd E Indep h_empty h_subset
 --     (by
---       simp_rw [mem_maximals_setOf_iff, not_and, not_forall, exists_prop, exists_and_left, mem_diff,
+--       simp_rw [mem_maximals_setOf_iff, not_and, not_forall, exists_prop, exists_and_left, mem_sdiff,
 --         and_imp, and_assoc]
 --       rintro I B hI hImax hB hBmax
 --       obtain ⟨J, hJ, hIJ, hne⟩ := hImax hI
@@ -141,7 +141,7 @@
 --     (h_support : ∀ ⦃I⦄, Indep I → I ⊆ E) : Matroid α :=
 --   matroid_of_indep_of_bdd_augment E Indep h_empty ind_mono
 --   ( fun I J hI hJ hlt ↦ ind_aug hI hJ ( by
---       rwa [← ENat.coe_lt_coe, (hE.subset (h_support hJ)).cast_ncard_eq,
+--       rwa [← ENat.natCast_lt_natCast, (hE.subset (h_support hJ)).cast_ncard_eq,
 --       (hE.subset (h_support hI)).cast_ncard_eq]) )
 --   (⟨E.ncard, fun I hI ↦ by { rw [hE.cast_ncard_eq]; exact encard_mono (h_support hI) }⟩ )
 --   h_support

@@ -212,7 +212,7 @@ theorem IsIso.image_isBase (h : IsIso e M N) {B : Set α} (hB : M.IsBase B) : N.
 theorem IsIso.image_dual_isBase (h : IsIso e M N) {B : Set α} (hB : M✶.IsBase B) :
     N✶.IsBase (e '' B) := by
   rw [dual_isBase_iff', and_iff_left <| h.groundEquiv.image_subset_ground B hB.subset_ground,
-    ← h.groundEquiv.image_ground, ← h.groundEquiv.injOn.image_diff hB.subset_ground]
+    ← h.groundEquiv.image_ground, ← h.groundEquiv.injOn.image_sdiff hB.subset_ground]
   exact (h.image_isBase <| hB.compl_isBase_of_dual)
 
 theorem IsIso.dual (h : IsIso e M N) : IsIso e M✶ N✶ :=
@@ -409,7 +409,7 @@ noncomputable def iso_onSubtype' (hX : X ⊆ M.E) (hne : X.Nonempty) : Iso (M.on
     (by simp [onSubtype_ground hX]) (by simp)
   ( by
     simp only [onSubtype_ground hX, subset_univ, InjOn.toPartialEquiv, image_univ,
-      Subtype.range_coe_subtype, setOf_mem_eq, BijOn.toPartialEquiv_apply, restrict_indep_iff,
+      Subtype.range_coe_subtype, ofPred_mem_eq, BijOn.toPartialEquiv_apply, restrict_indep_iff,
       image_subset_iff, Subtype.coe_preimage_self, and_true, forall_true_left]
     simp only [onSubtype._eq_1, comap_indep_iff, and_iff_left_iff_imp]
     intro I

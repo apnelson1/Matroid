@@ -18,57 +18,57 @@ lemma encard_diff_le_encard_diff {I₀ B₀ : Set α} (h : M₁✶ ≤w M₂✶)
   replace hB'' := hB''.isBase_of_spanning (h.spanning_of_spanning_of_dual hB'.spanning)
 
   have hrw1 : B' \ B = I \ B
-  · rwa [subset_antisymm_iff, and_iff_left (diff_subset_diff_left hIB'), diff_subset_iff,
-      union_diff_self, union_comm]
+  · rwa [subset_antisymm_iff, and_iff_left (sdiff_subset_sdiff_left hIB'), sdiff_subset_iff,
+      union_sdiff_self, union_comm]
 
   have hfin : (B \ B').encard ≠ ⊤
-  · rw [hB.encard_diff_comm hB', hrw1, encard_ne_top_iff]
-    apply hIfin.diff
+  · rw [hB.encard_sdiff_comm hB', hrw1, encard_ne_top_iff]
+    apply hIfin.sdiff
 
   have hrw2 : B'' ∩ I = I₀
   · exact Eq.symm <| hI₀I.eq_of_subset_indep (hB''.indep.inter_right I)
       (subset_inter hI₀B'' hI₀I.subset) inter_subset_right
 
   have hrw3 : (B \ B'').encard = (B \ B').encard + (B ∩ (B' \ B'')).encard
-  · rw [← diff_inter_self_eq_diff,
-      ← diff_union_diff_cancel inter_subset_right (inter_subset_inter_left _ hB''B'),
-      encard_union_eq (disjoint_sdiff_left.mono_right diff_subset), diff_inter_self_eq_diff]
+  · rw [← sdiff_inter_self_eq_sdiff,
+      ← sdiff_union_sdiff_cancel inter_subset_right (inter_subset_inter_left _ hB''B'),
+      encard_union_eq (disjoint_sdiff_left.mono_right sdiff_subset), sdiff_inter_self_eq_sdiff]
     convert rfl using 3
-    rw [← inter_diff_assoc, inter_comm, diff_eq_diff_inter_of_subset inter_subset_right]
+    rw [← inter_sdiff_assoc, inter_comm, sdiff_eq_sdiff_inter_of_subset inter_subset_right]
 
   have hB''ss' : B'' ⊆ B ∪ I₀
-  · rw [← diff_union_inter B'' I, hrw2, union_subset_iff, diff_subset_iff,
+  · rw [← sdiff_union_inter B'' I, hrw2, union_subset_iff, sdiff_subset_iff,
       and_iff_left subset_union_right, union_comm, union_assoc, union_comm, union_assoc]
     refine hB''B'.trans (hB'IB.trans subset_union_right)
 
   have hi2 : I₀ \ B = B'' \ B
-  · rwa [subset_antisymm_iff, and_iff_right (diff_subset_diff_left hI₀B''), diff_subset_iff,
-      union_diff_self]
+  · rwa [subset_antisymm_iff, and_iff_right (sdiff_subset_sdiff_left hI₀B''), sdiff_subset_iff,
+      union_sdiff_self]
 
   have hcalc1 : (B \ B'').encard = (B \ B₀).encard + (I₀ \ B).encard := by
     calc
       (B \ B'').encard = (B₀ \ B'').encard + ((B \ B₀) \ B'').encard := ?_
       _                = (B'' \ B₀).encard + ((B \ B₀) \ B'').encard := by
-        rw [hB''.encard_diff_comm hB₀]
+        rw [hB''.encard_sdiff_comm hB₀]
       _                = (B'' \ B₀ ∪ (B \ B₀) \ B'').encard          := ?_
       _                = ((B'' ∪ B) \ B₀).encard := ?_
-    · rw [← encard_union_eq (disjoint_sdiff_right.mono diff_subset diff_subset),
-        ← union_diff_distrib, union_diff_cancel hB₀B]
-    · rw [encard_union_eq <| disjoint_sdiff_right.mono_left diff_subset]
-    · rw [diff_diff_comm, ← union_diff_distrib, union_diff_self]
-    · rw [union_comm, ← union_diff_self, union_diff_distrib,
-        diff_diff, union_eq_self_of_subset_right hB₀B,
-        encard_union_eq (disjoint_sdiff_right.mono_left diff_subset), ← hi2]
+    · rw [← encard_union_eq (disjoint_sdiff_right.mono sdiff_subset sdiff_subset),
+        ← union_sdiff_distrib, union_sdiff_cancel hB₀B]
+    · rw [encard_union_eq <| disjoint_sdiff_right.mono_left sdiff_subset]
+    · rw [sdiff_sdiff_comm, ← union_sdiff_distrib, union_sdiff_self]
+    · rw [union_comm, ← union_sdiff_self, union_sdiff_distrib,
+        sdiff_sdiff, union_eq_self_of_subset_right hB₀B,
+        encard_union_eq (disjoint_sdiff_right.mono_left sdiff_subset), ← hi2]
 
   apply_fun (· + ((I \ I₀) \ B).encard) at hcalc1
-  rw [add_assoc, ← encard_union_eq (disjoint_sdiff_right.mono diff_subset diff_subset),
-    ← union_diff_distrib, union_diff_cancel hI₀I.subset, ← hrw1,
-    hB'.encard_diff_comm hB, hrw3, add_assoc, add_comm, add_left_inj_of_ne_top hfin] at hcalc1
+  rw [add_assoc, ← encard_union_eq (disjoint_sdiff_right.mono sdiff_subset sdiff_subset),
+    ← union_sdiff_distrib, union_sdiff_cancel hI₀I.subset, ← hrw1,
+    hB'.encard_sdiff_comm hB, hrw3, add_assoc, add_comm, add_left_inj_of_ne_top hfin] at hcalc1
 
-  rw [← hcalc1, ← encard_diff_add_encard_inter (t := B), add_comm, inter_comm, ← hrw2,
-    diff_inter_self_eq_diff]
+  rw [← hcalc1, ← encard_sdiff_add_encard_inter (t := B), add_comm, inter_comm, ← hrw2,
+    sdiff_inter_self_eq_sdiff]
   refine add_le_add_left (encard_le_encard ?_) _
-  exact inter_subset_inter_right _ (diff_subset_diff_left hIB')
+  exact inter_subset_inter_right _ (sdiff_subset_sdiff_left hIB')
 
 structure BasisPair (N M : Matroid α) (X : Set α) where
   left : Set α
@@ -96,7 +96,7 @@ lemma BasisPair.left_isBase (B : BasisPair N M M.E) (h_eq : N.E = M.E) : N.IsBas
 lemma BasisPair.right_isBase (B : BasisPair N M M.E) : M.IsBase B.right :=
   isBasis_ground_iff.1 B.right_isBasis
 
-noncomputable def BasisPair.encard_diff (I : BasisPair M N X) : ℕ∞ := (I.right \ I.left).encard
+noncomputable def BasisPair.encard_sdiff (I : BasisPair M N X) : ℕ∞ := (I.right \ I.left).encard
 
 
 namespace Quotient
@@ -115,7 +115,7 @@ It is defined by taking the minimal cardinality of `I₁ \ I₂` over all basis 
 This quantity is only sensible if `M₂` or `M₁✶` is finitary (even when `X` is the ground set),
 as otherwise it can depend on the choice of `I₁` and `I₂`; see `Matroid.TruncateFamily`. -/
 noncomputable def discrepancy {M₂ : Matroid α} (_hQ : M₂ ≤q M₁) (X : Set α) :=
-  ⨅ I : BasisPair M₂ M₁ X, I.encard_diff
+  ⨅ I : BasisPair M₂ M₁ X, I.encard_sdiff
 
 lemma exists_finite_witness {J₀ J : Set α} [M₂.Finitary] (hQ : M₂ ≤q M₁)
     (hJ₀X : M₂.IsBasis J₀ X) (hJX : M₁.IsBasis J X) (hss : J₀ ⊆ J) (hfin : (J \ J₀).Finite) :
@@ -124,14 +124,14 @@ lemma exists_finite_witness {J₀ J : Set α} [M₂.Finitary] (hQ : M₂ ≤q M�
   have hcl := M₂.exists_subset_finite_closure_of_subset_closure hfin (Y := J₀)
   rw [hJ₀X.closure_eq_closure] at hcl
   obtain ⟨I₀, hI₀J₀, hI₀fin, hI₀i, hI₀ss⟩ :=
-    hcl (M₂.subset_closure_of_subset' (diff_subset.trans hJX.subset) (diff_subset.trans hJE'))
+    hcl (M₂.subset_closure_of_subset' (sdiff_subset.trans hJX.subset) (sdiff_subset.trans hJE'))
 
   refine ⟨I₀, I₀ ∪ (J \ J₀), hI₀fin.union hfin,
-    hJX.indep.subset (union_subset (hI₀J₀.trans hss) diff_subset),
+    hJX.indep.subset (union_subset (hI₀J₀.trans hss) sdiff_subset),
       hI₀i.isBasis_of_subset_of_subset_closure subset_union_left (union_subset ?_ hI₀ss),
-      union_subset (hI₀J₀.trans hJ₀X.subset) (diff_subset.trans hJX.subset), ?_⟩
+      union_subset (hI₀J₀.trans hJ₀X.subset) (sdiff_subset.trans hJX.subset), ?_⟩
   · exact M₂.subset_closure I₀ hI₀i.subset_ground
-  simp only [union_diff_left, sdiff_eq_left]
+  simp only [union_sdiff_left, sdiff_eq_left]
   exact disjoint_sdiff_left.mono_right hI₀J₀
 
 lemma encard_isBasis'_diff_isBasis'_mono [M₂.Finitary] (hQ : M₂ ≤q M₁)
@@ -145,13 +145,13 @@ lemma encard_isBasis'_diff_isBasis'_mono [M₂.Finitary] (hQ : M₂ ≤q M₁)
   · obtain hinf' | hfin' := (I₁ \ I₂).finite_or_infinite.symm
     · obtain ⟨D,hD, hDcard⟩ := hinf'.exists_subset_card_eq (hfin.toFinset.card + 1)
       specialize aux D hD
-      rw [hDcard, ENat.coe_add, ← encard_coe_eq_coe_finsetCard, Finite.coe_toFinset, Nat.cast_one,
-        ENat.add_one_le_iff (by simpa)] at aux
+      rw [hDcard, ENat.natCast_add, ← encard_coe_eq_coe_finsetCard, Finite.coe_toFinset,
+        Nat.cast_one, ENat.add_one_le_iff (by simpa)] at aux
       simp at aux
     simpa [← encard_coe_eq_coe_finsetCard] using aux hfin'.toFinset (by simp)
 
   intro K hKss
-  rw [subset_diff] at hKss
+  rw [subset_sdiff] at hKss
   have hKE : (K : Set α) ⊆ M₂.E
   · exact hKss.1.trans (hI₁.indep.subset_ground.trans_eq hQ.ground_eq.symm)
   have hK : (K : Set α) ⊆ M₂.closure I₂
@@ -163,9 +163,9 @@ lemma encard_isBasis'_diff_isBasis'_mono [M₂.Finitary] (hQ : M₂ ≤q M₁)
     (hI₂.indep.isBasis_of_subset_of_subset_closure subset_union_left
       (union_subset (M₂.subset_closure I₂ hI₂.indep.subset_ground) hK))
     (hI₁.indep.subset (union_subset hIss hKss.1)).isBasis_self
-    subset_union_left (by simp [K.finite_toSet.diff])
+    subset_union_left (by simp [K.finite_toSet.sdiff])
 
-  rw [union_diff_left, sdiff_eq_left.2 hKss.2] at hdiff
+  rw [union_sdiff_left, sdiff_eq_left.2 hKss.2] at hdiff
   rw [← encard_coe_eq_coe_finsetCard, ← hdiff]
 
   have hL : L ⊆ X := hLss.trans (union_subset hI₂.subset (hKss.1.trans hI₁.subset))
@@ -191,7 +191,7 @@ lemma encard_diff_eq_encard_diff_of_isBase [M₂.Finitary] {B₁ B₂ B₁' B₂
   rwa [hQ.ground_eq, isBasis'_iff_isBasis, isBasis_ground_iff]
 
 lemma basisPair_encard_diff_eq_discrepancy [M₂.Finitary] (hQ : M₂ ≤q M₁)
-    (I : BasisPair M₂ M₁ X) : I.encard_diff = hQ.discrepancy X := by
+    (I : BasisPair M₂ M₁ X) : I.encard_sdiff = hQ.discrepancy X := by
   refine (le_iInf fun J ↦ ?_).antisymm <| iInf_le ..
   exact (encard_diff_eq_encard_diff_of_isBasis' hQ I.left_isBasis' I.right_isBasis'
     J.left_isBasis' J.right_isBasis' I.subset J.subset).le
@@ -216,7 +216,7 @@ lemma eRk_left_add_discrepancy_eq [M₂.Finitary] (hQ : M₂ ≤q M₁) (X : Set
   obtain ⟨I, hI⟩ := M₂.exists_isBasis' X
   obtain ⟨J, hJ, hIJ⟩ := (hQ.weakLE.indep_of_indep hI.indep).subset_isBasis'_of_subset hI.subset
   rw [← hI.encard_eq_eRk, ← hJ.encard_eq_eRk, ← hQ.encard_isBasis'_diff_eq_discrepancy hI hJ hIJ,
-    add_comm, encard_diff_add_encard_of_subset hIJ]
+    add_comm, encard_sdiff_add_encard_of_subset hIJ]
 
 @[simp]
 lemma discrepancy_ground_dual (hQ : M₂ ≤q M₁) :
@@ -225,11 +225,11 @@ lemma discrepancy_ground_dual (hQ : M₂ ≤q M₁) :
   · exact (aux hQ).antisymm <| by simpa using aux hQ.dual
   clear! M₁ M₂
   refine le_iInf fun B ↦ (iInf_le _ (i := ⟨N₁✶.E \ B.right, N₁✶.E \ B.left, ?_, ?_, ?_⟩)).trans ?_
-  · simp only [BasisPair.encard_diff, dual_ground]
+  · simp only [BasisPair.encard_sdiff, dual_ground]
     convert rfl.le using 2
     have : B.right ⊆ N₁.E := B.right_isBase.subset_ground
     tauto_set
-  · exact diff_subset_diff_right B.subset
+  · exact sdiff_subset_sdiff_right B.subset
   · rw [← h.dual.ground_eq, isBasis'_iff_isBasis, isBasis_ground_iff, ← dual_isBase_iff _,
       dual_dual, ← isBasis_ground_iff, ← isBasis'_iff_isBasis]
     · exact B.right_isBasis'
@@ -241,7 +241,7 @@ lemma discrepancy_ground_dual (hQ : M₂ ≤q M₁) :
 lemma discrepancy_rfl (M : Matroid α) (X : Set α) : (Quotient.refl M).discrepancy X = 0 := by
   obtain ⟨I, hI⟩ := M.exists_isBasis' X
   simp only [discrepancy, ENat.iInf_eq_zero]
-  exact ⟨⟨I,I, rfl.subset, hI, hI⟩, by simp [BasisPair.encard_diff]⟩
+  exact ⟨⟨I,I, rfl.subset, hI, hI⟩, by simp [BasisPair.encard_sdiff]⟩
 
 lemma discrepancy_mono [M₂.Finitary] (hQ : M₂ ≤q M₁) (hXY : X ⊆ Y) :
     hQ.discrepancy X ≤ hQ.discrepancy Y := by
@@ -262,7 +262,7 @@ lemma restrict_eq_restrict_of_discrepancy_le_zero [M₂.Finitary] (hQ : M₂ ≤
   obtain ⟨J, hJ⟩ := M₂.exists_isBasis' I
   replace h := (hQ.discrepancy_mono hIX).trans h
   rw [← hQ.encard_isBasis'_diff_eq_discrepancy hJ hI.isBasis_self.isBasis' hJ.subset,
-    nonpos_iff_eq_zero, encard_eq_zero, diff_eq_empty] at h
+    nonpos_iff_eq_zero, encard_eq_zero, sdiff_eq_empty] at h
   rw [← h.antisymm hJ.subset] at hJ
   exact hJ.indep
 
@@ -330,7 +330,7 @@ lemma intCast_rank_sub_rank_eq_nDiscrepancy [M₁.RankFinite] (hQ : M₂ ≤q M�
     (M₁.rank : ℤ) - M₂.rank  = hQ.nDiscrepancy M₁.E := by
   rw [rank_def, rank_def, hQ.ground_eq, intCast_rk_sub_rk_eq_nDiscrepancy]
 
-def foo [M₁.RankFinite] (hQ : M₂ ≤q M₁) {X : Set α} :
+theorem foo [M₁.RankFinite] (hQ : M₂ ≤q M₁) {X : Set α} :
     hQ.nDiscrepancy X = hQ.nDiscrepancy M₁.E ↔ M₁ ／ X = M₂ ／ X := by
   have := hQ.rankFinite
   refine ⟨fun h ↦ ext_rk (by simp [hQ.ground_eq]) (fun Y hY ↦ ?_), fun h_eq ↦ ?_⟩

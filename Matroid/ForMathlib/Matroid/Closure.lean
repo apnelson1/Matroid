@@ -50,7 +50,7 @@ lemma nonspanning_dual_iff (hXE : X ⊆ M.E := by aesop_mat) :
 
 lemma nonspanning_compl_dual_iff (hXE : X ⊆ M.E := by aesop_mat) :
     M✶.Nonspanning (M.E \ X) ↔ M.Dep X := by
-  rw [nonspanning_dual_iff, diff_diff_cancel_left hXE]
+  rw [nonspanning_dual_iff, sdiff_sdiff_cancel_left hXE]
 
 lemma Dep.nonspanning_compl_dual (hX : M.Dep X) : M✶.Nonspanning (M.E \ X) :=
   (nonspanning_compl_dual_iff hX.subset_ground).2 hX
@@ -69,7 +69,7 @@ lemma Nonspanning.codep_compl (h : M.Nonspanning X) : M.Codep (M.E \ X) := by
 lemma nonspanning_compl_iff (hXE : X ⊆ M.E := by aesop_mat) :
     M.Nonspanning (M.E \ X) ↔ M.Codep X := by
   rw [← M.dual_dual, nonspanning_dual_iff, dual_ground, dual_ground, dual_dual, dep_dual_iff,
-    dual_ground, diff_diff_cancel_left hXE]
+    dual_ground, sdiff_sdiff_cancel_left hXE]
 
 lemma Codep.nonspanning_compl (h : M.Codep X) : M.Nonspanning (M.E \ X) := by
   rwa [nonspanning_compl_iff]
@@ -131,7 +131,7 @@ lemma Spanning.dep_of_ssuperset (h : M.Spanning X) (hssu : X ⊂ Y) (hY : Y ⊆ 
 lemma IsRestriction.closure_eq' {N : Matroid α} (hNM : N ≤r M) (X : Set α) :
     N.closure X = M.closure (X ∩ N.E) ∩ N.E := by
   obtain ⟨R, hR, rfl⟩ := hNM
-  simp [diff_eq_empty.2 hR]
+  simp [sdiff_eq_empty.2 hR]
 
 lemma IsRestriction.closure_eq {N : Matroid α} (hNM : N ≤r M)
     (hX : X ⊆ N.E := by aesop_mat) : N.closure X = M.closure X ∩ N.E := by

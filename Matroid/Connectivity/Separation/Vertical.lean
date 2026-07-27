@@ -64,7 +64,7 @@ lemma isVerticalSeparation_iff_eRk (h : P.eConn ≠ ⊤) :
 lemma isVerticalSeparation_iff_nullity_dual :
     P.IsVerticalSeparation ↔ ∀ b, 1 ≤ M✶.nullity (P b) := by
   convert isVerticalSeparation_iff_forall with b
-  simp [ENat.one_le_iff_ne_zero]
+  simp [Order.one_le_iff_ne_zero]
 
 lemma isVerticalSeparation_of_lt_lt (h : P.eConn < M.eRk (P b)) (h' : P.eConn < M.eRk (P !b)) :
     P.IsVerticalSeparation := by
@@ -207,9 +207,9 @@ lemma isStrictSeparation_iff_eRk (hP : P.eConn ≠ ⊤) : P.IsStrictSeparation �
   rw [and_comm]
   convert isStrictSeparation_iff with b b
   · rw [← ENat.add_one_le_iff hP, ← M.eConn_add_nullity_eq_eRk_dual (P b)]
-    simp [hP, ENat.one_le_iff_ne_zero]
+    simp [hP, Order.one_le_iff_ne_zero]
   rw [← ENat.add_one_le_iff hP, ← M.eConn_add_nullity_dual_eq_eRk (P b)]
-  simp [hP, ENat.one_le_iff_ne_zero]
+  simp [hP, Order.one_le_iff_ne_zero]
 
 /-- A Tutte separation with connectivity zero is either strict,
 or has one side only loops or coloops. -/
@@ -383,7 +383,8 @@ lemma verticallyConnected_top_iff :
   refine ⟨fun h X hX ↦ ?_,
     fun h P hP ↦ by simpa [hP.not_spanning] using h (P false) P.subset_ground⟩
   rw [or_iff_not_imp_right, not_spanning_iff]
-  simpa using h (M.ofSetSep X true)
+  have h' := h (M.ofSetSep X true)
+  rwa [ofSetSep_apply_self, ofSetSep_true_false] at h'
 
 @[simp]
 lemma verticallyConnected_loopyOn (E : Set α) (k : ℕ∞) : (loopyOn E).VerticallyConnected k :=
@@ -401,6 +402,7 @@ lemma verticallyConnected_one (M : Matroid α) : M.VerticallyConnected 1 :=
 lemma verticallyConnected_of_le_one (M : Matroid α) (hk : k ≤ 1) : M.VerticallyConnected k :=
     (M.tutteConnected_of_le_one hk).verticallyConnected
 
+set_option backward.isDefEq.respectTransparency false in
 @[simp]
 lemma verticallyConnected_freeOn_iff (E : Set α) (k : ℕ∞) :
     (freeOn E).VerticallyConnected (k + 1) ↔ E.Subsingleton ∨ k = 0 := by
@@ -560,7 +562,7 @@ lemma CyclicallyConnected.eRank_ge (h : M.CyclicallyConnected (k + 1))
   rw [isCyclicSeparation_iff_forall, Bool.forall_bool, ofSetSep_true_false, ofSetSep_apply_self,
     and_iff_left hC.dep, ← not_indep_iff]
   intro hi
-  grw [← encard_diff_add_encard_of_subset hC.subset_ground, hi.encard_le_eRank,
+  grw [← encard_sdiff_add_encard_of_subset hC.subset_ground, hi.encard_le_eRank,
     ← hC.eRk_add_one_eq, eRk_le_eRank] at hle
   enat_to_nat! <;> lia
 
@@ -688,7 +690,7 @@ lemma TutteConnected.connected_deleteElem (h : M.TutteConnected (2 + 1)) (h4 : 4
     (e : α) : (M ＼ {e}).Connected := by
   have hne : (M ＼ {e}).Nonempty := by
     grw [← ground_nonempty_iff, ← one_le_encard_iff_nonempty, ← ENat.add_one_le_add_one_iff,
-      delete_ground, ← encard_le_encard_diff_singleton_add_one, ← h4]
+      delete_ground, ← encard_le_encard_sdiff_singleton_add_one, ← h4]
     norm_num
   rw [← tutteConnected_two_iff]
   exact h.deleteElem (by enat_to_nat!; lia) e
@@ -707,7 +709,7 @@ lemma TutteConnected.of_isMinor {t : ℕ∞} (h : M.TutteConnected (k + t + 1)) 
     (hNT : (M.E \ N.E).encard ≤ t) (hk : 2 * (k + t) < M.E.encard + 1) :
     N.TutteConnected (k + 1) := by
   obtain ⟨C, D, hC, hD, hCD, rfl⟩ := hNM.exists_eq_contract_delete_disjoint
-  rw [delete_ground, contract_ground, diff_diff, diff_diff_cancel_left (by grind),
+  rw [delete_ground, contract_ground, sdiff_sdiff, sdiff_sdiff_cancel_left (by grind),
     encard_union_eq hCD] at hNT
   have hle : k + (M ／ C)✶.eRk D + M.eRk C ≤ k + t := by
     grw [eRk_le_encard, eRk_le_encard, add_right_comm k, add_assoc k, hNT]
@@ -715,7 +717,7 @@ lemma TutteConnected.of_isMinor {t : ℕ∞} (h : M.TutteConnected (k + t + 1)) 
   · grw [hle]
     assumption
   grw [eRk_le_encard, contract_ground]
-  rw [← encard_diff_add_encard_of_subset hC] at hk
+  rw [← encard_sdiff_add_encard_of_subset hC] at hk
   enat_to_nat!; lia
 
 -- lemma TutteConnected.exists_of_not_tutteConnected_remove_elem {e : α}
@@ -760,7 +762,7 @@ lemma TutteConnected.mem_closure_of_separation_contractElem (h : M.TutteConnecte
       (P := P.copy (contractElem_eq_self he)) (by simpa) <| IsPredSeparation.copy hP _
   have he := h.notMem_closure_dual_of_separation_contractElem hPk hP (!i)
   rwa [mem_dual_closure_iff_notMem_closure_compl (notMem_subset P.subset <| by simp),
-    not_not, diff_diff_comm, ← contract_ground, P.compl_not_eq] at he
+    not_not, sdiff_sdiff_comm, ← contract_ground, P.compl_not_eq] at he
 
 /-- If `M` is a `(k + 1)`-connected matroid, and `P` is a `k`-separation in a single removal of `M`,
 then we know which sides of `P` span the removed element in `M`, both in the primal and the dual. -/
@@ -803,7 +805,7 @@ lemma TutteConnected.faithful_of_tutteConnected_remove (h : M.TutteConnected (k 
   rw [isTutteSeparation_iff_lt_encard (by enat_to_nat!)]
   refine fun i ↦ hlt.trans_le ?_
   grw [induce_apply_remove, ← ENat.add_one_le_add_one_iff, Order.add_one_le_of_lt (hP' i),
-    encard_le_encard_diff_add_encard _ {e}, encard_singleton]
+    encard_le_encard_sdiff_add_encard _ {e}, encard_singleton]
 
 /-- If `M` and `M ＼ {e}` are `(k + 1)`-connected, then every `k`-separation of `M` with sides
 of size greater than `k` is faithful to `M ＼ {e}`. -/
@@ -836,24 +838,24 @@ lemma VerticallyConnected.guts_subset_closure_diff (hM : M.VerticallyConnected (
     union_eq_self_of_subset_right (show P i ∩ P.guts ⊆ M.closure (P !i) by grind),
     eLocalConn_closure_right, eLocalConn_closure_right]
   obtain ⟨I, J, hI, hJ, hIJ⟩ :=
-    M.exists_isBasis_subset_isBasis (show P i \ (P i ∩ P.guts) ⊆ P i from diff_subset)
+    M.exists_isBasis_subset_isBasis (show P i \ (P i ∩ P.guts) ⊆ P i from sdiff_subset)
   rw [hI.eLocalConn_eq_nullity_project_right, hJ.eLocalConn_eq_nullity_project_right,
-    ← diff_union_of_subset hIJ, union_comm, nullity_union_eq_nullity_add_encard_diff]
-  · grw [diff_diff, union_self, one_le_encard_iff_nonempty.2]
-    rw [diff_nonempty]
+    ← sdiff_union_of_subset hIJ, union_comm, nullity_union_eq_nullity_add_encard_diff]
+  · grw [sdiff_sdiff, union_self, one_le_encard_iff_nonempty.2]
+    rw [sdiff_nonempty]
     refine fun hJI ↦ hcon ?_
-    grw [← diff_self_inter, ← hI.closure_eq_closure, ← hJI, hJ.closure_eq_closure,
+    grw [← sdiff_self_inter, ← hI.closure_eq_closure, ← hJI, hJ.closure_eq_closure,
       guts_subset_closure]
   have hJI := hI.inter_eq_of_subset_indep hIJ hJ.indep
-  nth_grw 1 [← hJI, diff_self_inter, diff_self_inter, project_closure, ← subset_union_right,
-    diff_subset_iff, guts_subset_closure P (!i), diff_union_self, ← M.subset_closure (P !i),
+  nth_grw 1 [← hJI, sdiff_self_inter, sdiff_self_inter, project_closure, ← subset_union_right,
+    sdiff_subset_iff, guts_subset_closure P (!i), sdiff_union_self, ← M.subset_closure (P !i),
     P.union_bool_eq, hJ.indep.subset_ground]
 
 lemma VerticallyConnected.guts_inter_coindep_restrict (hM : M.VerticallyConnected (k + 1))
     (hP : P.IsVerticalSeparation) (hPconn : P.eConn ≤ k) (i : Bool) :
     (M ↾ P i).Coindep (P.guts ∩ P i) := by
-  nth_grw 1 [coindep_iff_subset_closure_compl, restrict_ground_eq, diff_inter_self_eq_diff,
-    restrict_closure_eq _ diff_subset, hM.guts_subset_closure_diff hP hPconn i]
+  nth_grw 1 [coindep_iff_subset_closure_compl, restrict_ground_eq, sdiff_inter_self_eq_sdiff,
+    restrict_closure_eq _ sdiff_subset, hM.guts_subset_closure_diff hP hPconn i]
 
 lemma CyclicallyConnected.coguts_diff_indep_contract (hM : M.CyclicallyConnected (k + 1))
     (hP : P.IsCyclicSeparation) (hPconn : P.eConn ≤ k) (i : Bool) :
@@ -893,10 +895,10 @@ lemma TutteConnected.exists_notMem_guts_notMem_coguts (h : M.TutteConnected (k +
     nth_grw 1 [← inter_eq_self_of_subset_right hu, union_inter_distrib_right, union_subset_iff,
       and_iff_right inter_subset_left, guts_eq_inter_bool _ i, subset_inter_iff, inter_subset_right,
       and_iff_right (by grind), coindep_iff_subset_closure_compl.1 (hci.subset inter_subset_left),
-      ← P.union_bool_eq i, union_diff_distrib, diff_inter_self_eq_diff,
+      ← P.union_bool_eq i, union_sdiff_distrib, sdiff_inter_self_eq_sdiff,
       (show Disjoint (P !i) (P.coguts ∩ P i) by grind).sdiff_eq_left]
     refine closure_subset_closure_of_subset_closure <| union_subset ?_ (by grind)
-    grw [hu, union_diff_right, diff_subset, guts_subset_closure]
+    grw [hu, union_sdiff_right, sdiff_subset, guts_subset_closure]
   have hi : M.Indep (P i) := by
     refine indep_of_eRk_add_one_lt_girth ?_
     grw [hss, eRk_guts_le]

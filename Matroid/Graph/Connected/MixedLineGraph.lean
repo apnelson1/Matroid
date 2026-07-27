@@ -56,7 +56,7 @@ instance [G.LocallyFinite] : L'(G).LocallyFinite where
     simp only [IncEdges, mixedLineGraph_inc, reduceCtorEq, inl.injEq, false_or]
     convert G.finite_incEdges v |>.image (fun e ↦ (v, e))
     refine Set.ext fun ⟨a, b⟩ ↦ ?_
-    simp only [eq_comm, mem_setOf_eq, mem_image, mem_incEdges_iff, Prod.mk.injEq,
+    simp only [eq_comm, mem_ofPred_eq, mem_image, mem_incEdges_iff, Prod.mk.injEq,
       exists_eq_right_right', and_congr_left_iff]
     rintro rfl
     tauto
@@ -64,7 +64,7 @@ instance [G.LocallyFinite] : L'(G).LocallyFinite where
     simp only [IncEdges, mixedLineGraph_inc, inr.injEq, reduceCtorEq, or_false]
     convert G.endSet_finite e |>.image fun x ↦ (x, e)
     refine Set.ext fun ⟨a, b⟩ ↦ ?_
-    simp only [eq_comm, mem_setOf_eq, mem_image, mem_endSet_iff, Prod.mk.injEq, ↓existsAndEq,
+    simp only [eq_comm, mem_ofPred_eq, mem_image, mem_endSet_iff, Prod.mk.injEq, ↓existsAndEq,
       true_and, and_congr_left_iff]
     rintro rfl
     tauto
@@ -88,19 +88,19 @@ lemma mixedLineGraph_inr_eDegree_le_two : L'(G).eDegree (Sum.inr e) ≤ 2 := by
 lemma mixedLineGraph_deleteEdges : L'(G ＼ F) = L'(G) - (Sum.inr '' F : Set (α ⊕ β)) := by
   ext a b c
   · simp only [vertexSet_mixedLineGraph, vertexSet_deleteEdges, edgeSet_deleteEdges,
-      vertexSet_deleteVerts, image_diff Sum.inr_injective, union_diff_distrib]
+      vertexSet_deleteVerts, image_sdiff Sum.inr_injective, union_sdiff_distrib]
     grind
   grind [Sym2.eq, Prod.mk.injEq, Prod.swap_prod_mk]
 
 lemma mixedLineGraph_deleteVerts : L'(G - X) = L'(G) - (Sum.inl '' X ∪ Sum.inr '' E(G, X)) := by
   ext a b c
   · simp only [vertexSet_mixedLineGraph, vertexSet_deleteVerts, deleteVerts_edgeSet_diff]
-    rw [image_diff Sum.inl_injective, union_diff_distrib, ← diff_diff, ← diff_diff]
+    rw [image_sdiff Sum.inl_injective, union_sdiff_distrib, ← sdiff_sdiff, ← sdiff_sdiff]
     convert Iff.rfl using 3
     · apply Disjoint.sdiff_eq_left
-      rw [← image_diff Sum.inl_injective]
+      rw [← image_sdiff Sum.inl_injective]
       simp
-    rw [disjoint_image_inl_image_inr.symm.sdiff_eq_left, ← image_diff Sum.inr_injective]
+    rw [disjoint_image_inl_image_inr.symm.sdiff_eq_left, ← image_sdiff Sum.inr_injective]
   cases b <;> cases c <;> simp only [mixedLineGraph_isLink, deleteVerts_inc_iff,
     mem_setIncEdges_iff, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq, Sum.inl.injEq, reduceCtorEq,
     and_false, Prod.swap_prod_mk, or_self, deleteVerts_isLink_iff, mem_union, mem_image,
@@ -283,6 +283,7 @@ lemma WalkOfMixedLineGraph_last [DecidableEq α] {w : WList (α ⊕ β) (α × �
       exact WalkOfMixedLineGraph_last hw hh.symm hl
     exact WalkOfMixedLineGraph_last hw hh.symm hl
 
+set_option backward.isDefEq.respectTransparency false in
 @[simp]
 lemma mem_walkOfMixedLineGraph_iff [DecidableEq α] {w : WList (α ⊕ β) (α × β)} {s t}
     (h : L'(G).IsWalk w) (hf : w.first = inl s) (hl : w.last = inl t) :
@@ -331,6 +332,7 @@ lemma mem_of_mem_walkOfMixedLineGraph_edge [DecidableEq α] {w : WList (α ⊕ �
     simp only [cons_edge, List.mem_cons] at he
     exact he.imp id (mem_of_mem_walkOfMixedLineGraph_edge hw hh.symm hl ·)
 
+set_option backward.isDefEq.respectTransparency false in
 lemma IsWalk.WalkOfMixedLineGraph [DecidableEq α] {w : WList (α ⊕ β) (α × β)} (h : L'(G).IsWalk w)
     {s t} (hf : w.first = inl s) (hl : w.last = inl t) :
     G.IsWalk (WalkOfMixedLineGraph w h hf hl) := by
@@ -353,6 +355,7 @@ lemma IsWalk.WalkOfMixedLineGraph [DecidableEq α] {w : WList (α ⊕ β) (α ×
     simp only [cons_isWalk_iff, WalkOfMixedLineGraph_first]
     exact ⟨hds.isLink_of_inc_of_ne hdc hsc, hw.WalkOfMixedLineGraph _ hl⟩
 
+set_option backward.isDefEq.respectTransparency false in
 lemma IsPath.WalkOfMixedLineGraph [DecidableEq α] {w : WList (α ⊕ β) (α × β)} (h : L'(G).IsPath w)
     {s t} (hf : w.first = inl s) (hl : w.last = inl t) :
     G.IsPath (WalkOfMixedLineGraph w h.isWalk hf hl) := by

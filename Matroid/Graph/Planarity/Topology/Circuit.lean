@@ -37,8 +37,8 @@ variable {t : unitInterval}
 
 lemma unitInterval_univ_sdiff_zero : (univ \ {0} : Set I) = Ioc 0 1 := by
   ext x
-  simp only [mem_diff, mem_univ, mem_singleton_iff, true_and, mem_Ioc, unitInterval.pos_iff_ne_zero,
-    le_one', and_true]
+  simp only [mem_sdiff, mem_univ, mem_singleton_iff, true_and, mem_Ioc,
+    unitInterval.pos_iff_ne_zero, ne_eq, le_one', and_true]
 
 lemma isPreconnected_unitInterval_sdiff_zero : IsPreconnected (univ \ {0} : Set I) := by
   rw [unitInterval_univ_sdiff_zero]
@@ -49,7 +49,7 @@ lemma not_isPreconnected_unitInterval_sdiff_mem_Ioo (ht : t ∈ Ioo (0 : I) 1) :
   intro h
   have hsub : (univ \ {t} : Set I) ⊆ Iio t ∪ Ioi t := by
     intro x hx
-    simp only [mem_diff, mem_union, mem_Iio, mem_Ioi] at hx ⊢
+    simp only [mem_sdiff, mem_union, mem_Iio, mem_Ioi] at hx ⊢
     exact lt_or_gt_of_ne hx.2
   have hleft : ((univ \ {t} : Set I) ∩ Iio t).Nonempty :=
     ⟨0, ⟨mem_univ 0, (ne_of_gt ht.1).symm⟩, by simp [mem_Iio, ht.1]⟩
@@ -71,7 +71,7 @@ lemma mem_arc_choose_ends_of_range_sdiff_preconnected [T2Space α] {f : C(I, α)
   · exact Or.inr <| congrArg f ht1
   have htIoo : t ∈ Ioo (0 : I) 1 :=
     ⟨lt_of_le_of_ne t.2.1 (fun h => ht0 h.symm), lt_of_le_of_ne t.2.2 ht1⟩
-  rw [← image_univ, ← image_singleton, ← image_diff hf] at hconn
+  rw [← image_univ, ← image_singleton, ← image_sdiff hf] at hconn
   exact (not_isPreconnected_unitInterval_sdiff_mem_Ioo htIoo
     <| f.continuous.isClosedEmbedding hf |>.isInducing.isPreconnected_image.mp hconn).elim
 
@@ -80,7 +80,7 @@ end UnitIntervalArc
 lemma range_path_sdiff_source_preconnected [T2Space α] (P : Path x y) (hP : Injective P) :
     IsPreconnected (range P \ {x}) := by
   have h : IsPreconnected (range P \ {P 0}) := by
-    rw [← image_univ, ← image_singleton, ← image_diff hP]
+    rw [← image_univ, ← image_singleton, ← image_sdiff hP]
     exact P.continuous.isClosedEmbedding hP |>.isInducing.isPreconnected_image.mpr
       isPreconnected_unitInterval_sdiff_zero
   simpa [P.source] using h
@@ -88,7 +88,7 @@ lemma range_path_sdiff_source_preconnected [T2Space α] (P : Path x y) (hP : Inj
 lemma range_path_sdiff_target_preconnected [T2Space α] (P : Path x y) (hP : Injective P) :
     IsPreconnected (range P \ {y}) := by
   have h : IsPreconnected (range P \ {P 1}) := by
-    rw [← image_univ, ← image_singleton, ← image_diff hP, show (univ \ {1} : Set I) = Ico 0 1 from
+    rw [← image_univ, ← image_singleton, ← image_sdiff hP, show (univ \ {1} : Set I) = Ico 0 1 from
       by ext u; simp [mem_Ico, unitInterval.lt_one_iff_ne_one]]
     exact P.continuous.isClosedEmbedding hP |>.isInducing.isPreconnected_image.mpr
       isPreconnected_Ico
@@ -144,8 +144,8 @@ lemma IsCircuit.twoConnected (hC : IsCircuit C) : ∀ x, IsPathConnected (C \ {x
   by_cases hx : x ∈ range f
   · obtain ⟨i, rfl⟩ := hx
     convert Circle.isPathConnected_compl_singleton i |>.image f.continuous
-    rw [image_compl_eq_range_diff_image hf, image_singleton]
-  simp only [hx, not_false_eq_true, diff_singleton_eq_self]
+    rw [image_compl_eq_range_sdiff_image hf, image_singleton]
+  simp only [hx, not_false_eq_true, sdiff_singleton_eq_self]
   exact isPathConnected_range f.continuous
 
 lemma IsCircuit.image (hC : IsCircuit C) {f : C(α, β)} (hf : Injective f) :
@@ -248,7 +248,7 @@ lemma Path.ofCircle_onCircle_toFun (P : Path x x) : ⇑(Path.ofCircle P.onCircle
   simp only [onCircle, ContinuousMap.toFun_eq_coe, coe_toContinuousMap, ContinuousMap.coe_mk,
     ofCircle, Homeomorph.symm_apply_apply]
   generalize_proofs h1
-  change ((homeoIccQuot 1 0) ↑↑t).liftOn (⇑P ∘ ⇑(iccHomeoI 0 (0 + 1) onCircle._proof_3)) h1 = _
+  change ((homeoIccQuot 1 0) ↑↑t).liftOn (⇑P ∘ ⇑(iccHomeoI 0 (0 + 1) _)) h1 = _
 
   have ht_mem : (t : ℝ) ∈ Ico (0 : ℝ) (0 + 1) := by
     simp only [zero_add, mem_Ico, lt_iff_le_and_ne, ne_eq, Icc.coe_eq_one, ht, not_false_eq_true,

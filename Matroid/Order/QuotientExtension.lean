@@ -31,7 +31,7 @@ theorem Quotient.covBy_of_covBy [RankFinite M₁] (hQ : M₂ ≤q M₁) (hco : X
   have hXY : X ⊆ Y := CovBy.subset hco
   obtain⟨y , hy, _ ⟩:= CovBy.exists_eq_closure_insert hco
   use y
-  refine ⟨ mem_of_mem_diff hy , ?_ ⟩
+  refine ⟨ mem_of_mem_sdiff hy , ?_ ⟩
   --rw [hyy.symm]
   have hXy2 : M₂.IsFlat (M₂.closure (insert y X)) := closure_isFlat M₂ (insert y X)
   have hXy1 : M₁.IsFlat (M₂.closure (insert y X)) := Quotient.isFlat_of_isFlat hQ hXy2
@@ -88,9 +88,9 @@ theorem Quotient.covBy_of_covBy [RankFinite M₁] (hQ : M₂ ≤q M₁) (hco : X
   have hclXf : X = M₂.closure X := Eq.symm (IsFlat.closure hX2)
   have hy' : y ∈ M₂.E \ M₂.closure X := by
     rw [← hclXf]
-    refine ⟨?_ , notMem_of_mem_diff hy ⟩
+    refine ⟨?_ , notMem_of_mem_sdiff hy ⟩
     rw [← hE]
-    exact hYE (mem_of_mem_diff hy)
+    exact hYE (mem_of_mem_sdiff hy)
   have hX2E: X ⊆ M₂.E := hX2.subset_ground
   --have hfdsf : M₂.eRk (M₂.closure (insert y X)) - M₂.eRk X = M₂.eRelRk X (M₂.closure (insert y X))
   -- := Eq.symm (IsRkFinite.eRelRk_eq_sub hFin1 hXsub)
@@ -100,7 +100,7 @@ theorem Quotient.covBy_of_covBy [RankFinite M₁] (hQ : M₂ ≤q M₁) (hco : X
     rw [← (IsRkFinite.eRelRk_eq_sub hFin1 hXsub), eRelRk_closure_right M₂ X (insert y X)]
     exact eRelRk_insert_eq_one hy' hX2E
 
-  rw [← cast_rk_eq, ← cast_rk_eq, ← ENat.coe_sub, ← Nat.cast_one, Nat.cast_inj] at hdi
+  rw [← cast_rk_eq, ← cast_rk_eq, ← ENat.natCast_sub, ← Nat.cast_one, Nat.cast_inj] at hdi
 
   -- This ^^^  is how you convert `hdi` to a statement about `ℕ`,
   -- but it is unlikely you want to use `Nat` subtraction, since
@@ -110,7 +110,7 @@ theorem Quotient.covBy_of_covBy [RankFinite M₁] (hQ : M₂ ≤q M₁) (hco : X
   have hXaidcl : insert y X ⊆ M₂.E := by
       rw [hE.symm]
       refine insert_subset ?ha fun ⦃a⦄ a_1 ↦ hYE (hXY a_1)
-      exact hYE (mem_of_mem_diff hy)
+      exact hYE (mem_of_mem_sdiff hy)
   have hsubcl : insert y X ⊆ M₂.closure (insert y X) :=
     subset_closure_of_subset' M₂ (fun ⦃a⦄ a ↦ a) hXaidcl
 
@@ -121,9 +121,9 @@ theorem Quotient.covBy_of_covBy [RankFinite M₁] (hQ : M₂ ≤q M₁) (hco : X
   have hf : M₁.rk (M₂.closure (insert y X)) = M₁.rk X + 1 := by
     have hhm2 : M₁.rk X + 1 = M₁.rk (insert y X) := by
       have hhel : M₁.rk (insert y X) = M₁.rk (M₁.closure (insert y X)) := Eq.symm (rk_closure_eq M₁)
-      have hyEe : y ∈ M₁.E :=  hYE (mem_of_mem_diff hy)
+      have hyEe : y ∈ M₁.E :=  hYE (mem_of_mem_sdiff hy)
       have hcovy : X ⋖[M₁] M₁.closure (insert y X) := hF1X.covBy_closure_insert
-        (notMem_of_mem_diff hy) (hyEe)
+        (notMem_of_mem_sdiff hy) (hyEe)
       rw [hhel]
       exact (CovBy.rk_eq_of_isRkFinite hcovy (M₁.isRkFinite_set X)).symm
     exact Nat.le_antisymm h9 (le_of_eq_of_le hhm2 (rk_le_of_subset M₁ hsubcl))
@@ -132,12 +132,12 @@ theorem Quotient.covBy_of_covBy [RankFinite M₁] (hQ : M₂ ≤q M₁) (hco : X
     have hX2 : M₁.IsFlat X := Quotient.isFlat_of_isFlat hQ hX2
     have hcls : X ⊂ M₂.closure (insert y X) := by
       rw [ssubset_iff_of_subset hXsub]
-      exact ⟨ y, hsubcl (mem_insert y X) , notMem_of_mem_diff hy ⟩
+      exact ⟨ y, hsubcl (mem_insert y X) , notMem_of_mem_sdiff hy ⟩
     sorry
   sorry
   --   exact CovBy_rank_one hX2 hXy1 hf hcls
   -- apply CovBy_equal_cont hco hcovcl
-  -- exact ⟨y,mem_inter (mem_of_mem_diff hy) (hsubcl (mem_insert y X)), notMem_of_mem_diff hy ⟩
+  -- exact ⟨y,mem_inter (mem_of_mem_sdiff hy) (hsubcl (mem_insert y X)), notMem_of_mem_sdiff hy ⟩
 
 theorem Quotient.forall_superset_k [RankFinite M₁] {k : ℤ} {F F' : Set α} (hQ : M₂ ≤q M₁)
     (hrank : (M₁.rank : ℤ) - M₂.rank = k) (hFF' : F ⊆ F') (hFk : (M₁.rk F : ℤ) - M₂.rk F = k) :
@@ -164,10 +164,10 @@ theorem Quotient.forall_superset_isFlat [RankFinite M₁] {k : ℤ} {F F' : Set 
   obtain ⟨e, heEF', hin ⟩ := exists_insert_rk_eq_of_not_isFlat hF'E hcon
   rw [← hE] at hF'E
   rw [← hE] at heEF'
-  --have hF'eE : insert e F' ⊆ M₁.E := by exact insert_subset (mem_of_mem_diff heEF') hF'E
+  --have hF'eE : insert e F' ⊆ M₁.E := by exact insert_subset (mem_of_mem_sdiff heEF') hF'E
   have h1 : M₁.rk (insert e F') - M₂.rk (insert e F') ≤ k := by
     rw[ ←hrank, rank_def M₁, rank_def M₂, ←hE]
-    exact hQ.rank_sub_mono (insert_subset (mem_of_mem_diff heEF') hF'E )
+    exact hQ.rank_sub_mono (insert_subset (mem_of_mem_sdiff heEF') hF'E )
   have h2 : k < M₁.rk (insert e F') - M₂.rk (insert e F') := by
     rw [ ←(hQ.forall_superset_k hrank hFF' hFk) ]
     have hme : M₁.rk (F') < M₁.rk (insert e F') := by
@@ -273,7 +273,7 @@ lemma Quotient.exists_extension_quotient_contract_of_rank_lt [RankFinite M₁] {
         rw [nDiscrepancy_empty hQ]
         by_contra! hzero
         -- have hdisc : hQ.nDiscrepancy M₁.E = hQ.discrepancy M₁.E := by
-        --   refine ENat.coe_toNat ?_
+        --   refine ENat.natCast_toNat ?_
         --   exact discrepancy_ne_top hQ M₁.E
         --rw [ hdisc ] at hzero
         --have h1 := eq_of_discrepancy_le_zero hQ ?_
@@ -481,9 +481,9 @@ lemma Quotient.exists_extension_quotient_contract_of_rank_lt [RankFinite M₁] {
 --   simp only [Finset.coe_insert, ← union_singleton, union_subset_iff, singleton_subset_iff, ←
 --     delete_delete, deleteElem, true_and]
 --   rw [union_comm, ← contract_contract, ← contractElem, and_iff_left rfl]
---   rw [contractElem, contract_ground, subset_diff] at hNss
+--   rw [contractElem, contract_ground, subset_sdiff] at hNss
 
---   exact ⟨hNss.1, mem_of_mem_of_subset henl.mem_ground diff_subset⟩
+--   exact ⟨hNss.1, mem_of_mem_of_subset henl.mem_ground sdiff_subset⟩
 
 
 -- theorem Quotient.of_foo {α : Type u} {M₁ M₂ : Matroid α} [RankFinite M₂] (h : M₁ ≤q M₂) :

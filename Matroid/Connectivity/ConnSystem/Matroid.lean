@@ -22,7 +22,7 @@ private noncomputable abbrev eConnAux (M : Matroid α) (X : Set α) : ℕ∞ :=
 
 private lemma eConnAux_inter_ground (M : Matroid α) (X : Set α) :
     M.eConnAux (X ∩ M.E) = M.eConnAux X := by
-  rw [eConnAux, diff_inter_self_eq_diff, eLocalConn_inter_ground_left]
+  rw [eConnAux, sdiff_inter_self_eq_sdiff, eLocalConn_inter_ground_left]
 
 private lemma eConnAux_dual (M : Matroid α) (X : Set α) : M✶.eConnAux X = M.eConnAux X := by
   wlog hXE : X ⊆ M.E generalizing X with aux
@@ -33,12 +33,12 @@ private lemma eConnAux_dual (M : Matroid α) (X : Set α) : M✶.eConnAux X = M.
   obtain ⟨B, hB, rfl⟩ := hI.exists_isBasis_inter_eq_of_superset <| subset_union_left (t := J)
   have hsp : M.Spanning (X ∪ J) := by
     rw [spanning_iff_closure_eq, closure_union_congr_right hJ.closure_eq_closure,
-      union_diff_cancel hXE, closure_ground]
+      union_sdiff_cancel hXE, closure_ground]
   have hBdual := (hB.isBase_of_spanning hsp).compl_inter_isBasis_of_inter_isBasis hI
-  rw [diff_inter_diff, union_comm, ← diff_diff] at hBdual
+  rw [sdiff_inter_sdiff, union_comm, ← sdiff_sdiff] at hBdual
   obtain ⟨B', hB', rfl⟩ := hJ.exists_isBase
   have hB'dual := hB'.compl_inter_isBasis_of_inter_isBasis hJ
-  rw [diff_diff_cancel_left hXE] at hB'dual
+  rw [sdiff_sdiff_cancel_left hXE] at hB'dual
   have hB'E := hB'.subset_ground
   have hBXB' : B ⊆ X ∪ B' := by grind [hB.subset]
   rw [eConnAux, eConnAux, dual_ground,
@@ -51,24 +51,24 @@ private lemma eConnAux_dual (M : Matroid α) (X : Set α) : M✶.eConnAux X = M.
 private lemma eConnAux_delete_le (M : Matroid α) (X D : Set α) :
     (M ＼ D).eConnAux X ≤ M.eConnAux X := by
   grw [eConnAux, eLocalConn_delete_eq, eConnAux, delete_ground]
-  exact M.eLocalConn_mono diff_subset <| by grind
+  exact M.eLocalConn_mono sdiff_subset <| by grind
 
 lemma stronglyPreservable_eConnAux : StronglyPreservable (α := α) Matroid.eConnAux := by
   refine ⟨eConnAux_dual, eConnAux_inter_ground, eConnAux_delete_le, fun M B X k hB hkX ↦ ?_⟩
   have h1 := hB.exists_restrict_multiConn_eq'
       (X := fun b ↦ bif b then X ∩ M.E else M.E \ X) (k := k)
   simp only [inter_comm X, pairwise_disjoint_on_bool, disjoint_sdiff_inter.symm, iUnion_bool,
-    cond_true, cond_false, inter_union_diff, ← eLocalConn_eq_multiConn, forall_const] at h1
+    cond_true, cond_false, inter_union_sdiff, ← eLocalConn_eq_multiConn, forall_const] at h1
   rw [inter_comm, eLocalConn_inter_ground_left, imp_iff_right hkX] at h1
   obtain ⟨R, hRE, hBR, hRK, hconnk⟩ := h1
-  refine ⟨R \ B, diff_subset.trans hRE, disjoint_sdiff_left, hRK.le, ?_⟩
+  refine ⟨R \ B, sdiff_subset.trans hRE, disjoint_sdiff_left, hRK.le, ?_⟩
   have hrw1 : X ∩ M.E ∩ R = X ∩ (M ↾ R).E := by
     simp [inter_assoc, inter_eq_self_of_subset_right hRE]
   have hrw2 : M.E \ X ∩ R = (M ↾ R).E \ X := by
-    rw [restrict_ground_eq, ← inter_diff_right_comm, inter_eq_self_of_subset_right hRE]
+    rw [restrict_ground_eq, ← inter_sdiff_right_comm, inter_eq_self_of_subset_right hRE]
   simp_rw [Bool.apply_cond (f := fun X ↦ X ∩ R), hrw1, hrw2, ← eLocalConn_eq_multiConn,
     eLocalConn_inter_ground_left, restrict_ground_eq] at hconnk
-  rwa [union_diff_cancel hBR]
+  rwa [union_sdiff_cancel hBR]
 
 private lemma eConnAux_submod (M : Matroid α) (X Y : Set α) :
     M.eConnAux (X ∩ Y) + M.eConnAux (X ∪ Y) ≤ M.eConnAux X + M.eConnAux Y := by
@@ -80,12 +80,12 @@ private lemma eConnAux_submod (M : Matroid α) (X Y : Set α) :
     by simpa using hlt'
   have hsm1 := N.eRk_submod X Y
   have hsm2 := N.eRk_submod (N.E \ X) (N.E \ Y)
-  rw [← diff_inter, diff_inter_diff] at hsm2
+  rw [← sdiff_inter, sdiff_inter_sdiff] at hsm2
   have h1 := N.eRk_add_eRk_eq_eRk_union_add_eLocalConn X (N.E \ X)
   have h2 := N.eRk_add_eRk_eq_eRk_union_add_eLocalConn Y (N.E \ Y)
   have hi := N.eRk_add_eRk_eq_eRk_union_add_eLocalConn (X ∩ Y) (N.E \ (X ∩ Y))
   have hu := N.eRk_add_eRk_eq_eRk_union_add_eLocalConn (X ∪ Y) (N.E \ (X ∪ Y))
-  rw [union_diff_self, eRk_eq_eRank subset_union_right, ← eConnAux] at h1 h2 hu hi
+  rw [union_sdiff_self, eRk_eq_eRank subset_union_right, ← eConnAux] at h1 h2 hu hi
   simp_rw [← cast_rk_eq] at *
   clear hlt
   enat_to_nat!
@@ -96,7 +96,7 @@ noncomputable def eConn (M : Matroid α) : ConnSystem α ℕ∞ where
   E := M.E
   toFun := M.eConnAux
   toFun_inter_ground := by simp
-  toFun_compl X hX := by rw [eConnAux, diff_diff_cancel_left hX, eLocalConn_comm]
+  toFun_compl X hX := by rw [eConnAux, sdiff_sdiff_cancel_left hX, eLocalConn_comm]
   toFun_submod X Y _ _ := M.eConnAux_submod X Y
 
 lemma eConn_eq_eLocalConn (M : Matroid α) (X : Set α) : M.eConn X = M.eLocalConn X (M.E \ X) := rfl
@@ -128,6 +128,12 @@ lemma eConn_ground (M : Matroid α) : M.eConn M.E = 0 := by
 lemma eConn_dual (M : Matroid α) : M✶.eConn = M.eConn :=
   ConnSystem.ext rfl fun X _ ↦ M.eConnAux_dual X
 
+@[simp]
+lemma eConn_bDual (M : Matroid α) (b : Bool) : (M.bDual b).eConn = M.eConn := by
+  cases b with
+  | false => rfl
+  | true => exact M.eConn_dual
+
 lemma IsBasis'.eConn_eq (hIX : M.IsBasis' I X) (hJX : M.IsBasis' J (M.E \ X)) :
     M.eConn X = M.nullity (I ∪ J) := by
   rw [eConn_eq_eLocalConn, hIX.eLocalConn_eq_of_disjoint hJX disjoint_sdiff_right]
@@ -138,36 +144,36 @@ lemma IsBasis.eConn_eq (hIX : M.IsBasis I X) (hJX : M.IsBasis J (M.E \ X)) :
 
 lemma IsBasis.eConn_eq' (hIX : M.IsBasis I X) (hJX : M.IsBasis J Xᶜ) :
     M.eConn X = M.nullity (I ∪ J) := by
-  rw [hIX.eConn_eq (hJX.isBasis_subset ?_ (diff_subset_compl ..))]
-  rw [subset_diff, ← subset_compl_iff_disjoint_right]
+  rw [hIX.eConn_eq (hJX.isBasis_subset ?_ (sdiff_subset_compl ..))]
+  rw [subset_sdiff, ← subset_compl_iff_disjoint_right]
   exact ⟨hJX.indep.subset_ground, hJX.subset⟩
 
 lemma eConn_eq_eLocalConn' (M : Matroid α) (X : Set α) :
     M.eConn X = M.eLocalConn (X ∩ M.E) (M.E \ X) := by
-  rw [← eConn_inter_ground, eConn_eq_eLocalConn, diff_inter_self_eq_diff, inter_comm]
+  rw [← eConn_inter_ground, eConn_eq_eLocalConn, sdiff_inter_self_eq_sdiff, inter_comm]
 
 @[simp]
 lemma removeLoops_eConn (M : Matroid α) (X : Set α) : M.removeLoops.eConn X = M.eConn X := by
   rw [eConn_eq_eLocalConn, removeLoops_eLocalConn, eConn, ← eLocalConn_closure_right,
-    removeLoops_ground_eq, diff_eq_compl_inter, closure_inter_setOf_isNonloop_eq,
-    ← closure_inter_ground, ← diff_eq_compl_inter, eLocalConn_closure_right]
+    removeLoops_ground_eq, sdiff_eq_compl_inter, closure_inter_setOfPred_isNonloop_eq,
+    ← closure_inter_ground, ← sdiff_eq_compl_inter, eLocalConn_closure_right]
 
 lemma eConn_union_of_subset_loops {L : Set α} (hL : L ⊆ M.loops) :
     M.eConn (X ∪ L) = M.eConn X := by
-  rw [← removeLoops_eConn, ← eConn_inter_ground, removeLoops_ground_eq, setOf_isNonloop_eq,
+  rw [← removeLoops_eConn, ← eConn_inter_ground, removeLoops_ground_eq, setOfPred_isNonloop_eq,
     show (X ∪ L) ∩ (M.E \ M.loops) = X ∩ (M.E \ M.loops) by tauto_set,
-    ← setOf_isNonloop_eq, ← removeLoops_ground_eq, eConn_inter_ground, removeLoops_eConn]
+    ← setOfPred_isNonloop_eq, ← removeLoops_ground_eq, eConn_inter_ground, removeLoops_eConn]
 
 lemma eConn_diff_of_subset_loops {L : Set α} (hL : L ⊆ M.loops) :
     M.eConn (X \ L) = M.eConn X := by
-  rw [← eConn_union_of_subset_loops hL, diff_union_self, eConn_union_of_subset_loops hL]
+  rw [← eConn_union_of_subset_loops hL, sdiff_union_self, eConn_union_of_subset_loops hL]
 
 lemma Indep.nullity_union_le_eConn (hI : M.Indep I) (hJ : M.Indep J) (hIX : I ⊆ X)
     (hJX : Disjoint J X) : M.nullity (I ∪ J) ≤ M.eConn X := by
   rw [eConn_eq_eLocalConn]
   refine le_trans ?_ <| hI.encard_inter_add_nullity_le_eLocalConn hIX hJ (Y := M.E \ X) ?_
   · simp [(hJX.symm.mono_left hIX).inter_eq]
-  rwa [subset_diff, and_iff_right hJ.subset_ground]
+  rwa [subset_sdiff, and_iff_right hJ.subset_ground]
 
 @[simp]
 lemma eConn_restrict_univ_eq (M : Matroid α) (X : Set α) : (M ↾ univ).eConn X = M.eConn X := by
@@ -184,7 +190,7 @@ lemma eConn_compl (M : Matroid α) (X : Set α) : M.eConn (M.E \ X) = M.eConn X 
 /-- A version of `eConn_compl` where `compl` really means complementation in the universe. -/
 @[simp]
 lemma eConn_compl' (M : Matroid α) (X : Set α) : M.eConn Xᶜ = M.eConn X := by
-  rw [← eConn_restrict_univ_eq, compl_eq_univ_diff, ← M.eConn_restrict_univ_eq,
+  rw [← eConn_restrict_univ_eq, compl_eq_univ_sdiff, ← M.eConn_restrict_univ_eq,
     eq_comm, ← eConn_compl, restrict_ground_eq]
 
 lemma IsBasis'.eConn_eq_nullity_contract (hI : M.IsBasis' I X) : M.eConn X =
@@ -206,7 +212,7 @@ lemma eConn_diff_of_subset_coloops {L : Set α} (hL : L ⊆ M.coloops) :
 
 lemma eConn_delete_eq_of_subset_loops {L : Set α} (hL : L ⊆ M.loops) :
     (M ＼ L).eConn X = M.eConn X := by
-  rw [eConn_eq_eLocalConn, eLocalConn_delete_eq_of_subset_loops hL, delete_ground, diff_diff_comm,
+  rw [eConn_eq_eLocalConn, eLocalConn_delete_eq_of_subset_loops hL, delete_ground, sdiff_sdiff_comm,
     eLocalConn_diff_right_of_subset_loops hL, eConn_eq_eLocalConn]
 
 lemma eConn_delete_eq_diff_of_subset_loops {L : Set α} (hL : L ⊆ M.loops) :
@@ -246,9 +252,9 @@ lemma eConn_subset_coloops (h : X ⊆ M.coloops) : M.eConn X = 0 := by
 
 lemma eConn_of_subset_loops_union_coloops (h : X ⊆ M.loops ∪ M.coloops) :
     M.eConn X = 0 := by
-  rw [← diff_union_inter X M.coloops, eConn_union_of_subset_coloops inter_subset_right,
+  rw [← sdiff_union_inter X M.coloops, eConn_union_of_subset_coloops inter_subset_right,
     eConn_subset_loops]
-  rwa [diff_subset_iff, union_comm]
+  rwa [sdiff_subset_iff, union_comm]
 
 @[simp]
 lemma uniqueBaseon_eConn (E B X : Set α) : (uniqueBaseOn B E).eConn X = 0 := by
@@ -261,7 +267,7 @@ lemma uniqueBaseon_eConn (E B X : Set α) : (uniqueBaseOn B E).eConn X = 0 := by
 
 lemma eRk_add_eRk_compl_eq (M : Matroid α) (X : Set α) :
     M.eRk X + M.eRk (M.E \ X) = M.eRank + M.eConn X := by
-  rw [eConn_eq_eLocalConn, eRk_add_eRk_eq_eRk_union_add_eLocalConn, union_diff_self,
+  rw [eConn_eq_eLocalConn, eRk_add_eRk_eq_eRk_union_add_eLocalConn, union_sdiff_self,
     ← eRk_inter_ground, inter_eq_self_of_subset_right subset_union_right, eRank_def]
 
 lemma eConn_le_eRk (M : Matroid α) (X : Set α) : M.eConn X ≤ M.eRk X :=
@@ -283,7 +289,7 @@ lemma eConn_add_nullity_dual_eq_eRk (M : Matroid α) (X : Set α) (hX : X ⊆ M.
   obtain ⟨I, hI⟩ := M.exists_isBasis X
   rw [eConn_eq_eLocalConn, hI.eLocalConn_eq_nullity_project_right, ← hI.encard_eq_eRk,
     M✶.nullity_eq_eRank_restrict_dual, ← delete_compl, dual_delete_dual, dual_ground,
-    ← eRk_ground, contract_ground, diff_diff_cancel_left hX, ← eRk_closure_eq,
+    ← eRk_ground, contract_ground, sdiff_sdiff_cancel_left hX, ← eRk_closure_eq,
     ← contract_closure_congr hI.closure_eq_closure, eRk_closure_eq,
     nullity_project_eq_nullity_contract, add_comm, eRk_add_nullity_eq_encard]
 
@@ -302,19 +308,19 @@ lemma Indep.eConn_eq_eRk_dual (hI : M.Indep I) : M.eConn I = M✶.eRk I := by
 
 lemma eConn_add_eRank_eq (M : Matroid α) : M.eConn X + M.eRank = M.eRk X + M.eRk (M.E \ X) := by
   wlog hXE : X ⊆ M.E generalizing X with aux
-  · rw [← eConn_inter_ground, aux inter_subset_right, eRk_inter_ground, diff_inter_self_eq_diff]
-  rw [M.eRk_add_eRk_eq_eRk_union_add_eLocalConn, ← eConn_eq_eLocalConn, union_diff_cancel hXE,
+  · rw [← eConn_inter_ground, aux inter_subset_right, eRk_inter_ground, sdiff_inter_self_eq_sdiff]
+  rw [M.eRk_add_eRk_eq_eRk_union_add_eLocalConn, ← eConn_eq_eLocalConn, union_sdiff_cancel hXE,
     eRk_ground, add_comm]
 
 lemma Indep.eConn_eq_of_compl_indep (hI : M.Indep I) (hI' : M.Indep (M.E \ I)) :
     M.eConn I = M✶.eRank := by
   rw [hI.eConn_eq_eRk_dual, ← hI'.coindep.compl_spanning.eRk_eq, dual_ground,
-    diff_diff_cancel_left hI.subset_ground]
+    sdiff_sdiff_cancel_left hI.subset_ground]
 
 lemma eConn_union_eq_of_subset_loops {Y : Set α} (X : Set α) (hY : Y ⊆ M.loops) :
     M.eConn (X ∪ Y) = M.eConn X := by
-  rw [eConn_eq_eLocalConn, ← diff_diff, ← eLocalConn_closure_closure, ← union_empty (a := _ \ _),
-    ← closure_union_congr_right (closure_eq_loops_of_subset hY), diff_union_self,
+  rw [eConn_eq_eLocalConn, ← sdiff_sdiff, ← eLocalConn_closure_closure, ← union_empty (a := _ \ _),
+    ← closure_union_congr_right (closure_eq_loops_of_subset hY), sdiff_union_self,
     closure_union_congr_right (closure_eq_loops_of_subset hY),
     closure_union_congr_right (closure_eq_loops_of_subset hY), union_empty, union_empty,
     eLocalConn_closure_closure, ← eConn_eq_eLocalConn]
@@ -348,8 +354,8 @@ lemma eConn_eq_encard_iff' (hX : M.eConn X ≠ ⊤) :
   wlog hXE : X ⊆ M.E generalizing X with aux
   · refine iff_of_false (fun h_eq ↦ hXE ?_) fun h ↦ hXE h.1.subset_ground
     have hle := h_eq.symm.le
-    grw [← eConn_inter_ground, ← encard_diff_add_encard_inter X M.E, eConn_le_encard,
-      ENat.add_le_right_iff, encard_eq_zero, diff_eq_empty, or_iff_right hXE,
+    grw [← eConn_inter_ground, ← encard_sdiff_add_encard_inter X M.E, eConn_le_encard,
+      ENat.add_le_right_iff, encard_eq_zero, sdiff_eq_empty, or_iff_right hXE,
       ← top_le_iff, encard_le_encard inter_subset_left, ← h_eq, top_le_iff] at hle
     contradiction
   simp [← M.eConn_add_nullity_add_nullity_dual X, add_assoc, hX]
@@ -387,7 +393,8 @@ lemma IsHyperplane.eConn_add_one_eq {H : Set α} (hH : M.IsHyperplane H) :
 
 lemma IsCocircuit.eConn_add_one_eq {C : Set α} (hC : M.IsCocircuit C) :
     M.eConn C + 1 = M.eRk C := by
-  rw [← eConn_compl, hC.compl_isHyperplane.eConn_add_one_eq, diff_diff_cancel_left hC.subset_ground]
+  rw [← eConn_compl, hC.compl_isHyperplane.eConn_add_one_eq,
+    sdiff_sdiff_cancel_left hC.subset_ground]
 
 lemma IsCircuit.eConn_add_one_eq {C : Set α} (hC : M.IsCircuit C) :
     M.eConn C + 1 = M✶.eRk C := by
@@ -413,7 +420,7 @@ lemma eConn_lt_encard_iff (hX : M.eConn X ≠ ⊤) (hXE : X ⊆ M.E := by aesop_
 lemma eConn_lt_encard_compl_iff (hX : M.eConn X ≠ ⊤) (hXE : X ⊆ M.E := by aesop_mat) :
     M.eConn X < (M.E \ X).encard ↔ ¬ M✶.Spanning X ∨ ¬ M.Spanning X := by
   rw [← eConn_compl, eConn_lt_encard_iff' (by simpa), coindep_iff_compl_spanning,
-    diff_diff_cancel_left hXE, ← dual_coindep_iff, ← dual_ground, ← spanning_iff_compl_coindep]
+    sdiff_sdiff_cancel_left hXE, ← dual_coindep_iff, ← dual_ground, ← spanning_iff_compl_coindep]
 
 lemma eConn_lt_eRk_iff (hX : M.eConn X ≠ ⊤) (hXE : X ⊆ M.E := by aesop_mat) :
     M.eConn X < M.eRk X ↔ ¬ M.Spanning (M.E \ X) := by
@@ -422,7 +429,7 @@ lemma eConn_lt_eRk_iff (hX : M.eConn X ≠ ⊤) (hXE : X ⊆ M.E := by aesop_mat
 
 lemma eConn_lt_eRk_compl_iff (hX : M.eConn X ≠ ⊤) (hXE : X ⊆ M.E := by aesop_mat) :
     M.eConn X < M.eRk (M.E \ X) ↔ ¬ M.Spanning X := by
-  rw [← eConn_compl, eConn_lt_eRk_iff (by simpa), diff_diff_cancel_left hXE]
+  rw [← eConn_compl, eConn_lt_eRk_iff (by simpa), sdiff_sdiff_cancel_left hXE]
 
 @[simp]
 lemma eConn_lt_top (M : Matroid α) [RankFinite M] (X : Set α) : M.eConn X < ⊤ :=
@@ -444,13 +451,13 @@ lemma eConn_ne_top' (M : Matroid α) [RankFinite M✶] (X : Set α) : M.eConn X 
 lemma eConn_le_of_subset_of_subset_closure {Y : Set α} (M : Matroid α)
     (hXY : X ⊆ Y) (hYX : Y ⊆ M.closure X) : M.eConn Y ≤ M.eConn X := by
   grw [eConn_eq_eLocalConn, eLocalConn_mono_left _ hYX, eLocalConn_closure_left,
-    eLocalConn_mono_right _ _ (diff_subset_diff_right hXY), eConn_eq_eLocalConn]
+    eLocalConn_mono_right _ _ (sdiff_subset_sdiff_right hXY), eConn_eq_eLocalConn]
 
 lemma eConn_closure_le (M : Matroid α) (X : Set α) : M.eConn (M.closure X) ≤ M.eConn X := by
   wlog hX : X ⊆ M.E generalizing X with aux
   · grw [← M.closure_inter_ground X, aux _ inter_subset_right, eConn_inter_ground]
   grw [eConn_eq_eLocalConn, eLocalConn_closure_left, eConn_eq_eLocalConn,
-    M.eLocalConn_mono_right X (diff_subset_diff_right (M.subset_closure X))]
+    M.eLocalConn_mono_right X (sdiff_subset_sdiff_right (M.subset_closure X))]
 
 @[simp]
 lemma eConn_disjointSum_left_eq {M₁ M₂ : Matroid α} (hdj : Disjoint M₁.E M₂.E) :

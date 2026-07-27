@@ -19,7 +19,11 @@ lemma stronglyDisjoint_iff_disjoint_of_compatible (h : H₁.Compatible H₂) :
 lemma iInter_option_eq_sInter_insert {G₁ : Graph α β} {G : ι → Graph α β} :
     Graph.iInter (Option.elim · G₁ G) = Graph.sInter (insert G₁ (range G)) (by simp) := by
   obtain hι | hι := isEmpty_or_nonempty ι
-  · simp [range_eq_empty G]
+  · have : (Option.elim · G₁ G : Option ι → Graph α β) = fun _ ↦ G₁ :=
+      funext fun o ↦ match o with
+        | none => rfl
+        | some a => (IsEmpty.false a).elim
+    simp [range_eq_empty, this]
   rw [Graph.sInter_insert _ (range_nonempty _), Graph.sInter_range, Graph.iInter_option]
 
 lemma isClosedSubgraph_iUnion_of_stronglyDisjoint (h : Pairwise (StronglyDisjoint on Hι)) (i : ι) :

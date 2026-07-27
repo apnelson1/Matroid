@@ -48,7 +48,7 @@ lemma small_or_large (hX : μ X ≤ k) (hXE : X ⊆ μ.E) : T.Small X ∨ T.Larg
   (T.small_or_small_compl hXE hX).elim Or.inl fun h ↦ Or.inr ⟨h, hXE⟩
 
 lemma Small.compl_large (h : T.Small X) : T.Large (μ.E \ X) :=
-  ⟨by rwa [diff_diff_cancel_left h.subset_ground], diff_subset⟩
+  ⟨by rwa [sdiff_sdiff_cancel_left h.subset_ground], sdiff_subset⟩
 
 lemma Small.subset (hX : T.Small X) (hYX : Y ⊆ X) (hY : μ Y ≤ k) : T.Small Y :=
   (T.small_or_large hY (hYX.trans hX.subset_ground)).elim id
@@ -106,7 +106,7 @@ lemma small_compl_iff (hXE : X ⊆ μ.E) : T.Small (μ.E \ X) ↔ T.Large X := b
   rw [large_iff, and_iff_left hXE]
 
 lemma large_compl_iff (hXE : X ⊆ μ.E) : T.Large (μ.E \ X) ↔ T.Small X := by
-  rw [large_iff, diff_diff_cancel_left hXE, and_iff_left diff_subset]
+  rw [large_iff, sdiff_sdiff_cancel_left hXE, and_iff_left sdiff_subset]
 
 lemma not_small_iff (hX : μ X ≤ k) (hXE : X ⊆ μ.E) : ¬ T.Small X ↔ T.Large X :=
   ⟨fun h ↦ by grind [T.small_or_large hX hXE], Large.not_small⟩
@@ -119,14 +119,14 @@ lemma Small.union_small (hX : T.Small X) (hY : T.Small Y) (hXY : μ (X ∪ Y) �
     T.Small (X ∪ Y) := by
   rw [← not_large_iff hXY (union_subset hX.subset_ground hY.subset_ground)]
   refine fun hl ↦ (T.union_union_ssubset hX hY hl.compl_small).not_subset ?_
-  grw [union_diff_self, ← subset_union_right]
+  grw [union_sdiff_self, ← subset_union_right]
 
 /-- The intersection of two large sets, if its connectivity is low enough, is large. -/
 lemma Large.inter_large (hX : T.Large X) (hY : T.Large Y) (hXY : μ (X ∩ Y) ≤ k) :
     T.Large (X ∩ Y) := by
   rw [← small_compl_iff <| inter_subset_left.trans hX.subset_ground]
   have h := hX.compl_small.union_small hY.compl_small
-  rwa [← diff_inter, conn_compl, imp_iff_right hXY] at h
+  rwa [← sdiff_inter, conn_compl, imp_iff_right hXY] at h
 
 /-- Obtain a tangle of order `k' ≤ k` from a tangle `T` of order `k` by taking the `T`-small sets of
 connectivity at most `k'`. -/
@@ -148,9 +148,9 @@ def induce {μ ν : ConnSystem α R} (T : Tangle ν k) (h_le : ν ≤ μ) : Tang
     grind [ν.subset_of_le h_le]
   conn_le_of_small := by simp +contextual
   small_or_small_compl X hXE hXk := by
-    rw [and_iff_right hXE, and_iff_right diff_subset, μ.conn_compl, and_iff_right hXk,
-      and_iff_right hXk, inter_comm (_ \ _), ← inter_diff_assoc,
-      inter_eq_self_of_subset_left h_le.1, ← diff_inter_self_eq_diff]
+    rw [and_iff_right hXE, and_iff_right sdiff_subset, μ.conn_compl, and_iff_right hXk,
+      and_iff_right hXk, inter_comm (_ \ _), ← inter_sdiff_assoc,
+      inter_eq_self_of_subset_left h_le.1, ← sdiff_inter_self_eq_sdiff]
     exact T.small_or_small_compl inter_subset_right <| by grw [ν.conn_inter_ground, h_le.2, hXk]
   union_union_ssubset X Y Z hX hY hZ := by
     grind [ν.subset_of_le h_le, T.union_union_ssubset hX.2.2 hY.2.2 hZ.2.2]
@@ -262,8 +262,8 @@ lemma AdheresTo.eq_of_induce_eq {T₀ T₁ : Tangle ν k} (h : ν.AdheresTo μ)
   have h' : (T₀.induce h.le).Large (P₀ b) := by
     rwa [hT, induce_large_iff_of_subset (P₀.subset.trans P.subset), and_iff_right (hle _)]
   refine (h'.compl_small.of_induce.union_ssubset hi).not_subset ?_
-  grw [← inter_diff_right_comm, inter_eq_self_of_subset_right h.subset, P₀.subset,
-    diff_union_of_subset P.subset]
+  grw [← inter_sdiff_right_comm, inter_eq_self_of_subset_right h.subset, P₀.subset,
+    sdiff_union_of_subset P.subset]
 
 /-- A connectivity system is `k`-entangled if there is at most one tangle of each order `j < k`. -/
 def Entangled (μ : ConnSystem α R) (k : R) := ∀ ⦃j⦄, j < k → Subsingleton (Tangle μ j)

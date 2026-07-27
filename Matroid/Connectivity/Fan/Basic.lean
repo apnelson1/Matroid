@@ -236,7 +236,8 @@ lemma IsFan.isTriangle_getElem (h : M.IsFan F b c) (i) (hi : i + 2 < F.length) :
   | cons_triangle e x y F b c h heF hT ih =>
     obtain rfl | i := i
     · simpa
-    simpa using ih i <| by simpa using hi
+    specialize ih i (by simpa using hi)
+    simpa
 
 lemma IsFan.isTriangle_getElem_of_eq (h : M.IsFan F b c) (i) (hi : i + 2 < F.length)
     (hib : i.bodd = b) : M.IsTriangle {F[i], F[i + 1], F[i + 2]} := by
@@ -267,7 +268,11 @@ lemma isFan_of_forall_triangle (hF : 3 ≤ F.length) (hnd : F.Nodup)
     | cons a F ih =>
       have hwin := (ih f g a (b := !b) (by simp) (by grind) ?_).cons_not (e := e) (by grind) ?_
       · cases b with simpa using hwin
-      · exact fun i hi ↦ by simpa using hT (i + 1) (by grind)
+      · refine fun i hi ↦ ?_
+        have := hT (i + 1) (by grind)
+        simp at this
+        simp
+        assumption
       simpa using hT 0 (by simp)
 
 lemma isFan_of_eq_of_forall_triangle (hF : 3 ≤ F.length) (hnd : F.Nodup)
@@ -297,6 +302,12 @@ lemma isFan_four_iff : M.IsFan [x, e, f, g] b c ↔ c = !b ∧
   · exact h.isTriangle_bDual (by simp)
   · grind [h.nodup]
   simpa [hcb] using hT.isFan.cons (by simpa using hxg) (by simpa)
+
+lemma IsFan.swap_middle (h : M.IsFan F b c) (h4 : F.length = 4) :
+    M.IsFan [F[0], F[2], F[1], F[3]] b c := by
+  obtain ⟨p, q, r, s, rfl⟩ := length_eq_four.1 h4
+  simp only [isFan_four_iff, ne_eq, getElem_cons_zero, getElem_cons_succ] at *
+  exact ⟨h.1, h.2.1.swap_left, h.2.2.1.swap_right, h.2.2.2⟩
 
 /-- Induct by stripping two layers off the front of a fan to get a fan of the same type. -/
 @[elab_as_elim]
@@ -377,9 +388,8 @@ lemma IsFan.eRk_le (h : M.IsFan F b c) (hlen : 3 ≤ F.length) :
       grw [setOf_three, IsTriangle.eRk (by simpa using hT), h.bool_right_eq,
         show (2 : ℕ∞) * 2 ≤ 3 + 1 from rfl.le]
       simp
-
     | cons p F =>
-      simp_rw [List.mem_cons (b := e), setOf_or, setOf_eq_eq_singleton, singleton_union]
+      simp_rw [List.mem_cons (b := e), ofPred_or, ofPred_eq_eq_singleton, singleton_union]
       cases b
       · grw [eRk_insert_le_add_one, mul_add, ih (by grind)]
         simp [h.bool_right_eq]
@@ -409,8 +419,8 @@ lemma IsFan.contract_disjoint_aux (hF : M.IsFan F false c) (h4 : 4 ≤ F.length)
     (by grind [hF.nodup.getElem_inj_iff])
   by_cases h1 : F[1] ∈ C
   · simp [← hT.isCircuit.eq_of_subset_isCircuit hC (by grind), hdj.inter_eq] at hCX
-  grw [← diff_subset_iff.2 hCss, ← union_singleton, ← diff_diff, Disjoint.sdiff_eq_left (a := C)
-    (by grind), hC.closure_diff_singleton_eq]
+  grw [← sdiff_subset_iff.2 hCss, ← union_singleton, ← sdiff_sdiff, Disjoint.sdiff_eq_left (a := C)
+    (by grind), hC.closure_sdiff_singleton_eq]
   exact M.mem_closure_of_mem h0C
 
 /- Contractions preserve the property of being a fan, unless one of the ends is a joint
@@ -463,13 +473,13 @@ lemma IsFan.minor {N : Matroid α} (hF : M.IsFan F b c) (h4 : 4 ≤ F.length) (h
   have hCF := hF.contract_disjoint h4 (X := C) (by grind) ?_ ?_
   · have hwin := (hCF.dual.contract_disjoint (X := D) h4 (by grind) ?_ ?_).dual
     · simpa using hwin
-    · simp only [Bool.not_eq_eq_eq_not, Bool.not_false, dual_contract, delete_closure_eq, mem_diff,
+    · simp only [Bool.not_eq_eq_eq_not, Bool.not_false, dual_contract, delete_closure_eq, mem_sdiff,
         not_and, not_not, hCD.sdiff_eq_right]
       rintro rfl hcl
       refine False.elim <| h_first.not_isLoop ?_
       grind [bDual_true, dual_delete, dual_contract, contract_isLoop_iff_mem_closure,
         delete_closure_eq, hCD.sdiff_eq_right]
-    simp only [Bool.not_eq_eq_eq_not, Bool.not_false, dual_contract, delete_closure_eq, mem_diff]
+    simp only [Bool.not_eq_eq_eq_not, Bool.not_false, dual_contract, delete_closure_eq, mem_sdiff]
     rintro rfl hcl
     refine h_last.not_isLoop ?_
     grind [bDual_true, dual_delete, dual_contract, contract_isLoop_iff_mem_closure,
@@ -547,7 +557,7 @@ lemma IsFan.minor {N : Matroid α} (hF : M.IsFan F b c) (h4 : 4 ≤ F.length) (h
 --               (by simpa [IsTriad] using hT) (by simpa)
 --             obtain ⟨F, hF, hFE⟩ := unifOn_two_four_isFan hE4 b
 --             have hF : F.length = 4 := by
---               rw [← ENat.coe_inj, ← hF.nodup.encard_toSet_eq, hFE, hE4, Nat.cast_ofNat]
+--               rw [← ENat.natCast_inj, ← hF.nodup.encard_toSet_eq, hFE, hE4, Nat.cast_ofNat]
 --             apply_fun (Matroid.bDual · b) at hME
 --             simp only [bDual_bDual, bne_self_eq_false, bDual_false] at hME
 --             exact ⟨F.reverse, true, by simpa [hME], by grind⟩

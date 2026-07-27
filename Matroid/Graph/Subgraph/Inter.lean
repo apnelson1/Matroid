@@ -138,7 +138,7 @@ lemma induce_sInter (hs : Gs.Nonempty) (X : Set α) :
 @[simp]
 lemma deleteVerts_sInter (hs : Gs.Nonempty) (X : Set α) :
     (Graph.sInter Gs hs) - X = .sInter ((· - X) '' Gs) (by simpa) := by
-  refine Graph.ext (by simp [biInter_diff_distrib hs]) fun e x y ↦ ?_
+  refine Graph.ext (by simp [biInter_sdiff_distrib hs]) fun e x y ↦ ?_
   simp +contextual only [deleteVerts_isLink_iff, sInter_isLink, mem_image, forall_exists_index,
     and_imp, forall_apply_eq_imp_iff₂, iff_def, not_false_eq_true, and_self, implies_true, true_and]
   exact fun h ↦ (h _ hs.some_mem).right
@@ -240,7 +240,7 @@ lemma induce_inter_distrib (X : Set α) : (G ∩ H)[X] = G[X] ∩ H[X] :=
   simp +contextual only [induce_isLink, inter_isLink_iff, iff_def, and_self, implies_true]
 
 lemma deleteVerts_union (X Y : Set α) : G - (X ∪ Y) = (G - X) ∩ (G - Y) :=
-  Graph.ext (by simp [diff_inter_diff]) fun e x y ↦ by
+  Graph.ext (by simp [sdiff_inter_sdiff]) fun e x y ↦ by
   simp +contextual only [deleteVerts_isLink_iff, mem_union, not_or, inter_isLink_iff, iff_def,
     not_false_eq_true, and_self, implies_true]
 
@@ -324,7 +324,7 @@ lemma iInter_isSpanningSubgraph [Nonempty ι] (h : ∀ i, Hι i ≤s G) :
 lemma iInter_isClosedSubgraph [Nonempty ι] (h : ∀ i, Hι i ≤c G) : Graph.iInter Hι ≤c G :=
   IsClosedSubgraph.mk' (Graph.iInter_le_of_forall_le fun i ↦ (h i).le)
   fun e x he ↦ by
-    simp only [vertexSet_iInter, mem_iInter, edgeSet_iInter, mem_setOf_eq]
+    simp only [vertexSet_iInter, mem_iInter, edgeSet_iInter, mem_ofPred_eq]
     rintro hx
     obtain ⟨y, hy⟩ := he
     use x, y, fun i ↦ by rwa [(h i).isLink_congr (hx i)]

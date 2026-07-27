@@ -281,7 +281,7 @@ private lemma gah2 (hM : G.IsMatching M) (he : e ∉ M) : (G.addEdge e x y).IsMa
   refine IsMatching.mono_left (G := G ↾ M) ?_ hM
   rw [← deleteEdge_addEdge]
   transitivity (G ＼ {e})
-  · rw [← restrict_edgeSet_diff_eq_deleteEdges]
+  · rw [← restrict_edgeSet_sdiff_eq_deleteEdges]
     -- TODO: needs grind tag
     refine G.restrict_mono_right (by grind [hM.subset])
   refine le_addEdge ?_
@@ -369,7 +369,7 @@ lemma IsCycle.konig (hB : G.Bipartite) (h : G.IsCycle) : τ(G) = ν(G) := by
   replace pathCover : C.toGraph.IsCover C.tail.pathCover := by
     constructor
     · refine le_trans pathCover.subset ?_
-      simp only [toGraph_vertexSet, le_eq_subset]
+      simp only [toGraph_vertexSet]
       -- TODO: there should be some `∀ (w : WList α β), V(w.tail) ⊆ V(w)`
       refine WList.IsSuffix.subset (tail_isSuffix C)
     have := pathCover.cover
@@ -487,7 +487,7 @@ theorem Konig'sTheorem [H.Simple] [H.Finite] (hB : H.Bipartite) : τ(H) = ν(H) 
       refine W'.encard_insert_of_notMem ?_
       have := hW'.subset
       simp only [vertexSet_deleteVerts] at this
-      grind only [= subset_def, = mem_diff, = mem_singleton_iff]
+      grind only [= subset_def, = mem_sdiff, = mem_singleton_iff]
     have := W_cover.le_encard
     rw [W_encard, hW'.encard, hMin.2 hlt] at this
     have hle := G.matchingNumber_le_coverNumber
@@ -507,7 +507,7 @@ theorem Konig'sTheorem [H.Simple] [H.Finite] (hB : H.Bipartite) : τ(H) = ν(H) 
     rw [hM.encard, ν_eq]
   have no_touch {f} (hf : f ∈ M) : ¬ G.Inc f v := by
     have := hM.subset hf
-    simp only [edgeSet_deleteVerts, mem_singleton_iff, mem_setOf_eq] at this
+    simp only [edgeSet_deleteVerts, mem_singleton_iff, mem_ofPred_eq] at this
     obtain ⟨x, y, hxy⟩ := this
     intro bad
     obtain ⟨w, hw⟩ := bad
@@ -538,7 +538,7 @@ theorem Konig'sTheorem [H.Simple] [H.Finite] (hB : H.Bipartite) : τ(H) = ν(H) 
   have hMG' : (G ＼ {f}).IsMatching M := by
     refine hMG.anti_left deleteEdges_le ?_
     have := hf.edge_mem
-    simp only [edgeSet_deleteEdges, mem_diff] at this ⊢
+    simp only [edgeSet_deleteEdges, mem_sdiff] at this ⊢
     grind [hMG.subset]
 
   have G'_matchingNumber : ν(G ＼ {f}) = ν(G) := by

@@ -87,7 +87,7 @@ lemma AdjIndep.augment [DecidableEq β] (hI : M.AdjIndep Adj I) (hJ : M.AdjIndep
 
     specialize @hmax ⟨⟨f', I₀'⟩, ⟨g, J₀⟩⟩ ⟨hxI.subset ?_, ?_, hJ₀, hg⟩
     · simp only [hI₀', Finset.coe_insert, Finset.coe_sdiff, Finset.coe_singleton]
-      exact insert_subset_insert diff_subset
+      exact insert_subset_insert sdiff_subset
     · simp only [hI₀', Finset.coe_insert, Finset.coe_sdiff, Finset.coe_singleton, f']
       refine ⟨hf.bijOn.bijOn_update hyI hxI₀, fun v hvs ↦ ?_⟩
       obtain (rfl | hne) := eq_or_ne v y
@@ -95,8 +95,7 @@ lemma AdjIndep.augment [DecidableEq β] (hI : M.AdjIndep Adj I) (hJ : M.AdjIndep
       rw [update_of_ne hne]
       exact hf.adj hvs
 
-    simp only [Finset.le_eq_subset, Finset.subset_iff, Finset.mem_filter, Finset.mem_inter, and_imp,
-      φ, f'] at hmax
+    simp only [Finset.subset_iff, Finset.mem_filter, Finset.mem_inter, and_imp, φ, f'] at hmax
 
     specialize hmax (fun a haI haJ ha ↦ ⟨⟨haI, haJ⟩, ?_⟩) hyI hy
     · simp_rw [update_apply, ← ha, ite_eq_right_iff, ha, eq_comm]
@@ -129,6 +128,7 @@ def adjMap [DecidableEq β] (M : Matroid α) (Adj : α → β → Prop) (E : Set
   (IndepMatroid.matroid <| IndepMatroid.ofFinset univ (M.AdjIndep Adj) (.inl rfl)
     (fun _ _ ↦ Matroid.AdjIndep.subset) (fun _ _ ↦ Matroid.AdjIndep.augment) (by simp)) ↾ E
 
+set_option backward.isDefEq.respectTransparency false in
 @[simp] lemma adjMap_indep_iff [DecidableEq β] (M : Matroid α) (Adj : α → β → Prop) (E : Set β)
     {I : Finset β} : (M.adjMap Adj E).Indep I ↔ M.AdjIndep Adj I ∧ (I : Set β) ⊆ E := by
   simp [adjMap]
@@ -136,6 +136,7 @@ def adjMap [DecidableEq β] (M : Matroid α) (Adj : α → β → Prop) (E : Set
 @[simp] lemma adjMap_ground_eq [DecidableEq β] (M : Matroid α) (Adj : α → β → Prop) (E : Set β) :
   (M.adjMap Adj E).E = E := rfl
 
+set_option backward.isDefEq.respectTransparency false in
 /-- `M.adjMap Adj E` is finitary. -/
 instance [DecidableEq β] (M : Matroid α) (Adj : α → β → Prop) (E : Set β) :
     Finitary (M.adjMap Adj E) := by

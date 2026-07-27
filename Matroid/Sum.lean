@@ -17,8 +17,8 @@ open Set Sum
   · obtain rfl | hne := eq_or_ne i₀ i
     · simp
     simp [preimage_image_sigmaMk_of_ne hne]
-  convert subset_iUnion _ i₀
-  simp
+  rw [← preimage_image_sigmaMk i₀ (s i₀)]
+  exact subset_iUnion (fun i ↦ Sigma.mk i₀ ⁻¹' (Sigma.mk i '' s i)) i₀
 
 @[simp]
 lemma Sum.preimage_image_inl (α β : Type*) (X : Set α) : (inl : α → α ⊕ β) ⁻¹' (inl '' X) = X := by
@@ -136,7 +136,7 @@ lemma sigma_closure_eq (X) :
 
 lemma sigma_dual_eq : (Matroid.sigma M)✶ = Matroid.sigma (fun i ↦ (M i)✶) := by
   refine ext_isBase rfl fun B hB ↦ ?_
-  simp only [dual_isBase_iff', sigma_ground_eq, sigma_isBase_iff, preimage_diff, mem_univ,
+  simp only [dual_isBase_iff', sigma_ground_eq, sigma_isBase_iff, preimage_sdiff, mem_univ,
     mk_preimage_sigma, forall_and, and_congr_right_iff]
   exact fun _ ↦ ⟨fun h i ↦ (preimage_mono h).trans <| by simp, fun _ ↦ by simpa using hB⟩
 
@@ -238,9 +238,10 @@ lemma disjointSigma_dual (M : ι → Matroid α) hdj :
   refine ext_isBase rfl fun B hB ↦ ?_
   rw [dual_isBase_iff]
   simp only [dual_ground, disjointSigma_ground_eq] at hB
-  simp_rw [disjointSigma_isBase_iff, disjointSigma_ground_eq, and_iff_left diff_subset,
+  conv_rhs => rw [disjointSigma_isBase_iff (M := fun i ↦ (M i)✶) (h := hdj)]
+  simp_rw [disjointSigma_isBase_iff, disjointSigma_ground_eq, and_iff_left sdiff_subset,
     dual_ground, and_iff_left hB, dual_isBase_iff', and_iff_left inter_subset_right,
-    diff_inter_self_eq_diff, diff_inter_right_comm, iUnion_inter]
+    sdiff_inter_self_eq_sdiff, sdiff_inter_right_comm, iUnion_inter]
   convert Iff.rfl with i
   rw [iUnion_eq_single (a := i), inter_self]
   exact fun j hji ↦ (hdj hji).inter_eq
@@ -284,6 +285,7 @@ lemma IsBasis.disjointSum_isBasis_union {I J X Y : Set α} {M N : Matroid α} (h
     union_subset_union hIX.subset_ground hJY.subset_ground⟩
 
 
+set_option backward.isDefEq.respectTransparency false in
 lemma disjointSum_eq_disjointSigma (M N : Matroid α) (hMN : Disjoint M.E N.E) :
     M.disjointSum N hMN = Matroid.disjointSigma (fun b ↦ bif b then M else N)
     (by simp [Function.onFun, Pairwise, hMN, hMN.symm]) := by
@@ -293,11 +295,12 @@ lemma disjointSum_eq_disjointSigma (M N : Matroid α) (hMN : Disjoint M.E N.E) :
     iUnion_bool]
   tauto
 
+set_option backward.isDefEq.respectTransparency false in
 @[simp]
 lemma disjointSum_dual (M N : Matroid α) (hMN : Disjoint M.E N.E) :
     (M.disjointSum N hMN)✶ = M✶.disjointSum N✶ hMN := by
   simp only [disjointSum_eq_disjointSigma, disjointSigma_dual]
-  convert rfl using 3 with (i | i)
+  convert rfl using 3 with (i | i) <;> rfl
 
 lemma isRestriction_disjointSum_left (hMN : Disjoint M.E N.E) : M ≤r (disjointSum M N hMN) := by
   rw [disjointSum_eq_disjointSigma]
@@ -315,10 +318,12 @@ lemma disjointSum_restrict_left (hMN : Disjoint M.E N.E) : (disjointSum M N hMN)
 lemma disjointSum_restrict_right (hMN : Disjoint M.E N.E) : (disjointSum M N hMN) ↾ N.E = N :=
   (isRestriction_disjointSum_right hMN).eq_restrict
 
+set_option backward.isDefEq.respectTransparency false in
 @[simp]
 lemma emptyOn_disjointSum : disjointSum (emptyOn α) M (by simp) = M :=
   ext_indep (by simp) <| by simp +contextual [inter_eq_self_of_subset_left]
 
+set_option backward.isDefEq.respectTransparency false in
 @[simp]
 lemma disjointSum_emptyOn : disjointSum M (emptyOn α) (by simp) = M :=
   ext_indep (by simp) <| by simp +contextual [inter_eq_self_of_subset_left]
@@ -341,16 +346,22 @@ instance disjointSum_rankPos_right [N.RankPos] (hMN : Disjoint M.E N.E) :
 
 instance disjointSum_dual_rankPos_left [M✶.RankPos] (hMN : Disjoint M.E N.E) :
     (M.disjointSum N hMN)✶.RankPos := by
-  simp [rankPos_iff, M.ground_not_isBase]
+  rw [rankPos_iff, dual_isBase_iff, disjointSum_ground_eq, sdiff_empty, disjointSum_isBase_iff]
+  refine fun ⟨hM, _, _⟩ ↦ M.ground_not_isBase ?_
+  rwa [inter_eq_right.mpr subset_union_left] at hM
 
 instance disjointSum_dual_rankPos_right [N✶.RankPos] (hMN : Disjoint M.E N.E) :
     (M.disjointSum N hMN)✶.RankPos := by
-  simp [rankPos_iff, N.ground_not_isBase]
+  rw [rankPos_iff, dual_isBase_iff, disjointSum_ground_eq, sdiff_empty, disjointSum_isBase_iff]
+  refine fun ⟨_, hN, _⟩ ↦ N.ground_not_isBase ?_
+  rwa [inter_eq_right.mpr subset_union_right] at hN
 
+set_option backward.isDefEq.respectTransparency false in
 lemma disjointSum_closure_eq (hMN : Disjoint M.E N.E) (X : Set α) :
     (disjointSum M N hMN).closure X = M.closure (X ∩ M.E) ∪ N.closure (X ∩ N.E) := by
   simp [disjointSum_eq_disjointSigma, disjointSigma_closure, iUnion_bool]
 
+set_option backward.isDefEq.respectTransparency false in
 lemma disjointSum_spanning_iff (hMN : Disjoint M.E N.E) {X : Set α} :
     (disjointSum M N hMN).Spanning X ↔
       M.Spanning (X ∩ M.E) ∧ N.Spanning (X ∩ N.E) ∧ X ⊆ M.E ∪ N.E := by
@@ -363,6 +374,7 @@ lemma disjointSum_dep_iff (hMN : Disjoint M.E N.E) {X : Set α} :
     not_indep_iff, Classical.not_and_iff_not_or_not, not_indep_iff]
   tauto
 
+set_option backward.isDefEq.respectTransparency false in
 lemma disjointSum_loopyOn {E : Set α} (hMN : Disjoint M.E E) :
     M.disjointSum (loopyOn E) hMN = M ↾ (M.E ∪ E) := by
   refine ext_indep (by simp) ?_
@@ -372,21 +384,24 @@ lemma disjointSum_loopyOn {E : Set α} (hMN : Disjoint M.E E) :
     fun h' ↦ ⟨h'.inter_right _, (hMN.mono_left h'.subset_ground).inter_eq⟩⟩
   rwa [← inter_eq_self_of_subset_left hI, inter_union_distrib_left, hIE, union_empty]
 
+set_option backward.isDefEq.respectTransparency false in
 @[simp]
 lemma freeOn_disjointSum_freeOn {E E' : Set α} (hdj : Disjoint E E') :
     (freeOn E).disjointSum (freeOn E') hdj = freeOn (E ∪ E') :=
   ext_indep (by simp) (by simp)
 
+set_option backward.isDefEq.respectTransparency false in
 @[simp]
 lemma loopyOn_disjointSum_loopyOn {E E' : Set α} (hdj : Disjoint E E') :
     (loopyOn E).disjointSum (loopyOn E') hdj = loopyOn (E ∪ E') := by
-  rw [← dual_inj]
-  simp
+  rw [← dual_inj, disjointSum_dual]
+  simp [loopyOn_dual_eq, freeOn_disjointSum_freeOn]
 
 lemma restrict_superset_ground_eq_disjointSum {X : Set α} (hE : M.E ⊆ X) :
     M ↾ X = M.disjointSum (loopyOn (X \ M.E)) disjoint_sdiff_right := by
-  nth_rw 1 [← diff_union_of_subset hE, union_comm, ← disjointSum_loopyOn]
+  nth_rw 1 [← sdiff_union_of_subset hE, union_comm, ← disjointSum_loopyOn]
 
+set_option backward.isDefEq.respectTransparency false in
 lemma disjointSum_assoc {M₁ M₂ M₃ : Matroid α} (h₁₂ : Disjoint M₁.E M₂.E)
     (h₁₃ : Disjoint (M₁.disjointSum M₂ h₁₂).E M₃.E) :
     (M₁.disjointSum M₂ h₁₂).disjointSum M₃ h₁₃ = M₁.disjointSum (M₂.disjointSum M₃
@@ -397,17 +412,20 @@ lemma disjointSum_assoc {M₁ M₂ M₃ : Matroid α} (h₁₂ : Disjoint M₁.E
   simp [inter_assoc, union_inter_distrib_right, h₁₂.symm.inter_eq, h₁₂.inter_eq, hI,
     h₁₃.2.symm.inter_eq, h₁₃.2.inter_eq, ← union_assoc, and_assoc]
 
+set_option backward.isDefEq.respectTransparency false in
 lemma disjointSum_restrict_union {S T : Set α} (hdj : Disjoint M.E N.E) (hS : S ⊆ M.E)
     (hT : T ⊆ N.E) :
     (M.disjointSum N hdj) ↾ (S ∪ T) = (M ↾ S).disjointSum (N ↾ T) (hdj.mono hS hT) := by
   rw [disjointSum_eq_disjointSigma, union_eq_iUnion, disjointSigma_restrict_iUnion _ _ (by grind),
     disjointSum_eq_disjointSigma]
-  convert rfl with (i | i)
+  convert rfl with (i | i) <;> rfl
 
+set_option backward.isDefEq.respectTransparency false in
 lemma disjointSum_encard_ground (hdj : Disjoint M.E N.E) :
     (M.disjointSum N hdj).E.encard = M.E.encard + N.E.encard := by
   rw [disjointSum_ground_eq, encard_union_eq hdj]
 
+set_option backward.isDefEq.respectTransparency false in
 lemma sum_eq_disjointSum {β : Type*} (M : Matroid α) (N : Matroid β) : M.sum N =
     (M.map Sum.inl Sum.inl_injective.injOn).disjointSum (N.map Sum.inr Sum.inr_injective.injOn)
     (by simp) := by
@@ -427,6 +445,7 @@ end disjointSum
 
 variable {α β : Type*} {M : Matroid α} {N : Matroid β}
 
+set_option backward.isDefEq.respectTransparency false in
 @[simp]
 lemma sum_dual (M : Matroid α) (N : Matroid β) : (M.sum N)✶ = M✶.sum N✶ := by
   simp_rw [sum_eq_disjointSum, disjointSum_dual, map_dual]
@@ -444,6 +463,7 @@ lemma sum_dep_iff (M : Matroid α) (N : Matroid β) (X : Set (α ⊕ β)) :
   · simp [h.1 hx]
   simp [h.2 hx]
 
+set_option backward.isDefEq.respectTransparency false in
 lemma sum_closure_eq (M : Matroid α) (N : Matroid β) (X : Set (α ⊕ β)) :
     (M.sum N).closure X = inl '' (M.closure (inl ⁻¹' X)) ∪ inr '' (N.closure (inr ⁻¹' X)) := by
   rw [sum_eq_disjointSum, disjointSum_eq_disjointSigma, disjointSigma_closure]

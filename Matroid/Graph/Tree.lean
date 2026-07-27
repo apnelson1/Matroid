@@ -1,7 +1,7 @@
 import Matroid.Graphic
 
 variable {α β : Type*} {G H T : Graph α β} {u v x y z : α} {e e' f g : β} {X : Set α} {F : Set β}
-{P C Q : WList α β}
+  {P C Q : WList α β}
 open Set WList
 
 namespace Graph
@@ -39,6 +39,6 @@ lemma Connected.encard_vertexSet_le (hG : G.Connected) : V(G).encard ≤ E(G).en
   grw [← hTG.vertexSet_eq, hT.encard_vertexSet, hTG.le']
 
 lemma Connected.ncard_vertexSet_le [G.Finite] (hG : G.Connected) : V(G).ncard ≤ E(G).ncard + 1 := by
-  rw [← ENat.coe_le_coe, Nat.cast_add, G.vertexSet_finite.cast_ncard_eq,
+  rw [← ENat.natCast_le_natCast, Nat.cast_add, G.vertexSet_finite.cast_ncard_eq,
     G.edgeSet_finite.cast_ncard_eq]
   exact hG.encard_vertexSet_le

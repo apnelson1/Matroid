@@ -236,7 +236,7 @@ noncomputable def ReducedRep.toRep [DecidablePred (· ∈ M.E)] [DecidablePred (
     set fn := (fun x : M.E ↦ if hx : x.1 ∈ B then (Pi.single ⟨x, hx⟩ 1) else (P.1 · ⟨x, x.2, hx⟩))
     intro I
     set X := (Set.inclusion P.subset_ground) ⁻¹' I with hX
-    set Y := (Set.inclusion (show M.E \ B ⊆ M.E from diff_subset)) ⁻¹' I with hY
+    set Y := (Set.inclusion (show M.E \ B ⊆ M.E from sdiff_subset)) ⁻¹' I with hY
     have hIXY : Subtype.val '' I = Subtype.val '' X ∪ Subtype.val '' Y := by
       simp +contextual [hX, hY, Set.ext_iff, em, or_imp, iff_def,
         show ∀ x ∈ B, x ∈ M.E from fun x hx ↦ P.subset_ground hx]
@@ -351,6 +351,6 @@ noncomputable def ReducedRep.toRep [DecidablePred (· ∈ M.E)] [DecidablePred (
 
 
 
-    -- nth_rewrite 1 [← diff_union_inter I B]
+    -- nth_rewrite 1 [← sdiff_union_inter I B]
     -- rw [union_comm, v.indep_iff, linearIndepOn_union_iff_quotient disjoint_sdiff_inter.symm,
     --   ← v.indep_iff, and_iff_right (hB.indep.inter_left _), LinearIndepOn]

@@ -99,7 +99,7 @@ namespace ModularCut
 
 instance (M : Matroid α) : SetLike (ModularCut M) (Set α) where
   coe := ModularCut.carrier
-  coe_injective' U U' := by cases U; cases U'; simp
+  coe_injective U U' := by cases U; cases U'; simp
 
 @[simp]
 lemma mem_carrier_iff {U : M.ModularCut} : F ∈ U.carrier ↔ F ∈ U := Iff.rfl
@@ -154,10 +154,13 @@ protected def map {β : Type*} (U : M.ModularCut) (f : α → β) (hf : M.E.InjO
     simp_rw [isModularFamily_map_iff, subset_image_iff]
     rintro _ ⟨Fs, hFs, rfl⟩ hne ⟨Ys, ⟨B, hB, hYs⟩, h_eq⟩
     have hFsE : ∀ F ∈ Fs, F ⊆ M.E := fun F hF ↦ (U.forall_isFlat F (hFs hF)).subset_ground
-    have hwin := U.forall_inter Fs hFs (by simpa using hne) ⟨B, hB, ?_⟩
+    have hFsne : Fs.Nonempty := by
+      obtain ⟨_, ⟨F, hF, rfl⟩⟩ := hne
+      exact ⟨F, hF⟩
+    have hwin := U.forall_inter Fs hFs hFsne ⟨B, hB, ?_⟩
     · simp only [sInter_image, mem_image, SetLike.mem_coe]
       refine ⟨_, hwin, ?_⟩
-      rw [← InjOn.image_biInter_eq (f := f) (by simpa using hne), sInter_eq_biInter]
+      rw [sInter_eq_biInter, ← InjOn.image_biInter_eq (f := f) hFsne]
       exact hf.mono <| by simpa only [iUnion_subset_iff]
     simp only [Subtype.forall]
     refine fun F hF ↦ ?_
@@ -370,7 +373,7 @@ lemma mem_of_ssubset_indep_of_forall_diff (U : M.ModularCut) (hI : M.Indep I)
   have hne := nonempty_of_ssubset hJI
   have h_inter : ⋂ e, Is e = J := by
     rw [hIs, ← biInter_eq_iInter (t := fun x _ ↦ I \ {x}), biInter_diff_singleton_eq_diff _ hne,
-      diff_diff_right, diff_self, empty_union, inter_eq_self_of_subset_right hJI.subset]
+      sdiff_sdiff_right, sdiff_self, empty_union, inter_eq_self_of_subset_right hJI.subset]
   have _ := hne.coe_sort
   rw [← h_inter, ← hmod.iInter_closure_eq_closure_iInter]
   exact U.iInter_mem _ (fun ⟨i, hi⟩ ↦ h _ (by simpa)) hmod.cls_isModularFamily
@@ -392,8 +395,8 @@ lemma covBy_of_maximal_closure (U : M.ModularCut) {X Y : Set α}
 
   obtain (h | hnt) := (J \ I).subsingleton_or_nontrivial
   · obtain (he | ⟨e, he⟩) := h.eq_empty_or_singleton
-    · rw [(diff_eq_empty.1 he).antisymm hIJ] at hYU; contradiction
-    obtain rfl : J = insert e I := by rw [← union_diff_cancel hIJ, he, union_singleton]
+    · rw [(sdiff_eq_empty.1 he).antisymm hIJ] at hYU; contradiction
+    obtain rfl : J = insert e I := by rw [← union_sdiff_cancel hIJ, he, union_singleton]
     simpa [show e ∉ I from (he.symm.subset rfl).2] using hJ.indep.closure_diff_covBy (.inl rfl)
 
   obtain (rfl | hssu) := hIJ.eq_or_ssubset
@@ -406,12 +409,12 @@ lemma covBy_of_maximal_closure (U : M.ModularCut) {X Y : Set α}
     rw [← hI.closure_eq_closure, hI.indep.notMem_closure_iff_of_notMem hy.2 hyE]
     exact hJ.indep.subset (insert_subset hy.1 hIJ)
   have hyY : y ∈ Y :=
-    Or.elim (hJ.subset hy.1) (False.elim ∘ (notMem_of_mem_diff_closure ⟨hyE, hyX⟩)) id
+    Or.elim (hJ.subset hy.1) (False.elim ∘ (notMem_of_mem_sdiff_closure ⟨hyE, hyX⟩)) id
 
   specialize hmax y ⟨hyY, hyX⟩
   rw [← closure_insert_congr_right hI.closure_eq_closure] at hmax
   refine U.closure_superset_mem' hmax ?_
-  simp [insert_subset_iff, subset_diff, hIJ, hy.1, hyx.symm, hx.2]
+  simp [insert_subset_iff, subset_sdiff, hIJ, hy.1, hyx.symm, hx.2]
 section restrict
 
 /-- A `ModularCut` in `M` gives a `ModularCut` in `M ↾ R` for any `R ⊆ M.E`. -/
@@ -448,7 +451,7 @@ lemma restrict_copy {M N : Matroid α} (U : M.ModularCut) (R : Set α) (hMN : M 
 @[simp]
 lemma restrict_eq_top_iff {R : Set α} : U.restrict R = ⊤ ↔ U = ⊤ := by
   rw [ModularCut.eq_top_iff, mem_restrict_iff,   and_iff_right (isFlat_loops ..),
-    restrict_loops_eq', ← closure_inter_ground, union_inter_distrib_right, diff_inter_self,
+    restrict_loops_eq', ← closure_inter_ground, union_inter_distrib_right, sdiff_inter_self,
     union_empty, closure_inter_ground, closure_eq_loops_of_subset (by simp), ModularCut.eq_top_iff]
 
 @[simp]
@@ -479,7 +482,7 @@ lemma mem_delete_elem_iff :
     have hF' : M.IsFlat F := by
       have hFE := ((subset_insert _ _).trans hF.subset_ground)
       rw [isFlat_iff_subset_closure_self]
-      refine (subset_diff_singleton (M.closure_subset_closure (subset_insert e F)) heF').trans ?_
+      refine (subset_sdiff_singleton (M.closure_subset_closure (subset_insert e F)) heF').trans ?_
       simp [hF.closure]
     rw [hF'.closure] at hFU
     exact ⟨heF, .inl hFU⟩
@@ -552,7 +555,7 @@ protected def comap {β : Type*} {M : Matroid β} (U : M.ModularCut) (f : α →
 lemma mem_comap_iff {β : Type*} {M : Matroid β} (U : M.ModularCut) (f : α → β) :
     F ∈ U.comap f ↔ M.closure (f '' F) ∈ U ∧ F = f ⁻¹' (M.closure (f '' F)) := by
   simp [ModularCut.comap, comapOfSubsetRange, ModularCut.mem_mk_iff, mem_image,
-    SetLike.mem_coe, mem_restrict_iff, isFlat_restrict_iff', diff_eq_empty.2 inter_subset_right]
+    SetLike.mem_coe, mem_restrict_iff, isFlat_restrict_iff', sdiff_eq_empty.2 inter_subset_right]
   simp_rw [← inter_assoc, inter_right_comm,
     inter_eq_self_of_subset_left (M.closure_subset_ground _)]
   refine ⟨?_, fun ⟨h1, h2⟩ ↦ ?_⟩
@@ -577,7 +580,7 @@ def ofDeleteElem (M : Matroid α) (e : α) : (M ＼ {e}).ModularCut where
     refine fun Fs hFs hFne hmod ↦ ⟨IsFlat.sInter hFne fun F hF ↦ (hFs hF).1, ?_⟩
     have := hFne.coe_sort
     rw [delete_eq_restrict] at hmod
-    rw [sInter_eq_iInter, ← (hmod.ofRestrict diff_subset).iInter_closure_eq_closure_iInter,
+    rw [sInter_eq_iInter, ← (hmod.ofRestrict sdiff_subset).iInter_closure_eq_closure_iInter,
       mem_iInter]
     exact fun ⟨F, hF⟩ ↦ (hFs hF).2
 
@@ -596,7 +599,7 @@ lemma mem_ofDeleteElem_iff :
 @[simp]
 lemma mem_ofDeleteElem_iff' :
     F ∈ ModularCut.ofDeleteElem M e ↔ e ∈ M.closure F \ F ∧ M.IsFlat (insert e F) := by
-  simp only [mem_ofDeleteElem_iff, mem_diff]
+  simp only [mem_ofDeleteElem_iff, mem_sdiff]
   refine ⟨fun h ↦ ?_, fun h ↦ ⟨h.1.2, ?_⟩⟩
   · rw [← h.2, and_iff_left <| M.closure_isFlat F, and_iff_left h.1, h.2]
     exact mem_insert _ _
@@ -606,10 +609,10 @@ lemma mem_ofDeleteElem_iff' :
 @[simp]
 lemma ofDeleteElem_eq_top_iff : ModularCut.ofDeleteElem M e = ⊤ ↔ M.IsLoop e := by
   rw [ModularCut.eq_top_iff]
-  simp only [delete_loops_eq, mem_ofDeleteElem_iff', mem_diff, mem_loops_iff, mem_singleton_iff,
-    not_true_eq_false, and_false, not_false_eq_true, and_true, insert_diff_singleton]
+  simp only [delete_loops_eq, mem_ofDeleteElem_iff', mem_sdiff, mem_loops_iff, mem_singleton_iff,
+    not_true_eq_false, and_false, not_false_eq_true, and_true, insert_sdiff_singleton]
   refine ⟨fun h ↦ ?_, fun h ↦ ⟨?_, ?_⟩⟩
-  · grw [diff_subset, closure_loops] at h
+  · grw [sdiff_subset, closure_loops] at h
     exact h.1
   · exact h.mem_closure _
   rw [insert_eq_of_mem h]

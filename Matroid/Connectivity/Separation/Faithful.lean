@@ -87,11 +87,11 @@ lemma faithful_of_forall_eq (hN : N ≤m M) (h : ∀ C D, C ⊆ M.E → D ⊆ M.
       by grind
   obtain ⟨D', C, hD', hC, hDC, rfl⟩ :=  hm.exists_delete_coindep_contract_indep
   refine (h C (D ∪ D') hC.of_delete.subset_ground
-    (union_subset hDE (hD'.subset_ground.trans diff_subset)) ?_ ?_ i).2.mono_right <| by grind
-   [← Matroid.contract_delete_comm _ (subset_diff.1 hC.subset_ground).2, Matroid.delete_delete]
+    (union_subset hDE (hD'.subset_ground.trans sdiff_subset)) ?_ ?_ i).2.mono_right <| by grind
+   [← Matroid.contract_delete_comm _ (subset_sdiff.1 hC.subset_ground).2, Matroid.delete_delete]
   · grind [hC.subset_ground]
   rw [M.delete_delete, M.contract_delete_comm
-    (disjoint_union_right.2 ⟨(subset_diff.1 hC.subset_ground).2, hDC.symm⟩)]
+    (disjoint_union_right.2 ⟨(subset_sdiff.1 hC.subset_ground).2, hDC.symm⟩)]
 
 lemma Faithful.faithful_induce_of_isMinor (h : P.Faithful N) {N'} (hNN' : N ≤m N') (hN' : N' ≤m M) :
     (P.induce N').Faithful N := by
@@ -99,14 +99,14 @@ lemma Faithful.faithful_induce_of_isMinor (h : P.Faithful N) {N'} (hNN' : N ≤m
   refine ⟨hNN', fun X hX hNX i ↦ ?_, fun X hX hNX i ↦ ?_⟩
   · have hs := h.skew_of_contract (C := X ∪ C) (by grind [hC.subset_ground]) ?_ i
     refine ((hs.contract_subset_union (C := C) (by grind)).delete D).mono ?_ ?_
-    · rw [induce_apply_contract_delete, diff_diff]
+    · rw [induce_apply_contract_delete, sdiff_sdiff]
     · grind [induce_apply_contract_delete]
     rw [← contract_delete_comm _ (by grind), contract_contract, union_comm] at hNX
     exact hNX.trans <| delete_isMinor ..
   rw [dual_contract_delete, ← contract_delete_comm _ hCD.symm]
   have hs := (h.skew_dual_of_delete (D := X ∪ D) (by grind [hD.subset_ground]) ?_ i)
   · refine ((hs.contract_subset_union (C := D) (by grind)).delete C).mono ?_ ?_
-    · simp [diff_diff, union_comm]
+    · simp [sdiff_sdiff, union_comm]
     grind [induce_apply_contract_delete]
   refine hNX.trans ?_
   rw [delete_delete, union_comm]
@@ -120,54 +120,56 @@ lemma faithful_of_forall_indep_forall_coindep (hN : N ≤m M)
     (hC : ∀ C i, M.Indep C → N ≤m M ／ C → M.Skew (P i) (C \ P i))
     (hD : ∀ D i, M.Coindep D → N ≤m M ＼ D → M✶.Skew (P i) (D \ P i)) : P.Faithful N := by
   refine ⟨hN, fun C hCE hm i ↦ ?_, fun D hDE hm i ↦ ?_⟩
-  · obtain ⟨I, J, hI, hJ, hIJ⟩ := M.exists_isBasis_subset_isBasis (diff_subset : C \ P i ⊆ C)
+  · obtain ⟨I, J, hI, hJ, hIJ⟩ := M.exists_isBasis_subset_isBasis (sdiff_subset : C \ P i ⊆ C)
     refine (hC J i hJ.indep ?_).closure_skew_right.mono_right ?_
     · exact hm.trans <| contract_isMinor_of_subset _ hJ.subset
-    grw [hI.subset_closure, ← hIJ, sdiff_eq_left.2 (subset_diff.1 hI.subset).2]
-  obtain ⟨I, J, hI, hJ, hIJ⟩ := M✶.exists_isBasis_subset_isBasis (show D \ P i ⊆ D from diff_subset)
+    grw [hI.subset_closure, ← hIJ, sdiff_eq_left.2 (subset_sdiff.1 hI.subset).2]
+  obtain ⟨I, J, hI, hJ, hIJ⟩ :=
+    M✶.exists_isBasis_subset_isBasis (show D \ P i ⊆ D from sdiff_subset)
   refine (hD J i hJ.indep ?_).closure_skew_right.mono_right ?_
   · exact hm.trans <| IsRestriction.isMinor <| delete_isRestriction_of_subset _ hJ.subset
-  grw [hI.subset_closure, ← hIJ, sdiff_eq_left.2 (subset_diff.1 hI.subset).2]
+  grw [hI.subset_closure, ← hIJ, sdiff_eq_left.2 (subset_sdiff.1 hI.subset).2]
 
 lemma faithful_contract_iff (hCE : C ⊆ M.E) : P.Faithful (M ／ C) ↔ ∀ i, M.Skew (P i) (C \ P i) := by
   refine ⟨fun h i ↦ h.skew_of_contract hCE IsMinor.refl i,
     fun h ↦ faithful_of_forall_indep_forall_coindep (contract_isMinor ..)
       (fun C' i hC' hm ↦ (h i).mono_right ?_) (fun D i hD hm ↦ ?_)⟩
-  · exact diff_subset_diff_left <| (diff_subset_diff_iff_subset hCE hC'.subset_ground).1 hm.subset
-  have hDC : D ⊆ C := (diff_subset_diff_iff_subset hCE hD.subset_ground).1 hm.subset
+  · exact sdiff_subset_sdiff_left <|
+      (sdiff_subset_sdiff_iff_subset hCE hC'.subset_ground).1 hm.subset
+  have hDC : D ⊆ C := (sdiff_subset_sdiff_iff_subset hCE hD.subset_ground).1 hm.subset
   obtain ⟨Y, X, hY, hX, hYX, h_eq⟩ := hm.exists_delete_coindep_contract_indep
   rw [hD.delete_coindep_iff, Y.union_comm] at hY
   rw [delete_indep_iff] at hX
   obtain rfl : X ∪ (D ∪ Y) = C := by
     rw [← inter_eq_self_of_subset_left hCE,
       ← inter_eq_self_of_subset_left (union_subset hX.1.subset_ground hY.1.subset_ground),
-      ← diff_eq_diff_iff_inter_eq_inter]
+      ← sdiff_eq_sdiff_iff_inter_eq_inter]
     apply_fun Matroid.E at h_eq
-    rwa [contract_ground, contract_ground, M.delete_delete, delete_ground, diff_diff_comm,
-      diff_diff, eq_comm] at h_eq
+    rwa [contract_ground, contract_ground, M.delete_delete, delete_ground, sdiff_sdiff_comm,
+      sdiff_sdiff, eq_comm] at h_eq
   rw [← M.contract_contract, M.delete_delete, ← M.contract_delete_comm (by grind),
     contract_eq_delete_iff_skew_compl (by grind [contract_ground]),
     Coindep.skew_compl_iff_subset_loops (by rw [coindep_contract_iff]; grind),
-    contract_loops_eq, subset_diff] at h_eq
+    contract_loops_eq, subset_sdiff] at h_eq
   set L := D ∪ Y with hL
   suffices h' : M✶.Skew (P i) (L \ P i) from h'.mono_right <| by grind
   nth_rw 1 [skew_dual_iff disjoint_sdiff_right (by simp) (by grind),
     P.compl_eq, isModularPair_comm,
-    (hY.1.subset diff_subset).compl_spanning.isModularPair_iff, diff_inter_right_comm,
-    inter_eq_self_of_subset_right P.subset, P.diff_eq_inter_bool, diff_inter_self_eq_diff]
+    (hY.1.subset sdiff_subset).compl_spanning.isModularPair_iff, sdiff_inter_right_comm,
+    inter_eq_self_of_subset_right P.subset, P.diff_eq_inter_bool, sdiff_inter_self_eq_sdiff]
   suffices aux : P (!i) ∩ L ⊆ (M ↾ P (!i)).closure ((P !i) \ L) by
-    nth_grw 1 [← inter_union_diff (P (!i)) L, union_subset_iff, aux,
+    nth_grw 1 [← inter_union_sdiff (P (!i)) L, union_subset_iff, aux,
     (restrict_isRestriction ..).closure_subset_closure, and_iff_right rfl.subset,
-      ← M.subset_closure _ (diff_subset.trans P.subset)]
-  nth_grw 1 [← (h !i).symm.contract_restrict_eq, restrict_closure_eq _ diff_subset
+      ← M.subset_closure _ (sdiff_subset.trans P.subset)]
+  nth_grw 1 [← (h !i).symm.contract_restrict_eq, restrict_closure_eq _ sdiff_subset
     (by grind [contract_ground, P.subset (i := !i)]), subset_inter_iff,
-    and_iff_left inter_subset_left, contract_closure_eq, subset_diff, and_iff_left (by grind),
+    and_iff_left inter_subset_left, contract_closure_eq, subset_sdiff, and_iff_left (by grind),
     inter_subset_right, h_eq.1, M.closure_subset_closure]
   rw [← P.union_inter_left X hX.1.subset_ground i, Set.union_comm]
   exact union_subset_union (by grind) <| by grind [P.disjoint_bool i]
 
 lemma faithful_contract_iff_of_subset (hC : C ⊆ P i) : P.Faithful (M ／ C) ↔ M.Skew (P (!i)) C := by
-  rw [faithful_contract_iff (hC.trans P.subset), Bool.forall_bool' i, diff_eq_empty.2 hC,
+  rw [faithful_contract_iff (hC.trans P.subset), Bool.forall_bool' i, sdiff_eq_empty.2 hC,
     and_iff_right (M.skew_empty P.subset), P.diff_eq_inter_bool, i.not_not,
     inter_eq_self_of_subset_left hC]
 
@@ -180,29 +182,30 @@ lemma faithful_delete_iff_forall_subset_closure (hD : M.Coindep D) :
     P.Faithful (M ＼ D) ↔ ∀ i, P i ∩ D ⊆ M.closure (P i \ D) := by
   rw [← faithful_symm_iff, faithful_delete_iff hD.subset_ground]
   convert Iff.rfl using 2 with i
-  rw [P.symm_apply, skew_comm, (hD.subset diff_subset).skew_dual_iff disjoint_sdiff_left,
-    P.diff_eq_inter_bool, i.not_not, Set.union_comm, ← diff_diff, P.compl_not_eq,
-    diff_inter_self_eq_diff, Set.inter_comm]
+  rw [P.symm_apply, skew_comm, (hD.subset sdiff_subset).skew_dual_iff disjoint_sdiff_left,
+    P.diff_eq_inter_bool, i.not_not, Set.union_comm, ← sdiff_sdiff, P.compl_not_eq,
+    sdiff_inter_self_eq_sdiff, Set.inter_comm]
 
 lemma faithful_delete_iff_subset_closure_of_subset (hD : M.Coindep D) (hDP : D ⊆ P i) :
     P.Faithful (M ＼ D) ↔ D ⊆ M.closure (P i \ D) := by
   rw [faithful_delete_iff_forall_subset_closure hD, Bool.forall_bool' i,
     inter_eq_self_of_subset_right hDP, ← D.inter_comm, ← P.diff_eq_inter_bool _,
-    diff_eq_empty.2 hDP, and_iff_left (empty_subset ..)]
+    sdiff_eq_empty.2 hDP, and_iff_left (empty_subset ..)]
 
 lemma faithful_delete_of_subset_closure (hD : D ⊆ P i) (hDcl : D ⊆ M.closure (P i \ D)) :
     P.Faithful (M ＼ D) := by
   have hDE : D ⊆ M.E := hD.trans P.subset
   have hDi : M.Coindep D := by
-    grw [coindep_iff_subset_closure_compl, ← diff_subset_diff_left (P.subset (i := i)), ← hDcl]
+    grw [coindep_iff_subset_closure_compl, ← sdiff_subset_sdiff_left (P.subset (i := i)), ← hDcl]
   rwa [faithful_delete_iff_subset_closure_of_subset hDi hD]
 
 lemma faithful_iff_of_isSpanningRestriction (hNM : N ≤sr M) (hss : M.E ⊆ P i ∪ N.E) :
     P.Faithful N ↔ M.E ⊆ M.closure (P i ∩ N.E) ∪ N.E := by
   obtain ⟨D, hD, rfl⟩ := hNM.exists_eq_delete
-  rw [delete_ground, union_comm, ← diff_subset_iff, diff_diff_cancel_left hD.subset_ground] at hss
+  rw [delete_ground, union_comm, ← sdiff_subset_iff,
+    sdiff_sdiff_cancel_left hD.subset_ground] at hss
   rw [faithful_delete_iff_subset_closure_of_subset hD hss, delete_ground, union_comm,
-    ← diff_subset_iff, diff_diff_cancel_left hD.subset_ground, ← inter_diff_assoc,
+    ← sdiff_subset_iff, sdiff_sdiff_cancel_left hD.subset_ground, ← inter_sdiff_assoc,
     inter_eq_self_of_subset_left P.subset_ground]
 
 lemma induce_faithful_iff_of_isSpanningRestriction (hNM : N ≤sr M) {P : N.Separation} :
@@ -212,7 +215,7 @@ lemma induce_faithful_iff_of_isSpanningRestriction (hNM : N ≤sr M) {P : N.Sepa
       disjoint_sdiff_left.inter_eq, union_empty, inter_eq_self_of_subset_right
       (by grw [← hNM.subset, P.compl_not_eq])]
   rw [induce_apply_self, ← P.union_bool_eq i, union_comm (P i), ← union_assoc,
-    diff_union_of_subset (P.subset_ground.trans hNM.subset)]
+    sdiff_union_of_subset (P.subset_ground.trans hNM.subset)]
   grind
 
 set_option backward.isDefEq.respectTransparency false in
@@ -221,10 +224,10 @@ lemma faithful_delete_of_forall_subset_closure (hDcl : ∀ i, P i ∩ D ⊆ M.cl
   wlog hD : D ⊆ M.E generalizing D with aux
   · rw [← delete_inter_ground_eq]
     refine aux (fun i ↦ ?_) inter_subset_right
-    grw [← inter_assoc, inter_right_comm, P.inter_ground_left, hDcl, diff_inter,
-      diff_eq_empty.2 P.subset, union_empty]
+    grw [← inter_assoc, inter_right_comm, P.inter_ground_left, hDcl, sdiff_inter,
+      sdiff_eq_empty.2 P.subset, union_empty]
   have hD : M.Coindep D := by
-    grw [coindep_iff_subset_closure_compl, ← P.union_eq, union_diff_distrib,
+    grw [coindep_iff_subset_closure_compl, ← P.union_eq, union_sdiff_distrib,
       ← closure_closure_union_closure_eq_closure_union, ← hDcl, ← hDcl, ← union_inter_distrib_right,
       P.union_eq, inter_eq_self_of_subset_right hD, ← M.subset_closure D hD]
   rwa [faithful_delete_iff_forall_subset_closure hD]
@@ -237,7 +240,7 @@ lemma faithful_remove_iff (hX : X ⊆ M.E) {b : Bool} :
 
 lemma faithful_remove_iff_of_subset {b : Bool} (hX : X ⊆ P i) :
     P.Faithful (M.remove b X) ↔ (M.bDual (!b)).Skew (P (!i)) X := by
-  rw [faithful_remove_iff (hX.trans P.subset), forall_bool' i, diff_eq_empty.2 hX,
+  rw [faithful_remove_iff (hX.trans P.subset), forall_bool' i, sdiff_eq_empty.2 hX,
     and_iff_right ((M.bDual _).skew_empty (by simp)), P.diff_eq_inter_bool, i.not_not,
     inter_eq_self_of_subset_left hX]
 
@@ -251,8 +254,8 @@ lemma faithful_remove_of_subset_closure {b : Bool} (hX : X ⊆ P i)
 lemma faithful_delete_iff_forall_restrict_coindep (hD : M.Coindep D) :
     P.Faithful (M ＼ D) ↔ ∀ i, (M ↾ P i).Coindep (D ∩ P i) := by
   convert faithful_delete_iff_forall_subset_closure hD using 2 with i
-  rw [coindep_iff_subset_closure_compl, restrict_ground_eq, diff_inter_self_eq_diff,
-    restrict_closure_eq _ diff_subset, subset_inter_iff, and_iff_left inter_subset_right,
+  rw [coindep_iff_subset_closure_compl, restrict_ground_eq, sdiff_inter_self_eq_sdiff,
+    restrict_closure_eq _ sdiff_subset, subset_inter_iff, and_iff_left inter_subset_right,
     D.inter_comm]
 
 lemma Faithful.eConn_induce_eq (hP : P.Faithful N) : (P.induce N).eConn = P.eConn := by
@@ -286,12 +289,12 @@ lemma faithful_iff_eConn_induce_eq (hNM : N ≤m M) (hConn : (P.induce N).eConn 
   rintro C D hC hD hCD rfl i
   have hrw : (M ／ C).eConn (P i \ C) = M.eConn (P i) := by
     nth_grw 1 [le_antisymm_iff, eConn_contract_diff_le, and_iff_right rfl.le, P.eConn_eq, ← h,
-      ← Separation.eConn_eq _ i, induce_apply_contract_delete, ← diff_diff, eConn_delete_diff_le]
+      ← Separation.eConn_eq _ i, induce_apply_contract_delete, ← sdiff_sdiff, eConn_delete_diff_le]
   have hrw' : (M✶ ／ D).eConn (P i \ D) = M.eConn (P i) := by
     nth_grw 1 [← eConn_dual, dual_contract_dual, le_antisymm_iff,
       and_iff_right (eConn_delete_diff_le ..), P.eConn_eq, ← h,
       ← Separation.eConn_eq _ i, induce_apply_contract_delete, contract_delete_comm _ hCD,
-      union_comm, ← diff_diff, eConn_contract_diff_le]
+      union_comm, ← sdiff_sdiff, eConn_contract_diff_le]
   refine ⟨((M.eConn_contract_diff_eq_self_iff_skew_skew ?_).1 hrw).1, ?_⟩
   · rwa [hrw, P.eConn_eq, ← h]
   refine ((M✶.eConn_contract_diff_eq_self_iff_skew_skew ?_).1 (by simpa using hrw')).1
@@ -338,13 +341,13 @@ lemma Faithful.mem_closure_delete_of_delete {e D'} {P : (M ＼ D).Separation}
     (hP : P.Faithful (M ＼ D')) (hDD' : D ⊆ D') (hei : e ∈ P i) (hD : M.Coindep D') :
     e ∈ M.closure (P i \ D') := by
   have h := hP.subset_closure_diff_of_coindep (D := (D' \ D)) ?_ ?_ i hei
-  · rw [delete_closure_eq_of_disjoint _ ((P.disjoint_delete _).mono_left diff_subset),
-      diff_diff_right, (P.disjoint_delete _).inter_eq, union_empty, mem_diff] at h
+  · rw [delete_closure_eq_of_disjoint _ ((P.disjoint_delete _).mono_left sdiff_subset),
+      sdiff_sdiff_right, (P.disjoint_delete _).inter_eq, union_empty, mem_sdiff] at h
     exact h.1
-  · rw [delete_delete, union_diff_cancel hDD']
+  · rw [delete_delete, union_sdiff_cancel hDD']
     exact IsMinor.refl
   rwa [(hD.subset hDD').delete_coindep_iff, and_iff_left disjoint_sdiff_left,
-    diff_union_of_subset hDD']
+    sdiff_union_of_subset hDD']
 
 lemma Faithful.mem_closure_of_deleteElem {e} (hP : P.Faithful (M ＼ {e})) (hei : e ∈ P i)
     (he : ¬ M.IsColoop e) : e ∈ M.closure (P i \ {e}) :=
@@ -357,14 +360,14 @@ lemma Faithful.notMem_closure_of_contractElem {e} (hP : P.Faithful (M ／ {e})) 
 lemma Faithful.nullity_le (h : P.Faithful N) (i : Bool) :
     N.nullity (P i ∩ N.E) ≤ M.nullity (P i) := by
   obtain ⟨C, D, hC, hD, hCD, rfl⟩ := h.isMinor.exists_contract_indep_delete_coindep
-  rw [delete_ground, contract_ground, nullity_delete _ (by grind), ← inter_diff_assoc,
-    ← inter_diff_assoc, inter_eq_self_of_subset_left P.subset, diff_diff_comm]
+  rw [delete_ground, contract_ground, nullity_delete _ (by grind), ← inter_sdiff_assoc,
+    ← inter_sdiff_assoc, inter_eq_self_of_subset_left P.subset, sdiff_sdiff_comm]
   have h_eq := M.nullity_union_eq_nullity_contract_add_nullity C (P i \ D)
   rw [hC.nullity_eq, add_zero] at h_eq
-  grw [← h_eq, ← diff_union_self, diff_diff_right, hCD.inter_eq, union_empty,
-    Skew.nullity_union_eq _ (by grind), (hC.diff _).nullity_eq, zero_add,
-    nullity_le_of_subset _ diff_subset]
-  exact (h.skew_of_contract hC.subset_ground (delete_isMinor ..) i).symm.mono_right diff_subset
+  grw [← h_eq, ← sdiff_union_self, sdiff_sdiff_right, hCD.inter_eq, union_empty,
+    Skew.nullity_union_eq _ (by grind), (hC.sdiff _).nullity_eq, zero_add,
+    nullity_le_of_subset _ sdiff_subset]
+  exact (h.skew_of_contract hC.subset_ground (delete_isMinor ..) i).symm.mono_right sdiff_subset
 
 lemma Faithful.indep_of_indep (hPN : P.Faithful N) (h : M.Indep (P i)) :
     N.Indep (P i ∩ N.E) := by
@@ -376,18 +379,18 @@ lemma Faithful.coindep_of_coindep (hPN : P.Faithful N) (h : M.Coindep (P i)) :
 
 lemma Faithful.spanning_of_spanning (hPN : P.Faithful N) (h : M.Spanning (P i)) :
     N.Spanning (P i ∩ N.E) := by
-  rw [spanning_iff_compl_coindep, diff_inter_self_eq_diff,
+  rw [spanning_iff_compl_coindep, sdiff_inter_self_eq_sdiff,
     P.diff_eq_inter_bool _ hPN.isMinor.subset, Set.inter_comm]
   exact hPN.coindep_of_coindep <| P.compl_eq _ ▸ h.compl_coindep
 
 lemma faithful_iff_of_delete (P : (M ＼ D).Separation) (hD : D ⊆ M.E) (i : Bool) :
     (P.induce M i).Faithful (M ＼ D) ↔ M✶.Skew (P !i) (D \ P !i) := by
   rw [faithful_delete_iff hD]
-  have hss {j} : P j ∪ D ⊆ M✶.E := union_subset (P.subset.trans diff_subset) hD
-  cases i <;> simp [P.induce_apply_of_delete_eq_cond, ← diff_diff, skew_empty hss]
+  have hss {j} : P j ∪ D ⊆ M✶.E := union_subset (P.subset.trans sdiff_subset) hD
+  cases i <;> simp [P.induce_apply_of_delete_eq_cond, ← sdiff_sdiff, skew_empty hss]
 
 
-  -- cases i <;> simp [ofDelete, inter_eq_self_of_subset_right hD, ← diff_diff, skew_empty hss]
+  -- cases i <;> simp [ofDelete, inter_eq_self_of_subset_right hD, ← sdiff_sdiff, skew_empty hss]
 set_option backward.isDefEq.respectTransparency false in
 lemma faithful_iff_of_contract (P : (M ／ C).Separation) (hC : C ⊆ M.E) (i : Bool) :
     (P.induce M i).Faithful (M ／ C) ↔ M.Skew (P !i) (C \ P !i) := by
@@ -408,7 +411,7 @@ lemma faithful_of_subset_closure_of_remove {b} (P : (M.remove b X).Separation)
   have hXE : X ⊆ M.E := by simpa using hX.trans ((M.bDual b).closure_subset_ground (P i))
   refine faithful_remove_of_subset_closure (X := X) (i := i) ?_ ?_
   · grw [induce_apply_of_remove_self, ← subset_union_right]
-  rwa [induce_apply_of_remove_self, union_diff_cancel_right]
+  rwa [induce_apply_of_remove_self, union_sdiff_cancel_right]
   grw [P.subset]
   simp
 
@@ -423,7 +426,7 @@ lemma faithful_of_subset_closure_dual_of_contract (P : (M ／ C).Separation)
 lemma faithful_iff_of_coindep_of_delete (P : (M ＼ D).Separation) (hD : M.Coindep D) (i : Bool) :
     (P.induce M i).Faithful (M ＼ D) ↔ D ⊆ M.closure (P i) := by
   rw [faithful_delete_iff_forall_subset_closure hD, Bool.forall_bool' i,
-    induce_apply_of_delete_self, union_diff_cancel_right (P.disjoint_delete _).inter_eq.subset,
+    induce_apply_of_delete_self, union_sdiff_cancel_right (P.disjoint_delete _).inter_eq.subset,
     inter_eq_self_of_subset_right subset_union_right, induce_apply_not,
     P.apply_inter_ground_of_delete, (P.disjoint_delete _).inter_eq, and_iff_left (empty_subset ..)]
 
@@ -533,12 +536,12 @@ lemma IsLawfulDG.compl {dg} (h : IsLawfulDG (α := α) dg) : IsLawfulDG fun M X 
   refine fun N M P hP i hi ↦ ?_
   simp only [Separation.compl_eq] at hi
   have hwin := h hP.symm i (by simpa using hi)
-  rwa [diff_inter_self_eq_diff, P.diff_eq_inter_bool _ hP.isMinor.subset, inter_comm]
+  rwa [sdiff_inter_self_eq_sdiff, P.diff_eq_inter_bool _ hP.isMinor.subset, inter_comm]
 
 lemma Separation.Faithful.remove_of_isLawfulDG {dg b} (h : P.Faithful (M.remove b X))
     (hdg : IsLawfulDG dg) (hi : dg M (P i)) : dg (M.remove b X) (P i \ X) := by
   convert hdg h i hi using 1
-  rw [remove_ground, ← inter_diff_assoc, P.inter_ground_eq]
+  rw [remove_ground, ← inter_sdiff_assoc, P.inter_ground_eq]
 
 lemma Separation.Faithful.delete_of_isLawfulDG {dg} (h : P.Faithful (M ＼ D)) (hdg : IsLawfulDG dg)
     (hi : dg M (P i)) : dg (M ＼ D) (P i \ D) :=
@@ -565,11 +568,11 @@ lemma IsFaithfulMono.dual {w} (hw : IsFaithfulMono (α := α) w) :
 
 lemma IsFaithfulMono.le_of_delete {w} (h : IsFaithfulMono w) (hP : P.Faithful (M ＼ D))
     (i : Bool) : w (M ＼ D) (P i \ D) ≤ w M (P i) := by
-  grw [← h i hP, delete_ground, ← inter_diff_assoc, P.inter_ground_eq]
+  grw [← h i hP, delete_ground, ← inter_sdiff_assoc, P.inter_ground_eq]
 
 lemma IsFaithfulMono.le_of_contract {w} (h : IsFaithfulMono w) (hP : P.Faithful (M ／ C))
     (i : Bool) : w (M ／ C) (P i \ C) ≤ w M (P i) := by
-  grw [← h i hP, contract_ground, ← inter_diff_assoc, P.inter_ground_eq]
+  grw [← h i hP, contract_ground, ← inter_sdiff_assoc, P.inter_ground_eq]
 
 lemma isFaithfulMono_nullity : IsFaithfulMono (α := α) Matroid.nullity :=
   fun _ _ _ i h ↦ h.nullity_le i

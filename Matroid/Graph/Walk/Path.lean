@@ -68,7 +68,7 @@ lemma isTrail_induce_iff' (hw : w.Nonempty) : G[X].IsTrail w ↔ G.IsTrail w ∧
 
 @[simp]
 lemma isTrail_deleteVerts_iff : (G - X).IsTrail w ↔ G.IsTrail w ∧ Disjoint V(w) X := by
-  rw [deleteVerts_def, isTrail_induce_iff diff_subset, subset_diff, and_congr_right_iff,
+  rw [deleteVerts_def, isTrail_induce_iff sdiff_subset, subset_sdiff, and_congr_right_iff,
     and_iff_right_iff_imp]
   exact fun h _ ↦ h.vertexSet_subset
 
@@ -235,7 +235,7 @@ lemma isPath_induce_iff' (hP : P.Nonempty) : G[X].IsPath P ↔ G.IsPath P ∧ V(
 
 @[simp, grind =]
 lemma isPath_deleteVerts_iff : (G - X).IsPath P ↔ G.IsPath P ∧ Disjoint V(P) X := by
-  rw [deleteVerts_def, isPath_induce_iff diff_subset, subset_diff, and_congr_right_iff,
+  rw [deleteVerts_def, isPath_induce_iff sdiff_subset, subset_sdiff, and_congr_right_iff,
     and_iff_right_iff_imp]
   exact fun h _ ↦ h.vertexSet_subset
 
@@ -557,21 +557,21 @@ lemma IsPathFrom.append_right (hP₀ : G.IsPathFrom S T P₀) (hP₁ : G.IsPath 
     G.IsPathFrom (S \ (V(P₁) \ {P₁.first})) (T \ (V(P₁) \ {P₁.last})) (P₀ ++ P₁) where
   toIsPath := hP₀.isPath.append hP₁ h₁₂ fun x hxP₀ hxP₁ ↦ hP₀.eq_last_of_mem hxP₀ (h₁T hxP₁)
   first_mem := by
-    simp only [← h₁₂, append_first_of_eq, mem_diff, hP₀.first_mem, mem_vertexSet_iff,
+    simp only [← h₁₂, append_first_of_eq, mem_sdiff, hP₀.first_mem, mem_vertexSet_iff,
       mem_singleton_iff, not_and, not_not, true_and]
     exact fun hf₁ ↦ hP₀.eq_last_of_mem P₀.first_mem (h₁T hf₁)
   last_mem := by
-    simp only [append_last, mem_diff, mem_vertexSet_iff, WList.last_mem, mem_singleton_iff,
+    simp only [append_last, mem_sdiff, mem_vertexSet_iff, WList.last_mem, mem_singleton_iff,
       not_true_eq_false, and_false, not_false_eq_true, and_true]
     exact h₁T P₁.last_mem
   eq_first_of_mem := by
-    simp only [← h₁₂, mem_append_iff_of_eq, mem_diff, mem_vertexSet_iff, mem_singleton_iff, not_and,
-      not_not, append_first_of_eq, and_imp]
+    simp only [← h₁₂, mem_append_iff_of_eq, mem_sdiff, mem_vertexSet_iff, mem_singleton_iff,
+      not_and, not_not, append_first_of_eq, and_imp]
     refine fun v hv hvS hv₁ ↦ hP₀.eq_first_of_mem (hv.elim id fun h ↦ ?_) hvS
     rw [hv₁ h]
     exact P₀.last_mem
   eq_last_of_mem := by
-    simp only [h₁₂, mem_append_iff_of_eq, mem_diff, mem_vertexSet_iff, mem_singleton_iff, not_and,
+    simp only [h₁₂, mem_append_iff_of_eq, mem_sdiff, mem_vertexSet_iff, mem_singleton_iff, not_and,
       not_not, append_last, and_imp]
     refine fun v hv hvT hv₁ ↦ hv₁ (hv.elim (fun h ↦ ?_) id)
     obtain rfl := h₁₂ ▸ hP₀.eq_last_of_mem h hvT

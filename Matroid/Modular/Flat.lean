@@ -96,15 +96,15 @@ lemma IsModularFlat.IsFlat [Simple M] :
   obtain ⟨I, hIu, hIX, hIe, hIi⟩ := (h (M.singleton_isFlat (heE))).exists_common_isBasis
   rw [(M.isNonloop_of_loopless heE).indep.isBasis_iff_eq, inter_eq_right, singleton_subset_iff]
     at hIe
-  refine by_contra fun heX' ↦ hIu.indep.notMem_closure_diff_of_mem hIe
+  refine by_contra fun heX' ↦ hIu.indep.notMem_closure_sdiff_of_mem hIe
     (mem_of_mem_of_subset heX (M.closure_subset_closure_of_subset_closure ?_))
   exact hIX.subset_closure.trans
-    (M.closure_subset_closure (subset_diff_singleton inter_subset_left (by simp [hIe, heX'])))
+    (M.closure_subset_closure (subset_sdiff_singleton inter_subset_left (by simp [hIe, heX'])))
 
 lemma IsModularFlat.restrict_isFlat (hF : M.IsModularFlat F) (hF' : M.IsFlat F') (hFF' : F ⊆ F') :
     (M ↾ F').IsModularFlat F := by
   refine ⟨?_, fun F₁ hF₂ ↦ ?_⟩
-  · rw [isFlat_restrict_iff', hF.isFlat.closure, diff_eq_empty.2 hF'.subset_ground,
+  · rw [isFlat_restrict_iff', hF.isFlat.closure, sdiff_eq_empty.2 hF'.subset_ground,
       inter_eq_self_of_subset_left hFF', union_empty]
   obtain ⟨F₁, hF₁, rfl⟩ := (isFlat_restrict_iff hF'.subset_ground).1 hF₂
   exact (hF.isModularPair (hF₁.inter hF')).restrict hFF' inter_subset_right
@@ -113,7 +113,7 @@ lemma IsModularFlat.contract_subset {C : Set α} (hF : M.IsModularFlat F) (hC : 
     (M ／ C).IsModularFlat (F \ C) := by
   have hCE : C ⊆ M.E := hC.trans hF.subset_ground
   refine ⟨?_, fun F' hF' ↦ ?_⟩
-  · rw [isFlat_contract_iff, diff_union_of_subset hC, and_iff_right hF.isFlat]
+  · rw [isFlat_contract_iff, sdiff_union_of_subset hC, and_iff_right hF.isFlat]
     exact disjoint_sdiff_left
   rw [isFlat_contract_iff] at hF'
   simpa [hF'.2.sdiff_eq_left] using (hF.isModularPair hF'.1).contract_subset_closure (C := C)
@@ -126,10 +126,10 @@ lemma IsFlat.isModularFlat_iff_forall_skew_of_inter (hX : M.IsFlat X) :
   refine ⟨fun h F hF hr hs ↦ ?_, fun h Y hY ↦ ?_⟩
   · specialize h hF
     rw [isModularPair_iff_skew_contract_inter (hr.trans (M.closure_subset_ground _)),
-      contract_eq_delete_of_subset_loops hr, ← diff_inter_self_eq_diff,
-      ← diff_inter_self_eq_diff (t := X), inter_comm F] at h
+      contract_eq_delete_of_subset_loops hr, ← sdiff_inter_self_eq_sdiff,
+      ← sdiff_inter_self_eq_sdiff (t := X), inter_comm F] at h
     rw [skew_iff_diff_loops_skew]
-    exact h.of_delete.mono (diff_subset_diff_right hr) (diff_subset_diff_right hr)
+    exact h.of_delete.mono (sdiff_subset_sdiff_right hr) (sdiff_subset_sdiff_right hr)
   -- Let `W` be a flat so that `W` and `cl (X ∪ Y)` are a modular pair with intersection
   -- `Y` and spanning union.
   obtain ⟨W, hW⟩ := hY.exists_modularCompl M.ground_isFlat (M.closure_isFlat (X ∪ Y))
@@ -176,8 +176,8 @@ lemma IsFlat.isModularFlat_iff_forall_skew_of_inter (hX : M.IsFlat X) :
 
   have hrw : IU \ IZ = IU ∩ X
   · nth_rewrite 1 [← inter_eq_self_of_subset_left hIU.subset]
-    rw [inter_union_distrib_left, hIU_eq, union_diff_distrib, union_diff_right,
-      ← union_diff_distrib, ((h.mono ?_ ?_).disjoint_of_indep_right hIZ.indep).sdiff_eq_left,
+    rw [inter_union_distrib_left, hIU_eq, union_sdiff_distrib, union_sdiff_right,
+      ← union_sdiff_distrib, ((h.mono ?_ ?_).disjoint_of_indep_right hIZ.indep).sdiff_eq_left,
       union_eq_left, subset_inter_iff]
     · exact ⟨((subset_union_left.trans hIU_eq.symm.subset).trans inter_subset_left),
         hIXY.subset.trans inter_subset_left⟩
@@ -194,13 +194,13 @@ lemma IsFlat.isModularFlat_iff_forall_skew_of_inter (hX : M.IsFlat X) :
 
   have hdj := h.symm.diff_loops_disjoint_left.symm
 
-  have hss' : X ⊆ (M ／ (X' \ M.loops)).E := subset_diff.2 ⟨hX.subset_ground, hdj⟩
+  have hss' : X ⊆ (M ／ (X' \ M.loops)).E := subset_sdiff.2 ⟨hX.subset_ground, hdj⟩
 
-  replace h := h.mono_right (Y' := X' \ M.loops) diff_subset
+  replace h := h.mono_right (Y' := X' \ M.loops) sdiff_subset
   rw [← h.symm.contract_restrict_eq, restrict_closure_eq _ inter_subset_right hss',
-    subset_inter_iff, and_iff_left rfl.subset, contract_closure_eq, subset_diff, and_iff_left hdj,
+    subset_inter_iff, and_iff_left rfl.subset, contract_closure_eq, subset_sdiff, and_iff_left hdj,
     closure_union_congr_right (M.closure_diff_eq_closure_of_subset_loops _ rfl.subset),
-    ← hrw, diff_union_eq_union_of_subset _ (hss.trans hIX'.subset),
+    ← hrw, sdiff_union_eq_union_of_subset _ (hss.trans hIX'.subset),
     closure_union_congr_left hIU.closure_eq_closure, union_assoc]
 
   exact M.subset_closure_of_subset' subset_union_left
@@ -239,7 +239,7 @@ lemma IsLine.isModularFlat_of_forall_isHyperplane {L : Set α} (hL : M.IsLine L)
     (h : ∀ ⦃H⦄, M.IsHyperplane H → ¬ (L ∩ H ⊆ M.loops)) : M.IsModularFlat L := by
   rw [hL.isFlat.isModularFlat_iff_forall_skew_of_inter]
   intro F hF hcl hsp
-  rw [← eLocalConn_eq_zero, ← ENat.lt_one_iff_eq_zero, ← not_le]
+  rw [← eLocalConn_eq_zero, ← Order.lt_one_iff, ← not_le]
   intro hle
   have hlc := M.eLocalConn_add_eRelRk_union_eq_eRk L F
   rw [hL.eRk, ← eRelRk_closure_right, hsp.closure_eq, add_comm] at hlc
@@ -263,14 +263,14 @@ lemma IsModularFlat.exists_mem_mem_closure_insert (hX : M.IsModularFlat X) {C : 
   · exact ⟨e, M.mem_closure_of_mem' (mem_insert ..), by grind, he⟩
   have hss : I \ X ⊆ I ∩ M.closure C := by grind
   have hi : M.Indep (insert e (I \ X)) := by
-    grw [(hIXC.indep.diff _).insert_indep_iff_of_notMem (by grind), hss, hIC.closure_eq_closure,
-      closure_closure, mem_diff, and_iff_right (mem_ground_of_mem_closure heXC)]
+    grw [(hIXC.indep.sdiff _).insert_indep_iff_of_notMem (by grind), hss, hIC.closure_eq_closure,
+      closure_closure, mem_sdiff, and_iff_right (mem_ground_of_mem_closure heXC)]
     assumption
   have hP : M.IsPoint (M.closure (insert e (I \ X)) ∩ X) := by
     refine ⟨(M.closure_isFlat ..).inter hX.isFlat, ?_⟩
     rw [inter_comm, ← (hX.isModularPair (M.closure_isFlat ..)).eLocalConn_eq_eRk_inter,
       eLocalConn_closure_right, hIX.eLocalConn_eq_of_disjoint' hi.isBasis_self (by grind),
-      union_comm, insert_union, diff_union_inter, nullity_insert_eq_add_one _ heIX,
+      union_comm, insert_union, sdiff_union_inter, nullity_insert_eq_add_one _ heIX,
       hIXC.indep.nullity_eq, zero_add]
     rwa [hIXC.closure_eq_closure, closure_union_closure_right_eq]
   obtain ⟨f, hfbl, hfcl⟩ := hP.exists_eq_closure_isNonloop
@@ -297,7 +297,7 @@ there is an element of `X` parallel to `e`.-/
 lemma IsModularFlat.exists_parallel_mem_of_contract (hX : M.IsModularFlat X) {C : Set α}
     (he : (M ／ C).IsNonloop e) (hecl : e ∈ (M ／ C).closure X) :
     ∃ f ∈ X, (M ／ C).Parallel e f := by
-  simp only [contract_closure_eq, mem_diff, contract_isNonloop_iff] at hecl he
+  simp only [contract_closure_eq, mem_sdiff, contract_isNonloop_iff] at hecl he
   refine Exists.imp (fun f hf ↦ ?_) <| hX.exists_mem_mem_closure_insert he.2 hecl.1
   grind [contract_parallel_iff]
 
@@ -318,21 +318,21 @@ lemma IsFlat.isModularFlat_iff_forall_contract_exists_parallel (hX : M.IsFlat X)
   intro e heIJ hecl
 
   have hdj : Disjoint X (I \ {e})
-  · rw [disjoint_iff_inter_eq_empty, ((hI.indep.diff _).inter_left _).eq_empty_of_subset_loops]
-    exact (inter_subset_inter_right _ (diff_subset.trans hI.subset)).trans hXFcl
+  · rw [disjoint_iff_inter_eq_empty, ((hI.indep.sdiff _).inter_left _).eq_empty_of_subset_loops]
+    exact (inter_subset_inter_right _ (sdiff_subset.trans hI.subset)).trans hXFcl
 
   specialize h hdj.symm (e := e)
-  simp only [contract_closure_eq, ← closure_union_congr_left hJ.closure_eq_closure, mem_diff, hecl,
+  simp only [contract_closure_eq, ← closure_union_congr_left hJ.closure_eq_closure, mem_sdiff, hecl,
     mem_singleton_iff, not_true_eq_false, and_false, not_false_eq_true, and_self,
     contract_isNonloop_iff, hI.indep.subset_ground heIJ.1,
-    hI.indep.notMem_closure_diff_of_mem heIJ.1, forall_const] at h
+    hI.indep.notMem_closure_sdiff_of_mem heIJ.1, forall_const] at h
 
   obtain ⟨f, hfX, hef⟩ := h
 
   refine hef.isNonloop_right.of_contract.not_isLoop (hXFcl ⟨hfX, ?_⟩)
 
   replace hef := hef.symm.mem_closure
-  rw [contract_closure_eq, union_diff_self, singleton_union, insert_eq_of_mem heIJ.1,
+  rw [contract_closure_eq, union_sdiff_self, singleton_union, insert_eq_of_mem heIJ.1,
     ← hF.eq_closure_of_isBasis hI] at hef
   exact hef.1
 
@@ -354,7 +354,7 @@ lemma IsFlat.modularSet_iff_forall_isMinor_exists_parallel (hX : M.IsFlat X) :
   refine ⟨fun h N e hNM hXE heX hnl ↦ h.exists_parallel_mem_of_isMinor hNM hXE hnl heX, fun h ↦ ?_⟩
   rw [hX.isModularFlat_iff_forall_contract_exists_parallel]
   intro C e hCX he hecl
-  exact h e (M.contract_isMinor C) (subset_diff.2 ⟨hX.subset_ground, hCX.symm⟩) hecl he
+  exact h e (M.contract_isMinor C) (subset_sdiff.2 ⟨hX.subset_ground, hCX.symm⟩) hecl he
 
 lemma IsModularFlat.inter_insert_closure_isPoint_of_skew (hF : M.IsModularFlat F)
     (hFX : M.Skew F X) (heFX : e ∈ M.closure (F ∪ X)) (heX : e ∉ M.closure X) :
@@ -402,33 +402,33 @@ lemma IsFlat.isModularFlat_iff_forall_distrib_of_subset (hF : M.IsFlat F) :
     ((inter_subset_inter hI.subset hJ.subset).trans hdj), and_iff_right rfl]
 
   rw [hI.indep.union_indep_iff_forall_notMem_closure_right hJ.indep]
-  refine fun e ⟨heJ, heI⟩ hecl ↦ hJ.indep.notMem_closure_diff_of_mem heJ ?_
-  have hcon := h _ _ (M.closure_isFlat (J \ {e})) (M.closure_isFlat J) (M.closure_mono diff_subset)
+  refine fun e ⟨heJ, heI⟩ hecl ↦ hJ.indep.notMem_closure_sdiff_of_mem heJ ?_
+  have hcon := h _ _ (M.closure_isFlat (J \ {e})) (M.closure_isFlat J) (M.closure_mono sdiff_subset)
   rw [closure_union_closure_left_eq, ← closure_union_congr_right hI.closure_eq_closure,
     union_comm, ← hZ.eq_closure_of_isBasis hJ, hdj.antisymm (hF.inter hZ).loops_subset,
     loops, closure_closure_union_closure_eq_closure_union, union_empty] at hcon
-  exact hcon.subset ⟨hecl, hJ.subset heJ⟩
+  exact hcon ⟨hecl, hJ.subset heJ⟩
 
 lemma IsModularPair.distrib_of_subset_left (hFX : M.IsModularPair F X) (hF : M.IsFlat F)
     (hYF : Y ⊆ F) : F ∩ M.closure (X ∪ Y) = M.closure ((F ∩ X) ∪ Y) := by
   have hss : Y \ (F ∩ X) ⊆ F \ X
-  · rw [← diff_self_inter (s := F)]
-    exact diff_subset_diff_left hYF
+  · rw [← sdiff_self_inter (s := F)]
+    exact sdiff_subset_sdiff_left hYF
   have hsk := hFX.skew_contract_inter.contract_subset_left hss
-  rw [contract_contract, union_diff_self, diff_diff_right, diff_diff_right,
+  rw [contract_contract, union_sdiff_self, sdiff_sdiff_right, sdiff_sdiff_right,
     (disjoint_sdiff_left.mono_right inter_subset_right).inter_eq, union_empty,
     (disjoint_sdiff_left.mono_right inter_subset_left).inter_eq, union_empty] at hsk
 
   have h := hsk.inter_closure_eq
-  simp only [contract_closure_eq, diff_inter_diff_right] at h
-  rw [union_comm (F ∩ X), ← union_assoc, ← union_assoc, diff_union_self, union_right_comm,
-    diff_union_inter, union_eq_self_of_subset_right hYF, diff_union_self, union_right_comm,
-    inter_comm F, diff_union_inter, hF.closure, union_comm Y, inter_comm X, contract_loops_eq] at h
+  simp only [contract_closure_eq, sdiff_inter_sdiff_right] at h
+  rw [union_comm (F ∩ X), ← union_assoc, ← union_assoc, sdiff_union_self, union_right_comm,
+    sdiff_union_inter, union_eq_self_of_subset_right hYF, sdiff_union_self, union_right_comm,
+    inter_comm F, sdiff_union_inter, hF.closure, union_comm Y, inter_comm X, contract_loops_eq] at h
 
   apply_fun (· ∪ (F ∩ X ∪ Y)) at h
   have hE : F ∩ X ∪ Y ⊆ M.E := union_subset (inter_subset_left.trans hF.subset_ground)
     (hYF.trans hF.subset_ground)
-  rwa [diff_union_of_subset (M.subset_closure _), diff_union_of_subset] at h
+  rwa [sdiff_union_of_subset (M.subset_closure _), sdiff_union_of_subset] at h
   refine subset_inter (union_subset inter_subset_left hYF) (M.subset_closure_of_subset' ?_)
   exact union_subset_union_left _ inter_subset_right
 
@@ -443,34 +443,34 @@ lemma isModularPair_iff_forall_distrib_of_subset_left (hF : M.IsFlat F) (hXE : X
   obtain ⟨IX, hIX, hIX_eq⟩ := hI.exists_isBasis_inter_eq_of_superset inter_subset_right
   have hIIF : I ⊆ IF := by simp [← hIF_eq]
   have hIIX : I ⊆ IX := by simp [← hIX_eq]
-  have hIF' := hI.contract_diff_isBasis_diff hIF hIIF
-  have hIX' := hI.contract_diff_isBasis_diff hIX hIIX
+  have hIF' := hI.contract_sdiff_isBasis_sdiff hIF hIIF
+  have hIX' := hI.contract_sdiff_isBasis_sdiff hIX hIIX
 
-  rw [diff_inter_self_eq_diff] at hIX'
-  rw [diff_self_inter] at hIF'
+  rw [sdiff_inter_self_eq_sdiff] at hIX'
+  rw [sdiff_self_inter] at hIF'
 
   rw [hI.contract_eq_contract_delete, skew_delete_iff]
-  refine ⟨?_, disjoint_sdiff_left.mono_right (diff_subset.trans inter_subset_right),
-    disjoint_sdiff_left.mono_right (diff_subset.trans inter_subset_left)⟩
+  refine ⟨?_, disjoint_sdiff_left.mono_right (sdiff_subset.trans inter_subset_right),
+    disjoint_sdiff_left.mono_right (sdiff_subset.trans inter_subset_left)⟩
 
   suffices hIu : M.Indep (IF ∪ IX)
   · rw [← skew_iff_isBases_skew hIF' hIX', hIF'.indep.skew_iff_disjoint_union_indep hIX'.indep,
-      hI.indep.contract_indep_iff, ← union_diff_distrib, diff_union_of_subset,
+      hI.indep.contract_indep_iff, ← union_sdiff_distrib, sdiff_union_of_subset,
       and_iff_right disjoint_sdiff_left, and_iff_left hIu]
-    · rw [disjoint_iff_inter_eq_empty, diff_inter_diff_right, diff_eq_empty]
+    · rw [disjoint_iff_inter_eq_empty, sdiff_inter_sdiff_right, sdiff_eq_empty]
       rw [hI.eq_of_subset_indep (hIF.indep.inter_right _) (subset_inter hIIF hIIX)]
       exact inter_subset_inter hIF.subset hIX.subset
     exact hIIF.trans subset_union_left
 
   rw [union_comm, hIX.indep.union_indep_iff_forall_notMem_closure_right hIF.indep]
-  refine fun e ⟨heIF, heIX⟩ hecl ↦ hIF.indep.notMem_closure_diff_of_mem heIF ?_
-  specialize h _ (hF.closure_subset_of_subset (diff_subset.trans hIF.subset))
+  refine fun e ⟨heIF, heIX⟩ hecl ↦ hIF.indep.notMem_closure_sdiff_of_mem heIF ?_
+  specialize h _ (hF.closure_subset_of_subset (sdiff_subset.trans hIF.subset))
     (M.closure_isFlat (IF \ {e}))
   simp only [closure_union_closure_right_eq, ← closure_union_congr_left hIX.closure_eq_closure,
     ← closure_union_congr_left hI.closure_eq_closure] at h
-  rw [union_eq_self_of_subset_left (subset_diff_singleton hIIF (notMem_subset hIIX heIX))] at h
+  rw [union_eq_self_of_subset_left (subset_sdiff_singleton hIIF (notMem_subset hIIX heIX))] at h
 
-  exact h.subset ⟨hIF.subset heIF, hecl⟩
+  exact h ⟨hIF.subset heIF, hecl⟩
 
 lemma IsModularFlat.distrib_of_subset_self (hF : M.IsModularFlat F) (hX : M.IsFlat X) (hY : Y ⊆ F) :
     F ∩ M.closure (X ∪ Y) = M.closure (F ∩ X ∪ Y) := by
@@ -629,11 +629,11 @@ lemma IsModularFlat.restrict (hF : M.IsModularFlat F) (hFX : F ⊆ X)
   rw [hF'.isModularFlat_iff_forall_contract_exists_parallel]
   refine fun C e hCF he hecl  ↦ hF.exists_parallel_mem_of_isMinor ?_ ?_ he hecl
   · exact (contract_isMinor _ _).trans (restrict_isMinor _ hXE)
-  simp [subset_diff, hFX, hCF.symm]
+  simp [subset_sdiff, hFX, hCF.symm]
 
 lemma IsModularFlat.contract (hF : M.IsModularFlat F) (C : Set α) :
     (M ／ C).IsModularFlat ((M ／ C).closure F) := by
-  rw [← closure_inter_ground, contract_ground, ← inter_diff_assoc,
+  rw [← closure_inter_ground, contract_ground, ← inter_sdiff_assoc,
     inter_eq_self_of_subset_left hF.subset_ground,
     (closure_isFlat _ _).isModularFlat_iff_forall_contract_exists_parallel]
   intro A e hdj hnl hcl
@@ -642,11 +642,11 @@ lemma IsModularFlat.contract (hF : M.IsModularFlat F) (C : Set α) :
   · obtain ⟨f, hfF, hfcl⟩ := h_ex
     rw [← contract_contract] at hfcl
     refine ⟨f, ?_, hfcl⟩
-    simp only [contract_closure_eq, diff_union_self, mem_diff]
+    simp only [contract_closure_eq, sdiff_union_self, mem_sdiff]
     exact ⟨mem_of_mem_of_subset hfF
       (M.subset_closure_of_subset' subset_union_left hF.subset_ground), hfcl.mem_ground_right.1.2⟩
-  simp only [contract_closure_eq, diff_union_self, mem_diff, mem_union, not_or] at hcl ⊢
-  rwa [diff_union_eq_union_of_subset _ subset_union_left, closure_union_closure_left_eq,
+  simp only [contract_closure_eq, sdiff_union_self, mem_sdiff, mem_union, not_or] at hcl ⊢
+  rwa [sdiff_union_eq_union_of_subset _ subset_union_left, closure_union_closure_left_eq,
     union_comm C, ← union_union_distrib_right, union_right_comm, union_assoc] at hcl
 
 end IsModularFlat
@@ -694,8 +694,8 @@ lemma Modular.contract (hM : M.Modular) (C : Set α) : (M ／ C).Modular := by
     (M.closure_isFlat (F' ∪ C))).contract_subset_closure (C := C)
     (by grw [M.closure_closure, ← M.subset_closure _ hF.1.subset_ground, ← subset_union_right])
     (by grw [M.closure_closure, ← M.subset_closure _ hF'.1.subset_ground, ← subset_union_right])
-  · rw [hF.1.closure, union_diff_right, hF.2.sdiff_eq_left]
-  rw [hF'.1.closure, union_diff_right, hF'.2.sdiff_eq_left]
+  · rw [hF.1.closure, union_sdiff_right, hF.2.sdiff_eq_left]
+  rw [hF'.1.closure, union_sdiff_right, hF'.2.sdiff_eq_left]
 
 lemma IsCircuit.chord_split_of_modular_subset {C I : Set α} (hC : M.IsCircuit C) (hIC : I ⊆ C)
     (hnt : I.Nontrivial) (hnt' : (C \ I).Nontrivial) (hmod : M.IsModularFlat (M.closure I)) :
@@ -719,10 +719,10 @@ lemma IsCircuit.chord_split_of_modular_subset {C I : Set α} (hC : M.IsCircuit C
       · intro heI
         rw [insert_eq_of_mem heI] at hssu
         exact hssu.ne rfl
-      simp [insert_diff_of_notMem _ heI] at hnt'
-    refine aux _ ?_ hnt' (by rwa [diff_diff_cancel_left hIC]) ?_
+      simp [insert_sdiff_of_notMem _ heI] at hnt'
+    refine aux _ ?_ hnt' (by rwa [sdiff_sdiff_cancel_left hIC]) ?_
     · simpa [inter_eq_self_of_subset_right hIC] using hnt.nonempty
-    rwa [inter_comm, diff_diff_cancel_left hIC]
+    rwa [inter_comm, sdiff_sdiff_cancel_left hIC]
 
   intro J hJC hJnt hCJnt hb
 
@@ -730,9 +730,9 @@ lemma IsCircuit.chord_split_of_modular_subset {C I : Set α} (hC : M.IsCircuit C
     (by simpa using hb.subset.trans inter_subset_left) fun f hfI heclf ↦ ?_
   have hsk : M.Skew (J \ {f}) (C \ J)
   · rw [Indep.skew_iff_disjoint]
-    · exact disjoint_sdiff_right.mono_left diff_subset
-    refine (hC.diff_singleton_indep (hJC.subset hfI)).subset
-      (union_subset (diff_subset_diff_left hJC.subset) (diff_subset_diff_right (by simpa)))
+    · exact disjoint_sdiff_right.mono_left sdiff_subset
+    refine (hC.sdiff_singleton_indep (hJC.subset hfI)).subset
+      (union_subset (sdiff_subset_sdiff_left hJC.subset) (sdiff_subset_sdiff_right (by simpa)))
   have henl : M.IsNonloop e := indep_singleton.1 hJ.indep
 
   refine henl.not_isLoop <| hsk.closure_skew.inter_subset_loops ⟨heclf, ?_⟩
@@ -752,7 +752,7 @@ private lemma modular_finitary_aux (hM : ∀ F, M.IsFlat F → M.eRk F ≤ 2 →
   · intro g i h
     rw [ne_comm, ← not_or, ← mem_insert_iff]
     refine fun hgins ↦ h.dep.not_indep (h_isCircuit.ssubset_indep ?_)
-    refine HasSubset.Subset.ssubset_of_mem_notMem (a := y) ?_ (by simp) ?_
+    refine LE.le.ssubset_of_mem_notMem (a := y) ?_ (by simp) ?_
     · rw [insert_comm (b := y)]
       refine subset_trans ?_ (subset_insert _ _)
       obtain (rfl | hg) := hgins
@@ -777,7 +777,7 @@ private lemma modular_finitary_aux (hM : ∀ F, M.IsFlat F → M.eRk F ≤ 2 →
       (by simp [pair_subset_iff, h_inj.eq_iff])
       (by simp [hg i]) ?_ ?_
     rotate_left
-    · refine Infinite.nontrivial (Infinite.diff ?_ (by simp))
+    · refine Infinite.nontrivial (Infinite.sdiff ?_ (by simp))
       simp only [insert_infinite_iff, infinite_image_iff h_inj.injOn]
       exact Ici_infinite i
     · refine hM _ (M.closure_isFlat _) ?_
@@ -785,15 +785,15 @@ private lemma modular_finitary_aux (hM : ∀ F, M.IsFlat F → M.eRk F ≤ 2 →
       exact (M.eRk_le_encard _).trans (by simp)
     obtain ⟨g', hg'C, hgg', hg'x⟩ := h_ex
     rw [insert_comm] at hgg'
-    rw [insert_diff_of_notMem _ (by simp [hxg, hxi]), insert_diff_of_mem _ (by simp),
-      ← union_singleton (a := g), ← diff_diff, diff_singleton_eq_self, insert_comm,
-      ← Ioi_insert, image_insert_eq, insert_diff_of_mem _ (by simp),
-      diff_singleton_eq_self, show Ioi i = Ici (i+1) from rfl] at hg'x
+    rw [insert_sdiff_of_notMem _ (by simp [hxg, hxi]), insert_sdiff_of_mem _ (by simp),
+      ← union_singleton (a := g), ← sdiff_sdiff, sdiff_singleton_eq_self, insert_comm,
+      ← Ioi_insert, image_insert_eq, insert_sdiff_of_mem _ (by simp),
+      sdiff_singleton_eq_self, show Ioi i = Ici (i+1) from rfl] at hg'x
     · refine ⟨⟨g',?_⟩, ?_, hgg', hg'x⟩
       · exact ⟨hgg'.subset_ground (by simp), (aux1 hg'x).2⟩
       · rintro j rfl
         refine hg'x.dep.not_indep (h_isCircuit.ssubset_indep ?_)
-        refine HasSubset.Subset.ssubset_of_mem_notMem (a := y) ?_ (by simp) ?_
+        refine LE.le.ssubset_of_mem_notMem (a := y) ?_ (by simp) ?_
         · refine insert_subset_insert (insert_subset (by simp) ?_)
           exact (image_subset_range _ _).trans (subset_insert _ _)
         rw [mem_insert_iff, or_iff_right hxy.symm]
@@ -807,7 +807,7 @@ private lemma modular_finitary_aux (hM : ∀ F, M.IsFlat F → M.eRk F ≤ 2 →
   set f : ℕ → ↑(M.E \ range e) := Nat.recAux y' φ with f_def
   have hf_succ : ∀ n, f (n+1) = φ n (f n) := fun _ ↦ rfl
 
-  rw [← image_univ, ← show Ici 0 = univ by simp [Set.ext_iff]] at h_isCircuit
+  rw [← image_univ, ← show Ici 0 = univ by simp] at h_isCircuit
   have big : ∀ i, M.IsCircuit (insert x (insert ↑(f i) (e '' (Ici i))))
   · intro n
     induction' n with n IH
@@ -850,8 +850,8 @@ private lemma exists_of_modular_not_finitary (hM : ∀ L, M.IsLine L → M.IsMod
   simp only [finitary_iff_forall_isCircuit_finite, not_forall] at hnotfin
   obtain ⟨C, hC, hCinf : C.Infinite⟩ := hnotfin
   obtain ⟨x, hxC⟩ := hCinf.nonempty
-  obtain ⟨y, hyC, hyx : y ≠ x⟩ := (hCinf.diff (finite_singleton x)).nonempty
-  let e' := (hCinf.diff (t := {x,y}) (by simp)).natEmbedding
+  obtain ⟨y, hyC, hyx : y ≠ x⟩ := (hCinf.sdiff (finite_singleton x)).nonempty
+  let e' := (hCinf.sdiff (t := {x,y}) (by simp)).natEmbedding
   set e := Subtype.val ∘ e' with he_def
   set X := (C \ {x,y}) \ range e with X_def
   set N := M ／ X with hN_def
@@ -860,9 +860,9 @@ private lemma exists_of_modular_not_finitary (hM : ∀ L, M.IsLine L → M.IsMod
     · rw [he_def, range_comp]
       refine (image_mono (subset_univ _)).trans ?_
       rw [image_univ, Subtype.range_coe]
-    rw [X_def, diff_diff_right, diff_diff_cancel_left (pair_subset hxC hyC), union_diff_cancel_left,
-      eq_comm, inter_eq_right]
-    · exact hss.trans diff_subset
+    rw [X_def, sdiff_sdiff_right, sdiff_sdiff_cancel_left (pair_subset hxC hyC),
+      union_sdiff_cancel_left, eq_comm, inter_eq_right]
+    · exact hss.trans sdiff_subset
     rw [Disjoint.inter_eq]
     exact Disjoint.mono_right inter_subset_right (disjoint_sdiff_right.mono_right hss)
   have he_inj : e.Injective := Subtype.val_injective.comp e'.injective
@@ -882,11 +882,11 @@ private lemma exists_of_modular_not_finitary (hM : ∀ L, M.IsLine L → M.IsMod
   simp only [hX'] at h_aux
 
   rw [← singleton_union, ← singleton_union, ← union_assoc, singleton_union,
-    union_diff_cancel] at h_aux
+    union_sdiff_cancel] at h_aux
   swap
   · simp [pair_subset_iff, X_def, hxC, hyC]
   specialize h_aux <| hC.contract_isCircuit (C := X) ?_
-  · exact (diff_subset.trans diff_subset).ssubset_of_mem_notMem hxC (by simp)
+  · exact (sdiff_subset.trans sdiff_subset).ssubset_of_mem_notMem hxC (by simp)
   obtain ⟨f, rfl, hrange, hne, htri, hcirc⟩ := h_aux
   exact ⟨N, e, f, x, f 0, hyx.symm, he_inj, hxe, hye,
     by rwa [← hX'] at hne, hrange, rfl, htri, hcirc⟩
@@ -902,24 +902,24 @@ lemma finitary_of_forall_isLine_modular (hM : ∀ L, M.IsLine L → M.IsModularF
   · refine N.closure_subset_closure_of_subset_closure ?_
     rintro _ ⟨i, rfl⟩
     refine mem_of_mem_of_subset
-      ((htri i).mem_closure_diff_singleton_of_mem (e := e i) (by simp)) ?_
+      ((htri i).mem_closure_sdiff_singleton_of_mem (e := e i) (by simp)) ?_
     exact N.closure_mono <| by simp [insert_subset_iff]
   -- `x` is spanned by `y = b 0` and the `e`, so `x` is spanned by the `f`.
   have hcl1 : x ∈ N.closure (range f)
   · rw [← closure_closure, ← union_eq_self_of_subset_left hef,
       closure_closure_union_closure_eq_closure_union]
-    refine mem_of_mem_of_subset ((hcirc 0).mem_closure_diff_singleton_of_mem (by simp)) ?_
+    refine mem_of_mem_of_subset ((hcirc 0).mem_closure_sdiff_singleton_of_mem (by simp)) ?_
     refine N.closure_subset_closure ?_
-    rw [diff_subset_iff, singleton_union, ← union_singleton (a := f 0)]
+    rw [sdiff_subset_iff, singleton_union, ← union_singleton (a := f 0)]
     exact insert_subset_insert (union_subset_union (by simp) (by simp))
 
   rw [mem_closure_iff_exists_isCircuit hxf] at hcl1
   obtain ⟨C', hC'ss, hC', hxC'⟩ := hcl1
 
-  rw [← singleton_union, ← diff_subset_iff, subset_range_iff_exists_image_eq] at hC'ss
+  rw [← singleton_union, ← sdiff_subset_iff, subset_range_iff_exists_image_eq] at hC'ss
   obtain ⟨I, hI⟩ := hC'ss
   obtain rfl | hIne := I.eq_empty_or_nonempty
-  · rw [image_empty, eq_comm, diff_eq_empty] at hI
+  · rw [image_empty, eq_comm, sdiff_eq_empty] at hI
     refine hC'.dep.not_indep ((hcirc 0).ssubset_indep (hI.trans_ssubset ?_))
     refine (ssubset_insert (s := {x}) (a := f 0) (by simp [hxy.symm])).trans_subset ?_
     simp [pair_subset_iff]
@@ -930,22 +930,22 @@ lemma finitary_of_forall_isLine_modular (hM : ∀ L, M.IsLine L → M.IsModularF
     · exact mem_closure_of_mem' _ (by simp) (hC'.subset_ground hxC')
     rintro _ ⟨i, hj, rfl⟩
     refine mem_of_mem_of_subset
-      ((hcirc i).mem_closure_diff_singleton_of_mem (e := f i) (by simp))
+      ((hcirc i).mem_closure_sdiff_singleton_of_mem (e := f i) (by simp))
       (N.closure_subset_closure ?_)
-    rw [diff_subset_iff, singleton_union, insert_comm]
+    rw [sdiff_subset_iff, singleton_union, insert_comm]
     refine insert_subset_insert (insert_subset_insert (image_mono (fun x (hx : i ≤ x) ↦ ?_)))
     exact ((Nat.sInf_le hj.1).lt_of_ne' hj.2).trans_le hx
 
   have hcl : f j ∈ N.closure (insert x (C' \ {f j}))
-  · refine mem_of_mem_of_subset (hC'.mem_closure_diff_singleton_of_mem ?_) ?_
+  · refine mem_of_mem_of_subset (hC'.mem_closure_sdiff_singleton_of_mem ?_) ?_
     · exact mem_of_mem_of_subset (mem_image_of_mem f (Nat.sInf_mem hIne)) (by simp [hI])
     exact N.closure_mono (subset_insert _ _)
 
   have hC₀ : f j ∈ N.closure (insert x (e '' Ioi j))
   · refine mem_of_mem_of_subset hcl (subset_trans (N.closure_subset_closure ?_) hsp)
-    rw [← insert_diff_singleton, diff_diff_comm, ← hI]
+    rw [← insert_sdiff_singleton, sdiff_sdiff_comm, ← hI]
     refine insert_subset_insert ?_
-    rw [diff_subset_iff, ← image_singleton, ← image_union, singleton_union, insert_diff_singleton]
+    rw [sdiff_subset_iff, ← image_singleton, ← image_union, singleton_union, insert_sdiff_singleton]
     exact image_mono (subset_insert _ _)
 
   rw [mem_closure_iff_exists_isCircuit] at hC₀

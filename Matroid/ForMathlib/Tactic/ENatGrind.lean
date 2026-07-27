@@ -50,7 +50,7 @@ lemma isNat_pow_iff {b : ℕ} : IsNat (a ^ b) ↔ IsNat a ∨ b = 0 := by
 lemma isZero_add_iff : IsZero (a + b) ↔ IsZero a ∧ IsZero b := by simp [IsZero]
 lemma isZero_mul_iff : IsZero (a * b) ↔ IsZero a ∨ IsZero b := by simp [IsZero]
 lemma isZero_sub_iff : IsZero (a - b) ↔ a ≤ b := by
-  cases a <;> cases b <;> simp [← ENat.coe_sub, IsZero, Nat.sub_eq_zero_iff_le]
+  cases a <;> cases b <;> simp [← ENat.natCast_sub, IsZero, Nat.sub_eq_zero_iff_le]
 lemma isZero_pow_iff {b : ℕ} : IsZero (a ^ b) ↔ IsZero a ∧ b ≠ 0 := by simp [IsZero]
 lemma isNat_zero : IsNat 0 := isNat_iff.2 zero_ne_top
 lemma isNat_one : IsNat 1 := isNat_iff.2 one_ne_top

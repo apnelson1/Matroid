@@ -49,24 +49,28 @@ lemma iUnion_right_le_iUnion_sum {G : ι → Graph α β} {H : ι' → Graph α 
   rw [Graph.iUnion_le_iff]
   exact fun i ↦ le_trans (by simp) (Graph.le_iUnion hGH (Sum.inr i))
 
+set_option backward.isDefEq.respectTransparency false in
 @[simp]
 lemma induce_iUnion [Nonempty ι] {G : ι → Graph α β} (hG : Pairwise (Graph.Compatible on G))
     (X : Set α) :
     (Graph.iUnion G hG)[X] = .iUnion (fun i ↦ (G i)[X]) (fun _ _ hij ↦ (hG hij).induce ..) :=
   Graph.ext (by simp [iUnion_const]) (by simp)
 
+set_option backward.isDefEq.respectTransparency false in
 @[simp]
 lemma Compatible.deleteVerts_iUnion {G : ι → Graph α β} (hG : Pairwise (Graph.Compatible on G))
     (X : Set α) :
     (Graph.iUnion G hG) - X = .iUnion (fun i ↦ (G i) - X) (fun _ _ hij ↦ (hG hij).deleteVerts) :=
-  Graph.ext (by simp [iUnion_diff]) (by simp)
+  Graph.ext (by simp [iUnion_sdiff]) (by simp)
 
+set_option backward.isDefEq.respectTransparency false in
 @[simp]
 lemma Compatible.deleteEdges_iUnion {G : ι → Graph α β} (hG : Pairwise (Graph.Compatible on G))
     (F : Set β) :
     (Graph.iUnion G hG) ＼ F = .iUnion (fun i ↦ (G i) ＼ F) (fun _ _ hij ↦ (hG hij).deleteEdges) := by
   ext <;> simp
 
+set_option backward.isDefEq.respectTransparency false in
 @[simp]
 lemma Compatible.restrict_iUnion {G : ι → Graph α β} (hG : Pairwise (Graph.Compatible on G))
     (F : Set β) : (Graph.iUnion G hG) ↾ F =
@@ -195,8 +199,8 @@ lemma Compatible.union_mono (hleG : G₁ ≤ G₂) (hleH : H₁ ≤ H₂) (h : G
     G₁ ∪ H₁ ≤ G₂ ∪ H₂ := le_trans (h.union_mono_left hleG) (union_mono_right hleH)
 
 lemma restrict_union_deleteEdges (G : Graph α β) (F : Set β) : (G ↾ F) ∪ (G ＼ F) = G := by
-  rw [← restrict_edgeSet_diff_eq_deleteEdges, ← restrict_union, ← restrict_edgeSet_inter]
-  simp only [union_diff_self, restrict_edgeSet_inter, restrict_union, restrict_self]
+  rw [← restrict_edgeSet_sdiff_eq_deleteEdges, ← restrict_union, ← restrict_edgeSet_inter]
+  simp only [union_sdiff_self, restrict_edgeSet_inter, restrict_union, restrict_self]
   exact union_eq_self_of_le_left (by simp)
 
 lemma deleteEdges_union_restrict (G : Graph α β) (F : Set β) : (G ＼ F) ∪ (G ↾ F) = G := by
@@ -240,11 +244,13 @@ lemma induce_union (G : Graph α β) (X Y : Set α) (hX : ∀ x ∈ X, ∀ y ∈
     simp [hx, hy]
   simp [hxy]
 
+set_option backward.isDefEq.respectTransparency false in
 protected lemma inter_distrib_iUnion {H : ι → Graph α β} (hH : Pairwise (Compatible on H)) :
     G ∩ (Graph.iUnion H hH) = Graph.iUnion (fun i ↦ G ∩ (H i))
       (fun _ _ hne ↦ (hH hne).mono Graph.inter_le_right Graph.inter_le_right) :=
   Graph.ext (by simp [inter_iUnion]) (by simp)
 
+set_option backward.isDefEq.respectTransparency false in
 protected lemma inter_distrib_sUnion (hs : Gs.Pairwise Compatible) :
     G ∩ (Graph.sUnion Gs hs) = Graph.sUnion ((fun K ↦ G ∩ K) '' Gs) (by
       rintro _ ⟨K₁, hK₁, rfl⟩ _ ⟨K₂, hK₂, rfl⟩ -
@@ -342,7 +348,7 @@ lemma iUnion_isSpanningSubgraph_of_exists_isSpanningSubgraph_of_forall_le [Nonem
     (h : ∀ i, H i ≤ G) (hH : ∃ i, H i ≤s G) :
     Graph.iUnion H (pairwise_compatible_of_subgraph h) ≤s G := IsSpanningSubgraph.mk' (by
     apply le_antisymm
-    · simp only [vertexSet_iUnion, le_eq_subset, iUnion_subset_iff]
+    · simp only [vertexSet_iUnion, iUnion_subset_iff]
       exact fun i ↦ (h i).vertexSet_mono
     obtain ⟨i, hi⟩ := hH
     rw [← hi.vertexSet_eq]

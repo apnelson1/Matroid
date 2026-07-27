@@ -293,7 +293,7 @@ instance ENat.instBinomialRing : BinomialRing ℕ∞ where
         cases n with | _ => simp [h0, h1, Nat.factorial_ne_zero]
     | coe r =>
       rw [smeval_at_natCast (ascPochhammer ℕ n) r]
-      exact ENat.coe_inj.2 <| BinomialRing.factorial_nsmul_multichoose r n
+      exact ENat.natCast_inj.2 <| BinomialRing.factorial_nsmul_multichoose r n
 
 instance Int.instBinomialRing : BinomialRing ℤ where
   multichoose := Int.multichoose

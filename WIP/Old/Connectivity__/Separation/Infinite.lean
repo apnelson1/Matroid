@@ -29,7 +29,7 @@ lemma CyclicallyConnected.inter_nonempty_of_dep_dep (h : M.CyclicallyConnected �
   by_contra! hcon
   have hX' := cyclicallyConnected_top_iff.1 h X hX.subset_ground
   rw [or_iff_right hX.not_indep] at hX'
-  exact (hX'.subset (subset_diff.2 ⟨hY.subset_ground,
+  exact (hX'.subset (subset_sdiff.2 ⟨hY.subset_ground,
     by rwa [disjoint_comm, disjoint_iff_inter_eq_empty]⟩)).not_dep hY
 
 lemma cyclicallyConnected_top_iff_forall_inter_nonempty :
@@ -60,7 +60,7 @@ lemma TutteConnected.inter_nonempty_of_dep_codep (h : M.TutteConnected ⊤) (hX 
   obtain ⟨hi, hd⟩ | ⟨hi, hd⟩ := h hX.subset_ground
   · exact hX.not_indep hi
   refine hY.not_coindep (hd.subset ?_)
-  rwa [subset_diff, disjoint_comm, and_iff_right hY.subset_ground]
+  rwa [subset_sdiff, disjoint_comm, and_iff_right hY.subset_ground]
 
 lemma TutteConnected.isUniform (h : M.TutteConnected ⊤) : M.IsUniform :=
   TutteConnected.isUniform_of_encard_le (k := ⊤) (by simpa) (by simp)
@@ -75,11 +75,11 @@ lemma tutteConnected_top_iff_verticallyConnected_cyclicallyConnected_isUniform :
     obtain ⟨h,h'⟩ | ⟨h, h'⟩ := aux
       ⟨h'.dual_verticallyConnected, h.dual_cyclicallyConnected, hu.dual⟩
       h'.dual_verticallyConnected h.dual_cyclicallyConnected hu.dual
-      (show M.E \ X ⊆ M.E from diff_subset) (hu.spanning_of_dep hXi).compl_coindep
+      (show M.E \ X ⊆ M.E from sdiff_subset) (hu.spanning_of_dep hXi).compl_coindep
     · rw [dual_coindep_iff] at h'
       exact .inr ⟨h', h⟩
-    rw [dual_coindep_iff, dual_ground, diff_diff_cancel_left hXE] at h'
-    rw [dual_ground, diff_diff_cancel_left hXE] at h
+    rw [dual_coindep_iff, dual_ground, sdiff_sdiff_cancel_left hXE] at h'
+    rw [dual_ground, sdiff_sdiff_cancel_left hXE] at h
     exact .inl ⟨h', h⟩
   obtain (hXci | hXcd) := M.coindep_or_codep X
   · simp [hXi, hXci, tutteDegen_iff]
@@ -94,13 +94,13 @@ lemma VerticallyConnected.two_mul_eRank_le (h : M.VerticallyConnected ⊤) :
   obtain ⟨B, hB⟩ := M.exists_isBase
   obtain rfl | ⟨e, he⟩ := B.eq_empty_or_nonempty
   · simp [← hB.encard_eq_eRank]
-  obtain hs | hs := verticallyConnected_top_iff.1 h (B \ {e}) (diff_subset.trans hB.subset_ground)
-  · rw [hB.eq_of_superset_spanning hs diff_subset] at he
+  obtain hs | hs := verticallyConnected_top_iff.1 h (B \ {e}) (sdiff_subset.trans hB.subset_ground)
+  · rw [hB.eq_of_superset_spanning hs sdiff_subset] at he
     simp at he
   obtain ⟨B', hB', hB'ss⟩ := hs.exists_isBase_subset
   nth_grw 1 [two_mul, ← hB.encard_eq_eRank, ← hB'.encard_eq_eRank,
-    ← encard_diff_singleton_add_one he, add_right_comm, ← encard_union_eq,
-    encard_le_encard (union_subset (diff_subset.trans hB.subset_ground) hB'.subset_ground)]
+    ← encard_sdiff_singleton_add_one he, add_right_comm, ← encard_union_eq,
+    encard_le_encard (union_subset (sdiff_subset.trans hB.subset_ground) hB'.subset_ground)]
   exact disjoint_sdiff_right.mono_right hB'ss
 
 lemma CyclicallyConnected.two_mul_dual_eRank_le (h : M.CyclicallyConnected ⊤) :
@@ -113,7 +113,7 @@ lemma CyclicallyConnected.encard_le (h : M.CyclicallyConnected ⊤) :
   obtain ⟨D, hDE, hD⟩ :=
     exists_subset_encard_eq (k := M.eRank + 1) (s := M.E) (by enat_to_nat!; omega)
   have hle' : M.eRank + 1 ≤ (M.E \ D).encard := by
-    rw [← encard_diff_add_encard_of_subset hDE] at hlt
+    rw [← encard_sdiff_add_encard_of_subset hDE] at hlt
     eomega
   obtain ⟨D', hD'E, hD'⟩ := exists_subset_encard_eq hle'
   have hrt : ¬ M.RankInfinite := by rw [← eRank_eq_top_iff]; enat_to_nat!
@@ -148,9 +148,9 @@ lemma unifOn_tutteConnected_top_iff {E : Set α} {k : ℕ} (hkE : k ≤ E.encard
   suffices hsuff : ∀ ⦃X⦄, X ⊆ E →
     X.encard ≤ k ∧ k ≤ (E \ X).encard ∨ (E \ X).encard ≤ k ∧ k ≤ X.encard by
     simpa +contextual [TutteConnected, numConnected_top_iff', unifOn_coindep_iff'' hkE,
-      diff_subset, tutteDegen_iff]
+      sdiff_subset, tutteDegen_iff]
   intro X hX
-  have hcard := encard_diff_add_encard_of_subset hX
+  have hcard := encard_sdiff_add_encard_of_subset hX
   enat_to_nat!; lia
 
 /-- For finite `r`, a rank-`r` uniform matroid is `k`-Tutte-connected if and only if either
@@ -165,7 +165,7 @@ lemma unifOn_tutteConnected_iff {E : Set α} {r : ℕ} (hrE : r ≤ E.encard) :
       · simp [hle, hle']
       refine .inr <| h.tutteConnected_top_of_eRank_dual_add_one_le <| Order.add_one_le_of_lt ?_
       rwa [← unifOn_ground_eq E, ← (unifOn E r).eRank_add_eRank_dual, add_comm,
-        unifOn_eRank_eq, min_eq_right hrE, WithTop.add_lt_add_iff_right (ENat.coe_ne_top _)] at hlt'
+        unifOn_eRank_eq, min_eq_right hrE, WithTop.add_lt_add_iff_right (ENat.natCast_ne_top _)] at hlt'
     · refine .inr <| h.tutteConnected_top_of_eRank_add_one_le <| Order.add_one_le_of_lt ?_
       rwa [unifOn_eRank_eq, min_eq_right hrE]
   by_cases hconn : (unifOn E r).TutteConnected ⊤
@@ -180,7 +180,7 @@ lemma unifOn_tutteConnected_iff {E : Set α} {r : ℕ} (hrE : r ≤ E.encard) :
       unifOn_spanning_iff hrE P.subset_ground, not_le] at hPsep
     rw [← (unifOn_ground_eq E (k := r)), ← eRank_add_eRank_dual,
       ← Indep.eConn_eq_of_compl_indep (I := P true), P.eConn_eq, unifOn_eRank_eq,
-      min_eq_right hrE, add_comm, WithTop.add_le_add_iff_left (ENat.coe_ne_top r)] at hkrE
+      min_eq_right hrE, add_comm, WithTop.add_le_add_iff_left (ENat.natCast_ne_top r)] at hkrE
     · eomega
     · simpa [(hPsep true).le] using P.subset_ground
     rw [P.compl_true]
@@ -288,7 +288,7 @@ lemma VerticallyConnected.sparsePaving_of_cyclicallyConnected (hv : M.Vertically
   wlog hnot : ¬ M.IsCircuit X generalizing M X with aux
   · rw [not_not] at hnot
     refine aux hc.dual_verticallyConnected hv.dual_cyclicallyConnected (X := M.E \ X)
-      diff_subset hns.codep_compl ?_ ?_ ?_
+      sdiff_subset hns.codep_compl ?_ ?_ ?_
     · rwa [nonspanning_compl_dual_iff]
     · rwa [← isCocircuit_def, isCocircuit_compl_iff_isHyperplane, isHyperplane_compl_dual_iff,
         imp_not_comm]
@@ -296,8 +296,8 @@ lemma VerticallyConnected.sparsePaving_of_cyclicallyConnected (hv : M.Vertically
     exact hch hnot
   obtain ⟨C, hCX, hC⟩ := hd.exists_isCircuit_subset
   have h_eq := (hc.compl_indep_of_dep hC.dep).eq_of_spanning_subset
-    (hv.compl_spanning_of_nonspanning hns) (diff_subset_diff_right hCX)
-  rw [← diff_diff_cancel_left hXE, h_eq, diff_diff_cancel_left hC.subset_ground] at hnot
+    (hv.compl_spanning_of_nonspanning hns) (sdiff_subset_sdiff_right hCX)
+  rw [← sdiff_sdiff_cancel_left hXE, h_eq, sdiff_sdiff_cancel_left hC.subset_ground] at hnot
   contradiction
 
 -- lemma something [M.Tame] (hv : M.VerticallyConnected ⊤) (hc : M.CyclicallyConnected ⊤) :
@@ -337,7 +337,7 @@ lemma VerticallyConnected.sparsePaving_of_cyclicallyConnected (hv : M.Vertically
   --   intro ⟨hXd, hXn⟩
   --   by_cases hs : M.SparsePaving
   --   · have hci := (hv.compl_spanning_of_nonspanning hXn).compl_coindep
-  --     rw [diff_diff_cancel_left hXE, coindep_def, ← h hs] at hci
+  --     rw [sdiff_sdiff_cancel_left hXE, coindep_def, ← h hs] at hci
   --     exact hXd.not_indep hci
   --   clear! X
   --   rw [sparsePaving_iff_forall_indep_or_spanning_or_isCircuit_isHyperplane] at hs
@@ -349,7 +349,7 @@ lemma VerticallyConnected.sparsePaving_of_cyclicallyConnected (hv : M.Vertically
   --   · rw [not_not] at hnot
   --     have := M.tame_dual
   --     specialize aux hc.dual_verticallyConnected hv.dual_cyclicallyConnected (by simpa [eq_comm])
-  --       (Y := M.E \ Y) diff_subset
+  --       (Y := M.E \ Y) sdiff_subset
   --     simp only [dep_dual_iff, hns.codep_compl, imp_false, not_not, forall_const] at aux
   --     rw [isHyperplane_compl_dual_iff, ← isCocircuit_def, nonspanning_compl_dual_iff,
   --       imp_iff_right hni, imp_not_comm, imp_iff_right hnot, isCocircuit_compl_iff_isHyperplane,

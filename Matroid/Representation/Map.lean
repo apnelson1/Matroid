@@ -109,6 +109,7 @@ noncomputable def Rep.map (v : M.Rep 𝔽 W) (f : α → β) (hf : M.E.InjOn f)
         exact ((v.onIndep hI').congr <| h_eq.symm.mono hI'.subset_ground).image_of_comp
       exact v.indep_iff.2 <| (h.comp_of_image (hf.mono hIE)).congr (h_eq.mono hIE) )
 
+set_option backward.isDefEq.respectTransparency false in
 lemma Rep.matroidMap_apply (v : M.Rep 𝔽 W) {f : α → β} {hf} [DecidablePred (∃ y ∈ M.E, f y = ·)]
     {x : α} (hx : x ∈ M.E) : v.map f hf (f x) = v x := by
   have h : ∃ y ∈ M.E, f y = f x := ⟨x, hx, rfl⟩
@@ -167,10 +168,12 @@ protected lemma _root_.Module.matroid_subsingleton (𝔽 W : Type*) [AddCommGrou
     [Module 𝔽 W] [Subsingleton W] : Module.matroid 𝔽 W = loopyOn {0} := by
   simp [eq_loopyOn_iff, Module.matroid, Set.ext_iff, Subsingleton.eq_zero]
 
+set_option backward.isDefEq.respectTransparency false in
 instance _root_.Module.matroid_finitary : Finitary (Module.matroid 𝔽 W) := by
   rw [Module.matroid]
   infer_instance
 
+set_option backward.isDefEq.respectTransparency false in
 lemma Rep.eq_comap (v : M.Rep 𝔽 W) : M = (_root_.Module.matroid 𝔽 W).comapOn M.E v := by
   refine ext_indep rfl fun I hI ↦ ?_
   simp only [v.indep_iff, Module.matroid, comapOn_indep_iff, IndepMatroid.matroid_Indep,
@@ -228,6 +231,7 @@ lemma ofFun_finite (f : α → W) (E : Set α) (hfin : E.Finite) : (Matroid.ofFu
 
 @[simp] lemma ofFun_ground_eq {v : α → W} {E : Set α} : (Matroid.ofFun 𝔽 E v).E = E := rfl
 
+set_option backward.isDefEq.respectTransparency false in
 @[simp] lemma ofFun_indep_iff {v : α → W} {E : Set α} :
     (Matroid.ofFun 𝔽 E v).Indep I ↔ LinearIndepOn 𝔽 v I ∧ I ⊆ E := by
   rw [Matroid.ofFun, comapOn_indep_iff]

@@ -54,7 +54,7 @@ lemma Icc_eq_univ : Icc (0 : I) 1 = univ := by
 instance : ContinuousMul I := submonoid.continuousMul
 instance : PathConnectedSpace I :=
   isPathConnected_iff_pathConnectedSpace.mp <| (convex_Icc 0 1).isPathConnected ⟨0, by simp⟩
-instance : LocPathConnectedSpace I := (convex_Icc 0 1).locPathConnectedSpace
+instance : LocallyPathConnectedSpace I := (convex_Icc 0 1).locallyPathConnectedSpace
 
 noncomputable def squishLeft : I → I := fun t =>
   ⟨(t : ℝ) / 2, by constructor <;> nlinarith [t.2.1, t.2.2]⟩
@@ -64,12 +64,12 @@ noncomputable def half : I := ⟨2⁻¹, by constructor <;> linarith⟩
 
 @[simp]
 lemma squishLeft_le_half (t : I) : squishLeft t ≤ half := by
-  simp only [half, squishLeft, Subtype.mk_le_mk]
+  simp only [half, squishLeft, ← Subtype.coe_le_coe]
   linarith [t.2.2]
 
 @[simp]
 lemma half_le_squishRight (t : I) : half ≤ squishRight t := by
-  simp only [half, squishRight, Subtype.mk_le_mk]
+  simp only [half, squishRight, ← Subtype.coe_le_coe]
   linarith [t.2.1]
 
 @[simp]
@@ -108,34 +108,33 @@ lemma squishRight_lt_one (ht : t < 1) : squishRight t < 1 := by
   exact (div_lt_one₀ (by positivity)).mpr <| by linarith
 
 lemma squishLeft_injective : Injective squishLeft :=
-  fun s t hst ↦ Subtype.ext <| by simpa [squishLeft] using hst
+  fun s t hst ↦ Subtype.ext <| by grind [squishLeft]
 
 lemma squishRight_injective : Injective squishRight :=
-  fun s t hst ↦ Subtype.ext <| by simpa [squishRight] using hst
+  fun s t hst ↦ Subtype.ext <| by grind [squishRight]
 
 lemma squishLeft_Icc (i j : I) : squishLeft '' Icc i j = Icc (squishLeft i) (squishLeft j) := by
   obtain ⟨i, hi⟩ := i
   obtain ⟨j, hj⟩ := j
-  ext t
-  obtain ⟨t, ht⟩ := t
-  simp only [squishLeft, mem_image, mem_Icc, Subtype.mk.injEq, Subtype.exists, Subtype.mk_le_mk,
-    exists_and_left, exists_prop]
+  ext ⟨t, ht⟩
+  simp only [squishLeft, mem_image, mem_Icc, ← Subtype.coe_le_coe, Subtype.exists, exists_and_left]
   refine ⟨fun h => ?_, fun ⟨hit, htj⟩ => ?_⟩
-  · obtain ⟨x, ⟨hxi, hxj⟩, ⟨hx0, hx1⟩, rfl⟩ := h
+  · obtain ⟨x, ⟨hxi, hxj⟩, ⟨hx0, hx1⟩, hh⟩ := h
+    obtain rfl := Subtype.mk_eq_mk.mp hh
     constructor <;> linarith
-  refine ⟨2 * t, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ?_⟩ <;> linarith [hj.2, ht.1]
+  refine ⟨2 * t, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ?_⟩ <;> grind
 
 lemma squishRight_Icc (i j : I) : squishRight '' Icc i j = Icc (squishRight i) (squishRight j) := by
   obtain ⟨i, hi⟩ := i
   obtain ⟨j, hj⟩ := j
-  ext t
-  obtain ⟨t, ht⟩ := t
-  simp only [squishRight, mem_image, mem_Icc, Subtype.mk.injEq, Subtype.exists, Subtype.mk_le_mk,
-    exists_and_left, exists_prop]
+  ext ⟨t, ht⟩
+  simp only [squishRight, mem_image, mem_Icc, Subtype.exists, ← Subtype.coe_le_coe,
+    exists_and_left]
   refine ⟨fun h => ?_, fun ⟨hit, htj⟩ => ?_⟩
-  · obtain ⟨x, ⟨hxi, hxj⟩, ⟨hx0, hx1⟩, rfl⟩ := h
+  · obtain ⟨x, ⟨hxi, hxj⟩, ⟨hx0, hx1⟩, hh⟩ := h
+    obtain rfl := Subtype.mk_eq_mk.mp hh
     constructor <;> linarith
-  refine ⟨2 * t - 1, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ?_⟩ <;> linarith [hj.2, hi.1]
+  refine ⟨2 * t - 1, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ?_⟩ <;> grind
 
 end unitInterval
 
@@ -210,19 +209,17 @@ lemma trans_squishRight [TopologicalSpace α] {P : Path x y} {Q : Path y z} (i :
 lemma trans_injective_iff [TopologicalSpace α] {P : Path x y} {Q : Path y z} :
     Injective (P.trans Q) ↔ Injective P ∧ Injective Q ∧ Disjoint (range P \ {y}) (range Q) := by
   refine ⟨fun h => ⟨fun s t hst ↦ ?_, fun s t hst ↦ ?_, ?_⟩, fun ⟨hP, hQ, hdj⟩ t₁ t₂ ht => ?_⟩
-  · simpa [squishLeft, Subtype.val_inj] using h (a₁ := squishLeft s) (a₂ := squishLeft t)
-      (by simpa [trans_squishLeft])
-  · simpa [squishRight, Subtype.val_inj] using h (a₁ := squishRight s) (a₂ := squishRight t)
-      (by simpa [trans_squishRight])
+  · exact squishLeft_injective <| h (by simpa [trans_squishLeft] using hst)
+  · exact squishRight_injective <| h (by simpa [trans_squishRight] using hst)
   · by_contra! hdj
     rw [not_disjoint_iff] at hdj
     obtain ⟨a, ⟨⟨t1, hPQ⟩, hay⟩, t2, rfl⟩ := hdj
     rw [← trans_squishRight t2, ← trans_squishLeft t1] at hPQ
     replace hPQ := by simpa [squishLeft, squishRight] using h hPQ
     obtain rfl : t2 = 0 := by
-      apply Subtype.ext
-      change t2.val = 0
-      linarith [hPQ ▸ t1.prop.2, t2.prop.1]
+      have hPQ' : (t1 : ℝ) / 2 = (t2 + 1) / 2 := Subtype.ext_iff.mp hPQ
+      have : (t2 : ℝ) = 0 := by linarith [hPQ', t1.prop.2, t2.prop.1]
+      exact Subtype.ext (by simpa [Icc.coe_zero])
     simp at hay
   by_cases ht₁ : (t₁ : ℝ) ≤ 2⁻¹ <;> by_cases ht₂ : (t₂ : ℝ) ≤ 2⁻¹ <;> simp only [trans_apply,
     one_div, ht₁, ↓reduceDIte, ht₂] at ht
@@ -230,7 +227,7 @@ lemma trans_injective_iff [TopologicalSpace α] {P : Path x y} {Q : Path y z} :
   on_goal 3 => simpa [Subtype.val_inj] using hQ ht
   all_goals
   · have := ht ▸ (hdj.notMem_of_mem_right (a := Q _) (by simp))
-    simp only [mem_diff, mem_range, exists_apply_eq_apply, mem_singleton_iff,
+    simp only [mem_sdiff, mem_range, exists_apply_eq_apply, mem_singleton_iff,
       Path.eq_one_iff_of_injective hP, Subtype.ext_iff, Icc.coe_one, true_and,
       Decidable.not_not] at this
     simp only [this, Icc.mk_one, Path.target, eq_comm (a := y), Q.eq_zero_iff_of_injective hQ,
@@ -303,12 +300,11 @@ lemma trans_injOn_ico_iff [TopologicalSpace α] {P : Path x y} {Q : Path y x} :
       simp at hax
     replace hPQ := h (by simpa using squishLeft_le_half t1 |>.trans_lt half_lt_one)
       (by simpa using squishRight_lt_one ht2) hPQ
-    simp only [squishLeft, squishRight, Subtype.mk.injEq, ne_eq, OfNat.ofNat_ne_zero,
-      not_false_eq_true, div_left_inj'] at hPQ
+    replace hPQ : (t1 : ℝ) / 2 = (t2 + 1) / 2 := by
+      simpa [squishLeft, squishRight, Subtype.ext_iff] using hPQ
     obtain rfl : t2 = 0 := by
-      apply Subtype.ext
-      change t2.val = 0
-      linarith [hPQ ▸ t1.prop.2, t2.prop.1]
+      have : (t2 : ℝ) = 0 := by linarith [hPQ, t1.prop.2, t2.prop.1]
+      exact Subtype.ext (by simpa [Icc.coe_zero])
     simp at hay
   obtain ht₁1 : (t₁ : ℝ) < 1 := ht₁.2
   obtain ht₂1 : (t₂ : ℝ) < 1 := ht₂.2
@@ -319,7 +315,7 @@ lemma trans_injOn_ico_iff [TopologicalSpace α] {P : Path x y} {Q : Path y x} :
   on_goal 2 => rw [eq_comm] at ht
   all_goals
     refine (hdj.ne_of_mem ?_ ?_ ht).elim <;>
-    · simp only [← P.target, ← Q.target, mem_diff, mem_range, hP.eq_iff, hQ.eq_iff,
+    · simp only [← P.target, ← Q.target, mem_sdiff, mem_range, hP.eq_iff, hQ.eq_iff,
       exists_apply_eq_apply, mem_singleton_iff, true_and]
       rw [Subtype.ext_iff, Icc.coe_one]
       linarith

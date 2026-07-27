@@ -144,7 +144,7 @@ lemma projectiveGeometry_rank : (Projectivization.matroid 𝔽 W).rank = Module.
   rfl
 
 /-- Isomorphic vector spaces give isomorphic projective geometries. -/
-noncomputable def matroid_congr {𝔽 W : Type*} [Field 𝔽] [AddCommGroup W] [AddCommGroup W']
+noncomputable def matroid_congr {𝔽 W W' : Type*} [Field 𝔽] [AddCommGroup W] [AddCommGroup W']
     [Module 𝔽 W] [Module 𝔽 W'] (i : W ≃ₗ[𝔽] W') :
     Projectivization.matroid 𝔽 W ≂ Projectivization.matroid 𝔽 W' :=
   let m := Projectivization.mapEquiv (σ := RingHom.id 𝔽) i
@@ -154,7 +154,6 @@ noncomputable def matroid_congr {𝔽 W : Type*} [Field 𝔽] [AddCommGroup W] [
     rw [← Projectivization.independent_equiv (K := 𝔽) (V := W)
       (Equiv.Set.image m.symm I m.symm.injective), ← Projectivization.mapEquiv_indep_iff i]
     convert Iff.rfl with e
-    ext x
     simp only [comp_apply, Equiv.Set.image_apply, mapEquiv_apply]
     rw [eq_comm]
     apply mapEquiv_mapEquiv_symm
@@ -199,8 +198,9 @@ lemma exists_isoRestr_projectiveGeometry [M.Simple] (h : M.Representable 𝔽) (
   rw [matroidRep_fullRank.spanning_iff _ (by simp), ← top_le_iff,
     ← hv.span_spanning M.ground_spanning, ground_eq_univ, image_univ, image_univ, Submodule.span_le]
   simp only [matroidRep_apply_eq, subset_def, mem_range, SetLike.mem_coe, forall_exists_index,
-    forall_apply_eq_imp_iff, Projectivization.Subspace.mem_span_image_rep_iff _ _ (v.ne_zero _)]
-  exact fun e ↦ mem_of_mem_of_subset (by simp) (subset_span _)
+    forall_apply_eq_imp_iff]
+  exact fun e ↦ Projectivization.Subspace.mem_span_image_rep_iff _ (range v.projFun) (v.ne_zero _)
+    |>.mpr <| mem_of_mem_of_subset (by simp [Rep.projFun_apply]) (subset_span _)
 
 /-- A simple rank-`r` `F`-representable matroid has at most
 `1 + |𝔽| + |𝔽|^2 + ... + |𝔽|^(r-1)` elements. Also true for infinite `𝔽`. -/
@@ -213,7 +213,7 @@ lemma encard_le_of_simple [RankFinite M] [Simple M] (h : M.Representable 𝔽) :
     replace hE := show E.Subsingleton by simpa using hE
     obtain rfl | ⟨e, rfl⟩ := hE.eq_empty_or_singleton <;>
     simp [rank]
-  have hr : 1 < M.rank := by rwa [← ENat.coe_lt_coe, cast_rank_eq]
+  have hr : 1 < M.rank := by rwa [← ENat.natCast_lt_natCast, cast_rank_eq]
   obtain hinf | hfin := (finite_or_infinite 𝔽).symm
   · exact le_trans (by simp) (Finset.single_le_sum_of_canonicallyOrdered (i := 1) (by simpa))
   have : Nonempty (Fin M.rank) := ⟨1, hr⟩

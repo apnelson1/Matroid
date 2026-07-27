@@ -239,7 +239,7 @@ lemma coverNumber_eq_weightedCoverNumber (x : Set α) (P : Set α → Prop) [Dec
   simp [coverNumber, weightedCoverNumber]
 
 lemma one_le_coverNumber (hx : x.Nonempty) (P : Set α → Prop) : 1 ≤ x.coverNumber P := by
-  simp [coverNumber, ← not_lt, ENat.lt_one_iff_eq_zero, hx.ne_empty]
+  simp [coverNumber, ← not_lt, Order.lt_one_iff, hx.ne_empty]
 
 lemma coverNumber_le_of_imp (hPQ : ∀ y ⊆ x, P y → Q y) : x.coverNumber Q ≤ x.coverNumber P := by
   obtain hnot | ⟨T, hT, hTP⟩ := coverNumber_eq_top_or_exists_cover x P

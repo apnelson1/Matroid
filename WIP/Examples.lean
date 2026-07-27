@@ -29,7 +29,7 @@ def M_K₄ : Matroid (Fin 6) := by
     (NonspanningIsCircuit_antichain := by
       simp only [IsAntichain, Fin.isValue, mem_insert_iff, mem_singleton_iff]
       refine fun s hs t ht hne ↦ ?_
-      simp only [Fin.isValue, mem_setOf_eq] at hs ht
+      simp only [Fin.isValue, mem_ofPred_eq] at hs ht
       obtain hs | hs | hs | hs := hs
         <;> obtain ht | ht | ht | ht := ht
           <;> simp only [hs, Fin.isValue, ht, Pi.compl_apply, compl_iff_not]
@@ -80,7 +80,7 @@ def W3 :  Matroid (Fin 6) := by
     (NonspanningIsCircuit_antichain := by
       simp only [IsAntichain, Fin.isValue, mem_insert_iff, mem_singleton_iff]
       refine fun s hs t ht hne ↦ ?_
-      simp only [Fin.isValue, mem_setOf_eq] at hs ht
+      simp only [Fin.isValue, mem_ofPred_eq] at hs ht
       obtain hs | hs | hs := hs
         <;> obtain ht | ht | ht := ht
         <;> simp only [hs, Fin.isValue, ht, Pi.compl_apply, compl_iff_not]
@@ -128,7 +128,7 @@ def Q₆ :  Matroid (Fin 6) := by
     (NonspanningIsCircuit_antichain := by
       simp only [IsAntichain, Fin.isValue, mem_insert_iff, mem_singleton_iff]
       refine fun s hs t ht hne ↦ ?_
-      simp only [Fin.isValue, mem_setOf_eq] at hs ht
+      simp only [Fin.isValue, mem_ofPred_eq] at hs ht
       obtain hs | hs := hs
         <;> obtain ht | ht := ht
           <;> simp only [hs, Fin.isValue, ht, Pi.compl_apply, compl_iff_not]
@@ -208,7 +208,7 @@ def R₆ :  Matroid (Fin 6) := by
     (NonspanningIsCircuit_antichain := by
       simp only [IsAntichain, Fin.isValue, mem_insert_iff, mem_singleton_iff]
       refine fun s hs t ht hne ↦ ?_
-      simp only [Fin.isValue, mem_setOf_eq] at hs ht
+      simp only [Fin.isValue, mem_ofPred_eq] at hs ht
       obtain hs | hs := hs
         <;> obtain ht | ht := ht
           <;> simp only [hs, Fin.isValue, ht, Pi.compl_apply, compl_iff_not]

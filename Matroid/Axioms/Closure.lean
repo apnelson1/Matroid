@@ -47,22 +47,22 @@ lemma closure_closure_eq_closure (M : PreClosureMatroid α) (X : Set α) :
 lemma Indep.subset (hJ : M.Indep J) (hIJ : I ⊆ J) : M.Indep I := by
   rw [indep_iff] at hJ ⊢
   refine ⟨fun x hxI hx ↦ hJ.1 x (hIJ hxI) ?_, hIJ.trans hJ.2⟩
-  exact mem_of_mem_of_subset hx <| M.closure_subset_closure (diff_subset_diff_left hIJ)
+  exact mem_of_mem_of_subset hx <| M.closure_subset_closure (sdiff_subset_sdiff_left hIJ)
 
 lemma Indep.mem_closure_iff (hI : M.Indep I) (he : e ∈ M.E)
     (heI : e ∉ I) : e ∈ M.closure I ↔ ¬ M.Indep (insert e I) := by
   suffices (e ∉ M.closure I → ∃ x ∈ I, x ∈ M.closure (insert e I \ {x})) → e ∈ M.closure I by
-    simpa +contextual [mem_insert_iff, indep_iff, diff_singleton_eq_self heI, insert_subset_iff, he,
-      hI.subset_ground,  iff_def]
+    simpa +contextual [mem_insert_iff, indep_iff, sdiff_singleton_eq_self heI, insert_subset_iff,
+      he, hI.subset_ground,  iff_def]
 
   simp only [not_imp_comm (a := _ ∈ _), not_exists, not_and]
 
   refine fun h ↦ by_contra fun hcon ↦ hcon <| h fun x hxI hxcl ↦ hcon ?_
   rw [indep_iff] at hI
-  rw [← insert_diff_singleton_comm (by rintro rfl; contradiction)] at hxcl
-  have hex := M.closure_exchange (X := I \ {x}) (diff_subset.trans hI.2) he
+  rw [← insert_sdiff_singleton_comm (by rintro rfl; contradiction)] at hxcl
+  have hex := M.closure_exchange (X := I \ {x}) (sdiff_subset.trans hI.2) he
     (M.closure_subset_ground _ hxcl)
-  simpa [mem_diff, hxcl, hI.1 x hxI, insert_eq_of_mem hxI, heI] using hex
+  simpa [mem_sdiff, hxcl, hI.1 x hxI, insert_eq_of_mem hxI, heI] using hex
 
 lemma Indep.aug (hI : M.Indep I) (hInotmax : ¬ Maximal M.Indep I) (hBmax : Maximal M.Indep B) :
     ∃ e ∈ B \ I, M.Indep (insert e I) := by
@@ -89,7 +89,7 @@ lemma Indep.aug (hI : M.Indep I) (hInotmax : ¬ Maximal M.Indep I) (hBmax : Maxi
 
   rw [indep_iff, insert_subset_iff] at hi
   have hy := hi.1 y (by simp)
-  simp only [mem_singleton_iff, insert_diff_of_mem, diff_singleton_eq_self hyI, hclI] at hy
+  simp only [mem_singleton_iff, insert_sdiff_of_mem, sdiff_singleton_eq_self hyI, hclI] at hy
   exact hy hi.2.1
 
 end PreClosureMatroid

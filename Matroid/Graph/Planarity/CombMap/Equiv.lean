@@ -210,7 +210,7 @@ lemma skip_symm_mapsTo (he : e.finiteOrbit) (ht : e.IsCycleOn t) :
   intro x hx
   replace hx : e.skip s he ((Equiv.symm (skip e s he)) x) ∈ t \ s := by simp [hx]
   by_cases hz : (Equiv.symm (skip e s he)) x ∈ s
-  · simp only [Equiv.skip_apply_of_mem he hz, mem_diff] at hx
+  · simp only [Equiv.skip_apply_of_mem he hz, mem_sdiff] at hx
     exact absurd hz hx.2
   obtain ⟨n, -, hskip, -, -⟩ := skip_apply_not_mem he hz
   refine ⟨mem_of_pow_mem ht n ?_, hz⟩

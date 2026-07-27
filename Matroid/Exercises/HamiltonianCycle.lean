@@ -210,8 +210,8 @@ lemma Bound_on_indepSet {G : Graph α β} [G.Simple] [G.Finite]
       have := (hH.isClosedSubgraph).vertexSet_mono
       rw [vertexDelete_vertexSet] at this
       -- have : V(G) \ S ⊆ V(G) := by
-      --   exact diff_subset
-      (expose_names; exact fun ⦃a⦄ a_1 ↦ diff_subset (this a_1))
+      --   exact sdiff_subset
+      (expose_names; exact fun ⦃a⦄ a_1 ↦ sdiff_subset (this a_1))
       -- sorry -- look up set difference is subset
       --IsClosedSubgraph.vertexSet_mono
     exact Finite.subset gfin this
@@ -277,7 +277,7 @@ lemma Bound_on_indepSet {G : Graph α β} [G.Simple] [G.Finite]
       have hwnotinS1 : w ∉ S := by
         rw [vertexDelete_vertexSet] at hwnotinS
         simp at hwnotinS
-        exact notMem_of_mem_diff hwnotinS
+        exact notMem_of_mem_sdiff hwnotinS
       exact hwnotinS1 hwS
     -- have hfin : V(H).Finite := by
     --   have : V(H) ⊆ V(G) := by
@@ -300,7 +300,7 @@ lemma Bound_on_indepSet {G : Graph α β} [G.Simple] [G.Finite]
 
   have h1 : Inc ∪ (A ∩ V(H)) = (IncW ∪ (A ∩ V(H))) ∪ (Inc\IncW) := by
     have hinc : Inc = IncW ∪ (Inc\IncW) := by
-      refine Eq.symm (union_diff_cancel' (fun ⦃a⦄ a_1 ↦ a_1) inter_subset_left)
+      refine Eq.symm (union_sdiff_cancel' (fun ⦃a⦄ a_1 ↦ a_1) inter_subset_left)
     nth_rewrite 1 [hinc]
     exact union_right_comm IncW (Inc \ IncW) (A ∩ V(H))
 
@@ -317,14 +317,14 @@ lemma Bound_on_indepSet {G : Graph α β} [G.Simple] [G.Finite]
         --have hw2 := by exact mem_of_mem_inter_right hw
         rcases hw with ⟨ hw1, hw2 ⟩
         -- prove that in (Inc\IncW), w ∉ V(H)
-        have wnotinInc : w ∉ IncW := by exact notMem_of_mem_diff hw2
+        have wnotinInc : w ∉ IncW := by exact notMem_of_mem_sdiff hw2
         have wnotinH : w ∉ V(H) := by
           intro winH
           have winInc : w ∈ IncW := by
             exact ⟨ hw2.left, winH ⟩
           exact wnotinInc winInc
         -- rcases hw1 with ⟨ hw1inc, hw2a ⟩
-        -- have wnotinInc : w ∉ IncW := by exact notMem_of_mem_diff hw2
+        -- have wnotinInc : w ∉ IncW := by exact notMem_of_mem_sdiff hw2
         -- -- prove that in (IncW ∪ (A ∩ V(H))), w ∈ V(H)??
         have winH : w ∈ V(H) := by
           exact hfin1 hw1
@@ -344,7 +344,7 @@ lemma Bound_on_indepSet {G : Graph α β} [G.Simple] [G.Finite]
       exact incfin
 
       have : (Inc \ IncW) ⊆ V(G) := by
-        have : (Inc \ IncW) ⊆ Inc := by exact diff_subset
+        have : (Inc \ IncW) ⊆ Inc := by exact sdiff_subset
         have : Inc ⊆ V(G) := by
           intro u hu
           exact hu.right_mem
@@ -364,7 +364,7 @@ lemma Bound_on_indepSet {G : Graph α β} [G.Simple] [G.Finite]
     -- have : V(H) ⊆ V(G-S) := by exact isCompOf_subset (G - S) H hH
     have hs : V(G-S) ⊆ V(G) := by
       rw [vertexDelete_vertexSet]
-      exact diff_subset
+      exact sdiff_subset
     have : V(H) ⊆ V(G) := by exact fun ⦃a⦄ a_1 ↦ hs (IsCompOf.subset hH a_1)
     have gfin : V(G).Finite := by exact vertexSet_finite
     exact Finite.subset gfin this
@@ -436,14 +436,14 @@ lemma indep_to_Dirac [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).ncard)
     have : (G - S).Components.encard = 1 := by
       simp [is_singleton]
     rw [this] at hcomp; clear this
-    have : (2 : ℕ) ≤ (1 : ℕ) := by exact ENat.coe_le_coe.mp hcomp
+    have : (2 : ℕ) ≤ (1 : ℕ) := by exact ENat.natCast_le_natCast.mp hcomp
     linarith
 
   -- Second annoying case
   obtain ( Hemp| hAH1 ) := Classical.em ( A ∩ V(H2) = ∅)
   · have ⟨y, hy ⟩ : ∃ y, y ∈ V(H2) \ A := by
       -- Managed to simplify this part a lot - Noah
-      rw [← Set.diff_self_inter, Set.inter_comm, Hemp, Set.diff_empty]
+      rw [← Set.sdiff_self_inter, Set.inter_comm, Hemp, Set.sdiff_empty]
       exact H2comp.1.2
     --Apply Bound_on_indepSet with modifications since H2 is not a connected component
     -- You will nee hDirac applied to y
@@ -574,14 +574,14 @@ lemma indep_nbrs [G.Simple] [G.Finite] {i j : ℕ} {G D : Graph α β} {C : WLis
     · rwa [maximalFor_congr_val (y := C) (by simp) (by simp [hCs.prop, hCs.prop.rotate])]
     · rwa [hCs.prop.isClosed.rotate_vertexSet]
     · exact (rotate_nonempty_iff i).mpr hnt
-    · simp only [length_rotate, mem_setOf_eq, zero_le, true_and]
+    · simp only [length_rotate, mem_ofPred_eq, zero_le, true_and]
       have : i + 0 ≤ C.length := by
         simp only [add_zero]
         exact hi.1
       rw[get_rotate C this ]
       simp only [add_zero]
       exact hi.2
-    · simp only [length_rotate, mem_setOf_eq, one_le_length_iff]
+    · simp only [length_rotate, mem_ofPred_eq, one_le_length_iff]
       refine ⟨hnt, ?_ ⟩
       have : i + 1 ≤ C.length := by
         rw[← hindex ]
@@ -601,7 +601,7 @@ lemma indep_nbrs [G.Simple] [G.Finite] {i j : ℕ} {G D : Graph α β} {C : WLis
 --     (hnt : C.Nonempty) :
 --     G.IsIndependent <| C.get '' {i ≤ C.length | G.SetVxAdj V(D) (C.get i)} := by
 --   rw [isIndependent_iff (by grw [image_subset_range, range_get, hCs.prop.vertexSet_subset])]
---   simp only [mem_image, mem_setOf_eq, ne_eq, forall_exists_index, and_imp]
+--   simp only [mem_image, mem_ofPred_eq, ne_eq, forall_exists_index, and_imp]
 --   rintro _ _ i hi hiD rfl j hj hjD rfl hij hadj
 --   wlog hlt : i ≤ j generalizing i j with aux
 --   · exact aux j hj hjD i hi hiD (Ne.symm hij) hadj.symm (not_le.1 hlt).le
@@ -672,7 +672,7 @@ lemma indep_nbrsnext [G.Simple] [G.Finite] {D : Graph α β} (hCs : MaximalFor G
     --G.IsIndependent <| C.get '' ((· + 1) '' {i < C.length | G.SetVxAdj V(D) (C.get i)}) := by
 
   rw [isIndependent_iff (by grw [image_subset_range, range_get, hCs.prop.vertexSet_subset])]
-  simp only [mem_image, mem_setOf_eq, ne_eq, forall_exists_index, and_imp]
+  simp only [mem_image, mem_ofPred_eq, ne_eq, forall_exists_index, and_imp]
   rintro _ _ i hi haD rfl j hj hbD rfl hij hadj
   -- _ _ i hi hiD rfl j hj hjD rfl hij hadj
   wlog hlt : i ≤ j generalizing i j with aux
@@ -751,11 +751,11 @@ lemma indep_nbrsnext [G.Simple] [G.Finite] {D : Graph α β} (hCs : MaximalFor G
     by_contra hc
     rw[h_b1, h_a ] at hc
     have h0s : 0 ∈ {i ≤ C.length | G.SetVxAdj V(D) (C.get i)} := by
-      simp only [mem_setOf_eq, zero_le, true_and]
+      simp only [mem_ofPred_eq, zero_le, true_and]
       rw[←hc, ←h_b1]
       refine ⟨ wb, h1D, hadjaw ⟩
     have h1s : 1 ∈ {i ≤ C.length | G.SetVxAdj V(D) (C.get i)} := by
-      simp only [mem_setOf_eq, one_le_length_iff]
+      simp only [mem_ofPred_eq, one_le_length_iff]
       refine ⟨ hi, ⟨ wa, h2D, hadjbw ⟩ ⟩
     have h01 : 0 ≤ 1 := by omega
     have : 1 ≠ 0 + 1 := by sorry
@@ -772,18 +772,18 @@ lemma indep_nbrsnext [G.Simple] [G.Finite] {D : Graph α β} (hCs : MaximalFor G
     --   exact (idxOf_Adj (hC.toIsTrail) ha ha₁ haindices.symm).symm
     -- have hS : C.get '' {i ≤ C.length | G.SetVxAdj V(D) (C.get i)} ⊆ V(G) := by
     --   intro x hx
-    --   simp only [mem_image, mem_setOf_eq] at hx
+    --   simp only [mem_image, mem_ofPred_eq] at hx
     --   obtain ⟨k, hk ⟩ := hx
     --   obtain ⟨ w, hw, hww ⟩ := hk.1.2
     --   have : (C.get k) ∈ V(G) := by exact Adj.right_mem (id (Adj.symm hww))
     --   rwa[hk.2] at this
     -- have hSa : a₁ ∈ C.get '' {i ≤ C.length | G.SetVxAdj V(D) (C.get i)} := by
-    --   simp only [mem_image, mem_setOf_eq]
+    --   simp only [mem_image, mem_ofPred_eq]
     --   use 1
     --   simp only [one_le_length_iff]
     --   refine ⟨⟨hi, ⟨ wa, h2D, hadjbw ⟩⟩, h_a1 ⟩
     -- have hSb : b₁ ∈ C.get '' {i ≤ C.length | G.SetVxAdj V(D) (C.get i)} := by
-    --   simp only [mem_image, mem_setOf_eq]
+    --   simp only [mem_image, mem_ofPred_eq]
     --   use d + 1
     --   refine ⟨⟨hj, ⟨ wb, h1D, hadjaw ⟩⟩, h_b1 ⟩
 
@@ -1144,7 +1144,7 @@ lemma Hamiltonian_alpha_kappa [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).encard)
   · use C
     refine ⟨ hCs.prop, Eq.subset (id (Eq.symm h_eq)) ⟩
   have hG : V(G - V(C)).Nonempty := by
-    rw [vertexDelete_vertexSet, diff_nonempty]
+    rw [vertexDelete_vertexSet, sdiff_nonempty]
     exact hssu.not_subset
   -- `C` is a Hamilton cycle
   --There should be an obvious bound on the size of a cycle
@@ -1162,7 +1162,7 @@ lemma Hamiltonian_alpha_kappa [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).encard)
     --obtain ⟨v, hv ⟩ := hc
     -- have hg : V(G) \ VC = ∅ := by sorry
     -- have hg1 : VC ⊆ V(G) := by sorry
-    -- have hconcl : V(G) ⊆ VC  := by exact diff_eq_empty.mp hg
+    -- have hconcl : V(G) ⊆ VC  := by exact sdiff_eq_empty.mp hg
     -- have hconclusion : V(G) = VC  := by exact Subset.antisymm hconcl hg1
   have ⟨D, hD⟩ := exists_IsCompOf hG
   --{i ≤ C.length | G.SetVxAdj V(D) (C.get i)}
@@ -1217,7 +1217,7 @@ lemma Hamiltonian_alpha_kappa [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).encard)
 
   -- obtain h_not | h_ind := em' <| G.IsIndependent (C.get '' nbrIndices)
   -- · rw [isIndependent_iff (by grw [← hC.vertexSet_subset, image_subset_range, range_get])] at h_not
-  --   simp only [mem_image, mem_setOf_eq, ne_eq, forall_exists_index, and_imp, not_forall,
+  --   simp only [mem_image, mem_ofPred_eq, ne_eq, forall_exists_index, and_imp, not_forall,
   --     exists_prop, not_not, ↓existsAndEq, true_and, exists_and_left, nbrIndices] at h_not
   --   obtain ⟨i, hi, hi', j, hj, hj', hij, hadj⟩ := h_not
   --   sorry
@@ -2167,8 +2167,8 @@ lemma dirac_exists_cycle [G.Simple] [G.Finite] (hNontrivial : 3 ≤ V(G).encard)
     rw [reverse_cons] at h_isPath
     have disj := h_isPath.diff_Last_disjoint_of_append
     simp only [concat_vertexSet_eq, reverse_vertexSet, concat_last, mem_singleton_iff,
-      insert_diff_of_mem, mem_vertexSet_iff, x_notMem_suff, not_false_eq_true,
-      diff_singleton_eq_self] at disj
+      insert_sdiff_of_mem, mem_vertexSet_iff, x_notMem_suff, not_false_eq_true,
+      sdiff_singleton_eq_self] at disj
     exact disj.notMem_of_mem_right hu_pref hu_suff
 
   have y_notMem_pref : y ∉ pref := by

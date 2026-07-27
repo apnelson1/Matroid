@@ -145,6 +145,7 @@ lemma Iso.isFiniteRankUniform_iff {β : Type*} {N : Matroid β} (e : M ≂ N) :
     M.IsFiniteRankUniform a ↔ N.IsFiniteRankUniform a :=
   ⟨fun h ↦ h.of_iso e, fun h ↦ h.of_iso e.symm⟩
 
+set_option backward.isDefEq.respectTransparency false in
 theorem nonempty_iso_unifOn_iff {β : Type*} {X : Set β} {a : ℕ} (haX : a ≤ X.encard) :
     Nonempty (M ≂ (unifOn X a)) ↔ M.IsFiniteRankUniform a ∧ Nonempty (X ≃ M.E) := by
   refine ⟨fun ⟨i⟩ ↦ ⟨⟨unifOn_eRank_eq' haX ▸ i.eRank_eq, ?_⟩, ⟨i.1.symm⟩⟩, fun ⟨h, ⟨i⟩⟩ ↦ ?_⟩
@@ -158,7 +159,7 @@ theorem nonempty_iso_unifOn_iff {β : Type*} {X : Set β} {a : ℕ} (haX : a ≤
   refine ⟨i.symm, fun I ↦ ?_⟩
   simp only [h.indep_iff, Subtype.val_injective.encard_image, image_subset_iff,
     Subtype.coe_preimage_self, subset_univ, and_true, unifOn_ground_eq, unifOn_indep_iff]
-  rw [Function.Injective.encard_image (fun x ↦ by simp)]
+  rw [Function.Injective.encard_image i.symm.injective]
 
 /-- The restriction of `M` to `X` is a rank-`a` uniform matroid -/
 @[mk_iff]
@@ -177,7 +178,7 @@ lemma IsFiniteRankUniform.isFiniteRankUniformOn_of_restrict'
   rw [isFiniteRankUniform_iff_forall_indep_iff] at h
   replace h := h.2 {e} (by simpa)
   rw [restrict_indep_iff, and_iff_left (by simpa), encard_singleton, ← Nat.cast_one,
-    ENat.coe_le_coe] at h
+    ENat.natCast_le_natCast] at h
   exact h.2 <| by lia
 
 @[simp]
@@ -233,11 +234,11 @@ lemma IsFiniteRankUniform.restrict_insert_iff (h : (M ↾ X).IsFiniteRankUniform
     refine notMem_subset (M.closure_subset_closure hJK) <| h' _ hKX hK
   obtain hle | hgt := le_or_gt I.encard (a + 1)
   · refine iff_of_true ?_ hle
-    rw [← insert_diff_self_of_mem heI, Indep.insert_indep_iff_of_notMem _ (by simp), mem_diff,
+    rw [← insert_sdiff_self_of_mem heI, Indep.insert_indep_iff_of_notMem _ (by simp), mem_sdiff,
       and_iff_right (M.mem_ground_of_mem_closure he)]
     · refine h'' _ (by grind) ?_
-      grw [← ENat.add_one_le_add_one_iff, ← hle, encard_diff_singleton_add_one heI]
-    grw [h.2 _ (by grind), Nat.cast_add_one, ← hle, diff_subset]
+      grw [← ENat.add_one_le_add_one_iff, ← hle, encard_sdiff_singleton_add_one heI]
+    grw [h.2 _ (by grind), Nat.cast_add_one, ← hle, sdiff_subset]
   refine iff_of_false (fun hI ↦ ?_) hgt.not_ge
   replace hI := hI.encard_le_eRk_of_subset hIeX
   grw [← eRk_insert_closure_eq, insert_eq_of_mem he, eRk_closure_eq, hX] at hI
@@ -268,7 +269,7 @@ structure IsFiniteUniform (M : Matroid α) (a b : ℕ) (n : ℕ := a + b) : Prop
 
 lemma isFiniteUniform_iff' :
     M.IsFiniteUniform a b ↔ M.IsFiniteRankUniform a ∧ M.E.encard = a + b := by
-  rw [isFiniteUniform_iff, ENat.coe_add, and_congr_right_iff, and_iff_left_iff_imp]
+  rw [isFiniteUniform_iff, ENat.natCast_add, and_congr_right_iff, and_iff_left_iff_imp]
   refine fun h h' ↦ ?_
   rw [← M.eRank_add_eRank_dual, h.eRank_eq] at h'
   simpa using h'
@@ -277,14 +278,14 @@ lemma isFiniteUniform_iff_dual :
     M.IsFiniteUniform a b ↔ M.IsFiniteRankUniform a ∧ M✶.IsFiniteRankUniform b := by
   rw [isFiniteUniform_iff, and_congr_right_iff, M✶.isFiniteRankUniform_iff]
   refine fun h ↦ ⟨fun h' ↦ ⟨h'.2, h.isUniform.dual⟩, fun h' ↦ ⟨?_, h'.1⟩⟩
-  rw [← eRank_add_eRank_dual, h'.1, h.eRank_eq, ENat.coe_add]
+  rw [← eRank_add_eRank_dual, h'.1, h.eRank_eq, ENat.natCast_add]
 
 lemma IsFiniteUniform.finite (hM : M.IsFiniteUniform a b n) : M.Finite :=
   ⟨encard_lt_top_iff.1 <| by simp [hM.encard_eq]⟩
 
 lemma IsFiniteUniform.add_eq {a b n : ℕ} (h : M.IsFiniteUniform a b n) : a + b = n := by
-  rw [← ENat.coe_inj, ← h.encard_eq, ← eRank_add_eRank_dual, h.eRank_eq, h.eRank_dual_eq,
-    ENat.coe_add]
+  rw [← ENat.natCast_inj, ← h.encard_eq, ← eRank_add_eRank_dual, h.eRank_eq, h.eRank_dual_eq,
+    ENat.natCast_add]
 
 lemma IsFiniteUniform.le_left (h : M.IsFiniteUniform a b n) : a ≤ n := by
   grw [← h.add_eq, ← le_self_add]
@@ -332,7 +333,7 @@ lemma IsUniform.exists_isFiniteUniform_of_finite' (hM : M.IsUniform) [M.Finite] 
 lemma IsFiniteRankUniform.exists_isFiniteUniform_of_finite (h : M.IsFiniteRankUniform a)
     [M.Finite] : ∃ b n, M.IsFiniteUniform a b n ∧ b = M✶.eRank ∧ n = M.E.encard := by
   obtain ⟨a', b, n, hM1, ha, hb, hn⟩ := h.isUniform.exists_isFiniteUniform_of_finite
-  rw [h.eRank_eq, ENat.coe_inj] at ha
+  rw [h.eRank_eq, ENat.natCast_inj] at ha
   exact ⟨b, n, ha ▸ hM1, hb, hn⟩
 
 lemma isFiniteUniform_dual_iff : M✶.IsFiniteUniform a b n ↔ M.IsFiniteUniform b a n := by
@@ -363,8 +364,8 @@ lemma IsFiniteUniform.bDual_eq_self (h : M.IsFiniteUniform a a b) (d : Bool) : M
 lemma IsFiniteUniform.contractElem (h : M.IsFiniteUniform (a + 1) b (n + 1)) (he : e ∈ M.E) :
     (M ／ {e}).IsFiniteUniform a b n := by
   have hcard : (M ／ {e}).E.encard = ↑n := by
-    rw [contract_ground, ← ENat.add_one_inj, encard_diff_singleton_add_one he, h.encard_eq,
-      ENat.coe_add, ENat.coe_one]
+    rw [contract_ground, ← ENat.add_one_inj, encard_sdiff_singleton_add_one he, h.encard_eq,
+      ENat.natCast_add, ENat.natCast_one]
   refine ⟨h.toIsFiniteRankUniform.contractElem he, hcard, ?_⟩
   have hrd := (M ／ {e}).eRank_add_eRank_dual
   rw [hcard, (h.toIsFiniteRankUniform.contractElem he).eRank_eq] at hrd
@@ -436,8 +437,8 @@ lemma IsUniform.exists_eq_unifOn_of_finitary [M.Finitary] [M✶.RankPos] (hM : M
   obtain ⟨e, heC⟩ := hC.nonempty
   obtain hCi | hCs := hM.indep_or_spanning C
   · exact (hC.not_indep hCi).elim
-  have := ((hC.diff_singleton_isBasis heC).isBase_of_spanning hCs).rankFinite_of_finite
-    hC.finite.diff
+  have := ((hC.sdiff_singleton_isBasis heC).isBase_of_spanning hCs).rankFinite_of_finite
+    hC.finite.sdiff
   exact hM.exists_eq_unifOn
 
 /-- Don't use. -/
@@ -543,6 +544,7 @@ theorem nonempty_iso_line_iff {n : ℕ} :
     Nonempty (M ≂ unif 2 n) ↔ M.Simple ∧ M.eRank ≤ 2 ∧ M.E.encard = n := by
   simp [nonempty_iso_unif_iff''', ← and_assoc, eq_unifOn_two_iff, and_comm]
 
+set_option backward.isDefEq.respectTransparency false in
 lemma eRank_le_one_iff : M.eRank ≤ 1 ↔ ∃ (E₀ E₁ : Set α) (h : Disjoint E₀ E₁),
     M = (loopyOn E₀).disjointSum (unifOn E₁ 1) h := by
   refine ⟨fun hr ↦ ⟨M.loops, M.E \ M.loops, disjoint_sdiff_right, ?_⟩, ?_⟩
@@ -554,7 +556,7 @@ lemma eRank_le_one_iff : M.eRank ≤ 1 ↔ ∃ (E₀ E₁ : Set α) (h : Disjoin
     · rw [and_iff_right h.disjoint_loops, ← encard_le_one_iff_subsingleton,
         and_iff_left (h.subset_ground.trans subset_union_right)]
       exact (h.subset inter_subset_left).encard_le_eRank.trans hr
-    have hI : I ∩ (M.E \ M.loops) = I := by rwa [inter_eq_left, subset_diff, and_iff_left hcl]
+    have hI : I ∩ (M.E \ M.loops) = I := by rwa [inter_eq_left, subset_sdiff, and_iff_left hcl]
     rw [hI] at hss
     obtain rfl | ⟨e, rfl⟩ := hss.eq_empty_or_singleton
     · exact M.empty_indep

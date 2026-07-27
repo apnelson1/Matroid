@@ -29,7 +29,7 @@ theorem finprod_mem_le_finprod_mem' [OrderedCommMonoid N] (hf : (s ∩ mulSuppor
 theorem eq_of_finprod_mem_ge_finprod_mem_of_forall_le [OrderedCancelCommMonoid N]
     (hs : s.Finite) (h_le : ∀ i ∈ s, f i ≤ g i) (h_ge : ∏ᶠ i ∈ s, g i ≤ ∏ᶠ i ∈ s, f i) {a : ι}
     (ha : a ∈ s) : f a = g a := by
-  rw [show s = insert a (s \ {a}) by rw [insert_diff_singleton, insert_eq_of_mem ha],
+  rw [show s = insert a (s \ {a}) by rw [insert_sdiff_singleton, insert_eq_of_mem ha],
     finprod_mem_insert _ (fun h ↦ h.2 rfl) (hs.diff {a}),
     finprod_mem_insert _ (fun h ↦ h.2 rfl) (hs.diff {a})] at h_ge
   exact (h_le a ha).antisymm (le_of_mul_le_mul_right' (h_ge.trans
@@ -52,7 +52,7 @@ theorem eq_of_finprod_mem_ge_finprod_mem_of_forall_le' [OrderedCancelCommMonoid 
 @[to_additive]
 theorem finprod_le_finprod_of_subset [CanonicallyOrderedMonoid N] (h : s ⊆ t) (ht : t.Finite) :
     ∏ᶠ x ∈ s, f x ≤ ∏ᶠ x ∈ t, f x := by
-  rw [← inter_union_diff t s, inter_eq_right.mpr h,
+  rw [← inter_union_sdiff t s, inter_eq_right.mpr h,
     finprod_mem_union (@disjoint_sdiff_self_right _ s t _) (ht.subset h) (ht.diff _)]
   exact le_mul_right rfl.le
 
@@ -181,7 +181,7 @@ theorem finsum_encard (c : Set (Set α)) (hfin : c.Finite) (hc : c.PairwiseDisjo
 
 
 --   have' := finprod_mem_insert f (notMem_diff_ of_mem rfl : a ∉ s \ {a}) (hs.diff {a})
---   simp_rw [insert_diff_singleton, insert_eq_of_mem ha] at this
+--   simp_rw [insert_sdiff_singleton, insert_eq_of_mem ha] at this
 --   revert h_le h_ge ha a
 --   apply @Finite.induction_on _ _ _ hs
 --   · simp

@@ -45,12 +45,8 @@ lemma Projectivization.mapEquiv_symm_mapEquiv {K L V W : Type*} [Field K] [AddCo
     [Module K V] [DivisionRing L] [AddCommGroup W] [Module L W] {σ : K →+* L} {τ : L →+* K}
     [RingHomInvPair σ τ] [RingHomInvPair τ σ] (f : V ≃ₛₗ[σ] W) (x : Projectivization K V) :
     mapEquiv f.symm (mapEquiv f x) = x := by
-  have := Projectivization.map_comp (V := V) (W := W) (U := V) (σ := σ) (τ := τ)
-    (γ := RingHom.id K) f f.injective f.symm f.symm.injective
-  convert (congr_fun this x).symm
-  convert ((congr_fun Projectivization.map_id) x).symm
-  ext
-  simp
+  rw [← mapEquiv_symm]
+  exact (mapEquiv f).left_inv x
 
 @[simp]
 lemma Projectivization.mapEquiv_mapEquiv_symm {K L V W : Type*} [DivisionRing K] [AddCommGroup V]
@@ -96,9 +92,11 @@ lemma Projectivization.mapEquiv_mk_symm_mk {K L V W : Type*} [Field K] [AddCommG
     [Module K V] [DivisionRing L] [AddCommGroup W] [Module L W] {σ : K →+* L} {τ : L →+* K}
     [RingHomInvPair σ τ] [RingHomInvPair τ σ] (f : V ≃ₛₗ[σ] W) (x : Projectivization K V) :
     mk K (f.symm (mapEquiv f x).rep) (by simp [rep_nonzero]) = x := by
-  convert mk_apply_rep (σ := τ) (V := W) (W := V) (f := f.symm) f.symm.injective (mapEquiv f x)
-  rw [eq_comm]
-  apply mapEquiv_symm_mapEquiv
+  have h := mk_apply_rep (σ := τ) (V := W) (W := V) (f := (f.symm : W →ₛₗ[τ] V))
+    f.symm.injective (mapEquiv f x)
+  refine (Eq.trans ?_ h).trans ?_
+  · congr 1
+  · simpa [mapEquiv] using mapEquiv_symm_mapEquiv f x
 
 @[simp]
 lemma Projectivization.independent_comp_mk_iff (f : ι → V) (hf0 : ∀ i, f i ≠ 0) :
@@ -121,15 +119,11 @@ lemma LinearIndependent.independent_comp_mk {f : ι → V}
 lemma Projectivization.mapEquiv_indep_iff {W K : Type*} [Field K] [Module K V] [AddCommGroup W]
     [Module K W] (f : V ≃ₗ[K] W) (v : ι → Projectivization K V) :
     Independent (Projectivization.mapEquiv f ∘ v) ↔ Independent v := by
-  rw [independent_iff, ← f.symm.linearIndependent_iff_of_injOn f.symm.injective.injOn,
-    ← independent_comp_mk_iff _ (by simp [rep_nonzero])]
-  convert Iff.rfl with i
-  simp only [LinearEquiv.coe_coe, comp_apply]
-  have h := mk_apply_rep (V := W) (W := V) (σ := RingHom.id K) (τ := RingHom.id K)
-    (f.symm : W →ₗ[K] V) f.symm.injective (map (f : V →ₗ[K] W) f.injective (v i))
-  convert h.symm
-  rw [eq_comm]
-  apply mapEquiv_symm_mapEquiv
+  rw [independent_iff]
+  rw [← f.symm.linearIndependent_iff_of_injOn f.symm.injective.injOn]
+  change LinearIndependent K (fun i ↦ f.symm ((mapEquiv f (v i)).rep)) ↔ Independent v
+  rw [← independent_comp_mk_iff _ (by simp [rep_nonzero])]
+  simp only [mapEquiv_mk_symm_mk]
 
 end map
 
@@ -383,20 +377,10 @@ lemma Projectivization.Subspace.toSubmodule_bot_eq (K V : Type*) [Field K] [AddC
 lemma Submodule.span_toProjSubspace (K : Type*) {V : Type*} [Field K] [AddCommGroup V] [Module K V]
     (s : Set V) : (Submodule.span K s).toProjSubspace =
       Subspace.span (range (fun x : ↥(s \ {0}) ↦ Projectivization.mk K x.1 x.2.2)) := by
-  ext e
-  simp only [Subspace.mem_carrier_iff, mem_toProjSubspace_iff, Subspace.mem_span_iff_rep]
-  convert Iff.rfl using 2
-  simp only [le_antisymm_iff, Submodule.span_le, subset_def, mem_image, mem_range, Subtype.exists,
-    mem_diff, mem_singleton_iff, SetLike.mem_coe, forall_exists_index, and_imp]
-  constructor
-  · rintro x e y ⟨hys, hy0⟩ rfl rfl
-    simp only [Submodule.mk_rep_mem_iff_mem]
-    exact Submodule.subset_span hys
-  intro x hxs
-  obtain rfl | hne := eq_or_ne x 0
-  · simp
-  simp_rw [Subspace.mem_span_image_rep_iff _ _ hne]
-  exact Subspace.subset_span _ <| mem_range.2 ⟨⟨x, hxs, hne⟩, rfl⟩
+  have h := toProjSubspace_span_image_eq (K := K) (f := (Subtype.val : ↥(s \ {0}) → V))
+    (hf := fun x ↦ x.2.2) (s := Set.univ)
+  simp only [image_univ, Subtype.range_coe] at h
+  rwa [span_sdiff_singleton_zero] at h
 
 lemma Projectivization.Subspace.span_toSubmodule {K V : Type*} [Field K] [AddCommGroup V]
     [Module K V] (s : Set (Projectivization K V)) :

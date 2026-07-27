@@ -145,7 +145,7 @@ lemma not_disjoint_iff_eq_of_le (e : cell K n) (f : cell K m) (hmn : n ≤ m) :
 lemma closedCell_diff_openCell_eq_cellFrontier (e : cell K n) :
     closedCell n e \ openCell n e = cellFrontier n e := by
   rw [← cellFrontier_union_openCell_eq_closedCell]
-  exact Set.union_diff_cancel_right
+  exact Set.union_sdiff_cancel_right
     ((disjoint_skeletonLT_openCell le_rfl).mono_left (cellFrontier_subset_skeletonLT n e)).le_bot
 
 lemma isOpen_openCell_skeleton (e : cell K n) : IsOpen (↑(skeleton K n) ↓∩ openCell n e) := by
@@ -154,18 +154,18 @@ lemma isOpen_openCell_skeleton (e : cell K n) : IsOpen (↑(skeleton K n) ↓∩
     simp [A, Set.ext_iff]
   rw [← isClosed_compl_iff, hpre]
   refine CWComplex.isClosed_of_disjoint_openCell_or_isClosed_inter_closedCell
-    (diff_subset.trans (skeleton K n).subset_complex) (fun m hm j ↦ ?_)
+    (sdiff_subset.trans (skeleton K n).subset_complex) (fun m hm j ↦ ?_)
     |>.preimage continuous_subtype_val
   by_cases hmn : m ≤ n
   · right
-    rw [diff_inter_right_comm, inter_diff_assoc]
+    rw [sdiff_inter_right_comm, inter_sdiff_assoc]
     obtain h | h := em (Disjoint (closedCell m j) (openCell n e))
     · rw [h.sdiff_eq_left]
       exact (skeleton K ↑n).closed.inter isClosed_closedCell
     obtain ⟨rfl, rfl⟩ := (not_disjoint_iff_eq_of_le j e hmn).mp h
     rw [closedCell_diff_openCell_eq_cellFrontier j]
     exact (skeleton K ↑m).closed.inter isClosed_cellFrontier
-  · exact Or.inl <| (disjoint_skeleton_openCell (by simpa using hmn)).mono_left diff_subset
+  · exact Or.inl <| (disjoint_skeleton_openCell (by simpa using hmn)).mono_left sdiff_subset
 
 lemma openCellStratum_subset_skeleton : openCellStratum K n ⊆ skeleton K n :=
   iUnion_subset (openCell_subset_skeleton n)

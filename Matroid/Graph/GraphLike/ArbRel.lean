@@ -50,11 +50,10 @@ noncomputable def target (G : Graph α β) (e : β) (he : e ∈ E(G)) : α :=
   if ArbRel α h.choose h.choose_spec.choose then h.choose_spec.choose else h.choose
 
 lemma isLink_source_target (he : e ∈ E(G)) : G.IsLink e (G.source e he) (G.target e he) := by
-  let h := exists_isLink_of_mem_edgeSet he
-  simp only [source, target, ArbRel]
+  dsimp only [source, target]
   split_ifs with hRel
-  · exact h.choose_spec.choose_spec
-  · exact h.choose_spec.choose_spec.symm
+  · exact (exists_isLink_of_mem_edgeSet he).choose_spec.choose_spec
+  · exact (exists_isLink_of_mem_edgeSet he).choose_spec.choose_spec.symm
 
 @[simp]
 lemma source_mem (he : e ∈ E(G)) : G.source e he ∈ V(G) :=

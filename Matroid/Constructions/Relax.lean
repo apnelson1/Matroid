@@ -22,19 +22,19 @@ lemma IsBase.exists_exchange_of_isCircuitHyperplane (hB : M.IsBase B) (hH : M.Is
       exact fun hxB' ↦ hclosure (M.mem_closure_of_mem' ⟨hxB', hx.2⟩ (hH.subset_ground hx.1))
 
     refine (h x ⟨hx.1, hxB⟩).1 (hB.exchange_isBase_of_indep hxB ?_)
-    rwa [← (hB.indep.diff {e}).notMem_closure_iff_of_notMem (notMem_subset diff_subset hxB)
+    rwa [← (hB.indep.sdiff {e}).notMem_closure_iff_of_notMem (notMem_subset sdiff_subset hxB)
       (hH.subset_ground hx.1)]
 
-  rw [← closure_subset_closure_iff_subset_closure (diff_subset.trans hH.subset_ground),
-    hH.isCircuit.closure_diff_singleton_eq, hH.isHyperplane.isFlat.closure] at h1
+  rw [← closure_subset_closure_iff_subset_closure (sdiff_subset.trans hH.subset_ground),
+    hH.isCircuit.closure_sdiff_singleton_eq, hH.isHyperplane.isFlat.closure] at h1
   obtain hBH := hH.isHyperplane.eq_of_subset (hB.isHyperplane_of_closure_diff_singleton he) h1
 
   have hb : M.IsBasis (B \ {e}) H := by
-    exact (hB.indep.diff _).isBasis_of_subset_of_subset_closure
-      ((M.subset_closure (B \ {e}) (diff_subset.trans hB.subset_ground)).trans hBH.symm.subset) h1
+    exact (hB.indep.sdiff _).isBasis_of_subset_of_subset_closure
+      ((M.subset_closure (B \ {e}) (sdiff_subset.trans hB.subset_ground)).trans hBH.symm.subset) h1
   obtain ⟨f, ⟨hfH, hfBe⟩, hfB⟩ := hH.isCircuit.isBasis_iff_insert_eq.1 hb
   refine (h _ ⟨hfH, fun hfB ↦ hfBe ⟨hfB, fun (hfe : f = e) ↦ ?_⟩⟩).2 hfB.symm
-  apply hB.indep.notMem_closure_diff_of_mem he
+  apply hB.indep.notMem_closure_sdiff_of_mem he
   rwa [← hBH, ← hfe]
 
 /-- `M.IsLawfulRelaxation T` means that `T` is a set of circuit-hyperplanes of `M`. -/
@@ -123,8 +123,8 @@ lemma relax_dual (h : M.IsLawfulRelaxation T) : (M.relax T h)✶ = M✶.relax _ 
   convert Iff.rfl
   constructor
   · rintro ⟨B, hB, rfl⟩
-    rwa [diff_diff_cancel_left (h.ssubset_ground hB).subset]
-  exact fun h ↦ ⟨_, h, diff_diff_cancel_left hBE⟩
+    rwa [sdiff_sdiff_cancel_left (h.ssubset_ground hB).subset]
+  exact fun h ↦ ⟨_, h, sdiff_sdiff_cancel_left hBE⟩
 
 @[simp]
 lemma relax_spanning_iff {S} (h : M.IsLawfulRelaxation T) :
@@ -134,7 +134,7 @@ lemma relax_spanning_iff {S} (h : M.IsLawfulRelaxation T) :
   simp only [relax_E, relax_Indep, mem_image]
   convert Iff.rfl
   refine ⟨fun h ↦ ⟨S, h, rfl⟩, fun ⟨X, hXT, hX⟩ ↦ ?_⟩
-  rwa [← diff_diff_cancel_left hSE, ← hX, diff_diff_cancel_left (by grind)]
+  rwa [← sdiff_sdiff_cancel_left hSE, ← hX, sdiff_sdiff_cancel_left (by grind)]
 
 @[simp]
 lemma relax_dep_iff {D} (h : M.IsLawfulRelaxation T) :
@@ -149,31 +149,32 @@ lemma relax_eRank_eq (h : M.IsLawfulRelaxation T) : (M.relax T h).eRank = M.eRan
 
 @[simp]
 lemma relax_empty (M : Matroid α) : M.relax ∅ (by simp [IsLawfulRelaxation]) = M := by
-  simp [ext_iff_indep]
+  simp [relax]
 
+-- set_option backward.isDefEq.respectTransparency false in
 lemma relax_nonspanning_iff (h : M.IsLawfulRelaxation T) :
     (M.relax T h).Nonspanning X ↔ M.Nonspanning X ∧ X ∉ T := by
   by_cases! hXE : ¬ (X ⊆ M.E)
   · refine iff_of_false (fun h ↦ hXE h.subset_ground) fun h ↦ hXE <| h.1.subset_ground
   rw [nonspanning_iff, spanning_iff_compl_coindep, Coindep, relax_dual]
-  simp only [relax_E, relax_Indep, mem_image, not_or, dual_ground, diff_subset_iff,
-    subset_union_right, not_indep_iff, dep_dual_iff, not_exists, not_and]
+  simp only [relax_E, relax_Indep, mem_image, not_or,
+    not_indep_iff (show M.E \ X ⊆ M✶.E from sdiff_subset), dep_dual_iff, not_exists, not_and]
   rw [codep_compl_iff, and_assoc, and_congr_right_iff, and_iff_left hXE, iff_def,
     and_iff_right (by grind)]
   refine fun hX hXT Y hXY heq ↦ hXT ?_
-  rwa [← diff_diff_cancel_left hXE, ← heq, diff_diff_cancel_left (h.ssubset_ground hXY).subset]
+  rwa [← sdiff_sdiff_cancel_left hXE, ← heq, sdiff_sdiff_cancel_left (h.ssubset_ground hXY).subset]
 
 lemma relax_isCircuit_iff (h : M.IsLawfulRelaxation T) {C : Set α} :
     (M.relax T h).IsCircuit C ↔ (M.IsCircuit C ∧ C ∉ T) ∨ (C ⊆ M.E ∧ ∃ e ∈ C, C \ {e} ∈ T) := by
   by_cases! hXE : ¬ (C ⊆ M.E); grind
-  simp_rw [isCircuit_iff_dep_forall_diff_singleton_indep, relax_dep_iff, relax_Indep]
+  simp_rw [isCircuit_iff_dep_forall_sdiff_singleton_indep, relax_dep_iff, relax_Indep]
   refine ⟨fun ⟨⟨hC, hCT⟩, h⟩ ↦ ?_, ?_⟩
   · simp only [hC, true_and, hCT, not_false_eq_true, and_true, hC.subset_ground]
     grind
   rintro (h | ⟨-, e, heC, heCT⟩)
   · grind
-  refine ⟨⟨(h heCT).isCircuit.dep.superset diff_subset, fun hCT ↦ ?_⟩, fun f hfC ↦ ?_⟩
-  · grind [(h heCT).isCircuit.eq_of_subset_isCircuit (h hCT).isCircuit diff_subset]
+  refine ⟨⟨(h heCT).isCircuit.dep.superset sdiff_subset, fun hCT ↦ ?_⟩, fun f hfC ↦ ?_⟩
+  · grind [(h heCT).isCircuit.eq_of_subset_isCircuit (h hCT).isCircuit sdiff_subset]
   rw [or_iff_not_imp_left, not_indep_iff (by grind)]
   obtain rfl | hef := eq_or_ne e f; simp [heCT]
   have hb := (h heCT).isBase_of_isExchange (B := C \ {f}) (by grind)
@@ -190,7 +191,7 @@ lemma relax_isNonspanningCircuit_iff (h : M.IsLawfulRelaxation T) {C : Set α} :
   intro hCnsp hCT
   rw [and_iff_right hXE, or_iff_left, and_iff_left hCT]
   rintro ⟨e, heC, hCeT⟩
-  grind [(h hCeT).isHyperplane.eq_of_subset_nonspanning hCnsp diff_subset]
+  grind [(h hCeT).isHyperplane.eq_of_subset_nonspanning hCnsp sdiff_subset]
 
 instance rankPos_relax [M.RankPos] (h : M.IsLawfulRelaxation T) : (M.relax T h).RankPos := by
   rwa [← eRank_ne_zero_iff, relax_eRank_eq, eRank_ne_zero_iff]
@@ -207,7 +208,7 @@ def IsCircuitHyperplane.relax {C} (h : M.IsCircuitHyperplane C) : Matroid α :=
   M.relax {C} (by simpa [IsLawfulRelaxation])
 
 @[simp]
-def IsCircuitHyperplane.relax_ground {C} (h : M.IsCircuitHyperplane C) : h.relax.E = M.E := rfl
+theorem IsCircuitHyperplane.relax_ground {C} (h : M.IsCircuitHyperplane C) : h.relax.E = M.E := rfl
 
 @[simp]
 lemma IsCircuitHyperplane.relax_isBase_iff {C} (h : M.IsCircuitHyperplane C) :
@@ -233,7 +234,7 @@ lemma IsLawfulRelaxation.contract_delete (h : M.IsLawfulRelaxation T) (C D : Set
     (fun (X : Set α) ↦ X \ C) '' {H | H ∈ T ∧ C ⊂ H ∧ D ⊂ M.E \ H} := by
   rintro _ ⟨H, hHT, rfl⟩
   refine ((h hHT.1).contract hHT.2.1).delete ?_
-  rw [contract_ground, diff_diff, union_diff_cancel hHT.2.1.subset]
+  rw [contract_ground, sdiff_sdiff, union_sdiff_cancel hHT.2.1.subset]
   exact hHT.2.2
 
 /-- Relaxation commutes with deletion; if `T` is a set of circuit-hyperplanes of `M`,
@@ -247,9 +248,9 @@ lemma relax_delete (h : M.IsLawfulRelaxation T) {D} (hD : D ⊆ M.E := by aesop_
     (hDT : M.E \ D ∉ T) :
     (M.relax T h) ＼ D = (M ＼ D).relax {H | H ∈ T ∧ D ⊂ M.E \ H} (h.delete D) := by
   refine ext_indep rfl fun I (hI : I ⊆ M.E \ D) ↦ ?_
-  rw [subset_diff] at hI
+  rw [subset_sdiff] at hI
   have hssu : I ∈ T → D ⊂ M.E \ I := fun hIT ↦ ssubset_of_ne_of_subset
-    (fun hss ↦ hDT (by rwa [hss, diff_diff_cancel_left hI.1])) <| by grind
+    (fun hss ↦ hDT (by rwa [hss, sdiff_sdiff_cancel_left hI.1])) <| by grind
   simp [hI, and_iff_left_of_imp hssu]
 
 /- Relaxation commutes with contraction, except in the special case where the contract-set
@@ -259,11 +260,11 @@ lemma relax_contract (h : M.IsLawfulRelaxation T) {C} (hC : C ∉ T) (hCE : C �
   rw! [← dual_inj, dual_contract, relax_dual, relax_delete, ← dual_contract, relax_dual]
   · convert rfl using 2
     ext X
-    simp only [mem_image, mem_setOf_eq]
+    simp only [mem_image, mem_ofPred_eq]
     grind
   simp only [dual_ground, mem_image, not_exists, not_and]
   refine fun X hXT heq ↦ hC ?_
-  rwa [← diff_diff_cancel_left hCE, ← heq, diff_diff_cancel_left (h.ssubset_ground hXT).subset]
+  rwa [← sdiff_sdiff_cancel_left hCE, ← heq, sdiff_sdiff_cancel_left (h.ssubset_ground hXT).subset]
 
 /- Relaxation commutes with deleting coindependent sets of `M` -/
 lemma relax_delete_of_coindep (h : M.IsLawfulRelaxation T) {D} (hD : M.Coindep D) :
@@ -312,7 +313,7 @@ lemma IsLawfulTightening.exists_notMem_between {S} (hT : M.IsLawfulTightening T)
   by_cases! hB'T : B' ∉ T; grind
   obtain ⟨e, he⟩ := exists_of_ssubset (hIB'.ssubset_of_ne (by grind))
   obtain ⟨f, hf⟩ := exists_of_ssubset (hB'S.ssubset_of_ne (by grind))
-  have hex := (isExchange_diff_insert he.1 hf.2).symm
+  have hex := (isExchange_sdiff_insert he.1 hf.2).symm
   exact ⟨insert f (B' \ {e}), by grind, by grind, (hT.isFreeBase_of_mem hB'T).isBase_of_exchange _
     (by grind) hex, hT.notMem_of_exchange hB'T hex⟩
 
@@ -323,14 +324,15 @@ lemma IsLawfulTightening.dual (h : M.IsLawfulTightening T) :
     exact (h.isFreeBase_of_mem hB).compl_dual
   · rintro _ ⟨B, hB, rfl⟩ _ ⟨B', hB', rfl⟩ heq hex
     simp only [ne_eq] at hex heq
-    rw [isExchange_diff_right_iff (h.ssubset_ground hB).subset (h.ssubset_ground hB').subset] at hex
+    rw [isExchange_sdiff_right_iff (h.ssubset_ground hB).subset
+      (h.ssubset_ground hB').subset] at hex
     simp [h.pairwise_not_isExchange.eq hB hB' (by simpa)] at heq
   · rintro ⟨B, hB, h'⟩
     simp only [dual_ground, sdiff_eq_left] at h'
     rw [disjoint_iff_inter_eq_empty,
       inter_eq_self_of_subset_right (h.ssubset_ground hB).subset] at h'
     exact (h' ▸ h.empty_notMem) hB
-  simp only [mem_image, diff_eq_empty, not_exists, not_and]
+  simp only [mem_image, sdiff_eq_empty, not_exists, not_and]
   refine fun B hBT hss ↦ h.ground_notMem ?_
   rwa [hss.antisymm (h.ssubset_ground hBT).subset]
 
@@ -350,12 +352,12 @@ def tighten (M : Matroid α) (T : Set (Set α)) (hT : M.IsLawfulTightening T) : 
     hT.empty_notMem hT.ground_notMem]
   isBase_exchange := by
     intro B B' ⟨hB, hBT⟩ ⟨hB', hB'T⟩ e he
-    have hnBe : ¬ M.IsBase (B \ {e}) := hB.not_isBase_of_ssubset (diff_singleton_ssubset.2 he.1)
+    have hnBe : ¬ M.IsBase (B \ {e}) := hB.not_isBase_of_ssubset (sdiff_singleton_ssubset.2 he.1)
     have hBeT : B \ {e} ∉ T := fun h' ↦ hnBe (hT.isFreeBase_of_mem h').isBase
     have huT : (B \ {e}) ∪ B' ∉ T := by
       intro h'
       grind [hB'.eq_of_subset_isBase (hT.isFreeBase_of_mem h').isBase (by simp)]
-    obtain ⟨B₁, hBB₁, hB₁u, hB₁, hB₁T⟩ := hT.exists_notMem_between (hB.indep.diff {e})
+    obtain ⟨B₁, hBB₁, hB₁u, hB₁, hB₁T⟩ := hT.exists_notMem_between (hB.indep.sdiff {e})
       (hB'.spanning_of_superset (X := (B \ {e}) ∪ B')
       subset_union_right (by grind)) subset_union_left hBeT huT
     obtain ⟨f, hf⟩ := exists_of_ssubset (hBB₁.ssubset_of_ne (by grind))
@@ -369,11 +371,11 @@ def tighten (M : Matroid α) (T : Set (Set α)) (hT : M.IsLawfulTightening T) : 
     · by_cases hXT : X ∈ T
       · obtain ⟨e, he⟩ := exists_of_ssubset (hIX.ssubset_of_ne (by grind))
         refine ⟨X \ {e}, by grind, maximal_iff_forall_ssuperset.2 ?_⟩
-        simp only [diff_singleton_subset_iff, subset_insert, and_true, not_and, and_imp]
-        refine ⟨⟨(hT.isFreeBase_of_mem hXT).isBase.indep.diff _, fun h' ↦ ?_⟩,
+        simp only [sdiff_singleton_subset_iff, subset_insert, and_true, not_and, and_imp]
+        refine ⟨⟨(hT.isFreeBase_of_mem hXT).isBase.indep.sdiff _, fun h' ↦ ?_⟩,
           fun K hXK hK hKT hKX ↦ ?_⟩
         · grind [(hT.isFreeBase_of_mem h').isBase.eq_of_subset_isBase
-            (hT.isFreeBase_of_mem hXT).isBase diff_subset]
+            (hT.isFreeBase_of_mem hXT).isBase sdiff_subset]
         by_cases heK : e ∈ K
         · obtain rfl : K = X := by grind
           contradiction
@@ -398,9 +400,9 @@ lemma IsLawfulTightening.matroid_dual (hT : M.IsLawfulTightening T) :
     and_iff_left hB, and_congr_right_iff]
   refine fun hBc ↦ ⟨?_, fun hnot hBT ↦ hnot ⟨_, hBT, ?_⟩⟩
   · rintro hBT ⟨B', hB'T, rfl⟩
-    rw [diff_diff_cancel_left (hT.ssubset_ground hB'T).subset] at hBT
+    rw [sdiff_sdiff_cancel_left (hT.ssubset_ground hB'T).subset] at hBT
     contradiction
-  rw [diff_diff_cancel_left hB]
+  rw [sdiff_sdiff_cancel_left hB]
 
 lemma IsLawfulTightening.isCircuitHyperplane_tighten (hT : M.IsLawfulTightening T) (hX : X ∈ T) :
     (M.tighten T hT).IsCircuitHyperplane X := by
@@ -410,13 +412,13 @@ lemma IsLawfulTightening.isCircuitHyperplane_tighten (hT : M.IsLawfulTightening 
     specialize aux _ (M.E \ X) _ hT.dual ⟨X, hX, rfl⟩
     rw [← hT.matroid_dual, ← IsCocircuit] at aux
     convert aux.compl_isHyperplane
-    rw [tighten_E, diff_diff_cancel_left (by grind)]
-  simp only [isCircuit_iff_dep_forall_diff_singleton_indep, dep_iff, tighten_Indep, hY,
+    rw [tighten_E, sdiff_sdiff_cancel_left (by grind)]
+  simp only [isCircuit_iff_dep_forall_sdiff_singleton_indep, dep_iff, tighten_Indep, hY,
     not_true_eq_false, and_false, not_false_eq_true, tighten_E, true_and, forall_mem_and]
   refine ⟨(hT'.ssubset_ground hY).subset,
-    fun e heY ↦ (hT'.isFreeBase_of_mem hY).isBase.indep.diff _, fun e heY heYb ↦ ?_⟩
+    fun e heY ↦ (hT'.isFreeBase_of_mem hY).isBase.indep.sdiff _, fun e heY heYb ↦ ?_⟩
   have := (hT'.isFreeBase_of_mem heYb).isBase.eq_of_subset_isBase (hT'.isFreeBase_of_mem hY).isBase
-    diff_subset
+    sdiff_subset
   grind
 
 lemma IsLawfulTightening.encard_eq_eRank_of_mem (h : M.IsLawfulTightening T) (hX : X ∈ T) :

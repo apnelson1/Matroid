@@ -267,13 +267,13 @@ lemma isClosedSubgraph_iff_le_and_setLinkEdges_empty : H ≤c G ↔ (H ≤i G) �
   refine ⟨fun h ↦ ⟨h.isInducedSubgraph, ?_⟩,
     fun ⟨hle, hem⟩ ↦ ⟨hle, fun e x ⟨y, hxy⟩ hxH ↦ ?_⟩⟩
   · ext e
-    simp only [mem_setLinkEdges_iff, mem_diff, mem_empty_iff_false, iff_false, not_exists, not_and,
+    simp only [mem_setLinkEdges_iff, mem_sdiff, mem_empty_iff_false, iff_false, not_exists, not_and,
       and_imp]
     rintro x hxH y hyG hyH hxy
     exact hyH <| (h.isLink_congr hxH).mpr hxy |>.right_mem
   simp only [Set.ext_iff, mem_empty_iff_false, iff_false] at hem
   specialize hem e
-  simp only [hxy.mem_setLinkEdges_iff, hxH, mem_diff, hxy.right_mem, true_and, not_true_eq_false,
+  simp only [hxy.mem_setLinkEdges_iff, hxH, mem_sdiff, hxy.right_mem, true_and, not_true_eq_false,
     and_false, false_and, or_false, not_not] at hem
   exact hle.isLink_of_mem_mem hxy hxH hem |>.edge_mem
 

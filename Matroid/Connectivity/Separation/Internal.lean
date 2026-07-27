@@ -70,7 +70,7 @@ lemma InternallyConnected.exists_of_eConn_eq (hconn : M.InternallyConnected (k +
   have htop : P.eConn ≠ ⊤ := by simpa using hk
   have hle : (P i).encard ≤ P.eConn + 1 := by simpa [htop] using hi
   rw [← M.eConn_add_nullity_add_nullity_dual (P i), add_assoc, P.eConn_eq,
-    ENat.add_le_add_iff_left htop, ENat.le_one_iff_eq_zero_or_eq_one,
+    ENat.add_le_add_iff_left htop, Order.le_one_iff,
     add_eq_zero, nullity_eq_zero, nullity_eq_zero] at hle
   simp_rw [← M.eConn_add_nullity_add_nullity_dual (P i), P.eConn_eq, add_assoc,
     ENat.add_eq_add_left_iff, htop, or_false, ← add_assoc, ENat.add_eq_right_iff, add_eq_zero,

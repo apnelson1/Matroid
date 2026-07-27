@@ -47,7 +47,7 @@ lemma exists_connected_matroidalDual (h : G.matroidalDual H) [Nonempty γ] :
   obtain ⟨f, hf⟩ := H.connPartition.isRepFun_nonempty
   classical
   refine ⟨joinAt H (f _) f,
-    h.trans (cycleMatroid_joinAt hf (notMem_diff_of_mem ⟨_, hne.some_mem, rfl⟩)).symm, by
+    h.trans (cycleMatroid_joinAt hf (notMem_sdiff_of_mem ⟨_, hne.some_mem, rfl⟩)).symm, by
     simp [connected_iff, joinAt_preconnected hf, vertexSet_joinAt hf hne]⟩
 
 lemma exists_connected_finite_matroidalDual [G.EdgeFinite] (h : G.matroidalDual H) [Nonempty γ] :
@@ -61,7 +61,7 @@ lemma exists_connected_finite_matroidalDual [G.EdgeFinite] (h : G.matroidalDual 
   haveI := h.edgeFinite_of_matroidalDual
   classical
   refine ⟨joinAt H (f _) f,
-    h.trans (cycleMatroid_joinAt hf (notMem_diff_of_mem ⟨_, hne.some_mem, rfl⟩)).symm,
+    h.trans (cycleMatroid_joinAt hf (notMem_sdiff_of_mem ⟨_, hne.some_mem, rfl⟩)).symm,
     joinAt_finite hf, by simp [connected_iff, joinAt_preconnected hf, vertexSet_joinAt hf hne]⟩
 
 theorem euler_formula (h : G.matroidalDual H) :
@@ -95,10 +95,10 @@ lemma bound_face_encard_of_girth (h : G.matroidalDual H) (hG : ¬ G.IsForest) (h
     Set.not_subsingleton_iff.mp <| mt h.isForest_of_faceSet_subsingleton hG
   replace hG := G.girth_ne_top hG
   suffices H.MinDegreeGE G.cycleMatroid.girth.toNat by
-    rw [← ENat.coe_toNat_eq_self.mpr hG]
+    rw [← ENat.natCast_toNat_eq_self.mpr hG]
     exact h.edgeSet_eq ▸ this.le_encard_edgeSet
   refine EdgeConnGE.minDegreeGE hVH ?_
-  rw [← hH.cycleMatroid_dual_girth, matroidalDual_symm h, ENat.coe_toNat hG]
+  rw [← hH.cycleMatroid_dual_girth, matroidalDual_symm h, ENat.natCast_toNat hG]
 
 lemma girth_edgeConn_bound_of_connected (h : G.matroidalDual H) {k g : ℕ} (hk : G.EdgeConnGE k)
     (hg : g ≤ G.cycleMatroid.girth) (hGF : ¬ G.IsForest) (hG : G.Connected) (hH : H.Connected)

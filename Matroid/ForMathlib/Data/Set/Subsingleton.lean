@@ -8,7 +8,7 @@ lemma Nontrivial.diff_singleton_nonempty (hs : s.Nontrivial) (x : α) : (s \ {x}
   rw [nonempty_iff_ne_empty]
   intro hs'
   obtain ⟨y, hys⟩ := hs.exists_ne x
-  rw [Ne, ← mem_singleton_iff, ← mem_diff, hs'] at hys
+  rw [Ne, ← mem_singleton_iff, ← mem_sdiff, hs'] at hys
   simp at hys
 
 lemma Nonempty.nontrivial_of_ssubset (hs : s.Nonempty) (hst : s ⊂ t) : t.Nontrivial := by

@@ -7,8 +7,8 @@ variable {α β : Type*} {u v x y z : α} {e e' f g : β} {S T U: Set α}
 
 namespace WList
 
-variable {P : α → Prop} [DecidablePred P]
-variable {n m : ℕ}
+variable {P : α → Prop} [DecidablePred P] {n m : ℕ}
+
 @[simp]
 lemma tail_last (w : WList α β) : w.tail.last = w.last := by
   induction w with simp
@@ -297,7 +297,8 @@ lemma Nonempty.lastEdge_notMem_dropLast (hw : w.Nonempty) (hnd : w.edge.Nodup) :
 lemma Nontrivial.tail_lastEdge (hw : w.Nontrivial) :
     hw.tail_nonempty.lastEdge = hw.nonempty.lastEdge := by
   convert hw.reverse.dropLast_firstEdge using 1
-  simp [hw.tail_nonempty.firstEdge_reverse]
+  · simp [hw.tail_nonempty.firstEdge_reverse]
+  rfl
 
 lemma Nontrivial.firstEdge_ne_lastEdge (hw : w.Nontrivial) (hnd : w.edge.Nodup) :
     hw.nonempty.firstEdge ≠ hw.nonempty.lastEdge := by

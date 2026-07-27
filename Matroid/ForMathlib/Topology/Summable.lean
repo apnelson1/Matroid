@@ -124,14 +124,14 @@ theorem tprod_union_disjoint (hd : Disjoint s t) :
 
 @[to_additive]
 theorem tprod_le_of_subset (h : s ⊆ t) : ∏' (x : s), f x ≤ ∏' (x : t), f x := by
-  rw [← diff_union_of_subset h, tprod_union_disjoint disjoint_sdiff_left]
+  rw [← sdiff_union_of_subset h, tprod_union_disjoint disjoint_sdiff_left]
   exact le_mul_self
 
 @[to_additive]
 theorem tprod_union_le (s t : Set α) :
     ∏' (x : ↑(s ∪ t)), f (x : α) ≤ (∏' (x : s), f x) * ∏' (x : t), f x := by
-  rw [← diff_union_self, tprod_union_disjoint disjoint_sdiff_left]
-  exact mul_le_mul_left (tprod_le_of_subset diff_subset) _
+  rw [← sdiff_union_self, tprod_union_disjoint disjoint_sdiff_left]
+  exact mul_le_mul_left (tprod_le_of_subset sdiff_subset) _
 
 @[to_additive]
 theorem tprod_insert (h : a ∉ s) : ∏' (x : ↑(insert a s)), f x = f a * ∏' (x : s), f x := by
@@ -297,7 +297,7 @@ theorem tprod_iUnion_eq_tprod (f : α → M) (t : ι → Set α) (ht : Pairwise 
 theorem tprod_subtype_eq_tprod_mulSupport (s : Set α) (f : α → M) :
     ∏' (x : s), f x = ∏' (x : {x | x ∈ s ∧ f x ≠ 1}), f x := by
   have hu : s = {i | i ∈ s ∧ f i ≠ 1} ∪ {i | i ∈ s ∧ f i = 1} := by
-    simp only [Set.ext_iff, ne_eq, mem_union, mem_setOf_eq]
+    simp only [Set.ext_iff, ne_eq, mem_union, mem_ofPred_eq]
     grind
   have hrw : ∏' i : {i | i ∈ s ∧ f i = 1}, f i = 1 := by simp
   rw [hu, tprod_union_disjoint (by grind), hrw, mul_one, ← hu]
@@ -324,7 +324,8 @@ theorem tprod_const_eq_top [Infinite α] {c : M} (hc : c ≠ 1) : ∏' (_ : α),
   obtain ⟨n, hlt⟩ := exists_lt_pow (R := (Submonoid.neTop M)) (a := ⟨c, hne⟩)
     (Subtype.coe_lt_coe.1 <| one_le.lt_of_ne (by simpa using hc.symm)) ⟨b, hb.ne⟩
   obtain ⟨s, rfl⟩ := Infinite.exists_subset_card_eq α n
-  exact ⟨s, by simpa using hlt⟩
+  use s
+  rwa [← SubmonoidClass.coe_pow (⟨c, hne⟩ : Submonoid.neTop M) s.card]
 
 @[to_additive]
 theorem tprod_subtype_const_eq_top (hs : s.Infinite) {c : M} (hc : c ≠ 1) : ∏' (_ : s), c = ⊤ := by

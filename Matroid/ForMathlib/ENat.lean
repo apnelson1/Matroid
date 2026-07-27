@@ -29,7 +29,7 @@ def recTopZeroCoe {C : ℕ∞ → Sort*} (top : C ⊤) (zero : C 0) (coe : (a : 
   | succ n => exact coe n
 
 @[elab_as_elim]
-def recZeroSucc {C : ℕ∞ → Prop} (zero : C 0) (coe : (a : ℕ∞) → C (a + 1)) (n : ℕ∞) : C n := by
+theorem recZeroSucc {C : ℕ∞ → Prop} (zero : C 0) (coe : (a : ℕ∞) → C (a + 1)) (n : ℕ∞) : C n := by
   obtain rfl | ⟨k, rfl⟩ := n.eq_zero_or_exists_eq_add_one
   · assumption
   exact coe k
@@ -44,11 +44,6 @@ theorem nat_induction' {motive : ℕ∞ → Prop} (a : ℕ∞) (zero : motive 0)
   lift n to ℕ using hn.ne
   exact h n
 
--- this won't fire as `simp` without an explicit `ENat` version.
-@[simp]
-protected theorem add_eq_top : x + y = ⊤ ↔ x = ⊤ ∨ y = ⊤ :=
-  WithTop.add_eq_top
-
 protected theorem add_ne_top : x + y ≠ ⊤ ↔ x ≠ ⊤ ∧ y ≠ ⊤ := by
   simp
 
@@ -60,18 +55,18 @@ protected theorem top_mul_eq_ite (a : ℕ∞) : ⊤ * a = if a = 0 then 0 else �
 protected theorem mul_top_eq_ite (a : ℕ∞) : a * ⊤ = if a = 0 then 0 else ⊤ := by
   rw [mul_comm, ENat.top_mul_eq_ite]
 
-attribute [simp] ENat.coe_inj ENat.coe_le_coe ENat.coe_lt_coe ENat.coe_ne_top ENat.coe_lt_top
+-- attribute [simp] ENat.natCast_inj ENat.natCast_le_natCast ENat.natCast_lt_natCast
 
 @[simp]
 protected lemma ofNat_lt_top {n : ℕ} [n.AtLeastTwo] : (ofNat(n) : ℕ∞) < ⊤ :=
-  ENat.coe_lt_top n
+  ENat.natCast_lt_top n
 
 @[simp]
 protected lemma ofNat_le_ofNat {m n : ℕ} [m.AtLeastTwo] [n.AtLeastTwo] :
     (ofNat(m) : ℕ∞) ≤ (ofNat(n) : ℕ∞) ↔ m ≤ n := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · simpa using toNat_le_toNat h (by simp)
-  rwa [← ENat.coe_le_coe] at h
+  rwa [← ENat.natCast_le_natCast] at h
 
 @[simp]
 protected lemma ofNat_lt_ofNat {m n : ℕ} [m.AtLeastTwo] [n.AtLeastTwo] :
@@ -88,7 +83,7 @@ protected lemma ofNat_inj {m n : ℕ} [m.AtLeastTwo] [n.AtLeastTwo] :
 protected lemma one_lt_ofNat {n : ℕ} [n.AtLeastTwo] : (1 : ℕ∞) < ofNat(n) := by
   change 1 < (n : ℕ∞)
   have hlt : 1 < n := by exact Nat.AtLeastTwo.prop
-  rwa [← ENat.coe_lt_coe] at hlt
+  rwa [← ENat.natCast_lt_natCast] at hlt
 
 @[simp]
 protected lemma zero_lt_ofNat {n : ℕ} [n.AtLeastTwo] : (0 : ℕ∞) < ofNat(n) := by
@@ -102,43 +97,39 @@ protected lemma one_le_ofNat {n : ℕ} [n.AtLeastTwo] : (1 : ℕ∞) ≤ ofNat(n
 protected lemma not_ofNat_le_one {n : ℕ} [n.AtLeastTwo] : ¬ ofNat(n) ≤ (1 : ℕ∞) := by
   simp [← not_lt]
 
-@[simp]
-protected lemma one_le_coe {n : ℕ} : (1 : ℕ∞) ≤ n ↔ 1 ≤ n := by
-  rw [← ENat.coe_one, ENat.coe_le_coe]
+@[deprecated Nat.one_le_cast (since := "2026-07-21")]
+protected lemma one_le_coe {n : ℕ} : (1 : ℕ∞) ≤ n ↔ 1 ≤ n := Nat.one_le_cast
 
-@[simp]
-protected lemma coe_le_one {n : ℕ} : (n : ℕ∞) ≤ 1 ↔ n ≤ 1 := by
-  rw [← ENat.coe_one, ENat.coe_le_coe]
+@[deprecated Nat.cast_le_one (since := "2026-07-21")]
+protected lemma coe_le_one {n : ℕ} : (n : ℕ∞) ≤ 1 ↔ n ≤ 1 := Nat.cast_le_one
 
-@[simp]
-protected lemma coe_lt_one {n : ℕ} : (n : ℕ∞) < 1 ↔ n = 0 := by
-  rw [← ENat.coe_one, coe_lt_coe, Nat.lt_one_iff]
+@[deprecated Nat.cast_lt_one (since := "2026-07-21")]
+protected lemma coe_lt_one {n : ℕ} : (n : ℕ∞) < 1 ↔ n = 0 := Nat.cast_lt_one
 
-@[simp]
-protected lemma coe_eq_one {n : ℕ} : (n : ℕ∞) = 1 ↔ n = 1 := by
-  rw [← coe_one, ENat.coe_inj]
+@[deprecated Nat.cast_eq_one (since := "2026-07-21")]
+protected lemma coe_eq_one {n : ℕ} : (n : ℕ∞) = 1 ↔ n = 1 := Nat.cast_eq_one
 
 protected lemma coe_eq_ofNat {n : ℕ} [n.AtLeastTwo] : (n : ℕ∞) = ofNat(n) := rfl
 
 @[simp]
 protected lemma coe_le_ofNat {m n : ℕ} [n.AtLeastTwo] : (m : ℕ∞) ≤ ofNat(n) ↔ m ≤ n :=
-  ENat.coe_le_coe
+  ENat.natCast_le_natCast
 
 @[simp]
 protected lemma coe_lt_ofNat {m n : ℕ} [n.AtLeastTwo] : (m : ℕ∞) < ofNat(n) ↔ m < n :=
-  ENat.coe_lt_coe
+  ENat.natCast_lt_natCast
 
 @[simp]
 protected lemma ofNat_le_coe {m n : ℕ} [m.AtLeastTwo] : ofNat(m) ≤ (n : ℕ∞) ↔ m ≤ n :=
-  ENat.coe_le_coe
+  ENat.natCast_le_natCast
 
 @[simp]
 protected lemma ofNat_lt_coe {m n : ℕ} [m.AtLeastTwo] : ofNat(m) < (n : ℕ∞) ↔ m < n :=
-  ENat.coe_lt_coe
+  ENat.natCast_lt_natCast
 
 @[simp]
 protected lemma coe_eq_ofNat_iff {m n : ℕ} [n.AtLeastTwo] : (m : ℕ∞) = ofNat(n) ↔ m = n := by
-  rw [← ENat.coe_eq_ofNat (n := n), ENat.coe_inj]
+  rw [← ENat.coe_eq_ofNat (n := n), ENat.natCast_inj]
 
 @[simp]
 protected lemma zero_le {n : ℕ∞} : (0 : ℕ∞) ≤ n :=
@@ -190,7 +181,7 @@ theorem mul_eq_top_iff : a * b = ⊤ ↔ (a = ⊤ ∧ b ≠ 0) ∨ (a ≠ 0 ∧ 
   | coe a =>
   cases b with
   | top => simp +contextual [ENat.mul_top_eq_ite]
-  | coe b => simp only [coe_ne_top, ne_eq, false_and, and_false, or_self, ← coe_mul]
+  | coe b => simp only [natCast_ne_top, ne_eq, false_and, and_false, or_self, ← natCast_mul]
 
 @[simp]
 protected lemma ofNat_mul_eq_top_iff {n : ℕ} [n.AtLeastTwo] {a : ℕ∞} :
@@ -345,20 +336,20 @@ protected lemma even_top : Even (⊤ : ℕ∞) :=
 
 @[simp]
 protected lemma odd_top : Odd (⊤ : ℕ∞) :=
-  ⟨⊤, by enat_to_nat⟩
+  ⟨⊤, by simp⟩
 
 @[simp]
 protected lemma even_natCast {n : ℕ} : Even (n : ℕ∞) ↔ Even n := by
   refine ⟨fun ⟨r, hr⟩ ↦ ?_, fun ⟨r, hr⟩ ↦ ⟨r, ?_⟩⟩
   · lift r to ℕ using (by rintro rfl; simp at hr)
-    obtain rfl : n = r + r := by rwa [← ENat.coe_add, ENat.coe_inj] at hr
+    obtain rfl : n = r + r := by rwa [← ENat.natCast_add, ENat.natCast_inj] at hr
     exact Even.add_self r
-  rwa [← ENat.coe_add, ENat.coe_inj]
+  rwa [← ENat.natCast_add, ENat.natCast_inj]
 
 @[simp]
 protected lemma odd_natCast {n : ℕ} : Odd (n : ℕ∞) ↔ Odd n := by
   refine ⟨fun ⟨r, hr⟩ ↦ ?_, fun ⟨r, hr⟩ ↦ ⟨r, ?_⟩⟩
-  · lift r to ℕ using (by rintro rfl; enat_to_nat)
+  · lift r to ℕ using (by rintro rfl; simp at hr)
     norm_cast at hr
     subst hr
     exact odd_two_mul_add_one r

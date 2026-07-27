@@ -89,6 +89,22 @@ lemma remove_bDual (M : Matroid α) (X : Set α) (b c : Bool) :
     (M.bDual b).remove c X = (M.remove (b != c) X).bDual b := by
   simp
 
+lemma bDual_delete (M : Matroid α) (X : Set α) (b : Bool) :
+    (M.bDual b) ＼ X = (M.remove b X).bDual b := by
+  cases b with simp
+
+lemma bDual_contract (M : Matroid α) (X : Set α) (b : Bool) :
+    (M.bDual b) ／ X = (M.remove (!b) X).bDual b := by
+  cases b with simp
+
+lemma delete_bDual (M : Matroid α) (X : Set α) (b : Bool) :
+    (M ＼ X).bDual b = (M.bDual b).remove b X := by
+  cases b with simp
+
+lemma contract_bDual (M : Matroid α) (X : Set α) (b : Bool) :
+    (M ／ X).bDual b = (M.bDual b).remove (!b) X := by
+  cases b with simp
+
 @[simp, grind =]
 lemma remove_ground (M : Matroid α) (X : Set α) (b : Bool) : (M.remove b X).E = M.E \ X := by
   cases b <;> rfl
@@ -133,7 +149,7 @@ lemma IsStrictMinor.exists_eq_remove_singleton {N : Matroid α} (hNM : N <m M)
     (hE : (M.E \ N.E).Subsingleton) : ∃ b e, N = M.remove b {e} := by
   obtain ⟨e, he, b, h⟩ := hNM.exists_isMinor_removeElem
   refine ⟨b, e, Eq.symm <| h.eq_of_ground_subset ?_⟩
-  grw [remove_ground, diff_subset_comm]
+  grw [remove_ground, sdiff_subset_comm]
   exact hE.subset_of_nonempty_inter ⟨e, ⟨he, by grind⟩, rfl⟩
 
 lemma IsMinor.exists_isMinor_removeElem {N : Matroid α} (hNM : N ≤m M) (he : e ∉ N.E) :

@@ -40,7 +40,7 @@ lemma eq_addLoop_iff (he : e ∉ M.E) : M' = M.addLoop e ↔ M'.IsLoop e ∧ M' 
 
   simp_rw [ext_iff_indep, addLoop_ground, addLoop_indep_iff,
     delete_ground, delete_indep_iff, disjoint_singleton_right, ← singleton_dep, dep_iff,
-    singleton_subset_iff, and_iff_left he', subset_diff, disjoint_singleton_right, and_imp]
+    singleton_subset_iff, and_iff_left he', subset_sdiff, disjoint_singleton_right, and_imp]
 
   refine ⟨fun ⟨hE, hi⟩ ↦ ⟨?_, ?_, ?_⟩, fun ⟨hi, hE, h⟩ ↦ ⟨?_, fun I hIss ↦ ?_⟩⟩
   · rw [hi (singleton_subset_iff.2 he')]
@@ -48,7 +48,7 @@ lemma eq_addLoop_iff (he : e ∉ M.E) : M' = M.addLoop e ↔ M'.IsLoop e ∧ M' 
   · simp [hE, he]
   · rintro I hIss heI
     rw [and_iff_left heI, hi hIss]
-  · rw [← hE, insert_diff_singleton, insert_eq_of_mem he']
+  · rw [← hE, insert_sdiff_singleton, insert_eq_of_mem he']
   obtain (heI | heI) := em (e ∈ I)
   · exact iff_of_false (fun hI ↦ hi <| hI.subset (singleton_subset_iff.2 heI))
       (fun hI ↦ he <| hI.subset_ground heI)
@@ -109,7 +109,7 @@ lemma parallelExtend_not_isNonloop (he : ¬M.IsNonloop e) (f : α) :
     M.parallelExtend e f = (M ＼ {f}).addLoop f := by
   classical
   simp only [parallelExtend, ext_iff_indep, restrict_ground_eq, addLoop_ground, delete_ground,
-    insert_diff_singleton, restrict_indep_iff, comap_indep_iff, image_update, id_eq, image_id',
+    insert_sdiff_singleton, restrict_indep_iff, comap_indep_iff, image_update, id_eq, image_id',
     update_id_injOn_iff, addLoop_indep_iff, delete_indep_iff, disjoint_singleton_right, true_and]
 
   rintro I hI
@@ -121,7 +121,7 @@ lemma parallelExtend_not_isNonloop (he : ¬M.IsNonloop e) (f : α) :
 lemma parallelExtend_eq_parallelExtend_delete (M : Matroid α) {e f : α} (hef : e ≠ f):
     M.parallelExtend e f = (M ＼ {f}).parallelExtend e f := by
   classical
-  rw [parallelExtend, parallelExtend, delete_ground, insert_diff_singleton, ext_iff_indep]
+  rw [parallelExtend, parallelExtend, delete_ground, insert_sdiff_singleton, ext_iff_indep]
   simp only [restrict_ground_eq, restrict_indep_iff, comap_indep_iff, image_update, id_eq,
     image_id', update_id_injOn_iff, delete_indep_iff, disjoint_singleton_right, and_congr_left_iff,
     iff_self_and, true_and]
@@ -134,7 +134,7 @@ lemma parallelExtend_delete_eq' (M : Matroid α) (e f : α) :
     (M.parallelExtend e f) ＼ {f} = M ＼ {f} := by
   classical
   suffices ∀ I ⊆ M.E, _ → _ → I ⊆ insert f M.E by simpa +contextual [parallelExtend,
-    ext_iff_indep, subset_diff]
+    ext_iff_indep, subset_sdiff]
   exact fun I hI _ _ ↦ hI.trans (subset_insert _ _)
 
 lemma parallelExtend_delete_eq (e : α) (hf : f ∉ M.E) : (M.parallelExtend e f) ＼ {f} = M := by
@@ -148,7 +148,7 @@ lemma parallelExtend_isNonloop_iff (he : M.IsNonloop e) :
     image_update, image_id, image_id]
   obtain (rfl | hne) := eq_or_ne x f
   · simpa
-  simp only [mem_singleton_iff, hne.symm, not_false_eq_true, diff_singleton_eq_self, ite_false,
+  simp only [mem_singleton_iff, hne.symm, not_false_eq_true, sdiff_singleton_eq_self, ite_false,
     indep_singleton, hne, false_or, or_false, and_iff_left_iff_imp]
   exact IsNonloop.mem_ground
 
@@ -188,21 +188,21 @@ lemma eq_parallelExtend_iff (he : M.IsNonloop e) (hf : f ∉ M.E) :
 lemma parallelExtend_closure_eq_of_mem (he : M.IsNonloop e) (hf : f ∉ M.E) (X : Set α)
     (heX : e ∈ M.closure X) : (M.parallelExtend e f).closure X = insert f (M.closure X) := by
   nth_rw 2 [← M.parallelExtend_delete_eq e hf]
-  simp only [delete_closure_eq, insert_diff_singleton]
-  rw [← M.parallelExtend_delete_eq e hf, delete_closure_eq, mem_diff,
+  simp only [delete_closure_eq, insert_sdiff_singleton]
+  rw [← M.parallelExtend_delete_eq e hf, delete_closure_eq, mem_sdiff,
     (parallelExtend_parallel he f).mem_closure_iff_mem_closure] at heX
-  rw [closure_diff_singleton_eq_closure heX.1, eq_comm, insert_eq_self]
-  exact mem_of_mem_of_subset heX.1 (closure_subset_closure _ diff_subset)
+  rw [closure_sdiff_singleton_eq_closure heX.1, eq_comm, insert_eq_self]
+  exact mem_of_mem_of_subset heX.1 (closure_subset_closure _ sdiff_subset)
 
 lemma parallelExtend_closure_eq_of_notMem_notMem (he : M.IsNonloop e) (hf : f ∉ M.E) {X : Set α}
     (heX : e ∉ M.closure X) (hfX : f ∉ X) : (M.parallelExtend e f).closure X = M.closure X := by
   nth_rw 2 [← M.parallelExtend_delete_eq e hf]
   have hfX' : f ∉ (M.parallelExtend e f).closure (X \ {f}) := by
-    rw [← M.parallelExtend_delete_eq e hf, delete_closure_eq, mem_diff,
+    rw [← M.parallelExtend_delete_eq e hf, delete_closure_eq, mem_sdiff,
       (parallelExtend_parallel he f).mem_closure_iff_mem_closure] at heX
     simpa [(show e ≠ f by rintro rfl; exact hf he.mem_ground)] using heX
-  simp only [delete_closure_eq, diff_singleton_eq_self hfX']
-  rw [diff_singleton_eq_self hfX]
+  simp only [delete_closure_eq, sdiff_singleton_eq_self hfX']
+  rw [sdiff_singleton_eq_self hfX]
 
 lemma parallelExtend_indep_iff (he : M.IsNonloop e) (hf : f ∉ M.E) :
     (M.parallelExtend e f).Indep I ↔
@@ -258,7 +258,7 @@ instance parallelExtend_rankFinite (M : Matroid α) [RankFinite M] (e f : α) :
   have hB' : M.Indep (B \ {f}) := by
     rw [indep_iff_delete_of_disjoint (disjoint_sdiff_left (t := B) (s := {f})),
       ← parallelExtend_delete_eq' M e f, delete_indep_iff, and_iff_left disjoint_sdiff_left]
-    exact hB.indep.subset diff_subset
+    exact hB.indep.subset sdiff_subset
   exact ⟨⟨_, hB, (hB'.finite.insert f).subset <| by simp⟩⟩
 
 instance parallelExtend_finitary (M : Matroid α) [Finitary M] (e f : α) :
@@ -276,7 +276,7 @@ instance parallelExtend_finitary (M : Matroid α) [Finitary M] (e f : α) :
     · exact h.1.finite
     · exact toFinite {e, f}
     refine (h.2.2.1.finite.insert f).subset ?_
-    rw [insert_comm, insert_diff_singleton]
+    rw [insert_comm, insert_sdiff_singleton]
     exact (subset_insert _ _).trans (subset_insert _ _)
   · rwa [delete_isNonloop_iff, and_iff_right he]
   exact fun h ↦ h.2 rfl
@@ -352,7 +352,7 @@ lemma multiExtendLoopless_aux (φ : α → β) (hφN : ∀ x ∈ N.E, ∀ e ∈ 
     (∀ f ∈ N.E, (P f ∩ I).Subsingleton) ∧ I ⊆ ⋃ f ∈ N.E, P f) := by
   have aux1 (I) (hI : I ⊆ ⋃ f ∈ N.E, P f) : φ '' I = {f ∈ N.E | (P f ∩ I).Nonempty} := by
     ext b
-    simp only [mem_image, mem_setOf_eq]
+    simp only [mem_image, mem_ofPred_eq]
     constructor
     · rintro ⟨b, hbI, rfl⟩
       obtain ⟨x, hxN, hbx⟩ : ∃ x ∈ N.E, b ∈ P x := by simpa using hI hbI
@@ -389,14 +389,14 @@ def multiExtendLoopless (N : Matroid β) (P : β → Set α) (dj : N.E.Pairwise 
     simp only [mem_iUnion, exists_prop, and_imp, forall_exists_index] at hu
     rw [multiExtendLoopless_aux (φ := φ) (by grind)] )
 
+@[simp]
+theorem multiExtendLoopless_ground (N : Matroid β) (P : β → Set α)
+    (dj : N.E.Pairwise (Disjoint on P)) : (N.multiExtendLoopless P dj).E = ⋃ e ∈ N.E, P e := rfl
 
 @[simp]
-def multiExtendLoopless_ground (N : Matroid β) (P : β → Set α) (dj : N.E.Pairwise (Disjoint on P)) :
-    (N.multiExtendLoopless P dj).E = ⋃ e ∈ N.E, P e := rfl
-
-@[simp]
-def multiExtendLoopless_indep (N : Matroid β) (P : β → Set α) (dj : N.E.Pairwise (Disjoint on P))
-    {I : Set α} : (N.multiExtendLoopless P dj).Indep I ↔ N.Indep {f ∈ N.E | ((P f) ∩ I).Nonempty} ∧
+theorem multiExtendLoopless_indep (N : Matroid β) (P : β → Set α)
+    (dj : N.E.Pairwise (Disjoint on P)) {I : Set α} :
+    (N.multiExtendLoopless P dj).Indep I ↔ N.Indep {f ∈ N.E | ((P f) ∩ I).Nonempty} ∧
     (∀ f ∈ N.E, (P f ∩ I).Subsingleton) ∧ I ⊆ ⋃ f ∈ N.E, P f := Iff.rfl
 
 lemma multiExtendLoopless_eq_comapOn [Nonempty β] (N : Matroid β) (P : β → Set α)
@@ -455,6 +455,7 @@ lemma multiExtend_indep_iff_of_onUniv (N : Matroid β) [OnUniv N] (L : Set α) (
       ∧ (∀ f ∈ N.E, (P f ∩ I).Subsingleton) ∧ I ⊆ ⋃ f ∈ N.E, P f := by
   simp [multiExtend_indep_iff]
 
+set_option backward.isDefEq.respectTransparency false in
 @[simp]
 lemma multiExtend_map {α β γ : Type*} (N : Matroid β) (f : β → γ) (hf : InjOn f N.E)
     (P : γ → Set α) (L : Set α) (hP) : (N.map f hf).multiExtend P L hP = N.multiExtend (P ∘ f) L
@@ -484,6 +485,7 @@ lemma multiExtend_eRank_eq (N : Matroid β) (L : Set α) (P : β → Set α)
     inter_eq_self_of_subset_right subset_union_right, ← multiExtendLoopless_ground _ _ dj,
     eRk_ground, multiExtendLoopless_eRank_eq _ _ hP]
 
+set_option backward.isDefEq.respectTransparency false in
 lemma IsSimplification.multiExtendLoopless_eq {N M : Matroid α} [hM : M.Loopless]
     (hN : N.IsSimplification M) : N.multiExtendLoopless (fun e ↦ {x | M.Parallel e x})
     hN.setOf_parallel_pairwiseDisjoint = M := by
@@ -498,7 +500,7 @@ lemma IsSimplification.multiExtendLoopless_eq {N M : Matroid α} [hM : M.Looples
     rw [hφ, comap_parallel_iff, hN.simple.parallel_iff_eq (auxN he)]
   convert Iff.rfl using 3
   · ext e
-    simp only [mem_setOf_eq, mem_image]
+    simp only [mem_ofPred_eq, mem_image]
     constructor
     · rintro ⟨heN, ⟨x, hex : N.Parallel _ _, hxI⟩⟩
       refine ⟨x, hxI, ?_⟩
@@ -507,7 +509,7 @@ lemma IsSimplification.multiExtendLoopless_eq {N M : Matroid α} [hM : M.Looples
       exact hN.isRestriction.subset hex.mem_ground_left
     rintro ⟨x, hxI, rfl⟩
     refine ⟨auxN (hI hxI), ⟨x, ?_, hxI⟩⟩
-    rw [mem_setOf_eq, hidem, parallel_self_iff]
+    rw [mem_ofPred_eq, hidem, parallel_self_iff]
     exact hN.simple.isNonloop_of_mem <| auxN <| hI hxI
   refine ⟨fun h e heI f hfI hef ↦ ?_, fun h f hfN x ⟨hxf, hxI⟩ y ⟨hyf, hyI⟩ ↦ ?_⟩
   · refine h (φ e) (auxN (hI heI)) ⟨?_, heI⟩ ⟨?_, hfI⟩
@@ -522,7 +524,8 @@ lemma IsSimplification.multiExtend_eq {N M : Matroid α} (hN : N.IsSimplificatio
     M.loops hN.setOf_parallel_pairwiseDisjoint = M := by
   have aux := hN.isSimplification_removeLoops.multiExtendLoopless_eq
   simp_rw [removeLoops_parallel_iff] at aux
-  rw [multiExtend, aux, union_comm, ← hN.ground_eq_biUnion_setOf_parallel_union_loops,
+  unfold multiExtend
+  rw [aux, union_comm, ← hN.ground_eq_biUnion_setOf_parallel_union_loops,
     eq_restrict_removeLoops]
 
 -- (unifOn E 2).multiExtend (fun e ↦ {x | M.Parallel e x}) M.loops ⋯ =

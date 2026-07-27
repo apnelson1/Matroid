@@ -174,8 +174,8 @@ lemma foo (v : M.Rep 𝔽 W) (φ : W →ₗ[𝔽] W') (hφ) :
 --   obtain ⟨c, hcsupp, hc, hc0⟩ := hC'
 --   refine ⟨c, subset_antisymm (by simpa using hcsupp) fun e heC ↦ ?_, hc⟩
 --   simp only [Finset.mem_coe, Finsupp.mem_support_iff, ne_eq]
---   refine fun hc' ↦ hc0 <| (linearIndepOn_iff.1 <| v.onIndep <| hC.diff_singleton_indep heC) c ?_ hc
---   simpa [Finsupp.mem_supported, subset_diff_singleton_iff, hc']
+--   refine fun hc' ↦ hc0 <| (linearIndepOn_iff.1 <| v.onIndep <| hC.sdiff_singleton_indep heC) c ?_ hc
+--   simpa [Finsupp.mem_supported, subset_sdiff_singleton_iff, hc']
 
 -- lemma Rep.exists_mem_cycleSpace_of_isCircuit (v : M.Rep 𝔽 W) (hC : M.IsCircuit C) :
 --     ∃ w ∈ v.cycleSpace, w.support = C := by

@@ -37,7 +37,7 @@ lemma connected_iff_of_edgeSet_empty (hE : E(G) = ∅) : G.Connected ↔ ∃ v, 
     exists_eq_singleton_iff_nonempty_subsingleton]
 
 @[simps (attr := grind =)]
-def singleEdge_isEdgeSep (hne : u ≠ v) : (Graph.singleEdge u v e).IsEdgeSep {e} where
+theorem singleEdge_isEdgeSep (hne : u ≠ v) : (Graph.singleEdge u v e).IsEdgeSep {e} where
   subset_edgeSet := by simp
   not_connected h := by
     rw [connected_iff_of_edgeSet_empty (by simp),
@@ -88,7 +88,7 @@ lemma banana_connGE_iff : (banana u v F).ConnGE n ↔ n = 0 ∨ (n = 1 ∧ (u = 
     and_true]
   constructor
   · rintro (⟨rfl, hle⟩ | hlt)
-    · simp only [mem_singleton_iff, insert_eq_of_mem, encard_singleton, ENat.coe_le_one] at hle
+    · simp only [mem_singleton_iff, insert_eq_of_mem, encard_singleton, Nat.cast_le_one] at hle
       lia
     have := encard_pair_le u v
     enat_to_nat!
@@ -129,7 +129,7 @@ lemma IsComplete.edgeConnGE [G.Finite] (h : G.IsComplete) : G.EdgeConnGE (V(G).n
   · simp_all
   have hV : V(G).encard ≠ ⊤ := by simp
   rw [Menger'sTheorem_edge (ι := ↑(V(G) \ {v}))
-    (by simp [encard_diff_singleton_of_mem hv, ncard, ENat.coe_toNat])]
+    (by simp [encard_sdiff_singleton_of_mem hv, ncard, ENat.natCast_toNat])]
   intro s t hs ht
   obtain rfl | hne := eq_or_ne s t
   · exact ⟨G.edgePathEnsemble_nil hs _⟩
@@ -159,13 +159,13 @@ lemma IsComplete.edgeConnGE_iff [G.Finite] [G.Simple] (h : G.IsComplete) (hnt : 
     obtain ⟨e, he⟩ := h u hu v hv hne
     specialize hk _ (IsEdgeCut.of_vert u) ⟨e, by grind⟩
     rw [setLinkEdges_singleton_compl_eq_incEdges, encard_incEdges, h.neighbors hu,
-      encard_diff_singleton_of_mem hu] at hk
+      encard_sdiff_singleton_of_mem hu] at hk
     eomega
   apply h.edgeConnGE |>.anti_right (n := k)
   have := G.vertexSet_finite.encard_lt_top.ne
   rw [ncard]
   enat_to_nat!
-  rw [ENat.toNat_coe]
+  rw [ENat.toNat_natCast]
   grind
 
 @[simp]

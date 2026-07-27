@@ -10,24 +10,24 @@ namespace Graph
 def DegreePos (G : Graph α β) : Prop := ∀ ⦃x⦄, x ∈ V(G) → ∃ e, G.Inc e x
 
 lemma DegreePos.one_le_eDegree (hG : G.DegreePos) (hx : x ∈ V(G)) : 1 ≤ G.eDegree x := by
-  rw [ENat.one_le_iff_ne_zero]
+  rw [Order.one_le_iff_ne_zero]
   simp only [ne_eq, eDegree_eq_zero_iff_inc, not_forall, not_not]
   exact hG hx
 
 set_option backward.isDefEq.respectTransparency false
 lemma DegreePos.one_le_degree [G.LocallyFinite] (hG : G.DegreePos) (hx : x ∈ V(G)) :
     1 ≤ G.degree x := by
-  rw [← ENat.coe_le_coe, natCast_degree_eq]
+  rw [← ENat.natCast_le_natCast, natCast_degree_eq]
   exact hG.one_le_eDegree hx
 
 lemma degreePos_iff' : G.DegreePos ↔ ∀ ⦃x⦄, x ∈ V(G) → G.eDegree x ≠ 0 := by
-  simp_rw [← ENat.one_le_iff_ne_zero]
+  simp_rw [← Order.one_le_iff_ne_zero]
   refine ⟨fun h _ ↦ h.one_le_eDegree, fun h x hx ↦ ?_⟩
   suffices hcard : E(G, x).encard ≠ 0 by simpa [eq_empty_iff_forall_notMem] using hcard
   exact fun h0 ↦ by simpa [h0] using (h hx).trans <| G.eDegree_le_two_mul_encard_setOf_inc x
 
 lemma degreePos_iff [G.LocallyFinite] : G.DegreePos ↔ ∀ ⦃x⦄, x ∈ V(G) → G.degree x ≠ 0 := by
-  simp [Ne, ← ENat.coe_inj, natCast_degree_eq, degreePos_iff']
+  simp [Ne, ← ENat.natCast_inj, natCast_degree_eq, degreePos_iff']
 
 lemma DegreePos.finite_of_edgeSet_finite (hG : G.DegreePos) (hE : E(G).Finite) : G.Finite where
   vertexSet_finite := by
@@ -51,7 +51,7 @@ lemma DegreePos.edgeSet_nonempty (hG : G.DegreePos) (hV : V(G).Nonempty) : E(G).
 def MaxDegreeLE (G : Graph α β) (d : ℕ) : Prop := ∀ v, G.eDegree v ≤ d
 
 lemma MaxDegreeLE.degree_le (h : G.MaxDegreeLE d) (v : α) : G.degree v ≤ d :=
-  ENat.toNat_le_of_le_coe (h v)
+  ENat.toNat_le_of_le_natCast (h v)
 
 lemma MaxDegreeLE.mono (h : G.MaxDegreeLE d) (hle : H ≤ G) : H.MaxDegreeLE d :=
   fun v ↦ (eDegree_mono hle _).trans <| h v
@@ -64,7 +64,7 @@ lemma maxDegreeLE_iff' : G.MaxDegreeLE d ↔ ∀ v ∈ V(G), G.eDegree v ≤ d :
   ⟨fun h v _ ↦ h v, fun h v ↦ (em _).elim (h v) fun h ↦ by simp [eDegree_eq_zero_of_notMem h]⟩
 
 lemma maxDegreeLE_iff [G.LocallyFinite] : G.MaxDegreeLE d ↔ ∀ v ∈ V(G), G.degree v ≤ d := by
-  simp_rw [maxDegreeLE_iff', ← ENat.coe_le_coe, natCast_degree_eq]
+  simp_rw [maxDegreeLE_iff', ← ENat.natCast_le_natCast, natCast_degree_eq]
 
 lemma MaxDegreeLE.encard_edgeSet_le (h : G.MaxDegreeLE d) : 2 * E(G).encard ≤ d * V(G).encard := by
   rw [← handshake_eDegree_subtype, ← ENat.tsum_one, mul_tsum]
@@ -72,7 +72,7 @@ lemma MaxDegreeLE.encard_edgeSet_le (h : G.MaxDegreeLE d) : 2 * E(G).encard ≤ 
 
 lemma MaxDegreeLE.ncard_edgeSet_le [G.Finite] (h : G.MaxDegreeLE d) :
     2 * E(G).ncard ≤ d * V(G).ncard := by
-  simp_rw [← ENat.coe_le_coe, Nat.cast_mul, Nat.cast_ofNat]
+  simp_rw [← ENat.natCast_le_natCast, Nat.cast_mul, Nat.cast_ofNat]
   rw [G.edgeSet_finite.cast_ncard_eq, G.vertexSet_finite.cast_ncard_eq]
   exact h.encard_edgeSet_le
 
@@ -96,7 +96,7 @@ def MinDegreeGE (G : Graph α β) (d : ℕ) : Prop := ∀ v ∈ V(G), d ≤ G.eD
 lemma MinDegreeGE.le_degree [G.LocallyFinite] (h : G.MinDegreeGE d) (v : α) (hv : v ∈ V(G)) :
     d ≤ G.degree v := by
   have := h v hv
-  rwa [← ENat.coe_le_coe, natCast_degree_eq]
+  rwa [← ENat.natCast_le_natCast, natCast_degree_eq]
 
 lemma MinDegreeGE.mono (h : G.MinDegreeGE d) (hle : G ≤ H) (hV : V(H) ⊆ V(G)) : H.MinDegreeGE d :=
   fun v hv ↦ (h v (hV hv)).trans <| eDegree_mono hle _
@@ -104,7 +104,7 @@ lemma MinDegreeGE.mono (h : G.MinDegreeGE d) (hle : G ≤ H) (hV : V(H) ⊆ V(G)
 lemma minDegreeGE_iff' : G.MinDegreeGE d ↔ ∀ v ∈ V(G), d ≤ G.eDegree v := Iff.rfl
 
 lemma minDegreeGE_iff [G.LocallyFinite] : G.MinDegreeGE d ↔ ∀ v ∈ V(G), d ≤ G.degree v := by
-  simp_rw [minDegreeGE_iff', ← ENat.coe_le_coe, natCast_degree_eq]
+  simp_rw [minDegreeGE_iff', ← ENat.natCast_le_natCast, natCast_degree_eq]
 
 lemma MinDegreeGE.le_encard_edgeSet (h : G.MinDegreeGE d) : d * V(G).encard ≤ 2 * E(G).encard := by
   rw [← handshake_eDegree_subtype, ← ENat.tsum_one, mul_tsum]
@@ -112,7 +112,7 @@ lemma MinDegreeGE.le_encard_edgeSet (h : G.MinDegreeGE d) : d * V(G).encard ≤ 
 
 lemma MinDegreeGE.le_ncard_edgeSet [G.Finite] (h : G.MinDegreeGE d) :
     d * V(G).ncard ≤ 2 * E(G).ncard := by
-  simp_rw [← ENat.coe_le_coe, Nat.cast_mul, Nat.cast_ofNat]
+  simp_rw [← ENat.natCast_le_natCast, Nat.cast_mul, Nat.cast_ofNat]
   rw [G.edgeSet_finite.cast_ncard_eq, G.vertexSet_finite.cast_ncard_eq]
   exact h.le_encard_edgeSet
 
@@ -123,7 +123,7 @@ lemma Regular.degree (hG : G.Regular d) (hv : v ∈ V(G)) : G.degree v = d := by
   simp [Graph.degree, hG hv]
 
 lemma regular_iff [G.LocallyFinite] : G.Regular d ↔ ∀ v ∈ V(G), G.degree v = d := by
-  simp [Graph.Regular, ← ENat.coe_inj]
+  simp [Graph.Regular, ← ENat.natCast_inj]
 
 lemma Regular.maxDegreeLE (hG : G.Regular d) : G.MaxDegreeLE d :=
   maxDegreeLE_iff'.2 fun _ hv ↦ (hG hv).le
@@ -143,7 +143,7 @@ lemma Regular.ncard_edgeSet (hG : G.Regular d) : 2 * E(G).ncard = d * V(G).ncard
     simp
   have := hG.maxDegreeLE.locallyFinite
   by_cases hfin : G.Finite
-  · simp [← ENat.coe_inj, hfin.vertexSet_finite.cast_ncard_eq,
+  · simp [← ENat.natCast_inj, hfin.vertexSet_finite.cast_ncard_eq,
       hfin.edgeSet_finite.cast_ncard_eq, hG.encard_edgeSet]
   rw [Infinite.ncard, Infinite.ncard, mul_zero, mul_zero]
   · rwa [Set.Infinite, vertexSet_finite_iff]

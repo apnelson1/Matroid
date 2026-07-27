@@ -3,10 +3,10 @@ import Matroid.Graph.Planarity.Topology.Path
 
 open Set Function TopologicalSpace Topology Metric Nat Complex Real
 
-instance (x : ℝ) : LocPathConnectedSpace (AddCircle x) := LocPathConnectedSpace.coinduced _
+instance (x : ℝ) : LocallyPathConnectedSpace (AddCircle x) := LocallyPathConnectedSpace.coinduced _
 
-instance : LocPathConnectedSpace Circle := by
-  convert LocPathConnectedSpace.coinduced AddCircle.homeomorphCircle'
+instance : LocallyPathConnectedSpace Circle := by
+  convert LocallyPathConnectedSpace.coinduced AddCircle.homeomorphCircle'
   exact AddCircle.homeomorphCircle'.coinduced_eq.symm
 
 lemma Complex.im_eq_zero (x : ℂ) : x.im = 0 ↔ x.re = x := by
@@ -32,10 +32,10 @@ lemma im_val_eq_zero_iff (x : Circle) : x.val.im = 0 ↔ x = 1 ∨ x = -1 := by
   refine ⟨fun h => ?_, by rintro (rfl | rfl) <;> simp⟩
   suffices x.val = 1 ∨ x.val = -1 by
     obtain h | h := this
-    · simp only [OneMemClass.coe_eq_one] at h
+    · replace h := OneMemClass.coe_eq_one.mp h
       tauto
-    simp_rw [← neg_eq_iff_eq_neg, ← coe_neg, OneMemClass.coe_eq_one] at h
-    exact Or.inr <| neg_eq_iff_eq_neg.mp h
+    simp_rw [← neg_eq_iff_eq_neg, ← coe_neg] at h
+    exact Or.inr <| neg_eq_iff_eq_neg.mp <| OneMemClass.coe_eq_one.mp h
   rw [im_eq_zero] at h
   have hnorm : ‖x.val‖ = 1 := norm_coe x
   rw [← h] at hnorm ⊢

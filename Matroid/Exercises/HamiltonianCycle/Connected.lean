@@ -128,7 +128,7 @@ lemma IsClosedSubgraph.vertexDelete_components_eq (hH : H ≤c G) :
     (G - V(H)).Components = G.Components \ H.Components := by
   ext C
   refine ⟨?_, ?_⟩ <;> intro hC
-  · simp only [mem_diff, mem_components_iff_isCompOf]
+  · simp only [mem_sdiff, mem_components_iff_isCompOf]
     refine ⟨hC.of_isClosedSubgraph hH.compl, ?_⟩
     suffices ¬ V(C) ≤ V(H) by exact fun h ↦ this h.subset
     have solver := hC.le
@@ -142,7 +142,7 @@ lemma IsClosedSubgraph.vertexDelete_components_eq (hH : H ≤c G) :
   simp only [mem_components_iff_isCompOf]
   obtain (h|h) := hH.isCompOf_of_isCompOf_compl hC.1
   · exfalso
-    simp only [mem_diff, mem_components_iff_isCompOf] at hC
+    simp only [mem_sdiff, mem_components_iff_isCompOf] at hC
     exact hC.2 h
   assumption
 
@@ -194,7 +194,7 @@ lemma IsCompOf.isSepSet_of_not_connected_of_ssubset
   rw [ssubset_iff_exists] at hssub
   obtain ⟨hSH, x, hxH, hxnS⟩ := hssub
   have hxHS : x ∈ V(H - S) := by
-    simp only [vertexDelete_vertexSet, mem_diff]
+    simp only [vertexDelete_vertexSet, mem_sdiff]
     exact ⟨hxH, hxnS⟩
   have hle : H - S ≤ G - S := vertexDelete_mono_left hH.le _
   obtain ⟨Cx, hCx_ge, hCx_isCompOf⟩ :=

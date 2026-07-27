@@ -96,7 +96,7 @@ structure RepFun (P : Partition (Set α)) where
 
 instance : FunLike (RepFun P) α α where
   coe := RepFun.toFun
-  coe_injective' f f' := by cases f; cases f'; simp
+  coe_injective f f' := by cases f; cases f'; simp
 
 def RepFun.mk' (P : Partition (Set α)) (f : α → α) {p : α → Prop} (hP : ∀ {x}, x ∈ P.supp ↔ p x)
     (h₁ : ∀ a, ¬ p a → f a = a) (h₂ : ∀ a, p a → P a (f a))
@@ -198,8 +198,9 @@ lemma exists_extend_partial_repFun (P : Partition (Set α)) {t : Set α} (f₀ :
 the identity on `t`. -/
 lemma exists_extend_partial_repFun' (P : Partition (Set α)) {t : Set α}
     (h : ∀ ⦃x y⦄, x ∈ t → y ∈ t → P x y → x = y) : ∃ (f : P.RepFun), EqOn f id t := by
-  simpa using P.exists_extend_partial_repFun (fun x : t ↦ x) (by simp)
+  obtain ⟨f, hf⟩ := P.exists_extend_partial_repFun (fun x : t ↦ x) (by simp)
     (by simp [P.rel_self_iff_mem]) (fun x y ↦ h x.2 y.2)
+  exact ⟨f, fun x hx ↦ hf ⟨x, hx⟩⟩
 
 lemma nonempty_repFun (P : Partition (Set α)) : Nonempty P.RepFun := by
   obtain ⟨f, -⟩ := P.exists_extend_partial_repFun' (t := ∅) (by simp)
@@ -235,7 +236,7 @@ def fiber (f : α → α) : Partition (Set α) := by
   refine ofIndependent' (u := (f ⁻¹' {·}) '' (univ : Set α)) ?_
   rintro _ ⟨s, -, rfl⟩
   simp only [image_univ, sSup_eq_sUnion, disjoint_iff_forall_ne, mem_preimage, mem_singleton_iff,
-    mem_sUnion, mem_diff, mem_range, ← ne_eq, ↓existsAndEq, true_and, exists_eq_right']
+    mem_sUnion, mem_sdiff, mem_range, ← ne_eq, ↓existsAndEq, true_and, exists_eq_right']
   rintro s rfl t hne rfl
   simp at hne
 
@@ -381,7 +382,7 @@ lemma apply_eq_apply_iff' (hf : IsRepFun P f) :
     exact hf.apply_eq_apply h
   grind
 
-@[simp]
+-- @[simp]
 lemma idem (hf : IsRepFun P f) : f (f a) = f a := by
   obtain (ha | ha) := em (a ∈ P.supp)
   · rw [eq_comm, hf.apply_eq_apply_iff_rel ha]
@@ -427,14 +428,15 @@ lemma exists_extend_partial (P : Partition (Set α)) {t : Set α} (f₀ : t → 
 equal to the identity on `t`. -/
 lemma exists_extend_partial' (P : Partition (Set α)) {t : Set α}
     (h : ∀ ⦃x y⦄, x ∈ t → y ∈ t → P x y → x = y) : ∃ f, IsRepFun P f ∧ EqOn f id t := by
-  simpa using exists_extend_partial P (fun x : t ↦ x) (by simp)
+  obtain ⟨f, hf, hft⟩ := exists_extend_partial P (fun x : t ↦ x) (by simp)
     (by simp [P.rel_self_iff_mem]) (fun x y ↦ h x.2 y.2)
+  exact ⟨f, hf, fun x hx ↦ hft ⟨x, hx⟩⟩
 
 lemma isRepFun_nonempty (P : Partition (Set α)) : ∃ f, IsRepFun P f := by
   obtain ⟨f, hf, -⟩ := exists_extend_partial' P (t := ∅) (by simp)
   exact ⟨f, hf⟩
 
-@[simp]
+-- @[simp]
 theorem isRepFun_isRepFun (hf : IsRepFun P f) (hg : IsRepFun P g) (x : α) : f (g x) = f x := by
   obtain (hx | hx) := em (x ∈ P.supp)
   · exact hf.apply_eq_apply (hg.rel_apply hx).symm

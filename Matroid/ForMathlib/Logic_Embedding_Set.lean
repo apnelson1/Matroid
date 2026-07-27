@@ -1,5 +1,4 @@
 import Mathlib.Logic.Embedding.Set
-import Mathlib.Tactic.NthRewrite
 import Mathlib.Logic.Equiv.Set
 
 open Set Function Set.Notation
@@ -108,13 +107,12 @@ noncomputable def Subtype.embeddingInsert (f : s ↪ β) (ha : a ∉ s) (hb : b 
 
 theorem Subtype.embeddingInsert_apply_mem (f : s ↪ β) (ha : a ∉ s) (hb : b ∉ range f)
     {x : ↑(insert a s)} (hx : x.1 ∈ s) : (Subtype.embeddingInsert f ha hb) x = f ⟨x,hx⟩ := by
-  nth_rw 1 [show x = inclusion (subset_insert a s) ⟨x,hx⟩ from rfl]
-  simp only [embeddingInsert,  Embedding.coeFn_mk]
-  rw [(inclusion_injective (subset_insert a s)).extend_apply]
+  change Function.extend (inclusion (subset_insert a s)) (⇑f) (fun _ ↦ b) x = _
+  exact (inclusion_injective (subset_insert a s)).extend_apply _ _ ⟨x, hx⟩
 
 theorem Subtype.embeddingInsert_apply (f : s ↪ β) (ha : a ∉ s) (hb : b ∉ range f) :
     (Subtype.embeddingInsert f ha hb) ⟨a, mem_insert _ _⟩ = b := by
-  simp only [embeddingInsert, Embedding.coeFn_mk]
+  change Function.extend (inclusion (subset_insert a s)) (⇑f) (fun _ ↦ b) _ = b
   rw [extend_apply' _ _ _ (by simpa [embeddingOfSubset])]
 
 theorem Subtype.embeddingInsert_apply' (f : s ↪ β) (ha : a ∉ s) (hb : b ∉ range f)
@@ -132,7 +130,7 @@ theorem Subtype.embeddingInsert_apply_eq_ite (f : s ↪ β) (ha : a ∉ s) (hb :
 
 @[simp] theorem Subtype.range_embeddingInsert (f : s ↪ β) (ha : a ∉ s) (hb : b ∉ range f) :
     range (Subtype.embeddingInsert f ha hb) = insert b (range f) := by
-  simp only [embeddingInsert, Embedding.coeFn_mk]
+  change range (Function.extend (inclusion (subset_insert a s)) (⇑f) (fun _ ↦ b)) = _
   rw [range_extend (inclusion_injective (subset_insert a s)), range_inclusion]
   simp_rw [← union_singleton]
   convert rfl

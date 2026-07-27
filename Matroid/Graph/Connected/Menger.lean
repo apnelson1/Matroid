@@ -3,7 +3,7 @@ import Matroid.Graph.Connected.Vertex.VertexEnsemble
 import Matroid.Graph.Connected.MixedLineGraph
 import Matroid.Graph.Connected.LineGraph
 import Matroid.Graph.Finite
-import Mathlib.Data.Finite.Card
+import Mathlib.SetTheory.Cardinal.NatCard
 
 open Set Function Nat WList symmDiff Graph.SetEnsemble
 
@@ -12,6 +12,7 @@ variable {α β ι : Type*} {G H : Graph α β} {u v x x₁ x₂ y y₁ y₂ z s
 
 namespace Graph
 
+set_option backward.isDefEq.respectTransparency false in
 lemma Menger'sTheorem_aux [G.Finite] {S T : Set α} (hS : S ⊆ V(G)) (hT : T ⊆ V(G))
     (hconn : G.SetConnGE S T n) {A : G.SetEnsemble} (hA : A.between S T)
     (hAFin : A.paths.Finite) (hAcard : A.paths.encard < n) :
@@ -19,7 +20,7 @@ lemma Menger'sTheorem_aux [G.Finite] {S T : Set α} (hS : S ⊆ V(G)) (hT : T �
     ∃ x ∉ last '' A.paths, insert x (last '' A.paths) = last '' B.paths := by
   classical
   have hTfin : T.Finite := G.vertexSet_finite.subset hT
-  have : (V(G) \ T).Finite := G.vertexSet_finite.subset diff_subset
+  have : (V(G) \ T).Finite := G.vertexSet_finite.subset sdiff_subset
 
   /- Since we have less paths than the connectivity, the last ends of the paths is not an ST cut.
     Therefore, there is an S-(T \ last '' A.paths) path. -/
@@ -27,17 +28,17 @@ lemma Menger'sTheorem_aux [G.Finite] {S T : Set α} (hS : S ⊆ V(G)) (hT : T �
     have hlast : last '' A.paths ⊆ V(G) := by
       rintro _ ⟨P, hP, rfl⟩
       exact hT <| hA hP |>.last_mem
-    apply hconn.deleteVerts' (last '' A.paths) |>.subset diff_subset subset_rfl |>.anti_right
+    apply hconn.deleteVerts' (last '' A.paths) |>.subset sdiff_subset subset_rfl |>.anti_right
     rw [inter_eq_left.mpr hlast, A.last_injOn.encard_image]
     rw [← ENat.add_one_le_iff (by simpa)] at hAcard
     refine one_le_iff_ne_zero.mpr ?_
-    simp only [ne_eq, ENat.toNat_eq_zero, ENat.sub_eq_top_iff, ENat.coe_ne_top, encard_eq_top_iff,
-      not_infinite, false_and, or_false]
-    exact ENat.one_le_iff_ne_zero.mp <| ENat.le_sub_of_add_le_left (by simpa) hAcard
+    simp only [ne_eq, ENat.toNat_eq_zero, ENat.sub_eq_top_iff, ENat.natCast_ne_top,
+      encard_eq_top_iff, not_infinite, false_and, or_false]
+    exact Order.one_le_iff_ne_zero.mp <| ENat.le_sub_of_add_le_left (by simpa) hAcard
   obtain ⟨P, hP⟩ := h1.exists_isPathFrom (by simp); clear h1
   have hPlA : Disjoint V(P) (last '' A.paths) := by
     have := hP.isPath.vertexSet_subset
-    simp only [vertexSet_deleteVerts, subset_diff] at this
+    simp only [vertexSet_deleteVerts, subset_sdiff] at this
     exact this.2
 
   by_cases hdj : Disjoint V(P) A.vertexSet
@@ -54,7 +55,7 @@ lemma Menger'sTheorem_aux [G.Finite] {S T : Set α} (hS : S ⊆ V(G)) (hT : T �
   have hGP : G.IsPathFrom S T P := by
     refine hP.of_deleteVerts'.right_of_symmdiff_disjoint ?_
     simpa [inter_eq_right.mpr (hA.image_last_eq_inter ▸ inter_subset_left),
-      symmDiff_of_le diff_subset]
+      symmDiff_of_le sdiff_subset]
   let P' := P.suffixFromLast (· ∈ A.vertexSet)
   have hP'P : P'.IsSuffix P := by
     exact suffixFromLast_isSuffix ..
@@ -64,18 +65,18 @@ lemma Menger'sTheorem_aux [G.Finite] {S T : Set α} (hS : S ⊆ V(G)) (hT : T �
   have hR' : R'.between S (T ∪ V(R.bQ2)) := R.shorten_between
   have hR'Fin : R'.paths.Finite := by
     simp only [R', IsRightLeg.shorten, shorten_paths, finite_insert]
-    exact hAFin.diff
+    exact hAFin.sdiff
   have hR'card : R'.paths.encard < n := by
     unfold R' IsRightLeg.shorten shorten
-    rw [path_insert_paths_encard, path_remove_paths, Set.encard_diff_singleton_of_mem R.Q_mem]
+    rw [path_insert_paths_encard, path_remove_paths, Set.encard_sdiff_singleton_of_mem R.Q_mem]
     obtain ⟨n', hn'⟩ := ENat.ne_top_iff_exists.mp <| Set.encard_ne_top_iff.mpr hAFin
     rw [← hn']
     norm_cast
     have : 0 < n' := by
-      rw [← ENat.coe_lt_coe, hn']
+      rw [← ENat.natCast_lt_natCast, hn']
       simp only [cast_zero, encard_pos]
       use R.Q, R.Q_mem
-    rw [Nat.sub_add_cancel (by lia), ← ENat.coe_lt_coe]
+    rw [Nat.sub_add_cancel (by lia), ← ENat.natCast_lt_natCast]
     lia
   have hT' : T ∪ V(R.bQ2) ⊆ V(G) := by
     rw [R.bQ2_vertexSet]
@@ -85,9 +86,9 @@ lemma Menger'sTheorem_aux [G.Finite] {S T : Set α} (hS : S ⊆ V(G)) (hT : T �
     rw [mem_image]
     use R.Q, R.Q_mem, (hA R.Q_mem |>.eq_last_of_mem R.first_mem_path hxT).symm
   have hA'lW : last '' R.shorten.paths \ V(R.bQ2) = last '' A.paths \ {R.Q.last} := by
-    rw [R.shorten_last, insert_diff_of_mem _ (by simp)]
+    rw [R.shorten_last, insert_sdiff_of_mem _ (by simp)]
     apply Disjoint.sdiff_eq_left
-    rw [disjoint_diff_iff, hA.image_last_eq_inter, inter_assoc, inter_comm _ V(R.bQ2),
+    rw [disjoint_sdiff_iff, hA.image_last_eq_inter, inter_assoc, inter_comm _ V(R.bQ2),
       R.bQ2_inter_vertexSet, ← hA R.Q_mem|>.vertexSet_inter_right, inter_comm]
     exact inter_subset_inter_left _ R.Q2_isSuffix.subset
 
@@ -95,7 +96,7 @@ lemma Menger'sTheorem_aux [G.Finite] {S T : Set α} (hS : S ⊆ V(G)) (hT : T �
     subset_union_left) hR' hR'Fin hR'card
 
   rw [R.shorten_last] at hy
-  obtain ⟨hyP'f, hyA⟩ := by simpa only [mem_insert_iff, mem_diff, mem_image, mem_singleton_iff,
+  obtain ⟨hyP'f, hyA⟩ := by simpa only [mem_insert_iff, mem_sdiff, mem_image, mem_singleton_iff,
     not_or, not_and, Decidable.not_not, forall_exists_index, and_imp] using hy
   have hif : if y ∈ R.bQ2.vertex then List.countP (fun x ↦ decide (x ∈ B.vertexSet)) R.bQ2.vertex
       = 2 else List.countP (fun x ↦ decide (x ∈ B.vertexSet)) R.bQ2.vertex = 1 := by
@@ -112,7 +113,7 @@ lemma Menger'sTheorem_aux [G.Finite] {S T : Set α} (hS : S ⊆ V(G)) (hT : T �
       ext x
       simp only [Finset.mem_filter, List.mem_toFinset, mem_vertex, Finset.mem_insert,
         Finset.mem_singleton]
-      rw [h1, ← hexcd, R.shorten_last, mem_insert_iff, mem_insert_iff, mem_diff, ← or_assoc]
+      rw [h1, ← hexcd, R.shorten_last, mem_insert_iff, mem_insert_iff, mem_sdiff, ← or_assoc]
       simp +contextual only [mem_singleton_iff, iff_def, and_imp, h2, or_false, implies_true,
         true_or, and_true, true_and]
       rintro (rfl | rfl)
@@ -123,7 +124,7 @@ lemma Menger'sTheorem_aux [G.Finite] {S T : Set α} (hS : S ⊆ V(G)) (hT : T �
     ext x
     simp only [Finset.mem_filter, List.mem_toFinset, mem_vertex, Finset.mem_singleton]
     rw [h1, ← hexcd, R.shorten_last]
-    simp +contextual only [mem_insert_iff, mem_diff, mem_singleton_iff, iff_def, and_imp,
+    simp +contextual only [mem_insert_iff, mem_sdiff, mem_singleton_iff, iff_def, and_imp,
       IsRightLeg.first_mem_bQ2, true_or, or_true, and_self, implies_true, and_true]
     rintro hxbQ2 (rfl | rfl | hxlA)
     · exact (hyW hxbQ2).elim
@@ -137,7 +138,7 @@ lemma Menger'sTheorem_aux [G.Finite] {S T : Set α} (hS : S ⊆ V(G)) (hT : T �
     rw [singleton_subset_iff, ← hexcd, R.shorten_last]
     simp
   have hWT : (T \ V(R.bQ2) ∪ {R.bQ2.first, R.bQ2.last}) = T := by
-    rw [← R.bQ2_inter_right, inter_comm, diff_union_inter]
+    rw [← R.bQ2_inter_right, inter_comm, sdiff_union_inter]
   let B' := B.extend_right_le_two hB R.bQ2_isPath hle
   use B'
   split_ifs at hif with hybQ2
@@ -145,8 +146,8 @@ lemma Menger'sTheorem_aux [G.Finite] {S T : Set α} (hS : S ⊆ V(G)) (hT : T �
     rw [hWT] at this
     refine ⟨this, P.last, hP.last_mem.2, ?_⟩
     rw [SetEnsemble.extend_right_le_two_last_of_two hB R.bQ2_isPath hif, ← hexcd,
-      insert_diff_of_mem _ (by exact hybQ2), hA'lW, R.bQ2_first, R.bQ2_last]
-    simp only [union_insert, union_singleton, insert_diff_singleton]
+      insert_sdiff_of_mem _ (by exact hybQ2), hA'lW, R.bQ2_first, R.bQ2_last]
+    simp only [union_insert, union_singleton, insert_sdiff_singleton]
     rw [insert_eq_of_mem (a := R.Q.last) (by use R.Q, R.Q_mem),
       P.suffixFromLast_last (· ∈ A.vertexSet)]
   have hP'lB : R.bQ2.first ∉ B.vertexSet := by
@@ -155,7 +156,7 @@ lemma Menger'sTheorem_aux [G.Finite] {S T : Set α} (hS : S ⊆ V(G)) (hT : T �
       rw [hB.image_last_eq_inter, mem_inter_iff]
       use subset_union_right first_mem
     rw [← hexcd, R.shorten_last] at hPlBl
-    simp only [mem_insert_iff, mem_diff, mem_image, mem_singleton_iff] at hPlBl
+    simp only [mem_insert_iff, mem_sdiff, mem_image, mem_singleton_iff] at hPlBl
     obtain rfl | (h | ⟨h, hnQl⟩) := hPlBl
     · exact hybQ2 first_mem
     · exact hP'T <| (R.bQ2_first ▸ h) ▸ (hP'P.last_eq ▸ hP.last_mem.1)
@@ -164,17 +165,17 @@ lemma Menger'sTheorem_aux [G.Finite] {S T : Set α} (hS : S ⊆ V(G)) (hT : T �
   have := hB.extend_right_le_two R.bQ2_isPath hle hSW
   rw [hWT] at this
   refine ⟨this, y, fun hylA ↦ ?_, ?_⟩
-  · simp only [mem_insert_iff, mem_diff, mem_singleton_iff, not_or, not_and,
+  · simp only [mem_insert_iff, mem_sdiff, mem_singleton_iff, not_or, not_and,
     Decidable.not_not] at hy
     obtain rfl := hy.2 hylA
     exact ((R.bQ2_last ▸ hybQ2) last_mem).elim
   rw [SetEnsemble.extend_right_le_two_last_of_one hB R.bQ2_isPath hif hP'lB, ← hexcd,
-    insert_diff_of_notMem _ (by exact hybQ2), hA'lW, insert_comm, R.bQ2_last,
-    insert_diff_self_of_mem (by use R.Q, R.Q_mem)]
+    insert_sdiff_of_notMem _ (by exact hybQ2), hA'lW, insert_comm, R.bQ2_last,
+    insert_sdiff_self_of_mem (by use R.Q, R.Q_mem)]
 termination_by (V(G) \ T).ncard
 decreasing_by
   refine ncard_lt_ncard ?_ (by assumption)
-  rw [diff_ssubset_diff_iff, ssubset_iff_exists]
+  rw [sdiff_ssubset_sdiff_iff, ssubset_iff_exists]
   use inter_subset_inter_right _ subset_union_left, P'.first, ?_, by simp [hP'T]
   simp only [SetEnsemble.mem_vertexSet_iff, mem_inter_iff, mem_union, WList.mem_vertexSet_iff]
   use (hP'P.subset.trans hGP.vertexSet_subset) first_mem, Or.inr (R.first_mem_bQ2)
@@ -232,7 +233,7 @@ theorem Menger'sTheorem_set [G.Finite] (hS : S ⊆ V(G)) (hT : T ⊆ V(G)) (n : 
 theorem Menger'sTheorem_vertex [G.Finite] (hs : s ∈ V(G)) (ht : t ∈ V(G)) (hι : ENat.card ι = n) :
     G.ConnBetweenGE s t n ↔ Nonempty (G.VertexEnsemble s t ι) := by
   classical
-  have hιFin : Finite ι := ENat.card_lt_top.mp <| hι ▸ ENat.coe_lt_top n
+  have hιFin : Finite ι := ENat.card_lt_top.mp <| hι ▸ ENat.natCast_lt_top n
   obtain hne | hne := eq_or_ne s t
   · subst t
     simp only [hs, connBetweenGE_self, true_iff]
@@ -243,22 +244,22 @@ theorem Menger'sTheorem_vertex [G.Finite] (hs : s ∈ V(G)) (ht : t ∈ V(G)) (h
     exact ⟨he.vertexEnsemble ι hne⟩
   refine ⟨fun h => ?_, fun ⟨A⟩ C hC => ?_⟩
   · rw [connBetweenGE_iff_setConnGE hne hadj, Menger'sTheorem_set
-    (by simpa [subset_diff, hadj] using (G.neighbor_subset s).trans <| subset_insert ..)
-    (by simpa [subset_diff, not_symm_not hadj] using (G.neighbor_subset t).trans
+    (by simpa [subset_sdiff, hadj] using (G.neighbor_subset s).trans <| subset_insert ..)
+    (by simpa [subset_sdiff, not_symm_not hadj] using (G.neighbor_subset t).trans
     <| subset_insert ..)] at h
     obtain ⟨A, hA, hAcard⟩ := h
     have hAdj := A.of_deleteVerts
     replace hA := hA.left (S₀ := N(G, s)) <| by
-      rw [diff_symmDiff]
+      rw [sdiff_symmDiff]
       exact (hAdj.mono_right (by simp)).mono_right inter_subset_right
     replace hA := hA.right (T₀ := N(G, t)) <| by
-      rw [diff_symmDiff]
+      rw [sdiff_symmDiff]
       exact (hAdj.mono_right (by simp)).mono_right inter_subset_right
     refine ⟨VertexEnsemble.ofSetEnsemble s t hne A hA |>.comp (ι' := ι) ?_⟩
-    rw [ENat.card_eq_coe_natCard, ENat.coe_inj] at hι
+    rw [ENat.card_eq_coe_natCard, ENat.natCast_inj] at hι
     rw [← A.first_injOn.encard_image] at hAcard
     have hAcardFin : (first '' A.paths).Finite := finite_of_encard_eq_coe hAcard
-    rw [← hAcardFin.cast_ncard_eq, ENat.coe_inj] at hAcard
+    rw [← hAcardFin.cast_ncard_eq, ENat.natCast_inj] at hAcard
     exact (Finite.equivFinOfCardEq hι).trans (hAcardFin.equivFinOfCardEq hAcard).symm |>.toEmbedding
   have hmeet : ∀ i, ∃ x ∈ V(A.f i), x ∈ C := by
     intro i
@@ -309,7 +310,7 @@ theorem Menger'sTheorem [G.Finite] (hι : ENat.card ι = n) (hnt : V(G).Nontrivi
   · obtain ⟨A⟩ := Menger'sTheoremPre hι |>.mp h.pre hs ht
     use A
     convert subsingleton_empty
-    simp only [WList.length_eq_one_iff, mem_setOf_eq, mem_empty_iff_false, iff_false,
+    simp only [WList.length_eq_one_iff, mem_ofPred_eq, mem_empty_iff_false, iff_false,
       not_exists, Set.ext_iff]
     intro i u e v hi
     obtain rfl := hi ▸ (A.first_eq i)
@@ -337,7 +338,7 @@ theorem Menger'sTheorem [G.Finite] (hι : ENat.card ι = n) (hnt : V(G).Nontrivi
     intro i hAi j hAj
     obtain rfl | hnei := eq_or_ne i hιn.some <;> obtain rfl | hnej := eq_or_ne j hιn.some
     <;> simp_all only [mem_linkEdges_iff, cast_add, cast_one, ENat.card_coe_set_eq,
-      mem_setOf_eq, VertexEnsemble.extend_singleEdge_of_eq, cons_length, nil_length, zero_add]
+      mem_ofPred_eq, VertexEnsemble.extend_singleEdge_of_eq, cons_length, nil_length, zero_add]
     · simp [(A.of_le _).extend_singleEdge_of_ne hP hnej, A.of_linkEdges_deleteEdges] at hAj
     · simp [(A.of_le _).extend_singleEdge_of_ne hP hnei, A.of_linkEdges_deleteEdges] at hAi
     simp [(A.of_le _).extend_singleEdge_of_ne hP hnei, A.of_linkEdges_deleteEdges] at hAi
@@ -395,11 +396,11 @@ noncomputable def EdgePathEnsemble.ofLineGraphSetEnsemblePaths (A : (L(G)).SetEn
 lemma nonempty_edgePathEnsemble_of_lineGraphSetEnsemble [G.Finite] {n : ℕ}
     (A : (L(G)).SetEnsemble) (hA : A.between (E(G, s)) (E(G, t))) (hι : ENat.card ι = n)
     (hAcard : A.paths.encard = n) : Nonempty (G.EdgePathEnsemble s t ι) := by
-  have _ιfin : Finite ι := ENat.card_lt_top.mp (hι ▸ ENat.coe_lt_top n)
+  have _ιfin : Finite ι := ENat.card_lt_top.mp (hι ▸ ENat.natCast_lt_top n)
   let E₀ := EdgePathEnsemble.ofLineGraphSetEnsemblePaths A hA
   have hAcardFin := finite_of_encard_eq_coe hAcard
-  rw [ENat.card_eq_coe_natCard, ENat.coe_inj] at hι
-  rw [← hAcardFin.cast_ncard_eq, ENat.coe_inj] at hAcard
+  rw [ENat.card_eq_coe_natCard, ENat.natCast_inj] at hι
+  rw [← hAcardFin.cast_ncard_eq, ENat.natCast_inj] at hAcard
   have hpaths : Nat.card (↥A.paths) = n := by simpa [← Nat.card_coe_set_eq] using hAcard
   let φ := ((Finite.equivFinOfCardEq hι).trans (hAcardFin.equivFinOfCardEq hpaths).symm).toEmbedding
   exact ⟨E₀.comp φ⟩

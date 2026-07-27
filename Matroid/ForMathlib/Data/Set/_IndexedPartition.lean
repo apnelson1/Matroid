@@ -55,8 +55,8 @@ protected lemma eq_of_mem_of_mem {a : α} (hi : a ∈ P i) (hj : a ∈ P j) : i 
   P.pairwise_disjoint.eq fun h ↦ disjoint_left.1 h hi hj
 
 lemma single_eq_diff_iUnion (P : s.IndexedPartition ι) (i : ι) : P i = s \ (⋃ j ≠ i, P j) := by
-  simp only [subset_antisymm_iff, subset_diff, P.subset, disjoint_iUnion_right, true_and,
-    diff_subset_iff]
+  simp only [subset_antisymm_iff, subset_sdiff, P.subset, disjoint_iUnion_right, true_and,
+    sdiff_subset_iff]
   refine ⟨fun j hj ↦ (P.pairwise_disjoint hj).symm, ?_⟩
   simp_rw [← P.iUnion_eq, iUnion_subset_iff]
   intro j
@@ -192,20 +192,20 @@ lemma copy_expand [DecidableEq ι] (P : s.IndexedPartition ι) {s' : Set α} (h 
   P.copy_shift ..
 
 protected def diff (P : s.IndexedPartition ι) (t : Set α) : (s \ t).IndexedPartition ι :=
-  P.induce diff_subset
+  P.induce sdiff_subset
 
 @[simp, simp↓]
 lemma diff_apply (P : s.IndexedPartition ι) (t : Set α) (i : ι) : (P.diff t) i = P i \ t := by
-  rw [IndexedPartition.diff, IndexedPartition.induce_apply, ← inter_diff_assoc,
+  rw [IndexedPartition.diff, IndexedPartition.induce_apply, ← inter_sdiff_assoc,
     inter_eq_self_of_subset_left P.subset]
 
 @[simp]
 lemma subset_of_diff (P : (s \ t).IndexedPartition ι) (i : ι) : P i ⊆ s :=
-  P.subset.trans diff_subset
+  P.subset.trans sdiff_subset
 
 @[simp]
 lemma disjoint_of_diff (P : (s \ t).IndexedPartition ι) (i : ι) : Disjoint (P i) t :=
-  (subset_diff.1 P.subset).2
+  (subset_sdiff.1 P.subset).2
 
 /-- A partition is `Trivial` if it has exactly one nonempty cell. -/
 protected def Trivial (P : s.IndexedPartition ι) : Prop := ∃ i, P i = s
@@ -275,7 +275,7 @@ protected lemma disjoint_bool (b : Bool) : Disjoint (P b) (P (!b)) := by
 
 @[simp]
 protected lemma compl_eq (P : s.Bipartition) (b : Bool) : s \ (P b) = P (!b) := by
-  simp_rw [← P.union_bool_eq b, union_diff_cancel_left (P.disjoint_bool b).inter_eq.subset]
+  simp_rw [← P.union_bool_eq b, union_sdiff_cancel_left (P.disjoint_bool b).inter_eq.subset]
 
 protected lemma compl_not_eq (P : s.Bipartition) (b : Bool) : s \ (P (!b)) = P b := by
   rw [P.compl_eq, Bool.not_not]
@@ -353,7 +353,7 @@ lemma trivial_of_eq (h : P i = s) : P.Trivial :=
   ⟨_, h⟩
 
 lemma trivial_of_eq_empty (h : P i = ∅) : P.Trivial :=
-  trivial_of_eq (i := !i) <| by rw [← P.compl_eq, h, diff_empty]
+  trivial_of_eq (i := !i) <| by rw [← P.compl_eq, h, sdiff_empty]
 
 protected lemma trivial_def : P.Trivial ↔ P false = ∅ ∨ P true = ∅ := by
   refine ⟨fun h ↦ ?_, fun h ↦ Or.elim h trivial_of_eq_empty trivial_of_eq_empty⟩
@@ -383,7 +383,7 @@ lemma Trivial.exists_eq_empty (h : P.Trivial) : ∃ b, P b = ∅ := by
 
 lemma Trivial.exists_eq_eq (h : P.Trivial) : ∃ b, P b = ∅ ∧ P (!b) = s := by
   obtain ⟨i, hi⟩ := h.exists_eq_empty
-  exact ⟨i, hi, by rw [← P.compl_eq, hi, diff_empty]⟩
+  exact ⟨i, hi, by rw [← P.compl_eq, hi, sdiff_empty]⟩
 
 lemma Trivial.symm (h : P.Trivial) : P.symm.Trivial := by
   rwa [P.symm.trivial_def_bool true, P.symm_apply, Bool.not_true, P.symm_apply, Bool.not_false,
@@ -394,7 +394,7 @@ lemma trivial_symm_iff : P.symm.Trivial ↔ P.Trivial :=
   ⟨fun h ↦ by simpa using h.symm, Trivial.symm⟩
 
 lemma apply_eq_iff : P i = s ↔ P (!i) = ∅ := by
-  rw [← P.compl_eq, diff_eq_empty, subset_antisymm_iff, and_iff_right P.subset]
+  rw [← P.compl_eq, sdiff_eq_empty, subset_antisymm_iff, and_iff_right P.subset]
 
 /-- A bipartition is trivial if both sides are nonempty -/
 protected def Nontrivial (P : s.Bipartition) : Prop := ∀ i, (P i).Nonempty
@@ -447,11 +447,11 @@ lemma induce_induce (P : s.Bipartition) (hts : t ⊆ s) (hrt : r ⊆ t) :
     (P.induce hts).induce hrt = P.induce (hrt.trans hts) :=
   Bipartition.ext <| by simp [inter_assoc, inter_eq_self_of_subset_right hrt]
 
-protected def diff (P : s.Bipartition) (t : Set α) : (s \ t).Bipartition := P.induce diff_subset
+protected def diff (P : s.Bipartition) (t : Set α) : (s \ t).Bipartition := P.induce sdiff_subset
 
 @[simp, simp↓]
 lemma diff_apply (P : s.Bipartition) (t : Set α) (i : Bool) : (P.diff t) i = P i \ t := by
-  rw [Bipartition.diff, induce_apply, ← inter_diff_assoc, inter_eq_self_of_subset_left P.subset]
+  rw [Bipartition.diff, induce_apply, ← inter_sdiff_assoc, inter_eq_self_of_subset_left P.subset]
 
 protected def single (s : Set α) (i : Bool) := IndexedPartition.single s i
 
@@ -613,7 +613,7 @@ lemma Nontrivial.inter_trivial_iff (hP : P.Nontrivial) (b c : Bool) :
   grw [Bipartition.trivial_def, Bipartition.inter_apply_false, or_iff_not_imp_left, ← Ne,
     ← nonempty_iff_ne_empty, imp_iff_right (hP.nonempty.mono subset_union_left),
     P.inter_apply_true]
-  rw [← Q.compl_eq, subset_diff, ← P.compl_eq, subset_diff, disjoint_comm, Set.inter_comm,
+  rw [← Q.compl_eq, subset_sdiff, ← P.compl_eq, subset_sdiff, disjoint_comm, Set.inter_comm,
     and_iff_right P.subset, and_iff_right Q.subset, or_self, disjoint_iff_inter_eq_empty]
 
 lemma Nontrivial.union_trivial_iff (hP : P.Nontrivial) (b c : Bool) :
@@ -641,8 +641,8 @@ lemma union_trivial_iff (P Q : s.Bipartition) (b c : Bool) :
   rw [← inter_not_symm, trivial_symm_iff, inter_trivial_iff, Bool.not_not, Bool.not_not,
     ← or_assoc, ← or_assoc]
   convert Iff.rfl using 3
-  · rw [← P.compl_not_eq, diff_eq_empty, subset_antisymm_iff, and_iff_right P.subset]
-  rw [← Q.compl_not_eq, diff_eq_empty, subset_antisymm_iff, and_iff_right Q.subset]
+  · rw [← P.compl_not_eq, sdiff_eq_empty, subset_antisymm_iff, and_iff_right P.subset]
+  rw [← Q.compl_not_eq, sdiff_eq_empty, subset_antisymm_iff, and_iff_right Q.subset]
 
 
 

@@ -53,7 +53,7 @@ lemma apply_compl (μ : ConnSystem α R) (X : Set α) : μ (μ.E \ X) = μ X := 
 
 @[simp]
 lemma apply_compl' (μ : ConnSystem α R) (X : Set α) : μ Xᶜ = μ X := by
-  rw [← apply_inter_ground, ← diff_eq_compl_inter, apply_compl]
+  rw [← apply_inter_ground, ← sdiff_eq_compl_inter, apply_compl]
 
 lemma apply_submod (μ : ConnSystem α R) (X Y : Set α) : μ (X ∩ Y) + μ (X ∪ Y) ≤ μ X + μ Y := by
   grw [← μ.apply_inter_ground, inter_inter_distrib_right, ← μ.apply_inter_ground (X ∪ Y),
@@ -87,14 +87,14 @@ def induce (μ : ConnSystem α R) (hF : μ.E ⊆ F) : ConnSystem α R where
   toFun_inter_ground X := by
     rw [← μ.apply_inter_ground, inter_assoc, inter_eq_self_of_subset_right hF, μ.apply_inter_ground]
   toFun_compl X hXF := by
-    rw [← μ.apply_inter_ground, ← inter_diff_right_comm, inter_eq_self_of_subset_right hF,
+    rw [← μ.apply_inter_ground, ← inter_sdiff_right_comm, inter_eq_self_of_subset_right hF,
       μ.apply_compl]
   toFun_submod _ _ _ _ := μ.apply_submod ..
 
 @[simp]
 lemma induce_pConn (μ : ConnSystem α R) (hF : μ.E ⊆ F) (P : F.IndexedPartition Bool) :
     (μ.induce hF).pConn P = μ.pConn (P.induce hF) := by
-  simp only [pConn, induce_E, induce_toFun, IndexedPartition.induce_apply, apply_inter_ground]
+  simp only [pConn, induce_toFun, IndexedPartition.induce_apply, apply_inter_ground]
   rfl
 
 section normal
@@ -107,7 +107,7 @@ def Normal (μ : ConnSystem α R) : Prop := μ ∅ = 0
 lemma Normal.apply_empty (hμ : μ.Normal) : μ ∅ = 0 := hμ
 
 lemma Normal.apply_ground (hμ : μ.Normal) : μ μ.E = 0 := by
-  rw [← μ.apply_compl, diff_self, hμ.apply_empty]
+  rw [← μ.apply_compl, sdiff_self, hμ.apply_empty]
 
 end normal
 

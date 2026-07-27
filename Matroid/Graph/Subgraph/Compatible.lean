@@ -7,7 +7,6 @@ open Set Function
 
 /- For Mathlib -/
 
-@[simp]
 lemma Option.elim_eq_const_of_isEmpty {α : Type*} [hα : IsEmpty α] (f : α → β) (b : β) :
     (Option.elim · b f) = fun _ ↦ b :=
   funext fun a ↦ match a with
@@ -54,10 +53,6 @@ namespace Graph
 -- end CompatibleAt
 
 section Compatible
-
-@[simp]
-lemma compatible_symmetric : Symmetric (@Compatible α β) :=
-  fun _ _ ↦ Compatible.symm
 
 lemma compatible_comm : G.Compatible H ↔ H.Compatible G :=
   ⟨Compatible.symm, Compatible.symm⟩
@@ -121,7 +116,7 @@ lemma Compatible.deleteEdges (h : Compatible G H) : (G ＼ F).Compatible (H ＼ 
 lemma Compatible.restrict (h : Compatible G H) : (G ↾ F).Compatible (H ↾ F) :=
   h.mono restrict_le restrict_le
 
-@[simp, gcongr]
+@[simp]
 lemma Compatible.induce_induce : G[X].Compatible G[Y] :=
   Compatible.induce_left (Compatible.induce_right G.compatible_self _) _
 

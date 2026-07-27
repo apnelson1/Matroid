@@ -1,4 +1,13 @@
-import Matroid.Graph.Planarity.Realization.Basic
+import Matroid.Graph.Planarity.Realization.Weak
+
+/-!
+# The unit-edge metric realization of a graph
+
+This file equips a tagged copy `Graph.Realization.Metric G` of the point-set realization with the
+intrinsic extended path metric in which every edge has length one.  In particular, it deliberately
+does not install an `EMetricSpace` instance on the raw quotient `Graph.Realization G`; its quotient
+topology and this metric topology can therefore coexist without an instance diamond.
+-/
 
 open Set Function TopologicalSpace Topology Relation UniformSpace Sum Path WList Classical ENNReal
 open scoped unitInterval
@@ -7,6 +16,25 @@ namespace Graph
 
 variable {α β : Type*} {G : Graph α β} {e : E(G)} {t t' : I} {u v : V(G)}
   {w x y z : G.PreRealization}
+
+namespace Realization
+
+/-- The realization of `G` carrying the intrinsic unit-edge extended metric. -/
+def Metric (G : Graph α β) := G.Realization
+
+namespace Metric
+
+/-- Reinterpret a point-set realization as a metric realization. -/
+@[match_pattern, implicit_reducible]
+def ofRealization : G.Realization ≃ Metric G := Equiv.refl _
+
+/-- Forget the metric topology tag. -/
+@[match_pattern, implicit_reducible]
+def toRealization : Metric G ≃ G.Realization := Equiv.refl _
+
+end Metric
+
+end Realization
 
 /-- Distance from a pre-realization point to a vertex: graph distance to an endpoint, plus
 parameter along the incident edge (when the point lies on an edge). -/
@@ -70,9 +98,12 @@ private lemma iInf_distToVtx_add (x y : PreRealization G) :
     conv in G.distToVtx (inr ⟨e, t⟩) _ + G.distToVtx y _ =>
       rw [distToVtx, add_comm _ (ENNReal.ofReal _), add_comm _ (ENNReal.ofReal _)]
       exact (min_add_add_right _ _ _).symm
-    convert iInf_inf_eq <;> simp_rw [add_assoc, ← ENNReal.add_iInf]
-    <;> change _ = _ + (⨅ v, distToVtx G (Sum.inl _) v  + _)
-    <;> refine congr_arg (ENNReal.ofReal _ + ·) <| by rw [iInf_distToVtx_add]
+    convert iInf_inf_eq
+    · rfl
+    all_goals
+    · simp_rw [add_assoc, ← ENNReal.add_iInf]
+      change _ = _ + (⨅ v, distToVtx G (Sum.inl _) v  + _)
+      exact congr_arg (ENNReal.ofReal _ + ·) <| by rw [iInf_distToVtx_add]
 
 @[simp]
 private lemma preRealizationEDist_inl_left (u : V(G)) (x : PreRealization G) :
@@ -236,7 +267,7 @@ private lemma preRealizationEDist_zero_iff (x y : PreRealization G) :
     norm_cast
     simp [Subtype.coe_inj]
   | .inl v, .inr ⟨e, t⟩ =>
-    simp only [preRealizationEDist_inl_left, distToVtx, min_eq_zero_iff, add_eq_zero,
+    simp only [preRealizationEDist_inl_left, distToVtx, min_eq_zero, add_eq_zero,
       ofReal_eq_zero, unitInterval.val_le_zero_iff, tsub_le_iff_right, zero_add,
       unitInterval.one_le_val_iff, glueRel_inl_iff_glueRelAux, glueRelAux_inr_iff, inl.injEq,
       exists_eq_left']
@@ -244,7 +275,7 @@ private lemma preRealizationEDist_zero_iff (x y : PreRealization G) :
     simp only [eDist_eq_zero_iff, Subtype.coe_inj, Subtype.coe_prop, and_true]
     tauto
   | .inr ⟨e, t⟩, .inl v =>
-    simp only [preRealizationEDist_inl_right, distToVtx, min_eq_zero_iff, add_eq_zero,
+    simp only [preRealizationEDist_inl_right, distToVtx, min_eq_zero, add_eq_zero,
       ofReal_eq_zero, unitInterval.val_le_zero_iff, tsub_le_iff_right, zero_add,
       unitInterval.one_le_val_iff, glueRel_inr_inl]
     norm_cast
@@ -252,7 +283,7 @@ private lemma preRealizationEDist_zero_iff (x y : PreRealization G) :
     tauto
   | .inr ⟨e₁, t₁⟩, .inr ⟨e₂, t₂⟩ =>
     simp only [preRealizationEDist, iInf_distToVtx_add]
-    simp only [directDist, distToVtx, min_eq_zero_iff, add_eq_zero, ofReal_eq_zero,
+    simp only [directDist, distToVtx, min_eq_zero, add_eq_zero, ofReal_eq_zero,
       unitInterval.val_le_zero_iff, tsub_le_iff_right, zero_add, unitInterval.one_le_val_iff,
       glueRel_inr_inr_iff, glueRel_inl_iff_glueRelAux, glueRelAux_inr_iff, inl.injEq,
       exists_eq_left', Subtype.exists]
@@ -276,11 +307,18 @@ theorem preRealizationEDist_respects_quotient (a₁ a₂ b₁ b₂ : G.PreRealiz
     (G.preRealizationEDist_comm b₁ a₂).trans <|
       (preRealizationEDist_eq_of_glueRel hb b₁).trans (G.preRealizationEDist_comm b₂ b₁)
 
-/-- Extended distance on `Realization G`, induced by `Graph.eDist` on vertices and unit edges. -/
+/-- Extended distance on the point-set realization, induced by graph distance and unit edges. -/
 noncomputable def Realization.edist (G : Graph α β) (x y : G.Realization) : ℝ≥0∞ :=
   Quotient.lift₂ G.preRealizationEDist preRealizationEDist_respects_quotient x y
 
-noncomputable instance (G : Graph α β) : EMetricSpace G.Realization where
+/--
+The extended metric structure on the point-set realization.
+
+This is a named structure, not an instance: the instance is installed only on
+`Graph.Realization.Metric G`.
+-/
+@[instance_reducible]
+noncomputable def Realization.eMetricSpace (G : Graph α β) : EMetricSpace G.Realization where
   edist := Realization.edist G
   edist_self x := Quotient.inductionOn₂ x x fun x y ↦ by simp [Realization.edist]
   edist_comm := Quotient.ind₂ fun x y ↦ by simp [Realization.edist, preRealizationEDist_comm]
@@ -289,10 +327,103 @@ noncomputable instance (G : Graph α β) : EMetricSpace G.Realization where
   eq_of_edist_eq_zero {x y} := Quotient.inductionOn₂ x y fun x y ↦ by
     simp [Realization.edist, preRealizationEDist_zero_iff, Quotient.eq]
 
+noncomputable instance (G : Graph α β) : EMetricSpace (Realization.Metric G) :=
+  Realization.eMetricSpace G
+
+namespace Realization
+
+lemma metricTopology_eq :
+    (inferInstance : TopologicalSpace (Metric G)) =
+      (eMetricSpace G).toUniformSpace.toTopologicalSpace := by
+  rfl
+
+/-- The carrier identity from the weak realization to the metric realization. -/
+def weakToMetric (x : Weak G) : Metric G := x
+
+/-- The carrier identity from the metric realization to the weak realization. -/
+def metricToWeak (x : Metric G) : Weak G := x
+
+/-- The pre-realization projection with the metric topology on its codomain. -/
+def preToMetric (x : G.PreRealization) : Metric G :=
+  Quotient.mk' (s := G.glueRel) x
+
+/-- The weak and metric realizations have the same underlying points. -/
+def carrierEquiv : Weak G ≃ Metric G := Equiv.refl _
+
+/-- The two pre-realization projections agree on underlying points. -/
+theorem preToMetric_eq_weakToMetric_comp :
+    preToMetric (G := G) = weakToMetric ∘ preToWeak G := rfl
+
+namespace Metric
+
+/-- Include a graph vertex in the metric realization. -/
+def vertexMk (v : V(G)) : Metric G :=
+  G.vertexMk v
+
+/-- Include a parameter point of an edge in the metric realization. -/
+noncomputable def edgeMk (e : E(G)) (t : I) : Metric G :=
+  G.edgePath e t
+
+lemma edist_edgeMk_le (e : E(G)) (s t : I) :
+    EDist.edist (edgeMk (G := G) e s) (edgeMk (G := G) e t) ≤
+      EDist.edist s t := by
+  change G.preRealizationEDist (Sum.inr ⟨e, s⟩) (Sum.inr ⟨e, t⟩) ≤ EDist.edist s t
+  refine (min_le_left _ _).trans ?_
+  simp [directDist, edist_dist, Subtype.dist_eq, Real.dist_eq]
+
+/-- Every unit-edge parametrization is nonexpanding for the realization metric. -/
+lemma edgeMk_lipschitz (e : E(G)) : LipschitzWith 1 (edgeMk (G := G) e) :=
+  LipschitzWith.of_edist_le (edist_edgeMk_le e)
+
+/-- Parametrize an edge in the metric realization. -/
+noncomputable def edgePath (e : E(G)) :
+    Path (vertexMk (G := G) (G.src e)) (vertexMk (G := G) (G.tgt e)) where
+  toFun := edgeMk (G := G) e
+  source' := (G.edgePath e).source
+  target' := (G.edgePath e).target
+  continuous_toFun := (edgeMk_lipschitz e).continuous
+
+@[simp]
+lemma toRealization_vertexMk (v : V(G)) :
+    toRealization (G := G) (vertexMk (G := G) v) = G.vertexMk v := rfl
+
+@[simp]
+lemma toRealization_edgeMk (e : E(G)) (t : I) :
+    toRealization (G := G) (edgeMk (G := G) e t) = G.edgePath e t := rfl
+
+@[simp]
+lemma toRealization_edgePath (e : E(G)) (t : I) :
+    toRealization (G := G) (edgePath (G := G) e t) = G.edgePath e t := rfl
+
+end Metric
+
+/--
+The projection from the disjoint union of vertices and edge intervals to the metric realization is
+continuous.
+-/
+theorem continuous_preToMetric : Continuous (preToMetric (G := G)) := by
+  refine continuous_sum_dom.mpr ⟨continuous_of_discreteTopology, ?_⟩
+  rw [continuous_sigma_iff]
+  intro e
+  change Continuous (Metric.edgeMk (G := G) e)
+  exact (Metric.edgeMk_lipschitz e).continuous
+
+/-- The weak topology is finer than the unit-edge metric topology. -/
+theorem continuous_weakToMetric : Continuous (weakToMetric (G := G)) := by
+  rw [(preToWeak_isQuotientMap G).continuous_iff]
+  rw [← preToMetric_eq_weakToMetric_comp]
+  exact continuous_preToMetric
+
+end Realization
+
 @[reducible]
-noncomputable def Preconnected.MetricSpace (h : G.Preconnected) : MetricSpace G.Realization := by
-  refine EMetricSpace.toMetricSpace <| Quotient.ind₂ fun x y ↦ ?_
-  simp only [edist, Realization.edist, Quotient.lift_mk]
+noncomputable def Preconnected.MetricSpace (h : G.Preconnected) :
+    MetricSpace (Realization.Metric G) := by
+  refine EMetricSpace.toMetricSpace ?_
+  intro x y
+  refine Quotient.inductionOn₂ x y fun x y ↦ ?_
+  change Realization.edist G ⟦x⟧ ⟦y⟧ ≠ ⊤
+  simp only [Realization.edist, Quotient.lift_mk]
   match x, y with
   | inl x, inl y => simp [h x y]
   | inl x, inr ⟨e, t⟩ => simp [distToVtx, h (tgt e)]

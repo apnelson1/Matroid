@@ -86,7 +86,7 @@ lemma setOf_point_isCover_rkLE (M : Matroid α) [M.RankPos] :
   convert (M.setOf_singleton_isCover_rkLE {e | M.IsNonloop e}).image M.closure ?_ using 1
   · grind [isPoint_iff_exists_eq_closure_isNonloop]
   · refine subset_antisymm (fun e he ↦ ?_) (iUnion₂_subset (by simp [closure_subset_ground]))
-    simp only [mem_image, mem_setOf_eq, iUnion_exists, biUnion_and', iUnion_iUnion_eq_right,
+    simp only [mem_image, mem_ofPred_eq, iUnion_exists, biUnion_and', iUnion_iUnion_eq_right,
       mem_iUnion, exists_prop]
     obtain he' | he' := M.isLoop_or_isNonloop e
     · simp [he'.mem_closure, M.exists_isNonloop]
@@ -107,12 +107,12 @@ lemma foo (hM : M.eRank = 2) {P : Set α} (hP : M.IsPoint P) :
   -- obtain ⟨T, hT, hTcard⟩ := exists_cover (M ＼ P).E (M.RkLE 1) (by simp)
   obtain ⟨S, hS, hScard, hSflat⟩ := exists_isCover_rkLE_isFlat M (a := 1) (by simp)
   have hPS : P ∈ S := sorry
-  rw [← hScard, ← encard_diff_singleton_add_one hPS, ENat.add_one_le_add_one_iff]
+  rw [← hScard, ← encard_sdiff_singleton_add_one hPS, ENat.add_one_le_add_one_iff]
   refine IsCover.coverNumber_le ⟨?_, fun y hy ↦ hS.prop hy.1⟩
   rw [delete_ground, ← hS.sUnion_eq]
-  nth_rw 2 [← insert_diff_self_of_mem hPS]
-  rw [sUnion_insert, union_diff_left, eq_comm, sdiff_eq_left]
-  simp only [disjoint_sUnion_left, mem_diff, mem_singleton_iff, and_imp]
+  nth_rw 2 [← insert_sdiff_self_of_mem hPS]
+  rw [sUnion_insert, union_sdiff_left, eq_comm, sdiff_eq_left]
+  simp only [disjoint_sUnion_left, mem_sdiff, mem_singleton_iff, and_imp]
   sorry
 
 
@@ -318,13 +318,13 @@ end Matroid
 -- lemma setOf_point_isRankCover (M : Matroid α) (X : Set α) [(M ↾ X).RankPos] :
 --     M.IsRankCover {P | (M ↾ X).IsPoint P} X 1 := by
 --   refine ⟨subset_antisymm (sUnion_subset fun _ ↦ IsPoint.subset_ground) fun e he ↦ ?_, ?_ ⟩
---   · simp only [mem_sUnion, mem_setOf_eq]
+--   · simp only [mem_sUnion, mem_ofPred_eq]
 --     obtain hl | hnl := (M ↾ X).isLoop_or_isNonloop e
 --     · obtain ⟨f, hf⟩ := (M ↾ X).exists_isNonloop
 --       exact ⟨_, hf.closure_isPoint, hl.mem_closure _⟩
 --     exact ⟨_, hnl.closure_isPoint, mem_closure_of_mem _ (by simp) (by simpa)⟩
 --   intro F hF
---   simp only [mem_setOf_eq] at hF
+--   simp only [mem_ofPred_eq] at hF
 --   have hgs := hF.subset_ground
 --   simp only [restrict_ground_eq] at hgs
 --   grw [← inter_eq_left.2 (LE.le.subset hgs), ←restrict_eRk_eq', hF.eRk ]
@@ -337,7 +337,7 @@ end Matroid
 --     obtain rfl : E = ∅ := by simpa using hM
 --     constructor <;> simp [IsPoint]
 --     rw [ ←restrict_ground_eq (M := M) (R := X), hX ]
---     simp only [loopyOn_empty, emptyOn_ground, sUnion_eq_empty, mem_setOf_eq, and_imp, forall_eq,
+--     simp only [loopyOn_empty, emptyOn_ground, sUnion_eq_empty, mem_ofPred_eq, and_imp, forall_eq,
 --       eRk_empty, zero_ne_one, implies_true]
 --   exact M.setOf_point_isRankCover X
 
@@ -364,20 +364,20 @@ end Matroid
 --     · simp only [sUnion_image, mem_image, exists_exists_and_eq_and, iUnion_exists, biUnion_and',
 --       iUnion_iUnion_eq_right]
 --       refine subset_antisymm (iUnion_subset fun P ↦ ?_) fun f hf ↦ ?_
---       · simp only [mem_setOf_eq, iUnion_subset_iff, diff_subset_iff, union_diff_self,
+--       · simp only [mem_ofPred_eq, iUnion_subset_iff, sdiff_subset_iff, union_sdiff_self,
 --         singleton_union]
 --         intro h
 --         rw [insert_eq_of_mem he.mem_ground]
 --         exact closure_subset_ground M (insert e P)
 --       rw [←contract_ground M {e}, ←(setOf_point_isRankCover_ground (M ／ {e})).sUnion_eq] at hf
 --       obtain ⟨P, hP, hPf⟩ := hf
---       simp only [mem_setOf_eq, mem_iUnion, mem_diff, mem_singleton_iff, exists_and_left,
+--       simp only [mem_ofPred_eq, mem_iUnion, mem_sdiff, mem_singleton_iff, exists_and_left,
 --         exists_prop]
 --       have hP' : P ⊆ M.E \ {e} := by
 --         rw [←contract_ground M {e}]
 --         exact IsPoint.subset_ground hP
 --       refine ⟨P, ⟨mem_of_subset_of_mem (subset_closure M (insert e P) (insert_subset_iff.mpr
---           ⟨he.mem_ground, hP'.trans diff_subset⟩)) (by grind), hP, by grind ⟩⟩
+--           ⟨he.mem_ground, hP'.trans sdiff_subset⟩)) (by grind), hP, by grind ⟩⟩
 --     intro F hF
 --     simp only [mem_image, exists_exists_and_eq_and] at hF
 --     obtain ⟨P, hP, hPF ⟩ := hF
@@ -386,7 +386,7 @@ end Matroid
 --       rw [←contract_ground M {e}]
 --       exact IsPoint.subset_ground hP
 --     refine ⟨?_,mem_of_subset_of_mem (subset_closure M (insert e P) (insert_subset_iff.mpr
---           ⟨he.mem_ground, hP'.trans diff_subset⟩)) (mem_insert e P), hPF.symm⟩
+--           ⟨he.mem_ground, hP'.trans sdiff_subset⟩)) (mem_insert e P), hPF.symm⟩
 --     refine ⟨isFlat_closure (insert e P), ?_⟩
 --     simp only [eRk_closure_eq]
 --     have hhelp := CovBy.eRk_eq ((isPoint_contract_iff (M := M) (C := {e}) (P := P)).1 hP).1
@@ -413,9 +413,9 @@ end Matroid
 --   --     rw [←contract_ground M {e}]
 --   --     exact IsPoint.subset_ground hP1
 --   -- exact mem_of_subset_of_mem ((subset_closure M (insert e P) (insert_subset_iff.mpr
---   --     ⟨he.mem_ground, hP'.trans diff_subset⟩)) ) (mem_insert e P)
+--   --     ⟨he.mem_ground, hP'.trans sdiff_subset⟩)) ) (mem_insert e P)
 --   -- (subset_closure M (insert e P) (insert_subset_iff.mpr
---   --     ⟨he.mem_ground, hP1.trans diff_subset⟩))
+--   --     ⟨he.mem_ground, hP1.trans sdiff_subset⟩))
 
 
 -- lemma setOf_line_isRankCover' [(M ／ {e}).RankPos] (he : M.IsNonloop e) :
@@ -429,7 +429,7 @@ end Matroid
 --       rw [hL'] at hFx
 --       have hP : (M ／ {e}).IsPoint (L \ {e}) := by
 --         refine (isPoint_contract_iff (singleton_subset_iff.mpr he.mem_ground)).mpr ?_
---         simp only [union_diff_self, singleton_union, insert_eq_of_mem hLe]
+--         simp only [union_sdiff_self, singleton_union, insert_eq_of_mem hLe]
 --         refine ⟨(IsLine.mem_iff_covBy hL he).mp hLe, disjoint_sdiff_left⟩
 --       refine ⟨L \ {e}, ⟨hP, hFx⟩⟩
 --     intro ⟨P, ⟨hP, hxP⟩⟩
@@ -445,12 +445,12 @@ end Matroid
 --       exact IsPoint.subset_ground hP
 --     refine ⟨(M.closure (insert e P)) \ {e}, ⟨⟨M.closure (insert e P),
 --       ⟨hLin,mem_of_subset_of_mem (subset_closure M (insert e P) (insert_subset_iff.mpr
---       ⟨he.mem_ground, hP.trans diff_subset⟩)) (mem_insert e P),
---       diff_eq_diff_iff_inter_eq_inter.mpr rfl⟩ ⟩, ?_ ⟩⟩
---     refine mem_diff_singleton.mpr ⟨mem_of_subset_of_mem (subset_closure_of_subset' M
---       (subset_insert e P) (hP.trans diff_subset)) hxP, by grind⟩
+--       ⟨he.mem_ground, hP.trans sdiff_subset⟩)) (mem_insert e P),
+--       sdiff_eq_sdiff_iff_inter_eq_inter.mpr rfl⟩ ⟩, ?_ ⟩⟩
+--     refine mem_sdiff_singleton.mpr ⟨mem_of_subset_of_mem (subset_closure_of_subset' M
+--       (subset_insert e P) (hP.trans sdiff_subset)) hxP, by grind⟩
 --   intro F ⟨L, ⟨hL, hL2, h3⟩⟩
---   grw [h3, eRk_subset_le M diff_subset, hL.eRk]
+--   grw [h3, eRk_subset_le M sdiff_subset, hL.eRk]
 
 -- --lemma setOf_line_isminRankCover [(M ／ {e}).RankPos] (he : M.IsNonloop e) :
 
@@ -502,8 +502,8 @@ end Matroid
 --     · intro hK
 --       obtain ⟨ X, hX, h ⟩ := hK
 --       rw[ ← h]
---       exact diff_subset_diff_left (hT.subset hX)
---     simp only [mem_diff] at he
+--       exact sdiff_subset_sdiff_left (hT.subset hX)
+--     simp only [mem_sdiff] at he
 --     rw [←hT.sUnion_eq] at he
 --     obtain ⟨X, hX, hXe ⟩ := he.1
 --     have : e ∈ X \ D := mem_diff_of_mem hXe (he.2)
@@ -511,7 +511,7 @@ end Matroid
 --   intro F hF
 --   obtain ⟨ F' ,hF' ,hF2 ⟩ := hF
 --   rw [←hF2]
---   grw [eRk_subset_le M (diff_subset)]
+--   grw [eRk_subset_le M (sdiff_subset)]
 --   exact hT.pProp F' hF'
 
 -- lemma rankCoverNumber_eRk (hX : X.Nonempty) :
@@ -553,9 +553,9 @@ end Matroid
 -- lemma rankCoverNumber_delete_loop (hD : D ⊆ M.loops) (hne : (X \ D).Nonempty)
 --     (hX : X ⊆ M.E) :
 --     M.rankCoverNumber X k = M.rankCoverNumber (X \ D) k := by
---   have h1 := CoverNumberRank_subset_le M k (diff_subset (s := X) (t := D))
+--   have h1 := CoverNumberRank_subset_le M k (sdiff_subset (s := X) (t := D))
 --   have hh : X \ D ⊆ M.E := by
---     simp only [diff_subset_iff, subset_union_of_subset_right hX D ]
+--     simp only [sdiff_subset_iff, subset_union_of_subset_right hX D ]
 --   obtain ht | ⟨T', hT', hT'en ⟩ := (X \ D).exists_cover (fun A ↦ M.eRk A ≤ k)
 --   · rw [←rankCoverNumber_eq] at ht
 --     rw [ht] at h1
@@ -602,12 +602,12 @@ end Matroid
 --     {Y | Y ⊆ X ∧ Y.encard = a}.encard = b.choose a := by
 --   have hXfin : X.Finite := by simp [← encard_lt_top_iff, hX]
 --   set X' := hXfin.toFinset with hX'
---   have := (ENat.coe_inj).2 <| X'.card_powersetCard a
---   convert (ENat.coe_inj).2 <| X'.card_powersetCard a
+--   have := (ENat.natCast_inj).2 <| X'.card_powersetCard a
+--   convert (ENat.natCast_inj).2 <| X'.card_powersetCard a
 --   · rw [← encard_coe_eq_coe_finsetCard, ← Finset.coe_injective.encard_image (β := Set α)]
 --     convert rfl
 --     ext S
---     simp only [mem_image, SetLike.mem_coe, Finset.mem_powersetCard, mem_setOf_eq,
+--     simp only [mem_image, SetLike.mem_coe, Finset.mem_powersetCard, mem_ofPred_eq,
 --       hX', Finite.subset_toFinset]
 --     constructor
 --     · rintro ⟨T, ⟨hTX, rfl⟩, rfl⟩
@@ -615,9 +615,9 @@ end Matroid
 --     intro ⟨hSX, hSa⟩
 --     refine ⟨Finite.toFinset (s := S) ?_, ?_⟩
 --     · simp [← encard_lt_top_iff, hSa]
---     simp_rw [← ENat.coe_inj, ← hSa, ← Finite.encard_eq_coe_toFinset_card]
+--     simp_rw [← ENat.natCast_inj, ← hSa, ← Finite.encard_eq_coe_toFinset_card]
 --     simpa
---   rw [← ENat.coe_inj, ← hX, eq_comm, hXfin.encard_eq_coe_toFinset_card]
+--   rw [← ENat.natCast_inj, ← hX, eq_comm, hXfin.encard_eq_coe_toFinset_card]
 
 -- lemma base_isCover {a : ℕ} (hr : M.eRank ≤ a + 1) (ha : 1 ≤ a) (hXfin : X.Finite)
 --     --(h : Maximal (fun Y ↦ Y ⊆ M.E ∧ (M ↾ Y).IsFiniteRankUniform (a + 1) Y.encard) X) :
@@ -626,12 +626,12 @@ end Matroid
 --     --M.IsRankCover a (M.closure '' {K | K ⊆ X ∧ K.encard = a}) := by
 --   refine ⟨?_, ?_⟩
 --   · refine subset_antisymm (sUnion_subset fun K ↦ ?_) fun e he ↦ ?_
---     · simp only [mem_image, mem_setOf_eq, forall_exists_index, and_imp]
+--     · simp only [mem_image, mem_ofPred_eq, forall_exists_index, and_imp]
 --       grind
 --     obtain ⟨E, hEX, hEunif⟩ := h.prop.2.exists_eq_unifOn
 --     --obtain rfl : X = E := congr_arg Matroid.E hEunif
 --     by_contra! hcon
---     simp only [sUnion_image, mem_setOf_eq, mem_iUnion, exists_prop, not_exists, not_and,
+--     simp only [sUnion_image, mem_ofPred_eq, mem_iUnion, exists_prop, not_exists, not_and,
 --       and_imp] at hcon
 --     have hcon' (Z) (hZ : Z ⊆ X) (hZa : Z.encard ≤ a) : e ∉ M.closure Z := by
 --       have haX : a ≤ X.encard := by
@@ -646,7 +646,7 @@ end Matroid
 --     --have hwin := h.not_prop_of_ssuperset (t := insert e X) (by grind)
 --     have hwin := h.not_prop_of_gt (j := insert e X)
 --       (Finite.encard_lt_encard hXfin (ssubset_insert heX))
---     simp only [mem_setOf_eq, not_and, insert_subset_iff.mpr ⟨he, h.prop.1 ⟩,forall_const ] at hwin
+--     simp only [mem_ofPred_eq, not_and, insert_subset_iff.mpr ⟨he, h.prop.1 ⟩,forall_const ] at hwin
 --     --rw [insert_subset_iff , and_iff_right he, and_iff_right h.prop.1] at hwin
 --     apply hwin
 --     suffices aux : (M ↾ insert e X) = unifOn (insert e X) (a + 1) by
@@ -660,18 +660,18 @@ end Matroid
 --     have hI₀ : M.Indep (I \ {e}) := by
 --       have hrestr := (M.restrict_indep_iff (R := X) (I := I \ {e})).1
 --       have : I \ {e} ⊆ E  := by
---         rw [ ←unifOn_ground_eq E (k := a + 1), ← hEX, restrict_ground_eq, diff_subset_iff,
+--         rw [ ←unifOn_ground_eq E (k := a + 1), ← hEX, restrict_ground_eq, sdiff_subset_iff,
 --           singleton_union]
 --         exact LE.le.subset hI
---       nth_grw 1 [hEX, unifOn_indep_iff, diff_subset] at hrestr
+--       nth_grw 1 [hEX, unifOn_indep_iff, sdiff_subset] at hrestr
 --       grind
 --     by_cases! heI : e ∉ I
---     · rwa [diff_singleton_eq_self heI] at hI₀
---     rw [← insert_diff_self_of_mem heI, hI₀.insert_indep_iff_of_notMem (by grind), mem_diff,
+--     · rwa [sdiff_singleton_eq_self heI] at hI₀
+--     rw [← insert_sdiff_self_of_mem heI, hI₀.insert_indep_iff_of_notMem (by grind), mem_sdiff,
 --       and_iff_right he]
 --     refine hcon'  _ (by grind) ?_
---     grw [← ENat.add_one_le_add_one_iff, ← hcard, encard_diff_singleton_add_one heI]
---   simp only [mem_image, mem_setOf_eq, forall_exists_index, and_imp]
+--     grw [← ENat.add_one_le_add_one_iff, ← hcard, encard_sdiff_singleton_add_one heI]
+--   simp only [mem_image, mem_ofPred_eq, forall_exists_index, and_imp]
 --   rintro F I hI hcard rfl
 --   grw [eRk_closure_eq, eRk_le_encard, hcard]
 
@@ -713,7 +713,7 @@ end Matroid
 --   obtain ⟨x, hx ⟩ := ENat.ne_top_iff_exists.1 (LT.lt.ne_top hXb)
 --   rw[←hx] at hXb
 --   grw [hiC.rankCoverNumber_le, Set.encard_image_le, (set_to_binom_number) X hx.symm,
---     (Nat.choose_le_choose a (Nat.le_of_lt_succ (ENat.coe_lt_coe.mp hXb)))] at hcon
+--     (Nat.choose_le_choose a (Nat.le_of_lt_succ (ENat.natCast_lt_natCast.mp hXb)))] at hcon
 --   simp only [lt_self_iff_false] at hcon
 
 -- lemma rankCoverNumber_from_base {a b : ℕ} (ha : 1 ≤ a)
@@ -735,7 +735,7 @@ end Matroid
 --     grw [hrw, ENat.epow_top, ← le_top]
 --     obtain rfl | hlt := hb.eq_or_lt
 --     · simp [noUniformMinor_self_iff, htop] at hM
---     rw [← ENat.coe_one, ENat.coe_lt_coe]
+--     rw [← ENat.natCast_one, ENat.natCast_lt_natCast]
 --     suffices b.choose a ≠ 0 ∧ b.choose a ≠ 1 by lia
 --     exact ⟨(Nat.choose_pos hlt.le).ne.symm, by simp [Nat.choose_eq_one_iff, hlt.ne.symm, ha]⟩
 --   by_cases h0 : n = 0
@@ -766,13 +766,13 @@ end Matroid
 --     · have heN : (M／ C).Nonempty := by
 --         rw[←(M／ C).ground_nonempty_iff, contract_ground]
 --         exact (Set.nonempty_of_ssubset (by grind))
---       exact ENat.one_le_iff_ne_zero.mp (one_le_coverNumber
+--       exact Order.one_le_iff_ne_zero.mp (one_le_coverNumber
 --         ((ground_nonempty_iff (M ／ C)).mpr heN) (fun A ↦ (M ／ C).eRk A ≤ a))
 --     obtain rfl | hlt := hb.eq_or_lt
 --     · simp [noUniformMinor_self_iff] at hM
 --       grw [ ←eRk_le_eRank M C, htop ] at hM
 --       simp only [not_top_lt] at hM
---     rw [← ENat.coe_one, ENat.coe_lt_coe]
+--     rw [← ENat.natCast_one, ENat.natCast_lt_natCast]
 --     suffices b.choose a ≠ 0 ∧ b.choose a ≠ 1 by lia
 --     exact ⟨(Nat.choose_pos hlt.le).ne.symm, by simp [Nat.choose_eq_one_iff, hlt.ne.symm, ha] ⟩
 --   obtain h0 | hn := eq_or_ne (M.eRk C) 0
@@ -794,7 +794,7 @@ end Matroid
 --   rw [restrict_isNonloop_iff] at heC
 --   have h' : (M ／ {e}).eRk (C \ {e}) < M.eRk C := by
 --     have hrelrk := IsNonloop.eRelRk_add_one_eq heC.1 (C \ {e})
---     simp only [insert_diff_singleton, insert_eq_of_mem heC.2] at hrelrk
+--     simp only [insert_sdiff_singleton, insert_eq_of_mem heC.2] at hrelrk
 --     rw [ ←hrelrk, eRelRk.eq_1 ]
 --     simp only [ENat.lt_add_left_iff, ne_eq, eRk_eq_top_iff, IsRkFinite.diff_singleton_iff, not_not,
 --       one_ne_zero, not_false_eq_true, and_true]
@@ -804,10 +804,10 @@ end Matroid
 --     exact Ne.lt_top' (id (Ne.symm hlt))
 --   have hsub1 : (C \ {e}) ⊂ (M／ {e}).E := by
 --     simp only [contract_ground]
---     refine Set.ssubset_iff_subset_ne.mpr ⟨diff_subset_diff_left (subset_of_ssubset hC), ?_ ⟩
+--     refine Set.ssubset_iff_subset_ne.mpr ⟨sdiff_subset_sdiff_left (subset_of_ssubset hC), ?_ ⟩
 --     by_contra hc
 --     have h : C = M.E := by
---       rw [←insert_diff_self_of_mem heC.2, ←insert_diff_self_of_mem heC.1.mem_ground, hc]
+--       rw [←insert_sdiff_self_of_mem heC.2, ←insert_sdiff_self_of_mem heC.1.mem_ground, hc]
 --     grind
 --   have heN : (M／ {e}).Nonempty := by
 --     rw[←(M／ {e}).ground_nonempty_iff, contract_ground]
@@ -818,12 +818,12 @@ end Matroid
 --   grw [rankCoverNumber_from_base (Nat.one_le_iff_ne_zero.mpr ha) hM,
 --     rankCoverNumber_contract_one heC.1 (mem_of_subset_of_mem (subset_of_ssubset hC) (heC.2))
 --     (nonempty_of_ssubset' hsub1), ih ]
---   simp only [contract_contract, union_diff_self, singleton_union, ge_iff_le, insert_eq_of_mem heC.2,
+--   simp only [contract_contract, union_sdiff_self, singleton_union, ge_iff_le, insert_eq_of_mem heC.2,
 --     ←mul_assoc]
 --   nth_rw 1 [←eRelRk.eq_1, ←ENat.epow_one (x := ↑(b.choose a)),
 --     ←ENat.epow_add (x :=  ↑(b.choose a)) (y := 1) (z := (M.eRelRk {e} (C \ {e}))),
 --     ←add_comm (a := (M.eRelRk {e} (C \ {e}))) (b:= 1),
---     (heC.1).eRelRk_add_one_eq, insert_diff_singleton, insert_eq_of_mem heC.2 ]
+--     (heC.1).eRelRk_add_one_eq, insert_sdiff_singleton, insert_eq_of_mem heC.2 ]
 
 -- termination_by M.eRk C
 
@@ -934,10 +934,10 @@ end Matroid
 --     obtain ⟨m, hm ⟩ := ENat.ne_top_iff_exists.mp hfin
 --     rw [←hm]
 --     sorry
---   --   --←ENat.coe_one
+--   --   --←ENat.natCast_one
 --   --   sorry--simp only [Nat.cast_one]
 
---   --   --simp only [ENat.coe_add, Nat.cast_lt]
+--   --   --simp only [ENat.natCast_add, Nat.cast_lt]
 --   --   --exact instFiniteSubtypeLtOfLocallyFiniteOrderBot
 --   rw [tsum_fintype ]
 --   simp only [Nat.cast_sum, Nat.cast_pow]
@@ -1009,13 +1009,13 @@ end Matroid
 --   intro F hF
 --   by_contra hc
 --   have hrw : (F ∪ X \ M.E) ∩ M.E = F := by
---     refine Subset.antisymm (by simp only [union_inter_distrib_right, diff_inter_self, union_empty,
+--     refine Subset.antisymm (by simp only [union_inter_distrib_right, sdiff_inter_self, union_empty,
 --       inter_subset_left] ) (by simp only [subset_inter_iff, subset_union_left, true_and,
 --       (hF.subset_ground.subset).trans (inter_subset_right)])
 --   rw [not_nonspanning_iff (hXE := ?_), restrict_spanning_iff', ←closure_inter_ground, hrw] at hc
 --   exact ((not_spanning_iff (hXE := by grind )).2 hF)
 --     ((restrict_spanning_iff (hR := by grind) (by grind)).2 hc.1 )
---   simp only [restrict_ground_eq, union_subset_iff, diff_subset_iff, subset_union_right, and_true]
+--   simp only [restrict_ground_eq, union_subset_iff, sdiff_subset_iff, subset_union_right, and_true]
 --   exact (hF.subset_ground.subset).trans (inter_subset_left)
 
 -- lemma nonspanning_le_rankCoverNumber {n : ℕ} (hr : M.eRk X = n + 1) :

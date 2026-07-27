@@ -54,7 +54,7 @@ variable {α : Type*} [DecidableEq α] {I J C : Finset α} {M : FinsetNonspannin
     I.card = M.rank + 1 ∧ (∀ (C : Finset α), M.NonspanningIsCircuit C → ¬C ⊆ I) ∧ ↑I ⊆ M.E) C} := by
     simp only [IsAntichain]
     refine fun C hC D hD hne ↦ ?_
-    simp only [mem_setOf_eq] at hC hD
+    simp only [mem_ofPred_eq] at hC hD
     obtain Cns | hC := hC
     obtain Dns | hD := hD
     · exact M.NonspanningIsCircuit_antichain Cns Dns hne
@@ -86,7 +86,7 @@ variable {α : Type*} [DecidableEq α] {I J C : Finset α} {M : FinsetNonspannin
     (circuit_antichain := h_antichain)
     (circuit_elimination := by
       refine fun C D e hC hD hne he ↦ ?_
-      simp only [mem_setOf_eq] at hC hD
+      simp only [mem_ofPred_eq] at hC hD
       have large_set : ∀ S : Finset α, ↑S ⊆ M.E → S.card > M.rank → ∃ C : Finset α, IsCircuit C ∧ C ⊆ S
         := by
         intro S hsub hcard
@@ -304,5 +304,5 @@ lemma eq_of_NonspanningIsCircuit_iff_NonspanningIsCircuit_forall {M₁ M₂ : Ma
 
 theorem rank_add_dual_rank (M : Matroid α) [M.Finite] : M.rank + M✶.rank = M.E.ncard := by
   obtain h := M.eRank_add_dual_eRank
-  rwa [← coe_rank_eq, ← coe_rank_eq, ← ENat.coe_add, ← Finite.cast_ncard_eq, Nat.cast_inj] at h
+  rwa [← coe_rank_eq, ← coe_rank_eq, ← ENat.natCast_add, ← Finite.cast_ncard_eq, Nat.cast_inj] at h
   exact M.ground_finite

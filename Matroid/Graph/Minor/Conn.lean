@@ -125,13 +125,13 @@ lemma IsWalk.subset_unedgeSet_contract (hφ : G.connPartition.IsRepFun φ) {W}
     (hw : H /[E(G), φ].IsWalk W) (hu : W.first = φ u) (hv : W.last = φ v) :
     E(W) ⊆ E(hw.uncontract hφ hu hv) := by
   rw [← hw.unedgeSet_contract_diff hφ hu hv]
-  exact diff_subset
+  exact sdiff_subset
 
 @[simp]
 lemma IsWalk.unedgeSet_contract_subset (hφ : G.connPartition.IsRepFun φ) {W}
     (hw : H /[E(G), φ].IsWalk W) (hu : W.first = φ u) (hv : W.last = φ v) :
     E(hw.uncontract hφ hu hv) ⊆ E(W) ∪ E(G) := by
-  rw [← hw.unedgeSet_contract_diff hφ hu hv, diff_union_eq_union_of_subset _ subset_rfl]
+  rw [← hw.unedgeSet_contract_diff hφ hu hv, sdiff_union_eq_union_of_subset _ subset_rfl]
   exact subset_union_left
 
 lemma IsWalk.uncontract_isWalk (hφ : G.connPartition.IsRepFun φ) (hGH : G ≤ H) {W}
@@ -230,7 +230,7 @@ lemma IsCyclicWalk.exists_isCyclicWalk_of_contract (hφ : G.connPartition.IsRepF
     apply notMem_subset (hwP.isWalk.unedgeSet_contract_subset hφ hwf hv)
     simp [hew, heG]
   have hew' := hwP'.cons_isCyclicWalk (e := e) (by simp [hxy.symm]) he
-  exact ⟨_, hew', by simp [insert_diff_of_notMem _ heG]⟩
+  exact ⟨_, hew', by simp [insert_sdiff_of_notMem _ heG]⟩
 
 lemma contract_connBetween_iff (hφ : G.connPartition.IsRepFun φ) (hGH : G ≤ H) (u v) :
     (H /[E(G), φ]).ConnBetween (φ u) (φ v) ↔ H.ConnBetween u v := by

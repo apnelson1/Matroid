@@ -95,7 +95,7 @@ lemma edgeRemove_append_eq_right (w₁ w₂ : WList α β) (hw₁ : E(w₁) ⊆ 
     (w₁ ++ w₂).edgeRemove F = w₂.edgeRemove F := by
   induction w₁ with
   | nil => simp
-  | cons u e w ih => grind [cons_append, cons_edgeSet]
+  | cons u e w ih => grind [cons_edgeSet]
 
 end edgeRemove
 

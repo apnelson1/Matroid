@@ -4,7 +4,7 @@ import Matroid.Graph.Lattice
 import Mathlib.Data.Set.Finite.List
 
 variable {α β : Type*} {G H T F : Graph α β} {u v x y z : α} {e e' f g : β} {X : Set α}
-{P C Q : WList α β} {F : Set β}
+  {P C Q : WList α β} {F : Set β}
 
 open Set
 
@@ -218,12 +218,12 @@ instance (W : WList α β) : W.toGraph.Finite where
 lemma encard_delete_vertex_lt [G.Finite] (hx : x ∈ V(G)) :
     V(G - ({x} : Set α)).encard < V(G).encard := by
   rw [vertexSet_deleteVerts]
-  exact (G.vertexSet_finite.subset diff_subset).encard_lt_encard (by simpa)
+  exact (G.vertexSet_finite.subset sdiff_subset).encard_lt_encard (by simpa)
 
 lemma encard_delete_vertexSet_lt [G.Finite] (hX : (V(G) ∩ X).Nonempty) :
     V(G - X).encard < V(G).encard := by
   rw [vertexSet_deleteVerts]
-  exact (G.vertexSet_finite.subset diff_subset).encard_lt_encard (by simpa)
+  exact (G.vertexSet_finite.subset sdiff_subset).encard_lt_encard (by simpa)
 
 lemma ncard_delete_vertex_lt [G.Finite] (hx : x ∈ V(G)) :
     V(G - ({x} : Set α)).ncard < V(G).ncard := by
@@ -239,12 +239,12 @@ lemma ncard_delete_vertexSet_lt [G.Finite] (hX : (V(G) ∩ X).Nonempty) :
 lemma encard_delete_edge_lt [G.Finite] (he : e ∈ E(G)) :
     E(G ＼ {e}).encard < E(G).encard := by
   rw [edgeSet_deleteEdges]
-  exact (G.edgeSet_finite.subset diff_subset).encard_lt_encard (by simpa)
+  exact (G.edgeSet_finite.subset sdiff_subset).encard_lt_encard (by simpa)
 
 lemma encard_delete_edgeSet_lt [G.Finite] (hF : (E(G) ∩ F).Nonempty) :
     E(G ＼ F).encard < E(G).encard := by
   rw [edgeSet_deleteEdges]
-  exact (G.edgeSet_finite.subset diff_subset).encard_lt_encard (by simpa)
+  exact (G.edgeSet_finite.subset sdiff_subset).encard_lt_encard (by simpa)
 
 lemma ncard_delete_edge_lt [G.Finite] (he : e ∈ E(G)) :
     E(G ＼ {e}).ncard < E(G).ncard := by
@@ -279,6 +279,7 @@ protected class LocallyFinite (G : Graph α β) where
 lemma finite_incEdges (G : Graph α β) [G.LocallyFinite] (x : α) : E(G, x).Finite :=
   LocallyFinite.finite x
 
+set_option backward.isDefEq.respectTransparency false in
 lemma finite_neighbors (G : Graph α β) [G.LocallyFinite] : N(G, x).Finite := by
   change Finite N(G, x)
   have : Finite E(G, x) := G.finite_incEdges x
@@ -286,7 +287,7 @@ lemma finite_neighbors (G : Graph α β) [G.LocallyFinite] : N(G, x).Finite := b
     (fun y ↦ ⟨y.2.choose, y.2.choose_spec.inc_left⟩) fun ⟨y₁, hy₁⟩ ⟨y₂, hy₂⟩ ↦ ?_
   simp only [Subtype.mk.injEq]
   generalize_proofs h₁ h₂
-  refine fun h ↦  h₁.choose_spec.right_unique ?_
+  refine fun h ↦ h₁.choose_spec.right_unique ?_
   rw [h]
   exact h₂.choose_spec
 
