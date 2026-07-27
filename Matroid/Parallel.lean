@@ -352,7 +352,7 @@ lemma Parallel'.contract (hef : M.Parallel' e f) {C : Set α} (heC : e ∉ C) (h
   simp only [contract_closure_eq, ← closure_union_closure_left_eq M {e}, hef.closure_eq_closure,
     closure_union_closure_left_eq]
 
-lemma Parallel'.of_isMinor (hef : M.Parallel' e f) (hNM : N ≤m M) (heN : e ∈ N.E) (hfN : f ∈ N.E) :
+lemma Parallel'.of_isMinor (h`ef : M.Parallel' e f) (hNM : N ≤m M) (heN : e ∈ N.E) (hfN : f ∈ N.E) :
     N.Parallel' e f := by
   obtain ⟨C, D, hC, hD, hCD, rfl⟩ := hNM.exists_contract_indep_delete_coindep
   exact (hef.contract (by grind) (by grind)).delete (by grind) (by grind)

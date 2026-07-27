@@ -77,6 +77,17 @@ lemma eq_of_length_eq_three {α} {l : List α} (h : l.length = 3) : l = [l[0], l
   | head :: tail :: [tail'] => simp
   | head :: tail :: tail' :: tail'' => simpa using h
 
+lemma eq_of_map_eq_map {β : Type*} {l l' : List α} {f : α → β} (h : l.map f = l'.map f)
+    (hinj : Set.InjOn f {x | x ∈ l ∨ x ∈ l'}) : l = l' := by
+  induction l generalizing l' with
+  | nil => simpa using h
+  | cons x l ih =>
+    cases l' with
+    | nil => simp at h
+    | cons y l' =>
+      simp only [map_cons, cons.injEq] at h
+      rw [hinj (by simp) (by simp) h.1, ih h.2 (hinj.mono (by grind))]
+
 lemma mem_dropLast_iff {ι} {x : ι} {l : List ι} (hnd : l.Nodup) (hne : l ≠ []) :
     x ∈ l.dropLast ↔ x ∈ l ∧ x ≠ l.getLast hne := by
   obtain rfl | ⟨l', y, rfl⟩ := l.eq_nil_or_concat <;> grind
@@ -487,9 +498,42 @@ lemma exists_eq_or_eq_concat_of_sublist_range_add_one {L : List ℕ} {n : ℕ}
   · simp [h1]
   simp[ h1]
 
+lemma extract_zero (L : List α) (stop : ℕ) : L.extract 0 stop = L.take stop := by
+  simp
+
+lemma extract_zero_right (L : List α) (a : ℕ) : L.extract a 0 = [] := by
+  simp
+
+lemma extract_of_length_le (L : List α) (start : ℕ) {stop : ℕ} (h : L.length ≤ stop) :
+    L.extract start stop = L.drop start := by
+  obtain hle | hgt := le_or_gt start stop
+  · simpa [Nat.sub_add_cancel hle]
+  simp only [extract_eq_take_drop, take_eq_self_iff, length_drop, tsub_le_iff_right]
+  grw [Nat.sub_eq_zero_of_le hgt.le, zero_add, ← hgt, h]
+
+lemma extract_eq_nil (L : List α) {start stop : ℕ} (hlt : stop ≤ start) :
+    L.extract start stop = [] := by
+  grind [extract_eq_take_drop, take_eq_nil_iff, drop_eq_nil_iff]
+
+lemma extract_succ_cons (L : List α) (x : α) (a b : ℕ) :
+    (x :: L).extract (a + 1) (b + 1) = L.extract a b := by
+  rw [extract_eq_drop_take', take_succ_cons, drop_succ_cons, extract_eq_drop_take']
+
+lemma map_extract {β : Type*} (L : List α) (f : α → β) (a b : ℕ) :
+    (L.extract a b).map f = (L.map f).extract a b := by
+  simp
+
+lemma zipIdx_take (L : List α) (k i : ℕ) : (L.zipIdx i).take k = (L.take k).zipIdx i := by
+  induction k generalizing L i with
+  | zero => simp
+  | succ k ih => cases L with simp_all
+
+/-- Take the elements of a list whose indices satisfy a certain predicate and (optionally)
+belong to a certain subrange. -/
 def filterIdx (L : List α) (p : ℕ → Bool) (start : ℕ := 0) (stop : ℕ := L.length) : List α :=
   ((L.zipIdx.extract start stop).filter fun x ↦ p x.2).map Prod.fst
 
+@[simp]
 lemma filterIdx_nil (p : ℕ → Bool) {start stop : ℕ} :
     ([] : List α).filterIdx p start stop = [] := by
   simp [filterIdx]
@@ -497,6 +541,28 @@ lemma filterIdx_nil (p : ℕ → Bool) {start stop : ℕ} :
 lemma filterIdx_eq (L : List α) (p : ℕ → Bool) :
     L.filterIdx p = (L.zipIdx.filter fun x ↦ p x.2).map Prod.fst := by
   simp [filterIdx, take_of_length_le]
+
+lemma filterIdx_eq_nil (L : List α) (p : ℕ → Bool) {start stop : ℕ} (hle : stop ≤ start) :
+    L.filterIdx p start stop = [] := by
+  simp [filterIdx, extract_eq_nil _ hle]
+
+lemma filterIdx_zero_left (L : List α) (p : ℕ → Bool) (stop : ℕ) :
+    L.filterIdx p 0 stop = (L.take stop).filterIdx p := by
+  rw [filterIdx, filterIdx_eq, List.extract_zero, zipIdx_take]
+
+@[simp]
+lemma filterIdx_zero_right (L : List α) (p : ℕ → Bool) (start : ℕ) :
+    L.filterIdx p start 0 = [] := by
+  simp [filterIdx]
+
+@[simp]
+lemma filterIdx_false (L : List α) (start stop : ℕ) :
+    L.filterIdx (fun _ ↦ false) start stop = [] := by
+  simp [filterIdx]
+
+@[simp]
+lemma filterIdx_true (L : List α) : L.filterIdx (fun _ ↦ true) = L := by
+  simp [filterIdx]
 
 lemma filterIdx_cons_pos (L : List α) (a : α) {p : ℕ → Bool} (hp : p 0 = true):
     (a :: L).filterIdx p = a :: (L.filterIdx (fun x ↦ p (x + 1))) := by
@@ -519,11 +585,96 @@ lemma filterIdx_cons (L : List α) (a : α) (p : ℕ → Bool) :
   | false => rw [filterIdx_cons_neg _ _ h, cond_false]
   | true => rw [filterIdx_cons_pos _ _ h, cond_true]
 
+lemma filterIdx_cons_succ_succ (L : List α) (x : α) (p : ℕ → Bool) (a b : ℕ) :
+    (x :: L).filterIdx p (a + 1) (b + 1) = L.filterIdx (fun x ↦ p (x + 1)) a b := by
+  rw [filterIdx, zipIdx_cons', extract_succ_cons, filterIdx, ← map_extract, filter_map, map_map]
+  convert rfl <;>
+  simp [funext_iff]
+
+lemma take_eq_filterIdx (L : List α) (b : ℕ) : L.take b = L.filterIdx (fun i ↦ i < b) := by
+  induction b generalizing L with
+  | zero => simp
+  | succ b ih =>
+    cases L with
+    | nil => simp
+    | cons a L =>
+      rw [take_succ_cons, ih, length_cons, eq_comm, filterIdx_zero_left,
+        take_of_length_le (by simp), filterIdx_cons_pos _ _ (by simp)]
+      simp
+
+lemma drop_eq_filterIdx (L : List α) (b : ℕ) : L.drop b = L.filterIdx (fun i ↦ b ≤ i) := by
+  induction b generalizing L with
+  | zero => simp
+  | succ b ih =>
+    cases L with
+    | nil => simp
+    | cons x L =>
+      rw [drop_succ_cons, length_cons, filterIdx_zero_left, take_of_length_le (by simp),
+        filterIdx_cons_neg _ _ (by simp), ih]
+      simp
+
+lemma extract_eq_filterIdx (L : List α) (a b : ℕ) :
+    L.extract a b = L.filterIdx (fun i ↦ a ≤ i && i < b) := by
+  induction b generalizing a L with
+  | zero => simp
+  | succ b ih =>
+    cases L with
+    | nil => simp
+    | cons x L =>
+      obtain rfl | a := a
+      · simp only [extract_zero, take_succ_cons, zero_le, decide_true, Bool.true_and, length_cons]
+        rw [filterIdx_zero_left, eq_comm, take_of_length_le (by simp),
+          filterIdx_cons_pos _ _ (by simp), take_eq_filterIdx]
+        simp
+      rw [extract_eq_drop_take', take_succ_cons, drop_succ_cons, ← extract_eq_drop_take', ih,
+        filterIdx_cons_neg _ _ (by simp)]
+      simp
+
 lemma filterIdx_length (L : List α) (p : ℕ → Bool) :
     (L.filterIdx p).length = ((range L.length).filter p).length := by
   rw [filterIdx_eq, length_map, range_eq_range', ← zipIdx_map_snd 0 L, ← length_map Prod.snd,
     filter_map]
   rfl
+
+lemma filterIdx_congr (L : List α) {p q : ℕ → Bool} (start stop : ℕ)
+    (h : ∀ i, start ≤ i → i < stop → p i = q i) :
+    L.filterIdx p start stop = L.filterIdx q start stop := by
+  rw [filterIdx, filterIdx, filter_congr]
+  refine fun ⟨x, i⟩ hx ↦ ?_
+  simp only [extract_eq_take_drop, mem_take_iff_getElem, getElem_drop, getElem_zipIdx, zero_add,
+    Prod.mk.injEq, length_drop, length_zipIdx, lt_inf_iff, exists_and_right] at hx
+  obtain ⟨j, ⟨⟨hj, hj'⟩, rfl⟩, rfl⟩ := hx
+  grind
+
+lemma filterIdx_map {β : Type*} (L : List α) (p : ℕ → Bool) (f : α → β) {a b : ℕ} :
+    (L.filterIdx p a b).map f = (L.map f).filterIdx p a b := by
+  induction L generalizing p a b with
+  | nil => rw [filterIdx_nil, map_nil, filterIdx_nil]
+  | cons x L ih =>
+    obtain rfl | b := b
+    · simp
+    obtain rfl | a := a
+    · specialize ih (fun i ↦ p (i + 1)) (a := 0) (b := b)
+      rw [filterIdx_zero_left, eq_comm, filterIdx_zero_left] at ih
+      rw [filterIdx_zero_left, take_succ_cons, map_cons, eq_comm, filterIdx_zero_left,
+        take_succ_cons, filterIdx_cons, ih, filterIdx_cons]
+      cases h : p 0 with simp
+    rw [filterIdx_cons_succ_succ, ih, map_cons, filterIdx_cons_succ_succ]
+
+lemma filterIdx_start_stop_eq (L : List α) (p : ℕ → Bool) (a b : ℕ) :
+    L.filterIdx p a b = L.filterIdx (fun i ↦ p i && (a ≤ i && i < b)) := by
+  induction L generalizing a b p with
+  | nil =>
+    simp
+  | cons x L ih =>
+    obtain rfl | b := b
+    · simp
+    obtain rfl | a := a
+    · rw [filterIdx_zero_left, take_succ_cons, filterIdx_cons, ← filterIdx_zero_left, ih,
+        filterIdx_cons]
+      cases h : p 0 with simp
+    rw [filterIdx_cons_succ_succ, ih, filterIdx_cons]
+    simp
 
 -- lemma filterIdx_length' (L : List α) (p : ℕ → Bool) (start stop : ℕ) :
 --     (L.filterIdx p).length = (List.range' start stop)
