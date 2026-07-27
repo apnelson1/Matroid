@@ -479,3 +479,14 @@ lemma Separation.isoMinor_delete_of_notMem_coguts (hP : P.eConn = 1) (hNM : N �
   rw [← nonempty_isoMinor_dual_iff, dual_delete]
   exact (P.induce M✶).isoMinor_contract_of_notMem_guts (e := e) (i := i) (by simpa)
     hNM.dual (by simpa) (by simpa) (by simpa) (by simpa) (by simpa)
+
+lemma TutteConnected.exists_isCircuit_encard_ge_three (hM : M.TutteConnected 3)
+    (hE : 4 ≤ M.E.encard) : ∃ C, M.IsCircuit C ∧ 3 ≤ C.encard := by
+  rw [show (3 : ℕ∞) = 2 + 1 from rfl] at *
+  obtain ⟨E, rfl⟩ | hpos := M.exists_eq_freeOn_or_rankPos_dual
+  · rw [freeOn_ground] at hE
+    simp only [freeOn_tutteConnected_iff, ← encard_le_one_iff_subsingleton, OfNat.ofNat_ne_zero,
+      or_false] at hM
+    enat_to_nat!; lia
+  obtain ⟨C, hC⟩ := M.exists_isCircuit
+  refine ⟨C, hC, (hM.girth_ge hE).trans hC.girth_le_card⟩

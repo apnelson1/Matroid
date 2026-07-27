@@ -97,6 +97,20 @@ lemma IsFiniteRankUniform.map (hM : M.IsFiniteRankUniform a) {β : Type*} {f : �
     (hf : InjOn f M.E) : (M.map f hf).IsFiniteRankUniform a :=
   ⟨by simpa using hM.eRank_eq, hM.isUniform.map hf⟩
 
+lemma IsFiniteRankUniform.loopless_iff (hM : M.IsFiniteRankUniform a) :
+    M.Loopless ↔ (a = 0 → M = emptyOn α) := by
+  obtain ⟨E, rfl, haE⟩ := hM.exists_eq_unifOn
+  simp only [unifOn_loopless_iff]
+  obtain rfl | a := a
+  · simp [← ground_eq_empty_iff]
+  simp
+
+lemma IsFiniteRankUniform.simple_iff (hM : M.IsFiniteRankUniform a) :
+    M.Simple ↔ (a ≤ 1 → M.E.encard ≤ a) := by
+  obtain ⟨E, rfl, haE⟩ := hM.exists_eq_unifOn
+  simp only [unifOn_simple_iff, unifOn_ground_eq, ← encard_le_one_iff_subsingleton]
+  obtain rfl | rfl | a := a <;> simp
+
 /-- A uniform matroid whose rank is finite is one of the obvious ones. -/
 lemma IsUniform.isFiniteRankUniform [M.RankFinite] (hM : M.IsUniform) :
     ∃ a, M.IsFiniteRankUniform a :=
@@ -294,6 +308,15 @@ lemma IsFiniteUniform.sub_eq_left (h : M.IsFiniteUniform a b n) : n - a = b := b
 lemma IsFiniteUniform.sub_eq_right (h : M.IsFiniteUniform a b n) : n - b = a := by
   simp [← h.add_eq]
 
+lemma IsFiniteUniform.loopless_iff (h : M.IsFiniteUniform a b n) :
+    M.Loopless ↔ (a = 0 → b = 0) := by
+  simp [h.toIsFiniteRankUniform.loopless_iff, ← ground_eq_empty_iff, ← encard_eq_zero,
+    h.encard_eq, ← h.add_eq, imp_and]
+
+lemma IsFiniteUniform.simple_iff (h : M.IsFiniteUniform a b n) : M.Simple ↔ (a ≤ 1 → b = 0) := by
+  rw [h.toIsFiniteRankUniform.simple_iff, h.encard_eq, ← h.add_eq]
+  simp
+
 lemma IsUniform.exists_isFiniteUniform_of_finite (hM : M.IsUniform) [M.Finite] :
     ∃ a b n, M.IsFiniteUniform a b n ∧ a = M.eRank ∧ b = M✶.eRank ∧ n = M.E.encard := by
   have hcard := M.ground_finite.encard_eq_coe_toFinset_card
@@ -368,6 +391,12 @@ lemma IsFiniteUniform.nonempty_iso_unif (hM : M.IsFiniteUniform a b n) :
     encard_univ, ENat.card_eq_coe_fintype_card, Fintype.card_fin, hM.encard_eq]
   grw [encard_univ, ENat.card_eq_coe_fintype_card, Fintype.card_fin, Nat.cast_le,
     ← hM.add_eq, ← le_self_add]
+
+lemma IsFiniteUniform.exists_eq_circuitOn (hM : M.IsFiniteUniform a 1 n) :
+    ∃ E, E.Nonempty ∧ E.Finite ∧ M = circuitOn E := by
+  obtain ⟨C, hCne, rfl⟩ := eq_circuitOn_of_ground_isCircuit (M := M) <|
+    by simp [hM.isCircuit_iff, hM.encard_eq, ← hM.add_eq]
+  exact ⟨C, hCne, hM.finite.ground_finite, rfl⟩
 
 /-- Two finite uniform matroids with the same parameters are isomorphic. -/
 lemma IsFiniteUniform.nonempty_iso (hM : M.IsFiniteUniform a b n) {β : Type*} {N : Matroid β}

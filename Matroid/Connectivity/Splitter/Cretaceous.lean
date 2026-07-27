@@ -242,7 +242,6 @@ lemma exists_flexible {N : Matroid α} (hM : M.TutteConnected 3) (h4 : 4 ≤ M.E
     (by simpa using hi) (by grind) hfg
   exact ⟨φ.trans_isMinor ((delete_isMinor ..).contract_isMinor_contract (by grind))⟩
 
-
 lemma splitter_no_triangle (hM : M.TutteConnected 3) (hN : N.TutteConnected 3) (fNM : N <i M)
     (hTriad : ∀ e T, M.IsDeletable N e → M.IsTriad T → e ∉ T)
     (hTriangle : ∀ e T, M.IsContractible N e → M.IsTriangle T → e ∉ T) :

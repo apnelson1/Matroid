@@ -288,6 +288,17 @@ lemma disjointSum_not_connected {M₁ M₂ : Matroid α} (h₁ : M₁.Nonempty) 
   · exact hdj.notMem_of_mem_left (hC.subset_ground hfC) hf
   exact hdj.notMem_of_mem_right (hC.subset_ground heC) he
 
+lemma exists_isCircuit_encard_ge_three (hM : M.Connected) (hr : 2 ≤ M.eRank) :
+    ∃ C, M.IsCircuit C ∧ 3 ≤ C.encard := by
+  obtain ⟨B, hB⟩ := M.exists_isBase
+  obtain ⟨e, heB, f, hfB, hef⟩ := (two_le_encard_iff_nontrivial.1 (hB.encard_eq_eRank ▸ hr))
+  obtain ⟨C, hC⟩ := hM.exists_isCircuit_of_ne (hB.subset_ground heB) (hB.subset_ground hfB) hef
+  refine ⟨C, hC.1, Order.add_one_le_of_lt (x := (2 : ℕ∞)) ?_⟩
+  rw [← encard_pair hef]
+  refine Finite.encard_lt_encard (by simp) <| ssubset_of_ne_of_subset ?_ <| by grind
+  rintro rfl
+  exact (hB.indep.subset (by grind)).not_dep hC.1.dep
+
 section FinitaryCofinitary
 
 variable [DecidablePred (Set.Infinite (α := Set α))]

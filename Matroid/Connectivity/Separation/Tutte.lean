@@ -461,6 +461,12 @@ lemma TutteConnected.map {β : Type*} (hM : M.TutteConnected k) (f : α → β) 
   rw [hMg] at hM
   exact hM.of_map
 
+lemma TutteConnected.of_iso {β : Type*} {N : Matroid β} (hM : M.TutteConnected k) (i : M ≂ N) :
+    N.TutteConnected k := by
+  obtain ⟨rfl, rfl⟩ | ⟨f, hf, rfl⟩ := i.empty_empty_or_exists_eq_map
+  · simp
+  exact hM.map f hf
+
 lemma Connected.tutteConnected_two (hM : M.Connected) : (M.TutteConnected 2) := by
   obtain rfl | hne := M.eq_emptyOn_or_nonempty; simp
   rwa [tutteConnected_two_iff]

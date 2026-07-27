@@ -348,6 +348,14 @@ lemma IsCyclicFan.finite_of_connected [NeZero n] (h : M.IsCyclicFan n J) (hM : M
   rw [finite_iff, ← h.eq_ground_of_connected hM]
   simp [iUnion_bool, finite_range]
 
+lemma IsCyclicFan.triassic [NeZero n] (h : M.IsCyclicFan n J) (hM : M.Connected) : M.Triassic := by
+  refine triassic_iff_forall_bool.2 fun b e he ↦ ?_
+  simp_rw [← h.eq_ground_of_connected hM, mem_iUnion, mem_range] at he
+  obtain ⟨d, i, rfl⟩ := he
+  obtain rfl | rfl := d.eq_or_eq_not b
+  · exact ⟨_, h.isTriangle_bDual d i, by simp⟩
+  exact ⟨_, h.isTriangle_bDual b (i - b.toNat), by simp⟩
+
 /-- If `F` is a fan on the entire ground set of a simple, cosimple matroid that starts with a joint,
 then `F` determines a cyclic fan. We insist that `F` starts with a joint so that the description
 of the cyclic fan doesn't involve wrapping indices around. -/
@@ -380,13 +388,23 @@ lemma IsFan.isCyclicFan_of_ground_eq (hF : M.IsFan F false c) (hM : M.Simple) (h
 
 /-- Any fan on the ground set of a simple, cosimple matroid gives a cyclic fan. -/
 lemma IsFan.exists_isCyclicFan_of_ground_eq (hF : M.IsFan F b c) (hM : M.Simple) (hM' : M✶.Simple)
-    (hFE : {e | e ∈ F} = M.E) : ∃ n J, 2 * n = F.length ∧ M.IsCyclicFan n J := by
+    (hFE : {e | e ∈ F} = M.E) :
+      ∃ n J, 2 ≤ n ∧ 2 * n = F.length ∧ M.IsCyclicFan n J ∧ ⋃ i, range (J i) = M.E := by
   obtain ⟨m, hm⟩ := Nat.exists_eq_add_of_le' <| hF.length_ge_four_of_eq_ground hFE
   cases b
   · obtain ⟨n, hn, hnF, h⟩ := hF.isCyclicFan_of_ground_eq hM hM' hFE
-    exact ⟨n, _, hnF, h⟩
+    have h0 : NeZero n := NeZero.of_gt hn
+    refine ⟨n, _, hn, hnF, h, Finite.eq_of_subset_of_encard_le ?_ h.iUnion_subset_ground ?_⟩
+    · simp [iUnion_bool, finite_range]
+    rw [h.encard_iUnion_range, ← hFE, hF.nodup.encard_toSet_eq, ← hnF]
+    rfl
   obtain ⟨n, hn, hnF, h⟩ := hF.dual.isCyclicFan_of_ground_eq hM' (by simpa) hFE
-  exact ⟨n, _, hnF, M.dual_dual ▸ h.dual⟩
+  have h0 : NeZero n := NeZero.of_gt hn
+  replace h := M.dual_dual ▸ h.dual
+  refine ⟨n, _, hn, hnF, h, Finite.eq_of_subset_of_encard_le ?_ h.iUnion_subset_ground ?_⟩
+  · simp [iUnion_bool, finite_range]
+  grw [h.encard_iUnion_range, ← hFE, hF.nodup.encard_toSet_eq, ← hnF]
+  rfl
 
 /-- Every cyclic fan gives a fan. -/
 lemma IsCyclicFan.isFan [NeZero n] {J} (h : M.IsCyclicFan n J) :

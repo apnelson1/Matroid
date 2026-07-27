@@ -192,6 +192,18 @@ lemma IsTriangle.isNonloop_bDual₂ (h : M.IsTriangle {e, f, g}) : (M.bDual b).I
 lemma IsTriangle.isNonloop_bDual₃ (h : M.IsTriangle {e, f, g}) : (M.bDual b).IsNonloop g :=
   h.isNonloop_bDual_of_mem (by simp)
 
+lemma IsTriangle.isNonColoop_of_mem (h : M.IsTriangle T) (heT : e ∈ T) : M.IsNonColoop e :=
+  h.isNonloop_bDual_of_mem (b := true) heT
+
+lemma IsTriangle.isNonColoop₁ (h : M.IsTriangle {e, f, g}) : M.IsNonColoop e :=
+  h.isNonColoop_of_mem <| by simp
+
+lemma IsTriangle.isNonColoop₂ (h : M.IsTriangle {e, f, g}) : M.IsNonColoop f :=
+  h.isNonColoop_of_mem <| by simp
+
+lemma IsTriangle.isNonColoop₃ (h : M.IsTriangle {e, f, g}) : M.IsNonColoop g :=
+  h.isNonColoop_of_mem <| by simp
+
 lemma IsTriangle.parallel_contract₁ (h : M.IsTriangle {e, f, g}) : (M ／ {e}).Parallel f g := by
   rw [parallel_iff_isCircuit h.ne₂₃]
   convert h.isCircuit.contract_isCircuit (C := {e}) (by grind) using 1
@@ -281,6 +293,10 @@ lemma triassic_dual_iff : M✶.Triassic ↔ M.Triassic := by
   simp [triassic_iff, and_comm]
 
 alias ⟨_, Triassic.dual⟩ := triassic_dual_iff
+
+lemma triassic_iff_forall_bool :
+    M.Triassic ↔ ∀ b e, e ∈ M.E → ∃ T, (M.bDual b).IsTriangle T ∧ e ∈ T := by
+  simp [triassic_iff]
 
 lemma Triassic.mem_triangle_bDual (hM : M.Triassic) (he : e ∈ M.E) (b : Bool) :
     ∃ T, (M.bDual b).IsTriangle T ∧ e ∈ T := by
