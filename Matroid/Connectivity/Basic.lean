@@ -694,6 +694,19 @@ lemma IsLoop.eLocalConn {e : α} (he : M.IsLoop e) (X : Set α) : M.eLocalConn {
   rw [← eLocalConn_closure_left, he.closure, loops, eLocalConn_closure_left]
   simp
 
+lemma eLocalConn_union_left_le_eLocalConn_add_encard (M : Matroid α) (X Y Z : Set α) :
+    M.eLocalConn (X ∪ Z) Y ≤ M.eLocalConn X Y + Z.encard := by
+  obtain ⟨I, hI⟩ := M.exists_isBasis' X
+  obtain ⟨J, hJ⟩ := M.exists_isBasis' Y
+  obtain ⟨I, hI', rfl⟩ := hI.exists_isBasis'_inter_eq_of_superset
+    (show X ⊆ X ∪ Z from subset_union_left)
+  grw [hI.eLocalConn_eq_nullity_project_right, hI'.eLocalConn_eq_nullity_project_right,
+    show I ⊆ (I ∩ X) ∪ Z by grind, nullity_union_le_nullity_add_encard_diff, sdiff_subset]
+
+lemma eLocalConn_insert_left_le_add_one (M : Matroid α) (X Y : Set α) (e : α) :
+    M.eLocalConn (insert e X) Y ≤ M.eLocalConn X Y + 1 := by
+  grw [← union_singleton, eLocalConn_union_left_le_eLocalConn_add_encard, encard_singleton]
+
 @[simp]
 lemma loopyOn_eLocalConn {E X Y : Set α} : (loopyOn E).eLocalConn X Y = 0 := by
   simp [eLocalConn]
@@ -754,6 +767,16 @@ lemma IsNonloop.eLocalConn_eq_one_iff {e : α} (he : M.IsNonloop e) :
   rw [h_eq _ (by simpa using (M.eLocalConn_le_eRk_left {e} (X ∩ M.E)).trans (M.eRk_le_encard {e})),
     not_iff_comm, he.eLocalConn_eq_zero_iff]
 
+lemma eLocalConn_singleton_left_eq_zero {e} (he : e ∉ M.closure X) : M.eLocalConn {e} X = 0 := by
+  by_cases! heE : e ∉ M.E
+  · rw [← eLocalConn_inter_ground_left, singleton_inter_of_notMem heE, empty_eLocalConn]
+  obtain he' | he' := M.isLoop_or_isNonloop e
+  · rw [he'.eLocalConn]
+  rwa [he'.eLocalConn_eq_zero_iff]
+
+lemma eLocalConn_singleton_right_eq_zero {e} (he : e ∉ M.closure X) : M.eLocalConn X {e} = 0 := by
+  rw [eLocalConn_comm, eLocalConn_singleton_left_eq_zero he]
+
 lemma IsNonloop.eLocalConn_eq_ite {e : α} (he : M.IsNonloop e) (X : Set α)
     [Decidable (e ∈ M.closure X)] :
     M.eLocalConn {e} X = if e ∈ M.closure X then 1 else 0 := by
@@ -803,25 +826,31 @@ lemma IsCircuit.union_isCircuit_of_inter_eq_singleton {C₁ C₂ : Set α} {e : 
   rintro rfl
   exact hne <| hC₁.eq_of_subset_isCircuit hC₂ (by grind)
 
-lemma IsTriangle.union_diff_singleton_isCircuit {e f e' f' x} (hT : M.IsTriangle {e, f, x})
+lemma IsTriangle.union_diff_singleton_isCircuit {e f g C} (hT : M.IsTriangle {e, f, g})
+    (hC : M.IsCircuit C) (heC : e ∈ C) (hfC : f ∉ M.closure C) :
+    M.IsCircuit <| insert f <| insert g (C \ {e}) := by
+  obtain rfl | hne := eq_or_ne {e, f, g} C
+  · exact False.elim <| hfC <| mem_closure_of_mem _ (by simp) hT.subset_ground
+  suffices h1 : M.eLocalConn {e, f, g} C ≤ 1 by
+    convert hT.isCircuit.union_isCircuit_of_inter_eq_singleton hC (e := e) hne (by simp) heC h1
+    grind
+  grw [pair_comm, insert_comm, ← eLocalConn_closure_left, closure_insert_eq_of_mem_closure
+    hT.mem_closure₃, eLocalConn_closure_left, eLocalConn_insert_left_le_add_one,
+    eLocalConn_singleton_left_eq_zero hfC, zero_add]
+
+lemma IsTriangle.union_diff_singleton_isCircuit_four {e f e' f' x} (hT : M.IsTriangle {e, f, x})
     (hT' : M.IsTriangle {e', f', x}) (hee' : e ≠ e') (h_indep : M.Indep {e, e', x}) :
     M.IsCircuit {e, f, e', f'} := by
-  obtain rfl | hne := eq_or_ne e f'
-  · simpa using hT'.swap_left.isCircuit.dep.not_indep h_indep
-  have hne : ({e, f, x} : Set α) ≠ {e', f', x} := by apply_fun (e ∈ ·); grind
-  convert hT.isCircuit.union_isCircuit_of_inter_eq_singleton hT'.isCircuit (e := x)
-    hne (by simp) (by simp) ?_ using 1
-  · grind
-  have hr := (M.eRk_add_eRk_eq_eRk_union_add_eLocalConn {e, f, x} {e', f', x}).ge
-  grw [hT.eRk, hT'.eRk, ← eRk_closure_eq, insert_comm, insert_comm e',
-    ← closure_closure_union_closure_eq_closure_union,
-    closure_insert_eq_of_mem_closure hT.mem_closure₂,
-    closure_insert_eq_of_mem_closure hT'.mem_closure₂,
-    closure_closure_union_closure_eq_closure_union, eRk_closure_eq,
-    show ({e, x} : Set α) ∪ {e', x} =  {e, e', x} by grind, h_indep.eRk_eq_encard,
-    encard_insert_of_notMem (by grind), encard_pair (by grind), insert_comm,
-    insert_comm f'] at hr
-  enat_to_nat!; lia
+  suffices aux : f ∉ M.closure {x, f', e'} by
+    convert hT.reverse.union_diff_singleton_isCircuit hT'.reverse.isCircuit (by simp) aux using 1
+    grind
+  intro hcl
+  have hr := (eRk_insert_of_mem_closure hcl).le
+  grw [hT'.reverse.eRk, ← eRk_insert_of_mem_closure (e := e)
+    (mem_of_mem_of_subset hT.mem_closure₁ <| closure_subset_closure _ (by grind)),
+    ← eRk_subset_le (X := {e, e', x}) _ (by grind), h_indep.eRk_eq_encard, pair_comm, insert_comm,
+    encard_insert_of_notMem (by simp [hT.ne₁₃.symm, hT'.ne₁₃.symm]), encard_pair hee'] at hr
+  simp at hr
 
 lemma IsCircuit.union_isCircuit_of_inter_nonempty {C₁ C₂ : Set α} (hC₁ : M.IsCircuit C₁)
     (hC₂ : M.IsCircuit C₂) (hne : C₁ ≠ C₂) (h_inter : (C₁ ∩ C₂).Nonempty)

@@ -17,8 +17,8 @@ import Matroid.Connectivity.ConnSystem.Tangle
 import Matroid.Connectivity.Connected
 import Matroid.Connectivity.Core
 import Matroid.Connectivity.Extension
--- import Matroid.Connectivity.Fan.Basic
--- import Matroid.Connectivity.Fan.Circuit
+import Matroid.Connectivity.Fan.Basic
+import Matroid.Connectivity.Fan.Circuit
 -- import Matroid.Connectivity.Fan.Cyclic
 -- import Matroid.Connectivity.Fan.Wheel
 import Matroid.Connectivity.Minor

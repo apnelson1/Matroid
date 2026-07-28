@@ -1,4 +1,4 @@
-import Matroid.Connectivity.Fan.Circuit
+import Matroid.Connectivity.Fan.Rotary
 import Matroid.Connectivity.Separation.Tutte
 import Matroid.Connectivity.Splitter.TutteTriangle
 
@@ -7,7 +7,6 @@ open Set List
 namespace Matroid
 
 variable {α β : Type*} {F : List α} {b c d : Bool} {M : Matroid α}
-
 
 lemma IsFan.exists_triad_of_not_tutteConnected_three_remove (h : M.IsFan F b c) (h4 : 4 ≤ F.length)
     (hM : M.TutteConnected 3) (hnf : ¬ M.IsRotaryFan F b)

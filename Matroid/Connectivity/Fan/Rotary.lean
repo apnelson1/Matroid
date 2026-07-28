@@ -7,6 +7,7 @@ namespace Matroid
 
 variable {α β : Type*} {F : List α} {b c d : Bool} {M : Matroid α}
 
+#exit
 structure IsRotaryFan (M : Matroid α) (F : List α) (b : Bool) : Prop where
   isFan : M.IsFan F b (!b)
   isTriangle : (M.bDual b).IsTriangle {F[F.length - 2], F[F.length - 1], F[0]}

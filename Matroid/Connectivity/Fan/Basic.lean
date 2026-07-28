@@ -6,6 +6,26 @@ set_option linter.style.longLine false
 
 open Set List
 
+@[simp]
+lemma Bool.bne_right_self {b c : Bool} : (b != (c != b)) = c := by
+  rw [bne_comm, Bool.bne_self_right]
+
+@[simp]
+lemma Bool.beq_not_self_beq {b c : Bool} : (b == !b == c) = !c := by
+  grind [cases Bool]
+
+@[simp]
+lemma Bool.bnot_bne (b c : Bool) : !b != c = (b == c) := by
+  grind [cases Bool]
+
+@[simp]
+lemma Bool.beq_right_self (b c : Bool) : (b == (c == b)) = c := by
+  grind [cases Bool]
+
+lemma Nat.bodd_sub {a b : ℕ} (hab : a ≤ b) : (b - a).bodd = (b.bodd != a.bodd) := by
+  obtain ⟨d, rfl⟩ := exists_add_of_le hab
+  simp
+
 namespace Matroid
 
 -- variable {J : Bool → List α}
@@ -87,17 +107,41 @@ alias ⟨IsFan.of_bDual, _⟩ := isFan_bDual_iff
 lemma IsFan.bDual (h : M.IsFan F b c) (d : Bool) : (M.bDual d).IsFan F (b != d) (c != d) := by
   simpa
 
+
+lemma IsFan.length_bodd_eq (h : M.IsFan F b c) : F.length.bodd = (b == c) := by
+  induction h with
+  | of_pair => simp
+  | cons_triangle e x y F b => cases b with simp_all
+
+lemma IsFan.bool_right_eq (h : M.IsFan F b c) : c = (b == F.length.bodd) := by
+  simp [h.length_bodd_eq]
+
+lemma IsFan.bool_left_eq (h : M.IsFan F b c) : b = (c == F.length.bodd) := by
+  cases b with simp [h.length_bodd_eq]
+
 @[grind →]
 lemma IsFan.two_le_length (h : M.IsFan F b c) : 2 ≤ F.length := by
   induction h with simp_all
 
+lemma IsFan.length_sub_one_bodd_eq (h : M.IsFan F b c) : (F.length - 1).bodd = (b != c) := by
+  rw [Nat.bodd_sub (by grind)]
+  simp [h.length_bodd_eq]
+
+@[grind →]
+lemma IsFan.three_le_length (h : M.IsFan F b b) : 3 ≤ F.length := by
+  obtain h2 | h3 := h.two_le_length.eq_or_lt
+  · have hcon := h2 ▸ h.length_bodd_eq
+    simp at hcon
+  lia
+
 macro_rules | `(tactic| get_elem_tactic_extensible) => `(tactic| grind[IsFan.two_le_length])
+macro_rules | `(tactic| get_elem_tactic_extensible) => `(tactic| grind[IsFan.three_le_length])
 
 lemma IsFan.ne_nil (h : M.IsFan F b c) : F ≠ [] := by
   grind [h.two_le_length]
 
-lemma IsFan.alt_ne_nil (h : M.IsFan F b c) {d} : F.alt d ≠ [] := by
-  cases d <;> grind [F.alt_true_length_eq, h.two_le_length, F.alt_length_add]
+-- lemma IsFan.alt_ne_nil (h : M.IsFan F b c) {d} : F.alt d ≠ [] := by
+--   cases d <;> grind [F.alt_true_length_eq, h.two_le_length, F.alt_length_add]
 
 lemma IsFan.cons' (h : M.IsFan F b c) (heF : e ∉ F)  (hT : (M.bDual !b).IsTriangle
     {e, F.head h.ne_nil, F.tail.head (by grind [length_tail, h.two_le_length])}) :
@@ -190,17 +234,6 @@ lemma IsFan.get_mem_ground (h : M.IsFan F b c) {hi : i < F.length} : F[i] ∈ M.
 lemma IsFan.getElem_inj_iff (h : M.IsFan F b c) {hi : i < F.length} {hj : j < F.length} :
     F[i] = F[j] ↔ i = j :=
   h.nodup.getElem_inj_iff
-
-lemma IsFan.length_bodd_eq (h : M.IsFan F b c) : F.length.bodd = (b == c) := by
-  induction h with
-  | of_pair => simp
-  | cons_triangle e x y F b => cases b with simp_all
-
-lemma IsFan.bool_right_eq (h : M.IsFan F b c) : c = (b == F.length.bodd) := by
-  simp [h.length_bodd_eq]
-
-lemma IsFan.bool_left_eq (h : M.IsFan F b c) : b = (c == F.length.bodd) := by
-  cases b with simp [h.length_bodd_eq]
 
 lemma IsFan.length_even (h : M.IsFan F b !b) : Even F.length := by
   have := h.length_bodd_eq
