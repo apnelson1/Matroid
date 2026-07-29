@@ -73,6 +73,33 @@ lemma restrict_restrict {S T : Set α} (hS : S ⊆ f.Dom) (hT : T ⊆ (f.restric
   ext a x
   grind [mem_restrict]
 
+@[simp]
+lemma dom_map : (PFun.map φ f).Dom = f.Dom := by
+  ext a
+  simp only [mem_dom, PFun.map, Part.mem_map_iff]
+  grind
+
+@[simp]
+lemma mem_map (a : α) (c : γ) : c ∈ (PFun.map φ f) a ↔ ∃ b ∈ f a, φ b = c := by
+  simp [PFun.map]
+
+@[simp]
+lemma ran_map : (PFun.map φ f).ran = φ '' f.ran := by
+  ext c
+  simp only [ran, mem_map]
+  grind
+
+@[simp]
+lemma preimage_map (S : Set γ) : (PFun.map φ f).preimage S = f.preimage (φ ⁻¹' S) := by
+  ext a
+  simp only [mem_preimage, mem_map]
+  grind
+
+@[simp]
+lemma ran_eq_empty_iff_dom_eq_empty (f : α →. β) : f.ran = ∅ ↔ f.Dom = ∅ := by
+  simp only [ran, Set.ext_iff, mem_ofPred_eq, mem_empty_iff_false, mem_dom]
+  grind
+
 def codRestrict (f : α →. β) (S : Set β) : α →. β :=
   f.restrict (preimage_subset_dom f S)
 
@@ -102,30 +129,3 @@ lemma codRestrict_codRestrict :
   rw [restrict_restrict]
   congr
   grind [preimage_restrict]
-
-@[simp]
-lemma dom_map : (PFun.map φ f).Dom = f.Dom := by
-  ext a
-  simp only [mem_dom, PFun.map, Part.mem_map_iff]
-  grind
-
-@[simp]
-lemma mem_map (a : α) (c : γ) : c ∈ (PFun.map φ f) a ↔ ∃ b ∈ f a, φ b = c := by
-  simp [PFun.map]
-
-@[simp]
-lemma ran_map : (PFun.map φ f).ran = φ '' f.ran := by
-  ext c
-  simp only [ran, mem_map]
-  grind
-
-@[simp]
-lemma preimage_map (S : Set γ) : (PFun.map φ f).preimage S = f.preimage (φ ⁻¹' S) := by
-  ext a
-  simp only [mem_preimage, mem_map]
-  grind
-
-@[simp]
-lemma ran_eq_empty_iff_dom_eq_empty (f : α →. β) : f.ran = ∅ ↔ f.Dom = ∅ := by
-  simp only [ran, Set.ext_iff, mem_ofPred_eq, mem_empty_iff_false, mem_dom]
-  grind

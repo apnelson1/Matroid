@@ -61,18 +61,23 @@ instance (G : Graph α β) : UniformSpace V(G) := ⊥
 instance : DiscreteTopology V(G) where
   eq_bot := rfl
 
-instance instFiniteVtx [G.Finite] : Finite V(G) := G.vertexSet_finite
-instance instFiniteEg [G.EdgeFinite] : Finite E(G) := G.edgeSet_finite
+instance instFiniteVertex [G.Finite] : Finite V(G) := G.vertexSet_finite
+instance instFiniteEdge [G.EdgeFinite] : Finite E(G) := G.edgeSet_finite
 
-noncomputable def src (e : E(G)) : V(G) := ⟨G.source e.val e.prop, G.source_mem e.prop⟩
-noncomputable def tgt (e : E(G)) : V(G) := ⟨G.target e.val e.prop, G.target_mem e.prop⟩
-lemma isLink_src_tgt (e : E(G)) : G.IsLink e (src e) (tgt e) := G.isLink_source_target e.prop
+noncomputable def edgeSource (e : E(G)) : V(G) :=
+  ⟨G.source e.val e.prop, G.source_mem e.prop⟩
+
+noncomputable def edgeTarget (e : E(G)) : V(G) :=
+  ⟨G.target e.val e.prop, G.target_mem e.prop⟩
+
+lemma isLink_edgeSource_edgeTarget (e : E(G)) :
+    G.IsLink e (edgeSource e) (edgeTarget e) := G.isLink_source_target e.prop
 
 @[grind →]
-lemma IsNonloopAt.src_ne_tgt (e : E(G)) {x : V(G)} (h : G.IsNonloopAt e x) :
-    src e ≠ tgt e := by
+lemma IsNonloopAt.edgeSource_ne_edgeTarget (e : E(G)) {x : V(G)} (h : G.IsNonloopAt e x) :
+    edgeSource e ≠ edgeTarget e := by
   obtain ⟨hne, hl⟩ := h.choose_spec
-  grind [(isLink_src_tgt e).eq_and_eq_or_eq_and_eq hl]
+  grind [(isLink_edgeSource_edgeTarget e).eq_and_eq_or_eq_and_eq hl]
 
 /-- Disjoint union of the discrete 0-skeleton and one copy of `EdgeDisk` per edge. -/
 abbrev PreRealization (G : Graph α β) := V(G) ⊕ Σ (_ : E(G)), I
@@ -82,27 +87,29 @@ variable {e : E(G)} {t t' : I} {u v : V(G)} {w x y z : G.PreRealization}
 private def glueRelAux (G : Graph α β) (x y : PreRealization G) : Prop :=
   match x with
   | .inl u => y = Sum.inl u ∨
-    (∃ e : E(G), u = src e ∧ y = Sum.inr ⟨e, (0 : I)⟩) ∨
-    (∃ e : E(G), u = tgt e ∧ y = Sum.inr ⟨e, (1 : I)⟩)
+    (∃ e : E(G), u = edgeSource e ∧ y = Sum.inr ⟨e, (0 : I)⟩) ∨
+    (∃ e : E(G), u = edgeTarget e ∧ y = Sum.inr ⟨e, (1 : I)⟩)
   | .inr _ => False
 
 lemma glueRelAux_refl (u : V(G)) : G.glueRelAux (Sum.inl u) (Sum.inl u) := Or.inl rfl
 
 @[simp]
-lemma glueRelAux_inl_inj (u v : V(G)) : G.glueRelAux (Sum.inl u) (Sum.inl v) ↔ u = v := by
+lemma glueRelAux_inl_inl_iff (u v : V(G)) :
+    G.glueRelAux (Sum.inl u) (Sum.inl v) ↔ u = v := by
   simp only [glueRelAux, reduceCtorEq, and_false, exists_false, or_self, or_false, eq_comm]
   exact Sum.inl_injective.eq_iff
 
 @[simp]
 lemma glueRelAux_inl_inr_iff (u : V(G)) (e : E(G)) (t : I) :
-    G.glueRelAux (Sum.inl u) (Sum.inr ⟨e, t⟩) ↔ t = 0 ∧ u = src e ∨ t = 1 ∧ u = tgt e := by
+    G.glueRelAux (Sum.inl u) (Sum.inr ⟨e, t⟩) ↔
+      t = 0 ∧ u = edgeSource e ∨ t = 1 ∧ u = edgeTarget e := by
   simp only [glueRelAux, eq_comm, reduceCtorEq, Subtype.exists, false_or]
   grind
 
 @[simp]
 lemma glueRelAux_inr_iff (x : PreRealization G) (e : E(G)) (t : I) :
     G.glueRelAux x (Sum.inr ⟨e, t⟩) ↔ ∃ u : V(G), x = Sum.inl u ∧
-    (t = 0 ∧ u = src e ∨ t = 1 ∧ u = tgt e) := by
+    (t = 0 ∧ u = edgeSource e ∨ t = 1 ∧ u = edgeTarget e) := by
   cases x
   · rw [glueRelAux_inl_inr_iff]
     grind
@@ -149,7 +156,7 @@ theorem glueRel_inl_iff_glueRelAux (u : V(G)) (x : G.PreRealization) :
     rwa [glueRelAux_eqvGen _ h] at this
   exact EqvGen.rel _ _ h
 
-theorem eqvGen_inr_interior_preserved {a b : G.PreRealization} (ht : t ≠ 0 ∧ t ≠ 1)
+theorem glueRel_inr_interior_iff {a b : G.PreRealization} (ht : t ≠ 0 ∧ t ≠ 1)
     (h : G.glueRel a b) : (a = Sum.inr ⟨e, t⟩ ↔ b = Sum.inr ⟨e, t⟩) := by
   induction h with
   | refl => exact ⟨id, id⟩
@@ -160,27 +167,32 @@ theorem eqvGen_inr_interior_preserved {a b : G.PreRealization} (ht : t ≠ 0 ∧
   | symm _ _ _ ih => simpa [iff_comm] using ih
   | trans _ _ _ _ _ ixy iyz => exact ⟨fun hx => iyz.1 (ixy.1 hx), fun hz => ixy.2 (iyz.2 hz)⟩
 
-lemma glueRel_right_unique (ht : t ≠ 0 ∧ t ≠ 1) (s : G.PreRealization) :
+lemma glueRel_inr_interior_iff_eq (ht : t ≠ 0 ∧ t ≠ 1) (s : G.PreRealization) :
     G.glueRel (Sum.inr ⟨e, t⟩) s ↔ s = Sum.inr ⟨e, t⟩ :=
-  ⟨fun h => (eqvGen_inr_interior_preserved ht h).mp rfl, fun h => h ▸ EqvGen.refl _⟩
-
-lemma glueRel_inj_left (u v : V(G)) : glueRel G (Sum.inl u) (Sum.inl v) ↔ u = v := by simp
-
-theorem glueRel_inl_inr (u : V(G)) (e : E(G)) (t : I) :
-    G.glueRel (Sum.inl u) (Sum.inr ⟨e, t⟩) ↔ t = 0 ∧ u = src e ∨ t = 1 ∧ u = tgt e := by simp
+  ⟨fun h => (glueRel_inr_interior_iff ht h).mp rfl, fun h => h ▸ EqvGen.refl _⟩
 
 @[simp]
-theorem glueRel_inr_inl (e : E(G)) (t : I) (v : V(G)) : G.glueRel (Sum.inr ⟨e, t⟩) (Sum.inl v) ↔
-    t = (0 : I) ∧ v = src e ∨ t = (1 : I) ∧ v = tgt e :=
-  Iff.trans ⟨EqvGen.symm _ _, EqvGen.symm _ _⟩ (glueRel_inl_inr v e t)
+lemma glueRel_inl_inl_iff (u v : V(G)) :
+    glueRel G (Sum.inl u) (Sum.inl v) ↔ u = v := by simp
 
-lemma exists_inl_of_glueRel_inr (h : G.glueRel (Sum.inr ⟨e, t⟩) y) (hy : y ≠ Sum.inr ⟨e, t⟩) :
+theorem glueRel_inl_inr_iff (u : V(G)) (e : E(G)) (t : I) :
+    G.glueRel (Sum.inl u) (Sum.inr ⟨e, t⟩) ↔
+      t = 0 ∧ u = edgeSource e ∨ t = 1 ∧ u = edgeTarget e := by simp
+
+@[simp]
+theorem glueRel_inr_inl_iff (e : E(G)) (t : I) (v : V(G)) :
+    G.glueRel (Sum.inr ⟨e, t⟩) (Sum.inl v) ↔
+      t = (0 : I) ∧ v = edgeSource e ∨ t = (1 : I) ∧ v = edgeTarget e :=
+  Iff.trans ⟨EqvGen.symm _ _, EqvGen.symm _ _⟩ (glueRel_inl_inr_iff v e t)
+
+lemma exists_glueRel_inl_of_glueRel_inr_ne
+    (h : G.glueRel (Sum.inr ⟨e, t⟩) y) (hy : y ≠ Sum.inr ⟨e, t⟩) :
     ∃ u : V(G), G.glueRel (Sum.inl u) (Sum.inr ⟨e, t⟩) := by
   rcases eq_or_ne t 0 with rfl | ht0'
-  · exact ⟨src e, by simp⟩
+  · exact ⟨edgeSource e, by simp⟩
   rcases eq_or_ne t 1 with rfl | ht1'
-  · exact ⟨tgt e, by simp⟩
-  exact absurd ((eqvGen_inr_interior_preserved ⟨ht0', ht1'⟩ h).1 rfl) hy
+  · exact ⟨edgeTarget e, by simp⟩
+  exact absurd ((glueRel_inr_interior_iff ⟨ht0', ht1'⟩ h).1 rfl) hy
 
 @[simp]
 theorem glueRel_inr_inr_iff (e₁ e₂ : E(G)) (t₁ t₂ : I) :
@@ -190,14 +202,15 @@ theorem glueRel_inr_inr_iff (e₁ e₂ : E(G)) (t₁ t₂ : I) :
   · obtain heq | hne := eq_or_ne (inr ⟨e₁, t₁⟩ : PreRealization G) (inr ⟨e₂, t₂⟩)
     · obtain ⟨rfl, rfl⟩ := heq
       tauto
-    obtain ⟨u, hu⟩ := exists_inl_of_glueRel_inr h hne.symm
+    obtain ⟨u, hu⟩ := exists_glueRel_inl_of_glueRel_inr_ne h hne.symm
     exact Or.inr ⟨u, hu, Setoid.trans hu h⟩
   rintro (⟨rfl, rfl⟩ | ⟨v, h₁, h₂⟩)
   · simp
   exact trans_of G.glueRel (symm_of G.glueRel h₁) h₂
 
 @[simp↓]
-theorem glueRel_inr_inr_iff' (e : E(G)) (he : G.IsNonloopAt e (src e)) (t₁ t₂ : I) :
+theorem glueRel_inr_inr_iff_of_isNonloopAt
+    (e : E(G)) (he : G.IsNonloopAt e (edgeSource e)) (t₁ t₂ : I) :
     G.glueRel (Sum.inr ⟨e, t₁⟩) (Sum.inr ⟨e, t₂⟩) ↔ t₁ = t₂ := by
   simp only [glueRel_inr_inr_iff, true_and, glueRel_inl_iff_glueRelAux, glueRelAux_inr_iff,
     inl.injEq, exists_eq_left', or_iff_left_iff_imp, forall_exists_index, and_imp]
@@ -217,7 +230,7 @@ lemma vertexMk_injective : Injective G.vertexMk := fun u v ↦ by simp [vertexMk
 /-- Inclusion of a point of the `e`-th edge interval into the realization. -/
 -- def edgeMk (e : E(G)) (t : I) : Realization G := Quotient.mk' (s := G.glueRel) (Sum.inr ⟨e, t⟩)
 
-def edgePath (e : E(G)) : Path (vertexMk (src e)) (vertexMk (tgt e)) where
+def edgePath (e : E(G)) : Path (vertexMk (edgeSource e)) (vertexMk (edgeTarget e)) where
   toFun t := Quotient.mk' (s := G.glueRel) (Sum.inr ⟨e, t⟩)
   source' := Quotient.sound (by simp)
   target' := Quotient.sound (by simp)
@@ -225,13 +238,14 @@ def edgePath (e : E(G)) : Path (vertexMk (src e)) (vertexMk (tgt e)) where
 
 section edgePath
 
-lemma vertexMk_notMem_edgePath_Ioo (v : V(G)) (e : E(G)) : vertexMk v ∉ edgePath e '' Ioo 0 1 := by
+lemma vertexMk_not_mem_edgePath_Ioo (v : V(G)) (e : E(G)) :
+    vertexMk v ∉ edgePath e '' Ioo 0 1 := by
   rintro ⟨t, ht, heq⟩
   have := Quotient.exact heq
-  simp only [glueRel_inr_inl] at this
+  simp only [glueRel_inr_inl_iff] at this
   grind
 
-lemma edgePath_Ioo_disjoint_iff_ne (e₁ e₂ : E(G)) :
+lemma disjoint_edgePath_Ioo_iff (e₁ e₂ : E(G)) :
     Disjoint (edgePath e₁ '' Ioo 0 1) (edgePath e₂ '' Ioo 0 1) ↔ e₁ ≠ e₂ := by
   refine ⟨fun h => ?_, fun h => ?_⟩
   · rintro rfl
@@ -247,25 +261,27 @@ lemma edgePath_Ioo_disjoint_iff_ne (e₁ e₂ : E(G)) :
   simp only [glueRel_inr_inr_iff, glueRel_inl_iff_glueRelAux, glueRelAux_inr_iff] at this
   grind
 
-lemma edgePath_inj_on_Ioo (h₁ : (t₁ : ℝ) ∈ Ioo 0 1) (h : edgePath e t₁ = edgePath e t₂) :
+lemma edgePath_inj_of_mem_Ioo (h₁ : (t₁ : ℝ) ∈ Ioo 0 1)
+    (h : edgePath e t₁ = edgePath e t₂) :
     t₁ = t₂ := by
   obtain ⟨-, rfl⟩ | ⟨v, hv₁, hv₂⟩ := (glueRel_inr_inr_iff ..).mp (Quotient.exact h)
   · rfl
-  obtain ⟨rfl, -⟩ | ⟨rfl, -⟩ := (glueRel_inl_inr ..).mp hv₁ <;> simp at h₁
+  obtain ⟨rfl, -⟩ | ⟨rfl, -⟩ := (glueRel_inl_inr_iff ..).mp hv₁ <;> simp at h₁
 
-private lemma edgePath_injective (e : E(G)) (he : G.IsNonloopAt e (src e)) :
+private lemma edgePath_injective (e : E(G)) (he : G.IsNonloopAt e (edgeSource e)) :
     Injective (edgePath e) := by
   intro t₁ t₂ h
   have hgr : G.glueRel (Sum.inr ⟨e, t₁⟩) (Sum.inr ⟨e, t₂⟩) := (Quotient.eq (r := G.glueRel)).1 h
   obtain ⟨-, rfl⟩ | ⟨v, hv₁, hv₂⟩ := (glueRel_inr_inr_iff ..).mp (Quotient.exact h)
   · rfl
-  obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := (glueRel_inl_inr ..).mp hv₁ <;>
-  obtain ⟨rfl, h1⟩ | ⟨rfl, h1⟩ := (glueRel_inl_inr ..).mp hv₂ <;> clear h hv₁ hv₂ hgr <;> (try rfl)
+  obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := (glueRel_inl_inr_iff ..).mp hv₁ <;>
+  obtain ⟨rfl, h1⟩ | ⟨rfl, h1⟩ := (glueRel_inl_inr_iff ..).mp hv₂ <;>
+    clear h hv₁ hv₂ hgr <;> (try rfl)
   <;> have hval : G.source e.val e.prop = _ := congrArg Subtype.val (by simpa [eq_comm] using h1)
   <;> have hlink := hval ▸ G.isLink_source_target e.prop <;> exact absurd hlink (he.not_isLoopAt _)
 
 set_option backward.isDefEq.respectTransparency false in
-lemma edgePath_preimage_image (e : E(G)) {X : Set I} (h0X : 0 ∉ X) (h1X : 1 ∉ X) :
+lemma preimage_edgePath_image (e : E(G)) {X : Set I} (h0X : 0 ∉ X) (h1X : 1 ∉ X) :
     Quotient.mk' ⁻¹' (edgePath e '' X) = Sum.inr '' (Sigma.mk e '' X) := by
   ext x
   simp only [mem_preimage, mem_image, Sigma.exists, Sigma.mk.injEq, heq_eq_eq,
@@ -275,7 +291,7 @@ lemma edgePath_preimage_image (e : E(G)) {X : Set I} (h0X : 0 ∉ X) (h1X : 1 �
     exact ⟨t', ht', rfl⟩
   simp only [edgePath, coe_mk', ContinuousMap.coe_mk, Quotient.eq'] at h_eq
   match x with
-  | inl v => obtain ⟨rfl, -⟩ | ⟨rfl, -⟩ := (glueRel_inr_inl ..).mp h_eq <;> tauto
+  | inl v => obtain ⟨rfl, -⟩ | ⟨rfl, -⟩ := (glueRel_inr_inl_iff ..).mp h_eq <;> tauto
   | inr ⟨e', t'⟩ =>
     simp only [glueRel_inr_inr_iff, glueRel_inl_iff_glueRelAux, glueRelAux_inr_iff, inl.injEq,
       exists_eq_left'] at h_eq
@@ -284,7 +300,7 @@ lemma edgePath_preimage_image (e : E(G)) {X : Set I} (h0X : 0 ∉ X) (h1X : 1 �
 theorem isOpen_edgePath_image (e : E(G)) {X : Set I} (h0X : 0 ∉ X) (h1X : 1 ∉ X) :
     IsOpen (edgePath e '' X) ↔ IsOpen X := by
   change IsOpen (Quotient.mk' ⁻¹' (edgePath e '' X)) ↔ _
-  rw [edgePath_preimage_image e h0X h1X, isOpen_sum_iff]
+  rw [preimage_edgePath_image e h0X h1X, isOpen_sum_iff]
   simp [IsOpenEmbedding.sigmaMk.isOpen_iff_image_isOpen.symm]
 
 private lemma edgePath_preimage_aux_eq_preimage_mk' (e : E(G)) (C : Set I) :
@@ -310,9 +326,10 @@ private lemma isClosed_inr_sigma_mk_preimage_edgePath_preimage_aux_of_ne {e' : E
     grind
   exact (Finite.subset (by simp) hF_sub).isClosed
 
-private lemma inr_inr_same_edge_set_eq_of_isNonloopAt (e : E(G)) (he : G.IsNonloopAt e (src e))
+private lemma inr_inr_same_edge_set_eq_of_isNonloopAt
+    (e : E(G)) (he : G.IsNonloopAt e (edgeSource e))
     (C : Set I) : {x | ∃ t ∈ C, G.glueRel (Sum.inr ⟨e, x⟩) (Sum.inr ⟨e, t⟩)} = C := by
-  simp [glueRel_inr_inr_iff' e he]
+  simp [glueRel_inr_inr_iff_of_isNonloopAt e he]
 
 private lemma inr_inr_same_edge_set_subset_union_endpoints (e : E(G)) (C : Set I) :
     {x | ∃ t ∈ C, G.glueRel (Sum.inr ⟨e, x⟩) (Sum.inr ⟨e, t⟩)} ⊆ C ∪ {0, 1} := by
@@ -348,7 +365,7 @@ lemma isClosedMap_edgePath (e0 : E(G)) : IsClosedMap (edgePath e0) := by
   exact ⟨isClosed_discrete _, isClosed_inr_preimage_edgePath_preimage_aux e0 hC⟩
 
 @[simp]
-theorem isClosedEmbedding_edgePath (e : E(G)) (he : G.IsNonloopAt e (src e)) :
+theorem isClosedEmbedding_edgePath (e : E(G)) (he : G.IsNonloopAt e (edgeSource e)) :
     IsClosedEmbedding (edgePath e) :=
   IsClosedEmbedding.of_continuous_injective_isClosedMap (edgePath e).continuous
     (edgePath_injective e he) (isClosedMap_edgePath e)
@@ -357,9 +374,10 @@ end edgePath
 
 theorem joined_vertexMk_of_isLink {e : β} {x y : α} (h : G.IsLink e x y) :
     Joined (vertexMk ⟨x, h.left_mem⟩) (vertexMk ⟨y, h.right_mem⟩) := by
-  obtain ⟨h1, h2⟩ | ⟨h1, h2⟩ := h.eq_and_eq_or_eq_and_eq <| G.isLink_source_target h.edge_mem
-  · simpa [h1, h2, src, tgt] using ⟨edgePath ⟨e, h.edge_mem⟩⟩
-  · simpa [h1, h2, src, tgt] using ⟨edgePath ⟨e, h.edge_mem⟩ |>.symm⟩
+  obtain ⟨h1, h2⟩ | ⟨h1, h2⟩ :=
+    h.eq_and_eq_or_eq_and_eq <| G.isLink_source_target h.edge_mem
+  · simpa [h1, h2, edgeSource, edgeTarget] using ⟨edgePath ⟨e, h.edge_mem⟩⟩
+  · simpa [h1, h2, edgeSource, edgeTarget] using ⟨edgePath ⟨e, h.edge_mem⟩ |>.symm⟩
 
 theorem joined_vertexMk_of_isWalk {w : WList α β} (hw : G.IsWalk w) :
     Joined (vertexMk ⟨w.first, hw.first_mem⟩) (vertexMk ⟨w.last, hw.last_mem⟩) := by
@@ -372,7 +390,8 @@ theorem joined_vertexMk_of_connBetween {x y : α} (h : G.ConnBetween x y) :
   obtain ⟨w, hw, rfl, rfl⟩ := h
   exact joined_vertexMk_of_isWalk hw
 
-theorem Preconnected.joined_vertexMk_realMk {v0 : α} (hv0 : v0 ∈ V(G)) (hG : G.Preconnected)
+theorem Preconnected.joined_vertexMk_quotientMk
+    {v0 : α} (hv0 : v0 ∈ V(G)) (hG : G.Preconnected)
     (a : G.PreRealization) : Joined (vertexMk ⟨v0, hv0⟩) ⟦a⟧ := by
   match a with
   | inl v =>
@@ -381,79 +400,85 @@ theorem Preconnected.joined_vertexMk_realMk {v0 : α} (hv0 : v0 ∈ V(G)) (hG : 
   | inr ⟨e, t⟩ =>
     refine (joined_vertexMk_of_connBetween (hG v0 (G.source e.val e.prop) hv0 ?_)).trans ?_
     · exact (G.isLink_source_target e.prop).left_mem
-    let p : Path (vertexMk (src e)) (edgePath e t) :=
+    let p : Path (vertexMk (edgeSource e)) (edgePath e t) :=
       edgePath e |>.truncate 0 t |>.cast (by simp [t.prop.1]) (by simp)
     use p <;> simp only [Path.source, vertexMk_inj, Path.target] <;> rfl
 
 theorem Connected.pathConnectedSpace (h : G.Connected) : PathConnectedSpace G.Realization := by
   obtain ⟨v0, hv0⟩ := h.nonempty
   refine ⟨⟨vertexMk ⟨v0, hv0⟩⟩, Quotient.ind₂ fun a b ↦ ?_⟩
-  exact (h.pre.joined_vertexMk_realMk hv0 a).symm.trans (h.pre.joined_vertexMk_realMk hv0 b)
+  exact (h.pre.joined_vertexMk_quotientMk hv0 a).symm.trans
+    (h.pre.joined_vertexMk_quotientMk hv0 b)
 
 -- instance [G.Finite] : CompactSpace G.Realization := inferInstance
 
-lemma vertexMk_or_edgePath (x : G.Realization) :
+lemma exists_vertexMk_or_exists_edgePath (x : G.Realization) :
     (∃ v : V(G), vertexMk v = x) ∨ ∃ (e : E(G)) (t : I), t ∈ Ioo 0 1 ∧ edgePath e t = x := by
   induction x using Quotient.inductionOn with | h a => _
   match a with
   | .inl v => exact Or.inl ⟨v, rfl⟩
   | .inr ⟨e, t⟩ =>
     by_cases ht0 : 0 = t
-    · exact Or.inl ⟨src e, Quotient.sound <| by simp [ht0]⟩
+    · exact Or.inl ⟨edgeSource e, Quotient.sound <| by simp [ht0]⟩
     by_cases ht1 : t = 1
-    · exact Or.inl ⟨tgt e, Quotient.sound <| by simp [ht1]⟩
+    · exact Or.inl ⟨edgeTarget e, Quotient.sound <| by simp [ht1]⟩
     have h0 : 0 < t := t.prop.1.lt_of_ne (by grind)
     have h1 : t < 1 := t.prop.2.lt_of_ne (by grind)
     exact Or.inr ⟨e, t, ⟨h0, h1⟩, rfl⟩
 
-def foo : Set G.Realization := (range vertexMk)ᶜ
+/-- The points in the realization that are not vertices. -/
+def edgeInteriorSet (G : Graph α β) : Set G.Realization := (range vertexMk)ᶜ
 
 @[simp]
-lemma union_edges_eq_foo : ⋃ (e : E(G)), edgePath e '' Ioo 0 1 = G.foo := by
+lemma iUnion_edgePath_Ioo : ⋃ (e : E(G)), edgePath e '' Ioo 0 1 = G.edgeInteriorSet := by
   ext y
-  simp only [foo, mem_compl_iff, mem_range, mem_iUnion]
+  simp only [edgeInteriorSet, mem_compl_iff, mem_range, mem_iUnion]
   refine ⟨?_, fun hyS ↦ ?_⟩
   · rintro ⟨e', t', ht', rfl⟩
-    exact fun ⟨v, hv⟩ ↦ vertexMk_notMem_edgePath_Ioo v e' ⟨t', ht', hv.symm⟩
-  obtain ⟨e', t', ht', rfl⟩ := vertexMk_or_edgePath y |>.resolve_left hyS
+    exact fun ⟨v, hv⟩ ↦ vertexMk_not_mem_edgePath_Ioo v e' ⟨t', ht', hv.symm⟩
+  obtain ⟨e', t', ht', rfl⟩ := exists_vertexMk_or_exists_edgePath y |>.resolve_left hyS
   grind
 
-lemma preimage_foo_isClopen (e : E(G)) : IsClopen (G.foo ↓∩ edgePath e '' Ioo 0 1) := by
+lemma isClopen_edgePath_Ioo (e : E(G)) :
+    IsClopen (G.edgeInteriorSet ↓∩ edgePath e '' Ioo 0 1) := by
   have hU_open : IsOpen (edgePath e '' Ioo 0 1) := by
     rw [isOpen_edgePath_image e (by simp) (by simp)]
     exact isOpen_Ioo
-  have hU_compl : G.foo \ edgePath e '' Ioo 0 1 = ⋃ (e') (_ : e' ≠ e), edgePath e' '' Ioo 0 1 := by
+  have hU_compl : G.edgeInteriorSet \ edgePath e '' Ioo 0 1 =
+      ⋃ (e') (_ : e' ≠ e), edgePath e' '' Ioo 0 1 := by
     ext y
-    simp only [mem_sdiff, mem_compl_iff, mem_range, mem_iUnion, exists_prop, foo]
+    simp only [mem_sdiff, mem_compl_iff, mem_range, mem_iUnion, exists_prop, edgeInteriorSet]
     refine ⟨fun ⟨hyS, hyU⟩ ↦ ?_, ?_⟩
-    · obtain ⟨e', t', ht', rfl⟩ := vertexMk_or_edgePath y |>.resolve_left hyS
+    · obtain ⟨e', t', ht', rfl⟩ :=
+        exists_vertexMk_or_exists_edgePath y |>.resolve_left hyS
       exact ⟨e', fun heq => hyU (heq ▸ mem_image_of_mem _ ht'), t', ht', rfl⟩
     rintro ⟨e', hne, t', ht', rfl⟩
-    exact ⟨fun ⟨v, hv⟩ ↦ vertexMk_notMem_edgePath_Ioo v e' ⟨t', ht', hv.symm⟩,
-      (((edgePath_Ioo_disjoint_iff_ne e' e).mpr hne).le_bot ⟨mem_image_of_mem _ ht', ·⟩)⟩
-  have hU_compl_open : IsOpen (G.foo \ edgePath e '' Ioo 0 1) := by
+    exact ⟨fun ⟨v, hv⟩ ↦ vertexMk_not_mem_edgePath_Ioo v e' ⟨t', ht', hv.symm⟩,
+      (((disjoint_edgePath_Ioo_iff e' e).mpr hne).le_bot ⟨mem_image_of_mem _ ht', ·⟩)⟩
+  have hU_compl_open : IsOpen (G.edgeInteriorSet \ edgePath e '' Ioo 0 1) := by
     rw [hU_compl]
     refine isOpen_biUnion fun e' _ ↦ ?_
     rw [isOpen_edgePath_image e' (by simp) (by simp)]
     exact isOpen_Ioo
   refine ⟨?_, hU_open.preimage continuous_subtype_val⟩
-  have eq_compl : (G.foo ↓∩ edgePath e '' Ioo 0 1)ᶜ =
-      Subtype.val ⁻¹' (G.foo \ edgePath e '' Ioo 0 1) := by
+  have eq_compl : (G.edgeInteriorSet ↓∩ edgePath e '' Ioo 0 1)ᶜ =
+      Subtype.val ⁻¹' (G.edgeInteriorSet \ edgePath e '' Ioo 0 1) := by
     rw [← preimage_compl]
     grind
   rw [← isOpen_compl_iff, eq_compl]
-  exact isOpen_induced_iff.mpr ⟨G.foo \ edgePath e '' Ioo 0 1, hU_compl_open, rfl⟩
+  exact isOpen_induced_iff.mpr
+    ⟨G.edgeInteriorSet \ edgePath e '' Ioo 0 1, hU_compl_open, rfl⟩
 
-lemma pathComponent_eq_edge (T : Set G.Realization)
+lemma eq_edgePath_Ioo_of_mem_pathComponentPartition (T : Set G.Realization)
     (hT : T ∈ PathComponentPartition (range vertexMk)ᶜ) :
     ∃ e : E(G), T = edgePath e '' Ioo 0 1 := by
   obtain ⟨x, hx⟩ := Partition.nonempty_of_mem hT
-  obtain ⟨e, t, ht, rfl⟩ := vertexMk_or_edgePath x |>.resolve_left
+  obtain ⟨e, t, ht, rfl⟩ := exists_vertexMk_or_exists_edgePath x |>.resolve_left
     <| by simpa using Partition.subset_of_mem hT hx
   use e
   let S := (range G.vertexMk)ᶜ
   let U := edgePath e '' Ioo 0 1
-  have hU_clopen : IsClopen (S ↓∩ U) := preimage_foo_isClopen e
+  have hU_clopen : IsClopen (S ↓∩ U) := isClopen_edgePath_Ioo e
   have hU_pathConn : IsPathConnected U := by
     let f : Ioo (0 : ℝ) 1 → G.Realization := fun x ↦ edgePath e ⟨x.val, ⟨x.prop.1.le, x.prop.2.le⟩⟩
     have hf : Continuous f := (edgePath e).continuous.comp
@@ -471,7 +496,7 @@ lemma pathComponent_eq_edge (T : Set G.Realization)
 
   have hUS : U ⊆ S := by
     rintro _ ⟨t', ht', rfl⟩ ⟨v, hv⟩
-    exact vertexMk_notMem_edgePath_Ioo v e ⟨t', ht', hv.symm⟩
+    exact vertexMk_not_mem_edgePath_Ioo v e ⟨t', ht', hv.symm⟩
   have hxU : edgePath e t ∈ U := mem_image_of_mem _ ht
   rw [(PathComponentPartition S).eq_partOf_of_mem hT hx, pathComponentPartition_partOf, eq_comm]
   ext y
@@ -487,15 +512,15 @@ lemma pathComponent_eq_edge (T : Set G.Realization)
   simp only [mem_preimage, Path.target, A, PT] at h1
   exact h1
 
-lemma Realization.graphLike (T : Set G.Realization)
+lemma Realization.nonempty_homeomorph_Ioo_of_mem_pathComponentPartition (T : Set G.Realization)
     (hT : T ∈ PathComponentPartition (range vertexMk)ᶜ) : Nonempty (T ≃ₜ Ioo (0 : ℝ) 1) := by
-  obtain ⟨e, rfl⟩ := pathComponent_eq_edge T hT
+  obtain ⟨e, rfl⟩ := eq_edgePath_Ioo_of_mem_pathComponentPartition T hT
   let f : Ioo (0 : ℝ) 1 → G.Realization := fun x ↦ edgePath e ⟨x.val, ⟨x.prop.1.le, x.prop.2.le⟩⟩
   have hf_cont : Continuous f :=
     (edgePath e).continuous.comp (continuous_subtype_val.subtype_mk _)
   have h_inj : Injective f := by
     intro x y hxy
-    simpa [Subtype.ext_iff] using edgePath_inj_on_Ioo x.prop hxy
+    simpa [Subtype.ext_iff] using edgePath_inj_of_mem_Ioo x.prop hxy
   have h_range : range f = edgePath e '' Ioo (0 : I) 1 := by
     ext y
     simp only [mem_range, mem_image]

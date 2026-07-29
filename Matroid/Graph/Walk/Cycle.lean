@@ -556,4 +556,107 @@ lemma IsPath.concat_isCyclicWalk {P : WList α β} (hP : G.IsPath P) (he : G.IsL
     (heP : e ∉ P.edge) : G.IsCyclicWalk (P.concat e P.first) := by
   simpa using (hP.reverse.cons_isCyclicWalk (e := e) (by simpa using he) (by simpa)).reverse
 
+/-! ### Decompositions of cyclic walks -/
+
+/-- A member of a nontrivial decomposition of a cyclic walk is a path. -/
+lemma IsCyclicWalk.isPath_of_mem_decomposeTo {P : WList α β} {L : List (WList α β)}
+    [Inhabited α] (hC : G.IsCyclicWalk C) (hdec : C.DecomposeTo L)
+    (hne : ∀ P ∈ L, P.Nonempty) (hcard : 1 < L.length) (hP : P ∈ L) :
+    G.IsPath P := by
+  refine (hC.ne_iff_isPath_of_isSublist (hdec.isSublist_of_mem hP)).mp ?_
+  rintro rfl
+  obtain ⟨n, hn, rfl⟩ := List.getElem_of_mem hP
+  obtain ⟨m, hm, hnm⟩ : ∃ m < L.length, m ≠ n := by
+    match n with
+    | 0 => exact ⟨1, hcard, by omega⟩
+    | _ + 1 => exact ⟨0, by omega, by omega⟩
+  have hdisj : Disjoint E(L[n]) E(L[m]) := by
+    have hpw := List.pairwise_iff_getElem.mp (hdec.disjoint_of_edge_nodup hC.edge_nodup)
+    obtain hgt | hlt := lt_or_gt_of_ne hnm
+    · exact (hpw m n hm hn hgt).symm
+    exact hpw n m hn hm hlt
+  obtain ⟨f, hf⟩ := (hne _ (List.getElem_mem hm)).edgeSet_nonempty
+  exact hdisj.notMem_of_mem_right hf <|
+    (hdec.isSublist_of_mem (List.getElem_mem hm)).edge_subset hf
+
+/-- The index in `C` of the initial vertex of the `i`th piece of a decomposition of a cyclic walk
+into nonempty pieces, together with bounds for the indices of the internal vertices of that
+piece. Here `((L.take i)⁺).length` is the number of edges in the first `i` pieces. -/
+private lemma IsCyclicWalk.decomposeTo_idxOf [DecidableEq α] [Inhabited α]
+    {L : List (WList α β)} (hC : G.IsCyclicWalk C) (hdec : C.DecomposeTo L)
+    (hne : ∀ P ∈ L, P.Nonempty) {i : ℕ} (hi : i < L.length) :
+    C.idxOf L[i].first = ((L.take i)⁺).length ∧
+    ∀ x ∈ L[i].internalVertexSet, ((L.take i)⁺).length < C.idxOf x ∧
+      C.idxOf x < ((L.take (i + 1))⁺).length := by
+  have hne' : L.drop i ≠ [] := by simpa using hi
+  have hsucc := WList.length_appendList_take_succ hi
+  have hL := (hne _ (List.getElem_mem hi)).length_pos
+  have hCl : ((L.take L.length)⁺).length = C.length := by
+    rw [List.take_length, ← hdec.append]
+  have hlen : ((L.take (i + 1))⁺).length ≤ C.length := by
+    rw [← hCl]
+    exact WList.length_appendList_take_mono L (by omega)
+  have hsplit : ∀ m, C.get (((L.take i)⁺).length + m) = ((L.drop i)⁺).get m := by
+    rintro m
+    have h : L⁺ = (L.take i)⁺ ++ (L.drop i)⁺ := by
+      rw [← WList.appendList_append _ hne', List.take_append_drop]
+    rw [hdec.append, h, WList.get_append_add]
+  have hfirst : C.get ((L.take i)⁺).length = L[i].first := by
+    simpa [appendList_first hne' (hdec.chain_eq.drop i)] using hsplit 0
+  refine ⟨by rw [← hfirst, hC.idxOf_get (by omega)], fun x hx ↦ ?_⟩
+  obtain ⟨m, hm0, hml, rfl⟩ := WList.exists_get_of_mem_internalVertexSet hx
+  have hpre : L[i].IsPrefix ((L.drop i)⁺) := by
+    simpa using DecomposeTo.head_isPrefix ⟨hne', rfl, hdec.chain_eq.drop i⟩
+  have hidx : C.idxOf (L[i].get m) = ((L.take i)⁺).length + m := by
+    rw [hpre.get_eq_of_length_ge hml.le, ← hsplit m, hC.idxOf_get (by omega)]
+  omega
+
+/-- The initial vertices of the pieces in a nonempty decomposition of a cyclic walk are distinct. -/
+lemma IsCyclicWalk.map_first_nodup_of_decomposeTo {L : List (WList α β)} [Inhabited α]
+    (hC : G.IsCyclicWalk C) (hdec : C.DecomposeTo L) (hne : ∀ P ∈ L, P.Nonempty) :
+    (L.map WList.first).Nodup := by
+  classical
+  refine List.pairwise_iff_getElem.mpr fun i j hi hj hij ↦ ?_
+  simp only [List.length_map, List.getElem_map, ne_eq] at hi hj ⊢
+  rintro heq
+  have h1 := (hC.decomposeTo_idxOf hdec hne hi).1
+  rw [heq, (hC.decomposeTo_idxOf hdec hne hj).1] at h1
+  exact absurd h1.symm (WList.length_appendList_take_lt hne hij hj.le).ne
+
+/-- Distinct pieces in a nonempty decomposition of a cyclic walk have disjoint interiors. -/
+lemma IsCyclicWalk.pairwise_disjoint_internalVertexSet_of_decomposeTo
+    {L : List (WList α β)} [Inhabited α] (hC : G.IsCyclicWalk C)
+    (hdec : C.DecomposeTo L) (hne : ∀ P ∈ L, P.Nonempty) :
+    L.Pairwise (fun P Q ↦ Disjoint P.internalVertexSet Q.internalVertexSet) := by
+  classical
+  refine List.pairwise_iff_getElem.mpr fun i j hi hj hij ↦ ?_
+  refine Set.disjoint_left.mpr fun x hx hx' ↦ ?_
+  obtain ⟨-, hlt⟩ := (hC.decomposeTo_idxOf hdec hne hi).2 x hx
+  obtain ⟨hgt, -⟩ := (hC.decomposeTo_idxOf hdec hne hj).2 x hx'
+  have hle : ((L.take (i + 1))⁺).length ≤ ((L.take j)⁺).length :=
+    WList.length_appendList_take_mono L (by omega)
+  omega
+
+/-- No internal vertex of a piece in a nonempty cyclic decomposition is the initial vertex of
+another piece. -/
+lemma IsCyclicWalk.internalVertexSet_disjoint_map_first_of_decomposeTo
+    {P : WList α β} {L : List (WList α β)} [Inhabited α] (hC : G.IsCyclicWalk C)
+    (hdec : C.DecomposeTo L) (hne : ∀ P ∈ L, P.Nonempty) (hP : P ∈ L) :
+    Disjoint P.internalVertexSet {x | x ∈ L.map WList.first} := by
+  classical
+  obtain ⟨i, hi, rfl⟩ := List.getElem_of_mem hP
+  refine Set.disjoint_left.mpr fun x hx hx' ↦ ?_
+  simp only [Set.mem_ofPred_eq, List.mem_map] at hx'
+  obtain ⟨Q, hQ, rfl⟩ := hx'
+  obtain ⟨j, hj, rfl⟩ := List.getElem_of_mem hQ
+  obtain ⟨hlt1, hlt2⟩ := (hC.decomposeTo_idxOf hdec hne hi).2 _ hx
+  have heq := (hC.decomposeTo_idxOf hdec hne hj).1
+  obtain hij | hji := lt_or_ge i j
+  · have hle : ((L.take (i + 1))⁺).length ≤ ((L.take j)⁺).length :=
+      WList.length_appendList_take_mono L (by omega)
+    omega
+  have hle : ((L.take j)⁺).length ≤ ((L.take i)⁺).length :=
+    WList.length_appendList_take_mono L (by omega)
+  omega
+
 end Graph

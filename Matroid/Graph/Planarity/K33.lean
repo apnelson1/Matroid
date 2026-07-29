@@ -1,67 +1,27 @@
-import Mathlib.GroupTheory.Perm.Cycle.Concrete
 import Matroid.Graph.Degree.Max
-import Matroid.Graph.Minor.Conn
-import Matroid.Graph.Hom
-import Matroid.Graph.TopologicalMinor
-import Matroid.ForMathlib.Data.Set.IndexedPartition
-import Matroid.Graph.Planarity.CombMap.Basic
+import Matroid.Graph.Planarity.Obstructions
 
+variable {α β : Type*} {G C : Graph α β} {u v : α}
 
-variable {α β E ι : Type*} {G C : Graph α β} {S T : Set α} {u v : α}
-
-open Set Function WList IndexedPartition
+open Set WList
 
 namespace Graph
 
-def Sym2Set (S : Sym2 (Set α)) : Set (Sym2 α) := by
-  refine Sym2.lift ⟨fun A B ↦ (Function.uncurry Sym2.mk) '' (A ×ˢ B), fun A B ↦ ?_⟩ S
-  ext s
-  induction s with | h x y => _
-  simp only [mem_image, mem_prod]
-  grind
-
-@[simps (attr := grind =)]
-def CompletePartite (P : S.IndexedPartition ι) : Graph α (Sym2 α) where
-  vertexSet := ⋃ i, P i
-  edgeSet := ⋃ i, ⋃ j ≠ i, Sym2Set (s(P i, P j))
-  IsLink e u v := e = s(u, v) ∧ ∃ i j, i ≠ j ∧ u ∈ P i ∧ v ∈ P j
-  isLink_symm e he u v := by
-    simp only [and_imp, forall_exists_index]
-    rintro rfl i j hne hui hvj
-    use Sym2.eq_swap, j, i, hne.symm, hvj, hui
-  eq_or_eq_of_isLink_of_isLink e u v w z huv hwz := by grind
-  edge_mem_iff_exists_isLink e := by
-    simp only [ne_eq, Sym2Set, image_uncurry_prod, image2_curry, Sym2.lift_mk, mem_iUnion,
-      mem_image, mem_prod]
-    grind
-  left_mem_of_isLink e u v he := by grind [mem_iUnion]
-
-def IsPartite (G : Graph α β) (ι : Type*) : Prop :=
-  ∃ P : V(G).IndexedPartition ι, ∀ i, (P i).Pairwise (¬ G.Adj · ·)
-
-def IsCompletePartite (G : Graph α β) (ι : Type*) : Prop :=
-  ∃ P : V(G).IndexedPartition ι, (∀ i, (P i).Pairwise (¬ G.Adj · ·)) ∧
-    Pairwise ((fun A B ↦ ∀ a ∈ A, ∀ b ∈ B, G.Adj a b) on P)
-
-variable {ι : Type*} {P : S.IndexedPartition ι} {i j : ι}
-
-lemma IsCompletePartite.isPartite (h : IsCompletePartite G ι) : IsPartite G ι := by
-  obtain ⟨P, hP, hPp⟩ := h
-  exact ⟨P, hP⟩
-
-lemma completePartite_isCompletePartite (P : S.IndexedPartition ι) :
-    (CompletePartite P).IsCompletePartite ι :=
-  ⟨P.induce (by simp), fun i u ↦ by grind [Adj], fun i j hne u hui v hvj ↦ ⟨s(u, v), by grind⟩⟩
-
--- #exit
+lemma prefixUntilLast_append_suffixFromLast (w : WList α β) (P : α → Prop) [DecidablePred P] :
+    w.prefixUntilLast P ++ w.suffixFromLast P = w := by
+  have hends : (w.prefixUntilLast P).last = (w.suffixFromLast P).first := by
+    simp only [prefixUntilLast, suffixFromLast, reverse_last, reverse_first]
+    exact (w.reverse.prefixUntil_last_eq_suffixFrom_first P).symm
+  rw [← reverse_inj_iff, reverse_append hends, prefixUntilLast, suffixFromLast, reverse_reverse,
+    reverse_reverse, prefixUntil_append_suffixFrom]
 
 lemma K33_K5_lemma_aux1 (hCG : C ≤ G) (hC : C.IsCycle) (hu : u ∉ V(C)) (hv : v ∉ V(C)) (huv : u ≠ v)
     (hadj : G.Adj u v) (hu2 : (N(G, u) ∩ V(C)).Nontrivial) (hv2 : (N(G, v) ∩ V(C)).Nontrivial)
     (h : ∃ P, C.IsPath P ∧ (∀ x ∈ P, G.Adj u x ↔ x = P.first) ∧ (∀ x ∈ P, G.Adj v x ↔ x = P.last) ∧
       P.Nonempty) :
     (∃ P₁ P₂ : WList α β, C.IsPath P₁ ∧ C.IsPath P₂ ∧ (∀ x ∈ P₁.vertex.tail.dropLast, ¬ G.Adj u x) ∧
-    (∀ x ∈ P₂.vertex.tail.dropLast, ¬ G.Adj v x) ∧ C.IsCyclicWalk (P₁ ++ P₂)) ∨ (∃ (K : _),
-    Nonempty (Iso (CompleteBipartiteGraph 3 3) K) ∧ Nonempty (K.TopologicalMinor G)) := by
+    (∀ x ∈ P₂.vertex.tail.dropLast, ¬ G.Adj v x) ∧ C.IsCyclicWalk (P₁ ++ P₂)) ∨
+    (CompleteBipartiteGraph 3 3).IsTopologicalMinor G := by
   classical
   obtain ⟨P, hPC, hpPtl, hpPdl, hPne⟩ := h
   have hPfv : ¬ G.Adj v P.first := by
@@ -114,18 +74,20 @@ lemma K33_K5_lemma_aux1 (hCG : C ≤ G) (hC : C.IsCycle) (hu : u ∉ V(C)) (hv :
     gcongr
     exact Q.tail.dropLast.suffixFromLast_isSuffix (G.Adj v)
   have hVQ_suffix' : VQ.IsSuffix Q := hVQ_suffix.trans Q.tail_isSuffix
-  have hUQ'_path : (P ++ Q).toGraph.IsPath UQ := by
+  have hUQ_path : (P ++ Q).toGraph.IsPath UQ := by
     rw [← hPQ.ne_iff_isPath_of_isSublist <| hUQ_prefix'.isSublist.trans
       (isSuffix_append_left ..).isSublist, ← hQne.cons_tail]
     apply_fun WList.length
     grind [Q.tail.dropLast.suffixFromLast_isSuffix (G.Adj v) |>.isSublist.length_le]
-  have hVQ'_path : (P ++ Q).toGraph.IsPath VQ := by
+  have hVQ_path : (P ++ Q).toGraph.IsPath VQ := by
     rw [← hPQ.ne_iff_isPath_of_isSublist ((hVQ_suffix.trans Q.tail_isSuffix).trans
       (isSuffix_append_left ..)).isSublist]
     apply_fun WList.length
     grind [Q.tail.dropLast.suffixFromLast_isSuffix (G.Adj v) |>.isSublist.length_le]
+  -- In one cyclic order the two required clean paths are already visible. In the other, the four
+  -- alternating arcs are exactly the input expected by the one-off `K₃,₃` constructor.
   obtain hT | hF := em (uf ∈ VQ)
-  · refine Or.inl ⟨P ++ UQ, VQ.suffixFromVertex uf, ?_, hVQ'_path.suffix
+  · refine Or.inl ⟨P ++ UQ, VQ.suffixFromVertex uf, ?_, hVQ_path.suffix
       (VQ.suffixFromVertex_isSuffix uf), ?_, ?_, ?_⟩
     · rw [← hPQ.ne_iff_isPath_of_isSublist (hUQ_prefix'.append_left P).isSublist, ← hQne.cons_tail]
       simp only [ne_eq, append_right_inj_iff, cons.injEq, true_and, UQ]
@@ -165,26 +127,79 @@ lemma K33_K5_lemma_aux1 (hCG : C ≤ G) (hC : C.IsCycle) (hu : u ∉ V(C)) (hv :
       hVQ_suffix'.suffixFrom_eq_suffixFrom_of_forall (by grind) hQ.nodup
     rwa [append_assoc, hUQ_eq, hVQ_suf_eq, prefixUntilVertex_append_suffixFromVertex]
   right
-
-  sorry
-  /- Find the first neighbor of u in Q.tail, uf, and the last neighbor of v in Q.dropLast, vl.
-  Such vertices exist because u and v have at least two neighbors in C, yet P contains only one
-  neighbor each, P.first and P.last.
-  If uf appears strictly before vl in Q, we have neighbor of u and v appearing alternatingly:
-  P.first -- P.last -- uf -- vl -- P.first. Moreover, these four vertices are distinct, because
-  1. P is nonempty so P.first ≠ P.last,
-  2. uf is taken from Q.tail, so uf ≠ P.last = Q.first,
-  3. uf appears strictly before vl so uf ≠ vl,
-  4. vl is taken from Q.dropLast, so vl ≠ P.first = Q.last.
-  We construct K3,3 by contracting all but one edge between P.first -- P.last, P.last -- uf,
-  uf -- vl, and vl -- P.first.
-  P.first, uf, and v forms one part of K3,3, and the other part is P.last, vl, and u.
-
-  Otherwise, either uf = vl or uf appears after vl in Q. Then, traversing C from P.first, the first
-  neighbor of u is uf so take the path between them as P₁ and the rest of C as P₂. By construction,
-  P₁ is internally disjoint from N(G, u). P₂ is internally disjoint from N(G, v) because vl is the
-  last neighbor of v in Q.dropLast so after vl, no neighbor of v appears and all of P₂ is after vl.
-  -/
+  -- Middle arc of Q from the first u-neighbor uf to the last v-neighbor vl.
+  let R := (Q.tail.dropLast.prefixUntilLast (G.Adj v)).suffixFrom (G.Adj u)
+  have hPluf : P.last ≠ uf := fun h ↦ hPlu (h ▸ huf)
+  have hufvl : uf ≠ vl := fun h ↦ hF (h ▸ first_mem)
+  have hUQne : UQ.Nonempty := by simp [UQ]
+  have hVQne : VQ.Nonempty := by simp [VQ]
+  have hR_path : (P ++ Q).toGraph.IsPath R :=
+    hQ.sublist <|
+      (((Q.tail.dropLast.prefixUntilLast (G.Adj v)).suffixFrom_isSuffix (G.Adj u)).isSublist.trans
+        (Q.tail.dropLast.prefixUntilLast_isPrefix (G.Adj v)).isSublist).trans
+      (Q.tail.dropLast_isPrefix.isSublist.trans Q.tail_isSuffix.isSublist)
+  let Wmid := Q.tail.dropLast
+  have hufmid : uf ∈ Wmid := by
+    have hufQdl : uf ∈ Q.dropLast := hUQ_prefix.mem last_mem
+    rw [← hQne.cons_tail, hQnt.tail_nonempty.dropLast_cons] at hufQdl
+    obtain heq | huf := mem_cons_iff.mp hufQdl
+    · exact (hPluf (hQf.trans heq.symm)).elim
+    exact huf
+  have huf_not_suf : uf ∉ Wmid.suffixFromLast (G.Adj v) := fun huf ↦
+    hF (by simpa [VQ, mem_concat] using Or.inl huf)
+  have hufpre : uf ∈ Wmid.prefixUntilLast (G.Adj v) := by
+    rw [← prefixUntilLast_append_suffixFromLast Wmid (G.Adj v)] at hufmid
+    exact (mem_of_mem_append hufmid).resolve_right huf_not_suf
+  have hpre_eq : (Wmid.prefixUntilLast (G.Adj v)).prefixUntil (G.Adj u) =
+      Wmid.prefixUntil (G.Adj u) :=
+    Wmid.prefixUntilLast_isPrefix (G.Adj v) |>.prefixUntil_eq_prefixUntil_of_exists
+      ⟨uf, hufpre, huf⟩
+  have hpre : Wmid.prefixUntilLast (G.Adj v) = Wmid.prefixUntil (G.Adj u) ++ R := by
+    unfold R
+    rw [← hpre_eq, prefixUntil_append_suffixFrom]
+  have hmid : Wmid = Wmid.prefixUntil (G.Adj u) ++ R ++ Wmid.suffixFromLast (G.Adj v) := by
+    rw [← hpre]
+    exact (prefixUntilLast_append_suffixFromLast Wmid (G.Adj v)).symm
+  have hRfirst : R.first = uf := by
+    change ((Wmid.prefixUntilLast (G.Adj v)).suffixFrom (G.Adj u)).first = uf
+    rw [← prefixUntil_last_eq_suffixFrom_first, hpre_eq]
+    rfl
+  have hRlast : R.last = vl := by
+    change ((Wmid.prefixUntilLast (G.Adj v)).suffixFrom (G.Adj u)).last = vl
+    rw [suffixFrom_last]
+    have : (Wmid.prefixUntilLast (G.Adj v)).last = (Wmid.suffixFromLast (G.Adj v)).first := by
+      simp only [prefixUntilLast, suffixFromLast, reverse_last, reverse_first]
+      exact (Wmid.reverse.prefixUntil_last_eq_suffixFrom_first (G.Adj v)).symm
+    simpa [vl, VQ, Wmid] using this
+  have hRne : R.Nonempty := (first_ne_last_iff hR_path.nodup).mp (hRfirst ▸ hRlast ▸ hufvl)
+  have hUQ_first : UQ.first = P.last := by simp [UQ, hQf]
+  have hUQlast : UQ.last = R.first := hRfirst.symm
+  have hR_VQ : R.last = VQ.first := hRlast
+  have hQeq : Q = UQ ++ R ++ VQ := by
+    change Q = cons Q.first hQne.firstEdge (Wmid.prefixUntil (G.Adj u)) ++ R ++
+      (Wmid.suffixFromLast (G.Adj v)).concat hQne.lastEdge Q.last
+    refine hQne.concat_dropLast.symm.trans ?_
+    have hdrop : Q.dropLast = cons Q.first hQne.firstEdge Wmid :=
+      (congr_arg WList.dropLast hQne.cons_tail).symm.trans
+        (hQnt.tail_nonempty.dropLast_cons Q.first hQne.firstEdge)
+    rw [hdrop]
+    conv_lhs => rw [hmid]
+    rw [cons_concat, cons_append, ← WList.append_concat, ← cons_append]
+  letI : Inhabited α := ⟨P.first⟩
+  have hdec_RVQ : (R ++ VQ).DecomposeTo [R, VQ] :=
+    (DecomposeTo.append_cons_iff hR_VQ (by simp)).mpr ⟨by simp, by simp [appendList], by simp⟩
+  have hdec_UQRVQ : (UQ ++ (R ++ VQ)).DecomposeTo [UQ, R, VQ] :=
+    (DecomposeTo.append_cons_iff (by simpa [append_first_of_eq hR_VQ] using hUQlast)
+      (by simp)).mpr hdec_RVQ
+  have hdec : (P ++ Q).DecomposeTo [P, UQ, R, VQ] := by
+    rw [hQeq, append_assoc]
+    exact (DecomposeTo.append_cons_iff (by simpa [append_first_of_nonempty hUQne] using
+      hUQ_first.symm) (by simp)).mpr hdec_UQRVQ
+  exact isTopologicalMinor_completeBipartiteGraph_of_alternating_cycle
+    (hPQ.of_le hCG) hdec hPne hUQne hRne hVQne
+    (by simpa using hu) (by simpa using hv) huv
+    (hpPtl P.first first_mem |>.mpr rfl) huf
+    (hpPdl P.last last_mem |>.mpr rfl) (by simpa [hRlast] using hvl) hadj
 
 lemma K33_K5_lemma_aux2 (hCG : C ≤ G) (hC : C.IsCycle) (hu : u ∉ V(C)) (hv : v ∉ V(C)) (huv : u ≠ v)
     (hadj : G.Adj u v) (hu2 : (N(G, u) ∩ V(C)).Nontrivial) (hv2 : (N(G, v) ∩ V(C)).Nontrivial)
@@ -192,8 +207,8 @@ lemma K33_K5_lemma_aux2 (hCG : C ≤ G) (hC : C.IsCycle) (hu : u ∉ V(C)) (hv :
       P.Nil) :
     (∃ P₁ P₂ : WList α β, C.IsPath P₁ ∧ C.IsPath P₂ ∧ (∀ x ∈ P₁.vertex.tail.dropLast, ¬ G.Adj u x) ∧
     (∀ x ∈ P₂.vertex.tail.dropLast, ¬ G.Adj v x) ∧ C.IsCyclicWalk (P₁ ++ P₂)) ∨
-    (∃ (K : _), Nonempty (Iso (CompleteBipartiteGraph 3 3) K) ∧ Nonempty (K.TopologicalMinor G)) ∨
-    (∃ (K : _), Nonempty (Iso (CompleteGraph 5) K) ∧ Nonempty (K.TopologicalMinor G)) := by
+    (CompleteBipartiteGraph 3 3).IsTopologicalMinor G ∨
+    (CompleteGraph 5).IsTopologicalMinor G := by
   have h1 : ∀ x ∈ V(C), ∃ y ∈ V(C), x ≠ y ∧ G.Adj u y ∧ G.Adj v y := by
     intro x hxC
     obtain ⟨P, hP, hPeq⟩ := hC.deleteVerts_singleton_isPathGraph (hu2.mono inter_subset_right) hxC
@@ -261,8 +276,8 @@ lemma K33_K5_lemma (hCG : C ≤ G) (hC : IsCycle C) (hu : u ∉ V(C)) (hv : v �
     (hadj : G.Adj u v) (hu2 : (N(G, u) ∩ V(C)).Nontrivial) (hv2 : (N(G, v) ∩ V(C)).Nontrivial) :
     (∃ P₁ P₂ : WList α β, C.IsPath P₁ ∧ C.IsPath P₂ ∧ (∀ x ∈ P₁.vertex.tail.dropLast, ¬ G.Adj u x) ∧
     (∀ x ∈ P₂.vertex.tail.dropLast, ¬ G.Adj v x) ∧ C.IsCyclicWalk (P₁ ++ P₂)) ∨
-    (∃ (K : _), Nonempty (Iso (CompleteBipartiteGraph 3 3) K) ∧ Nonempty (K.TopologicalMinor G)) ∨
-    (∃ (K : _), Nonempty (Iso (CompleteGraph 5) K) ∧ Nonempty (K.TopologicalMinor G)) := by
+    (CompleteBipartiteGraph 3 3).IsTopologicalMinor G ∨
+    (CompleteGraph 5).IsTopologicalMinor G := by
   by_cases h : ∃ P, C.IsPath P ∧ (∀ x ∈ P, G.Adj u x ↔ x = P.first) ∧
     (∀ x ∈ P, G.Adj v x ↔ x = P.last) ∧ P.Nonempty
   · rw [← or_assoc]
@@ -271,23 +286,26 @@ lemma K33_K5_lemma (hCG : C ≤ G) (hC : IsCycle C) (hu : u ∉ V(C)) (hv : v �
   push Not at h
   exact K33_K5_lemma_aux2 hCG hC hu hv huv hadj hu2 hv2 h
 
--- lemma Kuratowski_aux_1 {G : Graph α β} [G.Finite] (hK5 : ∀ K, Nonempty (Iso (CompleteGraph 5) K) →
---     IsEmpty (K.TopologicalMinor G)) (hK33 : ∀ K, Nonempty (Iso (CompleteBipartiteGraph 3 3) K) →
---     IsEmpty (K.TopologicalMinor G)) : ∃ M : CombinatorialMap G (IncidenceType α β),
---     M.EulerCharacteristic = 1 := by
---   refine Finite.inductionOn_edgeSet G ?_ (P := fun H hH ↦ ∃ M : CombinatorialMap H (IncidenceType α β),
---     M.EulerCharacteristic = 1)
---   rintro H _ hH
---   wlog h3 : 3 < V(H).encard
---   · simp only [not_lt] at h3
---     sorry
---   wlog hconn3 : H.ConnGE 3
---   · obtain ⟨C, hHC, hC3⟩ := exists_isSepSet_encard_lt_of_not_connGE (by norm_cast) hconn3
+/- The intended conclusion of this unfinished theorem has not yet been specified.
+lemma Kuratowski_aux_1 [G.Finite] (hcon : G.Connected) (hK5 : ∀ K, Nonempty
+    (Iso (CompleteGraph 5) K) → IsEmpty (K.TopologicalMinor G)) (hK33 : ∀ K, Nonempty
+    (Iso (CompleteBipartiteGraph 3 3) K) → IsEmpty (K.TopologicalMinor G)) :
+     := by
+  generalize hm : E(G).ncard = m
+  induction m using Nat.strong_induction_on with | h m ih => _
+  subst m
+  wlog h3 : 3 < V(G).ncard
+  · simp only [not_lt] at h3
 
---     sorry
+    sorry
+  wlog hconn3 : G.ConnGE 3
+  · obtain ⟨C, hHC, hC3⟩ := exists_isSepSet_encard_lt_of_not_connGE (by norm_cast) hconn3
+
+    sorry
 
 
   -- sorry
+-/
 
 
 -- theorem K33_not_planar (f : (CompleteBipartiteGraph 3 3).Realization → E)

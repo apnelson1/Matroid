@@ -41,8 +41,8 @@ parameter along the incident edge (when the point lies on an edge). -/
 noncomputable def distToVtx (G : Graph α β) (x : PreRealization G) (v : V(G)) : ℝ≥0∞ :=
   match x with
   | Sum.inl w => G.eDist w.val v.val
-  | Sum.inr ⟨e, t⟩ => min (G.eDist (src e).val v.val + ENNReal.ofReal (t : ℝ))
-      (G.eDist (tgt e).val v.val + ENNReal.ofReal (1 - (t : ℝ)))
+  | Sum.inr ⟨e, t⟩ => min (G.eDist (edgeSource e).val v.val + ENNReal.ofReal (t : ℝ))
+      (G.eDist (edgeTarget e).val v.val + ENNReal.ofReal (1 - (t : ℝ)))
 
 @[simp]
 lemma distToVtx_inl_left (u v : V(G)) : distToVtx G (Sum.inl u) v = G.eDist u.val v.val := rfl
@@ -73,22 +73,22 @@ private lemma distToVtx_triangle (x : PreRealization G) (v w : V(G)) :
     exact G.eDist_triangle u.val w.val v.val
   | inr ⟨e, t⟩ =>
     refine le_trans (min_le_min ?_ ?_) <| (min_add_add_right _ _ _).le
-    · have hs : (G.eDist (src e).val v.val : ℝ≥0∞) ≤
-          (G.eDist (src e).val w.val : ℝ≥0∞) + (G.eDist w.val v.val : ℝ≥0∞) := by
+    · have hs : (G.eDist (edgeSource e).val v.val : ℝ≥0∞) ≤
+          (G.eDist (edgeSource e).val w.val : ℝ≥0∞) + (G.eDist w.val v.val : ℝ≥0∞) := by
         rw [← ENat.toENNReal_add, ENat.toENNReal_le]
-        exact G.eDist_triangle (src e).val w.val v.val
+        exact G.eDist_triangle (edgeSource e).val w.val v.val
       exact (add_le_add_left hs _).trans (le_of_eq (by ring))
-    have ht : (G.eDist (tgt e).val v.val : ℝ≥0∞) ≤
-        (G.eDist (tgt e).val w.val : ℝ≥0∞) + (G.eDist w.val v.val : ℝ≥0∞) := by
+    have ht : (G.eDist (edgeTarget e).val v.val : ℝ≥0∞) ≤
+        (G.eDist (edgeTarget e).val w.val : ℝ≥0∞) + (G.eDist w.val v.val : ℝ≥0∞) := by
       rw [← ENat.toENNReal_add, ENat.toENNReal_le]
-      exact G.eDist_triangle (tgt e).val w.val v.val
+      exact G.eDist_triangle (edgeTarget e).val w.val v.val
     exact (add_le_add ht le_rfl).trans (le_of_eq (by ring))
 
 private lemma iInf_distToVtx_add (x y : PreRealization G) :
     (⨅ v : V(G), distToVtx G x v + distToVtx G y v) = match x with
     | Sum.inl u => distToVtx G y u
-    | Sum.inr ⟨e, t⟩ => min (ENNReal.ofReal (t : ℝ) + distToVtx G y (src e))
-      (ENNReal.ofReal (1 - (t : ℝ)) + distToVtx G y (tgt e)) := by
+    | Sum.inr ⟨e, t⟩ => min (ENNReal.ofReal (t : ℝ) + distToVtx G y (edgeSource e))
+      (ENNReal.ofReal (1 - (t : ℝ)) + distToVtx G y (edgeTarget e)) := by
   match x with
   | Sum.inl u =>
     refine le_antisymm ?_ <| le_iInf fun v ↦ ?_
@@ -147,22 +147,10 @@ lemma preRealizationEDist_comm (G : Graph α β) (x y : PreRealization G) :
     simp only [preRealizationEDist, directDist]
     simp_rw [eq_comm (a := e₁), abs_sub_comm, add_comm]
 
-private lemma eDist_src_tgt_le_one (e : E(G)) : G.eDist (src e).val (tgt e).val ≤ 1 := by
-  simpa [IsLink.walk_length, IsLink.walk_first, IsLink.walk_last, src, tgt] using
+private lemma eDist_edgeSource_edgeTarget_le_one (e : E(G)) :
+    G.eDist (edgeSource e).val (edgeTarget e).val ≤ 1 := by
+  simpa [IsLink.walk_length, IsLink.walk_first, IsLink.walk_last, edgeSource, edgeTarget] using
     (G.isLink_source_target e.prop).walk_isWalk.eDist_le_length
-
--- private lemma eDist_le_add_one_tgt (e : E(G)) (x : α) :
---     (G.eDist x (src e).val : ℝ≥0∞) ≤ (G.eDist x (tgt e).val : ℝ≥0∞) + 1 := by
---   rw [← ENat.toENNReal_one, ← ENat.toENNReal_add, ENat.toENNReal_le]
---   refine (G.eDist_triangle x (tgt e).val (src e).val).trans ?_
---   rw [G.eDist_comm (tgt e).val]
---   exact add_le_add le_rfl (eDist_src_tgt_le_one e)
-
--- private lemma eDist_le_add_one_src (e : E(G)) (x : α) :
---     (G.eDist x (tgt e).val : ℝ≥0∞) ≤ (G.eDist x (src e).val : ℝ≥0∞) + 1 := by
---   rw [← ENat.toENNReal_one, ← ENat.toENNReal_add, ENat.toENNReal_le]
---   refine (G.eDist_triangle x (src e).val (tgt e).val).trans ?_
---   exact add_le_add le_rfl (eDist_src_tgt_le_one e)
 
 private lemma directDist_triangle (x y z : PreRealization G) :
     directDist G x z ≤ directDist G x y + directDist G y z := by
@@ -221,18 +209,20 @@ private lemma eDist_le_distToVtx_add (x : PreRealization G) (v w : V(G)) :
       refine le_trans ?_ <| (h_rearrange ..).le
       simp only [← ENNReal.ofReal_add t.2.1 (sub_nonneg.mpr t.2.2), add_sub_cancel, ofReal_one]
       norm_cast
-      refine (G.eDist_triangle v.val (src e).val w.val).trans ?_
-      refine add_le_add le_rfl (G.eDist_triangle (src e).val (tgt e).val w.val) |>.trans ?_
+      refine (G.eDist_triangle v.val (edgeSource e).val w.val).trans ?_
+      refine add_le_add le_rfl
+        (G.eDist_triangle (edgeSource e).val (edgeTarget e).val w.val) |>.trans ?_
       rw [eDist_comm]
-      exact add_le_add le_rfl (add_le_add (eDist_src_tgt_le_one e) le_rfl)
+      exact add_le_add le_rfl (add_le_add (eDist_edgeSource_edgeTarget_le_one e) le_rfl)
     on_goal 2 =>
       refine le_trans ?_ <| (h_rearrange ..).le
       simp only [← ENNReal.ofReal_add (sub_nonneg.mpr t.2.2) t.2.1, sub_add_cancel, ofReal_one]
       norm_cast
-      refine (G.eDist_triangle v.val (tgt e).val w.val).trans ?_
-      refine add_le_add le_rfl (G.eDist_triangle (tgt e).val (src e).val w.val) |>.trans ?_
-      rw [eDist_comm, eDist_comm (tgt e).val (src e).val]
-      exact add_le_add le_rfl (add_le_add (eDist_src_tgt_le_one e) le_rfl)
+      refine (G.eDist_triangle v.val (edgeTarget e).val w.val).trans ?_
+      refine add_le_add le_rfl
+        (G.eDist_triangle (edgeTarget e).val (edgeSource e).val w.val) |>.trans ?_
+      rw [eDist_comm, eDist_comm (edgeTarget e).val (edgeSource e).val]
+      exact add_le_add le_rfl (add_le_add (eDist_edgeSource_edgeTarget_le_one e) le_rfl)
     all_goals
       refine le_trans ?_ <| add_le_add le_self_add le_self_add
       norm_cast
@@ -263,7 +253,7 @@ private lemma preRealizationEDist_zero_iff (x y : PreRealization G) :
   match x, y with
   | .inl v, .inl w =>
     simp only [preRealizationEDist_inl_right, distToVtx_inl_left, glueRel_inl_iff_glueRelAux,
-      glueRelAux_inl_inj]
+      glueRelAux_inl_inl_iff]
     norm_cast
     simp [Subtype.coe_inj]
   | .inl v, .inr ⟨e, t⟩ =>
@@ -277,7 +267,7 @@ private lemma preRealizationEDist_zero_iff (x y : PreRealization G) :
   | .inr ⟨e, t⟩, .inl v =>
     simp only [preRealizationEDist_inl_right, distToVtx, min_eq_zero, add_eq_zero,
       ofReal_eq_zero, unitInterval.val_le_zero_iff, tsub_le_iff_right, zero_add,
-      unitInterval.one_le_val_iff, glueRel_inr_inl]
+      unitInterval.one_le_val_iff, glueRel_inr_inl_iff]
     norm_cast
     simp only [eDist_eq_zero_iff, Subtype.coe_inj, Subtype.coe_prop]
     tauto
@@ -377,7 +367,7 @@ lemma edgeMk_lipschitz (e : E(G)) : LipschitzWith 1 (edgeMk (G := G) e) :=
 
 /-- Parametrize an edge in the metric realization. -/
 noncomputable def edgePath (e : E(G)) :
-    Path (vertexMk (G := G) (G.src e)) (vertexMk (G := G) (G.tgt e)) where
+    Path (vertexMk (G := G) (G.edgeSource e)) (vertexMk (G := G) (G.edgeTarget e)) where
   toFun := edgeMk (G := G) e
   source' := (G.edgePath e).source
   target' := (G.edgePath e).target
@@ -426,10 +416,10 @@ noncomputable def Preconnected.MetricSpace (h : G.Preconnected) :
   simp only [Realization.edist, Quotient.lift_mk]
   match x, y with
   | inl x, inl y => simp [h x y]
-  | inl x, inr ⟨e, t⟩ => simp [distToVtx, h (tgt e)]
-  | inr ⟨e, t⟩, inl y => simp [distToVtx, h (src e)]
+  | inl x, inr ⟨e, t⟩ => simp [distToVtx, h (edgeTarget e)]
+  | inr ⟨e, t⟩, inl y => simp [distToVtx, h (edgeSource e)]
   | inr ⟨e₁, t₁⟩, inr ⟨e₂, t₂⟩ =>
-    simp [preRealizationEDist, directDist, distToVtx, h (src e₁), h (tgt e₁), h (src e₂),
-      h (tgt e₂), Subtype.exists_of_subtype (src e₁)]
+    simp [preRealizationEDist, directDist, distToVtx, h (edgeSource e₁), h (edgeTarget e₁),
+      h (edgeSource e₂), h (edgeTarget e₂), Subtype.exists_of_subtype (edgeSource e₁)]
 
 end Graph

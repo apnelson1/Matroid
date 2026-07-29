@@ -73,7 +73,7 @@ noncomputable def partialEquivEdgeMk (e' : E(G)) : PartialEquiv (Fin 1 → ℝ) 
     ext i
     obtain rfl : i = 0 := Subsingleton.elim _ _
     obtain ⟨⟨(ht1 : (0 : ℝ) < _), (ht2 : _ < (1 : ℝ))⟩, ht_eq⟩ := Classical.choose_spec h_mem
-    clear t₁ t₂ e; grind [edgePath_inj_on_Ioo ⟨ht1, ht2⟩ ht_eq]
+    clear t₁ t₂ e; grind [edgePath_inj_of_mem_Ioo ⟨ht1, ht2⟩ ht_eq]
   right_inv' x' hx' := by
     simp only [hx', ↓reduceDIte]
     obtain ⟨⟨(ht1 : (0 : ℝ) < _), (ht2 : _ < (1 : ℝ))⟩, _⟩ := Classical.choose_spec hx'
@@ -128,7 +128,7 @@ noncomputable instance : Topology.CWComplex (univ : Set G.Realization) where
     refine continuousOn_quotient _ ?_ _ ?_
     · rw [isOpen_edgePath_image e (by simp) (by simp)]
       exact isOpen_Ioo
-    rw [edgePath_preimage_image e (by simp) (by simp)]
+    rw [preimage_edgePath_image e (by simp) (by simp)]
     let f_pre : G.PreRealization → Fin 1 → ℝ := fun x ↦ match x with
     | Sum.inl _ => 0
     | Sum.inr ⟨e', t'⟩ => fun _ ↦ 2 * t' - 1
@@ -142,7 +142,7 @@ noncomputable instance : Topology.CWComplex (univ : Set G.Realization) where
     obtain ⟨e', t', ⟨ht', rfl⟩, rfl⟩ := hx
     have h_mem : Quotient.mk' _ ∈ edgePath e '' Ioo (0 : I) (1 : I) := ⟨t', ht', rfl⟩
     simp only [h_mem, ↓reduceDIte, comp_apply, partialEquivEdgeMk, f_pre,
-      ← edgePath_inj_on_Ioo ht' h_mem.choose_spec.2.symm]
+      ← edgePath_inj_of_mem_Ioo ht' h_mem.choose_spec.2.symm]
   | _ + 2, ⟨i⟩ => Empty.elim i
   pairwiseDisjoint' := by
     rintro ⟨n₁, i₁⟩ _ ⟨n₂, i₂⟩ _ hne
@@ -156,13 +156,13 @@ noncomputable instance : Topology.CWComplex (univ : Set G.Realization) where
       simpa [Realization.map, Function.onFun, hv]
     | 0, ⟨v₁⟩, 1, ⟨e₂⟩ =>
       simp only [Realization.map, Function.onFun, he, hv, disjoint_singleton_left]
-      exact vertexMk_notMem_edgePath_Ioo v₁ e₂
+      exact vertexMk_not_mem_edgePath_Ioo v₁ e₂
     | 1, ⟨e₁⟩, 0, ⟨v₂⟩ =>
       simp only [Realization.map, Function.onFun, he, hv, disjoint_singleton_right]
-      exact vertexMk_notMem_edgePath_Ioo v₂ e₁
+      exact vertexMk_not_mem_edgePath_Ioo v₂ e₁
     | 1, ⟨e₁⟩, 1, ⟨e₂⟩ =>
       replace hne : e₁ ≠ e₂ := by tauto
-      simpa only [Realization.map, Function.onFun, he, edgePath_Ioo_disjoint_iff_ne]
+      simpa only [Realization.map, Function.onFun, he, disjoint_edgePath_Ioo_iff]
     | n₁ + 2, ⟨i₁⟩, _, _ => exact Empty.elim i₁
     | _, _, n₂ + 2, ⟨i₂⟩ => exact Empty.elim i₂
   mapsTo' n i :=
@@ -171,7 +171,9 @@ noncomputable instance : Topology.CWComplex (univ : Set G.Realization) where
       refine ⟨fun _ ↦ ∅, fun _ ↦ ?_⟩
       simp [mem_sphere_iff_norm, norm_eq_zero_of_subsingleton]
     | 1, ⟨e⟩ => by
-      refine ⟨fun m ↦ match m with | 0 => {⟨src e⟩, ⟨tgt e⟩} | _ => ∅, fun x hx ↦ ?_⟩
+      refine
+        ⟨fun m ↦ match m with | 0 => {⟨edgeSource e⟩, ⟨edgeTarget e⟩} | _ => ∅,
+          fun x hx ↦ ?_⟩
       simp only [mem_sphere_iff_norm, sub_zero, norm_eq_one_iff_fin_1, Fin.isValue,
         Real.norm_eq_abs, zero_le_one, abs_eq] at hx
       obtain hx | hx := hx <;> simp [hx, Realization.map]

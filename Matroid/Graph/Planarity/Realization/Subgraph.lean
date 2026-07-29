@@ -50,11 +50,14 @@ def IsSubgraph.RealizationEmbedding (h : H ≤ G) : H.Realization → G.Realizat
   simp only [RealizationEmbeddingAux, ContinuousMap.coe_mk]
   match x, y with
   | inl u, inl v => simp_all
-  | inl u, inr ⟨e, t⟩ => simp_all [src, tgt, ← Subtype.val_inj (a := u), h.source, h.target]
-  | inr ⟨e, t⟩, inl u => simp_all [src, tgt, ← Subtype.val_inj (a := u), h.source, h.target]
+  | inl u, inr ⟨e, t⟩ =>
+    simp_all [edgeSource, edgeTarget, ← Subtype.val_inj (a := u), h.source, h.target]
+  | inr ⟨e, t⟩, inl u =>
+    simp_all [edgeSource, edgeTarget, ← Subtype.val_inj (a := u), h.source, h.target]
   | inr ⟨e₁, t₁⟩, inr ⟨e₂, t₂⟩ =>
     simp_all only [glueRel_inr_inr_iff, glueRel_inl_iff_glueRelAux, glueRelAux_inr_iff, inl.injEq,
-      src, tgt, exists_eq_left', Subtype.exists, Subtype.mk.injEq, exists_and_left, exists_prop]
+      edgeSource, edgeTarget, exists_eq_left', Subtype.exists, Subtype.mk.injEq,
+      exists_and_left, exists_prop]
     obtain ⟨rfl, rfl⟩ | ⟨u, (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩), h2, (⟨rfl, h1⟩ | ⟨rfl, h1⟩)⟩ := hrel
     · tauto
     all_goals
@@ -70,12 +73,14 @@ private lemma IsSubgraph.RealizationEmbedding_injective (h : H ≤ G) :
     Quotient.eq]
   match x, y with
   | inl u, inl v => simp [Subtype.val_inj]
-  | inl u, inr ⟨e, t⟩ => simp [src, tgt, ← Subtype.val_inj (a := u), h.source, h.target]
-  | inr ⟨e, t⟩, inl u => simp [src, tgt, ← Subtype.val_inj (a := u), h.source, h.target]
+  | inl u, inr ⟨e, t⟩ =>
+    simp [edgeSource, edgeTarget, ← Subtype.val_inj (a := u), h.source, h.target]
+  | inr ⟨e, t⟩, inl u =>
+    simp [edgeSource, edgeTarget, ← Subtype.val_inj (a := u), h.source, h.target]
   | inr ⟨e₁, t₁⟩, inr ⟨e₂, t₂⟩ =>
     simp only [glueRel_inr_inr_iff, Subtype.mk.injEq, glueRel_inl_iff_glueRelAux,
-      glueRelAux_inr_iff, inl.injEq, src, tgt, exists_eq_left', Subtype.exists, exists_and_left,
-      exists_prop, Subtype.coe_inj]
+      glueRelAux_inr_iff, inl.injEq, edgeSource, edgeTarget, exists_eq_left',
+      Subtype.exists, exists_and_left, exists_prop, Subtype.coe_inj]
     rintro (⟨rfl, rfl⟩ | ⟨u, (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩), h2, (⟨rfl, h1⟩ | ⟨rfl, h1⟩)⟩)
     · tauto
     all_goals
@@ -147,7 +152,7 @@ lemma IsSubgraph.RealizationEmbedding_isEmbedding (h : H ≤ G) :
           simp only [Quotient.map_mk, RealizationEmbeddingAux, ContinuousMap.coe_mk] at hx
           have hx' := Quotient.exact hx
           simp only [glueRel_inr_inr_iff, Subtype.mk.injEq, glueRel_inl_iff_glueRelAux,
-            glueRelAux_inr_iff, inl.injEq, src, tgt, exists_eq_left', Subtype.exists,
+            glueRelAux_inr_iff, inl.injEq, edgeSource, edgeTarget, exists_eq_left', Subtype.exists,
             exists_and_left, exists_prop] at hx'
           rcases hx' with ⟨he_eq, ht_eq⟩ |
             ⟨a, (⟨rfl, ha1⟩ | ⟨rfl, ha1⟩), ha2, (⟨rfl, ha3⟩ | ⟨rfl, ha3⟩)⟩
