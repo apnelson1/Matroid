@@ -262,6 +262,22 @@ lemma comapOn_parallel_iff {β : Type*} {φ : α → β} {M : Matroid β} {E : S
     (M.comapOn E φ).Parallel e f ↔ M.Parallel (φ e) (φ f) ∧ e ∈ E ∧ f ∈ E := by
   rw [comapOn, restrict_parallel_iff, comap_parallel_iff]
 
+lemma IsCircuit.mem_iff_mem_of_parallel_dual {C : Set α} (h : M.IsCircuit C)
+    (hef : M✶.Parallel e f) : e ∈ C ↔ f ∈ C := by
+  wlog h' : e ∈ C → f ∈ C generalizing e f with aux
+  · exact (aux hef.symm (by grind)).symm
+  refine ⟨h', fun hfC ↦ ?_⟩
+  obtain rfl | hne := eq_or_ne e f
+  · assumption
+  have hnt := h.isCocircuit_inter_nontrivial (hef.isCircuit_of_ne hne) ⟨f, by grind⟩
+  obtain ⟨x, ⟨⟨hxC, rfl | rfl⟩, h'⟩⟩ := hnt.exists_ne f
+  · assumption
+  contradiction
+
+lemma IsCircuit.mem_iff_mem_of_parallel_bDual {C : Set α} {b : Bool} (h : (M.bDual b).IsCircuit C)
+    (hef : (M.bDual !b).Parallel e f) : e ∈ C ↔ f ∈ C :=
+  h.mem_iff_mem_of_parallel_dual (by simpa)
+
 end Parallel
 
 section Parallel'
@@ -361,6 +377,10 @@ lemma Parallel.project (hef : M.Parallel' e f) (X : Set α) : (M.project X).Para
   refine ⟨hef.mem_ground_left, hef.mem_ground_right, ?_⟩
   simp only [project_closure, ← closure_union_closure_left_eq M {e}, hef.closure_eq_closure,
     closure_union_closure_left_eq]
+
+-- lemma IsCircuit.mem_iff_mem_of_parallel'_dual {C : Set α} (hC : M.IsCircuit C)
+--     (hxy : M✶.Parallel' e f) : e ∈ C ↔ f ∈ C := by
+--   have := hxy.
 
 end Parallel'
 

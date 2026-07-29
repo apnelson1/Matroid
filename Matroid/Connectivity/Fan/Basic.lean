@@ -6,12 +6,14 @@ set_option linter.style.longLine false
 
 open Set List
 
+variable {b c : Bool}
+
 @[simp]
-lemma Bool.bne_right_self {b c : Bool} : (b != (c != b)) = c := by
+lemma Bool.bne_right_self (b c : Bool) : (b != (c != b)) = c := by
   rw [bne_comm, Bool.bne_self_right]
 
 @[simp]
-lemma Bool.beq_not_self_beq {b c : Bool} : (b == !b == c) = !c := by
+lemma Bool.beq_not_self_beq (b c : Bool) : (b == !b == c) = !c := by
   grind [cases Bool]
 
 @[simp]
@@ -22,9 +24,31 @@ lemma Bool.bnot_bne (b c : Bool) : !b != c = (b == c) := by
 lemma Bool.beq_right_self (b c : Bool) : (b == (c == b)) = c := by
   grind [cases Bool]
 
+@[simp]
+lemma Bool.xor_self_beq (b c : Bool) : (b ^^ b == c) = !c := by
+  grind [cases Bool]
+
+@[simp]
+lemma Bool.xor_beq_self (b c : Bool) : (b ^^ c == b) = !c := by
+  grind [cases Bool]
+
+@[simp]
+lemma Bool.beq_self_xor (b c : Bool) : (b == (b ^^ c)) = !c := by
+  grind [cases Bool]
+
+@[simp]
+lemma Bool.beq_xor_self (b c : Bool) : (b == (c ^^ b)) = !c := by
+  grind [cases Bool]
+
 lemma Nat.bodd_sub {a b : ℕ} (hab : a ≤ b) : (b - a).bodd = (b.bodd != a.bodd) := by
   obtain ⟨d, rfl⟩ := exists_add_of_le hab
   simp
+
+@[grind .]
+lemma Nat.add_one_lt_of_bodd_eq {a b : ℕ} (hab : a < b) (hab' : a.bodd = b.bodd) : a + 1 < b := by
+  refine (show a + 1 ≤ b from hab).eq_or_lt.elim ?_ id
+  rintro rfl
+  simp at hab'
 
 namespace Matroid
 

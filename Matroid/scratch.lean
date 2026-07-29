@@ -3,37 +3,30 @@ import Matroid.Graph.Degree.Max
 import Matroid.Graph.Walk.Cycle
 import Matroid.Graph.Constructions.Basic
 
-open Set Graph
+set_option linter.style.longLine false
 
-namespace Graph
+lemma foo {s t r : ℕ} : False := by
+  have hlt : r - (s + 2) < r - s := sorry
+  exact foo (s := s + 2) (r := r) (t := t)
+termination_by r - s
 
-variable {α β : Type} {G : Graph α β}
 
-@[mk_iff]
-structure IsGammaColouring (γ : Type) (G : Graph α β) (c : α → γ) : Prop where
-  adj_colouring : ∀ x y, G.Adj x y → c x ≠ c y
-
-@[mk_iff]
-structure IsGammaKColouring (γ : Type) (G : Graph α β) (c : α → γ) (k : ℕ) : Prop where
-  is_colouring : IsGammaColouring γ G c
-  le_k_colours : (c '' V(G)).encard ≤ k
-
-def IsKColourable (G : Graph α β) (k : ℕ) := ∃ γ : Type, ∃ c : α → γ, IsGammaKColouring γ G c k
-
-theorem n_vertices_of_n_colourable (G : Graph α β) (hl : G.Loopless) (n : ℕ)
-    (hn : V(G).encard ≤ n) : IsKColourable G n := by
-  rw [loopless_iff_forall_ne_of_adj] at hl
-  let c : α → α := fun v ↦ v
-  have h₁ : ∀ x y, G.Adj x y → c x ≠ c y := by
-    intro x y ha
-    specialize hl x y
-    apply hl at ha
-    unfold c
-    exact ha
-  have h₂ : (c '' V(G)).encard ≤ n := by
-    sorry
-  have h₃ : IsGammaKColouring α G c n := by
-    sorry
-  unfold IsKColourable
-  use α
-  use c
+-- /-- If a circuit doesn't contain two particular cojoints `F[s], F[t]` of a fan `F`,
+-- but it contains something between them, then it is an interval. -/
+-- lemma IsFan.exists_eq_interval_of_notMem_mem_notMem {s t r : ℕ} (hF : M.IsFan F b c) (hsr : s < r)
+--     (hrt : r < t) (ht : t < F.length) (hsb : s.bodd = !b) (htb : t.bodd = !b)
+--     (hC : M.IsCircuit C) (hsC : F[s] ∉ C) (hrC : F[r] ∈ C) (htC : F[t] ∉ C) :
+--     ∃ (p q : ℕ) (_ : s < p) (hpq : p < q) (hq : q < t), p.bodd = b ∧ q.bodd = b ∧
+--     C = F.getElems (insert p <| insert q <| {i ∈ Ico p q | i.bodd = !b}) := by
+--   by_cases hs1 : F[s + 1] ∈ C
+--   · obtain ⟨j, hsj, hjt, rfl, rfl⟩ :=
+--       hF.exists_eq_interval_of_notMem_mem_add_one (by lia) ht hsb htb hC hsC hs1 htC
+--     refine ⟨s + 1, j, by simp [hsb, hsj, hjt]⟩
+--   have hs1i : s + 1 < r := by grind
+--   rw [hF.mem_iff_mem₁₂ _ _ (by lia) (by simpa [hsb]) hsC] at hs1
+--   have hlt : r - (s + 2) < r - s := by lia
+--   have hs2i : s + 2 < r := by grind
+--   have hwin := hF.exists_eq_interval_of_notMem_mem_notMem (s := s + 2) (r := r) (t := t) hs2i hrt ht
+--     (by simpa) htb hC hs1 hrC htC
+--   grind
+-- termination_by r - s

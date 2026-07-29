@@ -131,18 +131,15 @@ lemma altBetween_insert_drop_two {L : List α} {p q : ℕ} (hpq : p ≤ q)
   obtain rfl | rfl | i := i; grind; grind
   exact hcon.2 i (by grind) (by lia) (by simp) (by lia) (by grind)
 
-lemma mem_extract_iff_getElem {L : List α} : x ∈ L.extract p q ↔ ∃ (i : ℕ) (hi : i < L.length),
-    p ≤ i ∧ i < q ∧ L[i] = x := by
-  simp only [extract_eq_take_drop, mem_take_iff_getElem, getElem_drop, length_drop, lt_inf_iff,
-    exists_and_left]
-  refine ⟨by grind, ?_⟩
-  rintro ⟨i, hpi, hiq, hi, rfl⟩
-  obtain ⟨d, rfl⟩ := exists_add_of_le hpi
-  grind
+-- lemma mem_extract_iff_getElem {L : List α} : x ∈ L.extract p q ↔ ∃ (i : ℕ) (hi : i < L.length),
+--     p ≤ i ∧ i < q ∧ L[i] = x := by
+--   simp only [extract_eq_take_drop, mem_take_iff_getElem, getElem_drop, length_drop, lt_inf_iff,
+--     exists_and_left]
+--   refine ⟨by grind, ?_⟩
+--   rintro ⟨i, hpi, hiq, hi, rfl⟩
+--   obtain ⟨d, rfl⟩ := exists_add_of_le hpi
+--   grind
 
-lemma List.Nodup.getElem_mem_extract_iff (hL : L.Nodup) {hi : i < L.length} :
-    L[i] ∈ L.extract p q ↔ p ≤ i ∧ i < q := by
-  simp [mem_extract_iff_getElem, hL.getElem_inj_iff, hi]
 
 lemma altBetween_subset_extract (L : List α) (p q : ℕ) (b : Bool) :
     L.altBetween p q b ⊆ {x | x ∈ L.extract p q} := by
@@ -600,12 +597,11 @@ lemma IsFan.exists_eq_interval_of_notMem_mem_notMem {s i t : ℕ} (hF : M.IsFan 
     exact ⟨s + 1, j, by simp [hsb, hsj, hjt]⟩
   have hs1i : s + 1 < i := by grind
   rw [hF.mem_iff_mem₁₂ _ _ (by lia) (by simpa [hsb]) hsC] at hs1
-  have hlt : i - (s + 2) < i - s := by lia
   have hs2i : s + 2 < i := by grind
   have hwin := hF.exists_eq_interval_of_notMem_mem_notMem (s := s + 2) (i := i) (t := t) hs2i hit ht
     (by simpa) htb hC hs1 hiC htC
   grind
-termination_by i - s
+-- termination_by i - s
 
 @[grind .]
 lemma IsFan.length_ge_four_of_eq_ground [M.Simple] [M✶.Simple] (hF : M.IsFan F b c)

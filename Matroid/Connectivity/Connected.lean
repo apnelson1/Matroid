@@ -206,6 +206,11 @@ lemma connected_iff_of_nonempty (hM : M.Nonempty) :
   rw [connected_iff, and_iff_right hM]
   grind [connectedTo_self]
 
+lemma connected_iff_exists : M.Connected ↔ ∃ e ∈ M.E, ∀ f ∈ M.E, M.ConnectedTo e f := by
+  refine ⟨fun h ↦ ?_, fun ⟨e, he⟩ ↦ ⟨⟨e, he.1⟩, fun x y hx hy ↦ (he.2 x hx).symm.trans (he.2 y hy)⟩⟩
+  obtain ⟨e, he⟩ := h.nonempty
+  exact ⟨e, he, fun f hf ↦ h.forall_connectedTo he hf⟩
+
 lemma Connected.connectedTo (hM : M.Connected) (x y : α) (hx : x ∈ M.E := by aesop_mat)
     (hy : y ∈ M.E := by aesop_mat) : M.ConnectedTo x y :=
   hM.forall_connectedTo hx hy

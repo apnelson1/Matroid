@@ -7,7 +7,7 @@ namespace Matroid
 
 variable {α β : Type*} {F : List α} {b c d : Bool} {M : Matroid α}
 
-#exit
+
 structure IsRotaryFan (M : Matroid α) (F : List α) (b : Bool) : Prop where
   isFan : M.IsFan F b (!b)
   isTriangle : (M.bDual b).IsTriangle {F[F.length - 2], F[F.length - 1], F[0]}
@@ -108,6 +108,54 @@ lemma IsRotaryFan.setOf_eq_ground (h : M.IsRotaryFan F b) (hM : M.TutteConnected
   simp [insert_subset_iff, getElem_mem_dropLast (show F.length - 2 < F.length - 1 by grind),
     getElem_mem_dropLast (show 0 < F.length - 1 by grind)]
 
+lemma IsRotaryFan.restrict_connected (hF : M.IsRotaryFan F b) : (M ↾ {e | e ∈ F}).Connected := by
+  wlog hb : b = false generalizing F b with aux
+  · obtain rfl : b = true := by grind
+    simpa using aux hF.reverse rfl
+  subst hb
+  refine connected_iff_exists.2 ⟨F[0], by simp, fun f hf ↦ ?_⟩
+  obtain ⟨rfl | i, hi, rfl⟩ := getElem_of_mem hf
+  · simp
+  suffices hC : ∃ C ⊆ {e | e ∈ F}, M.IsCircuit C ∧ F[0] ∈ C ∧ F[i + 1] ∈ C by
+    obtain ⟨C, hCss, hC, h0C, hiC⟩ := hC
+    exact (hC.isCircuit_restrict_of_subset hCss).mem_connectedTo_mem h0C hiC
+  obtain hi' | hne := eq_or_ne (i + 2) F.length
+  · exact ⟨_, by simp [insert_subset_iff], hF.isTriangle.isCircuit, by simp, by simp [← hi']⟩
+  have hC := hF.isFan.isCircuit_interval (p := 0) (q := i + 1 + (!i.bodd).toNat) (by lia) (by grind)
+    rfl (by simp) (by simp)
+  refine ⟨_, getElems_subset_toSet .., hC, by simp [hF.isFan.nodup], ?_⟩
+  cases h : i.bodd with simp [hF.isFan.nodup, h]
+
+/-- A rotary fan is the entire matroid iff the matroid is connected. -/
+lemma IsRotaryFan.setOf_eq_ground_iff (hF : M.IsRotaryFan F b) :
+    {e | e ∈ F} = M.E ↔ M.Connected := by
+  refine ⟨fun h ↦ ?_, fun h ↦ hF.setOf_eq_ground h.tutteConnected_two⟩
+  rw [← M.restrict_ground_eq_self]
+  exact h ▸ hF.restrict_connected
+
+lemma IsRotaryFan.contract_delete (h : M.IsRotaryFan F false) (hlen : 4 < F.length) :
+    (M ／ {F[1]} ＼ {F[0]}).IsRotaryFan F.tail.tail false := by
+  have h6 : 6 ≤ F.length := sorry
+  obtain ⟨n, hn⟩ := Nat.exists_eq_add_of_le' h6
+  refine ⟨?_, ?_, ?_⟩
+  have := h.isFan.contract_head
+  have := (h.isFan.contract_head (by lia) (by simp)).delete_head (by grind) (fun _ ↦ ?_)
+  · simpa
+  · suffices ¬M✶.Parallel F[1] F[F.length - 1 - 1 + 1] by
+      simpa [delete_parallel_iff, h.isFan.nodup.getElem_inj_iff]
+    exact fun hp ↦ by simpa using h.dual.isFan.eq_eq_of_parallel h6 (by lia) hp
+  · suffices (M ／ {F[0]}).IsTriangle {F[n + 4], F[n + 5], F[2]} by
+      simpa [hn, add_assoc, h.isFan.nodup.getElem_inj_iff]
+
+  sorry
+
+lemma IsRotaryFan.eRk_eq (hF : M.IsRotaryFan F b) : 2 * M.eRk {e | e ∈ F} = F.length := by
+  wlog hb : b = false generalizing F b with aux
+  · simpa using aux hF.reverse (by grind)
+  subst hb
+  have := (hF.isFan.tail (by grind)).eRk_eq
+  simp at this
+
 /-- An even fan in a three-connected matroid whose initial element is (co)spanned by the
 other elements is a rotary fan -/
 lemma IsFan.isRotaryFan_of_tutteConnected_three_of_mem_closure (h : M.IsFan F b (!b))
@@ -135,3 +183,20 @@ lemma IsFan.isRotaryFan_of_tutteConnected_three_of_mem_closure (h : M.IsFan F b 
     (by grind [mem_of_mem_dropLast]) h.subset_ground)] at hss
   refine mem_of_mem_of_subset ?_ hss
   simp [h.get_mem_ground, mem_dropLast_iff h.nodup h.ne_nil, getLast_eq_getElem]
+
+lemma IsRotaryFan.exists_btw_of_isNonspanningCircuit (h : M.IsRotaryFan F b) {C : Set α}
+    (hM : M.TutteConnected 2) (hC : M.IsNonspanningCircuit C)
+    (hnss : C ≠ F.getElems {i | i.bodd = !b}) : ∃ (p q r : ℕ) (hpq : p < q)
+    (hq : q < F.length) (hr : r < F.length), p.bodd = !b ∧ q.bodd = !b ∧ r.bodd = !b ∧
+    F[p] ∉ C ∧ F[q] ∉ C ∧ F[r] ∈ C := by
+  _
+
+    -- p.bodd = !b) p < q
+    -- ∃ (p q r : ZMod n), btw p q r ∧ p ≠ q ∧ p ≠ r ∧ J true p ∉ C ∧ J true q ∈ C ∧ J true r ∉ C := by
+
+lemma IsRotaryFan.foo (h : M.IsRotaryFan F b) (hM : M.TutteConnected 2) {C : Set α}
+    (hC : M.IsNonspanningCircuit C) (hne : C ≠ F.getElems {i | i.bodd = !b}) :
+    ∃ (p q : ℕ) (hp : p < F.length) (hpq : p < q) (hq : q < F.length) (hpb : p.bodd = b)
+    (hqb : q.bodd = b), C = F.getElems (insert p <| insert q <| {i ∈ Ico p q | i.bodd = !b})
+    ∨ C = F.getElems (insert p <| insert q <| {i ∈ Iio p ∪ Ico q F.length | i.bodd = !b}) := by
+  _
