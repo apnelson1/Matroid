@@ -60,6 +60,10 @@ lemma IsRotaryFan.rotate (h : M.IsRotaryFan F b) (n : ℕ) :
     Nat.mod_eq_of_lt (show 1 < J.length by grind), Nat.mod_eq_of_lt (show 2 < J.length by grind)]
   exact hJ.isFan.isTriangle_bDual (by grind)
 
+-- lemma IsRotaryFan.rotate' (h : M.IsRotaryFan F b) (n : ℕ) :
+--     M.IsRotaryFan (F.rotateLeft n) (n.bodd != b) := by
+--   rw [rotateLeft_eq]
+
 lemma IsRotaryFan.reverse (h : M.IsRotaryFan F b) : M.IsRotaryFan F.reverse (!b) := by
   refine ⟨by simpa using h.isFan.reverse, ?_, ?_⟩
   · simp only [length_reverse, getElem_reverse, tsub_self, tsub_zero,
@@ -133,12 +137,27 @@ lemma IsRotaryFan.setOf_eq_ground_iff (hF : M.IsRotaryFan F b) :
   rw [← M.restrict_ground_eq_self]
   exact h ▸ hF.restrict_connected
 
+#check List.rotate
+
+lemma IsRotaryFan.parallel_iff_eq (h : M.IsRotaryFan F b) {i j} {hi : i < F.length}
+    {hj : j < F.length} : M.Parallel F[i] F[j] ↔ i = j := by
+
+  wlog hi : i = 1 generalizing i j F b with aux
+  · have := aux (h.rotate (F.length - 1 + i)) (i := 1) (j := (j + F.length + 1 - i) % F.length)
+      (hi := by grind [length_rotate])
+      (hj := by grw [length_rotate, Nat.mod_lt _ (by grind)]) rfl
+    obtain ⟨n, hn⟩ := Nat.exists_eq_add_of_le' h.length_ge
+    rw [eq_comm, mod_] at this
+    -- simp [hn, ← add_assoc, add_comm _ n] at this
+
+
 lemma IsRotaryFan.contract_delete (h : M.IsRotaryFan F false) (hlen : 4 < F.length) :
-    (M ／ {F[1]} ＼ {F[0]}).IsRotaryFan F.tail.tail false := by
+    (M ＼ {F[0]} ／ {F[1]}).IsRotaryFan F.tail.tail false := by
   have h6 : 6 ≤ F.length := sorry
   obtain ⟨n, hn⟩ := Nat.exists_eq_add_of_le' h6
+
   refine ⟨?_, ?_, ?_⟩
-  have := h.isFan.contract_head
+  · have := (h.isFan.delete_head' (by lia) ?_ (by simp)).contract_head' (by grind) ?_ (by simp)
   have := (h.isFan.contract_head (by lia) (by simp)).delete_head (by grind) (fun _ ↦ ?_)
   · simpa
   · suffices ¬M✶.Parallel F[1] F[F.length - 1 - 1 + 1] by

@@ -1,7 +1,7 @@
 import Mathlib.Analysis.InnerProductSpace.PiL2 -- inefficient import
 import Mathlib.Topology.UniformSpace.Path
 import Mathlib.Topology.Separation.Connected
-import Matroid.ForMathlib.List
+import Matroid.ForMathlib.List.Basic
 import Mathlib.Analysis.Complex.Circle
 import Mathlib.Topology.MetricSpace.Basic
 
@@ -33,4 +33,3 @@ lemma foo (γ : JordanCurve α) (hu : u ∈ range γ.toFun) (hv : v ∈ range γ
     (hP : range P.toFun ∩ range γ.toFun = {u, v}) :
     ∃ S₁ S₂ S₃, S₁ ∪ S₂ ∪ S₃ ∪ range γ.toFun ∪ range P.toFun = univ ∧
     IsOpen S₁ ∧ IsOpen S₂ ∧ IsOpen S₃ ∧ IsConnected S₁ ∧ IsConnected S₂ ∧ IsConnected S₃ ∧
-    

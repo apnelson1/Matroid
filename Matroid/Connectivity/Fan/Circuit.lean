@@ -1,9 +1,9 @@
 import Matroid.Connectivity.Fan.Basic
 import Matroid.Connectivity.Triangle
 import Matroid.Connectivity.Separation.Vertical
+import Matroid.ForMathlib.List.Set
 
 open Set List
-
 
 variable {α : Type*} {M : Matroid α} {X Y C K T : Set α} {e f g x y : α} {b c d : Bool}
     {J : Bool → List α} {L : List α} {n i j p q r : ℕ} {F J : List α} {b c : Bool}
@@ -407,11 +407,12 @@ lemma IsFan.eq_eq_of_parallel (h : M.IsFan F b c) (hF : 6 ≤ F.length) {hi : i 
   · obtain hib | hib := i.bodd.eq_or_eq_not b
     · exact False.elim <| (h.isTriangle_getElem_of_eq i (by lia) hib).indep₁₃.not_dep hC.dep
     by_cases! h2i : i < 2
-    · grind [h.mem_or_mem₁₂ (i + 2) (C := {F[i], F[i + 2]}) (by lia) (by simpa [hib] using hC)]
+    · have hcon := h.mem_or_mem₁₂ (i + 2) (C := {F[i], F[i + 2]}) (by lia) (by simpa [hib] using hC)
+      simp [h.nodup.getElem_inj_iff, add_assoc] at hcon
     obtain ⟨i, rfl⟩ := Nat.exists_eq_add_of_le' h2i
     have hwin := h.mem_or_mem₀₁ i {F[i + 2], F[i + 4]} (by lia) <| by
       simpa [show i.bodd = !b by simpa using hib]
-    grind
+    simp [h.nodup.getElem_inj_iff] at hwin
   obtain rfl | i := i
   · obtain rfl | rfl := b
     · cases hdb : d.bodd

@@ -1,8 +1,7 @@
 import Mathlib.Data.Nat.Bits
 import Mathlib.Algebra.Ring.Parity
-
--- variable {α : Type*} {X Y C K T : Set α} {e f g x y : α} {b c d : Bool}
---     {J : Bool → List α} {L : List α} {n i j : ℕ}
+import Mathlib.Order.Basic
+import Matroid.ForMathlib.Bool
 
 lemma Nat.bodd_eq_odd (n : ℕ) : n.bodd = Odd n := by
   induction n with
@@ -39,3 +38,13 @@ lemma Bool.toNat_bodd (b : Bool) : b.toNat.bodd = b := by
 @[grind! .]
 lemma Nat.bodd_toNat_le (n : ℕ) : n.bodd.toNat ≤ n := by
   cases n with grind
+
+lemma Nat.bodd_sub {a b : ℕ} (hab : a ≤ b) : (b - a).bodd = (b.bodd != a.bodd) := by
+  obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hab
+  simp
+
+lemma Nat.add_one_lt_of_bodd_eq {a b : ℕ} (hab : a < b) (hab' : a.bodd = b.bodd) : a + 1 < b := by
+  have := eq_or_lt_of_le (show a + 1 ≤ b from hab)
+  refine (show a + 1 ≤ b from hab).eq_or_lt.elim ?_ id
+  rintro rfl
+  simp at hab'

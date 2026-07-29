@@ -1,5 +1,5 @@
 import Matroid.Graph.WList.Ops
-import Matroid.ForMathlib.List
+import Matroid.ForMathlib.List.Basic
 
 open Set Function List Nat WList
 

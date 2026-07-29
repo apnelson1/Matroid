@@ -228,7 +228,7 @@ digraph "import_graph" {
   "Matroid.Graph.Connected.Defs" -> "Matroid.Graph.Connected.Construction";
   "Matroid.ForMathlib.LinearAlgebra.Finsupp" [shape=ellipse];
   "Matroid.ForMathlib.Card" [shape=ellipse];
-  "Matroid.ForMathlib.List" [shape=ellipse];
+  "Matroid.ForMathlib.List.Basic" [shape=ellipse];
   "Matroid.Finitize" [shape=ellipse];
   "Matroid.Rank.Skew" -> "Matroid.Finitize";
   "Matroid.Graph.Connected.Basic" [shape=ellipse];
@@ -260,7 +260,7 @@ digraph "import_graph" {
   "Matroid.ForMathlib.Partition.Induce" -> "Matroid.ForMathlib.Partition.Set";
   "Matroid.Graph.WList.Sublist" [shape=ellipse];
   "Matroid.Graph.WList.Ops" -> "Matroid.Graph.WList.Sublist";
-  "Matroid.ForMathlib.List" -> "Matroid.Graph.WList.Sublist";
+  "Matroid.ForMathlib.List.Basic" -> "Matroid.Graph.WList.Sublist";
   "Matroid.Constructions.Project" [shape=ellipse];
   "Matroid.Graph.Forest" [shape=ellipse];
   "Matroid.Graph.Distance" -> "Matroid.Graph.Forest";

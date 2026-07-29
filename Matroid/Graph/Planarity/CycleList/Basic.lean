@@ -1,6 +1,7 @@
 import Mathlib.Data.List.Cycle
 import Mathlib.Data.List.Fold
 import Mathlib.Data.List.SplitBy
+import Matroid.ForMathlib.List.SplitBy
 import Mathlib.Data.PNat.Defs
 import Mathlib.Tactic.Simproc.VecPerm
 

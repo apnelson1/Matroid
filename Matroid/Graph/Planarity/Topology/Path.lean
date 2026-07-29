@@ -2,7 +2,7 @@ import Mathlib.Analysis.InnerProductSpace.PiL2 -- inefficient import
 import Mathlib.Topology.UniformSpace.Path
 import Mathlib.Topology.Separation.Connected
 import Mathlib.Geometry.Polygon.Basic -- inefficient import
-import Matroid.ForMathlib.List
+import Matroid.ForMathlib.List.Basic
 import Mathlib.Probability.ProbabilityMassFunction.Basic
 
 universe u
