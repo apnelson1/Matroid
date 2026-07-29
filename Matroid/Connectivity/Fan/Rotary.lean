@@ -142,12 +142,42 @@ lemma IsRotaryFan.setOf_eq_ground_iff (hF : M.IsRotaryFan F b) :
 lemma IsRotaryFan.parallel_iff_eq (h : M.IsRotaryFan F b) {i j} {hi : i < F.length}
     {hj : j < F.length} : M.Parallel F[i] F[j] ↔ i = j := by
 
-  wlog hi : i = 1 generalizing i j F b with aux
-  · have := aux (h.rotate (F.length - 1 + i)) (i := 1) (j := (j + F.length + 1 - i) % F.length)
+  wlog hij : i < j generalizing i j with aux
+  · obtain rfl | hne := eq_or_ne i j
+    · simp [h.isFan.isNonloop (show F[i] ∈ F by simp)]
+    rw [parallel_comm, aux (hj := hi) (hi := hj) (by lia), eq_comm]
+  wlog hb : b = false generalizing b with aux
+  · _
+  obtain rfl | j := j; lia
+  induction i generalizing F j b with
+  | zero =>
+    suffices ¬ M.Parallel F[0] F[j + 1] by simpa
+    intro hp
+    obtain rfl | rfl := b
+    ·
+    -- obtain rfl | j := j; lia
+    -- simp only [Nat.right_eq_add, Nat.add_eq_zero_iff, one_ne_zero, and_false, iff_false]
+    -- sorry
+  | succ i ih =>
+    obtain rfl | j := j; lia
+    have hwin := ih (h.rotate 1) (j := j) (hj := by grind [length_rotate])
+      (hi := by grind [length_rotate]) (by lia)
+    simpa [getElem_rotate, Nat.mod_eq_of_lt hi, Nat.mod_eq_of_lt hj] using hwin
+
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_lt hij
+
+  wlog hi1 : i = 1 generalizing i j F b with aux
+  · convert aux (h.rotate (F.length - 1 + i)) (i := 1) (j := (j + F.length + 1 - i) % F.length)
       (hi := by grind [length_rotate])
-      (hj := by grw [length_rotate, Nat.mod_lt _ (by grind)]) rfl
+      (hj := by grw [length_rotate, Nat.mod_lt _ (by grind)]) rfl using 1
+    · sorry
+    obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_lt hi
+    simp [hk, show j + (i + k + 1) + 1 - i = j + k + 2 by lia]
+
+
+    rw []
     obtain ⟨n, hn⟩ := Nat.exists_eq_add_of_le' h.length_ge
-    rw [eq_comm, mod_] at this
+
     -- simp [hn, ← add_assoc, add_comm _ n] at this
 
 
