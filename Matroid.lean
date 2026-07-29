@@ -20,6 +20,8 @@ import Matroid.Connectivity.Extension
 import Matroid.Connectivity.Fan.Basic
 import Matroid.Connectivity.Fan.Circuit
 -- import Matroid.Connectivity.Fan.Cyclic
+-- import Matroid.Connectivity.Fan.Rotary
+-- import Matroid.Connectivity.Fan.ThreeConnected
 -- import Matroid.Connectivity.Fan.Wheel
 import Matroid.Connectivity.Minor
 import Matroid.Connectivity.Nat
@@ -36,8 +38,10 @@ import Matroid.Connectivity.Separation.Two
 import Matroid.Connectivity.Separation.Vertical
 -- import Matroid.Connectivity.Separation._vert_diag
 import Matroid.Connectivity.Skew
+-- import Matroid.Connectivity.Splitter.Basic
 -- import Matroid.Connectivity.Splitter.Cretaceous
 -- import Matroid.Connectivity.Splitter.Cretaceous-WIP
+-- import Matroid.Connectivity.Splitter.Fan
 import Matroid.Connectivity.Splitter.TutteTriangle
 import Matroid.Connectivity.Triangle
 import Matroid.Constructions.Matching
@@ -112,28 +116,22 @@ import Matroid.Graph.Matching.Konigs
 import Matroid.Graph.Matrix
 import Matroid.Graph.Minor.Conn
 import Matroid.Graph.Minor.Defs
--- import Matroid.Graph.Planarity.CWComplex.DualGraph
+-- import Matroid.Graph.Partite
 -- import Matroid.Graph.Planarity.CombMap.Basic
 -- import Matroid.Graph.Planarity.CombMap.Equiv
 -- import Matroid.Graph.Planarity.CycleList.Basic
--- import Matroid.Graph.Planarity.Defs
--- import Matroid.Graph.Planarity.Drawing
 import Matroid.Graph.Planarity.GraphContinuum.Basic
--- import Matroid.Graph.Planarity.K33
+-- import Matroid.Graph.Planarity.GraphContinuum.EdgeCircuit
+-- import Matroid.Graph.Planarity.GraphContinuum.EdgeEndpoints
+-- import Matroid.Graph.Planarity.Obstructions
 import Matroid.Graph.Planarity.Realization.Basic
 import Matroid.Graph.Planarity.Realization.CWComplex
-import Matroid.Graph.Planarity.Realization.Celluar
 import Matroid.Graph.Planarity.Realization.Metric
 import Matroid.Graph.Planarity.Realization.Subgraph
-import Matroid.Graph.Planarity.Realization.Weak
 import Matroid.Graph.Planarity.Topology.Circle
 import Matroid.Graph.Planarity.Topology.Circuit
 import Matroid.Graph.Planarity.Topology.ConnPartition
--- import Matroid.Graph.Planarity.Topology.Curve
--- import Matroid.Graph.Planarity.Topology.JCT
 -- import Matroid.Graph.Planarity.Topology.Path
--- import Matroid.Graph.Planarity.Topology.Plane
--- import Matroid.Graph.Planarity.Topology.PolygonalPath
 import Matroid.Graph.Simple
 import Matroid.Graph.Subgraph.Basic
 import Matroid.Graph.Subgraph.Compatible

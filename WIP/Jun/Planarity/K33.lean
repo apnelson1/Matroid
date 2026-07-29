@@ -133,11 +133,10 @@ lemma K33_K5_lemma_aux1 (hCG : C ≤ G) (hC : C.IsCycle) (hu : u ∉ V(C)) (hv :
   have hufvl : uf ≠ vl := fun h ↦ hF (h ▸ first_mem)
   have hUQne : UQ.Nonempty := by simp [UQ]
   have hVQne : VQ.Nonempty := by simp [VQ]
-  have hR_path : (P ++ Q).toGraph.IsPath R :=
-    hQ.sublist <|
-      (((Q.tail.dropLast.prefixUntilLast (G.Adj v)).suffixFrom_isSuffix (G.Adj u)).isSublist.trans
-        (Q.tail.dropLast.prefixUntilLast_isPrefix (G.Adj v)).isSublist).trans
-      (Q.tail.dropLast_isPrefix.isSublist.trans Q.tail_isSuffix.isSublist)
+  have hR_path : (P ++ Q).toGraph.IsPath R := hQ.sublist <|
+    (((Q.tail.dropLast.prefixUntilLast (G.Adj v)).suffixFrom_isSuffix (G.Adj u)).isSublist.trans
+      (Q.tail.dropLast.prefixUntilLast_isPrefix (G.Adj v)).isSublist).trans
+    (Q.tail.dropLast_isPrefix.isSublist.trans Q.tail_isSuffix.isSublist)
   let Wmid := Q.tail.dropLast
   have hufmid : uf ∈ Wmid := by
     have hufQdl : uf ∈ Q.dropLast := hUQ_prefix.mem last_mem
@@ -155,11 +154,9 @@ lemma K33_K5_lemma_aux1 (hCG : C ≤ G) (hC : C.IsCycle) (hu : u ∉ V(C)) (hv :
     Wmid.prefixUntilLast_isPrefix (G.Adj v) |>.prefixUntil_eq_prefixUntil_of_exists
       ⟨uf, hufpre, huf⟩
   have hpre : Wmid.prefixUntilLast (G.Adj v) = Wmid.prefixUntil (G.Adj u) ++ R := by
-    unfold R
     rw [← hpre_eq, prefixUntil_append_suffixFrom]
   have hmid : Wmid = Wmid.prefixUntil (G.Adj u) ++ R ++ Wmid.suffixFromLast (G.Adj v) := by
-    rw [← hpre]
-    exact (prefixUntilLast_append_suffixFromLast Wmid (G.Adj v)).symm
+    exact hpre ▸ (prefixUntilLast_append_suffixFromLast Wmid (G.Adj v)).symm
   have hRfirst : R.first = uf := by
     change ((Wmid.prefixUntilLast (G.Adj v)).suffixFrom (G.Adj u)).first = uf
     rw [← prefixUntil_last_eq_suffixFrom_first, hpre_eq]
@@ -189,17 +186,16 @@ lemma K33_K5_lemma_aux1 (hCG : C ≤ G) (hC : C.IsCycle) (hu : u ∉ V(C)) (hv :
   have hdec_RVQ : (R ++ VQ).DecomposeTo [R, VQ] :=
     (DecomposeTo.append_cons_iff hR_VQ (by simp)).mpr ⟨by simp, by simp [appendList], by simp⟩
   have hdec_UQRVQ : (UQ ++ (R ++ VQ)).DecomposeTo [UQ, R, VQ] :=
-    (DecomposeTo.append_cons_iff (by simpa [append_first_of_eq hR_VQ] using hUQlast)
-      (by simp)).mpr hdec_RVQ
+    (DecomposeTo.append_cons_iff (by simpa [append_first_of_eq hR_VQ] using hUQlast) (by simp)).mpr
+      hdec_RVQ
   have hdec : (P ++ Q).DecomposeTo [P, UQ, R, VQ] := by
     rw [hQeq, append_assoc]
     exact (DecomposeTo.append_cons_iff (by simpa [append_first_of_nonempty hUQne] using
       hUQ_first.symm) (by simp)).mpr hdec_UQRVQ
-  exact isTopologicalMinor_completeBipartiteGraph_of_alternating_cycle
-    (hPQ.of_le hCG) hdec hPne hUQne hRne hVQne
-    (by simpa using hu) (by simpa using hv) huv
-    (hpPtl P.first first_mem |>.mpr rfl) huf
-    (hpPdl P.last last_mem |>.mpr rfl) (by simpa [hRlast] using hvl) hadj
+  exact isTopologicalMinor_completeBipartiteGraph_of_alternating_cycle (hPQ.of_le hCG) hdec hPne
+    hUQne hRne hVQne (by simpa using hu) (by simpa using hv) huv
+    (hpPtl P.first first_mem |>.mpr rfl) huf (hpPdl P.last last_mem |>.mpr rfl)
+    (by simpa [hRlast] using hvl) hadj
 
 lemma K33_K5_lemma_aux2 (hCG : C ≤ G) (hC : C.IsCycle) (hu : u ∉ V(C)) (hv : v ∉ V(C)) (huv : u ≠ v)
     (hadj : G.Adj u v) (hu2 : (N(G, u) ∩ V(C)).Nontrivial) (hv2 : (N(G, v) ∩ V(C)).Nontrivial)

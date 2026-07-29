@@ -313,6 +313,70 @@ theorem subset_of_not_disjoint_of_path (P : Path (map 0 u 0) (map 0 v 0))
     continuous_subtype_val, hA_open⟩ ⟨⟨x, hxe⟩, hxP⟩
   exact fun y hy ↦ (show (⟨y, hy⟩ : openCell 1 e) ∈ A by simp [hA_univ])
 
+
+/-- First, we need a helper showing that any closed cell is covered by finitely many open cells.
+This follows directly from `CWComplex.cellFrontier_subset_finite_openCell` since
+`closedCell n i = openCell n i ∪ cellFrontier n i`. -/
+lemma CWComplex.closedCell_subset_finite_openCell (n : ℕ) (i : cell K n) :
+    ∃ (I : Π m, Finset (cell K m)), closedCell n i ⊆ ⋃ (m ≤ n) (j ∈ I m), openCell m j := by
+  obtain ⟨I, hI⟩ := CWComplex.cellFrontier_subset_finite_openCell n i
+  let I' : Π m, Finset (cell K m) := fun m ↦ if heq : m = n then ({heq ▸ i} : Finset _) else I m
+  use I'
+  sorry -- Define a new `I'` where `I' m = I m` for `m < n` and `I' n = {i}`.
+
+/-- The main lemma: A compact set in a CW complex intersects only finitely many open cells. -/
+lemma CWComplex.finite_openCell_inter_of_isCompact {A : Set E} (hA : IsCompact A) (hAC : A ⊆ K) :
+    { ni : Σ n, cell K n | (A ∩ openCell ni.1 ni.2).Nonempty }.Finite := by
+  -- by_contra h_inf
+
+  -- 1. Since the set of intersected cells is infinite, we can choose one point from each.
+  choose f hf using fun (ni : Σ n, cell K n) (hni : (A ∩ openCell ni.1 ni.2).Nonempty) => hni
+  let S := { f ni hni | (ni : Σ n, cell K n) (hni : (A ∩ openCell ni.1 ni.2).Nonempty) }
+
+  -- 2. Observe that `S ⊆ A`.
+  have hSA : S ⊆ A := by
+    rintro _ ⟨ni, hni, rfl⟩
+    exact (hf ni hni).1
+
+  -- 3. We claim that ANY subset `S' ⊆ S` is closed in `C` (and therefore in `X`).
+  have h_subset_closed : ∀ S' ⊆ S, IsClosed S' := by
+    intro S' hS'
+    -- By the weak topology of CW complexes, a set is closed if its intersection
+    -- with every closed cell is closed.
+    refine CWComplex.isClosed_of_isClosed_inter_openCell_or_isClosed_inter_closedCell
+      (hS'.trans hSA |>.trans hAC) fun n hnpos j ↦ Or.inr <| Set.Finite.isClosed ?_
+    obtain ⟨I, hI⟩ := CWComplex.closedCell_subset_finite_openCell n j
+    refine Set.Finite.subset ?_ (inter_subset_inter_right _ hI)
+    simp only [inter_iUnion]
+    apply Set.Finite.biUnion (sorry) fun i hi ↦ Set.Finite.biUnion (Finset.finite_toSet (I i))
+      fun c hc ↦ ?_
+
+    -- `closedCell n j` is covered by finitely many open cells (using the helper above).
+    -- Since `S'` has AT MOST one point in each open cell (because open cells are disjoint),
+    -- `S' ∩ closedCell n j` must be a FINITE set.
+    -- In a `T2Space`, any finite set is closed, so `IsClosed (S' ∩ closedCell n j)` is true.
+    sorry
+
+  -- 4. Since every subset of `S` is closed, `S` is a discrete, closed subspace of `X`.
+  -- Because `S` is closed and contained in the compact set `A`, `S` itself must be compact.
+  have hS_closed : IsClosed S := h_subset_closed S Subset.rfl
+  have hS_compact : IsCompact S := IsCompact.of_isClosed_subset hA hS_closed hSA
+
+  -- 5. A compact space where every subset is closed must be finite.
+  have hS_finite : S.Finite := by
+    apply hS_compact.finite
+    refine isDiscrete_iff_forall_exists_isOpen.mpr fun x hx ↦ ?_
+
+    -- You can prove this using the fact that the singleton cover of `S` is an open cover
+    -- (since their complements are closed by `h_subset_closed`), which must have a finite subcover.
+    sorry
+
+  -- 6. But `S` was constructed by picking exactly one point from an infinite set of disjoint
+  -- open cells, meaning `S` is in bijection with the infinite index set.
+  -- This contradicts `hS_finite`.
+  sorry
+
+
 /- Cycle & Jordan curve correspondence
 
   Given a CW complex `K`, a subset of `K` is a jordan curve iff it is a cycle of its one skeleton.
@@ -435,3 +499,5 @@ theorem CWComplex.dualGraph_abstract_dual [JCTSpace E] (S : Set (cell (univ : Se
   so `S` must contain a cycle in one skeleton graph. From before, we showed that a cycle is an edge
   cut of the dual graph. Since bond is a minimal edge cut, `S` must be the cycle. -/
   sorry
+
+

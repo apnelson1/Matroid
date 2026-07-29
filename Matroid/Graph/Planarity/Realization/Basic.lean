@@ -209,9 +209,8 @@ theorem glueRel_inr_inr_iff (e₁ e₂ : E(G)) (t₁ t₂ : I) :
   exact trans_of G.glueRel (symm_of G.glueRel h₁) h₂
 
 @[simp↓]
-theorem glueRel_inr_inr_iff_of_isNonloopAt
-    (e : E(G)) (he : G.IsNonloopAt e (edgeSource e)) (t₁ t₂ : I) :
-    G.glueRel (Sum.inr ⟨e, t₁⟩) (Sum.inr ⟨e, t₂⟩) ↔ t₁ = t₂ := by
+theorem glueRel_inr_inr_iff_of_isNonloopAt (e : E(G)) (he : G.IsNonloopAt e (edgeSource e))
+    (t₁ t₂ : I) : G.glueRel (Sum.inr ⟨e, t₁⟩) (Sum.inr ⟨e, t₂⟩) ↔ t₁ = t₂ := by
   simp only [glueRel_inr_inr_iff, true_and, glueRel_inl_iff_glueRelAux, glueRelAux_inr_iff,
     inl.injEq, exists_eq_left', or_iff_left_iff_imp, forall_exists_index, and_imp]
   grind
@@ -238,8 +237,7 @@ def edgePath (e : E(G)) : Path (vertexMk (edgeSource e)) (vertexMk (edgeTarget e
 
 section edgePath
 
-lemma vertexMk_not_mem_edgePath_Ioo (v : V(G)) (e : E(G)) :
-    vertexMk v ∉ edgePath e '' Ioo 0 1 := by
+lemma vertexMk_not_mem_edgePath_Ioo (v : V(G)) (e : E(G)) : vertexMk v ∉ edgePath e '' Ioo 0 1 := by
   rintro ⟨t, ht, heq⟩
   have := Quotient.exact heq
   simp only [glueRel_inr_inl_iff] at this
@@ -261,8 +259,7 @@ lemma disjoint_edgePath_Ioo_iff (e₁ e₂ : E(G)) :
   simp only [glueRel_inr_inr_iff, glueRel_inl_iff_glueRelAux, glueRelAux_inr_iff] at this
   grind
 
-lemma edgePath_inj_of_mem_Ioo (h₁ : (t₁ : ℝ) ∈ Ioo 0 1)
-    (h : edgePath e t₁ = edgePath e t₂) :
+lemma edgePath_inj_of_mem_Ioo (h₁ : (t₁ : ℝ) ∈ Ioo 0 1) (h : edgePath e t₁ = edgePath e t₂) :
     t₁ = t₂ := by
   obtain ⟨-, rfl⟩ | ⟨v, hv₁, hv₂⟩ := (glueRel_inr_inr_iff ..).mp (Quotient.exact h)
   · rfl
@@ -390,8 +387,7 @@ theorem joined_vertexMk_of_connBetween {x y : α} (h : G.ConnBetween x y) :
   obtain ⟨w, hw, rfl, rfl⟩ := h
   exact joined_vertexMk_of_isWalk hw
 
-theorem Preconnected.joined_vertexMk_quotientMk
-    {v0 : α} (hv0 : v0 ∈ V(G)) (hG : G.Preconnected)
+theorem Preconnected.joined_vertexMk_quotientMk {v0 : α} (hv0 : v0 ∈ V(G)) (hG : G.Preconnected)
     (a : G.PreRealization) : Joined (vertexMk ⟨v0, hv0⟩) ⟦a⟧ := by
   match a with
   | inl v =>
@@ -439,8 +435,7 @@ lemma iUnion_edgePath_Ioo : ⋃ (e : E(G)), edgePath e '' Ioo 0 1 = G.edgeInteri
   obtain ⟨e', t', ht', rfl⟩ := exists_vertexMk_or_exists_edgePath y |>.resolve_left hyS
   grind
 
-lemma isClopen_edgePath_Ioo (e : E(G)) :
-    IsClopen (G.edgeInteriorSet ↓∩ edgePath e '' Ioo 0 1) := by
+lemma isClopen_edgePath_Ioo (e : E(G)) : IsClopen (G.edgeInteriorSet ↓∩ edgePath e '' Ioo 0 1) := by
   have hU_open : IsOpen (edgePath e '' Ioo 0 1) := by
     rw [isOpen_edgePath_image e (by simp) (by simp)]
     exact isOpen_Ioo

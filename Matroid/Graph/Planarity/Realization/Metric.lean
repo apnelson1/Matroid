@@ -1,4 +1,4 @@
-import Matroid.Graph.Planarity.Realization.Weak
+import Matroid.Graph.Planarity.Realization.Basic
 
 /-!
 # The unit-edge metric realization of a graph
@@ -327,22 +327,22 @@ lemma metricTopology_eq :
       (eMetricSpace G).toUniformSpace.toTopologicalSpace := by
   rfl
 
-/-- The carrier identity from the weak realization to the metric realization. -/
-def weakToMetric (x : Weak G) : Metric G := x
+-- /-- The carrier identity from the weak realization to the metric realization. -/
+-- def weakToMetric (x : Weak G) : Metric G := x
 
-/-- The carrier identity from the metric realization to the weak realization. -/
-def metricToWeak (x : Metric G) : Weak G := x
+-- /-- The carrier identity from the metric realization to the weak realization. -/
+-- def metricToWeak (x : Metric G) : Weak G := x
 
 /-- The pre-realization projection with the metric topology on its codomain. -/
 def preToMetric (x : G.PreRealization) : Metric G :=
   Quotient.mk' (s := G.glueRel) x
 
-/-- The weak and metric realizations have the same underlying points. -/
-def carrierEquiv : Weak G ≃ Metric G := Equiv.refl _
+-- /-- The weak and metric realizations have the same underlying points. -/
+-- def carrierEquiv : Weak G ≃ Metric G := Equiv.refl _
 
-/-- The two pre-realization projections agree on underlying points. -/
-theorem preToMetric_eq_weakToMetric_comp :
-    preToMetric (G := G) = weakToMetric ∘ preToWeak G := rfl
+-- /-- The two pre-realization projections agree on underlying points. -/
+-- theorem preToMetric_eq_weakToMetric_comp :
+--     preToMetric (G := G) = weakToMetric ∘ preToWeak G := rfl
 
 namespace Metric
 
@@ -398,11 +398,11 @@ theorem continuous_preToMetric : Continuous (preToMetric (G := G)) := by
   change Continuous (Metric.edgeMk (G := G) e)
   exact (Metric.edgeMk_lipschitz e).continuous
 
-/-- The weak topology is finer than the unit-edge metric topology. -/
-theorem continuous_weakToMetric : Continuous (weakToMetric (G := G)) := by
-  rw [(preToWeak_isQuotientMap G).continuous_iff]
-  rw [← preToMetric_eq_weakToMetric_comp]
-  exact continuous_preToMetric
+-- /-- The weak topology is finer than the unit-edge metric topology. -/
+-- theorem continuous_weakToMetric : Continuous (weakToMetric (G := G)) := by
+--   rw [(preToWeak_isQuotientMap G).continuous_iff]
+--   rw [← preToMetric_eq_weakToMetric_comp]
+--   exact continuous_preToMetric
 
 end Realization
 
