@@ -129,7 +129,7 @@ lemma not_matroidalDual_K5 [Nonempty α] (G : Graph α _) : ¬ (CompleteGraph 5)
     (Matroid.three_le_girth _) ?_ (by simp) hHcon (by use 0, by simp, 1, by simp, by simp)
   rw [mul_add] at this
   norm_num at this
-  all_goals sorry
+  all_goals simp_all
 
 lemma not_matroidalDual_K33 [Nonempty α] (G : Graph α _) :
     ¬ (CompleteBipartiteGraph 3 3).matroidalDual G := by
@@ -140,7 +140,7 @@ lemma not_matroidalDual_K33 [Nonempty α] (G : Graph α _) :
     (by use Sum.inl 0, by simp, Sum.inr 0, by simp, by simp)
   rw [mul_add] at this
   norm_num at this
-  all_goals sorry
+  all_goals simp_all
 
 end matroidalDual
 
