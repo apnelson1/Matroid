@@ -1,6 +1,7 @@
 import Matroid.Modular.Basic
 import Matroid.ForMathlib.Set
 import Matroid.Constructions.Truncate
+import Matroid.Triangle
 
 universe u
 
@@ -1213,6 +1214,42 @@ lemma Skew.isCircuit_contract_of_nontrivial {C} (hXC : M.Skew X C) (hC : M.IsCir
   have he : M.IsLoop e := hXC.inter_subset_loops ⟨heX, heC⟩
   have heC := he.isCircuit.eq_of_subset_isCircuit (by simpa) (by simpa)
   simp [← heC] at hCnt
+
+lemma IsCircuit.isCircuit_contract_iff_skew {C} (hC : M.IsCircuit C) (hXC : Disjoint X C)
+    (hX : X ⊆ M.E := by aesop_mat) : (M ／ X).IsCircuit C ↔ M.Skew X C := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.isCircuit_contract hC hXC⟩
+  rw [skew_iff_contract_restrict_eq_restrict, hC.restrict_eq_circuitOn, h.restrict_eq_circuitOn]
+
+lemma IsCircuit.isCircuit_contract_iff_skew_of_nontrivial {C} (hC : M.IsCircuit C)
+    (hnt : C.Nontrivial) (hX : X ⊆ M.E := by aesop_mat) : (M ／ X).IsCircuit C ↔ M.Skew X C := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.isCircuit_contract_of_nontrivial hC hnt⟩
+  rw [skew_iff_contract_restrict_eq_restrict, hC.restrict_eq_circuitOn, h.restrict_eq_circuitOn]
+
+lemma IsCircuit.contractElem_isCircuit_of_notMem_closure {C} (hC : M.IsCircuit C)
+    (heC : e ∉ M.closure C) : (M ／ {e}).IsCircuit C := by
+  by_cases! he : e ∉ M.E
+  · rwa [contractElem_eq_self he]
+  rwa [hC.isCircuit_contract_iff_skew (by simpa using notMem_subset (M.subset_closure C) heC),
+    (isNonloop_of_notMem_closure heC).skew_left_iff]
+
+lemma IsTriangle.contractElem_isTriangle_of_notMem_closure {T} (hT : M.IsTriangle T)
+    (he : e ∉ M.closure T) : (M ／ {e}).IsTriangle T :=
+  ⟨hT.isCircuit.contractElem_isCircuit_of_notMem_closure he , hT.three_elements⟩
+
+lemma isCircuit_contractElem_iff_of_notMem {C} (heC : e ∉ C) (he : M.IsNonloop e) :
+    (M ／ {e}).IsCircuit C ↔ (M.IsCircuit C ∧ e ∉ M.closure C) ∨ (M.IsCircuit (insert e C)) := by
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · obtain hC | hC := h.isCircuit_or_isCircuit_insert_of_contractElem
+    · refine .inl ⟨hC, fun hecl ↦ ?_⟩
+      rw [hC.isCircuit_contract_iff_skew (by simpa), he.skew_left_iff] at h
+      contradiction
+    exact .inr hC
+  rintro (⟨hC, hecl⟩ | hC)
+  · rwa [hC.isCircuit_contract_iff_skew (by simpa), he.skew_left_iff]
+  obtain rfl | hne := C.eq_empty_or_nonempty
+  · simp [he.not_isLoop] at hC
+  have hwin := hC.contract_sdiff_isCircuit (K := C) hne (by simp)
+  rwa [insert_sdiff_of_notMem _ heC, sdiff_self, insert_empty_eq] at hwin
 
 lemma Indep.contract_indep_iff_skew {C} (hI : M.Indep I) (hCE : C ⊆ M.E := by aesop_mat) :
     (M ／ C).Indep I ↔ M.Skew I C := by

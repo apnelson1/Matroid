@@ -60,6 +60,11 @@ lemma IsRotaryFan.rotate (h : M.IsRotaryFan F b) (n : ℕ) :
     Nat.mod_eq_of_lt (show 1 < J.length by grind), Nat.mod_eq_of_lt (show 2 < J.length by grind)]
   exact hJ.isFan.isTriangle_bDual (by grind)
 
+
+lemma isRotaryFan_iff_forall (hF : 2 ≤ F.length) : M.IsRotaryFan F b ↔ ∀ i (hi : i < F.length),
+    (M.bDual (i.bodd != b)).IsTriangle {F[i], F[(i + 1) % F.length]'(by grind), F[(i + 2) % F.length]} := by
+  _
+
 -- lemma IsRotaryFan.rotate' (h : M.IsRotaryFan F b) (n : ℕ) :
 --     M.IsRotaryFan (F.rotateLeft n) (n.bodd != b) := by
 --   rw [rotateLeft_eq]
@@ -137,66 +142,78 @@ lemma IsRotaryFan.setOf_eq_ground_iff (hF : M.IsRotaryFan F b) :
   rw [← M.restrict_ground_eq_self]
   exact h ▸ hF.restrict_connected
 
-#check List.rotate
+lemma IsRotaryFan.eConn_eq (h : M.IsRotaryFan F b) : M.eConn {e | e ∈ F} = 0 := by
+  refine h.isFan.eConn_eq_zero_of_mem_closure_mem_closure ?_ ?_
+  · refine mem_of_mem_of_subset h.isTriad.mem_closure₂ <| closure_subset_closure _ ?_
+    exact pair_subset (getElem_mem_tail _ (by grind) _) (getElem_mem_tail _ (by grind) _)
+  refine mem_of_mem_of_subset h.isTriangle.mem_closure₂ <| closure_subset_closure _ ?_
+  exact pair_subset (getElem_mem_dropLast (by grind)) (getElem_mem_dropLast (by grind))
 
-lemma IsRotaryFan.parallel_iff_eq (h : M.IsRotaryFan F b) {i j} {hi : i < F.length}
-    {hj : j < F.length} : M.Parallel F[i] F[j] ↔ i = j := by
+lemma IsRotaryFan.restrict_self (h : M.IsRotaryFan F b) : (M ↾ {e | e ∈ F}).IsRotaryFan F b := by
+  refine ⟨?_, ?_, ?_⟩
 
+/-- This needs the length hypothesis, since a `4`-whirl has a weird parallel pair. -/
+lemma IsRotaryFan.parallel_iff_eq (h : M.IsRotaryFan F b) (h4 : 4 < F.length) {i j}
+    {hi : i < F.length} {hj : j < F.length} : M.Parallel F[i] F[j] ↔ i = j := by
   wlog hij : i < j generalizing i j with aux
   · obtain rfl | hne := eq_or_ne i j
     · simp [h.isFan.isNonloop (show F[i] ∈ F by simp)]
     rw [parallel_comm, aux (hj := hi) (hi := hj) (by lia), eq_comm]
-  wlog hb : b = false generalizing b with aux
-  · _
   obtain rfl | j := j; lia
   induction i generalizing F j b with
   | zero =>
     suffices ¬ M.Parallel F[0] F[j + 1] by simpa
     intro hp
     obtain rfl | rfl := b
-    ·
-    -- obtain rfl | j := j; lia
-    -- simp only [Nat.right_eq_add, Nat.add_eq_zero_iff, one_ne_zero, and_false, iff_false]
-    -- sorry
+    · obtain ⟨hj0, hj1⟩ : j ≠ 0 ∧ j ≠ 1 := by simpa [h.isFan.nodup.getElem_inj_iff] using
+        (h.isFan.isTriangle_getElem_of_eq 0 (by grind) rfl).notMem_of_mem_of_parallel hp (by simp)
+      obtain hjl : j + 1 = F.length - 1 := by
+        simpa [h.isFan.nodup.getElem_inj_iff, hj0] using
+        h.isTriad.isCircuit.mem_iff_mem_of_parallel_bDual hp
+      have hwin := h.isTriangle.notMem_of_mem_of_parallel hp
+      grind [h.isFan.nodup.getElem_inj_iff]
+    have h1 := (h.isFan.isTriangle_bDual (by grind)).isCircuit.mem_iff_mem_of_parallel_bDual hp
+    have h2 := h.isTriad.notMem_of_mem_of_parallel hp (by simp)
+    have h3 := h.isTriangle.isCircuit.mem_iff_mem_of_parallel_bDual hp
+    obtain ⟨rfl, h4⟩ : j = 1 ∧ F.length = 4 := by grind [h.isFan.nodup.getElem_inj_iff]
+    have h4' := (h.isFan.isTriangle_getElem 2 (by lia)).isCircuit.mem_iff_mem_of_parallel_bDual
+      hp.symm
+    simp [h.isFan.nodup.getElem_inj_iff] at h4'
   | succ i ih =>
     obtain rfl | j := j; lia
     have hwin := ih (h.rotate 1) (j := j) (hj := by grind [length_rotate])
-      (hi := by grind [length_rotate]) (by lia)
+      (hi := by grind [length_rotate]) (by simpa) (by lia)
     simpa [getElem_rotate, Nat.mod_eq_of_lt hi, Nat.mod_eq_of_lt hj] using hwin
-
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_lt hij
-
-  wlog hi1 : i = 1 generalizing i j F b with aux
-  · convert aux (h.rotate (F.length - 1 + i)) (i := 1) (j := (j + F.length + 1 - i) % F.length)
-      (hi := by grind [length_rotate])
-      (hj := by grw [length_rotate, Nat.mod_lt _ (by grind)]) rfl using 1
-    · sorry
-    obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_lt hi
-    simp [hk, show j + (i + k + 1) + 1 - i = j + k + 2 by lia]
-
-
-    rw []
-    obtain ⟨n, hn⟩ := Nat.exists_eq_add_of_le' h.length_ge
-
-    -- simp [hn, ← add_assoc, add_comm _ n] at this
-
 
 lemma IsRotaryFan.contract_delete (h : M.IsRotaryFan F false) (hlen : 4 < F.length) :
     (M ＼ {F[0]} ／ {F[1]}).IsRotaryFan F.tail.tail false := by
+  wlog hE : {e | e ∈ F} = M.E generalizing M with aux
+  ·
   have h6 : 6 ≤ F.length := sorry
+  have hgr := @h.isFan.nodup.getElem_inj_iff
   obtain ⟨n, hn⟩ := Nat.exists_eq_add_of_le' h6
 
   refine ⟨?_, ?_, ?_⟩
-  · have := (h.isFan.delete_head' (by lia) ?_ (by simp)).contract_head' (by grind) ?_ (by simp)
-  have := (h.isFan.contract_head (by lia) (by simp)).delete_head (by grind) (fun _ ↦ ?_)
-  · simpa
-  · suffices ¬M✶.Parallel F[1] F[F.length - 1 - 1 + 1] by
-      simpa [delete_parallel_iff, h.isFan.nodup.getElem_inj_iff]
-    exact fun hp ↦ by simpa using h.dual.isFan.eq_eq_of_parallel h6 (by lia) hp
-  · suffices (M ／ {F[0]}).IsTriangle {F[n + 4], F[n + 5], F[2]} by
-      simpa [hn, add_assoc, h.isFan.nodup.getElem_inj_iff]
+  · have hwin := (h.isFan.delete_head' (by lia) ?_ (by simp)).contract_head' (by grind) ?_ (by simp)
+    · simpa using hwin
+    · simp [h.dual.parallel_iff_eq hlen]
+    simp [delete_parallel_iff, h.parallel_iff_eq hlen]
+  · simp only [bDual_false, length_tail, hn, Nat.add_one_sub_one, Nat.reduceSubDiff, getElem_tail,
+      add_assoc, Nat.reduceAdd, zero_add]
+    rw [isTriangle_iff, encard_insert_of_notMem (by grind), encard_pair (by grind),
+      and_iff_left (show (2 : ℕ∞) + 1 = 3 from rfl)]
+    refine IsCircuit.isCircuit_contractElem_of_insert ?_ (by grind) (by simp)
+    rw [delete_isCircuit_iff]
 
-  sorry
+  -- have := (h.isFan.contract_head (by lia) (by simp)).delete_head (by grind) (fun _ ↦ ?_)
+  -- · simpa
+  -- · suffices ¬M✶.Parallel F[1] F[F.length - 1 - 1 + 1] by
+  --     simpa [delete_parallel_iff, h.isFan.nodup.getElem_inj_iff]
+  --   exact fun hp ↦ by simpa using h.dual.isFan.eq_eq_of_parallel h6 (by lia) hp
+  -- · suffices (M ／ {F[0]}).IsTriangle {F[n + 4], F[n + 5], F[2]} by
+  --     simpa [hn, add_assoc, h.isFan.nodup.getElem_inj_iff]
+
+  -- sorry
 
 lemma IsRotaryFan.eRk_eq (hF : M.IsRotaryFan F b) : 2 * M.eRk {e | e ∈ F} = F.length := by
   wlog hb : b = false generalizing F b with aux

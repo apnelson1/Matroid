@@ -204,8 +204,8 @@ lemma IsTriangle.isNonColoop₂ (h : M.IsTriangle {e, f, g}) : M.IsNonColoop f :
 lemma IsTriangle.isNonColoop₃ (h : M.IsTriangle {e, f, g}) : M.IsNonColoop g :=
   h.isNonColoop_of_mem <| by simp
 
-lemma IsTriangle.notMem_of_mem_of_parallel (h : M.IsTriangle T) (heT : e ∈ T)
-    (hef : M.Parallel e f) (hne : e ≠ f) : f ∉ T := by
+lemma IsTriangle.notMem_of_mem_of_parallel (h : M.IsTriangle T) (hef : M.Parallel e f) (heT : e ∈ T)
+    (hne : e ≠ f) : f ∉ T := by
   intro hfT
   obtain rfl := h.isCircuit.eq_of_superset_isCircuit (hef.isCircuit_of_ne hne) (by grind)
   have h23 := encard_pair hne ▸ h.three_elements
@@ -214,7 +214,7 @@ lemma IsTriangle.notMem_of_mem_of_parallel (h : M.IsTriangle T) (heT : e ∈ T)
 lemma IsTriangle.eq_of_parallel_mem_mem (h : M.IsTriangle T) (hef : M.Parallel e f)
     (heT : e ∈ T) (hfT : f ∈ T) : e = f := by
   contrapose hfT
-  exact h.notMem_of_mem_of_parallel heT hef hfT
+  exact h.notMem_of_mem_of_parallel hef heT hfT
 
 lemma IsTriangle.parallel_contract₁ (h : M.IsTriangle {e, f, g}) : (M ／ {e}).Parallel f g := by
   rw [parallel_iff_isCircuit h.ne₂₃]

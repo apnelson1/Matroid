@@ -160,6 +160,24 @@ lemma Cyclic.contract {A : Set α} (hA : M.Cyclic A) (C : Set α) : (M ／ C).Cy
     ← subset_union_left]
   exact hA e heA
 
+lemma IsCircuit.isCircuit_or_isCircuit_insert_of_contractElem (hC : (M ／ {e}).IsCircuit C) :
+    M.IsCircuit C ∨ M.IsCircuit (insert e C) := by
+  obtain ⟨C', hC', hCC', hC'e⟩ := hC.exists_subset_isCircuit_of_contract
+  by_cases heC' : e ∈ C'
+  · simp [show insert e C = C' by grind, hC']
+  simp [show C = C' by grind, hC']
+
+lemma IsCircuit.isCircuit_contract_of_union {X C} (h : M.IsCircuit (X ∪ C)) (hdj : Disjoint X C)
+    (hne : C.Nonempty) : (M ／ X).IsCircuit C := by
+  have hwin := h.contract_isCircuit (C := X) (subset_union_left.ssubset_of_ne ?_)
+  · rwa [union_sdiff_cancel_left hdj.inter_eq.subset] at hwin
+  rwa [Ne, eq_comm, union_eq_left, ← sdiff_eq_empty, hdj.sdiff_eq_right, ← Ne,
+    ← nonempty_iff_ne_empty]
+
+lemma IsCircuit.isCircuit_contractElem_of_insert {C} (h : M.IsCircuit (insert e C)) (he : e ∉ C)
+    (hC : C.Nonempty) : (M ／ {e}).IsCircuit C :=
+  (singleton_union ▸ h).isCircuit_contract_of_union (by simpa) hC
+
 /-- If `e` is a nonloop of both `M` and `N`, and `M` and `N` agree after removing `e`
 in both ways, then `M = N`. -/
 lemma ext_contractElem_deleteElem (heM : M.IsNonloop e) (heN : N.IsNonloop e)
