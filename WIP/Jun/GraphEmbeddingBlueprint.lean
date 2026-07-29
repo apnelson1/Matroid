@@ -1,5 +1,6 @@
 import Matroid.Binary.Representation
 import Matroid.ForMathlib.Data.Set.IndexedPartition
+import Matroid.Graph.Planarity.K33
 import Matroid.Graph.Planarity.Realization.Celluar
 import Matroid.Graph.Planarity.Realization.Metric
 import Matroid.Minor.Iso
@@ -2189,4 +2190,195 @@ end Matroid
    thin-sums representation for tame matroids.
 -/
 
+end GraphEmbeddingBlueprint
+/-!
+## 7. Kuratowski's theorem for finite graphs
+
+This section connects the ordinary-graph realization developed in Section 3 to the repository's
+existing topological-minor API.  The target is the topological form of Kuratowski's theorem for
+finite graphs, including loops and parallel edges:
+
+* a finite graph is planar exactly when it has no topological `K₅` and no topological `K₃,₃`;
+* the easy implication uses preservation of planarity under topological minors;
+* the hard implication reduces first to connected simple 3-connected graphs and then uses strong
+  induction on the number of edges;
+* the inductive contraction step is deliberately isolated.  Its proof is intended to combine
+  `Graph.Drawing.exists_facial_cycle_of_delete_vertex`, `Graph.K33_K5_lemma`, and
+  `Graph.Drawing.isPlanar_of_contract_of_facial_cycle_two_paths`.
+
+Keeping this section in a separate namespace avoids committing the eventual library theorem names
+while the reduction interfaces are still being proved.
+-/
+
+namespace GraphEmbeddingBlueprint
+namespace Kuratowski
+
+open Graph
+
+variable {α β γ δ : Type*}
+
+/-- Planarity in this section is the weak-realization drawing notion from Section 3.
+
+This is definitionally the same intended topological formulation as `Graph.IsPlanar` in
+`Matroid.Graph.Planarity.Drawing`; the local name avoids importing two currently incompatible
+plane-topology developments into this blueprint file.
+-/
+abbrev IsPlanar (G : Graph α β) : Prop := Realization.IsDrawablePlanar G
+
+/-- Planarity of weak realizations is inherited by topological minors. -/
+theorem IsPlanar.of_isTopologicalMinor {J : Graph γ δ} {G : Graph α β}
+    (hG : IsPlanar G) (hJG : J.IsTopologicalMinor G) : IsPlanar J := by
+  sorry
+
+/-- The weak realization of `K₅` has no plane drawing. -/
+theorem not_isPlanar_completeGraph_five : ¬ IsPlanar (CompleteGraph 5) := by
+  sorry
+
+/-- The weak realization of `K₃,₃` has no plane drawing. -/
+theorem not_isPlanar_completeBipartiteGraph_three_three :
+    ¬ IsPlanar (CompleteBipartiteGraph 3 3) := by
+  sorry
+
+/-- A graph contains one of the two subdivisions forbidden by Kuratowski's theorem. -/
+def HasKuratowskiObstruction (G : Graph α β) : Prop :=
+  (CompleteGraph 5).IsTopologicalMinor G ∨
+    (CompleteBipartiteGraph 3 3).IsTopologicalMinor G
+
+/-- The paired non-containment hypothesis in the topological form of Kuratowski's theorem. -/
+def IsKuratowskiFree (G : Graph α β) : Prop :=
+  ¬ (CompleteGraph 5).IsTopologicalMinor G ∧
+    ¬ (CompleteBipartiteGraph 3 3).IsTopologicalMinor G
+
+/-- The positive and negative obstruction packages are logical complements. -/
+theorem isKuratowskiFree_iff_not_hasKuratowskiObstruction (G : Graph α β) :
+    IsKuratowskiFree G ↔ ¬ HasKuratowskiObstruction G := by
+  simp [IsKuratowskiFree, HasKuratowskiObstruction]
+
+/-- The easy direction: a planar graph contains neither forbidden topological minor. -/
+theorem isKuratowskiFree_of_isPlanar {G : Graph α β} (hG : IsPlanar G) :
+    IsKuratowskiFree G := by
+  constructor
+  · intro hK5
+    exact not_isPlanar_completeGraph_five (hG.of_isTopologicalMinor hK5)
+  · intro hK33
+    exact not_isPlanar_completeBipartiteGraph_three_three (hG.of_isTopologicalMinor hK33)
+
+/-- Kuratowski-freeness descends to topological minors.
+
+The proof composes topological models.  This is the monotonicity interface needed every time a
+smaller graph is extracted during the connectivity reductions.
+-/
+theorem IsKuratowskiFree.of_isTopologicalMinor {J : Graph γ δ} {G : Graph α β}
+    (hG : IsKuratowskiFree G) (hJG : J.IsTopologicalMinor G) : IsKuratowskiFree J := by
+  sorry
+
+/-- Reduction from arbitrary finite graphs to the connected case.
+
+The eventual proof draws connected components in pairwise disjoint disks.  Conversely, any
+forbidden topological model is connected and therefore lies in a single component.  Quantifying
+over same-carrier graphs keeps this milestone independent of the final connected-component API.
+-/
+theorem isPlanar_of_connected_case {G : Graph α β} [G.Finite]
+    (hconnected : ∀ H : Graph α β, H.Finite → H.Connected →
+      IsKuratowskiFree H → IsPlanar H)
+    (hG : IsKuratowskiFree G) : IsPlanar G := by
+  sorry
+
+/-- Reduction from connected finite graphs to simple 3-connected graphs.
+
+Loops and redundant parallel edges are restored inside small vertex disks.  Cut vertices are
+handled by gluing block drawings at one point, and 2-separations by drawing the two augmented
+sides on opposite sides of a virtual edge.  Kuratowski-freeness of every extracted side follows
+from `IsKuratowskiFree.of_isTopologicalMinor`.
+-/
+theorem isPlanar_of_threeConnected_case {G : Graph α β} [G.Finite]
+    (hGconn : G.Connected) (hGfree : IsKuratowskiFree G)
+    (hthree : ∀ H : Graph α β, H.Finite → H.Simple → H.ConnGE 3 →
+      IsKuratowskiFree H → IsPlanar H) : IsPlanar G := by
+  sorry
+
+/-- Small base case for the 3-connected induction.
+
+A finite simple 3-connected graph with at most six edges has a direct plane drawing (the extremal
+case is `K₄`).
+-/
+theorem isPlanar_of_connGE_three_of_edgeSet_ncard_le_six {G : Graph α β}
+    [G.Finite] [G.Simple] (hG3 : G.ConnGE 3) (hE : E(G).ncard ≤ 6) : IsPlanar G := by
+  sorry
+
+/-- The local contraction/facial-cycle step at the heart of the hard implication.
+
+Choose a plane drawing of the contraction and use its facial cycle around the contracted vertex.
+Applied to the two original endpoints, `Graph.K33_K5_lemma` gives either the two clean boundary
+paths required by `Graph.Drawing.isPlanar_of_contract_of_facial_cycle_two_paths`, or an explicit
+topological `K₅`/`K₃,₃` in `G`.  Simplicity is stated explicitly for the contraction because a
+later proof may obtain it by deleting redundant parallel edges before applying this lemma.
+-/
+theorem isPlanar_or_hasKuratowskiObstruction_of_contract {G : Graph α β} {e : β} {u v : α}
+    [G.Finite] [G.Simple] (he : G.IsLink e u v) (huv : u ≠ v)
+    (hcontractFinite : (G /(e, he)).Finite)
+    (hcontractSimple : (G /(e, he)).Simple)
+    (hcontract3 : (G /(e, he)).ConnGE 3)
+    (hcontractPlanar : IsPlanar (G /(e, he))) :
+    IsPlanar G ∨ HasKuratowskiObstruction G := by
+  sorry
+
+/-- Strong-induction step for a simple 3-connected Kuratowski-free graph.
+
+The proof chooses an edge and a suitable simple core of its contraction.  Smaller 3-connected
+cores are planar by `ih`; the preceding contraction lemma then either reconstructs a drawing of
+`G` or contradicts Kuratowski-freeness.  Separating pairs created by contraction are delegated to
+the 2-separation gluing argument from `isPlanar_of_threeConnected_case`.
+-/
+theorem connGE_three_induction_step {G : Graph α β} [G.Finite] [G.Simple]
+    (hG3 : G.ConnGE 3) (hGfree : IsKuratowskiFree G)
+    (ih : ∀ H : Graph α β, H.Finite → H.Simple → H.ConnGE 3 →
+      E(H).ncard < E(G).ncard → IsKuratowskiFree H → IsPlanar H) : IsPlanar G := by
+  sorry
+
+/-- The hard implication for finite simple 3-connected graphs. -/
+theorem isPlanar_of_isKuratowskiFree_of_connGE_three {G : Graph α β}
+    [G.Finite] [G.Simple] (hG3 : G.ConnGE 3) (hGfree : IsKuratowskiFree G) :
+    IsPlanar G := by
+  sorry
+
+/-- The hard implication for connected finite graphs, assembled from the connectivity reduction
+and the 3-connected induction. -/
+theorem isPlanar_of_isKuratowskiFree_of_connected {G : Graph α β} [G.Finite]
+    (hGconn : G.Connected) (hGfree : IsKuratowskiFree G) : IsPlanar G := by
+  apply isPlanar_of_threeConnected_case hGconn hGfree
+  intro H hHfinite hHsimple hH3 hHfree
+  letI := hHfinite
+  letI := hHsimple
+  exact isPlanar_of_isKuratowskiFree_of_connGE_three hH3 hHfree
+
+/-- The hard implication for arbitrary finite graphs. -/
+theorem isPlanar_of_isKuratowskiFree {G : Graph α β} [G.Finite]
+    (hGfree : IsKuratowskiFree G) : IsPlanar G := by
+  apply isPlanar_of_connected_case (G := G) (hG := hGfree)
+  intro H hHfinite hHconn hHfree
+  letI := hHfinite
+  exact isPlanar_of_isKuratowskiFree_of_connected hHconn hHfree
+
+/-- **Kuratowski's theorem (finite topological form).**
+
+A finite graph is planar if and only if it contains neither a subdivision of `K₅` nor a
+subdivision of `K₃,₃`.
+-/
+theorem kuratowski {G : Graph α β} [G.Finite] :
+    IsPlanar G ↔ IsKuratowskiFree G := by
+  exact ⟨isKuratowskiFree_of_isPlanar, isPlanar_of_isKuratowskiFree⟩
+
+/-- Equivalent positive-obstruction formulation of Kuratowski's theorem. -/
+theorem not_isPlanar_iff_hasKuratowskiObstruction {G : Graph α β} [G.Finite] :
+    ¬ IsPlanar G ↔ HasKuratowskiObstruction G := by
+  classical
+  rw [kuratowski, isKuratowskiFree_iff_not_hasKuratowskiObstruction]
+  constructor
+  · intro h
+    exact Classical.byContradiction fun hn => h hn
+  · intro h hn
+    exact hn h
+
+end Kuratowski
 end GraphEmbeddingBlueprint

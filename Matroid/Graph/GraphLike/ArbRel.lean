@@ -25,8 +25,7 @@ namespace Graph
 variable {α β : Type*} {e : β} {G H : Graph α β}
 
 instance (α : Type*) : IsPartialOrder α Eq where
-  refl _ := rfl
-  trans _ _ _ := Eq.trans
+  toIsPreorder := inferInstance
   antisymm _ _ _ := Eq.symm
 
 noncomputable def ArbRel (α : Type*) : α → α → Prop :=

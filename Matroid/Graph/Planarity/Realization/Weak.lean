@@ -69,8 +69,7 @@ def vertexMk (v : V(G)) : Weak G :=
   G.vertexMk v
 
 /-- Parametrize an edge in the weak realization. -/
-noncomputable def edgePath (e : E(G)) :
-    Path (vertexMk G (G.src e)) (vertexMk G (G.tgt e)) :=
+noncomputable def edgePath (e : E(G))  :=
   G.edgePath e
 
 @[simp]

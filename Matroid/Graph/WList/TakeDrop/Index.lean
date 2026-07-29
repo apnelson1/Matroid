@@ -9,6 +9,10 @@ namespace WList
 
 variable {P : α → Prop} [DecidablePred P] {n m : ℕ}
 
+/-- The vertices of a wList other than its first and last vertices. -/
+def internalVertexSet (w : WList α β) : Set α :=
+  {x | x ∈ w.vertex.tail.dropLast}
+
 @[simp]
 lemma tail_last (w : WList α β) : w.tail.last = w.last := by
   induction w with simp
@@ -59,6 +63,34 @@ lemma mem_iff_eq_vertex_first_or_mem_tail : x ∈ w ↔ x = w.first ∨ x ∈ w.
   rintro (rfl | hx)
   · simp
   exact mem_of_mem_tail hx
+
+/-- A vertex of a wList is either its first vertex, an internal vertex, or its last vertex. -/
+lemma mem_iff_eq_first_or_mem_internalVertexSet_or_eq_last :
+    x ∈ w ↔ x = w.first ∨ x ∈ w.internalVertexSet ∨ x = w.last := by
+  refine ⟨fun hx ↦ ?_, ?_⟩
+  · obtain rfl | hx := mem_iff_eq_vertex_first_or_mem_tail.mp hx
+    · exact Or.inl rfl
+    have hne : w.vertex.tail ≠ [] := List.ne_nil_of_mem hx
+    obtain hx | rfl := (List.mem_iff_mem_dropLast_or_eq_getLast hne).mp hx
+    · exact .inr <| .inl hx
+    exact .inr <| .inr <| by rw [← vertex_getLast, ← List.getLast_tail hne]
+  rintro (rfl | hx | rfl)
+  · simp
+  · exact mem_of_mem_tail (List.mem_of_mem_dropLast hx)
+  · simp
+
+/-- An internal vertex of `w` is `w.get m` for some `0 < m < w.length`. -/
+lemma exists_get_of_mem_internalVertexSet (hx : x ∈ w.internalVertexSet) :
+    ∃ m, 0 < m ∧ m < w.length ∧ w.get m = x := by
+  simp only [internalVertexSet, Set.mem_ofPred_eq] at hx
+  obtain ⟨k, hk, rfl⟩ := List.getElem_of_mem hx
+  simp only [List.length_dropLast, List.length_tail, length_vertex] at hk
+  refine ⟨k + 1, by omega, by omega, ?_⟩
+  rw [get_eq_getElem_vertex _ (by omega), List.getElem_dropLast, List.getElem_tail]
+
+/-- The internal vertices of a sublist belong to the ambient wList. -/
+lemma IsSublist.internalVertexSet_subset (h : w₀.IsSublist w) : w₀.internalVertexSet ⊆ V(w) :=
+  fun _ hx ↦ h.mem <| mem_of_mem_tail <| List.mem_of_mem_dropLast hx
 
 lemma IsSublist.le_tail_of_ne_first {w₀} (h : w₀ ≤ w) (hne : w₀.first ≠ w.first) : w₀ ≤ w.tail := by
   induction h with
@@ -553,6 +585,10 @@ lemma drop_drop (w : WList α β) (m n : ℕ) : (w.drop n).drop m = w.drop (m + 
 
 lemma drop_drop_comm (m n : ℕ) : (w.drop m).drop n = (w.drop n).drop m := by
   rw [drop_drop, drop_drop, Nat.add_comm]
+
+lemma get_append_add (w₁ w₂ : WList α β) (m : ℕ) :
+    (w₁ ++ w₂).get (w₁.length + m) = w₂.get m := by
+  rw [← drop_first, Nat.add_comm w₁.length m, ← drop_drop, drop_append_length, drop_first]
 
 -- lemma take_reverse (w : WList α β) (n : ℕ) :
 --     (w.reverse).take n = (w.drop ((w.length + 1) - n)).reverse := by

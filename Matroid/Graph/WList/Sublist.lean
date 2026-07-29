@@ -693,6 +693,35 @@ lemma appendList_concat [Inhabited α] (l : WList α β) (L : List (WList α β)
     (L.concat l)⁺ = L⁺ ++ l := by
   simp [appendList]
 
+lemma appendList_append [Inhabited α] {L : List (WList α β)} (L₁ : List (WList α β))
+    (hne : L ≠ []) : (L₁ ++ L)⁺ = L₁⁺ ++ L⁺ := by
+  obtain ⟨l, L, rfl⟩ := List.exists_cons_of_ne_nil hne
+  simp only [appendList, List.foldl_append, List.foldl_cons, nil_append]
+  rw [List.foldl_assoc]
+
+lemma length_appendList_take_succ [Inhabited α] {L : List (WList α β)} {i : ℕ}
+    (hi : i < L.length) :
+    ((L.take (i + 1))⁺).length = ((L.take i)⁺).length + L[i].length := by
+  rw [List.take_add_one, List.getElem?_eq_getElem hi, Option.toList_some, ← List.concat_eq_append,
+    appendList_concat, append_length]
+
+lemma length_appendList_take_mono [Inhabited α] (L : List (WList α β)) :
+    Monotone fun i ↦ ((L.take i)⁺).length := by
+  refine monotone_nat_of_le_succ fun i ↦ ?_
+  obtain hi | hi := lt_or_ge i L.length
+  · simp [length_appendList_take_succ hi]
+  rw [List.take_of_length_le hi, List.take_of_length_le (by omega)]
+
+lemma length_appendList_take_lt [Inhabited α] {L : List (WList α β)} {i j : ℕ}
+    (hne : ∀ P ∈ L, P.Nonempty) (hij : i < j) (hj : j ≤ L.length) :
+    ((L.take i)⁺).length < ((L.take j)⁺).length := by
+  have hi : i < L.length := by omega
+  have h1 := length_appendList_take_succ hi
+  have h2 : ((L.take (i + 1))⁺).length ≤ ((L.take j)⁺).length :=
+    length_appendList_take_mono L (by omega)
+  have h3 := (hne _ (List.getElem_mem hi)).length_pos
+  omega
+
 @[simp]
 lemma appendList_first [Inhabited α] {L : List (WList α β)} (hne : L ≠ [])
     (h : L.IsChain (·.last = ·.first)) : L⁺.first = (L.head hne).first := by
