@@ -46,7 +46,7 @@ lemma IsFan.mem_or_mem₁₂ (F : M.Fan b c) (i C) (hi : i + 2 < F.length)
   obtain rfl | rfl := b.eq_or_eq_not i.bodd
   <;> simpa using hC
 
-lemma IsFan.getElems_Ico_subset_closure (F : M.Fan b c) (hp : p.bodd = b) (hq : q.bodd = !b)
+lemma getElems_Ico_subset_closure (F : M.Fan b c) (hp : p.bodd = b) (hq : q.bodd = !b)
     (hqF : q ≤ F.length) : (F : List α).getElems (Ico p q) ⊆
       M.closure ((F : List α).getElems {i ∈ Ico p q | i.bodd = b}) := by
   obtain hpq | hpq := lt_or_ge q p
@@ -65,11 +65,8 @@ lemma IsFan.getElems_Ico_subset_closure (F : M.Fan b c) (hp : p.bodd = b) (hq : 
     simp at hq
   refine mem_of_mem_of_subset (F.isTriangle_of_eq i (by lia) (by simp)).mem_closure₂ <|
     M.closure_subset_closure ?_
-  simp [insert_subset_iff]
-  simp [mem_toList_getElems_iff]
-  have := mem_toList_getElems_iff
+  simp [pair_subset_iff, show (p ≤ i ∧ i < q) ∧ p ≤ i + 2 ∧ i + 2 < q by lia]
 
-  grind [Nat.bodd_succ,  insert_subset_iff, hF.nodup.getElem_mem_getElems_iff]
 
 #exit
 
