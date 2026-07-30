@@ -120,6 +120,25 @@ lemma getElems_cons_of_notMem (L : List α) (a : α) {s : Set ℕ} (h0 : 0 ∉ s
   rintro ⟨i, hi, his, rfl⟩
   exact mem_getElems (show i + 1 ∈ s from his) (L := a :: L) (by grind)
 
+lemma getElems_cons (L : List α) (a : α) (s : Set ℕ) [Decidable (0 ∈ s)] :
+    (a :: L).getElems s = if 0 ∈ s then insert a (L.getElems {x | x + 1 ∈ s}) else
+      L.getElems {x | x + 1 ∈ s} := by
+  split_ifs with h
+  · rw [getElems_cons_of_mem _ _ h]
+  rw [getElems_cons_of_notMem _ _ h]
+
+lemma getElems_single_of_notMem {s : Set ℕ} (h : 0 ∉ s) (x : α) : [x].getElems s = ∅ := by
+  simp [getElems_cons_of_notMem _ _ h]
+
+lemma getElems_single_of_mem {s : Set ℕ} (h : 0 ∈ s) (x : α) : [x].getElems s = {x} := by
+  simp [getElems_cons_of_mem _ _ h]
+
+lemma getElems_single (s : Set ℕ) [Decidable (0 ∈ s)] (x : α) :
+    [x].getElems s = if 0 ∈ s then {x} else ∅ := by
+  split_ifs with h
+  · simp [getElems_cons_of_mem _ _ h]
+  simp [getElems_cons_of_notMem _ _ h]
+
 lemma getElems_encard_le (L : List α) (s : Set ℕ) : (L.getElems s).encard ≤ s.encard := by
   obtain hs | hs := s.finite_or_infinite.symm
   · simp [hs.encard_eq]
@@ -193,6 +212,64 @@ lemma getElems_subset_iff {s : Set ℕ} {t : Set α} :
   refine ⟨fun h i hi his ↦ h ⟨i, hi, his, rfl⟩, fun h ↦ ?_⟩
   rintro _ ⟨i, hi, his, rfl⟩
   exact h i hi his
+
+lemma getElems_rotate (L : List α) (s : Set ℕ) (k : ℕ) :
+    (L.rotate k).getElems s = L.getElems ((fun i ↦ (i + k) % L.length) '' (s ∩ Iio L.length)) := by
+  wlog hss : s ⊆ Iio L.length generalizing s with aux
+  · rw [← getElems_inter_Iio, length_rotate, aux, inter_assoc, inter_self]
+    simp
+  rw [inter_eq_self_of_subset_left hss]
+  wlog hk1 : k = 1 generalizing L k s with aux
+  · clear hk1
+    induction k generalizing s with
+    | zero =>
+      rw [rotate_zero, EqOn.image_eq (f₂ := id), image_id]
+      exact fun x hx ↦ x.mod_eq_of_lt (hss hx)
+    | succ k ih =>
+      by_cases h0 : L.length = 0
+      · simp [show L = [] by grind]
+      rw [← rotate_rotate, aux _ _ _ (by simpa) rfl, ih, image_image, length_rotate]
+      · simp [show ∀ x, x + 1 + k = x + (k + 1) by lia]
+      · grw [length_rotate, image_subset_range, range_subset_iff]
+        grind [Nat.mod_lt]
+  subst hk1
+  induction L generalizing s with
+  | nil => simp
+  | cons x L ih =>
+  simp only [rotate_cons_succ, rotate_zero, length_cons]
+  have hrw (i) (hi : i < L.length) :
+      i ∈ s ↔ i ∈ {x | x + 1 ∈ (fun a ↦ (a + 1) % (L.length + 1)) '' s} := by
+    refine ⟨fun h ↦ ⟨i, h, Nat.mod_eq_of_lt (by simpa)⟩, fun ⟨j, hjs, (hji : _ % _ = _)⟩ ↦ ?_⟩
+    rw [Nat.mod_eq_of_lt, add_left_inj] at hji
+    · rwa [← hji]
+    by_contra hcon
+    obtain rfl : j = L.length := by grind
+    simp at hji
+  classical
+  rw [getElems_append, getElems_single, getElems_cons, ← getElems_congr _ hrw]
+  by_cases h : L.length ∈ s
+  · simp only [mem_ofPred_eq, zero_add, h, ↓reduceIte, union_singleton, mem_image, left_eq_ite_iff,
+      not_exists, not_and, insert_eq_self]
+    exact fun h' ↦ False.elim <| h' _ h <| by simp
+  simp only [mem_ofPred_eq, zero_add, h, ↓reduceIte, union_empty, mem_image, right_eq_ite_iff,
+    forall_exists_index, and_imp]
+  intro i hi hi0
+  rw [Nat.mod_eq_of_lt (by grind)] at hi0
+  simp at hi0
+
+lemma Nodup.getElem_mem_getElems_rotate_iff (hL : L.Nodup) (s : Set ℕ) {k : ℕ} (hk : k ≤ L.length)
+    {hi : i < L.length} : L[i] ∈ (L.rotate k).getElems s ↔ (i + (L.length - k)) % L.length ∈ s := by
+  rw [getElems_rotate, hL.getElem_mem_getElems_iff]
+  simp only [mem_image, Set.mem_inter_iff, mem_Iio]
+  refine ⟨fun ⟨j, ⟨hjs, hj⟩, h'⟩ ↦ ?_, fun h ↦ ?_⟩
+  · rwa [← h', Nat.mod_add_mod, add_assoc, Nat.add_sub_cancel' hk, Nat.add_mod_right,
+      Nat.mod_eq_of_lt hj]
+  refine ⟨_, ⟨h, Nat.mod_lt _ (by lia)⟩, ?_⟩
+  rw [Nat.mod_add_mod, add_assoc, Nat.sub_add_cancel hk, Nat.add_mod_right, Nat.mod_eq_of_lt hi]
+
+lemma getElems_rotate_of_subset {L : List α} {s : Set ℕ} (hsL : s ⊆ Iio L.length) (k : ℕ) :
+    (L.rotate k).getElems s = L.getElems ((fun i ↦ (i + k) % L.length) '' s) := by
+  rw [getElems_rotate, inter_eq_self_of_subset_left hsL]
 
 lemma Nodup.getElems_eq_iff (hL : L.Nodup) {s : Set ℕ} {t : Set α} :
     t = L.getElems s ↔ t ⊆ {x | x ∈ L} ∧ ∀ i (hi : i < L.length), L[i] ∈ t ↔ i ∈ s := by

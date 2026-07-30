@@ -625,8 +625,22 @@ lemma disjointSum_isCircuit_iff {α : Type*} {M N : Matroid α} (hdj) {C : Set �
 
 end Sum
 
-
-
-
+lemma restrict_isCircuit_iff' {R C : Set α} :
+    (M ↾ R).IsCircuit C ↔ (M.IsCircuit C ∧ C ⊆ R) ∨ ∃ e ∈ R \ M.E, C = {e} := by
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · rw [isCircuit_iff_dep_forall_sdiff_singleton_indep, restrict_dep_iff] at h
+    by_cases hCE : C ⊆ M.E
+    · left
+      rw [isCircuit_iff_dep_forall_sdiff_singleton_indep, ← not_indep_iff, and_iff_left h.1.2,
+        and_iff_right h.1.1]
+      exact fun e heC ↦ (h.2 e heC).of_restrict
+    right
+    refine (not_subset.1 hCE).imp fun e ⟨heC, heE⟩ ↦ ⟨⟨h.1.2 heC, heE⟩, subset_antisymm ?_
+      (by simpa)⟩
+    refine fun f hf ↦ by_contra fun (hef : f ≠ e) ↦ heE <| singleton_subset_iff.1 ?_
+    exact (((h.2 f hf).subset (I := {e}) (by grind)).of_restrict).subset_ground
+  rintro (⟨hC, hCR⟩ | ⟨e, he, rfl⟩)
+  · exact hC.isCircuit_restrict_of_subset hCR
+  simp [singleton_isCircuit, restrict_isLoop_iff, he.1, he.2]
 
 end Matroid

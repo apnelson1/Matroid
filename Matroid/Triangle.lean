@@ -365,6 +365,12 @@ lemma IsFiniteRankUniform.isTriangle_iff (hM : M.IsFiniteRankUniform 2) :
     M.IsTriangle C ↔ C.encard = 3 ∧ C ⊆ M.E := by
   grind [Matroid.isTriangle_iff, hM.isCircuit_iff]
 
+lemma isTriangle_restrict_iff {R} : (M ↾ R).IsTriangle T ↔ M.IsTriangle T ∧ T ⊆ R := by
+  simp_rw [isTriangle_iff, and_right_comm (b := _ = _), and_congr_left_iff,
+    restrict_isCircuit_iff', iff_def, or_imp, and_iff_right id, and_iff_left Or.inl]
+  rintro h ⟨e, -, rfl⟩
+  simp at h
+
 @[simp]
 lemma isTriangle_delete_iff {D} : (M ＼ D).IsTriangle T ↔ M.IsTriangle T ∧ Disjoint T D := by
   grind [isTriangle_iff, delete_isCircuit_iff]
