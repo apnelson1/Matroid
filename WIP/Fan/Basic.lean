@@ -11,32 +11,105 @@ namespace Matroid
 -- variable {J : Bool → List α}
 
 variable {α : Type*} {M : Matroid α} {X Y C K T : Set α} {e f g x y : α} {b c d : Bool}
-    {J : Bool → List α} {L : List α} {n i j : ℕ} {F J : List α} {b c : Bool} {L : List ℕ}
+    {J : Bool → List α} {L : List α} {n i j : ℕ} {J : List α} {b c : Bool} {L : List ℕ}
 
-/-- A fan of a matroid `M` is a sequence `[e₀, f₀, e₁, f₁, ...]` of at least two
-distinct elements of `M`, where consecutive triples alternate between being triangles and triads.
-We allow fans to have length two for technical reasons; in a fan of length `2`, we
-insist that neither element is a loop or coloop.
 
-The fan may start and end with either triangles or triads;
-if each pair of consecutive `eᵢ` belongs to a common triangle,
-then the `eᵢ` are the 'joints' of the fan, and the `fᵢ` are 'cojoints'.
+structure Fan (M : Matroid α) (b c : Bool) where
+  toList : List α
+  toList_nodup : toList.Nodup
+  toList_length_ge : 2 ≤ toList.length
+  toList_length_bodd : toList.length.bodd = (b == c)
+  isNonloop' : ∀ i (hi : i < toList.length) (d : Bool), (M.bDual d).IsNonloop toList[i]
+  isTriangle' : ∀ i (hi : i + 2 < toList.length), (M.bDual (b != i.bodd)).IsTriangle
+    {toList[i], toList[i + 1], toList[i + 2]}
 
-Formally, the predicate `M.IsFan J b c` means that `J` is the list of elements, and `b c` are
-boolean variables indicating whether the fan respectively starts and ends with a triangle.
-We have `b = c` if and only if `J` had odd length.
+namespace Fan
 
-For example, if `{e,f,g}` is a triangle of `M`, then the fan `e, f, g` corresponds to the
-statement `M.IsFan [e, f, g] false false`.
-(The `false false` means that the fan begins and ends on joints.)
+instance coeList : CoeOut (M.Fan b c) (List α) where coe F := F.toList
 
-If, additionally, `{f, g, h}` is a triad of `M`, then the fan `e, f, g, h` corresponds to the
-statement `M.IsFan [e, f, g, h] false true`. -/
-inductive IsFan : Matroid α → List α → Bool → Bool → Prop
-  | of_pair (M : Matroid α) (b e f) (he : ∀ i, (M.bDual i).IsNonloop e)
-      (hf : ∀ i, (M.bDual i).IsNonloop f) (hne : e ≠ f) : IsFan M [e, f] b (!b)
-  | cons_triangle (M : Matroid α) e x y F b c (h : IsFan M (x :: y :: F) b c) (heF : e ∉ F)
-      (hT : (M.bDual (!b)).IsTriangle {e, x, y}) : IsFan M (e :: x :: y :: F) (!b) c
+instance : GetElem (M.Fan b c) Nat α (fun t i => i < t.toList.length) where
+  getElem := fun t i h => t.toList[i]
+
+def length (F : M.Fan b c) : ℕ := List.length (F : List α)
+
+instance : Membership α (M.Fan b c) where mem F e := e ∈ (F : List α)
+
+@[simp]
+lemma getElem_toList (F : Fan M b c) (i : ℕ) {hi : i < F.length} : (F : List α)[i] = F[i] := rfl
+
+def toSet (F : Fan M b c) : Set α := {e | e ∈ F}
+
+instance coeSet : CoeOut (M.Fan b c) (Set α) where coe F := F.toSet
+
+attribute [coe] Fan.toList Fan.toSet
+
+@[simp]
+lemma mem_coeSet (F : M.Fan b c) : e ∈ (F : Set α) ↔ e ∈ F := Iff.rfl
+
+@[simp]
+lemma mem_coeList (F : M.Fan b c) : e ∈ (F : List α) ↔ e ∈ F := Iff.rfl
+
+variable {F : M.Fan b c}
+
+@[simp]
+protected lemma nodup (F : M.Fan b c) : (F : List α).Nodup :=
+  F.toList_nodup
+
+lemma length_bodd (F : M.Fan b c) : F.length.bodd = (b == c) :=
+  F.toList_length_bodd
+
+lemma length_ge_two (F : M.Fan b c) : 2 ≤ F.length :=
+  F.toList_length_ge
+
+lemma length_ge_three (F : M.Fan b b) : 3 ≤ F.length :=
+  F.length_ge_two.eq_or_lt.elim (fun h ↦ by simpa [F.length_bodd] using congr_arg Nat.bodd h) id
+
+macro_rules
+  | `(tactic| get_elem_tactic_extensible) =>
+    `(tactic| grind[Fan.length_ge_two, Fan.length_ge_three,
+      List.length_rotate, Nat.add_one_lt_of_bodd_eq])
+
+@[simp, grind =]
+lemma coe_len (F : M.Fan b c) : (F : List α).length = F.length := rfl
+
+@[simp]
+lemma isNonloop {hi : i < F.length} {d : Bool} : (M.bDual d).IsNonloop F[i] :=
+  F.isNonloop' i hi d
+
+@[simp]
+lemma isTriangle (hi : i + 2 < F.length) :
+    (M.bDual (b != i.bodd)).IsTriangle {F[i], F[i + 1], F[i + 2]} :=
+  F.isTriangle' i hi
+
+lemma isTriangle.of_eq (i : ℕ) (hi : i + 2 < F.length) (h_eq : i.bodd = b) :
+    M.IsTriangle {F[i], F[i + 1], F[i + 2]} := by
+  simpa [h_eq] using F.isTriangle hi
+
+-- set_option pp.all true in
+@[simps]
+protected def cons (F : M.Fan b c) (heF : e ∉ F) (hT : M.IsTriangle {e, F[0], F[1]}) :
+    M.Fan (!b) c where
+  toList := e :: F
+  toList_nodup := by simpa
+  toList_length_ge := by grind
+  toList_length_bodd := by cases b with simp [F.length_bodd]
+  isNonloop' := by
+    rintro (rfl | i) hi d
+    · exact hT.isNonloop_bDual₁
+    simp
+    have := F.getElem_toList i (hi := by grind)
+
+
+    -- simp only [getElem_cons_succ]
+    rw [F.getElem_toList i]
+    _
+
+    sorry
+  isTriangle' := sorry
+
+
+
+#exit
 
 lemma IsFan.cons (h : M.IsFan (x :: y :: F) b c) (heF : e ∉ F)
     (hT : (M.bDual (!b)).IsTriangle {e, x, y}) : M.IsFan (e :: x :: y :: F) (!b) c := by
