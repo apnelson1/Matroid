@@ -1,4 +1,4 @@
-import Matroid.Connectivity.Fan.Basic
+import Matroid.Connectivity.FanWIP.Basic
 import Matroid.Connectivity.Triangle
 import Matroid.Connectivity.Separation.Vertical
 import Matroid.ForMathlib.List.Set
@@ -6,55 +6,55 @@ import Matroid.ForMathlib.List.Set
 open Set List
 
 variable {α : Type*} {M : Matroid α} {X Y C K T : Set α} {e f g x y : α} {b c d : Bool}
-    {J : Bool → List α} {L : List α} {n i j p q r : ℕ} {F J : List α} {b c : Bool}
+    {n i j p q r : ℕ} {b c : Bool} {F : M.Fan b c}
 
-namespace Matroid
+namespace Matroid.Fan
 
-lemma IsFan.mem_iff_mem₁₂ (hF : M.IsFan F b c) (i C) (hi : i + 2 < F.length)
+lemma IsFan.mem_iff_mem₁₂ (F : M.Fan b c) (i C) (hi : i + 2 < F.length)
     (hC : (M.bDual (i.bodd == b)).IsCircuit C) (heC : F[i] ∉ C) : F[i + 1] ∈ C ↔ F[i + 2] ∈ C := by
-  rw [(hF.isTriangle_getElem _ hi).mem_iff_mem_of_isCircuit_bDual _ heC]
+  rw [(F.isTriangle i hi).mem_iff_mem_of_isCircuit_bDual _ heC]
   obtain rfl | rfl := b.eq_or_eq_not i.bodd
   <;> simpa using hC
 
-lemma IsFan.mem_iff_mem₀₂ (hF : M.IsFan F b c) (i C) (hi : i + 2 < F.length)
+lemma IsFan.mem_iff_mem₀₂ (F : M.Fan b c) (i C) (hi : i + 2 < F.length)
     (hC : (M.bDual (i.bodd == b)).IsCircuit C) (heC : F[i + 1] ∉ C) : F[i] ∈ C ↔ F[i + 2] ∈ C := by
-  refine (hF.isTriangle_getElem i hi).swap_left.mem_iff_mem_of_isCircuit_bDual ?_ heC
+  refine (F.isTriangle i hi).swap_left.mem_iff_mem_of_isCircuit_bDual ?_ heC
   obtain rfl | rfl := b.eq_or_eq_not i.bodd
   <;> simpa using hC
 
-lemma IsFan.mem_iff_mem₀₁ (hF : M.IsFan F b c) (i C) (hi : i + 2 < F.length)
+lemma IsFan.mem_iff_mem₀₁ (F : M.Fan b c) (i C) (hi : i + 2 < F.length)
     (hC : (M.bDual (i.bodd == b)).IsCircuit C) (heC : F[i + 2] ∉ C) : F[i] ∈ C ↔ F[i + 1] ∈ C := by
-  rw [(hF.isTriangle_getElem i hi).reverse.mem_iff_mem_of_isCircuit_bDual ?_ heC]
+  rw [(F.isTriangle i hi).reverse.mem_iff_mem_of_isCircuit_bDual ?_ heC]
   obtain rfl | rfl := b.eq_or_eq_not i.bodd
   <;> simpa using hC
 
-lemma IsFan.mem_or_mem₀₁ (hF : M.IsFan F b c) (i C) (hi : i + 2 < F.length)
+lemma IsFan.mem_or_mem₀₁ (F : M.Fan b c) (i C) (hi : i + 2 < F.length)
     (hC : (M.bDual (i.bodd == b)).IsCircuit C) (heC : F[i + 2] ∈ C) : F[i] ∈ C ∨ F[i + 1] ∈ C := by
-  refine (hF.isTriangle_getElem i hi).reverse.swap_right.mem_or_mem_of_isCircuit_bDual ?_ heC
+  refine (F.isTriangle i hi).reverse.swap_right.mem_or_mem_of_isCircuit_bDual ?_ heC
   obtain rfl | rfl := b.eq_or_eq_not i.bodd
   <;> simpa using hC
 
-lemma IsFan.mem_or_mem₀₂ (hF : M.IsFan F b c) (i C) (hi : i + 2 < F.length)
+lemma IsFan.mem_or_mem₀₂ (F : M.Fan b c) (i C) (hi : i + 2 < F.length)
     (hC : (M.bDual (i.bodd == b)).IsCircuit C) (heC : F[i + 1] ∈ C) : F[i] ∈ C ∨ F[i + 2] ∈ C := by
-  refine (hF.isTriangle_getElem i hi).swap_left.mem_or_mem_of_isCircuit_bDual ?_ heC
+  refine (F.isTriangle i hi).swap_left.mem_or_mem_of_isCircuit_bDual ?_ heC
   obtain rfl | rfl := b.eq_or_eq_not i.bodd
   <;> simpa using hC
 
-lemma IsFan.mem_or_mem₁₂ (hF : M.IsFan F b c) (i C) (hi : i + 2 < F.length)
+lemma IsFan.mem_or_mem₁₂ (F : M.Fan b c) (i C) (hi : i + 2 < F.length)
     (hC : (M.bDual (i.bodd == b)).IsCircuit C) (heC : F[i] ∈ C) : F[i + 1] ∈ C ∨ F[i + 2] ∈ C := by
-  refine (hF.isTriangle_getElem i hi).mem_or_mem_of_isCircuit_bDual ?_ heC
+  refine (F.isTriangle i hi).mem_or_mem_of_isCircuit_bDual ?_ heC
   obtain rfl | rfl := b.eq_or_eq_not i.bodd
   <;> simpa using hC
 
-lemma IsFan.getElems_Ico_subset_closure (hF : M.IsFan F b c) (hp : p.bodd = b) (hq : q.bodd = !b)
-    (hqF : q ≤ F.length) :
-    F.getElems (Ico p q) ⊆ M.closure (F.getElems {i ∈ Ico p q | i.bodd = b}) := by
+lemma IsFan.getElems_Ico_subset_closure (F : M.Fan b c) (hp : p.bodd = b) (hq : q.bodd = !b)
+    (hqF : q ≤ F.length) : (F : List α).getElems (Ico p q) ⊆
+      M.closure ((F : List α).getElems {i ∈ Ico p q | i.bodd = b}) := by
   obtain hpq | hpq := lt_or_ge q p
   · simp [Ico_eq_empty_of_le hpq.le]
   rw [getElems_subset_iff]
   rintro i hiF ⟨hpi, hiq⟩
   obtain rfl | rfl := b.eq_or_eq_not i.bodd
-  · refine mem_closure_of_mem' _ (mem_getElems ?_ hiF) hF.get_mem_ground
+  · refine mem_closure_of_mem' _ (mem_getElems ?_ hiF) (by simp)
     simp [hpi, hiq]
   obtain rfl | i := i
   · grind
@@ -63,12 +63,18 @@ lemma IsFan.getElems_Ico_subset_closure (hF : M.IsFan F b c) (hp : p.bodd = b) (
   have hiq : i + 2 ≠ q := by
     rintro rfl
     simp at hq
-  refine mem_of_mem_of_subset (hF.isTriangle_getElem_of_eq i (by lia) (by simp)).mem_closure₂ <|
+  refine mem_of_mem_of_subset (F.isTriangle_of_eq i (by lia) (by simp)).mem_closure₂ <|
     M.closure_subset_closure ?_
+  simp [insert_subset_iff]
+  simp [mem_toList_getElems_iff]
+  have := mem_toList_getElems_iff
+
   grind [Nat.bodd_succ,  insert_subset_iff, hF.nodup.getElem_mem_getElems_iff]
 
+#exit
+
 /-- The joints are always independent, unless the first and last element are parallel joints. -/
-lemma IsFan.joints_indep (hF : M.IsFan F b c)
+lemma IsFan.joints_indep (F : M.Fan b c)
     (h_pair : b = false → c = false → ¬ M.Parallel F[0] F[F.length - 1]) :
     M.Indep (F.getElems {i | i.bodd = b}) := by
   simp only [hF.nodup.subset_getElems_iff, mem_ofPred_eq, and_imp,
@@ -99,7 +105,7 @@ lemma IsFan.joints_indep (hF : M.IsFan F b c)
 
 /-- Under an appropriate nondegeneracy assumption, any interval of joints or cojoints
 is independent. -/
-lemma IsFan.joints_Ico_indep (hF : M.IsFan F b c)
+lemma IsFan.joints_Ico_indep (F : M.Fan b c)
     (hpq : p = 0 → F.length ≤ q → b = false → c = false → ¬ M.Parallel F[0] F[F.length - 1]) :
     M.Indep (F.getElems {x ∈ Ico p q | x.bodd = b}) := by
   by_cases! hdg : b = false → c = false → ¬ M.Parallel F[0] F[F.length - 1]
@@ -123,7 +129,7 @@ lemma IsFan.joints_Ico_indep (hF : M.IsFan F b c)
   refine getElems_mono _ ?_
   rintro (rfl | i) <;> simp [hp]
 
-lemma IsFan.eRk_eq (hF : M.IsFan F b b) (hpara : ¬ (M.bDual b).Parallel F[0] (F[F.length - 1])) :
+lemma IsFan.eRk_eq (F : M.Fan b b) (hpara : ¬ (M.bDual b).Parallel F[0] (F[F.length - 1])) :
     2 * (M.bDual b).eRk {e | e ∈ F} = F.length + 1 := by
   obtain h2 | h3 := hF.two_le_length.eq_or_lt
   · have hcon := h2 ▸ hF.bool_right_eq
@@ -137,7 +143,7 @@ lemma IsFan.eRk_eq (hF : M.IsFan F b b) (hpara : ¬ (M.bDual b).Parallel F[0] (F
 
 /-- In a fan of length at least five, we can contract the head and remain a fan, unless
 the head is a cojoint in parallel with the second element, or a joint in parallel with the last. -/
-lemma IsFan.contract_head' (hF : M.IsFan F b c) (h5 : 5 ≤ F.length)
+lemma IsFan.contract_head' (F : M.Fan b c) (h5 : 5 ≤ F.length)
     (h_init : b = true → ¬ M.Parallel F[0] F[1])
     (h_pair : b = false → c = false → ¬ M.Parallel F[0] F[F.length - 1]) :
     (M ／ {F[0]}).IsFan F.tail (!b) c := by
@@ -179,13 +185,13 @@ lemma IsFan.contract_head' (hF : M.IsFan F b c) (h5 : 5 ≤ F.length)
   obtain h' | h' := hF.mem_or_mem₁₂ 0 C (by lia) (by simpa [hi]) h0C <;>
   simpa [hF.nodup.getElem_inj_iff, show i ≠ 0 by grind] using hCss h'
 
-lemma IsFan.delete_head' (hF : M.IsFan F b c) (h5 : 5 ≤ F.length)
+lemma IsFan.delete_head' (F : M.Fan b c) (h5 : 5 ≤ F.length)
     (h_init : b = false → ¬ M✶.Parallel F[0] F[1])
     (h_pair : b = true → c = true → ¬ M✶.Parallel F[0] F[F.length - 1]) :
     (M ＼ {F[0]}).IsFan F.tail (!b) c := by
   simpa using (hF.dual.contract_head' h5 (by simpa) (by simpa)).dual
 
-lemma IsFan.remove_head (hF : M.IsFan F b c) (h5 : 5 ≤ F.length) {d : Bool}
+lemma IsFan.remove_head (F : M.Fan b c) (h5 : 5 ≤ F.length) {d : Bool}
     (h_init : b = d → ¬ (M.bDual !d).Parallel F[0] F[1])
     (h_pair : b = !d → c = !d → ¬ (M.bDual !d).Parallel F[0] F[F.length - 1]) :
     (M.remove d {F[0]}).IsFan F.tail (!b) c := by
@@ -193,7 +199,7 @@ lemma IsFan.remove_head (hF : M.IsFan F b c) (h5 : 5 ≤ F.length) {d : Bool}
   · exact hF.delete_head' h5 (by simpa) (by simpa)
   exact hF.contract_head' h5 (by simpa) (by simpa)
 
--- lemma IsFan.delete_head' (hF : M.IsFan F b c) (h3 : 3 ≤ F.length)
+-- lemma IsFan.delete_head' (F : M.Fan b c) (h3 : 3 ≤ F.length)
 --     (h_tri : (F.length = 3 ∨ b = false) → ¬ M✶.Parallel F[0] F[1])
 --     (h4 : F.length ≤ 4 → ¬ M✶.Parallel F[0] F[2])
 --     (h_pair : b = false → c = false → ¬ M✶.Parallel F[0] F[F.length - 1]) :
@@ -230,7 +236,7 @@ lemma IsFan.remove_head (hF : M.IsFan F b c) (h5 : 5 ≤ F.length) {d : Bool}
 --   _
 
 /-- Probably this should be proved by reverse induction instead. TODO -/
-lemma IsFan.contract_head (hF : M.IsFan F false c) (h3 : 3 ≤ F.length)
+lemma IsFan.contract_head (F : M.Fan false c) (h3 : 3 ≤ F.length)
     (h_pair : c = false → ¬ M.Parallel F[0] F[F.length - 1]) :
     (M ／ {F[0]}).IsFan F.tail true c := by
   obtain h3 | hlt := h3.eq_or_lt
@@ -277,7 +283,7 @@ then `{F[p], F[q]} ∪ K` is a circuit.
 
 The nondegeracy hypothesis has some redundancy, since `i = 0` and `q + 1 = F.length` implies that
 `b = c = false`; we include it so it is easier to discharge quickly in various cases.  -/
-lemma IsFan.isCircuit_interval (hF : M.IsFan F b c) (hpq : p < q) (hqF : q < F.length)
+lemma IsFan.isCircuit_interval (F : M.Fan b c) (hpq : p < q) (hqF : q < F.length)
     (hpb : p.bodd = b) (hqb : q.bodd = b)
     (hdg : b = false → c = false → p = 0 → q + 1 = F.length → ¬ M.Parallel F[0] F[F.length - 1]) :
     M.IsCircuit <| F.getElems (insert p (insert q {i ∈ Ico p q | i.bodd = !b})) := by
@@ -315,7 +321,7 @@ lemma IsFan.isCircuit_interval (hF : M.IsFan F b c) (hpq : p < q) (hqF : q < F.l
 /-- If a circuit of a matroid contains joints `F[p + 1], F[q]` of a fan `F`,
 and does not contain the cojoint `F[p]`,
 then it comprises precisely `F[p + 1], F[q]`, and the cojoints between them.  -/
-lemma IsFan.eq_interval_of_notMem_mem_mem (hF : M.IsFan F b c) (hpq : p + 1 < q)
+lemma IsFan.eq_interval_of_notMem_mem_mem (F : M.Fan b c) (hpq : p + 1 < q)
     (hqF : q < F.length) (hpb : p.bodd = !b) (hqb : q.bodd = b) (hC : M.IsCircuit C)
     (hpC : F[p] ∉ C) (hp1C : F[p + 1] ∈ C) (hqC : F[q] ∈ C) :
     C = (F.getElems (insert (p + 1) <| insert q <| {i ∈ Ico (p + 1) q | i.bodd = !b})) := by
@@ -343,7 +349,7 @@ lemma IsFan.eq_interval_of_notMem_mem_mem (hF : M.IsFan F b c) (hpq : p + 1 < q)
     rw [← hF.mem_iff_mem₀₂ _ _ (by lia) (by simpa) h1]
     exact ih (by lia) (by lia) (by lia) (by simp)
 
-lemma IsFan.exists_eq_interval_of_notMem_mem_add_one (hF : M.IsFan F b c) (hpq : p + 1 < q)
+lemma IsFan.exists_eq_interval_of_notMem_mem_add_one (F : M.Fan b c) (hpq : p + 1 < q)
     (hqF : q < F.length) (hpb : p.bodd = !b) (hqb : q.bodd = !b) (hC : M.IsCircuit C)
     (hpC : F[p] ∉ C) (hp1C : F[p + 1] ∈ C) (hqC : F[q] ∉ C) :
     ∃ (r : ℕ) (_ : p + 1 < r) (_ : r < q), r.bodd = b ∧
@@ -370,7 +376,7 @@ lemma IsFan.exists_eq_interval_of_notMem_mem_add_one (hF : M.IsFan F b c) (hpq :
 
 /-- If a circuit doesn't contain two particular cojoints `F[s], F[t]` of a fan `F`,
 but it contains something between them, then it is an interval. -/
-lemma IsFan.exists_eq_interval_of_notMem_mem_notMem {s t r : ℕ} (hF : M.IsFan F b c) (hsr : s < r)
+lemma IsFan.exists_eq_interval_of_notMem_mem_notMem {s t r : ℕ} (F : M.Fan b c) (hsr : s < r)
     (hrt : r < t) (ht : t < F.length) (hsb : s.bodd = !b) (htb : t.bodd = !b)
     (hC : M.IsCircuit C) (hsC : F[s] ∉ C) (hrC : F[r] ∈ C) (htC : F[t] ∉ C) :
     ∃ (p q : ℕ) (_ : s < p) (_ : p < q) (_ : q < t), p.bodd = b ∧ q.bodd = b ∧
@@ -432,7 +438,7 @@ lemma IsFan.eq_eq_of_parallel (h : M.IsFan F b c) (hF : 6 ≤ F.length) {hi : i 
   have hcon := h.mem_or_mem₀₂ i {F[i + 1], F[i + (d + 4)]} (by lia) (by simpa [hib])
   simp [h.nodup.getElem_inj_iff] at hcon
 
--- lemma IsFan.delete_head'' (hF : M.IsFan F b c) (h3 : 3 ≤ F.length)
+-- lemma IsFan.delete_head'' (F : M.Fan b c) (h3 : 3 ≤ F.length)
 --     -- (h3 : F.length = 2 → ¬ )
 --     (h_tri : b = true → ¬ M✶.Parallel F[0] F[1])
 --     (h4 : b = false → F.length = 4 → ¬ M✶.Parallel F[0] F[2])
@@ -476,12 +482,12 @@ lemma IsFan.eq_eq_of_parallel (h : M.IsFan F b c) (hF : 6 ≤ F.length) {hi : i 
 
   --
 
-lemma IsFan.delete_head (hF : M.IsFan F true c) (h3 : 3 ≤ F.length)
+lemma IsFan.delete_head (F : M.Fan true c) (h3 : 3 ≤ F.length)
     (h_pair : c = true → ¬ M✶.Parallel F[0] F[F.length - 1]) :
     (M ＼ {F[0]}).IsFan F.tail false c := by
   simpa using (hF.dual.contract_head h3 (by simpa)).dual
 
-lemma IsFan.contract_head_three (hF : M.IsFan F b c) (h3 : F.length = 3)
+lemma IsFan.contract_head_three (F : M.Fan b c) (h3 : F.length = 3)
     (hnp₁ : b = true → ¬ M.Parallel F[0] F[1]) (hnp₂ : b = true → ¬ M.Parallel F[0] F[2]) :
     (M ／ {F[0]}).IsFan F.tail (!b) c := by
   rw [length_eq_three] at h3
@@ -507,7 +513,7 @@ lemma IsFan.contract_head_three (hF : M.IsFan F b c) (h3 : F.length = 3)
   simpa [hT.ne₁₃.symm] using hT.isNonloop_bDual₃ (b := !b)
 
 @[grind .]
-lemma IsFan.length_ge_four_of_eq_ground [M.Simple] [M✶.Simple] (hF : M.IsFan F b c)
+lemma IsFan.length_ge_four_of_eq_ground [M.Simple] [M✶.Simple] (F : M.Fan b c)
     (hFE : {e | e ∈ F} = M.E) : 4 ≤ F.length := by
   have hF2 := hF.two_le_length
   have hr := M.eRk_pair_eq (e := F[0]) (f := F[1]) (by simp [hF.nodup.getElem_inj_iff])
@@ -522,7 +528,7 @@ lemma IsFan.length_ge_four_of_eq_ground [M.Simple] [M✶.Simple] (hF : M.IsFan F
 /-- If `F` is a fan whose ends are joints, and `C` is a circuit containing the first but not
 the second element of `F`, then `M` has a circuit containing the first element of `F`,
 and no other elements of `F` except possibly the last.  -/
-lemma IsFan.exists_isCircuit_subset_first_last (hF : M.IsFan F false false)
+lemma IsFan.exists_isCircuit_subset_first_last (F : M.Fan false false)
     (hC : M.IsCircuit C) (h0C : F[0] ∈ C) (h1C : F[1] ∉ C) :
     ∃ C₀ ⊆ insert F[F.length - 1] C, M.IsCircuit C₀ ∧ F[0] ∈ C₀ := by
   obtain ⟨n, hn⟩ := Nat.exists_eq_add_of_le hF.two_le_length
@@ -565,7 +571,7 @@ lemma IsFan.exists_isCircuit_subset_first_last (hF : M.IsFan F false false)
 
 /-- For any fan `F = [a, b, ..., z]` whose ends are joints and for which `{a, b}` isn't series,
 there is a circuit `C` with `a ∈ C ∩ F ⊆ {a, z}`. -/
-lemma IsFan.exists_isCircuit_first_mem_of_length_odd (hF : M.IsFan F false c)
+lemma IsFan.exists_isCircuit_first_mem_of_length_odd (F : M.Fan false c)
     (h_odd : Odd F.length) (h01 : ¬ M✶.Parallel (F[0]'(by grind)) (F[1]'hF.two_le_length)) :
     ∃ C, M.IsCircuit C ∧ F[0] ∈ C ∧ ∀ i (hi : i + 1 < F.length),
       F[i + 1] ∈ C → i + 2 = F.length := by
@@ -602,7 +608,7 @@ lemma IsFan.exists_isCircuit_first_mem_of_length_odd (hF : M.IsFan F false c)
 
 /-- If `M` is a simple, cosimple matroid whose ground set is a fan, then the fan is even
 and wraps around its own beginning.  -/
-lemma IsFan.isTriangle_of_simple (hF : M.IsFan F false c) {n : ℕ} (h3 : F.length = n + 2)
+lemma IsFan.isTriangle_of_simple (F : M.Fan false c) {n : ℕ} (h3 : F.length = n + 2)
     (hM : M.Simple) (hM' : M✶.Simple) (hFE : {e | e ∈ F} = M.E) :
       Even F.length ∧ M.IsTriangle {F[n], F[n + 1]'(by grind), F[0]} := by
   obtain rfl | rfl | n := n
@@ -636,7 +642,7 @@ lemma IsFan.isTriangle_of_simple (hF : M.IsFan F false c) {n : ℕ} (h3 : F.leng
   grw [insert_eq_of_mem (by simp), encard_pair_le, ← hC.girth_le_card, ← M.three_le_girth] at hcard
   norm_num at hcard
 
-lemma IsFan.isTriangle_bDual_of_simple (hF : M.IsFan F b c) {n : ℕ} (h3 : F.length = n + 2)
+lemma IsFan.isTriangle_bDual_of_simple (F : M.Fan b c) {n : ℕ} (h3 : F.length = n + 2)
     (hM : M.Simple) (hM' : M✶.Simple) (hFE : {e | e ∈ F} = M.E) : Even F.length ∧
       (M.bDual b).IsTriangle {F[n], F[n + 1]'(by grind), F[0]} := by
   simpa using IsFan.isTriangle_of_simple (M := M.bDual (b)) (F := F) (c := c != b) (by simpa) h3
