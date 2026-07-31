@@ -193,7 +193,7 @@ lemma IsCyclicWalk.map (hf : InjOn f V(w)) (hw : G.IsCyclicWalk w) :
 
 lemma IsCyclicWalk.exists_of_map_of_injOn {φ : α → α'} (hφ : InjOn φ V(H)) {C : WList α' β}
     (hC : (φ ''ᴳ H).IsCyclicWalk C) : ∃ C₀, H.IsCyclicWalk C₀ ∧ C₀.map φ = C := by
-  haveI : Nonempty α := ⟨hC.isWalk.vertex_mem_of_mem first_mem |>.choose⟩
+  have : Nonempty α := ⟨hC.isWalk.vertex_mem_of_mem first_mem |>.choose⟩
   refine ⟨C.map (invFunOn φ V(H)), ⟨⟨⟨by simpa using hC.isWalk.map_invFunOn hφ, by
     simpa [WList.map_edge] using hC.edge_nodup⟩, by simpa using hC.nonempty, by
     simpa [WList.IsClosed] using congrArg _ hC.isClosed⟩, ?_⟩, by

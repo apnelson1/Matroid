@@ -320,7 +320,7 @@ variable [IsTopologicalAddGroup F] [ContinuousSMul ℝ F] {f}
 private lemma boolConnectedComponents_pathConnected (hf : Surjective f) (i : Bool) :
     IsPathConnected (f.boolConnectedComponents c i) := by
   fin_cases i
-  · haveI : PathConnectedSpace {x : F | c < f x} := isPathConnected_iff_pathConnectedSpace.mp <| by
+  · have : PathConnectedSpace {x : F | c < f x} := isPathConnected_iff_pathConnectedSpace.mp <| by
       obtain ⟨x, hx⟩ := hf (c + 1)
       exact (convex_halfSpace_gt f.isLinear c).isPathConnected ⟨x, by simp [hx]⟩
     have hAs : {x : F | c < f x} ⊆ {x : F | f x = c}ᶜ := fun x hx => ne_of_gt hx
@@ -328,7 +328,7 @@ private lemma boolConnectedComponents_pathConnected (hf : Surjective f) (i : Boo
       ext x
       grind [Subtype.exists, boolConnectedComponents]
     exact hU0 ▸ isPathConnected_range (continuous_inclusion hAs)
-  · haveI : PathConnectedSpace {x : F | f x < c} := isPathConnected_iff_pathConnectedSpace.mp <| by
+  · have : PathConnectedSpace {x : F | f x < c} := isPathConnected_iff_pathConnectedSpace.mp <| by
       obtain ⟨x, hx⟩ := hf (c - 1)
       exact (convex_halfSpace_lt f.isLinear c).isPathConnected ⟨x, by simp [hx]⟩
     have hBs : {x : F | f x < c} ⊆ {x : F | f x = c}ᶜ := fun x hx => ne_of_lt hx

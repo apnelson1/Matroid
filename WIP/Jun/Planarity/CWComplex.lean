@@ -307,7 +307,7 @@ theorem subset_of_not_disjoint_of_path (P : Path (map 0 u 0) (map 0 v 0))
     ext i
     fin_cases i
     exact hgs
-  haveI : PreconnectedSpace (openCell 1 e) :=
+  have : PreconnectedSpace (openCell 1 e) :=
     isPreconnected_iff_preconnectedSpace.mp (isPathConnected_openCell e).isConnected.isPreconnected
   have hA_univ : A = univ := IsClopen.eq_univ ⟨(isCompact_range P.continuous).isClosed.preimage
     continuous_subtype_val, hA_open⟩ ⟨⟨x, hxe⟩, hxP⟩
@@ -499,5 +499,3 @@ theorem CWComplex.dualGraph_abstract_dual [JCTSpace E] (S : Set (cell (univ : Se
   so `S` must contain a cycle in one skeleton graph. From before, we showed that a cycle is an edge
   cut of the dual graph. Since bond is a minimal edge cut, `S` must be the cycle. -/
   sorry
-
-

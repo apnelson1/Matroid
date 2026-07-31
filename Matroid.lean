@@ -34,13 +34,11 @@ import Matroid.Connectivity.Separation.Internal
 import Matroid.Connectivity.Separation.Minor
 import Matroid.Connectivity.Separation.Tutte
 import Matroid.Connectivity.Separation.Two
--- import Matroid.Connectivity.Separation.Two-WIP
 import Matroid.Connectivity.Separation.Vertical
 -- import Matroid.Connectivity.Separation._vert_diag
 import Matroid.Connectivity.Skew
 -- import Matroid.Connectivity.Splitter.Basic
 -- import Matroid.Connectivity.Splitter.Cretaceous
--- import Matroid.Connectivity.Splitter.Cretaceous-WIP
 -- import Matroid.Connectivity.Splitter.Fan
 import Matroid.Connectivity.Splitter.TutteTriangle
 import Matroid.Connectivity.Triangle
@@ -121,9 +119,7 @@ import Matroid.Graph.Minor.Defs
 -- import Matroid.Graph.Planarity.CombMap.Equiv
 -- import Matroid.Graph.Planarity.CycleList.Basic
 import Matroid.Graph.Planarity.GraphContinuum.Basic
--- import Matroid.Graph.Planarity.GraphContinuum.EdgeCircuit
--- import Matroid.Graph.Planarity.GraphContinuum.EdgeEndpoints
--- import Matroid.Graph.Planarity.Obstructions
+import Matroid.Graph.Planarity.Obstructions
 import Matroid.Graph.Planarity.Realization.Basic
 import Matroid.Graph.Planarity.Realization.CWComplex
 import Matroid.Graph.Planarity.Realization.Metric
@@ -140,7 +136,7 @@ import Matroid.Graph.Subgraph.Delete
 import Matroid.Graph.Subgraph.Inter
 import Matroid.Graph.Subgraph.Lemma
 import Matroid.Graph.Subgraph.Union
--- import Matroid.Graph.TopologicalMinor
+import Matroid.Graph.TopologicalMinor
 import Matroid.Graph.Tree
 import Matroid.Graph.WList.Cycle
 import Matroid.Graph.WList.Defs

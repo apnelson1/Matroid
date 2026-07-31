@@ -15,7 +15,7 @@ open Set
 
 lemma finite_list_nodup (α : Type*) [Finite α] : {L : List α | L.Nodup}.Finite := by
   classical
-  haveI := Fintype.ofFinite
+  have := Fintype.ofFinite
   refine (List.finite_length_le α (Fintype.card α)).subset fun L hL ↦ ?_
   simp [List.Nodup.length_le_card hL]
 

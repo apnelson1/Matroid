@@ -494,7 +494,7 @@ lemma eq_edgePath_Ioo_of_mem_pathComponentPartition (T : Set G.Realization)
       rintro ⟨t', ht', rfl⟩
       use t', Ioo_subset_Icc_self ht', ht'
     rw [hU_eq]
-    haveI : PathConnectedSpace (Ioo (0:ℝ) 1) := isPathConnected_iff_pathConnectedSpace.mp
+    have : PathConnectedSpace (Ioo (0:ℝ) 1) := isPathConnected_iff_pathConnectedSpace.mp
       <| (convex_Ioo 0 1).isPathConnected ⟨2⁻¹, by norm_num⟩
     exact isPathConnected_range hf
 

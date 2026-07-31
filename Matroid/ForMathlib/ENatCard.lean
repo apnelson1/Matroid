@@ -643,14 +643,14 @@ theorem card_plift (α : Type*) : Nat.card (PLift α) = Nat.card α :=
 
 theorem card_sigma {β : α → Type*} [Fintype α] [∀ a, Finite (β a)] :
     Nat.card (Sigma β) = ∑ a, Nat.card (β a) := by
-  letI _ (a : α) : Fintype (β a) := Fintype.ofFinite (β a)
+  let _ (a : α) : Fintype (β a) := Fintype.ofFinite (β a)
   simp_rw [Nat.card_eq_fintype_card, Fintype.card_sigma]
 
 theorem card_pi {β : α → Type*} [Fintype α] : Nat.card (∀ a, β a) = ∏ a, Nat.card (β a) := by
   simp [Nat.card, ENat.card_pi]
 
 theorem card_fun [Finite α] : Nat.card (α → β) = Nat.card β ^ Nat.card α := by
-  haveI := Fintype.ofFinite α
+  have := Fintype.ofFinite α
   rw [Nat.card_pi, Finset.prod_const, Finset.card_univ, ← Nat.card_eq_fintype_card]
 
 @[simp]
