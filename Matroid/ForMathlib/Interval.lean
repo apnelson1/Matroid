@@ -1,5 +1,9 @@
-import Mathlib.Order.Interval.Set.Defs
-import Mathlib.Algebra.Order.IsBotOne
+module
+
+public import Mathlib.Order.Interval.Set.Defs
+public import Mathlib.Algebra.Order.IsBotOne
+
+@[expose] public section
 
 namespace Set
 

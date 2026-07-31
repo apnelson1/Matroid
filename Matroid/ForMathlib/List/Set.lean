@@ -1,7 +1,11 @@
-import Mathlib.Algebra.Order.Interval.Set.SuccPred
-import Mathlib.Data.Set.Card
-import Matroid.ForMathlib.Interval
-import Matroid.ForMathlib.List.Extract
+module
+
+public import Mathlib.Algebra.Order.Interval.Set.SuccPred
+public import Mathlib.Data.Set.Card
+public import Matroid.ForMathlib.Interval
+public import Matroid.ForMathlib.List.Extract
+
+@[expose] public section
 
 variable {α : Type*} {L l : List α} {x : α} {i j p q n : ℕ}
 

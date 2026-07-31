@@ -1,9 +1,13 @@
-import Mathlib.Analysis.InnerProductSpace.PiL2 -- inefficient import
-import Mathlib.Topology.UniformSpace.Path
-import Mathlib.Topology.Separation.Connected
-import Mathlib.Geometry.Polygon.Basic -- inefficient import
-import Matroid.ForMathlib.List.Basic
-import Mathlib.Probability.ProbabilityMassFunction.Basic
+module
+
+public import Mathlib.Analysis.InnerProductSpace.PiL2 -- inefficient import
+public import Mathlib.Topology.UniformSpace.Path
+public import Mathlib.Topology.Separation.Connected
+public import Mathlib.Geometry.Polygon.Basic -- inefficient import
+public import Matroid.ForMathlib.List.Basic
+public import Mathlib.Probability.ProbabilityMassFunction.Basic
+
+@[expose] public section
 
 universe u
 variable {α β : Type*} {a b c x y z w : α} {C L : List α} {X Y : Set α} {N : ℕ}
@@ -216,9 +220,10 @@ lemma trans_injective_iff [TopologicalSpace α] {P : Path x y} {Q : Path y z} :
     obtain ⟨a, ⟨⟨t1, hPQ⟩, hay⟩, t2, rfl⟩ := hdj
     rw [← trans_squishRight t2, ← trans_squishLeft t1] at hPQ
     replace hPQ := by simpa [squishLeft, squishRight] using h hPQ
+    replace hPQ : (t1 : ℝ) / 2 = (t2 + 1) / 2 := by
+      simpa [squishLeft, squishRight, Subtype.ext_iff] using hPQ
     obtain rfl : t2 = 0 := by
-      have hPQ' : (t1 : ℝ) / 2 = (t2 + 1) / 2 := Subtype.ext_iff.mp hPQ
-      have : (t2 : ℝ) = 0 := by linarith [hPQ', t1.prop.2, t2.prop.1]
+      have : (t2 : ℝ) = 0 := by linarith [hPQ, t1.prop.2, t2.prop.1]
       exact Subtype.ext (by simpa [Icc.coe_zero])
     simp at hay
   by_cases ht₁ : (t₁ : ℝ) ≤ 2⁻¹ <;> by_cases ht₂ : (t₂ : ℝ) ≤ 2⁻¹ <;> simp only [trans_apply,

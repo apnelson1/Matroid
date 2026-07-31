@@ -1,4 +1,8 @@
-import Matroid.Graph.WList.TakeDrop.Defs
+module
+
+public import Matroid.Graph.WList.TakeDrop.Defs
+
+@[expose] public section
 
 open Set Function List Nat WList
 

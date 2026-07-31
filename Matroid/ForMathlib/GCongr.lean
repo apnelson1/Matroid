@@ -1,4 +1,8 @@
-import Matroid.ForMathlib.Matroid.Closure
+module
+
+public import Matroid.ForMathlib.Matroid.Closure
+
+@[expose] public section
 
 namespace Matroid
 

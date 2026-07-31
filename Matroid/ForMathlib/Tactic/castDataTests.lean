@@ -1,5 +1,9 @@
-import Mathlib
-import Matroid.ForMathlib.Tactic.castData1
+module
+
+public import Mathlib
+public import Matroid.ForMathlib.Tactic.castData1
+
+@[expose] public section
 
 /-- `castData` pulls the cast outward; `eq_rec_constant` collapses `Eq.rec` on a fixed type. -/
 example {α : Type*} {p q : α → Prop} {x : Subtype p} (h : p = q) : (h ▸ x).val = x.val := by

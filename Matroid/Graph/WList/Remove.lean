@@ -1,4 +1,8 @@
-import Matroid.Graph.WList.Sublist
+module
+
+public import Matroid.Graph.WList.Sublist
+
+@[expose] public section
 
 open Set Function List Nat WList
 

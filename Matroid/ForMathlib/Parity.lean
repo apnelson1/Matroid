@@ -1,7 +1,11 @@
-import Mathlib.Data.Nat.Bits
-import Mathlib.Algebra.Ring.Parity
-import Mathlib.Order.Basic
-import Matroid.ForMathlib.Bool
+module
+
+public import Mathlib.Data.Nat.Bits
+public import Mathlib.Algebra.Ring.Parity
+public import Mathlib.Order.Basic
+public import Matroid.ForMathlib.Bool
+
+@[expose] public section
 
 lemma Nat.bodd_eq_odd (n : ℕ) : n.bodd = Odd n := by
   induction n with

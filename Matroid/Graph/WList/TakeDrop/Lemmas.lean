@@ -1,6 +1,10 @@
-import Matroid.Graph.WList.TakeDrop.Index
-import Matroid.Graph.WList.TakeDrop.Pred
-import Matroid.Graph.WList.Remove
+module
+
+public import Matroid.Graph.WList.TakeDrop.Index
+public import Matroid.Graph.WList.TakeDrop.Pred
+public import Matroid.Graph.WList.Remove
+
+@[expose] public section
 
 open Set Function List Nat WList
 

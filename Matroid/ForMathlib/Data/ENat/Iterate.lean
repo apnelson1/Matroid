@@ -1,5 +1,9 @@
-import Matroid.ForMathlib.ENat
-import Mathlib.Data.ENat.Lattice -- inefficient import
+module
+
+public import Matroid.ForMathlib.ENat
+public import Mathlib.Data.ENat.Lattice -- inefficient import
+
+@[expose] public section
 
 namespace ENat
 

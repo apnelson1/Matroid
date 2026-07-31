@@ -1,4 +1,8 @@
-import Mathlib.Data.Set.Image
+module
+
+public import Mathlib.Data.Set.Image
+
+@[expose] public section
 
 open Set
 

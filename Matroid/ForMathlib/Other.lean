@@ -1,4 +1,8 @@
-import Matroid.ForMathlib.PartialEquiv
+module
+
+public import Matroid.ForMathlib.PartialEquiv
+
+@[expose] public section
 
 variable {α β : Type*} {s s₁ s₂ t t' : Set α} {f : α → β }
 

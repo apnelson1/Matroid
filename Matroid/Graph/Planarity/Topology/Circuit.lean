@@ -1,5 +1,9 @@
-import Mathlib.Topology.Order.IntermediateValue
-import Matroid.Graph.Planarity.Topology.Circle
+module
+
+public import Mathlib.Topology.Order.IntermediateValue
+public import Matroid.Graph.Planarity.Topology.Circle
+
+@[expose] public section
 
 variable {α β : Type*} [TopologicalSpace α] [TopologicalSpace β] {a b c u v w x y z : α}
   {A C X Y : Set α}

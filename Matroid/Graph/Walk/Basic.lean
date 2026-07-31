@@ -1,7 +1,12 @@
-import Matroid.Graph.WList.TakeDrop.Pred
-import Matroid.Graph.WList.TakeDrop.Index
-import Matroid.Graph.WList.Remove
-import Matroid.Graph.Subgraph.Delete
+module
+
+public import Matroid.Graph.WList.TakeDrop.Pred
+public import Matroid.Graph.WList.TakeDrop.Index
+public import Matroid.Graph.WList.Remove
+public import Matroid.Graph.Subgraph.Delete
+import all Mathlib.Combinatorics.Graph.Delete
+
+@[expose] public section
 
 /-
 This file defined predicates stating that an abstract walk `w` is a walk/trail/path of a graph `G`.

@@ -1,4 +1,8 @@
-import Matroid.ForMathlib.Partition.Induce
+module
+
+public import Matroid.ForMathlib.Partition.Induce
+
+@[expose] public section
 
 variable {α : Type*} {S T : Set α} {a b c : α}
 

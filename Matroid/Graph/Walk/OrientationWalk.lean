@@ -1,5 +1,9 @@
-import Mathlib.Combinatorics.Graph.Subgraph
-import Mathlib.Logic.Equiv.PartialEquiv
+module
+
+public import Mathlib.Combinatorics.Graph.Subgraph
+public import Mathlib.Logic.Equiv.PartialEquiv
+
+@[expose] public section
 
 variable {α β γ : Type*} {x y z u v w : α} {e f : β} {G H : Graph α β} {F : Set β} {S T : Set α}
 

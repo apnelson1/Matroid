@@ -1,8 +1,12 @@
-import Mathlib.Data.Set.Card
-import Matroid.ForMathlib.ENat
-import Mathlib.Algebra.BigOperators.WithTop
-import Mathlib.Algebra.BigOperators.Finprod
-import Mathlib.Tactic.ENatToNat
+module
+
+public import Mathlib.Data.Set.Card
+public import Matroid.ForMathlib.ENat
+public import Mathlib.Algebra.BigOperators.WithTop
+public import Mathlib.Algebra.BigOperators.Finprod
+public import Mathlib.Tactic.ENatToNat
+
+@[expose] public section
 
 open Set BigOperators Function
 

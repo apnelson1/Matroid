@@ -1,5 +1,10 @@
-import Matroid.Graph.Walk.Path
-import Matroid.Graph.WList.Cycle
+module
+
+public import Matroid.Graph.Walk.Path
+public import Matroid.Graph.WList.Cycle
+import all Mathlib.Combinatorics.Graph.Delete
+
+@[expose] public section
 
 variable {α β : Type*} {x y z u v : α} {e f : β} {G H : Graph α β}
   {w w₁ w₂ C C₁ C₂ : WList α β} {S T : Set α}

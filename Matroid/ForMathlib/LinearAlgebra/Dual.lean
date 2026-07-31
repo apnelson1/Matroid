@@ -1,4 +1,8 @@
-import Mathlib.LinearAlgebra.Dual
+module
+
+public import Mathlib.LinearAlgebra.Dual
+
+@[expose] public section
 
 
 open Submodule

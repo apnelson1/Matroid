@@ -1,5 +1,9 @@
-import Mathlib.Analysis.CStarAlgebra.Unitary.Connected
-import Matroid.Graph.Planarity.Topology.Path
+module
+
+public import Mathlib.Analysis.CStarAlgebra.Unitary.Connected
+public import Matroid.Graph.Planarity.Topology.Path
+
+@[expose] public section
 
 open Set Function TopologicalSpace Topology Metric Nat Complex Real
 

@@ -1,4 +1,9 @@
-import Matroid.Graph.Connected.Set.Defs
+module
+
+public import Matroid.Graph.Connected.Set.Defs
+import all Mathlib.Combinatorics.Graph.Delete
+
+@[expose] public section
 
 open Set Function Nat WList
 

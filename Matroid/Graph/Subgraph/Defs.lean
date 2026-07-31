@@ -1,6 +1,11 @@
-import Matroid.Graph.Constructions.Basic
-import Matroid.ForMathlib.Set
-import Matroid.ForMathlib.Function
+module
+
+public import Matroid.Graph.Constructions.Basic
+public import Matroid.ForMathlib.Set
+public import Matroid.ForMathlib.Function
+import all Mathlib.Combinatorics.Graph.Delete
+
+@[expose] public section
 
 variable {α β ι ι' : Type*} {x y z u v w : α} {e f : β} {G G₁ G₂ H H₁ H₂ : Graph α β}
   {F F₁ F₂ : Set β} {X Y : Set α} {Gs Hs : Set (Graph α β)} {Gι Hι : ι → Graph α β}
@@ -59,13 +64,17 @@ section deleteVerts
 --   hSub G x := G - ({x} : Set α)
 scoped notation:51 G:100 " - " S:100 => Graph.deleteVerts G S
 
-lemma deleteVerts_def (G : Graph α β) (X : Set α) : G - X = G [V(G) \ X] := rfl
+lemma deleteVerts_def (G : Graph α β) (X : Set α) : G - X = G [V(G) \ X] := by
+  unfold deleteVerts
+  rfl
 
 -- @[simp, grind =]
 -- lemma deleteVerts_singleton (G : Graph α β) (x : α) : G - x = G - ({x} : Set α) := rfl
 
 @[simp, grind =]
-lemma deleteVerts_vertexSet (G : Graph α β) (X : Set α) : V(G - X) = V(G) \ X := rfl
+lemma deleteVerts_vertexSet (G : Graph α β) (X : Set α) : V(G - X) = V(G) \ X := by
+  unfold deleteVerts
+  rfl
 
 @[simp, grind =]
 lemma deleteVerts_isLink_iff (G : Graph α β) (X : Set α) :

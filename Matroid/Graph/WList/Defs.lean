@@ -1,5 +1,9 @@
-import Mathlib.Data.Sym.Sym2
-import Mathlib.Data.Set.Card
+module
+
+public import Mathlib.Data.Sym.Sym2
+public import Mathlib.Data.Set.Card
+
+@[expose] public section
 
 open Set Function List Nat
 

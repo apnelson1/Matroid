@@ -1,5 +1,9 @@
-import Matroid.Graph.Connected.Menger
-import Mathlib.Combinatorics.Matroid.IndepAxioms
+module
+
+public import Matroid.Graph.Connected.Menger
+public import Mathlib.Combinatorics.Matroid.IndepAxioms
+
+@[expose] public section
 
 open Set Function Nat WList
 

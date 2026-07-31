@@ -1,8 +1,12 @@
-import Matroid.Graph.Subgraph.Basic
-import Mathlib.Data.PFun
-import Mathlib.Combinatorics.SimpleGraph.Basic
-import Mathlib.Data.Sym.Card
-import Mathlib.Order.Interval.Set.Nat
+module
+
+public import Matroid.Graph.Subgraph.Basic
+public import Mathlib.Data.PFun
+public import Mathlib.Combinatorics.SimpleGraph.Basic
+public import Mathlib.Data.Sym.Card
+public import Mathlib.Order.Interval.Set.Nat
+
+@[expose] public section
 
 variable {α β : Type*} {x y z u v w a b : α} {e f : β} {G H : Graph α β} {F F₁ F₂ : Set β}
   {X Y V : Set α}

@@ -1,5 +1,9 @@
-import Matroid.Graph.TopologicalMinor
-import Matroid.Graph.Walk.Cycle
+module
+
+public import Matroid.Graph.TopologicalMinor
+public import Matroid.Graph.Walk.Cycle
+
+@[expose] public section
 
 variable {α β : Type*}
 

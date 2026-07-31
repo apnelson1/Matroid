@@ -1,4 +1,9 @@
-import Matroid.Graph.Subgraph.Defs
+module
+
+public import Matroid.Graph.Subgraph.Defs
+import all Mathlib.Combinatorics.Graph.Delete
+
+@[expose] public section
 
 variable {α β ι ι' : Type*} {a b c : α} {x y z u v w : α} {e f : β} {Gι Hι : ι → Graph α β}
   {G G₁ G₂ H H₁ H₂ : Graph α β} {F F₁ F₂ : Set β} {X Y : Set α} {Gs Hs : Set (Graph α β)}

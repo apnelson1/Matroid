@@ -1,6 +1,10 @@
-import Mathlib.Combinatorics.Graph.Subgraph
-import Mathlib.Data.Set.Card
-import Mathlib.Data.ENat.Lattice
+module
+
+public import Mathlib.Combinatorics.Graph.Subgraph
+public import Mathlib.Data.Set.Card
+public import Mathlib.Data.ENat.Lattice
+
+@[expose] public section
 
 variable {α β κ : Type*} {x y z u v : α} {e f : β} {G : Graph α β}
 
@@ -85,7 +89,7 @@ lemma EdgeColorable_mono {m n : ℕ} (hG : G.EdgeColorable m) (hmn : m ≤ n) : 
 /-- The edge-chromatic number of a graph, as a term in the type `ℕ∞`, which is essentially the
 natural numbers with infinity. Don't worry about the way it is defined. -/
 noncomputable def chromaticIndex (G : Graph α β) : ℕ∞ :=
-    ⨅ n ∈ setOf {x | G.EdgeColorable x}, (n : ℕ∞)
+    ⨅ n ∈ ofPred {x | G.EdgeColorable x}, (n : ℕ∞)
 
 -- /-- the chromatic index of `G` is at most the size of the range of a given edge-coloring. -/
 -- lemma EdgeColoring.chromaticIndex_le (c : G.EdgeColoring κ) :

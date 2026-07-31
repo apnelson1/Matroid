@@ -1,6 +1,11 @@
-import Matroid.Graph.Planarity.CombMap.Equiv
-import Matroid.Graph.Walk.Dart
-import Matroid.Graph.Simple
+module
+
+public import Matroid.Graph.Planarity.CombMap.Equiv
+public import Matroid.Graph.Walk.Dart
+public import Matroid.Graph.Simple
+import all Mathlib.Combinatorics.Graph.Delete
+
+@[expose] public section
 
 open Set PFun Part Equiv Function Equiv.Perm
 

@@ -1,5 +1,9 @@
-import Mathlib.Algebra.Module.Submodule.Map
-import Mathlib.LinearAlgebra.Span.Defs
+module
+
+public import Mathlib.Algebra.Module.Submodule.Map
+public import Mathlib.LinearAlgebra.Span.Defs
+
+@[expose] public section
 
 theorem LinearEquiv.map_coe {R M₁ M₂ : Type*} [CommSemiring R]
     [AddCommMonoid M₁] [AddCommMonoid M₂] [Module R M₁] [Module R M₂] (e : M₁ ≃ₗ[R] M₂)

@@ -1,7 +1,11 @@
-import Mathlib.Algebra.Order.Ring.Nat
-import Mathlib.Algebra.Order.Sub.Basic
-import Mathlib.Data.List.Nodup
-import Mathlib.Data.List.TakeDrop
+module
+
+public import Mathlib.Algebra.Order.Ring.Nat
+public import Mathlib.Algebra.Order.Sub.Basic
+public import Mathlib.Data.List.Nodup
+public import Mathlib.Data.List.TakeDrop
+
+@[expose] public section
 
 variable {α : Type*} {L l : List α} {x : α} {i j p q n : ℕ}
 

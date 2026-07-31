@@ -1,5 +1,9 @@
-import Mathlib.Data.PEquiv
-import Matroid.Graph.Basic
+module
+
+public import Mathlib.Data.PEquiv
+public import Matroid.Graph.Basic
+
+@[expose] public section
 
 open Set Function
 
@@ -8,8 +12,7 @@ namespace Graph
 variable {α α' α'' β β' β'' : Type*} {G : Graph α β} {H : Graph α' β'} {K : Graph α'' β''}
   {x y : α} {e : β}
 
-private lemma option_isSome_iff_exists_mem {o : Option α} :
-    o.isSome ↔ ∃ x, x ∈ o := by
+lemma option_isSome_iff_exists_mem {o : Option α} : o.isSome ↔ ∃ x, x ∈ o := by
   simp [Option.isSome_iff_exists]
 
 /-- A graph homomorphism, represented by partial maps whose domains are exactly the vertex and

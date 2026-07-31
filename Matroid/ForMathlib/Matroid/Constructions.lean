@@ -1,4 +1,8 @@
-import Mathlib.Combinatorics.Matroid.Constructions
+module
+
+public import Mathlib.Combinatorics.Matroid.Constructions
+
+@[expose] public section
 
 namespace Matroid
 

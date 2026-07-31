@@ -1,5 +1,9 @@
 -- import Mathlib.Data.Set.Finite.Basic -- inefficient import
-import Mathlib.Data.Finset.Powerset -- inefficient import
+module
+
+public import Mathlib.Data.Finset.Powerset -- inefficient import
+
+@[expose] public section
 -- import Mathlib.Data.Fintype.Lattice
 -- import Mathlib.Data.Int.Cast.Basic
 -- import Mathlib.Algebra.Group.Int

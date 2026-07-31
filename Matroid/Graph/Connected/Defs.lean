@@ -1,6 +1,11 @@
-import Matroid.ForMathlib.Tactic.ENatToNat
-import Matroid.Graph.Connected.Component
-import Matroid.Graph.Connected.Set.Defs
+module
+
+public import Matroid.ForMathlib.Tactic.ENatToNat
+public import Matroid.Graph.Connected.Component
+public import Matroid.Graph.Connected.Set.Defs
+import all Mathlib.Combinatorics.Graph.Delete
+
+@[expose] public section
 
 open Set Function Nat WList
 variable {α β : Type*} {G H K : Graph α β} {s t u v x x₁ x₂ y y₁ y₂ z : α} {n m : ℕ}

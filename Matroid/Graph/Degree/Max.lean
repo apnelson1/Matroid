@@ -1,5 +1,10 @@
-import Matroid.Graph.Forest
-import Matroid.Graph.Walk.Cycle
+module
+
+public import Matroid.Graph.Forest
+public import Matroid.Graph.Walk.Cycle
+import all Mathlib.Combinatorics.Graph.Delete
+
+@[expose] public section
 
 variable {α β : Type*} {x y z u v w : α} {e f : β} {G H C : Graph α β} {F F₁ F₂ : Set β}
   {X Y : Set α} {d : ℕ}

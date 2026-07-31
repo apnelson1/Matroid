@@ -1,9 +1,13 @@
-import Mathlib.Data.List.Cycle
-import Mathlib.Data.List.Fold
-import Mathlib.Data.List.SplitBy
-import Matroid.ForMathlib.List.SplitBy
-import Mathlib.Data.PNat.Defs
-import Mathlib.Tactic.Simproc.VecPerm
+module
+
+public import Mathlib.Data.List.Cycle
+public import Mathlib.Data.List.Fold
+public import Mathlib.Data.List.SplitBy
+public import Matroid.ForMathlib.List.SplitBy
+public import Mathlib.Data.PNat.Defs
+public import Mathlib.Tactic.Simproc.VecPerm
+
+@[expose] public section
 
 variable {α β γ : Type*} {C C' : Cycle α} {l l' : List α} {x : α} {b : β} {c : γ}
 

@@ -1,4 +1,8 @@
-import Matroid.ForMathlib.Partition.Constructor
+module
+
+public import Matroid.ForMathlib.Partition.Constructor
+
+@[expose] public section
 
 open Set Function Relation
 

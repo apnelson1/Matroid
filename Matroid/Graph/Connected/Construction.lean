@@ -1,5 +1,9 @@
-import Matroid.Graph.Connected.Menger
-import Matroid.Graph.Connected.Bond
+module
+
+public import Matroid.Graph.Connected.Menger
+public import Matroid.Graph.Connected.Bond
+
+@[expose] public section
 
 open Set Function Nat WList
 

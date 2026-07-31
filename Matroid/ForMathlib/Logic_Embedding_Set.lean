@@ -1,5 +1,9 @@
-import Mathlib.Logic.Embedding.Set
-import Mathlib.Logic.Equiv.Set
+module
+
+public import Mathlib.Logic.Embedding.Set
+public import Mathlib.Logic.Equiv.Set
+
+@[expose] public section
 
 open Set Function Set.Notation
 

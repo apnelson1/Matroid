@@ -1,6 +1,10 @@
-import Mathlib.Algebra.Order.Ring.Nat
-import Mathlib.Algebra.Order.Sub.Unbundled.Basic
-import Mathlib.Data.Finset.Card
+module
+
+public import Mathlib.Algebra.Order.Ring.Nat
+public import Mathlib.Algebra.Order.Sub.Unbundled.Basic
+public import Mathlib.Data.Finset.Card
+
+@[expose] public section
 
 namespace List
 

@@ -1,4 +1,8 @@
-import Matroid.Graph.Connected.MixedLineGraph
+module
+
+public import Matroid.Graph.Connected.MixedLineGraph
+
+@[expose] public section
 
 open Set Function WList
 

@@ -1,6 +1,11 @@
-import Matroid.Graph.Subgraph.Union
-import Matroid.Graph.Walk.Path
-import Matroid.ForMathlib.Partition.Rep
+module
+
+public import Matroid.Graph.Subgraph.Union
+public import Matroid.Graph.Walk.Path
+public import Matroid.ForMathlib.Partition.Rep
+import all Mathlib.Combinatorics.Graph.Delete
+
+@[expose] public section
 
 variable {α β : Type*} {x y z u v w a b : α} {e f : β} {G H : Graph α β} {F F₁ F₂ : Set β}
     {X Y : Set α} {G H : Graph α β} {P : WList α β}

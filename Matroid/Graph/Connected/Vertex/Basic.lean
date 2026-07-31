@@ -1,5 +1,9 @@
-import Matroid.Graph.Lattice
-import Matroid.Graph.Connected.Vertex.Defs
+module
+
+public import Matroid.Graph.Lattice
+public import Matroid.Graph.Connected.Vertex.Defs
+
+@[expose] public section
 
 open Set Function Nat WList
 

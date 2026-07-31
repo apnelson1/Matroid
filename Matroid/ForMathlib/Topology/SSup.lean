@@ -1,7 +1,11 @@
 
-import Mathlib.Topology.Order.T5
-import Mathlib.Data.Set.Basic
-import Mathlib.Topology.Algebra.Monoid.Defs
+module
+
+public import Mathlib.Topology.Order.T5
+public import Mathlib.Data.Set.Basic
+public import Mathlib.Topology.Algebra.Monoid.Defs
+
+@[expose] public section
 
 open Set
 

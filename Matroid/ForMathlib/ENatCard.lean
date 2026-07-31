@@ -3,13 +3,15 @@ Copyright (c) 2021 Aaron Anderson. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Aaron Anderson
 -/
-import Mathlib.Data.ENat.Lattice
-import Mathlib.Data.Fintype.Prod
-import Mathlib.Data.Finite.Sum
-import Mathlib.Data.Fintype.BigOperators
-import Mathlib.Algebra.BigOperators.Ring.Finset
-import Mathlib.Algebra.Order.BigOperators.Group.Finset
-import Mathlib.Data.ZMod.Defs
+module
+
+public import Mathlib.Data.ENat.Lattice
+public import Mathlib.Data.Fintype.Prod
+public import Mathlib.Data.Finite.Sum
+public import Mathlib.Data.Fintype.BigOperators
+public import Mathlib.Algebra.BigOperators.Ring.Finset
+public import Mathlib.Algebra.Order.BigOperators.Group.Finset
+public import Mathlib.Data.ZMod.Defs
 
 /-!
 # Finite Cardinality Functions
@@ -21,6 +23,8 @@ import Mathlib.Data.ZMod.Defs
 * `Nat.card α` is the cardinality of `α` as a natural number.
   If `α` is infinite, `Nat.card α = 0`.
 -/
+
+@[expose] public section
 
 assert_not_exists Field
 

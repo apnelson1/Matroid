@@ -1,6 +1,11 @@
-import Matroid.Graph.WList.TakeDrop.Decompose
-import Matroid.Graph.WList.TakeDrop.Lemmas
-import Matroid.Graph.Walk.Basic
+module
+
+public import Matroid.Graph.WList.TakeDrop.Decompose
+public import Matroid.Graph.WList.TakeDrop.Lemmas
+public import Matroid.Graph.Walk.Basic
+import all Mathlib.Combinatorics.Graph.Delete
+
+@[expose] public section
 
 variable {α β ι : Type*} {x y z u v : α} {e f : β} {G H : Graph α β}
   {W w w₀ w₁ w₂ P P₀ P₁ P₂ : WList α β} {S S' T T' X : Set α}

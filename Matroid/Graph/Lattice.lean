@@ -1,5 +1,10 @@
-import Matroid.Graph.Subgraph.Lemma
-import Mathlib.Order.Atoms
+module
+
+public import Matroid.Graph.Subgraph.Lemma
+public import Mathlib.Order.Atoms
+import all Mathlib.Combinatorics.Graph.Delete
+
+@[expose] public section
 
 variable {α β ι ι' : Type*} {x y z u v w : α} {e f : β} {G G₁ G₂ H H₁ H₂ : Graph α β}
   {F F₁ F₂ : Set β} {X Y : Set α}

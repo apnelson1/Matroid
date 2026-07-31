@@ -1,6 +1,11 @@
-import Matroid.Graph.Distance
-import Matroid.Graph.Connected.Subgraph
-import Matroid.Graph.Connected.Bond
+module
+
+public import Matroid.Graph.Distance
+public import Matroid.Graph.Connected.Subgraph
+public import Matroid.Graph.Connected.Bond
+import all Mathlib.Combinatorics.Graph.Delete
+
+@[expose] public section
 
 variable {α β : Type*} {G H T : Graph α β} {u v x y z : α} {e e' f g : β} {X : Set α}
   {F F' I J : Set β} {P C Q : WList α β}

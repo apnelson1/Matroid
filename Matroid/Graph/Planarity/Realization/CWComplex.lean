@@ -1,4 +1,8 @@
-import Matroid.Graph.Planarity.Realization.Basic
+module
+
+public import Matroid.Graph.Planarity.Realization.Basic
+
+@[expose] public section
 
 open Set Function TopologicalSpace Topology Relation UniformSpace Sum Path WList Classical ENNReal
 open scoped unitInterval

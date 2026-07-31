@@ -1,4 +1,8 @@
-import Mathlib.LinearAlgebra.Dimension.Constructions
+module
+
+public import Mathlib.LinearAlgebra.Dimension.Constructions
+
+@[expose] public section
 
 variable {α R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M] {s : Set α}
 

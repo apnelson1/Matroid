@@ -1,5 +1,9 @@
-import Mathlib.Data.Ineq
-import Mathlib.Tactic.ENatToNat
+module
+
+public meta import Mathlib.Data.Ineq
+public meta import Mathlib.Tactic.ENatToNat
+
+public meta section
 
 open Lean Meta Mathlib.Tactic Qq
 

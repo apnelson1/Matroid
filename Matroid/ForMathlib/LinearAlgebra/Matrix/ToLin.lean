@@ -1,4 +1,8 @@
-import Mathlib.LinearAlgebra.Matrix.ToLin
+module
+
+public import Mathlib.LinearAlgebra.Matrix.ToLin
+
+@[expose] public section
 
 open Matrix Submodule Set LinearMap BigOperators
 

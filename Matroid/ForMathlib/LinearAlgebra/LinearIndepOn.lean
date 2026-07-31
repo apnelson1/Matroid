@@ -1,5 +1,9 @@
-import Mathlib.LinearAlgebra.Finsupp.Pi
-import Mathlib.LinearAlgebra.Finsupp.VectorSpace
+module
+
+public import Mathlib.LinearAlgebra.Finsupp.Pi
+public import Mathlib.LinearAlgebra.Finsupp.VectorSpace
+
+@[expose] public section
 
 variable {ι ι' : Type*} {R : Type*} {K : Type*} {s : Set ι} {M M' V : Type*} {v : ι → M}
 
@@ -50,7 +54,7 @@ theorem linearIndepOn_pair_iff' {R M ι : Type*} [Ring R] [AddCommGroup M] [Modu
   simp +contextual [hg0]
 
 theorem linearDepOn_pair_iff {K V ι : Type*} [DivisionRing K] [AddCommGroup V]
-  [Module K V] {i j : ι} (f : ι → V) (hij : i ≠ j) :
+    [Module K V] {i j : ι} (f : ι → V) (hij : i ≠ j) :
     ¬ LinearIndepOn K f {i, j} ↔ ∃ c d : K, c • f i = d • f j ∧ ¬ (c = 0 ∧ d = 0) := by
   by_cases hi : f i = 0
   · exact iff_of_true (fun h ↦ h.ne_zero (by simp) hi) ⟨1, 0, by simp [hi]⟩
@@ -58,7 +62,7 @@ theorem linearDepOn_pair_iff {K V ι : Type*} [DivisionRing K] [AddCommGroup V]
   refine ⟨fun ⟨c, hc⟩ ↦ ⟨c, 1, by simpa, by simp⟩, fun ⟨c, d, h, hcd⟩ ↦ ⟨d⁻¹ * c, ?_⟩⟩
   rw [mul_smul, h, inv_smul_smul₀]
   rintro rfl
-  exact hcd (by simpa [hi] using h) rfl
+  aesop
 
 @[simp]
 theorem Basis.mkImage_apply {ι R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]

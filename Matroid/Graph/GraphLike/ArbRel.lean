@@ -3,11 +3,14 @@ Copyright (c) 2026 Jun Kwon. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Kwon
 -/
+module
 
-import Mathlib.Order.Extension.Linear
+public import Mathlib.Order.Extension.Linear
 -- import Mathlib.Combinatorics.Graph.Subgraph
-import Matroid.Graph.Subgraph.Basic
-import Mathlib.Data.Sym.Sym2.Order
+public import Matroid.Graph.Subgraph.Basic
+public import Mathlib.Data.Sym.Sym2.Order
+
+public section
 
 /-!
 # Arbitrary trichotomous relation on a type α

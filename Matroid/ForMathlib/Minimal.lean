@@ -1,4 +1,8 @@
-import Mathlib.Order.Minimal -- inefficient import
+module
+
+public import Mathlib.Order.Minimal -- inefficient import
+
+@[expose] public section
 
 open Set
 

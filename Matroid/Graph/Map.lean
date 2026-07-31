@@ -1,6 +1,11 @@
-import Matroid.Graph.Subgraph.Compatible
-import Matroid.Graph.Subgraph.Delete
-import Matroid.Graph.Walk.Cycle
+module
+
+public import Matroid.Graph.Subgraph.Compatible
+public import Matroid.Graph.Subgraph.Delete
+public import Matroid.Graph.Walk.Cycle
+import all Mathlib.Combinatorics.Graph.Delete
+
+@[expose] public section
 
 variable {α β : Type*} {x y z u v w a b : α} {e f : β} {G H : Graph α β} {F F₁ F₂ : Set β}
   {X Y : Set α} {W : WList α β}

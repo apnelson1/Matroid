@@ -1,9 +1,14 @@
-import Matroid.Graph.Connected.Set.Leg
-import Matroid.Graph.Connected.Vertex.VertexEnsemble
-import Matroid.Graph.Connected.MixedLineGraph
-import Matroid.Graph.Connected.LineGraph
-import Matroid.Graph.Finite
-import Mathlib.SetTheory.Cardinal.NatCard
+module
+
+public import Matroid.Graph.Connected.Set.Leg
+public import Matroid.Graph.Connected.Vertex.VertexEnsemble
+public import Matroid.Graph.Connected.MixedLineGraph
+public import Matroid.Graph.Connected.LineGraph
+public import Matroid.Graph.Finite
+public import Mathlib.SetTheory.Cardinal.NatCard
+import all Mathlib.Combinatorics.Graph.Delete
+
+@[expose] public section
 
 open Set Function Nat WList symmDiff Graph.SetEnsemble
 
@@ -375,7 +380,7 @@ theorem Menger'sTheorem_mixed [G.Finite] (hs : s ∈ V(G)) (ht : t ∈ V(G)) (h�
 
 section edgeMenger
 
-private lemma foo {Q : WList β (Sym2 β)}
+lemma isPath_edgeSet_subset_of_restrict {Q : WList β (Sym2 β)}
     (hconn : (G ↾ V(Q)).ConnBetween s t) : E(hconn.exists_isPath.choose) ⊆ V(Q) :=
   hconn.exists_isPath.choose_spec.1.isWalk.edgeSet_subset_of_restrict
 
@@ -391,7 +396,8 @@ noncomputable def EdgePathEnsemble.ofLineGraphSetEnsemblePaths (A : (L(G)).SetEn
     first_eq := fun ⟨Q, hQ⟩ ↦ (h Q hQ).exists_isPath.choose_spec.2.1
     last_eq := fun ⟨Q, hQ⟩ ↦ (h Q hQ).exists_isPath.choose_spec.2.2
     edgeDisjoint := fun ⟨Q₁, h₁⟩ ⟨Q₂, h₂⟩ hne => (A.disjoint h₁ h₂ (Subtype.coe_injective.ne hne)
-      |>.mono_right (foo (h Q₂ h₂))).mono_left (foo (h Q₁ h₁))}
+      |>.mono_right (isPath_edgeSet_subset_of_restrict (h Q₂ h₂))).mono_left
+      (isPath_edgeSet_subset_of_restrict (h Q₁ h₁))}
 
 lemma nonempty_edgePathEnsemble_of_lineGraphSetEnsemble [G.Finite] {n : ℕ}
     (A : (L(G)).SetEnsemble) (hA : A.between (E(G, s)) (E(G, t))) (hι : ENat.card ι = n)

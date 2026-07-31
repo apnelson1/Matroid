@@ -1,4 +1,9 @@
-import Matroid.Graph.Walk.Path
+module
+
+public import Matroid.Graph.Walk.Path
+import all Mathlib.Combinatorics.Graph.Delete
+
+@[expose] public section
 
 open Set Function Nat WList
 

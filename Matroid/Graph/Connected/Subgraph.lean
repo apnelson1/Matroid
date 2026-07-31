@@ -1,5 +1,10 @@
-import Matroid.Graph.Connected.Basic
-import Matroid.Graph.Connected.Vertex.Basic
+module
+
+public import Matroid.Graph.Connected.Basic
+public import Matroid.Graph.Connected.Vertex.Basic
+import all Mathlib.Combinatorics.Graph.Delete
+
+@[expose] public section
 
 open Set Function Nat WList symmDiff
 

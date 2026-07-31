@@ -1,5 +1,9 @@
-import Mathlib.Logic.Equiv.PartialEquiv
-import Mathlib.Data.Set.Card
+module
+
+public import Mathlib.Logic.Equiv.PartialEquiv
+public import Mathlib.Data.Set.Card
+
+@[expose] public section
 
 open Set Function PartialEquiv
 

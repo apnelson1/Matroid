@@ -1,7 +1,12 @@
-import Matroid.Graph.Walk.Cycle
-import Matroid.Graph.Simple
-import Matroid.Graph.Lattice
-import Mathlib.Data.Set.Finite.List
+module
+
+public import Matroid.Graph.Walk.Cycle
+public import Matroid.Graph.Simple
+public import Matroid.Graph.Lattice
+public import Mathlib.Data.Set.Finite.List
+import all Mathlib.Combinatorics.Graph.Delete
+
+@[expose] public section
 
 variable {α β : Type*} {G H T F : Graph α β} {u v x y z : α} {e e' f g : β} {X : Set α}
   {P C Q : WList α β} {F : Set β}

@@ -1,5 +1,9 @@
-import Matroid.ForMathlib.Card
-import Matroid.Graph.Simple
+module
+
+public import Matroid.ForMathlib.Card
+public import Matroid.Graph.Simple
+
+@[expose] public section
 
 variable {α β : Type*} {x y z u v : α} {e f : β} {G H : Graph α β} {A : Set β}
   {W w w₁ w₂ : WList α β} {A S T : Set α}

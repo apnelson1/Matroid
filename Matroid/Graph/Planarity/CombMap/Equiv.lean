@@ -1,7 +1,11 @@
-import Mathlib.GroupTheory.Perm.Cycle.Basic
-import Mathlib.GroupTheory.Perm.Cycle.Concrete
-import Mathlib.GroupTheory.Perm.Support
-import Matroid.Graph.Walk.Dart
+module
+
+public import Mathlib.GroupTheory.Perm.Cycle.Basic
+public import Mathlib.GroupTheory.Perm.Cycle.Concrete
+public import Mathlib.GroupTheory.Perm.Support
+public import Matroid.Graph.Walk.Dart
+
+@[expose] public section
 
 open Set PFun Part Equiv Function Equiv.Perm
 

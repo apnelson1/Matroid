@@ -1,6 +1,10 @@
-import Mathlib.Data.Set.Pairwise.Basic
-import Mathlib.Order.Closure
-import Mathlib.Data.List.Chain
+module
+
+public import Mathlib.Data.Set.Pairwise.Basic
+public import Mathlib.Order.Closure
+public import Mathlib.Data.List.Chain
+
+@[expose] public section
 
 open Set Function
 
