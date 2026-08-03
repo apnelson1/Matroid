@@ -1,5 +1,10 @@
-import Matroid.Graph.Connected.Basic
-import Matroid.Graph.Minor.Defs
+module
+
+public import Matroid.Graph.Connected.Basic
+public import Matroid.Graph.Minor.Defs
+import all Mathlib.Combinatorics.Graph.Delete
+
+@[expose] public section
 
 open Set Function Nat WList
 
@@ -122,7 +127,7 @@ theorem exists_contract_connGE_three [G.Finite] (hG : G.ConnGE 3) (hV : 5 ≤ V(
     ∃ (e : β) (x y : α) (h : G.IsLink e x y), h.contract.ConnGE 3 := by
   -- If the conclusion fails, then every edge-contraction is "bad".
   by_contra! hbad
-  letI P := fun C : Graph α β ↦ ∃ (x y z : α), G.IsSep {x, y, z} ∧
+  let P := fun C : Graph α β ↦ ∃ (x y z : α), G.IsSep {x, y, z} ∧
     C.IsCompOf (G - ({x, y, z} : Set α)) ∧ G.Adj x y ∧ x ≠ y ∧ x ≠ z ∧ y ≠ z
   have hexP : ∃ C : Graph α β, P C := by
     -- Pick a nonloop edge; by `hbad`, contracting it destroys `ConnGE 3`,

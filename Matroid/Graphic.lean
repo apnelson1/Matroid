@@ -341,7 +341,7 @@ lemma eRank_cycleMatroid_add_numberOfComponents (G : Graph α β) :
     fun H hH ↦ (hGC.mem_toFinset.mp hH).connected.eRank_cycleMatroid_add_one
   convert Finset.sum_congr rfl f
   · rw [← Finset.sum_add_card_nsmul]
-    haveI : Fintype G.Components := hGC.fintype
+    have : Fintype G.Components := hGC.fintype
     simp only [← eRk_eq_eRank subset_rfl, cycleMatroid_E, NumberOfComponents, toFinite_toFinset,
       toFinset_card, nsmul_eq_mul, coe_fintypeCard, mul_one, ne_eq, encard_eq_top_iff, hGC,
       Set.Finite.not_infinite, not_false_eq_true, add_left_inj_of_ne_top]
@@ -583,7 +583,7 @@ lemma orientation.isAcyclicSet_linearIndepOn {𝔽 : Type*} [Field 𝔽] [Decida
     intro i hit
     have hF : (G ↾ (t : Set β)).IsForest := (isAcyclicSet_iff.mp (hI.anti htI)).2
     have hne : E(G ↾ (t : Set β)).Nonempty := ⟨i, hI.subset (htI hit), hit⟩
-    haveI : (G ↾ (t : Set β)).EdgeFinite := by
+    have : (G ↾ (t : Set β)).EdgeFinite := by
       constructor
       rw [edgeSet_restrict]
       exact (finite_toSet t).subset inter_subset_right

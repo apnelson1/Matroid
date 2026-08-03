@@ -1,5 +1,9 @@
-import Matroid.Graph.Planarity.Realization.Basic
-import Matroid.Graph.Planarity.Topology.Path
+module
+
+public import Matroid.Graph.Planarity.Realization.Basic
+public import Matroid.Graph.Planarity.Topology.Path
+
+@[expose] public section
 
 variable {α β E : Type*} [MetricSpace E] {G H : Graph α β} {S T : Set α}
 

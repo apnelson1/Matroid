@@ -1,7 +1,12 @@
-import Matroid.Graph.Finite
-import Mathlib.Algebra.BigOperators.Finsupp.Basic
-import Matroid.ForMathlib.Topology.ENat
-import Matroid.ForMathlib.Tactic.ENatToNat
+module
+
+public import Matroid.Graph.Finite
+public import Mathlib.Algebra.BigOperators.Finsupp.Basic
+public import Matroid.ForMathlib.Topology.ENat
+public import Matroid.ForMathlib.Tactic.ENatToNat
+import all Mathlib.Combinatorics.Graph.Delete
+
+@[expose] public section
 
 lemma List.eq_of_sum_eq_le {α : Type*} [AddCommMonoid α] [PartialOrder α] [AddLeftStrictMono α]
     [AddRightStrictMono α] [AddLeftMono α] {l : List (α × α)}

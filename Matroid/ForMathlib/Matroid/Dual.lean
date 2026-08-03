@@ -1,4 +1,8 @@
-import Mathlib.Combinatorics.Matroid.Closure -- inefficient import
+module
+
+public import Mathlib.Combinatorics.Matroid.Closure -- inefficient import
+
+@[expose] public section
 
 variable {α : Type*} {X Y D : Set α} {M : Matroid α}
 

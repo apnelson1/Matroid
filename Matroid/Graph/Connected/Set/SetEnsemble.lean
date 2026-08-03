@@ -1,4 +1,11 @@
-import Matroid.Graph.Connected.Set.Defs
+module
+
+public import Matroid.Graph.Connected.Set.Defs
+import all Mathlib.Combinatorics.Graph.Delete
+
+public section
+
+set_option backward.isDefEq.respectTransparency false
 
 
 open Set Function Nat WList symmDiff
@@ -49,7 +56,7 @@ lemma last_injOn (A : G.SetEnsemble) : A.paths.InjOn WList.last := by
 
 /-! ### Operations on SetEnsembles -/
 
-@[simps (attr := grind =)]
+@[expose, simps (attr := grind =)]
 def congr (A : G.SetEnsemble) (hG : G = H) : H.SetEnsemble where
   paths := A.paths
   disjoint := A.disjoint
@@ -61,7 +68,7 @@ lemma congr_vertexSet (A : G.SetEnsemble) (hG : G = H) :
   rw [vertexSet_eq_biUnion, congr_paths, ← vertexSet_eq_biUnion]
 
 /-- Attaches the same set of paths to a larger graph. -/
-@[simps (attr := grind =)]
+@[expose, simps (attr := grind =)]
 def of_le (A : G.SetEnsemble) (hle : G ≤ H) : H.SetEnsemble where
   paths := A.paths
   disjoint := A.disjoint
@@ -92,7 +99,7 @@ lemma between_vertexSet_inter_right_iff : A.between S (V(G) ∩ T) ↔ A.between
 
 /-- Given a vertex set disjoint from a SetEnsemble, the same set of paths form a valid SetEnsmeble
   for `G - X`. -/
-@[simps (attr := grind =)]
+@[expose, simps (attr := grind =)]
 def deleteVerts (A : G.SetEnsemble) (hA : Disjoint A.vertexSet X) : (G - X).SetEnsemble where
   paths := A.paths
   disjoint := A.disjoint
@@ -124,7 +131,7 @@ theorem between.sdiff_right (hAST : A.between S T) (hA : Disjoint A.vertexSet X)
     ((hA.mono_left (A.subset_vertexSet_of_mem hP))).notMem_of_mem_left last_mem⟩
 
 /-- Inserts a new disjoint path into a  -/
-@[simps (attr := grind =)]
+@[expose, simps (attr := grind =)]
 def path_insert (A : G.SetEnsemble) (P : WList α β) (hP : G.IsPath P)
     (hdj : Disjoint A.vertexSet V(P)) : G.SetEnsemble where
   paths := insert P A.paths
@@ -152,7 +159,7 @@ lemma between.path_insert (hAST : A.between S T) (hP : G.IsPathFrom S T P)
   · exact hP
   exact hAST hQ |>.left_of_symmdiff_disjoint <| by simp
 
-@[simps (attr := grind =)]
+@[expose, simps (attr := grind =)]
 def path_remove (A : G.SetEnsemble) (P : WList α β) : G.SetEnsemble where
   paths := A.paths \ {P}
   disjoint := A.disjoint.mono sdiff_subset
@@ -183,7 +190,7 @@ lemma path_remove_last (hP : P ∈ A.paths) :
 lemma between.path_remove (hAST : A.between S T) (P) : (A.path_remove P).between S T :=
   fun _ hQ ↦ hAST hQ.1
 
-@[simps! (attr := grind =)]
+@[expose, simps! (attr := grind =)]
 def shorten (A : G.SetEnsemble) (P : WList α β) (hQ : Q.IsSublist P) (hP : P ∈ A.paths) :
     G.SetEnsemble :=
   A.path_remove P |>.path_insert Q (A.valid hP |>.sublist hQ)
@@ -197,7 +204,7 @@ lemma shorten_last (hQ : Q.IsSublist P) (hP : P ∈ A.paths) :
 /-! ### Extending a SetEnsemble by a path in `T` -/
 
 /-- `pathr` refers to the path `P` in `T`. -/
-private lemma pathr_mem (A : G.SetEnsemble) (hPfirst : A.vertexSet ∩ V(P) = {P.first}) :
+lemma pathr_mem (A : G.SetEnsemble) (hPfirst : A.vertexSet ∩ V(P) = {P.first}) :
     P.first ∈ A.vertexSet := singleton_subset_iff.mp <| hPfirst ▸ inter_subset_left
 
 lemma pathr_first_eq_of_vertex_last (hAST : A.between S T)
@@ -228,7 +235,7 @@ lemma vertexSet_inter_pathr_eq_last_inter_pathr (hAST : A.between S T) (hPT : V(
   refine fun hx ↦ exists_congr fun P ↦ and_congr_right fun hP ↦ ?_
   simpa [eq_comm, hPT hx] using hAST hP |>.eq_last_iff_mem x |>.symm
 
-@[simps! (attr := grind =)]
+@[expose, simps! (attr := grind =)]
 noncomputable def extend_right (A : G.SetEnsemble) (hAST : A.between S T) (P : WList α β)
    (hPT : V(P) ⊆ T) (hPfirst : A.vertexSet ∩ V(P) = {P.first}) (hP : G.IsPath P) :
    G.SetEnsemble := by
@@ -342,9 +349,13 @@ noncomputable def extend_right_two (A : G.SetEnsemble) (hAST : A.between S T) (P
   have hap : P = P₀ ++ (P.breakAt (· ∈ A.vertexSet))[1] ++ P₂ :=
     hP ▸ P.breakAt_foldl_append_cancel (· ∈ A.vertexSet) (x := P.first) |>.symm
   have hdj : Disjoint V(P₀) V(P₂) := by
-    obtain ⟨hP₀leq, hP₂feq⟩ := by
-      have := hP ▸ P.breakAt_isChain_eq (· ∈ A.vertexSet)
-      simpa using this
+    have hchain := P.breakAt_isChain_eq (· ∈ A.vertexSet)
+
+    rw [hP] at hchain
+
+    simp only [List.isChain_cons_cons, List.isChain_singleton] at hchain
+
+    obtain ⟨hP₀leq, hP₂feq⟩ := hchain
     exact (hap ▸ hPP).disjoint_of_append_append hP₀leq
     <| P.nonempty_of_mem_breakAt_dropLast_tail (· ∈ A.vertexSet) <| by (conv_lhs => rw [hP]); simp
   refine A.extend_right hAST P₀.reverse (P₀.reverse_vertexSet ▸
@@ -380,9 +391,13 @@ lemma between.extend_right_two (hAST : A.between S T) (hPT : V(P) ⊆ T)
   have hap : P = P₀ ++ (P.breakAt (· ∈ A.vertexSet))[1] ++ P₂ :=
     hP ▸ P.breakAt_foldl_append_cancel (· ∈ A.vertexSet) (x := P.first) |>.symm
   have hdj : Disjoint V(P₀) V(P₂) := by
-    obtain ⟨hP₀leq, hP₂feq⟩ := by
-      have := hP ▸ P.breakAt_isChain_eq (· ∈ A.vertexSet)
-      simpa using this
+    have hchain := P.breakAt_isChain_eq (· ∈ A.vertexSet)
+
+    rw [hP] at hchain
+
+    simp only [List.isChain_cons_cons, List.isChain_singleton] at hchain
+
+    obtain ⟨hP₀leq, hP₂feq⟩ := hchain
     exact (hap ▸ hPP).disjoint_of_append_append hP₀leq
     <| P.nonempty_of_mem_breakAt_dropLast_tail (· ∈ A.vertexSet) <| by (conv_lhs => rw [hP]); simp
   have hex : ∃ u ∈ P, u ∈ A.vertexSet := by
@@ -410,9 +425,13 @@ lemma between.extend_right_two (hAST : A.between S T) (hPT : V(P) ⊆ T)
       P.breakAt_tail_map_first_eq_vertex_filter (· ∈ A.vertexSet) ▸
       List.mem_filter.mpr (by simp [hxP, hxA] : x ∈ P.vertex ∧ decide (x ∈ A.vertexSet) = true)
     obtain rfl | rfl := by
-      obtain ⟨hP₀leq, hP₂feq⟩ := by
-        have := hP ▸ P.breakAt_isChain_eq (· ∈ A.vertexSet)
-        simpa using this
+      have hchain := P.breakAt_isChain_eq (· ∈ A.vertexSet)
+
+      rw [hP] at hchain
+
+      simp only [List.isChain_cons_cons, List.isChain_singleton] at hchain
+
+      obtain ⟨hP₀leq, hP₂feq⟩ := hchain
       rw [hP] at this
       simpa [← hP₀leq] using this
     · exact mem_union_left _ last_mem
@@ -472,9 +491,13 @@ lemma extend_right_two_last (hAST : A.between S T) (hPT : V(P) ⊆ T)
   have hap : P = P₀ ++ (P.breakAt (· ∈ A.vertexSet))[1] ++ P₂ :=
     hP ▸ P.breakAt_foldl_append_cancel (· ∈ A.vertexSet) (x := P.first) |>.symm
   have hdj : Disjoint V(P₀) V(P₂) := by
-    obtain ⟨hP₀leq, hP₂feq⟩ := by
-      have := hP ▸ P.breakAt_isChain_eq (· ∈ A.vertexSet)
-      simpa using this
+    have hchain := P.breakAt_isChain_eq (· ∈ A.vertexSet)
+
+    rw [hP] at hchain
+
+    simp only [List.isChain_cons_cons, List.isChain_singleton] at hchain
+
+    obtain ⟨hP₀leq, hP₂feq⟩ := hchain
     exact (hap ▸ hPP).disjoint_of_append_append hP₀leq
     <| P.nonempty_of_mem_breakAt_dropLast_tail (· ∈ A.vertexSet) <| by (conv_lhs => rw [hP]); simp
   have hlast : V(P) ∩ (last '' A.paths) = V(P) ∩ A.vertexSet := by
@@ -505,9 +528,13 @@ lemma extend_right_two_last (hAST : A.between S T) (hPT : V(P) ⊆ T)
     WList.mem_vertexSet_iff, hQlast, and_true] at this
   convert this
   rw [hP]
-  obtain ⟨hP₀leq, hP₂feq⟩ := by
-    have := hP ▸ P.breakAt_isChain_eq (· ∈ A.vertexSet)
-    simpa using this
+  have hchain := P.breakAt_isChain_eq (· ∈ A.vertexSet)
+
+  rw [hP] at hchain
+
+  simp only [List.isChain_cons_cons, List.isChain_singleton] at hchain
+
+  obtain ⟨hP₀leq, hP₂feq⟩ := hchain
   simp only [mem_vertexSet_iff, List.map_cons, ← hP₀leq, List.map_nil, List.tail_cons,
     List.mem_cons, List.not_mem_nil, or_false]
   apply or_congr

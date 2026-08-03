@@ -1,5 +1,9 @@
-import Matroid.Graph.Connected.Defs
-import Matroid.ForMathlib.ENat
+module
+
+public import Matroid.Graph.Connected.Defs
+public import Matroid.ForMathlib.ENat
+
+@[expose] public section
 
 open Set Function Nat
 

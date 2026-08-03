@@ -631,8 +631,8 @@ lemma even_of_involutive (f : α → α) (hf : Involutive f) (hfix : ∀ x, f x 
   classical
   obtain (_ | _) := finite_or_infinite α |>.symm
   · simp [Nat.card_eq_zero_of_infinite]
-  letI : Fintype α := Fintype.ofFinite α
-  letI s : Setoid α := {
+  let : Fintype α := Fintype.ofFinite α
+  let s : Setoid α := {
     r := fun x y => y = x ∨ y = f x
     iseqv := by
       refine ⟨fun x ↦ Or.inl rfl, ?_, ?_⟩

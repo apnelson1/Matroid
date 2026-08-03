@@ -1,6 +1,11 @@
-import Matroid.Graph.Subgraph.Compatible
-import Matroid.Graph.Subgraph.Delete
-import Matroid.Graph.Walk.Cycle
+module
+
+public import Matroid.Graph.Subgraph.Compatible
+public import Matroid.Graph.Subgraph.Delete
+public import Matroid.Graph.Walk.Cycle
+import all Mathlib.Combinatorics.Graph.Delete
+
+@[expose] public section
 
 variable {α β : Type*} {x y z u v w a b : α} {e f : β} {G H : Graph α β} {F F₁ F₂ : Set β}
   {X Y : Set α} {W : WList α β}
@@ -188,7 +193,7 @@ lemma IsCyclicWalk.map (hf : InjOn f V(w)) (hw : G.IsCyclicWalk w) :
 
 lemma IsCyclicWalk.exists_of_map_of_injOn {φ : α → α'} (hφ : InjOn φ V(H)) {C : WList α' β}
     (hC : (φ ''ᴳ H).IsCyclicWalk C) : ∃ C₀, H.IsCyclicWalk C₀ ∧ C₀.map φ = C := by
-  haveI : Nonempty α := ⟨hC.isWalk.vertex_mem_of_mem first_mem |>.choose⟩
+  have : Nonempty α := ⟨hC.isWalk.vertex_mem_of_mem first_mem |>.choose⟩
   refine ⟨C.map (invFunOn φ V(H)), ⟨⟨⟨by simpa using hC.isWalk.map_invFunOn hφ, by
     simpa [WList.map_edge] using hC.edge_nodup⟩, by simpa using hC.nonempty, by
     simpa [WList.IsClosed] using congrArg _ hC.isClosed⟩, ?_⟩, by

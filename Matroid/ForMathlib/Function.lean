@@ -1,7 +1,11 @@
 
 -- import Mathlib.Data.Set.Pairwise.Basic -- inefficient import
-import Mathlib.Data.Set.Subset -- inefficient import
-import Matroid.ForMathlib.Relation
+module
+
+public import Mathlib.Data.Set.Subset -- inefficient import
+public import Matroid.ForMathlib.Relation
+
+@[expose] public section
 
 open Function Set Set.Notation
 

@@ -1,10 +1,14 @@
-import Mathlib.Topology.Instances.ENat
-import Mathlib.Topology.Algebra.InfiniteSum.Constructions
-import Mathlib.Topology.Order.T5
+module
+
+public import Mathlib.Topology.Instances.ENat
+public import Mathlib.Topology.Algebra.InfiniteSum.Constructions
+public import Mathlib.Topology.Order.T5
 -- import Matroid.ForMathlib.Topology.SSup
-import Mathlib.Topology.Algebra.InfiniteSum.Order
-import Matroid.ForMathlib.Order.Misc
-import Mathlib.Algebra.Order.Quantale
+public import Mathlib.Topology.Algebra.InfiniteSum.Order
+public import Matroid.ForMathlib.Order.Misc
+public import Mathlib.Algebra.Order.Quantale
+
+@[expose] public section
 -- import Mathlib.Algebra.Order.IsBotOne
 -- import Matroid.ForMathlib.ENat
 -- import Matroid.ForMathlib.Card
@@ -363,10 +367,11 @@ theorem tprod_eq_top_iff : ∏' a, f a = ⊤ ↔ f.mulSupport.Infinite ∨ ∃ a
 @[to_additive]
 theorem tprod_subtype_eq_top_iff :
     ∏' (a : s), f a = ⊤ ↔ (s ∩ f.mulSupport).Infinite ∨ ∃ a ∈ s, f a = ⊤ := by
-  convert tprod_eq_top_iff (M := M)
-  · convert Set.finite_image_iff Subtype.val_injective.injOn
-    aesop
-  simp
+  rw [tprod_eq_top_iff (f := fun a : s ↦ f a)]
+  refine or_congr ?_ (by simp)
+  change (mulSupport (f ∘ Subtype.val)).Infinite ↔ _
+  rw [mulSupport_comp_eq_preimage, ← infinite_image_iff Subtype.val_injective.injOn,
+    image_preimage_eq_inter_range, Subtype.range_coe, inter_comm]
 
 @[to_additive]
 theorem tprod_subtype_eq_top_of_inter_support_infinite {s : Set α}

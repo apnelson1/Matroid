@@ -1,6 +1,10 @@
-import Mathlib.LinearAlgebra.Vandermonde
-import Matroid.ForMathlib.LinearAlgebra.LinearIndepOn
-import Mathlib.RingTheory.FiniteType
+module
+
+public import Mathlib.LinearAlgebra.Vandermonde
+public import Matroid.ForMathlib.LinearAlgebra.LinearIndepOn
+public import Mathlib.RingTheory.FiniteType
+
+@[expose] public section
 
 set_option linter.style.longLine false
 

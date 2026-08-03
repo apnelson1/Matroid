@@ -1,9 +1,11 @@
-import Mathlib.Combinatorics.Graph.Lattice
-import Mathlib.Combinatorics.Graph.Delete
-import Mathlib.Data.Set.Card.Arithmetic
-import Matroid.ForMathlib.Partition.Set
-import Matroid.ForMathlib.ENat
-import Mathlib.Tactic.ENatToNat
+module
+
+public import Mathlib.Combinatorics.Graph.Lattice
+public import Mathlib.Combinatorics.Graph.Delete
+public import Mathlib.Data.Set.Card.Arithmetic
+public import Matroid.ForMathlib.Partition.Set
+public import Matroid.ForMathlib.ENat
+public import Mathlib.Tactic.ENatToNat
 
 /-!
 # Basic Graph Theory
@@ -28,6 +30,8 @@ for multigraphs with type `Graph α β` (where `α` is the vertex type and `β` 
 * `IsLeafEdge`: An edge that is pendant at some vertex.
 
 -/
+
+@[expose] public section
 
 variable {α β : Type*} {x y z u v w : α} {e f : β} {G H : Graph α β} {F : Set β} {S T X Y : Set α}
 

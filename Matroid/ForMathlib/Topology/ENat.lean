@@ -1,9 +1,13 @@
-import Matroid.ForMathlib.Topology.Summable
-import Mathlib.Topology.Instances.ENat
-import Matroid.ForMathlib.ENat
-import Matroid.ForMathlib.Card
-import Mathlib.Topology.Algebra.InfiniteSum.Constructions
-import Mathlib.Topology.Algebra.InfiniteSum.Order
+module
+
+public import Matroid.ForMathlib.Topology.Summable
+public import Mathlib.Topology.Instances.ENat
+public import Matroid.ForMathlib.ENat
+public import Matroid.ForMathlib.Card
+public import Mathlib.Topology.Algebra.InfiniteSum.Constructions
+public import Mathlib.Topology.Algebra.InfiniteSum.Order
+
+@[expose] public section
 
 open Set Function
 
@@ -43,10 +47,11 @@ protected theorem tsum_eq_top_iff : ∑' a, f a = ⊤ ↔ f.support.Infinite ∨
 
 protected theorem tsum_subtype_eq_top_iff {s : Set α} :
     ∑' (a : s), f a = ⊤ ↔ (s ∩ f.support).Infinite ∨ ∃ a ∈ s, f a = ⊤ := by
-  simp only [ENat.tsum_eq_top_iff, Subtype.exists, exists_prop]
-  convert Iff.rfl
-  convert Set.finite_image_iff Subtype.val_injective.injOn
-  aesop
+  rw [ENat.tsum_eq_top_iff (f := fun a : s ↦ f a)]
+  refine or_congr ?_ (by simp)
+  change (support (f ∘ Subtype.val)).Infinite ↔ _
+  rw [support_comp_eq_preimage, ← infinite_image_iff Subtype.val_injective.injOn,
+    image_preimage_eq_inter_range, Subtype.range_coe, inter_comm]
 
 protected theorem tsum_subtype_eq_top_of_inter_support_infinite {s : Set α}
     (hf : (s ∩ f.support).Infinite) : ∑' (a : s), f a = ⊤ :=

@@ -8,6 +8,7 @@ Behavior:
 - For any discovered module missing from `Matroid.lean`, add an active `import Matroid.xxx` line.
 - Re-write `Matroid.lean` as a list of import lines sorted alphabetically by module name (commented state preserved for previously-present entries).
 - By default, ignore modules matching any regex in `.matroidignore` located next to this script; pass `--all` to include everything.
+- Always ignore any file whose path contains `WIP` in a directory or file name (e.g. `Matroid/WIP/...` or `.../FooWIP.lean`).
 - With `--uncomment`, test each commented import (`-- import Matroid.xxx`) by running `lake env lean` on the corresponding file. If the file compiles successfully (no output), uncomment the import.
 
 Usage:
@@ -55,11 +56,16 @@ def filter_modules_with_ignore(modules: Set[str], patterns: List[re.Pattern[str]
     return kept
 
 
+def is_wip_path(path: Path) -> bool:
+    """True if any path component (folder or file name) contains the substring 'WIP'."""
+    return any('WIP' in part for part in path.parts)
+
+
 def discover_matroid_modules(matroid_dir: Path) -> Set[str]:
     modules: Set[str] = set()
     for root, dirs, files in os.walk(matroid_dir):
-        # Skip hidden directories like .git or .lake
-        dirs[:] = [d for d in dirs if not d.startswith('.')]
+        # Skip hidden directories like .git or .lake, and any WIP directories
+        dirs[:] = [d for d in dirs if not d.startswith('.') and 'WIP' not in d]
         for fn in files:
             if not fn.endswith('.lean'):
                 continue
@@ -67,6 +73,8 @@ def discover_matroid_modules(matroid_dir: Path) -> Set[str]:
             if fn.endswith('.olean'):
                 continue
             rel = Path(root, fn).relative_to(matroid_dir)
+            if is_wip_path(rel):
+                continue
             # Drop extension and convert path separators to dots
             mod_parts = rel.with_suffix('').parts
             # Build module path as Matroid.<...>
@@ -187,6 +195,8 @@ def discover_changed_matroid_modules(root: Path, matroid_dir: Path, base_rev: st
         if not p.startswith(prefix):
             continue
         rel = Path(p).relative_to(rel_prefix_path)
+        if is_wip_path(rel):
+            continue
         parts = rel.with_suffix('').parts
         if not parts:
             continue

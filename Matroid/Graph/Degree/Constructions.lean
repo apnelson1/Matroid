@@ -1,4 +1,8 @@
-import Matroid.Graph.Degree.Defs
+module
+
+public import Matroid.Graph.Degree.Defs
+
+@[expose] public section
 
 variable {α β : Type*} {x y z a b u v w : α} {e f : β} {G H : Graph α β} {P C : WList α β}
 

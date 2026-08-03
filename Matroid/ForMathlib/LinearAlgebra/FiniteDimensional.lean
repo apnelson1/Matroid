@@ -1,4 +1,8 @@
-import Mathlib.LinearAlgebra.FiniteDimensional
+module
+
+public import Mathlib.LinearAlgebra.FiniteDimensional
+
+@[expose] public section
 
 /-- Unlike the unprimed version, `f` isn't coerced here, so the simplifier can find it. -/
 @[simp] theorem LinearEquiv.finrank_map_eq' {R M M₂ : Type*} [Ring R] [AddCommGroup M]

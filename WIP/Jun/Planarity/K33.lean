@@ -182,7 +182,7 @@ lemma K33_K5_lemma_aux1 (hCG : C ≤ G) (hC : C.IsCycle) (hu : u ∉ V(C)) (hv :
     rw [hdrop]
     conv_lhs => rw [hmid]
     rw [cons_concat, cons_append, ← WList.append_concat, ← cons_append]
-  letI : Inhabited α := ⟨P.first⟩
+  let : Inhabited α := ⟨P.first⟩
   have hdec_RVQ : (R ++ VQ).DecomposeTo [R, VQ] :=
     (DecomposeTo.append_cons_iff hR_VQ (by simp)).mpr ⟨by simp, by simp [appendList], by simp⟩
   have hdec_UQRVQ : (UQ ++ (R ++ VQ)).DecomposeTo [UQ, R, VQ] :=

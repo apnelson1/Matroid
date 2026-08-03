@@ -1,4 +1,8 @@
-import Matroid.Graph.Connected.Set.SetEnsemble
+module
+
+public import Matroid.Graph.Connected.Set.SetEnsemble
+
+@[expose] public section
 
 open Set Graph.SetEnsemble
 

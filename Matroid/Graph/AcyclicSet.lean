@@ -1,4 +1,9 @@
-import Matroid.Graph.Forest
+module
+
+public import Matroid.Graph.Forest
+import all Mathlib.Combinatorics.Graph.Delete
+
+@[expose] public section
 
 variable {α β : Type*} {G H T : Graph α β} {u v x y z : α} {e e' f g : β} {X : Set α}
   {F F' I J : Set β} {P C Q : WList α β}

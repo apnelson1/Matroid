@@ -10,6 +10,8 @@ pp.proofs.withType = false
 linter.docPrime = false
 linter.style.longLine = true
 linter.unusedSimpArgs = true
+# Transition aid while migrating to the module system (private decls used from public sections)
+backward.privateInPublic = true
 
 [[require]]
 name = "loogle"

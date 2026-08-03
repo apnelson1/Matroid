@@ -1,13 +1,17 @@
-import Mathlib.Algebra.Group.Submonoid.Defs
-import Mathlib.Algebra.Order.Monoid.Canonical.Defs
-import Mathlib.Algebra.BigOperators.Group.Finset.Basic
-import Mathlib.Algebra.Order.Monoid.Unbundled.WithTop
-import Mathlib.Algebra.Order.Ring.WithTop
+module
+
+public import Mathlib.Algebra.Group.Submonoid.Defs
+public import Mathlib.Algebra.Order.Monoid.Canonical.Defs
+public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
+public import Mathlib.Algebra.Order.Monoid.Unbundled.WithTop
+public import Mathlib.Algebra.Order.Ring.WithTop
 -- import Mathlib.Algebra.Order.Hom.Ring
-import Mathlib.Algebra.Order.Monoid.Submonoid
-import Mathlib.Algebra.Ring.Subring.Defs
+public import Mathlib.Algebra.Order.Monoid.Submonoid
+public import Mathlib.Algebra.Ring.Subring.Defs
 -- import Mathlib.Algebra.Order.AddGroupWithTop
-import Mathlib.Algebra.Order.Archimedean.Defs
+public import Mathlib.Algebra.Order.Archimedean.Defs
+
+@[expose] public section
 
 set_option linter.style.longLine false
 

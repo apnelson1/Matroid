@@ -3,13 +3,15 @@ Copyright (c) 2021 Aaron Anderson. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Aaron Anderson
 -/
-import Mathlib.Data.ENat.Lattice
-import Mathlib.Data.Fintype.Prod
-import Mathlib.Data.Finite.Sum
-import Mathlib.Data.Fintype.BigOperators
-import Mathlib.Algebra.BigOperators.Ring.Finset
-import Mathlib.Algebra.Order.BigOperators.Group.Finset
-import Mathlib.Data.ZMod.Defs
+module
+
+public import Mathlib.Data.ENat.Lattice
+public import Mathlib.Data.Fintype.Prod
+public import Mathlib.Data.Finite.Sum
+public import Mathlib.Data.Fintype.BigOperators
+public import Mathlib.Algebra.BigOperators.Ring.Finset
+public import Mathlib.Algebra.Order.BigOperators.Group.Finset
+public import Mathlib.Data.ZMod.Defs
 
 /-!
 # Finite Cardinality Functions
@@ -21,6 +23,8 @@ import Mathlib.Data.ZMod.Defs
 * `Nat.card α` is the cardinality of `α` as a natural number.
   If `α` is infinite, `Nat.card α = 0`.
 -/
+
+@[expose] public section
 
 assert_not_exists Field
 
@@ -639,14 +643,14 @@ theorem card_plift (α : Type*) : Nat.card (PLift α) = Nat.card α :=
 
 theorem card_sigma {β : α → Type*} [Fintype α] [∀ a, Finite (β a)] :
     Nat.card (Sigma β) = ∑ a, Nat.card (β a) := by
-  letI _ (a : α) : Fintype (β a) := Fintype.ofFinite (β a)
+  let _ (a : α) : Fintype (β a) := Fintype.ofFinite (β a)
   simp_rw [Nat.card_eq_fintype_card, Fintype.card_sigma]
 
 theorem card_pi {β : α → Type*} [Fintype α] : Nat.card (∀ a, β a) = ∏ a, Nat.card (β a) := by
   simp [Nat.card, ENat.card_pi]
 
 theorem card_fun [Finite α] : Nat.card (α → β) = Nat.card β ^ Nat.card α := by
-  haveI := Fintype.ofFinite α
+  have := Fintype.ofFinite α
   rw [Nat.card_pi, Finset.prod_const, Finset.card_univ, ← Nat.card_eq_fintype_card]
 
 @[simp]

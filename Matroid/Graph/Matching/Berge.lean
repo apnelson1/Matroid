@@ -1,4 +1,8 @@
-import Matroid.Graph.Matching.Defs
+module
+
+public import Matroid.Graph.Matching.Defs
+
+@[expose] public section
 
 namespace Graph
 
@@ -193,9 +197,10 @@ lemma IsAugmenter.matching_encard_add_one_le_diff_matching_encard [P.Loopless] (
     exact le_top
   have VP_fin : V(P).Finite := by rwa [← ne_eq, encard_ne_top_iff] at h_ne_top
   have VPM_fin : V(P, E(P) ∩ M).Finite := VP_fin.subset (incVertexSet_subset _ _)
-  suffices hssub : V(P, E(P) ∩ M) ⊂ V(P)
-  · have hlt := VPM_fin.encard_lt_encard hssub
-    enat_to_nat!; omega
+  suffices hssub : V(P, E(P) ∩ M) ⊂ V(P) by
+    have hlt := VPM_fin.encard_lt_encard hssub
+    enat_to_nat!
+    omega
   rw [ssubset_iff_exists]
   refine ⟨incVertexSet_subset _ _, ?_⟩
   obtain ⟨x, hx⟩ := hP.exists_isLeaf
@@ -491,11 +496,11 @@ lemma exists_isAugmenter_of_matching_encard_lt [G.Loopless] [G.EdgeFinite] (hM :
     ((incVertexSet_finite P' _).subset inter_subset_left)] at bruh
   -- there are exactly 2 leaves. so...
   replace P'_leaf : {x | P'.eDegree x = 1} = V(P', M') \ V(P', M) := by
-    suffices emp : V(P', M) \ V(P', M') = ∅
-    · simpa only [emp, empty_union] using P'_leaf
+    suffices emp : V(P', M) \ V(P', M') = ∅ by
+      simpa only [emp, empty_union] using P'_leaf
     rw [← encard_eq_zero]
-    suffices leaf_encard : {x | P'.eDegree x = 1}.encard = 2
-    · apply congr_arg Set.encard at P'_leaf
+    suffices leaf_encard : {x | P'.eDegree x = 1}.encard = 2 by
+      apply congr_arg Set.encard at P'_leaf
       rw [leaf_encard, encard_union_eq (disjoint_sdiff_sdiff)] at P'_leaf
       by_contra hcon
       rw [← ne_eq, ← Order.one_le_iff_ne_zero] at hcon
@@ -503,7 +508,8 @@ lemma exists_isAugmenter_of_matching_encard_lt [G.Loopless] [G.EdgeFinite] (hM :
       rw [← ENat.add_one_le_iff (by simp)] at h
       have winner := add_le_add hcon h
       rw [← P'_leaf] at winner
-      enat_to_nat; omega
+      enat_to_nat
+      omega
     have nontrivial : E(P').Nonempty := by
       rw [← encard_ne_zero]
       by_contra! hcon

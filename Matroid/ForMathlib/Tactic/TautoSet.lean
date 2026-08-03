@@ -1,4 +1,8 @@
-import Mathlib.Tactic.TautoSet
+module
+
+public import Mathlib.Tactic.TautoSet
+
+@[expose] public section
 
 -- a version of `tauto_set` that uses `grind` instead of `tauto`.
 macro "tauto_set!" : tactic => `(tactic|

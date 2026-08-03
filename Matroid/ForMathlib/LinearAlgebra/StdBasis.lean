@@ -1,9 +1,13 @@
 
-import Mathlib.LinearAlgebra.StdBasis
-import Mathlib.LinearAlgebra.Dual
-import Matroid.ForMathlib.LinearAlgebra.FiniteDimensional
-import Matroid.ForMathlib.LinearAlgebra.Dual
-import Matroid.ForMathlib.Other
+module
+
+public import Mathlib.LinearAlgebra.StdBasis
+public import Mathlib.LinearAlgebra.Dual
+public import Matroid.ForMathlib.LinearAlgebra.FiniteDimensional
+public import Matroid.ForMathlib.LinearAlgebra.Dual
+public import Matroid.ForMathlib.Other
+
+@[expose] public section
 
 variable {α R η ι : Type*}
 

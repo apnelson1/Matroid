@@ -1,12 +1,16 @@
-import Mathlib.Data.Matrix.Rank
-import Mathlib.Data.Matrix.Block
-import Mathlib.LinearAlgebra.Dual
-import Mathlib.LinearAlgebra.FiniteDimensional
-import Matroid.ForMathlib.LinearAlgebra.LinearIndependent
-import Matroid.ForMathlib.LinearAlgebra.StdBasis
-import Matroid.ForMathlib.SetSubtype
-import Matroid.ForMathlib.LinearAlgebra.Matrix.ToLin
-import Mathlib.Order.Minimal
+module
+
+public import Mathlib.Data.Matrix.Rank
+public import Mathlib.Data.Matrix.Block
+public import Mathlib.LinearAlgebra.Dual
+public import Mathlib.LinearAlgebra.FiniteDimensional
+public import Matroid.ForMathlib.LinearAlgebra.LinearIndependent
+public import Matroid.ForMathlib.LinearAlgebra.StdBasis
+public import Matroid.ForMathlib.SetSubtype
+public import Matroid.ForMathlib.LinearAlgebra.Matrix.ToLin
+public import Mathlib.Order.Minimal
+
+@[expose] public section
 
 open Set Function Submodule BigOperators FiniteDimensional
 

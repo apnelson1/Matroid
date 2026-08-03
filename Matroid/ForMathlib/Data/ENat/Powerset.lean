@@ -1,8 +1,12 @@
-import Mathlib.Data.ENat.Pow
-import Mathlib.RingTheory.Binomial
-import Mathlib.Data.Set.PowersetCard
-import Mathlib.Data.Set.Card
-import Matroid.ForMathlib.ENat
+module
+
+public import Mathlib.Data.ENat.Pow
+public import Mathlib.RingTheory.Binomial
+public import Mathlib.Data.Set.PowersetCard
+public import Mathlib.Data.Set.Card
+public import Matroid.ForMathlib.ENat
+
+@[expose] public section
 
 variable {n k a b r : ℕ∞} {α : Type*}
 

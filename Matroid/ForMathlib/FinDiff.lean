@@ -1,8 +1,12 @@
-import Mathlib.Data.Set.Card
-import Mathlib.Tactic.Linarith
-import Matroid.ForMathlib.ENat
-import Matroid.ForMathlib.Set
-import Matroid.ForMathlib.Tactic.ENatToNat
+module
+
+public import Mathlib.Data.Set.Card
+public import Mathlib.Tactic.Linarith
+public import Matroid.ForMathlib.ENat
+public import Matroid.ForMathlib.Set
+public import Matroid.ForMathlib.Tactic.ENatToNat
+
+@[expose] public section
 
 variable {α : Type*} {X Y Z P Q : Set α} {e f : α}
 

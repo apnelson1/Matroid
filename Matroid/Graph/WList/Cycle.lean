@@ -1,5 +1,9 @@
-import Matroid.Graph.WList.TakeDrop.Pred
-import Matroid.Graph.WList.TakeDrop.Index
+module
+
+public import Matroid.Graph.WList.TakeDrop.Pred
+public import Matroid.Graph.WList.TakeDrop.Index
+
+@[expose] public section
 
 variable {α β : Type*} {x y z u v : α} {e f : β} {w w₁ w₂ : WList α β} {m n : ℕ}
 

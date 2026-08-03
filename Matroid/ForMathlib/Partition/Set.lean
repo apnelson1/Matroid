@@ -1,4 +1,8 @@
-import Matroid.ForMathlib.Partition.Induce
+module
+
+public import Matroid.ForMathlib.Partition.Induce
+
+@[expose] public section
 
 open Set Function Relation
 
@@ -81,7 +85,7 @@ variable {S T : Set α} {a b c : α} {P Q : Partition (Set α)}
 def Rel (P : Partition (Set α)) (a b : α) : Prop :=
   ∃ t ∈ P, a ∈ t ∧ b ∈ t
 
-private lemma le_of_rel_le' (h : P.Rel ≤ Q.Rel) : P ≤ Q := by
+lemma le_of_rel_le' (h : P.Rel ≤ Q.Rel) : P ≤ Q := by
   intro S hS
   obtain ⟨x, hxS⟩ := nonempty_of_mem hS
   obtain ⟨T, hT, hxT, -⟩ := h x x ⟨S, hS, hxS, hxS⟩

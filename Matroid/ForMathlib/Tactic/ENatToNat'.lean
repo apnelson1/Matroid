@@ -1,6 +1,8 @@
-import Mathlib.Data.Ineq
-import Mathlib.Data.Set.Card
-import Mathlib.Tactic.ENatToNat
+module
+
+public meta import Mathlib.Data.Ineq
+public meta import Mathlib.Data.Set.Card
+public meta import Mathlib.Tactic.ENatToNat
 
 /-!
 # `enat_to_nat` with configuration and `generalize_all`
@@ -22,6 +24,8 @@ eomega                    -- `enat_to_nat! <;> omega`
 `generalize_all` deliberately skips numeric/⊤/⊥ literals: they carry information that
 `enat_to_nat` (and downstream deciders like `omega`) rely on.
 -/
+
+public meta section
 
 namespace Matroid.Tactic.ENatToNat
 

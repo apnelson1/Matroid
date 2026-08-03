@@ -1,6 +1,10 @@
-import Mathlib.Data.ENat.Basic
-import Matroid.ForMathlib.ENat
-import Matroid.ForMathlib.Tactic.ENatGrindPrelude
+module
+
+public meta import Mathlib.Data.ENat.Basic
+public meta import Matroid.ForMathlib.ENat
+public meta import Matroid.ForMathlib.Tactic.ENatGrindPrelude
+
+@[expose] public meta section
 
 set_option linter.style.longLine false
 set_option linter.unusedVariables false

@@ -1,8 +1,12 @@
-import Matroid.Graph.Hom
-import Matroid.Graph.Map
-import Matroid.Graph.Minor.Defs
-import Matroid.Graph.Simple
-import Matroid.Graph.WList.TakeDrop.Index
+module
+
+public import Matroid.Graph.Hom
+public import Matroid.Graph.Map
+public import Matroid.Graph.Minor.Defs
+public import Matroid.Graph.Simple
+public import Matroid.Graph.WList.TakeDrop.Index
+
+@[expose] public section
 
 variable {α β γ δ ι : Type*} {G H : Graph α β} {u v x y z : α} {e f g : β}
   {X : Set α} {F : Set β} {P C W : WList α β} {n : ℕ}
@@ -70,8 +74,9 @@ noncomputable def ofPathRoutes {H : Graph γ δ} {G : Graph α β} [H.Simple]
     rintro e
     obtain ⟨u, v, huv⟩ := exists_isLink_of_mem_edgeSet e.prop
     have h : H.ends e = s(⟨u, huv.left_mem⟩, ⟨v, huv.right_mem⟩) := huv.ends_eq
-    exact ⟨_, _, fun hne ↦ huv.ne (congrArg Subtype.val hne), by
-      rw [← route_ends e, h, Sym2.map_mk]⟩
+    refine ⟨⟨u, huv.left_mem⟩, ⟨v, huv.right_mem⟩,
+      fun hne ↦ huv.ne (congrArg Subtype.val hne), ?_⟩
+    rw [← route_ends e, h, Sym2.map_mk]
   have hmem_range : ∀ (e : E(H)) {x : α}, x = (route e).first ∨ x = (route e).last →
       x ∈ range branch := by
     rintro e x hx
@@ -378,13 +383,13 @@ lemma eq_ends_of_mem_of_mem_route {e f : E(J)} {x : α} (hef : e ≠ f) (hxe : x
     (h1 ▸ (M.ends_mem_range_branchVal f).2)
 
 /-- `PEquiv` associated to an injection out of a subtype. -/
-private noncomputable def pequivOfSubtypeInj {α β} {s : Set α} (f : ↑s → β) (hf : Injective f) :
+noncomputable def pequivOfSubtypeInj {α β} {s : Set α} (f : ↑s → β) (hf : Injective f) :
     α ≃. β where
   toFun x := if hx : x ∈ s then some (f ⟨x, hx⟩) else none
   invFun y := if hy : ∃ x : ↑s, f x = y then some (Classical.choose hy).1 else none
   inv x y := by split_ifs with hx hy hy <;> grind
 
-private lemma pequivOfSubtypeInj_eq {α β} {s : Set α} (f : ↑s → β) (hf : Injective f) {x : α}
+lemma pequivOfSubtypeInj_eq {α β} {s : Set α} (f : ↑s → β) (hf : Injective f) {x : α}
     (hx : x ∈ s) : pequivOfSubtypeInj f hf x = some (f ⟨x, hx⟩) := dif_pos hx
 
 /-- Same-carrier copy of `J` whose edges are representative labels from the model routes. -/
@@ -443,7 +448,7 @@ lemma edgePEquiv_eq {e : δ} (he : e ∈ E(J)) :
     M.edgePEquiv e = some (M.repEdge ⟨e, he⟩) :=
   pequivOfSubtypeInj_eq _ _ he
 
-private lemma mem_symm_pequivOfSubtypeInj {α β} {s : Set α} (f : ↑s → β) (hf : Injective f)
+lemma mem_symm_pequivOfSubtypeInj {α β} {s : Set α} (f : ↑s → β) (hf : Injective f)
     {a : α} {b : β} (h : a ∈ (pequivOfSubtypeInj f hf).symm b) :
     ∃ ha : a ∈ s, f ⟨a, ha⟩ = b := by
   have h := (PEquiv.eq_some_iff (pequivOfSubtypeInj f hf)).mp (Option.mem_def.mp h)
@@ -555,30 +560,32 @@ lemma map_edgeSet_disjoint {e f : E(G)} (hef : e ≠ f) : Disjoint E(h.map e) E(
     (h.eq_of_mem_edgeSet_map hef hge hgf).trans (h.eq_of_mem_edgeSet_map hef.symm hgf hge).symm
 
 /-- Every topological minor is a topological model of itself inside the host graph. -/
-def toTopologicalModel : G.TopologicalModel H where
-  branchVertex :=
+def toTopologicalModel : G.TopologicalModel H :=
+  let branchVertex : V(G) ↪ V(H) :=
     ⟨fun x ↦ ⟨x.val, h.vertex_subset x.prop⟩,
       fun _ _ hxy ↦ Subtype.ext <| by simpa using hxy⟩
-  route := h.map
-  route_isSimple := h.map_isSimple
-  route_nonempty := h.map_nonempty
-  route_ends e := by
-    have hlink := h.map_isLink e
-    have hends : G.ends e = s(⟨_, hlink.left_mem⟩, ⟨_, hlink.right_mem⟩) := hlink.ends_eq
-    rw [hends, Sym2.map_mk]
-    rfl
-  route_internal_disjoint_branchVertices e :=
-    (h.map_ends e).mono_right fun _ ⟨x, hx⟩ ↦ hx ▸ x.prop
-  route_internal_disjoint e f hef := disjoint_left.mpr fun z hze hzf ↦ by
-    have hz := h.map_internally_disjoint e f hef
-      ⟨mem_iff_eq_first_or_mem_internalVertexSet_or_eq_last.mpr (Or.inr (Or.inl hze)),
-        mem_iff_eq_first_or_mem_internalVertexSet_or_eq_last.mpr (Or.inr (Or.inl hzf))⟩
-    simp only [mem_insert_iff, mem_singleton_iff] at hz
-    refine (h.map_ends e).notMem_of_mem_left hze ?_
-    obtain rfl | rfl := hz
-    · exact (h.map_isLink e).left_mem
-    exact (h.map_isLink e).right_mem
-  route_edge_disjoint _ _ hef := h.map_edgeSet_disjoint hef
+  { branchVertex := branchVertex
+    route := h.map
+    route_isSimple := h.map_isSimple
+    route_nonempty := h.map_nonempty
+    route_ends e := by
+      have hlink := h.map_isLink e
+      have hends : G.ends e =
+          s(⟨_, hlink.left_mem⟩, ⟨_, hlink.right_mem⟩) := hlink.ends_eq
+      rw [hends, Sym2.map_mk]
+      rfl
+    route_internal_disjoint_branchVertices e :=
+      (h.map_ends e).mono_right fun _ ⟨x, hx⟩ ↦ hx ▸ x.prop
+    route_internal_disjoint e f hef := disjoint_left.mpr fun z hze hzf ↦ by
+      have hz := h.map_internally_disjoint e f hef
+        ⟨mem_iff_eq_first_or_mem_internalVertexSet_or_eq_last.mpr (Or.inr (Or.inl hze)),
+          mem_iff_eq_first_or_mem_internalVertexSet_or_eq_last.mpr (Or.inr (Or.inl hzf))⟩
+      simp only [mem_insert_iff, mem_singleton_iff] at hz
+      refine (h.map_ends e).notMem_of_mem_left hze ?_
+      obtain rfl | rfl := hz
+      · exact (h.map_isLink e).left_mem
+      exact (h.map_isLink e).right_mem
+    route_edge_disjoint _ _ hef := h.map_edgeSet_disjoint hef }
 
 end TopologicalMinor
 
@@ -586,34 +593,34 @@ namespace TopologicalModel
 
 variable {J : Graph γ δ} {K : Graph α β}
 
-private lemma pequiv_inj {α' β'} (F : α' ≃. β') {x y : α'} {z : β'} (hx : F x = some z)
+lemma pequiv_inj {α' β'} (F : α' ≃. β') {x y : α'} {z : β'} (hx : F x = some z)
     (hy : F y = some z) : x = y :=
   Option.some_injective _ <| ((PEquiv.eq_some_iff F).mpr hx).symm.trans
     ((PEquiv.eq_some_iff F).mpr hy)
 
 /-- The vertex of `K` matched with a vertex of `J` by an isomorphism. -/
-private noncomputable def isoVert (F : Iso J K) (x : V(J)) : V(K) :=
+noncomputable def isoVert (F : Iso J K) (x : V(J)) : V(K) :=
   ⟨(F.vertMap x.val).get ((F.vertMap_isSome_iff x.val).mpr x.prop),
     F.toEmb.vertMap_vertexSet (Option.get_mem _)⟩
 
-private lemma isoVert_spec (F : Iso J K) (x : V(J)) : F.vertMap x.val = some (isoVert F x).1 :=
+lemma isoVert_spec (F : Iso J K) (x : V(J)) : F.vertMap x.val = some (isoVert F x).1 :=
   (Option.some_get _).symm
 
-private lemma isoVert_injective (F : Iso J K) : Injective (isoVert F) := fun x y hxy ↦
+lemma isoVert_injective (F : Iso J K) : Injective (isoVert F) := fun x y hxy ↦
   Subtype.ext <| pequiv_inj F.vertMap (isoVert_spec F x) (hxy ▸ isoVert_spec F y)
 
 /-- The edge of `K` matched with an edge of `J` by an isomorphism. -/
-private noncomputable def isoEdge (F : Iso J K) (e : E(J)) : E(K) :=
+noncomputable def isoEdge (F : Iso J K) (e : E(J)) : E(K) :=
   ⟨(F.edgeMap e.val).get ((F.edgeMap_isSome_iff e.val).mpr e.prop),
     F.toEmb.toHom.edgeMap_edgeSet (Option.get_mem _)⟩
 
-private lemma isoEdge_spec (F : Iso J K) (e : E(J)) : F.edgeMap e.val = some (isoEdge F e).1 :=
+lemma isoEdge_spec (F : Iso J K) (e : E(J)) : F.edgeMap e.val = some (isoEdge F e).1 :=
   (Option.some_get _).symm
 
-private lemma isoEdge_injective (F : Iso J K) : Injective (isoEdge F) := fun e f hef ↦
+lemma isoEdge_injective (F : Iso J K) : Injective (isoEdge F) := fun e f hef ↦
   Subtype.ext <| pequiv_inj F.edgeMap (isoEdge_spec F e) (hef ▸ isoEdge_spec F f)
 
-private lemma isoVert_ends (F : Iso J K) (e : E(J)) :
+lemma isoVert_ends (F : Iso J K) (e : E(J)) :
     Sym2.map (isoVert F) (J.ends e) = K.ends (isoEdge F e) := by
   obtain ⟨u, v, huv⟩ := exists_isLink_of_mem_edgeSet e.prop
   have hJ : J.ends e = s(⟨u, huv.left_mem⟩, ⟨v, huv.right_mem⟩) := huv.ends_eq

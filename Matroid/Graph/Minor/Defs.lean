@@ -1,6 +1,11 @@
-import Matroid.ForMathlib.Partition.Rep
-import Matroid.Graph.Map
-import Matroid.Graph.Connected.Basic
+module
+
+public import Matroid.ForMathlib.Partition.Rep
+public import Matroid.Graph.Map
+public import Matroid.Graph.Connected.Basic
+import all Mathlib.Combinatorics.Graph.Delete
+
+@[expose] public section
 
 
 variable {α β ι ι' : Type*} {x y z u v w : α} {e f : β} {G G₁ G₂ H H₁ H₂ I : Graph α β}

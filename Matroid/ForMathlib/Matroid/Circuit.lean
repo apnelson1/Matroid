@@ -1,5 +1,9 @@
-import Mathlib.Combinatorics.Matroid.Circuit
-import Matroid.ForMathlib.Matroid.Closure
+module
+
+public import Mathlib.Combinatorics.Matroid.Circuit
+public import Matroid.ForMathlib.Matroid.Closure
+
+@[expose] public section
 
 namespace Matroid
 

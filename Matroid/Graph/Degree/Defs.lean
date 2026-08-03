@@ -1,4 +1,8 @@
-import Matroid.Graph.Degree.Basic
+module
+
+public import Matroid.Graph.Degree.Basic
+
+@[expose] public section
 
 open Set
 

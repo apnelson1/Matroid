@@ -1,6 +1,10 @@
-import Mathlib.Data.ENat.Lattice -- inefficient import
-import Mathlib.Tactic.ENatToNat
-import Mathlib.Tactic.Recall
+module
+
+public import Mathlib.Data.ENat.Lattice -- inefficient import
+public import Mathlib.Tactic.ENatToNat
+public import Mathlib.Tactic.Recall
+
+@[expose] public section
 
 open WithTop
 

@@ -1,4 +1,8 @@
-import Mathlib.Data.Set.Subsingleton
+module
+
+public import Mathlib.Data.Set.Subsingleton
+
+@[expose] public section
 
 variable {α : Type*} {x y z : α} {s t : Set α}
 

@@ -1,4 +1,8 @@
-import Mathlib.Data.PFun
+module
+
+public import Mathlib.Data.PFun
+
+@[expose] public section
 
 namespace PFun
 

@@ -850,7 +850,7 @@ theorem ModularCut.extension_isFlat_iff {F : Set α} {C : M.ModularCut} (hC : C.
     intro Xs Xs_sub Xs_none mod
     refine' ⟨IsFlat.sInter Xs_none (fun F F_mem ↦ (Xs_sub F_mem).1), _⟩
     have mod': IsModularFamily M (fun X : Xs ↦ X) := mod.ofRestrict sdiff_subset
-    haveI Xsne : _root_.Nonempty ↑Xs := nonempty_coe_sort.2 Xs_none
+    have Xsne : _root_.Nonempty ↑Xs := nonempty_coe_sort.2 Xs_none
     rw [sInter_eq_iInter, ←IsModularFamily.iInter_closure_eq_closure_iInter mod', mem_iInter]
     exact fun X ↦ (Xs_sub X.2).2
 

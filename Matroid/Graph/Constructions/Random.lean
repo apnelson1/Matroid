@@ -1,5 +1,9 @@
-import Mathlib.Data.Sym.Sym2.Order
-import Matroid.Graph.Simple
+module
+
+public import Mathlib.Data.Sym.Sym2.Order
+public import Matroid.Graph.Simple
+
+@[expose] public section
 
 variable {α β : Type*} {G : Graph α β} {x y z u v w : α} {e f : β} {A : Set α} {B : Set β}
 

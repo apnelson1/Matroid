@@ -1,4 +1,6 @@
-import Matroid.Graph.Planarity.Realization.Basic
+module
+
+public import Matroid.Graph.Planarity.Realization.Basic
 
 /-!
 # The unit-edge metric realization of a graph
@@ -8,6 +10,8 @@ intrinsic extended path metric in which every edge has length one.  In particula
 does not install an `EMetricSpace` instance on the raw quotient `Graph.Realization G`; its quotient
 topology and this metric topology can therefore coexist without an instance diamond.
 -/
+
+@[expose] public section
 
 open Set Function TopologicalSpace Topology Relation UniformSpace Sum Path WList Classical ENNReal
 open scoped unitInterval

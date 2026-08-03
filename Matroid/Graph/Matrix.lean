@@ -1,8 +1,12 @@
-import Matroid.Graph.Basic
-import Mathlib.LinearAlgebra.Matrix.Determinant.TotallyUnimodular
-import Mathlib.LinearAlgebra.Matrix.Adjugate
-import Mathlib.LinearAlgebra.LinearIndependent.Defs
-import Matroid.Graph.Walk.Cycle
+module
+
+public import Matroid.Graph.Basic
+public import Mathlib.LinearAlgebra.Matrix.Determinant.TotallyUnimodular
+public import Mathlib.LinearAlgebra.Matrix.Adjugate
+public import Mathlib.LinearAlgebra.LinearIndependent.Defs
+public import Matroid.Graph.Walk.Cycle
+
+@[expose] public section
 
 open Set Matrix Function Classical BigOperators Finset
 

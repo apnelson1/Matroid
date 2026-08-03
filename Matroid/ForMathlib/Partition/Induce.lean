@@ -1,4 +1,8 @@
-import Matroid.ForMathlib.Partition.Basic
+module
+
+public import Matroid.ForMathlib.Partition.Basic
+
+@[expose] public section
 
 variable {α β ι ι' : Type*} {s t S T : Set α} {a b c x y : α}
 

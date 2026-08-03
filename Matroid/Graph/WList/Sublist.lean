@@ -1,5 +1,9 @@
-import Matroid.Graph.WList.Ops
-import Matroid.ForMathlib.List.Basic
+module
+
+public import Matroid.Graph.WList.Ops
+public import Matroid.ForMathlib.List.Basic
+
+@[expose] public section
 
 open Set Function List Nat WList
 

@@ -58,7 +58,7 @@ lemma exists_connected_finite_matroidalDual [G.EdgeFinite] (h : G.matroidalDual 
     simp only [cycleMatroid_bot, Matroid.emptyOn_dual_eq] at h
     exact ⟨noEdge {(Classical.arbitrary γ)} β, by simp [matroidalDual, h], by simp⟩
   obtain ⟨f, hf⟩ := H.connPartition.isRepFun_nonempty
-  haveI := h.edgeFinite_of_matroidalDual
+  have := h.edgeFinite_of_matroidalDual
   classical
   refine ⟨joinAt H (f _) f,
     h.trans (cycleMatroid_joinAt hf (notMem_sdiff_of_mem ⟨_, hne.some_mem, rfl⟩)).symm,

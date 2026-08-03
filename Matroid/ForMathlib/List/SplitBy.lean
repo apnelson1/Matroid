@@ -1,16 +1,20 @@
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.List.Flatten
-import Mathlib.Data.List.SplitBy
-import Mathlib.Algebra.Order.Group.Nat
-import Mathlib.Algebra.Order.Sub.Unbundled.Basic
-import Mathlib.Algebra.Ring.Parity
-import Mathlib.Data.Finset.Image
-import Mathlib.Data.Nat.Bits
-import Mathlib.Data.List.Induction
-import Mathlib.Data.Set.Finite.Basic
-import Mathlib.Data.Set.Card
-import Matroid.ForMathlib.Interval
-import Mathlib.Algebra.Order.Interval.Set.SuccPred
+module
+
+public import Mathlib.Data.Finset.Card
+public import Mathlib.Data.List.Flatten
+public import Mathlib.Data.List.SplitBy
+public import Mathlib.Algebra.Order.Group.Nat
+public import Mathlib.Algebra.Order.Sub.Unbundled.Basic
+public import Mathlib.Algebra.Ring.Parity
+public import Mathlib.Data.Finset.Image
+public import Mathlib.Data.Nat.Bits
+public import Mathlib.Data.List.Induction
+public import Mathlib.Data.Set.Finite.Basic
+public import Mathlib.Data.Set.Card
+public import Matroid.ForMathlib.Interval
+public import Mathlib.Algebra.Order.Interval.Set.SuccPred
+
+@[expose] public section
 
 namespace List
 

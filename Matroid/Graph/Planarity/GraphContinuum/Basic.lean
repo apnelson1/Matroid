@@ -1,8 +1,12 @@
-import Matroid.Graph.Planarity.Topology.ConnPartition
-import Matroid.Graph.Planarity.Topology.Circuit
-import Mathlib.Analysis.CStarAlgebra.Unitary.Connected
-import Mathlib.Geometry.Manifold.Metrizable
-import Mathlib.Topology.Connected.LocallyConnected
+module
+
+public import Matroid.Graph.Planarity.Topology.ConnPartition
+public import Matroid.Graph.Planarity.Topology.Circuit
+public import Mathlib.Analysis.CStarAlgebra.Unitary.Connected
+public import Mathlib.Geometry.Manifold.Metrizable
+public import Mathlib.Topology.Connected.LocallyConnected
+
+@[expose] public section
 
 variable {G : Type*} {e f C S T : Set G} {v w : G}
 

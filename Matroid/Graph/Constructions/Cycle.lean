@@ -1,7 +1,11 @@
-import Matroid.Graph.Walk.Cycle
-import Matroid.Graph.Forest
-import Mathlib.Combinatorics.Graph.Basic
-import Mathlib.Data.ZMod.Basic
+module
+
+public import Matroid.Graph.Walk.Cycle
+public import Matroid.Graph.Forest
+public import Mathlib.Combinatorics.Graph.Basic
+public import Mathlib.Data.ZMod.Basic
+
+@[expose] public section
 
 section Cycle
 

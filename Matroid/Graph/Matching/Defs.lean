@@ -1,5 +1,9 @@
-import Matroid.Graph.Degree.Max
-import Matroid.Parallel
+module
+
+public import Matroid.Graph.Degree.Max
+import all Mathlib.Combinatorics.Graph.Delete
+
+@[expose] public section
 
 namespace Graph
 
@@ -444,8 +448,8 @@ lemma exists_isMaxMatching' (G : Graph α β) (hν : ν(G) ≠ ⊤) : ∃ M, G.I
 
 lemma exists_isMaxMatching (G : Graph α β) [G.EdgeFinite] : ∃ M, G.IsMaxMatching M := by
   refine G.exists_isMaxMatching' ?_
-  suffices hlt : ν(G) < ⊤
-  · intro bad
+  suffices hlt : ν(G) < ⊤ by
+    intro bad
     rw [bad] at hlt
     exact hlt.ne rfl
   refine lt_of_le_of_lt G.matchingNumber_le_edgeSet_encard ?_

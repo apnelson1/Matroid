@@ -1,7 +1,11 @@
-import Mathlib.Data.Set.Lattice
-import Matroid.ForMathlib.Set
-import Mathlib.Data.Set.Card
-import Matroid.ForMathlib.Topology.ENat
+module
+
+public import Mathlib.Data.Set.Lattice
+public import Matroid.ForMathlib.Set
+public import Mathlib.Data.Set.Card
+public import Matroid.ForMathlib.Topology.ENat
+
+@[expose] public section
 -- import Mathlib.Order.Partition.Basic
 
 variable {α ι : Type*} {s t x y : Set α} {P Q P' : Set α → Prop} {T : Set (Set α)}

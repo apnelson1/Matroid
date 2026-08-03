@@ -1,6 +1,10 @@
-import Matroid.Graph.Subgraph.Delete
-import Matroid.Graph.Subgraph.Union
-import Matroid.Graph.Subgraph.Inter
+module
+
+public import Matroid.Graph.Subgraph.Delete
+public import Matroid.Graph.Subgraph.Union
+public import Matroid.Graph.Subgraph.Inter
+
+@[expose] public section
 
 variable {α β ι ι' : Type*} {x y z u v w : α} {e f : β} {F F₁ F₂ : Set β} {X Y : Set α}
   {G G₁ G₂ H H₁ H₂ : Graph α β} {F F₁ F₂ : Set β} {X Y : Set α} {s t : Set (Graph α β)}

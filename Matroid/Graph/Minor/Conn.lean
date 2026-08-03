@@ -1,5 +1,9 @@
-import Matroid.Graph.Minor.Defs
-import Matroid.Graph.Forest
+module
+
+public import Matroid.Graph.Minor.Defs
+public import Matroid.Graph.Forest
+
+@[expose] public section
 
 variable {α β ι ι' : Type*} {x y z u v w : α} {e f : β} {G G₁ G₂ H H₁ H₂ I : Graph α β}
   {C D F F₁ F₂ : Set β} {X Y : Set α} {Gs Hs : Set (Graph α β)} {W w w' P Q c : WList α β}

@@ -1,7 +1,11 @@
-import Mathlib.Order.CompactlyGenerated.Basic
-import Mathlib.Tactic.ApplyFun
-import Matroid.ForMathlib.Relation
-import Matroid.ForMathlib.Function -- for Function.onFun_comp
+module
+
+public import Mathlib.Order.CompactlyGenerated.Basic
+public import Mathlib.Tactic.ApplyFun
+public import Matroid.ForMathlib.Relation
+public import Matroid.ForMathlib.Function -- for Function.onFun_comp
+
+@[expose] public section
 
 open Set Function
 

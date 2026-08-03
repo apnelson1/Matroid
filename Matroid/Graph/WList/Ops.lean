@@ -1,4 +1,8 @@
-import Matroid.Graph.WList.Defs
+module
+
+public import Matroid.Graph.WList.Defs
+
+@[expose] public section
 
 open Set Function List Nat WList
 variable {α β : Type*} {u v x y z : α} {e e' f g : β} {S T U: Set α}
@@ -585,22 +589,23 @@ lemma idxOf_add_idxOf_reverse [DecidableEq α] (hw : w.vertex.Nodup) (hx : x ∈
   rw [add_comm]
   exact idxOf_reverse_add_idxOf hw hx
 
-def dIncLast [DecidableEq β] (w : WList α β) (he : e ∈ w.edge) : α × α :=
-  (w.reverse.dIncFirst (by simpa using he)).swap
+def dIncLast [DecidableEq β] (w : WList α β) {e : β} (he : e ∈ w.edge) : α × α :=
+  (w.reverse.dIncFirst (e := e) (by rw [reverse_edge, List.mem_reverse]; exact he)).swap
 
-lemma dIncLast_dInc [DecidableEq β] (w : WList α β) (he : e ∈ w.edge) :
+lemma dIncLast_dInc [DecidableEq β] (w : WList α β) {e : β} (he : e ∈ w.edge) :
     w.DInc e (w.dIncLast he).1 (w.dIncLast he).2 := by
   simp only [dIncLast, Prod.fst_swap, Prod.snd_swap]
   rw [← dInc_reverse_iff]
-  exact dIncFirst_dInc _ (by simpa using he)
+  exact dIncFirst_dInc (e := e) _ (by rw [reverse_edge, List.mem_reverse]; exact he)
 
 @[simp]
-lemma dIncLast_cons_of_mem [DecidableEq β] (w : WList α β) (he : e ∈ w.edge) :
+lemma dIncLast_cons_of_mem [DecidableEq β] (w : WList α β) {e : β} (he : e ∈ w.edge) :
     (cons x f w).dIncLast (by simp; grind : e ∈ _) = w.dIncLast he := by
   simp only [dIncLast, reverse_cons, Prod.swap_inj]
-  exact dIncFirst_concat_of_mem _ (by simpa using he)
+  exact dIncFirst_concat_of_mem (e := e) _
+    (by rw [reverse_edge, List.mem_reverse]; exact he)
 
-lemma dIncLast_cons [DecidableEq β] (w : WList α β) (he : e ∈ (cons x f w).edge) :
+lemma dIncLast_cons [DecidableEq β] (w : WList α β) {e : β} (he : e ∈ (cons x f w).edge) :
     (cons x f w).dIncLast he = if hew : e ∈ w.edge then w.dIncLast hew else (x, w.first) := by
   split_ifs with hew
   · exact dIncLast_cons_of_mem w hew

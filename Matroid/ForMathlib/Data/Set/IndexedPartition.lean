@@ -1,10 +1,14 @@
-import Matroid.ForMathlib.Data.Set.Subsingleton
-import Matroid.ForMathlib.Set
+module
+
+public import Matroid.ForMathlib.Data.Set.Subsingleton
+public import Matroid.ForMathlib.Set
 -- import Mathlib.Tactic.DepRewrite
-import Mathlib.Tactic.NthRewrite
-import Mathlib.Data.PFun
-import Batteries.CodeAction.Basic
-import Batteries.CodeAction.Misc
+public import Mathlib.Tactic.NthRewrite
+public import Mathlib.Data.PFun
+public import Batteries.CodeAction.Basic
+public import Batteries.CodeAction.Misc
+
+@[expose] public section
 
 set_option linter.style.longLine false
 

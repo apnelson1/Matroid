@@ -1,4 +1,8 @@
-import Mathlib.Data.Set.Lattice.Image
+module
+
+public import Mathlib.Data.Set.Lattice.Image
+
+@[expose] public section
 
 variable {α ι : Type*}
 

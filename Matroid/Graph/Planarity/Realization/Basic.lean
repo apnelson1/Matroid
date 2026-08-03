@@ -1,9 +1,13 @@
-import Matroid.Graph.Finite
-import Matroid.Graph.GraphLike.ArbRel
-import Matroid.Graph.Distance
-import Mathlib.Topology.CWComplex.Classical.Subcomplex
-import Matroid.Graph.Planarity.Topology.Path
-import Matroid.Graph.Planarity.Topology.ConnPartition
+module
+
+public import Matroid.Graph.Finite
+public import Matroid.Graph.GraphLike.ArbRel
+public import Matroid.Graph.Distance
+public import Mathlib.Topology.CWComplex.Classical.Subcomplex
+public import Matroid.Graph.Planarity.Topology.Path
+public import Matroid.Graph.Planarity.Topology.ConnPartition
+
+public section
 
 open Set Function TopologicalSpace Topology Relation Sum Path WList ENNReal Set.Notation
 open scoped unitInterval
@@ -64,9 +68,11 @@ instance : DiscreteTopology V(G) where
 instance instFiniteVertex [G.Finite] : Finite V(G) := G.vertexSet_finite
 instance instFiniteEdge [G.EdgeFinite] : Finite E(G) := G.edgeSet_finite
 
+@[expose]
 noncomputable def edgeSource (e : E(G)) : V(G) :=
   ⟨G.source e.val e.prop, G.source_mem e.prop⟩
 
+@[expose]
 noncomputable def edgeTarget (e : E(G)) : V(G) :=
   ⟨G.target e.val e.prop, G.target_mem e.prop⟩
 
@@ -84,7 +90,7 @@ abbrev PreRealization (G : Graph α β) := V(G) ⊕ Σ (_ : E(G)), I
 
 variable {e : E(G)} {t t' : I} {u v : V(G)} {w x y z : G.PreRealization}
 
-private def glueRelAux (G : Graph α β) (x y : PreRealization G) : Prop :=
+def glueRelAux (G : Graph α β) (x y : PreRealization G) : Prop :=
   match x with
   | .inl u => y = Sum.inl u ∨
     (∃ e : E(G), u = edgeSource e ∧ y = Sum.inr ⟨e, (0 : I)⟩) ∨
@@ -220,6 +226,7 @@ theorem glueRel_inr_inr_iff_of_isNonloopAt (e : E(G)) (he : G.IsNonloopAt e (edg
 abbrev Realization (G : Graph α β) : Type _ := Quotient G.glueRel
 
 /-- Inclusion of a vertex into the realization. -/
+@[expose]
 def vertexMk (v : V(G)) : Realization G := Quotient.mk' (s := G.glueRel) (Sum.inl v)
 
 lemma vertexMk_injective : Injective G.vertexMk := fun u v ↦ by simp [vertexMk]
@@ -229,6 +236,7 @@ lemma vertexMk_injective : Injective G.vertexMk := fun u v ↦ by simp [vertexMk
 /-- Inclusion of a point of the `e`-th edge interval into the realization. -/
 -- def edgeMk (e : E(G)) (t : I) : Realization G := Quotient.mk' (s := G.glueRel) (Sum.inr ⟨e, t⟩)
 
+@[expose]
 def edgePath (e : E(G)) : Path (vertexMk (edgeSource e)) (vertexMk (edgeTarget e)) where
   toFun t := Quotient.mk' (s := G.glueRel) (Sum.inr ⟨e, t⟩)
   source' := Quotient.sound (by simp)
@@ -423,6 +431,7 @@ lemma exists_vertexMk_or_exists_edgePath (x : G.Realization) :
     exact Or.inr ⟨e, t, ⟨h0, h1⟩, rfl⟩
 
 /-- The points in the realization that are not vertices. -/
+@[expose]
 def edgeInteriorSet (G : Graph α β) : Set G.Realization := (range vertexMk)ᶜ
 
 @[simp]
@@ -485,7 +494,7 @@ lemma eq_edgePath_Ioo_of_mem_pathComponentPartition (T : Set G.Realization)
       rintro ⟨t', ht', rfl⟩
       use t', Ioo_subset_Icc_self ht', ht'
     rw [hU_eq]
-    haveI : PathConnectedSpace (Ioo (0:ℝ) 1) := isPathConnected_iff_pathConnectedSpace.mp
+    have : PathConnectedSpace (Ioo (0:ℝ) 1) := isPathConnected_iff_pathConnectedSpace.mp
       <| (convex_Ioo 0 1).isPathConnected ⟨2⁻¹, by norm_num⟩
     exact isPathConnected_range hf
 

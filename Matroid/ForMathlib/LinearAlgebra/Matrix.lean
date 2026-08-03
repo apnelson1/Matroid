@@ -1,8 +1,12 @@
-import Mathlib.Data.Matrix.Rank
-import Mathlib.Data.Matrix.ColumnRowPartitioned
-import Mathlib.Data.Finset.Preimage
-import Matroid.ForMathlib.LinearAlgebra.LinearIndepOn
-import Matroid.ForMathlib.Minimal
+module
+
+public import Mathlib.Data.Matrix.Rank
+public import Mathlib.Data.Matrix.ColumnRowPartitioned
+public import Mathlib.Data.Finset.Preimage
+public import Matroid.ForMathlib.LinearAlgebra.LinearIndepOn
+public import Matroid.ForMathlib.Minimal
+
+@[expose] public section
 
 namespace Matrix
 

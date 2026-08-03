@@ -1,9 +1,13 @@
-import Mathlib.Topology.Instances.ENat
-import Mathlib.Topology.Algebra.InfiniteSum.Constructions
-import Mathlib.Topology.Order.T5
-import Mathlib.Topology.Algebra.InfiniteSum.Order
-import Matroid.ForMathlib.ENat
-import Matroid.ForMathlib.Card
+module
+
+public import Mathlib.Topology.Instances.ENat
+public import Mathlib.Topology.Algebra.InfiniteSum.Constructions
+public import Mathlib.Topology.Order.T5
+public import Mathlib.Topology.Algebra.InfiniteSum.Order
+public import Matroid.ForMathlib.ENat
+public import Matroid.ForMathlib.Card
+
+@[expose] public section
 
 open Lean Lean.PrettyPrinter.Delaborator in
 

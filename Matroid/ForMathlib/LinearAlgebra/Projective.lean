@@ -1,7 +1,11 @@
-import Mathlib.LinearAlgebra.Projectivization.Independence
-import Mathlib.LinearAlgebra.Projectivization.Subspace
-import Matroid.ForMathlib.LinearAlgebra.LinearIndepOn
-import Matroid.ForMathlib.LinearAlgebra.Submodule
+module
+
+public import Mathlib.LinearAlgebra.Projectivization.Independence
+public import Mathlib.LinearAlgebra.Projectivization.Subspace
+public import Matroid.ForMathlib.LinearAlgebra.LinearIndepOn
+public import Matroid.ForMathlib.LinearAlgebra.Submodule
+
+@[expose] public section
 
 variable {ι K V : Type*} [DivisionRing K] [AddCommGroup V] [Module K V]
 

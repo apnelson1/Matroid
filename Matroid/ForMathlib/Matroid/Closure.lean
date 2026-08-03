@@ -1,7 +1,11 @@
-import Mathlib.Combinatorics.Matroid.Closure -- inefficient import
-import Matroid.ForMathlib.Matroid.Dual
-import Matroid.ForMathlib.Matroid.Basic
-import Matroid.ForMathlib.Data.Set.Subsingleton
+module
+
+public import Mathlib.Combinatorics.Matroid.Closure -- inefficient import
+public import Matroid.ForMathlib.Matroid.Dual
+public import Matroid.ForMathlib.Matroid.Basic
+public import Matroid.ForMathlib.Data.Set.Subsingleton
+
+@[expose] public section
 
 namespace Matroid
 

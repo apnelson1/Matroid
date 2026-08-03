@@ -1,6 +1,10 @@
-import Mathlib.Analysis.InnerProductSpace.PiL2 -- inefficient import
+module
+
+public import Mathlib.Analysis.InnerProductSpace.PiL2 -- inefficient import
 -- import Matroid.ForMathlib.Partition.Set
-import Matroid.Graph.Basic
+public import Matroid.Graph.Basic
+
+@[expose] public section
 
 open Set Function Partition
 variable {α : Type*} [TopologicalSpace α] {S T T₁ T₂ : Set α} {u v w : α}

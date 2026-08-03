@@ -1,5 +1,9 @@
-import Mathlib.Data.Set.Image
-import Mathlib.Data.Set.Notation
+module
+
+public import Mathlib.Data.Set.Image
+public import Mathlib.Data.Set.Notation
+
+@[expose] public section
 
 open Function Set.Notation
 

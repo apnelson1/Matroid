@@ -1,6 +1,10 @@
-import Mathlib.Combinatorics.Matroid.Map -- inefficient import
-import Matroid.ForMathlib.Matroid.Basic
-import Matroid.ForMathlib.Function
+module
+
+public import Mathlib.Combinatorics.Matroid.Map -- inefficient import
+public import Matroid.ForMathlib.Matroid.Basic
+public import Matroid.ForMathlib.Function
+
+@[expose] public section
 
 open Set Function
 
