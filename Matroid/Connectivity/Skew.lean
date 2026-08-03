@@ -1225,6 +1225,15 @@ lemma IsCircuit.isCircuit_contract_iff_skew_of_nontrivial {C} (hC : M.IsCircuit 
   refine ⟨fun h ↦ ?_, fun h ↦ h.isCircuit_contract_of_nontrivial hC hnt⟩
   rw [skew_iff_contract_restrict_eq_restrict, hC.restrict_eq_circuitOn, h.restrict_eq_circuitOn]
 
+lemma IsTriangle.isTriangle_contract_iff_skew {T} (hT : M.IsTriangle T)
+    (hX : X ⊆ M.E := by aesop_mat) : (M ／ X).IsTriangle T ↔ M.Skew X T := by
+  simp only [isTriangle_iff, hT.three_elements, and_true]
+  rw [hT.isCircuit.isCircuit_contract_iff_skew_of_nontrivial hT.nontrivial]
+
+lemma IsTriangle.contract_isTriangle {T} (hT : M.IsTriangle T) (hX : M.Skew X T) :
+    (M ／ X).IsTriangle T :=
+  ⟨hX.isCircuit_contract_of_nontrivial hT.isCircuit hT.nontrivial, hT.three_elements⟩
+
 lemma IsCircuit.contractElem_isCircuit_of_notMem_closure {C} (hC : M.IsCircuit C)
     (heC : e ∉ M.closure C) : (M ／ {e}).IsCircuit C := by
   by_cases! he : e ∉ M.E

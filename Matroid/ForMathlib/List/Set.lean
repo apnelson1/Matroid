@@ -30,6 +30,13 @@ lemma Nodup.toSet_dropLast_eq (hl : l.Nodup) (h0 : l ≠ []) :
   simp only [tail_reverse, mem_reverse, head_reverse] at this
   assumption
 
+@[simp]
+lemma toSet_disjoint {l l' : List α} :
+    _root_.Disjoint ({x | x ∈ l} : Set α) {x | x ∈ l'} ↔ Disjoint l l' := by
+  simp [disjoint_left, Set.disjoint_left]
+
+alias ⟨_, Disjoint.toSet⟩ := toSet_disjoint
+
 lemma subset_of_subset_toSet_of_forall {s t : Set α} (hs : s ⊆ {x | x ∈ l})
     (hst : ∀ i (hi : i < l.length), l[i] ∈ s → l[i] ∈ t) : s ⊆ t := by
   intro x hx

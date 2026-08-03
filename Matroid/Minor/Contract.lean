@@ -115,6 +115,16 @@ lemma Codep.of_delete {D : Set α} (h : (M ＼ D).Codep X) (hD : D ⊆ M.E := by
   rw [← dep_dual_iff, dual_delete] at h
   exact union_comm _ _ ▸ h.of_contract
 
+lemma Codep.restrict (hD : M.Codep X) (hXR : X ⊆ R) : (M ↾ R).Codep X := by
+  rw [restrict_eq_delete_disjointSum_loopyOn, Codep]
+  generalize_proofs h
+  simp only [disjointSum_dual, dual_delete, loopyOn_dual_eq, disjointSum_dep_iff, contract_ground,
+    dual_ground, _root_.sdiff_sdiff_right_self, inf_eq_inter, freeOn_ground, freeOn_not_dep,
+    or_false]
+  rw [inter_comm M.E, ← inter_assoc, and_iff_left (by grind), inter_eq_self_of_subset_left hXR,
+    inter_eq_self_of_subset_left hD.subset_ground]
+  exact hD.dep_dual.contract_of_disjoint (C := M.E \ R) (by grind)
+
 lemma removeLoops_eq_contract (M : Matroid α) : M.removeLoops = M ／ M.loops := by
   rw [contract_eq_delete_of_subset_loops rfl.subset, removeLoops_eq_delete]
 

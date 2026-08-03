@@ -9,6 +9,9 @@ open Set
 
 namespace List
 
+lemma extract_isInfix (L : List α) (a b : ℕ) : L.extract a b <:+: L :=
+  (take_prefix ..).isInfix.trans <| (drop_suffix ..).isInfix
+
 lemma extract_zero (L : List α) (stop : ℕ) : L.extract 0 stop = L.take stop := by
   simp
 
@@ -25,6 +28,10 @@ lemma extract_of_length_le (L : List α) (start : ℕ) {stop : ℕ} (h : L.lengt
 lemma extract_eq_nil (L : List α) {start stop : ℕ} (hlt : stop ≤ start) :
     L.extract start stop = [] := by
   grind [extract_eq_take_drop, take_eq_nil_iff, drop_eq_nil_iff]
+
+lemma extract_eq_nil' (L : List α) {start stop : ℕ} (hlt : L.length ≤ start) :
+    L.extract start stop = [] := by
+  simp [hlt]
 
 lemma extract_succ_cons (L : List α) (x : α) (a b : ℕ) :
     (x :: L).extract (a + 1) (b + 1) = L.extract a b := by
@@ -85,7 +92,7 @@ lemma extract_add_one_right (L : List α) {p q : ℕ} (hpq : p ≤ q) (hq : q < 
     · simp
     rw [extract_succ_cons, extract_succ_cons, getElem_cons_succ, ih (by lia) (by grind)]
 
-lemma cons_extract_add_one_left (L : List α) {p q : ℕ} (hpq : p < q) (hq : q ≤ L.length) :
+lemma cons_extract_add_one_left (L : List α) {p q : ℕ} (hpq : p < q) (hp : p < L.length) :
     L[p] :: L.extract (p + 1) q = L.extract p q := by
   induction L generalizing p q with
   | nil => grind
@@ -95,3 +102,21 @@ lemma cons_extract_add_one_left (L : List α) {p q : ℕ} (hpq : p < q) (hq : q 
     obtain rfl | p := p
     · simp
     rw [extract_succ_cons, extract_succ_cons, getElem_cons_succ, ih (by lia) (by grind)]
+
+lemma extract_suffix_take (L : List α) (p q) : L.extract p q <:+ L.take q := by
+  rw [extract_eq_drop_take']
+  exact drop_suffix p (take q L)
+
+lemma extract_prefix_drop (L : List α) (p q) : L.extract p q <+: L.drop p := by
+  rw [extract_eq_take_drop]
+  exact take_prefix (q - p) (drop p L)
+
+lemma extract_suffix_extract (L : List α) {p'} (hpp' : p ≤ p') :
+    L.extract p' q <:+ L.extract p q := by
+  rw [extract_eq_drop_take', extract_eq_drop_take']
+  exact drop_suffix_drop_left _ hpp'
+
+lemma extract_prefix_extract (L : List α) {q'} (hqq' : q ≤ q') :
+    L.extract p q <+: L.extract p q' := by
+  rw [extract_eq_take_drop, extract_eq_take_drop]
+  exact take_prefix_take_left <| by lia

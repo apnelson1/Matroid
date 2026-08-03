@@ -39,6 +39,10 @@ lemma Nat.add_div2 (m n : ℕ) : (m + n).div2 = m.div2 + n.div2 + (m.bodd && n.b
   · simp [add_comm]
   grind
 
+@[grind =]
+lemma Bool.toNat_add_toNat_bnot (b : Bool) : b.toNat + (!b).toNat = 1 := by
+  cases b with simp
+
 namespace Matroid
 
 -- variable {J : Bool → List α}
@@ -46,7 +50,7 @@ namespace Matroid
 variable {α : Type*} {M : Matroid α} {X Y C K T : Set α} {e f g x y : α} {b c d : Bool}
     {J : Bool → List α} {L : List α} {n i j : ℕ} {J : List α} {b b' c : Bool} {L : List ℕ}
 
-@[ext]
+/-- A structure -/
 structure Fan (M : Matroid α) (b c : Bool) where
   toList : List α
   toList_nodup : toList.Nodup
@@ -58,9 +62,11 @@ structure Fan (M : Matroid α) (b c : Bool) where
 
 namespace Fan
 
+variable {F F' : M.Fan b c}
+
 instance coeList : CoeOut (M.Fan b c) (List α) where coe F := F.toList
 
-def length (F : M.Fan b c) : ℕ := List.length (F : List α)
+abbrev length (F : M.Fan b c) : ℕ := List.length (F : List α)
 
 @[grind! .]
 lemma length_bodd (F : M.Fan b c) : F.length.bodd = (b == c) :=
@@ -72,9 +78,14 @@ lemma length_bodd_eq_false (F : M.Fan b !b) : F.length.bodd = false := by
 lemma length_bodd_eq_true (F : M.Fan b b) : F.length.bodd = true := by
   grind
 
+
 @[grind! .]
 lemma length_ge_two (F : M.Fan b c) : 2 ≤ F.length :=
   F.toList_length_ge
+
+@[simp]
+lemma length_ne_one (F : M.Fan b c) : F.length ≠ 1 := by
+  grind
 
 @[grind! .]
 lemma length_ge_three (F : M.Fan b b) : 3 ≤ F.length :=
@@ -88,6 +99,7 @@ lemma toList_ne_nil (F : M.Fan b c) : (F : List α) ≠ [] := by
   grw [← length_pos_iff, length_toList, ← length_ge_two]
   simp
 
+-- @[reducible]
 instance : GetElem (M.Fan b c) Nat α (fun t i => i < t.length) where
   getElem := fun t i h => t.toList[i]
 
@@ -100,7 +112,6 @@ lemma getElem_toList' (F : Fan M b c) (i : ℕ) {hi : i < F.length} : (F : List 
 lemma getElem_toList (F : Fan M b c) (i : ℕ) {hi : i < (F : List α).length} :
     (F : List α)[i] = F[i] := rfl
 
-
 macro_rules
   | `(tactic| get_elem_tactic_extensible) =>
     `(tactic| grind[List.length_rotate, Nat.add_one_lt_of_bodd_eq])
@@ -108,7 +119,18 @@ macro_rules
 @[simp]
 lemma toList_head (F : M.Fan b c) : F.toList.head (by simp) = F[0] := by
   rw [← getElem_toList', ← getElem_zero_eq_head (by grind)]
-  rfl
+
+lemma toList_inj {F F' : M.Fan b c} (hF : (F : List α) = (F' : List α)) : F = F' := by
+  cases F with cases F' with grind
+
+@[simp]
+lemma toList_inj_iff {F F' : M.Fan b c} : (F : List α) = (F' : List α) ↔ F = F' := by
+  cases F with cases F' with grind
+
+@[ext (iff := false)]
+protected lemma ext {F F' : M.Fan b c} (h_length : F.length = F'.length)
+    (hi : ∀ i (hi : i < F.length) (hi' : i < F'.length), F[i] = F'[i]) : F = F' :=
+  toList_inj <| List.ext_getElem h_length hi
 
 def toSet (F : Fan M b c) : Set α := {e | e ∈ F}
 
@@ -143,16 +165,34 @@ lemma encard_toSet_eq (F : M.Fan b c) : (F : Set α).encard = F.length := by
 lemma toSet_nontrivial (F : M.Fan b c) : (F : Set α).Nontrivial := by
   grw [← two_le_encard_iff_nontrivial, encard_toSet_eq, ← F.length_ge_two, ENat.coe_eq_ofNat]
 
-lemma isNonloop (F : M.Fan b c) {hi : i < F.length} {d : Bool} : (M.bDual d).IsNonloop F[i] :=
+lemma bool_right_eq (F : M.Fan b c) : c = (b == F.length.bodd) := by
+  simp [F.length_bodd]
+
+lemma bool_left_eq (F : M.Fan b c) : b = (c == F.length.bodd) := by
+  cases b with simp [F.length_bodd]
+
+lemma isNonloop_bDual (F : M.Fan b c) {hi : i < F.length} {d : Bool} : (M.bDual d).IsNonloop F[i] :=
   F.isNonloop' i hi d
+
+lemma isNonloop (F : M.Fan b c) {hi : i < F.length} : M.IsNonloop F[i] :=
+  F.isNonloop_bDual (d := false)
 
 lemma getElem_of_mem (F : M.Fan b c) (heF : e ∈ F) : ∃ (i : ℕ) (hi : i < F.length), F[i] = e :=
   List.getElem_of_mem heF
 
 @[simp]
-lemma isNonloop_of_mem {F : M.Fan b c} (heF : e ∈ F) (d : Bool) : (M.bDual d).IsNonloop e := by
+lemma getElem_mem {hi : i < F.length} : F[i] ∈ F :=
+  List.getElem_mem hi
+
+@[simp]
+lemma isNonloop_bDual_of_mem {F : M.Fan b c} (heF : e ∈ F) (d : Bool) :
+    (M.bDual d).IsNonloop e := by
   obtain ⟨i, hi, rfl⟩ := F.getElem_of_mem heF
-  exact F.isNonloop
+  exact F.isNonloop_bDual
+
+@[simp]
+lemma isNonloop_of_mem {F : M.Fan b c} (heF : e ∈ F) : M.IsNonloop e :=
+  F.isNonloop_bDual_of_mem (d := false) heF
 
 @[simp, grind →]
 lemma getElem_inj (F : M.Fan b c) {i j} {hi : i < F.length} {hj : j < F.length} :
@@ -175,6 +215,7 @@ lemma Bool.bnot_toNat (b : Bool) : (!b).toNat = 1 - b.toNat := by
 --   rw [add_comm, n.bodd_add_div2]
 
 
+/-- Copy a fan.  -/
 @[simps]
 def copy (F : M.Fan b c) (M' : Matroid α) (b' c' : Bool) (hM : M = M')
     (hb : b = b') (hc : c = c') : M'.Fan b' c' where
@@ -196,11 +237,15 @@ lemma copy_length (F : M.Fan b c) (M' : Matroid α) (b' c' : Bool) (hM : M = M')
 @[simp]
 lemma copy_getElem (F : M.Fan b c) (M' : Matroid α) (b' c' : Bool) (hM : M = M')
     (hb : b = b') (hc : c = c') (i : ℕ) {hi : i < (F.copy M' b' c' hM hb hc).length} :
-    (F.copy M' b' c' hM hb hc)[i] = F[i] := rfl
+    (F.copy M' b' c' hM hb hc)[i] = F[i]'(show i < F.length from hi) := rfl
 
+@[simp]
+lemma copy_eq_self (F : M.Fan b c) : F.copy M b c rfl rfl rfl = F := rfl
+
+/-- Add an element to the beginning of a fan. -/
 @[simps]
-protected def consEq (F : M.Fan b c) (hb : b' = !b) (heF : e ∉ F)
-    (hT : (M.bDual b').IsTriangle {e, F[0], F[1]}) : M.Fan b' c where
+protected def cons (F : M.Fan b c) (heF : e ∉ F) (hT : (M.bDual !b).IsTriangle {e, F[0], F[1]})
+    (b' : Bool := !b) (hb : b' = !b := by simp) : M.Fan b' c where
   toList := e :: F
   toList_nodup := by simpa
   toList_length_ge := by grind
@@ -210,72 +255,71 @@ protected def consEq (F : M.Fan b c) (hb : b' = !b) (heF : e ∉ F)
   isNonloop' := by
     rintro (rfl | i) hi d
     · simpa [hb] using hT.isNonloop_bDual₁ (b := (b == d))
-    simpa using F.isNonloop
+    simpa using F.isNonloop_bDual
   isTriangle' := by
     rintro (rfl | i) hi
-    · simpa [← hb]
+    · simpa [hb]
     simpa [hb] using! F.isTriangle i (by grind)
 
 @[simp]
-lemma cons_length (F : M.Fan b c) (hb : b' = !b) (heF : e ∉ F) (hT) :
-    (F.consEq hb heF hT).length = F.length + 1 := by
-  rw [← length_toList, consEq_toList]
-  simp
+lemma cons_length (F : M.Fan b c) (heF : e ∉ F) (hT) {b' hb'} :
+    (F.cons heF hT b' hb').length = F.length + 1 := by
+  simp [← length_toList]
 
 @[simp]
-lemma cons_toSet (F : M.Fan b c) (hb : b' = !b) (heF : e ∉ F) (hT) :
-    (F.consEq hb heF hT : Set α) = insert e (F : Set α) := by
+lemma cons_toSet (F : M.Fan b c) (heF : e ∉ F) (hT) {hb : b' = !b}:
+    (F.cons heF hT b' hb : Set α) = insert e (F : Set α) := by
   rw [← ofPred_mem_toList_eq]
   simp [mem_cons, mem_toList, ofPred_or]
 
 @[simp]
-lemma getElem_cons_zero (F : M.Fan b c) (hb : b' = !b) (heF : e ∉ F) (hT) :
-    (F.consEq hb heF hT)[0] = e := rfl
+lemma getElem_cons_zero (F : M.Fan b c) (heF : e ∉ F) (hT) (hb : b' = !b) :
+    (F.cons heF hT b' hb)[0] = e := rfl
 
 @[simp]
-lemma getElem_cons_succ (F : M.Fan b c) (hb : b' = !b) (heF : e ∉ F) (hT)
-    (hi : i + 1 < (F.consEq hb heF hT).length) :
-    (F.consEq hb heF hT)[i + 1] = F[i]'(by simpa using hi) := rfl
+lemma getElem_cons_succ (F : M.Fan b c) (heF : e ∉ F) (hT) {hb : b' = !b}
+    (hi : i + 1 < (F.cons heF hT b' hb).length) :
+    (F.cons heF hT b' hb)[i + 1] = F[i]'(by simpa using hi) := rfl
 
-@[simps!, reducible]
-protected def cons (F : M.Fan b c) (heF : e ∉ F) (hT : (M.bDual (!b)).IsTriangle {e, F[0], F[1]}) :
-    M.Fan (!b) c := F.consEq rfl heF hT
-
-@[simps!, reducible]
-protected def consNot (F : M.Fan (!b) c) (heF : e ∉ F)
-  (hT : (M.bDual b).IsTriangle {e, F[0], F[1]}) : M.Fan b c :=
-    F.consEq (by simp) heF hT
-
-abbrev getLast (F : M.Fan b c) : α := F[F.length - 1]
+abbrev getLast (F : M.Fan b c) : α := (F : List α).getLast F.toList_ne_nil
 
 abbrev getPenult (F : M.Fan b c) : α := F[F.length - 2]
 
 lemma subset_ground (F : M.Fan b c) : (F : Set α) ⊆ M.E :=
-  fun _ he ↦ (F.isNonloop_of_mem he false).mem_ground
+  fun _ he ↦ (F.isNonloop_of_mem he).mem_ground
+
+lemma getLast_eq_getElem (F : M.Fan b c) : F.getLast = F[F.length - 1] :=
+  List.getLast_eq_getElem _
 
 @[simp]
-lemma getElem_eq_getElem (F : M.Fan b c) (i : ℕ) (hi : i < (F : List α).length) :
-    F[i] = F[i]'(show i < F.length from hi) :=
-  rfl
+lemma getElem_eq_getLast_iff (F : M.Fan b c) {hi : i < F.length} :
+    F[i] = F.getLast ↔ i + 1 = F.length := by
+  simp only [getLast_eq_getElem, getElem_inj]
+  lia
+
+@[simp]
+lemma getLast_ne_get_zero (F : M.Fan b c) : F.getLast ≠ F[0] := by
+  simp [getLast_eq_getElem, show F.length - 1 ≠ 0 by grind]
 
 @[simp]
 lemma get_mem_ground (F : M.Fan b c) (i : ℕ) {hi : i < F.length} : F[i] ∈ M.E :=
-  (F.isNonloop (d := false)).mem_ground
+  F.isNonloop.mem_ground
 
 @[simp]
 lemma mem_toList_getElems_iff (F : M.Fan b c) (i : ℕ) {hi : i < F.length} {s : Set ℕ} :
     F[i] ∈ (F : List α).getElems s ↔ i ∈ s :=
   F.nodup.getElem_mem_getElems_iff
 
+/-- The fan with the same elements in reverse order. -/
 @[simps]
-def reverse (F : M.Fan b c) : M.Fan c b where
+def reverse {b c : Bool} (F : M.Fan b c) : M.Fan c b where
   toList := (F : List α).reverse
   toList_nodup := List.nodup_reverse.2 F.nodup
   toList_length_ge := by simp [F.length_ge_two]
   toList_length_bodd := by simp [F.length_bodd, eq_comm]
   isNonloop' i hi d := by
     simp only [getElem_reverse, length_toList, getElem_toList]
-    exact F.isNonloop
+    exact F.isNonloop_bDual
   isTriangle' i hi := by
     simp only [getElem_reverse, length_toList, getElem_toList]
     simp only [length_reverse, length_toList] at hi
@@ -289,80 +333,192 @@ lemma reverse_toSet (F : M.Fan b c) : (F.reverse : Set α) = F := by
   rw [← ofPred_mem_toList_eq]
   simp
 
-@[simp]
-lemma reverse_length (F : M.Fan b c) : F.reverse.length = F.length :=
-  length_reverse ..
+@[simp, grind! .]
+lemma reverse_length (F : M.Fan b c) : F.reverse.length = F.length := by
+  exact length_reverse ..
 
 @[simp]
 lemma mem_reverse (F : M.Fan b c) : e ∈ F.reverse ↔ e ∈ F :=
   List.mem_reverse
 
 @[simp]
+lemma reverse_reverse (F : M.Fan b c) : F.reverse.reverse = F :=
+  toList_inj <| by simp
+
+@[simp]
+lemma reverse_inj_iff : F.reverse = F'.reverse ↔ F = F' := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
+  rw [← F.reverse_reverse, h, F'.reverse_reverse]
+
+alias ⟨reverse_inj, _⟩ := reverse_inj_iff
+
+@[simp]
 lemma reverse_getElem_zero (F : M.Fan b c) : F.reverse[0] = F.getLast := by
-  simp_rw [getLast, ← getElem_toList', reverse_toList, List.getElem_reverse, tsub_zero]
-  rfl
+  simp_rw [getLast, ← getElem_toList', reverse_toList, List.getElem_reverse, tsub_zero,
+    getElem_length_sub_one_eq_getLast]
 
 @[simp]
 lemma reverse_getElem_one (F : M.Fan b c) : F.reverse[1] = F.getPenult := by
-  simp_rw [getPenult, ← getElem_toList', reverse_toList, List.getElem_reverse, Nat.sub_sub,
-    one_add_one_eq_two]
-  rfl
+  simp_rw [getPenult, ← getElem_toList, reverse_toList, List.getElem_reverse, Nat.sub_sub]
 
-def concatEq (F : M.Fan b c) (heF : e ∉ F) {c'} (hc' : c' = !c)
-    (hT : (M.bDual c').IsTriangle {F.getPenult, F.getLast, e}) : M.Fan b c' :=
-  ((F.reverse.consEq (b' := c') hc' (by simpa)) (by simpa using hT.reverse)).reverse
+@[simp]
+lemma reverse_getLast (F : M.Fan b c) : F.reverse.getLast = F[0] := by
+  simp_rw [getLast, reverse_toList, getLast_reverse, toList_head]
 
-lemma concatEq_toList (F : M.Fan b c) (heF : e ∉ F) {c'} (hc' : c' = !c) (hT) :
-    (F.concatEq heF hc' hT).toList = F.toList ++ [e] := by
-  simp [concatEq]
+@[simp]
+lemma reverse_getPenult (F : M.Fan b c) : F.reverse.getPenult = F[1] := by
+  rw [← F.reverse_reverse, reverse_getElem_one, reverse_reverse]
 
+lemma reverse_getElem (F : M.Fan b c) (hi : i < F.reverse.length) :
+    F.reverse[i] = F[F.length - 1 - i] := by
+  rw [← getElem_toList]
+  simp
+
+lemma getElem_eq_reverse_getElem (F : M.Fan b c) (hi : i < F.length) :
+    F[i] = F.reverse[F.length - 1 - i] := by
+  grind [reverse_getElem]
+
+/-- Add a new element to the end of a fan. -/
+def concat (F : M.Fan b c) (heF : e ∉ F) (hT : (M.bDual !c).IsTriangle {F.getPenult, F.getLast, e})
+    (c' : Bool := !c) (hc' : c' = !c := by simp) : M.Fan b c' :=
+  (F.reverse.cons (e := e) (by simpa) (by simpa using hT.reverse) c' hc').reverse
+
+lemma concat_toList (F : M.Fan b c) (heF : e ∉ F) {c'} {hc' : c' = !c} (hT) :
+    (F.concat heF hT c' hc').toList = F.toList ++ [e] := by
+  simp [concat]
+
+@[simp, grind! .]
+lemma concat_length (F : M.Fan b c) {heF : e ∉ F} {hT} {c'} {hc'} :
+    (F.concat heF hT (c' := c') hc').length = F.length + 1 := by
+  simp [concat]
+
+lemma concat_getElem_of_lt (F : M.Fan b c) {heF : e ∉ F} {c'} {hc' : c' = !c} {hT} {i}
+    (hi : i < F.length) : (F.concat heF hT c' hc')[i] = F[i] := by
+  simp_rw [← getElem_toList, concat_toList, getElem_append_left hi]
+
+@[simp]
+lemma concatEq_getElem_length (F : M.Fan b c) {heF : e ∉ F} {c'} {hc' : c' = !c} {hT} :
+    (F.concat heF hT c' hc')[F.length] = e := by
+  simp [← getElem_toList, concat_toList]
+
+/-- A fan gives a fan in any dual. -/
 @[simps!]
-def bDual (F : M.Fan b c) (d : Bool) : (M.bDual d).Fan (b != d) (c != d) where
+def bDual (F : M.Fan b c) (d : Bool) (b' : Bool := (b != d)) (c' : Bool := (c != d))
+    (hb' : b' = (b != d) := by simp) (hc' : c' = (c != d) := by simp) :
+    (M.bDual d).Fan b' c' where
   toList := F
   toList_nodup := F.nodup
   toList_length_ge := F.length_ge_two
-  toList_length_bodd := by simp [F.length_bodd]
-  isNonloop' i hi d' := by simpa using F.isNonloop
-  isTriangle' i hi := by cases d with simpa using! F.isTriangle i hi
+  toList_length_bodd := by simp [hb', hc', F.length_bodd]
+  isNonloop' i hi d' := by simpa using F.isNonloop_bDual
+  isTriangle' i hi := by cases d with simpa [hb', hc'] using! F.isTriangle i hi
 
-@[reducible, simps!]
-def ofbDual (F : (M.bDual d).Fan b c) : M.Fan (b != d) (c != d) :=
-  (F.bDual d).copy _ _ _ (by simp) (by simp) (by simp)
+/-- A fan of any dual gives a fan -/
+@[simps!]
+def ofbDual (b' : Bool := (b != d)) (c' : Bool := (c != d))
+    (hb : b' = (b != d) := by simp) (hc : c' = (c != d) := by simp)
+    (F : (M.bDual d).Fan b c) : M.Fan b' c' :=
+  (F.bDual d b' c' hb hc).copy _ _ _ (by simp) (by simp) (by simp)
 
 @[simp]
-lemma bDual_length (F : M.Fan b c) (d : Bool) : (F.bDual d).length = F.length := rfl
+lemma bDual_length (F : M.Fan b c) (d : Bool) {b' c' hb hc} :
+    (F.bDual d b' c' hb hc).length = F.length := rfl
 
 @[simp]
-lemma bDual_toSet (F : M.Fan b c) (d : Bool) : (F.bDual d : Set α) = F := rfl
+lemma bDual_toSet (F : M.Fan b c) (d : Bool) {b' c' hb hc} :
+    (F.bDual d b' c' hb hc : Set α) = F := rfl
+
+@[simp]
+lemma bDual_getElem (F : M.Fan b c) (d : Bool) {b' c' hb hc} (i : ℕ)
+    (hi : i < (F.bDual d b' c' hb hc).length) :
+    (F.bDual d)[i] = F[i] := rfl
+
+@[simp]
+lemma mem_bDual (F : M.Fan b c) (d : Bool) {b' c' hb hc} :
+    x ∈ F.bDual d b' c' hb hc ↔ x ∈ F := Iff.rfl
+
+lemma bDual_cons (F : M.Fan b c) (d : Bool) {b' c' b'' c'' hb hc hb'} {e : α}
+     {he hT} :
+    (F.cons (e := e) he hT b'' hb').bDual d b' c' hb hc =
+      (F.bDual d b' c' (by _) hc).cons (e := e) (by
+      simp [hb]
+    ) hc := sorry
+    -- (F.bDual d b' c' hb hc).cons (e := e) he hT =
+
+def dual (F : M.Fan b c) (b' : Bool := !b) (c' : Bool := !c)
+    (hb : b' = !b := by simp) (hc : c' = !c := by simp) : (M✶.Fan b' c') :=
+  (F.bDual true).copy _ _ _ rfl (by simp [hb]) (by simp [hc])
 
 @[reducible]
-def dual (F : M.Fan b c) : (M✶.Fan (!b) (!c)) :=
-  (F.bDual true).copy _ _ _ rfl (by simp) (by simp)
+def ofDual (F : M✶.Fan b c) (b' : Bool := !b) (c' : Bool := !c)
+    (hb : b' = !b := by simp) (hc : c' = !c := by simp) : (M.Fan b' c') :=
+  (F.bDual true).copy _ _ _ (by simp) (by simp [hb]) (by simp [hc])
 
-@[reducible]
-def ofDual (F : M✶.Fan b c) : (M.Fan (!b) (!c)) :=
-  (F.bDual true).copy _ _ _ (by simp) (by simp) (by simp)
+@[simp]
+lemma bDual_false (F : M.Fan b c) {b' c' hb' hc'} :
+    (F.bDual false b' c' hb' hc') = F.copy _ _ _ rfl (by simp [hb']) (by simp [hc']) := rfl
 
+@[simp]
+lemma bDual_true (F : M.Fan b c) {b' c' hb' hc'} :
+    (F.bDual true b' c' hb' hc') = F.dual.copy _ _ _ rfl (by simp [hb']) (by simp [hc']) := rfl
+
+/-- The length-2 fan given by a pair of non-loop, non-coloop elements. -/
 @[simps]
 def ofPair (he : ∀ i, (M.bDual i).IsNonloop e) (hf : ∀ i, (M.bDual i).IsNonloop f) (hef : e ≠ f)
-    (b : Bool) : M.Fan b !b where
+    (b : Bool) (c : Bool := !b) (hbc : (!b) = c := by simp) : M.Fan b c where
   toList := [e, f]
   toList_nodup := by simpa
   toList_length_ge := by simp
-  toList_length_bodd := by simp
+  toList_length_bodd := by simp [← hbc]
   isNonloop' := by grind [Nat.le_one_iff_eq_zero_or_eq_one]
   isTriangle' := by simp
 
 @[simp]
-lemma ofPair_toSet (he : ∀ i, (M.bDual i).IsNonloop e) (hf : ∀ i, (M.bDual i).IsNonloop f)
-    (hef : e ≠ f) (b : Bool) : (Fan.ofPair he hf hef b : Set α) = {e, f} := by
+lemma toSet_ofPair (he : ∀ i, (M.bDual i).IsNonloop e) (hf : ∀ i, (M.bDual i).IsNonloop f)
+    (hef : e ≠ f) {b c : Bool} (hbc : (!b) = c) :
+      (Fan.ofPair he hf hef b c hbc : Set α) = {e, f} := by
+  subst hbc
   rw [← ofPred_mem_toList_eq, ofPair_toList]
   simp [ofPred_or, pair_comm]
 
 @[simp]
-lemma ofPair_length (he : ∀ i, (M.bDual i).IsNonloop e) (hf : ∀ i, (M.bDual i).IsNonloop f)
-    (hef : e ≠ f) (b : Bool) : (Fan.ofPair he hf hef b).length = 2 := rfl
+lemma length_ofPair (he : ∀ i, (M.bDual i).IsNonloop e) (hf : ∀ i, (M.bDual i).IsNonloop f)
+    (hef : e ≠ f) (b c : Bool) (hbc) : (Fan.ofPair he hf hef b c hbc).length = 2 := rfl
 
+lemma getElem_ofPair {he : ∀ i, (M.bDual i).IsNonloop e} {hf} {hef : e ≠ f} {b c hbc}
+    {hi : i < (ofPair he hf hef b c hbc).length} :
+    (ofPair he hf hef b c hbc)[i] = if i = 0 then e else f := by
+  change [e,f][i] = _
+  grind
+
+@[simp]
+lemma reverse_ofPair' (he : ∀ d, (M.bDual d).IsNonloop e) (hf : ∀ d, (M.bDual d).IsNonloop f)
+    (hef : e ≠ f) {hbc : (!b) = c} : (ofPair he hf hef b c hbc).reverse =
+      (ofPair hf he hef.symm c b (by simp [hbc])) :=
+  Fan.toList_inj <| by simp [reverse_toList, ofPair_toList]
+
+@[simp]
+lemma cons_reverse (F : M.Fan b c) (heF : e ∉ F) (hT) (b' hb') :
+    (F.cons heF hT b' hb').reverse =
+      F.reverse.concat (by simpa) (by simpa using hT.reverse) b' hb' := by
+  apply toList_inj
+  simp_rw [reverse_toList, cons_toList, concat_toList, reverse_cons, reverse_toList]
+
+lemma concat_reverse (F : M.Fan b c) (heF : e ∉ F) (hT) {c'} (hc : c' = !c) :
+    (F.concat heF hT c' hc).reverse =
+    F.reverse.cons (by simpa) (by simpa using hT.reverse) c' hc :=
+  reverse_inj <| by simp
+
+lemma eq_of_length_le_two (hF : F.length ≤ 2) : ∃ (e f : α) (he : ∀ i, (M.bDual i).IsNonloop e)
+    (hf : ∀ i, (M.bDual i).IsNonloop f) (hef : e ≠ f) (hbc : (!b) = c),
+    F = Fan.ofPair he hf hef b c hbc := by
+  replace hF := hF.antisymm F.length_ge_two
+  refine ⟨F[0], F[1], fun _ ↦ F.isNonloop_bDual, fun _ ↦ F.isNonloop_bDual, (by simp),
+    by simpa [hF] using F.bool_left_eq, Fan.ext (by simpa) ?_⟩
+  simp only [hF, Order.lt_two_iff, getElem_ofPair]
+  grind
+
+/-- The length-3 fan given by a triangle. -/
 @[simps]
 def ofTriangle (hT : M.IsTriangle {e, f, g}) : M.Fan false false where
   toList := [e, f, g]
@@ -375,6 +531,7 @@ def ofTriangle (hT : M.IsTriangle {e, f, g}) : M.Fan false false where
     · simpa
     simp [add_assoc] at hi
 
+/-- The length-3 fan given by a triangle in some dual. -/
 @[simps!, reducible]
 def ofTriangle_bDual (h : (M.bDual b).IsTriangle {e, f, g}) : M.Fan b b :=
   (ofTriangle h).ofbDual.copy _ _ _ rfl (by simp) (by simp)
@@ -392,53 +549,146 @@ lemma IsFan.bool_right_eq (F : M.Fan b c) : c = (b == F.length.bodd) := by
 lemma IsFan.bool_left_eq (F : M.Fan b c) : b = (c == F.length.bodd) := by
   cases b with simp [F.length_bodd]
 
+/-- Remove the element at the start of a fan. -/
 @[simps]
-def tail (F : M.Fan b c) (hF : 3 ≤ F.length) : M.Fan (!b) c where
+def tail {b c} (F : M.Fan b c) (hF : 3 ≤ F.length) (b' : Bool := !b) (hb' : b' = !b := by simp) :
+    M.Fan b' c where
   toList := (F : List α).tail
   toList_nodup := F.nodup.tail
   toList_length_ge := by grind
   toList_length_bodd := by
+    subst hb'
     simp only [length_tail, length_toList, F.length_sub_one_bodd_eq]
     cases b with cases c with simp
-  isNonloop' i hi d := by simpa using! F.isNonloop (i := i + 1) (d := d)
-  isTriangle' i hi := by simpa using! F.isTriangle (i := i + 1) (by grind)
+  isNonloop' i hi d := by simpa using F.isNonloop_bDual (i := i + 1) (d := d)
+  isTriangle' i hi := by simpa [hb'] using F.isTriangle (i := i + 1) (by grind)
 
-def dropLast (F : M.Fan b c) (hF : 3 ≤ F.length) : M.Fan b (!c) :=
-  (F.reverse.tail (by simpa)).reverse
+@[simp, grind =]
+lemma length_tail_add_one (F : M.Fan b c) (hF : 3 ≤ F.length) {b' : Bool} {hb' : b' = !b} :
+    (F.tail hF b' hb').length + 1 = F.length :=
+  List.length_tail_add_one _ <| by grind
 
-lemma eq_tail_cons (F : M.Fan b c) (hF : 3 ≤ F.length) : F = (F.tail hF).consNot (e := F[0])
-    (fun h0 ↦ by simpa using F.nodup.rel_head_tail (a := F[0]) h0)
-    (by simp_rw [← getElem_toList']; simpa using! F.isTriangle 0 (by lia)) := by
-  ext i e
-  simp only [getElem?_eq_some_iff, getElem_toList, length_toList, getElem_toList', consEq_toList,
-    tail_toList, length_cons, length_tail, Order.lt_add_one_iff]
+@[simp, grind! .]
+lemma length_tail_add_one' (F : M.Fan b c) (hF : 3 ≤ F.length) :
+    (F.tail hF).length + 1 = F.length :=
+  List.length_tail_add_one _ <| by grind
+
+@[simp]
+lemma getElem_tail (F : M.Fan b c) (hF : 3 ≤ F.length) {b' hb'}
+    (hi : i < (F.tail hF b' hb').length) :
+    (F.tail hF b' hb')[i] = F[i + 1]' (show i + 1 < F.length
+      by rwa [← add_lt_add_iff_right (a := 1), length_tail_add_one] at hi) :=
+  List.getElem_tail _
+
+@[simp]
+lemma getElem_mem_tail_iff (F : M.Fan b c) (hF : 3 ≤ F.length) (hi : i < F.length) {b' hb'} :
+    F[i] ∈ F.tail hF b' hb' ↔ i ≠ 0 := by
+  subst b'
   obtain rfl | i := i
-  · simp [show 0 < F.length by lia]
-  simp only [List.getElem_cons_succ, getElem_tail, getElem_toList, Order.add_one_le_iff,
-    show ∀ j, j < F.length - 1 ↔ j + 1 < F.length by grind]
+  · exact iff_of_false (fun h0t ↦ by simpa using (F.tail hF).getElem_of_mem h0t) (by simp)
+  rw [← F.getElem_tail hF _]
+  · simpa using getElem_mem
+  grind
+
+lemma eq_tail_cons (F : M.Fan b c) (hF : 3 ≤ F.length) :
+    F = (F.tail hF).cons (e := F[0]) (by simp) (by simpa using F.isTriangle 0 (by lia)) b
+    (by simp) :=
+  Fan.ext (by simp) (fun i hi hi' ↦ by cases i with simp)
+
+lemma eq_cons_tail (F : M.Fan b c) (he : e ∉ F) (hT : (M.bDual !b).IsTriangle {e, F[0], F[1]})
+    {b' hb'} : F = (F.cons he hT b' hb').tail
+      (by grw [cons_length, ← F.length_ge_two]) b (by simp [hb']) := by
+  refine Fan.ext ?_ fun i hi hi' ↦ by simp
+  rw [← add_left_inj (a := 1), length_tail_add_one, cons_length]
+
+@[simp]
+lemma cons_tail_eq_copy (F : M.Fan b c) (he : e ∉ F)
+    (hT : (M.bDual !b).IsTriangle {e, F[0], F[1]}) {b' b''} (hb : b' = !b) (hb'' : b'' = !b'):
+    (F.cons he hT b' hb).tail (by grw [cons_length, ← F.length_ge_two]) b'' hb'' =
+    F.copy M b'' c rfl (by rw [hb'', hb, b.not_not]) rfl := by
+  refine Fan.ext ?_ fun i hi hi' ↦ ?_
+  · rw [← add_left_inj (a := 1), length_tail_add_one, cons_length, copy_length]
+  simp
+
+/-- Remove the element at the end of a fan. -/
+def dropLast (F : M.Fan b c) (hF : 3 ≤ F.length) (c' : Bool := !c) (hc : c' = !c := by simp) :
+    M.Fan b c' :=
+  (F.reverse.tail (by simpa) c' hc).reverse
+
+@[simp]
+lemma dropLast_toList (F : M.Fan b c) (hF : 3 ≤ F.length) {c' hc} :
+    (F.dropLast hF c' hc : List α) = (F : List α).dropLast := by
+  simp [dropLast]
+
+lemma tail_reverse (F : M.Fan b c) (hF : 3 ≤ F.length) {b' hb'}:
+    (F.tail hF b' hb').reverse = F.reverse.dropLast (by simpa) b' hb' := by
+  simp [dropLast]
+
+lemma dropLast_reverse (F : M.Fan b c) (hF : 3 ≤ F.length) {c' hc'} :
+    (F.dropLast hF c' hc').reverse = F.reverse.tail (by simpa) c' hc' := by
+  rw [dropLast, reverse_reverse]
+
+@[simp, grind =]
+lemma length_dropLast_add_one (F : M.Fan b c) (hF : 3 ≤ F.length) {c' : Bool} {hc' : c' = !c} :
+    (F.dropLast hF c' hc').length + 1 = F.length := by
+  simp [dropLast]
+
+@[simp, grind! .]
+lemma length_dropLast_add_one' (F : M.Fan b c) (hF : 3 ≤ F.length) :
+    (F.dropLast hF).length + 1 = F.length := by
+  simp [dropLast]
+
+@[simp]
+lemma getElem_dropLast (F : M.Fan b c) (hF : 3 ≤ F.length) {c' hc'}
+    (hi : i < (F.dropLast hF c' hc').length) : (F.dropLast hF c' hc')[i] = F[i] := by
+  rw! [← getElem_toList, dropLast_toList, List.getElem_dropLast, getElem_toList]
   rfl
 
-def joints' (F : M.Fan b c) : List α := List.pmap
-    (l := List.range (F.length + (!b).toNat).div2)
-    (P := fun (i : ℕ) ↦ i < (F.length + (!b).toNat).div2)
-    (f := fun i hi ↦ F[2 * i + b.toNat]'
-    (by rw [lt_div2_iff, Nat.lt_iff_add_one_le] at hi; cases b with grind))
-    (by simp)
+@[simp]
+lemma getElem_mem_dropLast_iff (F : M.Fan b c) (hF : 3 ≤ F.length) (hi : i < F.length)
+    {c' hc'} : F[i] ∈ F.dropLast hF c' hc' ↔ i + 1 < F.length := by
+  rw [dropLast, getElem_eq_reverse_getElem, mem_reverse, getElem_mem_tail_iff, ne_eq,
+    Nat.sub_sub, Nat.sub_eq_zero_iff_le, not_le, add_comm]
 
-def joints (F : M.Fan b c) (d : Bool) : List α := (F.bDual d).joints'
+lemma eq_dropLast_concat (F : M.Fan b c) (hF : 3 ≤ F.length) :
+    F = (F.tail hF).cons (e := F[0]) (by simp) (by simpa using F.isTriangle 0 (by lia)) b
+    (by simp) :=
+  Fan.ext (by simp) (fun i hi hi' ↦ by cases i with simp)
 
-lemma length_joints (F : M.Fan b c) (d : Bool) :
-    (F.joints d).length = (F.length + (b == d).toNat).div2 := by
-  rw [joints, joints', length_pmap, List.length_range, bDual_length, Bool.bnot_bne]
+lemma concat_dropLast_eq_copy (F : M.Fan b c) (he : e ∉ F) (hT ) {c' c''} (hc' : c' = !c)
+    (hc'' : c'' = !c'):
+    (F.concat he hT c' hc').dropLast (by grw [concat_length, ← F.length_ge_two]) c'' hc'' =
+    F.copy M b _ rfl rfl (by rw [hc'', hc', Bool.not_not]) := by
+  refine Fan.ext ?_ fun i hi hi' ↦ ?_
+  · rw [← add_left_inj (a := 1), length_dropLast_add_one, concat_length, copy_length]
+  simp only [getElem_dropLast, concat_getElem_of_lt _ (by simpa using hi'), copy_getElem]
+  rfl
 
-lemma two_mul_length_joints_of_even (F : M.Fan b !b) (d : Bool) :
-    2 * (F.joints d).length = F.length := by
-  nth_rw 1 [length_joints, ← F.length.bodd_add_div2, add_comm (Bool.toNat _),
-    add_assoc, Nat.two_mul_add_div2, Nat.add_div2, toNat_div2, zero_add, toNat_div2, zero_add,
-    Bool.toNat_bodd, Bool.toNat_bodd, F.length_bodd_eq_false, Bool.false_and, mul_add,
-    show 2 * false.toNat = F.length.bodd.toNat by grind, add_comm, Nat.bodd_add_div2]
+lemma eq_concat_dropLast (F : M.Fan b c) (he : e ∉ F) (hT)
+    {c' hc'} : (F.concat he hT c' hc').dropLast
+      (by grw [concat_length, ← F.length_ge_two]) c (by simp [hc']) = F := by
+  simp [concat_dropLast_eq_copy]
 
--- #exit
+@[elab_as_elim]
+protected lemma induction {motive : ∀ {M : Matroid α} {b c : Bool} (_F : M.Fan b c), Prop}
+    (pair : ∀ e f b (he : ∀ d : Bool, (M.bDual d).IsNonloop e)
+      (hf : ∀ d : Bool, (M.bDual d).IsNonloop f) (hef : e ≠ f), motive (Fan.ofPair he hf hef b))
+    (cons : ∀ b c (F₀ : M.Fan b c) (e : α) (heF₀ : e ∉ F₀)
+      (hT : (M.bDual (!b)).IsTriangle {e, F₀[0], F₀[1]}) (_ih : motive F₀),
+      motive (F₀.cons heF₀ (by simpa using hT))) (F : M.Fan b c) : motive F := by
+  induction hi : F.length using Nat.strong_induction_on generalizing F b with | h n ih =>
+  subst n
+  obtain h2 | h3 := F.length_ge_two.eq_or_lt
+  · obtain ⟨e, f, he, hf, hef, rfl, rfl⟩ := F.eq_of_length_le_two h2.ge
+    apply pair
+  have hwin := cons _ _ (F.tail (by lia)) F[0] (by simp) (by simpa using F.isTriangle 0 (by lia))
+    <| ih _ (by grind) _ rfl
+  rw [F.eq_tail_cons (by lia)]
+  cases b with assumption
+
+-- lemma joints_reverse (F : M.Fan b c) (d : Bool) : (F.joints d).reverse = F.reverse.joints d := by
+--   _
+
 
 
 -- -- lemma IsFan.drop {k} (h : M.IsFan F b c) (hk : k + 2 ≤ F.length) :

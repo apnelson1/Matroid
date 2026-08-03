@@ -87,7 +87,6 @@ alias ⟨IsFan.of_bDual, _⟩ := isFan_bDual_iff
 lemma IsFan.bDual (h : M.IsFan F b c) (d : Bool) : (M.bDual d).IsFan F (b != d) (c != d) := by
   simpa
 
-
 lemma IsFan.length_bodd_eq (h : M.IsFan F b c) : F.length.bodd = (b == c) := by
   induction h with
   | of_pair => simp

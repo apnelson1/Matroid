@@ -371,6 +371,10 @@ lemma isTriangle_restrict_iff {R} : (M ↾ R).IsTriangle T ↔ M.IsTriangle T �
   rintro h ⟨e, -, rfl⟩
   simp at h
 
+lemma IsTriangle.restrict {R : Set α} (hT : M.IsTriangle T) (hTR : T ⊆ R) :
+    (M ↾ R).IsTriangle T := by
+  rwa [isTriangle_restrict_iff, and_iff_right hT]
+
 @[simp]
 lemma isTriangle_delete_iff {D} : (M ＼ D).IsTriangle T ↔ M.IsTriangle T ∧ Disjoint T D := by
   grind [isTriangle_iff, delete_isCircuit_iff]

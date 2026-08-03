@@ -145,6 +145,21 @@ lemma indep_iff_restrict_eq_freeOn : M.Indep I ↔ (M ↾ I = freeOn I) := by
   have h' := restrict_indep_iff (M := M) (I := I) (R := I)
   rwa [h, freeOn_indep_iff, iff_true_intro Subset.rfl, and_true, true_iff] at h'
 
+lemma restrict_eq_delete_disjointSum_loopyOn (M : Matroid α) (R : Set α) :
+    (M ↾ R) = (M ＼ (M.E \ R)).disjointSum (loopyOn (R \ M.E))
+      (by simp [loopyOn_ground, inter_comm M.E, disjoint_sdiff_inter.symm]) := by
+  generalize_proofs h
+  refine ext_indep ?_ fun I (hIR : I ⊆ R) ↦ ?_
+  · simp [inter_comm M.E, inter_union_sdiff]
+  simp only [restrict_indep_iff, hIR, and_true, disjointSum_indep_iff, delete_ground,
+    _root_.sdiff_sdiff_right_self, inf_eq_inter, inter_comm M.E, delete_indep_iff,
+    disjoint_iff_inter_eq_empty, inter_assoc, loopyOn_ground, loopyOn_indep_iff, inter_union_sdiff]
+  suffices M.Indep I ↔ M.Indep (I ∩ M.E) ∧ I ⊆ M.E by
+    simpa [← inter_assoc R (M.E \ R), ← inter_assoc, ← inter_sdiff_assoc,
+      inter_eq_self_of_subset_left hIR, sdiff_eq_empty]
+  exact ⟨fun h ↦ ⟨h.inter_right _, h.subset_ground⟩, fun ⟨h1, h2⟩ ↦ by
+    rwa [← inter_eq_self_of_subset_left h2]⟩
+
 lemma deleteElem_of_notMem_ground (h : e ∉ M.E) : M ＼ {e} = M := by
   rw [← delete_inter_ground_eq, singleton_inter_eq_empty.2 h, delete_empty]
 
