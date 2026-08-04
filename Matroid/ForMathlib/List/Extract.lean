@@ -4,6 +4,7 @@ public import Mathlib.Algebra.Order.Ring.Nat
 public import Mathlib.Algebra.Order.Sub.Basic
 public import Mathlib.Data.List.Nodup
 public import Mathlib.Data.List.TakeDrop
+public import Mathlib.Data.List.Rotate
 
 @[expose] public section
 
@@ -107,6 +108,16 @@ lemma cons_extract_add_one_left (L : List α) {p q : ℕ} (hpq : p < q) (hp : p 
     · simp
     rw [extract_succ_cons, extract_succ_cons, getElem_cons_succ, ih (by lia) (by grind)]
 
+lemma length_extract (L : List α) {p q : ℕ} (hq : q ≤ L.length) :
+    (L.extract p q).length = q - p := by
+  obtain hle | hgt := le_or_gt q p
+  · rw [extract_eq_nil _ hle, Nat.sub_eq_zero_of_le hle, length_nil]
+  replace hgt := hgt.le
+  induction q, hgt using Nat.le_induction with
+  | base => simp
+  | succ q hpq ih => rw [extract_add_one_right _ (by lia) (by lia), length_append, length_singleton,
+      ih (by lia), Nat.sub_add_comm hpq]
+
 lemma extract_suffix_take (L : List α) (p q) : L.extract p q <:+ L.take q := by
   rw [extract_eq_drop_take']
   exact drop_suffix p (take q L)
@@ -124,3 +135,59 @@ lemma extract_prefix_extract (L : List α) {q'} (hqq' : q ≤ q') :
     L.extract p q <+: L.extract p q' := by
   rw [extract_eq_take_drop, extract_eq_take_drop]
   exact take_prefix_take_left <| by lia
+
+
+/-- Take the list `L[p], L[p + 1], ..., L[L.length - 1], L[0], ..., L[q - 1]`. This is equal
+to `L.extract p q` if `p < q`, and is a concatenation of two sublists if `q ≤ p`. -/
+def extractC (L : List α) (p q : ℕ) := if p < q then L.extract p q else L.drop p ++ L.take q
+
+@[simp]
+lemma extractC_self (L : List α) (p : ℕ) (hp : p < L.length) : L.extractC p p = L.rotate p := by
+  refine ext_getElem ?_ fun i hi hi' ↦ ?_
+  · simp [extractC, min_eq_left hp.le, Nat.sub_add_cancel hp.le]
+  simp only [extractC, lt_self_iff_false, ↓reduceIte, getElem_rotate]
+  simp_rw [getElem_append, length_drop, Nat.lt_sub_iff_add_lt, getElem_drop, add_comm p,
+    getElem_take]
+  split_ifs with hi''
+  · simp_rw [Nat.mod_eq_of_lt hi'']
+  congr
+  simp only [length_rotate] at hi'
+  rw [eq_comm, Nat.mod_eq_iff, or_iff_right (by lia), and_iff_right (by lia)]
+  exact ⟨1, by lia⟩
+
+lemma extractC_add_one_right (L : List α) (p q : ℕ) (hq : q < L.length) (hpq : p ≠ q) :
+    L.extractC p (q + 1) = L.extractC p q ++ [L[q]] := by
+  by_cases hpqlt : p < q + 1
+  · rw [extractC, if_pos hpqlt, extract_add_one_right _ (by lia) (by lia), extractC,
+      if_pos (by lia)]
+  rw [extractC, if_neg hpqlt, extractC, if_neg (by lia), take_add_one, getElem?_eq_getElem (by lia)]
+  simp
+
+lemma extractC_length (L : List α) {p q : ℕ} (hp : p ≤ L.length) (hq : q ≤ L.length) :
+    (L.extractC p q).length = if p < q then q - p else q + L.length - p := by
+  rw [extractC]
+  split_ifs with h
+  · rw [length_extract _ hq]
+  rw [length_append, length_drop, length_take, min_eq_left hq]
+  lia
+
+lemma extractC_length_eq_mod (L : List α) (p q : ℕ) (hp : p < L.length) (hq : q < L.length)
+    (hpq : p ≠ q) : (L.extractC p q).length = (L.length + q - p) % L.length := by
+  rw [extractC_length _ hp.le hq.le, eq_comm, Nat.mod_eq_iff]
+  right
+  split_ifs with h
+  · exact ⟨by lia, 1, by lia⟩
+  exact ⟨by lia, 0, by lia⟩
+
+@[simp]
+lemma extractC_zero_right (L : List α) (p : ℕ) : L.extractC p 0 = L.drop p := by
+  simp [extractC]
+
+lemma extractC_add_one_self (L : List α) (p : ℕ) (hp : p < L.length) :
+    L.extractC p (p + 1) = [L[p]] := by
+  rw [extractC, if_pos (by lia), extract_add_one_right _ rfl.le hp, extract_eq_nil _ rfl.le,
+    nil_append]
+
+lemma extractC_prefix_rotate (L : List α) (p q : ℕ) (hp : p < L.length) (hq : q < L.length) :
+    L.extractC p q <:+ L.rotate p := by
+  _

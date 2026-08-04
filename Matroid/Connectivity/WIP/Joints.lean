@@ -353,3 +353,42 @@ lemma getElem_mem_intervalC_iff (F : M.Fan) {p q d hpq hq hpb hqb hi} :
   · simp [intervalC]
   simp [intervalC, -extract_eq_take_drop, mem_extract_iff_getElem, hip, hiq, hi,
     and_comm (a := (p ≤ i ∧ i < q)), show p < i ↔ p ≤ i by lia]
+
+lemma getElem_mem_intervalC_iff_of_odd (F : M.Fan) {p q d hpq hq hpb hqb hi}
+    (hib : i.bodd = (F.b == d)) :
+    F[i]'hi ∈ F.intervalC p q d hpq hq hpb hqb ↔ p < i ∧ i < q := by
+  obtain rfl | hip := eq_or_ne i p
+  · cases d with simp [hib] at hpb
+  obtain rfl | hiq := eq_or_ne i q
+  · cases d with simp [hib] at hqb
+  simp [getElem_mem_intervalC_iff, hib, hip, hiq]
+
+lemma getElem_mem_intervalC_iff_of_even (F : M.Fan) {p q d hpq hq hpb hqb hi}
+    (hib : i.bodd = (F.b != d)) :
+    F[i]'hi ∈ F.intervalC p q d hpq hq hpb hqb ↔ i = p ∨ i = q := by
+  cases d with simp [getElem_mem_intervalC_iff, hib]
+
+lemma intervalC_add_two (F : M.Fan) (p q : ℕ) (d : Bool) (hpq : p < q) (hqF : q + 2 < F.length)
+    (hp : p.bodd = (F.b != d)) (hq : (q + 2).bodd = (F.b != d)) :
+    F.intervalC p (q + 2) d (by lia) hqF hp hq =
+    (F.intervalC p q d hpq (by lia) hp (by simpa using hq)).dropLast ++ [F[q + 1], F[q + 2]] := by
+  simp only [Nat.bodd_succ, Bool.not_not] at hq
+  simp [intervalC, -extract_eq_take_drop]
+  rw [← List.cons_append, ← List.cons_append, List.dropLast_concat, extract_add_one_right
+    _ (by lia) (by simp [show q + 1 < F.length by lia]), append_cons (b := F[q + 1]),
+    extract_add_one_right _ hpq.le (by simp [show q < F.length by lia])]
+  simp only [extract_eq_take_drop, getElem_zipIdx, getElem_toList', zero_add, append_assoc,
+    cons_append, nil_append, filter_append, map_append, cons.injEq, append_cancel_left_eq,
+    _root_.true_and]
+  rw [filter_cons_of_neg (by simp [hq, ← Bool.not_eq]), filter_cons_of_pos (by simp [hq]),
+    filter_nil]
+  rfl
+
+lemma intervalC_add_two_self (F : M.Fan) (p : ℕ) (d : Bool) (hpF : p + 2 < F.length)
+    (hp : p.bodd = (F.b != d)) :
+    F.intervalC p (p + 2) d (by lia) hpF hp (by simpa) = [F[p], F[p + 1], F[p + 2]] := by
+
+lemma intervalC_add_two_self (F : M.Fan) (p : ℕ) (d : Bool) (hpF : p + 2 < F.length)
+    (hp : p.bodd = (F.b != d)) :
+    F.intervalC p (p + 2) d (by lia) hpF hp (by simpa) = [F[p], F[p + 1], F[p + 2]] := by
+  simp [intervalC]

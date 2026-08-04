@@ -34,6 +34,28 @@ lemma Nodup.toSet_dropLast_eq (hl : l.Nodup) (h0 : l ≠ []) :
   simp only [tail_reverse, mem_reverse, head_reverse] at this
   assumption
 
+lemma Nodup.toSet_inj_of_sublist (hl : l.Nodup) {k k' : List α} (hkl : k <+ l) (hk'l : k' <+ l) :
+    {x | x ∈ k} = {x | x ∈ k'} ↔ k = k' := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
+  induction l generalizing k k' with
+  | nil => rw [show k = [] by simpa using hkl, show k' = [] by simpa using hk'l]
+  | cons x l ih =>
+    rw [sublist_cons_iff] at hk'l hkl
+    obtain hk'l | ⟨k', rfl, hk'⟩ := hk'l
+    · obtain hkl | ⟨k, rfl, hk⟩ := hkl
+      · exact ih (by grind) hkl hk'l h
+      simp only [nodup_cons] at hl
+      exact False.elim <| hl.1 <| hk'l.mem <| h.subset <| by simp
+    simp only [nodup_cons] at hl
+    obtain hkl | ⟨k, rfl, hk⟩ := hkl
+    · exact False.elim <| hl.1 <| hkl.mem <| h.symm.subset <| by simp
+    simp only [mem_cons, ofPred_or, ofPred_eq_eq_singleton, singleton_union] at h
+    rw [ih (by grind) hk hk']
+    rw [← insert_sdiff_self_of_notMem (s := {x | x ∈ k}) (a := x), h,
+      insert_sdiff_self_of_notMem]
+    · exact fun h ↦ hl.1 <| hk'.mem h
+    exact fun h ↦ hl.1 <| hk.mem h
+
 @[simp]
 lemma toSet_disjoint {l l' : List α} :
     _root_.Disjoint ({x | x ∈ l} : Set α) {x | x ∈ l'} ↔ Disjoint l l' := by

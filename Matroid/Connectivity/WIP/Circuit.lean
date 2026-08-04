@@ -180,6 +180,19 @@ lemma eRk_eq (F : M.Fan) (hF : F.length.bodd = true)
     Nat.two_mul_div2 _ (by simpa), Nat.cast_add, Nat.cast_one]
   simpa using (F.bDual F.b).joints_indep <| by simpa [F.right_eq_left hF]
 
+lemma isCircuit_intervalC (F : M.Fan) (hpq : p < q) (hqF : q < F.length)
+    (hpb : p.bodd = F.b) (hqb : q.bodd = F.b)
+    (hdg : F.b = false → F.c = false → p = 0 → q + 1 = F.length → ¬ M.Parallel F[0] F.getLast) :
+    M.IsCircuit <| {e | e ∈ F.intervalC p q false hpq hqF (by simpa) (by simpa)} := by
+  induction q using Nat.strong_induction_on with | h q ih =>
+  obtain ⟨q, hqlt, rfl, rfl | hlt⟩ : ∃ q' < q, q' + 2 = q ∧ (q' = p ∨ p < q') := by
+    obtain ⟨rfl | rfl | d, rfl⟩ := exists_add_of_le hpq.le
+    · lia
+    · simp [hpb] at hqb
+    exact ⟨p + d, by grind⟩
+  ·
+  sorry
+
 /-- Let `F[p]` and `F[q]` be joints of a fan, and `K` be the set of cojoints between `p` and `q`.
 If `F[p]` and `F[q]` are not parallel and at the beginning and the end of the fan,
 then `{F[p], F[q]} ∪ K` is a circuit.
