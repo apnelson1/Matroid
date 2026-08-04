@@ -188,6 +188,6 @@ lemma extractC_add_one_self (L : List α) (p : ℕ) (hp : p < L.length) :
   rw [extractC, if_pos (by lia), extract_add_one_right _ rfl.le hp, extract_eq_nil _ rfl.le,
     nil_append]
 
-lemma extractC_prefix_rotate (L : List α) (p q : ℕ) (hp : p < L.length) (hq : q < L.length) :
-    L.extractC p q <:+ L.rotate p := by
-  _
+-- lemma extractC_prefix_rotate (L : List α) (p q : ℕ) (hp : p < L.length) (hq : q < L.length) :
+--     L.extractC p q <:+ L.rotate p := by
+--   _
