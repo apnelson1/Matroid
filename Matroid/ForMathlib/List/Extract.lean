@@ -163,6 +163,10 @@ lemma extractC_add_one_right (L : List α) (p q : ℕ) (hq : q < L.length) (hpq 
   rw [extractC, if_neg hpqlt, extractC, if_neg (by lia), take_add_one, getElem?_eq_getElem (by lia)]
   simp
 
+lemma extractC_of_length_le_right (hp : p < L.length) (hq : L.length ≤ q) :
+    L.extractC p q = L.drop p := by
+  rw [extractC, if_pos (by lia), extract_eq_drop_take', take_of_length_le hq]
+
 lemma extractC_length (L : List α) {p q : ℕ} (hp : p ≤ L.length) (hq : q ≤ L.length) :
     (L.extractC p q).length = if p < q then q - p else q + L.length - p := by
   rw [extractC]
@@ -188,6 +192,13 @@ lemma extractC_add_one_self (L : List α) (p : ℕ) (hp : p < L.length) :
   rw [extractC, if_pos (by lia), extract_add_one_right _ rfl.le hp, extract_eq_nil _ rfl.le,
     nil_append]
 
--- lemma extractC_prefix_rotate (L : List α) (p q : ℕ) (hp : p < L.length) (hq : q < L.length) :
---     L.extractC p q <:+ L.rotate p := by
---   _
+lemma extractC_prefix_rotate (L : List α) (p q : ℕ) (hp : p < L.length) :
+    L.extractC p q <+: L.rotate p := by
+  obtain hq | hq := le_or_gt L.length q
+  · rw [extractC_of_length_le_right hp hq, rotate_eq_drop_append_take hp.le]
+    exact prefix_append ..
+  obtain hlt | hge := lt_or_ge p q
+  · rw [extractC, if_pos hlt, extract_eq_take_drop, rotate_eq_drop_append_take hp.le]
+    exact (take_prefix ..).trans <| prefix_append ..
+  rw [extractC, if_neg (by lia), rotate_eq_drop_append_take hp.le, prefix_append_right_inj]
+  exact take_prefix_take_left hge

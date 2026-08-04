@@ -115,6 +115,11 @@ lemma getElems_union (L : List α) (s t : Set ℕ) :
 lemma getElems_singleton {i : ℕ} (hi : i < L.length) : L.getElems {i} = {L[i]} := by
   grind [getElems]
 
+@[simp]
+lemma Nodup.getElem_mem_getElems_iff (hL : L.Nodup) {s i} {hi : i < L.length} :
+    L[i] ∈ L.getElems s ↔ i ∈ s := by
+  simp [getElems, hL.getElem_inj_iff, hi]
+
 lemma getElems_insert (L : List α) (s : Set ℕ) {i : ℕ} (hi : i < L.length) :
     L.getElems (insert i s) = insert L[i] (L.getElems s) := by
   rw [← union_singleton, getElems_union, getElems_singleton hi, union_singleton]
@@ -130,6 +135,11 @@ lemma getElems_insert_eq_dite (L : List α) (s : Set ℕ) (i : ℕ) :
   split_ifs with h
   · exact getElems_insert L s h
   exact getElems_insert_eq_self L s (by lia)
+
+lemma Nodup.getElems_insert_sdiff (hL : L.Nodup) (s : Set ℕ) (his : i ∉ s) (hi : i < L.length) :
+    L.getElems (insert i s) \ {L[i]} = L.getElems s := by
+  rw [getElems_insert_eq_dite, dif_pos hi, insert_sdiff_self_of_notMem]
+  rwa [hL.getElem_mem_getElems_iff]
 
 lemma getElems_singleton_subsingleton {i : ℕ} : (L.getElems {i}).Subsingleton := by
   by_cases hi : i < L.length
@@ -228,10 +238,13 @@ lemma getElems_dropLast (hL : L.Nodup) (hL0 : L ≠ []) (s : Set ℕ) :
   rw [← L.dropLast_concat_getLast hL0, nodup_append] at hL
   grind
 
-@[simp]
-lemma Nodup.getElem_mem_getElems_iff (hL : L.Nodup) {s i} {hi : i < L.length} :
-    L[i] ∈ L.getElems s ↔ i ∈ s := by
-  simp [getElems, hL.getElem_inj_iff, hi]
+lemma getElems_reverse (L : List α) (s : Set ℕ) :
+    L.reverse.getElems s = L.getElems ((fun i ↦ L.length - 1 - i) ⁻¹' s) := by
+  refine Set.ext fun e ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · obtain ⟨i, hi, hiL, his, rfl⟩ := h
+    exact ⟨L.length - 1 - i, by grind, by grind, by simp⟩
+  obtain ⟨i, hi, h', rfl⟩ := h
+  exact ⟨L.length - 1 - i, by grind, h', by grind⟩
 
 lemma Nodup.subset_getElems_iff (hL : L.Nodup) {s : Set ℕ} {t : Set α} :
     t ⊆ L.getElems s ↔ t ⊆ {x | x ∈ L} ∧ ∀ i (hi : i < L.length), L[i] ∈ t → i ∈ s := by
