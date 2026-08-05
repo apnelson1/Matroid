@@ -4,6 +4,7 @@ public import Mathlib.Algebra.Order.Interval.Set.SuccPred
 public import Mathlib.Data.Set.Card
 public import Matroid.ForMathlib.Interval
 public import Matroid.ForMathlib.List.Extract
+public import Mathlib.Order.Interval.Finset.Nat
 
 @[expose] public section
 
@@ -191,7 +192,6 @@ lemma getElems_encard_le (L : List α) (s : Set ℕ) : (L.getElems s).encard ≤
     grw [← Set.singleton_union, getElems_union, Set.encard_union_le,
       Set.encard_le_one_iff_subsingleton.2 (getElems_singleton_subsingleton ..), ih,
       Set.singleton_union, Set.encard_insert_of_notMem has, add_comm]
-
 @[simp]
 lemma getElems_univ (L : List α) : L.getElems Set.univ = {x | x ∈ L} := by
   refine Set.ext fun x ↦ ⟨?_, fun h ↦ ?_⟩
@@ -211,6 +211,42 @@ lemma getElems_congr (L : List α) {s t : Set ℕ} (hst : ∀ i < L.length, i �
 lemma getElems_inter_Iio (L : List α) (s : Set ℕ) :
     L.getElems (s ∩ Set.Iio L.length) = L.getElems s :=
   getElems_congr _ <| by grind
+
+lemma Nodup.getElems_encard_eq (hL : L.Nodup) (s) :
+    (L.getElems s).encard = (s ∩ Iio L.length).encard := by
+  wlog hs : s.Finite ∧ s ⊆ Iio L.length generalizing s with aux
+  · rw [← getElems_inter_Iio, aux _ ⟨(finite_Iio L.length).inter_of_right _, by simp⟩, inter_assoc,
+      inter_self]
+  obtain ⟨hfin, hs⟩ := hs
+  induction s, hfin using Finite.induction_on with
+  | empty => simp
+  | @insert a s has hfin ih =>
+    rw [getElems_insert _ _ (by grind), encard_insert_of_notMem, inter_eq_self_of_subset_left hs,
+      encard_insert_of_notMem has, ih (by grind), inter_eq_self_of_subset_left (by grind)]
+    simpa [hL.getElem_mem_getElems_iff]
+
+lemma Nodup.getElems_subset_getElems_iff (hL : L.Nodup) {s t : Set ℕ} :
+    L.getElems s ⊆ L.getElems t ↔ (s ∩ Iio L.length) ⊆ (t ∩ Iio L.length) := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · exact fun i ⟨his, hiL⟩ ↦ ⟨hL.getElem_mem_getElems_iff.1 <| h (mem_getElems his hiL), hiL⟩
+  grw [← getElems_inter_Iio, h, getElems_inter_Iio]
+
+lemma Nodup.getElems_disjoint_iff (hL : L.Nodup) {s t} :
+    _root_.Disjoint (L.getElems s) (L.getElems t) ↔
+    _root_.Disjoint (s ∩ Iio L.length) (t ∩ Iio L.length) := by
+  simp +contextual only [Set.disjoint_left, Set.mem_inter_iff, mem_Iio, and_true, and_imp]
+  refine ⟨fun h a has hal ↦ ?_, ?_⟩
+  · have hwin := h (mem_getElems has hal)
+    rwa [hL.getElem_mem_getElems_iff] at hwin
+  rintro h _ ⟨i, hi, hi', rfl⟩
+  rw [hL.getElem_mem_getElems_iff]
+  exact h hi' hi
+
+lemma Nodup.getElems_sdiff (hL : L.Nodup) (s t : Set ℕ) :
+    L.getElems (s \ t) = L.getElems s \ L.getElems t := by
+  simp only [subset_antisymm_iff, subset_sdiff, hL.getElems_disjoint_iff, sdiff_subset_iff,
+    ← getElems_union, union_sdiff_self]
+  exact ⟨⟨getElems_mono L sdiff_subset, by grind⟩, getElems_mono _ subset_union_right⟩
 
 lemma getElems_append (L L' : List α) (s : Set ℕ) :
     (L ++ L').getElems s = L.getElems s ∪ L'.getElems {i | i + L.length ∈ s} := by
@@ -258,6 +294,19 @@ lemma getElems_subset_iff {s : Set ℕ} {t : Set α} :
   refine ⟨fun h i hi his ↦ h ⟨i, hi, his, rfl⟩, fun h ↦ ?_⟩
   rintro _ ⟨i, hi, his, rfl⟩
   exact h i hi his
+
+lemma getElems_ofPred {s : Set α} (hs : s ⊆ {x | x ∈ L}) :
+    s = L.getElems {i | ∃ (h : i < L.length), L[i] ∈ s} := by
+  refine subset_antisymm ?_ ?_
+  · intro x hxs
+    obtain ⟨i, hi, rfl⟩ := getElem_of_mem (hs hxs)
+    exact ⟨i, hi, ⟨hi, hxs⟩, rfl⟩
+  rintro _ ⟨i, hi, hi', rfl⟩
+  exact hi'.2
+
+lemma exists_eq_getElems {s : Set α} (hs : s ⊆ {x | x ∈ L}) :
+    ∃ t ⊆ Iio L.length, s = L.getElems t :=
+  ⟨{i | ∃ (h : i < L.length), L[i] ∈ s}, by grind, getElems_ofPred hs⟩
 
 lemma getElems_rotate (L : List α) (s : Set ℕ) (k : ℕ) :
     (L.rotate k).getElems s = L.getElems ((fun i ↦ (i + k) % L.length) '' (s ∩ Iio L.length)) := by

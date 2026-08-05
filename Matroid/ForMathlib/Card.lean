@@ -42,6 +42,11 @@ lemma encard_pair_iff (e f : α) : encard {e, f} = 2 ↔ e ≠ f := by
   simp only [mem_singleton_iff, insert_eq_of_mem, encard_singleton] at h
   enat_to_nat; lia
 
+@[simp]
+lemma encard_triple_le (e f g : α) : encard {e, f, g} ≤ 3 := by
+  grw [encard_insert_le, encard_pair_le]
+  rfl
+
 lemma two_le_encard_iff_nontrivial : 2 ≤ s.encard ↔ s.Nontrivial := by
   rw [← s.one_lt_encard_iff_nontrivial, ← one_add_one_eq_two, ENat.add_one_le_iff (by simp)]
 

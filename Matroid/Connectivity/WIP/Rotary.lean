@@ -11,28 +11,10 @@ variable {α β : Type*} {F : List α} {b c d : Bool} {M : Matroid α}
 variable {α : Type*} {M : Matroid α} {X Y C K T : Set α} {e f g x y : α} {b c d : Bool}
      {n i j : ℕ} {F : List α} {J : Bool → ZMod n → α}
 
-/-- A cyclic fan is an injective function `J` from `{0,1} × (ZMod n)` to `E(M)` so that
-for all `i`, the triple `J 0 i, J 0 (i + 1), J 1 i` is a triangle, and the triple
-`J 1 i, J 0 (i + 1), J 1 (i + 1)` is a triad.
-
-We do not insist that `n ≠ 0`, and thereby allow for infinite fans.  -/
-structure IsCyclicFan (M : Matroid α) (n : ℕ) (J : Bool → ZMod n → α) : Prop where
-  isTriangle_bDual : ∀ b i, (M.bDual b).IsTriangle {J b i, J b (i + 1), J (!b) (i + b.toNat)}
-  inj : ∀ b b' i i', J b i = J b' i' → i = i' ∧ b = b'
-
 structure IsRotaryFan (M : Matroid α) (F : List α) (b : Bool) : Prop where
   isFan : M.IsFan F b (!b)
   isTriangle : (M.bDual b).IsTriangle {F[F.length - 2], F[F.length - 1], F[0]}
   isTriad : (M.bDual (!b)).IsTriangle {F[F.length - 1], F[0], F[1]}
-
-example {n : ℕ} : {F : List α // M.IsRotaryFan F false} ≃
-    {P : ((n : ℕ) × (Bool → ZMod n → α)) // n ≠ 0 ∧ M.IsCyclicFan P.1 P.2} where
-  toFun := fun (⟨F, hF⟩ : {F : List α // M.IsRotaryFan F false}) ↦ by
-    refine ⟨⟨F.length.div2, fun b i ↦ F[2 * i.val + b.toNat]'sorry⟩, sorry⟩
-
-  invFun := _
-  left_inv := _
-  right_inv := _
 
 @[grind! .]
 lemma IsRotaryFan.length_ge (h : M.IsRotaryFan F b) : 4 ≤ F.length := by
@@ -82,9 +64,54 @@ lemma IsRotaryFan.rotate (h : M.IsRotaryFan F b) (n : ℕ) :
   exact hJ.isFan.isTriangle_bDual (by grind)
 
 
-lemma isRotaryFan_iff_forall (hF : 2 ≤ F.length) : M.IsRotaryFan F b ↔ ∀ i (hi : i < F.length),
-    (M.bDual (i.bodd != b)).IsTriangle {F[i], F[(i + 1) % F.length]'(by grind), F[(i + 2) % F.length]} := by
-  _
+
+#check ZMod.val_lt
+
+lemma IsRotaryFan.neZero (hF : M.IsRotaryFan F b) : NeZero F.length := sorry
+
+@[grind! .]
+lemma foo.val_lt (hF : 2 ≤ F.length) (i : ZMod F.length) : i.val < F.length := sorry
+
+
+@[simp]
+protected lemma IsRotaryFan.val_one (hF : M.IsRotaryFan F b) : (1 : ZMod F.length).val = 1 :=
+  sorry
+
+@[simp]
+protected lemma IsRotaryFan.val_two (hF : M.IsRotaryFan F b) : (2 : ZMod F.length).val = 2 := by
+  rw [ZMod.val_ofNat, Nat.mod_eq_of_lt (by grind)]
+
+@[simp]
+protected lemma IsRotaryFan.val_three (hF : M.IsRotaryFan F b) : (3 : ZMod F.length).val = 3 := by
+  rw [ZMod.val_ofNat, Nat.mod_eq_of_lt (by grind)]
+
+lemma IsRotaryFan.add_val_bodd (hF : M.IsRotaryFan F b) (a b : ZMod F.length) :
+    (a + b).val.bodd = (a.val.bodd != b.val.bodd) := by
+  sorry
+  -- obtain hle | hlt := le_or_gt F.length (a.val + b.val)
+  -- · simp [ZMod.val_add_of_le hle, Nat.bodd_sub hle, hF.length_bodd]
+  -- simp [ZMod.val_add_of_lt hlt]
+
+lemma IsRotaryFan.add_one_val_bodd (hF : M.IsRotaryFan F b) (a : ZMod F.length) :
+    (a + 1).val.bodd = !a.val.bodd := by
+  simp [hF.add_val_bodd]
+
+lemma IsRotaryFan.neg_val_bodd (hF : M.IsRotaryFan F b) (a : ZMod F.length) :
+    (- a).val.bodd = a.val.bodd := by
+  simpa using hF.add_val_bodd (-a) a
+
+lemma IsRotarFan.mod_bodd (hF : M.IsRotaryFan F b) (i : ℕ) :
+    (i % F.length).bodd = i.bodd := by
+  rw [← Nat.mod_add_div i F.length, Nat.mod_add_mod, Nat.add_mul_mod_self_left, Nat.bodd_add,
+    Nat.bodd_mul]
+  sorry
+  -- simp [hF.length_bodd]
+
+lemma isRotaryFan_iff_forall (hF : 2 ≤ F.length) : M.IsRotaryFan F b ↔ ∀ (i : ZMod F.length),
+    (M.bDual (i.val.bodd != b)).IsTriangle {F[i.val]'(by exact foo.val_lt hF i), F[(i + 1).val], F[(i + 2).val]} := by
+  sorry
+
+--   _
 
 -- lemma IsRotaryFan.rotate' (h : M.IsRotaryFan F b) (n : ℕ) :
 --     M.IsRotaryFan (F.rotateLeft n) (n.bodd != b) := by
@@ -217,6 +244,36 @@ lemma IsRotaryFan.parallel_iff_eq (h : M.IsRotaryFan F b) (h4 : 4 < F.length) {i
       (hi := by grind [length_rotate]) (by simpa) (by lia)
     simpa [getElem_rotate, Nat.mod_eq_of_lt hi, Nat.mod_eq_of_lt hj] using hwin
 
+/-- An even fan in a three-connected matroid whose initial element is (co)spanned by the
+other elements is a rotary fan -/
+lemma IsFan.isRotaryFan_of_tutteConnected_three_of_mem_closure (h : M.IsFan F b (!b))
+    (hM : M.TutteConnected 3) (h4 : 4 ≤ M.E.encard)
+    (hcl : F[0] ∈ (M.bDual (!b)).closure {x | x ∈ F.tail}) : M.IsRotaryFan F b := by
+  refine (h.isRotaryFan_of_ground_eq (hM.simple h4) (hM.dual.simple (by simpa)) ?_).2
+  rw [show (3 : ℕ∞) = 2 + 1 from rfl] at hM
+  have hle := h.eConn_le_one_of_mem_closure hcl
+  have hne : M.Nonempty := ⟨F[0], h.subset_ground (by simp)⟩
+  obtain h0 | hconn : M.eConn {e | e ∈ F} = 0 ∨ M.eConn {e | e ∈ F} = 1 := by enat_to_nat! <;> lia
+  · exact (hM.connected (by simp)).eq_ground_of_eConn_eq_zero h0 (by simp [h.ne_nil])
+      h.subset_ground
+  obtain h1 | h1 := hM.encard_eq_or_encard_compl_eq (by grw [hle, one_add_one_eq_two])
+    h.subset_ground
+  · simp only [h.nodup.encard_toSet_eq, hconn, Nat.cast_eq_one] at h1
+    simpa [h1] using h.two_le_length
+  suffices aux : F[F.length - 1] ∈ (M.bDual b).closure {x | x ∈ F.dropLast} by
+    simp [h.eConn_eq_zero_of_mem_closure_mem_closure hcl aux] at hconn
+  have := ((hM.bDual b).dual.simple (by simpa))
+  have h2 : (M.E \ {x | x ∈ F.dropLast}).encard ≤ 2 := by
+    grw [h.nodup.toSet_dropLast_eq h.ne_nil, sdiff_sdiff_right, inter_subset_right,
+      encard_union_le, h1, hle, encard_singleton, one_add_one_eq_two]
+  have hss := coindep_iff_subset_closure_compl.1 <| (M.bDual b)✶.indep_of_encard_le_two h2
+  rw [bDual_ground, sdiff_sdiff_cancel_left (subset_trans
+    (by grind [mem_of_mem_dropLast]) h.subset_ground)] at hss
+  refine mem_of_mem_of_subset ?_ hss
+  simp [h.get_mem_ground, mem_dropLast_iff h.nodup h.ne_nil, getLast_eq_getElem]
+
+#exit
+
 lemma IsRotaryFan.contract_delete (h : M.IsRotaryFan F false) (hlen : 4 < F.length) :
     (M ＼ {F[0]} ／ {F[1]}).IsRotaryFan F.tail.tail false := by
 
@@ -269,33 +326,7 @@ lemma IsRotaryFan.eRk_eq (hF : M.IsRotaryFan F b) : 2 * M.eRk {e | e ∈ F} = F.
   have := (hF.isFan.tail (by grind)).eRk_eq
   simp at this
 
-/-- An even fan in a three-connected matroid whose initial element is (co)spanned by the
-other elements is a rotary fan -/
-lemma IsFan.isRotaryFan_of_tutteConnected_three_of_mem_closure (h : M.IsFan F b (!b))
-    (hM : M.TutteConnected 3) (h4 : 4 ≤ M.E.encard)
-    (hcl : F[0] ∈ (M.bDual (!b)).closure {x | x ∈ F.tail}) : M.IsRotaryFan F b := by
-  refine (h.isRotaryFan_of_ground_eq (hM.simple h4) (hM.dual.simple (by simpa)) ?_).2
-  rw [show (3 : ℕ∞) = 2 + 1 from rfl] at hM
-  have hle := h.eConn_le_one_of_mem_closure hcl
-  have hne : M.Nonempty := ⟨F[0], h.subset_ground (by simp)⟩
-  obtain h0 | hconn : M.eConn {e | e ∈ F} = 0 ∨ M.eConn {e | e ∈ F} = 1 := by enat_to_nat! <;> lia
-  · exact (hM.connected (by simp)).eq_ground_of_eConn_eq_zero h0 (by simp [h.ne_nil])
-      h.subset_ground
-  obtain h1 | h1 := hM.encard_eq_or_encard_compl_eq (by grw [hle, one_add_one_eq_two])
-    h.subset_ground
-  · simp only [h.nodup.encard_toSet_eq, hconn, Nat.cast_eq_one] at h1
-    simpa [h1] using h.two_le_length
-  suffices aux : F[F.length - 1] ∈ (M.bDual b).closure {x | x ∈ F.dropLast} by
-    simp [h.eConn_eq_zero_of_mem_closure_mem_closure hcl aux] at hconn
-  have := ((hM.bDual b).dual.simple (by simpa))
-  have h2 : (M.E \ {x | x ∈ F.dropLast}).encard ≤ 2 := by
-    grw [h.nodup.toSet_dropLast_eq h.ne_nil, sdiff_sdiff_right, inter_subset_right,
-      encard_union_le, h1, hle, encard_singleton, one_add_one_eq_two]
-  have hss := coindep_iff_subset_closure_compl.1 <| (M.bDual b)✶.indep_of_encard_le_two h2
-  rw [bDual_ground, sdiff_sdiff_cancel_left (subset_trans
-    (by grind [mem_of_mem_dropLast]) h.subset_ground)] at hss
-  refine mem_of_mem_of_subset ?_ hss
-  simp [h.get_mem_ground, mem_dropLast_iff h.nodup h.ne_nil, getLast_eq_getElem]
+
 
 lemma IsRotaryFan.exists_btw_of_isNonspanningCircuit (h : M.IsRotaryFan F b) {C : Set α}
     (hM : M.TutteConnected 2) (hC : M.IsNonspanningCircuit C)

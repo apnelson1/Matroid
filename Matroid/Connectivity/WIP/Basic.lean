@@ -134,6 +134,10 @@ lemma length_ge_two (F : M.Fan) : 2 ≤ F.length :=
 lemma length_ne_one (F : M.Fan) : F.length ≠ 1 := by
   grind
 
+instance (F : M.Fan) : NeZero F.length := ⟨by grind⟩
+
+instance (F : M.Fan) : Fact (1 < F.length) := ⟨by grind⟩
+
 @[grind! .]
 lemma length_ge_three (F : M.Fan) (hb : F.b = F.c) : 3 ≤ F.length :=
   F.length_ge_two.eq_or_lt.elim (fun h ↦ by simpa [hb, F.length_bodd] using congr_arg Nat.bodd h) id
@@ -363,6 +367,10 @@ lemma subset_ground (F : M.Fan) : (F : Set α) ⊆ M.E :=
 
 lemma getLast_eq_getElem (F : M.Fan) : F.getLast = F[F.length - 1] :=
   List.getLast_eq_getElem _
+
+@[simp]
+lemma getLast_mem (F : M.Fan) : F.getLast ∈ F :=
+  List.getLast_mem (by simp)
 
 @[simp]
 lemma getElem_eq_getLast_iff (F : M.Fan) {hi : i < F.length} :
