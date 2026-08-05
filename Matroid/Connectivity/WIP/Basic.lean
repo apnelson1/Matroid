@@ -377,6 +377,11 @@ lemma getLast_eq_getElem_iff (F : M.Fan) {hi : i < F.length} :
   simp
 
 @[simp]
+lemma getLast_cons (F : M.Fan) (heF : e ∉ F) (hT) :
+    (F.cons heF hT).getLast = F.getLast := by
+  simp [getLast, cons_toList]
+
+@[simp]
 lemma getLast_ne_get_zero (F : M.Fan) : F.getLast ≠ F[0] := by
   simp [getLast_eq_getElem, show F.length - 1 ≠ 0 by grind]
 
@@ -551,6 +556,22 @@ lemma getElem_ofPair {he : ∀ i, (M.bDual i).IsNonloop e} {hf} {hef : e ≠ f} 
   grind
 
 @[simp]
+lemma getElem_zero_ofPair {he : ∀ i, (M.bDual i).IsNonloop e} {hf} {hef : e ≠ f} {b} :
+    (ofPair he hf hef b)[0] = e := rfl
+
+@[simp]
+lemma getElem_one_ofPair {he : ∀ i, (M.bDual i).IsNonloop e} {hf} {hef : e ≠ f} {b} :
+    (ofPair he hf hef b)[1] = f := rfl
+
+@[simp]
+lemma getLast_ofPair {he : ∀ i, (M.bDual i).IsNonloop e} {hf} {hef : e ≠ f} {b} :
+    (ofPair he hf hef b).getLast = f := rfl
+
+@[simp]
+lemma getPenult_ofPair {he : ∀ i, (M.bDual i).IsNonloop e} {hf} {hef : e ≠ f} {b} :
+    (ofPair he hf hef b).getPenult = e := rfl
+
+@[simp]
 lemma bDual_ofPair {he hf} {hef : e ≠ f} {b d} : (ofPair (M := M) he hf hef b).bDual d =
     ofPair (fun i ↦ by simpa using he _) (fun i ↦ by simpa using hf _) hef (b != d) :=
   Fan.ext (by simp) rfl
@@ -665,6 +686,11 @@ lemma getPenult_tail (F : M.Fan) (hF : 3 ≤ F.length) : (F.tail hF).getPenult =
   rw [getPenult, getPenult, getElem_tail, getElem_inj, ← Nat.sub_add_comm
     (by grind), length_tail_add_one]
 
+@[simp]
+lemma bDual_tail (F : M.Fan) (hF : 3 ≤ (F.bDual d).length) :
+    (F.bDual d).tail hF = (F.tail (show 3 ≤ F.length by simpa)).bDual d :=
+  Fan.ext (by simp) (by simp)
+
 /-- Remove the element at the end of a fan. -/
 @[simps!]
 def dropLast (F : M.Fan) (hF : 3 ≤ F.length) : M.Fan := (F.reverse.tail (by simpa)).reverse
@@ -695,6 +721,11 @@ lemma getElem_dropLast (F : M.Fan) (hF : 3 ≤ F.length)
     (hi : i < (F.dropLast hF).length) : (F.dropLast hF)[i] = F[i] := by
   rw! [← getElem_toList, dropLast_toList, List.getElem_dropLast, getElem_toList]
   rfl
+
+@[simp]
+lemma bDual_dropLast (F : M.Fan) (hF : 3 ≤ (F.bDual d).length) :
+    (F.bDual d).dropLast hF = (F.dropLast (show 3 ≤ F.length by simpa)).bDual d :=
+  Fan.ext (by simp) (by simp)
 
 @[simp]
 lemma getElem_mem_dropLast_iff (F : M.Fan) (hF : 3 ≤ F.length) (hi : i < F.length) :

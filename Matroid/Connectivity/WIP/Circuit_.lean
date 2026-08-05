@@ -520,47 +520,49 @@ lemma eConn_le_two (F : M.Fan) : M.eConn F ≤ 2 := by
 /-- If the head is spanned by the tail in the appropriate dual of `b`, then the fan
 has connectivity one. -/
 lemma eConn_le_one_of_mem_closure (F : M.Fan)
-    (hcl : F[0] ∈ (M.bDual (!F.b)).closure {e | e ∈ (F : List α).tail}) : M.eConn F ≤ 1 := by
+    (hcl : F[0] ∈ (M.bDual (!F.b)).closure (F \ {F[0]})) : M.eConn F ≤ 1 := by
   induction F using Fan.induction with
   | pair e f b he hf hef =>
     grw [toSet_ofPair, ← eConn_bDual M (!b), eConn_le_eRk, eRk_insert_of_mem_closure,
       eRk_le_encard, encard_singleton]
-    simpa [getElem_ofPair] using hcl
+    simp [getElem_ofPair, sdiff_singleton_eq_self (show e ∉ {f} from hef)] at hcl
   | cons F₀ e heF₀ hT ih =>
+    simp only [cons_left, Bool.not_not, cons_toSet, getElem_cons_zero, mem_singleton_iff,
+      insert_sdiff_of_mem, sdiff_singleton_eq_self (show e ∉ (F₀ : Set α) from heF₀)] at hcl
     grw [cons_toSet, ← ENat.add_one_le_add_one_iff, ← eConn_bDual M (F₀.b),
-      eConn_insert_add_one_eq (by simpa using hcl) _ (by simpa), ← bDual_toSet F₀ (F₀.b),
+      eConn_insert_add_one_eq hcl _ (by simpa), ← bDual_toSet F₀ (F₀.b),
       eConn_le_two, one_add_one_eq_two]
     simp only [dual_bDual]
     exact mem_of_mem_of_subset hT.mem_closure₁ <| closure_subset_closure _ <|
       by simp [pair_subset_iff]
 
 /-- TODO : I think this should hold even if the fan has odd length. -/
-lemma IsFan.eConn_eq_zero_of_mem_closure_mem_closure (h : M.IsFan F b (!b))
-    (hcl : F[0] ∈ (M.bDual (!b)).closure {x | x ∈ F.tail})
-    (hcl' : F[F.length - 1] ∈ (M.bDual b).closure {x | x ∈ F.dropLast}) :
-    M.eConn {e | e ∈ F} = 0 := by
-  wlog hb : b = false generalizing F b with aux
-  · obtain rfl : b = true := by simpa using hb
-    simpa using aux (F := F.reverse) (b := false) (by simpa using h.reverse) (by simpa using hcl')
-      (by simpa using hcl) rfl
-  subst hb
-  have hr := (M.eRk_add_eRk_dual_eq {e | e ∈ F} h.subset_ground).ge
-  replace hcl' := eRk_insert_of_mem_closure hcl'
-  rw [← toSet_concat_eq, ← getLast_eq_getElem h.ne_nil, dropLast_concat_getLast, bDual_false]
-    at hcl'
-  replace hcl := eRk_insert_of_mem_closure hcl
-  rw [← toSet_cons_eq, getElem_zero, cons_head_tail, Bool.not_false, bDual_true] at hcl
-  grw [← ENat.mul_le_mul_left_iff (a := 2) (by simp) (by simp), mul_add, mul_add, hcl, hcl',
-    h.nodup.encard_toSet_eq] at hr
-  obtain h2 | h3 := le_or_gt F.length 2
-  · grw [eRk_le_encard, eRk_le_encard, encard_toSet_le, encard_toSet_le] at hr
-    simp only [length_dropLast, ENat.natCast_sub, Nat.cast_one, length_tail] at hr
-    enat_to_nat! <;> lia
-  grw [(h.tail (by lia)).dual.eRk_le (by grind [h.length_even]),
-    (h.dropLast (by lia)).eRk_le (by grind [h.length_even])] at hr
-  simp only [length_dropLast, ENat.natCast_sub, Nat.cast_one, Bool.toNat_false,
-    Bool.not_false, Bool.not_true, length_tail] at hr
-  enat_to_nat! <;> lia
+lemma IsFan.eConn_eq_zero_of_mem_closure_mem_closure (F : M.Fan)
+    (even : F.length.bodd = false)
+    (hcl : F[0] ∈ (M.bDual (!F.b)).closure (F \ {F[0]}))
+    (hcl' : F.getLast ∈ (M.bDual F.b).closure (F  \ {F.getLast})) :
+    M.eConn F = 0 := by
+  suffices aux : (M.bDual F.b).eRk (F \ {F.getLast}) +
+    (M.bDual !F.b).eRk (F \ {F[0]}) ≤ F.length
+  · rw [← eRk_insert_of_mem_closure hcl, ← eRk_insert_of_mem_closure hcl',
+      insert_sdiff_self_of_mem (by simp [getLast_eq_getElem]),
+      insert_sdiff_self_of_mem (by simp), ← dual_bDual,
+      (M.bDual F.b).eRk_add_eRk_dual_eq _ (by simpa using F.subset_ground)] at aux
+    simpa using aux
+  obtain h2 | h3 := F.length_ge_two.eq_or_lt
+  · grw [eRk_le_encard, eRk_le_encard, ← ENat.add_one_le_add_one_iff, add_assoc,
+      encard_sdiff_singleton_add_one (by simp), add_comm,
+      ← ENat.add_one_le_add_one_iff, add_assoc, encard_sdiff_singleton_add_one
+        (by simp [getLast_eq_getElem])]
+    simp [← h2, show (2 : ℕ∞) + 2 = 2 + 1 + 1 from rfl]
+  nth_grw 1 [← F.bDual_toSet F.b, ← F.bDual_getLast (d := F.b),
+    ← dropLast_toSet (hF := by simpa), ← F.bDual_toSet (!F.b),
+    show (F.bDual (!F.b) : Set α) \ {F[0]} = (F.bDual (!F.b) : Set α) \
+      {(F.bDual (!F.b))[0]} from rfl, ← tail_toSet (hF := by simpa),
+      ← ENat.mul_le_mul_left_iff (show 2 ≠ 0 by simp) (by simp), mul_add,
+      eRk_le, eRk_le, ← Nat.cast_one, ← Nat.cast_add, length_dropLast_add_one,
+      add_assoc, ← Nat.cast_one, ← Nat.cast_add (n := 1), length_tail_add_one]
+  simp [F.right_eq_not even, ← two_mul]
 
 
 #exit
