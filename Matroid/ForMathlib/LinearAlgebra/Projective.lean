@@ -351,12 +351,12 @@ lemma Projectivization.Subspace.toSubmodule_top_eq (K V : Type*) [Field K] [AddC
 
 @[simp] lemma Submodule.toProjSubspace_eq_top_iff {W : Submodule K V} :
     W.toProjSubspace = ⊤ ↔ W = ⊤ := by
-  rw [ ← subspace_orderIso_submodule_symm_apply, OrderIso.apply_eq_iff_eq_symm_apply]
+  rw [← subspace_orderIso_submodule_symm_apply, ← OrderIso.eq_symm_apply]
   simp
 
 @[simp] lemma Projectization.Subspace.toSubmodule_eq_top_iff {W : Projectivization.Subspace K V} :
     W.toSubmodule = ⊤ ↔ W = ⊤ := by
-  rw [ ← subspace_orderIso_submodule_apply, OrderIso.apply_eq_iff_eq_symm_apply, map_top]
+  rw [ ← subspace_orderIso_submodule_apply, ← OrderIso.eq_symm_apply, map_top]
 
 @[simp]
 lemma Submodule.toProjSubspace_bot_eq (K V : Type*) [Field K] [AddCommGroup V] [Module K V] :
@@ -370,13 +370,11 @@ lemma Projectivization.Subspace.toSubmodule_bot_eq (K V : Type*) [Field K] [AddC
 
 @[simp] lemma Submodule.toProjSubspace_eq_bot_iff {W : Submodule K V} :
     W.toProjSubspace = ⊥ ↔ W = ⊥ := by
-  rw [ ← subspace_orderIso_submodule_symm_apply, OrderIso.apply_eq_iff_eq_symm_apply,
-    BotHomClass.map_bot]
+  rw [← subspace_orderIso_submodule_symm_apply, ← OrderIso.eq_symm_apply, BotHomClass.map_bot]
 
 @[simp] lemma Projectization.Subspace.toSubmodule_eq_bot_iff {W : Projectivization.Subspace K V} :
     W.toSubmodule = ⊥ ↔ W = ⊥ := by
-  rw [ ← subspace_orderIso_submodule_apply, OrderIso.apply_eq_iff_eq_symm_apply,
-    BotHomClass.map_bot]
+  rw [← subspace_orderIso_submodule_apply, ←OrderIso.eq_symm_apply, BotHomClass.map_bot]
 
 lemma Submodule.span_toProjSubspace (K : Type*) {V : Type*} [Field K] [AddCommGroup V] [Module K V]
     (s : Set V) : (Submodule.span K s).toProjSubspace =

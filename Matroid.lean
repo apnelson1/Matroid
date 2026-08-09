@@ -7,7 +7,6 @@ import Matroid.Axioms.Rank
 import Matroid.Binary.Crossing
 import Matroid.Binary.Representation
 import Matroid.Bool
--- import Matroid.Bridge
 import Matroid.Circuit
 import Matroid.Closure
 import Matroid.Connectivity.Basic
@@ -114,7 +113,6 @@ import Matroid.Graph.Matching.Konigs
 import Matroid.Graph.Matrix
 import Matroid.Graph.Minor.Conn
 import Matroid.Graph.Minor.Defs
--- import Matroid.Graph.Partite
 -- import Matroid.Graph.Planarity.CombMap.Basic
 -- import Matroid.Graph.Planarity.CombMap.Equiv
 -- import Matroid.Graph.Planarity.CycleList.Basic
@@ -127,7 +125,7 @@ import Matroid.Graph.Planarity.Realization.Subgraph
 import Matroid.Graph.Planarity.Topology.Circle
 import Matroid.Graph.Planarity.Topology.Circuit
 import Matroid.Graph.Planarity.Topology.ConnPartition
--- import Matroid.Graph.Planarity.Topology.Path
+import Matroid.Graph.Planarity.Topology.Path
 import Matroid.Graph.Simple
 import Matroid.Graph.Subgraph.Basic
 import Matroid.Graph.Subgraph.Compatible
