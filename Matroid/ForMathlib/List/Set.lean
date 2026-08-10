@@ -3,6 +3,7 @@ module
 public import Mathlib.Algebra.Order.Interval.Set.SuccPred
 public import Mathlib.Data.Set.Card
 public import Matroid.ForMathlib.Interval
+public import Matroid.ForMathlib.Parity
 public import Matroid.ForMathlib.List.Extract
 public import Mathlib.Order.Interval.Finset.Nat
 
@@ -231,6 +232,10 @@ lemma Nodup.getElems_subset_getElems_iff (hL : L.Nodup) {s t : Set ℕ} :
   · exact fun i ⟨his, hiL⟩ ↦ ⟨hL.getElem_mem_getElems_iff.1 <| h (mem_getElems his hiL), hiL⟩
   grw [← getElems_inter_Iio, h, getElems_inter_Iio]
 
+lemma Nodup.getElems_eq_getElems_iff (hL : L.Nodup) {s t : Set ℕ} :
+    L.getElems s = L.getElems t ↔ (s ∩ Iio L.length) = (t ∩ Iio L.length) := by
+  simp [subset_antisymm_iff, hL.getElems_subset_getElems_iff]
+
 lemma Nodup.getElems_disjoint_iff (hL : L.Nodup) {s t} :
     _root_.Disjoint (L.getElems s) (L.getElems t) ↔
     _root_.Disjoint (s ∩ Iio L.length) (t ∩ Iio L.length) := by
@@ -281,6 +286,18 @@ lemma getElems_reverse (L : List α) (s : Set ℕ) :
     exact ⟨L.length - 1 - i, by grind, by grind, by simp⟩
   obtain ⟨i, hi, h', rfl⟩ := h
   exact ⟨L.length - 1 - i, by grind, h', by grind⟩
+
+-- lemma getElems_reverse_of_subset (L : List α) {s : Set ℕ} (hs : s ⊆ Iio L.length) :
+--     L.reverse.getElems s = L.getElems ((fun i ↦ L.length - 1 - i) '' s) := by
+--   rw [getElems_reverse]
+--   convert rfl
+--   refine image_eq_preimage_of_leftInvOn_injOn (LeftInvOn.mono ?_ hs) <|
+--     InjOn.mono (preimage_mono hs) fun i hi j hj hij ↦ ?_
+--   · grind [LeftInvOn]
+
+
+
+
 
 lemma Nodup.subset_getElems_iff (hL : L.Nodup) {s : Set ℕ} {t : Set α} :
     t ⊆ L.getElems s ↔ t ⊆ {x | x ∈ L} ∧ ∀ i (hi : i < L.length), L[i] ∈ t → i ∈ s := by
@@ -366,6 +383,42 @@ lemma getElems_rotate_of_subset {L : List α} {s : Set ℕ} (hsL : s ⊆ Iio L.l
     (L.rotate k).getElems s = L.getElems ((fun i ↦ (i + k) % L.length) '' s) := by
   rw [getElems_rotate, inter_eq_self_of_subset_left hsL]
 
+lemma getElems_rotate_of_subset' {L : List α} {s : Set ℕ} {k : ℕ} (hs : s ⊆ Iio L.length)
+    (hk : k ≤ L.length) : (L.rotate k).getElems s =
+      L.getElems ((fun i ↦ (i + (L.length - k)) % L.length) ⁻¹' s) := by
+  obtain h0 | hpos := eq_zero_or_pos L.length
+  · simp [show s = ∅ by simpa [h0] using hs]
+  rw [getElems_rotate_of_subset hs k, eq_comm, ← getElems_inter_Iio]
+  convert rfl
+  ext i
+  simp only [mem_image, Set.mem_inter_iff, mem_preimage, mem_Iio]
+  refine ⟨fun ⟨j, hjs, hji⟩ ↦ ?_, fun h ↦ ⟨_, h.1, ?_⟩⟩
+  · rwa [← hji, Nat.mod_add_mod, add_assoc, Nat.add_sub_cancel' hk,
+      Nat.add_mod_right, Nat.mod_eq_of_lt (hs hjs), and_iff_left (Nat.mod_lt _ hpos)]
+  rw [Nat.mod_add_mod, ← Nat.add_sub_assoc hk, Nat.sub_add_cancel (show k ≤ i + L.length by lia),
+    Nat.add_mod_right, Nat.mod_eq_of_lt h.2]
+
+lemma getElems_rotate' {L : List α} {s : Set ℕ} {k : ℕ}
+    (hk : k ≤ L.length) : (L.rotate k).getElems s =
+      L.getElems ((fun i ↦ (i + (L.length - k)) % L.length) ⁻¹' s) := by
+  obtain h0 | hpos := eq_zero_or_pos L.length
+  · simp [length_eq_zero_iff.1 h0]
+  rw [← getElems_inter_Iio, length_rotate, getElems_rotate_of_subset' (by simp) hk,
+    preimage_inter, Iio, preimage_ofPred_eq]
+  simp [show ∀ x, x % L.length < L.length from fun x ↦ Nat.mod_lt x hpos]
+
+lemma getElems_rotate_bodd (L : List α) (k : ℕ) (b : Bool) (hL : L.length.bodd = false) :
+    (L.rotate k).getElems {i | i.bodd = b} = L.getElems {i | i.bodd = (b != k.bodd)} := by
+  obtain h0 | hpos := eq_zero_or_pos L.length
+  · simp [show L = [] by simpa using h0]
+  rw [← rotate_mod, ← getElems_inter_Iio, getElems_rotate_of_subset' (by simp)
+    (Nat.mod_lt _ hpos).le, length_rotate, ← getElems_inter_Iio, preimage_inter, inter_assoc,
+    inter_eq_self_of_subset_right (add_mod_bijOn_Iio ..).mapsTo.subset_preimage,
+    getElems_inter_Iio]
+  simp only [preimage_ofPred_eq, Nat.mod_bodd hL, Nat.bodd_add, xor,
+    Nat.bodd_sub (Nat.mod_lt _ hpos).le, hL, Bool.false_bne]
+  grind [cases Bool]
+
 lemma Nodup.getElems_eq_iff (hL : L.Nodup) {s : Set ℕ} {t : Set α} :
     t = L.getElems s ↔ t ⊆ {x | x ∈ L} ∧ ∀ i (hi : i < L.length), L[i] ∈ t ↔ i ∈ s := by
   refine ⟨fun h ↦ ⟨h.subset.trans (getElems_subset_toSet ..), fun i hi ↦ ?_⟩, fun h ↦ ?_⟩
@@ -417,22 +470,13 @@ lemma getElems_bodd_eq_reverse (L : List α) (b : Bool) :
   simp [getElems_reverse_bodd]
 
 lemma Nodup.getElems_bodd_encard (hL : L.Nodup) (b : Bool) :
-    2 * (L.getElems {i | i.bodd = b}).encard + (b && L.length.bodd).toNat =
-      L.length + (!b && L.length.bodd).toNat := by
-  induction L using List.twoStepInduction with
-  | nil => simp
-  | singleton x => cases b with | _ => simp [getElems, one_add_one_eq_two]
-  | cons_cons x y xs h1 _ =>
-      simp only [length_cons, Nat.bodd_succ, Bool.not_not, Nat.cast_add, Nat.cast_one]
-      rw [add_assoc _ 1 1, ← two_mul, add_right_comm, ← h1 (by grind), add_comm,
-        add_comm (2 * _), add_assoc, ← mul_add]
-      obtain rfl | rfl := b
-      · rw [getElems_cons_of_mem _ _ (by simp), getElems_cons_of_notMem _ _ (by simp),
-          encard_insert_of_notMem (by grind)]
-        simp
-      rw [getElems_cons_of_notMem _ _ (by simp), getElems_cons_of_mem _ _ (by simp),
-        encard_insert_of_notMem (by grind)]
-      simp
+    2 * (L.getElems {i | i.bodd = b}).encard + b.toNat =
+      L.length + (b != L.length.bodd).toNat := by
+  rw [hL.getElems_encard_eq, inter_comm, encard_Iio_inter_bodd L.length b]
+
+lemma Nodup.getElems_bodd_encard_of_even (hL : L.Nodup) (b : Bool) (hlen : L.length.bodd = false) :
+    2 * (L.getElems {i | i.bodd = b}).encard = L.length := by
+  simpa [hlen] using hL.getElems_bodd_encard b
 
 @[simp]
 lemma getElems_Iio_length (L : List α) : L.getElems (Set.Iio L.length) = {x | x ∈ L} := by

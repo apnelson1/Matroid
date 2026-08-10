@@ -262,3 +262,11 @@ lemma setOf_three {a b c : α} : {x | x ∈ [a, b, c]} = {a, b, c} := by
 
 lemma setOf_four {a b c d : α} : {x | x ∈ [a, b, c, d]} = {a, b, c, d} := by
   ext; simp
+
+theorem getElem_reverse' {l : List α} {i j : ℕ} (hij : i + j + 1 = l.length) :
+    l.reverse[i]'(by rw [length_reverse]; lia) = l[j] := by
+  simp_rw [getElem_reverse, ← hij]
+  convert rfl
+  lia
+
+-- Variant of getElem?_reverse with a hypothesis giving the linear relation between the indices.
