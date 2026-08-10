@@ -413,7 +413,7 @@ lemma comp_comp {η ξ : Type*} (P : s.IndexedPartition ι) (f : ι → η) (g :
 
 lemma comp_apply_equiv (P : s.IndexedPartition ι) (f : ι ≃ η) (i : η) :
     P.comp f i = P (f.symm i) := by
-  simp [f.apply_eq_iff_eq_symm_apply]
+  simp [← f.eq_symm_apply]
 
 section Bool
 
