@@ -278,6 +278,11 @@ lemma IsCircuit.mem_iff_mem_of_parallel_bDual {C : Set α} {b : Bool} (h : (M.bD
     (hef : (M.bDual !b).Parallel e f) : e ∈ C ↔ f ∈ C :=
   h.mem_iff_mem_of_parallel_dual (by simpa)
 
+lemma Dep.eq_of_subset_pair {D} (hD : M.Dep D) (hDss : D ⊆ {e, f})
+    (he : M.IsNonloop e) (hf : M.IsNonloop f) : D = {e, f} := by
+  rw [subset_pair_iff_eq] at hDss
+  grind [hD.nonempty.ne_empty, he.indep.not_dep, hf.indep.not_dep]
+
 end Parallel
 
 section Parallel'

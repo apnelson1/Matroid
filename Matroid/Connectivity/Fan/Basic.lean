@@ -211,6 +211,14 @@ lemma IsFan.isNonloop_bDual (h : M.IsFan F b c) (heF : e ∈ F) (d : Bool) :
 lemma IsFan.isNonloop (h : M.IsFan F b c) (heF : e ∈ F) : M.IsNonloop e :=
   h.isNonloop_bDual heF false
 
+lemma IsFan.isNonloop_get (h : M.IsFan F b c) {i : Fin F.length} :
+    M.IsNonloop (F.get i) :=
+  h.isNonloop (by simp)
+
+lemma IsFan.isNonloop_bDual_get (h : M.IsFan F b c) {i : Fin F.length} {d : Bool} :
+    (M.bDual d).IsNonloop (F.get i) :=
+  h.isNonloop_bDual (by simp) _
+
 lemma IsFan.subset_ground (h : M.IsFan F b c) : {x | x ∈ F} ⊆ M.E :=
   fun _ heF ↦ IsNonloop.mem_ground <| h.isNonloop heF
 
@@ -234,6 +242,10 @@ lemma IsFan.get_mem_ground (h : M.IsFan F b c) (i : Fin F.length) : F.get i ∈ 
 lemma IsFan.getElem_inj_iff (h : M.IsFan F b c) {hi : i < F.length} {hj : j < F.length} :
     F[i] = F[j] ↔ i = j :=
   h.nodup.getElem_inj_iff
+
+lemma IsFan.getElem_zero_ne_last (h : M.IsFan F b c) : F[0] ≠ F[F.length - 1] := by
+  rw [Ne, h.getElem_inj_iff]
+  grind
 
 lemma IsFan.length_even (h : M.IsFan F b !b) : Even F.length := by
   have := h.length_bodd_eq

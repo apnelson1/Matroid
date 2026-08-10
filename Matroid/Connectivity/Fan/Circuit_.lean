@@ -8,11 +8,31 @@ set_option linter.style.longLine false
 
 open Set List
 
+lemma Fin.top_eq_neg_one {n : ℕ} [NeZero n] : (⊤ : Fin n) = - 1 := by
+  obtain rfl | rfl | n := n <;> simp [← Fin.val_inj, Fin.val_neg]
 
+lemma Fin.top_add {n : ℕ} [NeZero n] (a : Fin n) : (⊤ : Fin n) + a = a - 1 := by
+  rw [add_comm, Fin.top_eq_neg_one, sub_eq_add_neg]
+
+lemma Fin.add_top {n : ℕ} [NeZero n] (a : Fin n) : a + ⊤ = a - 1 := by
+  rw [Fin.top_eq_neg_one, sub_eq_add_neg]
 
 lemma Fin.le_add_right_iff {n : ℕ} (i k : Fin n) : i ≤ i + k ↔ i.val + k.val < n := by
   rw [Fin.le_def, Fin.val_add_eq_ite]
   split_ifs <;> grind
+
+lemma Fin.bodd_val_sub_one {n} [NeZero n] {i : Fin n} (hi : i ≠ 0) :
+    (i - 1).1.bodd = !i.1.bodd := by
+  rw [Fin.val_sub_one_of_ne_zero hi, Nat.bodd_sub (by grind)]
+  simp only [Nat.bodd_succ, Nat.bodd_zero, Bool.not_false, Bool.bne_true]
+
+lemma Fin.bodd_val_add_one {n} [NeZero n] {i : Fin n} (hi : i ≠ ⊤) :
+    (i + 1).1.bodd = !i.1.bodd := by
+  rw [Fin.val_add_one_of_lt' (by grind), Nat.bodd_succ]
+
+lemma Fin.bodd_val_top {n} [NeZero n] : (⊤ : Fin n).1.bodd = !n.bodd := by
+  have := NeZero.ne n
+  simp [Nat.bodd_sub (show 1 ≤ n by lia)]
 
 lemma Fin.lt_iff_le_sub_one {n : ℕ} [NeZero n] {a b : Fin n} (hb : b ≠ 0) :
     a < b ↔ a ≤ b - 1 := by
@@ -91,6 +111,11 @@ lemma IsFan.isTriangle_get' [NeZero F.length] (hF : M.IsFan F b c) (i : Fin F.le
   · grind
   grind [hF.val_one]
 
+lemma IsFan.isTriangle_get_sub_add [NeZero F.length] (hF : M.IsFan F b c) (i : Fin F.length)
+    (hi0 : i ≠ 0) (hitop : i ≠ ⊤) :
+    (M.bDual (b == i.1.bodd)).IsTriangle {F[i - 1], F[i], F[i + 1]} := by
+  simpa [ne_eq, sub_eq_iff_eq_add, Fin.top_add, hi0, hitop, show i - 1 + 2 = i + 1 by grind,
+    Fin.bodd_val_sub_one hi0] using hF.isTriangle_get' (i - 1)
 
 lemma IsFan.getElems_Icc_subset_closure (hF : M.IsFan F b c) {p q : Fin F.length}
     (hp : p.1.bodd = b) (hq : q.1.bodd = b) :
@@ -99,65 +124,50 @@ lemma IsFan.getElems_Icc_subset_closure (hF : M.IsFan F b c) {p q : Fin F.length
   rintro _ ⟨i, hi, rfl⟩
   obtain rfl | rfl := b.eq_or_eq_not i.1.bodd
   · exact mem_closure_of_mem' _ (mem_image_of_mem _ ⟨hi, rfl⟩) <| hF.get_mem_ground i
-  obtain rfl | hi0 := eq_or_ne i 0
-  · grind
-  have hwin : ↑i - 1 + 2 < F.length → M.IsTriangle {F[(i - 1)], F[i], F[(i + 1)]} := by
-    simpa [i.val_sub_one_of_ne_zero hi0, Nat.bodd_sub (show 1 ≤ i.1 by grind),
-      show i - 1 + 2 = i + 1 by grind] using hF.isTriangle_get (i - 1)
-  refine mem_of_mem_of_subset (hwin (by grind [i.2])).mem_closure₂ <| closure_subset_closure _ <|
-    pair_subset (mem_image_of_mem _ ?_) <| mem_image_of_mem _ ?_
-  · simp only [mem_Icc, Fin.eta, mem_ofPred_eq]
-    refine ⟨⟨?_, ?_⟩, ?_⟩
-    · rw [← Fin.lt_iff_le_sub_one hi0, lt_iff_le_and_ne, and_iff_right hi.1]
-      grind
-    · exact (Fin.sub_le_iff.2 (Fin.one_le_of_ne_zero hi0)).trans hi.2
-    simp [Fin.val_sub_one_of_ne_zero hi0, Nat.bodd_sub (show 1 ≤ i.1 by lia)]
-  simp only [mem_Icc, Fin.eta, mem_ofPred_eq]
-  refine ⟨⟨?_, ?_⟩, ?_⟩
-  · refine hi.1.trans <| (Fin.le_add_right_iff ..).2 <| ?_
-    rw [hF.val_one]
+  have hi0 : i ≠ 0 := by grind
+  have hitop : i ≠ ⊤ := by grind
+  have hT : M.IsTriangle {F[(i - 1)], F[i], F[(i + 1)]} := by
+    simpa using hF.isTriangle_get_sub_add i hi0 hitop
+  refine mem_of_mem_of_subset hT.mem_closure₂ <| M.closure_subset_closure <| pair_subset
+    (mem_image_of_mem _ ⟨⟨?_, le_trans ?_ hi.2⟩, Fin.bodd_val_sub_one hi0⟩) <|
+    mem_image_of_mem _ ⟨⟨hi.1.trans ?_, ?_⟩, Fin.bodd_val_add_one hitop⟩
+  · simp only [Fin.eta]
+    rw [← Fin.lt_iff_le_sub_one (by grind), lt_iff_le_and_ne, and_iff_right hi.1]
     grind
-  · rw [← Fin.lt_iff_add_one_le (by grind), lt_iff_le_and_ne, and_iff_right hi.2]
+  · simp [show 1 ≤ i from Fin.one_le_of_ne_zero (by grind)]
+  · rw [Fin.le_add_right_iff, hF.val_one]
     grind
-  rw [Fin.val_add_one_of_lt' (by grind), Nat.bodd_succ]
-
-
-
-
+  rw [← Fin.lt_iff_add_one_le hitop, lt_iff_le_and_ne, and_iff_right hi.2]
+  grind
 
 /-- The joints are always independent, unless the first and last element are parallel joints. -/
 lemma IsFan.joints_indep (hF : M.IsFan F b c)
     (h_pair : b = false → c = false → ¬ M.Parallel F[0] F[F.length - 1]) :
     M.Indep (F.get '' {i | i.val.bodd = b}) := by
+  have := hF.neZero
   rw [indep_iff_forall_subset_not_isCircuit (by grind)]
-  -- simp_rw [get_eq_getElem, subset_image_iff, forall_exists_index, and_imp,
-  --   forall_apply_eq_imp_iff₂, Set.subset_def, mem_ofPred_eq]
-  -- simp only [hF.nodup.subset_getElems_iff, mem_ofPred_eq, and_imp,
-  --   indep_iff_forall_subset_not_isCircuit ((F.getElems_subset_toSet ..).trans hF.subset_ground)]
-
-  intro C hCF hCodd hC
-  by_cases hss : C ⊆ {F[0], F[F.length - 1]}
-  · by_cases! h0 : F[0] ∉ C
-    · exact hC.not_indep <| (hF.isNonloop (e := F[F.length - 1]) (by simp)).indep.subset <| by grind
-    by_cases! hlen : F[F.length - 1] ∉ C
-    · exact hC.not_indep <| (hF.isNonloop (e := F[0]) (by simp)).indep.subset <| by grind
-    obtain rfl := hss.antisymm (by grind)
-    obtain rfl : b = false := by simpa using hCodd 0 (by grind) (by simp)
-    obtain rfl : c = false := by
-      simpa [Nat.bodd_sub (show 1 ≤ F.length by grind), hF.length_bodd_eq] using
-      hCodd (F.length - 1) (by grind) (by simp)
-    refine h_pair rfl rfl <| ?_
-    rw [(hF.isNonloop (by simp)).parallel_iff_dep (hF.isNonloop (by simp))]
-    · exact hC.dep
-    grind
+  simp only [subset_image_iff, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
+  intro C hCodd hC
+  by_cases hss : C ⊆ {0, ⊤}
+  · obtain rfl : C = {0, ⊤} := by
+      rw [← hF.nodup.injective_get.image_injective.eq_iff, eq_comm,
+        hC.dep.eq_of_subset_pair (by grw [← image_pair, hss]) hF.isNonloop_get
+        hF.isNonloop_get, image_pair]
+    simp only [pair_subset_iff, mem_ofPred_eq, Fin.val_zero, Fin.bodd_val_top,
+      hF.length_bodd_eq] at hCodd
+    obtain ⟨rfl, rfl⟩ : b = false ∧ c = false := by grind
+    rw [image_pair, ← parallel_iff_isCircuit (by simp [hF.getElem_zero_ne_last])] at hC
+    exact h_pair rfl rfl <| by simpa using hC
   obtain ⟨x, hxC, hne⟩ := not_subset.1 hss
-  obtain ⟨rfl | i, hi, rfl⟩ := getElem_of_mem (hCF hxC)
-  · simp at hne
-  obtain hne' : i + 1 ≠ F.length - 1 := by simpa [hF.nodup.getElem_inj_iff] using hne
-  obtain rfl : (!i.bodd) = b := by simpa using hCodd _ hi hxC
-  obtain hiC | hi2C := hF.mem_or_mem₀₂ i C (by lia) (by simpa) hxC
-  · grind [hCodd i (by lia) hiC]
-  simpa using hCodd (i + 2) _ hi2C
+  have hT := (hF.isTriangle_get_sub_add x (by grind) (by grind)).swap_left
+  obtain h := hT.mem_or_mem_of_isCircuit_bDual (K := F.get '' C)
+    (by simpa [show x.1.bodd = b from hCodd hxC]) (mem_image_of_mem _ hxC)
+  simp_rw [Fin.getElem_fin, ← get_eq_getElem, hF.nodup.injective_get.mem_set_image] at h
+  have hxb : x.1.bodd = b := by grind
+  obtain h | h := h
+  · simpa [Fin.bodd_val_sub_one (show x ≠ 0 by grind), hxb] using hCodd h
+  simpa [Fin.bodd_val_add_one (show x ≠ ⊤ by grind), hxb] using hCodd h
+
 
 #exit
 
