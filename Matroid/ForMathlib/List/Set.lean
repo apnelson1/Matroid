@@ -15,26 +15,6 @@ open Set
 
 namespace List
 
-lemma toSet_cons_eq {a : α} : {x | x ∈ a :: l} = insert a {x | x ∈ l} := by
-  simp [Set.ext_iff]
-
-lemma toSet_concat_eq {a : α} : {x | x ∈ l ++ [a]} = insert a {x | x ∈ l} := by
-  simp [Set.ext_iff, or_comm]
-
-lemma toSet_append_eq {l' : List α} : {x | x ∈ l ++ l'} = {x | x ∈ l} ∪ {x | x ∈ l'} := by
-  simp [Set.ext_iff]
-
-lemma Nodup.toSet_tail_eq (hl : l.Nodup) (h0 : l ≠ []) :
-    {x | x ∈ l.tail} = {x | x ∈ l} \ {l.head h0} := by
-  nth_rw 2 [← cons_head_tail h0]
-  rw [toSet_cons_eq, Set.insert_sdiff_self_of_notMem]
-  cases hl with grind
-
-lemma Nodup.toSet_dropLast_eq (hl : l.Nodup) (h0 : l ≠ []) :
-    {x | x ∈ l.dropLast} = {x | x ∈ l} \ {l.getLast h0} := by
-  have := (nodup_reverse.2 hl).toSet_tail_eq (by simpa)
-  simp only [tail_reverse, mem_reverse, head_reverse] at this
-  assumption
 
 lemma Nodup.toSet_inj_of_sublist (hl : l.Nodup) {k k' : List α} (hkl : k <+ l) (hk'l : k' <+ l) :
     {x | x ∈ k} = {x | x ∈ k'} ↔ k = k' := by

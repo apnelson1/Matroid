@@ -251,7 +251,7 @@ lemma IsFan.length_even (h : M.IsFan F b !b) : Even F.length := by
   simp [Nat.bodd_eq_ite] at this
   simpa [Nat.bodd_eq_ite] using h.length_bodd_eq
 
-lemma IsFan.isTriangle_bDual (h : M.IsFan F b c) (hF : 3 ≤ F.length) :
+lemma IsFan.isTriangle_bDual (h : M.IsFan F b c) (hF : 3 ≤ F.length := by lia) :
     (M.bDual b).IsTriangle {F[0], F[1], F[2]} := by
   induction h with
   | of_pair => simp at hF
@@ -273,7 +273,7 @@ lemma IsFan.exists_cons (hF : M.IsFan F b c) (h : 3 ≤ F.length) :
     ∃ e F₀, F = e :: F₀ ∧ M.IsFan F₀ (!b) c := by
   cases hF with grind
 
-lemma IsFan.isTriangle_getElem (h : M.IsFan F b c) (i) (hi : i + 2 < F.length) :
+lemma IsFan.isTriangle_getElem (h : M.IsFan F b c) (i) (hi : i + 2 < F.length := by lia) :
     (M.bDual (b != i.bodd)).IsTriangle {F[i], F[i + 1], F[i + 2]} := by
   induction h generalizing i with
   | of_pair => grind
@@ -283,12 +283,12 @@ lemma IsFan.isTriangle_getElem (h : M.IsFan F b c) (i) (hi : i + 2 < F.length) :
     specialize ih i (by simpa using hi)
     simpa
 
-lemma IsFan.isTriangle_getElem_of_eq (h : M.IsFan F b c) (i) (hi : i + 2 < F.length)
-    (hib : i.bodd = b) : M.IsTriangle {F[i], F[i + 1], F[i + 2]} := by
+lemma IsFan.isTriangle_getElem_of_eq (h : M.IsFan F b c) (i) (hib : i.bodd = b)
+    (hi : i + 2 < F.length := by lia) : M.IsTriangle {F[i], F[i + 1], F[i + 2]} := by
   simpa [hib.symm] using h.isTriangle_getElem i hi
 
-lemma IsFan.isTriad_getElem_of_eq (h : M.IsFan F b c) (i) (hi : i + 2 < F.length)
-    (hib : i.bodd = !b) : M.IsTriad {F[i], F[i + 1], F[i + 2]} := by
+lemma IsFan.isTriad_getElem_of_eq (h : M.IsFan F b c) (i) (hib : i.bodd = !b)
+    (hi : i + 2 < F.length := by lia) : M.IsTriad {F[i], F[i + 1], F[i + 2]} := by
   simpa [hib] using h.isTriangle_getElem i hi
 
 lemma IsFan.isTriangle_image_get (h : M.IsFan F b c) (hF : F.length = n + 2) (i : Fin n) :
@@ -349,7 +349,7 @@ lemma isFan_of_eq_of_forall_triangle_get [NeZero F.length] (h2 : 2 ≤ F.length)
 lemma isFan_iff_forall (hF : 3 ≤ F.length) :
     M.IsFan F b c ↔ (b == c) = F.length.bodd ∧ F.Nodup ∧ ∀ i (hi : i + 2 < F.length),
     (M.bDual (b != i.bodd)).IsTriangle {F[i], F[i + 1], F[i + 2]} :=
-  ⟨fun h ↦ ⟨h.length_bodd_eq.symm, h.nodup, h.isTriangle_getElem⟩, fun ⟨hbc, hnd, h⟩ ↦
+  ⟨fun h ↦ ⟨h.length_bodd_eq.symm, h.nodup, fun _ _ ↦ h.isTriangle_getElem ..⟩, fun ⟨hbc, hnd, h⟩ ↦
     isFan_of_eq_of_forall_triangle (by lia) hnd hbc (by lia) h⟩
 
 @[simp]
@@ -471,14 +471,14 @@ lemma IsFiniteRankUniform.exists_isFan (h : M.IsFiniteUniform 2 2) (b : Bool) :
 lemma IsFan.contract_disjoint_aux (hF : M.IsFan F false c) (h4 : 4 ≤ F.length)
     (hX : Disjoint {e | e ∈ F} X) (hb : F[0] ∉ M.closure X) (hXE : X ⊆ M.E):
     (M ／ X).IsTriangle {F[0], F[1], F[2]} := by
-  have hT := hF.isTriangle_getElem_of_eq 0 (by lia) rfl
+  have hT := hF.isTriangle_getElem_of_eq 0 rfl
   have hdj : Disjoint {F[0], F[1], F[2]} X := hX.mono_left <| (show _ ⊆ {e | e ∈ F} by grind)
   rw [isTriangle_iff, and_iff_left hT.three_elements]
   refine Skew.isCircuit_contract (by_contra fun hsk ↦ hb ?_) hT.isCircuit hdj.symm
   rw [skew_comm] at hsk
   obtain ⟨C, hC, hCss, h0C, hCX⟩ :=
     hT.isCircuit.exists_isCircuit_mem_subset_union_of_not_skew hdj hsk (e := F[0]) (by simp)
-  have hT' := hF.isTriad_getElem_of_eq 1 (by lia) (by simp)
+  have hT' := hF.isTriad_getElem_of_eq 1 (by simp)
   have h21 := hT'.reverse.mem_iff_mem_of_isCocircuit (K := C) (by simpa)
     (by grind [hF.nodup.getElem_inj_iff])
   by_cases h1 : F[1] ∈ C
@@ -500,7 +500,7 @@ lemma IsFan.contract_disjoint (hF : M.IsFan F b c) (h4 : 4 ≤ F.length) (hX : D
   obtain rfl | rfl := b.eq_or_eq_not !i.bodd
   · simp only [Bool.not_bne, bne_self_eq_false, Bool.not_false, bDual_true, dual_contract,
       delete_isCircuit_iff, disjoint_insert_left, disjoint_singleton_left,
-      (hF.isTriad_getElem_of_eq i hi (by simp)).isCircuit]
+      (hF.isTriad_getElem_of_eq i (by simp)).isCircuit]
     grind
   obtain rfl | i := i
   · simp only [Nat.bodd_zero, Bool.not_false, Bool.not_true, forall_const] at hb
@@ -511,7 +511,7 @@ lemma IsFan.contract_disjoint (hF : M.IsFan F b c) (h4 : 4 ≤ F.length) (hX : D
       (by simpa using hc) hXE).reverse
     simpa [← heq] using hT.isCircuit
   simp only [Nat.bodd_succ, Bool.not_not, bne_self_eq_false, bDual_false]
-  have hT := hF.isTriangle_getElem_of_eq (i + 1) (by lia) (by simp)
+  have hT := hF.isTriangle_getElem_of_eq (i + 1) (by simp)
   have hTdj : Disjoint {F[i + 1], F[i + 1 + 1], F[i + 1 + 2]} X := by
     simp only [disjoint_insert_left, disjoint_singleton_left]
     grind
@@ -519,11 +519,11 @@ lemma IsFan.contract_disjoint (hF : M.IsFan F b c) (h4 : 4 ≤ F.length) (hX : D
   rw [skew_comm] at hsk
   obtain ⟨C, hC, hCss, hCi, hCX⟩ := hT.isCircuit.exists_isCircuit_mem_subset_union_of_not_skew hTdj
     (e := F[i + 2]) hsk (by simp) hXE
-  have hi1C : F[i + 1] ∈ C:= (hF.isTriad_getElem_of_eq i (by lia)
+  have hi1C : F[i + 1] ∈ C := (hF.isTriad_getElem_of_eq i
     (by simp)).reverse.swap_right.mem_of_mem_of_notMem_of_is_Cocircuit (by simpa) hCi
     (by grind [hF.nodup.getElem_inj_iff])
-  have hi3C : F[i + 3] ∈ C := (hF.isTriad_getElem_of_eq (i + 2) (by lia)
-    (by simp)).swap_right.mem_of_mem_of_notMem_of_is_Cocircuit (by simpa) hCi
+  have hi3C : F[i + 3] ∈ C := (hF.isTriad_getElem_of_eq
+    (i + 2) (by simp)).swap_right.mem_of_mem_of_notMem_of_is_Cocircuit (by simpa) hCi
     (by grind [hF.nodup.getElem_inj_iff])
   simp [← hT.isCircuit.eq_of_subset_isCircuit hC (by grind [insert_subset_iff]),
     hTdj.inter_eq] at hCX
