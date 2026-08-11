@@ -6,3 +6,5 @@ lakefile.olean.trace
 .cursor/*
 resources/*
 .DS_Store
+__pycache__/
+.claude/*

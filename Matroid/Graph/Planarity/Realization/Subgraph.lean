@@ -1,7 +1,7 @@
 module
 
 public import Matroid.Graph.Planarity.Realization.Basic
-public import Matroid.Graph.Planarity.Topology.Path
+public import Matroid.ForMathlib.Topology.Path
 
 @[expose] public section
 
@@ -39,17 +39,16 @@ lemma isOpen_of_Ioo_subset {U : Set I} (h : Ioo (0 : I) 1 ⊆ U) : IsOpen U := b
     exact continuous_subtype_val.isOpen_preimage _ isOpen_Iio
   · exact isOpen_univ
 
-namespace Graph
+namespace Graph.IsSubgraph
 
-def IsSubgraph.RealizationEmbeddingAux (h : H ≤ G) : C(H.PreRealization, G.PreRealization) where
+def RealizationEmbeddingAux (h : H ≤ G) : C(H.PreRealization, G.PreRealization) where
   toFun x := match x with
   | inl v => inl ⟨v.val, h.vertexSet_mono v.prop⟩
   | inr ⟨e, t⟩ => inr ⟨⟨e.val, edgeSet_mono h e.prop⟩, t⟩
-  continuous_toFun := by
-    refine continuous_sum_dom.mpr ⟨continuous_of_discreteTopology, ?_⟩
-    exact continuous_sigma_iff.mpr fun _ ↦  continuous_inr.comp continuous_sigmaMk
+  continuous_toFun := continuous_sum_dom.mpr ⟨continuous_of_discreteTopology,
+    continuous_sigma_iff.mpr fun _ ↦  continuous_inr.comp continuous_sigmaMk⟩
 
-def IsSubgraph.RealizationEmbedding (h : H ≤ G) : H.Realization → G.Realization := by
+def RealizationEmbedding (h : H ≤ G) : H.Realization → G.Realization := by
   refine Quotient.map h.RealizationEmbeddingAux fun x y hrel ↦ ?_
   simp only [RealizationEmbeddingAux, ContinuousMap.coe_mk]
   match x, y with
@@ -69,8 +68,7 @@ def IsSubgraph.RealizationEmbedding (h : H ≤ G) : H.Realization → G.Realizat
         true_and, and_false, false_and, or_false, false_or]
       simp [h.source, h.target, h1]
 
-private lemma IsSubgraph.RealizationEmbedding_injective (h : H ≤ G) :
-    Injective h.RealizationEmbedding := by
+private lemma RealizationEmbedding_injective (h : H ≤ G) : Injective h.RealizationEmbedding := by
   rintro x y
   refine Quotient.inductionOn₂ x y fun x y ↦ ?_
   simp only [RealizationEmbedding, Quotient.map_mk, RealizationEmbeddingAux, ContinuousMap.coe_mk,
@@ -92,94 +90,93 @@ private lemma IsSubgraph.RealizationEmbedding_injective (h : H ≤ G) :
         true_and, and_false, false_and, or_false, false_or]
       simp_all [h.source, h.target]
 
-lemma IsSubgraph.RealizationEmbedding_isEmbedding (h : H ≤ G) :
+/-! ### API for `RealizationEmbedding`
+
+The proof of `RealizationEmbedding_isEmbedding` below currently manipulates `Quotient.mk'` by
+hand. The lemmas in this section, together with `Realization.mk` and `Realization.isOpen_iff` in
+`Realization.Basic`, are meant to replace that plumbing; each is cross-referenced from a comment
+in the proof. -/
+
+@[simp]
+lemma RealizationEmbedding_mk (h : H ≤ G) (x : H.PreRealization) :
+    h.RealizationEmbedding (Realization.mk H x) = .mk G (h.RealizationEmbeddingAux x) := rfl
+
+@[simp]
+lemma RealizationEmbedding_vertexMk (h : H ≤ G) (v : V(H)) :
+    h.RealizationEmbedding (vertexMk v) = vertexMk ⟨v.val, h.vertexSet_mono v.prop⟩ := rfl
+
+@[simp]
+lemma RealizationEmbedding_edgePath (h : H ≤ G) (e : E(H)) (t : I) :
+    h.RealizationEmbedding (edgePath e t) = edgePath ⟨e.val, edgeSet_mono h e.prop⟩ t := rfl
+
+/-- Continuity of `RealizationEmbedding`, proved once from the universal property of the quotient
+instead of inline.-/
+lemma continuous_RealizationEmbedding (h : H ≤ G) : Continuous h.RealizationEmbedding := by
+  rw [continuous_coinduced_dom]
+  exact (Realization.mk G).continuous.comp h.RealizationEmbeddingAux.continuous
+
+/-- An edge of `H`, viewed in `G`, meets the image of `s` exactly where the corresponding edge of
+`H` meets `s`. This is the injectivity computation. -/
+lemma preimage_edgePath_image_RealizationEmbedding (h : H ≤ G) {e : E(G)} (he : e.val ∈ E(H))
+    (s : Set H.Realization) :
+    edgePath e ⁻¹' (h.RealizationEmbedding '' s) = edgePath ⟨e.val, he⟩ ⁻¹' s := by
+  ext t
+  simp only [mem_preimage, mem_image]
+  exact ⟨fun ⟨x, hx, hx_eq⟩ ↦ (h.RealizationEmbedding_injective
+    (RealizationEmbedding_edgePath h ⟨e.val, he⟩ t ▸ hx_eq)) ▸ hx,
+    fun ht ↦ ⟨Quotient.mk' (inr ⟨⟨e.val, he⟩, t⟩), ⟨ht, rfl⟩⟩⟩
+
+/-- An edge of `G` that is an edge of `H` lies entirely inside the image. -/
+lemma edgePath_mem_range_RealizationEmbedding (h : H ≤ G) {e : E(G)} (he : e.val ∈ E(H)) (t : I) :
+    edgePath e t ∈ range h.RealizationEmbedding :=
+  ⟨edgePath ⟨e.val, he⟩ t, RealizationEmbedding_edgePath h ⟨e.val, he⟩ t⟩
+
+/-- The form in which `preimage_edgePath_image_RealizationEmbedding` is used: on an edge of `H`
+the complement of the range contributes nothing, by
+`edgePath_mem_range_RealizationEmbedding`. -/
+lemma preimage_edgePath_image_union_compl_range (h : H ≤ G) {e : E(G)} (he : e.val ∈ E(H))
+    (s : Set H.Realization) :
+    edgePath e ⁻¹' (h.RealizationEmbedding '' s ∪ (range h.RealizationEmbedding)ᶜ) =
+      edgePath ⟨e.val, he⟩ ⁻¹' s := by
+  rw [preimage_union, preimage_compl, eq_univ_of_forall (show ∀ x,
+    x ∈ (edgePath e) ⁻¹' (range (RealizationEmbedding h)) from
+    h.edgePath_mem_range_RealizationEmbedding he), compl_univ, union_empty,
+    preimage_edgePath_image_RealizationEmbedding h he]
+
+/-- The interior of an edge of `G` that is not an edge of `H` misses the image of `H`. -/
+lemma edgePath_notMem_range_RealizationEmbedding (h : H ≤ G) {e : E(G)} (he : e.val ∉ E(H)) {t : I}
+    (ht : t ∈ Ioo (0 : I) 1) : edgePath e t ∉ range h.RealizationEmbedding := by
+  simp only [mem_range, not_exists, ne_eq]
+  intro y
+  induction y using Realization.ind with | h x => ?_
+  intro hx
+  rw [RealizationEmbedding_mk, ← Realization.mk_inr, eq_comm, Realization.mk_eq_mk,
+    glueRel_inr_interior_iff_eq ⟨ht.1.ne', ht.2.ne⟩ _] at hx
+  obtain v | ⟨e', t'⟩ := x
+  · simp [RealizationEmbeddingAux] at hx
+  simp only [RealizationEmbeddingAux, ContinuousMap.coe_mk, inr.injEq, Sigma.mk.injEq,
+    Subtype.ext_iff, heq_eq_eq] at hx
+  exact he (hx.1 ▸ e'.prop)
+
+lemma RealizationEmbedding_isEmbedding (h : H ≤ G) :
     Topology.IsEmbedding h.RealizationEmbedding where
   eq_induced := by
     ext s
-    change IsOpen (Quotient.mk' ⁻¹' s) ↔ ∃ t, _
+    rw [Realization.isOpen_iff s]
     refine ⟨fun hs ↦ ⟨h.RealizationEmbedding '' s ∪ (range h.RealizationEmbedding)ᶜ, ?_,
       by simp [h.RealizationEmbedding_injective.preimage_image]⟩, ?_⟩
-    · rw [isOpen_coinduced, isOpen_sum_iff, isOpen_sigma_iff]
-      refine ⟨isOpen_discrete _, fun e ↦ ?_⟩
-      simp only [preimage_union, preimage_compl]
+    · rw [Realization.isOpen_iff]
+      intro e
       by_cases heH : e.val ∈ E(H)
-      · have h1 : (fun t ↦ Quotient.mk' (inr ⟨e, t⟩)) ⁻¹'
-          (RealizationEmbedding h '' s ∪ (range (RealizationEmbedding h))ᶜ) =
-          (fun t ↦ Quotient.mk' (inr ⟨⟨e.val, heH⟩, t⟩)) ⁻¹' s := by
-          ext t
-          simp only [preimage_union, preimage_compl, mem_union, mem_preimage, mem_compl_iff,
-            mem_range, not_exists]
-          constructor
-          · rintro (⟨x, hx, hx_eq⟩ | hnot)
-            · have h_eq : RealizationEmbedding h (Quotient.mk' (inr ⟨⟨e.val, heH⟩, t⟩)) =
-                Quotient.mk' (inr ⟨e, t⟩) := rfl
-              rw [← h_eq] at hx_eq
-              have := h.RealizationEmbedding_injective hx_eq
-              rwa [this] at hx
-            · exfalso
-              apply hnot (Quotient.mk' (inr ⟨⟨e.val, heH⟩, t⟩))
-              rfl
-          · intro ht
-            left
-            use Quotient.mk' (inr ⟨⟨e.val, heH⟩, t⟩)
-            exact ⟨ht, rfl⟩
-        change IsOpen ((fun t ↦ Quotient.mk' (inr ⟨e, t⟩)) ⁻¹'
-          (RealizationEmbedding h '' s ∪ (range (RealizationEmbedding h))ᶜ))
-        rw [h1]
-        have h2 : IsOpen (Quotient.mk' ⁻¹' s) := hs
-        rw [isOpen_sum_iff] at h2
-        have h3 := h2.2
-        rw [isOpen_sigma_iff] at h3
-        exact h3 ⟨e.val, heH⟩
-      · change IsOpen ((fun t ↦ Quotient.mk' (inr ⟨e, t⟩)) ⁻¹'
-          (RealizationEmbedding h '' s ∪ (range (RealizationEmbedding h))ᶜ))
-        apply isOpen_of_Ioo_subset
-        intro t ht
-        simp only [preimage_union, preimage_compl, mem_union, mem_preimage, mem_compl_iff,
-          mem_range, not_exists]
-        right
-        intro x hx
-        revert hx
-        refine Quotient.inductionOn x fun x ↦ ?_
-        intro hx
-        match x with
-        | inl v =>
-          unfold RealizationEmbedding at hx
-          simp only [Quotient.map_mk, RealizationEmbeddingAux, ContinuousMap.coe_mk] at hx
-          have hx' := Quotient.exact hx
-          simp only [glueRel_inl_iff_glueRelAux, glueRelAux_inr_iff] at hx'
-          rcases hx' with ⟨u, hu, (⟨rfl, hu2⟩ | ⟨rfl, hu2⟩)⟩
-          · exact ne_of_gt ht.1 rfl
-          · exact ne_of_lt ht.2 rfl
-        | inr ⟨e', t'⟩ =>
-          unfold RealizationEmbedding at hx
-          simp only [Quotient.map_mk, RealizationEmbeddingAux, ContinuousMap.coe_mk] at hx
-          have hx' := Quotient.exact hx
-          simp only [glueRel_inr_inr_iff, Subtype.mk.injEq, glueRel_inl_iff_glueRelAux,
-            glueRelAux_inr_iff, inl.injEq, edgeSource, edgeTarget, exists_eq_left', Subtype.exists,
-            exists_and_left, exists_prop] at hx'
-          rcases hx' with ⟨he_eq, ht_eq⟩ |
-            ⟨a, (⟨rfl, ha1⟩ | ⟨rfl, ha1⟩), ha2, (⟨rfl, ha3⟩ | ⟨rfl, ha3⟩)⟩
-          · rw [← he_eq] at heH
-            exact heH e'.prop
-          · exact ne_of_gt ht.1 rfl
-          · exact ne_of_lt ht.2 rfl
-          · exact ne_of_gt ht.1 rfl
-          · exact ne_of_lt ht.2 rfl
+      · rw [preimage_edgePath_image_union_compl_range h heH]
+        exact hs ⟨e.val, heH⟩
+      · exact isOpen_of_Ioo_subset fun _ ht ↦
+          Or.inr (h.edgePath_notMem_range_RealizationEmbedding heH ht)
     rintro ⟨t, ht, rfl⟩
-    change IsOpen (Quotient.mk' ⁻¹' t) at ht
-    unfold RealizationEmbedding
-    rw [← preimage_comp]
-    generalize_proofs hh
-    have : Quotient.map h.RealizationEmbeddingAux hh ∘ Quotient.mk' =
-        Quotient.mk' ∘ h.RealizationEmbeddingAux := by
-      ext x
-      simp only [Quotient.mk', comp_apply, Quotient.map_mk]
-    rw [this, preimage_comp]
-    exact h.RealizationEmbeddingAux.continuous.isOpen_preimage _ ht
+    exact (Realization.isOpen_iff _).mp (ht.preimage h.continuous_RealizationEmbedding)
   injective := h.RealizationEmbedding_injective
 
-def IsSubgraph.realizationContinuousMap (h : H ≤ G) : C(H.Realization, G.Realization) where
+def realizationContinuousMap (h : H ≤ G) : C(H.Realization, G.Realization) where
   toFun := h.RealizationEmbedding
   continuous_toFun := h.RealizationEmbedding_isEmbedding.continuous
 

@@ -1,11 +1,6 @@
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2 -- inefficient import
-public import Mathlib.Topology.UniformSpace.Path
-public import Mathlib.Topology.Separation.Connected
-public import Mathlib.Geometry.Polygon.Basic -- inefficient import
-public import Matroid.ForMathlib.List.Basic
-public import Mathlib.Probability.ProbabilityMassFunction.Basic
 
 @[expose] public section
 
@@ -344,5 +339,46 @@ lemma sInf_notMem {α : Type*} [TopologicalSpace α] {S : Set α} {x y : α} (P 
     rw [unitInterval.le_zero] at h'
     exact h h'
   simpa [h] using (P.continuous.isOpen_preimage _ hS).sInf_notMem ⟨0, h⟩
+
+
+variable {α : Type*} [TopologicalSpace α] {x : α}
+
+/-- A loop is a *simple loop* if it does not visit any point twice, except that it ends where it
+started. -/
+def IsSimpleLoop (P : Path x x) : Prop := InjOn P (Ico 0 1)
+
+lemma isSimpleLoop_iff_injOn_ioc {P : Path x x} : P.IsSimpleLoop ↔ InjOn P (Ioc 0 1) := by
+  change InjOn P (Ico 0 1) ↔ InjOn P (Ioc 0 1)
+  wlog hoo : InjOn P (Ioo 0 1)
+  · exact iff_of_false (hoo <| ·.mono Ioo_subset_Ico_self) (hoo <| ·.mono Ioo_subset_Ioc_self)
+  refine ⟨fun h s hs t ht hst ↦ ?_, fun h s hs t ht hst ↦ ?_⟩
+  · obtain rfl | hs1 := eq_or_ne s 1 <;> obtain rfl | ht1 := eq_or_ne t 1
+    · rfl
+    · rw [Path.target] at hst
+      have := by simpa [hst] using h (by simp : (0 : I) ∈ _) ⟨ht.1.le,
+        lt_of_le_of_ne ht.2 ht1⟩
+      exact ht.1.ne this |>.elim
+    · rw [Path.target] at hst
+      have := by simpa [hst] using h ⟨hs.1.le, lt_of_le_of_ne hs.2 hs1⟩ (by simp : (0 : I) ∈ _)
+      exact hs.1.ne' this |>.elim
+    exact hoo ⟨hs.1, lt_of_le_of_ne hs.2 hs1⟩ ⟨ht.1, lt_of_le_of_ne ht.2 ht1⟩ hst
+  obtain rfl | hs0 := eq_or_ne s 0 <;> obtain rfl | ht0 := eq_or_ne t 0
+  · rfl
+  · simp only [Path.source] at hst
+    have := by simpa [hst] using h (by simp : (1 : I) ∈ _) ⟨ht.1.lt_of_ne' ht0, ht.2.le⟩
+    exact ht.2.ne' this |>.elim
+  · simp only [Path.source] at hst
+    have := by simpa [hst] using h ⟨hs.1.lt_of_ne' hs0, hs.2.le⟩ (by simp : (1 : I) ∈ _)
+    exact hs.2.ne this |>.elim
+  exact hoo ⟨lt_of_le_of_ne' hs.1 hs0, hs.2⟩ ⟨lt_of_le_of_ne' ht.1 ht0, ht.2⟩ hst
+
+lemma IsSimpleLoop.injOn_ioo {P : Path x x} (h : P.IsSimpleLoop) : InjOn P (Ioo 0 1) :=
+  h.mono Ioo_subset_Ico_self
+
+@[simp] lemma not_isSimpleLoop_refl : ¬ (Path.refl x).IsSimpleLoop := by
+  intro h
+  have heq := h (x₁ := 0) (x₂ := half) (by simp) (by simp)
+    (by rfl)
+  exact half_ne_zero heq.symm
 
 end Path

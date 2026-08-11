@@ -1,7 +1,7 @@
 module
 
-public import Matroid.Graph.Planarity.Topology.ConnPartition
-public import Matroid.Graph.Planarity.Topology.Circuit
+public import Matroid.ForMathlib.Topology.ConnPartition
+public import Matroid.ForMathlib.Topology.Circuit
 public import Mathlib.Analysis.CStarAlgebra.Unitary.Connected
 public import Mathlib.Geometry.Manifold.Metrizable
 public import Mathlib.Topology.Connected.LocallyConnected

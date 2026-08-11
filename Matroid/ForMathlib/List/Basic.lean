@@ -262,3 +262,33 @@ lemma setOf_three {a b c : α} : {x | x ∈ [a, b, c]} = {a, b, c} := by
 
 lemma setOf_four {a b c d : α} : {x | x ∈ [a, b, c, d]} = {a, b, c, d} := by
   ext; simp
+
+/-- Reassembling a list cut at index `d`: the head, the first arc, the element at `d`, the
+second arc read cyclically, and the head again, concatenate to the list closed up. Used to
+show that the two arcs of a polygon between two vertices cover it. -/
+lemma append_arc (L : List α) (x y : α) (d e : ℕ) (hd : 0 < d) (he : 0 < e)
+    (hsum : d + e = L.length) (hx : L.head? = some x) (hy : L[d] = y) :
+    x :: (L.tail.take (d - 1) ++ y ::
+      ((L.drop d ++ L.take d).tail.take (e - 1) ++ [x])) = L ++ [x] := by
+  have hdL : d < L.length := by omega
+  have hdrop : L.drop d = y :: L.drop (d + 1) := by
+    rw [List.drop_eq_getElem_cons hdL, hy]
+  have hlen : (L.drop (d + 1)).length = e - 1 := by
+    simp
+    omega
+  have hsecond : (L.drop d ++ L.take d).tail.take (e - 1) = L.drop (d + 1) := by
+    rw [hdrop]
+    simp only [List.cons_append, List.tail_cons]
+    rw [List.take_append]
+    simp [hlen]
+  rw [hsecond]
+  have htaildrop : L.tail.drop (d - 1) = y :: L.drop (d + 1) := by
+    rw [← hdrop, ← List.drop_one, List.drop_drop]
+    congr
+    omega
+  calc
+    _ = x :: ((L.tail.take (d - 1) ++ L.tail.drop (d - 1)) ++ [x]) := by
+      rw [htaildrop]
+      simp
+    _ = x :: (L.tail ++ [x]) := by rw [List.take_append_drop]
+    _ = L ++ [x] := by rw [← List.cons_head?_tail hx]; simp

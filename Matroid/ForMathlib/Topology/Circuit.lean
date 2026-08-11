@@ -1,7 +1,7 @@
 module
 
 public import Mathlib.Topology.Order.IntermediateValue
-public import Matroid.Graph.Planarity.Topology.Circle
+public import Matroid.ForMathlib.Topology.Circle
 
 @[expose] public section
 

@@ -1,8 +1,7 @@
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2 -- inefficient import
--- import Matroid.ForMathlib.Partition.Set
-public import Matroid.Graph.Basic
+public import Matroid.ForMathlib.Partition.Set
 
 @[expose] public section
 

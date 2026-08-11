@@ -1,6 +1,6 @@
 import Mathlib.Topology.CWComplex.Classical.Graph
 import Mathlib.Topology.CWComplex.Classical.Subcomplex
-import Matroid.Graph.Planarity.Topology.Circuit
+import Matroid.ForMathlib.Topology.Circuit
 import Matroid.Graphic
 import Matroid.ForMathlib.Analysis.Normed.Module.Connected
 import Mathlib.Geometry.Manifold.Instances.Sphere

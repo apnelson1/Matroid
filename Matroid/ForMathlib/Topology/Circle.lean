@@ -1,7 +1,7 @@
 module
 
 public import Mathlib.Analysis.CStarAlgebra.Unitary.Connected
-public import Matroid.Graph.Planarity.Topology.Path
+public import Matroid.ForMathlib.Topology.Path
 
 @[expose] public section
 

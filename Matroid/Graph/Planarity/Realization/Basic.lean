@@ -4,8 +4,8 @@ public import Matroid.Graph.Finite
 public import Matroid.Graph.GraphLike.ArbRel
 public import Matroid.Graph.Distance
 public import Mathlib.Topology.CWComplex.Classical.Subcomplex
-public import Matroid.Graph.Planarity.Topology.Path
-public import Matroid.Graph.Planarity.Topology.ConnPartition
+public import Matroid.ForMathlib.Topology.Path
+public import Matroid.ForMathlib.Topology.ConnPartition
 
 public section
 
@@ -225,6 +225,34 @@ theorem glueRel_inr_inr_iff_of_isNonloopAt (e : E(G)) (he : G.IsNonloopAt e (edg
 `glueRel`. -/
 abbrev Realization (G : Graph α β) : Type _ := Quotient G.glueRel
 
+/-- The canonical projection onto the realization, bundled as a continuous map.
+
+Prefer this over bare `Quotient.mk'`: the setoid is fixed explicitly rather than by instance
+search, so the term displays predictably and `simp`/`rw` can match it. Together with `mk_inl`,
+`mk_inr`, `mk_eq_mk` and `isOpen_iff` below it should remove the need to ever mention
+`Quotient.mk'`, `Quotient.eq'`, `Quotient.map_mk` or `Quotient.exact` downstream. -/
+@[expose]
+def Realization.mk (G : Graph α β) : C(G.PreRealization, G.Realization) where
+  toFun := Quotient.mk G.glueRel
+  continuous_toFun := ⟨fun _ a ↦ a⟩
+
+namespace Realization
+
+lemma mk_surjective : Surjective (mk G) := Quotient.mk_surjective
+
+@[elab_as_elim]
+lemma ind {p : G.Realization → Prop} (h : ∀ x, p (mk G x)) (x : G.Realization) : p x :=
+  Quotient.inductionOn x h
+
+@[simp]
+lemma mk_eq_mk {x y : G.PreRealization} : mk G x = mk G y ↔ G.glueRel x y := Quotient.eq
+
+/-- The realization carries the quotient topology. Should be `Iff.rfl`. -/
+lemma isOpen_iff_isOpen_preimage_mk (U : Set G.Realization) : IsOpen U ↔ IsOpen (mk G ⁻¹' U) :=
+  isOpen_coinduced
+
+end Realization
+
 /-- Inclusion of a vertex into the realization. -/
 @[expose]
 def vertexMk (v : V(G)) : Realization G := Quotient.mk' (s := G.glueRel) (Sum.inl v)
@@ -242,6 +270,25 @@ def edgePath (e : E(G)) : Path (vertexMk (edgeSource e)) (vertexMk (edgeTarget e
   source' := Quotient.sound (by simp)
   target' := Quotient.sound (by simp)
   continuous_toFun := continuous_quotient_mk'.comp' <| continuous_inr.comp' continuous_sigmaMk
+
+namespace Realization
+
+@[simp] lemma mk_inl (v : V(G)) : mk G (Sum.inl v) = vertexMk v := rfl
+
+@[simp] lemma mk_inr (e : E(G)) (t : I) : mk G (Sum.inr ⟨e, t⟩) = edgePath e t := rfl
+
+/-- Openness in the realization is a condition on the edges only: the `0`-skeleton is discrete,
+so the `Sum.inl` half of the quotient-topology criterion is automatic.
+
+Proof sketch: `rw [isOpen_iff_isOpen_preimage_mk, isOpen_sum_iff, isOpen_sigma_iff]` and then
+`simp [isOpen_discrete]`, using that `edgePath e ⁻¹' U = Sigma.mk e ⁻¹' (Sum.inr ⁻¹' (mk G ⁻¹' U))`
+is `rfl`. -/
+lemma isOpen_iff (U : Set G.Realization) : IsOpen U ↔ ∀ e : E(G), IsOpen (edgePath e ⁻¹' U) := by
+  rw [isOpen_iff_isOpen_preimage_mk, isOpen_sum_iff, isOpen_sigma_iff]
+  simp only [isOpen_discrete, Subtype.forall, true_and]
+  rfl
+
+end Realization
 
 section edgePath
 

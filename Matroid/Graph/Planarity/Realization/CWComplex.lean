@@ -1,26 +1,12 @@
 module
 
 public import Matroid.Graph.Planarity.Realization.Basic
+public import Matroid.ForMathlib.Analysis.Normed.Fin
 
 @[expose] public section
 
 open Set Function TopologicalSpace Topology Relation UniformSpace Sum Path WList Classical ENNReal
 open scoped unitInterval
-
-private lemma norm_le_one_iff_fin_1 (x : Fin 1 → ℝ) : ‖x‖ ≤ 1 ↔ ‖x 0‖ ≤ 1 := by simp [Pi.norm_def]
-private lemma norm_lt_one_iff_fin_1 (x : Fin 1 → ℝ) : ‖x‖ < 1 ↔ ‖x 0‖ < 1 := by simp [Pi.norm_def]
-private lemma norm_eq_one_iff_fin_1 (x : Fin 1 → ℝ) : ‖x‖ = 1 ↔ ‖x 0‖ = 1 := by simp [Pi.norm_def]
-
-private lemma metric_sphere_fin_one_eq : Metric.sphere (0 : Fin 1 → ℝ) 1 = {-1, 1} := by
-  ext f
-  simp only [mem_sphere_iff_norm, sub_zero, mem_insert_iff, mem_singleton_iff,
-    norm_eq_one_iff_fin_1, Real.norm_eq_abs]
-  refine ⟨fun hf ↦ ((abs_eq (zero_le_one' ℝ)).1 hf).symm.imp ?_ ?_, by rintro (rfl | rfl) <;> simp⟩
-  <;>
-  · intro h0
-    ext i
-    fin_cases i
-    simp [h0]
 
 namespace Graph
 
@@ -54,7 +40,7 @@ noncomputable def partialEquivEdgeMk (e' : E(G)) : PartialEquiv (Fin 1 → ℝ) 
   source := Metric.ball 0 1
   target := edgePath e' '' Ioo 0 1
   map_source' x hx := by
-    simp only [Metric.mem_ball, dist_zero_right, norm_lt_one_iff_fin_1, Fin.isValue,
+    simp only [Metric.mem_ball, dist_zero_right, norm_lt_one_iff_fin_one, Fin.isValue,
       Real.norm_eq_abs, abs_lt] at hx
     refine ⟨⟨_, by simp [zero_le_one]⟩, ?_, rfl⟩
     change (0 : ℝ) < _ ∧ _ < (1 : ℝ)
@@ -62,12 +48,12 @@ noncomputable def partialEquivEdgeMk (e' : E(G)) : PartialEquiv (Fin 1 → ℝ) 
       div_pos_iff_of_pos_right, true_and, sup_lt_iff, inf_lt_left]
     constructor <;> linarith
   map_target' x hx := by
-    simp only [hx, ↓reduceDIte, Metric.mem_ball, dist_zero_right, norm_lt_one_iff_fin_1,
+    simp only [hx, ↓reduceDIte, Metric.mem_ball, dist_zero_right, norm_lt_one_iff_fin_one,
       Real.norm_eq_abs]
     obtain ⟨⟨(ht1 : (0 : ℝ) < _), (ht2 : _ < (1 : ℝ))⟩, ht_eq⟩ := Classical.choose_spec hx
     refine abs_lt.mpr ⟨?_, ?_⟩ <;> linarith
   left_inv' := fun x hx ↦ by
-    simp only [Metric.mem_ball, dist_zero_right, norm_lt_one_iff_fin_1, Real.norm_eq_abs,
+    simp only [Metric.mem_ball, dist_zero_right, norm_lt_one_iff_fin_one, Real.norm_eq_abs,
       abs_lt] at hx
     have h_mem : edgePath e' ⟨max 0 (min 1 ((x 0 + 1) / 2)), by simp [zero_le_one]⟩ ∈
         edgePath e' '' Ioo 0 1 := by
@@ -109,7 +95,7 @@ lemma image_map_closedBall (e : E(G)) :
     exact ⟨⟨max 0 (min 1 ((f 0 + 1) / 2)), by simp [zero_le_one]⟩, rfl⟩
   rintro ⟨⟨t, ht1, ht2⟩, rfl⟩
   use fun _ ↦ 2 * t - 1, ?_, by simp [ht1, ht2]
-  rw [norm_le_one_iff_fin_1, Real.norm_eq_abs, abs_le]
+  rw [norm_le_one_iff_fin_one, Real.norm_eq_abs, abs_le]
   grind
 
 
@@ -178,7 +164,7 @@ noncomputable instance : Topology.CWComplex (univ : Set G.Realization) where
       refine
         ⟨fun m ↦ match m with | 0 => {⟨edgeSource e⟩, ⟨edgeTarget e⟩} | _ => ∅,
           fun x hx ↦ ?_⟩
-      simp only [mem_sphere_iff_norm, sub_zero, norm_eq_one_iff_fin_1, Fin.isValue,
+      simp only [mem_sphere_iff_norm, sub_zero, norm_eq_one_iff_fin_one, Fin.isValue,
         Real.norm_eq_abs, zero_le_one, abs_eq] at hx
       obtain hx | hx := hx <;> simp [hx, Realization.map]
     | n + 2, ⟨i⟩ => Empty.elim i

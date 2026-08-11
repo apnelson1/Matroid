@@ -3,16 +3,16 @@ import Mathlib.Topology.UniformSpace.Path
 import Mathlib.Topology.Separation.Connected
 import Mathlib.Geometry.Polygon.Basic -- inefficient import
 import Matroid.ForMathlib.List.Basic
-import Matroid.Graph.Planarity.Topology.Path
+import Matroid.ForMathlib.Topology.Path
 
 universe u
 variable {α β : Type u} {a b c x y z w : α} {C L : List α} {X Y : Set α} {N : ℕ}
 
 open Set Function TopologicalSpace Topology Metric Nat unitInterval
 
-lemma segment_union_eq_segment {𝕜 E : Type*} [Field 𝕜] [LinearOrder 𝕜]
-    [IsStrictOrderedRing 𝕜] [AddCommGroup E] [Module 𝕜 E] {x y z : E}
-    (hz : z ∈ segment 𝕜 x y) : segment 𝕜 x z ∪ segment 𝕜 z y = segment 𝕜 x y := by
+lemma segment_union_eq_segment {𝕜 E : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+    [AddCommGroup E] [Module 𝕜 E] {x y z : E} (hz : z ∈ segment 𝕜 x y) :
+    segment 𝕜 x z ∪ segment 𝕜 z y = segment 𝕜 x y := by
   simp only [segment_eq_image, mem_image, mem_Icc] at hz ⊢
   obtain ⟨t, ht, rfl⟩ := hz
   let f := fun (θ : 𝕜) ↦ (1 - θ) • x + θ • y
@@ -204,16 +204,16 @@ lemma trivial.vertices_eq_replicate (h : P.trivial) : ∃ n : ℕ, P.vertices = 
     rfl
 
 section Path
-variable [AddCommGroup α] [Module ℝ α] [TopologicalSpace α] [ContinuousAdd α] [ContinuousSMul ℝ α]
+variable [AddCommGroup α] [Module ℝ α] [TopologicalSpace α] [ContinuousSMul ℝ α]
 
 -- Convert to a Path
-noncomputable def toPath : ∀ {x y : α}, PolygonalPath x y → Path x y
+noncomputable def toPath [ContinuousAdd α] : ∀ {x y : α}, PolygonalPath x y → Path x y
   | _, _, direct x y => Path.segment x y
   | _, _, cons x w as => (Path.segment x w).trans as.toPath
 
-def toSet : Set α := Set.range (P.toPath)
+def toSet [ContinuousAdd α] : Set α := Set.range (P.toPath)
 
-lemma toSet_eq_biUnion : P.toSet = ⋃ s ∈ P.vPairs, segment ℝ s.1 s.2 := by
+lemma toSet_eq_biUnion [ContinuousAdd α] : P.toSet = ⋃ s ∈ P.vPairs, segment ℝ s.1 s.2 := by
   unfold toSet
   induction P with
   | direct x y => simp [toPath, vPairs_eq_zip]
@@ -221,14 +221,6 @@ lemma toSet_eq_biUnion : P.toSet = ⋃ s ∈ P.vPairs, segment ℝ s.1 s.2 := by
     simp only [toPath, Path.trans_range, Path.range_segment, ih, ← internal_concat, internal,
       cons_append, vPairs_eq_zip]
     simp
-
-@[simp]
-lemma toSet_direct : (direct x y).toSet = segment ℝ x y := by
-  simp [toSet, toPath]
-
-@[simp]
-lemma toSet_cons : (cons a x P).toSet = segment ℝ a x ∪ P.toSet := by
-  simp [toSet, toPath, Path.trans_range]
 
 lemma toSet_compact [IsTopologicalAddGroup α] : IsCompact (P.toSet) := by
   simp only [toSet_eq_biUnion]
@@ -243,6 +235,18 @@ lemma toSet_compact [IsTopologicalAddGroup α] : IsCompact (P.toSet) := by
 
 lemma toSet_isClosed [IsTopologicalAddGroup α] [T2Space α] : IsClosed (P.toSet) :=
   P.toSet_compact.isClosed
+
+section ContinuousAdd
+
+variable [ContinuousAdd α]
+
+@[simp]
+lemma toSet_direct : (direct x y).toSet = segment ℝ x y := by
+  simp [toSet, toPath]
+
+@[simp]
+lemma toSet_cons : (cons a x P).toSet = segment ℝ a x ∪ P.toSet := by
+  simp [toSet, toPath, Path.trans_range]
 
 lemma vertices_subset_toSet {x} (hx : x ∈ P.vertices) : x ∈ P.toSet := by
   induction P with
@@ -428,7 +432,8 @@ lemma closedSimple.cons_simple (h : P.closedSimple) :
   rw [closedSimple, toPath, Path.trans_injOn_ico_iff] at h
   obtain ⟨hP, hQ, hdj⟩ := h
   simp only [Path.range_segment] at hdj
-  rwa [← disjoint_sdiff_comm, sdiff_sdiff, union_singleton, segment_diff_endpoints has.ne.symm] at hdj
+  rwa [← disjoint_sdiff_comm, sdiff_sdiff, union_singleton,
+    segment_diff_endpoints has.ne.symm] at hdj
 
 lemma closedSimple_iff_cons_simple (P : PolygonalPath x x) : P.closedSimple ↔ ∃ b P',
     P = cons x b P' ∧ P'.simple ∧ Disjoint (openSegment ℝ x b) P'.toSet ∧
@@ -457,28 +462,28 @@ lemma closedSimple.unique_segment (h : P.closedSimple) (ha : a ∈ P.toSet) (hav
   · exact hdj.notMem_of_mem_left (mem_openSegment_of_ne_left_right hax.symm hab.symm hay) ha |>.elim
   · exact hc y ⟨hyP', hay⟩
 
-lemma closedSimple.two_segments (h : P.closedSimple) (hb : b ∈ P.vertices) : ∃ a c,
-    (a, b) ∈ P.vPairs ∧ (b, c) ∈ P.vPairs ∧ b ∉ ⋃ s ∈ {s | s ∈ P.vPairs} \ {(a, b), (b, c)},
-    segment ℝ s.1 s.2 := by
-  obtain ⟨d, P', rfl, hP', hdj⟩ := h.cons_simple
-  simp only [vertices, mem_cons] at hb
-  match P' with
-  | .direct _ _ =>
-    simp only [vertices, mem_cons, not_mem_nil, or_comm, false_or, or_self_left] at hb
-    obtain rfl | rfl := hb
-    · have hvP : (cons b d (direct d b)).vPairs = [(b, d), (d, b)] := by simp [vPairs]
-      rw [hvP]
-      use d, d, by simp, by simp, ?_
-      have h : {s | s ∈ [(b, d), (d, b)]} \ {(d, b), (b, d)} = ∅ := by grind
-      rw [h]
-      simp
-    have hvP : (cons x b (direct b x)).vPairs = [(x, b), (b, x)] := by simp [vPairs]
-    rw [hvP]
-    use x, x, by simp, by simp, ?_
-    have h : {s | s ∈ [(x, b), (b, x)]} \ {(x, b), (b, x)} = ∅ := by grind
-    rw [h]
-    simp
-  | .cons a c as => sorry
+-- lemma closedSimple.two_segments (h : P.closedSimple) (hb : b ∈ P.vertices) : ∃ a c,
+--     (a, b) ∈ P.vPairs ∧ (b, c) ∈ P.vPairs ∧ b ∉ ⋃ s ∈ {s | s ∈ P.vPairs} \ {(a, b), (b, c)},
+--     segment ℝ s.1 s.2 := by
+--   obtain ⟨d, P', rfl, hP', hdj⟩ := h.cons_simple
+--   simp only [vertices, mem_cons] at hb
+--   match P' with
+--   | .direct _ _ =>
+--     simp only [vertices, mem_cons, not_mem_nil, or_comm, false_or, or_self_left] at hb
+--     obtain rfl | rfl := hb
+--     · have hvP : (cons b d (direct d b)).vPairs = [(b, d), (d, b)] := by simp [vPairs]
+--       rw [hvP]
+--       use d, d, by simp, by simp, ?_
+--       have h : {s | s ∈ [(b, d), (d, b)]} \ {(d, b), (b, d)} = ∅ := by grind
+--       rw [h]
+--       simp
+--     have hvP : (cons x b (direct b x)).vPairs = [(x, b), (b, x)] := by simp [vPairs]
+--     rw [hvP]
+--     use x, x, by simp, by simp, ?_
+--     have h : {s | s ∈ [(x, b), (b, x)]} \ {(x, b), (b, x)} = ∅ := by grind
+--     rw [h]
+--     simp
+--   | .cons a c as => sorry
 
 end ClosedSimple
 
@@ -497,6 +502,8 @@ lemma region_nonempty_iff (P : PolygonalPath x y) (a : α) : (P.region a).Nonemp
 lemma region_empty_iff (P : PolygonalPath x y) (a : α) : P.region a = ∅ ↔ a ∈ P.toSet := by
   rw [← not_nonempty_iff_eq_empty, not_iff_comm]
   exact (region_nonempty_iff P a).symm
+
+end ContinuousAdd
 
 lemma region_isOpen [LocallyConnectedSpace α] [IsTopologicalAddGroup α] [T2Space α]
     (P : PolygonalPath x y) (a : α) : IsOpen (P.region a) :=
@@ -565,10 +572,10 @@ lemma List.uniform_isChain (hN : 0 < N) : (List.uniform hN).IsChain (dist · · 
 lemma List.uniform_length (hN : 0 < N) : (List.uniform hN).length = N + 1 := by
   simp [uniform]
 
-@[simp]
-lemma List.uniform_get (hN : 0 < N) (i : Fin (N + 1)) :
-    (List.uniform hN).get (i.cast (by simp)) = (i : ℝ) / N := by
-  simp [uniform]
+-- @[simp]
+-- lemma List.uniform_get (hN : 0 < N) (i : Fin (N + 1)) :
+--     (List.uniform hN).get (i.cast (by simp)) = (i : ℝ) / N := by
+--   simp [uniform]
 
 lemma List.uniform_eq_cons_concat (hN : 0 < N) :
     List.uniform hN = 0 :: (List.uniform hN).tail.dropLast ++ [1] := by
@@ -839,11 +846,11 @@ lemma exists_crossings [T1Space α] (hfin : (range P ∩ frontier U).Finite) (hx
   exact mt (isPreconnected_Icc.image P P.continuous.continuousOn |>.infinite_of_nontrivial)
   <| not_infinite.mpr <| hfin.subset <| by simp [hItfrontierU]
 
-lemma crossings_encard_even (hfin : (range P ∩ frontier U).Finite) :
-    Even (crossings U P).encard := by
+-- lemma crossings_encard_even (hfin : (range P ∩ frontier U).Finite) :
+--     Even (crossings U P).encard := by
 
-  -- let f : crossings U P → crossings U P := fun x
-  sorry
+--   -- let f : crossings U P → crossings U P := fun x
+--   sorry
 
 end Crossings
 

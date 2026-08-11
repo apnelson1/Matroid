@@ -7,6 +7,8 @@ This folder contains utility scripts for the Matroid project:
 3. **canvas_to_pdf.py** - Converts Obsidian canvas files to PDF visualizations
 4. **analyze_compile_times.py** - Per-module compile times and import critical paths
 
+The proof golfers that used to live here (`golf_grind.py`, `golf_rules.py`, `golf_common.py`) moved to `../../leangolf`, where they work against any lake project rather than only this one. See §5 below.
+
 ---
 
 ## 1. Matroid Import Updater (`update_matroid_imports.py`)
@@ -173,3 +175,24 @@ Notes:
 - Self times come from Lake; critical paths use only **direct** `Matroid.*` imports (not Mathlib).
 - If a module is not in the log, it was not rebuilt (cached) — run `lake clean Matroid` (or `lc Matroid`) before rebuilding for fresh numbers.
 - Pipe or `tee` the build log; the script also reads stdin when no file path is given.
+
+---
+
+## 5. Proof Golfers (moved to `Projects/leangolf`)
+
+`golf_grind.py`, `golf_rules.py` and their shared `golf_common.py` now live in
+`Projects/leangolf`, as a separate repository — one directory up from this repo.
+
+They were rewritten to locate the lake project from the target file rather than assuming
+this one, so they run against any Lean 4 project. From this repo the invocation is:
+
+```bash
+python3 ../leangolf/golf_rules.py Matroid/Path/To/File.lean          # dry-run diff
+python3 ../leangolf/golf_rules.py Matroid/Path/To/File.lean --write
+python3 ../leangolf/golf_grind.py Matroid/Path/To/File.lean --write
+```
+
+The rule table, options and the measured hand-vs-AI rates that motivate each rewrite are
+in that repo's `README.md`. Behaviour on this repo is unchanged: the scratch module is
+still `Matroid/ZzGolfBench.lean` and the column limit still comes from this lakefile's
+`linter.style.longLine`.
