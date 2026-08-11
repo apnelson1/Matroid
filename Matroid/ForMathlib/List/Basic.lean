@@ -25,6 +25,10 @@ lemma Nodup.eq_singleton_iff_head_getLast {α} {l : List α} (hnd : l.Nodup) (hn
     l.head hne = l.getLast hne ↔ ∃ x, l = [x] :=
   ⟨fun h => by cases l <;> grind, fun ⟨x, hx⟩ => by grind⟩
 
+lemma Nodup.head_notMem_tail {l : List α} (hl : l.Nodup) {hne : l ≠ []} :
+    l.head hne ∉ l.tail := by
+  cases l with grind
+
 lemma eq_of_length_eq_zero {α} {l : List α} (h : l.length = 0) : l = [] := by
   match l with
   | [] => rfl

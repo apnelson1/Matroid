@@ -211,8 +211,7 @@ lemma IsFan.isNonloop_bDual (h : M.IsFan F b c) (heF : e ∈ F) (d : Bool) :
 lemma IsFan.isNonloop (h : M.IsFan F b c) (heF : e ∈ F) : M.IsNonloop e :=
   h.isNonloop_bDual heF false
 
-lemma IsFan.isNonloop_get (h : M.IsFan F b c) {i : Fin F.length} :
-    M.IsNonloop (F.get i) :=
+lemma IsFan.isNonloop_getElem_fin (h : M.IsFan F b c) {i : Fin F.length} : M.IsNonloop F[i.1] :=
   h.isNonloop (by simp)
 
 lemma IsFan.isNonloop_bDual_get (h : M.IsFan F b c) {i : Fin F.length} {d : Bool} :
@@ -332,6 +331,20 @@ lemma isFan_of_eq_of_forall_triangle (h2 : 2 ≤ F.length) (hnd : F.Nodup)
     M.IsFan F b c := by
   convert isFan_of_forall_triangle h2 hnd hnl hT
   cases c with grind
+
+lemma isFan_of_eq_of_forall_triangle_get [NeZero F.length] (h2 : 2 ≤ F.length) (hnd : F.Nodup)
+    (hbc : (b == c) = F.length.bodd)
+    (hnl : F.length = 2 → ∀ d i (hi : i < F.length), (M.bDual d).IsNonloop F[i])
+    (hT : ∀ (i : Fin F.length), i ≠ 0 → i ≠ ⊤ →
+      (M.bDual (b == i.1.bodd)).IsTriangle {F[i - 1], F[i], F[i + 1]}) :
+    M.IsFan F b c := by
+  refine isFan_of_eq_of_forall_triangle h2 hnd hbc hnl fun i hi ↦ ?_
+  convert hT ⟨i + 1, by lia⟩ (by simp) (by simp [← Fin.val_inj, show i + 1 ≠ F.length - 1 by lia])
+  · cases b with simp
+  · simp [Fin.val_sub_one_of_ne_zero (show (⟨i + 1, by lia⟩ : Fin F.length) ≠ 0 by simp)]
+  · rfl
+  rw! [Fin.getElem_fin, Fin.val_add_one_of_lt' (by simpa [add_assoc])]
+  rfl
 
 lemma isFan_iff_forall (hF : 3 ≤ F.length) :
     M.IsFan F b c ↔ (b == c) = F.length.bodd ∧ F.Nodup ∧ ∀ i (hi : i + 2 < F.length),

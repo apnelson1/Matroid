@@ -59,7 +59,7 @@ lemma Nat.mod_bodd {n : ℕ} (hn : n.bodd = false) (i) : (i % n).bodd = i.bodd :
   nth_rw 1 [eq_comm, ← i.mod_add_div n, bodd_add, bodd_mul, hn]
   simp
 
-lemma encard_Ico_inter_bodd (x y : ℕ) (hxy : x ≤ y) (b : Bool) :
+lemma encard_Ico_inter_bodd {x y : ℕ} (hxy : x ≤ y) (b : Bool) :
     2 * (Set.Ico x y ∩ {i | i.bodd = b}).encard + x + (b != x.bodd).toNat =
     y + (b != y.bodd).toNat := by
   obtain ⟨d, rfl⟩ := exists_add_of_le hxy
@@ -74,10 +74,34 @@ lemma encard_Ico_inter_bodd (x y : ℕ) (hxy : x ≤ y) (b : Bool) :
     rw [Set.insert_inter_of_notMem (by cases h : x.bodd with simp [h]), ih (by simp)]
     cases h : x.bodd with simp [h]
 
+lemma encard_Icc_inter_bodd {x y : ℕ} (hxy : x ≤ y + 1) (b : Bool) :
+    2 * (Set.Icc x y ∩ {i | i.bodd = b}).encard + x + (b != x.bodd).toNat =
+    y + 1 + (b == y.bodd).toNat := by
+  rw [← Set.Ico_add_one_right_eq_Icc, encard_Ico_inter_bodd hxy]
+  simp
+
 lemma encard_Iio_inter_bodd (y : ℕ) (b : Bool) :
     2 * (Set.Iio y ∩ {i | i.bodd = b}).encard + b.toNat = y + (b != y.bodd).toNat := by
-  rw [show Set.Iio y = Set.Ico 0 y by grind, ← encard_Ico_inter_bodd (x := 0) _ (by simp)]
+  rw [show Set.Iio y = Set.Ico 0 y by grind, ← encard_Ico_inter_bodd (x := 0) (by simp)]
   simp
+
+lemma Fin.encard_Icc_inter_set_of_bodd {n : ℕ} {p q : Fin n} (hpq : p ≤ q) (d : Bool) :
+    2 * (Set.Icc p q ∩ {i : Fin n | i.1.bodd = d}).encard + p + (d != p.1.bodd).toNat =
+      q + 1 + (d == q.1.bodd).toNat := by
+  rw [← Fin.val_injective.encard_image, ← encard_Icc_inter_bodd (x := p) (by grind)]
+  convert rfl
+  ext i
+  simp only [Set.mem_inter_iff, Set.mem_Icc, Set.mem_ofPred_eq, Set.mem_image]
+  refine ⟨fun ⟨⟨hpi, hiq⟩, hi⟩ ↦ ⟨⟨i, by grind⟩, ⟨⟨hpi, hiq⟩, hi⟩, rfl⟩, ?_⟩
+  rintro ⟨x, hx, rfl⟩
+  assumption
+
+lemma Fin.encard_setOf_bodd (n : ℕ) (d : Bool) :
+    2 * {i : Fin n | i.1.bodd = d}.encard + d.toNat = n + (d != n.bodd).toNat := by
+  obtain rfl | n := n
+  · simp [Set.eq_empty_of_isEmpty]
+  simpa using Fin.encard_Icc_inter_set_of_bodd (show (0 : Fin (n + 1)) ≤ ⊤ by simp) d
+
 
 lemma Fin.add_bodd {n : ℕ} (hn : n.bodd = false) (a b : Fin n) :
     (a + b).1.bodd = (a.1.bodd ^^ b.1.bodd) := by
@@ -88,6 +112,11 @@ lemma Fin.sub_bodd {n : ℕ} (hn : n.bodd = false) (a b : Fin n) :
   rw [Fin.val_sub, Nat.mod_bodd hn, Nat.bodd_add, Nat.bodd_sub b.2.le]
   simp [hn, Bool.xor_comm]
 
-lemma Fin.rev_bodd {n : ℕ} (hn : n.bodd = false) (a : Fin n) : a.rev.1.bodd = !a.1.bodd := by
-  rw [Fin.val_rev, Nat.bodd_sub (by grind), hn]
+lemma Fin.rev_bodd {n : ℕ} (a : Fin n) : a.rev.1.bodd = (n.bodd == a.1.bodd) := by
+  rw [Fin.val_rev, Nat.bodd_sub (by grind)]
   simp
+
+lemma Fin.rev_bodd_of_even {n : ℕ} (hn : n.bodd = false) (a : Fin n) :
+    a.rev.1.bodd = !a.1.bodd := by
+  rw [a.rev_bodd]
+  simp [hn]
