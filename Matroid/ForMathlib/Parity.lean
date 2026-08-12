@@ -106,6 +106,10 @@ lemma Fin.encard_setOf_bodd (n : ℕ) (d : Bool) :
   · simp [Set.eq_empty_of_isEmpty]
   simpa using Fin.encard_Icc_inter_set_of_bodd (show (0 : Fin (n + 1)) ≤ ⊤ by simp) d
 
+lemma Fin.encard_setOf_bodd_of_even {n : ℕ} (hn : n.bodd = false) (d : Bool) :
+    2 * {i : Fin n | i.1.bodd = d}.encard = n := by
+  simpa [hn] using Fin.encard_setOf_bodd n d
+
 lemma Fin.add_bodd {n : ℕ} (hn : n.bodd = false) (a b : Fin n) :
     (a + b).1.bodd = (a.1.bodd ^^ b.1.bodd) := by
   rw [Fin.val_add, Nat.mod_bodd hn, Nat.bodd_add]

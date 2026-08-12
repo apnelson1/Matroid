@@ -36,6 +36,26 @@ lemma List.image_getElem_preimage_val_singleton {α : Type*} {L : List α} {i : 
   rw [← insert_empty_eq, image_getElem_preimage_val_insert _ hi]
   simp
 
+lemma List.image_getElem_fin_rotate' {α : Type*} {L : List α} (k : Fin L.length)
+    (s : Set (Fin (L.rotate k).length)) : (fun x ↦ (L.rotate k)[x.1]) '' s =
+    (fun x ↦ L[x.1]) '' (fun x ↦ x + k) '' (Fin.cast (by simp)) ⁻¹' s := by
+  have := k.neZero
+  simp only [image_image, rotate_getElem_fin]
+  simp [Set.ext_iff, Fin.exists_iff]
+
+lemma List.image_getElem_fin_rotate {α : Type*} {L : List α} (k : Fin L.length)
+    (s : Set (Fin (L.rotate k).length)) : (fun x ↦ (L.rotate k)[x.1]) '' s =
+    (fun x ↦ L[x.1]) '' (fun x ↦ x - k) ⁻¹' (Fin.cast (by simp)) ⁻¹' s := by
+  have := k.neZero
+  rw [List.image_getElem_fin_rotate', image_eq_preimage_of_inverse
+    (leftInverse_sub_add_left k) (leftInverse_add_left_sub k)]
+
+lemma List.image_getElem_fin_reverse {α : Type*} {L : List α}
+    (s : Set (Fin L.reverse.length)) : (fun x ↦ L.reverse[x.1]) '' s
+    = (fun x ↦ L[x.1]) '' Fin.rev ⁻¹' (Fin.cast (by simp)) ⁻¹' s := by
+  simp_rw [reverse_getElem_fin, ← Fin.image_rev, image_image]
+  simp [Set.ext_iff, Fin.exists_iff]
+
 lemma List.image_getElem_preimage_val_rotate {α : Type*} {L : List α} (s : Set ℕ)
     (k : Fin L.length) : (fun x ↦ (L.rotate k)[x.1]) '' (Fin.val ⁻¹' s) =
     (fun x ↦ L[x.1]) '' (fun i ↦ i + k) '' (Fin.val ⁻¹' s) := by
@@ -285,6 +305,36 @@ lemma IsFan.isCircuit_quad (hF : M.IsFan F b c) (p) (hp : p + 4 < F.length) (hpb
     image_getElem_preimage_val_singleton (by lia), image_getElem_preimage_val_singleton (by lia),
     insert_union, singleton_union] at hC
 
+/-- If a circuit `C` contains joints `F[p], F[q]` with `p < q`, and the cojoint `F[p + 1]`,
+then `C` is an interval. -/
+lemma IsFan.eq_interval_of_mem_mem_mem (hF : M.IsFan F b c) (hpq : p < q)
+    (hqF : q < F.length) (hpb : p.bodd = b) (hqb : q.bodd = b) (hC : M.IsCircuit C)
+    (hpC : F[p] ∈ C) (hp1C : F[p + 1] ∈ C) (hqC : F[q] ∈ C) :
+    C = (fun x ↦ F[x.1]) '' Fin.val ⁻¹' ({p, q} ∪ (Icc p q ∩ Nat.bodd ⁻¹' {!b})) := by
+  induction q using Nat.strong_induction_on with | h q ihq =>
+  suffices ∀ i (hi : i < F.length), p ≤ i → i ≤ q → i.bodd = !b → F[i] ∈ C by
+    refine hC.eq_of_superset_isCircuit (hF.isCircuit_interval hpq hqF hpb hqb ?_) <| by
+      refine image_getElem_preimage_val_subset_iff.2 fun i hiF hi ↦ by grind
+    rintro rfl rfl rfl hq hpara
+    obtain rfl : {F[0], F[q]} = C := by simpa [← hq, pair_subset hpC hqC]
+      using (hpara.isCircuit_of_ne hF.getElem_zero_ne_last).eq_of_subset_isCircuit hC
+    obtain rfl : 1 = q := by simpa [hF.nodup.getElem_inj_iff] using hp1C
+    simp at hqb
+  intro i hi hpi hiq hib
+  obtain ⟨d, rfl⟩ := exists_add_of_le hpi
+  induction d using Nat.twoStepInduction with
+  | zero => simpa
+  | one => exact hp1C
+  | more d ih _ =>
+    by_contra hcon
+    specialize ih (by lia) (by lia) (by lia) (by simpa using hib)
+    rw [← (hF.isTriad_getElem_of_eq (p + d) (by simpa using hib)).reverse.mem_iff_mem_of_isCircuit
+      hC (by simpa)] at ih
+    replace ihq := ihq (p + d + 1) (by lia) (by lia) (by lia) (by cases b with simpa using hib) hpC
+      hp1C ih
+    rw [ihq, hF.nodup.mem_image_getElem_preimage_val_iff] at hqC
+    simp [hqb, hpq.ne.symm, show q ≠ p + d + 1 by lia] at hqC
+
 /-- If a circuit of a matroid contains joints `F[p + 1], F[q]` of a fan `F`,
 and does not contain the cojoint `F[p]`,
 then it comprises precisely `F[p + 1], F[q]`, and the cojoints between them.  -/
@@ -292,23 +342,8 @@ lemma IsFan.eq_interval_of_notMem_mem_mem (hF : M.IsFan F b c) (hpq : p + 1 < q)
     (hqF : q < F.length) (hpb : p.bodd = !b) (hqb : q.bodd = b) (hC : M.IsCircuit C)
     (hpC : F[p] ∉ C) (hp1C : F[p + 1] ∈ C) (hqC : F[q] ∈ C) :
     C = (fun x ↦ F[x.1]) '' Fin.val ⁻¹' ({p + 1, q} ∪ (Icc (p + 1) q ∩ Nat.bodd ⁻¹' {!b})) := by
-  induction q using Nat.strong_induction_on with | h q ihq =>
-  suffices ∀ i (hi : i + 1 < F.length), p + 1 ≤ i → i < q → i.bodd = !b → F[i] ∈ C
-    from hC.eq_of_superset_isCircuit (hF.isCircuit_interval (by lia) hqF (by simpa) hqb (by simp))
-      <| image_getElem_preimage_val_subset_iff.2 fun i hiF hi ↦ by grind
-  intro i hilt hpi hiq hib
-  induction i using Nat.twoStepInduction with
-  | zero => simp at hpi
-  | one => grind
-  | more i ih _ =>
-    by_contra hcon
-    have hiff := (hF.isTriad_getElem_of_eq i (by simpa using hib)).reverse.mem_iff_mem_of_isCircuit
-      hC hcon
-    specialize ih (by lia) (by grind) (by lia) (by simpa using hib)
-    specialize ihq (i + 1) (by lia) (by grind) (by lia) (by simpa using hib) hpC hp1C
-      (by rwa [hiff])
-    simpa [hqb, show q ≠ p + 1 by lia, show q ≠ i + 1 by lia] using
-      (hF.nodup.mem_image_getElem_preimage_val_iff ..).1 (ihq.subset hqC)
+  refine hF.eq_interval_of_mem_mem_mem hpq hqF (by simpa) hqb hC hp1C (by_contra fun h ↦ hpC ?_) hqC
+  rwa [← (hF.isTriad_getElem_of_eq p hpb).reverse.mem_iff_mem_of_isCircuit hC h]
 
 lemma IsFan.exists_eq_interval_of_notMem_mem_add_one (hF : M.IsFan F b c) (hpq : p + 1 < q)
     (hqF : q < F.length) (hpb : p.bodd = !b) (hqb : q.bodd = !b) (hC : M.IsCircuit C)

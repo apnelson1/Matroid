@@ -1,6 +1,7 @@
 import Mathlib.Data.Int.ConditionallyCompleteOrder
 import Mathlib.Order.Interval.Set.Fin
 import Matroid.ForMathlib.Parity
+import Mathlib.Order.Circular.ZMod
 
 variable {n : ℕ}
 
@@ -21,6 +22,10 @@ lemma Nat.one_mod' [h : Fact (1 < n)] : 1 % n = 1 := by
 @[simp]
 lemma Fin.mod_val_eq (i : Fin n) : i.1 % n = i.1 :=
   Nat.mod_eq_of_lt i.2
+
+@[simp]
+lemma Nat.mod_lt' (a n : ℕ) [hn : NeZero n] : a % n < n :=
+  Nat.mod_lt _ <| by grind [hn.1]
 
 lemma Fin.range_val_eq_Iic (n : ℕ) [NeZero n] : range (Fin.val (n := n)) = Iic (n - 1) := by
   obtain rfl | n := n
@@ -143,8 +148,7 @@ lemma Fin.cast_sub_ofNat {m n k : ℕ} [NeZero n] [NeZero m] [k.AtLeastTwo] {hmn
   subst hmn
   rfl
 
-lemma Fin.cast_sub_one {m n k : ℕ} [NeZero n] [NeZero m] [k.AtLeastTwo] {hmn : m = n}
-    (i : Fin m) :
+lemma Fin.cast_sub_one {m n : ℕ} [NeZero n] [NeZero m] {hmn : m = n} (i : Fin m) :
     (i - 1).cast hmn = i.cast hmn - 1 := by
   subst hmn
   rfl
@@ -207,6 +211,24 @@ lemma Fin.val_add_one_of_ne_top {n} [NeZero n] {a : Fin n} (ha : a ≠ ⊤) :
   rw [← lt_top_iff_ne_top, Fin.lt_def, Fin.val_top] at ha
   rw [Fin.val_add_eq_of_add_lt (by simp [show a.1 ≤ n by lia])]
   simp
+
+lemma Fin.add_one_le_add_one_iff [NeZero n] {a b : Fin n} :
+    a + 1 ≤ b + 1 ↔ a = ⊤ ∨ (a ≤ b ∧ b ≠ ⊤) := by
+  obtain rfl | hb := eq_or_ne b ⊤
+  · simp [add_eq_zero_iff_eq_neg, neg_one]
+  obtain rfl | ha := eq_or_ne a ⊤
+  · simp
+  simp_rw [Fin.le_def, val_add_one_of_ne_top ha, val_add_one_of_ne_top hb, or_iff_right ha,
+    and_iff_left hb, Nat.add_one_le_add_one_iff]
+
+lemma Fin.sub_one_le_sub_one_iff [NeZero n] {a b : Fin n} :
+    a - 1 ≤ b - 1 ↔ b = 0 ∨ (a ≤ b ∧ a ≠ 0) := by
+  obtain rfl | ha := eq_or_ne a 0
+  · simp [neg_one, sub_eq_iff_eq_add]
+  obtain rfl | hb := eq_or_ne b 0
+  · simp [neg_one]
+  simp_rw [Fin.le_def, val_sub_one_of_ne_zero ha, val_sub_one_of_ne_zero hb]
+  lia
 
 lemma Fin.val_add_two_of_ne {n} [NeZero n] {a : Fin n} (ha : a ≠ ⊤) (ha' : a ≠ Fin.rev 1) :
     (a + 2).val = a.val + 2 := by
@@ -272,6 +294,10 @@ lemma Fin.cast_sub {m} (a b : Fin n) (hnm : n = m) :
   subst m
   rfl
 
+lemma Fin.cast_neg {m n : ℕ} (hmn : m = n) (a : Fin m) : (-a).cast hmn = - a.cast hmn := by
+  subst hmn
+  rfl
+
 @[simp]
 lemma Fin.cast_one [NeZero n] {m} [NeZero m] (hnm : n = m) : (1 : Fin n).cast hnm = 1 := by
   subst m
@@ -300,9 +326,10 @@ lemma List.rotate_getElem_fin {α : Type*} {L : List α} {k : ℕ} [NeZero L.len
     (i : Fin (L.rotate k).length) : (L.rotate k)[i.1] = L[(i.cast (length_rotate L k) + k).1] := by
   simp [getElem_rotate, Fin.val_add]
 
-lemma List.rotate_getElem_fin' {α : Type*} {L : List α} {k : Fin L.length} [NeZero L.length]
-    (i : Fin (L.rotate k).length) : (L.rotate k)[i.1] = L[(i.cast (length_rotate L k) + k).1] := by
-  rw [List.rotate_getElem_fin, Fin.cast_val_eq_self]
+open Fin.NatCast in
+lemma List.rotate_getElem_fin' {α : Type*} {L : List α} {k : ℕ} [NeZero L.length]
+    (i : Fin L.length) : (L.rotate k)[i.1] = L[(i + k).1] := by
+  simp [getElem_rotate, Fin.val_add]
 
 lemma List.rotate_rotate_fin {α : Type*} (L : List α) (a b : Fin L.length) :
     (L.rotate a).rotate b = L.rotate (a + b).1 := by
@@ -380,3 +407,121 @@ lemma Fin.preimage_sub_Iic {a d : Fin n} (hd : d ≤ a.rev) :
     (fun x ↦ x - d) ⁻¹' Iic a = Icc d (a + d) := by
   have hnz := a.neZero
   rw [← Icc_zero_left, preimage_sub_Icc (by simp) (.inr hd), zero_add]
+
+
+
+theorem btw_iff_sbtw {α : Type*} [CircularOrder α] {a b c : α} (hab : a ≠ b) (hbc : b ≠ c)
+    (hac : a ≠ c) : btw a b c ↔ sbtw a b c := by
+  refine ⟨fun h ↦ by_contra fun hcon ↦ ?_, fun h ↦ h.btw⟩
+  rw [← btw_iff_not_sbtw] at hcon
+  grind [h.antisymm hcon]
+
+theorem btw_iff_not_btw {α : Type*} [CircularOrder α] {a b c : α} (hab : a ≠ b) (hbc : b ≠ c)
+    (hac : a ≠ c) : btw a b c ↔ ¬ btw a c b := by
+  rw [btw_iff_sbtw hab hbc hac, sbtw_iff_not_btw, btw_cyclic]
+
+theorem SBtw.sbtw.ne₁₂ {α : Type*} [CircularPreorder α] {a b c : α} (habc : sbtw a b c) :
+    a ≠ b := by
+  rintro rfl
+  exact sbtw_irrefl_left habc
+
+theorem SBtw.sbtw.ne₂₃ {α : Type*} [CircularPreorder α] {a b c : α} (habc : sbtw a b c) :
+    b ≠ c := by
+  rintro rfl
+  exact sbtw_irrefl_right habc
+
+theorem SBtw.sbtw.ne₁₃ {α : Type*} [CircularPreorder α] {a b c : α} (habc : sbtw a b c) :
+    a ≠ c := by
+  rintro rfl
+  exact sbtw_irrefl_left_right habc
+
+open Fin.NatCast in
+/-- An induction principle for `Fin n` where successor is `Fin` addition,
+and the base case is anything. -/
+@[elab_as_elim]
+theorem Fin.induction_add_one {n : ℕ} [NeZero n] {motive : Fin n → Prop} (ex : ∃ i, motive i)
+    (succ : ∀ s (_ih : motive s), motive (s + 1)) (a : Fin n) : motive a := by
+  obtain ⟨i₀, hi₀⟩ := ex
+  suffices aux : ∀ k : ℕ, motive (i₀ + k) by simpa using aux (a - i₀).1
+  intro k
+  induction k with
+  | zero => simpa
+  | succ k ih => simpa [add_assoc] using succ _ ih
+
+theorem Fin.btw_zero_left_iff [NeZero n] {a b : Fin n} : btw 0 a b ↔ a ≤ b ∨ b = 0 := by
+  simp only [btw_iff, _root_.zero_le, true_and, nonpos_iff_eq_zero, and_true]
+  lia
+
+theorem Fin.sbtw_iff_zero_left [NeZero n] {a b : Fin n} : sbtw 0 a b ↔ a ≠ 0 ∧ a < b := by
+  simp [Fin.sbtw_iff, lt_iff_le_and_ne, eq_comm (a := a)]
+
+theorem Fin.sbtw_iff_top_right [NeZero n] {a b : Fin n} : sbtw a b ⊤ ↔ a < b ∧ b ≠ ⊤ := by
+  simp [Fin.sbtw_iff, lt_iff_le_and_ne, eq_comm (a := a)]
+
+@[simp]
+theorem Fin.btw_add_right_iff {a b c k : Fin n} : btw (a + k) (b + k) (c + k) ↔ btw a b c := by
+  have hnz := k.neZero
+  suffices aux : ∀ (x y z : Fin n), btw x y z ↔ btw (x + 1) (y + 1) (z + 1) by
+    induction k using Fin.induction_add_one with
+    | ex => exact ⟨0, by simp⟩
+    | succ s ih => simp_rw [← ih, ← add_assoc, ← aux]
+  intro x y z
+  simp only [btw_iff, add_one_le_add_one_iff, ne_eq]
+  cases hx : eq_or_ne x ⊤ with cases hy : eq_or_ne y ⊤ with cases hz : eq_or_ne z ⊤ with grind
+
+@[simp]
+theorem Fin.sbtw_add_right_iff {a b c k : Fin n} : sbtw (a + k) (b + k) (c + k) ↔ sbtw a b c := by
+  rw [sbtw_iff_not_btw, btw_add_right_iff, sbtw_iff_not_btw]
+
+@[simp]
+theorem Fin.btw_sub_right_iff {a b c k : Fin n} : btw (a - k) (b - k) (c - k) ↔ btw a b c := by
+  have := k.neZero
+  rw [← btw_add_right_iff (k := k), sub_add_cancel, sub_add_cancel, sub_add_cancel]
+
+@[simp]
+theorem Fin.sbtw_sub_right_iff {a b c k : Fin n} : sbtw (a - k) (b - k) (c - k) ↔ sbtw a b c := by
+  rw [sbtw_iff_not_btw, btw_sub_right_iff, sbtw_iff_not_btw]
+
+theorem Fin.btw_rev_iff {a b c : Fin n} : btw a.rev b.rev c.rev ↔ btw c b a := by
+  simp only [btw_iff, rev_le_rev]
+  tauto
+
+theorem Fin.btw_iff_of_lt {a b x : Fin n} (hab : a < b) : btw a x b ↔ a ≤ x ∧ x ≤ b := by
+  simp [btw_iff, hab.not_ge]
+
+theorem Fin.btw_iff_of_ge {a b x : Fin n} (hab : b ≤ a) : btw a x b ↔ x ≤ b ∨ a ≤ x := by
+  rw [btw_iff, and_iff_left hab, and_iff_right hab]
+  obtain hax | hxa := le_or_gt a x
+  · simp [hax]
+  simp [hxa.not_ge]
+
+theorem Fin.sbtw_iff_of_le {a b x : Fin n} (hab : a ≤ b) : sbtw a x b ↔ a < x ∧ x < b := by
+  simp [sbtw_iff, hab.not_gt]
+
+theorem Fin.sbtw_iff_of_gt {a b x : Fin n} (hab : b < a) : sbtw a x b ↔ x < b ∨ a < x := by
+  simp only [sbtw_iff, hab, and_true, true_and, or_iff_right_iff_imp, and_imp]
+  exact fun hax hxb ↦ False.elim <| (hax.trans hxb).not_ge hab.le
+
+theorem Fin.ofPred_btw_of_lt {a b : Fin n} (hab : a < b) : {x | btw a x b} = Icc a b := by
+  simp [Set.ext_iff, Fin.btw_iff_of_lt hab]
+
+theorem Fin.ofPred_btw_of_ge {a b : Fin n} (hab : b ≤ a) : {x | btw a x b} = Iic b ∪ Ici a := by
+  simp [Set.ext_iff, Fin.btw_iff_of_ge hab]
+
+theorem Fin.ofPred_sbtw_of_le {a b : Fin n} (hab : a ≤ b) : {x | sbtw a x b} = Ioo a b := by
+  simp [Set.ext_iff, Fin.sbtw_iff_of_le hab]
+
+theorem Fin.ofPred_sbtw_of_gt {a b : Fin n} (hab : b < a) : {x | sbtw a x b} = Iio b ∪ Ioi a := by
+  simp [Set.ext_iff, Fin.sbtw_iff_of_gt hab]
+
+@[simp]
+theorem Fin.btw_cast_iff {m n : ℕ} {a b c : Fin m} {hmn : m = n} :
+    btw (a.cast hmn) (b.cast hmn) (c.cast hmn) ↔ btw a b c := by
+  subst hmn
+  rfl
+
+@[simp]
+theorem Fin.sbtw_cast_iff {m n : ℕ} {a b c : Fin m} {hmn : m = n} :
+    sbtw (a.cast hmn) (b.cast hmn) (c.cast hmn) ↔ sbtw a b c := by
+  subst hmn
+  rfl
