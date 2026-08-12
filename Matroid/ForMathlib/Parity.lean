@@ -85,6 +85,10 @@ lemma encard_Iio_inter_bodd (y : ℕ) (b : Bool) :
   rw [show Set.Iio y = Set.Ico 0 y by grind, ← encard_Ico_inter_bodd (x := 0) (by simp)]
   simp
 
+lemma encard_Iio_inter_bodd_of_even {y : ℕ} (hy : y.bodd = false) (b : Bool) :
+    2 * (Set.Iio y ∩ {i | i.bodd = b}).encard = y := by
+  simpa [hy] using encard_Iio_inter_bodd y b
+
 lemma Fin.encard_Icc_inter_set_of_bodd {n : ℕ} {p q : Fin n} (hpq : p ≤ q) (d : Bool) :
     2 * (Set.Icc p q ∩ {i : Fin n | i.1.bodd = d}).encard + p + (d != p.1.bodd).toNat =
       q + 1 + (d == q.1.bodd).toNat := by
@@ -101,7 +105,6 @@ lemma Fin.encard_setOf_bodd (n : ℕ) (d : Bool) :
   obtain rfl | n := n
   · simp [Set.eq_empty_of_isEmpty]
   simpa using Fin.encard_Icc_inter_set_of_bodd (show (0 : Fin (n + 1)) ≤ ⊤ by simp) d
-
 
 lemma Fin.add_bodd {n : ℕ} (hn : n.bodd = false) (a b : Fin n) :
     (a + b).1.bodd = (a.1.bodd ^^ b.1.bodd) := by

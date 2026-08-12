@@ -10,14 +10,10 @@ variable {α : Type*} {M : Matroid α} {X Y C K T : Set α} {e f g x y : α} {b 
 
 open Set List
 
-lemma Icc_zero_left {α : Type*} [Preorder α] [Bot α] [Zero α] [IsBotZeroClass α] (a : α) :
-    Icc 0 a = Iic a := by
-  simp [Icc, Iic]
-
-lemma Ico_zero_left {α : Type*} [Preorder α] [Bot α] [Zero α] [IsBotZeroClass α] (a : α) :
-    Ico 0 a = Iio a := by
-  simp [Ico, Iio]
-
+@[simp]
+lemma List.range_getElem_fin {α : Type*} {L : List α} :
+    Set.range (fun (i : Fin L.length) ↦ L[i.1]) = {e | e ∈ L} := by
+  simp_rw [← get_eq_getElem, range_list_get]
 
 lemma List.Nodup.injective_getElem_fin {α : Type*} {L : List α} (hL : L.Nodup) :
     Function.Injective fun (i : Fin L.length) ↦ L[i.1] :=
@@ -39,6 +35,26 @@ lemma List.image_getElem_preimage_val_singleton {α : Type*} {L : List α} {i : 
     (hi : i < L.length) : (fun x ↦ L[x.1]) '' (Fin.val ⁻¹' {i}) = {L[i]} := by
   rw [← insert_empty_eq, image_getElem_preimage_val_insert _ hi]
   simp
+
+lemma List.image_getElem_preimage_val_rotate {α : Type*} {L : List α} (s : Set ℕ)
+    (k : Fin L.length) : (fun x ↦ (L.rotate k)[x.1]) '' (Fin.val ⁻¹' s) =
+    (fun x ↦ L[x.1]) '' (fun i ↦ i + k) '' (Fin.val ⁻¹' s) := by
+  have := k.neZero
+  simp_rw [image_image, rotate_getElem_fin]
+  simp [Set.ext_iff, Fin.exists_iff]
+
+lemma List.image_getElem_preimage_val_rotate' {α : Type*} {L : List α} (s : Set ℕ)
+    (k : Fin L.length) : (fun x ↦ (L.rotate k)[x.1]) '' (Fin.val ⁻¹' s) =
+    (fun x ↦ L[x.1]) '' (fun i ↦ i - k) ⁻¹' (Fin.val ⁻¹' s) := by
+  have := k.neZero
+  rw [image_getElem_preimage_val_rotate, image_eq_preimage_of_inverse
+    (leftInverse_sub_add_left k) (leftInverse_add_left_sub k)]
+
+lemma List.image_getElem_preimage_val_reverse {α : Type*} {L : List α} (s : Set ℕ) :
+    (fun x ↦ L.reverse[x.1]) '' (Fin.val ⁻¹' s) =
+    (fun x ↦ L[x.1]) '' (Fin.rev ⁻¹' Fin.val ⁻¹' s) := by
+  rw [← Fin.rev_involutive.image_eq_preimage_symm, image_image]
+  simp [add_comm _ 1, Nat.sub_sub, Set.ext_iff, Fin.exists_iff]
 
 lemma List.Nodup.mem_image_getElem_preimage_val_iff {α : Type*} {L : List α} (hL : L.Nodup)
     {i : ℕ} {s : Set ℕ} (hi : i < L.length) :

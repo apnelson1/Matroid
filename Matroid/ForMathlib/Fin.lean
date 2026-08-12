@@ -6,9 +6,21 @@ variable {n : ℕ}
 
 open Set
 
+lemma Icc_zero_left {α : Type*} [Preorder α] [Bot α] [Zero α] [IsBotZeroClass α] (a : α) :
+    Icc 0 a = Iic a := by
+  simp [Icc, Iic]
+
+lemma Ico_zero_left {α : Type*} [Preorder α] [Bot α] [Zero α] [IsBotZeroClass α] (a : α) :
+    Ico 0 a = Iio a := by
+  simp [Ico, Iio]
+
 @[simp]
 lemma Nat.one_mod' [h : Fact (1 < n)] : 1 % n = 1 := by
   rw [Nat.mod_eq_of_lt h.elim]
+
+@[simp]
+lemma Fin.mod_val_eq (i : Fin n) : i.1 % n = i.1 :=
+  Nat.mod_eq_of_lt i.2
 
 lemma Fin.range_val_eq_Iic (n : ℕ) [NeZero n] : range (Fin.val (n := n)) = Iic (n - 1) := by
   obtain rfl | n := n
@@ -39,6 +51,14 @@ lemma Fin.rev_eq_neg {n : ℕ} [NeZero n] (a : Fin n) : a.rev = - 1 - a := by
 lemma Fin.neg_eq_rev_add_one {n : ℕ} [NeZero n] (a : Fin n) : - a = a.rev + 1 := by
   simp only [rev_eq_neg]
   grind
+
+@[simp]
+lemma Fin.rev_neg [NeZero n] (a : Fin n) : (-a).rev = a - 1 := by
+  simp [rev_eq_neg, add_comm _ a, sub_eq_add_neg]
+
+@[simp]
+lemma Fin.neg_rev [NeZero n] (a : Fin n) : -a.rev = a + 1 := by
+  simp [rev_eq_neg]
 
 lemma Fin.add_eq_top_iff {n} [NeZero n] {a b : Fin n} : a + b = ⊤ ↔ a = rev b := by
   rw [Fin.rev_eq_neg, eq_sub_iff_add_eq, Fin.neg_one]
@@ -142,6 +162,9 @@ lemma Fin.top_add_one {n : ℕ} [NeZero n] : (⊤ : Fin n) + 1 = 0 := by
 lemma Fin.add_top {n : ℕ} [NeZero n] (a : Fin n) : a + ⊤ = a - 1 := by
   rw [Fin.top_eq_neg_one, sub_eq_add_neg]
 
+lemma Fin.top_sub {n : ℕ} [NeZero n] (a : Fin n) : (⊤ : Fin n) - a = a.rev := by
+  rw [Fin.top_eq_neg_one, rev_eq_neg]
+
 lemma Fin.le_add_right_iff {n : ℕ} (i k : Fin n) : i ≤ i + k ↔ i.val + k.val < n := by
   rw [Fin.le_def, Fin.val_add_eq_ite]
   split_ifs <;> grind
@@ -221,6 +244,10 @@ lemma Fin.lt_iff_add_one_le {n : ℕ} [NeZero n] {a b : Fin n} (ha : a ≠ ⊤) 
 lemma Fin.lt_add_one_iff_le {n : ℕ} [NeZero n] {a b : Fin n} (hb : b ≠ ⊤) : a < b + 1 ↔ a ≤ b := by
   rw [Fin.lt_iff_le_sub_one, add_sub_cancel_right]
   simpa [add_eq_zero_iff_eq_neg, neg_eq_rev_add_one, rev_add_self]
+
+lemma Fin.one_le_iff_ne_zero {n : ℕ} [Fact (1 < n)] {a : Fin n} : 1 ≤ a ↔ a ≠ 0 := by
+  rw [← zero_add 1, ← Fin.lt_iff_add_one_le zero_ne_top, lt_iff_le_and_ne, and_iff_right (by simp),
+    ne_comm]
 
 @[simp]
 lemma Fin.le_add_one_self_iff {n : ℕ} {b : Fin (n + 2)} : b ≤ b + 1 ↔ b ≠ ⊤ := by
@@ -310,19 +337,46 @@ lemma Fin.cast_natCast {m n} [NeZero m] [NeZero n] (h : m = n) (k : ℕ) :
   subst h
   rfl
 
-@[simps]
-def Fin.negPerm {n : ℕ} : Equiv.Perm (Fin n) where
-  toFun x := -x
-  invFun x := -x
-  left_inv x := by simp
-  right_inv x := by simp
+lemma Fin.val_sub_eq_ite (a b : Fin n) :
+    (a - b).1 = if b ≤ a then a.1 - b.1 else n + a.1 - b.1 := by
+  simp_rw [val_sub, Fin.le_def]
+  split_ifs with ha
+  · simp [show n - b.1 + a.1 = n + (a.1 - b.1) by lia, Nat.mod_eq_of_lt (show a.1 - b.1 < n by lia)]
+  rw [Nat.mod_eq_of_lt (by lia)]
+  lia
 
--- lemma Fin.le_neg_iff {a b : Fin n} : a ≤ -b ↔ b ≤ - a := by
---   have := a.neZero
---   rw [Fin.le_def, Fin.le_def, Fin.val_neg, Fin.val_neg]
---   split_ifs with hb ha
---   grind
---   simp [hb]
+lemma Fin.preimage_add_Icc [NeZero n] {a b d : Fin n} (hab : a ≤ b) (hle : d ≤ a ∨ b ≤ d - 1) :
+    (fun x ↦ x + d) ⁻¹' Icc a b = Icc (a - d) (b - d) := by
+  obtain rfl | h0 := eq_or_ne d 0
+  · simp
+  obtain ⟨a, ha⟩ := a
+  obtain ⟨b, hb⟩ := b
+  obtain ⟨d, hd⟩ := d
+  obtain ⟨s, rfl⟩ := exists_add_of_le (show a ≤ b from hab)
+  ext i
+  obtain ⟨i, hi⟩ := i
+  simp_rw [Fin.le_def, Fin.val_sub_one_of_ne_zero h0] at hle
+  simp_rw [mem_preimage, mem_Icc, Fin.le_def, Fin.val_add_eq_ite, Fin.val_sub_eq_ite, Fin.le_def]
+  grind
 
--- lemma Fin.preimage_rev_Icc {a b : Fin n} : (fun x ↦ - x) ⁻¹' Icc a b = Icc (-b) (-a) := by
---   ext i
+lemma Fin.preimage_sub_Icc [NeZero n] {a b d : Fin n} (hab : a ≤ b)
+    (hd : a.rev < d ∨ d ≤ b.rev) : (fun x ↦ x - d) ⁻¹' Icc a b = Icc (a + d) (b + d) := by
+  have := a.neZero
+  obtain rfl | hne := eq_or_ne d 0
+  · simp
+  simp_rw [sub_eq_add_neg]
+  rw [Fin.preimage_add_Icc hab, sub_neg_eq_add, sub_neg_eq_add]
+  rw [neg_eq_rev_add_one, add_sub_cancel_right, le_rev_iff, Fin.le_def, Fin.val_add_one_of_ne_top
+    (by simpa), Fin.val_rev, show n - (d.1 + 1) + 1 ≤ a.1 ↔ n - (a.1 + 1) + 1 ≤ d.1 by lia,
+    ← Fin.val_rev]
+  rwa [Fin.lt_def, ← Nat.add_one_le_iff] at hd
+
+lemma Fin.preimage_add_Ici {a d : Fin n} (hda : d ≤ a) :
+    (fun x ↦ x + d) ⁻¹' Ici a = Icc (a - d) d.rev := by
+  have := a.neZero
+  rw [← Icc_top, Fin.preimage_add_Icc (by simp) (.inl hda), Fin.top_sub]
+
+lemma Fin.preimage_sub_Iic {a d : Fin n} (hd : d ≤ a.rev) :
+    (fun x ↦ x - d) ⁻¹' Iic a = Icc d (a + d) := by
+  have hnz := a.neZero
+  rw [← Icc_zero_left, preimage_sub_Icc (by simp) (.inr hd), zero_add]
