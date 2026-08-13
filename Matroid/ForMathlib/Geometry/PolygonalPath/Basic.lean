@@ -6,6 +6,7 @@ public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Matroid.ForMathlib.Analysis.Convex.Segment
 public import Matroid.ForMathlib.List.Basic
 public import Matroid.ForMathlib.Topology.Path
+public import Matroid.ForMathlib.Topology.MetricSpace
 
 /-!
 # Polygonal paths
@@ -241,20 +242,12 @@ lemma mem_edges_iff {s : α × α} :
   rw [P.edges_eq_zip, List.mem_iff_getElem]
   have hzip : (P.vertices.zip P.vertices.tail).length = P.length := by
     rw [← P.edges_eq_zip, P.edges_length]
-  constructor
-  · rintro ⟨i, hi, hsi⟩
-    have hi' : i + 1 < P.vertices.length := by
-      rw [hzip] at hi
-      rw [P.vertices_length]
-      omega
-    refine ⟨i, hi', ?_⟩
-    rw [← hsi, List.getElem_zip, List.getElem_tail]
-  · rintro ⟨i, hi, rfl⟩
-    refine ⟨i, ?_, ?_⟩
-    · rw [hzip]
-      rw [P.vertices_length] at hi
-      omega
-    · rw [List.getElem_zip, List.getElem_tail]
+  refine ⟨?_, ?_⟩
+  · grind
+  rintro ⟨i, hi, rfl⟩
+  refine ⟨i, ?_, ?_⟩
+  · grind
+  rw [List.getElem_zip, List.getElem_tail]
 
 lemma fst_mem_vertices {s : α × α} (hs : s ∈ P.edges) : s.1 ∈ P.vertices := by
   rw [P.edges_eq_zip] at hs
@@ -310,14 +303,12 @@ lemma ofList_internal_self (h : 0 < P.length) : ofList x P.internal y = P := by
   induction P with
   | nil => simp at h
   | @cons a b c P ih =>
-    by_cases hP : 0 < P.length
-    · rw [internal_cons hP, ofList]
-      congr
-      exact ih hP
-    · have hP0 : P.length = 0 := Nat.eq_zero_of_not_pos hP
-      cases P with
-      | nil => rfl
-      | cons => simp at hP0
+    obtain hP | hP := em (0 < P.length)
+    · grind [internal_cons hP, ofList]
+    have hP0 : P.length = 0 := Nat.eq_zero_of_not_pos hP
+    cases P with
+    | nil => rfl
+    | cons => simp at hP0
 
 /-- Paths with at least one segment are equivalent to lists of internal vertices. -/
 def equivList (x y : α) : {P : PolygonalPath x y // 0 < P.length} ≃ List α where
@@ -456,15 +447,14 @@ lemma exists_append_eq_of_mem_vertices (ha : a ∈ P.vertices) :
   induction P generalizing a with
   | nil x =>
     simp only [vertices_nil, List.mem_singleton] at ha
-    have hax : a = x := ha
-    cases hax
+    cases ha
     exact ⟨nil x, nil x, rfl⟩
   | @cons x b y P ih =>
     simp only [vertices_cons, List.mem_cons] at ha
-    rcases ha with rfl | ha
+    obtain rfl | ha := ha
     · exact ⟨nil a, cons a b P, rfl⟩
-    · obtain ⟨A, B, rfl⟩ := ih ha
-      exact ⟨cons x b A, B, rfl⟩
+    obtain ⟨A, B, rfl⟩ := ih ha
+    exact ⟨cons x b A, B, rfl⟩
 
 @[simp] lemma drop_zero (h : 0 < P.length) : P.drop x 0 = P := by
   simpa [drop, internal] using P.ofList_internal_self h
@@ -485,9 +475,7 @@ lemma drop_vertices (u : α) (i : ℕ) (hu : P.vertices[i]? = some u) (hi : i < 
       subst u
       simpa using congrArg vertices (drop_zero (cons a b P) (by simp))
     | succ i =>
-      have hu' : P.vertices[i]? = some u := by simpa using hu
-      have hi' : i < P.length := by simpa using hi
-      simpa [drop, Nat.add_assoc] using ih u i hu' hi'
+      simpa [drop, Nat.add_assoc] using ih u i (by simpa using hu) (by simpa using hi)
 
 /-! ### Degenerate and nondegenerate paths -/
 
@@ -508,13 +496,12 @@ lemma IsTrivial.of_cons {P : PolygonalPath x y} (h : (cons a x P).IsTrivial) : P
 
 lemma isTrivial_iff_vertices_eq_replicate :
     P.IsTrivial ↔ P.vertices = List.replicate (P.length + 1) x := by
-  constructor
+  refine ⟨?_, ?_⟩
   · intro h
-    apply List.eq_replicate_iff.mpr
-    exact ⟨by simp, fun z hz => h z hz⟩
-  · intro h z hz
-    rw [h] at hz
-    simpa using hz
+    exact List.eq_replicate_iff.mpr ⟨by simp, fun z hz => h z hz⟩
+  intro h z hz
+  rw [h] at hz
+  simpa using hz
 
 /-- No segment of `P` is degenerate, i.e. consecutive vertices are distinct. This is what a
 "normalised" walk is; compare `Polygon.HasNondegenerateEdges`. -/
@@ -539,11 +526,11 @@ def HasNondegenerateEdges (P : PolygonalPath x y) : Prop := ∀ s ∈ P.edges, s
 @[simp] lemma hasNondegenerateEdges_reverse :
     P.reverse.HasNondegenerateEdges ↔ P.HasNondegenerateEdges := by
   simp only [HasNondegenerateEdges, reverse_edges, List.mem_reverse, List.mem_map, Prod.exists]
-  constructor
+  refine ⟨?_, ?_⟩
   · intro h s hs
     exact fun hEq => h (s.2, s.1) ⟨s.1, s.2, hs, rfl⟩ hEq.symm
-  · rintro h s ⟨u, v, huv, rfl⟩
-    exact fun hEq => h (u, v) huv hEq.symm
+  rintro h s ⟨u, v, huv, rfl⟩
+  exact fun hEq => h (u, v) huv hEq.symm
 
 /-! ### The set of points covered -/
 
@@ -601,13 +588,13 @@ lemma toSet_eq_biUnion (h : 0 < P.length) :
   induction P with
   | nil => simp at h
   | @cons a b y P ih =>
-    by_cases hP : 0 < P.length
+    obtain hP | hP := em (0 < P.length)
     · rw [toSet_cons, ih hP]
       simp
-    · have hP0 : P.length = 0 := Nat.eq_zero_of_not_pos hP
-      cases P with
-      | nil => simp [right_mem_segment]
-      | cons => simp at hP0
+    have hP0 : P.length = 0 := Nat.eq_zero_of_not_pos hP
+    cases P with
+    | nil => simp [right_mem_segment]
+    | cons => simp at hP0
 
 lemma mem_toSet_iff (h : 0 < P.length) {u : α} :
     u ∈ P.toSet ↔ ∃ s ∈ P.edges, u ∈ segment ℝ s.1 s.2 := by
@@ -619,9 +606,9 @@ lemma mem_toSet_of_mem_vertices {u : α} (hu : u ∈ P.vertices) : u ∈ P.toSet
   | nil => simpa using hu
   | cons a b P ih =>
     simp only [vertices_cons, List.mem_cons] at hu
-    rcases hu with rfl | hu
+    obtain rfl | hu := hu
     · exact mem_union_left _ (left_mem_segment ℝ _ b)
-    · exact mem_union_right _ (ih hu)
+    exact mem_union_right _ (ih hu)
 
 lemma vertices_subset_toSet : {u | u ∈ P.vertices} ⊆ P.toSet := fun _ => P.mem_toSet_of_mem_vertices
 
@@ -645,9 +632,8 @@ lemma toSet_mono_drop (u : α) (i : ℕ) (hu : P.vertices[i]? = some u) (hi : i 
       subst u
       rw [drop_zero (cons a b P) (by simp)]
     | succ i =>
-      have hu' : P.vertices[i]? = some u := by simpa using hu
       have hi' : i < P.length := by simpa using hi
-      simpa [drop, Nat.add_assoc] using (ih u i hu' hi').trans (subset_union_right)
+      simpa [drop, Nat.add_assoc] using (ih u i (by simpa using hu) hi').trans (subset_union_right)
 
 /-! ### Simple paths -/
 
@@ -670,11 +656,10 @@ private lemma IsSimple.first_mem_segment {P : PolygonalPath x y} (h : P.IsSimple
   | nil => simp at hs
   | cons x b P =>
     simp only [edges_cons, List.mem_cons] at hs
-    rcases hs with rfl | hs
+    obtain rfl | hs := hs
     · simp
-    · have hrel := (List.pairwise_cons.mp h.2).1 (s.1, s.2) hs
-      have := hrel ⟨left_mem_segment ℝ x b, hx⟩
-      simpa only [mem_inter_iff, mem_insert_iff, mem_singleton_iff, true_or, true_and] using this
+    have := ((List.pairwise_cons.mp h.2).1 (s.1, s.2) hs) ⟨left_mem_segment ℝ x b, hx⟩
+    simpa only [mem_inter_iff, mem_insert_iff, mem_singleton_iff, true_or, true_and] using this
 
 /-- The basic recursion for simplicity: prepending a segment keeps a path simple exactly when the
 new segment meets the old path only at the vertex they share. -/
@@ -685,35 +670,30 @@ lemma isSimple_cons_iff {P : PolygonalPath b y} :
   | @cons b c y P =>
     let Q : PolygonalPath b y := cons b c P
     change (cons a b Q).IsSimple ↔ _
-    constructor
+    refine ⟨?_, ?_⟩
     · intro h
       have hv := List.nodup_cons.mp h.1
       have he := List.pairwise_cons.mp h.2
-      refine ⟨fun hab => hv.1 (hab ▸ Q.first_mem_vertices), ⟨hv.2, he.2⟩, ?_⟩
-      rintro u ⟨huS, huQ⟩
+      refine ⟨fun hab => hv.1 (hab ▸ Q.first_mem_vertices), ⟨hv.2, he.2⟩, fun u ⟨huS, huQ⟩ ↦ ?_⟩
       obtain ⟨s, hs, hus⟩ := Q.mem_toSet_iff (by simp [Q]) |>.mp huQ
       have huends := he.1 s hs ⟨huS, hus⟩
-      rcases huends.1 with (rfl | rfl)
+      obtain (rfl | rfl) := huends.1
       · apply (hv.1 ?_).elim
-        rcases huends.2 with h | h
+        obtain h | h := huends.2
         · rw [h]
           exact Q.fst_mem_vertices hs
         · rw [h]
           exact Q.snd_mem_vertices hs
       · rfl
-    · rintro ⟨hab, hQ, hSQ⟩
-      constructor
-      · change (a :: Q.vertices).Nodup
-        rw [List.nodup_cons]
-        refine ⟨?_, hQ.1⟩
-        intro haQ
-        exact hab (hSQ ⟨left_mem_segment ℝ a b, Q.mem_toSet_of_mem_vertices haQ⟩)
-      · change List.Pairwise _ ((a, b) :: Q.edges)
-        rw [List.pairwise_cons]
-        refine ⟨?_, hQ.2⟩
-        intro s hs u hu
-        obtain rfl : u = b := hSQ ⟨hu.1, Q.segment_subset_toSet hs hu.2⟩
-        simp [hQ.first_mem_segment hs hu.2]
+    refine fun ⟨hab, hQ, hSQ⟩ ↦ ⟨?_, ?_⟩
+    · change (a :: Q.vertices).Nodup
+      rw [List.nodup_cons]
+      exact ⟨fun haQ ↦ (hab (hSQ ⟨left_mem_segment ℝ a b, Q.mem_toSet_of_mem_vertices haQ⟩)), hQ.1⟩
+    change List.Pairwise _ ((a, b) :: Q.edges)
+    rw [List.pairwise_cons]
+    refine ⟨fun s hs u hu ↦ ?_, hQ.2⟩
+    obtain rfl : u = b := hSQ ⟨hu.1, Q.segment_subset_toSet hs hu.2⟩
+    simp [hQ.first_mem_segment hs hu.2]
 
 /-- The characterization to work from: a concatenation is simple exactly when both pieces are
 simple and they meet only at the point they share. The closed analogue allows the two pieces to
@@ -722,51 +702,45 @@ lemma isSimple_append_iff {A : PolygonalPath x y} {B : PolygonalPath y z} :
     (A.append B).IsSimple ↔ A.IsSimple ∧ B.IsSimple ∧ A.toSet ∩ B.toSet ⊆ {y} := by
   induction A with
   | nil x =>
-    constructor
+    refine ⟨?_, ?_⟩
     · intro h
       exact ⟨isSimple_nil x, h, fun u hu => by simpa using hu.1⟩
-    · exact fun h => h.2.1
+    exact fun h => h.2.1
   | @cons a b y A ih =>
-    constructor
+    refine ⟨?_, ?_⟩
     · intro h
       obtain ⟨hab, hAB, hSAB⟩ := isSimple_cons_iff.mp h
       obtain ⟨hA, hB, hAB'⟩ := ih.mp hAB
-      refine ⟨isSimple_cons_iff.mpr ⟨hab, hA, ?_⟩, hB, ?_⟩
-      · intro u hu
-        exact hSAB ⟨hu.1, by simpa using mem_union_left B.toSet hu.2⟩
-      · intro u hu
-        rcases hu.1 with huS | huA
+      refine ⟨isSimple_cons_iff.mpr ⟨hab, hA, fun u hu ↦ ?_⟩, hB, fun u hu ↦ ?_⟩
+      · exact hSAB ⟨hu.1, by simpa using mem_union_left B.toSet hu.2⟩
+      · obtain huS | huA := hu.1
         · have hub : u = b := hSAB ⟨huS, by simpa using mem_union_right A.toSet hu.2⟩
           have hby : b = y := hAB' ⟨A.mem_toSet_of_mem_vertices A.first_mem_vertices,
             hub ▸ hu.2⟩
           exact hub.trans hby
         · exact hAB' ⟨huA, hu.2⟩
-    · rintro ⟨hA, hB, hAB⟩
-      obtain ⟨hab, hA', hSA⟩ := isSimple_cons_iff.mp hA
-      apply isSimple_cons_iff.mpr
-      refine ⟨hab, ih.mpr ⟨hA', hB, fun u hu => hAB ⟨mem_union_right _ hu.1, hu.2⟩⟩, ?_⟩
-      intro u hu
-      rw [toSet_append] at hu
-      rcases hu.2 with huA | huB
-      · exact hSA ⟨hu.1, huA⟩
-      · have huy : u = y := hAB ⟨mem_union_left A.toSet hu.1, huB⟩
-        have hyb : y = b := hSA ⟨huy ▸ hu.1,
-          A.mem_toSet_of_mem_vertices A.last_mem_vertices⟩
-        exact huy.trans hyb
+    rintro ⟨hA, hB, hAB⟩
+    obtain ⟨hab, hA', hSA⟩ := isSimple_cons_iff.mp hA
+    apply isSimple_cons_iff.mpr
+    refine ⟨hab, ih.mpr ⟨hA', hB, fun u hu => hAB ⟨mem_union_right _ hu.1, hu.2⟩⟩, fun u hu ↦ ?_⟩
+    rw [toSet_append] at hu
+    obtain huA | huB := hu.2
+    · exact hSA ⟨hu.1, huA⟩
+    have huy : u = y := hAB ⟨mem_union_left A.toSet hu.1, huB⟩
+    have hyb : y = b := hSA ⟨huy ▸ hu.1,
+      A.mem_toSet_of_mem_vertices A.last_mem_vertices⟩
+    exact huy.trans hyb
 
 lemma isSimple_append_iff' {A : PolygonalPath x y} {B : PolygonalPath y z} :
     (A.append B).IsSimple ↔ A.IsSimple ∧ B.IsSimple ∧ A.toSet ∩ B.toSet = {y} := by
   rw [isSimple_append_iff]
-  constructor
+  refine ⟨?_, ?_⟩
   · rintro ⟨hA, hB, hsub⟩
-    refine ⟨hA, hB, hsub.antisymm ?_⟩
-    intro u hu
-    have huy : u = y := by simpa using hu
-    subst u
+    refine ⟨hA, hB, hsub.antisymm fun u hu ↦ ?_⟩
+    obtain rfl : u = y := by simpa using hu
     exact ⟨A.mem_toSet_of_mem_vertices A.last_mem_vertices,
       B.mem_toSet_of_mem_vertices B.first_mem_vertices⟩
-  · rintro ⟨hA, hB, hEq⟩
-    exact ⟨hA, hB, hEq.le⟩
+  exact fun ⟨hA, hB, hEq⟩ ↦ ⟨hA, hB, hEq.le⟩
 
 variable {P : PolygonalPath x y}
 
@@ -800,8 +774,7 @@ lemma IsSimple.edges_nodup (h : P.IsSimple) : P.edges.Nodup := by
   | nil => simp
   | cons a b P ih =>
     rw [edges_cons, List.nodup_cons]
-    refine ⟨?_, ih h.of_cons⟩
-    intro hab
+    refine ⟨fun hab ↦ ?_, ih h.of_cons⟩
     exact (List.nodup_cons.mp h.1).1 (P.fst_mem_vertices hab)
 
 lemma IsSimple.hasNondegenerateEdges (h : P.IsSimple) : P.HasNondegenerateEdges := by
@@ -826,15 +799,13 @@ lemma IsSimple.ne (h : P.IsSimple) (hP : 0 < P.length) : x ≠ y := by
   exact hxy.symm ▸ hy
 
 lemma IsSimple.isTrivial_iff (h : P.IsSimple) : P.IsTrivial ↔ P.length = 0 := by
-  constructor
-  · intro htriv
-    by_contra hne
-    have hpos : 0 < P.length := Nat.pos_of_ne_zero hne
-    exact h.ne hpos htriv.first_eq_last
-  · intro hzero
-    cases P with
-    | nil => simp
-    | cons => simp at hzero
+  refine ⟨fun htriv ↦ ?_, ?_⟩
+  · by_contra hne
+    exact h.ne (Nat.pos_of_ne_zero hne) htriv.first_eq_last
+  intro hzero
+  cases P with
+  | nil => simp
+  | cons => simp at hzero
 
 private lemma IsSimple.mem_segment_iff_of_mem_vertices_aux (h : P.IsSimple) {u : α}
     (hu : u ∈ P.vertices) {s : α × α} (hs : s ∈ P.edges) :
@@ -843,8 +814,7 @@ private lemma IsSimple.mem_segment_iff_of_mem_vertices_aux (h : P.IsSimple) {u :
     (fun e => e ▸ right_mem_segment ℝ _ _)⟩
   intro hus
   obtain ⟨A, B, rfl⟩ := P.exists_append_eq_of_mem_vertices hu
-  have hs_or : s ∈ A.edges ∨ s ∈ B.edges := by simpa using hs
-  rcases hs_or with hs | hs
+  obtain hs | hs := (by simpa using hs)
   · have hs' : (s.2, s.1) ∈ A.reverse.edges := by
       rw [reverse_edges]
       simp only [List.mem_reverse, List.mem_map, Prod.exists]
@@ -854,7 +824,7 @@ private lemma IsSimple.mem_segment_iff_of_mem_vertices_aux (h : P.IsSimple) {u :
     rcases hArev.first_mem_segment hs' hu' with hsu | hsu
     · exact Or.inr hsu
     · exact Or.inl hsu
-  · exact (isSimple_append_iff.mp h).2.1.first_mem_segment hs hus
+  exact (isSimple_append_iff.mp h).2.1.first_mem_segment hs hus
 
 /-- A point of a simple path which is not a vertex lies on a unique segment. -/
 lemma IsSimple.existsUnique_edge (h : P.IsSimple) {u : α} (hu : u ∈ P.toSet)
@@ -866,16 +836,14 @@ lemma IsSimple.existsUnique_edge (h : P.IsSimple) {u : α} (hu : u ∈ P.toSet)
     | nil => exact huv (by simpa using hu)
     | cons => simp at hzero
   obtain ⟨s, hs, hus⟩ := P.mem_toSet_iff hP |>.mp hu
-  refine ⟨s, ⟨hs, hus⟩, ?_⟩
-  rintro t ⟨ht, hut⟩
+  refine ⟨s, ⟨hs, hus⟩, fun t ⟨ht, hut⟩ ↦ ?_⟩
   by_contra hst
   haveI hsymm : Std.Symm fun s t : α × α =>
       segment ℝ s.1 s.2 ∩ segment ℝ t.1 t.2 ⊆ ({s.1, s.2} ∩ {t.1, t.2} : Set α) := ⟨by
     intro p q hpq v hv
     have := hpq ⟨hv.2, hv.1⟩
     exact ⟨this.2, this.1⟩⟩
-  have hrel := h.2.forall hs ht (fun e => hst e.symm)
-  have huends := hrel ⟨hus, hut⟩
+  have huends := (h.2.forall hs ht (fun e => hst e.symm)) ⟨hus, hut⟩
   exact huv (huends.1.elim (fun e => e ▸ P.fst_mem_vertices hs)
     (fun e => e ▸ P.snd_mem_vertices hs))
 
@@ -898,10 +866,10 @@ lemma exists_hasNondegenerateEdges (P : PolygonalPath x y) :
       rw [hset, toSet_cons, segment_same]
       exact (union_eq_right.mpr fun u hu => hu ▸
         P.mem_toSet_of_mem_vertices P.first_mem_vertices).symm
-    · refine ⟨cons a b Q, hasNondegenerateEdges_cons.mpr ⟨hab, hQ⟩, ?_, ?_⟩
-      · simp [hset]
-      · simp
-        omega
+    refine ⟨cons a b Q, hasNondegenerateEdges_cons.mpr ⟨hab, hQ⟩, ?_, ?_⟩
+    · simp [hset]
+    simp
+    omega
 
 private lemma exists_first_inter_toSet {a b : α} (Q : PolygonalPath x y) (hQ : 0 < Q.length)
     (hne : (segment ℝ a b ∩ Q.toSet).Nonempty) :
@@ -914,12 +882,12 @@ private lemma exists_first_inter_toSet {a b : α} (Q : PolygonalPath x y) (hQ : 
     hfinite.isCompact_biUnion fun e _ => isCompact_setOf_lineMap_mem_segment a b e.1 e.2
   have hmemT (t : ℝ) : t ∈ T ↔ t ∈ Icc 0 1 ∧ AffineMap.lineMap a b t ∈ Q.toSet := by
     simp only [T, U, mem_iUnion, mem_ofPred_eq]
-    constructor
+    refine ⟨?_, ?_⟩
     · rintro ⟨e, he, ht, hte⟩
       exact ⟨ht, Q.segment_subset_toSet he hte⟩
-    · rintro ⟨ht, htQ⟩
-      obtain ⟨e, he, hte⟩ := (Q.mem_toSet_iff hQ).mp htQ
-      exact ⟨e, he, ht, hte⟩
+    rintro ⟨ht, htQ⟩
+    obtain ⟨e, he, hte⟩ := (Q.mem_toSet_iff hQ).mp htQ
+    exact ⟨e, he, ht, hte⟩
   have hTne : T.Nonempty := by
     obtain ⟨w, hwab, hwQ⟩ := hne
     rw [segment_eq_image_lineMap] at hwab
@@ -941,10 +909,7 @@ private lemma exists_first_inter_toSet {a b : α} (Q : PolygonalPath x y) (hQ : 
         rw [segment_symm ℝ 1 m, segment_eq_Icc hmIcc.2]
   rw [himage] at hw
   obtain ⟨t, ht, rfl⟩ := hw.1
-  have htT : t ∈ T := (hmemT t).mpr ⟨⟨hmIcc.1.trans ht.1, ht.2⟩, hw.2⟩
-  have htm : t ≤ m := hm htT
-  have : t = m := le_antisymm htm ht.1
-  subst t
+  obtain rfl : t = m := le_antisymm (hm ((hmemT t).mpr ⟨⟨hmIcc.1.trans ht.1, ht.2⟩, hw.2⟩)) ht.1
   simp
 
 private noncomputable def suffixAt {x y : α} (P : PolygonalPath x y) {a : α}
@@ -987,10 +952,7 @@ private lemma suffixAt_toSet_subset {P : PolygonalPath x y} {a : α} (ha : a ∈
     split_ifs with hau hau
     · subst a
       exact subset_rfl
-    · simp only [toSet_cons]
-      refine union_subset_union_left P.toSet ?_
-      rw [← segment_union_eq_segment (openSegment_subset_segment ℝ u v hau)]
-      exact subset_union_right
+    · grind [toSet_cons, segment_union_eq_segment (openSegment_subset_segment ℝ u v hau)]
     exact (ih _).trans subset_union_right
 
 private lemma IsSimple.suffixAt {P : PolygonalPath x y} (h : P.IsSimple) {a : α}
@@ -1001,13 +963,7 @@ private lemma IsSimple.suffixAt {P : PolygonalPath x y} (h : P.IsSimple) {a : α
     rw [PolygonalPath.suffixAt]
     split_ifs with hau hau
     · subst a; exact h
-    · rw [isSimple_cons_iff] at h ⊢
-      obtain ⟨huv, hP, hinter⟩ := h
-      refine ⟨?_, hP, fun w hw => hinter ⟨?_, hw.2⟩⟩
-      · rintro rfl
-        exact huv (right_mem_openSegment_iff.mp hau)
-      · rw [← segment_union_eq_segment (openSegment_subset_segment ℝ u v hau)]
-        exact mem_union_right _ hw.1
+    · grind [isSimple_cons_iff, segment_union_eq_segment (openSegment_subset_segment ℝ u v hau)]
     exact ih h.of_cons _
 
 /-- **Arc extraction.** Every polygonal path contains a simple polygonal path with the same
@@ -1039,10 +995,9 @@ lemma exists_isSimple_toSet_subset (P : PolygonalPath x y) :
       exact subset_union_left
     | @cons b c y Q =>
       let R : PolygonalPath b y := cons b c Q
-      have hRpos : 0 < R.length := by simp [R]
       have hne : (segment ℝ b a ∩ R.toSet).Nonempty :=
         ⟨b, left_mem_segment ℝ b a, R.mem_toSet_of_mem_vertices R.first_mem_vertices⟩
-      obtain ⟨q, hq, hfirst⟩ := exists_first_inter_toSet R hRpos hne
+      obtain ⟨q, hq, hfirst⟩ := exists_first_inter_toSet R (by simp [R]) hne
       let B : PolygonalPath q y := R.suffixAt hq.2
       have hB : B.IsSimple := hQ.suffixAt hq.2
       have hBR : B.toSet ⊆ R.toSet := suffixAt_toSet_subset hq.2
@@ -1051,12 +1006,12 @@ lemma exists_isSimple_toSet_subset (P : PolygonalPath x y) :
       refine ⟨(direct a q).append B, isSimple_append_iff.mpr ?_, ?_⟩
       · exact ⟨isSimple_direct.mpr (fun haq => hqa haq.symm), hB,
           fun w hw ↦ hfirst ⟨by simpa [toSet_direct] using hw.1, hBR hw.2⟩⟩
-      · rw [toSet_append, toSet_direct, toSet_cons]
-        apply union_subset
-        · have hqS : q ∈ segment ℝ a b := by simpa [segment_symm] using hq.1
-          rw [← segment_union_eq_segment hqS]
-          exact subset_union_left.trans subset_union_left
-        · exact hBR.trans (hQP.trans subset_union_right)
+      rw [toSet_append, toSet_direct, toSet_cons]
+      apply union_subset
+      · have hqS : q ∈ segment ℝ a b := by simpa [segment_symm] using hq.1
+        rw [← segment_union_eq_segment hqS]
+        exact subset_union_left.trans subset_union_left
+      exact hBR.trans (hQP.trans subset_union_right)
 
 end Segments
 
@@ -1117,19 +1072,18 @@ lemma toSet_infinite_of_nontrivial [T1Space α] (h : P.toSet.Nontrivial) : P.toS
   P.isConnected_toSet.isPreconnected.infinite_of_nontrivial h
 
 lemma isTrivial_iff_toSet_eq_singleton [T1Space α] : P.IsTrivial ↔ P.toSet = {x} := by
-  constructor
+  refine ⟨?_, ?_⟩
   · intro h
     induction P with
     | nil => simp
     | cons a b P ih =>
-      have hab : b = a := h b (by simp [P.first_mem_vertices])
-      subst b
+      obtain rfl : b = a := h b (by simp [P.first_mem_vertices])
       rw [toSet_cons, segment_same, ih h.of_cons]
       simp
-  · intro h z hz
-    have hz' := P.mem_toSet_of_mem_vertices hz
-    rw [h] at hz'
-    simpa using hz'
+  intro h z hz
+  have hz' := P.mem_toSet_of_mem_vertices hz
+  rw [h] at hz'
+  simpa using hz'
 
 open unitInterval
 
@@ -1157,15 +1111,13 @@ lemma injective_toPath_iff : Injective P.toPath ↔ P.IsSimple ∧ 0 < P.length 
       change Injective ((Path.segment a b).trans Q.toPath) ↔
         (cons a b Q).IsSimple ∧ 0 < (cons a b Q).length
       rw [Path.trans_injective_iff]
-      constructor
+      refine ⟨?_, ?_⟩
       · rintro ⟨hseg, hQinj, hdj⟩
         obtain ⟨hQ, hQlen⟩ := ih.mp hQinj
-        refine ⟨isSimple_cons_iff.mpr ⟨?_, hQ, ?_⟩, by simp⟩
-        · intro hab
-          subst b
+        refine ⟨isSimple_cons_iff.mpr ⟨fun hab ↦ ?_, hQ, fun u hu ↦ ?_⟩, by simp⟩
+        · subst b
           exact zero_ne_one (hseg (a₁ := (0 : I)) (a₂ := 1) (by simp))
-        · intro u hu
-          by_contra hub
+        · by_contra hub
           have huS : u ∈ range (Path.segment a b) := by
             rw [Path.range_segment]
             exact hu.1
@@ -1173,19 +1125,19 @@ lemma injective_toPath_iff : Injective P.toPath ↔ P.IsSimple ∧ 0 < P.length 
             rw [← Q.toSet_eq_range_toPath]
             exact hu.2
           exact hdj.notMem_of_mem_left ⟨huS, hub⟩ huQ
-      · rintro ⟨hsimple, hlen⟩
-        obtain ⟨hab, hQ, hinter⟩ := isSimple_cons_iff.mp hsimple
-        have hQlen : 0 < Q.length := by simp [Q]
-        refine ⟨Path.segment_injective_of_ne hab, ih.mpr ⟨hQ, hQlen⟩, ?_⟩
-        rw [Set.disjoint_left]
-        rintro u ⟨huS, hub⟩ huQ
-        have huS' : u ∈ segment ℝ a b := by
-          rw [← Path.range_segment]
-          exact huS
-        have huQ' : u ∈ Q.toSet := by
-          rw [Q.toSet_eq_range_toPath]
-          exact huQ
-        exact hub (hinter ⟨huS', huQ'⟩)
+      rintro ⟨hsimple, hlen⟩
+      obtain ⟨hab, hQ, hinter⟩ := isSimple_cons_iff.mp hsimple
+      have hQlen : 0 < Q.length := by simp [Q]
+      refine ⟨Path.segment_injective_of_ne hab, ih.mpr ⟨hQ, hQlen⟩, ?_⟩
+      rw [Set.disjoint_left]
+      rintro u ⟨huS, hub⟩ huQ
+      have huS' : u ∈ segment ℝ a b := by
+        rw [← Path.range_segment]
+        exact huS
+      have huQ' : u ∈ Q.toSet := by
+        rw [Q.toSet_eq_range_toPath]
+        exact huQ
+      exact hub (hinter ⟨huS', huQ'⟩)
 
 /-! ### Cutting at, and inserting, a point of the image -/
 
@@ -1303,9 +1255,9 @@ lemma vertices_subset_vertices_subdivide :
       next hauv =>
         simp only [vertices_cons, mem_cons, append_vertices, vertices_direct, tail_cons,
           mem_append] at hw ⊢
-        rcases hw with hw | hw
+        obtain hw | hw := hw
         · exact Or.inl (Or.inl hw)
-        · exact Or.inr hw
+        exact Or.inr hw
       next hauv =>
         have ha' : a ∈ P.toSet := by
           simp only [toSet_cons, mem_union] at ha
@@ -1340,13 +1292,11 @@ lemma vertices_subset_vertices_subdivide :
       next hauv =>
         have hua : u ≠ a := fun h => hau h.symm
         have huv : u ≠ v := by
-          intro h
-          subst v
+          rintro rfl
           rw [openSegment_same] at hauv
           exact hua (mem_singleton_iff.mp hauv).symm
         have hav : a ≠ v := by
-          intro h
-          subst a
+          rintro rfl
           exact huv (right_mem_openSegment_iff.mp hauv)
         have hinter : segment ℝ u a ∩ segment ℝ a v = {a} :=
           segment_inter_subsegments_eq_singleton huv hauv
@@ -1381,13 +1331,13 @@ lemma vertices_subset_vertices_subdivide :
       next hauv =>
         have ha' : a ∈ P.toSet := by
           simp only [toSet_cons, mem_union] at ha
-          rcases ha with ha | ha
+          obtain ha | ha := ha
           · by_cases hav : a = v
             · subst a
               exact P.mem_toSet_of_mem_vertices P.first_mem_vertices
             · exact (hauv (mem_openSegment_of_ne_left_right
                 (fun h => hau h.symm) (fun h => hav h.symm) ha)).elim
-          · exact ha
+          exact ha
         change (cons u v (P.subdivide ha')).IsSimple ↔ (cons u v P).IsSimple
         rw [isSimple_cons_iff, ih ha', toSet_subdivide]
         exact (isSimple_cons_iff (a := u) (b := v) (P := P)).symm
@@ -1397,8 +1347,67 @@ point. This is the open version of the "two arcs" decomposition of a simple clos
 lemma IsSimple.breakAt (h : P.IsSimple) (ha : a ∈ P.toSet) :
     (P.breakAt ha).1.IsSimple ∧ (P.breakAt ha).2.IsSimple ∧
       (P.breakAt ha).1.toSet ∩ (P.breakAt ha).2.toSet = {a} := by
-  have hs : (P.subdivide ha).IsSimple := (isSimple_subdivide_iff ha).mpr h
-  simpa only [subdivide, isSimple_append_iff'] using hs
+  simpa only [subdivide, isSimple_append_iff'] using ((isSimple_subdivide_iff ha).mpr h)
+
+/-- The two pieces of `IsSimple.breakAt` are the two *parameter* halves of `P.toPath`.
+
+`IsSimple.breakAt` identifies the pieces combinatorially, as polygonal paths; this identifies them
+analytically. An embedded arc has an injective `toPath`, so each piece is a connected subset of the
+image whose parameter preimage is an interval, and the two intervals meet only at `t₀`
+(`Path.image_Icc_subset_of_isConnected`). Callers cutting a cell twice — once at each end — need
+this to compose the two cuts, since the second cut is taken in the *first piece's* parametrisation
+while the conclusion has to be stated in `P`'s. -/
+@[grind →]
+lemma IsSimple.toSet_breakAt_eq [T2Space α] (hP : P.IsSimple) (hlen : 0 < P.length)
+    (ha : a ∈ P.toSet) {t₀ : I} (ht₀ : P.toPath t₀ = a) :
+    (P.breakAt ha).1.toSet = P.toPath '' Set.Icc (0 : I) t₀ ∧
+    (P.breakAt ha).2.toSet = P.toPath '' Set.Icc t₀ (1 : I) := by
+  have hinj : Function.Injective P.toPath := (injective_toPath_iff P).mpr ⟨hP, hlen⟩
+  obtain ⟨_, _, hAB⟩ := hP.breakAt ha
+  have hunion := P.breakAt_toSet_union (ha := ha)
+  have hAsub : (P.breakAt ha).1.toSet ⊆ Set.range P.toPath := by
+    rw [← P.toSet_eq_range_toPath, ← hunion]; exact Set.subset_union_left
+  have hBsub : (P.breakAt ha).2.toSet ⊆ Set.range P.toPath := by
+    rw [← P.toSet_eq_range_toPath, ← hunion]; exact Set.subset_union_right
+  have hA : P.toPath '' Set.Icc (0 : I) t₀ ⊆ (P.breakAt ha).1.toSet :=
+    Path.image_Icc_subset_of_isConnected hinj (P.breakAt ha).1.isConnected_toSet hAsub
+      (by simp [Path.source]) (by simp [ht₀])
+  have hB : P.toPath '' Set.Icc t₀ (1 : I) ⊆ (P.breakAt ha).2.toSet :=
+    Path.image_Icc_subset_of_isConnected hinj (P.breakAt ha).2.isConnected_toSet hBsub
+      (by simp [ht₀]) (by simp [Path.target])
+  refine ⟨subset_antisymm ?_ hA, subset_antisymm ?_ hB⟩
+  · intro w hw
+    obtain ⟨t, rfl⟩ : w ∈ Set.range P.toPath := by
+      have : w ∈ P.toSet := hunion ▸ Or.inl hw
+      rwa [P.toSet_eq_range_toPath] at this
+    refine ⟨t, ⟨bot_le, ?_⟩, rfl⟩
+    by_contra ht
+    have ht' : t₀ < t := lt_of_not_ge ht
+    have hinter : P.toPath t ∈ (P.breakAt ha).1.toSet ∩ (P.breakAt ha).2.toSet :=
+      ⟨hw, hB ⟨t, ⟨ht'.le, le_top⟩, rfl⟩⟩
+    rw [hAB, Set.mem_singleton_iff] at hinter
+    exact ht'.ne' (hinj (hinter.trans ht₀.symm))
+  intro w hw
+  obtain ⟨t, rfl⟩ : w ∈ Set.range P.toPath := by
+    have : w ∈ P.toSet := hunion ▸ Or.inr hw
+    rwa [P.toSet_eq_range_toPath] at this
+  refine ⟨t, ⟨?_, le_top⟩, rfl⟩
+  by_contra ht
+  have ht' : t < t₀ := lt_of_not_ge ht
+  have hinter : P.toPath t ∈ (P.breakAt ha).1.toSet ∩ (P.breakAt ha).2.toSet :=
+    ⟨hA ⟨t, ⟨bot_le, ht'.le⟩, rfl⟩, hw⟩
+  rw [hAB, Set.mem_singleton_iff] at hinter
+  exact ht'.ne (hinj (hinter.trans ht₀.symm))
+
+/-- Regression test for the `@[grind →]` above; it fails if the tag is removed.
+
+The forward form is forced. `@[grind =]` is rejected twice over: the conclusion is a conjunction,
+not an equality, and even after splitting it the left-hand side `(P.breakAt ha).1.toSet` does not
+mention `t₀`, so the pattern could not instantiate it. The antecedent `P.toPath t₀ = a` is the only
+place every variable appears together, and it is specific — headed by `toPath` — so keying there
+costs nothing outside this API. -/
+example [T2Space α] (hP : P.IsSimple) (hlen : 0 < P.length) (ha : a ∈ P.toSet) {t₀ : I}
+    (ht₀ : P.toPath t₀ = a) : (P.breakAt ha).1.toSet = P.toPath '' Set.Icc (0 : I) t₀ := by grind
 
 omit [ContinuousAdd α] in
 /-- Locally, a simple path looks like the unique segment through the given point. This is the local
@@ -1420,9 +1429,7 @@ lemma exists_nhds_inter_toSet_eq [IsTopologicalAddGroup α] [T2Space α] {s : α
     have hts : t = s := h.unique ⟨ht.1, hat⟩ ⟨hs, has⟩
     exact ht.2 hts
   refine ⟨Kᶜ, hK.isOpen_compl.mem_nhds haK, ?_⟩
-  apply Set.ext
-  intro w
-  constructor
+  refine Set.ext (fun w ↦ ⟨?_, ?_⟩)
   · rintro ⟨hwK, hwP⟩
     have hPpos : 0 < P.length := by
       rw [← P.edges_length]
@@ -1435,10 +1442,161 @@ lemma exists_nhds_inter_toSet_eq [IsTopologicalAddGroup α] [T2Space α] {s : α
       exact hwK (by
         simp only [K, mem_iUnion]
         exact ⟨t, ⟨ht, hts⟩, hwt⟩)
-  · rintro ⟨hwK, hws⟩
-    exact ⟨hwK, P.segment_subset_toSet hs hws⟩
+  exact fun ⟨hwK, hws⟩ ↦ ⟨hwK, P.segment_subset_toSet hs hws⟩
 
 end Path
 
+/-! ### First and last edges of a path -/
+
+section Edges
+
+variable {x y : α}
+
+/-- A path of positive length has an edge ending at its last vertex. -/
+@[grind →]
+lemma exists_edge_ending_at_last {x y : α} {P : PolygonalPath x y} (h : 0 < P.length) :
+    ∃ a, (a, y) ∈ P.edges := by
+  have hrev : 0 < P.reverse.length := by simpa using h
+  cases hP : P.reverse with
+  | nil => simp [hP] at hrev
+  | cons _ a Q =>
+    refine ⟨a, ?_⟩
+    have : (y, a) ∈ P.reverse.edges := by simp [hP]
+    simpa [reverse_edges] using this
+
+/-- A path of positive length has an edge starting at its first vertex. -/
+@[grind →]
+lemma exists_edge_starting_at_first {x y : α} {P : PolygonalPath x y} (h : 0 < P.length) :
+    ∃ b, (x, b) ∈ P.edges := by
+  cases P with
+  | nil => simp at h
+  | cons _ b Q => exact ⟨b, by simp⟩
+
+@[simp, grind =]
+lemma edges_cast {x y x' y' : α} (P : PolygonalPath x y) (hx : x = x') (hy : y = y') :
+    (P.cast hx hy).edges = P.edges := by
+  subst hx; subst hy; rfl
+
+/-- Casting the right factor of an append agrees with casting the append. -/
+@[grind =]
+lemma append_cast_right {x p y : α} (A : PolygonalPath x p) (B : PolygonalPath p y)
+    (heq : y = x) :
+    (A.append B).cast rfl heq = A.append (B.cast rfl heq) := by
+  induction heq
+  rfl
+
+end Edges
+
+/-! ### The edge of a simple path through one of its endpoints -/
+
+section SimpleEdge
+
+variable [AddCommGroup α] [Module ℝ α]
+
+/-- In a simple path, the only edge whose segment contains the last vertex is the last edge. -/
+@[grind →]
+lemma eq_last_edge_of_mem_segment {x p : α} {A : PolygonalPath x p} (hA : A.IsSimple)
+    {a : α} (ha : (a, p) ∈ A.edges) {s : α × α} (hs : s ∈ A.edges)
+    (hps : p ∈ segment ℝ s.1 s.2) : s = (a, p) := by
+  have ha' : (p, a) ∈ A.reverse.edges := by simpa [reverse_edges] using ha
+  have hs' : (s.2, s.1) ∈ A.reverse.edges := by simpa [reverse_edges] using hs
+  have hps' : p ∈ segment ℝ s.2 s.1 := by rwa [segment_symm]
+  cases hArev : A.reverse with
+  | nil =>
+    have hlen : A.reverse.length = 0 := by rw [hArev]; rfl
+    have : A.length = 0 := by simpa using hlen
+    cases A with
+    | nil => simp at ha
+    | cons => simp at this
+  | cons _ b Q =>
+    have hAr' : (cons p b Q).IsSimple := hArev ▸ (isSimple_reverse.mpr hA)
+    obtain ⟨hpb, hQ, hmeet⟩ := isSimple_cons_iff.mp hAr'
+    have ha_mem : (p, a) ∈ (p, b) :: Q.edges := by
+      simpa [hArev, edges_cons] using ha'
+    have hb_eq : a = b := by
+      obtain heq | haQ := List.mem_cons.mp ha_mem
+      · exact (Prod.mk.inj heq).2
+      exact ((List.nodup_cons.mp hAr'.1).1 (Q.fst_mem_vertices haQ)).elim
+    subst b
+    have hs_mem : (s.2, s.1) ∈ (p, a) :: Q.edges := by
+      simpa [hArev, edges_cons] using hs'
+    rcases List.mem_cons.mp hs_mem with heq | hsQ
+    · grind
+    have hpQ : p ∈ Q.toSet := Q.segment_subset_toSet hsQ hps'
+    have : p = a := mem_singleton_iff.mp (hmeet ⟨left_mem_segment ℝ p a, hpQ⟩)
+    exact (hpb this).elim
+
+/-- In a simple path, the only edge whose segment contains the first vertex is the first
+edge. -/
+@[grind →]
+lemma eq_first_edge_of_mem_segment {p y : α} {B : PolygonalPath p y} (hB : B.IsSimple)
+    {b : α} (hb : (p, b) ∈ B.edges) {s : α × α} (hs : s ∈ B.edges)
+    (hps : p ∈ segment ℝ s.1 s.2) : s = (p, b) := by
+  cases hBcases : B with
+  | nil => simp [hBcases] at hb
+  | cons _ c Q =>
+    have hBsimp : (cons p c Q).IsSimple := hBcases ▸ hB
+    obtain ⟨hpc, hQ, hmeet⟩ := isSimple_cons_iff.mp hBsimp
+    have hb_mem : (p, b) ∈ (p, c) :: Q.edges := by
+      simpa [hBcases, edges_cons] using hb
+    have hc_eq : b = c := by
+      rcases List.mem_cons.mp hb_mem with heq | hbQ
+      · exact (Prod.mk.inj heq).2
+      exact ((List.nodup_cons.mp hBsimp.1).1 (Q.fst_mem_vertices hbQ)).elim
+    subst c
+    have hs_mem : s ∈ (p, b) :: Q.edges := by
+      simpa [hBcases, edges_cons] using hs
+    rcases List.mem_cons.mp hs_mem with heq | hsQ
+    · exact heq
+    have hpQ : p ∈ Q.toSet := Q.segment_subset_toSet hsQ hps
+    have : p = b := mem_singleton_iff.mp (hmeet ⟨left_mem_segment ℝ p b, hpQ⟩)
+    exact (hpc this).elim
+
+end SimpleEdge
+
+section Metric
+
+variable [NormedAddCommGroup α] [NormedSpace ℝ α]
+
+open Metric
+
+/-- A simple polygonal path meets a small enough ball around its start in its first segment only.
+
+**The radius has to be chosen after the path.** A path may perfectly well leave a *fixed* ball
+around its start and come back into it; what simplicity rules out is only that it returns to `x`
+itself. So the statement produces a `ρ`, and any consumer needing a bound of this shape at a radius
+it also gets from elsewhere must take the minimum of the two.
+
+Route: `toSet_eq_insert_biUnion` writes `P.toSet` as `{y}` together with finitely many segments.
+The tail `Q.toSet` is compact (`isCompact_segment`, `Set.Finite.isCompact_biUnion`) and misses `x`
+by simplicity, so `exists_pos_le_dist_of_notMem` (`ForMathlib/Topology/MetricSpace.lean`) bounds `ρ`
+away from it; half that bound is small enough. -/
+theorem exists_ball_inter_subset_firstSegment {x y : α} {P : PolygonalPath x y}
+    (hP : P.IsSimple) (hxy : x ≠ y) :
+    ∃ ρ > 0, ∃ z ≠ x, P.toSet ∩ closedBall x ρ ⊆ segment ℝ x z ∧ segment ℝ x z ⊆ P.toSet := by
+  classical
+  cases P with
+  | nil => exact (hxy rfl).elim
+  | @cons _ b _ Q =>
+    obtain ⟨hab, -, hinter⟩ := isSimple_cons_iff.mp hP
+    have hxQ : x ∉ Q.toSet := by
+      intro hx
+      have : x ∈ segment ℝ x b ∩ Q.toSet := ⟨left_mem_segment _ _ _, hx⟩
+      exact hab (by simpa using hinter this)
+    have hKcompact : IsCompact Q.toSet := by
+      rw [toSet_eq_insert_biUnion]
+      exact isCompact_singleton.union
+        (Q.edges.finite_toSet.isCompact_biUnion fun _ _ ↦ isCompact_segment _ _)
+    obtain ⟨δ, hδpos, hδle⟩ := exists_pos_le_dist_of_notMem hKcompact.isClosed hxQ
+    refine ⟨δ / 2, half_pos hδpos, b, hab.symm, fun u ⟨huP, huball⟩ ↦ ?_, ?_⟩
+    · rw [toSet_cons] at huP
+      obtain huseg | huQ := huP
+      · exact huseg
+      · linarith [mem_closedBall'.mp huball, hδle u huQ, hδpos]
+    have hedge : (x, b) ∈ (cons x b Q).edges := by
+      simp [edges_cons]
+    exact (cons x b Q).segment_subset_toSet hedge
+
+end Metric
 
 end PolygonalPath

@@ -14,6 +14,7 @@ in `Mathlib.Analysis.Convex.Segment`.
 
 * `segment_union_eq_segment`, `affineSegment_union_eq_affineSegment` : splitting a segment at one
   of its points, in a module and in an affine space respectively.
+* `segment_subset_segment_right` : shortening a segment at its right endpoint.
 * `isCompact_setOf_lineMap_mem_segment`, `convex_setOf_lineMap_mem_segment` : the set of
   parameters `t ∈ [0,1]` with `lineMap a b t ∈ [c, d]` is compact and convex, hence a closed
   interval (`exists_eq_Icc_setOf_lineMap_mem_segment`).
@@ -39,6 +40,14 @@ set.
 open Set Function
 
 /-! ### Splitting a segment -/
+
+/-- Shortening a segment at its right endpoint. The containment half of
+`segment_union_eq_segment`, but with far weaker hypotheses — no order on `𝕜` beyond
+`IsOrderedRing`, since it is only convexity of the target. -/
+lemma segment_subset_segment_right {𝕜 E : Type*} [Semiring 𝕜] [PartialOrder 𝕜] [IsOrderedRing 𝕜]
+    [AddCommMonoid E] [Module 𝕜 E] {x y z : E} (hz : z ∈ segment 𝕜 x y) :
+    segment 𝕜 x z ⊆ segment 𝕜 x y :=
+  (convex_segment x y).segment_subset (left_mem_segment 𝕜 x y) hz
 
 /-- Splitting a segment at one of its points. -/
 lemma segment_union_eq_segment {𝕜 E : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
@@ -214,6 +223,7 @@ section OpenSegment
 variable {E : Type*} [AddCommGroup E] [Module ℝ E] {p a b : E}
 
 /-- An interior point of a segment differs from its left endpoint. -/
+@[grind →]
 lemma ne_of_mem_openSegment_left (hab : a ≠ b) (hp : p ∈ openSegment ℝ a b) : a ≠ p := by
   obtain ⟨t, ⟨ht0, _⟩, rfl⟩ := (openSegment_eq_image_lineMap (𝕜 := ℝ) a b).symm ▸ hp
   intro h
@@ -222,6 +232,7 @@ lemma ne_of_mem_openSegment_left (hab : a ≠ b) (hp : p ∈ openSegment ℝ a b
   exact ht0.ne' ht
 
 /-- An interior point of a segment differs from its right endpoint. -/
+@[grind →]
 lemma ne_of_mem_openSegment_right (hab : a ≠ b) (hp : p ∈ openSegment ℝ a b) : b ≠ p := by
   obtain ⟨t, ⟨_, ht1⟩, rfl⟩ := (openSegment_eq_image_lineMap (𝕜 := ℝ) a b).symm ▸ hp
   intro h

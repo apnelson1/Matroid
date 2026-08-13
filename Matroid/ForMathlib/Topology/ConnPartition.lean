@@ -82,3 +82,16 @@ structure AdjRegion (S T₁ T₂ : Set α) : Prop where
   h : (frontier T₁) ∩ (frontier T₂) |>.Nonempty
 
 end PathComponentPartition
+
+section ComponentCarriers
+
+/-- Distinct connected components of a subspace have disjoint carriers in the ambient space. -/
+lemma disjoint_val_image_connectedComponents {S : Set α} {F F' : ConnectedComponents ↥S}
+    (hne : F ≠ F') : Disjoint (Subtype.val '' (ConnectedComponents.mk ⁻¹' {F}))
+    (Subtype.val '' (ConnectedComponents.mk ⁻¹' {F'})) := by
+  refine Set.disjoint_left.mpr ?_
+  rintro _ ⟨a, haF, rfl⟩ ⟨b, hbF, heq⟩
+  obtain rfl : a = b := Subtype.ext heq.symm
+  exact hne ((Set.mem_singleton_iff.mp haF).symm.trans (Set.mem_singleton_iff.mp hbF))
+
+end ComponentCarriers

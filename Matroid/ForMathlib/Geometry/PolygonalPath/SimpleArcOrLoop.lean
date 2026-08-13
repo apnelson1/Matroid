@@ -137,4 +137,47 @@ lemma IsSimpleArcOrLoop.injOn_toPath_Ioo (h : P.IsSimpleArcOrLoop) :
   · rw [cast_rfl] at h
     exact (show Path.IsSimpleLoop P.toPath from h).injOn_ioo
 
+/-! ### Splitting a simple arc or loop at an interior vertex
+
+Cutting at a vertex other than the source leaves two simple pieces meeting only at the shared
+endpoints — whichever branch of `IsSimpleArcOrLoop` holds. -/
+
+section Append
+
+variable {x p y : α} {A : PolygonalPath x p} {B : PolygonalPath p y}
+
+@[grind →]
+lemma IsSimpleArcOrLoop.isSimple_left {x p y : α}
+    {A : PolygonalPath x p} {B : PolygonalPath p y}
+    (h : (A.append B).IsSimpleArcOrLoop) (hxp : x ≠ p) : A.IsSimple := by
+  rcases h with ⟨hS, _⟩ | ⟨heq, hL⟩
+  · exact hS.of_append_left
+  · subst y
+    rw [cast_rfl] at hL
+    exact IsSimpleLoop.isSimple_of_append_left hxp hL
+
+@[grind →]
+lemma IsSimpleArcOrLoop.isSimple_right {x p y : α}
+    {A : PolygonalPath x p} {B : PolygonalPath p y}
+    (h : (A.append B).IsSimpleArcOrLoop) (hxp : x ≠ p) : B.IsSimple := by
+  rcases h with ⟨hS, _⟩ | ⟨heq, hL⟩
+  · exact hS.of_append_right
+  · subst y
+    rw [cast_rfl] at hL
+    exact (isSimpleLoop_append_iff hxp).mp hL |>.2.1
+
+@[grind →]
+lemma IsSimpleArcOrLoop.toSet_inter_subset {x p y : α}
+    {A : PolygonalPath x p} {B : PolygonalPath p y}
+    (h : (A.append B).IsSimpleArcOrLoop) (hxp : x ≠ p) :
+    A.toSet ∩ B.toSet ⊆ ({x, p} : Set α) := by
+  rcases h with ⟨hS, _⟩ | ⟨heq, hL⟩
+  · intro u hu
+    exact Or.inr ((isSimple_append_iff.mp hS).2.2 hu)
+  · subst y
+    rw [cast_rfl] at hL
+    exact ((isSimpleLoop_append_iff hxp).mp hL).2.2.le
+
+end Append
+
 end PolygonalPath

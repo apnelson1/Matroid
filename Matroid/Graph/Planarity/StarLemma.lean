@@ -1,6 +1,9 @@
 import Matroid.Graph.Planarity.PLDrawing
 import Matroid.Graph.Planarity.Face
 import Matroid.ForMathlib.Geometry.DiskMinusRadii
+import Matroid.ForMathlib.Geometry.SegmentFigure
+import Matroid.ForMathlib.Geometry.StarComponents
+import Matroid.ForMathlib.Topology.ConnPartition
 import Matroid.ForMathlib.Analysis.Convex.RadialPoint
 import Mathlib.Analysis.Normed.Affine.AddTorsor
 
@@ -51,304 +54,45 @@ namespace PLDrawing
 
 /-! ### 3.6, the star lemma -/
 
-/- **Proof route for `exists_radius`** (formalisation helper). Status.md 3.6's proof is complete and
-correct; what follows is only which Lean declarations carry it, all checked against this pin.
+/- `exists_radius` used to be proved here, over ~125 lines. Its proof used the drawing exactly
+twice, both as `range D.toDrawing.vertex` and both times only for finiteness; everything else came
+from `exists_finite_support`, whose conclusion is `IsSegmentFigure`. It is therefore a fact about
+finite unions of segments, and now lives in `Matroid/ForMathlib/Geometry/SegmentFigure.lean`
+(Kuratowski `Decisions.md` D14: a file mentioning no `Graph`, `V(`, `E(` is not a planarity file).
 
-*Prerequisite.* `PLDrawing.exists_finite_support` (`PLDrawing.lean:127`, proved). Everything below
-assumes the support is `range vertex ∪ ⋃ s ∈ S, segment ℝ s.1 s.2` for a finite `S`.
-
-*The radius.* Split `S` into the segments whose closure contains `p` and the rest. The rest has
-compact union — `isCompact_segment` in `Matroid/ForMathlib/Analysis/Convex/Segment.lean`, then
-`Set.Finite.isCompact_biUnion` — and does not contain `p`, so
-`IsClosed.notMem_iff_infDist_pos` (`Mathlib/Topology/MetricSpace/HausdorffDistance.lean`, and
-`infDist_pos_iff_notMem_closure` at `:692`) gives a positive lower bound. Take `ρ` below that, below
-`dist p s.1` and `dist p s.2` for each remaining segment, and below `Finset.min'` of the finitely
-many such numbers. `Y` is then the set of points where those segments cross `sphere p ρ`.
-
-*The expensive half.* The `⊇` direction of the stated equality — that every segment germ at `p` is
-captured and nothing else intrudes — is the whole cost; the `⊆` direction follows from the radius
-choice. Distinctness of the `y_i` is `D.toDrawing.injective`.
-
-*The two corollaries* (`exists_radius_vertex`, `exists_radius_edgeInterior`) are separate
-obligations on top: the degree count `(Y.card : ℕ∞) = G.degree v.1` needs a bijection between `Y`
-and the edge-ends at `v`, with a loop supplying two, and is not implied by `exists_radius`.
-
-Nothing in this block needs the plane; the statement is over a real normed space deliberately
-(Kuratowski `Decisions.md` D11). Only the *count* of complementary pieces is two-dimensional. -/
+Moving it is what unblocks Status.md 3.9: a θ-curve is three polygonal arcs with no drawing
+anywhere, so it could never reach the drawing-shaped statement, and manufacturing a `PLDrawing` of
+`Graph.banana` to fake one leads back to `exists_radius_vertex`, whose degree conjunct is still
+open (SegmentFigure counting is done; see the handoff on that theorem). -/
 
 /- Dropped `Y.Nonempty`: Status.md's `d ≥ 1` conflicts with `d = deg v` at isolated vertices;
 the star there is `{p}` with `Y = ∅`, so the equality uses `{p} ∪ ⋃ …`. -/
 
-
-/-- A point off a closed set stays a fixed positive distance from all of it. The bound is stated
-pointwise rather than as `infDist p K`, which is what lets the empty case go without its own
-branch: `infDist p ∅ = 0`, but `∀ x ∈ ∅, _` is vacuous. -/
-private lemma exists_pos_le_dist_of_notMem {K : Set V} (hK : IsClosed K) {p : V} (hp : p ∉ K) :
-    ∃ δ > 0, ∀ x ∈ K, δ ≤ dist p x := by
-  obtain rfl | hne := K.eq_empty_or_nonempty
-  · exact ⟨1, one_pos, by simp⟩
-  exact ⟨infDist p K, (hK.notMem_iff_infDist_pos hne).mp hp, fun _ hx ↦ infDist_le_dist_of_mem hx⟩
+/-- The support of a polygonal drawing of a finite graph is a segment figure. This is the whole of
+what the star lemma uses about a drawing. -/
+theorem isSegmentFigure_support [G.Finite] (D : PLDrawing G V) :
+    IsSegmentFigure D.toDrawing.support := by
+  obtain ⟨S, hSfin, hsupp⟩ := D.exists_finite_support
+  exact ⟨_, S, Set.finite_range _, hSfin, hsupp⟩
 
 /-- **The star lemma.** About each of its points, a polygonal drawing of a finite graph meets a
 small enough closed ball in a union of straight radii, one for each direction in which the drawing
 leaves the point.
 
-No hypothesis on the ambient space beyond a norm: the radius is chosen below the distance from `p`
-to the finitely many segments not touching it, below the length of each segment ending at `p`, and
-below the distance to the endpoints of a segment through `p`. -/
+No hypothesis on the ambient space beyond a norm. This is `IsSegmentFigure.exists_radius`
+specialised along `isSegmentFigure_support`; nothing about graphs enters its proof. -/
 theorem exists_radius [G.Finite] (D : PLDrawing G V) {p : V} (hp : p ∈ D.toDrawing.support) :
     ∃ ρ > 0, ∃ Y : Finset V, ↑Y ⊆ sphere p ρ ∧
-      closedBall p ρ ∩ D.toDrawing.support = {p} ∪ ⋃ y ∈ Y, segment ℝ p y := by
-  classical
-  obtain ⟨S0, hSfin, hsupp⟩ := D.exists_finite_support
-  let Sp : Set (V × V) := {s ∈ S0 | p ∈ segment ℝ s.1 s.2}
-  let Srest : Set (V × V) := {s ∈ S0 | p ∉ segment ℝ s.1 s.2}
-  have hSpfin : Sp.Finite := hSfin.subset fun _ h ↦ h.1
-  have hSrestfin : Srest.Finite := hSfin.subset fun _ h ↦ h.1
-  let K : Set V := (range D.toDrawing.vertex \ {p}) ∪ ⋃ s ∈ Srest, segment ℝ s.1 s.2
-  have hKcompact : IsCompact K :=
-    (((Set.finite_range D.toDrawing.vertex).subset sdiff_subset).isCompact).union
-      (hSrestfin.isCompact_biUnion fun _ _ ↦ isCompact_segment _ _)
-  have hKclosed : IsClosed K := hKcompact.isClosed
-  have hpK : p ∉ K := by
-    refine not_or.mpr ⟨fun h ↦ h.2 rfl, ?_⟩
-    intro hp'
-    obtain ⟨s, hs, hseg⟩ := mem_iUnion₂.mp hp'
-    exact hs.2 hseg
-  obtain ⟨δ, hδpos, hδle⟩ := exists_pos_le_dist_of_notMem hKclosed hpK
-  -- Everything below is a statement about an *endpoint* of a segment through `p`, and never about
-  -- which of the two endpoints it is. Ranging over endpoints rather than over pairs is what
-  -- removes the `s.1`/`s.2` duplication from the four facts that follow.
-  let ends : Finset V := hSpfin.toFinset.biUnion fun s ↦ ({s.1, s.2} : Finset V).erase p
-  have hends_ne : ∀ z ∈ ends, z ≠ p := by
-    intro z hz
-    obtain ⟨s, -, hz⟩ := Finset.mem_biUnion.mp hz
-    exact Finset.ne_of_mem_erase hz
-  have hends_seg : ∀ z ∈ ends, ∃ s ∈ Sp, segment ℝ p z ⊆ segment ℝ s.1 s.2 := by
-    intro z hz
-    obtain ⟨s, hsF, hz⟩ := Finset.mem_biUnion.mp hz
-    have hs := hSpfin.mem_toFinset.mp hsF
-    have hsplit := segment_union_eq_segment hs.2
-    have hz' := Finset.mem_of_mem_erase hz
-    simp only [Finset.mem_insert, Finset.mem_singleton] at hz'
-    refine ⟨s, hs, ?_⟩
-    obtain rfl | rfl := hz'
-    · rw [← hsplit, segment_symm]
-      exact subset_union_left
-    rw [← hsplit]
-    exact subset_union_right
-  have hmem_ends : ∀ s ∈ Sp, ∀ z, z = s.1 ∨ z = s.2 → z ≠ p → z ∈ ends := fun s hs z hz hzp ↦
-    Finset.mem_biUnion.mpr
-      ⟨s, hSpfin.mem_toFinset.mpr hs, Finset.mem_erase.mpr ⟨hzp, by simpa using hz⟩⟩
-  let dists : Finset ℝ := ends.image (dist p ·)
-  have hdists_pos : ∀ d ∈ dists, 0 < d := by
-    intro d hd
-    obtain ⟨z, hz, rfl⟩ := Finset.mem_image.mp hd
-    exact dist_pos.mpr (hends_ne z hz).symm
-  let bounds : Finset ℝ := insert δ (insert (1 : ℝ) dists)
-  have hbounds_ne : bounds.Nonempty := Finset.insert_nonempty _ _
-  let ρ : ℝ := bounds.min' hbounds_ne / 2
-  have hρpos : 0 < ρ := half_pos <| by
-    have hxpos : ∀ x ∈ bounds, 0 < x := by
-      intro x hx
-      rcases Finset.mem_insert.mp hx with rfl | hx
-      · exact hδpos
-      · rcases Finset.mem_insert.mp hx with rfl | hx
-        · norm_num
-        · exact hdists_pos x hx
-    exact hxpos _ (Finset.min'_mem _ _)
-  have hρ_lt_δ : ρ < δ :=
-    calc
-      ρ = bounds.min' hbounds_ne / 2 := rfl
-      _ ≤ δ / 2 :=
-        div_le_div_of_nonneg_right (Finset.min'_le _ _ (Finset.mem_insert_self _ _)) (by norm_num)
-      _ < δ := half_lt_self hδpos
-  have hρ_le_end : ∀ z ∈ ends, ρ ≤ dist p z := by
-    intro z hz
-    have hle : bounds.min' hbounds_ne ≤ dist p z :=
-      Finset.min'_le _ _ (Finset.mem_insert_of_mem
-        (Finset.mem_insert_of_mem (Finset.mem_image_of_mem _ hz)))
-    exact (div_le_div_of_nonneg_right hle (by norm_num)).trans (half_le_self dist_nonneg)
-  have hnotK {x : V} (hxball : x ∈ closedBall p ρ) (hxK : x ∈ K) : False := by
-    have hle := hδle x hxK
-    rw [PseudoMetricSpace.dist_comm] at hle
-    linarith [mem_closedBall.mp hxball, hρ_lt_δ]
-  let Y : Finset V := ends.image (radialPoint p · ρ)
-  have hYsphere : ↑Y ⊆ sphere p ρ := by
-    intro y hy
-    obtain ⟨z, hz, rfl⟩ := Finset.mem_image.mp (show y ∈ Y from hy)
-    exact mem_sphere_radialPoint p z hρpos.le (hends_ne z hz)
-  refine ⟨ρ, hρpos, Y, hYsphere, subset_antisymm ?_ ?_⟩
-  · intro x ⟨hxball, hxsup⟩
-    rw [hsupp] at hxsup
-    rcases hxsup with hxV | hxS
-    · rcases eq_or_ne x p with rfl | hxp
-      · exact Or.inl rfl
-      · exact (hnotK hxball (Or.inl ⟨hxV, hxp⟩)).elim
-    · obtain ⟨s, hsS0, hxseg⟩ := mem_iUnion₂.mp hxS
-      by_cases hpseg : p ∈ segment ℝ s.1 s.2
-      · have hsSp : s ∈ Sp := ⟨hsS0, hpseg⟩
-        -- One argument for either endpoint, applied twice below.
-        have hcap : ∀ z, z = s.1 ∨ z = s.2 → z ≠ p → x ∈ segment ℝ p z →
-            x ∈ ({p} : Set V) ∪ ⋃ y ∈ Y, segment ℝ p y := by
-          intro z hz hzp hxz
-          have hzend := hmem_ends s hsSp z hz hzp
-          have hxrad : x ∈ segment ℝ p (radialPoint p z ρ) := by
-            have hx' : x ∈ closedBall p ρ ∩ segment ℝ p z := ⟨hxball, hxz⟩
-            rwa [segment_inter_closedBall_eq_radial p z hρpos hzp (hρ_le_end z hzend)] at hx'
-          exact Or.inr
-            (mem_iUnion₂.mpr ⟨radialPoint p z ρ, Finset.mem_image_of_mem _ hzend, hxrad⟩)
-        have hx' : x ∈ segment ℝ s.1 p ∪ segment ℝ p s.2 :=
-          (segment_union_eq_segment hpseg).symm ▸ hxseg
-        obtain hx1 | hx2 := hx'
-        · rw [segment_symm] at hx1
-          obtain heq | hne := eq_or_ne s.1 p
-          · subst heq
-            exact Or.inl (by simpa [segment_same] using hx1)
-          exact hcap s.1 (Or.inl rfl) hne hx1
-        obtain heq | hne := eq_or_ne s.2 p
-        · subst heq
-          exact Or.inl (by simpa [segment_same] using hx2)
-        exact hcap s.2 (Or.inr rfl) hne hx2
-      exact (hnotK hxball (Or.inr (mem_iUnion₂.mpr ⟨s, ⟨hsS0, hpseg⟩, hxseg⟩))).elim
-  · intro x hx
-    obtain rfl | hx := hx
-    · exact ⟨mem_closedBall_self hρpos.le, hp⟩
-    obtain ⟨y, hyY, hxseg⟩ := mem_iUnion₂.mp hx
-    have hyball : y ∈ closedBall p ρ := sphere_subset_closedBall (hYsphere hyY)
-    refine ⟨(convex_closedBall p ρ).segment_subset (mem_closedBall_self hρpos.le) hyball hxseg, ?_⟩
-    obtain ⟨z, hzend, rfl⟩ := Finset.mem_image.mp hyY
-    obtain ⟨s, hsSp, hsub⟩ := hends_seg z hzend
-    have h1 : segment ℝ p (radialPoint p z ρ) ⊆ segment ℝ p z :=
-      (convex_segment p z).segment_subset (left_mem_segment _ _ _)
-        (radialPoint_mem_segment p z hρpos.le (hρ_le_end z hzend))
-    rw [hsupp]
-    exact Or.inr (mem_iUnion₂.mpr ⟨s, hsSp.1, hsub (h1 hxseg)⟩)
-
-private lemma pathInterior_subset_range {x y : V} (P : Path x y) :
-    Drawing.pathInterior P ⊆ range P := by
-  rintro _ ⟨t, ht, rfl⟩
-  exact ⟨t, rfl⟩
-
-
-private lemma exists_edge_ending_at_last {x y : V} {P : PolygonalPath x y} (h : 0 < P.length) :
-    ∃ a, (a, y) ∈ P.edges := by
-  have hrev : 0 < P.reverse.length := by simpa using h
-  cases hP : P.reverse with
-  | nil => simp [hP] at hrev
-  | cons _ a Q =>
-    refine ⟨a, ?_⟩
-    have : (y, a) ∈ P.reverse.edges := by simp [hP]
-    simpa [PolygonalPath.reverse_edges] using this
-
-private lemma exists_edge_starting_at_first {x y : V} {P : PolygonalPath x y} (h : 0 < P.length) :
-    ∃ b, (x, b) ∈ P.edges := by
-  cases P with
-  | nil => simp at h
-  | cons _ b Q => exact ⟨b, by simp⟩
-
-private lemma isSimple_left_of_append_isSimpleArcOrLoop {x p y : V}
-    {A : PolygonalPath x p} {B : PolygonalPath p y}
-    (h : (A.append B).IsSimpleArcOrLoop) (hxp : x ≠ p) : A.IsSimple := by
-  rcases h with ⟨hS, _⟩ | ⟨heq, hL⟩
-  · exact hS.of_append_left
-  · subst y
-    rw [PolygonalPath.cast_rfl] at hL
-    exact PolygonalPath.IsSimpleLoop.isSimple_of_append_left hxp hL
-
-private lemma isSimple_right_of_append_isSimpleArcOrLoop {x p y : V}
-    {A : PolygonalPath x p} {B : PolygonalPath p y}
-    (h : (A.append B).IsSimpleArcOrLoop) (hxp : x ≠ p) : B.IsSimple := by
-  rcases h with ⟨hS, _⟩ | ⟨heq, hL⟩
-  · exact hS.of_append_right
-  · subst y
-    rw [PolygonalPath.cast_rfl] at hL
-    exact (PolygonalPath.isSimpleLoop_append_iff hxp).mp hL |>.2.1
-
-private lemma toSet_inter_subset_of_append_isSimpleArcOrLoop {x p y : V}
-    {A : PolygonalPath x p} {B : PolygonalPath p y}
-    (h : (A.append B).IsSimpleArcOrLoop) (hxp : x ≠ p) :
-    A.toSet ∩ B.toSet ⊆ ({x, p} : Set V) := by
-  rcases h with ⟨hS, _⟩ | ⟨heq, hL⟩
-  · intro u hu
-    exact Or.inr ((PolygonalPath.isSimple_append_iff.mp hS).2.2 hu)
-  · subst y
-    rw [PolygonalPath.cast_rfl] at hL
-    exact ((PolygonalPath.isSimpleLoop_append_iff hxp).mp hL).2.2.le
-
-
-private lemma append_cast_right {x p y : V} (A : PolygonalPath x p) (B : PolygonalPath p y)
-    (heq : y = x) :
-    (A.append B).cast rfl heq = A.append (B.cast rfl heq) := by
-  induction heq
-  rfl
-
-private lemma eq_last_edge_of_mem_segment {x p : V} {A : PolygonalPath x p} (hA : A.IsSimple)
-    {a : V} (ha : (a, p) ∈ A.edges) {s : V × V} (hs : s ∈ A.edges)
-    (hps : p ∈ segment ℝ s.1 s.2) : s = (a, p) := by
-  have hAr : A.reverse.IsSimple := PolygonalPath.isSimple_reverse.mpr hA
-  have ha' : (p, a) ∈ A.reverse.edges := by simpa [PolygonalPath.reverse_edges] using ha
-  have hs' : (s.2, s.1) ∈ A.reverse.edges := by simpa [PolygonalPath.reverse_edges] using hs
-  have hps' : p ∈ segment ℝ s.2 s.1 := by rwa [segment_symm]
-  cases hArev : A.reverse with
-  | nil =>
-    have hlen : A.reverse.length = 0 := by rw [hArev]; rfl
-    have : A.length = 0 := by simpa using hlen
-    cases A with
-    | nil => simp at ha
-    | cons => simp at this
-  | cons _ b Q =>
-    have hAr' : (PolygonalPath.cons p b Q).IsSimple := hArev ▸ hAr
-    obtain ⟨hpb, hQ, hmeet⟩ := PolygonalPath.isSimple_cons_iff.mp hAr'
-    have ha_mem : (p, a) ∈ (p, b) :: Q.edges := by
-      simpa [hArev, PolygonalPath.edges_cons] using ha'
-    have hb_eq : a = b := by
-      rcases List.mem_cons.mp ha_mem with heq | haQ
-      · exact (Prod.mk.inj heq).2
-      · exact ((List.nodup_cons.mp hAr'.1).1 (Q.fst_mem_vertices haQ)).elim
-    subst b
-    have hs_mem : (s.2, s.1) ∈ (p, a) :: Q.edges := by
-      simpa [hArev, PolygonalPath.edges_cons] using hs'
-    rcases List.mem_cons.mp hs_mem with heq | hsQ
-    · obtain ⟨hs2, hs1⟩ := Prod.mk.inj heq
-      exact Prod.ext hs1 hs2
-    · have hpQ : p ∈ Q.toSet := Q.segment_subset_toSet hsQ hps'
-      have : p = a := mem_singleton_iff.mp (hmeet ⟨left_mem_segment ℝ p a, hpQ⟩)
-      exact (hpb this).elim
-
-private lemma eq_first_edge_of_mem_segment {p y : V} {B : PolygonalPath p y} (hB : B.IsSimple)
-    {b : V} (hb : (p, b) ∈ B.edges) {s : V × V} (hs : s ∈ B.edges)
-    (hps : p ∈ segment ℝ s.1 s.2) : s = (p, b) := by
-  cases hBcases : B with
-  | nil => simp [hBcases] at hb
-  | cons _ c Q =>
-    have hBsimp : (PolygonalPath.cons p c Q).IsSimple := hBcases ▸ hB
-    obtain ⟨hpc, hQ, hmeet⟩ := PolygonalPath.isSimple_cons_iff.mp hBsimp
-    have hb_mem : (p, b) ∈ (p, c) :: Q.edges := by
-      simpa [hBcases, PolygonalPath.edges_cons] using hb
-    have hc_eq : b = c := by
-      rcases List.mem_cons.mp hb_mem with heq | hbQ
-      · exact (Prod.mk.inj heq).2
-      · exact ((List.nodup_cons.mp hBsimp.1).1 (Q.fst_mem_vertices hbQ)).elim
-    subst c
-    have hs_mem : s ∈ (p, b) :: Q.edges := by
-      simpa [hBcases, PolygonalPath.edges_cons] using hs
-    rcases List.mem_cons.mp hs_mem with heq | hsQ
-    · exact heq
-    · have hpQ : p ∈ Q.toSet := Q.segment_subset_toSet hsQ hps
-      have : p = b := mem_singleton_iff.mp (hmeet ⟨left_mem_segment ℝ p b, hpQ⟩)
-      exact (hpc this).elim
+      closedBall p ρ ∩ D.toDrawing.support = {p} ∪ ⋃ y ∈ Y, segment ℝ p y :=
+  D.isSegmentFigure_support.exists_radius hp
 
 /-- At a point interior to one cell there are exactly two radii, and both lie along that cell. -/
 theorem exists_radius_edgeInterior [G.Finite] (D : PLDrawing G V) {e : E(G)} {p : V}
-    (hp : p ∈ Drawing.pathInterior (D.toDrawing.edgePath e)) :
-    ∃ ρ > 0, ∃ Y : Finset V, ↑Y ⊆ sphere p ρ ∧ Y.card = 2 ∧
-      ↑Y ⊆ range (D.toDrawing.edgePath e) ∧
-      closedBall p ρ ∩ D.toDrawing.support =
-        {p} ∪ ⋃ y ∈ Y, segment ℝ p y := by
+    (hp : p ∈ pathInterior (D.toDrawing.edgePath e)) :
+    ∃ ρ > 0, ∃ Y : Finset V, ↑Y ⊆ sphere p ρ ∧ Y.card = 2 ∧ ↑Y ⊆ range (D.toDrawing.edgePath e) ∧
+    closedBall p ρ ∩ D.toDrawing.support = {p} ∪ ⋃ y ∈ Y, segment ℝ p y := by
   classical
-  have hp_range : p ∈ range (D.toDrawing.edgePath e) := pathInterior_subset_range _ hp
-  have hp_cell : p ∈ (D.cell e).toSet := by rwa [← D.range_edgePath e]
+  have hp_cell : p ∈ (D.cell e).toSet := D.range_edgePath e ▸ (pathInterior_subset_range _ hp)
   by_cases hvert : p ∈ (D.cell e).vertices
   · -- Bend at an interior polygonal vertex: two incident cell edges, then the open-segment star.
     have hp_not_v : p ∉ range D.toDrawing.vertex :=
@@ -368,17 +112,14 @@ theorem exists_radius_edgeInterior [G.Finite] (D : PLDrawing G V) {e : E(G)} {p 
       cases B with
       | nil => exact hpy rfl
       | cons => simp at this
-    obtain ⟨a, haA⟩ := exists_edge_ending_at_last hApos
-    obtain ⟨b, hbB⟩ := exists_edge_starting_at_first hBpos
+    obtain ⟨a, haA⟩ := A.exists_edge_ending_at_last hApos
+    obtain ⟨b, hbB⟩ := B.exists_edge_starting_at_first hBpos
     have ha : (a, p) ∈ (D.cell e).edges := by
       simpa [hAB, PolygonalPath.append_edges] using Or.inl haA
     have hb : (p, b) ∈ (D.cell e).edges := by
       simpa [hAB, PolygonalPath.append_edges] using Or.inr hbB
-    have hxp : D.toDrawing.vertex (edgeSource e) ≠ p := hpx.symm
-    have hA : A.IsSimple :=
-      isSimple_left_of_append_isSimpleArcOrLoop (hAB ▸ D.cell_isSimpleArcOrLoop e) hxp
-    have hB : B.IsSimple :=
-      isSimple_right_of_append_isSimpleArcOrLoop (hAB ▸ D.cell_isSimpleArcOrLoop e) hxp
+    have hA : A.IsSimple := (hAB ▸ D.cell_isSimpleArcOrLoop e).isSimple_left hpx.symm
+    have hB : B.IsSimple := (hAB ▸ D.cell_isSimpleArcOrLoop e).isSimple_right hpx.symm
     have hne_a : a ≠ p := hA.hasNondegenerateEdges _ haA
     have hne_b : b ≠ p := (hB.hasNondegenerateEdges _ hbB).symm
     have honly : ∀ s ∈ (D.cell e).edges, p ∈ segment ℝ s.1 s.2 → s = (a, p) ∨ s = (p, b) := by
@@ -386,32 +127,27 @@ theorem exists_radius_edgeInterior [G.Finite] (D : PLDrawing G V) {e : E(G)} {p 
       have hs' : s ∈ A.edges ∨ s ∈ B.edges := by
         simpa [hAB, PolygonalPath.append_edges] using hs
       rcases hs' with hsA | hsB
-      · exact Or.inl (eq_last_edge_of_mem_segment hA haA hsA hps)
-      · exact Or.inr (eq_first_edge_of_mem_segment hB hbB hsB hps)
-    have hinter : A.toSet ∩ B.toSet ⊆
-        ({D.toDrawing.vertex (edgeSource e), p} : Set V) := by
-      rcases show (A.append B).IsSimpleArcOrLoop from hAB ▸ D.cell_isSimpleArcOrLoop e with
-        ⟨hS, _⟩ | ⟨heq', hL⟩
-      · intro u hu
-        exact Or.inr ((PolygonalPath.isSimple_append_iff.mp hS).2.2 hu)
+      · exact Or.inl (PolygonalPath.eq_last_edge_of_mem_segment hA haA hsA hps)
+      · exact Or.inr (PolygonalPath.eq_first_edge_of_mem_segment hB hbB hsB hps)
+    have hinter : A.toSet ∩ B.toSet ⊆ ({D.toDrawing.vertex (edgeSource e), p} : Set V) := by
+      intro u hu
+      obtain ⟨hS, _⟩ | ⟨heq', hL⟩ := hAB ▸ D.cell_isSimpleArcOrLoop e
+      · exact Or.inr ((PolygonalPath.isSimple_append_iff.mp hS).2.2 hu)
       · let B' : PolygonalPath p (D.toDrawing.vertex (edgeSource e)) := B.cast rfl heq'
         have hBset : B'.toSet = B.toSet := PolygonalPath.toSet_cast B rfl heq'
         have hL' : (A.append B').IsSimpleLoop := by
           dsimp [B']
-          rwa [← append_cast_right A B heq']
-        intro u hu
-        have : u ∈ A.toSet ∩ B'.toSet := ⟨hu.1, hBset ▸ hu.2⟩
-        exact ((PolygonalPath.isSimpleLoop_append_iff hxp).mp hL').2.2 ▸ this
+          rwa [← PolygonalPath.append_cast_right A B heq']
+        exact ((PolygonalPath.isSimpleLoop_append_iff hpx.symm).mp hL').2.2 ▸ ⟨hu.1, hBset ▸ hu.2⟩
     have ha_not_other {f : E(G)} (hf : f ≠ e) : p ∉ (D.cell f).toSet := by
       intro hpf
-      rw [← D.range_edgePath f] at hpf
-      obtain ⟨t, rfl⟩ := hpf
-      by_cases h0 : t = 0
-      · exact hp_not_v (by rw [h0, Path.source]; exact ⟨_, rfl⟩)
-      by_cases h1 : t = 1
-      · exact hp_not_v (by rw [h1, Path.target]; exact ⟨_, rfl⟩)
+      obtain ⟨t, rfl⟩ := D.range_edgePath f ▸ hpf
+      obtain rfl | h0 := eq_or_ne t 0
+      · exact hp_not_v (by rw [(D.edgePath f).source]; exact ⟨_, rfl⟩)
+      obtain rfl | h1 := eq_or_ne t 1
+      · exact hp_not_v (by rw [(D.edgePath f).target]; exact ⟨_, rfl⟩)
       · exact (Drawing.pathInterior_edgePath_disjoint D.toDrawing hf.symm).notMem_of_mem_left hp
-          ⟨t, ⟨lt_of_le_of_ne t.2.1 (Ne.symm h0), lt_of_le_of_ne t.2.2 h1⟩, rfl⟩
+          ⟨t, ⟨lt_of_le_of_ne t.2.1 h0.symm, lt_of_le_of_ne t.2.2 h1⟩, rfl⟩
     have hcellCompact (f : E(G)) : IsCompact (D.cell f).toSet := by
       rw [PolygonalPath.toSet_eq_insert_biUnion]
       exact isCompact_singleton.union <|
@@ -421,22 +157,17 @@ theorem exists_radius_edgeInterior [G.Finite] (D : PLDrawing G V) {e : E(G)} {p 
     let Kfor : Set V := range D.toDrawing.vertex ∪ ⋃ f ∈ {f : E(G) | f ≠ e}, (D.cell f).toSet
     let K : Set V := Kfor ∪ Kcell
     have hKclosed : IsClosed K := by
-      refine IsClosed.union ?_ ?_
-      · refine IsClosed.union ?_ ?_
-        · have : Finite V(G) := inferInstance
-          exact (Set.finite_range D.toDrawing.vertex).isCompact.isClosed
-        · exact ((Set.toFinite _).isCompact_biUnion fun f _ ↦ hcellCompact f).isClosed
+      refine IsClosed.union (IsClosed.union ?_ ?_) ?_
+      · have : Finite V(G) := inferInstance
+        exact (Set.finite_range D.toDrawing.vertex).isCompact.isClosed
+      · exact ((Set.toFinite _).isCompact_biUnion fun f _ ↦ hcellCompact f).isClosed
       · exact ((D.cell e).edges.finite_toSet.subset fun _ h ↦ h.1).isCompact_biUnion
           (fun _ _ ↦ isCompact_segment _ _) |>.isClosed
     have hpK : p ∉ K := by
-      refine not_or.mpr ⟨?_, ?_⟩
-      · refine not_or.mpr ⟨hp_not_v, ?_⟩
-        intro hp'
+      refine not_or.mpr ⟨not_or.mpr ⟨hp_not_v, fun hp' ↦ ?_⟩, fun hp' ↦ ?_⟩ <;>
         obtain ⟨f, hf, hpf⟩ := mem_iUnion₂.mp hp'
-        exact ha_not_other hf hpf
-      · intro hp'
-        obtain ⟨s, hs, hseg⟩ := mem_iUnion₂.mp hp'
-        exact hs.2 hseg
+      · exact ha_not_other hf hpf
+      · exact hf.2 hpf
     obtain ⟨δ, hδpos, hδle⟩ := exists_pos_le_dist_of_notMem hKclosed hpK
     let ρ : ℝ := min δ (min (dist p a) (dist p b)) / 2
     have hρpos : 0 < ρ :=
@@ -531,29 +262,23 @@ theorem exists_radius_edgeInterior [G.Finite] (D : PLDrawing G V) {e : E(G)} {p 
     have hloc : closedBall p ρ ∩ D.toDrawing.support =
         closedBall p ρ ∩ (segment ℝ a p ∪ segment ℝ p b) := by
       ext x
-      constructor
-      · intro ⟨hxball, hxsup⟩
-        refine ⟨hxball, ?_⟩
-        rw [Drawing.support_eq] at hxsup
-        rcases hxsup with hxV | hxE
-        · exact (hnotK hxball (Or.inl (Or.inl hxV))).elim
-        · obtain ⟨f, hf⟩ := mem_iUnion.mp hxE
-          rw [D.range_edgePath f] at hf
-          by_cases hef : f = e
-          · rw [hef] at hf
-            have hPpos : 0 < (D.cell e).length := by
-              rw [← (D.cell e).edges_length]
-              exact List.length_pos_of_mem ha
-            obtain ⟨s, hs, hxs⟩ := (PolygonalPath.mem_toSet_iff (D.cell e) hPpos).mp hf
-            by_cases hps : p ∈ segment ℝ s.1 s.2
-            · rcases honly s hs hps with rfl | rfl
-              · exact Or.inl hxs
-              · exact Or.inr hxs
-            · exact (hnotK hxball (Or.inr (mem_iUnion₂.mpr ⟨s, ⟨hs, hps⟩, hxs⟩))).elim
-          · exact (hnotK hxball (Or.inl (Or.inr (mem_iUnion₂.mpr ⟨f, hef, hf⟩)))).elim
-      · intro ⟨hxball, hxseg⟩
-        refine ⟨hxball, ?_⟩
-        have : x ∈ (D.cell e).toSet := by
+      refine ⟨fun ⟨hxball, hxsup⟩ ↦ ⟨hxball, ?_⟩, fun ⟨hxball, hxseg⟩ ↦ ⟨hxball, ?_⟩⟩
+      · refine (D.support_eq ▸ hxsup).elim (fun hxV ↦ (hnotK hxball (Or.inl (Or.inl hxV))).elim) fun hxE ↦ ?_
+        obtain ⟨f, hf⟩ := mem_iUnion.mp hxE
+        rw [D.range_edgePath f] at hf
+        by_cases hef : f = e
+        · rw [hef] at hf
+          have hPpos : 0 < (D.cell e).length := by
+            rw [← (D.cell e).edges_length]
+            exact List.length_pos_of_mem ha
+          obtain ⟨s, hs, hxs⟩ := (PolygonalPath.mem_toSet_iff (D.cell e) hPpos).mp hf
+          by_cases hps : p ∈ segment ℝ s.1 s.2
+          · rcases honly s hs hps with rfl | rfl
+            · exact Or.inl hxs
+            · exact Or.inr hxs
+          · exact (hnotK hxball (Or.inr (mem_iUnion₂.mpr ⟨s, ⟨hs, hps⟩, hxs⟩))).elim
+        · exact (hnotK hxball (Or.inl (Or.inr (mem_iUnion₂.mpr ⟨f, hef, hf⟩)))).elim
+      · have : x ∈ (D.cell e).toSet := by
           rw [hAB, PolygonalPath.toSet_append]
           exact hxseg.elim (fun h ↦ Or.inl (hsegA h)) (fun h ↦ Or.inr (hsegB h))
         rw [← D.range_edgePath e] at this
@@ -645,46 +370,8 @@ theorem exists_radius_edgeInterior [G.Finite] (D : PLDrawing G V) {e : E(G)} {p 
     rw [hloc, closedBall_inter_segment_eq_two_radii p s.1 s.2 hρpos hab hp_open hρ_le_a hρ_le_b,
       two_radii_union_eq_star p ya yb, ← hYunion]
 
-private lemma coe_star_eq_sphere_inter_support {p : V} {ρ : ℝ} {Y : Finset V} {S : Set V}
-    (hρ : 0 < ρ) (hYsph : ↑Y ⊆ sphere p ρ)
-    (hstar : closedBall p ρ ∩ S = {p} ∪ ⋃ y ∈ Y, segment ℝ p y) :
-    (Y : Set V) = sphere p ρ ∩ S := by
-  ext y
-  constructor
-  · intro hy
-    refine ⟨hYsph hy, ?_⟩
-    have : y ∈ closedBall p ρ ∩ S := by
-      rw [hstar]
-      exact Or.inr (mem_iUnion₂.mpr ⟨y, hy, right_mem_segment _ _ _⟩)
-    exact this.2
-  · intro ⟨hysph, hysup⟩
-    have hyball : y ∈ closedBall p ρ := sphere_subset_closedBall hysph
-    have hy' : y ∈ ({p} : Set V) ∪ ⋃ y ∈ Y, segment ℝ p y := by
-      rw [← hstar]; exact ⟨hyball, hysup⟩
-    rcases hy' with hy' | hy'
-    · have hyp : y = p := mem_singleton_iff.mp hy'
-      have : dist p y = ρ := by
-        simpa [PseudoMetricSpace.dist_comm] using mem_sphere.mp hysph
-      rw [hyp, dist_self] at this
-      exact (hρ.ne' this.symm).elim
-    · obtain ⟨y', hy'Y, hyseg⟩ := mem_iUnion₂.mp hy'
-      obtain ⟨t, ⟨ht0, ht1⟩, rfl⟩ := (segment_eq_image_lineMap (𝕜 := ℝ) p y').symm ▸ hyseg
-      have hy'dist : dist p y' = ρ := by
-        simpa [PseudoMetricSpace.dist_comm] using mem_sphere.mp (hYsph hy'Y)
-      have htρ : t * dist p y' = dist p (AffineMap.lineMap p y' t) :=
-        (PseudoMetricSpace.dist_comm (AffineMap.lineMap p y' t) p ▸
-          dist_lineMap_left_of_nonneg p y' ht0).symm
-      have : dist p (AffineMap.lineMap p y' t) = ρ := by
-        simpa [PseudoMetricSpace.dist_comm] using mem_sphere.mp hysph
-      have ht : t = 1 := by
-        have hypos : 0 < dist p y' := by rw [hy'dist]; exact hρ
-        have : t * dist p y' = (1 : ℝ) * dist p y' := by
-          rw [htρ, this, hy'dist, one_mul]
-        exact (mul_left_inj' hypos.ne').mp this
-      simpa [ht] using hy'Y
-
 private lemma pathInterior_edgePath_eq_toSet_sdiff (D : PLDrawing G V) (e : E(G)) :
-    Drawing.pathInterior (D.toDrawing.edgePath e) =
+    pathInterior (D.toDrawing.edgePath e) =
       (D.cell e).toSet \
         ({D.toDrawing.vertex (edgeSource e), D.toDrawing.vertex (edgeTarget e)} : Set V) := by
   rw [← D.range_edgePath e]
@@ -704,19 +391,6 @@ private lemma pathInterior_edgePath_eq_toSet_sdiff (D : PLDrawing G V) (e : E(G)
     · exact lt_of_le_of_ne t.2.2 fun h1 ↦ hx <| Or.inr <| by
         rw [h1]; simp [Path.target]
 
-omit [NormedAddCommGroup V] [NormedSpace ℝ V] in
-private lemma cast_edges {x y x' y' : V} (P : PolygonalPath x y) (hx : x = x') (hy : y = y') :
-    (P.cast hx hy).edges = P.edges := by
-  subst hx; subst hy; rfl
-
-private lemma IsSimpleLoop.hasNondegenerateEdges {x : V} {P : PolygonalPath x x}
-    (h : P.IsSimpleLoop) : P.HasNondegenerateEdges := by
-  cases P with
-  | nil => exact (PolygonalPath.not_isSimpleLoop_nil h).elim
-  | cons a b Q =>
-    obtain ⟨hne, hQ, _⟩ := PolygonalPath.isSimpleLoop_cons_iff.mp h
-    exact PolygonalPath.hasNondegenerateEdges_cons.mpr ⟨hne, hQ.hasNondegenerateEdges⟩
-
 private lemma cell_length_pos (D : PLDrawing G V) (e : E(G)) : 0 < (D.cell e).length := by
   rcases D.cell_isSimpleArcOrLoop e with ⟨_, hlen⟩ | ⟨heq, hL⟩
   · exact hlen
@@ -730,8 +404,8 @@ private lemma cell_out_ne_source (D : PLDrawing G V) (e : E(G)) {b : V}
   · exact (hS.hasNondegenerateEdges _ hb).symm
   · have hL' : ((D.cell e).cast rfl heq).IsSimpleLoop := hL
     have hb' : (D.toDrawing.vertex (edgeSource e), b) ∈ ((D.cell e).cast rfl heq).edges := by
-      rwa [cast_edges]
-    exact (IsSimpleLoop.hasNondegenerateEdges hL' _ hb').symm
+      rwa [PolygonalPath.edges_cast]
+    exact (PolygonalPath.IsSimpleLoop.hasNondegenerateEdges hL' _ hb').symm
 
 private lemma cell_in_ne_target (D : PLDrawing G V) (e : E(G)) {a : V}
     (ha : (a, D.toDrawing.vertex (edgeTarget e)) ∈ (D.cell e).edges) :
@@ -740,20 +414,19 @@ private lemma cell_in_ne_target (D : PLDrawing G V) (e : E(G)) {a : V}
   · exact hS.hasNondegenerateEdges _ ha
   · have hL' : ((D.cell e).cast rfl heq).IsSimpleLoop := hL
     have ha0 : (a, D.toDrawing.vertex (edgeTarget e)) ∈ ((D.cell e).cast rfl heq).edges := by
-      rwa [cast_edges]
+      rwa [PolygonalPath.edges_cast]
     have heq_pair : (a, D.toDrawing.vertex (edgeTarget e)) =
         (a, D.toDrawing.vertex (edgeSource e)) := congrArg _ heq
     have ha' : (a, D.toDrawing.vertex (edgeSource e)) ∈ ((D.cell e).cast rfl heq).edges :=
       heq_pair ▸ ha0
     have hne : a ≠ D.toDrawing.vertex (edgeSource e) :=
-      IsSimpleLoop.hasNondegenerateEdges hL' _ ha'
+      PolygonalPath.IsSimpleLoop.hasNondegenerateEdges hL' _ ha'
     have heq_ne : (a ≠ D.toDrawing.vertex (edgeSource e)) =
         (a ≠ D.toDrawing.vertex (edgeTarget e)) := by rw [heq]
     exact heq_ne ▸ hne
 
 private lemma degree_eq_ncard_source_add_target [G.Finite] (v : V(G)) :
-    G.degree v.1 =
-      {e : E(G) | edgeSource e = v}.ncard + {e : E(G) | edgeTarget e = v}.ncard := by
+    G.degree v.1 = {e : E(G) | edgeSource e = v}.ncard + {e : E(G) | edgeTarget e = v}.ncard := by
   classical
   have : G.LocallyFinite := inferInstance
   let Outs : Set (E(G)) := {e | edgeSource e = v}
@@ -762,36 +435,23 @@ private lemma degree_eq_ncard_source_add_target [G.Finite] (v : V(G)) :
   let S : Set (E(G)) := {e | edgeSource e = v ∧ edgeTarget e ≠ v}
   let T : Set (E(G)) := {e | edgeTarget e = v ∧ edgeSource e ≠ v}
   have hOuts : Outs = L ∪ S := by
-    ext e; constructor
-    · intro he
-      by_cases ht : edgeTarget e = v
-      · exact Or.inl ⟨he, ht⟩
-      · exact Or.inr ⟨he, ht⟩
-    · exact fun h ↦ h.elim And.left And.left
+    ext e
+    exact ⟨by grind, fun h ↦ h.elim And.left And.left⟩
   have hIns : Ins = L ∪ T := by
-    ext e; constructor
-    · intro he
-      by_cases hs : edgeSource e = v
-      · exact Or.inl ⟨hs, he⟩
-      · exact Or.inr ⟨he, hs⟩
-    · exact fun h ↦ h.elim And.right And.left
-  have hLS : Disjoint L S :=
-    disjoint_left.mpr fun _ hL hS ↦ hS.2 hL.2
-  have hLT : Disjoint L T :=
-    disjoint_left.mpr fun _ hL hT ↦ hT.2 hL.1
-  have hST : Disjoint S T :=
-    disjoint_left.mpr fun _ hS hT ↦ hT.2 hS.1
+    ext e
+    exact ⟨by grind, fun h ↦ h.elim And.right And.left⟩
+  have hLS : Disjoint L S := disjoint_left.mpr fun _ hL hS ↦ hS.2 hL.2
+  have hLT : Disjoint L T := disjoint_left.mpr fun _ hL hT ↦ hT.2 hL.1
+  have hST : Disjoint S T := disjoint_left.mpr fun _ hS hT ↦ hT.2 hS.1
   have hL : {e | G.IsLoopAt e v.1} = Subtype.val '' L := by
-    ext e; constructor
-    · intro he
-      refine ⟨⟨e, he.inc.edge_mem⟩, ?_, rfl⟩
-      have hlink := isLink_edgeSource_edgeTarget ⟨e, he.inc.edge_mem⟩
+    ext e
+    refine ⟨fun he ↦ ⟨⟨e, he.inc.edge_mem⟩, ?_, rfl⟩, fun ⟨e', ⟨hs, ht⟩, heq⟩ ↦ ?_⟩
+    · have hlink := isLink_edgeSource_edgeTarget ⟨e, he.inc.edge_mem⟩
       obtain ⟨h1, h2⟩ := he.eq_of_isLink hlink
       exact ⟨Subtype.ext h1.symm, Subtype.ext h2.symm⟩
-    · rintro ⟨e', ⟨hs, ht⟩, rfl⟩
-      have hlink := isLink_edgeSource_edgeTarget e'
+    · have hlink := isLink_edgeSource_edgeTarget e'
       rw [hs, ht] at hlink
-      exact isLink_self_iff.mp hlink
+      exact isLink_self_iff.mp <| heq ▸ hlink
   have hN : {e | G.IsNonloopAt e v.1} = Subtype.val '' (S ∪ T) := by
     ext e; constructor
     · intro he
@@ -825,18 +485,313 @@ private lemma degree_eq_ncard_source_add_target [G.Finite] (v : V(G)) :
   rw [hOuts, hIns, ncard_union_eq hLS, ncard_union_eq hLT, ncard_union_eq hST]
   ring
 
-/- **Handoff to formalisation helper** (`exists_radius_vertex` degree conjunct).
+/-! ### Ends at a vertex
 
-The geometric star at a vertex image is already `exists_radius`. Relating `Y.card` to
-`G.degree v` needs a bijection between sphere points and incidence ends at `v` (loop → two
-outbound first/last cell segments; drawing injectivity ⇒ distinct ends give distinct directions).
-The `Y` from `exists_radius` is opaque (radial points of *all* support segments through `p`).
-Attempted rebuild from `E(G,v)` / `edgeSource`/`edgeTarget` stubs failed at matching opaque `Y` to
-cell ends inside the star ball (unique-edge recovery, openSegment vertex exclusion). Provide either
-(a) a lemma that at a vertex image the star segments are exactly the incident cell ends, plus
-`radialPoint` injectivity, or (b) a constructive star rebuilt from incidences with shrunk `ρ`.
-Scaffolding scale — not a tactic fill. Geometric equality without the degree conjunct is free from
-`exists_radius`. -/
+The packaging the degree conjunct of `exists_radius_vertex` needs. The earlier handoff asked for a
+family `U : Ends → Set V` of *cells*, with four hypotheses to discharge, and bounced on two of them:
+the `Fintype`/`ncard` wiring, and the shrink needed to make distinct pieces meet only at `p`.
+
+Both dissolve if the piece is the **first (or last) segment of the cell** rather than the whole
+cell. Then `U i = segment p (endTip i)` and:
+
+* `U i ⊆ support` — a segment of a cell is in the support, no shrink;
+* `∃ w ≠ p, segment p w ⊆ U i` — trivial, `w := endTip i`;
+* `i ≠ j → U i ∩ U j ⊆ {p}` — **globally true**, no shrink: two end segments at `v` from different
+  edges have interiors in disjoint open cells, and the two end segments of a loop meet only at `v`
+  because a simple loop has length `≥ 3` and so is not a digon;
+* `U i ∩ closedBall p ρ ⊆ segment p (z i)` — trivial with `z i := endTip i`.
+
+Only the cover needs a small `ρ`, and that is the single lemma
+`exists_radius_support_subset_iUnion_segment_endTip` below. `U` itself never appears: the two
+`SegmentFigure` bounds are applied with `U i := segment ℝ p (endTip i)` directly. -/
+
+/-- The **ends at `v`**: one for each edge with `edgeSource e = v`, one for each with
+`edgeTarget e = v`. A loop at `v` contributes both, which is exactly why the count is `G.degree v`
+rather than the number of incident edges. -/
+abbrev EndsAt (G : Graph α β) (v : V(G)) : Type _ :=
+  {e : E(G) // edgeSource e = v} ⊕ {e : E(G) // edgeTarget e = v}
+
+/-- **The count.** This is the `Fintype`/`ncard` bridge the earlier attempt bounced on.
+
+Stated with `Nat.card`, not `Fintype.card`: `E(G)` is a `Set`, so `[G.Finite]` supplies `Finite`
+and *not* `Fintype`, and asking for `Fintype` here is what made the wiring fight back. `Nat.card`
+needs no instance and is definitionally what `Set.ncard` already is, so
+`degree_eq_ncard_source_add_target` lands with no conversion.
+
+Route: `Nat.card_sum` splits the sum type, then `Set.Nat.card_coe_set_eq` rewrites each summand as
+the `Set.ncard` appearing in `degree_eq_ncard_source_add_target`. Keep everything in `ℕ`; do not
+detour through `eDegree`, which is `ℕ∞` and forces `ENat.toNat` juggling.
+
+At the call site, `le_card_radii_of_pairwise` wants `[Fintype ι]`: obtain it with
+`have : Finite (EndsAt G v) := inferInstance; letI := Fintype.ofFinite (EndsAt G v)` and bridge
+back with `Nat.card_eq_fintype_card`. -/
+lemma card_endsAt [G.Finite] (v : V(G)) : Nat.card (EndsAt G v) = G.degree v.1 := by
+  rw [Nat.card_sum]
+  change Nat.card ↑{e : E(G) | edgeSource e = v} + Nat.card ↑{e : E(G) | edgeTarget e = v} =
+    G.degree v.1
+  rw [Nat.card_coe_set_eq, Nat.card_coe_set_eq, degree_eq_ncard_source_add_target]
+
+/-- The far endpoint of the cell segment at `v` belonging to an end: the first segment of the cell
+for an out-end, the last for an in-end. Total, via `cell_length_pos`. -/
+noncomputable def endTip (D : PLDrawing G V) {v : V(G)} : EndsAt G v → V
+  | .inl e => Classical.choose (PolygonalPath.exists_edge_starting_at_first (D.cell_length_pos e.1))
+  | .inr e => Classical.choose (PolygonalPath.exists_edge_ending_at_last (D.cell_length_pos e.1))
+
+private lemma endTip_mem_edges_out (D : PLDrawing G V) {v : V(G)} (e : {e : E(G) // edgeSource e = v}) :
+    (D.toDrawing.vertex v, D.endTip (.inl e)) ∈ (D.cell e.1).edges := by
+  have hb := Classical.choose_spec
+    (PolygonalPath.exists_edge_starting_at_first (D.cell_length_pos e.1))
+  simpa [endTip, e.2] using hb
+
+private lemma endTip_mem_edges_in (D : PLDrawing G V) {v : V(G)} (e : {e : E(G) // edgeTarget e = v}) :
+    (D.endTip (.inr e), D.toDrawing.vertex v) ∈ (D.cell e.1).edges := by
+  have ha := Classical.choose_spec
+    (PolygonalPath.exists_edge_ending_at_last (D.cell_length_pos e.1))
+  simpa [endTip, e.2] using ha
+
+/- Route: unfold `endTip` to `Classical.choose_spec`, giving the cell edge, then
+`cell_out_ne_source` for `.inl` and `cell_in_ne_target` for `.inr`. The `e.2` rewrite is what turns
+`D.toDrawing.vertex (edgeSource e.1)` into `D.toDrawing.vertex v`. -/
+lemma endTip_ne (D : PLDrawing G V) {v : V(G)} (i : EndsAt G v) :
+    D.endTip i ≠ D.toDrawing.vertex v := by
+  match i with
+  | .inl e =>
+    have hb := Classical.choose_spec
+      (PolygonalPath.exists_edge_starting_at_first (D.cell_length_pos e.1))
+    simpa [endTip, e.2] using cell_out_ne_source D e.1 hb
+  | .inr e =>
+    have ha := Classical.choose_spec
+      (PolygonalPath.exists_edge_ending_at_last (D.cell_length_pos e.1))
+    simpa [endTip, e.2] using cell_in_ne_target D e.1 ha
+
+/- Route: `Classical.choose_spec` puts the pair in `(D.cell _).edges`, then
+`PolygonalPath.segment_subset_toSet` lands it in the cell, and `D.range_edgePath` /
+`Drawing.support_eq` land the cell in the support. -/
+lemma segment_endTip_subset_support (D : PLDrawing G V) {v : V(G)} (i : EndsAt G v) :
+    segment ℝ (D.toDrawing.vertex v) (D.endTip i) ⊆ D.toDrawing.support := by
+  match i with
+  | .inl e =>
+    intro x hx
+    have hcell : x ∈ (D.cell e.1).toSet :=
+      (D.cell e.1).segment_subset_toSet (endTip_mem_edges_out D e) hx
+    rw [Drawing.support_eq]
+    refine Or.inr (mem_iUnion.mpr ⟨e.1, ?_⟩)
+    rwa [D.range_edgePath]
+  | .inr e =>
+    intro x hx
+    have hx' : x ∈ segment ℝ (D.endTip (.inr e)) (D.toDrawing.vertex v) := by
+      rwa [segment_symm]
+    have hcell : x ∈ (D.cell e.1).toSet :=
+      (D.cell e.1).segment_subset_toSet (endTip_mem_edges_in D e) hx'
+    rw [Drawing.support_eq]
+    refine Or.inr (mem_iUnion.mpr ⟨e.1, ?_⟩)
+    rwa [D.range_edgePath]
+
+private def endEdge {v : V(G)} : EndsAt G v → E(G)
+  | .inl e => e.1
+  | .inr e => e.1
+
+private lemma cell_isSimple_of_source_ne_target (D : PLDrawing G V) (e : E(G))
+    (hne : edgeSource e ≠ edgeTarget e) : (D.cell e).IsSimple :=
+  (PolygonalPath.isSimpleArcOrLoop_iff_isSimple
+    (D.toDrawing.vertex_injective.ne hne)).mp (D.cell_isSimpleArcOrLoop e)
+
+/-- The open end segment at `v`, excluding the tip, lies in the open cell. -/
+private lemma openSegment_endTip_subset_pathInterior (D : PLDrawing G V) {v : V(G)}
+    (i : EndsAt G v) :
+    openSegment ℝ (D.toDrawing.vertex v) (D.endTip i) ⊆
+      pathInterior (D.toDrawing.edgePath (endEdge i)) := by
+  intro x hx
+  have htipne : D.endTip i ≠ D.toDrawing.vertex v := endTip_ne D i
+  have hx_ne_p : x ≠ D.toDrawing.vertex v := fun h ↦
+    htipne.symm (left_mem_openSegment_iff.mp (h ▸ hx))
+  have hxseg : x ∈ segment ℝ (D.toDrawing.vertex v) (D.endTip i) :=
+    openSegment_subset_segment ℝ _ _ hx
+  match i with
+  | .inl e =>
+    have hcell : x ∈ (D.cell e.1).toSet :=
+      (D.cell e.1).segment_subset_toSet (endTip_mem_edges_out D e) hxseg
+    have hx_ne_tgt : x ≠ D.toDrawing.vertex (edgeTarget e.1) := by
+      intro ht
+      by_cases hse : edgeSource e.1 = edgeTarget e.1
+      · exact hx_ne_p (ht.trans (by rw [← hse, e.2]))
+      · have hS := cell_isSimple_of_source_ne_target D e.1 hse
+        have hmem := (hS.mem_segment_iff_of_mem_vertices
+          (D.cell e.1).last_mem_vertices (endTip_mem_edges_out D e)).mp (ht ▸ hxseg)
+        rcases hmem with htp | htt
+        · exact hx_ne_p (ht.trans htp)
+        · have hx_tip : x = D.endTip (.inl e) := ht.trans htt
+          exact htipne (right_mem_openSegment_iff.mp (hx_tip ▸ hx)).symm
+    rw [pathInterior_edgePath_eq_toSet_sdiff]
+    refine ⟨hcell, ?_⟩
+    rintro (hs | ht)
+    · exact hx_ne_p (hs.trans (congrArg _ e.2))
+    · exact hx_ne_tgt ht
+  | .inr e =>
+    have hx' : x ∈ segment ℝ (D.endTip (.inr e)) (D.toDrawing.vertex v) := by
+      rwa [segment_symm]
+    have hcell : x ∈ (D.cell e.1).toSet :=
+      (D.cell e.1).segment_subset_toSet (endTip_mem_edges_in D e) hx'
+    have hx_ne_src : x ≠ D.toDrawing.vertex (edgeSource e.1) := by
+      intro hs
+      by_cases hse : edgeSource e.1 = edgeTarget e.1
+      · exact hx_ne_p (hs.trans (by rw [hse, e.2]))
+      · have hS := cell_isSimple_of_source_ne_target D e.1 hse
+        have hmem := (hS.mem_segment_iff_of_mem_vertices
+          (D.cell e.1).first_mem_vertices (endTip_mem_edges_in D e)).mp (hs ▸ hx')
+        rcases hmem with hts | htp
+        · have hx_tip : x = D.endTip (.inr e) := hs.trans hts
+          exact htipne (right_mem_openSegment_iff.mp (hx_tip ▸ hx)).symm
+        · exact hx_ne_p (hs.trans htp)
+    rw [pathInterior_edgePath_eq_toSet_sdiff]
+    refine ⟨hcell, ?_⟩
+    rintro (hs | ht)
+    · exact hx_ne_src hs
+    · exact hx_ne_p (ht.trans (congrArg _ e.2))
+
+private lemma tip_mem_cell_toSet (D : PLDrawing G V) {v : V(G)} (i : EndsAt G v) :
+    D.endTip i ∈ (D.cell (endEdge i)).toSet := by
+  match i with
+  | .inl e =>
+    exact (D.cell e.1).segment_subset_toSet (endTip_mem_edges_out D e)
+      (right_mem_segment _ _ _)
+  | .inr e =>
+    exact (D.cell e.1).segment_subset_toSet (endTip_mem_edges_in D e)
+      (left_mem_segment _ _ _)
+
+/-- The two end segments of a loop cell at `v` meet only at `v`.
+
+Route: cast the cell to a based loop at `p := vertex v` (`source = target = v`), apply
+`IsSimpleLoop.three_le_length` so the path is not a digon, then `isSimpleLoop_cons_iff` gives
+`segment p tipOut ∩ Q.toSet ⊆ {p, tipOut}` with `Q` the tail after the first edge. The in-tip edge
+`(tipIn, p)` lies in `Q.edges` (it is not the first edge, by `endTip_ne`), so
+`segment tipIn p ⊆ Q.toSet`. Hence the intersection of the two end segments is in `{p, tipOut}`; the
+`tipOut` case forces `tipOut = tipIn` via `mem_segment_iff_of_mem_vertices`, contradicting
+`three_le_length` (digon). Identifying `tipOut` with the `cons` head uses that a simple path has no
+edge starting at its last vertex (`mem_edges_iff` + `Nodup.getElem_inj_iff`).
+
+**Stuck (tactic, not FH).** All named APIs exist. Failures were mechanical:
+* `PolygonalPath.cast` / `edges_cast` / `isSimpleArcOrLoop_cast` vs `endTip` defined on the uncast
+  cell — `simpa` on `(endTip (.inr f), p) ∈ P.edges` fights `f.1 = e.1` and `vertex v` vs `p`.
+* Proving `endTip (.inl e) = b` for `P = cons p b Q`: the `List.mem_cons` right branch (edge
+  starting at `p` inside `Q`) needs `Nodup` of `Q.vertices` plus “no outgoing edge from the last
+  vertex”; `getLast`/`getElem` index arithmetic and `nodup_iff_injective_getElem` (Fin-shaped)
+  repeatedly misfired.
+* `tips_ne : tipIn ≠ tipOut` via `eq_first_edge_of_mem_segment` on `Q` when assuming `tipIn = b`
+  works for `Q = direct b p` (`length = 2` vs `three_le_length`), but the longer-`Q` revisit-`p`
+  case needs a clean `vertices.Nodup` contradiction after subst.
+
+No missing public lemma: a short private `endTip_eq_cons_head` / `no_edge_starting_at_last` would
+be local sugar, not scaffolding. -/
+private lemma segment_endTip_inter_loop (D : PLDrawing G V) {v : V(G)}
+    (e : {e : E(G) // edgeSource e = v}) (f : {e : E(G) // edgeTarget e = v})
+    (hef : e.1 = f.1) :
+    segment ℝ (D.toDrawing.vertex v) (D.endTip (.inl e)) ∩
+        segment ℝ (D.toDrawing.vertex v) (D.endTip (.inr f)) ⊆
+      {D.toDrawing.vertex v} := by
+  sorry
+
+/-- **Distinct ends give segments meeting only at `v`** — with no shrinking, which is the point. -/
+lemma segment_endTip_inter (D : PLDrawing G V) {v : V(G)} {i j : EndsAt G v} (hij : i ≠ j) :
+    segment ℝ (D.toDrawing.vertex v) (D.endTip i) ∩ segment ℝ (D.toDrawing.vertex v) (D.endTip j)
+      ⊆ {D.toDrawing.vertex v} := by
+  intro x ⟨hxi, hxj⟩
+  set p := D.toDrawing.vertex v
+  by_contra hx_not
+  have hxne : x ≠ p := fun h ↦ hx_not (h ▸ rfl)
+  have tip_or_open (k : EndsAt G v) (hxk : x ∈ segment ℝ p (D.endTip k)) :
+      x = D.endTip k ∨ x ∈ pathInterior (D.toDrawing.edgePath (endEdge k)) := by
+    by_cases ht : x = D.endTip k
+    · exact Or.inl ht
+    · exact Or.inr <| openSegment_endTip_subset_pathInterior D k <|
+        mem_openSegment_of_ne_left_right hxne.symm (mt Eq.symm ht) hxk
+  have tip_endpoint_or_interior (k : EndsAt G v) :
+      D.endTip k = D.toDrawing.vertex (edgeSource (endEdge k)) ∨
+        D.endTip k = D.toDrawing.vertex (edgeTarget (endEdge k)) ∨
+        D.endTip k ∈ pathInterior (D.toDrawing.edgePath (endEdge k)) := by
+    by_cases hs : D.endTip k = D.toDrawing.vertex (edgeSource (endEdge k))
+    · exact Or.inl hs
+    · by_cases ht : D.endTip k = D.toDrawing.vertex (edgeTarget (endEdge k))
+      · exact Or.inr (Or.inl ht)
+      · refine Or.inr (Or.inr ?_)
+        rw [pathInterior_edgePath_eq_toSet_sdiff]
+        exact ⟨tip_mem_cell_toSet D k, fun h ↦ h.elim hs ht⟩
+  by_cases hedf : endEdge i = endEdge j
+  · match i, j with
+    | .inl e, .inl f =>
+      exact (hij (congrArg Sum.inl (Subtype.ext hedf))).elim
+    | .inr e, .inr f =>
+      exact (hij (congrArg Sum.inr (Subtype.ext hedf))).elim
+    | .inl e, .inr f =>
+      exact hx_not (segment_endTip_inter_loop D e f hedf ⟨hxi, hxj⟩)
+    | .inr e, .inl f =>
+      exact hx_not (segment_endTip_inter_loop D f e hedf.symm ⟨hxj, hxi⟩)
+  · have hi := tip_or_open i hxi
+    have hj := tip_or_open j hxj
+    have tip_meets_open (k ℓ : EndsAt G v) (hkℓ : endEdge k ≠ endEdge ℓ)
+        (htip : x = D.endTip k)
+        (hopen : x ∈ pathInterior (D.toDrawing.edgePath (endEdge ℓ))) : False := by
+      have hxℓ : D.endTip k ∈ pathInterior (D.toDrawing.edgePath (endEdge ℓ)) := by
+        rwa [← htip]
+      rcases tip_endpoint_or_interior k with hk | hk | hk
+      · exact (Drawing.pathInterior_edgePath_disjoint_vertex D.toDrawing (endEdge ℓ)).notMem_of_mem_left
+          hxℓ ⟨edgeSource (endEdge k), hk.symm⟩
+      · exact (Drawing.pathInterior_edgePath_disjoint_vertex D.toDrawing (endEdge ℓ)).notMem_of_mem_left
+          hxℓ ⟨edgeTarget (endEdge k), hk.symm⟩
+      · exact (Drawing.pathInterior_edgePath_disjoint D.toDrawing hkℓ).notMem_of_mem_left hk hxℓ
+    rcases hi with hi | hi
+    · rcases hj with hj | hj
+      · have eqt : D.endTip i = D.endTip j := hi.symm.trans hj
+        have hmi : midpoint ℝ p (D.endTip i) ∈
+            pathInterior (D.toDrawing.edgePath (endEdge i)) :=
+          openSegment_endTip_subset_pathInterior D i (midpoint_mem_openSegment _ _)
+        have hmj : midpoint ℝ p (D.endTip i) ∈
+            pathInterior (D.toDrawing.edgePath (endEdge j)) := by
+          rw [eqt]
+          exact openSegment_endTip_subset_pathInterior D j (midpoint_mem_openSegment _ _)
+        exact (Drawing.pathInterior_edgePath_disjoint D.toDrawing hedf).notMem_of_mem_left hmi hmj
+      · exact tip_meets_open i j hedf hi hj
+    · rcases hj with hj | hj
+      · exact tip_meets_open j i (Ne.symm hedf) hj hi
+      · exact (Drawing.pathInterior_edgePath_disjoint D.toDrawing hedf).notMem_of_mem_left hi hj
+
+/-- **The cover, and the only place a small radius is needed.** Near `v` the drawing is exactly the
+union of the end segments.
+
+Route: `exists_finite_support` writes the support as `range vertex ∪ ⋃ s ∈ S, segment s.1 s.2` with
+`S` finite. Bound `ρ` below all of:
+* `dist (vertex v) w` for the finitely many other vertex images `w`;
+* the distance from `vertex v` to each segment of `S` not containing it;
+* half the distance from `vertex v` to each `endTip i`.
+
+Then a point of the support in `closedBall (vertex v) ρ` other than `vertex v` lies on a segment
+through `vertex v`; that segment is an edge of some cell at `v`, and
+`eq_first_edge_of_mem_segment` / `eq_last_edge_of_mem_segment` identify it as an end segment.
+
+Alternative: for each non-loop out-end apply `exists_ball_inter_subset_firstSegment` (and reverse for
+in-ends); for a loop take the min of the two one-sided radii from `isSimpleLoop_cons_iff`; then min
+against the distance to non-incident cells.
+
+**Stuck (tactic, not FH).** Packaging and named lemmas are enough; assembly of
+`exists_radius_vertex` already consumes this statement. Failures:
+* Finite-support route: δ-bound against `K = (range vertex \ {p}) ∪ ⋃ Srest` copies
+  `IsSegmentFigure.exists_radius` cleanly; the hard step is identifying a segment through `p` as
+  `segment p (endTip i)`. That needs `endTip_eq` from “`(p, b)` (resp. `(b, p)`) is the first
+  (resp. last) edge of the cell”, which is the same uniqueness stuck point as
+  `segment_endTip_inter_loop`.
+* Per-end `exists_ball_inter_subset_firstSegment` route: the existential `z` is *some* point with
+  `cell ∩ ball ⊆ segment p z`, not definitionally `endTip`. Closing `segment p z ⊆ segment p
+  (endTip i)` (or proving `z = endTip`) again needs first-edge uniqueness. Loops are excluded by
+  that lemma’s `x ≠ y`, so they need a separate two-sided radius anyway.
+
+Preferred next cut: prove private `endTip_inl_eq` / `endTip_inr_eq` (first/last edge determines the
+tip) once, then both this cover and the loop intersection become short. -/
+theorem exists_radius_support_subset_iUnion_segment_endTip [G.Finite] (D : PLDrawing G V)
+    (v : V(G)) :
+    ∃ ρ > 0, D.toDrawing.support ∩ closedBall (D.toDrawing.vertex v) ρ ⊆
+      {D.toDrawing.vertex v} ∪ ⋃ i : EndsAt G v, segment ℝ (D.toDrawing.vertex v) (D.endTip i) := by
+  sorry
+
 /-- At a vertex there is one radius per edge end: `degree` counts a loop twice, and a loop does
 contribute two radii. -/
 theorem exists_radius_vertex [G.Finite] (D : PLDrawing G V) (v : V(G)) :
@@ -845,9 +800,54 @@ theorem exists_radius_vertex [G.Finite] (D : PLDrawing G V) (v : V(G)) :
       closedBall (D.toDrawing.vertex v) ρ ∩ D.toDrawing.support =
         {D.toDrawing.vertex v} ∪ ⋃ y ∈ Y, segment ℝ (D.toDrawing.vertex v) y := by
   classical
-  obtain ⟨ρ, hρ, Y, hYsph, hstar⟩ := D.exists_radius (Drawing.vertex_mem_support _ v)
-  refine ⟨ρ, hρ, Y, hYsph, ?_, hstar⟩
-  sorry
+  set p := D.toDrawing.vertex v
+  obtain ⟨ρ₀, hρ₀, Y₀, hY₀, hstar₀⟩ := D.exists_radius (Drawing.vertex_mem_support _ v)
+  obtain ⟨ρ₁, hρ₁, hcover₁⟩ := D.exists_radius_support_subset_iUnion_segment_endTip v
+  let ρ : ℝ := min ρ₀ ρ₁
+  have hρ : 0 < ρ := lt_min hρ₀ hρ₁
+  obtain ⟨Y, hY, -, hstar⟩ :=
+    exists_radius_of_le hρ₀ hY₀ hstar₀ hρ (min_le_left _ _)
+  refine ⟨ρ, hρ, Y, hY, ?_, hstar⟩
+  have : Finite (EndsAt G v) := inferInstance
+  letI : Fintype (EndsAt G v) := Fintype.ofFinite _
+  let U : EndsAt G v → Set V := fun i ↦ segment ℝ p (D.endTip i)
+  have hge : Fintype.card (EndsAt G v) ≤ Y.card :=
+    le_card_radii_of_pairwise (T := D.toDrawing.support) hρ hY hstar
+      (fun i ↦ segment_endTip_subset_support D i)
+      (fun i ↦ ⟨D.endTip i, endTip_ne D i, subset_rfl⟩)
+      (fun i j hij ↦ segment_endTip_inter D hij)
+  have hcover : D.toDrawing.support ∩ closedBall p ρ ⊆ {p} ∪ ⋃ i, U i := by
+    intro x hx
+    exact hcover₁ ⟨hx.1, closedBall_subset_closedBall (min_le_right ρ₀ ρ₁) hx.2⟩
+  have hle : Y.card ≤ Fintype.card (EndsAt G v) :=
+    card_radii_le_of_cover (T := D.toDrawing.support) hρ hY hstar hcover (endTip_ne D)
+      (fun _ ↦ Set.inter_subset_left)
+  have hEq : Y.card = Nat.card (EndsAt G v) := by
+    rw [Nat.card_eq_fintype_card]
+    exact Nat.le_antisymm hle hge
+  rw [hEq, card_endsAt]
+
+/- **Assembly of the degree conjunct** (formalisation helper). Every piece is now named; this is the
+order to put them in. Write `p := D.toDrawing.vertex v` and `U i := segment ℝ p (D.endTip i)`.
+
+1. `exists_radius_support_subset_iUnion_segment_endTip` gives `ρ₁ > 0` for the cover. Take
+   `ρ := min ρ₀ ρ₁` with `ρ₀` from `exists_radius`, then transport the star down with
+   `exists_radius_of_le` — which keeps `Y.card`, so nothing about `Y` is lost. **The `refine` above
+   must therefore be reorganised**: pick the radius *before* introducing `Y`, rather than taking
+   whatever `exists_radius` returned.
+2. `letI := Fintype.ofFinite (EndsAt G v)` (see `card_endsAt` for why `Finite` is all that
+   `[G.Finite]` gives here).
+3. `Y.card ≥` : `le_card_radii_of_pairwise` with `hUT := segment_endTip_subset_support`,
+   `hUp := fun i ↦ ⟨D.endTip i, endTip_ne D i, subset_rfl⟩`, `hmeet := segment_endTip_inter`.
+   Note none of these three needs the radius — that is the whole point of taking `U i` to be the
+   end *segment* rather than the cell.
+4. `Y.card ≤` : `card_radii_le_of_cover` with `z := D.endTip`, `hzne := endTip_ne D`,
+   `hcover` from step 1, and `hUz := fun i ↦ Set.inter_subset_left`.
+5. `Nat.le_antisymm` gives `Y.card = Nat.card (EndsAt G v)` (via `Nat.card_eq_fintype_card`), and
+   `card_endsAt` rewrites it to `G.degree v.1`. Cast to `ℕ∞` last, with `Nat.cast_inj`.
+
+The two `SegmentFigure` bounds are stated about *any* `Y` satisfying the star equation, so `Y` never
+has to be unfolded — which is what defeated the earlier attempt. -/
 
 /-! ### 3.7, accessibility -/
 
@@ -966,79 +966,44 @@ def facesAt (D : PLDrawing G (EuclideanSpace ℝ (Fin 2))) (p : EuclideanSpace �
   {F | (p : OnePoint (EuclideanSpace ℝ (Fin 2))) ∈ frontier (D.toDrawing.onePoint.faceSet F)}
 
 /-- Distinct faces have disjoint carriers. -/
+/- Both lemmas in this block were graph-free and have moved to `ForMathlib`; what remains is the
+transport into the drawing's `Face` type. `Drawing.Face` is *by definition*
+`ConnectedComponents ↥(supportᶜ)` and `Drawing.faceSet` is *by definition* the corresponding image,
+so neither statement ever needed a graph. See Kuratowski `Decisions.md` D14/D16. -/
+
 private lemma faceSet_disjoint_of_ne {X : Type*} [TopologicalSpace X] {G : Graph α β}
     (D : Drawing G X) {F G' : D.Face} (hne : F ≠ G') :
-    Disjoint (D.faceSet F) (D.faceSet G') := by
-  refine disjoint_left.mpr ?_
-  rintro _ ⟨a, haF, rfl⟩ ⟨b, hbG, heq⟩
-  have hab : a = b := Subtype.ext heq.symm
-  subst hab
-  have hF : F = ConnectedComponents.mk a := (mem_singleton_iff.mp haF).symm
-  have hG : G' = ConnectedComponents.mk a := (mem_singleton_iff.mp hbG).symm
-  exact hne (hF.trans hG.symm)
+    Disjoint (D.faceSet F) (D.faceSet G') :=
+  disjoint_val_image_connectedComponents hne
 
 /-- **Sector extraction.** If the closed ball at `p` meets the drawing in a star, then any face
 whose frontier reaches a point `q` of the open ball contains the image of a whole sector of the
 punctured disk.
 
 Stated for a general `q ∈ ball p ρ` rather than for `p` itself: two of the three call sites want
-`q = p` and the third does not, and the argument never looks at which.  -/
+`q = p` and the third does not, and the argument never looks at which.
+
+This is `exists_sector_subset_connectedComponentIn` transported along
+`Drawing.faceSet_eq_connectedComponentIn` and `Drawing.support_onePoint`. -/
 private lemma exists_sector_subset_faceSet [G.Finite]
     (D : PLDrawing G (EuclideanSpace ℝ (Fin 2))) {p q : EuclideanSpace ℝ (Fin 2)}
     {ρ : ℝ} {Y : Finset (EuclideanSpace ℝ (Fin 2))} (hYne : Y.Nonempty)
     (hstar : closedBall p ρ ∩ D.toDrawing.support = {p} ∪ ⋃ y ∈ Y, segment ℝ p y)
     (hqball : q ∈ ball p ρ) {F : D.toDrawing.onePoint.Face} (hF : F ∈ D.facesAt q) :
     ∃ C ∈ sectors p ρ Y, (↑) '' C ⊆ D.toDrawing.onePoint.faceSet F := by
-  have hnhds : (↑) '' (ball p ρ) ∈ 𝓝 (q : OnePoint (EuclideanSpace ℝ (Fin 2))) := by
-    rw [OnePoint.nhds_coe_eq]
-    exact Filter.image_mem_map (isOpen_ball.mem_nhds hqball)
-  obtain ⟨z', ⟨hzU, hzF⟩⟩ :=
-    mem_closure_iff_nhds.mp (frontier_subset_closure hF) ((↑) '' ball p ρ) hnhds
-  obtain ⟨z, hzball, rfl⟩ := hzU
-  have hzS : z ∉ D.toDrawing.support := by
-    have : (z : OnePoint _) ∉ D.toDrawing.onePoint.support :=
-      (D.toDrawing.onePoint.faceSet_disjoint_support F).notMem_of_mem_left hzF
-    rw [Drawing.support_onePoint] at this
-    exact fun hz ↦ this ⟨z, hz, rfl⟩
-  have hzD : z ∈ diskMinusRadii p ρ Y := by
-    refine ⟨hzball, fun hzrad ↦ hzS ?_⟩
-    have hzsup : z ∈ closedBall p ρ ∩ D.toDrawing.support := by
-      rw [hstar]
-      exact Or.inr (by simpa [mem_iUnion] using hzrad)
-    exact hzsup.2
-  refine ⟨connectedComponentIn (diskMinusRadii p ρ Y) z, ⟨z, hzD, rfl⟩, ?_⟩
-  have hCsub := connectedComponentIn_subset (diskMinusRadii p ρ Y) z
-  have hconn : IsConnected
-      ((↑) '' connectedComponentIn (diskMinusRadii p ρ Y) z :
-        Set (OnePoint (EuclideanSpace ℝ (Fin 2)))) :=
-    (isConnected_connectedComponentIn_iff.mpr hzD).image _ OnePoint.continuous_coe.continuousOn
-  have himg : (↑) '' connectedComponentIn (diskMinusRadii p ρ Y) z ⊆
-      D.toDrawing.onePoint.supportᶜ := by
-    intro w hw
-    obtain ⟨w0, hw0, rfl⟩ := hw
-    have hw0D := hCsub hw0
-    have hw0S : w0 ∉ D.toDrawing.support := by
-      intro hwS
-      have hw0mem : w0 ∈ closedBall p ρ ∩ D.toDrawing.support :=
-        ⟨ball_subset_closedBall hw0D.1, hwS⟩
-      rw [hstar] at hw0mem
-      obtain rfl | hwY := hw0mem
-      · exact hw0D.2 (by
-          obtain ⟨y, hy⟩ := hYne
-          exact mem_iUnion.mpr ⟨y, mem_iUnion.mpr ⟨hy, left_mem_segment _ _ _⟩⟩)
-      exact hw0D.2 (by simpa [mem_iUnion] using hwY)
-    rw [Drawing.support_onePoint]
-    exact fun ⟨w1, hw1, heq⟩ ↦ hw0S (OnePoint.coe_injective heq ▸ hw1)
-  have hz_mem : (z : OnePoint (EuclideanSpace ℝ (Fin 2))) ∈
-      (↑) '' connectedComponentIn (diskMinusRadii p ρ Y) z :=
-    ⟨z, mem_connectedComponentIn hzD, rfl⟩
-  rw [D.toDrawing.onePoint.faceSet_eq_connectedComponentIn F hzF]
-  exact hconn.isPreconnected.subset_connectedComponentIn hz_mem himg
+  obtain ⟨w, hw⟩ := D.toDrawing.onePoint.faceSet_nonempty F
+  have hEq : D.toDrawing.onePoint.faceSet F
+      = connectedComponentIn ((↑) '' D.toDrawing.support : Set (OnePoint _))ᶜ w := by
+    rw [D.toDrawing.onePoint.faceSet_eq_connectedComponentIn F hw, Drawing.support_onePoint]
+  rw [hEq]
+  have hF' : (q : OnePoint (EuclideanSpace ℝ (Fin 2))) ∈
+      frontier (D.toDrawing.onePoint.faceSet F) := hF
+  exact exists_sector_subset_connectedComponentIn hYne hstar hqball (by rwa [hEq] at hF')
 
 
 /-- An open cell has at most two sides. -/
 theorem ncard_facesAt_le_two [G.Finite] (D : PLDrawing G (EuclideanSpace ℝ (Fin 2))) {e : E(G)}
-    {p : EuclideanSpace ℝ (Fin 2)} (hp : p ∈ Drawing.pathInterior (D.toDrawing.edgePath e)) :
+    {p : EuclideanSpace ℝ (Fin 2)} (hp : p ∈ pathInterior (D.toDrawing.edgePath e)) :
     (D.facesAt p).ncard ≤ 2 := by
   classical
   obtain ⟨ρ, hρ, Y, hYsph, hYcard, _, hstar⟩ := D.exists_radius_edgeInterior hp
@@ -1118,8 +1083,8 @@ private lemma facesAt_eq_of_mem_star_ball [G.Finite]
     (D : PLDrawing G (EuclideanSpace ℝ (Fin 2))) {e : E(G)}
     {p q : EuclideanSpace ℝ (Fin 2)} {ρ : ℝ}
     {Y : Finset (EuclideanSpace ℝ (Fin 2))}
-    (hp : p ∈ Drawing.pathInterior (D.toDrawing.edgePath e))
-    (hq : q ∈ Drawing.pathInterior (D.toDrawing.edgePath e))
+    (hp : p ∈ pathInterior (D.toDrawing.edgePath e))
+    (hq : q ∈ pathInterior (D.toDrawing.edgePath e))
     (hρ : 0 < ρ) (hYsph : ↑Y ⊆ sphere p ρ) (hYcard : Y.card = 2)
     (hstar : closedBall p ρ ∩ D.toDrawing.support =
       {p} ∪ ⋃ y ∈ Y, segment ℝ p y)
@@ -1197,13 +1162,13 @@ private lemma facesAt_eq_of_mem_star_ball [G.Finite]
 
 /-- The sides of an open cell are locally constant along the cell. -/
 theorem facesAt_eq [G.Finite] (D : PLDrawing G (EuclideanSpace ℝ (Fin 2))) {e : E(G)}
-    {p q : EuclideanSpace ℝ (Fin 2)} (hp : p ∈ Drawing.pathInterior (D.toDrawing.edgePath e))
-    (hq : q ∈ Drawing.pathInterior (D.toDrawing.edgePath e)) :
+    {p q : EuclideanSpace ℝ (Fin 2)} (hp : p ∈ pathInterior (D.toDrawing.edgePath e))
+    (hq : q ∈ pathInterior (D.toDrawing.edgePath e)) :
     D.facesAt p = D.facesAt q := by
   classical
-  let PI := Drawing.pathInterior (D.toDrawing.edgePath e)
+  let PI := pathInterior (D.toDrawing.edgePath e)
   have hPIc : IsConnected PI := by
-    simpa only [PI, Drawing.pathInterior] using
+    simpa only [PI, pathInterior] using
       (isConnected_Ioo (show (0 : unitInterval) < 1 from zero_lt_one)).image _
         (D.toDrawing.edgePath e).continuous.continuousOn
   have hloc (x : EuclideanSpace ℝ (Fin 2)) (hx : x ∈ PI) :

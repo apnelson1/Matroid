@@ -406,4 +406,14 @@ lemma IsSimpleLoop.existsUnique_edge {P : PolygonalPath x x} {a : α} (h : P.IsS
         exact haends.elim (fun e => (hax e).elim) (fun e => (hab e).elim)
       · exact hsuniq t ⟨ht, hat⟩
 
+/-- A simple loop has no degenerate edge. -/
+@[grind →]
+lemma IsSimpleLoop.hasNondegenerateEdges {x : α} {P : PolygonalPath x x}
+    (h : P.IsSimpleLoop) : P.HasNondegenerateEdges := by
+  cases P with
+  | nil => exact (not_isSimpleLoop_nil h).elim
+  | cons a b Q =>
+    obtain ⟨hne, hQ, _⟩ := isSimpleLoop_cons_iff.mp h
+    exact hasNondegenerateEdges_cons.mpr ⟨hne, hQ.hasNondegenerateEdges⟩
+
 end PolygonalPath

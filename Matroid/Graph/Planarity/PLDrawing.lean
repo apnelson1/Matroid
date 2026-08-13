@@ -170,7 +170,7 @@ theorem exists_nhds_inter_support_eq_segment [G.Finite] [T2Space V] [IsTopologic
     obtain rfl | rfl := h
     · exact (D.cell f).first_mem_vertices
     · exact (D.cell f).last_mem_vertices
-  have haPI : a ∈ Drawing.pathInterior (D.toDrawing.edgePath f) := by
+  have haPI : a ∈ pathInterior (D.toDrawing.edgePath f) := by
     have : a ∈ range (D.toDrawing.edgePath f) := by rw [D.range_edgePath f]; exact ha
     obtain ⟨t, rfl⟩ := this
     refine ⟨t, ⟨?_, ?_⟩, rfl⟩
@@ -238,18 +238,18 @@ analysis lives here, and §2.6 and §6 verify their obligations on `toSet`s. -/
 /-- The interior of the parametrized cell is its image minus its endpoints — for a loop, minus the
 single base point, which is again the open cell. -/
 theorem pathInterior_toPath {x y : V} {P : PolygonalPath x y} (h : P.IsSimpleArcOrLoop) :
-    Drawing.pathInterior P.toPath = P.toSet \ {x, y} :=
+    pathInterior P.toPath = P.toSet \ {x, y} :=
   h.toSet_diff_endpoints.symm
 
 theorem disjoint_pathInterior_toPath_range {x y : V} {P : PolygonalPath x y} {S : Set V}
     (h : P.IsSimpleArcOrLoop) (hdisj : Disjoint (P.toSet \ {x, y}) S) :
-    Disjoint (Drawing.pathInterior P.toPath) S :=
+    Disjoint (pathInterior P.toPath) S :=
   (pathInterior_toPath h) ▸ hdisj
 
 theorem disjoint_pathInterior_toPath {x y x' y' : V} {P : PolygonalPath x y}
     {Q : PolygonalPath x' y'} (hP : P.IsSimpleArcOrLoop) (hQ : Q.IsSimpleArcOrLoop)
     (hdisj : Disjoint (P.toSet \ {x, y}) (Q.toSet \ {x', y'})) :
-    Disjoint (Drawing.pathInterior P.toPath) (Drawing.pathInterior Q.toPath) :=
+    Disjoint (pathInterior P.toPath) (pathInterior Q.toPath) :=
   (pathInterior_toPath hP) ▸ (pathInterior_toPath hQ) ▸ hdisj
 
 /-- Build a polygonal drawing from vertex positions and cells. The hypotheses are the polygonal form

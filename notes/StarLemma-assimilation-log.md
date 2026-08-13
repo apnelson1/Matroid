@@ -1,4 +1,13 @@
-# Extracting lemmas from AI-written proofs
+# StarLemma assimilation — worked log
+
+A record of assimilating one file, `Matroid/Graph/Planarity/StarLemma.lean` (1692 lines of
+AI-generated Lean), kept for its concrete before/after material and its numbers.
+
+**This is not the guide.** The transferable method — the five stages, the scans, the tagging
+rules — lives in `Matroid/notes/lean/Assimilation.md` in the neighbouring repo. Read that first;
+come here only for a worked example of it.
+
+---
 
 A method note, written from a worked example: `Matroid/Graph/Planarity/StarLemma.lean`, 1692 lines
 of freshly AI-generated Lean, reduced to 1469 by extraction alone — no change to any statement, no
@@ -324,11 +333,15 @@ wholesale:
 | `radialPoint_eq_iff_pos_parallel`, `radialPoint_ne_of_mem_openSegment`, `closedBall_inter_segment_eq_two_radii`, `closedBall_inter_two_segments_at_endpoint`, `two_radii_union_eq_star`, `coe_star_eq_sphere_inter_support` | the "star of two radii" facts — move *with* `radialPoint`, public |
 | `ne_of_mem_openSegment_left`/`_right` | public; general `openSegment` facts, Mathlib has only the converse (`mem_openSegment_of_ne_left_right`) |
 
-**Proposed home:** `Matroid/ForMathlib/Analysis/Convex/Segment.lean`, or a sibling
-`ForMathlib/Analysis/Convex/RadialPoint.lean` if 200-odd lines is too much for one file. The
-precedent is already set — that file holds `segment_union_eq_segment` and `isCompact_segment`,
-*both of which `StarLemma.lean` already imports and uses*, so the import direction is proven
-acyclic.
+**Home — done.** `Matroid/ForMathlib/Analysis/Convex/RadialPoint.lean` (286 lines), a sibling of
+`Segment.lean`, which now also holds `ne_of_mem_openSegment_left`/`_right` in their general module
+setting rather than the normed one. The import direction was already proven acyclic:
+`StarLemma.lean` imported and used `segment_union_eq_segment` and `isCompact_segment` from
+`Segment.lean` before the move. `StarLemma.lean` went 1467 → 1254 lines.
+
+One rename on the way: `dist_lineMap_center` became `dist_lineMap_left_of_nonneg`, matching
+Mathlib's `dist_lineMap_left` that it now wraps, and was made public since two call sites remain in
+`StarLemma.lean`.
 
 **The cost, stated honestly:** `private` → public is a maintenance commitment. You are promising a
 name and an interface. `radialPoint` in particular is a definition, so its precise form (`lineMap`
@@ -391,6 +404,97 @@ sphere meet only [at the centre]". That is `radialPoint_ne_of_mem_openSegment` a
 After level-1 extraction, run the domain-token scan and ask of each `PURE` hit: *if I needed this
 in six months, where would I look for it?* If the answer is not the file it is in, it is misplaced.
 If the answer is "Mathlib", check Mathlib first — it may already be there.
+
+---
+
+# The pipeline, and a name for it
+
+"Golfing" is too narrow for what this note describes. The full sequence of turning a working proof
+into a library citizen has five stages, and they are genuinely different kinds of work:
+
+| stage | question | who can do it |
+|---|---|---|
+| 0. **Reduce** | should this exist at all? | grep Mathlib |
+| 1. **Golf** | is the tactic text minimal and idiomatic? | `../leangolf`, mechanically |
+| 2. **Extract** | is each argument named once? | duplicate scan + reading |
+| 3. **Relocate** | is the name visible from where it is needed? | domain-token scan |
+| 4. **Tag** | does it participate in automation, in normal form? | judgement + measurement |
+
+Proposed name for the whole sequence: **assimilation** — the work of turning code that merely
+compiles into code the library can absorb. Individually: *reduce, golf, extract, relocate, tag*.
+
+Two ordering constraints, both learned the hard way:
+
+- **Extract before golf** (see above): golfing rewrites each copy of a duplicated block
+  differently and destroys the signal.
+- **Reduce before everything.** A lemma you golf, extract and relocate, only to find Mathlib had
+  it, is four stages of wasted work. `dist_lineMap_center` survived three passes of this note
+  before anyone checked.
+
+Tagging is last for a reason: it is the only stage whose mistakes are **non-local**. A bad
+extraction hurts one file; a bad `@[simp]` or `@[grind]` degrades every downstream proof.
+
+## Stage 4 in practice: what tagging `radialPoint` taught
+
+Worked example, `Matroid/ForMathlib/Analysis/Convex/RadialPoint.lean`.
+
+**The rule I started with** — sound, and worth keeping:
+
+> Tag a lemma whose left-hand side is *headed by the new definition*. It can then only fire where
+> the definition already appears, so its cost is bounded. Do **not** tag one whose left-hand side is
+> built from pre-existing notions and whose right-hand side introduces the definition — that fires
+> library-wide and drags an unfamiliar definition into unrelated goals.
+
+By that rule `segment_inter_closedBall_eq_radial` — the main theorem of the file — must **not** be
+`@[simp]`, because its LHS `closedBall p ρ ∩ segment ℝ p z` is all pre-existing notions. Being the
+most important lemma in a file is not an argument for tagging it.
+
+**Where the rule was not enough.** I tagged `dist_radialPoint : dist (radialPoint p z ρ) p = ρ`,
+having reasoned carefully about *orientation* — constructed point on the left, matching
+`mem_sphere`, `mem_closedBall`, and Mathlib's `dist_lineMap_left`. Then
+`mem_sphere_radialPoint` still would not close by `simp`, leaving:
+
+```
+⊢ ‖radialPoint p z ρ - p‖ = ρ
+```
+
+The cause: in a normed space Mathlib normalises ball and sphere membership to **norms**, not to
+`dist`. `mem_sphere_iff_norm` and `mem_closedBall_iff_norm` carry `@[simp high]`, outranking
+`mem_sphere`. So a `dist`-shaped rule is never what `simp` is looking at by the time it could
+apply — it loses the race in precisely the goals where it is wanted.
+
+The fix is to state the tagged lemma in the *ambient* normal form:
+
+```lean
+@[simp] lemma norm_radialPoint_sub (p z : V) {ρ : ℝ} (hρ : 0 ≤ ρ) (hne : z ≠ p) :
+    ‖radialPoint p z ρ - p‖ = ρ
+```
+
+with `dist_radialPoint` kept untagged as the human-facing statement.
+
+**The lesson, which generalises past this file:** picking a normal form is not a free choice. The
+surrounding simp set already has one, and a new lemma either joins it or is dead weight. *Test the
+tag* — write the goal you expect it to close and check `simp` closes it. A tag that never fires is
+invisible: it costs a match attempt on every relevant goal and never shows up as a failure.
+
+## On `grind` tags: nothing, deliberately
+
+No `@[grind]` anywhere in the new file, and the reason is measurable rather than aesthetic.
+
+Mathlib ships `scripts/grind_unused_lemmas.sh`, which builds with
+`set_option grind.unusedLemmaThreshold N` and reports **lemmas activated N+ times by E-matching but
+absent from the final proof term**. That names the real cost of a bad `grind` tag: not unsoundness,
+not even looping, but *activation without contribution* — work done on every `grind` call whose
+goal mentions your symbol, paid forever, for nothing.
+
+There are currently **zero** `grind` calls anywhere in this project whose goals mention
+`radialPoint`. Tagging now would create exactly the pattern that script exists to find. The right
+time is when the first `grind` proof over this API appears; `dist_radialPoint` is then the natural
+`@[grind =]` candidate, for the same bounded-cost reason that made it a `@[simp]` candidate.
+
+Worth running `grind_unused_lemmas.sh` against this project once there is enough `grind` usage to
+make it meaningful — it is the only feedback loop here that is quantitative rather than
+judgemental.
 
 ---
 

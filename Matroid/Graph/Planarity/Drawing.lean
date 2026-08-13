@@ -112,10 +112,6 @@ noncomputable def edgePath (D : Drawing G X) (e : E(G)) :
     Path (D.vertex (edgeSource e)) (D.vertex (edgeTarget e)) :=
   (G.edgePath e).map D.continuous
 
-/-- The open image of a path, with both endpoints omitted. -/
-def pathInterior {x y : X} (P : Path x y) : Set X :=
-  P '' Ioo (0 : unitInterval) 1
-
 /-- The image of the realization under a drawing. -/
 def support (D : Drawing G X) : Set X :=
   range D
@@ -757,7 +753,7 @@ lemma embedFinite_injective (ι : Type*) [Finite ι] : Injective (embedFinite ι
   exact (Finite.equivFin ι).injective (Fin.val_injective (Nat.cast_injective this))
 
 lemma pathInterior_segment (a b : Plane) :
-    Drawing.pathInterior (Path.segment a b) = openSegment ℝ a b := by
+    pathInterior (Path.segment a b) = openSegment ℝ a b := by
   ext z
   constructor
   · rintro ⟨t, ht, rfl⟩

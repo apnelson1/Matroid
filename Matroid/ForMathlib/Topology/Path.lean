@@ -50,6 +50,22 @@ lemma Icc_eq_univ : Icc (0 : I) 1 = univ := by
   have := t.prop
   tauto
 
+/-- Every parameter is an endpoint of `I` or interior to it.
+
+A wrapper on `Set.eq_endpoints_or_mem_Ioo_of_mem_Icc`, whose `Icc` hypothesis is vacuous here. It
+earns its name by how often a statement about a path splits into "at the source", "at the target"
+and "on the open image": callers get `t = 0` and `t = 1` as substitutable equations rather than
+having to pass through `Subtype.ext`.
+
+**Deliberately untagged; pass it as a hint** — `grind [unitInterval.eq_zero_or_eq_one_or_mem_Ioo]`.
+There is no tag form that fits. `@[grind →]` is rejected outright (`does not have propositional
+hypotheses`) because there is nothing to key on: the lemma holds of *every* `t : I`. `@[grind .]`
+would key on a bare variable and so fire on every `I`-valued term in every goal, imposing a
+three-way case split library-wide for a fact most goals do not need. A hypothesis-free disjunction
+is a splitter, and a splitter is the caller's choice, not the library's. -/
+lemma eq_zero_or_eq_one_or_mem_Ioo (t : I) : t = 0 ∨ t = 1 ∨ t ∈ Ioo (0 : I) 1 :=
+  Set.eq_endpoints_or_mem_Ioo_of_mem_Icc (Icc_eq_univ ▸ mem_univ t)
+
 instance : ContinuousMul I := submonoid.continuousMul
 instance : PathConnectedSpace I :=
   isPathConnected_iff_pathConnectedSpace.mp <| (convex_Icc 0 1).isPathConnected ⟨0, by simp⟩
@@ -118,9 +134,7 @@ lemma squishLeft_Icc (i j : I) : squishLeft '' Icc i j = Icc (squishLeft i) (squ
   ext ⟨t, ht⟩
   simp only [squishLeft, mem_image, mem_Icc, ← Subtype.coe_le_coe, Subtype.exists, exists_and_left]
   refine ⟨fun h => ?_, fun ⟨hit, htj⟩ => ?_⟩
-  · obtain ⟨x, ⟨hxi, hxj⟩, ⟨hx0, hx1⟩, hh⟩ := h
-    obtain rfl := Subtype.mk_eq_mk.mp hh
-    constructor <;> linarith
+  · grind
   refine ⟨2 * t, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ?_⟩ <;> grind
 
 lemma squishRight_Icc (i j : I) : squishRight '' Icc i j = Icc (squishRight i) (squishRight j) := by
@@ -130,9 +144,7 @@ lemma squishRight_Icc (i j : I) : squishRight '' Icc i j = Icc (squishRight i) (
   simp only [squishRight, mem_image, mem_Icc, Subtype.exists, ← Subtype.coe_le_coe,
     exists_and_left]
   refine ⟨fun h => ?_, fun ⟨hit, htj⟩ => ?_⟩
-  · obtain ⟨x, ⟨hxi, hxj⟩, ⟨hx0, hx1⟩, hh⟩ := h
-    obtain rfl := Subtype.mk_eq_mk.mp hh
-    constructor <;> linarith
+  · grind
   refine ⟨2 * t - 1, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ?_⟩ <;> grind
 
 end unitInterval
@@ -226,13 +238,13 @@ lemma trans_injective_iff [TopologicalSpace α] {P : Path x y} {Q : Path y z} :
   · simpa [Subtype.val_inj] using hP ht
   on_goal 3 => simpa [Subtype.val_inj] using hQ ht
   all_goals
-  · have := ht ▸ (hdj.notMem_of_mem_right (a := Q _) (by simp))
-    simp only [mem_sdiff, mem_range, exists_apply_eq_apply, mem_singleton_iff,
-      Path.eq_one_iff_of_injective hP, Subtype.ext_iff, Icc.coe_one, true_and,
-      Decidable.not_not] at this
-    simp only [this, Icc.mk_one, Path.target, eq_comm (a := y), Q.eq_zero_iff_of_injective hQ,
-      Subtype.ext_iff, Icc.coe_zero] at ht
-    linarith
+  have := ht ▸ (hdj.notMem_of_mem_right (a := Q _) (by simp))
+  simp only [mem_sdiff, mem_range, exists_apply_eq_apply, mem_singleton_iff,
+    Path.eq_one_iff_of_injective hP, Subtype.ext_iff, Icc.coe_one, true_and,
+    Decidable.not_not] at this
+  simp only [this, Icc.mk_one, Path.target, eq_comm (a := y), Q.eq_zero_iff_of_injective hQ,
+    Subtype.ext_iff, Icc.coe_zero] at ht
+  linarith
 
 lemma injOn_ico_iff_injOn_ioc [TopologicalSpace α] (P : Path x x) :
     InjOn P (Ico 0 1) ↔ InjOn P (Ioc 0 1) := by
@@ -381,4 +393,205 @@ lemma IsSimpleLoop.injOn_ioo {P : Path x x} (h : P.IsSimpleLoop) : InjOn P (Ioo 
     (by rfl)
   exact half_ne_zero heq.symm
 
+/-! ### Cutting a path at a metric ball
+
+Both lemmas below were `private` in `Matroid/Graph/Planarity/PLReduction.lean`, where they were
+stated over a real normed space although neither uses the linear structure. See Kuratowski
+`Decisions.md` D14/D16: a declaration whose statement mentions nothing from its file's namespace is
+misfiled, and stating it at the hypotheses its proof actually uses is what makes it reachable. -/
+
+/-- On an injectively parametrised path, a connected piece of the image containing `γ t₁` and
+`γ t₂` contains the whole parameter interval between them.
+
+The preimage inherits connectedness from the piece only because `γ` is a closed embedding, which on
+the compact domain `I` is exactly injectivity. This is the step that turns "two subarcs meet in a
+single point" into "two subarcs are the two parameter halves". -/
+@[grind →]
+lemma image_Icc_subset_of_isConnected [T2Space α] {y : α} {γ : Path x y} (hinj : Injective γ)
+    {S : Set α} (hS : IsConnected S) (hSsub : S ⊆ range γ) {t₁ t₂ : I}
+    (h₁ : γ t₁ ∈ S) (h₂ : γ t₂ ∈ S) : γ '' Icc t₁ t₂ ⊆ S := by
+  have hpre : IsConnected (γ ⁻¹' S) :=
+    hS.preimage_of_isClosedMap hinj (γ.continuous.isClosedEmbedding hinj).isClosedMap hSsub
+  rintro w ⟨t, ht, rfl⟩
+  obtain ⟨s, hs, hseq⟩ :=
+    (hpre.image _ continuous_subtype_val.continuousOn).Icc_subset
+      (mem_image_of_mem _ h₁) (mem_image_of_mem _ h₂) ⟨ht.1, ht.2⟩
+  exact (Subtype.ext hseq) ▸ hs
+
+/-- Last exit from `closedBall c rc` and first subsequent entry into `closedBall d rd` along a path
+from `a` to `b`, where `a` starts in the first ball and `b` ends in the second. Both parameter sets
+are closed and nonempty, so the extrema exist; disjointness of the balls forces the exit time to
+precede the entry time and puts both endpoints on the spheres.
+
+The centres are deliberately not required to be the endpoints. One caller cuts a path at the balls
+around its own two ends, so its membership hypotheses are `mem_closedBall_self`; another cuts a
+polygonal *approximation*, whose endpoints lie in the balls without being their centres. Positivity
+of the radii is not a hypothesis: it is only ever used to supply the two memberships.
+
+**Deliberately untagged; pass it as a hint.** Both forms are rejected, and the reason is structural
+rather than a matter of choosing better options. `@[grind →]` keys on the antecedents, which mention
+`a, b, c, d, rc, rd` but *never `γ`* — `γ` occurs only in the conclusion, under the `∃ t s` binder —
+so no antecedent multi-pattern determines every variable (`failed to find patterns in the
+antecedents`). `@[grind .]` keys on the conclusion, whose head is `Exists` (`failed to find
+patterns`). A lemma whose principal argument appears only beneath an existential in the conclusion
+has no E-matching pattern at all; it is a *producer*, and producers are invoked, not matched. -/
+lemma exists_lastExit_firstEntry {α : Type*} [PseudoMetricSpace α] {a b c d : α} (γ : Path a b)
+    {rc rd : ℝ} (hdisj : Disjoint (closedBall c rc) (closedBall d rd))
+    (ha : a ∈ closedBall c rc) (hb : b ∈ closedBall d rd) :
+    ∃ (t s : I), t < s ∧
+      dist (γ t) c = rc ∧ dist (γ s) d = rd ∧
+      (γ '' Icc t s) ∩ closedBall c rc = {γ t} ∧
+      (γ '' Icc t s) ∩ closedBall d rd = {γ s} := by
+  let Su : Set I := {u | γ u ∈ closedBall c rc}
+  have hSu_ne : Su.Nonempty := ⟨0, by simpa [Su, Path.source] using ha⟩
+  obtain ⟨t, ht⟩ := (isClosed_closedBall.preimage γ.continuous).isCompact.exists_isGreatest hSu_ne
+  let Sv : Set I := {u | t ≤ u ∧ γ u ∈ closedBall d rd}
+  have hSv_closed : IsClosed Sv :=
+    isClosed_Ici.inter (isClosed_closedBall.preimage γ.continuous)
+  have hSv_ne : Sv.Nonempty := ⟨1, ⟨t.2.2, by simpa [Path.target] using hb⟩⟩
+  obtain ⟨s, hs⟩ := hSv_closed.isCompact.exists_isLeast hSv_ne
+  have hts : t < s := by
+    exact lt_of_le_of_ne hs.1.1 fun heq ↦ (hdisj.notMem_of_mem_left ht.1 (heq ▸ hs.1.2))
+  refine ⟨t, s, hts, ?_, ?_, ?_, ?_⟩
+  · have hle : dist (γ t) c ≤ rc := Metric.mem_closedBall.mp ht.1
+    refine le_antisymm hle ?_
+    by_contra hlt'
+    have hlt : dist (γ t) c < rc := lt_of_not_ge hlt'
+    have hcont : Continuous fun u : I ↦ dist (γ u) c :=
+      Continuous.dist γ.continuous continuous_const
+    have ht_ne_one : t ≠ 1 := by
+      intro ht1
+      have hmem : γ 1 ∈ closedBall c rc := by
+        have := ht.1; rwa [ht1] at this
+      have : b ∈ closedBall c rc := by rwa [γ.target] at hmem
+      exact hdisj.notMem_of_mem_left this hb
+    have ht_lt : (t : ℝ) < 1 := unitInterval.lt_one_iff_ne_one.mpr ht_ne_one
+    have hc := hcont.continuousAt (x := t)
+    rw [Metric.continuousAt_iff] at hc
+    obtain ⟨δ, δpos, hδ⟩ := hc (rc - dist (γ t) c) (sub_pos.mpr hlt)
+    have hab : (t : ℝ) < min (t + δ / 2) 1 :=
+      lt_min (lt_add_of_pos_right _ (half_pos δpos)) ht_lt
+    obtain ⟨t0, ht0a, ht0b⟩ := exists_between hab
+    have ht0I : t0 ∈ (I : Set ℝ) :=
+      ⟨t.2.1.trans (le_of_lt ht0a), (le_of_lt ht0b).trans (min_le_right _ _)⟩
+    set u : I := ⟨t0, ht0I⟩
+    have hparamI : dist u t < δ := by
+      have habs : dist t0 (t : ℝ) = t0 - t := by
+        rw [Real.dist_eq, abs_of_nonneg (sub_nonneg.mpr (le_of_lt ht0a))]
+      have : t0 < t + δ / 2 := (lt_min_iff.mp ht0b).1
+      change dist (u : ℝ) (t : ℝ) < δ
+      linarith
+    have hclose := hδ hparamI
+    have hu_ball : dist (γ u) c < rc := by
+      have := abs_lt.mp hclose; linarith
+    have hu_mem : u ∈ Su := Metric.mem_closedBall.mpr (le_of_lt hu_ball)
+    have : u ≤ t := ht.2 hu_mem
+    exact (lt_of_le_of_lt this ht0a).false
+  · have hle : dist (γ s) d ≤ rd := Metric.mem_closedBall.mp hs.1.2
+    refine le_antisymm hle ?_
+    by_contra hlt'
+    have hlt : dist (γ s) d < rd := lt_of_not_ge hlt'
+    have hcont : Continuous fun u : I ↦ dist (γ u) d :=
+      Continuous.dist γ.continuous continuous_const
+    have hc := hcont.continuousAt (x := s)
+    rw [Metric.continuousAt_iff] at hc
+    obtain ⟨δ, δpos, hδ⟩ := hc (rd - dist (γ s) d) (sub_pos.mpr hlt)
+    have hε : 0 < min (δ / 2) (((s : ℝ) - t) / 2) :=
+      lt_min (half_pos δpos) (half_pos (sub_pos.mpr hts))
+    set t0 : ℝ := (s : ℝ) - min (δ / 2) (((s : ℝ) - t) / 2)
+    have ht0_lt : t0 < s := sub_lt_self _ hε
+    have ht0_gt : (t : ℝ) < t0 := by
+      have : min (δ / 2) (((s : ℝ) - t) / 2) ≤ ((s : ℝ) - t) / 2 := min_le_right _ _
+      linarith
+    have ht0I : t0 ∈ (I : Set ℝ) :=
+      ⟨t.2.1.trans (le_of_lt ht0_gt), (le_of_lt ht0_lt).trans s.2.2⟩
+    set u : I := ⟨t0, ht0I⟩
+    have hparamI : dist u s < δ := by
+      have habs : dist t0 (s : ℝ) = s - t0 := by
+        rw [Real.dist_eq, abs_sub_comm, abs_of_nonneg (sub_nonneg.mpr (le_of_lt ht0_lt))]
+      have : s - t0 = min (δ / 2) (((s : ℝ) - t) / 2) := by simp [t0]
+      change dist (u : ℝ) (s : ℝ) < δ
+      calc dist t0 (s : ℝ)
+          = min (δ / 2) (((s : ℝ) - t) / 2) := by rw [habs, this]
+        _ ≤ δ / 2 := min_le_left _ _
+        _ < δ := half_lt_self δpos
+    have hclose := hδ hparamI
+    have hu_ball : dist (γ u) d < rd := by
+      have := abs_lt.mp hclose; linarith
+    have hu_mem : u ∈ Sv := ⟨le_of_lt ht0_gt, Metric.mem_closedBall.mpr (le_of_lt hu_ball)⟩
+    have : s ≤ u := hs.2 hu_mem
+    exact (lt_of_le_of_lt this ht0_lt).false
+  · ext z; constructor
+    · intro hz
+      obtain ⟨⟨u, hu, rfl⟩, hzB⟩ := hz
+      have : u ≤ t := ht.2 hzB
+      have : u = t := le_antisymm this hu.1
+      simp [this]
+    · intro hz
+      rw [hz]
+      exact ⟨⟨t, ⟨le_rfl, le_of_lt hts⟩, rfl⟩, ht.1⟩
+  ext z; constructor
+  · intro hz
+    obtain ⟨⟨u, hu, rfl⟩, hzB⟩ := hz
+    have : s ≤ u := hs.2 ⟨hu.1, hzB⟩
+    have : u = s := le_antisymm hu.2 this
+    simp [this]
+  intro hz
+  rw [hz]
+  exact ⟨⟨s, ⟨le_of_lt hts, le_rfl⟩, rfl⟩, hs.1.2⟩
+
 end Path
+
+/-! ### The interior of a path
+
+`pathInterior` used to live in `Matroid/Graph/Planarity/Drawing.lean`. It mentions no graph and no
+drawing — it is the image of a path with both endpoints omitted — so it belongs here. See
+Kuratowski `Decisions.md` D14/D16. -/
+
+/-- The open image of a path, with both endpoints omitted. -/
+def pathInterior {X : Type*} [TopologicalSpace X] {x y : X} (P : Path x y) : Set X :=
+  P '' Ioo (0 : unitInterval) 1
+
+lemma pathInterior_subset_range {X : Type*} [TopologicalSpace X] {x y : X} (P : Path x y) :
+    pathInterior P ⊆ range P := by
+  rintro _ ⟨t, ht, rfl⟩
+  exact ⟨t, rfl⟩
+
+/-! ### Regression tests for the tags
+
+Each `example` fails if the tag or hint named above it is removed. The two that pass a lemma
+explicitly are the point of the exercise: a `grind` proof may only rely on a lemma that is either
+tagged or hinted, so an untaggable lemma is not thereby unusable — it just moves the cost from the
+library to the call site, which is the right place for it when no pattern exists. -/
+
+section RegressionTests
+
+open unitInterval
+
+-- `unitInterval.eq_zero_or_eq_one_or_mem_Ioo` as a hint: untaggable, so the caller names it.
+example {t : I} (h₀ : t ≠ 0) (h₁ : t ≠ 1) : t ∈ Ioo (0 : I) 1 := by
+  grind [unitInterval.eq_zero_or_eq_one_or_mem_Ioo]
+
+-- Without the hint the same goal is out of reach, which is what makes the hint load-bearing.
+example {t : I} (h₀ : t ≠ 0) (h₁ : t ≠ 1) : t = 0 ∨ t = 1 ∨ t ∈ Ioo (0 : I) 1 := by
+  grind [unitInterval.eq_zero_or_eq_one_or_mem_Ioo]
+
+-- `Path.image_Icc_subset_of_isConnected`, `@[grind →]`: keyed on the antecedents, which do mention
+-- every variable, unlike `exists_lastExit_firstEntry` below.
+example {α : Type*} [TopologicalSpace α] [T2Space α] {x y : α} {γ : Path x y}
+    (hinj : Function.Injective γ) {S : Set α} (hS : IsConnected S) (hSsub : S ⊆ range γ)
+    {t₁ t₂ : I} (h₁ : γ t₁ ∈ S) (h₂ : γ t₂ ∈ S) : γ '' Icc t₁ t₂ ⊆ S := by grind
+
+-- `Path.exists_lastExit_firstEntry` is a *producer*, and `grind` cannot use it even as a hint:
+-- `grind [Path.exists_lastExit_firstEntry]` is rejected with `failed to find an usable pattern
+-- using different modifiers`, for the same reason both attribute forms were. The working shape is
+-- to instantiate it and let `grind` consume the facts it yields. That is not a defect, and it is
+-- the answer whenever a lemma's principal argument lives only under an existential.
+example {α : Type*} [PseudoMetricSpace α] {a b c d : α} (γ : Path a b) {rc rd : ℝ}
+    (hdisj : Disjoint (closedBall c rc) (closedBall d rd))
+    (ha : a ∈ closedBall c rc) (hb : b ∈ closedBall d rd) :
+    ∃ t : I, dist (γ t) c = rc ∧ γ t ∈ closedBall c rc := by
+  obtain ⟨t, s, hts, hc, hd, hmc, hmd⟩ := γ.exists_lastExit_firstEntry hdisj ha hb
+  grind [mem_closedBall]
+
+end RegressionTests

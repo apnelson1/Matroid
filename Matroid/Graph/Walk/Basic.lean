@@ -769,6 +769,16 @@ lemma WellFormed.isWalk_toGraph (hw : w.WellFormed) : w.toGraph.IsWalk w := by
     obtain ⟨y₁, y₂, h⟩ := exists_isLink_of_mem_edge he
     rw [((ih hw.1).isLink_mono h).isLink_iff_sym2_eq, hw.2 _ _ h]
 
+/-- If a nontrivial walk of `G` has no internal vertex in `V(H)`, then none of its edges lie in
+`E(H)`. Needs `Nontrivial`: a one-edge walk between two vertices of `H` has empty internal set. -/
+lemma Nontrivial.disjoint_edgeSet_of_disjoint_internalVertexSet
+    {G H : Graph α β} (hw : w.Nontrivial) (hle : H ≤ G) (hW : G.IsWalk w)
+    (hdisj : Disjoint w.internalVertexSet V(H)) : Disjoint E(w) E(H) := by
+  refine disjoint_left.2 fun f hf hfH ↦ ?_
+  obtain ⟨a, b, hab⟩ := (mem_edge_iff_exists_dInc).mp (mem_edgeSet_iff.mp hf)
+  have habH := (hW.isLink_of_dInc hab).of_le_of_mem hle hfH
+  exact hw.not_prop_both_of_dInc (P := (· ∈ V(H))) hdisj hab ⟨habH.left_mem, habH.right_mem⟩
+
 end WList
 
 namespace Graph

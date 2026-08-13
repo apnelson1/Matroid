@@ -111,7 +111,10 @@ Route: `IsEar.le_union` for `≤`. For `≠`: `edgeSet_nonempty` gives `e ∈ E(
 `e ∉ E(H)`, and `toGraph_edgeSet` `Walk/Basic.lean:714` with `union_edgeSet` puts
 `e ∈ E(H ∪ P.toGraph)`. -/
 lemma IsEar.lt_union (h : G.IsEar H P) : H < H ∪ P.toGraph := by
-  sorry
+  obtain ⟨e, he⟩ := h.edgeSet_nonempty
+  refine lt_iff_le_and_ne.mpr ⟨h.le_union, fun heq ↦ ?_⟩
+  apply_fun Graph.edgeSet at heq
+  exact h.edge_disjoint.notMem_of_mem_left he <| Set.ext_iff.mp heq e |>.mpr (by grind)
 
 /-! ### Existence: `Status.md` 4.1
 
@@ -150,34 +153,68 @@ Split `G.Inc e x` on loop versus nonloop (`Inc.isLoopAt_or_isNonloopAt`, `Basic.
 theorem exists_isEar_or_isLoopAt_of_connected (hG : G.Connected)
     (hGx : ∀ x ∈ V(G), (G - {x}).Connected) (hle : H ≤ G) (hV : V(H).Nontrivial) (hne : H ≠ G) :
     (∃ P, G.IsEar H P) ∨ ∃ e x, x ∈ V(H) ∧ G.IsLoopAt e x ∧ e ∉ E(H) := by
-  sorry
+  obtain ⟨e, x, hex, heH, hxH⟩ := hG.exists_inc_notMem_of_lt (Std.lt_of_le_of_ne hle hne)
+    hV.nonempty
+  refine hex.isLoopAt_or_isNonloopAt.elim (Or.inr ⟨e, x, hxH, ·, heH⟩) fun ⟨u, hux, h⟩ ↦ Or.inl ?_
+  obtain ⟨y₀, hy₀, hy₀x⟩ := hV.exists_ne x
+  obtain ⟨Q, hQ, rfl, rfl⟩ := hGx x (hle.vertexSet_mono hxH) |>.connBetween (by grind : u ∈ _)
+    (by grind : y₀ ∈ _) |>.exists_isPath
+  simp only [isPath_deleteVerts_iff, disjoint_singleton_right, mem_vertexSet_iff] at hQ
+  classical
+  have hpre := Q.prefixUntil_isPrefix (· ∈ V(H))
+  have hnotMem := mt (hpre.subset ·) hQ.2
+  use cons x e (Q.prefixUntil (· ∈ V(H))), ?_, (ne_of_mem_of_not_mem last_mem hnotMem |>.symm), hxH,
+    prefixUntil_prop_last ⟨_, last_mem, hy₀⟩, disjoint_internalVertexSet_cons_prefixUntil .., ?_
+  · rw [cons_isPath_iff, prefixUntil_first]
+    use h, hQ.1.prefix hpre, hnotMem
+  by_cases hnt : (cons x e (Q.prefixUntil (· ∈ V(H)))).Nontrivial
+  · exact hnt.disjoint_edgeSet_of_disjoint_internalVertexSet hle
+      (cons_isWalk_iff.mpr ⟨(Q.prefixUntil_first (· ∈ V(H))) ▸ h, (hQ.1.prefix hpre).isWalk⟩)
+      (disjoint_internalVertexSet_cons_prefixUntil Q (· ∈ V(H)) x e)
+  have hnil : (Q.prefixUntil (· ∈ V(H))).Nil := by
+    rwa [← WList.not_nonempty_iff, ← cons_nontrivial_iff]
+  rw [hnil.eq_nil_first, cons_edgeSet, nil_edgeSet, insert_empty_eq]
+  exact disjoint_singleton_left.mpr heH
 
 /-- A `2`-connected graph has more than `n` vertices. This is the `le_card` field of `ConnGE`
 `Connected/Defs.lean:43` with the `V(G).Subsingleton` alternative ruled out: a subsingleton graph is
 `⊥` or a bouquet, and `connGE_bot` and `connGE_bouquet_iff` `Connected/Defs.lean` cap both at
 `ConnGE 1`. -/
 lemma ConnGE.lt_encard_vertexSet (hG : G.ConnGE n) (hn : 2 ≤ n) : n < V(G).encard := by
-  sorry
+  refine hG.le_card.resolve_left fun h ↦ ?_
+  obtain hempty | ⟨v, hv⟩ := h.eq_empty_or_singleton
+  · obtain rfl := vertexSet_eq_empty_iff.mp hempty
+    grind [connGE_bot]
+  obtain heq := Graph.eq_bouquet_of_subsingleton (hv ▸ rfl : v ∈ _) h
+  grind [connGE_bouquet_iff]
 
 /- Route: `ConnGE.deleteVerts` `Connected/Defs.lean:751` at `X = {x}`, whose side condition
 `(V(G) ∩ {x}).Finite` follows from `Set.Subsingleton.finite`; it yields `(G - {x}).ConnGE 1`, then
 `connGE_one_iff` `Connected/Defs.lean:676`. -/
 lemma ConnGE.deleteVert_connected (hG : G.ConnGE 2) (hx : x ∈ V(G)) : (G - {x}).Connected := by
-  sorry
+  have := hG.deleteVerts (Subsingleton.inter_singleton.finite : (V(G) ∩ {x}).Finite)
+  rw [inter_eq_right.mpr (singleton_subset_iff.mpr hx), encard_singleton] at this
+  rw [← connGE_one_iff]
+  norm_cast
 
 /-- **`Status.md` 4.1, corrected.** A proper subgraph with at least two vertices of a loopless
 `2`-connected graph has an ear.
 
 No `[G.Finite]` and no `[G.Simple]`. -/
 theorem ConnGE.exists_isEar [G.Loopless] (hG : G.ConnGE 2) (hle : H ≤ G) (hV : V(H).Nontrivial)
-    (hne : H ≠ G) : ∃ P, G.IsEar H P := by
-  sorry
+    (hne : H ≠ G) : ∃ P, G.IsEar H P :=
+  exists_isEar_or_isLoopAt_of_connected (hG.connected (by omega))
+    (fun _ ↦ hG.deleteVert_connected) hle hV hne |>.resolve_right <| by simp
 
 /-- Same, without discharging the loop alternative. -/
 theorem ConnGE.exists_isEar_or_isLoopAt (hG : G.ConnGE 2) (hle : H ≤ G) (hV : V(H).Nontrivial)
     (hne : H ≠ G) : (∃ P, G.IsEar H P) ∨ ∃ e x, x ∈ V(H) ∧ G.IsLoopAt e x ∧ e ∉ E(H) :=
   exists_isEar_or_isLoopAt_of_connected (hG.connected one_le_two)
     (fun _ hx ↦ hG.deleteVert_connected hx) hle hV hne
+
+lemma neighbor_isSep (hx : x ∈ V(G)) (h : ∃ v ∈ V(G), ¬ G.Adj x v) : G.IsSep N(G, x) := by
+  refine ⟨G.neighbor_subset x, ?_⟩
+  sorry -- 1-menger. Should be trivial
 
 /-! ### The base cycle -/
 
@@ -198,6 +235,10 @@ Compare `EdgeConnGE.minDegreeGE` `Connected/Bond.lean:565`, the edge-connectivit
 proved the same way. -/
 lemma ConnGE.exists_two_adj (hG : G.ConnGE 2) (hx : x ∈ V(G)) :
     ∃ u v, u ≠ v ∧ u ≠ x ∧ v ≠ x ∧ G.Adj x u ∧ G.Adj x v := by
+  obtain hh := hG.lt_encard_vertexSet le_rfl
+
+  contrapose! hG
+  have := G.neighbor_isSep hx
   sorry
 
 /-- A `2`-connected graph has, through each of its vertices, a cycle on at least three vertices.
@@ -219,6 +260,7 @@ applies. Convert with `IsCyclicWalk.toGraph_isCycle` `Forest.lean:192` and
 `Connected.isCycle_of_regular` `Degree/Max.lean:97` is the model for the last two steps. -/
 theorem ConnGE.exists_isCycle_le (hG : G.ConnGE 2) (hx : x ∈ V(G)) :
     ∃ C₀, C₀.IsCycle ∧ C₀ ≤ G ∧ x ∈ V(C₀) ∧ 3 ≤ V(C₀).encard := by
+  
   sorry
 
 /-! ### Ear induction

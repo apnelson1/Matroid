@@ -1,6 +1,7 @@
 module
 
 public import Matroid.Graph.WList.TakeDrop.Defs
+public import Matroid.Graph.WList.TakeDrop.Index
 
 @[expose] public section
 
@@ -150,6 +151,54 @@ lemma prefixUntil_vertex_dropLast_not_prop (hx : x ∈ (w.prefixUntil P).vertex.
     · simp [hPu] at hx
     simp [List.dropLast_cons_of_ne_nil vertex_ne_nil, List.mem_cons, hPu] at hx
     grind
+
+/-- The internal vertices of `cons x e (w.prefixUntil P)` are exactly the `dropLast` vertices of
+the prefix, so none of them satisfy `P`. -/
+lemma disjoint_internalVertexSet_cons_prefixUntil
+    (w : WList α β) (P : α → Prop) [DecidablePred P] (x : α) (e : β) :
+    Disjoint (cons x e (w.prefixUntil P)).internalVertexSet {y | P y} := by
+  refine disjoint_left.2 fun y hy hyP ↦ ?_
+  simp only [internalVertexSet, mem_ofPred] at hy
+  exact prefixUntil_vertex_dropLast_not_prop hy hyP
+
+/-- The first vertex of a nonempty walk belongs to `vertex.dropLast`. -/
+lemma Nonempty.mem_first_vertex_dropLast (hw : w.Nonempty) : w.first ∈ w.vertex.dropLast := by
+  cases hw with
+  | cons x e w => simp [List.dropLast_cons_of_ne_nil vertex_ne_nil]
+
+/-- The first vertex of a nontrivial walk belongs to `vertex.dropLast`. -/
+lemma Nontrivial.mem_first_vertex_dropLast (hw : w.Nontrivial) : w.first ∈ w.vertex.dropLast :=
+  hw.nonempty.mem_first_vertex_dropLast
+
+/-- The first vertex of a nontrivial `prefixUntil P` does not satisfy `P`. -/
+lemma Nontrivial.prefixUntil_not_prop_first {w : WList α β} {P : α → Prop} [DecidablePred P]
+    (h : (w.prefixUntil P).Nontrivial) : ¬ P (w.prefixUntil P).first :=
+  prefixUntil_vertex_dropLast_not_prop h.mem_first_vertex_dropLast
+
+/-- The left endpoint of any directed edge of `w.prefixUntil P` fails `P`. -/
+lemma DInc.not_prop_left_of_prefixUntil {w : WList α β} {P : α → Prop} [DecidablePred P]
+    (h : (w.prefixUntil P).DInc e x y) : ¬ P x :=
+  prefixUntil_vertex_dropLast_not_prop h.left_mem_vertex_dropLast
+
+/-- On a nontrivial walk, the second vertex is internal. -/
+lemma Nontrivial.second_mem_internalVertexSet (hw : w.Nontrivial) :
+    w.second ∈ w.internalVertexSet := by
+  obtain ⟨x, e, w', rfl⟩ := hw.nonempty.exists_cons
+  rw [cons_nontrivial_iff] at hw
+  simpa [internalVertexSet] using hw.mem_first_vertex_dropLast
+
+/-- If `w` is nontrivial and its internal vertices avoid the `P`-points, then no directed edge of
+`w` has both ends satisfying `P`.
+
+`Nontrivial` is essential: a single edge between two `P`-points has empty internal set. -/
+lemma Nontrivial.not_prop_both_of_dInc {P : α → Prop} (hw : w.Nontrivial)
+    (hdisj : Disjoint w.internalVertexSet {z | P z}) (h : w.DInc e x y) : ¬ (P x ∧ P y) := by
+  rintro ⟨hxP, hyP⟩
+  obtain ⟨u, f, w', rfl⟩ := hw.nonempty.exists_cons
+  obtain ⟨rfl, rfl, rfl⟩ | h := dInc_cons_iff.mp h
+  · exact hdisj.notMem_of_mem_left (by simpa using hw.second_mem_internalVertexSet) hyP
+  · exact hdisj.notMem_of_mem_left (by
+      simpa [internalVertexSet] using h.left_mem_vertex_dropLast) hxP
 
 lemma vertex_prefixUntil (w : WList α β) (P : α → Prop) [DecidablePred P] :
     (w.prefixUntil P).vertex = w.vertex.take (w.vertex.findIdx P + 1) := by
