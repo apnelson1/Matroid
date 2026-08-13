@@ -1,8 +1,4 @@
-import Matroid.Uniform.Minor
-import Matroid.Extension.ProjectionBy
 import Matroid.Extension.Principal
-import Matroid.ForMathlib.Data.ENat.Powerset
-import Matroid.Extension.Guts
 
 variable {α β : Type*} {M N M' : Matroid α} {I X Y : Set α} {e f : α} {a k l : ℕ∞}
     {T : Set (Set α)}
@@ -10,8 +6,6 @@ variable {α β : Type*} {M N M' : Matroid α} {I X Y : Set α} {e f : α} {a k 
 open Set
 
 namespace Matroid
-
-
 
 
 /-- `M.IsPerturbation N k` means that `N` can be obtained from `M` by a finite sequence of lifts

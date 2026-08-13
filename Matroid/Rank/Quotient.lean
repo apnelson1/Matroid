@@ -1,4 +1,4 @@
-
+import Matroid.Extension.ExtendBy
 import Matroid.Order.Discrepancy
 
 open Set
@@ -41,24 +41,9 @@ lemma ModularCut.eRk_insert_le_eRk_add_one (U : M.ModularCut) :
   rw [← insert_sdiff_singleton]
   refine (eRk_insert_le_add_one _ e (X \ {e})).trans ?_
   rw [U.extendBy_eRk_eq_eRk (by simp)]
-  exact add_le_add_right (M.eRk_mono (by simp)) _
+  grw [sdiff_subset]
 
 lemma ModularCut.rk_insert_le_rk_add_one [RankFinite M] {e : α} (U : M.ModularCut) :
     (M.extendBy e U).rk (insert e X) ≤ M.rk X + 1 := by
   rw [← ENat.natCast_le_natCast, cast_rk_eq, Nat.cast_add, cast_rk_eq, Nat.cast_one]
   exact U.eRk_insert_le_eRk_add_one
-
-lemma ModularCut.eRk_le_extendBy_eRk_insert {e : α} (U : M.ModularCut) :
-    M.eRk X ≤ (M.extendBy e U).eRk X  := by
-  by_cases heX : e ∈ X
-  · sorry
-  sorry
-
-lemma ModularCut.rank_ge [RankFinite M] {e : α} (U : M.ModularCut) :
-    M.rk X ≤ (M.extendBy e U).rk (insert e X)  := by
-  sorry
-  -- by_cases hXin : M.closure X ∈ U
-  -- · exact Nat.le.intro (congrFun (congrArg HAdd.hAdd (U.extendBy_rk_eq he heX hXin )) 1)
-  -- · exact Nat.le_of_eq (U.extendBy_rk_notin he heX hXin hecl )
-
---lemma foo {a : α} (h : a < a) : False := by exact

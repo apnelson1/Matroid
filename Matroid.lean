@@ -1,9 +1,8 @@
--- import Matroid.Asymptotic.ZeroPattern
 import Matroid.Axioms.Circuit
 import Matroid.Axioms.Closure
 import Matroid.Axioms.Flat
 import Matroid.Axioms.Rank
--- import Matroid.BaseExchange
+import Matroid.BaseExchange
 import Matroid.Binary.Crossing
 import Matroid.Binary.Representation
 import Matroid.Bool
@@ -18,10 +17,9 @@ import Matroid.Connectivity.Core
 import Matroid.Connectivity.Extension
 import Matroid.Connectivity.Fan.Basic
 import Matroid.Connectivity.Fan.Circuit
--- import Matroid.Connectivity.Fan.Cyclic
--- import Matroid.Connectivity.Fan.Rotary
--- import Matroid.Connectivity.Fan.ThreeConnected
--- import Matroid.Connectivity.Fan.Wheel
+import Matroid.Connectivity.Fan.Cyclic
+import Matroid.Connectivity.Fan.Minor
+import Matroid.Connectivity.Fan.ThreeConnected
 import Matroid.Connectivity.Minor
 import Matroid.Connectivity.Nat
 import Matroid.Connectivity.Separation.Abstract
@@ -36,9 +34,8 @@ import Matroid.Connectivity.Separation.Two
 import Matroid.Connectivity.Separation.Vertical
 -- import Matroid.Connectivity.Separation._vert_diag
 import Matroid.Connectivity.Skew
--- import Matroid.Connectivity.Splitter.Basic
--- import Matroid.Connectivity.Splitter.Cretaceous
--- import Matroid.Connectivity.Splitter.Fan
+import Matroid.Connectivity.Splitter.Cretaceous
+import Matroid.Connectivity.Splitter.Triassic
 import Matroid.Connectivity.Splitter.TutteTriangle
 import Matroid.Connectivity.Triangle
 import Matroid.Constructions.Matching
@@ -54,9 +51,8 @@ import Matroid.Extension.Guts
 import Matroid.Extension.Minor
 import Matroid.Extension.ModularCut
 import Matroid.Extension.Parallel
--- import Matroid.Extension.Pert
--- import Matroid.Extension.Perturbation
--- import Matroid.Extension.Principal
+import Matroid.Extension.Perturbation
+import Matroid.Extension.Principal
 import Matroid.Extension.ProjectBy
 import Matroid.Extension.ProjectionBy
 import Matroid.Extension.Quotient
@@ -67,7 +63,7 @@ import Matroid.Extension.Quotient
 -- import Matroid.Extremal.Uniform
 import Matroid.Finitize
 import Matroid.Flat.Basic
--- import Matroid.Flat.Cyclic
+import Matroid.Flat.Cyclic
 import Matroid.Flat.Hyperplane
 import Matroid.Flat.Lattice
 import Matroid.Flat.LowRank
@@ -152,8 +148,6 @@ import Matroid.Graph.Walk.Cycle
 -- import Matroid.Graph.Walk.OrientationWalk
 import Matroid.Graph.Walk.Path
 import Matroid.Graphic
--- import Matroid.Induction
--- import Matroid.Inter
 import Matroid.Intersection
 import Matroid.Loop
 import Matroid.Minor.Contract
@@ -164,18 +158,17 @@ import Matroid.Minor.Rank
 import Matroid.Modular.Basic
 import Matroid.Modular.Flat
 -- import Matroid.Modular.Sum
--- import Matroid.NonspanningCircuit
+import Matroid.NonspanningCircuit
 import Matroid.OnUniv
 import Matroid.Order.Discrepancy
 import Matroid.Order.Quotient
--- import Matroid.Order.QuotientExtension
 import Matroid.Order.Weak
 import Matroid.Parallel
 import Matroid.Rank.Cardinal
 import Matroid.Rank.ENat
 import Matroid.Rank.Nat
 import Matroid.Rank.Nullity
--- import Matroid.Rank.Quotient
+import Matroid.Rank.Quotient
 import Matroid.Rank.Skew
 import Matroid.Representation.Basic
 import Matroid.Representation.CycleSpace

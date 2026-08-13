@@ -1,8 +1,5 @@
-import Matroid.Connectivity.Separation.Infinite
 import Matroid.Connectivity.Fan.ThreeConnected
 import Matroid.Connectivity.Splitter.Cretaceous
-import Matroid.Connectivity.Splitter.Basic
-import Matroid.Connectivity.Splitter.TutteTriangle
 
 open Set Function
 
@@ -11,6 +8,8 @@ namespace Matroid
 variable {α β : Type*} {M : Matroid α} {N : Matroid β} {X Y C K T : Set α} {e f g x y : α}
     {b c d : Bool} {n i j : ℕ} {F : List α} {J : Bool → ZMod n → α}
 
+/-- If `N` is a simple minor of a matroid `M`, and `{e, f}` is a parallel pair of `M`,
+then `M ＼ {e}` has an `N`-minor. -/
 lemma Simple.nonempty_isoMinor_deleteElem_of_parallel (hN : N.Simple) (hNM : N ≤i M)
     (hef : M.Parallel e f) (hne : e ≠ f) : Nonempty (N ≤i M ＼ {e}) := by
   classical
@@ -108,23 +107,101 @@ lemma IsTriangle.nonempty_isMinor_remove_of_isMinor_remove' {T : Set α} (hM : M
   obtain ⟨g, ge, hgf, rfl⟩ := exists_eq_of_encard_eq_three_of_mem_of_mem h.three_elements he hf hef
   exact h.nonempty_isMinor_remove_of_isMinor_remove hM (N := N) h5 hNM hN
 
-lemma bar (P : Bool → ℕ → Prop) {a : ℕ} (h : P false 0)
-    (h : ∀ s i j b, s + 2 < a → s.bodd = b → s ≤ i → i ≤ s + 2 → s ≤ j → j ≤ s + 2 → i ≠ j →
-      P b i → P (!b) j) (d : Bool) {j : ℕ} (hj : j + 2 < a) : P d (j + 1) := by
-  sorry
+/-- A fan is good for a minor `N` if its joints are deletable for `N` and its cojoints are
+contractible for `N`. -/
+structure IsGoodFan (M : Matroid α) (N : Matroid β) (F : List α) (b c : Bool) : Prop where
+  isFan : M.IsFan F b c
+  nonempty_isoMinor : ∀ i (hi : i < F.length), Nonempty (N ≤i M.remove (i.bodd != b) {F[i]})
 
-lemma splitter [M.Finite] {N : Matroid α} (hM : M.TutteConnected 3) (h5 : 5 ≤ M.E.encard)
-    (hNM : N <m M) (hN : N.TutteConnected 3) (not_whorl : ¬ ∃ F b, M.IsCyclicFan F b) :
+/-- Any fan on at least five elements with a removable internal element is good. -/
+lemma IsFan.isGoodFan_of_single (hF : M.IsFan F b c) (h5 : 5 ≤ F.length)
+    (hM : M.TutteConnected 3) (hN : N.TutteConnected 3)
+    {s : ℕ} {d : Bool} (hs : s + 1 < F.length) (hs0 : s ≠ 0)
+    (hne : Nonempty (N ≤i M.remove d {F[s]})) : M.IsGoodFan N F b c := by
+  have hM5 : 5 ≤ M.E.encard := by
+    grw [← hF.subset_ground, hF.nodup.encard_toSet_eq, ← h5, ENat.coe_eq_ofNat]
+  suffices aux : ∃ (t : ℕ) (ht : t + 1 < F.length), t ≠ 0 ∧
+      Nonempty (N ≤i M.remove (t.bodd != b) {F[t]}) by
+    clear! s
+    obtain ⟨s, hlt, hs0, hs⟩ := aux
+    refine ⟨hF, fun i hiF ↦ ?_⟩
+    wlog hsi : s ≤ i generalizing F b c i s with aux
+    · specialize aux hF.reverse (by simpa) (i := F.length - 1 - i) (s := F.length - 1 - s)
+        (by grind) (by lia) ?_ (by grind) (by lia)
+      · rw [Nat.bodd_sub (by lia), hF.length_sub_one_bodd_eq, F.getElem_reverse' (j := s) (by lia)]
+        cases b with cases c with simpa using hs
+      rw [Nat.bodd_sub (by lia), hF.length_sub_one_bodd_eq, F.getElem_reverse' (j := i) (by lia)]
+        at aux
+      cases b with cases c with simpa using aux
+    induction i using Nat.strong_induction_on with | h n ih =>
+    obtain rfl | hslt := hsi.eq_or_lt
+    · assumption
+    obtain rfl | rfl | n := n
+    · simp at hslt
+    · lia
+    cases b with simpa using IsTriangle.nonempty_isMinor_remove_of_isMinor_remove
+      (hF.isTriangle_getElem n).rotate_left hM hM5
+      (by simpa using ih (n + 1) (by lia) (by lia) (by lia)) hN
+  obtain rfl | rfl := d.eq_or_eq_not (s.bodd != b)
+  · exact ⟨s, hs, hs0, hne⟩
+  obtain rfl | rfl | rfl | s := s
+  · simp at hs0
+  · exact ⟨3, by lia, by simp, by
+      simpa using (hF.isTriangle_getElem 1).swap_right.nonempty_isMinor_remove_of_isMinor_remove hM
+        hM5 (by simpa using hne) hN⟩
+  · refine ⟨3, by lia, by simp, ?_⟩
+    have h1 := (hF.isTriangle_getElem 0).reverse.nonempty_isMinor_remove_of_isMinor_remove hM hM5
+      (by simpa using hne) hN
+    simpa using (hF.isTriangle_getElem 1).swap_right.nonempty_isMinor_remove_of_isMinor_remove
+      hM hM5 (by simpa using h1) hN
+  exact ⟨s + 1, by lia, by
+    cases b with simpa using IsTriangle.nonempty_isMinor_remove_of_isMinor_remove
+       (hF.isTriangle_getElem (s + 1)).rotate hM hM5 (by simpa using hne) hN⟩
+
+/-- The splitter theorem holds if `M` has at most five elements. This is true because any such
+  `M` must be a uniform matroid. -/
+private lemma splitter_small {N : Matroid α} (hM : M.TutteConnected 3) (h5 : M.E.encard ≤ 5)
+    (hNM : N <m M) (hN : N.TutteConnected 3) :
     ∃ e b, e ∈ M.E ∧ Nonempty (N ≤i M.remove b {e}) ∧ (M.remove b {e}).TutteConnected 3 := by
+  rw [show (3 : ℕ∞) = 1 + 1 + 1 from rfl] at *
+  obtain ⟨b, hb⟩ := hM.exists_forall_remove_of_isUniform (hM.isUniform_of_encard_le h5)
+    (by grw [finite_iff, ← encard_lt_top_iff, h5, ENat.ofNat_lt_top])
+  wlog hb' : b = true generalizing M N b with aux
+  · obtain rfl : b = false := by grind
+    obtain ⟨e, b, he, hne, htc⟩ :=
+      aux hM.dual h5 hNM.dual hN.dual true (by simpa using fun e ↦ (hb e).dual) rfl
+    exact ⟨e, !b, he, by simpa [← nonempty_isoMinor_dual_iff (N := N✶)] using hne,
+      by simpa using htc.dual⟩
+  subst hb'
+  obtain ⟨C, D, hC, hD, hCD, rfl⟩ := hNM.isMinor.exists_contract_indep_delete_coindep
+  obtain ⟨e, heC⟩ | rfl := C.eq_empty_or_nonempty.symm
+  · refine ⟨e, true, hC.subset_ground heC, ⟨IsMinor.isoMinor ?_⟩, hb e⟩
+    exact (delete_isMinor ..).trans <| contract_isMinor_of_subset _ <| by simpa
+  obtain rfl | ⟨e, heD⟩ := D.eq_empty_or_nonempty
+  · simp [isStrictMinor_irrefl] at hNM
+  simp_rw [contract_empty] at *
+  have hmin : M ＼ D ≤m M.remove false {e}:= (delete_isRestriction_of_subset _ (by simpa)).isMinor
+  refine ⟨e, false, hD.subset_ground heD, ⟨hmin.isoMinor⟩, ?_⟩
+  apply TutteConnected.tutteConnected_of_tutteConnected_isSpanningRestriction hN hM
+    hD.delete_isSpanningRestriction hmin (remove_isMinor ..)
+
+/- ## Seymour's splitter theorem -/
+/-- If `N` is a `3`-connected proper minor of a `3`-connected matroid `M`,
+then either `M` is a wheel or whirl,
+or there is an element `e` such that `M ／ e` or `M ＼ e` is `3`-connected with an `N`-minor. -/
+theorem splitterTheorem [M.Finite] {N : Matroid α} (hM : M.TutteConnected 3) (hNM : N <m M)
+    (hN : N.TutteConnected 3) (not_whorl : ¬ ∃ F b, M.IsCyclicFan F b) :
+    ∃ e b, e ∈ M.E ∧ Nonempty (N ≤i M.remove b {e}) ∧ (M.remove b {e}).TutteConnected 3 := by
+  obtain h5 | h5 := lt_or_ge M.E.encard 5
+  · exact splitter_small hM h5.le hNM hN
   by_cases! hex :
       ∀ e b, e ∈ M.E → Nonempty (N ≤i M.remove b {e}) → ∀ T, (M.bDual !b).IsTriangle T → e ∉ T
   · exact splitter_no_triangle_minor hM (by enat_to_nat!; lia) hNM hN hex
-
   have h4 : 4 ≤ M.E.encard := le_trans (by simp) h5
   by_contra! hcon
-  -- find a good fan.
+  -- find a length-four fan `F₀` whose first element is removable in the right way for `N`.
   obtain ⟨F₀, b, c, hF₀, hF₀4, hF₀ne⟩ : ∃ (F₀ : List α) (b c : Bool) (hF₀ : M.IsFan F₀ b c)
-      (hF₀4 : F₀.length = 4), ∀ e ∈ F₀, ∃ d, Nonempty (N ≤i M.remove d {e}) := by
+      (hF₀4 : F₀.length = 4), Nonempty (N ≤i M.remove b {F₀[0]}) := by
     obtain ⟨x, d₀, hx, hNx, T, hT, hxT⟩ := hex
     obtain ⟨y, z, -, -, -, rfl⟩ := exists_eq_of_encard_eq_three_of_mem hT.three_elements hxT
     have hNy := hT.nonempty_isMinor_remove_of_isMinor_remove hM h5 (by simpa) hN
@@ -137,159 +214,45 @@ lemma splitter [M.Finite] {N : Matroid α} (hM : M.TutteConnected 3) (h5 : 5 ≤
     simp only [bDual_isTriad_iff, Bool.not_not, ne_comm (a := w)] at hw
     obtain ⟨hxw, hw⟩ | ⟨hyw, hw⟩ := hw
     · have hNw := hw.swap_right.nonempty_isMinor_remove_of_isMinor_remove hM h5 hNz hN
-      refine ⟨[x, y, z, w], _, _, (hw.swap_left.isFan.cons (by simpa) (by simpa)).of_bDual, rfl, ?_⟩
-      obtain rfl | rfl := d₀ <;>
-      · simp only [remove_false, Bool.not_false, Bool.not_true, remove_true] at hNx hNy hNz hNw
-        simp [hNx, hNy, hNz, hNw]
+      use [x, y, z, w]
+      refine ⟨_, _, (hw.swap_left.isFan.cons (by simpa) (by simpa)).of_bDual, rfl, ?_⟩
+      simp
+      have hNy' := hw.nonempty_isMinor_remove_of_isMinor_remove hM h5 hNz hN
+      exact hT.swap_left.nonempty_isMinor_remove_of_isMinor_remove hM h5 (by simpa) hN
     have hNw := hw.swap_right.nonempty_isMinor_remove_of_isMinor_remove hM h5 hNz hN
-    refine ⟨[y, x, z, w], _, _,
-      (hw.swap_left.isFan.cons (by simpa) (by simpa using hT.swap_left)).of_bDual, rfl, ?_⟩
-    obtain rfl | rfl := d₀ <;>
-    · simp only [remove_false, Bool.not_false, Bool.not_true, remove_true] at hNx hNy hNz hNw
-      simp [hNx, hNy, hNz, hNw]
-  -- extend it to a maximal fan
-  obtain ⟨F, d, hF₀F, h | ⟨hF, hF3⟩⟩ :=
-    hM.exists_subset_isFan_remove_tutteConnected_three hF₀ hF₀4.ge
-  · exact not_whorl ⟨_, _, h⟩
+    use [y, x, z, w]
+    exact ⟨_, _, (hw.swap_left.isFan.cons (by simpa) (by simpa using hT.swap_left)).of_bDual,
+      rfl, by simpa⟩
+  -- extend `F₀` (after possibly switching the middle two elements to get `F₁`)
+  -- to a fan `F` that is either cyclic, or whose first element is removable
+  -- in the right way for connectivity.
+  obtain ⟨F, F₁, hF₁, hF₁F, hcyc | ⟨d, hF, hFr⟩⟩ := hF₀.exists_suffix_removable hF₀4.ge hM
+  -- If `F` it is cyclic, we win.
+  · exact not_whorl ⟨_, _, hcyc⟩
+  -- If the extension is trivial, then the first element is removable for both `N` and connectivity
+  have hlen : F₀.length = F₁.length := by grind
+  suffices hFgood : M.IsGoodFan N F d c from
+    hcon _ _ hF.getElem_mem_ground (hFgood.2 0 (by grind)) <| by simpa
+  -- otherwise, the fan `F` contains an internal `N`-removable element and has length at least `5`,
+  -- so its first element is removable for `N` as well.
+  obtain h4 | h5' := hF₁F.length_le.eq_or_lt
+  · obtain rfl : F₁ = F := hF₁F.eq_of_length_le h4.ge
+    obtain rfl : b = d := by simp [hF₀.bool_left_eq, hlen, ← hF.bool_left_eq]
+    exact False.elim <| hcon F₀[0] b hF₀.getElem_mem_ground hF₀ne <| by cases hF₁ with grind
+  obtain ⟨L, rfl⟩ := List.suffix_iff_exists_eq_append.1 hF₁F
+  refine hF.isGoodFan_of_single (s := L.length) (d := b) (by grind) hM hN (by grind) (by grind) ?_
+  simpa [show F₁[0] = F₀[0] by grind]
 
-
-
-
-
-
-
-
-    -- · simpa only [bDual_delete, tutteConnected_bDual_iff]
-
-    -- have hNy := hT.nonempty_isMinor_delete_of_isMinor_contract' hM h5 hNx.some hN
-    -- have hNz := hT.swap_right.nonempty_isMinor_delete_of_isMinor_contract' hM h5 hNx.some hN
-    -- obtain ⟨w, hwx, hw⟩ | ⟨w, hwy, hw⟩ := tutte_triangle' hM hT.reverse
-    --   (by enat_to_nat!; lia) (hcon z false hT.mem_ground₃ hNz) (hcon y false hT.mem_ground₂ hNy)
-
-#exit
-
-  wlog hd₀ : d₀ = true generalizing d₀ M N with aux
-  · obtain rfl : d₀ = false := by grind
-    specialize aux hM.dual (by simpa) hNM.dual hN.dual ?_ true hx ?_ (by simpa) rfl
-    · exact fun ⟨F, b, hF'⟩ ↦ not_whorl ⟨F, !b, by simpa using hF'⟩
-    · simpa using nonempty_isoMinor_dual_iff.2 hNx
-    obtain ⟨e, b, he, hNM', h3⟩ := aux
-    refine ⟨e, !b, he, ?_, by simpa using h3.dual ⟩
-    simpa [← nonempty_isoMinor_dual_iff (N := N)]
-  subst hd₀
-  simp only [Bool.not_true, bDual_false, remove_true] at hT hNx
-  by_contra! hcon
-  -- `M` has a `4`-fan `F₀` containing two deletable elements.
-  obtain ⟨F₀, b, c, hF₀, hF₀4, hF₀ne⟩ : ∃ (F₀ : List α) (b c : Bool) (hF₀ : M.IsFan F₀ b c)
-    (hF₀4 : F₀.length = 4), ∀ e ∈ F₀, ∃ d, Nonempty (N ≤i M.remove d {e}) := by
-    obtain ⟨y, z, -, -, -, rfl⟩ := exists_eq_of_encard_eq_three_of_mem hT.three_elements hxT
-    have hNy := hT.nonempty_isMinor_delete_of_isMinor_contract' hM h5 hNx.some hN
-    have hNz := hT.swap_right.nonempty_isMinor_delete_of_isMinor_contract' hM h5 hNx.some hN
-    obtain ⟨w, hwx, hw⟩ | ⟨w, hwy, hw⟩ := tutte_triangle' hM hT.reverse
-      (by enat_to_nat!; lia) (hcon z false hT.mem_ground₃ hNz) (hcon y false hT.mem_ground₂ hNy)
-    · have := hw.non
-      have hF := hw.reverse.isFan.cons (e := x) hT.ne₁₃ (by simpa)
-
-
-    obtain ⟨K, hK, hzK, ⟨hyK, hxK⟩ | ⟨hyK, hxK⟩⟩ := tutte_triangle hM hT.reverse
-      (by enat_to_nat!; lia) (hcon z false hT.mem_ground₃ hNz) (hcon y false hT.mem_ground₂ hNy)
-    ·
-      obtain ⟨w, -, -, rfl⟩ :=
-        exists_eq_of_encard_eq_three_of_mem_of_mem hK.three_elements hyK hzK hT.ne₂₃
-      refine ⟨_, _, _, (hK.isFan.cons (e := x) (by grind) (by simpa)).of_dual, rfl, ?_⟩
-      -- simp [Set.Nontrivial]
-      exact ⟨y, ⟨by simp, hNy⟩, z, ⟨by simp, hNz⟩, hT.ne₂₃⟩
-    obtain ⟨w, -, -, rfl⟩ :=
-      exists_eq_of_encard_eq_three_of_mem_of_mem hK.three_elements hxK hzK hT.ne₁₃
-    exact ⟨_, _, _, (hK.isFan.cons (e := y) (by grind) (by simpa using hT.swap_left)).of_dual,
-      rfl, ⟨y, ⟨by simp, hNy⟩, z, ⟨by simp, hNz⟩, hT.ne₂₃⟩⟩
-  clear! x
-
-
-  obtain ⟨F, d, hF₀F, h | ⟨hF, hF3⟩⟩ :=
-    hM.exists_subset_isFan_remove_tutteConnected_three hF₀ hF₀4.ge
-  · exact not_whorl ⟨_, _, h⟩
-  have h4F := hF₀4.symm.trans_le <| hF₀.nodup.length_le_of_subset hF₀F
-
-  have hnd := bar (P := fun b i ↦ ∃ (hi : i < F.length), IsEmpty (N ≤i M.remove (b != d) {F[i]}))
-    (a := F.length) ?_ ?_
-  · obtain ⟨x, ⟨hxF₀, hxd⟩, hxne⟩ := hF₀ne.diff_singleton_nonempty (F[F.length - 1])
-    obtain ⟨rfl | j, hj, rfl⟩ := List.getElem_of_mem (hF₀F hxF₀)
-    · have := hcon _ false hF.getElem_mem_ground hxd
-    have hlt : j + 1 < F.length := by grind
-    have := hnd false
-
-    sorry
-
-  · by_contra! hcon'
-    exact hcon _ _ hF.getElem_mem_ground (by simpa using hcon' (by lia)) hF3
-  intro s i j b hs hsb hsi his hsj hjs hij ⟨hiF, hemp⟩
-  contrapose! hemp
-  obtain ⟨hFj⟩ := hemp (by lia)
-  have hwin := (hF.isTriangle_getElem s).nonempty_isMinor_remove_of_isMinor_remove' (e := F[j])
-    (f := F[i]) (N := N) hM h5 (by grind [hF.nodup.getElem_inj_iff])
-    (by grind [hF.nodup.getElem_inj_iff]) (by grind [hF.nodup.getElem_inj_iff]) hN
-    (by cases d with simpa [hsb] using hFj)
-  cases d with simpa [hsb] using hwin
-
-  -- simp [hF.nodup.getElem_inj_iff, show j = s ∨ j = s + 1 ∨ j = s + 2 by grind] at this
-
-
-  -- · sorry
-  -- · by_contra! hcon'
-  --   exact hcon _ _ hF.getElem_mem_ground (by simpa using hcon' (by lia)) hF3
-
-  -- have aux : ∀ i b (hi : i + 2 < F.length), IsEmpty (N ≤i M.remove b {F[i + 1]}) := by
-  --   intro i b hi
-  --   induction i with
-  --   | zero =>
-  --     by_contra! hne
-  --     simp only [zero_add] at hne
-  --     have hT : (M.bDual d).IsTriangle {F[0], F[1], F[2]} := by simpa using hF.isTriangle_getElem 0
-  --     suffices hne' : Nonempty (N ≤i M.remove (!d) {F[1]}) by
-  --       have hwin := hT.swap_left.nonempty_isMinor_remove_of_isMinor_remove hM h5 hne'.some hN
-  --       exact hcon _ _ hF.getElem_mem_ground hwin hF3
-  --     obtain rfl | rfl := b.eq_or_eq_not !d
-  --     · exact hne
-  --     have hT' : (M.bDual !d).IsTriangle {F[1], F[2], F[3]} := by
-  --       simpa using hF.isTriangle_getElem 1
-  --     have hne' := hT'.nonempty_isMinor_remove_of_isMinor_remove (N := N) hM h5 hne.some hN
-  --     have := hT.reverse.nonempty_isMinor_remove_of_isMinor_remove hM h5 hne'.some hN
-
-
-  --   | succ n _ => sorry
-
-  --   _
-  -- obtain ⟨u, hu, rfl⟩ := List.getElem_of_mem (hF₀F hxF₀)
-
-  -- obtain ⟨F, d, hFc | ⟨hF, hF4, hFc⟩⟩ :=
-  --   hM.exists_subset_isFan_remove_tutteConnected_three
-  --   --  ⟨F₀, _, _, hF₀, hF₀4.ge⟩
-  -- · exact not_whorl ⟨F, _, hFc⟩
-
-
-
-
-  -- have hne : Nonempty ((N.bDual !d₀) ≤i (M.bDual !d₀) ／ {x}) := by
-  --   rwa [← nonempty_isoMinor_bDual_iff (b := !d₀), bDual_contract, bDual_bDual_self,
-  --     bDual_bDual_self, Bool.not_not]
-  -- have hney := hT.nonempty_isMinor_delete_of_isMinor_contract' (hM.bDual _)
-  --   (by simpa) hne.some (hN.bDual !d₀)
-  -- have hnex := hT.swap_right.nonempty_isMinor_delete_of_isMinor_contract' (hM.bDual _)
-  --   (by simpa) hne.some (hN.bDual !d₀)
-  -- have := tutte_triangle (hM.bDual _) hT (by simpa)
-
-
-  -- by_contra! hcon
-  -- have h₀ := hcon x d₀ hx hNx
-
-  -- have := hT.nonempty_isMinor_delete_of_isMinor_contract'
-  -- wlog hd₀ : d₀ = false generalizing M N d₀ with aux
-  -- · obtain rfl : d₀ = true := by grind
-  --   have := aux hM.dual (by simpa) hNM.dual hN.dual ?_ false he₀ ?_ (by simpa)
-
-  --
-  -- by_cases h3c : (M.drmo)
-
--- lemma foo (hM : M.TutteConnected 3) {T T'} (hT : M.IsTriangle T) (hT' : M.IsTriad T')
---     (hne : (T ∩ T').Nonempty)
+/- ## Tutte's Wheels and Whirls Theorem -/
+/-- Every nonempty `3`-connected matroid that is not a wheel
+or whirl has an element whose removal keeps `3`-connectivity. -/
+theorem wheelsAndWhirls [M.Finite] (hM : M.TutteConnected 3) (hne : M.Nonempty)
+    (hF : ¬ ∃ F b, M.IsCyclicFan F b) :
+    ∃ e ∈ M.E, (M ／ {e}).TutteConnected 3 ∨ (M ＼ {e}).TutteConnected 3 := by
+  have he : emptyOn α <m M := by
+    rw [isStrictMinor_iff_isMinor_ne, and_iff_right M.emptyOn_isMinor]
+    rintro rfl
+    simp [← Matroid.ground_nonempty_iff] at hne
+  obtain ⟨e, rfl | rfl, he, -, htc⟩ := splitterTheorem hM (N := emptyOn α) he (by simp) hF
+  · exact ⟨e, he, .inr htc⟩
+  exact ⟨e, he, .inl htc⟩
