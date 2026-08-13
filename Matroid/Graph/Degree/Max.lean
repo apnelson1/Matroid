@@ -153,3 +153,16 @@ lemma IsCycle.deleteEdges_singleton_isPathGraph (hC : C.IsCycle) (he : e ∈ E(C
   apply_fun edgeSet at hPeq
   simp only [toGraph_edgeSet, Set.ext_iff] at hPeq
   grind
+
+lemma IsCycle.preconnGE (hG : G.IsCycle) : G.PreconnGE 2 := by
+  suffices ∀ a, (G - {a}).Preconnected by simpa
+    [preconnGE_iff_forall_preconnected, encard_le_one_iff_eq, hG.connected.preconnected]
+  intro x
+  by_cases! hx : x ∉ V(G)
+  · rw [(G.deleteVerts_eq_self_iff {x}).2 (by simpa)]
+    exact hG.connected.preconnected
+  obtain hss | hnt := V(G).subsingleton_or_nontrivial
+  · have hVx := hss.eq_singleton_of_mem hx
+    rw [(deleteVerts_eq_bot_iff G {x}).2 (by simp [hVx])]
+    simp only [bot_isComplete, IsComplete.preconnected]
+  exact (hG.deleteVerts_singleton_isPathGraph hnt hx).connected.preconnected

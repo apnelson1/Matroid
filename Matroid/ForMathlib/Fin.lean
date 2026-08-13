@@ -1,7 +1,11 @@
-import Mathlib.Data.Int.ConditionallyCompleteOrder
-import Mathlib.Order.Interval.Set.Fin
-import Matroid.ForMathlib.Parity
-import Mathlib.Order.Circular.ZMod
+module
+
+public import Mathlib.Data.Int.ConditionallyCompleteOrder
+public import Mathlib.Order.Interval.Set.Fin
+public import Matroid.ForMathlib.Parity
+public import Mathlib.Order.Circular.ZMod
+
+@[expose] public section
 
 variable {n : ℕ}
 
