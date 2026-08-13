@@ -569,6 +569,13 @@ lemma Parallel'.contract_delete_comm (hef : M.Parallel' e f) :
   rw [hef.parallel'.indep_substitute_iff (by simp) (by grind), insert_sdiff_self_of_notMem
     (by grind)]
 
+lemma Parallel'.deleteElem_eq_mapEquiv [DecidableEq α] (hef : M.Parallel' e f) :
+    M ＼ {e} = (M ＼ {f}).mapEquiv (Equiv.swap e f) := by
+  have hrw := M.delete_map ((Equiv.swap e f).injective.injOn) (D := {f})
+    (by simpa using hef.mem_ground_right)
+  simpa [← mapEquiv_eq_map, hef.eq_mapEquiv_swap, image_singleton,
+    Equiv.swap_apply_right, eq_comm] using hrw
+
 end Swap
 
 section Subtype

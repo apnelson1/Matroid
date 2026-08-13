@@ -328,3 +328,15 @@ theorem tutte_triangle (hM : M.TutteConnected 3) (hT : M.IsTriangle {e, f, g})
     fun ⟨hf, hg⟩ ↦ hne <| Finite.eq_of_subset_of_encard_le (by simp) (by grind)
     (by rw [hK.three_elements, hT.three_elements])
   grind
+
+theorem tutte_triangle' (hM : M.TutteConnected 3) (hT : M.IsTriangle {e, f, g})
+    (hcard : 4 ≤ M.E.encard) (he : ¬ (M ＼ {e}).TutteConnected 3)
+    (hf : ¬ (M ＼ {f}).TutteConnected 3) :
+    ∃ z, (z ≠ g ∧ M.IsTriad {e, f, z} ∨ z ≠ f ∧ M.IsTriad {e, g, z}) := by
+  obtain ⟨K, hK, heK, hK' | hK'⟩ := tutte_triangle hM hT hcard he hf
+  · obtain ⟨z, -, -, rfl⟩ :=
+      exists_eq_of_encard_eq_three_of_mem_of_mem hK.three_elements heK hK'.1 hT.ne₁₂
+    exact ⟨z, .inl ⟨by grind, hK⟩⟩
+  obtain ⟨z, -, -, rfl⟩ :=
+    exists_eq_of_encard_eq_three_of_mem_of_mem hK.three_elements heK hK'.2 hT.ne₁₃
+  exact ⟨z, .inr ⟨by grind, hK⟩⟩

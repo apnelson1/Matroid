@@ -119,3 +119,56 @@ lemma IsFan.exists_extend_of_not_tutteConnected_remove (h : M.IsFan F b c) (h5 :
     enat_to_nat! <;> lia
   rw [parallel_iff_eq]
   grind [h.nodup.getElem_inj_iff]
+
+lemma IsFan.remove_tutteConnected_three_of_maximalFor' (hF : M.IsFan F b c) (hF4 : 4 ≤ F.length)
+    (hM : M.TutteConnected 3)
+    (hmax : MaximalFor (fun L : List α ↦ ∃ b, M.IsFan L b c) (fun L ↦ {e | e ∈ L}) F)
+    (hFc : ¬ M.IsCyclicFan F b) : (M.remove b {F[0]}).TutteConnected 3 := by
+  by_contra! hcon
+  obtain h4 | h4 := hF4.eq_or_lt
+  · obtain ⟨x, hx | hx⟩ := hF.exists_extend_of_not_tutteConnected_remove₄ h4.symm hM hFc hcon
+    · exact (nodup_cons.1 hx.nodup).1 <| by simpa using hmax.2 ⟨!b, hx⟩ (by grind)
+    refine (nodup_cons.1 hx.nodup).1 ?_
+    obtain ⟨u, y, z, w, rfl⟩ : ∃ a b c d, F = [a, b, c, d] := by rwa [eq_comm, length_eq_four] at h4
+    simpa [or_left_comm (a := (x = z))] using hmax.2 ⟨!b, hx⟩
+  obtain ⟨x, hx⟩ := hF.exists_extend_of_not_tutteConnected_remove (by lia) hM hFc hcon
+  exact (nodup_cons.1 hx.nodup).1 <| by simpa using hmax.2 ⟨!b, hx⟩ (by grind)
+
+lemma IsFan.remove_tutteConnected_three_of_maximalFor (hF : M.IsFan F b c) (hF4 : 4 ≤ F.length)
+    (hM : M.TutteConnected 3) (hmax : MaximalFor (fun L : List α ↦ ∃ b, M.IsFan L b c) length F)
+    (hFc : ¬ M.IsCyclicFan F b) : (M.remove b {F[0]}).TutteConnected 3 := by
+  by_contra! hcon
+  obtain h4 | h4 := hF4.eq_or_lt
+  · obtain ⟨x, hx | hx⟩ := hF.exists_extend_of_not_tutteConnected_remove₄ h4.symm hM hFc hcon
+    · simpa using hmax.2 ⟨!b, hx⟩ (by simp)
+    simpa [h4.symm] using hmax.2 ⟨!b, hx⟩
+  obtain ⟨x, hx⟩ := hF.exists_extend_of_not_tutteConnected_remove (by lia) hM hFc hcon
+  simpa using hmax.2 ⟨!b, hx⟩
+
+/-- If `M` is a `3`-connected matroid with a fan of `F₀` length at least four, then `F₀`
+is a suffix of a fan `F` that is either cyclic, or whose initial element can be removed
+keeping connectivity. -/
+lemma TutteConnected.exists_subset_isFan_remove_tutteConnected_three [M.RankFinite]
+    (hM : M.TutteConnected 3) {F₀} (hF₀ : M.IsFan F₀ b c) (hF₀4 : 4 ≤ F₀.length) :
+    ∃ F d, F₀ ⊆ F ∧
+    (M.IsCyclicFan F d ∨ ∃ (hF : M.IsFan F d c), (M.remove d {F[0]}).TutteConnected 3) := by
+  set s := {F : List α | ∃ d, M.IsFan F d c ∧ F₀ ⊆ F} with hs
+  have hsfin : (length '' s).Finite := by
+    refine BddAbove.finite ⟨2 * (M.rank + 1), ?_⟩
+    simp only [upperBounds, hs, mem_image, mem_ofPred_eq, forall_exists_index, and_imp]
+    rintro _ L c hL _ rfl
+    have hcon := hL.eRk_ge
+    grw [← ENat.natCast_le_natCast, Nat.cast_mul, Nat.cast_add, cast_rank_eq, hcon, eRk_le_eRank,
+      Bool.toNat_le_one]
+    enat_to_nat! <;> simp
+  have hsne : s.Nonempty := ⟨F₀, b, hF₀, by simp⟩
+  obtain ⟨F, hFmax⟩ := Finite.exists_maximalFor' (s := s) (f := length) hsfin hsne
+  obtain ⟨d, hF, hss⟩ := hFmax.1
+  by_cases hFc : M.IsCyclicFan F d
+  · exact ⟨F, d, hss, .inl hFc⟩
+  have hF₀Flen := hF₀.nodup.length_le_of_subset hss
+  refine ⟨F, d, hss, .inr ⟨hF, hF.remove_tutteConnected_three_of_maximalFor' (hF₀4.trans hF₀Flen)
+    hM ?_ hFc ⟩⟩
+  refine ⟨⟨d, hF⟩, fun F' ⟨d', hF'⟩ (hss' : F ⊆ F') ↦ (?_ : F' ⊆ F)⟩
+  have hlen' := hFmax.2 (j := F') ⟨_, hF', by grind⟩ (hF.nodup.length_le_of_subset hss')
+  exact (hF.nodup.toSet_eq_of_subset_of_length_ge hss' hlen').superset

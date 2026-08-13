@@ -180,24 +180,21 @@ lemma IsFan.dropLast_ne_nil (h : M.IsFan F b c) : F.dropLast ≠ [] := by
   cases h with grind
 
 lemma IsFan.drop {k} (h : M.IsFan F b c) (hk : k + 2 ≤ F.length) :
-    M.IsFan (F.drop k) (if Even k then b else !b) c := by
+    M.IsFan (F.drop k) (b != k.bodd) c := by
   induction k with
   | zero => simpa
-  | succ k ih =>
-    convert (ih (by grind)).tail (by grind) using 1
-    · simp
-    grind
+  | succ k ih => convert (ih (by grind)).tail (by grind) using 1 <;> simp
 
 lemma IsFan.right_eq (h : M.IsFan F b c) : c = (if Odd F.length then b else !b) := by
   induction h with grind
 
 lemma IsFan.take {k} (h : M.IsFan F b c) (hk : 2 ≤ k) (hkle : k ≤ F.length) :
-    M.IsFan (F.take k) b (if Odd k then b else !b) := by
+    M.IsFan (F.take k) b (b == k.bodd) := by
   convert (h.reverse.drop (k := F.length - k) (by grind)).reverse using 1
   · grind [List.drop_reverse]
   obtain ⟨d, h_eq⟩ := exists_add_of_le hkle
-  simp only [h_eq, add_tsub_cancel_left, h.right_eq, Nat.odd_add]
-  split_ifs <;> grind
+  simp only [h.bool_left_eq, h_eq, Nat.bodd_add, add_tsub_cancel_left]
+  cases c with cases hd : d.bodd with simp
 
 lemma IsFan.isNonloop_bDual (h : M.IsFan F b c) (heF : e ∈ F) (d : Bool) :
     (M.bDual d).IsNonloop e := by

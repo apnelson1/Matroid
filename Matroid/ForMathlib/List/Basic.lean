@@ -101,6 +101,14 @@ lemma Nodup.mem_iff_eq_getLast_or_mem_dropLast {α} {x : α} {l : List α} (hnd 
     (hne : l ≠ []) : x ∈ l ↔ x = l.getLast hne ∨ x ≠ l.getLast hne ∧ x ∈ l.dropLast := by
   induction l using List.reverseRec with | nil => simp at hne | append_singleton l a _ => grind
 
+lemma Nodup.toSet_eq_of_subset_of_length_ge {l l' : List α} (hl : l.Nodup) (hss : l ⊆ l')
+    (hlen : l'.length ≤ l.length) : {x | x ∈ l} = {x | x ∈ l'} := by
+  classical
+  have hss' : l.toFinset ⊆ l'.toFinset := by simpa [Finset.subset_iff]
+  suffices aux : l.toFinset = l'.toFinset by simpa [Set.ext_iff, Finset.ext_iff] using aux
+  refine Finset.eq_of_subset_of_card_le hss' ?_
+  grw [toFinset_card_of_nodup hl, toFinset_card_le, hlen]
+
 lemma IsSuffix.eq_of_first_mem {α} {l₁ l₂ : List α} (h : l₁.IsSuffix l₂) (hnd : l₂.Nodup)
     (hne : l₂ ≠ []) (hl : l₂.head hne ∈ l₁) : l₁ = l₂ := by
   match h with
