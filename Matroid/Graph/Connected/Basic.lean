@@ -957,7 +957,7 @@ lemma noEdge_preconnGE_iff (n : ℕ) : (Graph.noEdge X β).PreconnGE n ↔ n = 0
 @[simp]
 lemma noEdge_ConnGE_iff (n : ℕ) : (Graph.noEdge X β).ConnGE n ↔ n = 0 ∨ (n = 1 ∧ ∃ x, X = {x}):= by
   obtain hc | hc := em ((Graph.noEdge X β).IsComplete) |>.symm
-  · rw [← preconnGE_iff_connGE_of_not_isComplete hc, noEdge_preconnGE_iff]
+  · rw [← preconnGE_iff_connGE_of_not_isComplete (fun _ ↦ hc), noEdge_preconnGE_iff]
     constructor
     · rintro (rfl | hss)
       · tauto

@@ -222,6 +222,7 @@ lemma incEdges_completeGraph (n : ℕ) (x : ℕ) (hx : x < n) :
   ext e
   induction e with | h u v => aesop
 
+/-- `G.IsComplete` means that any two distinct vertices are adjacent. -/
 def IsComplete (G : Graph α β) : Prop := ∀ x ∈ V(G), ∀ y ∈ V(G), x ≠ y → G.Adj x y
 
 @[simp]
@@ -233,6 +234,9 @@ lemma completeGraph_isComplete (n : ℕ) : (CompleteGraph n).IsComplete := by
 @[simp]
 lemma bot_isComplete : (⊥ : Graph α β).IsComplete := by
   simp [IsComplete]
+
+lemma IsComplete.of_subsingleton (hG : V(G).Subsingleton) : G.IsComplete :=
+  fun _ hx _ hy hne ↦ False.elim <| hne <| hG hx hy
 
 @[simp]
 lemma bouquet_isComplete (v : α) (F : Set β) : (bouquet v F).IsComplete := by
