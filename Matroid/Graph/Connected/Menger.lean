@@ -307,7 +307,7 @@ theorem Menger'sTheorem [G.Finite] (hι : ENat.card ι = n) (hnt : V(G).Nontrivi
       obtain ⟨s, hs, t, ht, hne⟩ := hnt
       obtain ⟨A, hA⟩ := h hs ht
       exact A.vertexSet_encard_of_length_one_subsingleton hι hs hne hA
-    rw [← G.preconnGE_iff_connGE_of_not_isComplete hC n]
+    rw [← preconnGE_iff_connGE_of_not_isComplete (fun _ ↦ hC)]
     intro s t hs ht
     rw [Menger'sTheorem_vertex hs ht hι]
     exact ⟨(h hs ht).choose⟩
