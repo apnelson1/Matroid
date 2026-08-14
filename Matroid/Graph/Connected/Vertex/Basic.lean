@@ -1,6 +1,7 @@
 module
 
 public import Matroid.Graph.Lattice
+public import Matroid.Graph.Simple
 public import Matroid.Graph.Connected.Vertex.Defs
 
 @[expose] public section
@@ -48,3 +49,16 @@ lemma IsWalk.prefixUntil_isWalk_subgraph {W} {H : G.Subgraph} [DecidablePred (·
       <| H.mem_edgeSet_or_compl_edgeSet hW.1.edge_mem |>.resolve_right
       <| fun hec ↦ h (hW.1.of_le_of_mem Hᶜ.prop hec |>.left_mem)
       use this, hW.2.prefixUntil_isWalk_subgraph this.right_mem
+
+lemma IsSimpleficationOf.connBetween_iff (h : G.IsSimpleficationOf H) :
+    G.ConnBetween x y ↔ H.ConnBetween x y := by
+  refine ⟨fun hxy ↦ hxy.mono h.le, fun hxy ↦ ?_⟩
+  rw [connBetween_iff_reflTransGen_adj] at hxy ⊢
+  use h.isSpanningSubgraph.vertexSet_eq ▸ hxy.1
+  replace hxy := hxy.2
+  induction hxy with
+  | refl => exact Relation.ReflTransGen.refl
+  | @tail a b _h hadj ih =>
+    obtain rfl | hne := eq_or_ne a b
+    · exact ih
+    exact ih.tail (h.adj_iff hne |>.mpr hadj)

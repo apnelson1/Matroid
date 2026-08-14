@@ -410,16 +410,16 @@ lemma IsForest.bipartite {F : Graph α β} (hF : IsForest F) : F.Bipartite := by
     intro hyP
     subst hPfirst hPlast
     have hle' := (hP.isPath.suffix <| P.suffixFromVertex_isSuffix y).isWalk.dist_le_length
-    rw [suffixFromVertex_first hyP, suffixFromVertex_last, dist_comm] at hle'
+    rw [suffixFromVertex_first hyP, suffixFromVertex_last, Graph.dist_comm] at hle'
     have hne : P.suffixFromVertex y ≠ P := by
       refine fun heq ↦ hxy.symm.adj.ne ?_
       rw [← heq, suffixFromVertex_first hyP]
     have hlt := (P.suffixFromVertex_isSuffix y).isSublist.length_lt hne
-    rw [dist_comm] at hle
+    rw [Graph.dist_comm] at hle
     linarith [hP.length_eq_dist]
   have hPl : P.length + 1 = F.dist y P.last := by simpa using
     (hF.isShortestPath_of_isPath hPy).length_eq_dist
-  rw [← hPlast, ← hPfirst, dist_comm, ← hP.length_eq_dist, dist_comm, ← hPl]
+  rw [← hPlast, ← hPfirst, Graph.dist_comm, ← hP.length_eq_dist, Graph.dist_comm, ← hPl]
   simp
 
 /-- A graph is bipartite if and only if all its cycles are even -/

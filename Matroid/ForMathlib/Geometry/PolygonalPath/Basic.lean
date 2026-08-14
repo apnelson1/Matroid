@@ -836,16 +836,12 @@ lemma IsSimple.existsUnique_edge (h : P.IsSimple) {u : α} (hu : u ∈ P.toSet)
     | nil => exact huv (by simpa using hu)
     | cons => simp at hzero
   obtain ⟨s, hs, hus⟩ := P.mem_toSet_iff hP |>.mp hu
-  refine ⟨s, ⟨hs, hus⟩, fun t ⟨ht, hut⟩ ↦ ?_⟩
-  by_contra hst
-  haveI hsymm : Std.Symm fun s t : α × α =>
-      segment ℝ s.1 s.2 ∩ segment ℝ t.1 t.2 ⊆ ({s.1, s.2} ∩ {t.1, t.2} : Set α) := ⟨by
-    intro p q hpq v hv
-    have := hpq ⟨hv.2, hv.1⟩
-    exact ⟨this.2, this.1⟩⟩
-  have huends := (h.2.forall hs ht (fun e => hst e.symm)) ⟨hus, hut⟩
-  exact huv (huends.1.elim (fun e => e ▸ P.fst_mem_vertices hs)
-    (fun e => e ▸ P.snd_mem_vertices hs))
+  refine ⟨s, ⟨hs, hus⟩, fun t ⟨ht, hut⟩ ↦ by_contra fun hst ↦ ?_⟩
+  have hsymm : Std.Symm fun s t : α × α =>
+      segment ℝ s.1 s.2 ∩ segment ℝ t.1 t.2 ⊆ ({s.1, s.2} ∩ {t.1, t.2} : Set α) :=
+    ⟨fun p q hpq v hv ↦ inter_comm .. ▸ hpq ⟨hv.2, hv.1⟩⟩
+  exact huv (((h.2.forall hs ht (fun e => hst e.symm)) ⟨hus, hut⟩).1.elim
+    (· ▸ P.fst_mem_vertices hs) (· ▸ P.snd_mem_vertices hs))
 
 /-- A vertex of a simple path lies on the one or two segments incident to it, and no others. -/
 lemma IsSimple.mem_segment_iff_of_mem_vertices (h : P.IsSimple) {u : α} (hu : u ∈ P.vertices)

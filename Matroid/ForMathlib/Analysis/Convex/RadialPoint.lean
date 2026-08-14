@@ -151,7 +151,7 @@ lemma segment_inter_closedBall_eq_radial (p z : V) {ρ : ℝ} (hρ : 0 < ρ) (hn
     (hlt : ρ ≤ dist p z) :
     closedBall p ρ ∩ segment ℝ p z = segment ℝ p (radialPoint p z ρ) := by
   apply subset_antisymm
-  · intro w ⟨hwball, hwseg⟩
+  · rintro w ⟨hwball, hwseg⟩
     obtain ⟨t, ⟨ht0, _ht1⟩, rfl⟩ :=
       (segment_eq_image_lineMap (𝕜 := ℝ) p z).symm ▸ hwseg
     have htdist : t * dist p z ≤ ρ := by
@@ -227,7 +227,7 @@ lemma closedBall_inter_segment_eq_two_radii (p a b : V) {ρ : ℝ} (hρ : 0 < ρ
   have hne_b := ne_of_mem_openSegment_right hab hp
   have hqseg : p ∈ segment ℝ a b := openSegment_subset_segment ℝ a b hp
   apply subset_antisymm
-  · intro x ⟨hxball, hxseg⟩
+  · rintro x ⟨hxball, hxseg⟩
     have hx' : x ∈ segment ℝ a p ∪ segment ℝ p b := by
       rwa [← segment_union_eq_segment hqseg] at hxseg
     rcases hx' with hx1 | hx2
@@ -260,7 +260,7 @@ lemma closedBall_inter_two_segments_at_endpoint (p a b : V) {ρ : ℝ} (hρ : 0 
     closedBall p ρ ∩ (segment ℝ a p ∪ segment ℝ p b) =
       segment ℝ p (radialPoint p a ρ) ∪ segment ℝ p (radialPoint p b ρ) := by
   apply subset_antisymm
-  · intro x ⟨hxball, hx⟩
+  · rintro x ⟨hxball, hx⟩
     obtain hx | hx := hx
     · have : x ∈ closedBall p ρ ∩ segment ℝ p a := ⟨hxball, by rwa [segment_symm]⟩
       exact Or.inl <| (segment_inter_closedBall_eq_radial p a hρ hne_a ha) ▸ this
@@ -401,7 +401,7 @@ lemma segment_radial_inter_eq_center {p z₁ z₂ : V} (hne₁ : z₁ ≠ p)
   have hz₂ : dist z₂ p = ρ := heq
   clear_value ρ
   refine subset_antisymm ?_ (by simp [left_mem_segment])
-  intro w ⟨hw₁, hw₂⟩
+  rintro w ⟨hw₁, hw₂⟩
   by_cases hwr : dist w p = ρ
   · have hwz₁ := eq_of_mem_segment_of_mem_sphere p hρ (mem_sphere.mpr hz₁) hw₁ (mem_sphere.mpr hwr)
     have hwz₂ := eq_of_mem_segment_of_mem_sphere p hρ (mem_sphere.mpr hz₂) hw₂ (mem_sphere.mpr hwr)
@@ -458,7 +458,7 @@ lemma two_radii_union_eq_star (p ya yb : V) :
   refine ⟨?_, ?_⟩
   · exact Or.inr
   rintro (rfl | h)
-  · exact Or.inl (left_mem_segment _ _ _)
+  · exact Or.inl (left_mem_segment ..)
   exact h
 
 /-- **A point of a radius at distance exactly `ρ` is the radial point.** The pointwise form of
@@ -479,59 +479,5 @@ lemma eq_radialPoint_of_mem_segment_of_mem_sphere (p z : V) {ρ : ℝ} (hρ : 0 
   rw [segment_inter_closedBall_eq_radial p z hρ hne hle] at hy
   exact eq_of_mem_segment_of_mem_sphere p hρ (mem_sphere_radialPoint p z hρ.le hne) hy hysph
 
-/-! ### Regression tests for the tags
-
-Each `example` below fails if the corresponding tag is removed. This is the only way to find out
-that a tag fires: a tag that never matches produces no error, no warning and no failing proof, it
-just costs a match attempt forever. These are also the `grind` call sites that
-`grind.unusedLemmaThreshold` needs in order to measure anything over this API at all — without them
-the file is unmeasurable, and "no `grind` call mentions `radialPoint`" is a statement about the
-absence of tests, not evidence that tagging is premature. -/
-
-section RegressionTests
-
-variable {p z z₁ z₂ w y : V} {ρ : ℝ}
-
--- `norm_radialPoint_sub`, in the ambient normed normal form.
-example (hρ : 0 ≤ ρ) (hne : z ≠ p) : ‖radialPoint p z ρ - p‖ = ρ := by grind
-
--- `mem_sphere_radialPoint` and `radialPoint_mem_segment`, whose hypotheses are side conditions.
-example (hρ : 0 ≤ ρ) (hne : z ≠ p) (hle : ρ ≤ dist p z) :
-    radialPoint p z ρ ∈ sphere p ρ ∧ radialPoint p z ρ ∈ segment ℝ p z := by grind
-
--- `segment_inter_closedBall_eq_radial`: truncating a radius to a ball.
-example (hρ : 0 < ρ) (hne : z ≠ p) (hle : ρ ≤ dist p z) :
-    closedBall p ρ ∩ segment ℝ p z = segment ℝ p (radialPoint p z ρ) := by grind
-
--- `eq_of_mem_segment_of_mem_sphere`: a radius meets its sphere once. Keyed on the antecedents,
--- so this closes only because the `∈ segment` / `∈ sphere` hypotheses are present to match.
-example (hρ : 0 < ρ) (hw : w ∈ sphere p ρ) (hy : y ∈ segment ℝ p w) (hysph : y ∈ sphere p ρ) :
-    y = w := by grind
-
--- `segment_diff_ball_eq_singleton`: the part of a radius outside the open ball.
-example (hρ : 0 < ρ) (hz : dist z p = ρ) : segment ℝ p z \ ball p ρ = {z} := by grind
-
--- `segment_radial_inter_eq_center`: two radii of one ball with distinct sphere endpoints.
-example (hne₁ : z₁ ≠ p) (heq : dist z₂ p = dist z₁ p) (hne : z₁ ≠ z₂) :
-    segment ℝ p z₁ ∩ segment ℝ p z₂ = {p} := by grind
-
--- The consumer-facing use of the previous one: a point on both radii is the centre. This is the
--- form that actually appears downstream, and it closes only because the tag is `=` rather than
--- `→`: `grind` rewrites the intersection it already has, instead of having to guess the lemma.
-example (hne₁ : z₁ ≠ p) (heq : dist z₂ p = dist z₁ p) (hne : z₁ ≠ z₂)
-    (h₁ : w ∈ segment ℝ p z₁) (h₂ : w ∈ segment ℝ p z₂) : w = p := by grind
-
--- The `ρ`-shaped call, which is how callers carrying a named radius reach the lemma. The `dist_pos`
--- hint is needed and is not an oversight: the side condition `z₁ ≠ p` follows from `0 < ρ` and
--- `dist z₁ p = ρ` only through `dist_pos`, which is untagged in Mathlib. A caller in this shape
--- pays one hint; that is the price of the phantom `ρ` living in the caller rather than the lemma.
-example (hρ : 0 < ρ) (hz₁ : dist z₁ p = ρ) (hz₂ : dist z₂ p = ρ) (hne : z₁ ≠ z₂) :
-    segment ℝ p z₁ ∩ segment ℝ p z₂ = {p} := by grind [dist_pos]
-
--- From `WIP/GrindProbe.lean`, which could not build (`WIP` is not a `lean_lib`) and is now deleted:
--- a point of a radius at distance exactly `ρ` *is* the radial point. Composes
--- `segment_inter_closedBall_eq_radial` with `eq_of_mem_segment_of_mem_sphere`.
-example (hρ : 0 < ρ) (hzne : z ≠ p) (hle : ρ ≤ dist p z)
-    (hyseg : y ∈ segment ℝ p z) (hysph : y ∈ sphere p ρ) : y = radialPoint p z ρ := by grind
-
-end RegressionTests
+/-! The regression tests for the tags above live in `tests/MatroidTests/GrindTags.lean`;
+see `tests/README.md`. -/

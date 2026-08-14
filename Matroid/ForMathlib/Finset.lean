@@ -9,7 +9,6 @@ public import Mathlib.Data.Finset.Powerset -- inefficient import
 -- import Mathlib.Algebra.Group.Int
 -- import Mathlib.Algebra.Ring.Int
 
-set_option linter.unusedSectionVars false
 variable {α β : Type*} {s t r : Finset α} {a b : α}
 
 namespace Finset
@@ -44,6 +43,7 @@ lemma singleton_subset_inter_and_union_subset_singleton {s t : Finset α} {e : �
   · exact Subset.antisymm (Finset.union_subset_left h') (h.trans Finset.inter_subset_left)
   · exact Subset.antisymm (Finset.union_subset_right h') (h.trans Finset.inter_subset_right)
 
+omit [DecidableEq α] in
 lemma singleton_of_mem_card_le_one {e : α} {s : Finset α} (hs : s.card ≤ 1)
     (he : e ∈ s) : s = {e} := by
   ext x; refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩

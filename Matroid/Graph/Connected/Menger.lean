@@ -417,7 +417,7 @@ theorem Menger'sTheorem_edge_vertex [G.Finite] (hs : s ∈ V(G)) (ht : t ∈ V(G
   · simp only [edgeConnBetweenGE_self hs, true_iff]
     exact ⟨edgePathEnsemble_nil G hs ι⟩
   refine ⟨fun hconn => ?_, fun ⟨E⟩ F hF => ?_⟩
-  · rw [edgeConnBetweenGE_iff_lineGraph_setConnGE hst] at hconn
+  · rw [edgeConnBetweenGE_iff_lineGraph_setConnGE hst, le_setConnectivity_iff] at hconn
     obtain ⟨A, hA, hAcard⟩ := (Menger'sTheorem_set (by simp) (by simp) n).mp hconn
     exact nonempty_edgePathEnsemble_of_lineGraphSetEnsemble A hA hι hAcard
   have hF' (i : ι) : G.IsEdgeCutBetween F (E.f i).first (E.f i).last := by
@@ -434,8 +434,28 @@ theorem Menger'sTheorem_edge_vertex [G.Finite] (hs : s ∈ V(G)) (ht : t ∈ V(G
 
 theorem Menger'sTheorem_edge [G.Finite] (hι : ENat.card ι = n) :
     G.EdgeConnGE n ↔ ∀ ⦃s t⦄, s ∈ V(G) → t ∈ V(G) → Nonempty (G.EdgePathEnsemble s t ι) :=
-  ⟨fun hConn _ _ hs ht => (Menger'sTheorem_edge_vertex hs ht hι).1 (hConn hs ht),
-    fun hEns _ _ hs ht => (Menger'sTheorem_edge_vertex hs ht hι).2 (hEns hs ht)⟩
+  ⟨fun hConn _ _ hs ht => (Menger'sTheorem_edge_vertex hs ht hι).mp (hConn hs ht),
+    fun hEns _ _ hs ht => (Menger'sTheorem_edge_vertex hs ht hι).mpr (hEns hs ht)⟩
+
+/-- Vertex Menger supplies `κ` internally disjoint `s`–`t` paths, at most one of them an edge;
+those paths are therefore edge-disjoint, so edge Menger gives `κ ≤ κₑ`. -/
+lemma connectivity_le_edgeConnectivity [G.Finite] (h : V(G).Nontrivial) : κ(G) ≤ κₑ(G) := by
+  have hκlt : κ(G) < ⊤ := by
+    apply (min_le_right G.sepConnectivity G.cardConnectivityBound).trans_lt
+    unfold cardConnectivityBound
+    rw [dif_neg h.not_subsingleton, lt_top_iff_ne_top]
+    simp [ENat.sub_eq_top_iff, encard_eq_top_iff]
+  obtain ⟨n, hn⟩ := ENat.ne_top_iff_exists.mp hκlt.ne
+  have hι : ENat.card (Fin n) = n := by simp
+  rw [← hn, ← edgeConnGE_iff_le_edgeConnectivity]
+  intro s t hs ht
+  obtain rfl | hst := eq_or_ne s t
+  · exact edgeConnBetweenGE_self hs n
+  obtain ⟨A, hA⟩ := (Menger'sTheorem hι h).mp ((connGE_iff_le_connectivity n).2 (hn ▸ le_rfl)) hs ht
+  have htriv : Set.Subsingleton {i : Fin n | ¬ (A.f i).Nontrivial} :=
+    hA.anti fun i (hi : ¬ (A.f i).Nontrivial) ↦ by_contra fun hlen ↦
+      hi <| A.nonempty_of_ne hst i |>.nontrivial_of_length_ne_one hlen
+  exact (Menger'sTheorem_edge_vertex hs ht hι).mpr ⟨EdgePathEnsemble.ofVertexEnsemble A htriv⟩
 
 end edgeMenger
 

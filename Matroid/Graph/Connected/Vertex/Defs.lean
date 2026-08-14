@@ -144,6 +144,18 @@ lemma Isolated.connBetween_iff_eq (hisol : G.Isolated x) : G.ConnBetween x y ↔
   rintro ⟨W, hW, rfl, rfl⟩
   exact hisol.eq_last_of_mem hW first_mem
 
+lemma connBetween_iff_reflTransGen_adj :
+    G.ConnBetween x y ↔ x ∈ V(G) ∧ Relation.ReflTransGen G.Adj x y := by
+  refine ⟨fun h ↦ ⟨h.left_mem, ?_⟩, ?_⟩
+  · obtain ⟨W, hW, rfl, rfl⟩ := h
+    induction hW with
+    | nil => exact .refl
+    | cons _hW h ih => exact .head h.adj ih
+  rintro ⟨hx, h⟩
+  induction h with
+  | refl => exact ConnBetween.refl hx
+  | tail _h hadj ih => exact ih.trans hadj.connBetween
+
 /-! ### Separators between two vertices -/
 
 structure IsSepBetween (G : Graph α β) (s t : α) (C : Set α) : Prop where

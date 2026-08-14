@@ -1,7 +1,7 @@
 module
 
 public import Matroid.Graph.Forest
-public import Matroid.Graph.Simple
+public import Matroid.Graph.Connected.Menger
 public import Matroid.Graph.WList.TakeDrop.Pred
 import all Mathlib.Combinatorics.Graph.Delete
 
@@ -212,34 +212,23 @@ theorem ConnGE.exists_isEar_or_isLoopAt (hG : G.ConnGE 2) (hle : H ≤ G) (hV : 
   exists_isEar_or_isLoopAt_of_connected (hG.connected one_le_two)
     (fun _ hx ↦ hG.deleteVert_connected hx) hle hV hne
 
-lemma neighbor_isSep (hx : x ∈ V(G)) (h : ∃ v ∈ V(G), ¬ G.Adj x v) : G.IsSep N(G, x) := by
-  refine ⟨G.neighbor_subset x, ?_⟩
-  sorry -- 1-menger. Should be trivial
+lemma neighbor_isSep (hx : x ∈ V(G)) (h : ∃ v ∈ V(G), v ≠ x ∧ ¬ G.Adj x v) :
+    G.IsSep (N(G, x) \ {x}) := by
+  obtain ⟨v, hv, hne, hna⟩ := h
+  refine ⟨sdiff_subset.trans (G.neighbor_subset x), fun hconn ↦ hne ?_⟩
+  suffices ∀ {y}, Relation.ReflTransGen (G - (N(G, x) \ {x})).Adj x y → y = x from
+    this (connBetween_iff_reflTransGen_adj.mp
+    (hconn.connBetween (x := x) (y := v) (by simp [hx]) (by simp [hv, hna]))).2
+  intro y hy
+  induction hy with
+  | refl => rfl
+  | tail _ hadj ih =>
+    rw [ih, deleteVerts_adj_iff] at hadj
+    obtain ⟨hAdj, -, hc⟩ := hadj
+    simp only [mem_sdiff, mem_singleton_iff, not_and, not_not] at hc
+    exact hc hAdj
 
 /-! ### The base cycle -/
-
-/-- Every vertex of a `2`-connected graph has two distinct neighbours, both different from itself.
-
-`u ≠ x` and `v ≠ x` have to be stated, not inferred: `Adj` is `∃ e, G.IsLink e x y`
-(Mathlib `Combinatorics/Graph/Basic.lean:316`), so a loop at `x` makes `G.Adj x x` true. Without
-them `exists_isCycle_le` cannot place `u` and `v` in `V(G - {x})`.
-
-This is also strictly what is wanted in place of `MinDegreeGE 2`, which would not serve: parallel
-edges make the degree `2` without producing a second neighbour, and it is the second neighbour that
-excludes a digon.
-
-Route: if `x` had no neighbour outside `{x}` then `∅` is an `IsSep` `Connected/Defs.lean:370`, and
-if `u` were its only one then `x` is isolated in `G - {u}`, which still has another vertex by
-`ConnGE.lt_encard_vertexSet`, so `{u}` is an `IsSep` of `encard 1`. Either contradicts `hG.le_cut`.
-Compare `EdgeConnGE.minDegreeGE` `Connected/Bond.lean:565`, the edge-connectivity analogue, which is
-proved the same way. -/
-lemma ConnGE.exists_two_adj (hG : G.ConnGE 2) (hx : x ∈ V(G)) :
-    ∃ u v, u ≠ v ∧ u ≠ x ∧ v ≠ x ∧ G.Adj x u ∧ G.Adj x v := by
-  obtain hh := hG.lt_encard_vertexSet le_rfl
-
-  contrapose! hG
-  have := G.neighbor_isSep hx
-  sorry
 
 /-- A `2`-connected graph has, through each of its vertices, a cycle on at least three vertices.
 
@@ -247,21 +236,75 @@ The bound on `V(C₀)` matters: `IsCycle` `Forest.lean:167` is `Minimal (¬ IsFo
 loops and digons, and neither is `2`-connected — so a decomposition rooted at one would have no
 converse. No finiteness instance is needed: the cycle is built, not extracted.
 
-Route: `ConnGE.exists_two_adj` gives `e₁ : G.IsLink e₁ x u` and `e₂ : G.IsLink e₂ x v` with
-`u ≠ v`, hence `e₁ ≠ e₂`, and with `u ≠ x`, `v ≠ x`, which is what places both in `V(G - {x})`.
-`ConnGE.deleteVert_connected` and `ConnBetween.exists_isPath`
-`Connected/Vertex/Defs.lean:70` give a path `Q` of `G - {x}` from `u` to `v`; `x ∉ V(Q)` by
-`isPath_deleteVerts_iff` `Walk/Path.lean:242`. Then `(cons x e₁ Q).concat e₂ x` is closed with
-`tail.vertex.Nodup` and length `> 2`, so `IsWalk.isCyclicWalk_of_closed_nodup` `Walk/Cycle.lean:58`
-applies. Convert with `IsCyclicWalk.toGraph_isCycle` `Forest.lean:192` and
-`IsWalk.toGraph_le` `Walk/Basic.lean:776`; `toGraph_vertexSet` `Walk/Basic.lean:710` gives the
-`encard` bound from the three distinct vertices `x, u, v`.
-
-`Connected.isCycle_of_regular` `Degree/Max.lean:97` is the model for the last two steps. -/
+Route: Since `G` is `2`-connected, there are at least 3 vertices. Let `x` and `y` be distinct
+vertices in `V(G)`. Take some `G'` that satisfies `G'.IsSimpleficationOf G`, via
+`exists_isSimpleficationOf_of_le` with `⊥` graph. `G'` is also `2`-connected, (
+`connectivity_simplify`) so there are two internally disjoint paths from `x` to `y` in `G'`.
+Then, appending the reverse of the second path to the first path, we get a tour and
+`IsTour.dedup_tail_isCyclicWalk` gives a cycle that contains `x`. -/
 theorem ConnGE.exists_isCycle_le (hG : G.ConnGE 2) (hx : x ∈ V(G)) :
     ∃ C₀, C₀.IsCycle ∧ C₀ ≤ G ∧ x ∈ V(C₀) ∧ 3 ≤ V(C₀).encard := by
+  have : (⊥ : Graph α β).Simple := by rw [← noEdge_empty]; infer_instance
+  obtain ⟨G', -, hsimp⟩ := exists_isSimpleficationOf_of_le (G := ⊥) (H := G) bot_le
+  have hG' : G'.ConnGE 2 := (connGE_iff_le_connectivity 2).2 <|
+    connectivity_simplify hsimp ▸ (connGE_iff_le_connectivity 2).1 hG
   
-  sorry
+
+  have hx' : x ∈ V(G') := hsimp.isSpanningSubgraph.vertexSet_eq ▸ hx
+
+  obtain ⟨y, hy, hyx⟩ := two_le_encard_iff_nontrivial.mp (hG'.lt_encard_vertexSet le_rfl).le
+    |>.exists_ne x
+
+  have hN : 2 ≤ (N(G', x) \ {x}).encard := by
+    by_contra hlt
+    have hle1 : (N(G', x) \ {x}).encard ≤ 1 := by
+      rw [not_le] at hlt
+      enat_to_nat!
+      omega
+    have hSle : ({x} ∪ (N(G', x) \ {x})).encard ≤ 2 := by
+      refine (encard_union_le _ _).trans ?_
+      rw [encard_singleton, add_comm]
+      exact (add_le_add_left hle1 1).trans_eq (by norm_num)
+    obtain ⟨y, hyV, hyS⟩ := diff_nonempty_of_encard_lt_encard <|
+      hSle.trans_lt (hG'.lt_encard_vertexSet le_rfl)
+    have hyx : y ≠ x := fun h ↦ hyS (by simp [h])
+    exact hlt <| hG'.le_cut <| G'.neighbor_isSep hx'
+      ⟨y, hyV, hyx, fun hadj ↦ hyS (Or.inr ⟨hadj, hyx⟩)⟩
+  obtain ⟨u, hu, v, hv, huv⟩ := (one_lt_encard_iff_nontrivial.1
+    (lt_of_lt_of_le (by simp : (1 : ℕ∞) < 2) hN))
+  simp only [mem_sdiff, mem_singleton_iff] at hu hv
+  obtain ⟨e1, he1⟩ := show G'.Adj x u from hu.1
+  obtain ⟨e2, he2⟩ := show G'.Adj x v from hv.1
+  have huV : u ∈ V(G' - ({x} : Set α)) := by
+    simp [vertexSet_deleteVerts, he1.right_mem, hu.2]
+  have hvV : v ∈ V(G' - ({x} : Set α)) := by
+    simp [vertexSet_deleteVerts, he2.right_mem, hv.2]
+  obtain ⟨Q, hQ, rfl, rfl⟩ := (hG'.deleteVert_connected hx').connBetween huV hvV |>.exists_isPath
+  simp only [isPath_deleteVerts_iff, disjoint_singleton_right, mem_vertexSet_iff] at hQ
+  have hP : G'.IsPath (cons x e1 Q) := cons_isPath_iff.2 ⟨he1, hQ.1, hQ.2⟩
+  have hC : G'.IsCyclicWalk ((cons x e1 Q).concat e2 x) :=
+    hP.concat_isCyclicWalk he2.symm <| by
+      simp only [cons_edge, List.mem_cons, not_or]
+      exact ⟨fun h ↦ huv (he1.right_unique (h ▸ he2)),
+        fun he ↦ hQ.2 <| hQ.1.isWalk.vertex_mem_of_edge_mem he he2.inc_left⟩
+  refine ⟨_, hC.toGraph_isCycle, hC.isWalk.toGraph_le.trans hsimp.le, ?_, ?_⟩
+  · simp [toGraph_vertexSet]
+  rw [toGraph_vertexSet, concat_vertexSet_eq, cons_vertexSet,
+    insert_eq_of_mem (mem_insert _ _)]
+  have hxuv : x ∉ ({Q.first, Q.last} : Set α) := by
+    intro hxQ
+    simp only [mem_insert_iff, mem_singleton_iff] at hxQ
+    exact hxQ.elim (hu.2 ∘ Eq.symm) (hv.2 ∘ Eq.symm)
+  have hcard : ({x, Q.first, Q.last} : Set α).encard = 3 := by
+    rw [encard_insert_of_notMem hxuv, encard_pair huv]
+    norm_num
+  rw [← hcard]
+  have hf : Q.first ∈ insert x V(Q) :=
+    mem_insert_of_mem _ (mem_vertexSet_iff.2 (first_mem (w := Q)))
+  have hl : Q.last ∈ insert x V(Q) :=
+    mem_insert_of_mem _ (mem_vertexSet_iff.2 (last_mem (w := Q)))
+  exact encard_le_encard <|
+    insert_subset (mem_insert _ _) (insert_subset hf (singleton_subset_iff.2 hl))
 
 /-! ### Ear induction
 

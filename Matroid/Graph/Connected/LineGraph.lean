@@ -145,7 +145,8 @@ lemma isEdgeCutBetween_iff_lineGraph_isSetCut (hst : s ≠ t) (F : Set β) :
 
 @[simp]
 lemma edgeConnBetweenGE_iff_lineGraph_setConnGE (hst : s ≠ t) (n : ℕ) :
-    G.EdgeConnBetweenGE s t n ↔ L(G).SetConnGE (E(G, s)) (E(G, t)) n := by
-  simp only [EdgeConnBetweenGE, SetConnGE, isEdgeCutBetween_iff_lineGraph_isSetCut hst]
+    G.EdgeConnBetweenGE s t n ↔ n ≤ L(G).setConnectivity (E(G, s)) (E(G, t)) := by
+  simp only [EdgeConnBetweenGE, le_setConnectivity_iff,
+    isEdgeCutBetween_iff_lineGraph_isSetCut hst]
 
 end Graph

@@ -64,16 +64,7 @@ pattern has to come from the antecedents, and here it does — `p ∉ K` and `Di
 every variable of their lemma. Contrast `Path.exists_lastExit_firstEntry`, whose principal argument
 appears only under the existential and which therefore admits no tag at all. -/
 
-section RegressionTests
-
-variable {X : Type*} [PseudoMetricSpace X]
-
-example {K : Set X} (hK : IsClosed K) {p : X} (hp : p ∉ K) : ∃ δ > 0, ∀ x ∈ K, δ ≤ dist p x := by
-  grind
-
-example {s t : Set X} (hs : IsCompact s) (ht : IsClosed t) (hst : Disjoint s t) :
-    ∃ δ > 0, ∀ x ∈ s, ∀ y ∈ t, δ ≤ dist x y := by grind
-
-end RegressionTests
+/-! The regression tests for the tags above live in `tests/MatroidTests/GrindTags.lean`;
+see `tests/README.md`. -/
 
 end

@@ -62,60 +62,46 @@ noncomputable section
 
 universe u
 
-variable {α β : Type*} {G H : Graph α β}
-variable {V : Type u} [NormedAddCommGroup V] [NormedSpace ℝ V]
+variable {α β : Type*} {G H : Graph α β} {V : Type u} [NormedAddCommGroup V]
 
 /-! ### Step 1: separating the vertices -/
 
-set_option linter.unusedSectionVars false in
 /-- A vertex image does not lie on the cell of a non-incident edge. -/
-lemma Drawing.vertex_notMem_range_edgePath_of_not_inc (D : Drawing G V)
-    {x : V(G)} {e : E(G)} (h : ¬ G.Inc e.1 x.1) : D.vertex x ∉ range (D.edgePath e) := by
+lemma Drawing.vertex_notMem_range_edgePath_of_not_inc (D : Drawing G V) {x : V(G)} {e : E(G)}
+    (h : ¬ G.Inc e.1 x.1) : D.vertex x ∉ range (D.edgePath e) := by
   rintro ⟨t, ht⟩
   have hends : x = edgeSource e ∨ x = edgeTarget e → G.Inc e.1 x.1 := by
     rintro (rfl | rfl)
     · exact (isLink_edgeSource_edgeTarget e).inc_left
     exact (isLink_edgeSource_edgeTarget e).inc_right
   obtain rfl | rfl | htI := unitInterval.eq_zero_or_eq_one_or_mem_Ioo t
-  · apply h
-    refine hends <| Or.inl <| D.vertex_injective ?_
-    rw [Path.source] at ht
-    exact ht.symm
-  · apply h
-    refine hends <| Or.inr <| D.vertex_injective ?_
-    rw [Path.target] at ht
-    exact ht.symm
-  exact (D.pathInterior_edgePath_disjoint_vertex e).notMem_of_mem_left ⟨t, htI, ht⟩
-    ⟨x, rfl⟩
+  · grind [D.vertex_injective]
+  · grind [D.vertex_injective]
+  exact (D.pathInterior_edgePath_disjoint_vertex e).notMem_of_mem_left ⟨t, htI, ht⟩ ⟨x, rfl⟩
 
 /-- A radius at each vertex whose closed balls are pairwise disjoint and meet the drawing only in
 that vertex and the cells at it.
 
 Status.md's Step 1 states the last inclusion without the `{D.vertex x}` summand, which fails for an
 isolated vertex, where the union on the right is empty. -/
-theorem Drawing.exists_vertexRadius [G.Finite] (D : Drawing G V) :
-    ∃ r : V(G) → ℝ, (∀ x, 0 < r x) ∧
-      (Pairwise fun x y ↦ Disjoint (closedBall (D.vertex x) (r x))
-        (closedBall (D.vertex y) (r y))) ∧
-      ∀ x, closedBall (D.vertex x) (r x) ∩ D.support ⊆
-        {D.vertex x} ∪ ⋃ e ∈ {e : E(G) | G.Inc e.1 x.1}, range (D.edgePath e) := by
+theorem Drawing.exists_vertexRadius [G.Finite] (D : Drawing G V) : ∃ r : V(G) → ℝ, (∀ x, 0 < r x) ∧
+    (Pairwise fun x y ↦ Disjoint (closedBall (D.vertex x) (r x)) (closedBall (D.vertex y) (r y))) ∧
+    ∀ x, closedBall (D.vertex x) (r x) ∩ D.support ⊆ {D.vertex x} ∪
+    ⋃ e ∈ {e : E(G) | G.Inc e.1 x.1}, range (D.edgePath e) := by
   classical
   -- `Graph.dist` / `Graph.dist_comm` shadow the metric versions in this namespace.
-  have mdist_pos {a b : V} : 0 < Dist.dist a b ↔ a ≠ b := @dist_pos V _ a b
-  have mdist_comm (a b : V) : Dist.dist a b = Dist.dist b a :=
-    PseudoMetricSpace.dist_comm a b
+  have mdist_pos {a b : V} : 0 < dist a b ↔ a ≠ b := @dist_pos V _ a b
   have one_third_lt_one : (1 / 3 : ℝ) < 1 := by norm_num
   have : Fintype V(G) := Fintype.ofFinite _
   have : Fintype E(G) := Fintype.ofFinite _
   -- Status.md: empty minima default to `1`, encoded by adjoining `1` to each distance set.
   let vertDists (x : V(G)) : Finset ℝ :=
-    (Finset.univ.erase x).image fun y ↦ Dist.dist (D.vertex x) (D.vertex y)
+    (Finset.univ.erase x).image fun y ↦ dist (D.vertex x) (D.vertex y)
   let edgeDists (x : V(G)) : Finset ℝ :=
     ((Finset.univ.filter fun e : E(G) ↦ ¬ G.Inc e.1 x.1).image fun e ↦
       infDist (D.vertex x) (range (D.edgePath e)))
   let r (x : V(G)) : ℝ :=
-    (1 / 3) * ((insert (1 : ℝ) (vertDists x ∪ edgeDists x)).min'
-      (Finset.insert_nonempty _ _))
+    (1 / 3) * ((insert (1 : ℝ) (vertDists x ∪ edgeDists x)).min' (Finset.insert_nonempty ..))
   have hrange_nonempty (e : E(G)) : (range (D.edgePath e)).Nonempty := ⟨_, ⟨0, rfl⟩⟩
   have hrange_closed (e : E(G)) : IsClosed (range (D.edgePath e)) :=
     (isCompact_range (D.edgePath e).continuous).isClosed
@@ -131,98 +117,37 @@ theorem Drawing.exists_vertexRadius [G.Finite] (D : Drawing G V) :
     obtain ⟨e, he, rfl⟩ := Finset.mem_image.mp hE
     exact (hrange_closed e).notMem_iff_infDist_pos (hrange_nonempty e) |>.mp
       (D.vertex_notMem_range_edgePath_of_not_inc (Finset.mem_filter.mp he).2)
-  have hle_vert (x y : V(G)) (hyx : y ≠ x) :
-      r x ≤ (1 / 3) * Dist.dist (D.vertex x) (D.vertex y) := by
-    have hmem : Dist.dist (D.vertex x) (D.vertex y) ∈
-        insert (1 : ℝ) (vertDists x ∪ edgeDists x) :=
-      Finset.mem_insert_of_mem <| Finset.mem_union_left _ <| Finset.mem_image.mpr
-        ⟨y, Finset.mem_erase.mpr ⟨hyx, Finset.mem_univ _⟩, rfl⟩
-    exact mul_le_mul_of_nonneg_left (Finset.min'_le _ _ hmem) (by norm_num)
+  have hle_vert (x y : V(G)) (hyx : y ≠ x) : r x ≤ (1 / 3) * dist (D.vertex x) (D.vertex y) := by
+    refine mul_le_mul_of_nonneg_left (Finset.min'_le _ _ ?_) (by norm_num)
+    exact Finset.mem_insert_of_mem <| Finset.mem_union_left _ <| Finset.mem_image.mpr
+      ⟨y, Finset.mem_erase.mpr ⟨hyx, Finset.mem_univ _⟩, rfl⟩
   have hle_edge (x : V(G)) (e : E(G)) (he : ¬ G.Inc e.1 x.1) :
       r x ≤ (1 / 3) * infDist (D.vertex x) (range (D.edgePath e)) := by
-    have hmem : infDist (D.vertex x) (range (D.edgePath e)) ∈
-        insert (1 : ℝ) (vertDists x ∪ edgeDists x) :=
-      Finset.mem_insert_of_mem <| Finset.mem_union_right _ <| Finset.mem_image.mpr
-        ⟨e, Finset.mem_filter.mpr ⟨Finset.mem_univ _, he⟩, rfl⟩
-    exact mul_le_mul_of_nonneg_left (Finset.min'_le _ _ hmem) (by norm_num)
-  refine ⟨r, hpos, ?_, ?_⟩
-  · intro x y hxy
-    refine closedBall_disjoint_closedBall ?_
-    have hd : 0 < Dist.dist (D.vertex x) (D.vertex y) :=
-      mdist_pos.mpr (D.vertex_injective.ne hxy)
-    have hx := hle_vert x y hxy.symm
-    have hy := hle_vert y x hxy
-    have : r x + r y ≤ (2 / 3) * Dist.dist (D.vertex x) (D.vertex y) := by
-      calc
-        r x + r y
-            ≤ (1 / 3) * Dist.dist (D.vertex x) (D.vertex y) +
-                (1 / 3) * Dist.dist (D.vertex y) (D.vertex x) := add_le_add hx hy
-        _ = (2 / 3) * Dist.dist (D.vertex x) (D.vertex y) := by
-          rw [mdist_comm (D.vertex y) (D.vertex x), ← two_mul, ← mul_assoc]
-          norm_num
-    exact lt_of_le_of_lt this <| (mul_lt_iff_lt_one_left hd).mpr (by norm_num)
-  intro x z hz
-  obtain ⟨hzball, hzsupp⟩ := hz
+    refine mul_le_mul_of_nonneg_left (Finset.min'_le _ _ ?_) (by norm_num)
+    exact Finset.mem_insert_of_mem <| Finset.mem_union_right _ <| Finset.mem_image.mpr
+      ⟨e, Finset.mem_filter.mpr ⟨Finset.mem_univ _, he⟩, rfl⟩
+  refine ⟨r, hpos, fun x y hxy ↦ closedBall_disjoint_closedBall ?_, ?_⟩
+  · have hd : 0 < dist (D.vertex x) (D.vertex y) := mdist_pos.mpr (D.vertex_injective.ne hxy)
+    refine lt_of_le_of_lt (b := (2 / 3) * _)
+      ((add_le_add (hle_vert x y hxy.symm) (hle_vert y x hxy)).trans ?_)
+      <| (mul_lt_iff_lt_one_left hd).mpr (by norm_num)
+    rw [dist_comm (D.vertex y) (D.vertex x), ← two_mul, ← mul_assoc]
+    norm_num
+  rintro x z ⟨hzball, hzsupp⟩
+  rw [mem_closedBall, dist_comm] at hzball
   rw [D.support_eq, mem_union, mem_iUnion] at hzsupp
   obtain ⟨y, rfl⟩ | ⟨e, he⟩ := hzsupp
-  · by_cases hyx : y = x
-    · simp [hyx]
-    · have hdist : Dist.dist (D.vertex x) (D.vertex y) ≤ r x := by
-        rw [mdist_comm]
-        exact Metric.mem_closedBall.mp hzball
-      have : r x < Dist.dist (D.vertex x) (D.vertex y) := by
-        have hxy : x ≠ y := fun h ↦ hyx h.symm
-        have hlt : (1 / 3) * Dist.dist (D.vertex x) (D.vertex y) <
-            Dist.dist (D.vertex x) (D.vertex y) :=
-          (mul_lt_iff_lt_one_left
-            (mdist_pos.mpr (D.vertex_injective.ne hxy))).mpr one_third_lt_one
-        exact lt_of_le_of_lt (hle_vert x y hyx) hlt
-      exact (this.not_ge hdist).elim
+  · suffices y = x by simp [this]
+    by_contra! hyx
+    exact hzball.not_gt <| (hle_vert x y hyx).trans_lt <| mul_lt_iff_lt_one_left
+      (mdist_pos.mpr (D.vertex_injective.ne hyx.symm)) |>.mpr one_third_lt_one
   obtain hinc | hinc := em (G.Inc e.1 x.1)
-  · exact Or.inr <| mem_biUnion (by exact hinc) he
-  have hdist : Dist.dist (D.vertex x) z ≤ r x := by
-    rw [mdist_comm]
-    exact Metric.mem_closedBall.mp hzball
-  have hinf : infDist (D.vertex x) (range (D.edgePath e)) ≤ r x :=
-    (infDist_le_dist_of_mem he).trans hdist
-  have : r x < infDist (D.vertex x) (range (D.edgePath e)) :=
-    lt_of_le_of_lt (hle_edge x e hinc) <|
-      (mul_lt_iff_lt_one_left <|
-        (hrange_closed e).notMem_iff_infDist_pos (hrange_nonempty e) |>.mp
-          (D.vertex_notMem_range_edgePath_of_not_inc hinc)).mpr one_third_lt_one
-  exact (this.not_ge hinf).elim
+  · exact Or.inr <| mem_biUnion hinc he
+  exact ((infDist_le_dist_of_mem he).trans hzball |>.not_gt <| (hle_edge x e hinc).trans_lt
+    <| (mul_lt_iff_lt_one_left <| (hrange_closed e).notMem_iff_infDist_pos (hrange_nonempty e)
+    |>.mp (D.vertex_notMem_range_edgePath_of_not_inc hinc)).mpr one_third_lt_one).elim
 
 /-! ### Step 2: the middle of each cell -/
-
-
-set_option linter.unusedSectionVars false in
-/-- Distinct edge-path ranges meet only at images of shared endpoints. -/
-lemma Drawing.range_edgePath_inter (D : Drawing G V) {e f : E(G)} (hef : e ≠ f) :
-    range (D.edgePath e) ∩ range (D.edgePath f) ⊆
-      {D.vertex (edgeSource e), D.vertex (edgeTarget e)} ∩
-        {D.vertex (edgeSource f), D.vertex (edgeTarget f)} := by
-  -- One argument, applied once per edge. The two conjuncts of the conclusion are the same
-  -- statement with `e` and `f` exchanged, so naming it is cheaper than mirroring the proof.
-  have key {g h : E(G)} (hgh : g ≠ h) {z : V} {tg sh : I}
-      (htg : D.edgePath g tg = z) (hsh : D.edgePath h sh = z) :
-      z = D.vertex (edgeSource g) ∨ z = D.vertex (edgeTarget g) := by
-    obtain rfl | rfl | htgI := unitInterval.eq_zero_or_eq_one_or_mem_Ioo tg
-    · left; rw [← htg, Path.source]
-    · right; rw [← htg, Path.target]
-    -- `z` interior to the cell of `g` is on no other cell and is no vertex image, so `h` cannot
-    -- reach it at all: every case for `sh` is absurd.
-    have hinter : z ∈ pathInterior (D.edgePath g) := ⟨tg, htgI, htg⟩
-    have hnotV : z ∉ range D.vertex :=
-      (D.pathInterior_edgePath_disjoint_vertex g).notMem_of_mem_left hinter
-    have hnotH : z ∉ pathInterior (D.edgePath h) :=
-      (D.pathInterior_edgePath_disjoint hgh).notMem_of_mem_left hinter
-    obtain rfl | rfl | hshI := unitInterval.eq_zero_or_eq_one_or_mem_Ioo sh
-    · exact (hnotV ⟨edgeSource h, by rw [← hsh, Path.source]⟩).elim
-    · exact (hnotV ⟨edgeTarget h, by rw [← hsh, Path.target]⟩).elim
-    exact (hnotH ⟨sh, hshI, hsh⟩).elim
-  intro z ⟨⟨te, hte⟩, ⟨sf, hsf⟩⟩
-  exact ⟨by simpa [mem_insert_iff, mem_singleton_iff] using key hef hte hsf,
-    by simpa [mem_insert_iff, mem_singleton_iff] using key (Ne.symm hef) hsf hte⟩
 
 /-- The middles of the cells: for each edge, the part of its cell running from its last exit from
 the ball at one end to its first entry into the ball at the other. Distinct middles are disjoint,
@@ -233,13 +158,10 @@ Stated as a family rather than one edge at a time because the disjointness acros
 next step consumes. The middle is presented as a path rather than as a set so that it can be fed to
 the approximation lemma. -/
 theorem Drawing.exists_middlePaths [G.Finite] [G.Loopless] (D : Drawing G V) {r : V(G) → ℝ}
-    (hpos : ∀ x, 0 < r x)
-    (hdisj : Pairwise fun x y ↦ Disjoint (closedBall (D.vertex x) (r x))
-      (closedBall (D.vertex y) (r y)))
-    (hball : ∀ x, closedBall (D.vertex x) (r x) ∩ D.support ⊆
+    (hpos : ∀ x, 0 < r x) (hdisj : Pairwise fun x y ↦ Disjoint (closedBall (D.vertex x) (r x))
+      (closedBall (D.vertex y) (r y))) (hball : ∀ x, closedBall (D.vertex x) (r x) ∩ D.support ⊆
       {D.vertex x} ∪ ⋃ e ∈ {e : E(G) | G.Inc e.1 x.1}, range (D.edgePath e)) :
-    ∃ (a b : E(G) → V) (Q : ∀ e, Path (a e) (b e)),
-      (∀ e, range (Q e) ⊆ range (D.edgePath e)) ∧
+    ∃ (a b : E(G) → V) (Q : ∀ e, Path (a e) (b e)), (∀ e, range (Q e) ⊆ range (D.edgePath e)) ∧
       (∀ e, dist (a e) (D.vertex (edgeSource e)) = r (edgeSource e)) ∧
       (∀ e, dist (b e) (D.vertex (edgeTarget e)) = r (edgeTarget e)) ∧
       (∀ e, range (Q e) ∩ closedBall (D.vertex (edgeSource e)) (r (edgeSource e)) = {a e}) ∧
@@ -247,24 +169,21 @@ theorem Drawing.exists_middlePaths [G.Finite] [G.Loopless] (D : Drawing G V) {r 
       (∀ e, ∀ x, x ≠ edgeSource e → x ≠ edgeTarget e →
         Disjoint (range (Q e)) (closedBall (D.vertex x) (r x))) ∧
       Pairwise fun e f ↦ Disjoint (range (Q e)) (range (Q f)) := by
-  classical
   have hsrc_ne_tgt (e : E(G)) : edgeSource e ≠ edgeTarget e := by
     exact fun heq ↦ (isLink_edgeSource_edgeTarget e).ne (congrArg Subtype.val heq)
   have hinc_ends (e : E(G)) {x : V(G)} (hx : G.Inc e.1 x.1) :
-      x = edgeSource e ∨ x = edgeTarget e := by
-    have h := hx.eq_or_eq_of_isLink (isLink_edgeSource_edgeTarget e)
-    exact h.imp (fun h ↦ Subtype.ext h) (fun h ↦ Subtype.ext h)
+      x = edgeSource e ∨ x = edgeTarget e := hx.eq_or_eq_of_isLink (isLink_edgeSource_edgeTarget e)
+        |>.imp (fun h ↦ Subtype.ext h) (fun h ↦ Subtype.ext h)
   choose t_e s_e ht_lt hdist_a hdist_b hinter_a hinter_b using fun e : E(G) ↦
     (D.edgePath e).exists_lastExit_firstEntry (hdisj (hsrc_ne_tgt e))
       (mem_closedBall_self (hpos _).le) (mem_closedBall_self (hpos _).le)
-  have ht_le (e : E(G)) : t_e e ≤ s_e e := le_of_lt (ht_lt e)
   let a : E(G) → V := fun e ↦ D.edgePath e (t_e e)
   let b : E(G) → V := fun e ↦ D.edgePath e (s_e e)
   let Q : ∀ e, Path (a e) (b e) := fun e ↦ (D.edgePath e).subpath (t_e e) (s_e e)
   have hQ_range (e : E(G)) : range (Q e) = D.edgePath e '' Icc (t_e e) (s_e e) :=
-    Path.range_subpath_of_le _ _ _ (ht_le e)
-  have hQ_subset (e : E(G)) : range (Q e) ⊆ range (D.edgePath e) := by
-    rw [hQ_range]; exact image_subset_range _ _
+    Path.range_subpath_of_le _ _ _ (ht_lt e).le
+  have hQ_subset (e : E(G)) : range (Q e) ⊆ range (D.edgePath e) :=
+    hQ_range .. ▸ image_subset_range ..
   have hmeet_a (e : E(G)) :
       range (Q e) ∩ closedBall (D.vertex (edgeSource e)) (r (edgeSource e)) = {a e} := by
     rw [hQ_range, show a e = D.edgePath e (t_e e) from rfl]
@@ -273,44 +192,39 @@ theorem Drawing.exists_middlePaths [G.Finite] [G.Loopless] (D : Drawing G V) {r 
       range (Q e) ∩ closedBall (D.vertex (edgeTarget e)) (r (edgeTarget e)) = {b e} := by
     rw [hQ_range, show b e = D.edgePath e (s_e e) from rfl]
     exact hinter_b e
-  refine ⟨a, b, Q, hQ_subset, hdist_a, hdist_b, hmeet_a, hmeet_b, fun e x hxu hxv ↦ ?_, ?_⟩
-  · refine disjoint_left.mpr fun z hzQ hzB ↦ ?_
-    have hzmem := hball x ⟨hzB, (D.edgePath_range_subset_support e (hQ_subset e hzQ))⟩
+  refine ⟨a, b, Q, hQ_subset, hdist_a, hdist_b, hmeet_a, hmeet_b, fun e x hxu hxv ↦
+    disjoint_left.mpr fun z hzQ hzB ↦ ?_, fun e f hef ↦ disjoint_left.mpr fun z hze hzf ↦ ?_⟩
+  · have hzmem := hball x ⟨hzB, (D.edgePath_range_subset_support e (hQ_subset e hzQ))⟩
     rw [mem_union, mem_singleton_iff] at hzmem
     obtain rfl | hzE := hzmem
     · exact D.vertex_notMem_range_edgePath_of_not_inc
         (fun hinc ↦ (hinc_ends e hinc).elim hxu hxv) (hQ_subset e hzQ)
-    · obtain ⟨f, hf, hzf⟩ := mem_iUnion₂.mp hzE
-      by_cases hef : f = e
-      · grind
-      · have hz_inter :=
-          (D.range_edgePath_inter (Ne.symm hef)) ⟨hQ_subset e hzQ, hzf⟩
-        have hz_end : z = D.vertex (edgeSource e) ∨ z = D.vertex (edgeTarget e) := by
-          simpa [mem_inter_iff, mem_insert_iff, mem_singleton_iff] using hz_inter.1
-        obtain rfl | rfl := hz_end
-        · exact (hdisj hxu.symm).notMem_of_mem_left
-            (mem_closedBall_self (le_of_lt (hpos _))) hzB
-        · exact (hdisj hxv.symm).notMem_of_mem_left
-            (mem_closedBall_self (le_of_lt (hpos _))) hzB
-  refine fun e f hef ↦ disjoint_left.mpr fun z hze hzf ↦ ?_
-  have hz_inter := (D.range_edgePath_inter hef) ⟨hQ_subset e hze, hQ_subset f hzf⟩
-  have hz_end : z = D.vertex (edgeSource e) ∨ z = D.vertex (edgeTarget e) := by
-    simpa [mem_inter_iff, mem_insert_iff, mem_singleton_iff] using hz_inter.1
+    obtain ⟨f, hf, hzf⟩ := mem_iUnion₂.mp hzE
+    obtain rfl | hef := eq_or_ne f e
+    · grind
+    have hz_end : z = D.vertex (edgeSource e) ∨ z = D.vertex (edgeTarget e) := by
+      simpa [mem_inter_iff, mem_insert_iff, mem_singleton_iff] using
+        ((D.range_edgePath_inter hef.symm).subset ⟨hQ_subset e hzQ, hzf⟩).1
+    obtain rfl | rfl := hz_end
+    · exact (hdisj hxu.symm).notMem_of_mem_left (mem_closedBall_self (hpos _).le) hzB
+    exact (hdisj hxv.symm).notMem_of_mem_left (mem_closedBall_self (hpos _).le) hzB
   have ha_ne : a e ≠ D.vertex (edgeSource e) := by
     intro h
-    have : Dist.dist (a e) (D.vertex (edgeSource e)) = 0 := by simp [h]
+    have : dist (a e) (D.vertex (edgeSource e)) = 0 := by simp [h]
     exact (hpos _).ne' (hdist_a e ▸ this)
   have hb_ne : b e ≠ D.vertex (edgeTarget e) := by
     intro h
-    have : Dist.dist (b e) (D.vertex (edgeTarget e)) = 0 := by simp [h]
+    have : dist (b e) (D.vertex (edgeTarget e)) = 0 := by simp [h]
     exact (hpos _).ne' (hdist_b e ▸ this)
-  rcases hz_end with hz | hz
+  obtain hz | hz : z = D.vertex (edgeSource e) ∨ z = D.vertex (edgeTarget e) := by
+    simpa [mem_inter_iff, mem_insert_iff, mem_singleton_iff] using
+      ((D.range_edgePath_inter hef).subset ⟨hQ_subset e hze, hQ_subset f hzf⟩).1
   · have : z ∈ range (Q e) ∩ closedBall (D.vertex (edgeSource e)) (r (edgeSource e)) :=
-      ⟨hze, by rw [hz]; exact mem_closedBall_self (le_of_lt (hpos _))⟩
+      ⟨hze, by rw [hz]; exact mem_closedBall_self ((hpos _).le)⟩
     rw [hmeet_a, mem_singleton_iff, hz] at this
     exact ha_ne this.symm
   have : z ∈ range (Q e) ∩ closedBall (D.vertex (edgeTarget e)) (r (edgeTarget e)) :=
-    ⟨hze, by rw [hz]; exact mem_closedBall_self (le_of_lt (hpos _))⟩
+    ⟨hze, by rw [hz]; exact mem_closedBall_self ((hpos _).le)⟩
   rw [hmeet_b, mem_singleton_iff, hz] at this
   exact hb_ne this.symm
 
@@ -319,14 +233,13 @@ theorem Drawing.exists_middlePaths [G.Finite] [G.Loopless] (D : Drawing G V) {r 
 
 /-- Status.md 2.6: a drawing of a finite loopless graph in a real normed space can be replaced by a
 polygonal drawing with the same vertex positions. -/
-theorem Drawing.exists_plDrawing [G.Finite] [G.Loopless] (D : Drawing G V) :
-    ∃ Q : PLDrawing G V, ∀ x, Q.toDrawing.vertex x = D.vertex x := by
-  classical
+theorem Drawing.exists_plDrawing [G.Finite] [G.Loopless] [NormedSpace ℝ V] (D : Drawing G V) :
+    ∃ Q : PLDrawing G V, ∀ x, Q.vertex x = D.vertex x := by
   obtain ⟨r, hpos, hdisj, hball⟩ := D.exists_vertexRadius
   obtain ⟨a, b, Mid, _hMid_sub, hdist_a, hdist_b, _hmeet_a, _hmeet_b, havoid, hMid_disj⟩ :=
     D.exists_middlePaths hpos hdisj hball
-  have hsrc_ne_tgt (e : E(G)) : edgeSource e ≠ edgeTarget e := by
-    exact fun heq ↦ (isLink_edgeSource_edgeTarget e).ne (congrArg Subtype.val heq)
+  have hsrc_ne_tgt (e : E(G)) : edgeSource e ≠ edgeTarget e :=
+    fun heq ↦ (isLink_edgeSource_edgeTarget e).ne (congrArg Subtype.val heq)
   -- Closed obstacle sets: balls at vertices that are not ends of `e`.
   let K : E(G) → Set V := fun e ↦
     ⋃ x ∈ {x : V(G) | x ≠ edgeSource e ∧ x ≠ edgeTarget e}, closedBall (D.vertex x) (r x)
@@ -338,54 +251,30 @@ theorem Drawing.exists_plDrawing [G.Finite] [G.Loopless] (D : Drawing G V) :
     exact (havoid e x hx.1 hx.2).notMem_of_mem_left hzMid hzB
   obtain ⟨Ppoly, hP_disj, hP_K⟩ :=
     exists_polygonalPath_family_of_disjoint Mid hMid_disj K hK_closed hMid_K
-  have ha_mem (e : E(G)) :
-      a e ∈ closedBall (D.vertex (edgeSource e)) (r (edgeSource e)) :=
-    mem_closedBall.mpr (le_of_eq (hdist_a e))
-  have hb_mem (e : E(G)) :
-      b e ∈ closedBall (D.vertex (edgeTarget e)) (r (edgeTarget e)) :=
-    mem_closedBall.mpr (le_of_eq (hdist_b e))
-  choose zu zv cell hcell using fun e : E(G) ↦
-    exists_isSimple_radial (hpos _) (hpos _) (hdisj (hsrc_ne_tgt e))
-      (Ppoly e) (ha_mem e) (hb_mem e)
-  have hcell_simple (e : E(G)) : (cell e).IsSimple := (hcell e).1
+  choose zu zv cell hcell using fun e : E(G) ↦ exists_isSimple_radial (hpos _) (hpos _)
+    (hdisj (hsrc_ne_tgt e)) (Ppoly e) (mem_closedBall.mpr (hdist_a e).le)
+    (mem_closedBall.mpr (hdist_b e).le)
   have hzu_dist (e : E(G)) :
-      Dist.dist (zu e) (D.vertex (edgeSource e)) = r (edgeSource e) := (hcell e).2.1
+      dist (zu e) (D.vertex (edgeSource e)) = r (edgeSource e) := (hcell e).2.1
   have hzv_dist (e : E(G)) :
-      Dist.dist (zv e) (D.vertex (edgeTarget e)) = r (edgeTarget e) := (hcell e).2.2.1
-  have hcell_src (e : E(G)) :
-      (cell e).toSet ∩ closedBall (D.vertex (edgeSource e)) (r (edgeSource e)) =
-        segment ℝ (D.vertex (edgeSource e)) (zu e) := (hcell e).2.2.2.1
-  have hcell_tgt (e : E(G)) :
-      (cell e).toSet ∩ closedBall (D.vertex (edgeTarget e)) (r (edgeTarget e)) =
-        segment ℝ (D.vertex (edgeTarget e)) (zv e) := (hcell e).2.2.2.2.1
-  have hcell_mid (e : E(G)) :
-      (cell e).toSet \
-          (ball (D.vertex (edgeSource e)) (r (edgeSource e)) ∪
-            ball (D.vertex (edgeTarget e)) (r (edgeTarget e))) ⊆
-        (Ppoly e).toSet := (hcell e).2.2.2.2.2
+      dist (zv e) (D.vertex (edgeTarget e)) = r (edgeTarget e) := (hcell e).2.2.1
+  have hcell_src (e : E(G)) : (cell e).toSet ∩ closedBall (D.vertex (edgeSource e))
+      (r (edgeSource e)) = segment ℝ (D.vertex (edgeSource e)) (zu e) := (hcell e).2.2.2.1
+  have hcell_tgt (e : E(G)) : (cell e).toSet ∩ closedBall (D.vertex (edgeTarget e))
+      (r (edgeTarget e)) = segment ℝ (D.vertex (edgeTarget e)) (zv e) := (hcell e).2.2.2.2.1
+  have hcell_mid (e : E(G)) : (cell e).toSet \ (ball (D.vertex (edgeSource e)) (r (edgeSource e)) ∪
+      ball (D.vertex (edgeTarget e)) (r (edgeTarget e))) ⊆ (Ppoly e).toSet := (hcell e).2.2.2.2.2
   have hzu_mem_P (e : E(G)) : zu e ∈ (Ppoly e).toSet := by
-    have hzu_cell : zu e ∈ (cell e).toSet := by
-      have : zu e ∈
-          (cell e).toSet ∩ closedBall (D.vertex (edgeSource e)) (r (edgeSource e)) := by
-        rw [hcell_src]; exact right_mem_segment ℝ _ _
-      exact this.1
-    refine hcell_mid e ⟨hzu_cell, ?_⟩
+    refine hcell_mid e ⟨(hcell_src .. ▸ right_mem_segment ℝ ..).1, ?_⟩
     rintro (hu | hv)
     · exact (lt_self_iff_false _).mp <| (mem_ball.mp hu).trans_eq (hzu_dist e).symm
-    exact (hdisj (hsrc_ne_tgt e)).notMem_of_mem_left
-      (mem_closedBall.mpr (le_of_eq (hzu_dist e)))
-      (mem_closedBall.mpr (le_of_lt (mem_ball.mp hv)))
+    exact (hdisj (hsrc_ne_tgt e)).notMem_of_mem_left (mem_closedBall.mpr (hzu_dist e).le)
+      (mem_closedBall.mpr (mem_ball.mp hv).le)
   have hzv_mem_P (e : E(G)) : zv e ∈ (Ppoly e).toSet := by
-    have hzv_cell : zv e ∈ (cell e).toSet := by
-      have : zv e ∈
-          (cell e).toSet ∩ closedBall (D.vertex (edgeTarget e)) (r (edgeTarget e)) := by
-        rw [hcell_tgt]; exact right_mem_segment ℝ _ _
-      exact this.1
-    refine hcell_mid e ⟨hzv_cell, ?_⟩
+    refine hcell_mid e ⟨(hcell_tgt .. ▸ right_mem_segment ..).1, ?_⟩
     rintro (hu | hv)
-    · exact (hdisj (hsrc_ne_tgt e)).notMem_of_mem_left
-        (mem_closedBall.mpr (le_of_lt (mem_ball.mp hu)))
-        (mem_closedBall.mpr (le_of_eq (hzv_dist e)))
+    · exact (hdisj (hsrc_ne_tgt e)).notMem_of_mem_left (mem_closedBall.mpr (mem_ball.mp hu).le)
+        (mem_closedBall.mpr (hzv_dist e).le)
     exact (lt_self_iff_false _).mp <| (mem_ball.mp hv).trans_eq (hzv_dist e).symm
   have hcell_avoid (e : E(G)) (x : V(G)) (hxu : x ≠ edgeSource e) (hxv : x ≠ edgeTarget e) :
       Disjoint (cell e).toSet (closedBall (D.vertex x) (r x)) := by
@@ -394,20 +283,16 @@ theorem Drawing.exists_plDrawing [G.Finite] [G.Loopless] (D : Drawing G V) :
     · exact (hdisj hxu.symm).notMem_of_mem_left hwu hwB
     obtain hwv | hwv := em (w ∈ closedBall (D.vertex (edgeTarget e)) (r (edgeTarget e)))
     · exact (hdisj hxv.symm).notMem_of_mem_left hwv hwB
-    have hwP : w ∈ (Ppoly e).toSet :=
-      hcell_mid e ⟨hwcell, by
+    have hwP : w ∈ (Ppoly e).toSet := hcell_mid e ⟨hwcell, by
         rintro (hu | hv)
-        · exact hwu (mem_closedBall.mpr (le_of_lt (mem_ball.mp hu)))
-        exact hwv (mem_closedBall.mpr (le_of_lt (mem_ball.mp hv)))⟩
-    exact (hP_K e).notMem_of_mem_left hwP <|
-      mem_iUnion₂.mpr ⟨x, ⟨hxu, hxv⟩, hwB⟩
+        · exact hwu (mem_closedBall.mpr (mem_ball.mp hu).le)
+        exact hwv (mem_closedBall.mpr (mem_ball.mp hv).le)⟩
+    exact (hP_K e).notMem_of_mem_left hwP <| mem_iUnion₂.mpr ⟨x, ⟨hxu, hxv⟩, hwB⟩
   have hlen (e : E(G)) : 0 < (cell e).length :=
     length_pos_of_ne (cell e) (D.vertex_injective.ne (hsrc_ne_tgt e))
-  have hsimple (e : E(G)) : (cell e).IsSimpleArcOrLoop :=
-    (hcell_simple e).isSimpleArcOrLoop (hlen e)
-  have hcv (e : E(G)) : Disjoint
-      ((cell e).toSet \
-        {D.vertex (edgeSource e), D.vertex (edgeTarget e)}) (range D.vertex) := by
+  have hsimple (e : E(G)) : (cell e).IsSimpleArcOrLoop := (hcell e).1.isSimpleArcOrLoop (hlen e)
+  have hcv (e : E(G)) : Disjoint ((cell e).toSet \
+      {D.vertex (edgeSource e), D.vertex (edgeTarget e)}) (range D.vertex) := by
     refine disjoint_left.mpr ?_
     rintro w ⟨hwcell, hwne⟩ ⟨x, rfl⟩
     have hxne : x ≠ edgeSource e ∧ x ≠ edgeTarget e := by
@@ -420,9 +305,8 @@ theorem Drawing.exists_plDrawing [G.Finite] [G.Loopless] (D : Drawing G V) :
   -- naming `edgeSource` and `edgeTarget` separately is what keeps `hcc` below from splitting
   -- into the four cases (end of `e`) × (end of `f`), each with the same body.
   have hend (g : E(G)) (x : V(G)) (hx : x = edgeSource g ∨ x = edgeTarget g) :
-      ∃ z, Dist.dist z (D.vertex x) = r x ∧
-        (cell g).toSet ∩ closedBall (D.vertex x) (r x) = segment ℝ (D.vertex x) z ∧
-        z ∈ (Ppoly g).toSet := by
+      ∃ z, dist z (D.vertex x) = r x ∧ (cell g).toSet ∩ closedBall (D.vertex x) (r x) =
+      segment ℝ (D.vertex x) z ∧ z ∈ (Ppoly g).toSet := by
     obtain rfl | rfl := hx
     · exact ⟨zu g, hzu_dist g, hcell_src g, hzu_mem_P g⟩
     exact ⟨zv g, hzv_dist g, hcell_tgt g, hzv_mem_P g⟩
@@ -433,12 +317,12 @@ theorem Drawing.exists_plDrawing [G.Finite] [G.Loopless] (D : Drawing G V) :
       {w : V} (hwe : w ∈ (cell e).toSet) (hwf : w ∈ (cell f).toSet)
       (hwB : w ∈ closedBall (D.vertex x) (r x)) : w = D.vertex x := by
     obtain ⟨ze, hze_dist, hze_cell, hze_P⟩ := hend e x hx
-    have hwseg : w ∈ segment ℝ (D.vertex x) ze := by rw [← hze_cell]; exact ⟨hwe, hwB⟩
+    have hwseg : w ∈ segment ℝ (D.vertex x) ze := hze_cell ▸ ⟨hwe, hwB⟩
     by_cases hxf : x = edgeSource f ∨ x = edgeTarget f
     · obtain ⟨zf, hzf_dist, hzf_cell, hzf_P⟩ := hend f x hxf
       have hzne : ze ≠ zf := fun hz ↦
         (hP_disj hef).notMem_of_mem_left hze_P (hz ▸ hzf_P)
-      have hwsegf : w ∈ segment ℝ (D.vertex x) zf := by rw [← hzf_cell]; exact ⟨hwf, hwB⟩
+      have hwsegf : w ∈ segment ℝ (D.vertex x) zf := hzf_cell ▸ ⟨hwf, hwB⟩
       have hne₁ : ze ≠ D.vertex x := dist_pos.mp (by rw [hze_dist]; exact hpos x)
       exact eq_center_of_mem_two_radii hne₁ (hzf_dist.trans hze_dist.symm) hzne hwseg hwsegf
     push Not at hxf
@@ -454,7 +338,7 @@ theorem Drawing.exists_plDrawing [G.Finite] [G.Loopless] (D : Drawing G V) :
     have hwP : w ∈ (Ppoly e).toSet :=
       hcell_mid e ⟨hwe, by
         rintro (hu | hv)
-        · exact hwe_u (mem_closedBall.mpr (le_of_lt (mem_ball.mp hu)))
+        · exact hwe_u (mem_closedBall.mpr ((mem_ball.mp hu).le))
         exact hwe_v (mem_closedBall.mpr (le_of_lt (mem_ball.mp hv)))⟩
     -- `w` is outside both balls at `e`, so *any* ball containing it is an obstacle in `K e`.
     have hfar (y : V(G)) (hy : w ∈ closedBall (D.vertex y) (r y)) : False := by
@@ -469,7 +353,7 @@ theorem Drawing.exists_plDrawing [G.Finite] [G.Loopless] (D : Drawing G V) :
     have hwPf : w ∈ (Ppoly f).toSet :=
       hcell_mid f ⟨hwf, by
         rintro (hu | hv)
-        · exact hwf_u (mem_closedBall.mpr (le_of_lt (mem_ball.mp hu)))
+        · exact hwf_u (mem_closedBall.mpr ((mem_ball.mp hu).le))
         exact hwf_v (mem_closedBall.mpr (le_of_lt (mem_ball.mp hv)))⟩
     exact (hP_disj hef).notMem_of_mem_left hwP hwPf
   refine ⟨PLDrawing.ofCells D.vertex D.vertex_injective cell hsimple hcv hcc, fun x ↦ ?_⟩

@@ -28,8 +28,8 @@ theorem IsSetCut.isSepBetween_of_neighbor (hC : (G - ({s, t} : Set α)).IsSetCut
       (hst.neighbor_setConnected hne <| (hadj <| ·.of_le deleteVerts_le)).subset
         (by grw [neighbor_mono deleteVerts_le]) (by grw [neighbor_mono deleteVerts_le])
 
-lemma connBetweenGE_iff_setConnGE (hne : s ≠ t) (hadj : ¬ G.Adj s t) :
-    G.ConnBetweenGE s t n ↔ (G - ({s, t} : Set α)).SetConnGE (N(G, s) \ {s}) (N(G, t) \ {t}) n := by
+lemma connBetweenGE_iff_setConnGE (hne : s ≠ t) (hadj : ¬ G.Adj s t) : G.ConnBetweenGE s t n ↔
+    (G - ({s, t} : Set α)).SetConnGE (N(G, s) \ {s}) (N(G, t) \ {t}) n := by
   refine ⟨fun h C hC => ?_, fun h C hC => ?_⟩
   · obtain ⟨hCsub, hCs, hCt⟩ : C ⊆ V(G) ∧ s ∉ C ∧ t ∉ C := by
       simpa [subset_sdiff] using hC.subset_vertexSet

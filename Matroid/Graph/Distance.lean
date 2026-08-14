@@ -145,7 +145,7 @@ protected noncomputable def dist (G : Graph α β) (x y : α) : ℕ := (G.eDist 
 
 -- notation "d(" G ", " x ", " y ")" => Graph.dist G x y
 
-lemma dist_comm (G : Graph α β) (x y : α) : G.dist x y = G.dist y x := by
+protected lemma dist_comm (G : Graph α β) (x y : α) : G.dist x y = G.dist y x := by
   rw [Graph.dist, eDist_comm, ← Graph.dist]
 
 lemma ConnBetween.cast_dist (hG : G.ConnBetween x y) : G.dist x y = G.eDist x y := by
@@ -202,7 +202,7 @@ lemma ConnBetween.exists_isShortestPath (hxy : G.ConnBetween x y) :
   exact ⟨P, hP.isWalk.isShortestPath_of_length_le hlen.le, rfl, rfl⟩
 
 lemma IsShortestPath.reverse (hP : G.IsShortestPath P) : G.IsShortestPath P.reverse :=
-  hP.isPath.isWalk.reverse.isShortestPath_of_length_le <| by simp [hP.length_eq_dist, dist_comm]
+  hP.isPath.isWalk.reverse.isShortestPath_of_length_le <| by simp [hP.length_eq_dist, G.dist_comm]
 
 @[simp]
 lemma isShortestPath_reverse_iff : G.IsShortestPath P.reverse ↔ G.IsShortestPath P :=

@@ -2,7 +2,6 @@ module
 
 public import Matroid.Graph.Connected.Vertex.Defs
 public import Matroid.ForMathlib.Partition.Set
-public import Matroid.ForMathlib.Tactic.ENatToNat
 import all Mathlib.Combinatorics.Graph.Delete
 
 @[expose] public section
@@ -155,16 +154,16 @@ lemma IsSetCut.of_le (h : G.IsSetCut S T C) (hle : H ≤ G) : H.IsSetCut S T (V(
     rw [deleteVerts_vertexSet_inter] at hH
     exact h.ST_disconnects <| hH.of_le (deleteVerts_mono_left hle C)
 
-lemma IsSetCut.subset_left (h : G.IsSetCut S T C) (hS : S' ⊆ S) : G.IsSetCut S' T C where
+lemma IsSetCut.anti_left (h : G.IsSetCut S T C) (hS : S' ⊆ S) : G.IsSetCut S' T C where
   subset_vertexSet := h.subset_vertexSet.trans (by simp)
   ST_disconnects hH := h.ST_disconnects <| hH.subset_left hS
 
-lemma IsSetCut.subset_right (h : G.IsSetCut S T C) (hT : T' ⊆ T) : G.IsSetCut S T' C where
+lemma IsSetCut.anti_right (h : G.IsSetCut S T C) (hT : T' ⊆ T) : G.IsSetCut S T' C where
   subset_vertexSet := h.subset_vertexSet.trans (by simp)
   ST_disconnects hH := h.ST_disconnects <| hH.subset_right hT
 
-lemma IsSetCut.subset (h : G.IsSetCut S T C) (hS : S' ⊆ S) (hT : T' ⊆ T) : G.IsSetCut S' T' C :=
-  h.subset_left hS |>.subset_right hT
+lemma IsSetCut.anti (h : G.IsSetCut S T C) (hS : S' ⊆ S) (hT : T' ⊆ T) : G.IsSetCut S' T' C :=
+  h.anti_left hS |>.anti_right hT
 
 lemma IsSetCut.left_union (h₁ : G.IsSetCut S T C) (h₂ : G.IsSetCut S' T C') :
     G.IsSetCut (S ∪ S') T (C ∪ C') where
@@ -182,13 +181,13 @@ lemma IsSetCut.right_union (h₁ : G.IsSetCut S T C) (h₂ : G.IsSetCut S T' C')
 lemma isSetCut_vertexSet_inter_left_iff : G.IsSetCut (V(G) ∩ S) T C ↔ G.IsSetCut S T C := by
   refine ⟨fun h => ⟨h.subset_vertexSet, fun ⟨s, hs, t, ht, hcon⟩ ↦ ?_⟩, fun h => ?_⟩
   · exact h.ST_disconnects ⟨s, ⟨hcon.left_mem.1, hs⟩, t, ht, hcon⟩
-  · exact h.subset_left inter_subset_right
+  · exact h.anti_left inter_subset_right
 alias ⟨_, IsSetCut.vertexSet_inter_left⟩ := isSetCut_vertexSet_inter_left_iff
 
 lemma isSetCut_vertexSet_inter_right_iff : G.IsSetCut S (V(G) ∩ T) C ↔ G.IsSetCut S T C := by
   refine ⟨fun h => ⟨h.subset_vertexSet, fun ⟨s, hs, t, ht, hcon⟩ ↦ ?_⟩, fun h => ?_⟩
   · exact h.ST_disconnects ⟨s, hs, t, ⟨hcon.right_mem.1, ht⟩, hcon⟩
-  · exact h.subset_right inter_subset_right
+  · exact h.anti_right inter_subset_right
 alias ⟨_, IsSetCut.vertexSet_inter_right⟩ := isSetCut_vertexSet_inter_right_iff
 
 lemma IsSetCut.of_deleteVerts (h : (G - X).IsSetCut S T C) : G.IsSetCut S T ((X ∩ V(G)) ∪ C) where
@@ -539,9 +538,6 @@ end SetEnsemble
 
 /-! ### k-connectivity between two sets -/
 
-def SetConnGE (G : Graph α β) (S T : Set α) (n : ℕ) : Prop :=
-  ∀ ⦃C : Set α⦄, G.IsSetCut S T C → n ≤ C.encard
-
 /-- Minimum `C.encard` over vertex set cuts `C` between `S` and `T`, as an `ℕ∞`. -/
 noncomputable def setConnectivity (G : Graph α β) (S T : Set α) : ℕ∞ :=
   ⨅ C : {C : Set α // G.IsSetCut S T C}, (C.val : Set α).encard
@@ -549,6 +545,84 @@ noncomputable def setConnectivity (G : Graph α β) (S T : Set α) : ℕ∞ :=
 lemma le_setConnectivity_iff {k : ℕ∞} (S T : Set α) :
     k ≤ G.setConnectivity S T ↔ ∀ ⦃C : Set α⦄, G.IsSetCut S T C → k ≤ C.encard := by
   simp [setConnectivity, le_iInf_iff, Subtype.forall]
+
+lemma setConnectivity_comm : G.setConnectivity S T = G.setConnectivity T S := by
+  refine le_antisymm ?_ ?_ <;>
+  · rw [le_setConnectivity_iff]
+    exact fun _ hC ↦ (le_setConnectivity_iff _ _).1 le_rfl hC.symm
+
+@[simp]
+lemma setConnectivity_vertexSet_inter_left :
+    G.setConnectivity (V(G) ∩ S) T = G.setConnectivity S T := by
+  refine le_antisymm ?_ ?_ <;> rw [le_setConnectivity_iff]
+  · exact fun _ hC ↦ le_setConnectivity_iff .. |>.1 le_rfl <|
+      isSetCut_vertexSet_inter_left_iff.mpr hC
+  exact fun _ hC ↦ le_setConnectivity_iff .. |>.1 le_rfl <|
+    isSetCut_vertexSet_inter_left_iff.mp hC
+
+@[simp]
+lemma setConnectivity_vertexSet_inter_right :
+    G.setConnectivity S (V(G) ∩ T) = G.setConnectivity S T := by
+  refine le_antisymm ?_ ?_ <;> rw [le_setConnectivity_iff]
+  · exact fun _ hC ↦ le_setConnectivity_iff .. |>.1 le_rfl <|
+      isSetCut_vertexSet_inter_right_iff.mpr hC
+  exact fun _ hC ↦ le_setConnectivity_iff .. |>.1 le_rfl <|
+    isSetCut_vertexSet_inter_right_iff.mp hC
+
+@[simp]
+lemma one_le_setConnectivity_iff : 1 ≤ G.setConnectivity S T ↔ G.SetConnected S T := by
+  simp_rw [le_setConnectivity_iff, one_le_encard_iff_nonempty]
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · by_contra! hc
+    simpa using h <| isSetCut_empty hc
+  rintro ⟨s, hs, t, ht, w, hw, rfl, rfl⟩ C hC
+  obtain ⟨x, hxw, hxC⟩ := (show G.IsWalkFrom S T w from ⟨hw, hs, ht⟩).exists_mem_isSetCut hC
+  use x, hxC
+
+lemma setConnectivity_le_deleteVert_add_encard (G : Graph α β) (S T : Set α) (X : Set α) :
+    G.setConnectivity S T ≤ (G - X).setConnectivity (S \ X) (T \ X) + (X ∩ V(G)).encard := by
+  rw [← tsub_le_iff_right, le_setConnectivity_iff]
+  intro C hC
+  rw [tsub_le_iff_right, add_comm]
+  exact ((le_setConnectivity_iff S T).1 le_rfl <|
+    hC.of_deleteVerts'.anti (by simp) (by simp)).trans (encard_union_le _ _)
+
+@[gcongr]
+lemma setConnectivity_left_mono (hS : S ⊆ S') : G.setConnectivity S T ≤ G.setConnectivity S' T := by
+  rw [le_setConnectivity_iff]
+  exact fun _ hC ↦ (le_setConnectivity_iff S T).1 le_rfl (hC.anti_left hS)
+
+@[gcongr]
+lemma setConnectivity_right_mono (hT : T ⊆ T') :
+    G.setConnectivity S T ≤ G.setConnectivity S T' := by
+  rw [setConnectivity_comm, setConnectivity_comm (T := T')]
+  exact setConnectivity_left_mono hT
+
+@[gcongr]
+lemma setConnectivity_mono (h : G ≤ H) (S T) : G.setConnectivity S T ≤ H.setConnectivity S T := by
+  rw [le_setConnectivity_iff]
+  exact fun _ hC ↦ ((le_setConnectivity_iff S T).1 le_rfl (hC.of_le h)).trans
+    (encard_le_encard inter_subset_right)
+
+lemma inter_encard_le_setConnectivity (G : Graph α β) (S T) :
+    (V(G) ∩ S ∩ T).encard ≤ G.setConnectivity S T :=
+  (le_setConnectivity_iff _ _).2 fun _ hC ↦ encard_le_encard hC.inter_subset
+
+lemma setConnectivity_le_inter_left_encard (G : Graph α β) (S T) :
+    G.setConnectivity S T ≤ (V(G) ∩ S).encard :=
+  (le_setConnectivity_iff S T).1 le_rfl (left_isSetCut G S T)
+
+lemma setConnectivity_le_inter_right_encard (G : Graph α β) (S T) :
+    G.setConnectivity S T ≤ (V(G) ∩ T).encard :=
+  (le_setConnectivity_iff S T).1 le_rfl (right_isSetCut G S T)
+
+lemma setConnectivity_self : G.setConnectivity S S = (V(G) ∩ S).encard :=
+  (setConnectivity_le_inter_left_encard (T := S) ..).antisymm <| by
+    simpa [inter_assoc, inter_self] using G.inter_encard_le_setConnectivity S S
+
+
+def SetConnGE (G : Graph α β) (S T : Set α) (n : ℕ) : Prop :=
+  ∀ ⦃C : Set α⦄, G.IsSetCut S T C → n ≤ C.encard
 
 lemma setConnGE_iff_le_setConnectivity (S T : Set α) (n : ℕ) :
     G.SetConnGE S T n ↔ (n : ℕ∞) ≤ G.setConnectivity S T := by
@@ -620,12 +694,12 @@ lemma SetConnGE.deleteVerts (h : G.SetConnGE S T n) (X : Set α) :
 lemma SetConnGE.deleteVerts' (h : G.SetConnGE S T n) (X : Set α) :
     (G - X).SetConnGE (S \ X) (T \ X) (n - (X ∩ V(G)).encard).toNat := by
   intro C hC
-  have := by simpa only using h ((hC.of_deleteVerts').subset (by simp) (by simp))
+  have := by simpa only using h ((hC.of_deleteVerts').anti (by simp) (by simp))
   exact (ENat.natCast_toNat_le_self _).trans <| tsub_le_iff_left.mpr <| this.trans
     <| encard_union_le ..
 
 lemma SetConnGE.subset (h : G.SetConnGE S T n) (hS : S ⊆ S') (hT : T ⊆ T') : G.SetConnGE S' T' n :=
-  fun _ hC ↦ h (hC.subset hS hT)
+  fun _ hC ↦ h (hC.anti hS hT)
 
 lemma setConnGE_inter_ncard (hFin : (V(G) ∩ S ∩ T).Finite) :
     G.SetConnGE S T (V(G) ∩ S ∩ T).ncard := by
@@ -711,6 +785,6 @@ lemma EdgeSetConnGE_one_iff : G.EdgeSetConnGE S T 1 ↔ G.SetConnected S T := by
 lemma EdgeSetConnGE.of_not_disjoint (hdj : ¬ Disjoint V(G) (S ∩ T)) : G.EdgeSetConnGE S T n :=
   fun _ hF ↦ (hdj hF.disjoint).elim
 
-lemma SetConnGE.edgeSetConnGE (h : G.SetConnGE S T n) : G.EdgeSetConnGE S T n :=
-  fun _ hF ↦ h hF.isSetCut |>.trans (encard_image_le _ _)
-  |>.trans (encard_preimage_val_le_encard_right _ _)
+-- lemma SetConnGE.edgeSetConnGE (h : G.SetConnGE S T n) : G.EdgeSetConnGE S T n :=
+--   fun _ hF ↦ h hF.isSetCut |>.trans (encard_image_le _ _)
+--   |>.trans (encard_preimage_val_le_encard_right _ _)

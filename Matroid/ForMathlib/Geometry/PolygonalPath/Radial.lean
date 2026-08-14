@@ -82,7 +82,7 @@ theorem exists_polygonalPath_family_of_disjoint {ι : Type*} [Finite ι] {a b : 
       ((Finset.univ.biUnion fun i =>
           Finset.univ.biUnion fun j => if h : i ≠ j then {pairSep i j h} else ∅) ∪
         Finset.univ.image kSep)
-  let δ : ℝ := (1 / 3) * seps.min' (Finset.insert_nonempty _ _)
+  let δ : ℝ := (1 / 3) * seps.min' (Finset.insert_nonempty ..)
   have hδpos : 0 < δ := by
     refine mul_pos (by norm_num) ?_
     rw [Finset.lt_min'_iff]
@@ -124,7 +124,7 @@ theorem exists_polygonalPath_family_of_disjoint {ι : Type*} [Finite ι] {a b : 
         nlinarith
       have h23 : (2 / 3 : ℝ) * pairSep i j hij < pairSep i j hij :=
         (mul_lt_iff_lt_one_left (hpairSep_spec i j hij).1).mpr (by norm_num)
-      exact this.trans <| lt_of_le_of_lt h2 h23
+      exact this.trans <| h2.trans_lt h23
     exact (hlt.not_ge hsep).elim
   refine Disjoint.mono_left (hP i) (disjoint_iff_inf_le.mpr fun z ⟨hzP, hzK⟩ ↦ ?_)
   have hz' := (Metric.mem_thickening_iff_infDist_lt (hrange_nonempty i)).mp hzP
@@ -166,7 +166,7 @@ theorem exists_isSimple_radial {cu cv : V} {ru rv : ℝ} (hru : 0 < ru) (hrv : 0
     M.toPath.exists_lastExit_firstEntry hballs hx hy
   set zu : V := M.toPath τ
   set zv : V := M.toPath τv
-  have hzu_toSet : zu ∈ M.toSet := by rw [M.toSet_eq_range_toPath]; exact ⟨τ, rfl⟩
+  have hzu_toSet : zu ∈ M.toSet := M.toSet_eq_range_toPath.symm ▸ ⟨τ, rfl⟩
   obtain ⟨_, hBsimple, _⟩ := hM.breakAt hzu_toSet
   set B := (M.breakAt hzu_toSet).2
   have hB_eq : B.toSet = M.toPath '' Icc τ (1 : I) :=
@@ -210,12 +210,12 @@ theorem exists_isSimple_radial {cu cv : V} {ru rv : ℝ} (hru : 0 < ru) (hrv : 0
     rw [hQB, mem_singleton_iff] at hinter
     exact ht'.ne (hinj (by simpa [zv] using hinter)).symm
   have hQ_u : Q.toSet ∩ closedBall cu ru ⊆ {zu} := by
-    intro w ⟨hwQ, hwBu⟩
+    rintro w ⟨hwQ, hwBu⟩
     have : w ∈ (M.toPath '' Icc τ τv) ∩ closedBall cu ru := by
       rw [← hQ_eq]; exact ⟨hwQ, hwBu⟩
     simpa [hmid_u, zu] using this
   have hQ_v : Q.toSet ∩ closedBall cv rv ⊆ {zv} := by
-    intro w ⟨hwQ, hwBv⟩
+    rintro w ⟨hwQ, hwBv⟩
     have : w ∈ (M.toPath '' Icc τ τv) ∩ closedBall cv rv := by
       rw [← hQ_eq]; exact ⟨hwQ, hwBv⟩
     simpa [hmid_v, zv] using this

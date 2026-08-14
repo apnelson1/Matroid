@@ -391,6 +391,56 @@ lemma encard_setLinkEdges_singleton_compl_completeGraph (n : ℕ) (x : ℕ) (hx 
   rw [setLinkEdges_singleton_compl_eq_incEdges, encard_incEdges,
     encard_neighbors_completeGraph _ _ hx, ENat.natCast_sub, Nat.cast_one]
 
+/-- `G` is a simplefication of `H` if `G` is maximally simple subgraph of `H`. -/
+def IsSimpleficationOf (G H : Graph α β) : Prop := Maximal (fun G ↦ G.Simple ∧ G ≤ H) G
+
+lemma IsSimpleficationOf.simple (h : G.IsSimpleficationOf H) : G.Simple := h.1.1
+
+lemma IsSimpleficationOf.le (h : G.IsSimpleficationOf H) : G ≤ H := h.1.2
+
+lemma IsSimpleficationOf.isSpanningSubgraph (h : G.IsSimpleficationOf H) : G ≤s H := by
+  refine IsSpanningSubgraph.mk' (h.le.vertexSet_mono.antisymm fun x hx ↦ ?_) h.le.isLink_mono
+  by_contra hxG
+  let G' := G ∪ Graph.noEdge {x} β
+  have hG' : G'.Simple ∧ G' ≤ H := ⟨h.simple.union fun _ _ _ _ _ hf ↦ (by simp at hf),
+    Graph.union_le h.le ⟨by simpa [vertexSet_noEdge], by simp⟩⟩
+  exact hxG <| (h.2 hG' (Graph.left_le_union ..)).vertexSet_mono <| by
+    simp [G', vertexSet_union, vertexSet_noEdge]
+
+lemma IsSimpleficationOf.adj_iff (h : G.IsSimpleficationOf H) (hne : x ≠ y) :
+    G.Adj x y ↔ H.Adj x y := by
+  refine ⟨fun hxy ↦ hxy.of_le h.le, fun ⟨e, he⟩ ↦ by_contra fun hna ↦ ?_⟩
+  have hG' : (G.addEdge e x y).Simple ∧ G.addEdge e x y ≤ H := by
+    have := singleEdge_simple hne e
+    have := h.simple
+    refine ⟨Simple.union fun e' f a b he' hf ↦ ?_, addEdge_le h.le he⟩
+    obtain ⟨rfl, ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩⟩ := he'
+    · exact (hna hf.adj).elim
+    exact (hna hf.adj.symm).elim
+  exact hna ((addEdge_isLink G e x y).of_le
+    (h.2 hG' (le_addEdge <| fun he' ↦ hna ⟨e, he.of_le_of_mem h.le he'⟩))).adj
+
+@[gcongr]
+lemma IsSimpleficationOf.induce (h : G.IsSimpleficationOf H) (X : Set α) :
+    G[X].IsSimpleficationOf H[X] := by
+  have hV : V(G) = V(H) := h.isSpanningSubgraph.vertexSet_eq
+  have := h.simple
+  refine ⟨⟨inferInstance, induce_mono_left h.le X⟩, fun H' ⟨hH', hH'le⟩ hle ↦ ?_⟩
+  have hH'Gle : H'[V(G)] ≤ H := ⟨by simp [hV], fun _ _ _ he ↦ (he.1.of_le hH'le).1⟩
+  have hG' : (G ∪ H'[V(G)]).Simple ∧ G ∪ H'[V(G)] ≤ H := ⟨Simple.union fun e f x y he hf ↦
+    ((hle.isLink_mono ⟨he, hH'le.vertexSet_mono hf.1.left_mem,
+    hH'le.vertexSet_mono hf.1.right_mem⟩).unique_edge hf.1), Graph.union_le h.le hH'Gle⟩
+  refine ⟨hH'le.vertexSet_mono, fun e x y he ↦ ?_⟩
+  have heX := he.of_le hH'le
+  exact ⟨(compatible_of_le_le h.le hH'Gle).right_le_union.trans (h.2 hG' (Graph.left_le_union ..))
+    |>.isLink_mono ⟨he, hV ▸ heX.1.left_mem, hV ▸ heX.1.right_mem⟩, heX.2.1, heX.2.2⟩
+
+@[gcongr]
+lemma IsSimpleficationOf.deleteVerts (h : G.IsSimpleficationOf H) (X : Set α) :
+    (G - X).IsSimpleficationOf (H - X) := by
+  rw [deleteVerts_def, deleteVerts_def, h.isSpanningSubgraph.vertexSet_eq]
+  exact h.induce _
+
 section Simplify
 
 variable {φ : β → β}
@@ -402,6 +452,9 @@ lemma simplify_isSpanningSubgraph : G.simplify φ ≤s G :=
   restrict_isSpanningSubgraph.trans G.loopRemove_isSpanningSubgraph
 
 lemma simplify_le : G.simplify φ ≤ G := simplify_isSpanningSubgraph.le
+
+lemma simplify_isLink : (G.simplify φ).IsLink e x y ↔ e ∈ φ '' E(G) ∧ G.IsLink e x y ∧ x ≠ y := by
+  simp [simplify, restrict_isLink, loopRemove_isLink]
 
 lemma simplify_edgeSet_diff (hφ : G.parallelClasses.IsRepFun φ) :
     E(G.simplify φ) = φ '' E(G) \ ⋃ x ∈ V(G), G.loopSet x := by
@@ -438,3 +491,48 @@ lemma simplify_eq_restrict (hφ : G.parallelClasses.IsRepFun φ) :
   · simp [simplify]
   rw [simplify_edgeSet hφ, edgeSet_restrict, eq_comm, inter_eq_right]
   exact (image_mono sdiff_subset).trans <| hφ.image_subset (by simp [parallelClasses_supp])
+
+lemma simplify_simple (hφ : G.parallelClasses.IsRepFun φ) : (G.simplify φ).Simple where
+  not_isLoopAt e x h := by
+    rw [← isLink_self_iff, simplify_isLink] at h
+    exact h.2.2 rfl
+  eq_of_isLink e f x y he hf := by
+    rw [simplify_isLink] at he hf
+    have hef : G.parallel e f := ⟨he.2.1.edge_mem, hf.2.1.edge_mem, by
+      ext u v
+      rw [he.2.1.isLink_iff_sym2_eq, hf.2.1.isLink_iff_sym2_eq]⟩
+    have hφef : φ e = φ f :=
+      hφ.apply_eq_apply (by simpa [parallelClasses, Partition.rel_ofRel_eq] using hef)
+    obtain ⟨e₀, -, rfl⟩ := he.1
+    obtain ⟨f₀, -, rfl⟩ := hf.1
+    simpa [hφ.idem] using hφef
+
+lemma simplify_isSimpleficationOf (hφ : G.parallelClasses.IsRepFun φ) :
+    (G.simplify φ).IsSimpleficationOf G := by
+  refine ⟨⟨simplify_simple hφ, simplify_le⟩, fun H ⟨hH, hHle⟩ hle ↦ ?_⟩
+  rw [simplify, le_restrict_iff]
+  refine ⟨le_loopRemove hHle, fun e he ↦ ?_⟩
+  have heG := hHle.edgeSet_mono he
+  have hpar : G.parallel e (φ e) := by
+    simpa [parallelClasses, Partition.rel_ofRel_eq] using hφ.rel_apply (by simpa using heG)
+  have hφe : φ e ∈ E(G.simplify φ) := by
+    rw [simplify_edgeSet_diff hφ]
+    refine ⟨⟨e, heG, rfl⟩, ?_⟩
+    simp only [mem_iUnion, mem_loopSet, exists_prop, not_exists, not_and]
+    intro x _ hloop
+    change G.IsLink (φ e) x x at hloop
+    exact hH.not_isLoopAt e x <| (hpar.isLink_eq ▸ hloop).of_le_of_mem hHle he
+  obtain ⟨x, y, hex⟩ := exists_isLink_of_mem_edgeSet he
+  exact ⟨e, heG, (hex.unique_edge <|
+    ((hpar.isLink_eq ▸ hex.of_le hHle).of_le_of_mem simplify_le hφe).of_le hle).symm⟩
+
+lemma exists_isSimpleficationOf_of_le (h : G ≤ H) [G.Simple] :
+    ∃ G', G ≤ G' ∧ G'.IsSimpleficationOf H := by
+  obtain ⟨φ, hφ, hφid⟩ := H.parallelClasses.exists_extend_partial' (t := E(G))
+    (fun e f he hf hef ↦ by
+      simp only [parallelClasses, Partition.rel_ofRel_eq] at hef
+      obtain ⟨x, y, hex⟩ := exists_isLink_of_mem_edgeSet he
+      exact hex.unique_edge <| (hef.isLink_eq ▸ hex.of_le h).of_le_of_mem h hf)
+  refine ⟨H.simplify φ, ?_, simplify_isSimpleficationOf hφ⟩
+  rw [simplify, le_restrict_iff]
+  exact ⟨le_loopRemove h, fun e he ↦ ⟨e, h.edgeSet_mono he, hφid he⟩⟩

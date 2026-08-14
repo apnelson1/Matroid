@@ -155,18 +155,41 @@ lemma edgePath_injOn_Ioo (D : Drawing G X) (e : E(G)) :
 
 /-- The open part of an edge is disjoint from all vertex images. -/
 lemma pathInterior_edgePath_disjoint_vertex (D : Drawing G X) (e : E(G)) :
-    Disjoint (pathInterior (D.edgePath e)) (range D.vertex) := by
+    Disjoint (D.edgePath e).Interior (range D.vertex) := by
   refine disjoint_left.mpr ?_
   rintro _ ⟨t, ht, rfl⟩ ⟨v, hv⟩
   exact vertexMk_not_mem_edgePath_Ioo v e ⟨t, ht, D.injective hv.symm⟩
 
 /-- The open parts of distinct edges are disjoint. -/
 lemma pathInterior_edgePath_disjoint (D : Drawing G X) {e f : E(G)} (hef : e ≠ f) :
-    Disjoint (pathInterior (D.edgePath e)) (pathInterior (D.edgePath f)) := by
+    Disjoint (D.edgePath e).Interior (D.edgePath f).Interior := by
   refine disjoint_left.mpr ?_
   rintro _ ⟨t, ht, rfl⟩ ⟨s, hs, heq⟩
   exact ((disjoint_edgePath_Ioo_iff e f).mpr hef).notMem_of_mem_left ⟨t, ht, rfl⟩
     ⟨s, hs, D.injective heq⟩
+
+lemma range_edgePath_inter (D : Drawing G X) {e f : E(G)} (hef : e ≠ f) :
+    range (D.edgePath e) ∩ range (D.edgePath f) = {D.vertex (edgeSource e),
+      D.vertex (edgeTarget e)} ∩ {D.vertex (edgeSource f), D.vertex (edgeTarget f)} := by
+  refine subset_antisymm ?_ (inter_subset_inter ?_ ?_)
+  rotate_left
+  · rintro _ (rfl | rfl) <;> simp
+  · rintro _ (rfl | rfl) <;> simp
+  have key {g h : E(G)} (hgh : g ≠ h) {z : X} {tg sh : I} (htg : D.edgePath g tg = z)
+      (hsh : D.edgePath h sh = z) : z = D.vertex (edgeSource g) ∨ z = D.vertex (edgeTarget g) := by
+    obtain rfl | rfl | htgI := (D.edgePath g).mem_range_iff_mem_interior_or_source_or_target z
+      |>.mp (by simp [← htg])
+    · tauto
+    · tauto
+    have hnotV : z ∉ range D.vertex :=
+      (D.pathInterior_edgePath_disjoint_vertex g).notMem_of_mem_left htgI
+    obtain rfl | rfl | hshI := unitInterval.eq_zero_or_eq_one_or_mem_Ioo sh
+    · exact (hnotV ⟨edgeSource h, by rw [← hsh, Path.source]⟩).elim
+    · exact (hnotV ⟨edgeTarget h, by rw [← hsh, Path.target]⟩).elim
+    exact ((D.pathInterior_edgePath_disjoint hgh).notMem_of_mem_left htgI ⟨sh, hshI, hsh⟩).elim
+  intro z ⟨⟨te, hte⟩, ⟨sf, hsf⟩⟩
+  exact ⟨by simpa [mem_insert_iff, mem_singleton_iff] using key hef hte hsf,
+    by simpa [mem_insert_iff, mem_singleton_iff] using key hef.symm hsf hte⟩
 
 /-- The support of a drawing of a finite graph is compact. -/
 lemma support_isCompact [G.Finite] (D : Drawing G X) : IsCompact D.support :=
@@ -209,9 +232,8 @@ injective. -/
 noncomputable def preRealizationMapOfPaths (vertex : V(G) → X)
     (edge : ∀ e : E(G), Path (vertex (edgeSource e)) (vertex (edgeTarget e))) :
     C(G.PreRealization, X) :=
-  ⟨Sum.elim vertex fun p ↦ edge p.1 p.2,
-    continuous_sum_dom.mpr ⟨continuous_of_discreteTopology,
-      continuous_sigma fun e ↦ (edge e).continuous⟩⟩
+  ⟨Sum.elim vertex fun p ↦ edge p.1 p.2, continuous_sum_dom.mpr ⟨continuous_of_discreteTopology,
+    continuous_sigma fun e ↦ (edge e).continuous⟩⟩
 
 @[simp]
 lemma preRealizationMapOfPaths_inl (vertex : V(G) → X)
@@ -220,28 +242,23 @@ lemma preRealizationMapOfPaths_inl (vertex : V(G) → X)
 
 @[simp]
 lemma preRealizationMapOfPaths_inr (vertex : V(G) → X)
-    (edge : ∀ e : E(G), Path (vertex (edgeSource e)) (vertex (edgeTarget e)))
-    (e : E(G)) (t : unitInterval) :
+    (edge : ∀ e : E(G), Path (vertex (edgeSource e)) (vertex (edgeTarget e))) (e : E(G))
+    (t : unitInterval) :
     preRealizationMapOfPaths vertex edge (Sum.inr ⟨e, t⟩) = edge e t := rfl
 
 /-- The endpoints of the paths are where the realization glues, so the map respects the relation.
 This direction needs no hypothesis: it is `Path.source` and `Path.target`. -/
-theorem map_eq_of_glueRel_preRealizationMapOfPaths (vertex : V(G) → X)
-    (edge : ∀ e : E(G), Path (vertex (edgeSource e)) (vertex (edgeTarget e))) :
-    ∀ a b, G.glueRel a b →
-      preRealizationMapOfPaths vertex edge a = preRealizationMapOfPaths vertex edge b := by
-  intro a b h
+theorem map_eq_of_glueRel_preRealizationMapOfPaths (vertex : V(G) → X) {a b}
+    (edge : ∀ e : E(G), Path (vertex (edgeSource e)) (vertex (edgeTarget e))) (h : G.glueRel a b) :
+    preRealizationMapOfPaths vertex edge a = preRealizationMapOfPaths vertex edge b := by
   induction h with
   | refl => rfl
   | symm _ _ _ ih => exact ih.symm
   | trans _ _ _ _ _ h₁ h₂ => exact h₁.trans h₂
   | rel x y hxy =>
     match x, y with
-    | .inr _, _ =>
-      simp [glueRelAux] at hxy
-    | .inl u, .inl v =>
-      obtain rfl := (glueRelAux_inl_inl_iff ..).mp hxy
-      rfl
+    | .inr _, _ => simp [glueRelAux] at hxy
+    | .inl u, .inl v => rw [(glueRelAux_inl_inl_iff ..).mp hxy]
     | .inl u, .inr ⟨e, t⟩ =>
       obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := (glueRelAux_inl_inr_iff ..).mp hxy
       · simp [Path.source]
@@ -249,24 +266,21 @@ theorem map_eq_of_glueRel_preRealizationMapOfPaths (vertex : V(G) → X)
 
 /-- Conversely, the map identifies *only* what the realization glues. This is where all four
 hypotheses are used, and it is the whole mathematical content of `ofVertexAndEdgePaths`. -/
-theorem glueRel_of_map_eq_preRealizationMapOfPaths (vertex : V(G) → X)
+theorem glueRel_of_map_eq_preRealizationMapOfPaths {a b} (vertex : V(G) → X)
     (vertex_injective : Injective vertex)
     (edge : ∀ e : E(G), Path (vertex (edgeSource e)) (vertex (edgeTarget e)))
     (edge_injective : ∀ e, InjOn (edge e) (Ioo (0 : unitInterval) 1))
-    (edge_interior_disjoint_vertex : ∀ e, Disjoint (pathInterior (edge e)) (range vertex))
-    (edge_interior_disjoint : ∀ e f, e ≠ f →
-      Disjoint (pathInterior (edge e)) (pathInterior (edge f))) :
-    ∀ a b, preRealizationMapOfPaths vertex edge a = preRealizationMapOfPaths vertex edge b →
-      G.glueRel a b := by
-  intro a b h
+    (edge_interior_disjoint_vertex : ∀ e, Disjoint (edge e).Interior (range vertex))
+    (edge_interior_disjoint : ∀ e f, e ≠ f → Disjoint (edge e).Interior (edge f).Interior)
+    (h : preRealizationMapOfPaths vertex edge a = preRealizationMapOfPaths vertex edge b) :
+    G.glueRel a b := by
   match a, b with
-  | .inl u, .inl v =>
-    exact (glueRel_inl_inl_iff u v).mpr (vertex_injective (by simpa using h))
+  | .inl u, .inl v => exact (glueRel_inl_inl_iff u v).mpr (vertex_injective (by simpa using h))
   | .inl u, .inr ⟨e, t⟩ =>
     have hvt : vertex u = edge e t := by simpa using h
-    rcases eq_or_ne t 0 with rfl | ht0
+    obtain rfl | ht0 := eq_or_ne t 0
     · exact (glueRel_inl_inr_iff u e 0).mpr <|
-        .inl ⟨rfl, vertex_injective (by simpa [Path.source] using hvt)⟩
+        .inl ⟨rfl, vertex_injective (by rwa [Path.source] at hvt)⟩
     rcases eq_or_ne t 1 with rfl | ht1
     · exact (glueRel_inl_inr_iff u e 1).mpr <|
         .inr ⟨rfl, vertex_injective (by simpa [Path.target] using hvt)⟩
@@ -334,19 +348,18 @@ noncomputable def ofVertexAndEdgePaths
     (vertex : V(G) → X) (vertex_injective : Injective vertex)
     (edge : ∀ e : E(G), Path (vertex (edgeSource e)) (vertex (edgeTarget e)))
     (edge_injective : ∀ e, InjOn (edge e) (Ioo (0 : unitInterval) 1))
-    (edge_interior_disjoint_vertex : ∀ e, Disjoint (pathInterior (edge e)) (range vertex))
-    (edge_interior_disjoint : ∀ e f, e ≠ f →
-      Disjoint (pathInterior (edge e)) (pathInterior (edge f))) :
+    (edge_interior_disjoint_vertex : ∀ e, Disjoint (edge e).Interior (range vertex))
+    (edge_interior_disjoint : ∀ e f, e ≠ f → Disjoint (edge e).Interior (edge f).Interior) :
     Drawing G X :=
   ofPreRealization (preRealizationMapOfPaths vertex edge)
-    (map_eq_of_glueRel_preRealizationMapOfPaths vertex edge)
-    (glueRel_of_map_eq_preRealizationMapOfPaths vertex vertex_injective edge edge_injective
-      edge_interior_disjoint_vertex edge_interior_disjoint)
+    (fun _ _ ↦ map_eq_of_glueRel_preRealizationMapOfPaths vertex edge)
+    (fun _ _ ↦ glueRel_of_map_eq_preRealizationMapOfPaths vertex vertex_injective edge
+      edge_injective edge_interior_disjoint_vertex edge_interior_disjoint)
 
 variable {vertex : V(G) → X} {edge : ∀ e : E(G), Path (vertex (edgeSource e))
   (vertex (edgeTarget e))} {hv : Injective vertex} {he : ∀ e, InjOn (edge e) (Ioo (0 : I) 1)}
-  {hev : ∀ e, Disjoint (pathInterior (edge e)) (range vertex)}
-  {hee : ∀ e f, e ≠ f → Disjoint (pathInterior (edge e)) (pathInterior (edge f))}
+  {hev : ∀ e, Disjoint (edge e).Interior (range vertex)}
+  {hee : ∀ e f, e ≠ f → Disjoint (edge e).Interior (edge f).Interior}
 
 @[simp]
 lemma ofVertexAndEdgePaths_vertex (x : V(G)) :
@@ -406,6 +419,218 @@ lemma range_edgePath_restrict (D : Drawing G X) (h : H ≤ G) (e : E(H)) :
   simp only [mem_range]
   refine ⟨fun ⟨t, ht⟩ ↦ ⟨t, ?_⟩, fun ⟨t, ht⟩ ↦ ⟨t, ?_⟩⟩ <;>
     rw [← ht, edgePath_apply, edgePath_apply, restrict_apply, h.RealizationEmbedding_edgePath]
+
+/-! ### Gluing two drawings
+
+`union` below glues a drawing of `G₁` and a drawing of `G₂` into a drawing of `G₁ ∪ G₂`. It is pure
+gluing: no metric, no plane, no finiteness, no `Loopless`. Every geometric fact is pushed into the
+two hypotheses `Agree` and `hsupp`.
+
+**Intended consumer.** Status.md §13.1 Lemma 13.2, *insertion*: adding one parallel edge or one
+loop to an existing drawing. Take `G₂ := Graph.singleEdge u v f` (or `Graph.singleEdge u u f` for a
+loop), so that `V(G₂)` is the one or two attachment vertices and `hsupp` reads exactly "the new arc
+meets the old support only at those vertices" — which is what the routing primitive of §6.1 and the
+sector construction of §13.1 respectively deliver. `Agree` is then immediate.
+
+**Not** for gluing two planar graphs along a cut vertex or a shared edge. Status.md:970 retires
+that: "no gluing of two drawings, no re-rooting of a face to infinity". The theorems that used to
+sit at the bottom of this file are gone; see Kuratowski `Decisions.md` D17.
+
+The layer is subdivided because the four obligations of `ofVertexAndEdgePaths` each split into the
+same three cases — both edges in `G₁`, both in `G₂`, one of each — and the cross case is always the
+same argument. That argument is `mem_range_vertex_of_mem_support_inter`, stated once.
+
+Three design points, all load-bearing.
+
+*`Agree` is a typing obligation, not a proof obligation.* Without it `unionEdge` does not elaborate.
+See its docstring.
+
+*Never state a computation lemma for `unionEdge` as an equation between paths.* `unionEdge … ed` and
+`D₁.edgePath ⟨ed.1, h⟩` have different types — the endpoints differ by `unionVertex_edgeSource_left`
+— so an equation between them is ill-typed and forces `HEq`. Mathlib's `Path.cast`
+(`Mathlib/Topology/Path.lean:376`) keeps `toFun` definitionally, so `range` and `Path.Interior` see
+straight through the cast: every computation lemma below is stated at the level of those two sets,
+and each closes by `dif_pos`/`dif_neg` and then `rfl`.
+
+*`Disjoint E(G₁) E(G₂)` is deliberately not assumed.* A shared edge is resolved in favour of `G₁`,
+and no obligation below needs disjointness: `hsupp` already forbids the configuration that would
+break injectivity — a shared arc lies in both supports and is not a vertex image. The insertion use
+above never has a shared edge, so this costs nothing there. -/
+
+section Gluing
+
+variable {G₁ G₂ : Graph α β} (D₁ : Drawing G₁ X) (D₂ : Drawing G₂ X)
+
+/-- `D₁` and `D₂` place every shared vertex at the same point of `X`.
+
+This is a **typing** obligation, not a proof obligation: without it `unionEdge` does not elaborate.
+An edge of `G₂` whose source is a vertex shared with `G₁` must be assigned a path *starting at*
+`unionVertex D₁ D₂ (edgeSource _)`, which computes to `D₁.vertex …`, whereas `D₂.edgePath` starts at
+`D₂.vertex …`. No amount of proof effort closes that gap; the hypothesis has to exist. -/
+def Agree : Prop :=
+  ∀ (x : α) (h₁ : x ∈ V(G₁)) (h₂ : x ∈ V(G₂)), D₁.vertex ⟨x, h₁⟩ = D₂.vertex ⟨x, h₂⟩
+
+open Classical in
+/-- The vertex placement of the glued drawing: use `D₁` where it is defined, `D₂` otherwise. -/
+noncomputable def unionVertex (w : V(G₁ ∪ G₂)) : X :=
+  if hw : w.1 ∈ V(G₁) then D₁.vertex ⟨w.1, hw⟩
+  else D₂.vertex ⟨w.1, Or.resolve_left (show w.1 ∈ V(G₁) ∨ w.1 ∈ V(G₂) from w.2) hw⟩
+
+@[simp]
+lemma unionVertex_of_mem_left {w : V(G₁ ∪ G₂)} (hw : w.1 ∈ V(G₁)) :
+    unionVertex D₁ D₂ w = D₁.vertex ⟨w.1, hw⟩ :=
+  dif_pos hw
+
+/-- The right-hand computation rule. Unlike the left one it needs `Agree`, because a vertex of `G₂`
+may also be a vertex of `G₁`, in which case `unionVertex` took the `D₁` branch. -/
+lemma unionVertex_of_mem_right (ha : D₁.Agree D₂) {w : V(G₁ ∪ G₂)} (hw : w.1 ∈ V(G₂)) :
+    unionVertex D₁ D₂ w = D₂.vertex ⟨w.1, hw⟩ := by
+  by_cases hw₁ : w.1 ∈ V(G₁)
+  · rw [unionVertex_of_mem_left D₁ D₂ hw₁]
+    exact ha w.1 hw₁ hw
+  · rw [unionVertex, dif_neg hw₁]
+
+lemma range_unionVertex (ha : D₁.Agree D₂) :
+    range (unionVertex D₁ D₂) = range D₁.vertex ∪ range D₂.vertex := by
+  sorry
+
+/-! The four `edgeSource`/`edgeTarget` transport lemmas. They are the exact analogues of
+`restrict_vertex_edgeSource` and `restrict_vertex_edgeTarget` above, and hold for the same reason:
+`ArbRel` fixes one linear order per *type*, so `IsSubgraph.source` (`GraphLike/ArbRel.lean:93`) and
+`IsSubgraph.target` are available for `G₁ ≤ G₁ ∪ G₂` and `G₂ ≤ G₁ ∪ G₂`. They exist only to make
+`unionEdge` typecheck. -/
+
+lemma unionVertex_edgeSource_left {ed : E(G₁ ∪ G₂)} (hed : ed.1 ∈ E(G₁)) :
+    unionVertex D₁ D₂ (edgeSource ed) = D₁.vertex (edgeSource ⟨ed.1, hed⟩) := by
+  sorry
+
+lemma unionVertex_edgeTarget_left {ed : E(G₁ ∪ G₂)} (hed : ed.1 ∈ E(G₁)) :
+    unionVertex D₁ D₂ (edgeTarget ed) = D₁.vertex (edgeTarget ⟨ed.1, hed⟩) := by
+  sorry
+
+lemma unionVertex_edgeSource_right (hc : G₁.Compatible G₂) (ha : D₁.Agree D₂) {ed : E(G₁ ∪ G₂)}
+    (hed : ed.1 ∈ E(G₂)) :
+    unionVertex D₁ D₂ (edgeSource ed) = D₂.vertex (edgeSource ⟨ed.1, hed⟩) := by
+  sorry
+
+lemma unionVertex_edgeTarget_right (hc : G₁.Compatible G₂) (ha : D₁.Agree D₂) {ed : E(G₁ ∪ G₂)}
+    (hed : ed.1 ∈ E(G₂)) :
+    unionVertex D₁ D₂ (edgeTarget ed) = D₂.vertex (edgeTarget ⟨ed.1, hed⟩) := by
+  sorry
+
+open Classical in
+/-- The edge placement of the glued drawing. A shared edge is drawn by `D₁`. -/
+noncomputable def unionEdge (hc : G₁.Compatible G₂) (ha : D₁.Agree D₂) (ed : E(G₁ ∪ G₂)) :
+    Path (unionVertex D₁ D₂ (edgeSource ed)) (unionVertex D₁ D₂ (edgeTarget ed)) :=
+  if hed : ed.1 ∈ E(G₁) then
+    (D₁.edgePath ⟨ed.1, hed⟩).cast (unionVertex_edgeSource_left D₁ D₂ hed)
+      (unionVertex_edgeTarget_left D₁ D₂ hed)
+  else
+    have hed₂ : ed.1 ∈ E(G₂) := Or.resolve_left (show ed.1 ∈ E(G₁) ∨ ed.1 ∈ E(G₂) from ed.2) hed
+    (D₂.edgePath ⟨ed.1, hed₂⟩).cast (unionVertex_edgeSource_right D₁ D₂ hc ha hed₂)
+      (unionVertex_edgeTarget_right D₁ D₂ hc ha hed₂)
+
+/-! The four computation lemmas for `unionEdge`, at the level of `range` and `Path.Interior`. Each
+is `rw [unionEdge, dif_pos hed]` (resp. `dif_neg`) followed by `rfl`: `Path.cast` does not change
+`toFun`, so both sets are literally the same term. Do not attempt the path-level equation. -/
+
+lemma range_unionEdge_left (hc : G₁.Compatible G₂) (ha : D₁.Agree D₂) {ed : E(G₁ ∪ G₂)}
+    (hed : ed.1 ∈ E(G₁)) :
+    range (unionEdge D₁ D₂ hc ha ed) = range (D₁.edgePath ⟨ed.1, hed⟩) := by
+  sorry
+
+lemma range_unionEdge_right (hc : G₁.Compatible G₂) (ha : D₁.Agree D₂) {ed : E(G₁ ∪ G₂)}
+    (hed₁ : ed.1 ∉ E(G₁)) (hed : ed.1 ∈ E(G₂)) :
+    range (unionEdge D₁ D₂ hc ha ed) = range (D₂.edgePath ⟨ed.1, hed⟩) := by
+  sorry
+
+lemma unionEdge_interior_left (hc : G₁.Compatible G₂) (ha : D₁.Agree D₂) {ed : E(G₁ ∪ G₂)}
+    (hed : ed.1 ∈ E(G₁)) :
+    (unionEdge D₁ D₂ hc ha ed).Interior = (D₁.edgePath ⟨ed.1, hed⟩).Interior := by
+  sorry
+
+lemma unionEdge_interior_right (hc : G₁.Compatible G₂) (ha : D₁.Agree D₂) {ed : E(G₁ ∪ G₂)}
+    (hed₁ : ed.1 ∉ E(G₁)) (hed : ed.1 ∈ E(G₂)) :
+    (unionEdge D₁ D₂ hc ha ed).Interior = (D₂.edgePath ⟨ed.1, hed⟩).Interior := by
+  sorry
+
+/-- **The workhorse of the cross case.** A point common to both supports is not merely *some* point
+of `D₁`'s vertex set: it is a vertex image on *both* sides. That upgrade is what rules out a shared
+point lying in the interior of an edge, and it discharges the mixed case of all four obligations
+below.
+
+The `hsupp` hypothesis is stated with `⊆` rather than `=` on purpose: given `Agree`, the reverse
+inclusion is automatic, so the equality form would only make every call site harder. -/
+lemma mem_range_vertex_of_mem_support_inter (ha : D₁.Agree D₂)
+    (hsupp : D₁.support ∩ D₂.support ⊆ D₁.vertex '' {w : V(G₁) | w.1 ∈ V(G₂)}) {x : X}
+    (h₁ : x ∈ D₁.support) (h₂ : x ∈ D₂.support) :
+    x ∈ range D₁.vertex ∧ x ∈ range D₂.vertex := by
+  sorry
+
+/-! ### The four obligations of `ofVertexAndEdgePaths`
+
+Each splits on membership in `E(G₁)`/`V(G₁)` into a `D₁` case, a `D₂` case and a cross case. The
+first two are the corresponding fact for `D₁` or `D₂` transported along the computation lemmas
+above; the cross case is `mem_range_vertex_of_mem_support_inter` followed by
+`pathInterior_edgePath_disjoint_vertex`. -/
+
+lemma unionVertex_injective (ha : D₁.Agree D₂)
+    (hsupp : D₁.support ∩ D₂.support ⊆ D₁.vertex '' {w : V(G₁) | w.1 ∈ V(G₂)}) :
+    Injective (unionVertex D₁ D₂) := by
+  sorry
+
+lemma unionEdge_injOn (hc : G₁.Compatible G₂) (ha : D₁.Agree D₂) (ed : E(G₁ ∪ G₂)) :
+    InjOn (unionEdge D₁ D₂ hc ha ed) (Ioo (0 : unitInterval) 1) := by
+  sorry
+
+lemma unionEdge_interior_disjoint_range_unionVertex (hc : G₁.Compatible G₂) (ha : D₁.Agree D₂)
+    (hsupp : D₁.support ∩ D₂.support ⊆ D₁.vertex '' {w : V(G₁) | w.1 ∈ V(G₂)})
+    (ed : E(G₁ ∪ G₂)) :
+    Disjoint (unionEdge D₁ D₂ hc ha ed).Interior (range (unionVertex D₁ D₂)) := by
+  sorry
+
+lemma unionEdge_interior_disjoint (hc : G₁.Compatible G₂) (ha : D₁.Agree D₂)
+    (hsupp : D₁.support ∩ D₂.support ⊆ D₁.vertex '' {w : V(G₁) | w.1 ∈ V(G₂)})
+    (ed₁ ed₂ : E(G₁ ∪ G₂)) (hne : ed₁ ≠ ed₂) :
+    Disjoint (unionEdge D₁ D₂ hc ha ed₁).Interior (unionEdge D₁ D₂ hc ha ed₂).Interior := by
+  sorry
+
+/-- **Gluing.** Two drawings that agree on the shared vertices and meet nowhere else assemble into a
+drawing of the union.
+
+This is a genuine definition: its data — where each vertex goes and which arc each edge follows —
+is completely determined by `unionVertex` and `unionEdge`, so `union_vertex` and the two
+`range_edgePath` lemmas below hold by `rfl` no matter how the four obligations are eventually
+proved. That is the reason for splitting them out rather than leaving the whole `def` open. -/
+noncomputable def union (hc : G₁.Compatible G₂) (ha : D₁.Agree D₂)
+    (hsupp : D₁.support ∩ D₂.support ⊆ D₁.vertex '' {w : V(G₁) | w.1 ∈ V(G₂)}) :
+    Drawing (G₁ ∪ G₂) X :=
+  ofVertexAndEdgePaths (unionVertex D₁ D₂) (unionVertex_injective D₁ D₂ ha hsupp)
+    (unionEdge D₁ D₂ hc ha) (unionEdge_injOn D₁ D₂ hc ha)
+    (unionEdge_interior_disjoint_range_unionVertex D₁ D₂ hc ha hsupp)
+    fun _ _ ↦ unionEdge_interior_disjoint D₁ D₂ hc ha hsupp _ _
+
+@[simp]
+lemma union_vertex (hc : G₁.Compatible G₂) (ha : D₁.Agree D₂)
+    (hsupp : D₁.support ∩ D₂.support ⊆ D₁.vertex '' {w : V(G₁) | w.1 ∈ V(G₂)})
+    (w : V(G₁ ∪ G₂)) : (union D₁ D₂ hc ha hsupp).vertex w = unionVertex D₁ D₂ w :=
+  rfl
+
+lemma range_edgePath_union (hc : G₁.Compatible G₂) (ha : D₁.Agree D₂)
+    (hsupp : D₁.support ∩ D₂.support ⊆ D₁.vertex '' {w : V(G₁) | w.1 ∈ V(G₂)})
+    (ed : E(G₁ ∪ G₂)) :
+    range ((union D₁ D₂ hc ha hsupp).edgePath ed) = range (unionEdge D₁ D₂ hc ha ed) :=
+  rfl
+
+/-- The support of a glued drawing is the union of the two supports. This is what lets a caller
+iterate `union`, and what turns a hypothesis about `D₁.support ∪ D₂.support` into one about the
+glued drawing. -/
+lemma union_support (hc : G₁.Compatible G₂) (ha : D₁.Agree D₂)
+    (hsupp : D₁.support ∩ D₂.support ⊆ D₁.vertex '' {w : V(G₁) | w.1 ∈ V(G₂)}) :
+    (union D₁ D₂ hc ha hsupp).support = D₁.support ∪ D₂.support := by
+  sorry
+
+end Gluing
 
 end Drawing
 
@@ -485,33 +710,29 @@ lemma preRealizationMap_glueRel (F : Iso K G) ⦃a b : K.PreRealization⦄
   | trans _ _ _ _ _ h₁ h₂ => exact Setoid.trans h₁ h₂
   | rel x y hxy =>
     match x, y with
-    | .inr _, _ =>
-      simp [glueRelAux] at hxy
-    | .inl u, .inl v =>
-      obtain rfl := (glueRelAux_inl_inl_iff ..).mp hxy
-      rfl
+    | .inr _, _ => simp [glueRelAux] at hxy
+    | .inl u, .inl v => rw [(glueRelAux_inl_inl_iff ..).mp hxy]
     | .inl u, .inr ⟨e, t⟩ =>
-      obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := (glueRelAux_inl_inr_iff ..).mp hxy
-      · by_cases hori : F.sameOrientation e
-        · convert (glueRel_inl_inr_iff (edgeSource (F.edge e)) (F.edge e) 0).mpr
-            (.inl ⟨rfl, rfl⟩) using 1
-          · simpa [preRealizationMap] using hori
-          · simp [preRealizationMap, orient, if_pos hori]
-        · obtain ⟨hs, _⟩ := F.vert_of_not_sameOrientation hori
-          convert (glueRel_inl_inr_iff (edgeTarget (F.edge e)) (F.edge e) 1).mpr
-            (.inr ⟨rfl, rfl⟩) using 1
-          · simpa [preRealizationMap] using hs
-          · simp [preRealizationMap, orient, if_neg hori]
-      · by_cases hori : F.sameOrientation e
-        · convert (glueRel_inl_inr_iff (edgeTarget (F.edge e)) (F.edge e) 1).mpr
-            (.inr ⟨rfl, rfl⟩) using 1
-          · simpa [preRealizationMap] using F.vert_edgeTarget_of_sameOrientation hori
-          · simp [preRealizationMap, orient, if_pos hori]
-        · obtain ⟨_, ht⟩ := F.vert_of_not_sameOrientation hori
-          convert (glueRel_inl_inr_iff (edgeSource (F.edge e)) (F.edge e) 0).mpr
-            (.inl ⟨rfl, rfl⟩) using 1
-          · simpa [preRealizationMap] using ht
-          · simp [preRealizationMap, orient, if_neg hori]
+      obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := (glueRelAux_inl_inr_iff ..).mp hxy <;>
+        by_cases hori : F.sameOrientation e
+      · convert (glueRel_inl_inr_iff (edgeSource (F.edge e)) (F.edge e) 0).mpr
+          (.inl ⟨rfl, rfl⟩) using 1
+        · simpa [preRealizationMap] using hori
+        · simp [preRealizationMap, orient, if_pos hori]
+      · obtain ⟨hs, _⟩ := F.vert_of_not_sameOrientation hori
+        convert (glueRel_inl_inr_iff (edgeTarget (F.edge e)) (F.edge e) 1).mpr
+          (.inr ⟨rfl, rfl⟩) using 1
+        · simpa [preRealizationMap] using hs
+        · simp [preRealizationMap, orient, if_neg hori]
+      · convert (glueRel_inl_inr_iff (edgeTarget (F.edge e)) (F.edge e) 1).mpr
+          (.inr ⟨rfl, rfl⟩) using 1
+        · simpa [preRealizationMap] using F.vert_edgeTarget_of_sameOrientation hori
+        · simp [preRealizationMap, orient, if_pos hori]
+      · obtain ⟨_, ht⟩ := F.vert_of_not_sameOrientation hori
+        convert (glueRel_inl_inr_iff (edgeSource (F.edge e)) (F.edge e) 0).mpr
+          (.inl ⟨rfl, rfl⟩) using 1
+        · simpa [preRealizationMap] using ht
+        · simp [preRealizationMap, orient, if_neg hori]
 
 lemma vert_symm_vert (F : Iso K G) (x : V(K)) : F.symm.vert (F.vert x) = x := by
   ext
@@ -558,25 +779,21 @@ lemma not_sameOrientation_symm (F : Iso K G) {e : E(K)} (h : ¬ F.sameOrientatio
 
 lemma sameOrientation_edge_symm (F : Iso K G) (e : E(G)) :
     F.sameOrientation (F.symm.edge e) ↔ F.symm.sameOrientation e := by
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · unfold sameOrientation at h ⊢
-    have h' : F.vert (edgeSource (F.symm.edge e)) = edgeSource e := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩ <;> unfold sameOrientation at h ⊢
+  · have h' : F.vert (edgeSource (F.symm.edge e)) = edgeSource e := by
       simpa [edge_edge_symm] using h
     simpa [vert_symm_vert] using congrArg F.symm.vert h'.symm
-  · unfold sameOrientation at h ⊢
-    have := congrArg F.vert h
+  · have := congrArg F.vert h
     simpa [vert_vert_symm, edge_edge_symm] using this.symm
 
 lemma orient_symm_orient (F : Iso K G) (e : E(K)) (t : I) :
     F.symm.orient (F.edge e) (F.orient e t) = t := by
-  classical
   by_cases h : F.sameOrientation e
   · simp [orient, if_pos h, if_pos (F.sameOrientation_symm h)]
   · simp [orient, if_neg h, if_neg (F.not_sameOrientation_symm h), symm_symm]
 
 lemma orient_orient_symm (F : Iso K G) (e : E(G)) (t : I) :
     F.orient (F.symm.edge e) (F.symm.orient e t) = t := by
-  classical
   by_cases h : F.symm.sameOrientation e
   · simp [orient, if_pos h, if_pos ((F.sameOrientation_edge_symm e).mpr h)]
   · simp [orient, if_neg h, if_neg (mt (F.sameOrientation_edge_symm e).mp h), symm_symm]
@@ -584,16 +801,14 @@ lemma orient_orient_symm (F : Iso K G) (e : E(G)) (t : I) :
 lemma preRealizationMap_symm_comp (F : Iso K G) (x : K.PreRealization) :
     F.symm.preRealizationMap (F.preRealizationMap x) = x := by
   match x with
-  | .inl v =>
-    simp only [preRealizationMap, ContinuousMap.coe_mk, vert_symm_vert]
+  | .inl v => simp only [preRealizationMap, ContinuousMap.coe_mk, vert_symm_vert]
   | .inr ⟨e, t⟩ =>
     simp only [preRealizationMap, ContinuousMap.coe_mk, edge_symm_edge, orient_symm_orient]
 
 lemma preRealizationMap_comp_symm (F : Iso K G) (x : G.PreRealization) :
     F.preRealizationMap (F.symm.preRealizationMap x) = x := by
   match x with
-  | .inl v =>
-    simp only [preRealizationMap, ContinuousMap.coe_mk, vert_vert_symm]
+  | .inl v => simp only [preRealizationMap, ContinuousMap.coe_mk, vert_vert_symm]
   | .inr ⟨e, t⟩ =>
     simp only [preRealizationMap, ContinuousMap.coe_mk, edge_edge_symm, orient_orient_symm]
 
@@ -601,20 +816,16 @@ lemma preRealizationMap_comp_symm (F : Iso K G) (x : G.PreRealization) :
 noncomputable def realizationHomeomorph (F : Iso K G) : Realization K ≃ₜ Realization G where
   toFun := Quotient.map F.preRealizationMap F.preRealizationMap_glueRel
   invFun := Quotient.map F.symm.preRealizationMap F.symm.preRealizationMap_glueRel
-  left_inv := by
-    intro x
+  left_inv x := by
     induction x using Realization.ind with | h a =>
     exact congrArg (Realization.mk K) (F.preRealizationMap_symm_comp a)
-  right_inv := by
-    intro x
+  right_inv x := by
     induction x using Realization.ind with | h a =>
     exact congrArg (Realization.mk G) (F.preRealizationMap_comp_symm a)
-  continuous_toFun := by
-    rw [continuous_coinduced_dom]
-    exact continuous_coinduced_rng.comp F.preRealizationMap.continuous
-  continuous_invFun := by
-    rw [continuous_coinduced_dom]
-    exact continuous_coinduced_rng.comp F.symm.preRealizationMap.continuous
+  continuous_toFun :=
+    continuous_coinduced_dom.mpr <| continuous_coinduced_rng.comp F.preRealizationMap.continuous
+  continuous_invFun := continuous_coinduced_dom.mpr <|
+    continuous_coinduced_rng.comp F.symm.preRealizationMap.continuous
 
 end Iso
 
@@ -623,8 +834,7 @@ namespace Drawing
 /-- Pull a drawing back along a graph isomorphism. -/
 noncomputable def ofIso (D : Drawing G X) (F : Iso K G) : Drawing K X where
   toContinuousMap :=
-    { toFun := D ∘ F.realizationHomeomorph
-      continuous_toFun := D.continuous.comp F.realizationHomeomorph.continuous }
+    ⟨D ∘ F.realizationHomeomorph, D.continuous.comp F.realizationHomeomorph.continuous⟩
   inj' := D.injective.comp F.realizationHomeomorph.injective
 
 /-- A drawing `D'` extends `D` along the subgraph inclusion `h`. -/
@@ -687,56 +897,24 @@ lemma of_iso (hG : G.Planar) (F : Iso K G) : K.Planar :=
 theorem isTopologicalMinor (hG : G.Planar) (hHG : H.IsTopologicalMinor G) : H.Planar :=
   IsDrawable.isTopologicalMinor hG hHG
 
-/- **Proof route for the two theorems below** (formalisation helper). These are not small `sorry`
-fills, and the earlier note here was right that gluing is missing. But the gap splits in two, and
-only the second half is ambient topology.
+/- **Removed 2026-08-13.** Two union theorems used to sit here —
+`union_of_vertexSet_inter_subsingleton` (planar ∪ planar along at most one vertex) and
+`union_of_common_nonloop_edge` — together with `IsForest.planar`, their only consumer. All three are
+deleted, not moved.
 
-*(a) A missing combinator, mine to supply; no topology in it.*
+They are out of plan. Status.md:970 is explicit: "There is no decomposition object, **no gluing of
+two drawings, no re-rooting of a face to infinity**, and no polygonal Schoenflies anywhere below.
+Earlier revisions of this note called for those; they are not needed." Status.md:1287 repeats the
+warning for §13.5–§13.6, and no row of the §12 dependency table consumes a union of drawings. The
+three had no consumer in the tree either, transitively.
 
-    def Drawing.union (D₁ : Drawing G₁ X) (D₂ : Drawing G₂ X) (hc : G₁.Compatible G₂)
-        (hsupp : D₁.support ∩ D₂.support = D₁.vertex '' {v | v.1 ∈ V(G₁) ∩ V(G₂)}) :
-        Drawing (G₁ ∪ G₂) X
+Supplying the gluing hypotheses would have required exactly the second item on that retired list —
+re-rooting a face to infinity, to put a marked vertex on the outer face — so the cost was real and
+the plan had already declined to pay it. See Kuratowski `Decisions.md` D17 for the full record,
+including the parts of the analysis worth keeping.
 
-The argument is the `Sum` case split already written out in
-`glueRel_of_map_eq_preRealizationMapOfPaths` above, one level up; build it with `ofPreRealization`.
-Nothing here needs `[Finite]`, a metric, or the plane. Written once, it discharges the
-`V(G₁) ∩ V(G₂) = ∅` case of the first theorem immediately: both supports are compact
-(`support_isCompact`, `:154`) hence bounded, so translating `D₂` far enough separates them, and
-`postcomp` takes any *continuous injection* — `fun z ↦ c • z + b` with `c ≠ 0`, continuous by
-`fun_prop` and injective by `smul_right_injective` — so no homeomorphism API is needed.
-
-*(b) A free direction at the shared vertex.* For the singleton case you need a wedge at
-`D₁.vertex v` meeting `D₁.support` only at that point, into which the scaled `D₂` goes. Do **not**
-route this through `DiskMinusRadii`'s sector count: in the PL category the segments through `p` are
-finitely many, so all but finitely many directions are free, and
-`Graph.PLDrawing.exists_radius` (`Planarity/StarLemma.lean`) keeps the rest of the support out of
-a small ball. That is a strictly weaker obligation than the star lemma's exact equality; state it
-separately as `exists_free_wedge` and prove it first if `exists_radius` proves expensive.
-
-So the real prerequisites are `PLDrawing.exists_finite_support`, then `exists_radius` (or just the
-weak wedge), then `Drawing.union` — none of which is Schoenflies-strength, and none of which needs
-the two open closure lemmas in `DiskMinusRadii`.
-
-*Note.* `IsForest.planar` below already calls `union_of_vertexSet_inter_subsingleton`, so it reads
-as complete while resting on this chain.
-
-**Tactic handoff (2026-08-11).** `Drawing.union` and `exists_free_wedge` are still not declared —
-only described in this comment. Per the route above they are formalisation-helper deliverables
-("mine to supply"). Tactic will not invent those defs; return when they exist with proof routes. -/
-/-- The union of two finite planar graphs meeting in at most one vertex is planar. -/
-theorem union_of_vertexSet_inter_subsingleton {G₁ G₂ : Graph α β} [G₁.Finite] [G₂.Finite]
-    (h₁ : G₁.Planar) (h₂ : G₂.Planar) (hcompat : G₁.Compatible G₂)
-    (hedge : Disjoint E(G₁) E(G₂)) (hvertex : (V(G₁) ∩ V(G₂)).Subsingleton) :
-    (G₁ ∪ G₂).Planar := by
-  sorry
-
-/-- The union of two finite planar graphs along a common nonloop edge is planar. -/
-theorem union_of_common_nonloop_edge {G₁ G₂ : Graph α β} [G₁.Finite] [G₂.Finite]
-    (h₁ : G₁.Planar) (h₂ : G₂.Planar) (hcompat : G₁.Compatible G₂)
-    (he₁ : G₁.IsLink e u v) (he₂ : G₂.IsLink e u v) (huv : u ≠ v)
-    (hvertex : V(G₁) ∩ V(G₂) = {u, v}) (hedge : E(G₁) ∩ E(G₂) = {e}) :
-    (G₁ ∪ G₂).Planar := by
-  sorry
+`Drawing.union` above stays: it is combinatorial, it needs nothing downstream, and §13.1's Lemma
+13.2 has a use for it. Recover the deleted statements from git if §13 ever changes its mind. -/
 
 end Planar
 
@@ -752,8 +930,8 @@ lemma embedFinite_injective (ι : Type*) [Finite ι] : Injective (embedFinite ι
     simpa [embedFinite, PiLp.single_apply] using congrArg (fun v : Plane => v 0) h
   exact (Finite.equivFin ι).injective (Fin.val_injective (Nat.cast_injective this))
 
-lemma pathInterior_segment (a b : Plane) :
-    pathInterior (Path.segment a b) = openSegment ℝ a b := by
+lemma Path.interior_segment (a b : Plane) :
+    (Path.segment a b).Interior = openSegment ℝ a b := by
   ext z
   constructor
   · rintro ⟨t, ht, rfl⟩
@@ -800,87 +978,34 @@ theorem singleEdge_planar {x y : α} (hxy : x ≠ y) (e : β) : (Graph.singleEdg
   have : Finite ↑V(G) := by
     change Finite ↑({x, y} : Set α)
     infer_instance
+  let e' : E(G) := ⟨e, by simp [G]⟩
   set vertex : V(G) → Plane := embedFinite V(G)
   have hv : Injective vertex := embedFinite_injective _
+  have he : ∀ f : E(G), f = ⟨e, by simp [G]⟩ := by simp [G]
   have hne : ∀ f : E(G), edgeSource f ≠ edgeTarget f :=
     fun f ↦ singleEdge_edgeSource_ne_edgeTarget hxy e f
   set edge : ∀ f : E(G), Path (vertex (edgeSource f)) (vertex (edgeTarget f)) :=
     fun f => Path.segment (vertex (edgeSource f)) (vertex (edgeTarget f))
-  refine ⟨Drawing.ofVertexAndEdgePaths vertex hv edge ?_ ?_ ?_⟩
-  · intro f _ _ _ _ heq
-    exact Path.segment_injective_of_ne (hv.ne (hne f)) heq
-  · intro f
-    have hne' : vertex (edgeSource f) ≠ vertex (edgeTarget f) := hv.ne (hne f)
-    have hnotL : vertex (edgeSource f) ∉
-        openSegment ℝ (vertex (edgeSource f)) (vertex (edgeTarget f)) :=
-      fun h ↦ hne' (left_mem_openSegment_iff.mp h)
-    have hnotR : vertex (edgeTarget f) ∉
-        openSegment ℝ (vertex (edgeSource f)) (vertex (edgeTarget f)) :=
-      fun h ↦ hne' (right_mem_openSegment_iff.mp h)
-    refine disjoint_left.mpr ?_
-    rintro z ⟨t, ht, rfl⟩ ⟨v, hvz⟩
-    have hzopen : edge f t ∈ openSegment ℝ (vertex (edgeSource f)) (vertex (edgeTarget f)) := by
-      simpa [← pathInterior_segment] using ⟨t, ht, rfl⟩
-    have hf : (f : β) = e := by simpa [G, edgeSet_singleEdge] using f.2
-    have hlink : s((edgeSource f : α), (edgeTarget f : α)) = s(x, y) := by
-      simpa [hf, G, singleEdge_isLink_iff] using isLink_edgeSource_edgeTarget f
-    have hvxy : (v : α) = x ∨ (v : α) = y := by
-      simpa [G, vertexSet_singleEdge] using v.2
-    have hmap : vertex v = vertex (edgeSource f) ∨ vertex v = vertex (edgeTarget f) := by
-      rcases Sym2.eq_iff.mp hlink with ⟨hs, ht⟩ | ⟨hs, ht⟩
-      · rcases hvxy with hvx | hvy
-        · exact Or.inl (congrArg vertex (Subtype.ext (hvx.trans hs.symm)))
-        · exact Or.inr (congrArg vertex (Subtype.ext (hvy.trans ht.symm)))
-      · rcases hvxy with hvx | hvy
-        · exact Or.inr (congrArg vertex (Subtype.ext (hvx.trans ht.symm)))
-        · exact Or.inl (congrArg vertex (Subtype.ext (hvy.trans hs.symm)))
-    rcases hmap with hmap | hmap
-    · exact hnotL (by rwa [← hvz, hmap] at hzopen)
-    · exact hnotR (by rwa [← hvz, hmap] at hzopen)
-  · intro f g hfg
-    have hf : (f : β) = e := by simpa [G, edgeSet_singleEdge] using f.2
-    have hg : (g : β) = e := by simpa [G, edgeSet_singleEdge] using g.2
-    exact (hfg (Subtype.ext (hf.trans hg.symm))).elim
-
-/-- Every finite forest is planar. -/
-theorem IsForest.planar [G.Finite] (hG : G.IsForest) : G.Planar := by
-  induction hn : V(G).ncard using Nat.strong_induction_on generalizing G with
-  | h n ih =>
-    subst hn
-    obtain hE | hE := E(G).eq_empty_or_nonempty
-    · rw [edgeSet_eq_empty_iff.mp hE]
-      exact noEdge_planar _ G.vertexSet_finite
-    · obtain ⟨ed, xv, hp⟩ := hG.exists_isPendant hE
-      obtain ⟨yv, hyV, hlink, hyx, heH, hGeq⟩ := hp.eq_addEdge
-      set H := G - ({xv} : Set α)
-      have hHplanar : H.Planar :=
-        ih V(H).ncard (ncard_delete_vertex_lt hp.vertex_mem) (hG.anti deleteVerts_le) rfl
-      have hEplanar : (Graph.singleEdge xv yv ed).Planar := singleEdge_planar hyx.symm ed
-      have hedge : Disjoint E(Graph.singleEdge xv yv ed) E(H) := by
-        simpa [edgeSet_singleEdge] using (disjoint_singleton_left.mpr heH)
-      have hcompat : (Graph.singleEdge xv yv ed).Compatible H :=
-        Compatible.of_disjoint_edgeSet hedge
-      have hvertex : (V(Graph.singleEdge xv yv ed) ∩ V(H)).Subsingleton := by
-        intro a ha b hb
-        have ha' : a = yv := by
-          have : a ∈ ({xv, yv} : Set α) ∩ V(H) := by simpa [vertexSet_singleEdge] using ha
-          have hx : xv ∉ V(H) := by simp [H, vertexSet_deleteVerts]
-          simp only [mem_inter_iff, mem_insert_iff, mem_singleton_iff] at this
-          obtain ⟨rfl | rfl, haH⟩ := this
-          · exact absurd haH hx
-          · rfl
-        have hb' : b = yv := by
-          have : b ∈ ({xv, yv} : Set α) ∩ V(H) := by simpa [vertexSet_singleEdge] using hb
-          have hx : xv ∉ V(H) := by simp [H, vertexSet_deleteVerts]
-          simp only [mem_inter_iff, mem_insert_iff, mem_singleton_iff] at this
-          obtain ⟨rfl | rfl, hbH⟩ := this
-          · exact absurd hbH hx
-          · rfl
-        exact ha'.trans hb'.symm
-      have hunion : (Graph.singleEdge xv yv ed ∪ H).Planar :=
-        Planar.union_of_vertexSet_inter_subsingleton hEplanar hHplanar hcompat hedge hvertex
-      convert hunion
-      simpa [Graph.addEdge] using hGeq
+  refine ⟨Drawing.ofVertexAndEdgePaths vertex hv edge (fun f _ _ _ _ heq ↦
+    Path.segment_injective_of_ne (hv.ne (hne f)) heq) (fun f ↦ disjoint_left.mpr ?_)
+    fun f g hfg ↦ by grind⟩
+  obtain rfl := he f
+  rintro z ⟨t, ht, rfl⟩ ⟨v, hvz⟩
+  have hzopen : edge e' t ∈ openSegment ℝ (vertex (edgeSource e')) (vertex (edgeTarget e')) := by
+    simpa [← Path.interior_segment] using ⟨t, ht, rfl⟩
+  have hlink : s((edgeSource e' : α), (edgeTarget e' : α)) = s(x, y) := by
+    rw [← isLink_edgeSource_edgeTarget e' |>.isLink_iff_sym2_eq]
+    simp only [singleEdge_isLink, and_self, true_or, G, e']
+  have hvxy : (v : α) = x ∨ (v : α) = y := by
+    simpa [G, vertexSet_singleEdge] using v.2
+  obtain hmap | hmap : vertex v = vertex (edgeSource e') ∨ vertex v = vertex (edgeTarget e') := by
+    obtain ⟨hs, ht⟩ | ⟨hs, ht⟩ := Sym2.eq_iff.mp hlink <;> obtain hvx | hvy := hvxy
+    · exact Or.inl (congrArg vertex (Subtype.ext (hvx.trans hs.symm)))
+    · exact Or.inr (congrArg vertex (Subtype.ext (hvy.trans ht.symm)))
+    · exact Or.inr (congrArg vertex (Subtype.ext (hvx.trans ht.symm)))
+    · exact Or.inl (congrArg vertex (Subtype.ext (hvy.trans hs.symm)))
+  · exact hv.ne (hne e') (left_mem_openSegment_iff.mp (by rwa [← hvz, hmap] at hzopen))
+  · exact hv.ne (hne e') (right_mem_openSegment_iff.mp (by rwa [← hvz, hmap] at hzopen))
 
 /-! ### Straight-line drawing on at most four vertices -/
 
@@ -1111,7 +1236,7 @@ theorem planar_of_vertexSet_encard_le_four [G.Finite] [G.Simple]
   · intro e _ _ _ _ heq
     exact Path.segment_injective_of_ne (hv.ne (hne e)) heq
   · intro e
-    rw [pathInterior_segment]
+    rw [Path.interior_segment]
     refine disjoint_left.mpr ?_
     rintro z hz ⟨w, rfl⟩
     have hij : ι (edgeSource e) ≠ ι (edgeTarget e) := ι.injective.ne (hne e)
@@ -1126,7 +1251,7 @@ theorem planar_of_vertexSet_encard_le_four [G.Finite] [G.Simple]
         exact hij (pts4_injective (right_mem_openSegment_iff.mp hz'))
       · exact not_mem_openSegment_pts4 hij h1 h2 hz'
   · intro e f hef
-    rw [pathInterior_segment, pathInterior_segment]
+    rw [Path.interior_segment, Path.interior_segment]
     have hij : ι (edgeSource e) ≠ ι (edgeTarget e) := ι.injective.ne (hne e)
     have hkl : ι (edgeSource f) ≠ ι (edgeTarget f) := ι.injective.ne (hne f)
     have hends : G.ends e ≠ G.ends f := (ends_injective G).ne hef
