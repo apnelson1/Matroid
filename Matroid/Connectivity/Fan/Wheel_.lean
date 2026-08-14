@@ -2,9 +2,40 @@ import Matroid.Graphic
 import Matroid.Connectivity.Fan.Cyclic
 import Matroid.Graph.Bipartite
 
+open Set
+
 namespace Graph
 
-variable {α β γ : Type*} {G : Graph α β}
+variable {α α' β β' γ : Type*} {x y : α} {e f : β} {G : Graph α β}
+
+lemma Adj.map (hG : G.Adj x y) (φ : α → α') : (G.map φ).Adj (φ x) (φ y) := by
+  obtain ⟨e, he⟩ := hG
+  exact ⟨e, he.map φ⟩
+
+lemma map_adj_iff_of_injective {φ : α → α'} {x y : α} (hφ : φ.Injective) :
+    (G.map φ).Adj (φ x) (φ y) ↔ G.Adj x y :=
+  ⟨fun ⟨e, he⟩ ↦ ⟨e, by simpa [hφ.eq_iff] using he⟩, fun h ↦ h.map φ⟩
+
+lemma map_adj_iff_of_injOn {φ : α → α'} {x y : α} (hφ : InjOn φ V(G))
+    (hx : x ∈ V(G)) (hy : y ∈ V(G)) : (G.map φ).Adj (φ x) (φ y) ↔ G.Adj x y := by
+  refine ⟨fun ⟨e, he⟩ ↦ ⟨e, ?_⟩, fun h ↦ h.map φ⟩
+  obtain ⟨x', y', h, hx', hy'⟩ := he
+  rw [hφ.eq_iff hx h.left_mem] at hx'
+  rw [hφ.eq_iff hy h.right_mem] at hy'
+  rwa [hx', hy']
+
+@[simp]
+lemma edgeMap_adj_iff {φ : β → β'} {hφ} : (G.edgeMap φ hφ).Adj x y ↔ G.Adj x y := by
+  simp [Adj]
+
+lemma edgeMap_adj_eq {φ : β → β'} {hφ} : (G.edgeMap φ hφ).Adj = G.Adj := by
+  simp [funext_iff]
+
+lemma Loopless.map (hG : G.Loopless) (f : α → β) (hf : InjOn f V(G)) : (G.map f).Loopless := by
+  simp only [loopless_iff_forall_ne_of_adj, ne_eq]
+  rintro x _ ⟨e, he⟩ rfl
+
+
 
 /-- Add some new vertices to a graph that are adjacent to all existing vertices.
 The new vertices are identified with a type `γ`, and the new edges with terms in `α × γ`. -/
@@ -97,6 +128,14 @@ lemma apexOf_inc_inr_iff {e x} :
   cases e with simp [apexOf_inc_iff, and_comm]
 
 @[simp]
+lemma apexOf_not_inc_inl_inr {e x} : ¬ (G.apexOf γ).Inc (.inl e) (.inr x) := by
+  simp [apexOf_inc_iff]
+
+@[simp]
+lemma apexOf_inc_inl_inl_iff {e x} : (G.apexOf γ).Inc (.inl e) (.inl x) ↔ G.Inc e x := by
+  simpa [apexOf_inc_iff] using @Inc.vertex_mem _
+
+@[simp]
 lemma apexOf_adj_inl_inl_iff {x y} : (G.apexOf γ).Adj (.inl x) (.inl y) ↔ G.Adj x y := by
   simp [Adj]
 
@@ -120,6 +159,37 @@ lemma apexOf_isLoopAt_iff {e x} :
     cases x with simp
   simp_rw [IsLoopAt, apexOf_isLink_inr_iff]
   simp +contextual
+
+lemma Loopless.apexOf_loopless (hG : G.Loopless) (γ : Type*) : (G.apexOf γ).Loopless := by
+  rw [loopless_iff_forall_ne_of_adj]
+  simp +contextual [Adj.ne (G := G)]
+
+lemma apexOf_delete_range_inr (G : Graph α β) :
+    (G.apexOf γ) - Set.range .inr = (G.map Sum.inl).edgeMap Sum.inl (by simp +contextual) :=
+  ext_inc (by simp) fun e x ↦ by cases e with cases x with simp
+
+@[simp]
+lemma apexOf_loopless_iff : (G.apexOf γ).Loopless ↔ G.Loopless := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.apexOf_loopless γ⟩
+  have := h.mono (deleteVerts_le (X := Set.range .inr))
+  simp [apexOf_delete_range_inr] at this
+
+
+lemma Simple.apexOf_simple (hG : G.Simple) : (G.apexOf γ).Simple := by
+  obtain ⟨hl, hG⟩ := (simple_iff ..).1 hG
+  rw [simple_iff, and_iff_right hl.apexOf_loopless]
+  rintro (e | ⟨a, b⟩) (f | ⟨c, d⟩) (x | x) (y | y)
+  · simpa using @hG e f x y
+  all_goals simp +contextual [apexOf_isLink_inl_iff_exists]
+
+lemma singleApex_connected [Nonempty γ] {G : Graph α β} (hG : V(G).Nonempty) :
+    (G.apexOf γ).Connected := by
+  obtain a := Classical.arbitrary γ
+  obtain ⟨x₀, hx₀⟩ := hG
+  refine connected_of_vertex (u := .inr a) (by simp) ?_
+  rintro (x | x) hx
+  · exact Adj.connBetween <| by simpa using hx
+  exact (Adj.connBetween (y := .inl x₀) (by simpa)).trans <| Adj.connBetween <| by simpa
 
 /-- The graph with vertices `V(G) ∪ {none}` and edges `E(G) ∪ V(G)`,
 where the new edges go to the apex vertex. -/
