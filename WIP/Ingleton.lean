@@ -1,5 +1,7 @@
-import Matroid.Paving
-import Matroid.Rank.Nat
+module
+
+public import Matroid.Paving
+public import Matroid.Rank.Nat
 
 open Set
 

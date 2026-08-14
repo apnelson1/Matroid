@@ -1,7 +1,9 @@
-import Matroid.Connectivity.Fan.Basic
-import Matroid.Connectivity.Triangle
-import Matroid.Connectivity.Separation.Vertical
-import Mathlib.Tactic.DepRewrite
+module
+
+public import Matroid.Connectivity.Fan.Basic
+public import Matroid.Connectivity.Triangle
+public import Matroid.Connectivity.Separation.Vertical
+public import Mathlib.Tactic.DepRewrite
 
 
 open Set List

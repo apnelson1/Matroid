@@ -1,4 +1,6 @@
-import Matroid
+module
+
+public import Matroid
 
 
 /-! # Matroid definitions

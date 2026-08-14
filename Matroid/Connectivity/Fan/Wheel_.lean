@@ -1,6 +1,10 @@
-import Matroid.Graphic
-import Matroid.Connectivity.Fan.Cyclic
-import Matroid.Graph.Bipartite
+module
+
+public import Matroid.Graphic
+public import Matroid.Connectivity.Fan.Cyclic
+public import Matroid.Graph.Bipartite
+
+@[expose] public section
 
 open Set
 

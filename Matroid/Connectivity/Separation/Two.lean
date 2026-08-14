@@ -1,5 +1,9 @@
-import Matroid.Connectivity.Separation.Vertical
-import Matroid.Extension.Guts
+module
+
+public import Matroid.Connectivity.Separation.Vertical
+public import Matroid.Extension.Guts
+
+@[expose] public section
 
 variable {α : Type*} {M N : Matroid α} {j k : ℕ∞} {d k : ℕ∞} {A C X Y : Set α} {P : M.Separation}
   {b i : Bool} {e f x y : α}

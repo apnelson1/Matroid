@@ -1,9 +1,12 @@
-import Matroid.Representation.Uniform
-import Matroid.Representation.FundamentalMatrix
-import Matroid.Representation.CycleSpace
-import Matroid.Binary.Crossing
-import Matroid.Order.Quotient
+module
 
+public import Matroid.Representation.Uniform
+public import Matroid.Representation.FundamentalMatrix
+public import Matroid.Representation.CycleSpace
+public import Matroid.Binary.Crossing
+public import Matroid.Order.Quotient
+
+@[expose] public section
 
 variable {α β W W' 𝔽 R ι : Type*} {e f x : α} {I E B X Y : Set α} {M : Matroid α} [DivisionRing 𝔽]
   [DivisionRing R] [AddCommGroup W] [Module 𝔽 W] [AddCommGroup W'] [Module 𝔽 W']

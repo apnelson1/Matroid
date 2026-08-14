@@ -1,4 +1,6 @@
-import Matroid.Connectivity.Separation.Vertical
+module
+
+public import Matroid.Connectivity.Separation.Vertical
 
 namespace Matroid
 

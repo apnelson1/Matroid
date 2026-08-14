@@ -1,8 +1,11 @@
-import Matroid.ForMathlib.Data.Set.IndexedPartition
-import Mathlib.Data.Set.Card
-import Batteries.CodeAction.Basic
-import Batteries.CodeAction.Misc
+module
 
+public import Matroid.ForMathlib.Data.Set.IndexedPartition
+public import Mathlib.Data.Set.Card
+public import Batteries.CodeAction.Basic
+public import Batteries.CodeAction.Misc
+
+@[expose] public section
 
 open Set
 

@@ -1,6 +1,8 @@
-import Matroid.Connectivity.Fan.Circuit
-import Matroid.Connectivity.Separation.Tutte
-import Mathlib.Data.ZMod.Basic
+module
+
+public import Matroid.Connectivity.Fan.Circuit
+public import Matroid.Connectivity.Separation.Tutte
+public import Mathlib.Data.ZMod.Basic
 
 open Set List
 

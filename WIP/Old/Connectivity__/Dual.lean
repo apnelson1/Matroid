@@ -1,4 +1,6 @@
-import Matroid.Minor.Order
+module
+
+public import Matroid.Minor.Order
 
 
 namespace Matroid

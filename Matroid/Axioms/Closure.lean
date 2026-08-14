@@ -1,4 +1,8 @@
-import Mathlib.Combinatorics.Matroid.Closure
+module
+
+public import Mathlib.Combinatorics.Matroid.Closure
+
+@[expose] public section
 
 open Set Matroid
 

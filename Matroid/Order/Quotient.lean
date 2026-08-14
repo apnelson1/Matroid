@@ -1,5 +1,9 @@
-import Matroid.Order.Weak
+module
+
+public import Matroid.Order.Weak
 -- import Matroid.Constructions.Truncate
+
+@[expose] public section
 
 variable {α : Type*} {M N M₁ M₂ : Matroid α} {F F' X Y Z I : Set α}
 

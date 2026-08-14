@@ -1,9 +1,13 @@
-import Matroid.Representation.Minor
-import Matroid.Rank.Cardinal
-import Mathlib.FieldTheory.Finite.GaloisField
-import Mathlib.LinearAlgebra.Projectivization.Cardinality
-import Matroid.ForMathlib.LinearAlgebra.Projective
-import Matroid.Uniform.Minor
+module
+
+public import Matroid.Representation.Minor
+public import Matroid.Rank.Cardinal
+public import Mathlib.FieldTheory.Finite.GaloisField
+public import Mathlib.LinearAlgebra.Projectivization.Cardinality
+public import Matroid.ForMathlib.LinearAlgebra.Projective
+public import Matroid.Uniform.Minor
+
+@[expose] public section
 
 variable {α β W W' 𝔽 R : Type*} {e f x : α} {I E B X Y : Set α} {M : Matroid α} [DivisionRing 𝔽]
   [AddCommGroup W] [Module 𝔽 W] [AddCommGroup W'] [Module 𝔽 W']

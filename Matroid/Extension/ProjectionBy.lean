@@ -1,11 +1,15 @@
-import Mathlib.Data.Fin.VecNotation
-import Mathlib.Logic.Function.CompTypeclasses
+module
 
-import Matroid.Extension.Minor
-import Matroid.ForMathlib.Matroid.Map
-import Matroid.Order.Quotient
-import Matroid.Rank.Cardinal
-import Matroid.ForMathlib.Data.Set.Sum
+public import Mathlib.Data.Fin.VecNotation
+public import Mathlib.Logic.Function.CompTypeclasses
+
+public import Matroid.Extension.Minor
+public import Matroid.ForMathlib.Matroid.Map
+public import Matroid.Order.Quotient
+public import Matroid.Rank.Cardinal
+public import Matroid.ForMathlib.Data.Set.Sum
+
+@[expose] public section
 
 set_option linter.style.longLine false
 

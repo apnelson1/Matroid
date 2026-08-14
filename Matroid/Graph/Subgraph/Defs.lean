@@ -4,6 +4,7 @@ public import Matroid.Graph.Constructions.Basic
 public import Matroid.ForMathlib.Set
 public import Matroid.ForMathlib.Function
 import all Mathlib.Combinatorics.Graph.Delete
+public import Mathlib.Combinatorics.Graph.Delete
 
 @[expose] public section
 

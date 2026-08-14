@@ -1,6 +1,10 @@
-import Mathlib.Combinatorics.Matroid.Sum
-import Matroid.ForMathlib.Matroid.Map
-import Matroid.ForMathlib.Set
+module
+
+public import Mathlib.Combinatorics.Matroid.Sum
+public import Matroid.ForMathlib.Matroid.Map
+public import Matroid.ForMathlib.Set
+
+@[expose] public section
 
 namespace Matroid
 

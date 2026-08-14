@@ -1,7 +1,12 @@
-import Matroid.Modular.Basic
-import Matroid.ForMathlib.Set
-import Matroid.Constructions.Truncate
-import Matroid.Triangle
+module
+
+public import Mathlib.Algebra.BigOperators.Ring.Finset
+public import Matroid.Modular.Basic
+public import Matroid.ForMathlib.Set
+public import Matroid.Constructions.Truncate
+public import Matroid.Triangle
+
+@[expose] public section
 
 universe u
 

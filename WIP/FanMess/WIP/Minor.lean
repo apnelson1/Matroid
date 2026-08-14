@@ -1,4 +1,6 @@
-import Matroid.Connectivity.WIP.Basic
+module
+
+public import Matroid.Connectivity.WIP.Basic
 
 open Set Function
 

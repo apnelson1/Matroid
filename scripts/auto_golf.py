@@ -24,9 +24,9 @@ Pattern alternatives `foo|bar` (including `_|h` in `rintro`) are normalized to s
 
 from __future__ import annotations
 
-import argparse
-import re
-import sys
+public import argparse
+public import re
+public import sys
 from dataclasses import dataclass, field
 from typing import List, Optional, Tuple, Union
 

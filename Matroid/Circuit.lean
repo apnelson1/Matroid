@@ -1,10 +1,14 @@
-import Matroid.ForMathlib.Card
-import Mathlib.Combinatorics.Matroid.Rank.ENat
-import Matroid.ForMathlib.Matroid.Basic
-import Matroid.Sum
-import Matroid.ForMathlib.Set
-import Batteries.CodeAction.Basic
-import Batteries.CodeAction.Misc
+module
+
+public import Matroid.ForMathlib.Card
+public import Mathlib.Combinatorics.Matroid.Rank.ENat
+public import Matroid.ForMathlib.Matroid.Basic
+public import Matroid.Sum
+public import Matroid.ForMathlib.Set
+public import Batteries.CodeAction.Basic
+public import Batteries.CodeAction.Misc
+
+@[expose] public section
 
 /-!
   A `Circuit` of a matroid is a minimal dependent set.

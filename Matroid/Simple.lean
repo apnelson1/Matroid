@@ -1,8 +1,12 @@
-import Matroid.Parallel
-import Matroid.Minor.Iso
-import Matroid.ForMathlib.Card
-import Matroid.Closure
-import Matroid.ForMathlib.Tactic.ENatToNat
+module
+
+public import Matroid.Parallel
+public import Matroid.Minor.Iso
+public import Matroid.ForMathlib.Card
+public import Matroid.Closure
+public import Matroid.ForMathlib.Tactic.ENatToNat
+
+@[expose] public section
 
 open Set Set.Notation
 

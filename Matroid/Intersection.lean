@@ -1,5 +1,9 @@
-import Matroid.Minor.Rank
-import Matroid.Flat.LowRank
+module
+
+public import Matroid.Minor.Rank
+public import Matroid.Flat.LowRank
+
+@[expose] public section
 
 /- Here we prove Edmonds' matroid intersection theorem: given two matroids `M₁` and `M₂` on `α`, the
   largest set that is independent in both matroids has size equal to the min of `M₁.r X + M₂.r Xᶜ`,

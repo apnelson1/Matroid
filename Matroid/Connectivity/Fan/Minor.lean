@@ -1,8 +1,11 @@
-import Matroid.Connectivity.Fan.Basic
-import Matroid.Connectivity.Triangle
-import Matroid.Connectivity.Separation.Vertical
-import Mathlib.Order.Interval.Set.Fin
+module
 
+public import Matroid.Connectivity.Fan.Basic
+public import Matroid.Connectivity.Triangle
+public import Matroid.Connectivity.Separation.Vertical
+public import Mathlib.Order.Interval.Set.Fin
+
+@[expose] public section
 
 set_option linter.style.longLine false
 

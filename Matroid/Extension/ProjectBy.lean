@@ -1,5 +1,9 @@
-import Matroid.Extension.ExtendBy
-import Matroid.Order.Quotient
+module
+
+public import Matroid.Extension.ExtendBy
+public import Matroid.Order.Quotient
+
+@[expose] public section
 
 universe u
 
@@ -9,7 +13,7 @@ variable {α : Type*} {M : Matroid α} {I J B F₀ F F' X Y : Set α} {e f : α}
 
 namespace Matroid.ModularCut
 
-private lemma projectBy_aux (U : M.ModularCut) :
+lemma projectBy_aux (U : M.ModularCut) :
     ((((M.map _ (some_injective _).injOn).extendBy none
     (U.map _ (some_injective _).injOn)) ／ {(none : Option α)}).comap Option.some).Indep I ↔
     M.Indep I ∧ (U ≠ ⊤ → M.closure I ∉ U) := by

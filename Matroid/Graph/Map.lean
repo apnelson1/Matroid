@@ -4,6 +4,8 @@ public import Matroid.Graph.Subgraph.Compatible
 public import Matroid.Graph.Subgraph.Delete
 public import Matroid.Graph.Walk.Cycle
 import all Mathlib.Combinatorics.Graph.Delete
+public import Mathlib.Combinatorics.Graph.Delete
+
 
 @[expose] public section
 

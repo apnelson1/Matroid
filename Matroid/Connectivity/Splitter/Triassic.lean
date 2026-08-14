@@ -1,5 +1,9 @@
-import Matroid.Connectivity.Fan.ThreeConnected
-import Matroid.Connectivity.Splitter.Cretaceous
+module
+
+public import Matroid.Connectivity.Fan.ThreeConnected
+public import Matroid.Connectivity.Splitter.Cretaceous
+
+@[expose] public section
 
 open Set Function
 

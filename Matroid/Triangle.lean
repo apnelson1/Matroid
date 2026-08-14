@@ -1,8 +1,12 @@
-import Matroid.Bool
-import Matroid.Simple
-import Matroid.Uniform.Finite
-import Matroid.ForMathlib.ENat
+module
+
+public import Matroid.Bool
+public import Matroid.Simple
+public import Matroid.Uniform.Finite
+public import Matroid.ForMathlib.ENat
 -- import Matroid.Connectivity.Separation.Tutte
+
+@[expose] public section
 
 open Set
 

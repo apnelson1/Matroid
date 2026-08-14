@@ -1,5 +1,9 @@
-import Matroid.Representation.Projective
-import Matroid.ForMathlib.LinearAlgebra.Vandermonde
+module
+
+public import Matroid.Representation.Projective
+public import Matroid.ForMathlib.LinearAlgebra.Vandermonde
+
+@[expose] public section
 
 variable {α β W W' 𝔽 R : Type*} {e f x : α} {I E B X Y : Set α} {M : Matroid α} [Field 𝔽]
   [AddCommGroup W] [Module 𝔽 W] [AddCommGroup W'] [Module 𝔽 W']

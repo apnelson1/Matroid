@@ -1,8 +1,11 @@
-import Matroid.Circuit
-import Matroid.Closure
-import Matroid.Rank.ENat
-import Matroid.ForMathlib.Tactic.ENatToNat
+module
 
+public import Matroid.Circuit
+public import Matroid.Closure
+public import Matroid.Rank.ENat
+public import Matroid.ForMathlib.Tactic.ENatToNat
+
+@[expose] public section
 
 namespace Matroid
 

@@ -1,4 +1,6 @@
-import Matroid.Minor.Rank
+module
+
+public import Matroid.Minor.Rank
 
 /-
 We collect material on matroid invariants and closure properties of classes of matroids here.

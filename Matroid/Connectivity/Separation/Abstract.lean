@@ -1,6 +1,10 @@
-import Matroid.Connectivity.Separation.Faithful
-import Matroid.ForMathlib.Matroid.Constructions
-import Matroid.ForMathlib.Data.Set.Subsingleton
+module
+
+public import Matroid.Connectivity.Separation.Faithful
+public import Matroid.ForMathlib.Matroid.Constructions
+public import Matroid.ForMathlib.Data.Set.Subsingleton
+
+@[expose] public section
 
 open Set Matroid.Separation Function
 

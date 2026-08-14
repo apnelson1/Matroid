@@ -1,6 +1,8 @@
-import Matroid.Connectivity.Fan.Rotary
-import Matroid.Connectivity.Separation.Tutte
-import Matroid.Connectivity.Splitter.TutteTriangle
+module
+
+public import Matroid.Connectivity.Fan.Rotary
+public import Matroid.Connectivity.Separation.Tutte
+public import Matroid.Connectivity.Splitter.TutteTriangle
 
 open Set List
 

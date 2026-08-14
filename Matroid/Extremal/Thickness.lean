@@ -1,5 +1,9 @@
-import Matroid.Extremal.Covers
-import Matroid.Order.Quotient
+module
+
+public import Matroid.Extremal.Covers
+public import Matroid.Order.Quotient
+
+@[expose] public section
 
 variable {α : Type*} {M N M' : Matroid α} {I F X Y F' F₀ F₁ F₂ P L H H₁ H₂ H' B C D K : Set α}
   {e f : α} {l r : ℕ} {a k d : ℕ∞} {T : Set (Set α)} {ι : Type*} {i j : ι}

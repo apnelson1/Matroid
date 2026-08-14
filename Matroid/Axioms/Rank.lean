@@ -1,7 +1,11 @@
-import Matroid.ForMathlib.Other
-import Matroid.Minor.Rank
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Cases
+module
+
+public import Matroid.ForMathlib.Other
+public import Matroid.Minor.Rank
+public import Mathlib.Tactic.Linarith
+public import Mathlib.Tactic.Cases
+
+@[expose] public section
 
 open Set
 

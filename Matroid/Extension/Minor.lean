@@ -1,4 +1,8 @@
-import Matroid.Extension.ProjectBy
+module
+
+public import Matroid.Extension.ProjectBy
+
+@[expose] public section
 
 open Set Function Set.Notation Option
 

@@ -1,10 +1,12 @@
-import Matroid.Constructions.Matching
-import Mathlib.Combinatorics.Matroid.Sum
-import Mathlib.Order.Disjointed
-import Matroid.Constructions.Submodular
-import Matroid.Rank.Nat
-import Mathlib.Algebra.BigOperators.Ring
-import Matroid.ForMathlib.Set
+module
+
+public import Matroid.Constructions.Matching
+public import Mathlib.Combinatorics.Matroid.Sum
+public import Mathlib.Order.Disjointed
+public import Matroid.Constructions.Submodular
+public import Matroid.Rank.Nat
+public import Mathlib.Algebra.BigOperators.Ring
+public import Matroid.ForMathlib.Set
 
 
 namespace Matroid

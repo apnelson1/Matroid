@@ -1,5 +1,9 @@
-import Matroid.Modular.Flat
-import Matroid.Axioms.Flat
+module
+
+public import Matroid.Modular.Flat
+public import Matroid.Axioms.Flat
+
+@[expose] public section
 
 variable {α ι : Type*} {M N : Matroid α} {X Y C F F' F₀ F₁ T : Set α} {e f g : α}
 

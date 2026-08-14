@@ -1,5 +1,9 @@
-import Matroid.Uniform.Basic
-import Matroid.ForMathlib.Matroid.Constructions
+module
+
+public import Matroid.Uniform.Basic
+public import Matroid.ForMathlib.Matroid.Constructions
+
+@[expose] public section
 
 namespace Matroid
 

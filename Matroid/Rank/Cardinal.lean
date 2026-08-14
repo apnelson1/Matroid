@@ -3,13 +3,17 @@ Copyright (c) 2025 Peter Nelson and Junyan Xu. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Peter Nelson, Junyan Xu
 -/
-import Mathlib.Combinatorics.Matroid.Closure
-import Mathlib.Combinatorics.Matroid.Map
-import Mathlib.Combinatorics.Matroid.Rank.Cardinal
-import Matroid.ForMathlib.Card
-import Matroid.Rank.Nat
-import Mathlib.SetTheory.Cardinal.Arithmetic
-import Mathlib.SetTheory.Cardinal.Order
+module
+
+public import Mathlib.Combinatorics.Matroid.Closure
+public import Mathlib.Combinatorics.Matroid.Map
+public import Mathlib.Combinatorics.Matroid.Rank.Cardinal
+public import Matroid.ForMathlib.Card
+public import Matroid.Rank.Nat
+public import Mathlib.SetTheory.Cardinal.Arithmetic
+public import Mathlib.SetTheory.Cardinal.Order
+
+@[expose] public section
 
 /-!
 # Cardinal-valued rank

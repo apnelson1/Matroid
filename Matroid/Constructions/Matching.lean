@@ -1,9 +1,12 @@
+module
 
-import Mathlib.Combinatorics.Matroid.Minor.Restrict -- inefficient import
-import Matroid.ForMathlib.Finset
-import Matroid.ForMathlib.Function
-import Matroid.ForMathlib.Matroid.Basic
-import Matroid.Rank.Nat
+public import Mathlib.Combinatorics.Matroid.Minor.Restrict -- inefficient import
+public import Matroid.ForMathlib.Finset
+public import Matroid.ForMathlib.Function
+public import Matroid.ForMathlib.Matroid.Basic
+public import Matroid.Rank.Nat
+
+@[expose] public section
 
 open Set Function
 

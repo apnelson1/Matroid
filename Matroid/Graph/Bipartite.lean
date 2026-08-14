@@ -1,4 +1,8 @@
-import Matroid.Graph.Tree
+module
+
+public import Matroid.Graph.Tree
+
+@[expose] public section
 
 variable {α β : Type*} {G H T : Graph α β} {u v x y z : α} {e e' f g : β} {X : Set α} {F : Set β}
   {P C W : WList α β} {n : ℕ}

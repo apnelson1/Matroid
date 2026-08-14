@@ -1,6 +1,8 @@
-import Mathlib.Combinatorics.Matroid.Sum
-import Matroid.Modular.Flat
-import Matroid.Connectivity.Skew
+module
+
+public import Mathlib.Combinatorics.Matroid.Sum
+public import Matroid.Modular.Flat
+public import Matroid.Connectivity.Skew
 
 variable {α β ι : Type*} {M N : Matroid α} {F I X : Set α}
 

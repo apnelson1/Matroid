@@ -1,5 +1,7 @@
-import Matroid.Graphic
-import Matroid.Connectivity.Fan.Cyclic
+module
+
+public import Matroid.Graphic
+public import Matroid.Connectivity.Fan.Cyclic
 
 
 

@@ -9,6 +9,8 @@ variable {α ι : Type*}
 open Function symmDiff
 namespace Set
 
+lemma preimage_singleton {α β : Type*} (f : α → β) (y : β) : f ⁻¹' {y} = {x | f x = y} := rfl
+
 lemma iUnion_eq_single_of_forall_subset {ι : Sort*} {s : ι → Set α} {a : ι}
     (hi : ∀ i ≠ a, s i ⊆ s a) : ⋃ i, s i = s a := by
   refine (subset_iUnion ..).antisymm' <| iUnion_subset fun i ↦ ?_

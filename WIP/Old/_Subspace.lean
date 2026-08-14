@@ -1,4 +1,6 @@
-import Matroid.Representation.Basic
+module
+
+public import Matroid.Representation.Basic
 
 variable {α β W W' 𝔽 R : Type*} {e f x : α} {I B X Y : Set α} {M : Matroid α} [Field 𝔽]
   [AddCommGroup W] [Module 𝔽 W] [AddCommGroup W'] [Module 𝔽 W']

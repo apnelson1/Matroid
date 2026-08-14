@@ -1,6 +1,10 @@
-import Mathlib.Combinatorics.Matroid.IndepAxioms -- inefficient import
-import Matroid.ForMathlib.Finset
-import Matroid.Circuit
+module
+
+public import Mathlib.Combinatorics.Matroid.IndepAxioms -- inefficient import
+public import Matroid.ForMathlib.Finset
+public import Matroid.Circuit
+
+@[expose] public section
 
 variable {α : Type*} {X I J C Y : Set α}
 

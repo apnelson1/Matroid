@@ -1,6 +1,9 @@
-import Matroid.ForMathlib.Cover
-import Matroid.Uniform.Paving
+module
 
+public import Matroid.ForMathlib.Cover
+public import Matroid.Uniform.Paving
+
+@[expose] public section
 
 set_option linter.style.longLine false
 

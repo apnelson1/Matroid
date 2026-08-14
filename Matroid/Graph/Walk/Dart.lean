@@ -6,6 +6,8 @@ public import Matroid.Graph.Minor.Defs
 public import Matroid.ForMathlib.Data.PFun
 public import Matroid.ForMathlib.Topology.ENat
 import all Mathlib.Combinatorics.Graph.Delete
+public import Mathlib.Combinatorics.Graph.Delete
+
 
 @[expose] public section
 

@@ -1,20 +1,23 @@
-import Matroid.Minor.Rank
-import Matroid.Uniform.Basic
-import Matroid.Simple
-import Matroid.Minor.Iso
-import Mathlib.Tactic.Linarith
-import Mathlib.Data.Finset.Powerset
-import Matroid.Flat.LowRank
-import Matroid.ForMathlib.Topology.ENat
-import Matroid.ForMathlib.Minimal
-import Mathlib.Data.Set.Card.Arithmetic
-import Matroid.Uniform.Basic
-import Matroid.Uniform.Paving
-import Matroid.Uniform.Finite
-import Matroid.Uniform.Minor
-import Matroid.Rank.ENat
-import Matroid.ForMathlib.Topology.ENat
+module
 
+public import Matroid.Minor.Rank
+public import Matroid.Uniform.Basic
+public import Matroid.Simple
+public import Matroid.Minor.Iso
+public import Mathlib.Tactic.Linarith
+public import Mathlib.Data.Finset.Powerset
+public import Matroid.Flat.LowRank
+public import Matroid.ForMathlib.Topology.ENat
+public import Matroid.ForMathlib.Minimal
+public import Mathlib.Data.Set.Card.Arithmetic
+public import Matroid.Uniform.Basic
+public import Matroid.Uniform.Paving
+public import Matroid.Uniform.Finite
+public import Matroid.Uniform.Minor
+public import Matroid.Rank.ENat
+public import Matroid.ForMathlib.Topology.ENat
+
+@[expose] public section
 
 variable {α : Type*} {M N M' : Matroid α} {I F X Y F' F₀ F₁ F₂ P L H H₁ H₂ H' B C D K : Set α}
   {e f : α} {l r : ℕ} {a k : ℕ∞} {T : Set (Set α)} {ι : Type*} {i j : ι}

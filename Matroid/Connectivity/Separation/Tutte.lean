@@ -1,6 +1,10 @@
-import Matroid.Connectivity.Separation.Abstract
-import Matroid.Triangle
-import Matroid.Constructions.Small
+module
+
+public import Matroid.Connectivity.Separation.Abstract
+public import Matroid.Triangle
+public import Matroid.Constructions.Small
+
+@[expose] public section
 
 open Set Matroid.Separation Function
 

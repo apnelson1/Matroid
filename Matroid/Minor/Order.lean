@@ -1,7 +1,10 @@
-import Matroid.Loop
-import Matroid.Minor.Contract
-import Mathlib.Combinatorics.Matroid.Minor.Order
+module
 
+public import Matroid.Loop
+public import Matroid.Minor.Contract
+public import Mathlib.Combinatorics.Matroid.Minor.Order
+
+@[expose] public section
 
 open Set
 

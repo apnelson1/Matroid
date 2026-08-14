@@ -1,6 +1,6 @@
 
-import Matroid.Connectivity.WIP.Circuit
-import Mathlib.Data.ZMod.Basic
+public import Matroid.Connectivity.WIP.Circuit
+public import Mathlib.Data.ZMod.Basic
 
 open Set List Bool
 

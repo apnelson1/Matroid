@@ -1,6 +1,10 @@
-import Matroid.BaseExchange
-import Matroid.NonspanningCircuit
-import Matroid.Uniform.Basic
+module
+
+public import Matroid.BaseExchange
+public import Matroid.NonspanningCircuit
+public import Matroid.Uniform.Basic
+
+@[expose] public section
 
 variable {α : Type*} {M : Matroid α} {E I H B X : Set α} {e f : α} {Hs T : Set (Set α)}
 

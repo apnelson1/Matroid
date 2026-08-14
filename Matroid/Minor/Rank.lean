@@ -1,8 +1,12 @@
-import Matroid.Minor.Order
-import Matroid.Rank.Nat
-import Matroid.Rank.Nullity
-import Matroid.ForMathlib.ENat
-import Matroid.Bool
+module
+
+public import Matroid.Minor.Order
+public import Matroid.Rank.Nat
+public import Matroid.Rank.Nullity
+public import Matroid.ForMathlib.ENat
+public import Matroid.Bool
+
+@[expose] public section
 
 open Set
 

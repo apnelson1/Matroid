@@ -4,6 +4,8 @@ public import Matroid.Graph.WList.TakeDrop.Decompose
 public import Matroid.Graph.WList.TakeDrop.Lemmas
 public import Matroid.Graph.Walk.Basic
 import all Mathlib.Combinatorics.Graph.Delete
+public import Mathlib.Combinatorics.Graph.Delete
+
 
 @[expose] public section
 

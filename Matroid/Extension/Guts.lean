@@ -1,10 +1,14 @@
-import Matroid.Modular.Flat
-import Matroid.Connectivity.Extension
-import Matroid.Extension.Minor
-import Matroid.Extension.ProjectionBy
-import Matroid.Constructions.Project
-import Matroid.ForMathlib.Matroid.Closure
-import Matroid.ForMathlib.Data.ENat.Iterate
+module
+
+public import Matroid.Modular.Flat
+public import Matroid.Connectivity.Extension
+public import Matroid.Extension.Minor
+public import Matroid.Extension.ProjectionBy
+public import Matroid.Constructions.Project
+public import Matroid.ForMathlib.Matroid.Closure
+public import Matroid.ForMathlib.Data.ENat.Iterate
+
+@[expose] public section
 
 open Set BigOperators Set.Notation Function Matroid.ModularCut
 

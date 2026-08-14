@@ -1,4 +1,6 @@
-import Matroid.Connectivity.ConnSystem.Matroid
+module
+
+public import Matroid.Connectivity.ConnSystem.Matroid
 
 open Set Set.Notation Function
 

@@ -1,5 +1,9 @@
-import Matroid.Extension.ExtendBy
-import Matroid.Order.Discrepancy
+module
+
+public import Matroid.Extension.ExtendBy
+public import Matroid.Order.Discrepancy
+
+@[expose] public section
 
 open Set
 namespace Matroid

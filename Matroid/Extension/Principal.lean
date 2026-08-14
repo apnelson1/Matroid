@@ -1,6 +1,9 @@
-import Matroid.Extension.ProjectBy
-import Matroid.Extension.Guts
+module
 
+public import Matroid.Extension.ProjectBy
+public import Matroid.Extension.Guts
+
+@[expose] public section
 
 open Set Function Set.Notation Option Matroid.ModularCut
 

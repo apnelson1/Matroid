@@ -1,4 +1,8 @@
-import Matroid.Rank.Skew
+module
+
+public import Matroid.Rank.Skew
+
+@[expose] public section
 
 variable {α ι : Type*} {M : Matroid α} {A B C X Y I J : Set α} {e f : α} {k : ℕ∞}
   {μ : Matroid α → Set α → ℕ∞}

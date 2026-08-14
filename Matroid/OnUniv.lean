@@ -1,5 +1,9 @@
-import Mathlib.Combinatorics.Matroid.Circuit -- inefficient import
-import Matroid.Sum
+module
+
+public import Mathlib.Combinatorics.Matroid.Circuit -- inefficient import
+public import Matroid.Sum
+
+@[expose] public section
 
 section OnUniv
 

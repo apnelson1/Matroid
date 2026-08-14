@@ -1,4 +1,8 @@
-import Matroid.Connectivity.Separation.Vertical
+module
+
+public import Matroid.Connectivity.Separation.Vertical
+
+@[expose] public section
 
 open Set Matroid Function Separation
 

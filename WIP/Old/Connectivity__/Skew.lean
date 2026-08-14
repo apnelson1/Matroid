@@ -1,8 +1,10 @@
-import Mathlib.Algebra.BigOperators.Ring.Finset
-import Matroid.Modular.Basic
-import Matroid.Order.Quotient
-import Matroid.Constructions.Project
-import Matroid.ForMathlib.Set
+module
+
+public import Mathlib.Algebra.BigOperators.Ring.Finset
+public import Matroid.Modular.Basic
+public import Matroid.Order.Quotient
+public import Matroid.Constructions.Project
+public import Matroid.ForMathlib.Set
 
 universe u
 

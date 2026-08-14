@@ -1,7 +1,11 @@
-import Matroid.ForMathlib.Partition.Constructor
-import Mathlib.Combinatorics.SimpleGraph.Basic
-import Matroid.Connectivity.Connected
-import Matroid.Parallel
+module
+
+public import Matroid.ForMathlib.Partition.Constructor
+public import Mathlib.Combinatorics.SimpleGraph.Basic
+public import Matroid.Connectivity.Connected
+public import Matroid.Parallel
+
+@[expose] public section
 
 /-
 # C-Bridge and overlapping graph
@@ -43,8 +47,8 @@ restricted to `C`. -/
 def segments (M : Matroid α) (C B : Set α) : Partition (Set α) :=
   (M ↾ (B ∪ C)).seriesClasses.induce C
 
-/-- Two `C`-bridges `B₁` and `B₂` overlap in `M` if there are no `B₁`-segment `S₁` 
-and `B₂`-segment `S₂` that cover `C`. 
+/-- Two `C`-bridges `B₁` and `B₂` overlap in `M` if there are no `B₁`-segment `S₁`
+and `B₂`-segment `S₂` that cover `C`.
 (They "avoid" each other if such segments exist; they overlap otherwise). -/
 def BridgesOverlap (M : Matroid α) (C B₁ B₂ : Set α) : Prop :=
   ¬ ∃ (S₁ S₂ : Set α), S₁ ∈ M.segments C B₁ ∧ S₂ ∈ M.segments C B₂ ∧ S₁ ∪ S₂ = C

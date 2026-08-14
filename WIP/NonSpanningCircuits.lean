@@ -1,9 +1,11 @@
-import Mathlib.Combinatorics.Matroid.Basic
-import Mathlib.Combinatorics.Matroid.IndepAxioms
-import Matroid.Constructions.IsCircuitAxioms
-import Matroid.Rank
-import Matroid.Circuit
-import Mathlib.Tactic.Linarith
+module
+
+public import Mathlib.Combinatorics.Matroid.Basic
+public import Mathlib.Combinatorics.Matroid.IndepAxioms
+public import Matroid.Constructions.IsCircuitAxioms
+public import Matroid.Rank
+public import Matroid.Circuit
+public import Mathlib.Tactic.Linarith
 
 
 open Set Matroid

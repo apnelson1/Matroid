@@ -1,5 +1,9 @@
-import Matroid.Representation.StandardRep
-import Matroid.Uniform.Basic
+module
+
+public import Matroid.Representation.StandardRep
+public import Matroid.Uniform.Basic
+
+@[expose] public section
 
 variable {α β W W' 𝔽 R : Type*} {e f x : α} {I E B X Y : Set α} {M : Matroid α} [DivisionRing 𝔽]
   [AddCommGroup W] [Module 𝔽 W] [AddCommGroup W'] [Module 𝔽 W']

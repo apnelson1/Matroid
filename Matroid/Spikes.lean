@@ -1,5 +1,9 @@
-import Matroid.Axioms.Circuit
-import Matroid.Uniform.Basic
+module
+
+public import Matroid.Axioms.Circuit
+public import Matroid.Uniform.Basic
+
+@[expose] public section
 
 variable {α : Type*} {B X I J C Y : Set α}
 

@@ -1,7 +1,11 @@
-import Mathlib.LinearAlgebra.Dimension.Free
-import Matroid.Connectivity.Skew
+module
+
+public import Mathlib.LinearAlgebra.Dimension.Free
+public import Matroid.Connectivity.Skew
 -- import Matroid.ForMathlib.LinearAlgebra.LinearIndependent
-import Matroid.ForMathlib.LinearAlgebra.LinearIndepOn
+public import Matroid.ForMathlib.LinearAlgebra.LinearIndepOn
+
+@[expose] public section
 
 variable {α β W W' 𝔽 R : Type*} {e f x : α} {I E B X Y : Set α} {M : Matroid α} [DivisionRing 𝔽]
   [AddCommGroup W] [Module 𝔽 W] [AddCommMonoid W'] [Module 𝔽 W']
@@ -50,14 +54,53 @@ lemma Rep.injOn_of_indep (v : M.Rep 𝔽 W) (hI : M.Indep I) : InjOn v I :=
 --   ⟨fun h ↦ ⟨v.indep_image h, v.injOn_of_indep h⟩,
 --     fun h ↦ (v.indep_iff_image_of_inj h.2).2 h.1⟩
 
-lemma Rep.eq_zero_iff_not_indep {v : M.Rep 𝔽 W} : v e = 0 ↔ ¬ M.Indep {e} := by
+
+
+lemma Rep.isBasis'_iff (v : M.Rep 𝔽 W) :
+    M.IsBasis' I X ↔ I ⊆ X ∧ LinearIndepOn 𝔽 v I ∧ v '' X ⊆ span 𝔽 (v '' I) := by
+  have aux ⦃I J : Set α⦄ : M.Indep J ∧ J ⊆ X → I ⊆ J → M.Indep I ∧ I ⊆ X :=
+    fun h hJI ↦ ⟨h.1.subset hJI, hJI.trans h.2⟩
+  simp only [IsBasis', maximal_iff_forall_insert aux, insert_subset_iff, not_and, image_subset_iff]
+  simp +contextual only [v.indep_iff, linearIndepOn_insert_iff, imp_false, and_imp, iff_def,
+    true_and, not_true_eq_false, not_imp_not, forall_const, and_self]
+  refine ⟨fun hI hIX h e heX ↦ (em (e ∈ I)).elim (fun heI ↦ ?_) fun heI ↦ h e heI heX,
+    fun hIX hI hX e heI heX ↦ hX heX⟩
+  exact mem_of_mem_of_subset heI <| (subset_preimage_image v I).trans <| preimage_mono subset_span
+
+
+lemma Rep.mem_closure_iff (v : M.Rep 𝔽 W) (heE : e ∈ M.E := by aesop_mat) :
+    e ∈ M.closure X ↔ v e ∈ span 𝔽 (v '' X) := by
+  obtain ⟨I, hIX⟩ := M.exists_isBasis' X
+  have aux : span 𝔽 (v '' I) = span 𝔽 (v '' X) :=
+    (span_mono (image_mono hIX.subset)).antisymm <| span_le.2 (v.isBasis'_iff.1 hIX).2.2
+  rw [← hIX.closure_eq_closure, ← aux, ← not_iff_not, (v.onIndep hIX.indep).notMem_span_iff,
+    hIX.indep.notMem_closure_iff, v.indep_iff]
+
+
+lemma Rep.closure_eq (v : M.Rep 𝔽 W) (X : Set α) : M.closure X = (v ⁻¹' span 𝔽 (v '' X)) ∩ M.E := by
+  ext e
+  by_cases he : e ∈ M.E
+  · rw [v.mem_closure_iff, mem_inter_iff, and_iff_left he, mem_preimage, SetLike.mem_coe]
+  simp [he, notMem_subset (M.closure_subset_ground X) he]
+
+lemma Rep.mem_closure_iff' (v : M.Rep 𝔽 W) :
+    e ∈ M.closure X ↔ v e ∈ span 𝔽 (v '' X) ∧ e ∈ M.E := by
+  simp [v.closure_eq]
+
+section Torsion
+
+variable [Module.IsTorsionFree 𝔽 W]
+
+lemma Rep.eq_zero_iff_not_indep {v : M.Rep 𝔽 W} :
+    v e = 0 ↔ ¬ M.Indep {e} := by
   simp [v.indep_iff]
 
 lemma Rep.eq_zero_iff (v : M.Rep 𝔽 W) (e : α) (he : e ∈ M.E := by aesop_mat) :
     v e = 0 ↔ M.IsLoop e := by
   rw [v.eq_zero_iff_not_indep, singleton_not_indep]
 
-lemma Rep.eq_zero_of_notMem_ground (v : M.Rep 𝔽 W) (he : e ∉ M.E) : v e = 0 := by
+lemma Rep.eq_zero_of_notMem_ground (v : M.Rep 𝔽 W) (he : e ∉ M.E) :
+    v e = 0 := by
   rw [v.eq_zero_iff_not_indep, indep_singleton]
   exact fun hl ↦ he hl.mem_ground
 
@@ -79,42 +122,12 @@ lemma Rep.support_subset_ground (v : M.Rep 𝔽 W) : support v ⊆ M.E :=
 lemma Rep.mem_ground_of_apply_ne_zero {v : M.Rep 𝔽 W} (hv : v e ≠ 0) : e ∈ M.E :=
   v.support_subset_ground hv
 
-lemma Indep.rep_apply_ne_zero_of_mem {v : M.Rep 𝔽 W} (hI : M.Indep I) (heI : e ∈ I) :
-    v e ≠ 0 := by
+lemma Indep.rep_apply_ne_zero_of_mem {v : M.Rep 𝔽 W} (hI : M.Indep I) (heI : e ∈ I) : v e ≠ 0 := by
   rw [Ne, Rep.eq_zero_iff_not_indep, not_not]
   exact hI.subset (by simpa)
 
-lemma Rep.isBasis'_iff (v : M.Rep 𝔽 W) :
-    M.IsBasis' I X ↔ I ⊆ X ∧ LinearIndepOn 𝔽 v I ∧ v '' X ⊆ span 𝔽 (v '' I) := by
-  have aux ⦃I J : Set α⦄ : M.Indep J ∧ J ⊆ X → I ⊆ J → M.Indep I ∧ I ⊆ X :=
-    fun h hJI ↦ ⟨h.1.subset hJI, hJI.trans h.2⟩
-  simp only [IsBasis', maximal_iff_forall_insert aux, insert_subset_iff, not_and, image_subset_iff]
-  simp +contextual only [v.indep_iff, linearIndepOn_insert_iff, imp_false, and_imp, iff_def,
-    true_and, not_true_eq_false, not_imp_not, forall_const, and_self]
-  refine ⟨fun hI hIX h e heX ↦ (em (e ∈ I)).elim (fun heI ↦ ?_) fun heI ↦ h e heI heX,
-    fun hIX hI hX e heI heX ↦ hX heX⟩
-  exact mem_of_mem_of_subset heI <| (subset_preimage_image v I).trans <| preimage_mono subset_span
-
-lemma Rep.mem_closure_iff (v : M.Rep 𝔽 W) (heE : e ∈ M.E := by aesop_mat) :
-    e ∈ M.closure X ↔ v e ∈ span 𝔽 (v '' X) := by
-  obtain ⟨I, hIX⟩ := M.exists_isBasis' X
-  have aux : span 𝔽 (v '' I) = span 𝔽 (v '' X) :=
-    (span_mono (image_mono hIX.subset)).antisymm <| span_le.2 (v.isBasis'_iff.1 hIX).2.2
-  rw [← hIX.closure_eq_closure, ← aux, ← not_iff_not, (v.onIndep hIX.indep).notMem_span_iff,
-    hIX.indep.notMem_closure_iff, v.indep_iff]
-
-lemma Rep.closure_eq (v : M.Rep 𝔽 W) (X : Set α) : M.closure X = (v ⁻¹' span 𝔽 (v '' X)) ∩ M.E := by
-  ext e
-  by_cases he : e ∈ M.E
-  · rw [v.mem_closure_iff, mem_inter_iff, and_iff_left he, mem_preimage, SetLike.mem_coe]
-  simp [he, notMem_subset (M.closure_subset_ground X) he]
-
-lemma Rep.mem_closure_iff' (v : M.Rep 𝔽 W) :
-    e ∈ M.closure X ↔ v e ∈ span 𝔽 (v '' X) ∧ e ∈ M.E := by
-  simp [v.closure_eq]
-
-lemma Rep.span_le_of_closure_subset (v : M.Rep 𝔽 W) (hXY : M.closure X ⊆ M.closure Y) :
-    span 𝔽 (v '' X) ≤ span 𝔽 (v '' Y) := by
+lemma Rep.span_le_of_closure_subset (v : M.Rep 𝔽 W)
+    (hXY : M.closure X ⊆ M.closure Y) : span 𝔽 (v '' X) ≤ span 𝔽 (v '' Y) := by
   rw [span_le]
   rintro _ ⟨e, he, rfl⟩
   obtain heE | heE := em' (e ∈ M.E)
@@ -138,6 +151,24 @@ lemma Rep.span_closure_congr_iff (v : M.Rep 𝔽 W) :
 
 @[simp] lemma Rep.span_image_loops (v : M.Rep 𝔽 W) : span 𝔽 (v '' (M.loops)) = ⊥ := by
   simp [v.span_closure_congr (M.closure_loops)]
+
+lemma Rep.skew_iff_span_disjoint (v : M.Rep 𝔽 W) (hXE : X ⊆ M.E) (hYE : Y ⊆ M.E) :
+    M.Skew X Y ↔ Disjoint (span 𝔽 (v '' X)) (span 𝔽 (v '' Y)) := by
+  obtain ⟨I, hI⟩ := M.exists_isBasis X
+  obtain ⟨J, hJ⟩ := M.exists_isBasis Y
+  rw [← skew_iff_isBases_skew hI hJ, hI.indep.skew_iff_disjoint_union_indep hJ.indep,
+    ← v.span_closure_congr hI.closure_eq_closure, ← v.span_closure_congr hJ.closure_eq_closure,
+    v.indep_iff]
+  by_cases hdj : Disjoint I J
+  ·  rw [linearIndepOn_union_iff hdj, ← v.indep_iff, ← v.indep_iff, and_iff_right hdj,
+      and_iff_right hI.indep, and_iff_right hJ.indep]
+  obtain ⟨x, hxI, hxJ⟩ := not_disjoint_iff.1 hdj
+  simp only [hdj, false_and, disjoint_def, false_iff, not_forall, exists_prop]
+  refine ⟨v x, (subset_span (mem_image_of_mem v hxI)), (subset_span (mem_image_of_mem v hxJ)), ?_⟩
+  rw [v.eq_zero_iff_not_indep, not_not]
+  exact hI.indep.subset (by simpa)
+
+end Torsion
 
 /- If some linear combination of columns of `M.E` is zero, the nonzero indices form a cyclic set.-/
 -- lemma Rep.cyclic_of_linearCombination (v : M.Rep 𝔽 W) (c : α →₀ 𝔽)
@@ -164,22 +195,6 @@ lemma Rep.span_closure_congr_iff (v : M.Rep 𝔽 W) :
 --   contrapose! h0
 --   refine (linearIndepOn_iff.1 <| v.indep_iff.1 <| hC.sdiff_singleton_indep heC) _ ?_ hc
 --   simpa [Finsupp.mem_supported, subset_sdiff_singleton_iff, h0] using h
-
-lemma Rep.skew_iff_span_disjoint (v : M.Rep 𝔽 W) (hXE : X ⊆ M.E) (hYE : Y ⊆ M.E) :
-    M.Skew X Y ↔ Disjoint (span 𝔽 (v '' X)) (span 𝔽 (v '' Y)) := by
-  obtain ⟨I, hI⟩ := M.exists_isBasis X
-  obtain ⟨J, hJ⟩ := M.exists_isBasis Y
-  rw [← skew_iff_isBases_skew hI hJ, hI.indep.skew_iff_disjoint_union_indep hJ.indep,
-    ← v.span_closure_congr hI.closure_eq_closure, ← v.span_closure_congr hJ.closure_eq_closure,
-    v.indep_iff]
-  by_cases hdj : Disjoint I J
-  ·  rw [linearIndepOn_union_iff hdj, ← v.indep_iff, ← v.indep_iff, and_iff_right hdj,
-      and_iff_right hI.indep, and_iff_right hJ.indep]
-  obtain ⟨x, hxI, hxJ⟩ := not_disjoint_iff.1 hdj
-  simp only [hdj, false_and, disjoint_def, false_iff, not_forall, exists_prop]
-  refine ⟨v x, (subset_span (mem_image_of_mem v hxI)), (subset_span (mem_image_of_mem v hxJ)), ?_⟩
-  rw [v.eq_zero_iff_not_indep, not_not]
-  exact hI.indep.subset (by simpa)
 
 /-! ### Constructors -/
 
@@ -222,6 +237,8 @@ noncomputable def Rep.restrict (v : M.Rep 𝔽 W) (X : Set α) : (M ↾ X).Rep �
     (v.restrict X : α → W) = indicator X v := rfl
 
 section Simple
+
+variable [Module.IsTorsionFree 𝔽 W]
 
 @[simp]
 lemma Rep.ne_zero [M.Loopless] [M.OnUniv] (v : M.Rep 𝔽 W) (e : α) : v e ≠ 0 := by

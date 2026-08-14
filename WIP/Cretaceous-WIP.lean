@@ -1,5 +1,7 @@
-import Matroid.Connectivity.Separation.Adherent
-import Matroid.Connectivity.Splitter.Cretaceous
+module
+
+public import Matroid.Connectivity.Separation.Adherent
+public import Matroid.Connectivity.Splitter.Cretaceous
 
 set_option linter.style.longLine false
 

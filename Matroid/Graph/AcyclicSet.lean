@@ -2,6 +2,8 @@ module
 
 public import Matroid.Graph.Forest
 import all Mathlib.Combinatorics.Graph.Delete
+public import Mathlib.Combinatorics.Graph.Delete
+
 
 @[expose] public section
 

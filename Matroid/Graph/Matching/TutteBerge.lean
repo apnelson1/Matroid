@@ -1,6 +1,6 @@
 
-import Matroid.Graph.Matching.Defs
-import Matroid.Parallel
+public import Matroid.Graph.Matching.Defs
+public import Matroid.Parallel
 
 
 namespace Graph

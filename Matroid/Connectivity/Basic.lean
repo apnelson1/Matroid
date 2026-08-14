@@ -1,8 +1,12 @@
-import Matroid.Rank.Skew
-import Matroid.ForMathlib.Matroid.Map
-import Matroid.ForMathlib.ENat
-import Matroid.Uniform.Basic
-import Matroid.Triangle
+module
+
+public import Matroid.Rank.Skew
+public import Matroid.ForMathlib.Matroid.Map
+public import Matroid.ForMathlib.ENat
+public import Matroid.Uniform.Basic
+public import Matroid.Triangle
+
+@[expose] public section
 
 open Set Function
 
@@ -33,7 +37,7 @@ section Multi
 
 /-- An auxiliary version of multi-connectivity used in the real definition.
 If the sets are disjoint, then this is equal to `multiConn`, but otherwise it is badly behaved.-/
-private noncomputable def multiConnAux (M : Matroid α) (X : ι → Set α) : ℕ∞ :=
+noncomputable def multiConnAux (M : Matroid α) (X : ι → Set α) : ℕ∞ :=
   ⨅ (I : {I : ι → Set α // ∀ i, M.IsBasis' (I i) (X i)}), M.nullity (⋃ i, I.1 i)
 
 private lemma multiConnAux_eq_nullity_iUnion (M : Matroid α) (hI : ∀ i, M.IsBasis' (I i) (X i))

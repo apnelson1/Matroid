@@ -1,5 +1,9 @@
-import Matroid.Graphic
-import Matroid.Graph.Constructions.Apex
+module
+
+public import Matroid.Graphic
+public import Matroid.Graph.Constructions.Apex
+
+@[expose] public section
 
 variable {α β : Type*} {M : Matroid α} {X Y C K T : Set α} {e f g x y : α} {b c d : Bool}
      {n i j : ℕ} {F : List α} {J : Bool → ZMod n → α} {G : Graph α β}

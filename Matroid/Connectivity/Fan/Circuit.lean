@@ -1,7 +1,11 @@
-import Matroid.Connectivity.Fan.Basic
-import Matroid.Connectivity.Triangle
-import Matroid.Connectivity.Separation.Vertical
-import Matroid.ForMathlib.Fin
+module
+
+public import Matroid.Connectivity.Fan.Basic
+public import Matroid.Connectivity.Triangle
+public import Matroid.Connectivity.Separation.Vertical
+public import Matroid.ForMathlib.Fin
+
+@[expose] public section
 
 set_option linter.style.longLine false
 
@@ -20,19 +24,20 @@ lemma List.Nodup.injective_getElem_fin {α : Type*} {L : List α} (hL : L.Nodup)
   hL.injective_get
 
 lemma List.image_getElem_preimage_val_insert {α : Type*} {L : List α} (s : Set ℕ) {i : ℕ}
-    (hi : i < L.length) : (fun x ↦ L[x.1]) '' (Fin.val ⁻¹' (insert i s)) =
+    (hi : i < L.length) : (fun x : Fin L.length ↦ L[x.1]) '' (Fin.val ⁻¹' (insert i s)) =
       insert L[i] ((fun x : Fin L.length ↦ L[x.1]'x.2) '' (Fin.val ⁻¹' s)) := by
   rw [← singleton_union, preimage_union, image_union, show Fin.val ⁻¹' {i} = {⟨i, hi⟩} by
     grind, image_singleton, singleton_union]
 
 lemma List.Nodup.image_getElem_preimage_val_sdiff_singleton {L : List α} (hL : L.Nodup)
     (s : Set ℕ) {i : ℕ} (hi : i < L.length) :
-    (fun x ↦ L[x.1]) '' (Fin.val ⁻¹' s) \ {L[i]} = (fun x ↦ L[x.1]) '' (Fin.val ⁻¹' (s \ {i})) := by
+    (fun x : Fin L.length ↦ L[x.1]) '' (Fin.val ⁻¹' s) \ {L[i]} =
+    (fun x : Fin L.length ↦ L[x.1]) '' (Fin.val ⁻¹' (s \ {i})) := by
   rw [preimage_sdiff, image_sdiff hL.injective_getElem_fin,
   show Fin.val ⁻¹' {i} = {⟨i, hi⟩} by grind, image_singleton]
 
 lemma List.image_getElem_preimage_val_singleton {α : Type*} {L : List α} {i : ℕ}
-    (hi : i < L.length) : (fun x ↦ L[x.1]) '' (Fin.val ⁻¹' {i}) = {L[i]} := by
+    (hi : i < L.length) : (fun x : Fin L.length ↦ L[x.1]) '' (Fin.val ⁻¹' {i}) = {L[i]} := by
   rw [← insert_empty_eq, image_getElem_preimage_val_insert _ hi]
   simp
 
@@ -52,45 +57,46 @@ lemma List.image_getElem_fin_rotate {α : Type*} {L : List α} (k : Fin L.length
 
 lemma List.image_getElem_fin_reverse {α : Type*} {L : List α}
     (s : Set (Fin L.reverse.length)) : (fun x ↦ L.reverse[x.1]) '' s
-    = (fun x ↦ L[x.1]) '' Fin.rev ⁻¹' (Fin.cast (by simp)) ⁻¹' s := by
+    = (fun x : Fin L.length ↦ L[x.1]) '' Fin.rev ⁻¹' (Fin.cast (by simp)) ⁻¹' s := by
   simp_rw [reverse_getElem_fin, ← Fin.image_rev, image_image]
   simp [Set.ext_iff, Fin.exists_iff]
 
 lemma List.image_getElem_preimage_val_rotate {α : Type*} {L : List α} (s : Set ℕ)
-    (k : Fin L.length) : (fun x ↦ (L.rotate k)[x.1]) '' (Fin.val ⁻¹' s) =
+    (k : Fin L.length) : (fun x : Fin (L.rotate k).length ↦ (L.rotate k)[x.1]) '' (Fin.val ⁻¹' s) =
     (fun x ↦ L[x.1]) '' (fun i ↦ i + k) '' (Fin.val ⁻¹' s) := by
   have := k.neZero
   simp_rw [image_image, rotate_getElem_fin]
   simp [Set.ext_iff, Fin.exists_iff]
 
 lemma List.image_getElem_preimage_val_rotate' {α : Type*} {L : List α} (s : Set ℕ)
-    (k : Fin L.length) : (fun x ↦ (L.rotate k)[x.1]) '' (Fin.val ⁻¹' s) =
+    (k : Fin L.length) : (fun x : Fin (L.rotate k).length ↦ (L.rotate k)[x.1]) '' (Fin.val ⁻¹' s) =
     (fun x ↦ L[x.1]) '' (fun i ↦ i - k) ⁻¹' (Fin.val ⁻¹' s) := by
   have := k.neZero
   rw [image_getElem_preimage_val_rotate, image_eq_preimage_of_inverse
     (leftInverse_sub_add_left k) (leftInverse_add_left_sub k)]
 
 lemma List.image_getElem_preimage_val_reverse {α : Type*} {L : List α} (s : Set ℕ) :
-    (fun x ↦ L.reverse[x.1]) '' (Fin.val ⁻¹' s) =
-    (fun x ↦ L[x.1]) '' (Fin.rev ⁻¹' Fin.val ⁻¹' s) := by
+    (fun x : Fin L.reverse.length ↦ L.reverse[x.1]) '' (Fin.val ⁻¹' s) =
+    (fun x : Fin L.length ↦ L[x.1]) '' (Fin.rev ⁻¹' Fin.val ⁻¹' s) := by
   rw [← Fin.rev_involutive.image_eq_preimage_symm, image_image]
   simp [add_comm _ 1, Nat.sub_sub, Set.ext_iff, Fin.exists_iff]
 
 lemma List.Nodup.mem_image_getElem_preimage_val_iff {α : Type*} {L : List α} (hL : L.Nodup)
     {i : ℕ} {s : Set ℕ} (hi : i < L.length) :
-    L[i] ∈ (fun x ↦ L[x.1]) '' (Fin.val ⁻¹' s) ↔ i ∈ s := by
+    L[i] ∈ (fun x : Fin L.length ↦ L[x.1]) '' (Fin.val ⁻¹' s) ↔ i ∈ s := by
   rw! [show i = (⟨i, hi⟩ : Fin L.length).val from rfl, hL.injective_getElem_fin.mem_set_image,
     mem_preimage]
   rfl
 
 lemma List.image_getElem_preimage_val_subset_iff {L : List α} {s : Set ℕ} {t : Set α} :
-    (fun x ↦ L[x.1]) '' (Fin.val ⁻¹' s) ⊆ t ↔ ∀ i (hi : i < L.length), i ∈ s → L[i] ∈ t := by
+    (fun x : Fin L.length ↦ L[x.1]) '' (Fin.val ⁻¹' s) ⊆ t ↔
+    ∀ i (hi : i < L.length), i ∈ s → L[i] ∈ t := by
   rw [image_subset_iff]
   exact ⟨fun h i hi his ↦ by simpa using h (show ⟨i, hi⟩ ∈ Fin.val ⁻¹' s from his),
     fun h i hi ↦ h i i.2 hi⟩
 
 lemma List.getElem_mem_image_getElem_preimage_val {L : List α} {i : ℕ} {s : Set ℕ}
-    {hi : i < L.length} (his : i ∈ s) : L[i] ∈ (fun x ↦ L[x.1]) '' (Fin.val ⁻¹' s) :=
+    {hi : i < L.length} (his : i ∈ s) : L[i] ∈ (fun x : Fin L.length ↦ L[x.1]) '' (Fin.val ⁻¹' s) :=
   ⟨⟨i, hi⟩, his, rfl⟩
 
 
@@ -130,7 +136,7 @@ lemma IsFan.isTriangle_get_sub_add [NeZero F.length] (hF : M.IsFan F b c) (i : F
 is independent. -/
 lemma IsFan.joints_Icc_indep (hF : M.IsFan F b c) {p q : ℕ}
     (hpq : p = 0 → F.length ≤ q + 1 → b = false → c = false → ¬ M.Parallel F[0] F[F.length - 1]) :
-    M.Indep ((fun x ↦ F[x.1]) '' Fin.val ⁻¹' (Icc p q ∩ Nat.bodd ⁻¹' {b})) := by
+    M.Indep ((fun x : Fin F.length ↦ F[x.1]) '' Fin.val ⁻¹' (Icc p q ∩ Nat.bodd ⁻¹' {b})) := by
   have := hF.neZero
   rw [indep_iff_forall_subset_not_isCircuit (by grind)]
   simp only [subset_image_iff, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
@@ -163,20 +169,18 @@ lemma IsFan.joints_Icc_indep (hF : M.IsFan F b c) {p q : ℕ}
 is independent. -/
 lemma IsFan.joints_Icc_fin_indep [NeZero F.length] (hF : M.IsFan F b c) {p q : Fin F.length}
     (hpq : p = 0 → q = ⊤ → b = false → c = false → ¬ M.Parallel F[0] F[F.length - 1]) :
-    M.Indep ((fun x ↦ F[x]) '' {x ∈ Icc p q | x.1.bodd = b}) := by
+    M.Indep ((fun x : Fin F.length ↦ F[x.1]) '' {x ∈ Icc p q | x.1.bodd = b}) := by
+  obtain ⟨p, hp⟩ := p
+  obtain ⟨q, hq⟩ := q
   convert hF.joints_Icc_indep (p := p) (q := q) ?_ using 2
-  · simp
-  · rw [preimage_inter, ofPred_and, ofPred_mem_eq, ← Fin.image_val_Icc,
-      preimage_image_eq _ Fin.val_injective, preimage_preimage]
-    simp [preimage]
-  convert hpq
-  · simp
-  simp only [← Fin.val_inj, Fin.val_top]
-  grind
+  · simp [Set.ext_iff, Fin.forall_iff]
+  simpa [← Fin.val_inj, show q = F.length - 1 ↔ F.length ≤ q + 1 by lia] using hpq
 
 lemma IsFan.image_getElem_Icc_subset_closure (hF : M.IsFan F b c) {p q : ℕ} (hq : q < F.length)
-    (hpb : p.bodd = b) (hqb : q.bodd = b) : (fun x ↦ F[x.1]) '' (Fin.val ⁻¹' (Icc p q)) ⊆
-      M.closure ((fun x ↦ F[x.1]) '' Fin.val ⁻¹' ((Icc p q) ∩ Nat.bodd ⁻¹' {b})) := by
+    (hpb : p.bodd = b) (hqb : q.bodd = b) :
+      (fun x : Fin F.length ↦ F[x.1]) '' (Fin.val ⁻¹' (Icc p q)) ⊆
+      M.closure ((fun x  : Fin F.length ↦ F[x.1]) ''
+        Fin.val ⁻¹' ((Icc p q) ∩ Nat.bodd ⁻¹' {b})) := by
   rintro _ ⟨⟨i, hi⟩, ⟨hpi : p ≤ i, hiq : i ≤ q⟩, rfl⟩
   obtain rfl | rfl := b.eq_or_eq_not i.bodd
   · exact M.mem_closure_of_mem' (mem_image_of_mem _ (by simp [hpi, hiq])) hF.getElem_mem_ground
@@ -192,7 +196,7 @@ lemma IsFan.image_getElem_Icc_subset_closure (hF : M.IsFan F b c) {p q : ℕ} (h
 /-- The joints are always independent, unless the first and last element are parallel joints. -/
 lemma IsFan.joints_indep (hF : M.IsFan F b c)
     (h_pair : b = false → c = false → ¬ M.Parallel F[0] F[F.length - 1]) :
-    M.Indep ((fun x ↦ F[x.1]) '' Fin.val ⁻¹' (Nat.bodd ⁻¹' {b})) := by
+    M.Indep ((fun x : Fin F.length ↦ F[x.1]) '' Fin.val ⁻¹' (Nat.bodd ⁻¹' {b})) := by
   have hnz := hF.neZero
   have hwin := hF.joints_Icc_indep (p := 0) (q := F.length - 1) (by grind)
   simp_rw [Icc_zero_left, ← Fin.range_val_eq_Iic, inter_comm, preimage_inter_range] at hwin
@@ -236,7 +240,8 @@ The nondegeracy hypothesis has some redundancy, since `i = 0` and `q + 1 = F.len
 lemma IsFan.isCircuit_interval (hF : M.IsFan F b c) {p q : ℕ} (hpq : p < q) (hq : q < F.length)
     (hpb : p.bodd = b) (hqb : q.bodd = b)
     (hdg : b = false → c = false → p = 0 → q + 1 = F.length → ¬ M.Parallel F[0] F[F.length - 1]) :
-    M.IsCircuit <| (fun x ↦ F[x.1]) '' Fin.val ⁻¹' ({p, q} ∪ (Icc p q ∩ Nat.bodd ⁻¹' {!b})) := by
+    M.IsCircuit <| (fun x : Fin F.length ↦ F[x.1]) '' Fin.val ⁻¹'
+      ({p, q} ∪ (Icc p q ∩ Nat.bodd ⁻¹' {!b})) := by
   obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hpq.le
   rw! [preimage_union, image_union, image_getElem_preimage_val_insert _ (by lia),
     image_getElem_preimage_val_singleton (by lia)]
@@ -278,7 +283,8 @@ lemma IsFan.isCircuit_interval (hF : M.IsFan F b c) {p q : ℕ} (hpq : p < q) (h
 lemma IsFan.isCircuit_interval_Ioo (hF : M.IsFan F b c) {p q : ℕ} (hpq : p < q) (hq : q < F.length)
     (hpb : p.bodd = b) (hqb : q.bodd = b)
     (hdg : b = false → c = false → p = 0 → q + 1 = F.length → ¬ M.Parallel F[0] F[F.length - 1]) :
-    M.IsCircuit <| (fun x ↦ F[x.1]) '' Fin.val ⁻¹' ({p, q} ∪ (Ioo p q ∩ Nat.bodd ⁻¹' {!b})) := by
+    M.IsCircuit <| (fun x : Fin F.length ↦ F[x.1]) ''
+      Fin.val ⁻¹' ({p, q} ∪ (Ioo p q ∩ Nat.bodd ⁻¹' {!b})) := by
   convert hF.isCircuit_interval hpq hq hpb hqb hdg using 4
   obtain rfl | q := q
   · simp at hpq
@@ -310,7 +316,8 @@ then `C` is an interval. -/
 lemma IsFan.eq_interval_of_mem_mem_mem (hF : M.IsFan F b c) (hpq : p < q)
     (hqF : q < F.length) (hpb : p.bodd = b) (hqb : q.bodd = b) (hC : M.IsCircuit C)
     (hpC : F[p] ∈ C) (hp1C : F[p + 1] ∈ C) (hqC : F[q] ∈ C) :
-    C = (fun x ↦ F[x.1]) '' Fin.val ⁻¹' ({p, q} ∪ (Icc p q ∩ Nat.bodd ⁻¹' {!b})) := by
+    C = (fun x : Fin F.length ↦ F[x.1]) ''
+      Fin.val ⁻¹' ({p, q} ∪ (Icc p q ∩ Nat.bodd ⁻¹' {!b})) := by
   induction q using Nat.strong_induction_on with | h q ihq =>
   suffices ∀ i (hi : i < F.length), p ≤ i → i ≤ q → i.bodd = !b → F[i] ∈ C by
     refine hC.eq_of_superset_isCircuit (hF.isCircuit_interval hpq hqF hpb hqb ?_) <| by
@@ -341,7 +348,8 @@ then it comprises precisely `F[p + 1], F[q]`, and the cojoints between them.  -/
 lemma IsFan.eq_interval_of_notMem_mem_mem (hF : M.IsFan F b c) (hpq : p + 1 < q)
     (hqF : q < F.length) (hpb : p.bodd = !b) (hqb : q.bodd = b) (hC : M.IsCircuit C)
     (hpC : F[p] ∉ C) (hp1C : F[p + 1] ∈ C) (hqC : F[q] ∈ C) :
-    C = (fun x ↦ F[x.1]) '' Fin.val ⁻¹' ({p + 1, q} ∪ (Icc (p + 1) q ∩ Nat.bodd ⁻¹' {!b})) := by
+    C = (fun x : Fin F.length ↦ F[x.1]) '' Fin.val ⁻¹'
+      ({p + 1, q} ∪ (Icc (p + 1) q ∩ Nat.bodd ⁻¹' {!b})) := by
   refine hF.eq_interval_of_mem_mem_mem hpq hqF (by simpa) hqb hC hp1C (by_contra fun h ↦ hpC ?_) hqC
   rwa [← (hF.isTriad_getElem_of_eq p hpb).reverse.mem_iff_mem_of_isCircuit hC h]
 
@@ -349,7 +357,8 @@ lemma IsFan.exists_eq_interval_of_notMem_mem_add_one (hF : M.IsFan F b c) (hpq :
     (hqF : q < F.length) (hpb : p.bodd = !b) (hqb : q.bodd = !b) (hC : M.IsCircuit C)
     (hpC : F[p] ∉ C) (hp1C : F[p + 1] ∈ C) (hqC : F[q] ∉ C) :
     ∃ (r : ℕ) (_ : p + 1 < r) (_ : r < q), r.bodd = b ∧
-    C = (fun x ↦ F[x.1]) '' Fin.val ⁻¹' ({p + 1, r} ∪ (Icc (p + 1) r ∩ Nat.bodd ⁻¹' {!b})) := by
+    C = (fun x : Fin F.length ↦ F[x.1]) '' Fin.val ⁻¹'
+      ({p + 1, r} ∪ (Icc (p + 1) r ∩ Nat.bodd ⁻¹' {!b})) := by
   by_cases! hr : ¬ (∀ r (hr : r < q), p + 1 < r → r.bodd = !p.bodd → F[r] ∉ C)
   · push Not at hr
     obtain ⟨r, hrq, hpr, hrb, hrC⟩ := hr
@@ -375,7 +384,7 @@ lemma IsFan.exists_eq_interval_of_notMem_mem_notMem {s t r : ℕ} (hF : M.IsFan 
     (hrt : r < t) (ht : t < F.length) (hsb : s.bodd = !b) (htb : t.bodd = !b)
     (hC : M.IsCircuit C) (hsC : F[s] ∉ C) (hrC : F[r] ∈ C) (htC : F[t] ∉ C) :
     ∃ (p q : ℕ) (_ : s < p) (_ : p < q) (_ : q < t), p.bodd = b ∧ q.bodd = b ∧
-    C = (fun x ↦ F[x.1]) '' Fin.val ⁻¹' ({p, q} ∪ (Icc p q ∩ Nat.bodd ⁻¹' {!b})) := by
+    C = (fun x : Fin F.length ↦ F[x.1]) '' Fin.val ⁻¹' ({p, q} ∪ (Icc p q ∩ Nat.bodd ⁻¹' {!b})) := by
   induction h : r - s using Nat.strong_induction_on generalizing r s with | h d ih =>
   by_cases hs1 : F[s + 1] ∈ C
   · obtain ⟨j, hsj, hjt, rfl, rfl⟩ :=
@@ -443,7 +452,7 @@ lemma IsFan.forall_cojoint_mem_le_or_forall_cojoint_mem_le (hF : M.IsFan F b c) 
 
 /-- Each proper subset of the cojoints is independent. -/
 lemma IsFan.indep_of_ssubset_cojoints (hF : M.IsFan F b c) {I : Set α}
-    (hI : I ⊂ (fun x ↦ F[x.1]) '' Fin.val ⁻¹' Nat.bodd ⁻¹' {!b}) : M.Indep I := by
+    (hI : I ⊂ (fun x : Fin F.length ↦ F[x.1]) '' Fin.val ⁻¹' Nat.bodd ⁻¹' {!b}) : M.Indep I := by
 
   have hss : (fun x ↦ F[x.1]) '' Fin.val ⁻¹' Nat.bodd ⁻¹' {!b} ⊆ {e | e ∈ F} := by grind
   rw [indep_iff_forall_subset_not_isCircuit (hI.subset.trans (hss.trans hF.subset_ground))]

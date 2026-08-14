@@ -1,6 +1,8 @@
-import Matroid.Connectivity.Fan.Circuit
-import Mathlib.Data.ZMod.Basic
-import Mathlib.Order.Circular.ZMod
+module
+
+public import Matroid.Connectivity.Fan.Circuit
+public import Mathlib.Data.ZMod.Basic
+public import Mathlib.Order.Circular.ZMod
 
 open Set Function
 

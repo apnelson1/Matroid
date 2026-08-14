@@ -1,6 +1,10 @@
-import Matroid.Connectivity.Basic
-import Matroid.Connectivity.ConnSystem.Basic
-import Matroid.Finitize
+module
+
+public import Matroid.Connectivity.Basic
+public import Matroid.Connectivity.ConnSystem.Basic
+public import Matroid.Finitize
+
+@[expose] public section
 
 open Set
 
@@ -17,7 +21,7 @@ as a package. -/
 
 /-- the connectivity function of a matroid as a pure function, rather than a `ConnSystem`.
 Just an implementation detail on the way to a `ConnSystem`; not intended for external use. -/
-private noncomputable abbrev eConnAux (M : Matroid α) (X : Set α) : ℕ∞ :=
+noncomputable abbrev eConnAux (M : Matroid α) (X : Set α) : ℕ∞ :=
   M.eLocalConn X (M.E \ X)
 
 private lemma eConnAux_inter_ground (M : Matroid α) (X : Set α) :
@@ -53,7 +57,7 @@ private lemma eConnAux_delete_le (M : Matroid α) (X D : Set α) :
   grw [eConnAux, eLocalConn_delete_eq, eConnAux, delete_ground]
   exact M.eLocalConn_mono sdiff_subset <| by grind
 
-lemma stronglyPreservable_eConnAux : StronglyPreservable (α := α) Matroid.eConnAux := by
+private lemma stronglyPreservable_eConnAux : StronglyPreservable (α := α) Matroid.eConnAux := by
   refine ⟨eConnAux_dual, eConnAux_inter_ground, eConnAux_delete_le, fun M B X k hB hkX ↦ ?_⟩
   have h1 := hB.exists_restrict_multiConn_eq'
       (X := fun b ↦ bif b then X ∩ M.E else M.E \ X) (k := k)
@@ -70,7 +74,7 @@ lemma stronglyPreservable_eConnAux : StronglyPreservable (α := α) Matroid.eCon
     eLocalConn_inter_ground_left, restrict_ground_eq] at hconnk
   rwa [union_sdiff_cancel hBR]
 
-private lemma eConnAux_submod (M : Matroid α) (X Y : Set α) :
+lemma eConnAux_submod (M : Matroid α) (X Y : Set α) :
     M.eConnAux (X ∩ Y) + M.eConnAux (X ∪ Y) ≤ M.eConnAux X + M.eConnAux Y := by
   by_contra! hlt
   obtain ⟨N, -, hN, hlt'⟩ :=

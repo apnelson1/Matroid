@@ -1,4 +1,8 @@
-import Mathlib.Combinatorics.Matroid.Minor.Contract
+module
+
+public import Mathlib.Combinatorics.Matroid.Minor.Contract
+
+@[expose] public section
 
 variable {α : Type*} {M M' N : Matroid α} {e f : α} {I C J R B X Y Z K S : Set α}
 

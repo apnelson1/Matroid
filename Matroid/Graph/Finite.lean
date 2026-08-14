@@ -5,6 +5,8 @@ public import Matroid.Graph.Simple
 public import Matroid.Graph.Lattice
 public import Mathlib.Data.Set.Finite.List
 import all Mathlib.Combinatorics.Graph.Delete
+public import Mathlib.Combinatorics.Graph.Delete
+
 
 @[expose] public section
 

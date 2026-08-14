@@ -1,4 +1,6 @@
-import Matroid.Representation.Basic
+module
+
+public import Matroid.Representation.Basic
 
 open Set Matrix
 

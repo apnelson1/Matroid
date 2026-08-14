@@ -4,6 +4,8 @@ public import Matroid.Graph.Connected.Vertex.Defs
 public import Matroid.ForMathlib.Partition.Set
 public import Matroid.ForMathlib.Tactic.ENatToNat
 import all Mathlib.Combinatorics.Graph.Delete
+public import Mathlib.Combinatorics.Graph.Delete
+
 
 @[expose] public section
 

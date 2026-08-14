@@ -1,11 +1,15 @@
-import Mathlib.Algebra.MvPolynomial.Eval
-import Mathlib.Algebra.MvPolynomial.Degrees
-import Mathlib.Data.Nat.Choose.Bounds
-import Mathlib.Data.Complex.Exponential
-import Mathlib.Data.Set.Card
-import Matroid.ForMathlib.Card
-import Mathlib.Analysis.Normed.Module.Basic
-import Mathlib.Analysis.SpecialFunctions.Log.IsBase
+module
+
+public import Mathlib.Algebra.MvPolynomial.Eval
+public import Mathlib.Algebra.MvPolynomial.Degrees
+public import Mathlib.Data.Nat.Choose.Bounds
+public import Mathlib.Data.Complex.Exponential
+public import Mathlib.Data.Set.Card
+public import Matroid.ForMathlib.Card
+public import Mathlib.Analysis.Normed.Module.Basic
+public import Mathlib.Analysis.SpecialFunctions.Log.IsBase
+
+@[expose] public section
 
 universe u1 u2 u3 u4
 

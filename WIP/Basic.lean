@@ -1,13 +1,15 @@
-import Mathlib.Data.Set.Defs
-import Mathlib.Logic.Equiv.Basic
-import Mathlib.Combinatorics.Matroid.Minor.Order
-import Mathlib.Combinatorics.Matroid.Map
-import Matroid.ForMathlib.Set
-import Matroid.Connectivity.Separation.Two
-import Matroid.Connectivity.Fan.Cyclic
-import Matroid.Connectivity.Separation.Infinite
-import Matroid.Constructions.Small
-import Matroid.Uniform.Minor
+module
+
+public import Mathlib.Data.Set.Defs
+public import Mathlib.Logic.Equiv.Basic
+public import Mathlib.Combinatorics.Matroid.Minor.Order
+public import Mathlib.Combinatorics.Matroid.Map
+public import Matroid.ForMathlib.Set
+public import Matroid.Connectivity.Separation.Two
+public import Matroid.Connectivity.Fan.Cyclic
+public import Matroid.Connectivity.Separation.Infinite
+public import Matroid.Constructions.Small
+public import Matroid.Uniform.Minor
 
 open Set Matroid Function Separation
 

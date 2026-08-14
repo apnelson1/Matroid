@@ -1,9 +1,14 @@
-import Matroid.ForMathlib.Matroid.Basic
-import Matroid.ForMathlib.Matroid.Map
-import Matroid.Closure
-import Matroid.Modular.Basic
-import Matroid.Minor.Contract
-import Matroid.ForMathlib.Data.Set.Finite
+module
+
+public import Matroid.ForMathlib.Matroid.Basic
+public import Matroid.ForMathlib.Matroid.Map
+public import Matroid.Closure
+public import Matroid.Modular.Basic
+public import Matroid.Minor.Contract
+public import Matroid.ForMathlib.Data.Set.Finite
+
+
+@[expose] public section
 
 /-
 

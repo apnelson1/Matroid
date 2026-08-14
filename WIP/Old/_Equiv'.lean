@@ -1,7 +1,9 @@
-import Mathlib.Combinatorics.Matroid.Constructions
-import Mathlib.Combinatorics.Matroid.Map
-import Matroid.ForMathlib.PartialEquiv
-import Matroid.ForMathlib.Other
+module
+
+public import Mathlib.Combinatorics.Matroid.Constructions
+public import Mathlib.Combinatorics.Matroid.Map
+public import Matroid.ForMathlib.PartialEquiv
+public import Matroid.ForMathlib.Other
 
 open Set
 

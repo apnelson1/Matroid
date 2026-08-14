@@ -1,17 +1,17 @@
-import Matroid.Connectivity.Fan.Circuit
-import Matroid.Connectivity.Fan.Minor
-import Matroid.Connectivity.Separation.Tutte
-import Mathlib.Logic.Equiv.Fin.Rotate
+module
+
+public import Matroid.Connectivity.Fan.Circuit
+public import Matroid.Connectivity.Fan.Minor
+public import Matroid.Connectivity.Separation.Tutte
+public import Mathlib.Logic.Equiv.Fin.Rotate
+
+@[expose] public section
 
 open Set List Nat Fin
-
-lemma Set.preimage_singleton {α β : Type*} (f : α → β) (y : β) : f ⁻¹' {y} = {x | f x = y} := rfl
 
 namespace Matroid
 
 variable {α β : Type*} {F : List α} {b c d : Bool} {M : Matroid α}
-
-
 
 variable {α : Type*} {M : Matroid α} {X Y C K T : Set α} {e f g x y : α} {b c d : Bool}
      {n i j : ℕ} {F : List α} {J : Bool → ZMod n → α}
@@ -110,9 +110,9 @@ lemma IsCyclicFan.rotate (h : M.IsCyclicFan F b) (n : ℕ) :
   have _ := h.isFan.neZero
   refine isCyclicFan_of_forall _ _ _ (by simpa using h.length_ge) (by simpa using h.isFan.nodup)
     fun i ↦ ?_
-  rw [rotate_getElem_fin, rotate_getElem_fin, rotate_getElem_fin, Fin.cast_add, Fin.cast_one,
-    Fin.cast_add, Fin.cast_ofNat, add_right_comm, add_right_comm _ 2, Bool.bne_assoc,
-    bne_comm (a := n.bodd)]
+  rw! [rotate_getElem_fin, rotate_getElem_fin, rotate_getElem_fin, Fin.cast_add, Fin.cast_one,
+    Fin.cast_add, Fin.cast_one, add_right_comm, Fin.cast_add i 2, Fin.cast_ofNat (k := 2),
+    add_right_comm _ 2, Bool.bne_assoc, bne_comm (a := n.bodd)]
   have := h.isTriangle_getElem_fin (i.cast (by simp) + (n : Fin _))
   simpa [Fin.bodd_val_add_of_even h.even, mod_bodd h.even, Bool.bne_eq_xor] using this
 
@@ -347,7 +347,7 @@ lemma IsFan.isCyclicFan_of_tutteConnected_three_of_mem_closure (h : M.IsFan F b 
   simp [h.getElem_mem_ground, mem_dropLast_iff h.nodup h.ne_nil, getLast_eq_getElem]
 
 lemma IsCyclicFan.joints_indep (h : M.IsCyclicFan F b) :
-    M.Indep ((fun x ↦ F[x.1]) '' Fin.val ⁻¹' {i | i.bodd = b}) :=
+    M.Indep ((fun x : Fin F.length ↦ F[x.1]) '' Fin.val ⁻¹' {i | i.bodd = b}) :=
   h.isFan.joints_indep (by simp +contextual)
 
 /-- `IsFanCircuit F b C` means that `C` consists of a pair of joints `F[p], F[q]` of `C`,
@@ -399,7 +399,8 @@ lemma IsFanCircuit.isCircuit (h : M.IsCyclicFan F b) (hC : IsFanCircuit F b C) :
 
 lemma IsCyclicFan.isFanCircuit_of_isNonspanningCircuit [NeZero F.length] (hF : M.IsCyclicFan F b)
     (hM : M.TutteConnected 2) {C : Set α} (hC : M.IsNonspanningCircuit C)
-    (hne : C ≠ (fun x ↦ F[x.1]) '' Fin.val ⁻¹' {i | i.bodd = !b}) : IsFanCircuit F b C := by
+    (hne : C ≠ (fun x : Fin F.length ↦ F[x.1]) '' Fin.val ⁻¹' {i | i.bodd = !b}) :
+    IsFanCircuit F b C := by
   -- `C` isn't contained in the cojoints, because it would be a proper subset and hence independent.
   by_cases hssu : C ⊆ (fun x ↦ F[↑x]) '' val ⁻¹' bodd ⁻¹' {!b}
   · exact False.elim <| (hF.isFan.indep_of_ssubset_cojoints (hssu.ssubset_of_ne hne)).not_dep
@@ -458,7 +459,7 @@ lemma IsCyclicFan.isFanCircuit_of_isNonspanningCircuit [NeZero F.length] (hF : M
   exact fun i hi hib hiC ↦ by_contra fun h0 ↦ hq ⟨i, hi⟩ (by grind) (by simpa) (by simpa)
 
 lemma IsCyclicFan.isNonspanningCircuit_iff (hF : M.IsCyclicFan F b) (hM : M.TutteConnected 2)
-    {C : Set α} (hne : C ≠ (fun x ↦ F[x.1]) '' Fin.val ⁻¹' {i | i.bodd = !b}) :
+    {C : Set α} (hne : C ≠ (fun x : Fin F.length ↦ F[x.1]) '' Fin.val ⁻¹' {i | i.bodd = !b}) :
     M.IsNonspanningCircuit C ↔ (IsFanCircuit F b C ∧ 2 * C.encard ≤ F.length)  := by
   have := hF.isFan.neZero
   refine ⟨fun h ↦ ⟨hF.isFanCircuit_of_isNonspanningCircuit hM h hne, ?_⟩, fun h ↦ ?_⟩
@@ -471,8 +472,8 @@ lemma IsCyclicFan.isNonspanningCircuit_iff (hF : M.IsCyclicFan F b) (hM : M.Tutt
 
 lemma IsCyclicFan.isCircuitHyperplane_or_isBase_cojoints (hF : M.IsCyclicFan F b)
     (hM : M.TutteConnected 2) :
-    M.IsCircuitHyperplane ((fun x ↦ F[x.1]) '' Fin.val ⁻¹' {i | i.bodd = !b}) ∨
-    M.IsBase ((fun x ↦ F[x.1]) '' Fin.val ⁻¹' {i | i.bodd = !b}) := by
+    M.IsCircuitHyperplane ((fun x : Fin F.length ↦ F[x.1]) '' Fin.val ⁻¹' {i | i.bodd = !b}) ∨
+    M.IsBase ((fun x : Fin F.length  ↦ F[x.1]) '' Fin.val ⁻¹' {i | i.bodd = !b}) := by
   have := hF.finite hM
   have hnz := hF.isFan.neZero
   set J := ((fun x ↦ F[x.1]) '' Fin.val ⁻¹' {i | i.bodd = !b}) with hJ
@@ -510,9 +511,10 @@ and the cojoints are at least as free in `M` as they are in `N`,
 then `M` is obtained from `N` by relaxing the cojoints. -/
 lemma IsCyclicFan.eq_relax {M N : Matroid α} (hFM : M.IsCyclicFan F b) (hFN : N.IsCyclicFan F b)
     (hM : M.TutteConnected 2) (hN : N.TutteConnected 2) (hMN : M ≠ N)
-    (hI : N.Indep ((fun x ↦ F[x.1]) '' Fin.val ⁻¹' {i | i.bodd = !b}) →
-      M.Indep ((fun x ↦ F[x.1]) '' Fin.val ⁻¹' {i | i.bodd = !b})) :
-    ∃ (h : N.IsCircuitHyperplane ((fun x ↦ F[x.1]) '' Fin.val ⁻¹' {i | i.bodd = !b})),
+    (hI : N.Indep ((fun x : Fin F.length ↦ F[x.1]) '' Fin.val ⁻¹' {i | i.bodd = !b}) →
+      M.Indep ((fun x : Fin F.length ↦ F[x.1]) '' Fin.val ⁻¹' {i | i.bodd = !b})) :
+    ∃ (h : N.IsCircuitHyperplane
+      ((fun x : Fin F.length ↦ F[x.1]) '' Fin.val ⁻¹' {i | i.bodd = !b})),
       M = N.relax _ (IsLawfulRelaxation.single h) := by
   have hJM := hFM.isCircuitHyperplane_or_isBase_cojoints hM
   have hJN := hFN.isCircuitHyperplane_or_isBase_cojoints hN

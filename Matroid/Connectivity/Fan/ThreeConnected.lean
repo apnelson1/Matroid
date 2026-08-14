@@ -1,6 +1,10 @@
-import Matroid.Connectivity.Fan.Cyclic
-import Matroid.Connectivity.Separation.Tutte
-import Matroid.Connectivity.Splitter.TutteTriangle
+module
+
+public import Matroid.Connectivity.Fan.Cyclic
+public import Matroid.Connectivity.Separation.Tutte
+public import Matroid.Connectivity.Splitter.TutteTriangle
+
+@[expose] public section
 
 open Set List
 

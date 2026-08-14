@@ -1,6 +1,10 @@
-import Matroid.Extremal.Covers_
-import Matroid.Uniform.Minor
-import Matroid.ForMathlib.Data.ENat.Powerset
+module
+
+public import Matroid.Extremal.Covers_
+public import Matroid.Uniform.Minor
+public import Matroid.ForMathlib.Data.ENat.Powerset
+
+@[expose] public section
 
 variable {α : Type*} {M N M' : Matroid α} {I F X Y F' F₀ F₁ F₂ P L H H₁ H₂ H' B C D K : Set α}
   {e f : α} {l r : ℕ} {a k : ℕ∞} {T : Set (Set α)} {ι : Type*} {i j : ι}

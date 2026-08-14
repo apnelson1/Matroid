@@ -1,7 +1,13 @@
-import Matroid.Extension.Principal
+module
+
+public import Matroid.Extension.Principal
+
+@[expose] public section
 
 variable {α β : Type*} {M N M' : Matroid α} {I X Y : Set α} {e f : α} {a k l : ℕ∞}
     {T : Set (Set α)}
+
+
 
 open Set
 

@@ -1,6 +1,10 @@
-import Mathlib.LinearAlgebra.Projectivization.Basic -- inefficient import
-import Matroid.Representation.Minor
-import Matroid.ForMathlib.LinearAlgebra.Finsupp
+module
+
+public import Mathlib.LinearAlgebra.Projectivization.Basic -- inefficient import
+public import Matroid.Representation.Minor
+public import Matroid.ForMathlib.LinearAlgebra.Finsupp
+
+@[expose] public section
 
 variable {α β W W' 𝔽 R : Type*} {e f x : α} {I C E B X Y : Set α} {M : Matroid α} [DivisionRing 𝔽]
   [AddCommGroup W] [Module 𝔽 W] [AddCommGroup W'] [Module 𝔽 W'] {c : α →₀ 𝔽}

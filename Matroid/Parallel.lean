@@ -1,7 +1,11 @@
-import Matroid.ForMathlib.Other
-import Matroid.Flat.LowRank
-import Matroid.Flat.Hyperplane
-import Matroid.Equiv
+module
+
+public import Matroid.ForMathlib.Other
+public import Matroid.Flat.LowRank
+public import Matroid.Flat.Hyperplane
+public import Matroid.Equiv
+
+@[expose] public section
 
 open Set Set.Notation
 

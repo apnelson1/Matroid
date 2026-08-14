@@ -1,6 +1,11 @@
-import Matroid.Rank.ENat
-import Matroid.Constructions.Project
-import Matroid.Minor.Contract
+module
+
+public import Matroid.Rank.ENat
+public import Matroid.Constructions.Project
+public import Matroid.Minor.Contract
+public import Mathlib.Tactic.Ring
+
+@[expose] public section
 
 open Set ENat Function
 

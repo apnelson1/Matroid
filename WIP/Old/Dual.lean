@@ -1,4 +1,6 @@
-import Matroid.Basic
+module
+
+public import Matroid.Basic
 
 namespace Matroid
 

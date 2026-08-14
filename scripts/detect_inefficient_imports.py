@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-import os
-import re
-import subprocess
-import sys
+public import os
+public import re
+public import subprocess
+public import sys
 
 # Configuration
 MATHLIB_PATH = ".lake/packages/mathlib"

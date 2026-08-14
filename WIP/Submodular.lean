@@ -1,8 +1,8 @@
 
-import Mathlib.Order.Lattice
-import Matroid.Rank.Nat
-import Matroid.Constructions.IsCircuitAxioms
-import Mathlib.Algebra.Order.BigOperators.Group.Finset
+public import Mathlib.Order.Lattice
+public import Matroid.Rank.Nat
+public import Matroid.Constructions.IsCircuitAxioms
+public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 
 open Finset
 

@@ -7,6 +7,8 @@ public import Matroid.Graph.Connected.LineGraph
 public import Matroid.Graph.Finite
 public import Mathlib.SetTheory.Cardinal.NatCard
 import all Mathlib.Combinatorics.Graph.Delete
+public import Mathlib.Combinatorics.Graph.Delete
+
 
 @[expose] public section
 

@@ -1,4 +1,6 @@
-import Matroid.Connectivity.WIP.Minor
+module
+
+public import Matroid.Connectivity.WIP.Minor
 
 set_option linter.style.longLine false
 

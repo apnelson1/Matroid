@@ -1,8 +1,12 @@
-import Matroid.Flat.Lattice
-import Matroid.Simple
-import Matroid.ForMathlib.Card
-import Matroid.ForMathlib.Matroid.Basic
-import Matroid.ForMathlib.GCongr
+module
+
+public import Matroid.Flat.Lattice
+public import Matroid.Simple
+public import Matroid.ForMathlib.Card
+public import Matroid.ForMathlib.Matroid.Basic
+public import Matroid.ForMathlib.GCongr
+
+@[expose] public section
 
 open Set BigOperators Set.Notation
 

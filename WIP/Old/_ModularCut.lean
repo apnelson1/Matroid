@@ -1,7 +1,9 @@
-import Matroid.Simple
-import Matroid.ForMathlib.Other
-import Matroid.Minor.Basic
-import Matroid.Modular.Basic
+module
+
+public import Matroid.Simple
+public import Matroid.ForMathlib.Other
+public import Matroid.Minor.Basic
+public import Matroid.Modular.Basic
 
 namespace Matroid
 open Set BigOperators

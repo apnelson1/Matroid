@@ -1,5 +1,9 @@
-import Matroid.Connectivity.Separation.Basic
-import Matroid.Bool
+module
+
+public import Matroid.Connectivity.Separation.Basic
+public import Matroid.Bool
+
+@[expose] public section
 
 open Set Function
 

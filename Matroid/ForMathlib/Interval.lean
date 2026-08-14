@@ -5,7 +5,7 @@ public import Mathlib.Algebra.Order.IsBotOne
 public import Mathlib.Data.Set.Function
 public import Mathlib.Order.Nat
 public import Init.Data.Nat.Div.Basic
--- public import Mathlib.Order.Interval.Finset.Nat
+--public import Mathlib.Order.Interval.Finset.Nat
 
 @[expose] public section
 

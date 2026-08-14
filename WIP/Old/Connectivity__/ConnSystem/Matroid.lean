@@ -1,5 +1,7 @@
-import Matroid.Connectivity.ConnSystem.Tangle
-import Matroid.Connectivity.Separation.Tutte
+module
+
+public import Matroid.Connectivity.ConnSystem.Tangle
+public import Matroid.Connectivity.Separation.Tutte
 
 open Set
 

@@ -1,9 +1,11 @@
-import Matroid.Representation.Minor
-import Matroid.Rank.Cardinal
-import Mathlib.FieldTheory.Finite.GaloisField
-import Mathlib.LinearAlgebra.Dimension.Basic
-import Mathlib.LinearAlgebra.Projectivization.Subspace
-import Matroid.ForMathlib.LinearAlgebra.Projective
+module
+
+public import Matroid.Representation.Minor
+public import Matroid.Rank.Cardinal
+public import Mathlib.FieldTheory.Finite.GaloisField
+public import Mathlib.LinearAlgebra.Dimension.Basic
+public import Mathlib.LinearAlgebra.Projectivization.Subspace
+public import Matroid.ForMathlib.LinearAlgebra.Projective
 
 variable {α β W W' 𝔽 R : Type*} {e f x : α} {I E B X Y : Set α} {M : Matroid α} [DivisionRing 𝔽]
   [AddCommGroup W] [Module 𝔽 W] [AddCommGroup W'] [Module 𝔽 W']

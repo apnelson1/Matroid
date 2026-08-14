@@ -1,11 +1,13 @@
-import Matroid.Graph.Connected.Basic
-import Matroid.Graph.Independent
-import Matroid.Graph.Tree
-import Matroid.ForMathlib.Minimal
-import Matroid.ForMathlib.Tactic.ENatToNat
+module
 
-import Matroid.Exercises.HamiltonianCycle.Degree
-import Matroid.Exercises.HamiltonianCycle.Walk
+public import Matroid.Graph.Connected.Basic
+public import Matroid.Graph.Independent
+public import Matroid.Graph.Tree
+public import Matroid.ForMathlib.Minimal
+public import Matroid.ForMathlib.Tactic.ENatToNat
+
+public import Matroid.Exercises.HamiltonianCycle.Degree
+public import Matroid.Exercises.HamiltonianCycle.Walk
 
 open Set
 

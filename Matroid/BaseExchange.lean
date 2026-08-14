@@ -1,5 +1,9 @@
-import Matroid.Flat.Hyperplane
-import Matroid.ForMathlib.FinDiff
+module
+
+public import Matroid.Flat.Hyperplane
+public import Matroid.ForMathlib.FinDiff
+
+@[expose] public section
 
 variable {α : Type*} {M : Matroid α} {E I B C H K X Y : Set α} {k : ℕ∞} {e f : α}
 
