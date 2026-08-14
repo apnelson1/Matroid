@@ -519,3 +519,39 @@ lemma mixedLineGraph_edge_not_adj (G : Graph α β) (e f : β) :
     ¬ L'(G).Adj (Sum.inr e) (Sum.inr f) := by
   intro ⟨e, h⟩
   simp at h
+
+/-- A complete-bipartite graph with vertex set a sum type and edge set a product type. -/
+@[simps]
+def completeBipartiteGraphOn (α β : Type*) : Graph (α ⊕ β) (α × β) where
+  vertexSet := univ
+  edgeSet := univ
+  IsLink e x y := (x = .inl e.1 ∧ y = .inr e.2) ∨ (y = .inl e.1 ∧ x = .inr e.2)
+  isLink_symm := by grind [Std.Symm]
+  eq_or_eq_of_isLink_of_isLink := by grind
+  edge_mem_iff_exists_isLink := by simp
+  left_mem_of_isLink := by simp
+
+@[simp]
+lemma completeBipartiteGraphOn_adj_inl_inr {α β : Type*} {x : α} {y : β} :
+    (completeBipartiteGraphOn α β).Adj (.inl x) (.inr y) := by
+  simp [Graph.Adj]
+
+@[simp]
+lemma completeBipartiteGraphOn_adj_inr_inl {α β : Type*} {x : α} {y : β} :
+    (completeBipartiteGraphOn α β).Adj (.inr y) (.inl x) := by
+  simp [Graph.Adj]
+
+@[simp]
+lemma completeBipartiteGraphOn_not_adj_inl_inl {α β : Type*} {x y : α} :
+    ¬ (completeBipartiteGraphOn α β).Adj (.inl x) (.inl y) := by
+  simp [Graph.Adj]
+
+@[simp]
+lemma completeBipartiteGraphOn_not_adj_inr_inr {α β : Type*} {x y : β} :
+    ¬ (completeBipartiteGraphOn α β).Adj (.inr x) (.inr y) := by
+  simp [Graph.Adj]
+
+@[simp]
+lemma completeBipartiteGraphOn_inc_iff {x : α ⊕ β} {e : α × β} :
+    (completeBipartiteGraphOn α β).Inc e x ↔ x = .inl e.1 ∨ x = .inr e.2 := by
+  simp [Graph.Inc, or_comm]
