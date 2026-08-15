@@ -326,8 +326,8 @@ lemma not_connBetween (S : G.Separation) (hx : x ∈ S.left) (hy : y ∈ S.right
 theorem isSepBetween_of_deleteVerts (S : (G - X).Separation) (hx : x ∈ S.left)
     (hy : y ∈ S.right) : G.IsSepBetween x y (V(G) ∩ X) := by
   refine ⟨inter_subset_left, ?_, ?_, ?_⟩
-  · simp [(S.left_subset hx).2]
-  · simp [(S.right_subset hy).2]
+  · simp [deleteVerts_vertexSet .. ▸ (S.left_subset hx) |>.2]
+  · simp [deleteVerts_vertexSet .. ▸ (S.right_subset hy) |>.2]
   · simpa [deleteVerts_vertexSet_inter] using S.not_connBetween hx hy
 
 lemma induce_stronglyDisjoint (S : G.Separation) : G[S.left].StronglyDisjoint G[S.right] where
@@ -602,8 +602,9 @@ lemma preconnGE_iff_forall_preconnected :
   · rw [preconnected_iff_isEmpty_separation]
     by_contra! hS
     obtain ⟨S⟩ := hS
-    have hcut := h (sdiff_subset <| S.left_subset S.nonempty_left.some_mem)
-        (sdiff_subset <| S.right_subset S.nonempty_right.some_mem)
+    have hcut :=
+      h (sdiff_subset <| deleteVerts_vertexSet .. ▸ S.left_subset S.nonempty_left.some_mem)
+        (sdiff_subset <| deleteVerts_vertexSet .. ▸ S.right_subset S.nonempty_right.some_mem)
         (S.isSepBetween_of_deleteVerts (X := X) S.nonempty_left.some_mem S.nonempty_right.some_mem)
     exact hcut.trans (encard_le_encard inter_subset_right) |>.not_gt hX
   by_contra! hCn
@@ -618,8 +619,9 @@ lemma preconnGE_map_iff_of_injOn {α' : Type*} {φ : α → α'} (hφ : InjOn φ
   refine ⟨fun h X hX hXn ↦ ?_, fun h X hX hXn ↦ ?_⟩
   · specialize h X hX (by rwa [(hφ.mono hX).encard_image])
     rwa [← map_deleteVerts_of_injOn hφ hX,
-      preconnected_map_iff_of_injOn (hφ.mono sdiff_subset)] at h
-  rw [← map_deleteVerts_of_injOn hφ hX, preconnected_map_iff_of_injOn (hφ.mono sdiff_subset)]
+      preconnected_map_iff_of_injOn (hφ.mono (deleteVerts_vertexSet .. ▸ sdiff_subset))] at h
+  rw [← map_deleteVerts_of_injOn hφ hX, preconnected_map_iff_of_injOn
+    (hφ.mono (deleteVerts_vertexSet .. ▸ sdiff_subset))]
   exact h X hX <| by rwa [← (hφ.mono hX).encard_image]
 
 @[simp]
@@ -910,7 +912,9 @@ lemma ConnGE.deleteVerts (h : G.ConnGE n) (hFin : (V(G) ∩ X).Finite) :
     have : V(G - X).encard = V(G).encard - (X ∩ V(G)).encard := by
       rw [vertexSet_deleteVerts, ← sdiff_inter_self_eq_sdiff, encard_sdiff inter_subset_right hFin]
     rw [not_subsingleton_iff, ← one_lt_encard_iff_nontrivial, this] at hss
-    refine h.le_card.imp (fun h a ha b hb ↦ h ha.1 hb.1) (fun h ↦ ?_)
+    refine h.le_card.imp (fun h a ha b hb ↦ ?_) (fun h ↦ ?_)
+    · rw [deleteVerts_vertexSet] at ha hb
+      exact h ha.1 hb.1
     rw [ENat.natCast_toNat (by simp), this, inter_comm]
     enat_to_nat! <;> omega
 

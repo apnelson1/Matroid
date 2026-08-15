@@ -455,9 +455,10 @@ lemma project_isSkewFamily_iff {C : Set α} {Xs : ι → Set α} (hC : C ⊆ M.E
     have hb := hBX.isBasis_inter i
     replace hB := project_indep_iff.1 hB.indep
     have hdj' : Disjoint B C := (subset_sdiff.1 hB.subset_ground).2
-    rw [show (Xs i ∪ C) ∩ (B ∪ I) = I ∪ (Xs i ∩ B) by grind [hI.subset]]
+    rw [show (Xs i ∪ C) ∩ (B ∪ I) = I ∪ (Xs i ∩ B) by grind [hI.subset, -Disjoint.mono_left]]
     rw [hI.indep.project_isBasis_iff] at hb
-    refine hb.1.indep.isBasis_of_subset_of_subset_closure (by grind [hI.subset]) ?_
+    refine hb.1.indep.isBasis_of_subset_of_subset_closure
+      (by grind [hI.subset, -Disjoint.mono_left]) ?_
     have hXE : Xs i ⊆ M.E := h.subset_ground_of_mem i
     grw [hb.1.closure_eq_closure, closure_union_congr_left hI.closure_eq_closure, union_comm,
       ← M.subset_closure _]
@@ -658,8 +659,8 @@ lemma skew_iff_isBases_skew (hI : M.IsBasis I X) (hJ : M.IsBasis J Y) : M.Skew I
 
 lemma skew_dual_iff (hXY : Disjoint X Y) (hX : X ⊆ M.E := by aesop_mat)
     (hY : Y ⊆ M.E := by aesop_mat) : M✶.Skew X Y ↔ M.IsModularPair (M.E \ X) (M.E \ Y) := by
-  rw [Skew, isSkewFamily_dual_iff_isModularFamily_compl (by grind) (by grind [Pairwise]),
-    IsModularPair]
+  rw [Skew, isSkewFamily_dual_iff_isModularFamily_compl (by grind [-Disjoint.mono_left])
+    (by grind [Pairwise, -Disjoint.mono_left]), IsModularPair]
   simp [Bool.apply_cond (f := fun X ↦ M.E \ X)]
 
 lemma isModularPair_dual_iff (hXY : X ∪ Y = M.E) :
@@ -1202,7 +1203,7 @@ lemma skew_iff_forall_isCircuit_of_inter_subset_loops (hX : X ⊆ M.E := by aeso
   rw [skew_iff_forall_isCircuit disjoint_sdiff_left (sdiff_subset.trans hX) hY, sdiff_union_self]
   intro C hC hC_sub
   by_cases hdj : Disjoint C (X ∩ Y)
-  · exact (h C hC hC_sub).imp (by grind) id
+  · exact (h C hC hC_sub).imp (by grind [-Disjoint.mono_left]) id
   · obtain ⟨e, heC, heXY⟩ := not_disjoint_iff.mp hdj
     obtain rfl : C = {e} := IsLoop.eq_of_isCircuit_mem (hinter heXY) hC heC
     exact Or.inr (singleton_subset_iff.mpr heXY.2)
@@ -1301,17 +1302,14 @@ lemma IsCircuit.exists_isCircuit_mem_subset_union_of_not_skew {C} (hC : M.IsCirc
   simp only [skew_iff_forall_isCircuit hdj, not_forall, not_or, exists_prop] at hXC
   obtain ⟨C', hC', hC'ss, hnss, hcss'⟩ := hXC
   by_cases heC' : e ∈ C'
-  · exact ⟨C', hC', hC'ss, heC', not_disjoint_iff_nonempty_inter.1 (by grind)⟩
-  obtain ⟨f, hfC, hfC'⟩ : (C ∩ C').Nonempty := not_disjoint_iff_nonempty_inter.1 (by grind)
+  · exact ⟨C', hC', hC'ss, heC', not_disjoint_iff_nonempty_inter.1 (by grind [-Disjoint.mono_left])⟩
+  obtain ⟨f, hfC, hfC'⟩ : (C ∩ C').Nonempty := not_disjoint_iff_nonempty_inter.1
+    (by grind [-Disjoint.mono_left])
   obtain ⟨C'', hC''ss, hC'', heC''⟩ := hC.strong_elimination hC' hfC hfC' he heC'
-  refine ⟨C'', hC'', by grind, heC'', not_disjoint_iff_nonempty_inter.1 fun hdj ↦ ?_⟩
-  obtain rfl : C = C'' := hC.eq_of_superset_isCircuit hC'' (by grind)
-  grind
-
-
-
-  -- have := hC.strong_elimination hC' (e := e) (f := )
-
+  refine ⟨C'', hC'', by grind [-Disjoint.mono_left], heC'',
+    not_disjoint_iff_nonempty_inter.1 fun hdj ↦ ?_⟩
+  obtain rfl : C = C'' := hC.eq_of_superset_isCircuit hC'' (by grind [-Disjoint.mono_left])
+  grind [-Disjoint.mono_left]
 
 section ModularCompl
 

@@ -348,7 +348,7 @@ lemma exists_of_encard_add_encard_eq_three (h : s.encard + t.encard = 3) (hdj : 
   · obtain rfl : t = {x, z} := by grind
     use y, x, z; grind
   obtain rfl : t = {x} := by grind [sdiff_eq_empty]
-  use z, y, x; grind
+  use z, y, x; grind [-disjoint_comm]
 
 @[simp]
 lemma ENat.encard_Iio (n : ℕ∞) : (Set.Iio n).encard = n := by

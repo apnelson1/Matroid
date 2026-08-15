@@ -64,7 +64,8 @@ lemma IsSimpleLoop.isSimpleArcOrLoop {P : PolygonalPath x x} (h : P.IsSimpleLoop
 
 /-- With distinct endpoints there is no loop branch, so the disjunction collapses. -/
 lemma isSimpleArcOrLoop_iff_isSimple (hxy : x ≠ y) : P.IsSimpleArcOrLoop ↔ P.IsSimple := by
-  refine ⟨fun h ↦ h.elim And.left fun ⟨hyx, _⟩ ↦ absurd hyx.symm hxy, fun h ↦ h.isSimpleArcOrLoop ?_⟩
+  refine ⟨fun h ↦ h.elim And.left fun ⟨hyx, _⟩ ↦ absurd hyx.symm hxy,
+    fun h ↦ h.isSimpleArcOrLoop ?_⟩
   cases P with
   | nil => exact (hxy rfl).elim
   | cons => simp

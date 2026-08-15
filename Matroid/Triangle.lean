@@ -97,10 +97,10 @@ lemma IsTriangle.swap_right (h : M.IsTriangle {e, f, g}) : M.IsTriangle {e, g, f
   rwa [pair_comm]
 
 lemma IsTriangle.rotate (h : M.IsTriangle {e, f, g}) : M.IsTriangle {g, e, f} := by
-  convert h using 1; grind
+  convert h using 1; grind [-List.eq_or_mem_of_mem_cons]
 
 lemma IsTriangle.rotate_left (h : M.IsTriangle {e, f, g}) : M.IsTriangle {f, g, e} := by
-  convert h using 1; grind
+  convert h using 1; grind [-List.eq_or_mem_of_mem_cons]
 
 lemma IsTriangle.swap_left (h : M.IsTriangle {e, f, g}) : M.IsTriangle {f, e, g} :=
   h.rotate_left.swap_right
@@ -112,10 +112,10 @@ lemma IsTriad.swap_right (h : M.IsTriad {e, f, g}) : M.IsTriad {e, g, f} := by
   rwa [pair_comm]
 
 lemma IsTriad.rotate (h : M.IsTriad {e, f, g}) : M.IsTriad {g, e, f} := by
-  convert h using 1; grind
+  convert h using 1; grind [-List.eq_or_mem_of_mem_cons]
 
 lemma IsTriad.rotate_left (h : M.IsTriad {e, f, g}) : M.IsTriad {f, g, e} := by
-  convert h using 1; grind
+  convert h using 1; grind [-List.eq_or_mem_of_mem_cons]
 
 lemma IsTriad.swap_left (h : M.IsTriad {e, f, g}) : M.IsTriad {f, e, g} :=
   h.rotate_left.swap_right
@@ -124,10 +124,12 @@ lemma IsTriad.reverse (h : M.IsTriad {e, f, g}) : M.IsTriad {g, f, e} :=
   h.rotate_left.swap_left
 
 lemma IsTriangle.indep₁₂ (h : M.IsTriangle {e, f, g}) : M.Indep {e,f} :=
-  (h.isCircuit.sdiff_singleton_indep (e := g) (by simp)).subset <| by grind [h.ne₁₂, h.ne₂₃, h.ne₁₃]
+  (h.isCircuit.sdiff_singleton_indep (e := g) (by simp)).subset <| by
+    grind [h.ne₁₂, h.ne₂₃, h.ne₁₃, -List.eq_or_mem_of_mem_cons]
 
 lemma IsTriangle.indep₁₃ (h : M.IsTriangle {e, f, g}) : M.Indep {e,g} :=
-  (h.isCircuit.sdiff_singleton_indep (e := f) (by simp)).subset <| by grind [h.ne₁₂, h.ne₂₃, h.ne₁₃]
+  (h.isCircuit.sdiff_singleton_indep (e := f) (by simp)).subset <| by
+    grind [h.ne₁₂, h.ne₂₃, h.ne₁₃, -List.eq_or_mem_of_mem_cons]
 
 lemma IsTriangle.indep₂₃ (h : M.IsTriangle {e, f, g}) : M.Indep {f,g} :=
   (h.isCircuit.sdiff_singleton_indep (e := e) (by simp)).subset <| by grind [h.ne₁₂, h.ne₂₃, h.ne₁₃]
@@ -149,10 +151,10 @@ lemma IsTriangle.mem_closure₁ (h : M.IsTriangle {e, f, g}) : e ∈ M.closure {
   rwa [insert_sdiff_self_of_notMem (by simp [h.ne₁₂, h.ne₁₃])] at h'
 
 lemma IsTriangle.mem_closure₂ (h : M.IsTriangle {e, f, g}) : f ∈ M.closure {e,g} :=
-  IsTriangle.mem_closure₁ (M := M) <| by convert h using 1; grind
+  IsTriangle.mem_closure₁ (M := M) <| by convert h using 1; grind [-List.eq_or_mem_of_mem_cons]
 
 lemma IsTriangle.mem_closure₃ (h : M.IsTriangle {e, f, g}) : g ∈ M.closure {e,f} :=
-  IsTriangle.mem_closure₁ (M := M) <| by convert h using 1; grind
+  IsTriangle.mem_closure₁ (M := M) <| by convert h using 1; grind [-List.eq_or_mem_of_mem_cons]
 
 lemma IsTriangle.isNonloop_of_mem (h : M.IsTriangle T) (heT : e ∈ T) : M.IsNonloop e := by
   refine h.isCircuit.isNonloop_of_mem ?_ heT
@@ -223,7 +225,7 @@ lemma IsTriangle.eq_of_parallel_mem_mem (h : M.IsTriangle T) (hef : M.Parallel e
 lemma IsTriangle.parallel_contract₁ (h : M.IsTriangle {e, f, g}) : (M ／ {e}).Parallel f g := by
   rw [parallel_iff_isCircuit h.ne₂₃]
   convert h.isCircuit.contract_isCircuit (C := {e}) (by grind) using 1
-  grind
+  grind [-List.eq_or_mem_of_mem_cons]
 
 lemma IsTriangle.parallel_contract₂ (h : M.IsTriangle {e, f, g}) : (M ／ {f}).Parallel e g :=
   h.swap_left.parallel_contract₁
@@ -331,7 +333,7 @@ lemma IsTriangle.mem_iff_mem_of_isCocircuit (h : M.IsTriangle {e, f, g}) (hK : M
   wlog hfK : f ∈ K generalizing f g with aux
   · exact iff_of_false hfK fun hgK ↦ hfK <| (aux h.swap_right hgK).1 hgK
   obtain ⟨x, hx⟩ := (h.isCircuit.isCocircuit_inter_nontrivial hK ⟨f, by grind⟩).exists_ne f
-  exact iff_of_true hfK <| by grind
+  exact iff_of_true hfK <| by grind [-List.eq_or_mem_of_mem_cons]
 
 lemma IsTriad.mem_iff_mem_of_isCircuit (h : M.IsTriad {e, f, g}) (hC : M.IsCircuit C)
     (heC : e ∉ C) : f ∈ C ↔ g ∈ C :=
@@ -340,12 +342,14 @@ lemma IsTriad.mem_iff_mem_of_isCircuit (h : M.IsTriad {e, f, g}) (hC : M.IsCircu
 lemma IsTriangle.mem_or_mem_of_isCocircuit (h : M.IsTriangle {e, f, g}) (hK : M.IsCocircuit K)
     (heK : e ∈ K) : f ∈ K ∨ g ∈ K := by
   by_contra! hcon
-  exact h.isCircuit.inter_isCocircuit_ne_singleton hK (e := e) <| by grind
+  exact h.isCircuit.inter_isCocircuit_ne_singleton hK (e := e) <| by
+    grind [-List.eq_or_mem_of_mem_cons]
 
 lemma IsTriangle.mem_of_mem_of_notMem_of_is_Cocircuit (h : M.IsTriangle {e, f, g})
     (hK : M.IsCocircuit K) (heK : e ∈ K) (hfK : f ∉ K) : g ∈ K := by
   by_contra! hcon
-  exact h.isCircuit.inter_isCocircuit_ne_singleton hK (e := e) <| by grind
+  exact h.isCircuit.inter_isCocircuit_ne_singleton hK (e := e) <| by
+    grind [-List.eq_or_mem_of_mem_cons]
 
 lemma IsTriangle.mem_or_mem_of_isCircuit_bDual (h : (M.bDual b).IsTriangle {e, f, g})
     (hK : (M.bDual !b).IsCircuit K) (heK : e ∈ K) : f ∈ K ∨ g ∈ K := by
@@ -358,7 +362,8 @@ lemma IsTriangle.mem_iff_mem_of_isCircuit_bDual (h : (M.bDual b).IsTriangle {e, 
 lemma IsTriangle.mem_of_mem_of_notMem_of_isCircuit_bDual {b} (h : (M.bDual b).IsTriangle {e, f, g})
     (hK : (M.bDual (!b)).IsCircuit K) (heK : e ∈ K) (hfK : f ∉ K) : g ∈ K := by
   by_contra! hcon
-  exact h.isCircuit.inter_isCocircuit_ne_singleton (by simpa using hK) (e := e) <| by grind
+  exact h.isCircuit.inter_isCocircuit_ne_singleton (by simpa using hK) (e := e) <| by
+    grind [-List.eq_or_mem_of_mem_cons]
 
 lemma IsTriangle.eq_of_isTriad {x y : α} (h : M.IsTriangle {e, f, g}) (h' : M.IsTriad {e, x, y}) :
     f = x ∨ f = y ∨ g = x ∨ g = y := by

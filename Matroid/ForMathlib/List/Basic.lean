@@ -87,7 +87,6 @@ lemma Nodup.eq_head_or_mem_tail_ne {α} {x : α} {l : List α} (hnd : l.Nodup) (
     x = l.head (ne_nil_of_mem hx) ∨ x ≠ l.head (ne_nil_of_mem hx) ∧ x ∈ l.tail := by
   match l with | [] => simp at hx | a :: as => grind
 
-@[grind =]
 lemma Nodup.mem_iff_eq_head_or_mem_tail {α} {x : α} {l : List α} (hnd : l.Nodup) (hne : l ≠ []) :
     x ∈ l ↔ x = l.head hne ∨ x ≠ l.head hne ∧ x ∈ l.tail := by
   match l with | [] => simp at hne | a :: as => grind
@@ -99,7 +98,8 @@ lemma Nodup.eq_getLast_or_mem_dropLast_ne {α} {x : α} {l : List α} (hnd : l.N
 @[grind =]
 lemma Nodup.mem_iff_eq_getLast_or_mem_dropLast {α} {x : α} {l : List α} (hnd : l.Nodup)
     (hne : l ≠ []) : x ∈ l ↔ x = l.getLast hne ∨ x ≠ l.getLast hne ∧ x ∈ l.dropLast := by
-  induction l using List.reverseRec with | nil => simp at hne | append_singleton l a _ => grind
+  induction l using List.reverseRec with | nil => simp at hne | append_singleton l a _ =>
+  grind
 
 lemma Nodup.toSet_eq_of_subset_of_length_ge {l l' : List α} (hl : l.Nodup) (hss : l ⊆ l')
     (hlen : l'.length ≤ l.length) : {x | x ∈ l} = {x | x ∈ l'} := by
