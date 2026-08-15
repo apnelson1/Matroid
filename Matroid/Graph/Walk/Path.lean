@@ -112,6 +112,24 @@ lemma IsTrail.dInc_iff_eq_of_dInc (hW : G.IsTrail W) (he : W.DInc e u v) :
     · simpa [h.edge_mem] using hW.edge_nodup
     exact IH hW.of_cons he h
 
+lemma IsTrail.idxOf_adj [DecidableEq α] {a b : α} (hw : G.IsTrail w) (ha : a ∈ w) (hb : b ∈ w)
+    (he : w.idxOf b = w.idxOf a + 1) : G.Adj a b := by
+  induction w with | nil w => simp_all | cons u e w ih =>
+  simp_all only [cons_isTrail_iff, mem_cons_iff, forall_const]
+  obtain rfl | hu := eq_or_ne a u
+  · simp_all only [true_or, idxOf_cons_self, zero_add]
+    obtain rfl | hbb := eq_or_ne a b
+    · simp at he
+    simp only [idxOf_cons a e w, hbb, ↓reduceIte, Nat.add_eq_right, idxOf_eq_zero_iff] at he
+    rw [he]
+    exact hw.2.1.adj
+  simp only [hu, false_or] at ha
+  obtain rfl | hau := eq_or_ne b u
+  · simp_all
+  simp [hau] at hb
+  simp [idxOf_cons_ne hu.symm, idxOf_cons_ne hau.symm] at he
+  exact ih ha hb he
+
 lemma IsTrail.first_eq_of_isLink (hT : G.IsTrail (cons x e w)) (hl : G.IsLink e x y) :
     w.first = y := by
   rw [cons_isTrail_iff] at hT
@@ -316,6 +334,31 @@ lemma IsPath.vertexSet_nontrivial_iff (hP : G.IsPath P) : V(P).Nontrivial ↔ P.
   simp only [cons_isPath_iff] at hP
   exact nontrivial_of_exists_ne (mem_insert ..) ⟨P.first, by simp, fun h ↦ hP.2.2 (by simp [← h])⟩
 
+lemma IsPath.encard_vertexSet (hP : G.IsPath P) : V(P).encard = P.length + 1 :=
+  encard_vxSet_of_nodup hP.nodup
+
+lemma IsPath.ncard_vertexSet (hP : G.IsPath P) : V(P).ncard = P.length + 1 := by
+  have := hP.encard_vertexSet
+  rw [← P.vertexSet_finite.cast_ncard_eq] at this
+  norm_cast at this
+
+lemma IsPath.vertex_length_eq_ncard (hP : G.IsPath P) : P.vertex.length = V(P).ncard := by
+  rw [length_vertex, hP.ncard_vertexSet]
+
+lemma IsPath.vertex_length_eq_encard (hP : G.IsPath P) : P.vertex.length = V(P).encard := by
+  rw [← P.vertexSet_finite.cast_ncard_eq]
+  norm_cast
+  exact hP.vertex_length_eq_ncard
+
+lemma IsPath.vertex_length_le_encard (hP : G.IsPath P) : P.vertex.length ≤ V(G).encard := by
+  rw [hP.vertex_length_eq_encard]
+  exact encard_le_encard hP.vertexSet_subset
+
+/-- Every path has at most `V(G).encard - 1` edges. -/
+lemma IsPath.length_le_encard (hP : G.IsPath P) : P.length + 1 ≤ V(G).encard := by
+  rw [← hP.encard_vertexSet]
+  exact encard_le_encard hP.vertexSet_subset
+
 lemma IsPath.diff_Last_disjoint_of_append (hP : G.IsPath <| P₀ ++ P₁) :
     Disjoint (V(P₀) \ {P₀.last}) V(P₁) := by
   have hdj := List.disjoint_of_nodup_append <| by simpa [append_vertex] using hP.nodup
@@ -364,6 +407,54 @@ lemma IsPath.not_nontrivial_of_isLink {P : WList α β} {e : β} {x y s t : α} 
   obtain he | he := P.isLink_iff_dInc.mp he
   · exact hP.not_nontrivial_of_dInc hfirst hlast he hx hy
   · exact hP.not_nontrivial_of_dInc hfirst hlast he hy hx
+
+@[simp]
+lemma IsPath.suffixFromVertex_of_dInc [DecidableEq α] (hP : G.IsPath P) (h : P.DInc e x y) :
+    P.suffixFromVertex x = cons x e (P.suffixFromVertex y) := by
+  induction P generalizing e x y with | nil => simp_all | cons x' e' P IH =>
+  rw [dInc_cons_iff] at h
+  obtain ⟨he', hP, hx'⟩ := by simpa using hP
+  obtain ⟨rfl, rfl, rfl⟩ | h := h
+  · refine (suffixFromVertex_first_eq _).trans ?_
+    rw [suffixFromVertex_second_eq]
+    intro rfl
+    simp at hx'
+  specialize IH hP h
+  have x'_ne_y : x' ≠ y := by
+    intro rfl
+    exact hx' h.right_mem
+  have x'_ne_x : x' ≠ x := by
+    intro rfl
+    exact hx' h.left_mem
+  simp_all [suffixFromVertex]
+
+@[simp]
+lemma IsPath.prefixUntilVertex_dInc_suffixFromVertex [DecidableEq α] (hP : G.IsPath P)
+    (h : P.DInc e x y) : (P.prefixUntilVertex x) ++ cons x e (P.suffixFromVertex y) = P := by
+  rw [← hP.suffixFromVertex_of_dInc h]
+  exact prefixUntilVertex_append_suffixFromVertex P x
+
+@[simp]
+lemma IsPath.first_mem_suffixFromVertex_iff [DecidableEq α] (hP : G.IsPath P) (hx : x ∈ P) :
+    P.first ∈ P.suffixFromVertex x ↔ P.first = x := by
+  refine ⟨fun h ↦ ?_, ?_⟩; swap
+  · rintro rfl
+    simp [WList.suffixFromVertex_first_eq P]
+  obtain hnil | rfl := by simpa using P.suffixFromVertex_isSuffix x |>.eq_of_first_mem hP.nodup h
+  · obtain rfl := hnil.eq_nil_of_mem hx
+    simp
+  rfl
+
+lemma IsPath.eq_of_mem_prefixUntilVertex_suffixFromVertex [DecidableEq α] (hP : G.IsPath P)
+    (hypre : y ∈ P.prefixUntilVertex x) (hysuf : y ∈ P.suffixFromVertex x) (hx : x ∈ P) :
+    x = y := by
+  rw [← prefixUntilVertex_append_suffixFromVertex P x] at hP
+  have hPf : x = (P.suffixFromVertex x).first := (suffixFromVertex_first hx).symm
+  nth_rw 1 [(prefixUntilVertex_last hx).symm] at hPf
+  have hint : y ∈ V(P.prefixUntilVertex x) ∩ V(P.suffixFromVertex x) := mem_inter hypre hysuf
+  rw [hP.inter_eq_singleton_of_append hPf] at hint
+  simp only [prefixUntilVertex_last hx, mem_singleton_iff] at hint
+  exact hint.symm
 
 /-! ### Fixed ends. (To be cleaned up) -/
 

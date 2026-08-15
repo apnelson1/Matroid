@@ -1,6 +1,7 @@
 module
 
 public import Matroid.ForMathlib.Geometry.PolygonalPath.Basic
+public import Matroid.ForMathlib.List.Basic
 public import Mathlib.Topology.UniformSpace.Path
 public import Mathlib.Analysis.Normed.Module.Convex
 

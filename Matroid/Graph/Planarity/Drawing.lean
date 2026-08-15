@@ -1,16 +1,10 @@
 import Matroid.Graph.Degree.Max
-import Matroid.Graph.Degree.Basic
 import Matroid.Graph.Minor.Defs
 import Matroid.Graph.Planarity.Realization.Subgraph
 import Matroid.Graph.TopologicalMinor
-import Matroid.Graph.Simple
 import Mathlib.Analysis.Convex.PathConnected
-import Mathlib.Analysis.Convex.Segment
 import Mathlib.LinearAlgebra.LinearIndependent.Basic
-import Mathlib.Tactic.FinCases
--- import Mathlib.Tactic.Linarith
--- import Mathlib.Tactic.NormNum
--- import Mathlib.Tactic.Ring
+
 
 /-!
 # Drawings of graphs

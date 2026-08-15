@@ -111,8 +111,10 @@ theorem exists_radius_edgeInterior [G.Finite] (D : PLDrawing G V) {e : E(G)} {p 
       cases B with
       | nil => exact hpy rfl
       | cons => simp at this
-    obtain ⟨a, haA⟩ := A.exists_edge_ending_at_last hApos
-    obtain ⟨b, hbB⟩ := B.exists_edge_starting_at_first hBpos
+    have haA : (A.lastTip, p) ∈ A.edges := PolygonalPath.mem_edges_lastTip hApos
+    have hbB : (p, B.firstTip) ∈ B.edges := PolygonalPath.mem_edges_firstTip hBpos
+    set a := A.lastTip
+    set b := B.firstTip
     have ha : (a, p) ∈ (D.cell e).edges := by
       simpa [hAB, PolygonalPath.append_edges] using Or.inl haA
     have hb : (p, b) ∈ (D.cell e).edges := by
@@ -531,37 +533,51 @@ lemma card_endsAt [G.Finite] (v : V(G)) : Nat.card (EndsAt G v) = G.degree v.1 :
   rw [Nat.card_coe_set_eq, Nat.card_coe_set_eq, degree_eq_ncard_source_add_target]
 
 /-- The far endpoint of the cell segment at `v` belonging to an end: the first segment of the cell
-for an out-end, the last for an in-end. Total, via `cell_length_pos`. -/
-noncomputable def endTip (D : PLDrawing G V) {v : V(G)} : EndsAt G v → V
-  | .inl e => Classical.choose (PolygonalPath.exists_edge_starting_at_first (D.cell_length_pos e.1))
-  | .inr e => Classical.choose (PolygonalPath.exists_edge_ending_at_last (D.cell_length_pos e.1))
+for an out-end, the last for an in-end.
 
-private lemma endTip_mem_edges_out (D : PLDrawing G V) {v : V(G)} (e : {e : E(G) // edgeSource e = v}) :
+**This used to be `Classical.choose` of `exists_edge_starting_at_first`.** That is what made the
+star lemma at a vertex hard: the tip was a term with no computation rule, so `endTip (.inl e) = b`
+was not `rfl` for `D.cell e.1 = cons _ b _`, two tips of the same cell could not be identified, and
+the tip of a *cast* cell was a different term again. `PolygonalPath.firstTip` / `lastTip` are now
+functions with `@[simp]` computation and cast lemmas, so all three go away. See
+`PolygonalPath/Basic.lean`'s note above `firstTip`. -/
+def endTip (D : PLDrawing G V) {v : V(G)} : EndsAt G v → V
+  | .inl e => (D.cell e.1).firstTip
+  | .inr e => (D.cell e.1).lastTip
+
+/-- `endTip` on an out-end is the first tip of the cell, definitionally. This is the rewrite the
+`Classical.choose` version could not offer. -/
+@[simp] lemma endTip_inl (D : PLDrawing G V) {v : V(G)} (e : {e : E(G) // edgeSource e = v}) :
+    D.endTip (.inl e) = (D.cell e.1).firstTip := rfl
+
+/-- `endTip` on an in-end is the last tip of the cell, definitionally. -/
+@[simp] lemma endTip_inr (D : PLDrawing G V) {v : V(G)} (e : {e : E(G) // edgeTarget e = v}) :
+    D.endTip (.inr e) = (D.cell e.1).lastTip := rfl
+
+private lemma endTip_mem_edges_out (D : PLDrawing G V)
+    {v : V(G)} (e : {e : E(G) // edgeSource e = v}) :
     (D.toDrawing.vertex v, D.endTip (.inl e)) ∈ (D.cell e.1).edges := by
-  have hb := Classical.choose_spec
-    (PolygonalPath.exists_edge_starting_at_first (D.cell_length_pos e.1))
-  simpa [endTip, e.2] using hb
+  simpa [e.2] using PolygonalPath.mem_edges_firstTip (D.cell_length_pos e.1)
 
-private lemma endTip_mem_edges_in (D : PLDrawing G V) {v : V(G)} (e : {e : E(G) // edgeTarget e = v}) :
+private lemma endTip_mem_edges_in (D : PLDrawing G V)
+    {v : V(G)} (e : {e : E(G) // edgeTarget e = v}) :
     (D.endTip (.inr e), D.toDrawing.vertex v) ∈ (D.cell e.1).edges := by
-  have ha := Classical.choose_spec
-    (PolygonalPath.exists_edge_ending_at_last (D.cell_length_pos e.1))
-  simpa [endTip, e.2] using ha
+  simpa [e.2] using PolygonalPath.mem_edges_lastTip (D.cell_length_pos e.1)
 
-/- Route: unfold `endTip` to `Classical.choose_spec`, giving the cell edge, then
-`cell_out_ne_source` for `.inl` and `cell_in_ne_target` for `.inr`. The `e.2` rewrite is what turns
-`D.toDrawing.vertex (edgeSource e.1)` into `D.toDrawing.vertex v`. -/
+/- Route: `endTip_mem_edges_out` / `_in` give the cell edge directly — no `Classical.choose_spec` —
+then `cell_out_ne_source` for `.inl` and `cell_in_ne_target` for `.inr`. The `e.2` rewrite is what
+turns `D.toDrawing.vertex (edgeSource e.1)` into `D.toDrawing.vertex v`. -/
 lemma endTip_ne (D : PLDrawing G V) {v : V(G)} (i : EndsAt G v) :
     D.endTip i ≠ D.toDrawing.vertex v := by
   match i with
   | .inl e =>
-    have hb := Classical.choose_spec
-      (PolygonalPath.exists_edge_starting_at_first (D.cell_length_pos e.1))
-    simpa [endTip, e.2] using cell_out_ne_source D e.1 hb
+    have hb : (D.toDrawing.vertex (edgeSource e.1), (D.cell e.1).firstTip) ∈ (D.cell e.1).edges :=
+      PolygonalPath.mem_edges_firstTip (D.cell_length_pos e.1)
+    simpa [e.2] using cell_out_ne_source D e.1 hb
   | .inr e =>
-    have ha := Classical.choose_spec
-      (PolygonalPath.exists_edge_ending_at_last (D.cell_length_pos e.1))
-    simpa [endTip, e.2] using cell_in_ne_target D e.1 ha
+    have ha : ((D.cell e.1).lastTip, D.toDrawing.vertex (edgeTarget e.1)) ∈ (D.cell e.1).edges :=
+      PolygonalPath.mem_edges_lastTip (D.cell_length_pos e.1)
+    simpa [e.2] using cell_in_ne_target D e.1 ha
 
 /- Route: `Classical.choose_spec` puts the pair in `(D.cell _).edges`, then
 `PolygonalPath.segment_subset_toSet` lands it in the cell, and `D.range_edgePath` /
@@ -658,37 +674,50 @@ private lemma tip_mem_cell_toSet (D : PLDrawing G V) {v : V(G)} (i : EndsAt G v)
     exact (D.cell e.1).segment_subset_toSet (endTip_mem_edges_in D e)
       (left_mem_segment _ _ _)
 
-/-- The two end segments of a loop cell at `v` meet only at `v`.
-
-Route: cast the cell to a based loop at `p := vertex v` (`source = target = v`), apply
-`IsSimpleLoop.three_le_length` so the path is not a digon, then `isSimpleLoop_cons_iff` gives
-`segment p tipOut ∩ Q.toSet ⊆ {p, tipOut}` with `Q` the tail after the first edge. The in-tip edge
-`(tipIn, p)` lies in `Q.edges` (it is not the first edge, by `endTip_ne`), so
-`segment tipIn p ⊆ Q.toSet`. Hence the intersection of the two end segments is in `{p, tipOut}`; the
-`tipOut` case forces `tipOut = tipIn` via `mem_segment_iff_of_mem_vertices`, contradicting
-`three_le_length` (digon). Identifying `tipOut` with the `cons` head uses that a simple path has no
-edge starting at its last vertex (`mem_edges_iff` + `Nodup.getElem_inj_iff`).
-
-**Stuck (tactic, not FH).** All named APIs exist. Failures were mechanical:
-* `PolygonalPath.cast` / `edges_cast` / `isSimpleArcOrLoop_cast` vs `endTip` defined on the uncast
-  cell — `simpa` on `(endTip (.inr f), p) ∈ P.edges` fights `f.1 = e.1` and `vertex v` vs `p`.
-* Proving `endTip (.inl e) = b` for `P = cons p b Q`: the `List.mem_cons` right branch (edge
-  starting at `p` inside `Q`) needs `Nodup` of `Q.vertices` plus “no outgoing edge from the last
-  vertex”; `getLast`/`getElem` index arithmetic and `nodup_iff_injective_getElem` (Fin-shaped)
-  repeatedly misfired.
-* `tips_ne : tipIn ≠ tipOut` via `eq_first_edge_of_mem_segment` on `Q` when assuming `tipIn = b`
-  works for `Q = direct b p` (`length = 2` vs `three_le_length`), but the longer-`Q` revisit-`p`
-  case needs a clean `vertices.Nodup` contradiction after subst.
-
-No missing public lemma: a short private `endTip_eq_cons_head` / `no_edge_starting_at_last` would
-be local sugar, not scaffolding. -/
+/-- The two end segments of a loop cell at `v` meet only at `v`. -/
 private lemma segment_endTip_inter_loop (D : PLDrawing G V) {v : V(G)}
     (e : {e : E(G) // edgeSource e = v}) (f : {e : E(G) // edgeTarget e = v})
     (hef : e.1 = f.1) :
     segment ℝ (D.toDrawing.vertex v) (D.endTip (.inl e)) ∩
         segment ℝ (D.toDrawing.vertex v) (D.endTip (.inr f)) ⊆
       {D.toDrawing.vertex v} := by
-  sorry
+  intro z ⟨hzOut, hzIn⟩
+  set p := D.toDrawing.vertex v
+  simp only [endTip_inl, endTip_inr] at hzOut hzIn
+  rw [← hef] at hzIn
+  have hx : D.toDrawing.vertex (edgeSource e.1) = p := congrArg _ e.2
+  have hy : D.toDrawing.vertex (edgeTarget e.1) = p := by rw [hef, f.2]
+  rw [← PolygonalPath.firstTip_cast (D.cell e.1) hx hy] at hzOut
+  rw [← PolygonalPath.lastTip_cast (D.cell e.1) hx hy] at hzIn
+  have hPpos : 0 < ((D.cell e.1).cast hx hy).length := by
+    simpa [PolygonalPath.cast_length] using D.cell_length_pos e.1
+  have hP : ((D.cell e.1).cast hx hy).IsSimpleLoop :=
+    (PolygonalPath.isSimpleArcOrLoop_iff_isSimpleLoop hPpos).mp
+      ((PolygonalPath.isSimpleArcOrLoop_cast hx hy).mpr (D.cell_isSimpleArcOrLoop e.1))
+  suffices ∀ {P : PolygonalPath p p}, P.IsSimpleLoop →
+      z ∈ segment ℝ p P.firstTip → z ∈ segment ℝ p P.lastTip → z ∈ ({p} : Set V) from
+    this hP hzOut hzIn
+  intro P hP hzOut hzIn
+  cases P with
+  | nil => exact (PolygonalPath.not_isSimpleLoop_nil hP).elim
+  | cons _ b Q =>
+    obtain ⟨hpb, hQ, hmeet⟩ := PolygonalPath.isSimpleLoop_cons_iff.mp hP
+    have hQpos : 0 < Q.length := by
+      have := hP.three_le_length
+      simp at this
+      omega
+    have hzQ : z ∈ Q.toSet :=
+      Q.segment_subset_toSet (PolygonalPath.mem_edges_lastTip hQpos) <| by
+        rw [segment_symm, ← PolygonalPath.lastTip_cons hQpos]; exact hzIn
+    rcases hmeet ⟨hzOut, hzQ⟩ with rfl | rfl
+    · rfl
+    · have hbends :=
+        (hQ.mem_segment_iff_of_mem_vertices Q.first_mem_vertices
+          (PolygonalPath.mem_edges_lastTip hQpos)).mp <| by
+            rw [segment_symm, ← PolygonalPath.lastTip_cons hQpos]; exact hzIn
+      rcases hbends with hbt | hbp
+      · exact (hP.firstTip_ne_lastTip (by simp [PolygonalPath.lastTip_cons hQpos, hbt])).elim
+      · exact (hpb hbp.symm).elim
 
 /-- **Distinct ends give segments meeting only at `v`** — with no shrinking, which is the point. -/
 lemma segment_endTip_inter (D : PLDrawing G V) {v : V(G)} {i j : EndsAt G v} (hij : i ≠ j) :
@@ -767,24 +796,29 @@ Then a point of the support in `closedBall (vertex v) ρ` other than `vertex v` 
 through `vertex v`; that segment is an edge of some cell at `v`, and
 `eq_first_edge_of_mem_segment` / `eq_last_edge_of_mem_segment` identify it as an end segment.
 
-Alternative: for each non-loop out-end apply `exists_ball_inter_subset_firstSegment` (and reverse for
-in-ends); for a loop take the min of the two one-sided radii from `isSimpleLoop_cons_iff`; then min
-against the distance to non-incident cells.
+**Unblocked 2026-08-14; the previous note recorded this as a tactic problem and it was not.** Both
+routes below used to end at the same wall — "the `z` I have is not the `endTip` I want" — and that
+wall was a statement-layer defect, now fixed in three places:
 
-**Stuck (tactic, not FH).** Packaging and named lemmas are enough; assembly of
-`exists_radius_vertex` already consumes this statement. Failures:
-* Finite-support route: δ-bound against `K = (range vertex \ {p}) ∪ ⋃ Srest` copies
-  `IsSegmentFigure.exists_radius` cleanly; the hard step is identifying a segment through `p` as
-  `segment p (endTip i)`. That needs `endTip_eq` from “`(p, b)` (resp. `(b, p)`) is the first
-  (resp. last) edge of the cell”, which is the same uniqueness stuck point as
-  `segment_endTip_inter_loop`.
-* Per-end `exists_ball_inter_subset_firstSegment` route: the existential `z` is *some* point with
-  `cell ∩ ball ⊆ segment p z`, not definitionally `endTip`. Closing `segment p z ⊆ segment p
-  (endTip i)` (or proving `z = endTip`) again needs first-edge uniqueness. Loops are excluded by
-  that lemma’s `x ≠ y`, so they need a separate two-sided radius anyway.
+* `endTip` is no longer `Classical.choose` of an existential. It is `(D.cell _).firstTip` /
+  `lastTip`, so `endTip_inl` and `endTip_inr` above are `rfl` and `simp` rewrites both ways. The
+  `endTip_inl_eq` / `endTip_inr_eq` the old note asked for as "local sugar" are those two lemmas,
+  and they were not sugar: without them nothing about a tip could be transported at all.
+* `PolygonalPath.firstTip_cast` / `lastTip_cast` are `simp`, so a tip of a *cast* cell is the tip
+  of the cell. That was the first of the three recorded failures and it is now automatic.
+* `exists_ball_inter_subset_firstSegment` (`PolygonalPath/Basic.lean`) now concludes about
+  `segment ℝ x P.firstTip` rather than about an existentially quantified `z`. So the per-end route
+  below no longer has anything to identify: what it returns *is* `segment p (endTip i)`.
 
-Preferred next cut: prove private `endTip_inl_eq` / `endTip_inr_eq` (first/last edge determines the
-tip) once, then both this cover and the loop intersection become short. -/
+Preferred route, now that the per-end version composes: for each out-end take the radius from
+`exists_ball_inter_subset_firstSegment` applied to `D.cell e.1` (whose `IsSimple` is
+`cell_isSimple_of_source_ne_target`, needing `edgeSource ≠ edgeTarget`); for each in-end apply it
+to the reverse and use `firstTip_reverse`. For a **loop** end, both of the above are unavailable —
+a loop cell is not `IsSimple` — and the two one-sided radii come instead from
+`IsSimpleLoop.eq_first_or_last_edge_of_mem_segment` (`PolygonalPath/SimpleLoop.lean`), which is the
+loop analogue of `eq_first_edge_of_mem_segment` that did not exist before. Finally take the minimum
+over the finitely many ends together with the distance to the non-incident cells, the latter from
+`exists_finite_support` as in the first route above. -/
 theorem exists_radius_support_subset_iUnion_segment_endTip [G.Finite] (D : PLDrawing G V)
     (v : V(G)) : ∃ ρ > 0, D.toDrawing.support ∩ closedBall (D.toDrawing.vertex v) ρ ⊆
     {D.toDrawing.vertex v} ∪ ⋃ i : EndsAt G v, segment ℝ (D.toDrawing.vertex v) (D.endTip i) := by

@@ -3,6 +3,7 @@ module
 public import Matroid.Graph.Forest
 public import Matroid.Graph.Connected.Menger
 public import Matroid.Graph.WList.TakeDrop.Pred
+public import Matroid.Graph.Degree.Defs
 import all Mathlib.Combinatorics.Graph.Delete
 
 @[expose] public section
@@ -248,13 +249,7 @@ theorem ConnGE.exists_isCycle_le (hG : G.ConnGE 2) (hx : x ∈ V(G)) :
   obtain ⟨G', -, hsimp⟩ := exists_isSimpleficationOf_of_le (G := ⊥) (H := G) bot_le
   have hG' : G'.ConnGE 2 := (connGE_iff_le_connectivity 2).2 <|
     connectivity_simplify hsimp ▸ (connGE_iff_le_connectivity 2).1 hG
-  
-
   have hx' : x ∈ V(G') := hsimp.isSpanningSubgraph.vertexSet_eq ▸ hx
-
-  obtain ⟨y, hy, hyx⟩ := two_le_encard_iff_nontrivial.mp (hG'.lt_encard_vertexSet le_rfl).le
-    |>.exists_ne x
-
   have hN : 2 ≤ (N(G', x) \ {x}).encard := by
     by_contra hlt
     have hle1 : (N(G', x) \ {x}).encard ≤ 1 := by
@@ -326,11 +321,36 @@ Termination endgame: when `E(H) = E(G)` also `V(H) = V(G)`, since a vertex of `G
 still carries an edge (`ConnGE.exists_isNonloopAt` `Connected/Basic.lean:633`) whose ends lie in
 `V(H)` once that edge is in `E(H)`. -/
 @[elab_as_elim]
-theorem ConnGE.ear_induction [G.Finite] [G.Loopless] (hG : G.ConnGE 2) (hC₀ : C₀.IsCycle)
-    (hC₀G : C₀ ≤ G) (h3 : 3 ≤ V(C₀).encard) {motive : Graph α β → Prop} (base : motive C₀)
+theorem ConnGE.ear_induction [G.Finite] [G.Loopless] (hG : G.ConnGE 2) (hC₀G : C₀ ≤ G)
+    (h3 : 3 ≤ V(C₀).encard) {motive : Graph α β → Prop} (base : motive C₀)
     (step : ∀ ⦃H P⦄, C₀ ≤ H → H ≤ G → G.IsEar H P → motive H → motive (H ∪ P.toGraph)) :
     motive G := by
-  sorry
+  suffices ∀ n (H : Graph α β), (E(G) \ E(H)).ncard = n → C₀ ≤ H → H ≤ G → motive H → motive G from
+    this _ C₀ rfl le_rfl hC₀G base
+  intro n
+  induction n using Nat.strong_induction_on with | h n ih => _
+  rintro H rfl hC₀H hHG hH
+  obtain rfl | hHne := eq_or_ne H G
+  · exact hH
+  have hV : V(H).Nontrivial := by
+    have hnt : V(C₀).Nontrivial := one_lt_encard_iff_nontrivial.1 <|
+      (by norm_num : (1 : ℕ∞) < 3).trans_le h3
+    obtain ⟨x, hx, y, hy, hxy⟩ := hnt
+    exact ⟨x, vertexSet_mono hC₀H hx, y, vertexSet_mono hC₀H hy, hxy⟩
+  obtain ⟨P, hP⟩ := hG.exists_isEar hHG hV hHne
+  refine ih (E(G) \ E(H ∪ P.toGraph)).ncard
+    (ncard_lt_ncard ?_ (G.edgeSet_finite.subset sdiff_subset)) (H ∪ P.toGraph) rfl
+    (hC₀H.trans hP.le_union) (hP.union_le hHG) (step hC₀H hHG hP hH)
+  have hss : E(G) \ E(H ∪ P.toGraph) ⊆ E(G) \ E(H) := by
+    intro e
+    simp only [edgeSet_union, toGraph_edgeSet, mem_sdiff, mem_union, not_or, and_imp]
+    exact fun heG heH _ ↦ ⟨heG, heH⟩
+  obtain ⟨e, heP⟩ := hP.edgeSet_nonempty
+  have heP' : e ∈ E(P.toGraph) := by simpa [toGraph_edgeSet] using heP
+  refine hss.ssubset_of_not_subset fun hsub ↦ ?_
+  have := hsub ⟨edgeSet_mono hP.toGraph_le heP', hP.edge_disjoint.notMem_of_mem_left heP⟩
+  simp [edgeSet_union] at this
+  exact this.2.2 heP
 
 /-! ### Ear decompositions -/
 
@@ -346,11 +366,15 @@ inductive EarBuild (G : Graph α β) : Graph α β → List (WList α β) → Gr
 
 /- Route: induction on the derivation; `IsEar.le_union` at each `cons`, `le_trans` to chain. -/
 lemma EarBuild.le (h : G.EarBuild H Ps K) : H ≤ K := by
-  sorry
+  induction h with
+  | nil => exact le_rfl
+  | cons hR _ ih => exact hR.le_union.trans ih
 
 /- Route: induction on the derivation; `IsEar.union_le` at each `cons` re-establishes `≤ G`. -/
 lemma EarBuild.le_of_le (h : G.EarBuild H Ps K) (hle : H ≤ G) : K ≤ G := by
-  sorry
+  induction h with
+  | nil => exact hle
+  | cons hR _ ih => exact ih (hR.union_le hle)
 
 /-- An **ear decomposition** of `G`: a cycle of `G` on at least three vertices, and a list of ears
 attaching to it that exhausts `G`.
@@ -371,8 +395,46 @@ Route: `IsCycle.exists_isCyclicWalk_eq` `Forest.lean:200` presents `C₀` as a c
 `IsCycle.exists_two_paths_of_ne` `Forest.lean:281` supplies the two arcs between any two of its
 vertices, which is exactly what `le_cut` needs against a separator of `encard ≤ 1`. The `le_card`
 field is `h3`. -/
-lemma IsCycle.connGE_two (hC₀ : C₀.IsCycle) (h3 : 3 ≤ V(C₀).encard) : C₀.ConnGE 2 := by
-  sorry
+lemma IsCycle.connGE_two (hC₀ : C₀.IsCycle) (h3 : 3 ≤ V(C₀).encard) : C₀.ConnGE 2 where
+  le_card := Or.inr <| (by norm_num : (2 : ℕ∞) < 3).trans_le h3
+  le_cut C hC := by
+    by_contra hlt
+    have hle1 : C.encard ≤ 1 := by
+      contrapose! hlt
+      convert Order.add_one_le_of_lt hlt
+      · rfl
+      · norm_num
+    obtain rfl | ⟨x, rfl⟩ := encard_le_one_iff_eq.1 hle1
+    · exact empty_isSep_iff.mp hC hC₀.connected
+    obtain ⟨W, hW, rfl⟩ := hC₀.exists_isCyclicWalk_eq
+    have hx : x ∈ W := by simpa [mem_vertexSet_iff] using hC.subset_vx (mem_singleton x)
+    have hnt : W.Nontrivial := hW.nontrivial_iff_vertexSet_nontrivial.2 <|
+      one_lt_encard_iff_nontrivial.1 <| (by norm_num : (1 : ℕ∞) < 3).trans_le (by simpa using h3)
+    obtain ⟨P, hP, hPeq⟩ := hW.exists_isPath_toGraph_eq_delete_vertex hnt hx
+    exact hC.not_connected <| hPeq ▸ hP.isWalk.toGraph_connected
+
+lemma IsCycle.three_le_encard_of_simple [G.Simple] (hG : G.IsCycle) : 3 ≤ V(G).encard := by
+  obtain ⟨x, hx⟩ := hG.nonempty
+  have h := eDegree_le_encard hx
+  rw [hG.regular_two hx] at h
+  exact le_trans (by norm_num : (3 : ℕ∞) ≤ 2 + 1) h
+
+lemma ConnGE.not_isForest (hG : G.ConnGE 2) : ¬ G.IsForest := by
+  obtain ⟨x, hx⟩ := (hG.connected one_le_two).nonempty
+  obtain ⟨C, hC, hle, -, -⟩ := hG.exists_isCycle_le hx
+  exact not_isForest_iff_exists_isCycle.2 ⟨C, hC, hle⟩
+
+lemma isCycle_iff_minimal_connGE_two [G.Simple] : G.IsCycle ↔ Minimal (·.ConnGE 2) G := by
+  constructor
+  · intro hG
+    refine ⟨hG.connGE_two hG.three_le_encard_of_simple, ?_⟩
+    exact fun H hH hle ↦ hG.le_of_le hH.not_isForest hle
+  · intro hG
+    refine ⟨hG.prop.not_isForest, ?_⟩
+    intro H hH hle
+    obtain ⟨C, hC, hCle⟩ := not_isForest_iff_exists_isCycle.1 hH
+    have : C.Simple := ‹G.Simple›.mono (hCle.trans hle)
+    exact (hG.le_of_le (hC.connGE_two hC.three_le_encard_of_simple) (hCle.trans hle)).trans hCle
 
 /-- **Attaching an ear preserves `2`-connectivity.** The inductive content of the converse half of
 Whitney's theorem.
@@ -386,8 +448,114 @@ vertex of `P` reaches `P.first` along `P` avoiding `S` — or, if `S` meets `P`'
 other side to `P.last`. Assemble with `ConnBetween.trans` `Connected/Vertex/Defs.lean:44`.
 The `le_card` field is inherited from `hH` through `IsEar.le_union`. -/
 theorem IsEar.connGE_two_union (hP : G.IsEar H P) (hle : H ≤ G) (hH : H.ConnGE 2) :
-    (H ∪ P.toGraph).ConnGE 2 := by
-  sorry
+    (H ∪ P.toGraph).ConnGE 2 where
+  le_card := Or.inr <| (hH.lt_encard_vertexSet le_rfl).trans_le <|
+    encard_le_encard (vertexSet_mono hP.le_union)
+  le_cut S hS := by
+    by_contra hlt
+    have hle1 : S.encard ≤ 1 := by
+      contrapose! hlt
+      convert Order.add_one_le_of_lt hlt
+      · rfl
+      · norm_num
+    obtain rfl | ⟨s, rfl⟩ := encard_le_one_iff_eq.1 hle1
+    · exact empty_isSep_iff.mp hS <|
+        (compatible_of_le_le hle hP.toGraph_le).union_connected_of_nonempty_inter
+          (hH.connected one_le_two) hP.isPath.isWalk.toGraph_connected
+          ⟨P.first, hP.first_mem, by simp [toGraph_vertexSet]⟩
+    refine hS.not_connected ?_
+    classical
+    have hHconn : (H - ({s} : Set α)).Connected := by
+      by_cases hsH : s ∈ V(H)
+      · exact hH.deleteVert_connected hsH
+      · rw [(deleteVerts_eq_self_iff _ _).mpr (by simpa [disjoint_singleton_right])]
+        exact hH.connected one_le_two
+    have ht : ∃ t ∈ ({P.first, P.last} : Set α), t ≠ s := by
+      by_contra! h
+      exact hP.first_ne_last <| (h _ (by simp)).trans (h _ (by simp)).symm
+    obtain ⟨t, htends, hts⟩ := ht
+    have htH : t ∈ V(H) := by
+      simp only [mem_insert_iff, mem_singleton_iff] at htends
+      obtain rfl | rfl := htends <;> simp [hP.first_mem, hP.last_mem]
+    have htHS : t ∈ V(H - ({s} : Set α)) := by simp [htH, hts]
+    have hHS_le : H - ({s} : Set α) ≤ (H ∪ P.toGraph) - ({s} : Set α) :=
+      deleteVerts_mono_left hP.le_union _
+    have hcompat : H.Compatible P.toGraph := compatible_of_le_le hle hP.toGraph_le
+    have walk_sub {Q : WList α β} (hQ : G.IsPath Q) (hEQ : E(Q) ⊆ E(P))
+        (hfirst : Q.first ∈ V(P)) (hdj : s ∉ V(Q)) :
+        ((H ∪ P.toGraph) - ({s} : Set α)).ConnBetween Q.first Q.last := by
+      have hU : (H ∪ P.toGraph).IsWalk Q :=
+        hQ.isWalk.isWalk_le (hP.union_le hle)
+          (hEQ.trans <| by
+            rw [← toGraph_edgeSet]
+            exact edgeSet_mono hcompat.right_le_union)
+          (by simp [vertexSet_union, toGraph_vertexSet, hfirst])
+      exact (isWalk_deleteVerts_iff.2 ⟨hU, disjoint_singleton_right.2 hdj⟩).connBetween_first_last
+    have hP_to_t (x : α) (hxP : x ∈ P) (hxs : x ≠ s) :
+        ((H ∪ P.toGraph) - ({s} : Set α)).ConnBetween x t := by
+      have hxV : x ∈ V(P) := mem_vertexSet_iff.2 hxP
+      have hinter : V(P.prefixUntilVertex x) ∩ V(P.suffixFromVertex x) =
+          {(P.prefixUntilVertex x).last} :=
+        ((prefixUntilVertex_append_suffixFromVertex P x).symm ▸
+            hP.isPath).inter_eq_singleton_of_append
+          (by rw [prefixUntilVertex_last hxP, suffixFromVertex_first hxP])
+      rw [prefixUntilVertex_last hxP] at hinter
+      have hpre : G.IsPath (P.prefixUntilVertex x) :=
+        hP.isPath.prefix (prefixUntilVertex_isPrefix P x)
+      have hsuf : G.IsPath (P.suffixFromVertex x) :=
+        hP.isPath.suffix (suffixFromVertex_isSuffix P x)
+      have hEpre : E(P.prefixUntilVertex x) ⊆ E(P) :=
+        (prefixUntilVertex_isPrefix P x).edge_subset
+      have hEsuf : E(P.suffixFromVertex x) ⊆ E(P) :=
+        (suffixFromVertex_isSuffix P x).edge_subset
+      have hfirst_pre : (P.prefixUntilVertex x).first ∈ V(P) := by
+        simp [prefixUntilVertex_first]
+      have hfirst_suf : (P.suffixFromVertex x).first ∈ V(P) := by
+        simpa [suffixFromVertex_first hxP] using hxV
+      have hHS (a b : α) (ha : a ∈ V(H - ({s} : Set α))) (hb : b ∈ V(H - ({s} : Set α))) :
+          ((H ∪ P.toGraph) - ({s} : Set α)).ConnBetween a b :=
+        (hHconn.connBetween ha hb).mono hHS_le
+      have htends' : t = P.first ∨ t = P.last := by simpa using htends
+      obtain rfl | rfl := htends'
+      · by_cases hspre : s ∈ V(P.prefixUntilVertex x)
+        · have hssuf : s ∉ V(P.suffixFromVertex x) := fun hs ↦ hxs <|
+            (eq_of_mem_singleton (hinter ▸ ⟨hspre, hs⟩)).symm
+          have hlasts : P.last ≠ s := by
+            intro h
+            exact hssuf <| mem_vertexSet_iff.2 <|
+              h ▸ suffixFromVertex_last P x ▸ WList.last_mem
+          have hxlast := walk_sub hsuf hEsuf hfirst_suf hssuf
+          rw [suffixFromVertex_first hxP, suffixFromVertex_last] at hxlast
+          exact hxlast.trans (hHS P.last P.first (by simp [hP.last_mem, hlasts])
+            (by simp [hP.first_mem, hts]))
+        · have hxfirst := walk_sub hpre hEpre hfirst_pre hspre
+          rw [prefixUntilVertex_first, prefixUntilVertex_last hxP] at hxfirst
+          exact hxfirst.symm
+      · -- `t = P.last`
+        by_cases hssuf : s ∈ V(P.suffixFromVertex x)
+        · have hspre : s ∉ V(P.prefixUntilVertex x) := fun hs ↦ hxs <|
+            (eq_of_mem_singleton (hinter ▸ ⟨hs, hssuf⟩)).symm
+          have hfirsts : P.first ≠ s := by
+            intro h
+            exact hspre <| mem_vertexSet_iff.2 <|
+              h ▸ prefixUntilVertex_first P x ▸ WList.first_mem
+          have hxfirst := walk_sub hpre hEpre hfirst_pre hspre
+          rw [prefixUntilVertex_first, prefixUntilVertex_last hxP] at hxfirst
+          exact hxfirst.symm.trans
+            (hHS P.first P.last (by simp [hP.first_mem, hfirsts]) (by simp [hP.last_mem, hts]))
+        · have hxlast := walk_sub hsuf hEsuf hfirst_suf hssuf
+          rw [suffixFromVertex_first hxP, suffixFromVertex_last] at hxlast
+          exact hxlast
+    refine connected_iff.2 ⟨⟨t, ?_⟩, fun u v hu hv ↦ ?_⟩
+    · simp [vertexSet_deleteVerts, vertexSet_union, htH, hts]
+    simp only [vertexSet_deleteVerts, vertexSet_union, mem_sdiff, mem_union,
+      mem_singleton_iff] at hu hv
+    have hto_t {w : α} (hw : w ∈ V(H) ∨ w ∈ V(P.toGraph)) (hws : w ≠ s) :
+        ((H ∪ P.toGraph) - ({s} : Set α)).ConnBetween w t := by
+      obtain hw | hw := hw
+      · exact (hHconn.connBetween (by simp [hw, hws]) htHS).mono hHS_le
+      · exact hP_to_t w (by simpa [toGraph_vertexSet, mem_vertexSet_iff] using hw) hws
+    exact (hto_t hu.1 hu.2).trans (hto_t hv.1 hv.2).symm
 
 /-- **Whitney, converse half.** A graph with an ear decomposition is `2`-connected.
 
@@ -397,7 +565,10 @@ no loop of `G` is ever reached — which is why the forward direction below need
 Route: `IsCycle.connGE_two` for the base, then induction on the `EarBuild` derivation with
 `IsEar.connGE_two_union` at each step, carrying `H ≤ G` along by `EarBuild.le_of_le`. -/
 theorem IsEarDecomposition.connGE_two (h : G.IsEarDecomposition C₀ Ps) : G.ConnGE 2 := by
-  sorry
+  refine EarBuild.rec (motive := fun (A : Graph α β) _ B _ ↦ A ≤ G → A.ConnGE 2 → B.ConnGE 2)
+    (fun _ _ hA ↦ hA) (fun hR _ ih hle hA ↦
+      ih (hR.union_le hle) (hR.connGE_two_union hle hA))
+    h.earBuild h.le (h.isCycle.connGE_two h.three_le)
 
 /-- **Whitney, forward half.** Every finite loopless `2`-connected graph has an ear decomposition.
 
@@ -408,7 +579,40 @@ Obstruction: the eliminator discards its ears, so this cannot be routed through 
 has to be written out. -/
 theorem ConnGE.exists_isEarDecomposition [G.Finite] [G.Loopless] (hG : G.ConnGE 2) :
     ∃ C₀ Ps, G.IsEarDecomposition C₀ Ps := by
-  sorry
+  obtain ⟨x, hx⟩ := (hG.connected one_le_two).nonempty
+  obtain ⟨C₀, hC₀, hC₀G, -, h3⟩ := hG.exists_isCycle_le hx
+  suffices ∀ n (H : Graph α β), (E(G) \ E(H)).ncard = n →
+      C₀ ≤ H → H ≤ G → ∃ Ps, G.EarBuild H Ps G by
+    obtain ⟨Ps, hPs⟩ := this _ C₀ rfl le_rfl hC₀G
+    exact ⟨C₀, Ps, hC₀, h3, hC₀G, hPs⟩
+  intro n
+  induction n using Nat.strong_induction_on with
+  | h n ih =>
+    intro H hn hC₀H hHG
+    by_cases hHeq : H = G
+    · rw [hHeq]
+      exact ⟨List.nil, EarBuild.nil G⟩
+    have hV : V(H).Nontrivial := by
+      have hnt : V(C₀).Nontrivial := one_lt_encard_iff_nontrivial.1 <|
+        (by norm_num : (1 : ℕ∞) < 3).trans_le h3
+      obtain ⟨x, hx, y, hy, hxy⟩ := hnt
+      exact ⟨x, vertexSet_mono hC₀H hx, y, vertexSet_mono hC₀H hy, hxy⟩
+    obtain ⟨P, hP⟩ := hG.exists_isEar hHG hV hHeq
+    refine (ih (E(G) \ E(H ∪ P.toGraph)).ncard ?_ (H ∪ P.toGraph) rfl
+      (hC₀H.trans hP.le_union) (hP.union_le hHG)).elim fun Ps hPs ↦
+        ⟨P :: Ps, EarBuild.cons hP hPs⟩
+    rw [← hn]
+    refine ncard_lt_ncard ?_ (G.edgeSet_finite.subset sdiff_subset)
+    have hss : E(G) \ E(H ∪ P.toGraph) ⊆ E(G) \ E(H) := by
+      intro e
+      simp only [edgeSet_union, toGraph_edgeSet, mem_sdiff, mem_union, not_or, and_imp]
+      exact fun heG heH _ ↦ ⟨heG, heH⟩
+    obtain ⟨e, heP⟩ := hP.edgeSet_nonempty
+    have heP' : e ∈ E(P.toGraph) := by simpa [toGraph_edgeSet] using heP
+    exact hss.ssubset_of_not_subset fun hsub ↦ by
+      have := hsub ⟨edgeSet_mono hP.toGraph_le heP', hP.edge_disjoint.notMem_of_mem_left heP⟩
+      simp [edgeSet_union] at this
+      exact this.2.2 heP
 
 /-- **Whitney's theorem.** For a finite loopless graph, `2`-connectivity is exactly the existence of
 an ear decomposition. -/

@@ -362,15 +362,8 @@ lemma IsSimpleLoop.three_le_length {P : PolygonalPath x x} (h : P.IsSimpleLoop) 
                     ⟨hwv ▸ hwua, right_mem_segment ℝ a v⟩
                 exact (hav this.symm).elim
       next hauv =>
-        have ha' : a ∈ P.toSet := by
-          simp only [toSet_cons, mem_union] at ha
-          rcases ha with ha | ha
-          · by_cases hav : a = v
-            · subst a
-              exact P.mem_toSet_of_mem_vertices P.first_mem_vertices
-            · exact (hauv (mem_openSegment_of_ne_left_right
-                (fun h => hau h.symm) (fun h => hav h.symm) ha)).elim
-          · exact ha
+        have ha' : a ∈ P.toSet :=
+          ((mem_toSet_cons_iff.mp ha).resolve_left hau).resolve_left hauv
         change (cons x v (P.subdivide ha')).IsSimpleLoop ↔ (cons x v P).IsSimpleLoop
         rw [isSimpleLoop_cons_iff, isSimple_subdivide_iff ha', toSet_subdivide]
         exact (isSimpleLoop_cons_iff (x := x) (b := v) (P := P)).symm
@@ -405,6 +398,74 @@ lemma IsSimpleLoop.existsUnique_edge {P : PolygonalPath x x} {a : α} (h : P.IsS
       · have haends := hinter ⟨hat, haQ⟩
         exact haends.elim (fun e => (hax e).elim) (fun e => (hab e).elim)
       · exact hsuniq t ⟨ht, hat⟩
+
+/-! ### The two edges at the base point
+
+`eq_first_edge_of_mem_segment` and `eq_last_edge_of_mem_segment` (`Basic.lean`) pin down which edge
+of a *simple path* can contain an endpoint. At the base point of a simple **loop** the answer is a
+disjunction — the first edge and the last edge both end there — and no lemma said so, which is why
+a consumer that handles a cell of a drawing uniformly could close the arc case and not the loop
+case. `Graph.PLDrawing.segment_endTip_inter_loop` is exactly that consumer.
+
+These are stated with `firstTip` and `lastTip` rather than existentially, so that a caller can
+identify the two edges with the ones it already holds. -/
+
+/-- At the base point of a simple loop the first tip is not the base point. -/
+lemma IsSimpleLoop.firstTip_ne {P : PolygonalPath x x} (h : P.IsSimpleLoop) : P.firstTip ≠ x := by
+  cases P with
+  | nil => exact (not_isSimpleLoop_nil h).elim
+  | cons a b Q => exact fun hbx ↦ (isSimpleLoop_cons_iff.mp h).1 hbx.symm
+
+/-- At the base point of a simple loop the last tip is not the base point. -/
+lemma IsSimpleLoop.lastTip_ne {P : PolygonalPath x x} (h : P.IsSimpleLoop) : P.lastTip ≠ x :=
+  (isSimpleLoop_reverse.mpr h).firstTip_ne
+
+/-- **The two edges at the base point of a simple loop are distinct.** Equivalently, a simple loop
+is not a digon — which is what `three_le_length` says, in the form a caller can use. -/
+lemma IsSimpleLoop.firstTip_ne_lastTip {P : PolygonalPath x x} (h : P.IsSimpleLoop) :
+    P.firstTip ≠ P.lastTip := by
+  cases P with
+  | nil => exact (not_isSimpleLoop_nil h).elim
+  | cons x b Q =>
+    obtain ⟨-, hQ, -⟩ := isSimpleLoop_cons_iff.mp h
+    have hQlen : 2 ≤ Q.length := by
+      have := h.three_le_length
+      simp at this
+      omega
+    intro heq
+    cases Q with
+    | nil => simp at hQlen
+    | cons b c R =>
+      have hRpos : 0 < R.length := by
+        simp at hQlen
+        omega
+      have hlast : (cons x b (cons b c R)).lastTip = R.lastTip := by
+        rw [lastTip_cons (by simp), lastTip_cons hRpos]
+      have hbR : b ∈ R.vertices := by
+        have : b = R.lastTip := heq.trans hlast
+        exact this ▸ R.fst_mem_vertices (mem_edges_lastTip hRpos)
+      exact (List.nodup_cons.mp hQ.vertices_nodup).1 hbR
+
+/-- **At the base point of a simple loop, only the first and last edges contain it.** The loop
+analogue of `eq_first_edge_of_mem_segment`; the disjunction is irreducible, because both edges
+genuinely end at the base point. -/
+lemma IsSimpleLoop.eq_first_or_last_edge_of_mem_segment {P : PolygonalPath x x}
+    (h : P.IsSimpleLoop) {s : α × α} (hs : s ∈ P.edges) (hxs : x ∈ segment ℝ s.1 s.2) :
+    s = (x, P.firstTip) ∨ s = (P.lastTip, x) := by
+  cases P with
+  | nil => exact (not_isSimpleLoop_nil h).elim
+  | cons x b Q =>
+    obtain ⟨-, hQ, -⟩ := isSimpleLoop_cons_iff.mp h
+    have hQpos : 0 < Q.length := by
+      have := h.three_le_length
+      simp at this
+      omega
+    simp only [edges_cons, List.mem_cons] at hs
+    rcases hs with rfl | hsQ
+    · exact Or.inl rfl
+    · have hs_eq : s = (Q.lastTip, x) :=
+        eq_last_edge_of_mem_segment hQ (mem_edges_lastTip hQpos) hsQ hxs
+      exact Or.inr (hs_eq.trans (by rw [lastTip_cons hQpos]))
 
 /-- A simple loop has no degenerate edge. -/
 @[grind →]

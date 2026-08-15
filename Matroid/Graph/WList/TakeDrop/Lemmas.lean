@@ -93,6 +93,23 @@ lemma take_length_prefixUntilVertex [DecidableEq α] (hx : x ∈ w) :
     w.take (w.prefixUntilVertex x).length = w.prefixUntilVertex x := by
   rw [prefixUntilVertex_length hx, take_prefixUntilVertex hx]
 
+lemma prefixUntilVertex_concat_of_exists [DecidableEq α] (h : v ∈ w) :
+    (w.concat e x).prefixUntilVertex v = w.prefixUntilVertex v :=
+  prefixUntil_concat_of_exists (by use v)
+
+lemma suffixFromVertex_concat_of_exists [DecidableEq α]  (w : WList α β) (hb : v ∈ w ):
+    (w.concat e x).suffixFromVertex v = (w.suffixFromVertex v).concat e x := by
+  have hrw : (w.concat e x).suffixFromVertex v = (w.concat e x).suffixFrom (· = v) := by exact rfl
+  have h : ∃ u ∈ w, (· = v) u := by use v
+  have hrw' : (w.suffixFrom fun x ↦ x = v) = w.suffixFromVertex v := by exact rfl
+  rw[hrw, suffixFrom_concat_of_exists w (· = v) h, hrw' ]
+
+lemma suffixFromVertex_concat_of_forall [DecidableEq α]  (w : WList α β) (hb : x ∉ w ):
+    (w.concat e x).suffixFromVertex x = nil x := by
+  have hrw : (w.concat e x).suffixFromVertex x = (w.concat e x).suffixFrom (· = x) := by exact rfl
+  have h : ∀ u ∈ w, ¬ (· = x) u := by
+    exact fun u a ↦ ne_of_mem_of_not_mem a hb
+  rw[hrw, suffixFrom_concat_of_forall w (· = x) h ]
 
 section Dedup
 

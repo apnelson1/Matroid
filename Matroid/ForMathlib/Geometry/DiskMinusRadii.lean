@@ -1,17 +1,9 @@
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import Mathlib.Analysis.Convex.Topology
-public import Mathlib.Topology.Connected.LocallyConnected
-public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
-public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
-public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Angle
 public import Mathlib.Analysis.Complex.Arg
-public import Mathlib.Analysis.Normed.Module.Ray
 public import Mathlib.Analysis.Convex.PathConnected
-public import Mathlib.Data.List.Sort
-public import Mathlib.Topology.Connected.LocallyPathConnected
 
 /-!
 # A disk with finitely many radii removed
@@ -177,9 +169,8 @@ private lemma sameRay_toComplex_iff {x p q : EuclideanSpace ℝ (Fin 2)} :
 private lemma polar_eq_iff_angle {s θ₁ θ₂ : ℝ} (hs : 0 < s) :
     polar x s θ₁ = polar x s θ₂ ↔ ∃ n : ℤ, θ₁ = θ₂ + (n : ℝ) * (2 * π) := by
   refine ⟨fun h ↦ ?_, ?_⟩
-  · have hexp : cexp (↑θ₁ * I) = cexp (↑θ₂ * I) :=
-      mul_left_cancel₀ (ofReal_ne_zero.mpr hs.ne') <| by
-        simpa [toComplex_polar] using congrArg (toComplex x) h
+  · have hexp : cexp (↑θ₁ * I) = cexp (↑θ₂ * I) := mul_left_cancel₀ (ofReal_ne_zero.mpr hs.ne') <|
+      by simpa [toComplex_polar] using congrArg (toComplex x) h
     obtain ⟨n, hn⟩ := Complex.exp_eq_exp_iff_exists_int.mp hexp
     refine ⟨n, ?_⟩
     exact_mod_cast mul_right_cancel₀ I_ne_zero (show (θ₁ : ℂ) * I = (θ₂ + n * (2 * π)) * I by grind)
@@ -197,11 +188,10 @@ private lemma polar_inj {s₁ s₂ θ₁ θ₂ : ℝ} (hs₁ : 0 < s₁) (hs₂ 
     simpa [dist_polar, abs_of_pos hs₁, abs_of_pos hs₂] using congrArg (dist · x) h
   refine ⟨rfl, ?_⟩
   obtain ⟨n, hn⟩ := (polar_eq_iff_angle hs₁).mp h
-  obtain rfl : n = 0 := by
+  obtain rfl : n = 0 :=
     have : |(n : ℝ)| * (2 * π) < 1 * (2 * π) := by
       simpa [hn, abs_mul, abs_of_pos Real.two_pi_pos] using hθ
-    exact Int.abs_lt_one_iff.mp (by exact_mod_cast ((mul_lt_mul_iff_of_pos_right Real.two_pi_pos).mp
-      this))
+    Int.abs_lt_one_iff.mp (by exact_mod_cast (mul_lt_mul_iff_of_pos_right Real.two_pi_pos).mp this)
   simpa using hn
 
 private noncomputable def argFinset (x : EuclideanSpace ℝ (Fin 2))
@@ -319,9 +309,7 @@ private lemma ne_center_of_mem_diskMinusRadii (hYne : Y.Nonempty) {p : Euclidean
     (hp : p ∈ diskMinusRadii x ρ Y) : p ≠ x := by
   intro rfl
   obtain ⟨y, hy⟩ := hYne
-  have : p ∈ ⋃ y ∈ Y, segment ℝ p y :=
-    mem_iUnion.mpr ⟨y, mem_iUnion.mpr ⟨hy, left_mem_segment _ _ _⟩⟩
-  exact hp.2 this
+  exact hp.2 <| mem_iUnion.mpr ⟨y, mem_iUnion.mpr ⟨hy, left_mem_segment _ _ _⟩⟩
 
 private lemma mem_diskMinusRadii_iff (hρ : 0 < ρ) (hYne : Y.Nonempty) (hY : ↑Y ⊆ sphere x ρ)
     {p : EuclideanSpace ℝ (Fin 2)} : p ∈ diskMinusRadii x ρ Y ↔

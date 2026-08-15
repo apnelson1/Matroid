@@ -6,8 +6,8 @@ import all Mathlib.Combinatorics.Graph.Delete
 
 @[expose] public section
 
-variable {α β : Type*} {x y z u v : α} {e f : β} {G H : Graph α β}
-  {w w₁ w₂ C C₁ C₂ : WList α β} {S T : Set α}
+variable {α β : Type*} {x y z u v a b : α} {e f : β} {G H : Graph α β}
+  {w w₁ w₂ C C₁ C₂ : WList α β} {S T : Set α} {n : ℕ}
 
 open Set WList
 
@@ -221,6 +221,177 @@ lemma IsTour.edgeRemove {F : Set β} [DecidablePred (· ∈ F)] (hw : G.IsTour w
 lemma IsCyclicWalk.intRotate (hC : G.IsCyclicWalk C) (n : ℤ) : G.IsCyclicWalk (C.intRotate n) :=
   hC.rotate ..
 
+lemma IsCyclicWalk.rotate_one (hC : G.IsCyclicWalk C) :
+    ∃ e, C.rotate 1 = C.tail.concat e C.tail.first :=
+  hC.nonempty.rotate_one
+
+lemma IsCyclicWalk.idxOf_rotate_one [DecidableEq α] (hC : G.IsCyclicWalk C) (h1 : C.first ≠ a)
+    (ha : a ∈ C) : (C.rotate 1).idxOf a + 1 = C.idxOf a :=
+  hC.nonempty.idxOf_rotate_one h1 ha
+
+lemma IsCyclicWalk.idxOf_rotate_first [DecidableEq α] (_ : G.IsCyclicWalk C) (hlt : n < C.idxOf a) :
+    (C.rotate n).first ≠ a :=
+  idxOf_rotate_first_ne_of_lt hlt
+
+lemma IsCyclicWalk.idxOf_rotate_n_le [DecidableEq α] (_ : G.IsCyclicWalk C) (ha : a ∈ C)
+    (hle : n ≤ C.idxOf a) : (C.rotate n).idxOf a + n = C.idxOf a :=
+  C.idxOf_rotate_add_of_le_idxOf ha hle
+
+lemma IsCyclicWalk.idxOf_rotate_one_first' [DecidableEq α] (hC : G.IsCyclicWalk C) :
+    (C.rotate 1).idxOf C.first + 1 = C.length := by
+  obtain ⟨e, hrC⟩ := hC.rotate_one
+  rw [hrC, idxOf_concat_of_mem, hC.isClosed.eq, ← tail_last, idxOf_last _ hC.nodup, tail_length,
+    Nat.sub_add_cancel hC.nonempty.length_pos]
+  rw [hC.isClosed.mem_tail_iff]
+  exact first_mem
+
+lemma IsCyclicWalk.idxOf_rotate_one_first [DecidableEq α] (hC : G.IsCyclicWalk C) (h1 : C.first = a)
+    (ha : a ∈ C) : (C.rotate 1).idxOf a + 1 = C.length := by
+  obtain ⟨e, hrC⟩ := hC.rotate_one
+  have hft := h1 ▸ hC.isClosed.eq
+  rw [hrC, idxOf_concat_of_mem (hC.isClosed.mem_tail_iff.2 ha), hft, (tail_last C).symm,
+    idxOf_last C.tail hC.nodup, tail_length]
+  have := hC.nonempty.length_pos
+  omega
+
+lemma IsCyclicWalk.idxOf_rotate_untilfirst [DecidableEq α] (hC : G.IsCyclicWalk C) (ha : a ∈ C) :
+    (C.rotate (C.idxOf a + 1)).idxOf a + 1 = C.length := by
+  rw [← rotate_rotate C (C.idxOf a) 1, (hC.rotate (C.idxOf a)).idxOf_rotate_one_first
+    (rotate_idxOf_first ha) (hC.isClosed.mem_rotate.mpr ha), length_rotate]
+
+lemma IsCyclicWalk.idxOf_rotate_idxOf [DecidableEq α] (hC : G.IsCyclicWalk C) (ha : a ∈ C) :
+    (C.rotate (C.idxOf a)).idxOf a = 0 := by
+  simpa using hC.idxOf_rotate_n_le ha le_rfl
+
+lemma IsCyclicWalk.idxOf_rotate_n [DecidableEq α] (hC : G.IsCyclicWalk C) (ha : a ∈ C)
+    (hn : n < C.length) (hle : C.idxOf a < n) :
+    (C.rotate n).idxOf a + n = C.length + C.idxOf a := by
+  obtain ⟨x, rfl⟩ | hnt := exists_eq_nil_or_nonempty C
+  · simp_all
+  induction n with | zero => simp_all | succ n hi =>
+  obtain han | hu := eq_or_ne (C.idxOf a) n
+  · rw [← han]
+    have hle' : C.idxOf a < C.length := by
+      rw [han]
+      exact Nat.lt_of_succ_lt hn
+    have := hC.idxOf_rotate_untilfirst ha
+    omega
+  rw [← C.rotate_rotate n 1]
+  have hg : n < C.length := Nat.lt_of_succ_lt hn
+  have hii := hi hg (Nat.lt_of_le_of_ne (Nat.le_of_lt_succ hle) hu)
+  have hnf : (C.rotate n).first ≠ a := by
+    by_contra hc
+    have hia : (C.rotate n).idxOf a = 0 := by
+      rw [← hc]
+      exact idxOf_first (C.rotate n)
+    rw [hia, zero_add] at hii
+    rw [hii] at hg
+    omega
+  have ha' : a ∈ C.rotate n := (IsClosed.mem_rotate hC.isClosed).mpr ha
+  have hf := (rotate_nonempty_iff.mpr hnt).idxOf_rotate_one hnf ha'
+  omega
+
+lemma IsCyclicWalk.idxOf_adj [DecidableEq α] (hC : G.IsCyclicWalk C) (ha : a ∈ C) (hb : b ∈ C)
+    (he : C.idxOf b = C.idxOf a + 1) : G.Adj a b :=
+  hC.isTrail.idxOf_adj ha hb he
+
+lemma IsCyclicWalk.idxOf_adj_first [DecidableEq α] (hC : G.IsCyclicWalk C) (hab : a ≠ b)
+    (ha : C.idxOf a = 0) (hb : C.idxOf b = C.length - 1) : G.Adj a b := by
+  have haC : a ∈ C := by
+    have hlea : C.idxOf a ≤ C.length := by
+      rw [ha]
+      exact Nat.zero_le C.length
+    exact idxOf_le_length_iff_mem.mp hlea
+  have hbC : b ∈ C := by
+    have hle : C.idxOf b ≤ C.length := by
+      rw [hb]
+      omega
+    exact idxOf_le_length_iff_mem.mp hle
+  obtain h0 | hnt := DecidableNonempty C
+  · simp only [WList.not_nonempty_iff] at h0
+    rw [length_eq_zero.2 h0, zero_tsub, ← ha] at hb
+    exact hab (C.idxOf_inj_of_left_mem haC hb.symm) |>.elim
+  obtain h1 | hle := le_or_gt C.length 1
+  · rw [h1.antisymm (one_le_length_iff.mpr hnt), tsub_self, ← ha] at hb
+    exact hab (C.idxOf_inj_of_left_mem haC hb.symm) |>.elim
+  have hn : C.idxOf b < C.length := by
+    rw [hb]
+    omega
+  have hab : C.idxOf a < C.idxOf b := by
+    rw [ha, hb]
+    exact Nat.zero_lt_sub_of_lt hle
+  have := hC.idxOf_rotate_idxOf hbC
+  have hf := hC.idxOf_rotate_n haC hn hab
+  rw [ha, ← this] at hf
+  nth_rw 2 [hb] at hf
+  have hlast : (C.rotate (C.idxOf b)).idxOf a = (C.rotate (C.idxOf b)).idxOf b + 1 := by omega
+  exact ((hC.rotate (C.idxOf b)).idxOf_adj (hC.isClosed.mem_rotate.2 hbC)
+    (hC.isClosed.mem_rotate.2 haC) hlast).symm
+
+lemma IsCyclicWalk.idxOf_rotate [DecidableEq α] (hC : G.IsCyclicWalk C) (ha : a ∈ C)
+    (hn : n < C.length) : ((C.rotate n).idxOf a + n) % C.length = C.idxOf a := by
+  obtain ⟨x, rfl⟩ | hne := exists_eq_nil_or_nonempty C
+  · simp_all
+  obtain hle | hlt := le_or_gt n (C.idxOf a)
+  · rw [hC.idxOf_rotate_n_le ha hle]
+    exact Nat.mod_eq_of_lt (hC.isClosed.idxOf_lt_length ha hne)
+  rw [hC.idxOf_rotate_n ha hn hlt]
+  simp only [Nat.add_mod_left]
+  exact Nat.mod_eq_of_lt (hC.isClosed.idxOf_lt_length ha hne)
+
+lemma IsCyclicWalk.idxOf_adj_rotate [DecidableEq α] (hC : G.IsCyclicWalk C) (ha : a ∈ C)
+    (hb : b ∈ C) (hn : n < C.length) :
+    C.idxOf b = C.idxOf a + 1 ∨ (C.idxOf b = 0 ∧ C.idxOf a = C.length - 1)
+    ↔ (C.rotate n).idxOf b = (C.rotate n).idxOf a + 1 ∨
+    ((C.rotate n).idxOf b = 0 ∧ (C.rotate n).idxOf a = C.length - 1) := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  obtain hle | hlt := le_or_gt n (C.idxOf a)
+  have := hC.idxOf_rotate_n_le ha hle
+  · obtain hleb | hltb := le_or_gt n (C.idxOf b)
+    · have := hC.idxOf_rotate_n_le hb hleb
+      omega
+    have := hC.idxOf_rotate_n hb hn hltb
+    omega
+  obtain hleb | hltb := le_or_gt n (C.idxOf b)
+  · have := hC.idxOf_rotate_n ha hn hlt
+    have := hC.idxOf_rotate_n_le hb hleb
+    omega
+  have := hC.idxOf_rotate_n ha hn hlt
+  have := hC.idxOf_rotate_n hb hn hltb
+  omega
+  have hne := hC.nonempty
+  have hh : (C.rotate n).idxOf b + n = (C.rotate n).idxOf a + n + 1 ∨
+      (C.rotate n).idxOf b + n = n ∧ (C.rotate n).idxOf a + n = (C.length - 1) + n := by
+    omega
+  obtain hle | hlt := le_or_gt n (C.idxOf a)
+  rw [hC.idxOf_rotate_n_le ha hle] at hh
+  · obtain hleb | hltb := le_or_gt n (C.idxOf b)
+    · rw [hC.idxOf_rotate_n_le hb hleb] at hh
+      obtain hgood | hf := hh
+      · omega
+      have := hC.isClosed.idxOf_lt_length ha hne
+      rw [hf.2] at this
+      by_contra
+      omega
+    rw [hC.idxOf_rotate_n hb hn hltb] at hh
+    have := hC.isClosed.idxOf_lt_length ha hne
+    have : C.length ≤ C.length + C.idxOf b := Nat.le_add_right C.length (C.idxOf b)
+    obtain haa | haaa : C.length + C.idxOf b = C.length ∨ C.length + C.idxOf b = C.length + 1 := by
+      omega
+    · simp only [Nat.add_eq_left] at haa
+      rw [haa] at hh
+      omega
+    simp only [Nat.add_left_cancel_iff] at haaa
+    simp only [haaa, Nat.add_right_cancel_iff] at hh
+    omega
+  obtain hleb | hltb := le_or_gt n (C.idxOf b)
+  rw [hC.idxOf_rotate_n_le hb hleb] at hh
+  · rw [hC.idxOf_rotate_n ha hn hlt] at hh
+    have := hC.isClosed.idxOf_lt_length hb hne
+    omega
+  rw [hC.idxOf_rotate_n ha hn hlt, hC.idxOf_rotate_n hb hn hltb] at hh
+  omega
+
 lemma IsCyclicWalk.tail_isPath (hC : G.IsCyclicWalk C) : G.IsPath C.tail where
   isWalk := hC.isWalk.suffix <| tail_isSuffix C
   nodup := hC.nodup
@@ -351,6 +522,11 @@ lemma IsCyclicWalk.encard_vertexSet (h : G.IsCyclicWalk C) : V(C).encard = C.len
     encard_vxSet_of_nodup h.nodup, Nat.cast_add, Nat.cast_one]
   rw [h.isClosed.eq, ← tail_last, mem_vertexSet_iff]
   exact last_mem
+
+lemma IsCyclicWalk.ncard_vertexSet (h : G.IsCyclicWalk C) : V(C).ncard = C.length := by
+  have := h.encard_vertexSet
+  rw [← C.vertexSet_finite.cast_ncard_eq] at this
+  norm_cast at this
 
 lemma IsCyclicWalk.loop_or_noloop (h : G.IsCyclicWalk C) :
     (∃ x e, C = cons x e (nil x)) ∨ C.NoLoop := by

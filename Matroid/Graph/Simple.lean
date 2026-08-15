@@ -1,7 +1,7 @@
 module
 
 public import Matroid.Graph.Subgraph.Union
-public import Matroid.Graph.Walk.Path
+public import Matroid.Graph.Walk.Cycle
 public import Matroid.ForMathlib.Partition.Rep
 import all Mathlib.Combinatorics.Graph.Delete
 
@@ -536,3 +536,15 @@ lemma exists_isSimpleficationOf_of_le (h : G ≤ H) [G.Simple] :
   refine ⟨H.simplify φ, ?_, simplify_isSimpleficationOf hφ⟩
   rw [simplify, le_restrict_iff]
   exact ⟨le_loopRemove h, fun e he ↦ ⟨e, h.edgeSet_mono he, hφid he⟩⟩
+
+lemma IsCyclicWalk.nontrivial_of_loopless [G.Loopless] (hC : G.IsCyclicWalk P) : P.Nontrivial := by
+  refine hC.loop_or_nontrivial.elim ?_ id
+  rintro ⟨x, e, rfl⟩
+  simpa using cons_isTrail_iff.1 hC.isTrail
+
+lemma IsCyclicWalk.three_le_length_of_simple [G.Simple] (hC : G.IsCyclicWalk P) : 3 ≤ P.length := by
+  by_contra! hlen
+  obtain ⟨x, y, e, f, _, hne, rfl⟩ :=
+    hC.length_eq_two_iff.mp (by grind [hC.nontrivial_of_loopless.two_le_length])
+  obtain ⟨he, hf, hx⟩ := by simpa using hC.isWalk
+  exact hne <| he.unique_edge hf.symm

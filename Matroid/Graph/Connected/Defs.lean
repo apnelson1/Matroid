@@ -393,6 +393,36 @@ lemma connected_of_not_isSep (hV : S ⊆ V(G)) (hS : ¬ IsSep G S) : (G - S).Con
 lemma empty_isSep_iff : G.IsSep ∅ ↔ ¬ G.Connected :=
   ⟨fun h ↦ by simpa using h.not_connected, fun h ↦ ⟨empty_subset _, by simpa⟩⟩
 
+lemma empty_isSep (h : ¬ G.Connected) : G.IsSep ∅ :=
+  empty_isSep_iff.mpr h
+
+lemma IsSep.not_connected_of_empty (h : G.IsSep ∅) : ¬ G.Connected :=
+  empty_isSep_iff.mp h
+
+@[simp]
+lemma IsMinSep.eq_empty_iff (hS : G.IsMinSep S) : S = ∅ ↔ ¬ G.Connected := by
+  refine ⟨fun h ↦ (h ▸ hS).toIsSep.not_connected_of_empty, ?_⟩
+  by_contra! hcon
+  obtain ⟨hG, hSne⟩ := hcon
+  obtain rfl := by simpa using hS.minimal ∅ <| empty_isSep hG
+  simp at hSne
+
+@[simp]
+lemma empty_isMinSep_iff : G.IsMinSep ∅ ↔ ¬ G.Connected :=
+  ⟨fun h ↦ h.toIsSep.not_connected_of_empty, fun h ↦ ⟨empty_isSep h, by simp⟩⟩
+
+lemma IsMinSep.connected_iff (hS : G.IsMinSep S) : G.Connected ↔ S.Nonempty := by
+  simpa [nonempty_iff_ne_empty] using hS.eq_empty_iff.not.symm
+
+lemma IsMinSep.encard_eq_encard_of_isMinSep (hS : G.IsMinSep S) (hT : G.IsMinSep T) :
+    S.encard = T.encard := by
+  have h₁ := hS.minimal _ hT.toIsSep
+  have h₂ := hT.minimal _ hS.toIsSep
+  exact h₁.antisymm h₂
+
+lemma isSep_empty_iff_isMinSep_empty : G.IsSep ∅ ↔ G.IsMinSep ∅ :=
+  ⟨fun hyp ↦ ⟨hyp, by simp⟩, fun h ↦ h.toIsSep⟩
+
 lemma conn_iff_forall_isSep : G.Connected ↔ ∀ ⦃S⦄, IsSep G S → S.Nonempty := by
   refine ⟨fun h S hS => ?_, fun h => ?_⟩ <;> by_contra! hC
   · simpa [hC, h] using hS.not_connected

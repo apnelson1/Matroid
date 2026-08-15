@@ -249,11 +249,11 @@ belong in a file of their own once that development starts.
   `V(H).Nontrivial`, not `V(H) ≠ ∅`. Free for 4.2, whose `H` always contains `C₀`.
 * **4.2 Face theorem** — every face of a 2-connected *polygonal* drawing has frontier `|C|` for a
   cycle `C ≤ G`. Needs: induction over subgraphs `C₀ ≤ H ≤ G`, adding ears, identifying the ear's
-  relative interior with a face of `D.restrict`, splitting that face via `exists_two_regions_crosscut`
-  (3.10), and packaging `frontier F = (restrict hC).support` as `IsFacialSubgraph`. Remaining
-  bridges, now that the combinatorial half is in place: cycle support ↔ simple polygon / Jordan
-  loop on `𝕊`; induction carrier relating faces of `D|H` to faces of `D|H'`. (`H + P` as a
-  subgraph of `G` is `Graph.IsEar.union_le`.)
+  relative interior with a face of `D.restrict`, splitting that face via
+  `exists_two_regions_crosscut` (3.10), and packaging `frontier F = (restrict hC).support` as
+  `IsFacialSubgraph`. Remaining bridges, now that the combinatorial half is in place: cycle support
+  ↔ simple polygon / Jordan loop on `𝕊`; induction carrier relating faces of `D|H` to faces of
+  `D|H'`. (`H + P` as a subgraph of `G` is `Graph.IsEar.union_le`.)
 
 The three theorems below are Status.md §5–§6 and are corollaries of 4.2 + 3.10 + pairing. Next
 step: state 4.2 in a Planarity file of its own (D7), with proof routes naming the two bridges
@@ -269,6 +269,7 @@ theorem exists_facial_cycle_of_delete_vertex [H.Finite] [H.Simple] (hH : H.ConnG
     (D : Drawing H (EuclideanSpace ℝ (Fin 2))) (u : V(H)) :
     ∃ (C : Graph α β) (hC : C ≤ H - {u.1}),
       C.IsCycle ∧ (D.restrict deleteVerts_le).IsFacialSubgraph hC ∧ N(H, u.1) ⊆ V(C) := by
+  
   sorry
 
 /-- The facial cycle around the contracted vertex, expressed back in the original graph.

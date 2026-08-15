@@ -165,6 +165,17 @@ lemma isTrail_finite (G : Graph α β) [G.Finite] : {P | G.IsTrail P}.Finite := 
 lemma isPath_finite (G : Graph α β) [G.Finite] : {P | G.IsPath P}.Finite :=
   G.isTrail_finite.subset fun _ ↦ IsPath.isTrail
 
+lemma IsPath.vertex_length_le_ncard [G.Finite] (hP : G.IsPath P) :
+    P.vertex.length ≤ V(G).ncard := by
+  have := hP.vertex_length_le_encard
+  rw [← G.vertexSet_finite.cast_ncard_eq] at this
+  norm_cast at this
+
+lemma IsPath.length_le_ncard [G.Finite] (hP : G.IsPath P) : P.length + 1 ≤ V(G).ncard := by
+  have := hP.length_le_encard
+  rw [← G.vertexSet_finite.cast_ncard_eq] at this
+  norm_cast at this
+
 lemma isCyclicWalk_finite (G : Graph α β) [G.Finite] : {C | G.IsCyclicWalk C}.Finite :=
   G.isTrail_finite.subset fun _ ↦ IsCyclicWalk.isTrail
 

@@ -79,7 +79,7 @@ import Matroid.Graph.Connected.Bond
 import Matroid.Graph.Connected.Component
 import Matroid.Graph.Connected.Construction
 import Matroid.Graph.Connected.Defs
-import Matroid.Graph.Connected.Ear
+-- import Matroid.Graph.Connected.Ear
 -- import Matroid.Graph.Connected.Gammoid
 import Matroid.Graph.Connected.LineGraph
 import Matroid.Graph.Connected.Menger
@@ -117,19 +117,19 @@ import Matroid.Graph.Minor.Defs
 -- import Matroid.Graph.Partite
 -- import Matroid.Graph.Planarity.CombMap.Basic
 -- import Matroid.Graph.Planarity.CombMap.Equiv
-import Matroid.Graph.Planarity.Drawing
-import Matroid.Graph.Planarity.Face
-import Matroid.Graph.Planarity.FaceCycle
+-- import Matroid.Graph.Planarity.Drawing
+-- import Matroid.Graph.Planarity.Face
+-- import Matroid.Graph.Planarity.FaceCycle
 import Matroid.Graph.Planarity.GraphContinuum.Basic
-import Matroid.Graph.Planarity.Obstructions
-import Matroid.Graph.Planarity.PLDrawing
-import Matroid.Graph.Planarity.PLReduction
+-- import Matroid.Graph.Planarity.Obstructions
+-- import Matroid.Graph.Planarity.PLDrawing
+-- import Matroid.Graph.Planarity.PLReduction
 import Matroid.Graph.Planarity.Realization.Basic
 import Matroid.Graph.Planarity.Realization.CWComplex
 import Matroid.Graph.Planarity.Realization.Metric
 import Matroid.Graph.Planarity.Realization.Subgraph
-import Matroid.Graph.Planarity.StarLemma
-import Matroid.Graph.Planarity.ThetaCurve
+-- import Matroid.Graph.Planarity.StarLemma
+-- import Matroid.Graph.Planarity.ThetaCurve
 import Matroid.Graph.Simple
 import Matroid.Graph.Subgraph.Basic
 import Matroid.Graph.Subgraph.Compatible

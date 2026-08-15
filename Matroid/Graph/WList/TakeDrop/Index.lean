@@ -28,6 +28,10 @@ lemma tail_edge (w : WList α β) : w.tail.edge = w.edge.tail := by
 lemma tail_length (w : WList α β) : w.tail.length = w.length - 1 := by
   induction w with simp
 
+lemma Nonempty.length_eq_tail_vertex_length (hw : w.Nonempty) :
+    w.length = w.tail.vertex.length := by
+  induction w with simp_all
+
 lemma mem_tail_iff_of_nodup (hw : Nodup w.vertex) (hne : w.Nonempty) :
     x ∈ w.tail ↔ x ∈ w ∧ x ≠ w.first := by
   induction w with aesop
@@ -818,5 +822,35 @@ lemma idxOf_eq_length_prefixUntilVertex [DecidableEq α] (hx : x ∈ w) :
   simp only [hx, prefixUntilVertex, forall_const, ne_eq, hu.symm, not_false_eq_true, idxOf_cons_ne,
     prefixUntil_cons, ↓reduceIte, cons_length, Nat.add_right_cancel_iff] at ih ⊢
   assumption
+
+lemma prefixUntilVertex_idxOf [DecidableEq α] (hx : x ∈ w) (hle : w.idxOf y ≤ w.idxOf x) :
+    w.idxOf y = (w.prefixUntilVertex x).idxOf y := by
+  simp only [prefixUntilVertex]
+  fun_induction WList.prefixUntil with simp_all [idxOf_eq_zero_iff]
+  | case3 u e w hne IH =>
+    replace hx : x ∈ w := by tauto
+    obtain rfl | hne' := em (u = y) <;> simp_all
+
+lemma suffixFromVertex_index [DecidableEq α] (hx : x ∈ w) (hle : w.idxOf x ≤ w.idxOf y) :
+    w.idxOf y = (w.suffixFromVertex x).idxOf y + w.idxOf x := by
+  simp only [suffixFromVertex]
+  fun_induction WList.suffixFrom with simp_all
+  | case3 u e w hne IH =>
+    replace hx : x ∈ w := by tauto
+    obtain (rfl|hne') := em (u = y) <;> simp_all
+    omega
+
+lemma prefixUntilVertex_tail [DecidableEq α] (w : WList α β) (hv : v ≠ w.first) (hvw : v ∈ w) :
+    w.tail.prefixUntilVertex v = (w.prefixUntilVertex v).tail := by
+  induction w with simp_all
+  | cons u e w IH =>
+    simp only [prefixUntilVertex]
+    fun_induction WList.prefixUntil with
+    | case1 | case2 => simp_all; split_ifs <;> simp
+    | case3 x f w hne IH =>
+      replace hvw : v ∈ w := by simp at hvw; tauto
+      simp [hvw] at IH
+      split_ifs at IH <;> [tauto; skip]
+      simp_all
 
 end WList

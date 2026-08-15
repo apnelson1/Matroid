@@ -2,6 +2,7 @@ module
 
 public import Matroid.ForMathlib.Geometry.Polygon.Basic
 public import Matroid.ForMathlib.Geometry.PolygonalPath.SimpleLoop
+public import Matroid.ForMathlib.List.Basic
 public import Matroid.ForMathlib.Topology.Path
 public import Matroid.ForMathlib.Geometry.PolygonalPath.Basic
 

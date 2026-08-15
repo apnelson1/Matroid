@@ -162,6 +162,14 @@ lemma idxOf_concat_of_notMem [DecidableEq α] (hx : x ∉ w) :
   simp only [mem_cons_iff, not_or, ← ne_eq] at hx
   simp [hx.1.symm, ih hx.2]
 
+lemma idxOf_cons_concat_of_ne [DecidableEq α] (hvu : v ≠ u) (hv : v ∈ cons u e (w.concat f u)) :
+    v ∈ w ∧ (cons u e (w.concat f u)).idxOf v = w.idxOf v + 1 := by
+  simp only [mem_cons_iff, mem_concat] at hv
+  obtain (rfl | hvw | rfl) := hv
+  · contradiction
+  · exact ⟨hvw, by simp [idxOf_cons_ne hvu.symm, idxOf_concat_of_mem hvw]⟩
+  · contradiction
+
 lemma get_concat (w : WList α β) (e x) {n} (hn : n ≤ w.length) :
     (w.concat e x).get n = w.get n := by
   induction n generalizing w with | zero => simp | succ n IH => cases w with

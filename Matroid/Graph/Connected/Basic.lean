@@ -82,6 +82,44 @@ alias ⟨_, Connected.numberOfComponents⟩ := numberOfComponents_eq_one_iff
 lemma components_subsingleton_iff_connected : G.Components.Subsingleton ↔ G = ⊥ ∨ G.Connected := by
   rw [components_subsingleton_iff, preconnected_iff]
 
+lemma finite_components_of_finite [G.Finite] : G.Components.Finite :=
+  G.vertexSet_finite.finite_of_encard_le G.components_encard_le
+
+lemma ge_two_components_of_not_connected (hNeBot : V(G).Nonempty) (h : ¬ G.Connected) :
+    2 ≤ G.Components.encard := by
+  by_contra! hcon
+  rw [ENat.lt_two_iff, encard_le_one_iff_subsingleton,
+    components_subsingleton_iff_connected] at hcon
+  grind [ne_bot_iff]
+
+lemma not_connected_of_nontrivial_components (h : G.Components.Nontrivial) : ¬ G.Connected := by
+  rw [← numberOfComponents_eq_one_iff, NumberOfComponents]
+  rw [← one_lt_encard_iff_nontrivial] at h
+  exact h.ne'
+
+lemma components_nontrivial_of_not_connected (hNeBot : V(G).Nonempty) (h : ¬ G.Connected) :
+    G.Components.Nontrivial := by
+  rw [← two_le_encard_iff_nontrivial]
+  exact ge_two_components_of_not_connected hNeBot h
+
+protected lemma Connected.components_eq_singleton_self (h : G.Connected) : G.Components = {G} :=
+  (components_subsingleton_iff_connected.mpr (Or.inr h)).eq_singleton_of_mem h
+
+lemma components_eq_singleton_self (h : G.Connected) : G.Components = {G} :=
+  h.components_eq_singleton_self
+
+lemma components_eq_singleton_self_iff : H.Components = {H} ↔ H.Connected :=
+  ⟨fun h ↦ components_eq_singleton_iff.mp ⟨_, h⟩, fun h ↦ h.connected.components_eq_singleton_self⟩
+
+lemma eq_iff_components_eq_components : G = H ↔ G.Components = H.Components := by
+  refine ⟨fun heq ↦ heq ▸ rfl, fun hyp ↦ ?_⟩
+  rw [G.eq_sUnion_components, H.eq_sUnion_components]
+  simp_all only
+
+lemma IsCompOf.eq_of_connected (hH : H.IsCompOf G) (hG : G.Connected) : H = G := by
+  obtain ⟨x, hx⟩ := hH.nonempty
+  exact hH.eq_of_mem_mem hG.connected hx (hH.subset hx)
+
 lemma IsClosedSubgraph.isCompOf_of_isCompOf_compl (h : H ≤c G) (hK : K.IsCompOf G) :
     K.IsCompOf H ∨ K.IsCompOf (G - V(H)) := by
   refine (h.disjoint_or_subset_of_isCompOf hK).elim .inl fun hdj ↦ .inr <| hK.of_le_le ?_ (by simp)
@@ -224,6 +262,94 @@ lemma IsCompOf.of_deleteVerts (hH : H.IsCompOf G) (hS : Disjoint V(H) S) : H.IsC
     simp only [isWalk_deleteVerts_iff, hw, true_and]
     exact hS.mono_left hwW.vertexSet_subset
   exact hwS.isWalk_isClosedSubgraph_of_first_mem hKcS hvK |>.last_mem
+
+lemma IsClosedSubgraph.vertexDelete_components_eq (hH : H ≤c G) :
+    (G - V(H)).Components = G.Components \ H.Components := by
+  ext C
+  simp only [mem_components_iff_isCompOf, mem_sdiff]
+  refine ⟨fun hC ↦ ⟨hC.of_isClosedSubgraph hH.compl, fun bad ↦ ?_⟩,
+    fun hC ↦ (hH.isCompOf_of_isCompOf_compl hC.1).elim (hC.2 · |>.elim) id⟩
+  have solver := ((le_deleteVerts_iff.mp hC.le).2.eq_bot_of_le bad.subset) ▸ hC.nonempty
+  simp at solver
+
+lemma IsClosedSubgraph.vertexDelete_components_encard_eq (hH : H ≤c G) :
+    (G - V(H)).Components.encard + H.Components.encard = G.Components.encard := by
+  rw [hH.vertexDelete_components_eq, encard_sdiff_add_encard,
+    union_eq_left.mpr hH.components_subset_components]
+
+lemma IsCompOf.vertexDelete_components_eq (hH : H.IsCompOf G) :
+    (G - V(H)).Components = G.Components \ {H} := by
+  rw [hH.isClosedSubgraph.vertexDelete_components_eq]
+  suffices H.Components = {H} by rw [this]
+  exact hH.connected.components_eq_singleton_self
+
+lemma IsCompOf.vertexDelete_components_encard_eq (hH : H.IsCompOf G) :
+    (G - V(H)).Components.encard + 1 = G.Components.encard := by
+  rw [← encard_singleton H, ← hH.connected.components_eq_singleton_self]
+  exact hH.isClosedSubgraph.vertexDelete_components_encard_eq
+
+lemma IsCompOf.isSepSet_of_three_le_components_encard
+    (hH : H.IsCompOf G) (hG : 3 ≤ G.Components.encard) : G.IsSep V(H) := by
+  refine ⟨hH.subset, not_connected_of_nontrivial_components ?_⟩
+  rw [← two_le_encard_iff_nontrivial]
+  suffices h : 3 ≤ 1 + (G - V(H)).Components.encard from
+    ENat.one_add_le_one_add_iff.mp h
+  rwa [add_comm, hH.vertexDelete_components_encard_eq]
+
+lemma IsCompOf.isSepSet_of_not_connected_of_ssubset
+    (hH : H.IsCompOf G) (hG : ¬ G.Connected) (hssub : S ⊂ V(H)) : G.IsSep S := by
+  refine ⟨hssub.le.trans hH.subset, ?_⟩
+  obtain ⟨hSH, x, hxH, hxnS⟩ := ssubset_iff_exists.mp hssub
+  have hxHS : x ∈ V(H - S) := by
+    simp only [deleteVerts_vertexSet, mem_sdiff]
+    exact ⟨hxH, hxnS⟩
+  obtain ⟨Cx, hCx_ge, hCx_isCompOf⟩ := (walkable_connected hxHS).exists_isCompOf_ge <|
+    walkable_isClosedSubgraph.le.trans <| deleteVerts_mono_left hH.le _
+  obtain ⟨K, K_isCompOf_G, hne⟩ :=
+    (components_nontrivial_of_not_connected (hH.nonempty.mono hH.subset) hG).exists_ne H
+  have K_isCompOf_GS : K.IsCompOf (G - S) :=
+    K_isCompOf_G.of_deleteVerts <| by
+      contrapose! hne
+      obtain ⟨y, hyK, hyS⟩ := Set.not_disjoint_iff.mp hne
+      exact K_isCompOf_G.eq_of_mem_mem hH hyK (hSH hyS)
+  refine not_connected_of_nontrivial_components ⟨K, K_isCompOf_GS, Cx, hCx_isCompOf, ?_⟩
+  contrapose hne
+  exact K_isCompOf_G.eq_of_mem_mem hH
+    (hne ▸ vertexSet_mono hCx_ge <| mem_walkable_self_iff.mpr hxHS) hxHS.1
+
+lemma exists_isSepSet_with_encard_lt_components_encard (hG : 3 ≤ V(G).encard)
+    (hConn : ¬ G.Connected) {n} (hn : n + 2 ≤ V(G).encard) : ∃ S, G.IsSep S ∧ S.encard = n := by
+  have hNeBot : V(G).Nonempty := by
+    rw [← encard_pos]
+    suffices aux : (0 : ℕ∞) < 3 from aux.trans_le hG
+    eomega
+  obtain ⟨H, hH⟩ := exists_isCompOf hNeBot
+  obtain ⟨K, hK, hHK⟩ := (components_nontrivial_of_not_connected hNeBot hConn).exists_ne H
+  obtain ⟨x, hx⟩ := hH.nonempty
+  obtain ⟨y, hy⟩ := hK.nonempty
+  have hxV : x ∈ V(G) := hH.subset hx
+  have hyV : y ∈ V(G) := hK.subset hy
+  have hxy : x ≠ y := by
+    rintro rfl
+    exact hHK (hH.eq_of_mem_mem hK hx hy).symm
+  have hn' : n ≤ (V(G) \ {x, y}).encard := by
+    have hcard : (V(G) \ {x, y}).encard + 2 = V(G).encard := by
+      rw [← encard_pair hxy, encard_sdiff_add_encard_of_subset (pair_subset_iff.mpr ⟨hxV, hyV⟩)]
+    rwa [← hcard, ENat.add_le_add_iff_right (by decide)] at hn
+  obtain ⟨S, hSsub, hSenc⟩ := (V(G) \ {x, y}).exists_subset_encard_eq hn'
+  refine ⟨S, ⟨hSsub.trans sdiff_subset, fun hconn ↦ ?_⟩, hSenc⟩
+  have hx_not_S : x ∉ S := fun h ↦ (hSsub h).2 (Or.inl rfl)
+  have hy_not_S : y ∉ S := fun h ↦ (hSsub h).2 (Or.inr rfl)
+  have hxS : x ∈ V(G - S) := by simp [hxV, hx_not_S]
+  have hyS : y ∈ V(G - S) := by simp [hyV, hy_not_S]
+  have hwalk : y ∈ V(G.walkable x) := (hconn.connBetween hxS hyS).mono deleteVerts_le
+  refine hHK ?_
+  exact (hK.eq_of_mem_mem (walkable_isCompOf hxV) hy hwalk).trans
+    (hH.eq_of_mem_mem (walkable_isCompOf hxV) hx (mem_walkable_self_iff.mpr hxV)).symm
+
+lemma exists_isSepSet_size_one_of_not_connected (hG : 3 ≤ V(G).encard) (h : ¬ G.Connected) :
+    ∃ S, G.IsSep S ∧ S.encard = 1 :=
+  exists_isSepSet_with_encard_lt_components_encard hG h (show (1 : ℕ∞) + 2 ≤ _ from hG)
 
 lemma singleVertex_connected (hG : V(G) = {x}) : G.Connected := by
   simp [connected_iff, hG, preconnected_of_vertexSet_subsingleton]
