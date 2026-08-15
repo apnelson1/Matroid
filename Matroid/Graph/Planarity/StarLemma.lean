@@ -1049,11 +1049,11 @@ theorem ncard_facesAt_le_two [G.Finite] (D : PLDrawing G (EuclideanSpace ℝ (Fi
     if h : F ∈ D.facesAt p then Classical.choose (hex F h) else ∅
   have hCsec (F : D.toDrawing.onePoint.Face) (hF : F ∈ D.facesAt p) :
       C F ∈ sectors p ρ Y := by
-    simp only [C, dif_pos hF]
+    simp only [C, dite_eq_left hF]
     exact (Classical.choose_spec (hex F hF)).1
   have hCface (F : D.toDrawing.onePoint.Face) (hF : F ∈ D.facesAt p) :
       (↑) '' (C F) ⊆ D.toDrawing.onePoint.faceSet F := by
-    simp only [C, dif_pos hF]
+    simp only [C, dite_eq_left hF]
     exact (Classical.choose_spec (hex F hF)).2
   have hinj : InjOn C (D.facesAt p) := by
     intro F hF G' hG hCG

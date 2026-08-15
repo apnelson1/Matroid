@@ -198,11 +198,11 @@ lemma cyclic_tfae : List.TFAE [
 
 lemma cyclic_iff_forall_inter_isCocircuit_encard_ne (hAE : A ⊆ M.E := by aesop_mat) :
     M.Cyclic A ↔ ∀ K, M.IsCocircuit K → (A ∩ K).encard ≠ 1 := by
-  rw [cyclic_tfae.out 0 4 rfl rfl, and_iff_left hAE]
+  rw [cyclic_tfae.out 1 5 rfl rfl, and_iff_left hAE]
 
 lemma cyclic_iff_forall_mem_closure_diff_singleton :
     M.Cyclic A ↔ ∀ e ∈ A, e ∈ M.closure (A \ {e}) :=
-  cyclic_tfae.out 0 3
+  cyclic_tfae.out 1 4
 
 lemma Cyclic.iUnion {ι : Type*} (As : ι → Set α) (hAs : ∀ i, M.Cyclic (As i)) :
     M.Cyclic (⋃ i, As i) := by
@@ -607,9 +607,10 @@ lemma disjointSigma_isCircuit_iff {α : Type*} {ι : Type*} {M : ι → Matroid 
 lemma sum_isCircuit_iff {α β : Type*} (M : Matroid α) (N : Matroid β) {C : Set (α ⊕ β)} :
     (M.sum N).IsCircuit C ↔
     (C ⊆ range .inl ∧ M.IsCircuit (.inl ⁻¹' C)) ∨ (C ⊆ range .inr ∧ N.IsCircuit (.inr ⁻¹' C)) := by
-  simp only [Matroid.sum, cond_false, cond_true, Equiv.sumEquivSigmaBool, mapEquiv_isCircuit_iff,
-    Equiv.sumCongr_symm, Equiv.sumCongr_apply, Equiv.symm_symm, Equiv.coe_fn_mk,
-    sigma_isCircuit_iff', range_sigmaMk, image_subset_iff, Bool.exists_bool, Equiv.ulift_apply]
+  simp only [Matroid.sum, Bool.cond_false, Bool.cond_true, Equiv.sumEquivSigmaBool,
+    mapEquiv_isCircuit_iff, Equiv.sumCongr_symm, Equiv.sumCongr_apply, Equiv.symm_symm,
+    Equiv.coe_fn_mk, sigma_isCircuit_iff', range_sigmaMk, image_subset_iff, Bool.exists_bool,
+    Equiv.ulift_apply]
   convert Iff.rfl <;> aesop
 
 @[simp]

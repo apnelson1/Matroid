@@ -31,7 +31,7 @@ lemma Odd.bodd {n : ℕ} (hn : Odd n) : n.bodd = true := by
   rwa [n.bodd_eq_odd]
 
 lemma Even.bodd {n : ℕ} (hn : Even n) : n.bodd = false := by
-  rw [Nat.bodd_eq_ite, if_neg (by rwa [Nat.not_odd_iff_even])]
+  rw [Nat.bodd_eq_ite, ite_eq_right (by rwa [Nat.not_odd_iff_even])]
 
 @[grind! .]
 lemma Bool.toNat_le_one (b : Bool) : b.toNat ≤ 1 := by

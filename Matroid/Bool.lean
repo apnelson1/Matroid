@@ -47,7 +47,7 @@ lemma bDual_coindep_iff : (M.bDual b).Coindep X ↔ (M.bDual (!b)).Indep X := by
 
 @[simp]
 lemma bDual_bDual {c} : (M.bDual b).bDual c = M.bDual (b != c) := by
-  cases b <;> simp [bDual]
+  cases b <;> cases c <;> simp [bDual]
 
 lemma bDual_bDual_self (M : Matroid α) (b : Bool) : (M.bDual b).bDual b = M := by
   simp

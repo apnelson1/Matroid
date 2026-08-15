@@ -3,6 +3,7 @@ module
 public import Mathlib.Data.ENat.Lattice -- inefficient import
 public import Mathlib.Tactic.ENatToNat
 public import Mathlib.Tactic.Recall
+public import Mathlib.Data.Nat.Cast.Order.Basic
 
 @[expose] public section
 

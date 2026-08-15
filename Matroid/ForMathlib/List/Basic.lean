@@ -125,7 +125,7 @@ lemma IsPrefix.eq_of_last_mem {α} {l₁ l₂ : List α} (h : l₁.IsPrefix l₂
     l₁.dropLast <+: l₂.dropLast := by
   obtain heq | hlt := h.length_le.eq_or_lt
   · exact eq_of_length h heq ▸ refl _
-  rw [prefix_iff_eq_take.mp h, dropLast_take hlt, dropLast_eq_take]
+  rw [prefix_iff_eq_take.mp h, dropLast_take hlt.le, dropLast_eq_take]
   exact take_prefix_take_left (by grind)
 
 @[gcongr] lemma IsSuffix.dropLast {α} {l₁ l₂ : List α} (h : l₁ <:+ l₂) :

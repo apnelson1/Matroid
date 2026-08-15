@@ -241,7 +241,7 @@ lemma incEdges_encard_mono (hle : G ≤ H) (x : α) : E(G, x).encard ≤ E(H, x)
 @[simp, grind .]
 lemma restrict_incEdges_encard_le_encard (F : Set β) (x : α) :
     E(G ↾ F, x).encard ≤ E(G, x).encard := by
-  grind
+  grind [encard_le_encard]
 
 @[simp, grind .]
 lemma incEdges_addEdge_of_notMem_left (e : β) (x y : α) (hx : x ∉ V(G)) :
@@ -583,7 +583,7 @@ theorem Konig'sTheorem [H.Simple] [H.Finite] (hB : H.Bipartite) : τ(H) = ν(H) 
   -- Since uv ∈ E(G), and f ≠ uv, therefore uv ∈ E(G \ f).
   -- Since W' doesn't contain v, it must therefore contain u.
   have huW' : u ∈ W' := by
-    have hne : e ≠ f := by grind
+    have hne : e ≠ f := by grind [IsLink.right_unique]
     have heG' : e ∈ E(G ＼ {f}) := by grind [edgeSet_deleteEdges]
     grind only [hW'.mem_or_mem_of_isLink (huv.of_le_of_mem deleteEdges_le heG')]
   -- So W' also covers f (since f = ux), so W' is a cover of G

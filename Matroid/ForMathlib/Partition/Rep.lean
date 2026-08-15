@@ -183,7 +183,7 @@ lemma exists_extend_partial_repFun (P : Partition (Set α)) {t : Set α} (f₀ :
     · exact h.choose_spec.trans <| h_mem h.choose h.choose_spec.right_mem
     push Not at h
     exact P.rep_rel (P.partOf_mem ha) (P.mem_partOf ha)
-  · simp_rw [hf, dif_pos hab.left_mem, dif_pos hab.right_mem]
+  · simp_rw [hf, dite_eq_left hab.left_mem, dite_eq_left hab.right_mem]
     split_ifs with h₁ h₂ h₂
     · exact h_eq _ _ <| (hab.symm.trans h₁.choose_spec).symm.trans h₂.choose_spec
     · exact False.elim <| h₂ ⟨_, hab.symm.trans h₁.choose_spec⟩
@@ -414,7 +414,7 @@ lemma exists_extend_partial (P : Partition (Set α)) {t : Set α} (f₀ : t → 
     · exact h.choose_spec.trans <| h_mem h.choose h.choose_spec.right_mem
     push Not at h
     exact P.rep_rel (P.partOf_mem ha) (P.mem_partOf ha)
-  · simp_rw [hfdef, dif_pos hab.left_mem, dif_pos hab.right_mem]
+  · simp_rw [hfdef, dite_eq_left hab.left_mem, dite_eq_left hab.right_mem]
     split_ifs with h₁ h₂ h₂
     · exact h_eq _ _ <| (hab.symm.trans h₁.choose_spec).symm.trans h₂.choose_spec
     · exact False.elim <| h₂ ⟨_, hab.symm.trans h₁.choose_spec⟩
@@ -483,14 +483,14 @@ end IsRepFun
 --     if h : a ∈ s then P.rep (P.partOf_mem h) else a
 
 -- lemma rep'_eq_rep (P : Partition (Set α)) (ha : a ∈ s) : P.rep' a = P.rep (P.partOf_mem ha) := by
---   rw [rep', dif_pos ha]
+--   rw [rep', dite_eq_left ha]
 
 -- lemma rel_rep' (P : Partition (Set α)) (ha : a ∈ s) : P a (P.rep' a) := by
 --   rw [P.rep'_eq_rep ha]
 --   exact P.rep_rel (P.partOf_mem ha) (P.mem_partOf ha)
 
 -- lemma rep'_eq_self_of_notMem (P : Partition (Set α)) (ha : a ∉ s) : P.rep' a = a := by
---   rw [rep', dif_neg ha]
+--   rw [rep', dite_eq_right ha]
 
 -- lemma rel_iff_rep'_eq_rep' (ha : a ∈ s) (hb : b ∈ s) : P a b ↔ P.rep' a = P.rep' b := by
 --   refine ⟨fun h ↦ ?_, fun h ↦ (P.rel_rep' ha).trans (h.symm ▸ P.rel_rep' hb).symm ⟩

@@ -1,5 +1,6 @@
 module
 
+-- public import Matroid.Asymptotic.ZeroPattern
 public import Matroid.Axioms.Circuit
 public import Matroid.Axioms.Closure
 public import Matroid.Axioms.Flat
@@ -22,6 +23,7 @@ public import Matroid.Connectivity.Fan.Circuit
 public import Matroid.Connectivity.Fan.Cyclic
 public import Matroid.Connectivity.Fan.Minor
 public import Matroid.Connectivity.Fan.ThreeConnected
+-- public import Matroid.Connectivity.Fan.Wheel
 public import Matroid.Connectivity.Minor
 public import Matroid.Connectivity.Nat
 public import Matroid.Connectivity.Separation.Abstract
@@ -34,18 +36,18 @@ public import Matroid.Connectivity.Separation.Minor
 public import Matroid.Connectivity.Separation.Tutte
 public import Matroid.Connectivity.Separation.Two
 public import Matroid.Connectivity.Separation.Vertical
--- import Matroid.Connectivity.Separation._vert_diag
+-- public import Matroid.Connectivity.Separation._vert_diag
 public import Matroid.Connectivity.Skew
 public import Matroid.Connectivity.Splitter.Cretaceous
 public import Matroid.Connectivity.Splitter.Triassic
 public import Matroid.Connectivity.Splitter.TutteTriangle
 public import Matroid.Connectivity.Triangle
 public import Matroid.Constructions.Matching
--- import Matroid.Constructions.ModularSum
+-- public import Matroid.Constructions.ModularSum
 public import Matroid.Constructions.Project
 public import Matroid.Constructions.Relax
--- import Matroid.Constructions.SeriesParallel
--- import Matroid.Constructions.Small
+-- public import Matroid.Constructions.SeriesParallel
+-- public import Matroid.Constructions.Small
 public import Matroid.Constructions.Truncate
 public import Matroid.Equiv
 public import Matroid.Extension.ExtendBy
@@ -58,11 +60,11 @@ public import Matroid.Extension.Principal
 public import Matroid.Extension.ProjectBy
 public import Matroid.Extension.ProjectionBy
 public import Matroid.Extension.Quotient
--- import Matroid.Extremal.Covers
--- import Matroid.Extremal.Covers_
--- import Matroid.Extremal.Thickness
--- import Matroid.Extremal.Triangular
--- import Matroid.Extremal.Uniform
+-- public import Matroid.Extremal.Covers
+-- public import Matroid.Extremal.Covers_
+-- public import Matroid.Extremal.Thickness
+-- public import Matroid.Extremal.Triangular
+-- public import Matroid.Extremal.Uniform
 public import Matroid.Finitize
 public import Matroid.Flat.Basic
 public import Matroid.Flat.Cyclic
@@ -78,7 +80,7 @@ public import Matroid.Graph.Connected.Component
 public import Matroid.Graph.Connected.Construction
 public import Matroid.Graph.Connected.Defs
 public import Matroid.Graph.Connected.Ear
--- import Matroid.Graph.Connected.Gammoid
+-- public import Matroid.Graph.Connected.Gammoid
 public import Matroid.Graph.Connected.LineGraph
 public import Matroid.Graph.Connected.Menger
 public import Matroid.Graph.Connected.Minor
@@ -90,15 +92,16 @@ public import Matroid.Graph.Connected.Subgraph
 public import Matroid.Graph.Connected.Vertex.Basic
 public import Matroid.Graph.Connected.Vertex.Defs
 public import Matroid.Graph.Connected.Vertex.VertexEnsemble
+-- public import Matroid.Graph.Constructions.Apex
 public import Matroid.Graph.Constructions.Basic
--- import Matroid.Graph.Constructions.Cycle
--- import Matroid.Graph.Constructions.Random
+-- public import Matroid.Graph.Constructions.Cycle
+-- public import Matroid.Graph.Constructions.Random
 public import Matroid.Graph.Degree.Basic
 public import Matroid.Graph.Degree.Constructions
 public import Matroid.Graph.Degree.Defs
 public import Matroid.Graph.Degree.Max
 public import Matroid.Graph.Distance
--- import Matroid.Graph.EdgeColoring
+-- public import Matroid.Graph.EdgeColoring
 public import Matroid.Graph.Finite
 public import Matroid.Graph.Forest
 public import Matroid.Graph.Hom
@@ -108,25 +111,25 @@ public import Matroid.Graph.Map
 public import Matroid.Graph.Matching.Berge
 public import Matroid.Graph.Matching.Defs
 public import Matroid.Graph.Matching.Konigs
--- import Matroid.Graph.Matching.TutteBerge
+-- public import Matroid.Graph.Matching.TutteBerge
 public import Matroid.Graph.Matrix
 public import Matroid.Graph.Minor.Conn
 public import Matroid.Graph.Minor.Defs
--- import Matroid.Graph.Planarity.CombMap.Basic
--- import Matroid.Graph.Planarity.CombMap.Equiv
--- import Matroid.Graph.Planarity.Drawing
--- import Matroid.Graph.Planarity.Face
--- import Matroid.Graph.Planarity.FaceCycle
+-- public import Matroid.Graph.Planarity.CombMap.Basic
+-- public import Matroid.Graph.Planarity.CombMap.Equiv
+-- public import Matroid.Graph.Planarity.Drawing
+-- public import Matroid.Graph.Planarity.Face
+-- public import Matroid.Graph.Planarity.FaceCycle
 public import Matroid.Graph.Planarity.GraphContinuum.Basic
 public import Matroid.Graph.Planarity.Obstructions
--- import Matroid.Graph.Planarity.PLDrawing
--- import Matroid.Graph.Planarity.PLReduction
+-- public import Matroid.Graph.Planarity.PLDrawing
+-- public import Matroid.Graph.Planarity.PLReduction
 public import Matroid.Graph.Planarity.Realization.Basic
 public import Matroid.Graph.Planarity.Realization.CWComplex
 public import Matroid.Graph.Planarity.Realization.Metric
 public import Matroid.Graph.Planarity.Realization.Subgraph
--- import Matroid.Graph.Planarity.StarLemma
--- import Matroid.Graph.Planarity.ThetaCurve
+-- public import Matroid.Graph.Planarity.StarLemma
+-- public import Matroid.Graph.Planarity.ThetaCurve
 public import Matroid.Graph.Simple
 public import Matroid.Graph.Subgraph.Basic
 public import Matroid.Graph.Subgraph.Compatible
@@ -149,8 +152,8 @@ public import Matroid.Graph.WList.TakeDrop.Lemmas
 public import Matroid.Graph.WList.TakeDrop.Pred
 public import Matroid.Graph.Walk.Basic
 public import Matroid.Graph.Walk.Cycle
--- import Matroid.Graph.Walk.Dart
--- import Matroid.Graph.Walk.OrientationWalk
+-- public import Matroid.Graph.Walk.Dart
+-- public import Matroid.Graph.Walk.OrientationWalk
 public import Matroid.Graph.Walk.Path
 public import Matroid.Graphic
 public import Matroid.Intersection
@@ -162,7 +165,7 @@ public import Matroid.Minor.Order
 public import Matroid.Minor.Rank
 public import Matroid.Modular.Basic
 public import Matroid.Modular.Flat
--- import Matroid.Modular.Sum
+-- public import Matroid.Modular.Sum
 public import Matroid.NonspanningCircuit
 public import Matroid.OnUniv
 public import Matroid.Order.Discrepancy
@@ -177,12 +180,12 @@ public import Matroid.Rank.Quotient
 public import Matroid.Rank.Skew
 public import Matroid.Representation.Basic
 public import Matroid.Representation.CycleSpace
--- import Matroid.Representation.CycleSpace'
--- import Matroid.Representation.CycleSpace_
--- import Matroid.Representation.Dual
+-- public import Matroid.Representation.CycleSpace'
+-- public import Matroid.Representation.CycleSpace_
+-- public import Matroid.Representation.Dual
 public import Matroid.Representation.FundamentalMatrix
 public import Matroid.Representation.Map
--- import Matroid.Representation.Matrix
+-- public import Matroid.Representation.Matrix
 public import Matroid.Representation.Minor
 public import Matroid.Representation.Pasture
 public import Matroid.Representation.Projective

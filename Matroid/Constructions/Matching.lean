@@ -131,10 +131,11 @@ def adjMap [DecidableEq β] (M : Matroid α) (Adj : α → β → Prop) (E : Set
   (IndepMatroid.matroid <| IndepMatroid.ofFinset univ (M.AdjIndep Adj) (.inl rfl)
     (fun _ _ ↦ Matroid.AdjIndep.subset) (fun _ _ ↦ Matroid.AdjIndep.augment) (by simp)) ↾ E
 
-set_option backward.isDefEq.respectTransparency false in
 @[simp] lemma adjMap_indep_iff [DecidableEq β] (M : Matroid α) (Adj : α → β → Prop) (E : Set β)
     {I : Finset β} : (M.adjMap Adj E).Indep I ↔ M.AdjIndep Adj I ∧ (I : Set β) ⊆ E := by
-  simp [adjMap]
+  simp only [adjMap, restrict_indep_iff, IndepMatroid.matroid_Indep]
+  convert Iff.rfl
+  exact IndepMatroid.ofFinset_indep .. |>.symm
 
 @[simp] lemma adjMap_ground_eq [DecidableEq β] (M : Matroid α) (Adj : α → β → Prop) (E : Set β) :
   (M.adjMap Adj E).E = E := rfl

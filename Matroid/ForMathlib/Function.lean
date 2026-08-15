@@ -28,7 +28,7 @@ variable {α β : Type*} [DecidableEq α] {f : α → β} {a : α} {b : β}
   split_ifs with h
   · rw [subset_antisymm_iff, image_subset_iff]
     refine ⟨fun x hxs ↦ (em (x = a)).elim (fun heq ↦ ?_) (fun hne ↦ Or.inr ?_), fun x ↦ ?_⟩
-    · rw [mem_preimage, update_apply, if_pos heq]; exact mem_insert _ _
+    · rw [mem_preimage, update_apply, ite_eq_left heq]; exact mem_insert _ _
     · exact ⟨x, ⟨hxs, hne⟩, by rw [update_of_ne hne]⟩
     rintro (rfl | ⟨x, hx, rfl⟩)
     · use a; simpa

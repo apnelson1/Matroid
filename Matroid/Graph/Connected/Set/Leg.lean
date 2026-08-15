@@ -235,12 +235,12 @@ lemma shorten_between (h : P.IsRightLeg A S T) : h.shorten.between S (T ∪ V(h.
   rw [symmDiff_of_le subset_union_left, union_sdiff_left]
   exact (h.path_remove_Q_disjoint_bQ2).mono_right sdiff_subset
 
-set_option backward.isDefEq.respectTransparency false in
 @[simp]
 lemma shorten_last (h : P.IsRightLeg A S T) :
     last '' h.shorten.paths = insert P.first ((last '' A.paths) \ {h.Q.last}) := by
   classical
-  simp only [shorten]
+  unfold shorten
+  generalize_proofs h1 h2
   rw [A.shorten_last, Q1_last]
 
 end IsRightLeg

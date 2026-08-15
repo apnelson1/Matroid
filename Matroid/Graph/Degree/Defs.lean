@@ -18,7 +18,6 @@ lemma DegreePos.one_le_eDegree (hG : G.DegreePos) (hx : x ∈ V(G)) : 1 ≤ G.eD
   simp only [ne_eq, eDegree_eq_zero_iff_inc, not_forall, not_not]
   exact hG hx
 
-set_option backward.isDefEq.respectTransparency false
 lemma DegreePos.one_le_degree [G.LocallyFinite] (hG : G.DegreePos) (hx : x ∈ V(G)) :
     1 ≤ G.degree x := by
   rw [← ENat.natCast_le_natCast, natCast_degree_eq]
@@ -192,7 +191,7 @@ lemma unique_neighbor_of_eDegree_eq_one (hx : G.eDegree x = 1) (hxy : G.Adj x y)
 
 lemma IsSpanningSubgraph.minEDegree (h : H ≤s G) : H.minEDegree ≤ G.minEDegree :=
   le_iInf₂ fun v hv ↦ (minEDegree_le_eDegree (h.vertexSet_eq ▸ hv)).trans (eDegree_mono h.le v)
-  
+
 
 /-- `G.MinDegreeGE d` means that `G` has minimum degree at least `d`. -/
 def MinDegreeGE (G : Graph α β) (d : ℕ) : Prop := ∀ v ∈ V(G), d ≤ G.eDegree v

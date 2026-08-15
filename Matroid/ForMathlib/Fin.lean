@@ -42,7 +42,7 @@ lemma Fin.eq_rev_iff {n : ℕ} (a b : Fin n) : a = rev b ↔ a.1 + b.1 + 1 = n :
   lia
 
 lemma Fin.rev_add_self {n : ℕ} [NeZero n] (a : Fin n) : a.rev + a = ⊤ := by
-  rw [← Fin.val_inj, Fin.val_add_eq_ite, if_neg]
+  rw [← Fin.val_inj, Fin.val_add_eq_ite, ite_eq_right]
   · simp only [val_rev, val_top]
     lia
   simp only [val_rev, not_le]

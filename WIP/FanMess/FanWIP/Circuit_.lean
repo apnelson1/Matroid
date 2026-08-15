@@ -633,12 +633,12 @@ lemma IsFan.isTriangle_of_simple (hF : M.IsFan F false c) {n : ℕ} (h3 : F.leng
     obtain hlt | hle := lt_or_ge i m
     all_goals grind
   obtain hn | hn := Nat.even_or_odd n
-  · simp_rw [hm, if_neg (show ¬ Odd n by simpa)] at hss
+  · simp_rw [hm, ite_eq_right (show ¬ Odd n by simpa)] at hss
     refine ⟨by grind, isTriangle_of_dep_of_encard_le
       (hC.dep.superset hss (by simp [insert_subset_iff, hF.get_mem_ground])) ?_⟩
     grw [encard_insert_le, encard_pair_le, show (2 : ℕ∞) + 1 = 3 from rfl]
   have hcard := encard_le_encard hss
-  simp_rw [hm, if_pos hn] at hcard
+  simp_rw [hm, ite_eq_left hn] at hcard
   grw [insert_eq_of_mem (by simp), encard_pair_le, ← hC.girth_le_card, ← M.three_le_girth] at hcard
   norm_num at hcard
 

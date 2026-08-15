@@ -5,6 +5,8 @@ public import Matroid.ForMathlib.List.Basic
 public import Matroid.ForMathlib.Parity
 
 @[expose] public section
+attribute [-grind] Disjoint.mono_left List.Nodup.getElem_inj List.eq_or_mem_of_mem_cons
+  List.Nodup.mem_iff_eq_getLast_or_mem_dropLast
 
 set_option linter.style.longLine false
 
@@ -478,12 +480,13 @@ lemma IsFan.contract_disjoint_aux (hF : M.IsFan F false c) (h4 : 4 ≤ F.length)
   refine Skew.isCircuit_contract (by_contra fun hsk ↦ hb ?_) hT.isCircuit hdj.symm
   rw [skew_comm] at hsk
   obtain ⟨C, hC, hCss, h0C, hCX⟩ :=
-    hT.isCircuit.exists_isCircuit_mem_subset_union_of_not_skew hdj hsk (e := F[0]) (by simp)
+    hT.isCircuit.exists_isCircuit_mem_subset_union_of_not_skew hdj hsk (e := F[0]) (by simp) hXE
   have hT' := hF.isTriad_getElem_of_eq 1 (by simp)
   have h21 := hT'.reverse.mem_iff_mem_of_isCocircuit (K := C) (by simpa)
     (by grind [hF.nodup.getElem_inj_iff])
   by_cases h1 : F[1] ∈ C
-  · simp [← hT.isCircuit.eq_of_subset_isCircuit hC (by grind), hdj.inter_eq] at hCX
+  · simp [← hT.isCircuit.eq_of_subset_isCircuit hC
+      (by grind), hdj.inter_eq] at hCX
   grw [← sdiff_subset_iff.2 hCss, ← union_singleton, ← sdiff_sdiff, Disjoint.sdiff_eq_left (a := C)
     (by grind), hC.closure_sdiff_singleton_eq]
   exact M.mem_closure_of_mem h0C

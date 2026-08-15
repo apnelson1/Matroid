@@ -390,7 +390,7 @@ noncomputable def pequivOfSubtypeInj {α β} {s : Set α} (f : ↑s → β) (hf 
   inv x y := by split_ifs with hx hy hy <;> grind
 
 lemma pequivOfSubtypeInj_eq {α β} {s : Set α} (f : ↑s → β) (hf : Injective f) {x : α}
-    (hx : x ∈ s) : pequivOfSubtypeInj f hf x = some (f ⟨x, hx⟩) := dif_pos hx
+    (hx : x ∈ s) : pequivOfSubtypeInj f hf x = some (f ⟨x, hx⟩) := dite_eq_left hx
 
 /-- Same-carrier copy of `J` whose edges are representative labels from the model routes. -/
 noncomputable def normalized : Graph α β where
@@ -837,19 +837,19 @@ lemma branchVerts_eq_prefix (hv : v = (h.map e).first) (hne : (h.map e).first �
     h.branchVerts e v = V((h.map e).prefixUntilEdgeLabel e.val) := by
   have hvfirst : (h.map e).first = v := hv.symm
   have hvlast : (h.map e).last ≠ v := fun h ↦ hne (hvfirst.trans h.symm)
-  simp [branchVerts, if_pos hvfirst, if_neg hvlast]
+  simp [branchVerts, ite_eq_left hvfirst, ite_eq_right hvlast]
 
 lemma branchVerts_eq_union (hv : v = (h.map e).first) (hloop : (h.map e).first = (h.map e).last) :
     h.branchVerts e v = V((h.map e).prefixUntilEdgeLabel e.val) ∪
     V((h.map e).suffixFromEdgeLabel e.val) := by
   have hvfirst : (h.map e).first = v := hv.symm
-  simp [branchVerts, if_pos (hloop.symm.trans hvfirst), if_pos hvfirst]
+  simp [branchVerts, ite_eq_left (hloop.symm.trans hvfirst), ite_eq_left hvfirst]
 
 lemma branchVerts_eq_suffix (hv : v = (h.map e).last) (hne : (h.map e).first ≠ (h.map e).last) :
     h.branchVerts e v = V((h.map e).suffixFromEdgeLabel e.val) := by
   have hvlast : (h.map e).last = v := hv.symm
   have hvfirst : (h.map e).first ≠ v := fun h ↦ hne (h.trans hvlast.symm)
-  simp [branchVerts, if_neg hvfirst, if_pos hvlast]
+  simp [branchVerts, ite_eq_right hvfirst, ite_eq_left hvlast]
 
 lemma branchVerts_subset_vertexSet_walk (e : E(G)) (v : α) : h.branchVerts e v ⊆ V(h.map e) := by
   rintro z hz

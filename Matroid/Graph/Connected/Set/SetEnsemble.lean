@@ -328,7 +328,7 @@ lemma extend_right_last (A : G.SetEnsemble) (hAST : A.between S T) (hPT : V(P) �
 
 /-- Extends a SetEnsemble by a path in `P` when exactly two paths end somewhere in `P`.
   Send help. -/
-@[simps! (attr := grind =)]
+@[expose, simps! (attr := grind =)]
 noncomputable def extend_right_two (A : G.SetEnsemble) (hAST : A.between S T) (P : WList α β)
     (hPT : V(P) ⊆ T) [DecidablePred (· ∈ A.vertexSet)]
     (htwo : P.vertex.countP (· ∈ A.vertexSet) = 2) (hPP : G.IsPath P) : G.SetEnsemble := by

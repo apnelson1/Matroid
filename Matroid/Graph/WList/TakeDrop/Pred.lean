@@ -39,7 +39,7 @@ lemma prefixUntil_not_prop (hx : x ∈ w.prefixUntil P) (hne : (w.prefixUntil P)
   | nil u => simp_all
   | cons u e W ih =>
     refine (em (P u)).elim (fun _ ↦ by simp_all) fun hu ↦ ?_
-    rw [prefixUntil_cons, if_neg hu, mem_cons_iff] at hx
+    rw [prefixUntil_cons, ite_eq_right hu, mem_cons_iff] at hx
     cases hx <;> simp_all
 
 lemma prefixUntil_last_eq_of_prop (hv : v ∈ w.prefixUntil P) (hvP : P v) :

@@ -98,7 +98,7 @@ noncomputable def Rep.map (v : M.Rep 𝔽 W) (f : α → β) (hf : M.E.InjOn f)
   have h_eq : EqOn (v' ∘ f) v M.E := by
     intro x hx
     have h : ∃ y ∈ M.E, f y = f x := ⟨x, hx, rfl⟩
-    simp [v', dif_pos h, show h.choose = x from hf h.choose_spec.1 hx h.choose_spec.2]
+    simp [v', dite_eq_left h, show h.choose = x from hf h.choose_spec.1 hx h.choose_spec.2]
   Rep.ofGround
   ( v := v')
   ( h_support := fun x ↦ by
@@ -117,7 +117,7 @@ set_option backward.isDefEq.respectTransparency false in
 lemma Rep.matroidMap_apply (v : M.Rep 𝔽 W) {f : α → β} {hf} [DecidablePred (∃ y ∈ M.E, f y = ·)]
     {x : α} (hx : x ∈ M.E) : v.map f hf (f x) = v x := by
   have h : ∃ y ∈ M.E, f y = f x := ⟨x, hx, rfl⟩
-  simp [map, dif_pos h, show h.choose = x from hf h.choose_spec.1 hx h.choose_spec.2]
+  simp [map, dite_eq_left h, show h.choose = x from hf h.choose_spec.1 hx h.choose_spec.2]
 
 lemma Rep.matroidMap_image (v : M.Rep 𝔽 W) (f : α → β) (hf) [DecidablePred (∃ y ∈ M.E, f y = ·)]
     (hX : X ⊆ M.E) : v.map f hf '' (f '' X) = v '' X := by

@@ -22,14 +22,14 @@ instance [CanonicallyOrderedAddCommMonoid α] : DistribSMul ℕ∞ (WithTop α) 
   smul_zero := by
     rintro (rfl | n)
     · change ite _ _ _ = _
-      rw [if_pos rfl]
+      rw [ite_eq_left rfl]
     exact nsmul_zero n
   smul_add := by
     rintro (rfl | n) a b
     · change ite _ _ _ = (ite _ _ _) + (ite _ _ _)
       obtain (rfl | ha) := (zero_le a).eq_or_lt
-      · rw [zero_add, if_pos rfl, zero_add]
-      rw [if_neg, if_neg ha.ne.symm, WithTop.top_add]
+      · rw [zero_add, ite_eq_left rfl, zero_add]
+      rw [ite_eq_right, ite_eq_right ha.ne.symm, WithTop.top_add]
       rw [← Ne.def, ← pos_iff_ne_zero]
       exact ha.trans_le le_self_add
     exact nsmul_add a b n

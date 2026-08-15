@@ -62,7 +62,8 @@ private lemma stronglyPreservable_eConnAux : StronglyPreservable (α := α) Matr
   have h1 := hB.exists_restrict_multiConn_eq'
       (X := fun b ↦ bif b then X ∩ M.E else M.E \ X) (k := k)
   simp only [inter_comm X, pairwise_disjoint_on_bool, disjoint_sdiff_inter.symm, iUnion_bool,
-    cond_true, cond_false, inter_union_sdiff, ← eLocalConn_eq_multiConn, forall_const] at h1
+    Bool.cond_true, Bool.cond_false, inter_union_sdiff, ← eLocalConn_eq_multiConn,
+    forall_const] at h1
   rw [inter_comm, eLocalConn_inter_ground_left, imp_iff_right hkX] at h1
   obtain ⟨R, hRE, hBR, hRK, hconnk⟩ := h1
   refine ⟨R \ B, sdiff_subset.trans hRE, disjoint_sdiff_left, hRK.le, ?_⟩

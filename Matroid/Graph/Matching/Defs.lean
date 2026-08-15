@@ -139,16 +139,16 @@ lemma IsMatching.mono_left (hle : G ≤ H) (h : G.IsMatching M) : H.IsMatching M
     iterate 2 rw [← inc_eq_of_le hle (h.subset ‹_›)]
     exact h.disjoint heM hfM hne
 
-@[simp, grind .]
+@[simp]
 lemma IsMatching.anti_left (hM : G.IsMatching M) (hle : H ≤ G) (hMH : M ⊆ E(H)) :
     H.IsMatching M where
   subset := hMH
   disjoint _ _ heM hfM hne :=
     disjoint_of_subset (endSet_mono hle _) (endSet_mono hle _) (hM.disjoint heM hfM hne)
 
-@[simp, grind .]
+@[simp]
 lemma IsMatching.anti_right (hM : G.IsMatching M) (h : M' ⊆ M) : G.IsMatching M' where
-  subset := by grind
+  subset := by grind [hM.anti_left]
   disjoint _ _ heM' hfM' hne := hM.disjoint (h heM') (h hfM') hne
 
 /-- The restriction of a matching to a subgraph remains a matching. -/

@@ -350,7 +350,7 @@ lemma coe_of_le {H : Graph α β} (H' : H.Subgraph) (hle : H ≤ G) :
     (H'.of_le hle : Graph α β) = H' := rfl
 
 /-- The proof that the subgraphs of a graph `G` form a completely distributive lattice. -/
-def minAx : CompletelyDistribLattice.MinimalAxioms G.Subgraph where
+lemma minAx : CompletelyDistribLattice.MinimalAxioms G.Subgraph where
   iInf_iSup_eq {ι κ} f := by
     rw [Subtype.ext_iff]
     obtain (hι | hι) := isEmpty_or_nonempty ι
@@ -862,7 +862,7 @@ lemma compl_edgeSet (H : G.ClosedSubgraph) :
   · exact fun he => hunin <| huv.of_le_of_mem H.prop.le he |>.left_mem
   · obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet he
     use x, y, hxy
-    have hx := H.prop.mem_tfae_of_isLink hxy |>.not.out 0 2
+    have hx := H.prop.mem_tfae_of_isLink hxy |>.not.out 1 3
     have hy := H.prop.mem_tfae_of_isLink hxy |>.not.out 1 2
     tauto
 
@@ -872,7 +872,7 @@ lemma compl_isLink (H : G.ClosedSubgraph) :
   change (G - V(H.val)).IsLink e x y ↔ _
   simp only [deleteVerts_isLink_iff, and_congr_right_iff]
   rintro he
-  have hx := H.prop.mem_tfae_of_isLink he |>.not.out 0 2
+  have hx := H.prop.mem_tfae_of_isLink he |>.not.out 1 3
   have hy := H.prop.mem_tfae_of_isLink he |>.not.out 1 2
   tauto
 

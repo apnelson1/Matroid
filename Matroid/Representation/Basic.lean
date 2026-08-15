@@ -224,7 +224,7 @@ end Torsion
     rw [hf]
     apply linearIndependent_equiv' <| Equiv.Set.image _ _ Subtype.val_injective
     ext ⟨⟨x,hx⟩, hx'⟩
-    simp [dif_pos hx] )
+    simp [dite_eq_left hx] )
 
 /-- A representation gives a representation of any restriction -/
 noncomputable def Rep.restrict (v : M.Rep 𝔽 W) (X : Set α) : (M ↾ X).Rep 𝔽 W :=

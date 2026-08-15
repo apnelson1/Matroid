@@ -40,7 +40,7 @@ variable {w w₁ w₂ : WList α β}
 lemma nil_inj_iff : (nil x : WList α β) = nil y ↔ x = y := by
   rw [nil.injEq]
 
-@[simp, grind =]
+@[simp]
 lemma cons_inj_iff : cons x e w₁ = cons y f w₂ ↔ x = y ∧ e = f ∧ w₁ = w₂ := by
   induction w₁ with simp
 

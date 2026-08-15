@@ -295,8 +295,8 @@ lemma disjointSum_eq_disjointSigma (M N : Matroid α) (hMN : Disjoint M.E N.E) :
     (by simp [Function.onFun, Pairwise, hMN, hMN.symm]) := by
   refine ext_indep (by simp [iUnion_bool]) fun I hI ↦ ?_
   simp only [disjointSum_indep_iff, and_comm, disjointSigma_indep_iff, Bool.apply_cond,
-    Bool.cond_prop, Bool.forall_bool, Bool.false_eq_true, ↓reduceIte, cond_false, cond_true,
-    iUnion_bool]
+    Bool.cond_prop, Bool.forall_bool, Bool.false_eq_true, ↓reduceIte, Bool.cond_false,
+    Bool.cond_true, iUnion_bool]
   tauto
 
 set_option backward.isDefEq.respectTransparency false in

@@ -10,9 +10,7 @@ pp.proofs.withType = false
 linter.docPrime = false
 linter.style.longLine = true
 linter.unusedSimpArgs = true
-grind.unusedLemmaThreshold = 10
-# Transition aid while migrating to the module system (private decls used from public sections)
-backward.privateInPublic = true
+# grind.unusedLemmaThreshold = 10
 
 [[require]]
 name = "loogle"

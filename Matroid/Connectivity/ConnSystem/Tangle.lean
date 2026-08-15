@@ -207,7 +207,7 @@ lemma exists_bipartition_bool_of_ne {T' : Tangle μ k} (h_ne : T ≠ T') (b : Bo
   refine ⟨IndexedPartition.ofSubset hXE b, by simpa, by simpa, fun i ↦ ?_⟩
   obtain rfl | rfl := i.eq_or_eq_not b
   · simp [hX, hX']
-  simp only [IndexedPartition.ofSubset_apply, Bool.not_beq_self, cond_false]
+  simp only [IndexedPartition.ofSubset_apply, Bool.not_beq_self, Bool.cond_false]
   exact iff_of_false hX.compl_large.not_small hX'.compl_small.not_large
 
 lemma exists_bipartition_of_ne {T' : Tangle μ k} (h_ne : T ≠ T') :

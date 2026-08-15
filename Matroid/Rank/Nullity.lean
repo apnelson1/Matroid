@@ -113,8 +113,8 @@ lemma nullity_singleton_eq_one (he : e ∈ M.E := by aesop_mat) :
 lemma nullity_singleton_eq_ite [Decidable (M.IsLoop e)] (he : e ∈ M.E := by aesop_mat) :
     M.nullity {e} = if M.IsLoop e then 1 else 0 := by
   obtain h | h := M.isLoop_or_isNonloop e
-  · rw [if_pos h, h.nullity_eq]
-  rw [if_neg h.not_isLoop, h.nullity_eq]
+  · rw [ite_eq_left h, h.nullity_eq]
+  rw [ite_eq_right h.not_isLoop, h.nullity_eq]
 
 lemma nullity_singleton_eq_ite' [Decidable (M.IsNonloop e)] :
     M.nullity {e} = if M.IsNonloop e then 0 else 1 := by
@@ -122,7 +122,8 @@ lemma nullity_singleton_eq_ite' [Decidable (M.IsNonloop e)] :
   by_cases he : e ∈ M.E
   · rw [nullity_singleton_eq_ite, ← ite_not]
     simp_rw [M.not_isLoop_iff he]
-  rw [← nullity_restrict_univ, IsLoop.nullity_eq (by simp [he]), if_neg (fun h ↦ he h.mem_ground)]
+  rw [← nullity_restrict_univ, IsLoop.nullity_eq (by simp [he]),
+    ite_eq_right (fun h ↦ he h.mem_ground)]
 
 @[gcongr]
 lemma nullity_le_of_subset (M : Matroid α) (hXY : X ⊆ Y) : M.nullity X ≤ M.nullity Y := by

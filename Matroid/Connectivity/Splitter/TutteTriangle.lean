@@ -294,11 +294,13 @@ lemma tutte_triangle_weak (hM : M.TutteConnected 3) (hT : M.IsTriangle {e,f,g})
   rw [show (3 : ℕ∞) = 1 + 1 + 1 from rfl] at *
   have hsep (i) : ∃ (P : (M ＼ {x i}).Separation),
        P.eConn ≤ 1 ∧ P.IsTutteSeparation ∧ x (!i) ∈ P true := by
-    cases i
-    · dsimp only [x]
+    cases i with
+    | false =>
+      change ∃ P : (M ＼ {f}).Separation, P.eConn ≤ 1 ∧ P.IsTutteSeparation ∧ e ∈ P true
       rw [not_tutteConnected_iff_exists_mem (e := e) (by simp [hT.ne₁₂, hT.mem_ground₁]) true] at hf
       simpa using hf
-    · dsimp only [x]
+    | true =>
+      change ∃ P : (M ＼ {e}).Separation, P.eConn ≤ 1 ∧ P.IsTutteSeparation ∧ f ∈ P true
       rw [not_tutteConnected_iff_exists_mem (e := f)
         (by simp [hT.ne₁₂.symm, hT.mem_ground₂]) true] at he
       simpa using he

@@ -474,13 +474,13 @@ lemma IsForest.simple (hG : G.IsForest) : G.Simple where
     simpa [isCyclicWalk_iff, isTour_iff, he.left_mem, hf.symm, he, he.adj.ne.symm] using
       hG (cons x e (cons y f (nil x)))
 
-set_option backward.isDefEq.respectTransparency false in
+-- set_option backward.isDefEq.respectTransparency false in
 lemma isForest_iff_isTrail_eq_eq : G.IsForest ↔ ∀ ⦃P Q⦄, G.IsTrail P → G.IsTrail Q →
     P.first = Q.first → P.last = Q.last → P = Q := by
   refine ⟨fun hG P Q hP hQ hfirst hlast ↦ hG.eq_of_isTrail_eq_eq hP hQ hfirst hlast, fun h ↦ ?_⟩
   have hG : G.Loopless := ⟨fun e x hex ↦ by
-    simpa using congrArg length
-    <| h hex.walk_isTrail (Q := nil x) (by simp [hex.left_mem]) (by simp) (by simp)⟩
+    simpa [IsLink.walk] using congrArg length <| h hex.walk_isTrail (Q := nil x)
+      (by simp [hex.left_mem]) (by grind [IsLink.walk_first]) (by grind [IsLink.walk_last])⟩
   intro e he
   rw [isBridge_iff_notMem_isCyclicWalk he]
   intro C hC heC

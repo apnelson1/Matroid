@@ -558,11 +558,11 @@ lemma eConn_eq_eConn_contract_subset_add (M : Matroid α) (hCX : C ⊆ X) :
       aux (hI.subset.trans hCX) hI.indep]
   have hrw := M.multiConn_project_add_disjoint (X := fun b ↦ bif b then X else M.E \ X)
     (by simp [iUnion_bool, hC.subset_ground.trans subset_union_right])
-    (by simp [pairwise_disjoint_on_bool, disjoint_sdiff_right]) hC
+    (by simpa [pairwise_disjoint_on_bool'] using disjoint_sdiff_right) hC
   grw [eq_comm, eConn_eq_eLocalConn, project_ground, eLocalConn_eq_multiConn,
     eConn_eq_eLocalConn, eLocalConn_eq_multiConn (Y := M.E \ X), ← hrw]
-  simp only [tsum_bool, cond_false, (disjoint_sdiff_left.mono_right hCX).inter_eq,
-    project_empty, cond_true, inter_eq_self_of_subset_right hCX]
+  simp only [tsum_bool, Bool.cond_false, (disjoint_sdiff_left.mono_right hCX).inter_eq,
+    project_empty, Bool.cond_true, inter_eq_self_of_subset_right hCX]
   rw [← (M.project C).eLocalConn_closure_right,
     show (M.project C).closure C = (M.project C).closure ∅ by simp, eLocalConn_closure_right,
     eLocalConn_empty, add_zero]
@@ -887,7 +887,7 @@ theorem eConn_inter_add_eConn_union_union_le (M : Matroid α) (hC : Disjoint C X
   obtain ⟨N, hNM, hNfin, hN⟩ := stronglyPreservable_eConn.exists_finite_counterexample_of_lt_sum M g
     (monotone_rhs_aux ..) (fun b ↦ bif b then C ∩ D else X ∪ C ∪ D) (by simpa)
   simp only [Fintype.univ_bool, Finset.mem_singleton, Bool.true_eq_false, not_false_eq_true,
-    Finset.sum_insert, cond_true, Finset.sum_singleton, cond_false, g, ← cast_conn_eq,
+    Finset.sum_insert, Bool.cond_true, Finset.sum_singleton, Bool.cond_false, g, ← cast_conn_eq,
     ← Nat.cast_add, ENat.natCast_lt_natCast] at hN
   exact (N.nConn_inter_add_conn_union_union_le hC hD).not_gt hN
 

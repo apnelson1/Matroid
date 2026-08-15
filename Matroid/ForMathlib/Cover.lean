@@ -203,10 +203,10 @@ lemma weightedCoverNumber_eq_weightedCoverNumber_ite (y : Set α) (f : Set α �
   simp_rw [le_antisymm_iff, weightedCoverNumber, le_iInf_iff, isCover_true_iff]
   refine ⟨fun T hT ↦ ?_, fun T hT ↦ ?_⟩
   · obtain ⟨i, hi⟩ | hnot := exists_or_forall_not (fun x : T ↦ ¬ P x)
-    · grw [← ENat.le_tsum (a := i), if_neg hi, ← le_top]
-    grw [iInf₂_le T (by simpa [isCover_iff, ← hT] using hnot), tsum_congr (fun i ↦ if_pos _)]
+    · grw [← ENat.le_tsum (a := i), ite_eq_right hi, ← le_top]
+    grw [iInf₂_le T (by simpa [isCover_iff, ← hT] using hnot), tsum_congr (fun i ↦ ite_eq_left _)]
     simpa using hnot
-  grw [iInf₂_le T hT.sUnion_eq, tsum_congr (fun i ↦ if_pos _)]
+  grw [iInf₂_le T hT.sUnion_eq, tsum_congr (fun i ↦ ite_eq_left _)]
   simpa using hT.prop
 
 /-- This is the size of the smallest cover of `x` in which each set satisfies `P`. -/

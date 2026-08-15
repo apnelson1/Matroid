@@ -525,7 +525,8 @@ set_option backward.isDefEq.respectTransparency false in
 lemma disjointSum_removeColoops {N : Matroid α} (hMN : Disjoint M.E N.E) :
     (M.disjointSum N hMN).removeColoops = M.removeColoops.disjointSum N.removeColoops
       (hMN.mono (fun _ ↦ IsNonloop.mem_ground) (fun _ ↦ IsNonloop.mem_ground)) := by
-  simp [disjointSum_eq_disjointSigma, Bool.apply_cond]
+  simp only [disjointSum_eq_disjointSigma, disjointSigma_removeColoops]
+  convert rfl using 3 with (i | i) <;> rfl
 
 section Constructions
 
