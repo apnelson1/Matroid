@@ -1,6 +1,10 @@
-import Matroid.Simple
-import Matroid.Extension.ModularCut
-import Matroid.ForMathlib.Function
+module
+
+public import Matroid.Simple
+public import Matroid.Extension.ModularCut
+public import Matroid.ForMathlib.Function
+
+@[expose] public section
 
 open Set Function Set.Notation
 namespace Matroid

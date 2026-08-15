@@ -1,5 +1,9 @@
-import Matroid.Axioms.Closure
-import Matroid.Flat.Basic
+module
+
+public import Matroid.Axioms.Closure
+public import Matroid.Flat.Basic
+
+@[expose] public section
 
 open Set
 

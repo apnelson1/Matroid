@@ -1,5 +1,9 @@
-import Matroid.Connectivity.Nat
-import Matroid.Order.Quotient
+module
+
+public import Matroid.Connectivity.Nat
+public import Matroid.Order.Quotient
+
+@[expose] public section
 
 open Set Function
 

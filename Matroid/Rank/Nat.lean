@@ -1,4 +1,8 @@
-import Matroid.Rank.ENat
+module
+
+public import Matroid.Rank.ENat
+
+@[expose] public section
 
 namespace Matroid
 

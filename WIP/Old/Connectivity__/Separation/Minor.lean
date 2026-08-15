@@ -1,5 +1,7 @@
-import Matroid.Connectivity.Separation.Basic
-import Matroid.Connectivity.Dual
+module
+
+public import Matroid.Connectivity.Separation.Basic
+public import Matroid.Connectivity.Dual
 
 open Set Function
 

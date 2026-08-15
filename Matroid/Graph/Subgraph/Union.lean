@@ -2,6 +2,7 @@ module
 
 public import Matroid.Graph.Subgraph.Compatible
 import all Mathlib.Combinatorics.Graph.Delete
+public import Mathlib.Combinatorics.Graph.Delete
 
 @[expose] public section
 

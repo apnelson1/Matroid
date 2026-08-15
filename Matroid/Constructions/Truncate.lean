@@ -1,6 +1,10 @@
-import Matroid.BaseExchange
-import Matroid.Extension.ProjectBy
-import Matroid.Order.Quotient
+module
+
+public import Matroid.BaseExchange
+public import Matroid.Extension.ProjectBy
+public import Matroid.Order.Quotient
+
+@[expose] public section
 
 variable {α : Type*} {M : Matroid α} {E I B : Set α} {k : ℕ∞}
 

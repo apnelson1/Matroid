@@ -1,8 +1,10 @@
-import Matroid.Simple
-import Mathlib.combinatorics.hall.basic
-import Matroid.Constructions.Uniform
-import Mathlib.Order.RelClasses
-import Mathlib.SetTheory.Ordinal.Basic
+module
+
+public import Matroid.Simple
+public import Mathlib.combinatorics.hall.basic
+public import Matroid.Constructions.Uniform
+public import Mathlib.Order.RelClasses
+public import Mathlib.SetTheory.Ordinal.Basic
 
 
 namespace Matroid

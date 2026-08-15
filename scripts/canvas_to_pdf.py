@@ -6,8 +6,8 @@ This script reads .canvas files (JSON format) from the ToDo folder
 and generates PDF visualizations showing the node layout and connections.
 """
 
-import json
-import sys
+public import json
+public import sys
 from pathlib import Path
 from typing import Dict, List, Tuple
 

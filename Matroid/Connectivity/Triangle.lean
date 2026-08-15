@@ -1,8 +1,10 @@
-import Matroid.Connectivity.Minor
-import Matroid.Connectivity.Connected
-import Matroid.Connectivity.Separation.Basic
-import Matroid.ForMathlib.Matroid.Constructions
-import Matroid.Triangle
+module
+
+public import Matroid.Connectivity.Minor
+public import Matroid.Connectivity.Connected
+public import Matroid.Connectivity.Separation.Basic
+public import Matroid.ForMathlib.Matroid.Constructions
+public import Matroid.Triangle
 
 
 /-

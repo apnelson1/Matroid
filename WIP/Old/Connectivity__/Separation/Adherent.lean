@@ -1,4 +1,6 @@
-import Matroid.Connectivity.Separation.Internal
+module
+
+public import Matroid.Connectivity.Separation.Internal
 
 variable {α : Type*} {M N : Matroid α} {j k : ℕ∞} {d k : ℕ∞} {A X Y : Set α} {P : M.Separation}
   {b : Bool}

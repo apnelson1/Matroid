@@ -1,6 +1,10 @@
-import Matroid.Minor.Delete
-import Mathlib.Combinatorics.Matroid.Minor.Contract
-import Matroid.ForMathlib.Matroid.Constructions
+module
+
+public import Matroid.Minor.Delete
+public import Mathlib.Combinatorics.Matroid.Minor.Contract
+public import Matroid.ForMathlib.Matroid.Constructions
+
+@[expose] public section
 
 variable {α : Type*} {M M' N : Matroid α} {e f : α} {I J R B C X Y Z K S : Set α}
 

@@ -1,5 +1,9 @@
-import Matroid.Connectivity.ConnSystem.Basic
-import Matroid.Connectivity.Separation.Basic
+module
+
+public import Matroid.Connectivity.ConnSystem.Basic
+public import Matroid.Connectivity.Separation.Basic
+
+@[expose] public section
 
 open Set ConnSystem
 

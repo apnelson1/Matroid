@@ -1,12 +1,17 @@
-import Mathlib.Data.Set.Defs
-import Mathlib.Logic.Equiv.Basic
-import Mathlib.Combinatorics.Matroid.Minor.Order
-import Mathlib.Combinatorics.Matroid.Map
-import Matroid.ForMathlib.Set
-import Matroid.Connectivity.Separation.Two
-import Matroid.Triangle
-import Matroid.Constructions.Small
-import Matroid.Uniform.Minor
+module
+
+public import Mathlib.Data.Set.Defs
+public import Mathlib.Logic.Equiv.Basic
+public import Mathlib.Combinatorics.Matroid.Minor.Order
+public import Mathlib.Combinatorics.Matroid.Map
+public import Matroid.ForMathlib.Set
+public import Matroid.Connectivity.Separation.Two
+public import Matroid.Triangle
+public import Matroid.Constructions.Small
+public import Matroid.Uniform.Minor
+public import Matroid.Connectivity.Separation.Adherent
+
+@[expose] public section
 
 open Set Matroid Function Separation
 
@@ -168,7 +173,7 @@ lemma Separation.indep_coindep_exists_basis_contraction_minor
     ∃ B, (M ／ P i).IsBase B ∧ M ／ C ＼ D ≤m M ／ B := by
   rw [coindep_iff_compl_spanning
     (by grind only [= subset_def, → Indep.subset_ground, = dual_ground]),
-    diff_diff_eq_sdiff_union (subset_trans hC P.subset), P.compl_eq, Bool.not_not,
+    sdiff_sdiff_eq_sdiff_union (subset_trans hC P.subset), P.compl_eq, Bool.not_not,
     union_comm] at hDc
   have h₁ : (M ／ (P i)).Spanning C := by
     rw [contract_spanning_iff]
@@ -242,42 +247,70 @@ lemma exists_flexible {N : Matroid α} (hM : M.TutteConnected 3) (h4 : 4 ≤ M.E
     (by simpa using hi) (by grind) hfg
   exact ⟨φ.trans_isMinor ((delete_isMinor ..).contract_isMinor_contract (by grind))⟩
 
-lemma splitter_no_triangle (hM : M.TutteConnected 3) (hN : N.TutteConnected 3) (fNM : N <i M)
-    (hTriad : ∀ e T, M.IsDeletable N e → M.IsTriad T → e ∉ T)
-    (hTriangle : ∀ e T, M.IsContractible N e → M.IsTriangle T → e ∉ T) :
-    ∃ e, (M.IsDeletable N e ∧ (M ＼ {e}).TutteConnected 3)
-    ∨ (M.IsContractible N e ∧ (M ／ {e}).TutteConnected 3) := by
-  rw [show (3 : ℕ∞) = 2 + 1 from rfl] at *
-  obtain ⟨e, he⟩ := StrictIsoMinor.exists_isDeletable_or_isContractible (fNM)
-  clear fNM
-  wlog hed : M.IsDeletable N e generalizing M N with aux
-  · rw [or_iff_left hed, ← dual_isDeletable_dual_iff] at he
-    specialize aux hM.dual hN.dual (by simpa) (by simpa) (Or.inr he) he
-    obtain ⟨f, hf⟩ := aux
-    use f
-    rwa [dual_isContractible_dual_iff, dual_isDeletable_dual_iff, ← dual_contract, ← dual_delete,
-      tutteConnected_dual_iff, tutteConnected_dual_iff, or_comm] at hf
-  clear he
-  by_contra! hcon
-  have henot3con : ¬ (M ＼ {e}).TutteConnected (2 + 1) := (hcon e).1 hed
-  rw [not_tutteConnected_iff_exists] at henot3con
-  obtain ⟨P, hP⟩ := henot3con
+/-- A golfed version of the main result here. This uses `exists_flexible` as well as
+`Simple.contractElem_simple_of_notMem_triangle` and `exists_removeElem_tutteConnected_three` to
+avoid reasoning directly about girth. -/
+lemma splitter_no_triangle_minor {N : Matroid α} (hM : M.TutteConnected 3) (h4 : 4 ≤ M.E.encard)
+    (hNM : N <m M) (hN : N.TutteConnected 3) (hr : ∀ e b, e ∈ M.E → Nonempty (N ≤i M.remove b {e}) →
+      ∀ T, (M.bDual !b).IsTriangle T → e ∉ T) :
+    ∃ e b, e ∈ M.E ∧ Nonempty (N ≤i M.remove b {e}) ∧ (M.remove b {e}).TutteConnected 3 := by
+  -- Let `e` be a `b`-removable element for `N`. If removing `e` keeps `3`-connectedness, we win.
+  obtain ⟨e, heM, b, heN⟩ := hNM.exists_isMinor_removeElem
+  by_cases htc : (M.remove b {e}).TutteConnected 3
+  · exact ⟨e, b, heM, ⟨heN.isoMinor⟩, htc⟩
+  -- by hypothesis, `e` is in no triangle of `(M.bDual !b)`, so `(M.bDual !b) ／ {e}` is simple.
+  have hs' := ((hM.bDual (!b)).simple (by simpa using h4)).contractElem_simple_of_notMem_triangle
+    <| hr e b heM ⟨heN.isoMinor⟩
+  -- ... and therefore we can find a flexible element `f` for `N`.
+  rw [← tutteConnected_bDual_iff (b := b), bDual_remove, bne_self_eq_false, remove_false] at htc
+  obtain ⟨f, hfM, hb⟩ := exists_flexible (hM.bDual b) (e := e) (by simpa) htc (by simpa)
+    (by simpa using heN.bDual b) (hN.bDual b)
+  replace hb : ∀ d, Nonempty (N ≤i (M.remove d {f})) := by
+    simp_rw [remove_bDual, nonempty_isoMinor_bDual_iff] at hb
+    exact fun d ↦ by simpa using hb (b != d)
+  -- by the triangle hypothesis, we can remove `f` in one way or the other to stay `3`-connected,
+  -- so we win by the flexibility of `f`.
+  have aux (T : Set α) (d : Bool) (hT : (M.bDual d).IsTriangle T) : f ∉ T :=
+    hr f (!d) (by simpa using hfM) (hb _) T (by simpa)
+  obtain ⟨d, hd⟩ := hM.exists_removeElem_tutteConnected_three aux
+  exact ⟨f, d, by simpa using hfM, (hb _), hd⟩
 
-  /-
-  We are under the hypotheses that if M/e has an N-minor, then e is not in a triangle, and
-  if M\e has an N-minor, then e is not in a triad. The other case leads to 4-element fans.
+-- lemma splitter_no_triangle (hM : M.TutteConnected 3) (hN : N.TutteConnected 3) (fNM : N <i M)
+--     (hTriad : ∀ e T, M.IsDeletable N e → M.IsTriad T → e ∉ T)
+--     (hTriangle : ∀ e T, M.IsContractible N e → M.IsTriangle T → e ∉ T) :
+--     ∃ e, (M.IsDeletable N e ∧ (M ＼ {e}).TutteConnected 3)
+--     ∨ (M.IsContractible N e ∧ (M ／ {e}).TutteConnected 3) := by
+--   rw [show (3 : ℕ∞) = 2 + 1 from rfl] at *
+--   obtain ⟨e, he⟩ := StrictIsoMinor.exists_isDeletable_or_isContractible (fNM)
+--   clear fNM
+--   wlog hed : M.IsDeletable N e generalizing M N with aux
+--   · rw [or_iff_left hed, ← dual_isDeletable_dual_iff] at he
+--     specialize aux hM.dual hN.dual (by simpa) (by simpa) (Or.inr he) he
+--     obtain ⟨f, hf⟩ := aux
+--     use f
+--     rwa [dual_isContractible_dual_iff, dual_isDeletable_dual_iff, ← dual_contract, ← dual_delete,
+--       tutteConnected_dual_iff, tutteConnected_dual_iff, or_comm] at hf
+--   clear he
+--   by_contra! hcon
+--   have henot3con : ¬ (M ＼ {e}).TutteConnected (2 + 1) := (hcon e).1 hed
+--   rw [not_tutteConnected_iff_exists] at henot3con
+--   obtain ⟨P, hP⟩ := henot3con
 
-  At this point we have used duality to assume that there is an element e such that
-  M\e has an N-minor. Note that e is not in a triad. If M\e is 3-connected, then we are done,
-  so we assume that M\e has a 2-separation P.
+--   /-
+--   We are under the hypotheses that if M/e has an N-minor, then e is not in a triangle, and
+--   if M\e has an N-minor, then e is not in a triad. The other case leads to 4-element fans.
 
-  We show that P has a "small side" relative to a copy of N, that is, for a fixed copy
-  of N, there is a side of P that contains at most one element of that copy. This small
-  side cannot have rank 1, because M is simple. It cannot have corank 1, because then e
-  would be in a triad, and e is a deletable element. So by a lemma, the small side contains
-  a "flexible" element, f, meaning that both M \ f and M / f have isomorphic copies of N.
-  The hypotheses imply f is in no triangle and in no triad, so that si(M/f) = M/f and
-  co(M\f) = M\f. Now we can apply Bixby to f and deduce that the splitter theorem holds.
-  -/
+--   At this point we have used duality to assume that there is an element e such that
+--   M\e has an N-minor. Note that e is not in a triad. If M\e is 3-connected, then we are done,
+--   so we assume that M\e has a 2-separation P.
 
-  sorry
+--   We show that P has a "small side" relative to a copy of N, that is, for a fixed copy
+--   of N, there is a side of P that contains at most one element of that copy. This small
+--   side cannot have rank 1, because M is simple. It cannot have corank 1, because then e
+--   would be in a triad, and e is a deletable element. So by a lemma, the small side contains
+--   a "flexible" element, f, meaning that both M \ f and M / f have isomorphic copies of N.
+--   The hypotheses imply f is in no triangle and in no triad, so that si(M/f) = M/f and
+--   co(M\f) = M\f. Now we can apply Bixby to f and deduce that the splitter theorem holds.
+--   -/
+
+--   sorry

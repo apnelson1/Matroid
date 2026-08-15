@@ -1,5 +1,5 @@
 --import Matroid.Order.Discrepancy
-import Matroid.Rank.Quotient
+public import Matroid.Rank.Quotient
 
 universe u
 

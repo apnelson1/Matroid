@@ -1,14 +1,16 @@
-import Matroid.Graph.Independent
-import Matroid.Graph.Connected.Menger
-import Matroid.ForMathlib.Minimal
+module
 
-import Matroid.Exercises.HamiltonianCycle.Degree
-import Matroid.Exercises.HamiltonianCycle.Walk
-import Matroid.Exercises.HamiltonianCycle.Connected
-import Matroid.Exercises.HamiltonianCycle.Bipartite
+public import Matroid.Graph.Independent
+public import Matroid.Graph.Connected.Menger
+public import Matroid.ForMathlib.Minimal
+
+public import Matroid.Exercises.HamiltonianCycle.Degree
+public import Matroid.Exercises.HamiltonianCycle.Walk
+public import Matroid.Exercises.HamiltonianCycle.Connected
+public import Matroid.Exercises.HamiltonianCycle.Bipartite
 
 -- TODO: remember to remove this Loogle import at the end of the project
-import Loogle.Find
+public import Loogle.Find
 
 open Qq Lean Meta Elab Tactic WList Set
 

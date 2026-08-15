@@ -1,4 +1,8 @@
-import Matroid.Connectivity.ConnSystem.Matroid
+module
+
+public import Matroid.Connectivity.ConnSystem.Matroid
+
+@[expose] public section
 
 variable {α : Type*} {M : Matroid α} {X Y I C D : Set α} {e : α}
 

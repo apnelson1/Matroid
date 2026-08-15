@@ -1,5 +1,9 @@
-import Matroid.Flat.Lattice
-import Matroid.ForMathlib.Matroid.Circuit
+module
+
+public import Matroid.Flat.Lattice
+public import Matroid.ForMathlib.Matroid.Circuit
+
+@[expose] public section
 
 variable {α : Type*} {M : Matroid α} {I F X Y F' F₀ F₁ F₂ P L H H₁ H₂ H' B C K : Set α} {e f : α}
 

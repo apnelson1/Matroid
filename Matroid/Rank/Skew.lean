@@ -1,7 +1,10 @@
-import Matroid.Rank.Nullity
-import Matroid.Connectivity.Skew
-import Matroid.ForMathlib.Topology.ENat
+module
 
+public import Matroid.Rank.Nullity
+public import Matroid.Connectivity.Skew
+public import Matroid.ForMathlib.Topology.ENat
+
+@[expose] public section
 
 theorem ENat.strong_induction_on {p : ℕ∞ → Prop} (n : ℕ∞)
     (h : ∀ (n : ℕ∞), (∀ (m : ℕ∞), m < n → p m) → p n) : p n := by

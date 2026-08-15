@@ -1,7 +1,9 @@
-import Matroid.Rank.Skew
-import Matroid.ForMathlib.Matroid.Map
-import Matroid.ForMathlib.ENat
-import Matroid.Uniform.Basic
+module
+
+public import Matroid.Rank.Skew
+public import Matroid.ForMathlib.Matroid.Map
+public import Matroid.ForMathlib.ENat
+public import Matroid.Uniform.Basic
 
 open Set Function
 

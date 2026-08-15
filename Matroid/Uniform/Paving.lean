@@ -1,9 +1,13 @@
-import Matroid.Constructions.Relax
-import Matroid.Uniform.Finite
-import Matroid.ForMathlib.Matroid.Basic
-import Matroid.Closure
-import Matroid.ForMathlib.Matroid.Closure
-import Matroid.ForMathlib.Tactic.TautoSet
+module
+
+public import Matroid.Constructions.Relax
+public import Matroid.Uniform.Finite
+public import Matroid.ForMathlib.Matroid.Basic
+public import Matroid.Closure
+public import Matroid.ForMathlib.Matroid.Closure
+public import Matroid.ForMathlib.Tactic.TautoSet
+
+@[expose] public section
 
 open Set
 

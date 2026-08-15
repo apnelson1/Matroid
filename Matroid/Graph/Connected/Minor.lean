@@ -3,6 +3,8 @@ module
 public import Matroid.Graph.Connected.Basic
 public import Matroid.Graph.Minor.Defs
 import all Mathlib.Combinatorics.Graph.Delete
+public import Mathlib.Combinatorics.Graph.Delete
+
 
 @[expose] public section
 

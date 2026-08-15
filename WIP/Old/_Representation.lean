@@ -1,7 +1,9 @@
-import Mathlib.LinearAlgebra.Dual
-import Mathlib.LinearAlgebra.Finrank
-import Matroid.ForMathlib.LinearAlgebra.LinearIndependent
-import Matroid.ForMathlib.LinearAlgebra.StdBasis
+module
+
+public import Mathlib.LinearAlgebra.Dual
+public import Mathlib.LinearAlgebra.Finrank
+public import Matroid.ForMathlib.LinearAlgebra.LinearIndependent
+public import Matroid.ForMathlib.LinearAlgebra.StdBasis
 
 open Submodule Set Module BigOperators
 

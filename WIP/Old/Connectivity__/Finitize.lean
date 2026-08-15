@@ -1,4 +1,6 @@
-import Matroid.Connectivity.Basic
+module
+
+public import Matroid.Connectivity.Basic
 
 variable {α ι : Type*} {M : Matroid α} {A B C X Y I J : Set α} {e f : α} {k : ℕ∞}
 

@@ -1,4 +1,8 @@
-import Matroid.Connectivity.Minor
+module
+
+public import Matroid.Connectivity.Minor
+
+@[expose] public section
 
 variable {α ι : Type*} {M : Matroid α} {e f x y : α} {C D : Set α}
 

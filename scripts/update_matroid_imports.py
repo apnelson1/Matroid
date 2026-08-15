@@ -18,16 +18,16 @@ Defaults assume this script is located at `<repo_root>/scripts/`.
 """
 from __future__ import annotations
 
-import argparse
-import os
-import re
-import subprocess
-import sys
+public import argparse
+public import os
+public import re
+public import subprocess
+public import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Dict, Iterable, List, Set, Tuple, Optional
 
-IMPORT_RE = re.compile(r"^\s*(--\s*)?import\s+(Matroid\.[\w\.'-]+)\s*$")
+public import_RE = re.compile(r"^\s*(--\s*)?import\s+(Matroid\.[\w\.'-]+)\s*$")
 
 
 def load_ignore_patterns(ignore_file: Path) -> List[re.Pattern[str]]:

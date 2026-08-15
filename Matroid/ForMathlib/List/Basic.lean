@@ -25,6 +25,10 @@ lemma Nodup.eq_singleton_iff_head_getLast {α} {l : List α} (hnd : l.Nodup) (hn
     l.head hne = l.getLast hne ↔ ∃ x, l = [x] :=
   ⟨fun h => by cases l <;> grind, fun ⟨x, hx⟩ => by grind⟩
 
+lemma Nodup.head_notMem_tail {l : List α} (hl : l.Nodup) {hne : l ≠ []} :
+    l.head hne ∉ l.tail := by
+  cases l with grind
+
 lemma eq_of_length_eq_zero {α} {l : List α} (h : l.length = 0) : l = [] := by
   match l with
   | [] => rfl
@@ -96,6 +100,14 @@ lemma Nodup.eq_getLast_or_mem_dropLast_ne {α} {x : α} {l : List α} (hnd : l.N
 lemma Nodup.mem_iff_eq_getLast_or_mem_dropLast {α} {x : α} {l : List α} (hnd : l.Nodup)
     (hne : l ≠ []) : x ∈ l ↔ x = l.getLast hne ∨ x ≠ l.getLast hne ∧ x ∈ l.dropLast := by
   induction l using List.reverseRec with | nil => simp at hne | append_singleton l a _ => grind
+
+lemma Nodup.toSet_eq_of_subset_of_length_ge {l l' : List α} (hl : l.Nodup) (hss : l ⊆ l')
+    (hlen : l'.length ≤ l.length) : {x | x ∈ l} = {x | x ∈ l'} := by
+  classical
+  have hss' : l.toFinset ⊆ l'.toFinset := by simpa [Finset.subset_iff]
+  suffices aux : l.toFinset = l'.toFinset by simpa [Set.ext_iff, Finset.ext_iff] using aux
+  refine Finset.eq_of_subset_of_card_le hss' ?_
+  grw [toFinset_card_of_nodup hl, toFinset_card_le, hlen]
 
 lemma IsSuffix.eq_of_first_mem {α} {l₁ l₂ : List α} (h : l₁.IsSuffix l₂) (hnd : l₂.Nodup)
     (hne : l₂ ≠ []) (hl : l₂.head hne ∈ l₁) : l₁ = l₂ := by
@@ -292,3 +304,32 @@ lemma append_arc (L : List α) (x y : α) (d e : ℕ) (hd : 0 < d) (he : 0 < e)
       simp
     _ = x :: (L.tail ++ [x]) := by rw [List.take_append_drop]
     _ = L ++ [x] := by rw [← List.cons_head?_tail hx]; simp
+
+theorem getElem_reverse' {l : List α} {i j : ℕ} (hij : i + j + 1 = l.length) :
+    l.reverse[i]'(by rw [length_reverse]; lia) = l[j] := by
+  simp_rw [getElem_reverse, ← hij]
+  convert rfl
+  lia
+
+lemma toSet_cons_eq {a : α} : {x | x ∈ a :: l} = insert a {x | x ∈ l} := by
+  simp [Set.ext_iff]
+
+lemma toSet_concat_eq {a : α} : {x | x ∈ l ++ [a]} = insert a {x | x ∈ l} := by
+  simp [Set.ext_iff, or_comm]
+
+lemma toSet_append_eq {l' : List α} : {x | x ∈ l ++ l'} = {x | x ∈ l} ∪ {x | x ∈ l'} := by
+  simp [Set.ext_iff]
+
+lemma Nodup.toSet_tail_eq (hl : l.Nodup) (h0 : l ≠ []) :
+    {x | x ∈ l.tail} = {x | x ∈ l} \ {l.head h0} := by
+  nth_rw 2 [← cons_head_tail h0]
+  rw [toSet_cons_eq, Set.insert_sdiff_self_of_notMem]
+  cases hl with grind
+
+lemma Nodup.toSet_dropLast_eq (hl : l.Nodup) (h0 : l ≠ []) :
+    {x | x ∈ l.dropLast} = {x | x ∈ l} \ {l.getLast h0} := by
+  have := (nodup_reverse.2 hl).toSet_tail_eq (by simpa)
+  simp only [tail_reverse, mem_reverse, head_reverse] at this
+  assumption
+
+-- Variant of getElem?_reverse with a hypothesis giving the linear relation between the indices.

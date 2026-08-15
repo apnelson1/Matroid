@@ -1,5 +1,9 @@
-import Matroid.Connectivity.Separation.Vertical
-import Matroid.Tame
+module
+
+public import Matroid.Connectivity.Separation.Vertical
+public import Matroid.Tame
+
+@[expose] public section
 
 variable {α : Type*} {M : Matroid α} {X Y : Set α} {e f : α} {P : M.Separation} {k : ℕ∞}
 

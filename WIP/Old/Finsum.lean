@@ -1,5 +1,7 @@
-import Mathlib.Algebra.BigOperators.Finprod
-import Mathlib.Data.Set.Card
+module
+
+public import Mathlib.Algebra.BigOperators.Finprod
+public import Mathlib.Data.Set.Card
 
 open Set Function
 

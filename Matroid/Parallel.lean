@@ -1,7 +1,11 @@
-import Matroid.ForMathlib.Other
-import Matroid.Flat.LowRank
-import Matroid.Flat.Hyperplane
-import Matroid.Equiv
+module
+
+public import Matroid.ForMathlib.Other
+public import Matroid.Flat.LowRank
+public import Matroid.Flat.Hyperplane
+public import Matroid.Equiv
+
+@[expose] public section
 
 open Set Set.Notation
 
@@ -277,6 +281,11 @@ lemma IsCircuit.mem_iff_mem_of_parallel_dual {C : Set α} (h : M.IsCircuit C)
 lemma IsCircuit.mem_iff_mem_of_parallel_bDual {C : Set α} {b : Bool} (h : (M.bDual b).IsCircuit C)
     (hef : (M.bDual !b).Parallel e f) : e ∈ C ↔ f ∈ C :=
   h.mem_iff_mem_of_parallel_dual (by simpa)
+
+lemma Dep.eq_of_subset_pair {D} (hD : M.Dep D) (hDss : D ⊆ {e, f})
+    (he : M.IsNonloop e) (hf : M.IsNonloop f) : D = {e, f} := by
+  rw [subset_pair_iff_eq] at hDss
+  grind [hD.nonempty.ne_empty, he.indep.not_dep, hf.indep.not_dep]
 
 end Parallel
 
@@ -563,6 +572,13 @@ lemma Parallel'.contract_delete_comm (hef : M.Parallel' e f) :
       show e ∉ I by grind, show f ∉ I by grind]
   rw [hef.parallel'.indep_substitute_iff (by simp) (by grind), insert_sdiff_self_of_notMem
     (by grind)]
+
+lemma Parallel'.deleteElem_eq_mapEquiv [DecidableEq α] (hef : M.Parallel' e f) :
+    M ＼ {e} = (M ＼ {f}).mapEquiv (Equiv.swap e f) := by
+  have hrw := M.delete_map ((Equiv.swap e f).injective.injOn) (D := {f})
+    (by simpa using hef.mem_ground_right)
+  simpa [← mapEquiv_eq_map, hef.eq_mapEquiv_swap, image_singleton,
+    Equiv.swap_apply_right, eq_comm] using hrw
 
 end Swap
 

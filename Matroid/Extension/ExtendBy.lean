@@ -1,5 +1,9 @@
-import Matroid.Extension.ModularCut
-import Matroid.ForMathlib.Other
+module
+
+public import Matroid.Extension.ModularCut
+public import Matroid.ForMathlib.Other
+
+@[expose] public section
 
 universe u
 
@@ -200,7 +204,7 @@ lemma extIndep_aug (hI : U.ExtIndep e I) (hInmax : ¬ Maximal (U.ExtIndep e) I)
   replace hInmax := show ¬M.IsHyperplane (M.closure (I \ {e})) by simpa [hImax.2] using hInmax
   exact hInmax <| (hImax.1.symm ▸ hBhp)
 
-private lemma existsMaximalSubsetProperty (U : M.ModularCut) (hXE : X ⊆ insert e M.E) :
+lemma existsMaximalSubsetProperty (U : M.ModularCut) (hXE : X ⊆ insert e M.E) :
   ExistsMaximalSubsetProperty (U.ExtIndep e) X := by
   intro I hI hIX
   obtain ⟨J, hJ, hIJ⟩ :=

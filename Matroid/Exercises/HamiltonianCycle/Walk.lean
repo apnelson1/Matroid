@@ -1,10 +1,12 @@
-import Matroid.Graph.Connected.Basic
-import Matroid.Graph.Walk.Cycle
-import Matroid.ForMathlib.Tactic.ENatToNat
-import Matroid.ForMathlib.Minimal
+module
 
-import Matroid.Exercises.HamiltonianCycle.Degree
-import Matroid.Exercises.HamiltonianCycle.WList
+public import Matroid.Graph.Connected.Basic
+public import Matroid.Graph.Walk.Cycle
+public import Matroid.ForMathlib.Tactic.ENatToNat
+public import Matroid.ForMathlib.Minimal
+
+public import Matroid.Exercises.HamiltonianCycle.Degree
+public import Matroid.Exercises.HamiltonianCycle.WList
 
 -- This file contains all relevant lemmas on walks/paths/cycles.
 -- All three are included together for convenience.

@@ -1,4 +1,8 @@
-import Matroid.Uniform.Minor
+module
+
+public import Matroid.Uniform.Minor
+
+@[expose] public section
 
 namespace Matroid
 

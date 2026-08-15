@@ -1,8 +1,12 @@
-import Matroid.Minor.Rank
-import Matroid.Modular.Basic
-import Matroid.Triangle
-import Matroid.ForMathlib.Data.Set.Finite
-import Mathlib.Tactic.Cases
+module
+
+public import Matroid.Minor.Rank
+public import Matroid.Modular.Basic
+public import Matroid.Triangle
+public import Matroid.ForMathlib.Data.Set.Finite
+public import Mathlib.Tactic.Cases
+
+@[expose] public section
 
 open Set
 
@@ -320,20 +324,20 @@ private def X (Cs : ℕ → Set α) (e : ℕ → α) : ℕ → Set α
   | n+1 => if {C ∈ cSet Cs e n | e (n+1) ∈ C}.Infinite then insert (e (n+1)) (X Cs e n)
       else X Cs e n
 
-lemma cSet_antitone {Cs : ℕ → Set α} {e : ℕ → α} : Antitone (cSet Cs e) := by
+private lemma cSet_antitone {Cs : ℕ → Set α} {e : ℕ → α} : Antitone (cSet Cs e) := by
   apply antitone_nat_of_succ_le fun n ↦ ?_
   simp only [cSet]
   split_ifs with h <;> simp
 
-lemma cSet_subset_range (Cs : ℕ → Set α) (e : ℕ → α) (i : ℕ) : cSet Cs e i ⊆ range Cs :=
+private lemma cSet_subset_range (Cs : ℕ → Set α) (e : ℕ → α) (i : ℕ) : cSet Cs e i ⊆ range Cs :=
   subset_trans (cSet_antitone zero_le) rfl.le
 
-lemma X_monotone (Cs : ℕ → Set α) (e : ℕ → α) : Monotone (X Cs e) := by
+private lemma X_monotone (Cs : ℕ → Set α) (e : ℕ → α) : Monotone (X Cs e) := by
   apply monotone_nat_of_le_succ fun n ↦ ?_
   simp only [X]
   split_ifs with h <;> simp
 
-lemma cSet_infinite (Cs : ℕ ↪ Set α) (e) (i : ℕ) : (cSet Cs e i).Infinite := by
+private lemma cSet_infinite (Cs : ℕ ↪ Set α) (e) (i : ℕ) : (cSet Cs e i).Infinite := by
   induction' i with i IH
   · simpa only [cSet] using infinite_range_of_injective Cs.injective
   simp only [cSet] at IH ⊢
@@ -341,8 +345,8 @@ lemma cSet_infinite (Cs : ℕ ↪ Set α) (e) (i : ℕ) : (cSet Cs e i).Infinite
   · simpa
   exact Infinite.sdiff IH (by exact not_infinite.1 h)
 
-lemma cSet_inter_image_Iic {Cs : ℕ ↪ Set α} {e} {i : ℕ} {C} (heC : e 0 ∈ C) (hC : C ∈ cSet Cs e i) :
-    C ∩ e '' Iic i = X Cs e i := by
+private lemma cSet_inter_image_Iic {Cs : ℕ ↪ Set α} {e} {i : ℕ} {C} (heC : e 0 ∈ C)
+    (hC : C ∈ cSet Cs e i) : C ∩ e '' Iic i = X Cs e i := by
   induction' i with i IH
   · simpa [X, Set.Iic]
   simp only [X]

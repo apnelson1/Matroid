@@ -1,13 +1,15 @@
-import Mathlib.Data.Set.Defs
-import Mathlib.Logic.Equiv.Basic
-import Mathlib.Combinatorics.Matroid.Minor.Order
-import Mathlib.Combinatorics.Matroid.Map
-import Matroid.ForMathlib.Set
-import Matroid.Connectivity.Separation.Two
-import Matroid.Connectivity.Fan.Cyclic
-import Matroid.Connectivity.Separation.Infinite
-import Matroid.Constructions.Small
-import Matroid.Uniform.Minor
+module
+
+public import Mathlib.Data.Set.Defs
+public import Mathlib.Logic.Equiv.Basic
+public import Mathlib.Combinatorics.Matroid.Minor.Order
+public import Mathlib.Combinatorics.Matroid.Map
+public import Matroid.ForMathlib.Set
+public import Matroid.Connectivity.Separation.Two
+public import Matroid.Connectivity.Fan.Cyclic
+public import Matroid.Connectivity.Separation.Infinite
+public import Matroid.Constructions.Small
+public import Matroid.Uniform.Minor
 
 open Set Matroid Function Separation
 
@@ -16,7 +18,7 @@ variable {α β : Type*} {M N : Matroid α} {e f x y z : α}
 /-- The statement that the splitter theorem holds for a particular pair of matroids `M`, `N`. -/
 def SplitterTheoremHoldsFor (M : Matroid α) (N : Matroid β) : Prop :=
   -- `M` is a cyclic fan.
-   (∃ (n : ℕ) (_ : n ≠ 0) (J : Bool → ZMod n → α), M.IsCyclicFan n J ∧ ⋃ i, range (J i) = M.E) ∨
+  (∃ (F : List α) (b : Bool), M.IsCyclicFan F b ∧ {e | e ∈ F} = M.E) ∨
   -- Some element of `M` that can be removed while keeping an `N`-minor and `3`-connectivity. -/
   (∃ (b : Bool) (e : α),
     e ∈ M.E ∧ Nonempty (N ≤i M.remove b {e}) ∧ (M.remove b {e}).TutteConnected 3)

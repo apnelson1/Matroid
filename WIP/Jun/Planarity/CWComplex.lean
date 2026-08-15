@@ -1,9 +1,11 @@
-import Mathlib.Topology.CWComplex.Classical.Graph
-import Mathlib.Topology.CWComplex.Classical.Subcomplex
-import Matroid.ForMathlib.Topology.Circuit
-import Matroid.Graphic
-import Matroid.ForMathlib.Analysis.Normed.Module.Connected
-import Mathlib.Geometry.Manifold.Instances.Sphere
+module
+
+public import Mathlib.Topology.CWComplex.Classical.Graph
+public import Mathlib.Topology.CWComplex.Classical.Subcomplex
+public import Matroid.Graph.Planarity.Topology.Circuit
+public import Matroid.Graphic
+public import Matroid.ForMathlib.Analysis.Normed.Module.Connected
+public import Mathlib.Geometry.Manifold.Instances.Sphere
 
 open Metric Set Graph Topology.RelCWComplex Topology.CWComplex Function Set.Notation
 

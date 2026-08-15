@@ -1,6 +1,10 @@
-import Matroid.Order.Quotient
+module
+
+public import Matroid.Order.Quotient
 
 open Set
+
+@[expose] public section
 
 namespace Matroid
 

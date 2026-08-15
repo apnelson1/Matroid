@@ -1,4 +1,8 @@
-import Matroid.Flat.Lattice
+module
+
+public import Matroid.Flat.Lattice
+
+@[expose] public section
 
 variable {α : Type*} {M : Matroid α} {I F X Y F' F₀ F₁ F₂ P L H H₁ H₂ H' B C K : Set α} {e f : α}
 

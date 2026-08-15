@@ -1,2 +1,4 @@
-import Matroid.Graph.Walk.Cycle
-import Matroid.ForMathlib.Tactic.ENatToNat
+module
+
+public import Matroid.Graph.Walk.Cycle
+public import Matroid.ForMathlib.Tactic.ENatToNat

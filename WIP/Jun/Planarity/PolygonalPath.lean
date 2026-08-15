@@ -1,9 +1,11 @@
-import Mathlib.Analysis.InnerProductSpace.PiL2 -- inefficient import
-import Mathlib.Topology.UniformSpace.Path
-import Mathlib.Topology.Separation.Connected
-import Mathlib.Geometry.Polygon.Basic -- inefficient import
-import Matroid.ForMathlib.List.Basic
-import Matroid.ForMathlib.Topology.Path
+module
+
+public import Mathlib.Analysis.InnerProductSpace.PiL2 -- inefficient import
+public import Mathlib.Topology.UniformSpace.Path
+public import Mathlib.Topology.Separation.Connected
+public import Mathlib.Geometry.Polygon.Basic -- inefficient import
+public import Matroid.ForMathlib.List.Basic
+public import Matroid.Graph.Planarity.Topology.Path
 
 universe u
 variable {α β : Type u} {a b c x y z w : α} {C L : List α} {X Y : Set α} {N : ℕ}

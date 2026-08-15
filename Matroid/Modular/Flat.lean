@@ -1,7 +1,11 @@
-import Matroid.Connectivity.Basic
-import Matroid.ForMathlib.Data.Set.Finite
-import Mathlib.Tactic.Cases
-import Mathlib.Order.Interval.Set.Infinite
+module
+
+public import Matroid.Connectivity.Basic
+public import Matroid.ForMathlib.Data.Set.Finite
+public import Mathlib.Tactic.Cases
+public import Mathlib.Order.Interval.Set.Infinite
+
+@[expose] public section
 
 namespace Matroid
 

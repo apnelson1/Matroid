@@ -1,8 +1,12 @@
-import Matroid.Circuit
-import Mathlib.Combinatorics.Matroid.Loop -- inefficient import
-import Matroid.ForMathlib.Finset
-import Matroid.ForMathlib.Matroid.Closure
-import Matroid.OnUniv
+module
+
+public import Matroid.Circuit
+public import Mathlib.Combinatorics.Matroid.Loop -- inefficient import
+public import Matroid.ForMathlib.Finset
+public import Matroid.ForMathlib.Matroid.Closure
+public import Matroid.OnUniv
+
+@[expose] public section
 
 /-
   A `Loop` of a matroid is a one-element circuit, or, definitionally, a member of `M.loops`.

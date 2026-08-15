@@ -1,5 +1,7 @@
-import Matroid.Connectivity.Local
-import Matroid.Connectivity.Separation.Minor
+module
+
+public import Matroid.Connectivity.Local
+public import Matroid.Connectivity.Separation.Minor
 
 
 open Set Set.Notation

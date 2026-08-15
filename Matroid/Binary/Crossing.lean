@@ -1,6 +1,10 @@
-import Matroid.Tame
-import Matroid.Uniform.Minor
-import Matroid.ForMathlib.Data.Set.Subsingleton
+module
+
+public import Matroid.Tame
+public import Matroid.Uniform.Minor
+public import Matroid.ForMathlib.Data.Set.Subsingleton
+
+@[expose] public section
 
 open Set.Notation
 open Set

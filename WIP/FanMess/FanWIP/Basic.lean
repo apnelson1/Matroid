@@ -1,6 +1,8 @@
-import Matroid.Connectivity.Separation.Tutte
-import Matroid.ForMathlib.List.Set
-import Matroid.ForMathlib.Parity
+module
+
+public import Matroid.Connectivity.Separation.Tutte
+public import Matroid.ForMathlib.List.Set
+public import Matroid.ForMathlib.Parity
 
 set_option linter.style.longLine false
 

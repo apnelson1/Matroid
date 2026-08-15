@@ -3,6 +3,7 @@ module
 public import Matroid.Graph.Subgraph.Lemma
 public import Mathlib.Order.Atoms
 import all Mathlib.Combinatorics.Graph.Delete
+public import Mathlib.Combinatorics.Graph.Delete
 
 @[expose] public section
 

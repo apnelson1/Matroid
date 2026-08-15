@@ -1,5 +1,7 @@
-import Matroid.Simple
-import Mathlib.combinatorics.hall.basic
+module
+
+public import Matroid.Simple
+public import Mathlib.combinatorics.hall.basic
 namespace Matroid
 open Finset
 

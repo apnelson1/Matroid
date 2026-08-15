@@ -50,8 +50,8 @@ while (($#)); do
 done
 
 CONFIG_PATH="$config_path" SET_DEFAULT="$set_default" python3 - <<'PY'
-import os
-import re
+public import os
+public import re
 from pathlib import Path
 
 service_name = "matroid-r2-public"

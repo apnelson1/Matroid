@@ -1,205 +1,199 @@
--- import Matroid.Asymptotic.ZeroPattern
-import Matroid.Axioms.Circuit
-import Matroid.Axioms.Closure
-import Matroid.Axioms.Flat
-import Matroid.Axioms.Rank
--- import Matroid.BaseExchange
-import Matroid.Binary.Crossing
-import Matroid.Binary.Representation
-import Matroid.Bool
-import Matroid.Circuit
-import Matroid.Closure
-import Matroid.Connectivity.Basic
-import Matroid.Connectivity.ConnSystem.Basic
-import Matroid.Connectivity.ConnSystem.Matroid
-import Matroid.Connectivity.ConnSystem.Tangle
-import Matroid.Connectivity.Connected
-import Matroid.Connectivity.Core
-import Matroid.Connectivity.Extension
-import Matroid.Connectivity.Fan.Basic
-import Matroid.Connectivity.Fan.Circuit
--- import Matroid.Connectivity.Fan.Cyclic
--- import Matroid.Connectivity.Fan.Rotary
--- import Matroid.Connectivity.Fan.ThreeConnected
--- import Matroid.Connectivity.Fan.Wheel
-import Matroid.Connectivity.Minor
-import Matroid.Connectivity.Nat
-import Matroid.Connectivity.Separation.Abstract
-import Matroid.Connectivity.Separation.Adherent
-import Matroid.Connectivity.Separation.Basic
-import Matroid.Connectivity.Separation.Faithful
-import Matroid.Connectivity.Separation.Infinite
-import Matroid.Connectivity.Separation.Internal
-import Matroid.Connectivity.Separation.Minor
-import Matroid.Connectivity.Separation.Tutte
-import Matroid.Connectivity.Separation.Two
-import Matroid.Connectivity.Separation.Vertical
+module
+
+public import Matroid.Axioms.Circuit
+public import Matroid.Axioms.Closure
+public import Matroid.Axioms.Flat
+public import Matroid.Axioms.Rank
+public import Matroid.BaseExchange
+public import Matroid.Binary.Crossing
+public import Matroid.Binary.Representation
+public import Matroid.Bool
+public import Matroid.Circuit
+public import Matroid.Closure
+public import Matroid.Connectivity.Basic
+public import Matroid.Connectivity.ConnSystem.Basic
+public import Matroid.Connectivity.ConnSystem.Matroid
+public import Matroid.Connectivity.ConnSystem.Tangle
+public import Matroid.Connectivity.Connected
+public import Matroid.Connectivity.Core
+public import Matroid.Connectivity.Extension
+public import Matroid.Connectivity.Fan.Basic
+public import Matroid.Connectivity.Fan.Circuit
+public import Matroid.Connectivity.Fan.Cyclic
+public import Matroid.Connectivity.Fan.Minor
+public import Matroid.Connectivity.Fan.ThreeConnected
+public import Matroid.Connectivity.Minor
+public import Matroid.Connectivity.Nat
+public import Matroid.Connectivity.Separation.Abstract
+public import Matroid.Connectivity.Separation.Adherent
+public import Matroid.Connectivity.Separation.Basic
+public import Matroid.Connectivity.Separation.Faithful
+public import Matroid.Connectivity.Separation.Infinite
+public import Matroid.Connectivity.Separation.Internal
+public import Matroid.Connectivity.Separation.Minor
+public import Matroid.Connectivity.Separation.Tutte
+public import Matroid.Connectivity.Separation.Two
+public import Matroid.Connectivity.Separation.Vertical
 -- import Matroid.Connectivity.Separation._vert_diag
-import Matroid.Connectivity.Skew
--- import Matroid.Connectivity.Splitter.Basic
--- import Matroid.Connectivity.Splitter.Cretaceous
--- import Matroid.Connectivity.Splitter.Fan
-import Matroid.Connectivity.Splitter.TutteTriangle
-import Matroid.Connectivity.Triangle
-import Matroid.Constructions.Matching
+public import Matroid.Connectivity.Skew
+public import Matroid.Connectivity.Splitter.Cretaceous
+public import Matroid.Connectivity.Splitter.Triassic
+public import Matroid.Connectivity.Splitter.TutteTriangle
+public import Matroid.Connectivity.Triangle
+public import Matroid.Constructions.Matching
 -- import Matroid.Constructions.ModularSum
-import Matroid.Constructions.Project
-import Matroid.Constructions.Relax
+public import Matroid.Constructions.Project
+public import Matroid.Constructions.Relax
 -- import Matroid.Constructions.SeriesParallel
 -- import Matroid.Constructions.Small
-import Matroid.Constructions.Truncate
-import Matroid.Equiv
-import Matroid.Extension.ExtendBy
-import Matroid.Extension.Guts
-import Matroid.Extension.Minor
-import Matroid.Extension.ModularCut
-import Matroid.Extension.Parallel
--- import Matroid.Extension.Pert
--- import Matroid.Extension.Perturbation
--- import Matroid.Extension.Principal
-import Matroid.Extension.ProjectBy
-import Matroid.Extension.ProjectionBy
-import Matroid.Extension.Quotient
+public import Matroid.Constructions.Truncate
+public import Matroid.Equiv
+public import Matroid.Extension.ExtendBy
+public import Matroid.Extension.Guts
+public import Matroid.Extension.Minor
+public import Matroid.Extension.ModularCut
+public import Matroid.Extension.Parallel
+public import Matroid.Extension.Perturbation
+public import Matroid.Extension.Principal
+public import Matroid.Extension.ProjectBy
+public import Matroid.Extension.ProjectionBy
+public import Matroid.Extension.Quotient
 -- import Matroid.Extremal.Covers
 -- import Matroid.Extremal.Covers_
 -- import Matroid.Extremal.Thickness
 -- import Matroid.Extremal.Triangular
 -- import Matroid.Extremal.Uniform
-import Matroid.Finitize
-import Matroid.Flat.Basic
--- import Matroid.Flat.Cyclic
-import Matroid.Flat.Hyperplane
-import Matroid.Flat.Lattice
-import Matroid.Flat.LowRank
-import Matroid.Graph.AcyclicSet
-import Matroid.Graph.Basic
-import Matroid.Graph.Bipartite
-import Matroid.Graph.Connected.Basic
-import Matroid.Graph.Connected.Bond
-import Matroid.Graph.Connected.Component
-import Matroid.Graph.Connected.Construction
-import Matroid.Graph.Connected.Defs
--- import Matroid.Graph.Connected.Ear
+public import Matroid.Finitize
+public import Matroid.Flat.Basic
+public import Matroid.Flat.Cyclic
+public import Matroid.Flat.Hyperplane
+public import Matroid.Flat.Lattice
+public import Matroid.Flat.LowRank
+public import Matroid.Graph.AcyclicSet
+public import Matroid.Graph.Basic
+public import Matroid.Graph.Bipartite
+public import Matroid.Graph.Connected.Basic
+public import Matroid.Graph.Connected.Bond
+public import Matroid.Graph.Connected.Component
+public import Matroid.Graph.Connected.Construction
+public import Matroid.Graph.Connected.Defs
+public import Matroid.Graph.Connected.Ear
 -- import Matroid.Graph.Connected.Gammoid
-import Matroid.Graph.Connected.LineGraph
-import Matroid.Graph.Connected.Menger
-import Matroid.Graph.Connected.Minor
-import Matroid.Graph.Connected.MixedLineGraph
-import Matroid.Graph.Connected.Set.Defs
-import Matroid.Graph.Connected.Set.Leg
-import Matroid.Graph.Connected.Set.SetEnsemble
-import Matroid.Graph.Connected.Subgraph
-import Matroid.Graph.Connected.Vertex.Basic
-import Matroid.Graph.Connected.Vertex.Defs
-import Matroid.Graph.Connected.Vertex.VertexEnsemble
-import Matroid.Graph.Constructions.Basic
+public import Matroid.Graph.Connected.LineGraph
+public import Matroid.Graph.Connected.Menger
+public import Matroid.Graph.Connected.Minor
+public import Matroid.Graph.Connected.MixedLineGraph
+public import Matroid.Graph.Connected.Set.Defs
+public import Matroid.Graph.Connected.Set.Leg
+public import Matroid.Graph.Connected.Set.SetEnsemble
+public import Matroid.Graph.Connected.Subgraph
+public import Matroid.Graph.Connected.Vertex.Basic
+public import Matroid.Graph.Connected.Vertex.Defs
+public import Matroid.Graph.Connected.Vertex.VertexEnsemble
+public import Matroid.Graph.Constructions.Basic
 -- import Matroid.Graph.Constructions.Cycle
 -- import Matroid.Graph.Constructions.Random
-import Matroid.Graph.Degree.Basic
-import Matroid.Graph.Degree.Constructions
-import Matroid.Graph.Degree.Defs
-import Matroid.Graph.Degree.Max
-import Matroid.Graph.Distance
+public import Matroid.Graph.Degree.Basic
+public import Matroid.Graph.Degree.Constructions
+public import Matroid.Graph.Degree.Defs
+public import Matroid.Graph.Degree.Max
+public import Matroid.Graph.Distance
 -- import Matroid.Graph.EdgeColoring
-import Matroid.Graph.Finite
-import Matroid.Graph.Forest
-import Matroid.Graph.Hom
-import Matroid.Graph.Independent
-import Matroid.Graph.Lattice
-import Matroid.Graph.Map
-import Matroid.Graph.Matching.Berge
-import Matroid.Graph.Matching.Defs
-import Matroid.Graph.Matching.Konigs
+public import Matroid.Graph.Finite
+public import Matroid.Graph.Forest
+public import Matroid.Graph.Hom
+public import Matroid.Graph.Independent
+public import Matroid.Graph.Lattice
+public import Matroid.Graph.Map
+public import Matroid.Graph.Matching.Berge
+public import Matroid.Graph.Matching.Defs
+public import Matroid.Graph.Matching.Konigs
 -- import Matroid.Graph.Matching.TutteBerge
-import Matroid.Graph.Matrix
-import Matroid.Graph.Minor.Conn
-import Matroid.Graph.Minor.Defs
--- import Matroid.Graph.Partite
+public import Matroid.Graph.Matrix
+public import Matroid.Graph.Minor.Conn
+public import Matroid.Graph.Minor.Defs
 -- import Matroid.Graph.Planarity.CombMap.Basic
 -- import Matroid.Graph.Planarity.CombMap.Equiv
 -- import Matroid.Graph.Planarity.Drawing
 -- import Matroid.Graph.Planarity.Face
 -- import Matroid.Graph.Planarity.FaceCycle
-import Matroid.Graph.Planarity.GraphContinuum.Basic
--- import Matroid.Graph.Planarity.Obstructions
+public import Matroid.Graph.Planarity.GraphContinuum.Basic
+public import Matroid.Graph.Planarity.Obstructions
 -- import Matroid.Graph.Planarity.PLDrawing
 -- import Matroid.Graph.Planarity.PLReduction
-import Matroid.Graph.Planarity.Realization.Basic
-import Matroid.Graph.Planarity.Realization.CWComplex
-import Matroid.Graph.Planarity.Realization.Metric
-import Matroid.Graph.Planarity.Realization.Subgraph
+public import Matroid.Graph.Planarity.Realization.Basic
+public import Matroid.Graph.Planarity.Realization.CWComplex
+public import Matroid.Graph.Planarity.Realization.Metric
+public import Matroid.Graph.Planarity.Realization.Subgraph
 -- import Matroid.Graph.Planarity.StarLemma
 -- import Matroid.Graph.Planarity.ThetaCurve
-import Matroid.Graph.Simple
-import Matroid.Graph.Subgraph.Basic
-import Matroid.Graph.Subgraph.Compatible
-import Matroid.Graph.Subgraph.Defs
-import Matroid.Graph.Subgraph.Delete
-import Matroid.Graph.Subgraph.Inter
-import Matroid.Graph.Subgraph.Lemma
-import Matroid.Graph.Subgraph.Union
-import Matroid.Graph.TopologicalMinor
-import Matroid.Graph.Tree
-import Matroid.Graph.WList.Cycle
-import Matroid.Graph.WList.Defs
-import Matroid.Graph.WList.Ops
-import Matroid.Graph.WList.Remove
-import Matroid.Graph.WList.Sublist
-import Matroid.Graph.WList.TakeDrop.Decompose
-import Matroid.Graph.WList.TakeDrop.Defs
-import Matroid.Graph.WList.TakeDrop.Index
-import Matroid.Graph.WList.TakeDrop.Lemmas
-import Matroid.Graph.WList.TakeDrop.Pred
-import Matroid.Graph.Walk.Basic
-import Matroid.Graph.Walk.Cycle
+public import Matroid.Graph.Simple
+public import Matroid.Graph.Subgraph.Basic
+public import Matroid.Graph.Subgraph.Compatible
+public import Matroid.Graph.Subgraph.Defs
+public import Matroid.Graph.Subgraph.Delete
+public import Matroid.Graph.Subgraph.Inter
+public import Matroid.Graph.Subgraph.Lemma
+public import Matroid.Graph.Subgraph.Union
+public import Matroid.Graph.TopologicalMinor
+public import Matroid.Graph.Tree
+public import Matroid.Graph.WList.Cycle
+public import Matroid.Graph.WList.Defs
+public import Matroid.Graph.WList.Ops
+public import Matroid.Graph.WList.Remove
+public import Matroid.Graph.WList.Sublist
+public import Matroid.Graph.WList.TakeDrop.Decompose
+public import Matroid.Graph.WList.TakeDrop.Defs
+public import Matroid.Graph.WList.TakeDrop.Index
+public import Matroid.Graph.WList.TakeDrop.Lemmas
+public import Matroid.Graph.WList.TakeDrop.Pred
+public import Matroid.Graph.Walk.Basic
+public import Matroid.Graph.Walk.Cycle
 -- import Matroid.Graph.Walk.Dart
 -- import Matroid.Graph.Walk.OrientationWalk
-import Matroid.Graph.Walk.Path
-import Matroid.Graphic
--- import Matroid.Induction
--- import Matroid.Inter
-import Matroid.Intersection
-import Matroid.Loop
-import Matroid.Minor.Contract
-import Matroid.Minor.Delete
-import Matroid.Minor.Iso
-import Matroid.Minor.Order
-import Matroid.Minor.Rank
-import Matroid.Modular.Basic
-import Matroid.Modular.Flat
+public import Matroid.Graph.Walk.Path
+public import Matroid.Graphic
+public import Matroid.Intersection
+public import Matroid.Loop
+public import Matroid.Minor.Contract
+public import Matroid.Minor.Delete
+public import Matroid.Minor.Iso
+public import Matroid.Minor.Order
+public import Matroid.Minor.Rank
+public import Matroid.Modular.Basic
+public import Matroid.Modular.Flat
 -- import Matroid.Modular.Sum
--- import Matroid.NonspanningCircuit
-import Matroid.OnUniv
-import Matroid.Order.Discrepancy
-import Matroid.Order.Quotient
--- import Matroid.Order.QuotientExtension
-import Matroid.Order.Weak
-import Matroid.Parallel
-import Matroid.Rank.Cardinal
-import Matroid.Rank.ENat
-import Matroid.Rank.Nat
-import Matroid.Rank.Nullity
--- import Matroid.Rank.Quotient
-import Matroid.Rank.Skew
-import Matroid.Representation.Basic
-import Matroid.Representation.CycleSpace
+public import Matroid.NonspanningCircuit
+public import Matroid.OnUniv
+public import Matroid.Order.Discrepancy
+public import Matroid.Order.Quotient
+public import Matroid.Order.Weak
+public import Matroid.Parallel
+public import Matroid.Rank.Cardinal
+public import Matroid.Rank.ENat
+public import Matroid.Rank.Nat
+public import Matroid.Rank.Nullity
+public import Matroid.Rank.Quotient
+public import Matroid.Rank.Skew
+public import Matroid.Representation.Basic
+public import Matroid.Representation.CycleSpace
 -- import Matroid.Representation.CycleSpace'
 -- import Matroid.Representation.CycleSpace_
 -- import Matroid.Representation.Dual
-import Matroid.Representation.FundamentalMatrix
-import Matroid.Representation.Map
+public import Matroid.Representation.FundamentalMatrix
+public import Matroid.Representation.Map
 -- import Matroid.Representation.Matrix
-import Matroid.Representation.Minor
-import Matroid.Representation.Pasture
-import Matroid.Representation.Projective
-import Matroid.Representation.StandardRep
-import Matroid.Representation.Uniform
-import Matroid.Simple
-import Matroid.Spikes
-import Matroid.Sum
-import Matroid.Tame
-import Matroid.Triangle
-import Matroid.Uniform.Basic
-import Matroid.Uniform.Finite
-import Matroid.Uniform.Minor
-import Matroid.Uniform.Paving
+public import Matroid.Representation.Minor
+public import Matroid.Representation.Pasture
+public import Matroid.Representation.Projective
+public import Matroid.Representation.StandardRep
+public import Matroid.Representation.Uniform
+public import Matroid.Simple
+public import Matroid.Spikes
+public import Matroid.Sum
+public import Matroid.Tame
+public import Matroid.Triangle
+public import Matroid.Uniform.Basic
+public import Matroid.Uniform.Finite
+public import Matroid.Uniform.Minor
+public import Matroid.Uniform.Paving

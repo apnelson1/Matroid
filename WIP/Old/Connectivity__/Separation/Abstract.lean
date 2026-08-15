@@ -1,7 +1,9 @@
-import Matroid.Connectivity.Separation.Faithful
-import Matroid.ForMathlib.Matroid.Constructions
-import Matroid.ForMathlib.Data.Set.Subsingleton
-import Matroid.ForMathlib.Tactic.ENatToNat
+module
+
+public import Matroid.Connectivity.Separation.Faithful
+public import Matroid.ForMathlib.Matroid.Constructions
+public import Matroid.ForMathlib.Data.Set.Subsingleton
+public import Matroid.ForMathlib.Tactic.ENatToNat
 
 open Set Matroid.Separation Function
 

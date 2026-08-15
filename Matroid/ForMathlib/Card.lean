@@ -5,6 +5,7 @@ public import Matroid.ForMathlib.ENat
 public import Mathlib.Algebra.BigOperators.WithTop
 public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Tactic.ENatToNat
+public import Mathlib.Algebra.Order.Interval.Set.SuccPred
 
 @[expose] public section
 
@@ -365,3 +366,13 @@ lemma ENat.encard_Iio (n : ℕ∞) : (Set.Iio n).encard = n := by
 @[simp]
 lemma ENat.encard_Iic (n : ℕ∞) : (Set.Iic n).encard = n + 1 := by
   rw [← Iio_insert, encard_insert_of_notMem (by simp), ENat.encard_Iio]
+
+@[simp]
+lemma Nat.encard_Iio (n : ℕ) : (Set.Iio n).encard = n := by
+  nth_rw 2 [← Nat.card_Iio n]
+  rw [← encard_coe_eq_coe_finsetCard]
+  simp
+
+@[simp]
+lemma Nat.encard_Iic (n : ℕ) : (Set.Iic n).encard = n + 1 := by
+  rw [← Iio_insert, encard_insert_of_notMem (by simp), encard_Iio]

@@ -1,4 +1,6 @@
-import Matroid.Connectivity.Separation.Abstract
+module
+
+public import Matroid.Connectivity.Separation.Abstract
 
 open Set Matroid.Separation Function
 

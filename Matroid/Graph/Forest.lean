@@ -4,6 +4,8 @@ public import Matroid.Graph.Distance
 public import Matroid.Graph.Connected.Subgraph
 public import Matroid.Graph.Connected.Bond
 import all Mathlib.Combinatorics.Graph.Delete
+public import Mathlib.Combinatorics.Graph.Delete
+
 
 @[expose] public section
 

@@ -1,4 +1,8 @@
-import Matroid.Minor.Order
+module
+
+public import Matroid.Minor.Order
+
+@[expose] public section
 
 namespace Matroid
 

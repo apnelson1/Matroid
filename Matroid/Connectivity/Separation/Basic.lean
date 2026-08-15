@@ -1,7 +1,11 @@
-import Matroid.Connectivity.Connected
-import Matroid.Connectivity.Minor
-import Matroid.ForMathlib.Data.Set.IndexedPartition
-import Matroid.Bool
+module
+
+public import Matroid.Connectivity.Connected
+public import Matroid.Connectivity.Minor
+public import Matroid.ForMathlib.Data.Set.IndexedPartition
+public import Matroid.Bool
+
+@[expose] public section
 
 open Set Function
 open scoped symmDiff

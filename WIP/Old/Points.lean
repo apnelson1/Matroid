@@ -1,5 +1,7 @@
-import Matroid.Simple
-import Matroid.ForMathlib.Card
+module
+
+public import Matroid.Simple
+public import Matroid.ForMathlib.Card
 
 open Set
 open PSetoid

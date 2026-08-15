@@ -23,11 +23,11 @@ Reads log from a file path or stdin when no path is given.
 
 from __future__ import annotations
 
-import argparse
-import glob
-import re
-import subprocess
-import sys
+public import argparse
+public import glob
+public import re
+public import subprocess
+public import sys
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path

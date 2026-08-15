@@ -1,5 +1,7 @@
-import Mathlib.Data.Set.Pairwise.Basic
-import Matroid.Basic
+module
+
+public import Mathlib.Data.Set.Pairwise.Basic
+public import Matroid.Basic
 
 open Set
 

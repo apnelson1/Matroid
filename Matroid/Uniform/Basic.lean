@@ -1,12 +1,16 @@
-import Matroid.Constructions.Truncate
-import Matroid.ForMathlib.FinDiff
-import Mathlib.Combinatorics.Matroid.Sum -- inefficient import
-import Matroid.Simple
-import Matroid.Bool
-import Matroid.ForMathlib.Tactic.ENatToNat
-import Matroid.Minor.Iso
-import Matroid.ForMathlib.Card
-import Matroid.ForMathlib.Set
+module
+
+public import Matroid.Constructions.Truncate
+public import Matroid.ForMathlib.FinDiff
+public import Mathlib.Combinatorics.Matroid.Sum -- inefficient import
+public import Matroid.Simple
+public import Matroid.Bool
+public import Matroid.ForMathlib.Tactic.ENatToNat
+public import Matroid.Minor.Iso
+public import Matroid.ForMathlib.Card
+public import Matroid.ForMathlib.Set
+
+@[expose] public section
 
 variable {α : Type*} {M : Matroid α} {E I B X Y C : Set α} {k : ℕ} {e f : α}
 

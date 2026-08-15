@@ -1,7 +1,11 @@
-import Matroid.Representation.StandardRep
-import Matroid.Order.Quotient
-import Mathlib.LinearAlgebra.Matrix.Determinant.Basic -- inefficient import
-import Mathlib.LinearAlgebra.FiniteDimensional.Defs -- inefficient import
+module
+
+public import Matroid.Representation.StandardRep
+public import Matroid.Order.Quotient
+public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic -- inefficient import
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs -- inefficient import
+
+@[expose] public section
 
 -- Experiments with getting duality to work nicely.
 

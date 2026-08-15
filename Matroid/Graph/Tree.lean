@@ -1,4 +1,8 @@
-import Matroid.Graphic
+module
+
+public import Matroid.Graphic
+
+@[expose] public section
 
 variable {α β : Type*} {G H T : Graph α β} {u v x y z : α} {e e' f g : β} {X : Set α} {F : Set β}
   {P C Q : WList α β}

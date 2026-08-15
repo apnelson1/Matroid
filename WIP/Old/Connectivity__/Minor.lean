@@ -1,6 +1,8 @@
-import Matroid.Finitize
-import Matroid.Connectivity.Nat
-import Matroid.Minor.Order
+module
+
+public import Matroid.Finitize
+public import Matroid.Connectivity.Nat
+public import Matroid.Minor.Order
 
 open Set Function
 

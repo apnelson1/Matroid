@@ -1,4 +1,6 @@
-import Lake.CLI.Main
+module
+
+public import Lake.CLI.Main
 
 /-!
 

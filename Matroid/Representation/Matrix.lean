@@ -1,5 +1,9 @@
-import Matroid.Representation.StandardRep
-import Mathlib.LinearAlgebra.Matrix.Rank
+module
+
+public import Matroid.Representation.StandardRep
+public import Mathlib.LinearAlgebra.Matrix.Rank
+
+@[expose] public section
 
 variable {α β ι W W' 𝔽 R : Type*} {e f x : α} {I B X Y : Set α} {M : Matroid α} [Field 𝔽]
   [AddCommGroup W] [Module 𝔽 W] [AddCommGroup W'] [Module 𝔽 W']

@@ -1,5 +1,7 @@
-import Mathlib.Combinatorics.Matroid.Sum
-import Matroid.Extension.Minor
+module
+
+public import Mathlib.Combinatorics.Matroid.Sum
+public import Matroid.Extension.Minor
 
 set_option linter.style.longLine false
 

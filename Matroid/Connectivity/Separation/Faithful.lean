@@ -1,4 +1,8 @@
-import Matroid.Connectivity.Separation.Minor
+module
+
+public import Matroid.Connectivity.Separation.Minor
+
+@[expose] public section
 
 open Set Function Bool
 

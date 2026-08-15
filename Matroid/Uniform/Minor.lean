@@ -1,4 +1,8 @@
-import Matroid.Uniform.Finite
+module
+
+public import Matroid.Uniform.Finite
+
+@[expose] public section
 
 variable {α : Type*} {M : Matroid α} {E I B X Y C : Set α} {k : ℕ} {e f : α} {a b b' n : ℕ}
 

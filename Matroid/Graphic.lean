@@ -1,12 +1,16 @@
-import Matroid.Axioms.Circuit
-import Matroid.Minor.Contract
-import Matroid.Graph.AcyclicSet
-import Matroid.Graph.Minor.Conn
-import Matroid.Graph.Connected.Minor
-import Matroid.Connectivity.Skew
-import Matroid.Connectivity.ConnSystem.Matroid
-import Matroid.Graph.Matrix
-import Matroid.Binary.Representation
+module
+
+public import Matroid.Axioms.Circuit
+public import Matroid.Minor.Contract
+public import Matroid.Graph.AcyclicSet
+public import Matroid.Graph.Minor.Conn
+public import Matroid.Graph.Connected.Minor
+public import Matroid.Connectivity.Skew
+public import Matroid.Connectivity.ConnSystem.Matroid
+public import Matroid.Graph.Matrix
+public import Matroid.Binary.Representation
+
+@[expose] public section
 
 open Set WList Matroid Function
 
@@ -199,7 +203,8 @@ lemma cycleMatroid_deleteVerts_isolatedSet (G : Graph α β) :
       sdiff_empty]
   rw [cycleMatroid_isCircuit, cycleMatroid_isCircuit]
   refine ⟨fun h ↦ h.of_isLink (fun e x y hxy ↦ ?_), fun h ↦ h.of_isLink (fun e x y hxy ↦ ?_)⟩
-  · exact hxy.1
+  · simp only [deleteVerts_isLink, mem_isolatedSet_iff] at hxy
+    exact hxy.1
   simp [hxy, hxy.left_not_isolated, hxy.right_not_isolated]
 
 lemma cycleMatroid_isRestriction_of_isLink (hl : ∀ ⦃e x y⦄, G.IsLink e x y → H.IsLink e x y) :
@@ -459,7 +464,7 @@ private lemma IsCyclicWalk.joinAt_edges_subset_IsCompOf [DecidablePred (· ∈ f
     rw [← map_union]
     exact congrArg _ (hHco.isClosedSubgraph.eq_union_deleteVerts).symm
   have h2 : (V(φ ''ᴳ H) ∩ V(φ ''ᴳ (G - V(H)))).Subsingleton := by
-    rintro y ⟨⟨a, haH, rfl⟩, ⟨b, ⟨-, hbH⟩, hφab⟩⟩ z ⟨⟨c, hcH, rfl⟩, ⟨d, ⟨-, hdH⟩, hφcd⟩⟩
+    rintro y ⟨⟨a, haH, rfl⟩, ⟨b, hb, hφab⟩⟩ z ⟨⟨c, hcH, rfl⟩, ⟨d, hd, hφcd⟩⟩
     exact (joinAtMap_eq_of_joinAtMap_eq_joinAtMap hφab.symm (by grind)).trans
       (joinAtMap_eq_of_joinAtMap_eq_joinAtMap hφcd.symm (by grind)).symm
   rw [h_union] at hW

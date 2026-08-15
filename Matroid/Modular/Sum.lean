@@ -1,5 +1,9 @@
-import Matroid.Modular.Flat
-import Matroid.Connectivity.Minor
+module
+
+public import Matroid.Modular.Flat
+public import Matroid.Connectivity.Minor
+
+@[expose] public section
 
 open Set Function
 

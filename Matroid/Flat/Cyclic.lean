@@ -1,4 +1,8 @@
-import Matroid.Flat.Lattice
+module
+
+public import Matroid.Flat.Lattice
+
+@[expose] public section
 
 variable {α : Type*} {M : Matroid α} {I F X Y F' F₀ F₁ F₂ P L H H₁ H₂ H' B C K : Set α} {e f : α}
 
@@ -53,17 +57,3 @@ lemma IsFlat.isCyclicFlat_sUnion_isCircuit_subset_iInter {ι : Type*} (F : ι �
   · convert M.ground_isFlat.isCyclicFlat_cycleClosure using 4 with C
     simp [cycleClosure_def, and_iff_left_of_imp IsCircuit.subset_ground]
   simpa [cycleClosure_def] using (IsFlat.iInter (fun i ↦ (hF i))).isCyclicFlat_cycleClosure
-
-lemma isFlat_iff_foo (hF : F ⊆ M.E := by aesop_mat) : M.IsFlat F ↔
-    (M.IsCyclicFlat (M.cycleClosure F)) ∧ ∀ F₀ ⊆ F, M.IsCyclicFlat F₀ → F₀ ⊆ M.cycleClosure F := by
-  refine ⟨fun h ↦ ⟨h.isCyclicFlat_cycleClosure, fun F₀ hF₀F hF₀ ↦ ?_⟩, fun h ↦ ?_⟩
-  · exact hF₀.cyclic.subset_cycleClosure_of_subset hF₀F
-  · rw [isFlat_iff_forall_isCircuit]
-    intro C e hC heC hCeF
-    have := h.1.isFlat.
-    have := hC.cyclic.subset_cycleClosure_of_subset hCeF
-
-lemma ext_isCyclicFlat {M₁ M₂ : Matroid α} (hE : M₁.E = M₂.E) [M₁.RankFinite]
-    (hr : ∀ (r : ℕ) F, (M₁.IsCyclicFlat F ∧ M₁.eRk F = r) ↔ (M₂.IsCyclicFlat F ∧ M₂.eRk F = r)) :
-    M₁ = M₂ := by
-  sorry

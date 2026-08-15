@@ -1,9 +1,11 @@
-import Mathlib.Algebra.Order.Monoid.Canonical.Defs
-import Mathlib.Algebra.Order.Monoid.WithTop
-import Mathlib.Data.ENat.Basic
-import Mathlib.Topology.Algebra.InfiniteSum.Basic
-import Mathlib.Topology.Algebra.Order.MonotoneConvergence
-import Mathlib.Topology.Instances.ENNReal
+module
+
+public import Mathlib.Algebra.Order.Monoid.Canonical.Defs
+public import Mathlib.Algebra.Order.Monoid.WithTop
+public import Mathlib.Data.ENat.Basic
+public import Mathlib.Topology.Algebra.InfiniteSum.Basic
+public import Mathlib.Topology.Algebra.Order.MonotoneConvergence
+public import Mathlib.Topology.Instances.ENNReal
 
 section SMul
 

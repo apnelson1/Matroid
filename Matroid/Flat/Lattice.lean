@@ -1,5 +1,9 @@
-import Matroid.Flat.Basic
-import Matroid.ForMathlib.Partition.Rep
+module
+
+public import Matroid.Flat.Basic
+public import Matroid.ForMathlib.Partition.Rep
+
+@[expose] public section
 
 variable {α : Type*} {M : Matroid α} {I F X Y F' F₀ F₁ F₂ P L H H₁ H₂ H' B C K : Set α} {e f : α}
 

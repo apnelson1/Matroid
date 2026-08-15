@@ -1,5 +1,9 @@
-import Matroid.Minor.Rank
-import Matroid.Flat.Hyperplane
+module
+
+public import Matroid.Minor.Rank
+public import Matroid.Flat.Hyperplane
+
+@[expose] public section
 
 universe u
 

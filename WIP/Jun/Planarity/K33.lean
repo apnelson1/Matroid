@@ -1,5 +1,7 @@
-import Matroid.Graph.Degree.Max
-import Matroid.Graph.Planarity.Obstructions
+module
+
+public import Matroid.Graph.Degree.Max
+public import Matroid.Graph.Planarity.Obstructions
 
 variable {α β : Type*} {G C : Graph α β} {u v : α}
 

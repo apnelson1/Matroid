@@ -3,7 +3,10 @@ module
 public import Matroid.Graph.Subgraph.Union
 public import Matroid.Graph.Walk.Cycle
 public import Matroid.ForMathlib.Partition.Rep
+public import Matroid.Graph.Map
 import all Mathlib.Combinatorics.Graph.Delete
+public import Mathlib.Combinatorics.Graph.Delete
+
 
 @[expose] public section
 
@@ -548,3 +551,59 @@ lemma IsCyclicWalk.three_le_length_of_simple [G.Simple] (hC : G.IsCyclicWalk P) 
     hC.length_eq_two_iff.mp (by grind [hC.nontrivial_of_loopless.two_le_length])
   obtain ⟨he, hf, hx⟩ := by simpa using hC.isWalk
   exact hne <| he.unique_edge hf.symm
+
+section Map
+
+variable {α' β' : Type*}
+
+lemma map_loopless_iff {φ : α → α'} {G : Graph α β} :
+    (G.map φ).Loopless ↔ ∀ x y, G.Adj x y → φ x ≠ φ y := by
+  simp +contextual only [loopless_iff_forall_ne_of_adj, map_adj_iff, ne_eq, forall_exists_index,
+    and_imp]
+  refine ⟨fun h x y hxy hxy' ↦ h _ _ _ _ hxy rfl rfl hxy', ?_⟩
+  rintro h _ _ x y hxy rfl rfl hxy'
+  exact h x y hxy hxy'
+
+lemma Loopless.map (hG : G.Loopless) {φ : α → α'} (hφ : InjOn φ V(G)) : (G.map φ).Loopless := by
+  refine ⟨fun e x ⟨a, b, h, hab, h'⟩ ↦ hG.not_isLoopAt e a ?_⟩
+  rwa [← (hφ.eq_iff h.left_mem h.right_mem).1 (hab.symm.trans h')] at h
+
+lemma map_loopless_iff_of_injOn {φ : α → α'} (hφ : InjOn φ V(G)) :
+    (G.map φ).Loopless ↔ G.Loopless := by
+  refine ⟨fun h ↦ loopless_iff_forall_ne_of_adj.2 fun x y h' hxy ↦ ?_, fun h ↦ h.map hφ⟩
+  rw [map_loopless_iff] at h
+  grind
+
+@[simp]
+lemma edgeMap_loopless_iff {φ : β → β'} {hφ} : (G.edgeMap φ hφ).Loopless ↔ G.Loopless := by
+  simp [loopless_iff_forall_ne_of_adj]
+
+lemma map_simple_iff {φ : α → α'} : (G.map φ).Simple ↔ ((∀ x y, G.Adj x y → φ x ≠ φ y) ∧
+    (∀ e x y e' x' y', G.IsLink e x y → G.IsLink e' x' y' → φ x = φ x' → φ y = φ y' → e = e')) := by
+  simp only [simple_iff, map_loopless_iff, Adj, ne_eq, forall_exists_index, map_isLink, and_imp,
+    and_congr_right_iff]
+  refine fun hl ↦ ⟨fun h e x y e' x' y' he he' hx hy ↦ h _ _ he rfl rfl _ _ he' hx hy, ?_⟩
+  rintro h e e' _ _ x y he rfl rfl x' y' he' hx hy
+  exact h _ _ _ _ _ _ he he' hx hy
+
+lemma map_simple_iff_of_injOn {φ : α → α'} (hφ : InjOn φ V(G)) : (G.map φ).Simple ↔ G.Simple := by
+  rw [map_simple_iff, ← map_loopless_iff, map_loopless_iff_of_injOn hφ, simple_iff,
+    and_congr_right_iff]
+  refine fun hl ↦ ⟨fun h e e' x y he he' ↦ h _ _ _ _ _ _ he he' rfl rfl,
+    fun h e x y e' x' y' he he' hx hy ↦ ?_⟩
+  rw [hφ.eq_iff he.left_mem he'.left_mem] at hx
+  rw [hφ.eq_iff he.right_mem he'.right_mem] at hy
+  grind
+
+lemma edgeMap_simple_iff {φ : β → β'} {hφ} : (G.edgeMap φ hφ).Simple ↔
+    G.Loopless ∧ ∀ x y e f, G.IsLink e x y → G.IsLink f x y → φ e = φ f := by
+  simp only [simple_iff, edgeMap_loopless_iff, edgeMap_isLink, forall_exists_index, and_imp]
+  grind
+
+lemma edgeMap_simple_iff_of_injOn {φ : β → β'} {hφ} (hφ' : InjOn φ E(G)) :
+    (G.edgeMap φ hφ).Simple ↔ G.Simple := by
+  simp only [simple_iff, edgeMap_loopless_iff, edgeMap_isLink, forall_exists_index, and_imp,
+    and_congr_right_iff]
+  refine fun hl ↦ ⟨fun h e f x y he hf ↦ hφ' he.edge_mem hf.edge_mem <| h e rfl he f rfl hf, ?_⟩
+  rintro h _ _ x y e rfl he f rfl hf
+  rw [h he hf]

@@ -1,6 +1,8 @@
-import Matroid.Connectivity.Connected
-import Matroid.Connectivity.Minor
-import Matroid.ForMathlib.Data.Set.IndexedPartition
+module
+
+public import Matroid.Connectivity.Connected
+public import Matroid.Connectivity.Minor
+public import Matroid.ForMathlib.Data.Set.IndexedPartition
 
 open Set Function
 

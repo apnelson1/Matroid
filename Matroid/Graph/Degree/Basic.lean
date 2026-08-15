@@ -5,6 +5,8 @@ public import Mathlib.Algebra.BigOperators.Finsupp.Basic
 public import Matroid.ForMathlib.Topology.ENat
 public import Matroid.ForMathlib.Tactic.ENatToNat
 import all Mathlib.Combinatorics.Graph.Delete
+public import Mathlib.Combinatorics.Graph.Delete
+
 
 @[expose] public section
 

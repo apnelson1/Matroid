@@ -1,8 +1,10 @@
-import Matroid.Connectivity.Fan.Circuit
-import Matroid.Connectivity.Separation.Tutte
-import Mathlib.Data.ZMod.Basic
+module
 
-open Set List
+public import Matroid.Connectivity.Fan.Circuit
+public import Matroid.Connectivity.Separation.Tutte
+public import Mathlib.Data.ZMod.Basic
+
+open Set List Nat
 
 namespace Matroid
 
@@ -11,33 +13,64 @@ variable {α β : Type*} {F : List α} {b c d : Bool} {M : Matroid α}
 variable {α : Type*} {M : Matroid α} {X Y C K T : Set α} {e f g x y : α} {b c d : Bool}
      {n i j : ℕ} {F : List α} {J : Bool → ZMod n → α}
 
-/-- A cyclic fan is an injective function `J` from `{0,1} × (ZMod n)` to `E(M)` so that
-for all `i`, the triple `J 0 i, J 0 (i + 1), J 1 i` is a triangle, and the triple
-`J 1 i, J 0 (i + 1), J 1 (i + 1)` is a triad.
-
-We do not insist that `n ≠ 0`, and thereby allow for infinite fans.  -/
-structure IsCyclicFan (M : Matroid α) (n : ℕ) (J : Bool → ZMod n → α) : Prop where
-  isTriangle_bDual : ∀ b i, (M.bDual b).IsTriangle {J b i, J b (i + 1), J (!b) (i + b.toNat)}
-  inj : ∀ b b' i i', J b i = J b' i' → i = i' ∧ b = b'
-
 structure IsRotaryFan (M : Matroid α) (F : List α) (b : Bool) : Prop where
   isFan : M.IsFan F b (!b)
-  isTriangle : (M.bDual b).IsTriangle {F[F.length - 2], F[F.length - 1], F[0]}
-  isTriad : (M.bDual (!b)).IsTriangle {F[F.length - 1], F[0], F[1]}
+  isTriangle_end : (M.bDual b).IsTriangle {F[F.length - 2], F[F.length - 1], F[0]}
+  isTriad_end : (M.bDual (!b)).IsTriangle {F[F.length - 1], F[0], F[1]}
 
-example {n : ℕ} : {F : List α // M.IsRotaryFan F false} ≃
-    {P : ((n : ℕ) × (Bool → ZMod n → α)) // n ≠ 0 ∧ M.IsCyclicFan P.1 P.2} where
-  toFun := fun (⟨F, hF⟩ : {F : List α // M.IsRotaryFan F false}) ↦ by
-    refine ⟨⟨F.length.div2, fun b i ↦ F[2 * i.val + b.toNat]'sorry⟩, sorry⟩
+attribute [grind →] IsRotaryFan.isFan
 
-  invFun := _
-  left_inv := _
-  right_inv := _
+macro_rules
+  | `(tactic| get_elem_tactic_extensible) =>
+    `(tactic| exact @ZMod.val_lt _ ⟨by grind⟩ ..)
+
+macro_rules
+  | `(tactic| get_elem_tactic_extensible) =>
+    `(tactic| exact Nat.mod_lt _ (by grind))
+
+-- @[grind =>]
+-- lemma foo (F : List α) (hF : 0 < F.length) (i : ZMod F.length) : i.val < F.length := by
+--   have : NeZero F.length := ⟨hF.ne.symm⟩
+--   apply ZMod.val_lt
+
+lemma mod_bodd {n : ℕ} (hn : n.bodd = false) (i) : (i % n).bodd = i.bodd := by
+  sorry
+
+lemma ZMod.val_ofNat_of_lt {i n : ℕ} [i.AtLeastTwo] (hin : i < n) :
+    (ofNat(i) : ZMod n).val = i := by
+  rw [ZMod.val_ofNat, Nat.mod_eq_of_lt (by simpa)]
+  exact Nat.add_zero i
+
+lemma ZMod.ofNat_eq_zero {i n : ℕ} [i.AtLeastTwo] : (ofNat(i) : ZMod n) = 0 ↔ (n ∣ i) := by
+  rw [← ZMod.val_eq_zero, ZMod.val_ofNat, ← Nat.dvd_iff_mod_eq_zero]
+  simp [OfNat.ofNat]
+
+lemma ZMod.ofNat_ne_zero_of_lt {i n : ℕ} [i.AtLeastTwo] (hin : i < n) :
+    (ofNat(i) : ZMod n) ≠ 0 := by
+  rw [Ne, ZMod.ofNat_eq_zero]
+  contrapose! hin
+  exact Nat.le_of_dvd (Nat.pos_of_neZero i) hin
+
+lemma ZMod.val_succ [NeZero n] (i : ZMod n) (hi : i ≠ -1) : (i + 1).val = i.val + 1 := by
+  obtain rfl | rfl | n := n
+  · exact False.elim <| NeZero.ne 0 rfl
+  · exact False.elim <| hi <| Subsingleton.elim (α := Fin 1) ..
+  rw [ZMod.val_add, ZMod.val_one'' (by simp), Nat.mod_eq_of_lt]
+  obtain heq | hne := (Nat.add_one_le_of_lt i.val_lt).eq_or_lt
+  · contrapose! hi
+    refine ZMod.val_injective _ ?_
+    rw [ZMod.val_neg_one]
+    lia
+  assumption
+
+@[simp]
+lemma ZMod.one_eq_zero {n : ℕ} : (1 : ZMod n) = 0 ↔ n = 1 := by
+  simp [← ZMod.val_eq_zero, ZMod.val_one_eq_one_mod]
 
 @[grind! .]
 lemma IsRotaryFan.length_ge (h : M.IsRotaryFan F b) : 4 ≤ F.length := by
   cases h.isFan with
-  | of_pair b e f he hf hne => simpa using h.isTriangle
+  | of_pair b e f he hf hne => simpa using h.isTriangle_end
   | cons_triangle e x y F b c h heF hT =>
     cases F with
     | nil =>
@@ -45,58 +78,196 @@ lemma IsRotaryFan.length_ge (h : M.IsRotaryFan F b) : 4 ≤ F.length := by
       simp at hcon
     | cons y F => simp
 
+lemma IsRotaryFan.length_bodd (h : M.IsRotaryFan F b) : F.length.bodd = false := by
+  simpa using h.isFan.length_bodd_eq
+
+lemma isRotaryFan_of_forall' (M : Matroid α) (F : List α) (b : Bool)
+    (hF : 4 ≤ F.length) (hnd : F.Nodup)
+    (hmod : ∀ i,
+      (M.bDual (b != i.bodd)).IsTriangle
+        {F[i % F.length], F[(i + 1) % F.length], F[(i + 2) % F.length]}) :
+    M.IsRotaryFan F b := by
+  have hT : (M.bDual (b != F.length.bodd)).IsTriangle {F[F.length - 2], F[F.length - 1], F[0]} := by
+    specialize hmod (F.length - 2)
+    rw [bodd_sub (by lia), bodd_two, Bool.bne_false] at hmod
+    convert hmod
+    · rw [mod_eq_of_lt (by lia)]
+    · rw [mod_eq_of_lt (by lia)]
+      lia
+    rw [Nat.sub_add_cancel (by lia), mod_self]
+  obtain hodd | hodd := F.length.bodd.eq_false_or_eq_true
+  · obtain h4 | h5 := hF.eq_or_lt
+    · simp [← h4] at hodd
+    have hT' : (M.bDual b).IsTriangle {F[0], F[1], F[2]} := by
+      simpa [mod_eq_of_lt (show 1 < F.length by lia), mod_eq_of_lt (show 2 < F.length by lia)]
+        using hmod 0
+    have hwin := hT'.mem_or_mem_of_isCircuit_bDual (by simpa [hodd] using hT.isCircuit)
+    simp only [Set.mem_insert_iff, hnd.getElem_inj_iff, mem_singleton_iff, or_true, one_ne_zero,
+      or_false, OfNat.ofNat_ne_zero, forall_const] at hwin
+    lia
+  refine ⟨isFan_of_eq_of_forall_triangle (by lia) hnd (by simpa) (by lia) fun i hi ↦ ?_, ?_, ?_⟩
+  · convert hmod i
+    <;> rw [mod_eq_of_lt (by lia)]
+  · simpa [hodd] using hT
+  convert hmod (F.length - 1)
+  · simp [Nat.bodd_sub (show 1 ≤ F.length by lia), hodd]
+  · rw [mod_eq_of_lt (by lia)]
+  · simp [Nat.sub_add_cancel (show 1 ≤ F.length by lia)]
+  rw [← Nat.sub_add_comm (by lia), Nat.add_one_sub_one, add_mod_left, mod_eq_of_lt (by lia)]
+
+lemma IsRotaryFan.isTriangle (h : M.IsRotaryFan F b) (i : ZMod F.length) :
+    (M.bDual (b != i.val.bodd)).IsTriangle {F[i.val], F[(i + 1).val], F[(i + 2).val]} := by
+  have : NeZero F.length := ⟨by grind⟩
+  have : Fact (1 < F.length) := ⟨by grind⟩
+  obtain hlt | hge := lt_or_ge (i.val + 2) F.length
+  · convert h.isFan.isTriangle_getElem i.val hlt
+    · rw [ZMod.val_add, ZMod.val_one'' (by grind), Nat.mod_eq_of_lt (by lia)]
+    rw [ZMod.val_add, ZMod.val_ofNat_of_lt (by lia), Nat.mod_eq_of_lt (by lia)]
+  obtain h2 | h1 : i.val + 2 = F.length ∨ i.val + 1 = F.length := by grind
+  · convert h.isTriangle_end
+    · apply_fun Nat.bodd at h2
+      simp [show i.val.bodd = false by simpa [h.isFan.length_bodd_eq] using h2]
+    · lia
+    · simp_rw [← h2, ZMod.val_add, ZMod.val_one,
+        Nat.mod_eq_of_lt (show i.val + 1 < F.length by lia)]
+      lia
+    rw [ZMod.val_add, ZMod.val_ofNat_of_lt (show 2 < F.length by grind), h2, Nat.mod_self]
+  convert h.isTriad_end
+  · apply_fun Nat.bodd at h1
+    simp [show i.val.bodd = true by simpa [h.length_bodd] using h1]
+  · lia
+  · rw [ZMod.val_add, ZMod.val_one, h1, Nat.mod_self]
+  rw [ZMod.val_add, ZMod.val_ofNat_of_lt (by grind), show (nat_lit 2 : ℕ) = 1 + 1 from rfl,
+    ← add_assoc, h1, Nat.add_mod_left, Nat.mod_eq_of_lt (by grind)]
+
+-- lemma IsRotaryFan.isTriangle (h : M.IsRotaryFan F b) (i : ZMod F.length) :
+--     (M.bDual (b != i.val.bodd)).IsTriangle {F[i.val], F[(i + 1).val], F[(i + 2).val]} := by
+--   have : NeZero F.length := ⟨by grind⟩
+--   have : Fact (1 < F.length) := ⟨by grind⟩
+--   obtain hlt | hge := lt_or_ge (i.val + 2) F.length
+--   · convert h.isFan.isTriangle_getElem i.val hlt
+--     · rw [ZMod.val_add, ZMod.val_one'' (by grind), Nat.mod_eq_of_lt (by lia)]
+--     rw [ZMod.val_add, ZMod.val_ofNat_of_lt (by lia), Nat.mod_eq_of_lt (by lia)]
+--   obtain h2 | h1 : i.val + 2 = F.length ∨ i.val + 1 = F.length := by grind
+--   · convert h.isTriangle_end
+--     · apply_fun Nat.bodd at h2
+--       simp [show i.val.bodd = false by simpa [h.isFan.length_bodd_eq] using h2]
+--     · lia
+--     · simp_rw [← h2, ZMod.val_add, ZMod.val_one,
+--         Nat.mod_eq_of_lt (show i.val + 1 < F.length by lia)]
+--       lia
+--     rw [ZMod.val_add, ZMod.val_ofNat_of_lt (show 2 < F.length by grind), h2, Nat.mod_self]
+--   convert h.isTriad_end
+--   · apply_fun Nat.bodd at h1
+--     simp [show i.val.bodd = true by simpa [h.length_bodd] using h1]
+--   · lia
+--   · rw [ZMod.val_add, ZMod.val_one, h1, Nat.mod_self]
+--   rw [ZMod.val_add, ZMod.val_ofNat_of_lt (by grind), show (nat_lit 2 : ℕ) = 1 + 1 from rfl,
+--     ← add_assoc, h1, Nat.add_mod_left, Nat.mod_eq_of_lt (by grind)]
+
+
+  --   simp only [CharP.cast_eq_zero, zero_sub, neg_add_cancel, ZMod.val_zero] at hmod
+  --   have h2 : NeZero (1 : ZMod F.length) := ⟨by simp⟩
+  --   have h2 : NeZero (2 : ZMod F.length) := ⟨ZMod.ofNat_ne_zero_of_lt (by lia)⟩
+  --   simpa [ZMod.val_neg_of_ne_zero, ZMod.val_ofNat_of_lt (show 2 < F.length by lia),
+  --     show (-2 : ZMod F.length) + 1 = -1 by ring, ZMod.val_neg_of_ne_zero, ZMod.val_one,
+  --     Nat.bodd_sub (show 2 ≤ F.length by lia)] using hmod
+  -- obtain hodd | hodd := F.length.bodd.eq_false_or_eq_true
+  -- · have hT' : (M.bDual b).IsTriangle {F[0], F[1], F[2]} := by
+  --     simpa [ZMod.val_one, ZMod.val_ofNat_of_lt (show 2 < F.length by lia)] using hmod 0
+  --   have hwin := hT.mem_iff_mem_of_isCircuit_bDual (by simpa [hodd] using hT'.isCircuit)
+  --   obtain h4 | h5 := hF.eq_or_lt
+  --   · simp [← h4] at hodd
+  --   simp only [Set.mem_insert_iff, hnd.getElem_inj_iff, Nat.sub_eq_zero_iff_le, mem_singleton_iff,
+  --     Nat.pred_eq_succ_iff, zero_add, Nat.reduceAdd, OfNat.zero_ne_ofNat] at hwin
+  --   lia
+  -- refine ⟨isFan_of_eq_of_forall_triangle (by lia) hnd (by simpa) (by lia) fun i hi ↦ ?_, ?_, ?_⟩
+  -- · specialize hmod i
+  --   simp only [ZMod.val_natCast, ZMod.val_add, Nat.mod_eq_of_lt (show i < F.length by lia)] at hmod
+  --   convert hmod
+  --   · rw [ZMod.val_one'' (by lia), Nat.mod_eq_of_lt (by lia)]
+  --   rw [ZMod.val_ofNat, Nat.mod_eq_of_lt (a := 2) (by lia), Nat.mod_eq_of_lt hi]
+  -- · specialize hmod (F.length - 2)
+  --   simp only [CharP.cast_eq_zero, zero_sub, neg_add_cancel, ZMod.val_zero] at hmod
+  --   have h2 : NeZero (1 : ZMod F.length) := ⟨by simp⟩
+  --   have h2 : NeZero (2 : ZMod F.length) := ⟨ZMod.ofNat_ne_zero_of_lt (by lia)⟩
+  --   simpa [ZMod.val_neg_of_ne_zero, ZMod.val_ofNat_of_lt (show 2 < F.length by lia),
+  --     show (-2 : ZMod F.length) + 1 = -1 by ring, ZMod.val_neg_of_ne_zero, ZMod.val_one,
+  --     Nat.bodd_sub (show 2 ≤ F.length by lia), hodd] using hmod
+  -- specialize hmod (-1)
+  -- simpa [show (-1 : ZMod F.length) + 2 = 1 by ring, ZMod.val_neg_of_ne_zero, ZMod.val_one,
+  --   Nat.bodd_sub (show 1 ≤ F.length by lia), hodd] using hmod
+
+-- lemma isRotaryFan_of_forall (M : Matroid α) (F : List α) (b : Bool)
+--     (hF : 4 ≤ F.length) (hnd : F.Nodup)
+--     (hmod : ∀ (i : ZMod F.length),
+--       (M.bDual (b != i.val.bodd)).IsTriangle {F[i.val], F[(i + 1).val], F[(i + 2).val]}) :
+--     M.IsRotaryFan F b := by
+--   have : NeZero F.length := ⟨by grind⟩
+--   have h' : Fact (1 < F.length) := ⟨by grind⟩
+--   have hT : (M.bDual (b != F.length.bodd)).IsTriangle {F[F.length - 2], F[F.length - 1], F[0]} := by
+--     specialize hmod (F.length - 2)
+--     simp only [CharP.cast_eq_zero, zero_sub, neg_add_cancel, ZMod.val_zero] at hmod
+--     have h2 : NeZero (1 : ZMod F.length) := ⟨by simp⟩
+--     have h2 : NeZero (2 : ZMod F.length) := ⟨ZMod.ofNat_ne_zero_of_lt (by lia)⟩
+--     simpa [ZMod.val_neg_of_ne_zero, ZMod.val_ofNat_of_lt (show 2 < F.length by lia),
+--       show (-2 : ZMod F.length) + 1 = -1 by ring, ZMod.val_neg_of_ne_zero, ZMod.val_one,
+--       Nat.bodd_sub (show 2 ≤ F.length by lia)] using hmod
+--   obtain hodd | hodd := F.length.bodd.eq_false_or_eq_true
+--   · have hT' : (M.bDual b).IsTriangle {F[0], F[1], F[2]} := by
+--       simpa [ZMod.val_one, ZMod.val_ofNat_of_lt (show 2 < F.length by lia)] using hmod 0
+--     have hwin := hT.mem_iff_mem_of_isCircuit_bDual (by simpa [hodd] using hT'.isCircuit)
+--     obtain h4 | h5 := hF.eq_or_lt
+--     · simp [← h4] at hodd
+--     simp only [Set.mem_insert_iff, hnd.getElem_inj_iff, Nat.sub_eq_zero_iff_le, mem_singleton_iff,
+--       Nat.pred_eq_succ_iff, zero_add, Nat.reduceAdd, OfNat.zero_ne_ofNat] at hwin
+--     lia
+--   refine ⟨isFan_of_eq_of_forall_triangle (by lia) hnd (by simpa) (by lia) fun i hi ↦ ?_, ?_, ?_⟩
+--   · specialize hmod i
+--     simp only [ZMod.val_natCast, ZMod.val_add, Nat.mod_eq_of_lt (show i < F.length by lia)] at hmod
+--     convert hmod
+--     · rw [ZMod.val_one'' (by lia), Nat.mod_eq_of_lt (by lia)]
+--     rw [ZMod.val_ofNat, Nat.mod_eq_of_lt (a := 2) (by lia), Nat.mod_eq_of_lt hi]
+--   · specialize hmod (F.length - 2)
+--     simp only [CharP.cast_eq_zero, zero_sub, neg_add_cancel, ZMod.val_zero] at hmod
+--     have h2 : NeZero (1 : ZMod F.length) := ⟨by simp⟩
+--     have h2 : NeZero (2 : ZMod F.length) := ⟨ZMod.ofNat_ne_zero_of_lt (by lia)⟩
+--     simpa [ZMod.val_neg_of_ne_zero, ZMod.val_ofNat_of_lt (show 2 < F.length by lia),
+--       show (-2 : ZMod F.length) + 1 = -1 by ring, ZMod.val_neg_of_ne_zero, ZMod.val_one,
+--       Nat.bodd_sub (show 2 ≤ F.length by lia), hodd] using hmod
+--   specialize hmod (-1)
+--   simpa [show (-1 : ZMod F.length) + 2 = 1 by ring, ZMod.val_neg_of_ne_zero, ZMod.val_one,
+--     Nat.bodd_sub (show 1 ≤ F.length by lia), hodd] using hmod
+
+
+
 lemma IsRotaryFan.rotate (h : M.IsRotaryFan F b) (n : ℕ) :
     M.IsRotaryFan (F.rotate n) (b != n.bodd) := by
-  suffices aux : ∀ {F b}, M.IsRotaryFan F b → M.IsRotaryFan (F.rotate 1) (!b) by
-    induction n with
-    | zero => simpa
-    | succ n ih => simpa using aux ih
-  refine @fun J d hJ ↦ ⟨?_, ?_, ?_⟩
-  · rw [isFan_iff_forall (by grw [length_rotate, ← hJ.length_ge]; simp),
-      and_iff_right (by simp [hJ.isFan.length_bodd_eq]),
-      and_iff_right (by simpa using hJ.isFan.nodup)]
-    intro i hi
-    simp only [length_rotate] at hi
-    simp only [Bool.not_bne, getElem_rotate, Nat.mod_eq_of_lt (show i + 1 < J.length by lia),
-      Nat.mod_eq_of_lt (show i + 1 + 1 < J.length from hi)]
-    by_cases hi' : i + 3 = J.length
-    · simp only [add_assoc, Nat.reduceAdd, hi', Nat.mod_self]
-      have hi : i.bodd = true := by
-        have hwin := hJ.isFan.length_bodd_eq ▸ congr_arg Nat.bodd hi'
-        simpa using hwin
-      convert hJ.isTriangle
-      · simp [hi]
-      · lia
-      lia
-    simp_rw [Nat.mod_eq_of_lt (show i + 2 + 1 < J.length by lia), add_right_comm _ 2]
-    exact (hJ.isFan.bDual _).isTriangle_getElem_of_eq _ _ (by simp)
-  · simp only [length_rotate, getElem_rotate, zero_add]
-    simp_rw [Nat.mod_eq_of_lt (show J.length - 2 + 1 < J.length by grind),
-      Nat.sub_add_cancel (show 1 ≤ J.length by grind), Nat.mod_self,
-      Nat.one_mod_eq_one.2 (show J.length ≠ 1 by grind)]
-    convert hJ.isTriad
-    grind [hJ.isFan]
-  simp only [Bool.not_not, length_rotate, getElem_rotate, zero_add, Nat.reduceAdd]
-  simp_rw [Nat.sub_add_cancel (show 1 ≤ J.length by grind), Nat.mod_self,
-    Nat.mod_eq_of_lt (show 1 < J.length by grind), Nat.mod_eq_of_lt (show 2 < J.length by grind)]
-  exact hJ.isFan.isTriangle_bDual (by grind)
-
-
-lemma isRotaryFan_iff_forall (hF : 2 ≤ F.length) : M.IsRotaryFan F b ↔ ∀ i (hi : i < F.length),
-    (M.bDual (i.bodd != b)).IsTriangle {F[i], F[(i + 1) % F.length]'(by grind), F[(i + 2) % F.length]} := by
-  _
-
--- lemma IsRotaryFan.rotate' (h : M.IsRotaryFan F b) (n : ℕ) :
---     M.IsRotaryFan (F.rotateLeft n) (n.bodd != b) := by
---   rw [rotateLeft_eq]
+  have _ : NeZero F.length := ⟨by grind⟩
+  have _ : NeZero (F.rotate n).length := ⟨by grind [length_rotate]⟩
+  refine isRotaryFan_of_forall _ _ _ (by simpa using h.length_ge)
+    (nodup_rotate.2 h.isFan.nodup) fun i ↦ ?_
+  simp
+  have := h.isTriangle (i.val + n)
+  convert h.isTriangle (i.val + n)
+  · simp_rw [← Nat.cast_add, ZMod.val_natCast, mod_bodd h.length_bodd, bne_comm (a := n.bodd),
+      Nat.bodd_add]
+  · rw [← Nat.cast_add, ZMod.val_natCast]
+  · simp [← ZMod.val_natCast, Nat.cast_add, add_right_comm]
+  simp only [← ZMod.val_natCast, Nat.cast_add, ZMod.natCast_val, length_rotate, dvd_refl,
+    ZMod.cast_add, add_right_comm]
+  convert rfl
+  rw [ZMod.cast_eq_val, ZMod.val_ofNat_of_lt (by grind [length_rotate]), ← Nat.cast_ofNat]
 
 lemma IsRotaryFan.reverse (h : M.IsRotaryFan F b) : M.IsRotaryFan F.reverse (!b) := by
-  refine ⟨by simpa using h.isFan.reverse, ?_, ?_⟩
-  · simp only [length_reverse, getElem_reverse, tsub_self, tsub_zero,
-      show F.length - 1 - (F.length - 2) = 1 by grind]
-    exact h.isTriad.reverse
-  simp only [Bool.not_not, length_reverse, getElem_reverse, tsub_self, tsub_zero, Nat.sub_sub]
-  exact h.isTriangle.reverse
+  refine isRotaryFan_of_forall _ _ _ (by simpa using h.length_ge) (by simpa using h.isFan.nodup) ?_
+  simp
+  -- refine ⟨by simpa using h.isFan.reverse, ?_, ?_⟩
+  -- · simp only [length_reverse, getElem_reverse, tsub_self, tsub_zero,
+  --     show F.length - 1 - (F.length - 2) = 1 by grind]
+  --   exact h.isTriad.reverse
+  -- simp only [Bool.not_not, length_reverse, getElem_reverse, tsub_self, tsub_zero, Nat.sub_sub]
+  -- exact h.isTriangle.reverse
 
 lemma IsRotaryFan.dual (h : M.IsRotaryFan F b) : M✶.IsRotaryFan F (!b) :=
   ⟨by simpa using h.isFan.dual, by simpa using h.isTriangle, by simpa using h.isTriad⟩

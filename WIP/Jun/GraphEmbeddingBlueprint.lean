@@ -1,13 +1,15 @@
-import Matroid.Binary.Representation
-import Matroid.ForMathlib.Data.Set.IndexedPartition
-import Matroid.Graph.Planarity.K33
-import Matroid.Graph.Planarity.Realization.Celluar
-import Matroid.Graph.Planarity.Realization.Metric
-import Matroid.Minor.Iso
-import Matroid.Tame
-import Mathlib.Order.UpperLower.Basic
-import Mathlib.Topology.Category.TopCat.Basic
-import Mathlib.Topology.Order
+module
+
+public import Matroid.Binary.Representation
+public import Matroid.ForMathlib.Data.Set.IndexedPartition
+public import Matroid.Graph.Planarity.K33
+public import Matroid.Graph.Planarity.Realization.Celluar
+public import Matroid.Graph.Planarity.Realization.Metric
+public import Matroid.Minor.Iso
+public import Matroid.Tame
+public import Mathlib.Order.UpperLower.Basic
+public import Mathlib.Topology.Category.TopCat.Basic
+public import Mathlib.Topology.Order
 
 /-!
 # Blueprint: graph-like spaces, realizations, and geometric duality

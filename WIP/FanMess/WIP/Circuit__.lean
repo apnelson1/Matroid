@@ -1,7 +1,9 @@
-import Matroid.Connectivity.WIP.Joints
-import Matroid.Connectivity.Triangle
-import Matroid.Connectivity.Separation.Vertical
-import Matroid.ForMathlib.List.Set
+module
+
+public import Matroid.Connectivity.WIP.Joints
+public import Matroid.Connectivity.Triangle
+public import Matroid.Connectivity.Separation.Vertical
+public import Matroid.ForMathlib.List.Set
 
 open Set List Bool
 

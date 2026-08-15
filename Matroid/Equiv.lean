@@ -1,7 +1,11 @@
-import Matroid.Rank.Nat
-import Matroid.ForMathlib.PreimageVal
-import Matroid.ForMathlib.Logic_Embedding_Set
-import Matroid.ForMathlib.Matroid.Basic
+module
+
+public import Matroid.Rank.Nat
+public import Matroid.ForMathlib.PreimageVal
+public import Matroid.ForMathlib.Logic_Embedding_Set
+public import Matroid.ForMathlib.Matroid.Basic
+
+@[expose] public section
 
 variable {α β : Type*} {M : Matroid α} {N : Matroid β}
 

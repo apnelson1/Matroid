@@ -1,4 +1,6 @@
-import Matroid.Graph.Connected.Basic
+module
+
+public import Matroid.Graph.Connected.Basic
 
 open Set
 

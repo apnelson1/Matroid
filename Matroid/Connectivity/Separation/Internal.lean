@@ -1,4 +1,8 @@
-import Matroid.Connectivity.Separation.Tutte
+module
+
+public import Matroid.Connectivity.Separation.Tutte
+
+@[expose] public section
 
 variable {α : Type*} {M : Matroid α} {j k : ℕ∞} {d k : ℕ∞} {A X Y : Set α} {P : M.Separation}
   {b : Bool} {f g : ℕ∞ → ℕ∞}

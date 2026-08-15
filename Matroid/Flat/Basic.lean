@@ -1,5 +1,9 @@
-import Matroid.Minor.Rank
-import Mathlib.Tactic.Linarith
+module
+
+public import Matroid.Minor.Rank
+public import Mathlib.Tactic.Linarith
+
+@[expose] public section
 
 variable {α : Type*} {M : Matroid α} {I F X Y F' F₀ F₁ F₂ P L H H₁ H₂ H' B C K : Set α} {e f : α}
 

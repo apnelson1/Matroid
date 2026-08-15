@@ -1,8 +1,12 @@
-import Matroid.Loop
-import Matroid.ForMathlib.Matroid.Dual
-import Matroid.ForMathlib.Matroid.Closure
-import Mathlib.Combinatorics.Matroid.Minor.Delete
-import Matroid.Closure
+module
+
+public import Matroid.Loop
+public import Matroid.ForMathlib.Matroid.Dual
+public import Matroid.ForMathlib.Matroid.Closure
+public import Mathlib.Combinatorics.Matroid.Minor.Delete
+public import Matroid.Closure
+
+@[expose] public section
 
 open Set
 

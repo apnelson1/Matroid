@@ -87,7 +87,7 @@ lemma banana_preconnGE_iff : (banana u v F).PreconnGE n ↔ n = 0 ∨ u = v ∨ 
 @[simp]
 lemma banana_connGE_iff : (banana u v F).ConnGE n ↔ n = 0 ∨ (n = 1 ∧ (u = v ∨ F.Nonempty)) := by
   obtain hc | hc := em ((banana u v F).IsComplete) |>.symm
-  · simp [← banana_isComplete_iff, hc, ← preconnGE_iff_connGE_of_not_isComplete hc]
+  · simp [← banana_isComplete_iff, hc, ← preconnGE_iff_connGE_of_not_isComplete (fun _ ↦ hc)]
   simp only [hc.connGE_iff, vertexSet_banana, pair_subsingleton_iff, ← banana_isComplete_iff, hc,
     and_true]
   constructor

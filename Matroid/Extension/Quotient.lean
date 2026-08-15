@@ -1,9 +1,13 @@
-import Matroid.Rank.Skew
-import Matroid.Order.Quotient
-import Matroid.Order.Discrepancy
-import Matroid.Extension.Minor
-import Matroid.Extension.ProjectBy
-import Matroid.ForMathlib.Data.Set.Finite
+module
+
+public import Matroid.Rank.Skew
+public import Matroid.Order.Quotient
+public import Matroid.Order.Discrepancy
+public import Matroid.Extension.Minor
+public import Matroid.Extension.ProjectBy
+public import Matroid.ForMathlib.Data.Set.Finite
+
+@[expose] public section
 
 open Set BigOperators Set.Notation Function
 

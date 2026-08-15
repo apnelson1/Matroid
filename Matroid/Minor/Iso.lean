@@ -1,7 +1,11 @@
-import Matroid.Minor.Rank
-import Mathlib.Combinatorics.Matroid.Constructions -- inefficient import
-import Matroid.Equiv
-import Matroid.ForMathlib.Other
+module
+
+public import Matroid.Minor.Rank
+public import Mathlib.Combinatorics.Matroid.Constructions -- inefficient import
+public import Matroid.Equiv
+public import Matroid.ForMathlib.Other
+
+@[expose] public section
 
 namespace Matroid
 

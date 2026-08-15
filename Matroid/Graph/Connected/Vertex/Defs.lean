@@ -2,6 +2,9 @@ module
 
 public import Matroid.Graph.Walk.Path
 import all Mathlib.Combinatorics.Graph.Delete
+public import Mathlib.Combinatorics.Graph.Delete
+public import Matroid.Graph.Map
+
 
 @[expose] public section
 
@@ -57,6 +60,28 @@ lemma connBetween_self : G.ConnBetween x x ↔ x ∈ V(G) :=
 @[grind →]
 lemma Adj.connBetween (h : G.Adj x y) : G.ConnBetween x y :=
   ⟨cons x h.choose (nil y), by simp [h.choose_spec, h.right_mem], by simp, by simp⟩
+
+lemma connBetween_eq_transGen (G : Graph α β) :
+    G.ConnBetween = Relation.TransGen (fun x y ↦ (x = y ∧ x ∈ V(G)) ∨ G.Adj x y) := by
+  ext x y
+  refine ⟨?_, fun h ↦ ?_⟩
+  · rintro ⟨w, hw, rfl, rfl⟩
+    induction hw with
+    | @nil x hx =>
+      simp only [nil_first, nil_last]
+      exact .single <| .inl ⟨rfl, hx⟩
+    | @cons x e w hw h ih =>
+      simp only [first_cons, last_cons]
+      exact .trans (.single (.inr h.adj)) ih
+  induction h with
+  | @single a h =>
+    obtain ⟨rfl, ha⟩ | hxa := h
+    · simpa
+    exact hxa.connBetween
+  | @tail a b c h ih =>
+    obtain ⟨rfl , -⟩ | hab := h
+    · assumption
+    exact ih.trans hab.connBetween
 
 @[grind →]
 lemma IsLink.connBetween (h : G.IsLink e x y) : G.ConnBetween x y :=
@@ -155,6 +180,27 @@ lemma connBetween_iff_reflTransGen_adj :
   induction h with
   | refl => exact ConnBetween.refl hx
   | tail _h hadj ih => exact ih.trans hadj.connBetween
+
+lemma connBetween_map_iff_of_injOn {α' : Type*} {φ : α → α'} (hφ : InjOn φ V(G))
+    (hx : x ∈ V(G)) (hy : y ∈ V(G)) : (G.map φ).ConnBetween (φ x) (φ y) ↔ G.ConnBetween x y := by
+  have : Nonempty α := ⟨x⟩
+  refine ⟨fun ⟨w, hw, hwx, hwy⟩ ↦ ?_, fun ⟨w, hw, hwx, hwy⟩ ↦ ?_⟩
+  · simpa [hwx, hwy, hφ.leftInvOn_invFunOn.eq hx, hφ.leftInvOn_invFunOn.eq hy] using
+      (hw.map_invFunOn hφ).connBetween_first_last
+  simpa [hwx, hwy] using (hw.map φ).connBetween_first_last
+
+lemma connBetween_map_iff_of_injective {α' : Type*} {φ : α → α'} (hφ : Injective φ) :
+    (G.map φ).ConnBetween (φ x) (φ y) ↔ G.ConnBetween x y := by
+  by_cases! hx : x ∉ V(G)
+  · exact iff_of_false (fun h ↦ hx (hφ.mem_set_image.1 h.left_mem)) fun h ↦ hx h.left_mem
+  by_cases! hy : y ∉ V(G)
+  · exact iff_of_false (fun h ↦ hy (hφ.mem_set_image.1 h.right_mem)) fun h ↦ hy h.right_mem
+  rw [connBetween_map_iff_of_injOn hφ.injOn hx hy]
+
+@[simp]
+lemma connBetween_edgeMap_iff {β' : Type*} {φ : β → β'} {hφ} {x y : α} :
+    (G.edgeMap φ hφ).ConnBetween x y ↔ G.ConnBetween x y := by
+  simp [connBetween_eq_transGen]
 
 /-! ### Separators between two vertices -/
 
@@ -608,6 +654,11 @@ lemma connBetweenGE_le_encard_sub_two (h : G.ConnBetweenGE s t n) (hne : s ≠ t
 lemma connBetweenGE_le_encard (h : G.ConnBetweenGE s t n) (hne : s ≠ t) (hadj : ¬ G.Adj s t) :
     n ≤ V(G).encard :=
   (connBetweenGE_le_diff_encard h hne hadj).trans <| encard_le_encard sdiff_subset
+
+lemma connBetweenGE_add_two_le_encard (h : G.ConnBetweenGE s t n) (hs : s ∈ V(G)) (ht : t ∈ V(G))
+    (hne : s ≠ t) (hadj : ¬ G.Adj s t) : n + 2 ≤ V(G).encard := by
+  grw [connBetweenGE_le_encard_sub_two h hne hadj, tsub_add_cancel_of_le]
+  grw [← show {s, t} ⊆ V(G) by grind, encard_pair hne]
 
 def EdgeConnBetweenGE (G : Graph α β) (s t : α) (n : ℕ) : Prop :=
   ∀ ⦃F : Set β⦄, G.IsEdgeCutBetween F s t → n ≤ F.encard

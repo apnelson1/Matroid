@@ -1,4 +1,6 @@
-import Matroid
+module
+
+public import Matroid
 
 /-! # Theorem statements
 This file contains formalized statements of the the main theorems of the article

@@ -1,4 +1,8 @@
-import Mathlib.Algebra.GroupWithZero.Defs
+module
+
+public import Mathlib.Algebra.GroupWithZero.Defs
+
+@[expose] public section
 
 structure Pasture (M : Type*) [CommGroupWithZero M] where
   IsNull : M → M → M → Prop
