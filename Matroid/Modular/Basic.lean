@@ -455,7 +455,7 @@ set_option backward.isDefEq.respectTransparency false in
       (M.IsModularFamily (fun i ↦ Xs i ∩ M.E)) ∧ (N.IsModularFamily (fun i ↦ Xs i ∩ N.E)) ∧
       ∀ i, Xs i ⊆ M.E ∪ N.E := by
   rw [disjointSum_eq_disjointSigma, isModularFamily_disjointSigma_iff]
-  simp only [Bool.forall_bool, cond_false, cond_true, iUnion_bool]
+  simp only [Bool.forall_bool, Bool.cond_false, Bool.cond_true, iUnion_bool]
   tauto
 
 end IsModularFamily
@@ -467,9 +467,10 @@ def IsModularPair (M : Matroid α) (X Y : Set α) :=
   M.IsModularFamily (fun i : Bool ↦ bif i then X else Y)
 
 lemma IsModularPair.symm (h : M.IsModularPair X Y) : M.IsModularPair Y X := by
-   obtain ⟨B, hB⟩ := h
-   exact ⟨B, hB.indep, fun i ↦ by simpa using hB.2 !i⟩
-
+  obtain ⟨B, hB⟩ := h
+  exact ⟨B, hB.indep, fun i ↦ by cases i with
+    | false => simpa using hB.2 true
+    | true => simpa using hB.2 false⟩
 lemma isModularPair_comm : M.IsModularPair X Y ↔ M.IsModularPair Y X :=
   ⟨IsModularPair.symm, IsModularPair.symm⟩
 
@@ -487,7 +488,7 @@ lemma isModularPair_iff {M : Matroid α} {X Y : Set α} :
   refine ⟨fun ⟨B, hB, hB'⟩ ↦ ⟨B, indep_iff.1 hB, ?_⟩,
     fun ⟨I, ⟨B, hB, hIB⟩, hIX, hIY⟩ ↦ ⟨B, hB.indep, ?_⟩ ⟩
   · exact ⟨by simpa using hB' true, by simpa using hB' false⟩
-  simp only [Bool.forall_bool, cond_false, cond_true]
+  simp only [Bool.forall_bool, Bool.cond_false, Bool.cond_true]
   rw [← hIX.eq_of_subset_indep (hB.indep.inter_left X) (inter_subset_inter_right _ hIB)
     inter_subset_left, ← hIY.eq_of_subset_indep (hB.indep.inter_left Y)
     (inter_subset_inter_right _ hIB) inter_subset_left]
@@ -557,8 +558,8 @@ lemma isModularPair_of_subset (hXY : X ⊆ Y) (hY : Y ⊆ M.E) : M.IsModularPair
 
 lemma Indep.isModularPair_of_union (hi : M.Indep (I ∪ J)) : M.IsModularPair I J := by
   rw [IsModularPair]
-  simpa only [iUnion_subset_iff, Bool.forall_bool, cond_false, subset_union_right, cond_true,
-    subset_union_left, and_self, forall_true_left] using
+  simpa only [iUnion_subset_iff, Bool.forall_bool, Bool.cond_false, subset_union_right,
+    Bool.cond_true, subset_union_left, and_self, forall_true_left] using
     hi.isModularFamily_of_subsets (Js := fun i ↦ bif i then I else J)
 
 lemma IsModularPair.of_subset_closure_subset_closure (h : M.IsModularPair X Y) (hXX' : X ⊆ X')
@@ -744,8 +745,8 @@ lemma Coindep.subset_closure_iff_isModularPair (hX : M.Coindep (X \ Y))
 lemma isModularPair_disjointSigma_iff (X Y : Set α) {M : η → Matroid α} {hdj} :
     (Matroid.disjointSigma M hdj).IsModularPair X Y ↔
     (∀ c, (M c).IsModularPair (X ∩ (M c).E) (Y ∩ (M c).E)) ∧ X ∪ Y ⊆ ⋃ c, (M c).E := by
-  simp only [IsModularPair, isModularFamily_disjointSigma_iff, Bool.forall_bool, cond_false,
-    cond_true, union_subset_iff]
+  simp only [IsModularPair, isModularFamily_disjointSigma_iff, Bool.forall_bool, Bool.cond_false,
+    Bool.cond_true, union_subset_iff]
   rw [and_comm (a := X ⊆ _)]
   convert Iff.rfl using 5 with i j
   grind
@@ -755,7 +756,7 @@ lemma isModularPair_disjointSum_iff (X Y : Set α) {M N : Matroid α} {hdj} :
     (M.disjointSum N hdj).IsModularPair X Y ↔ M.IsModularPair (X ∩ M.E) (Y ∩ M.E) ∧
       N.IsModularPair (X ∩ N.E) (Y ∩ N.E) ∧ X ∪ Y ⊆ M.E ∪ N.E := by
   simp only [disjointSum_eq_disjointSigma, isModularPair_disjointSigma_iff, Bool.forall_bool,
-    cond_false, cond_true, iUnion_bool, union_subset_iff]
+    Bool.cond_false, Bool.cond_true, iUnion_bool, union_subset_iff]
   tauto
 
 end IsModularPair

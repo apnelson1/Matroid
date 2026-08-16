@@ -445,7 +445,7 @@ lemma connectivity_le_edgeConnectivity [G.Finite] (h : V(G).Nontrivial) : κ(G) 
   have hκlt : κ(G) < ⊤ := by
     apply (min_le_right G.sepConnectivity G.cardConnectivityBound).trans_lt
     unfold cardConnectivityBound
-    rw [dif_neg h.not_subsingleton, lt_top_iff_ne_top]
+    rw [dite_eq_right h.not_subsingleton, lt_top_iff_ne_top]
     simp [ENat.sub_eq_top_iff, encard_eq_top_iff]
   obtain ⟨n, hn⟩ := ENat.ne_top_iff_exists.mp hκlt.ne
   have hι : ENat.card (Fin n) = n := by simp

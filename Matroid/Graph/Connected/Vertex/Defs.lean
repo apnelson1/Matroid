@@ -87,7 +87,6 @@ lemma connBetween_eq_transGen (G : Graph α β) :
 lemma IsLink.connBetween (h : G.IsLink e x y) : G.ConnBetween x y :=
   h.adj.connBetween
 
-@[grind →]
 lemma ConnBetween.mono (hle : H ≤ G) (h : H.ConnBetween x y) : G.ConnBetween x y := by
   obtain ⟨W, hW, rfl, rfl⟩ := h
   use W, hW.of_le hle

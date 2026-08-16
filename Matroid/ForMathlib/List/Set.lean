@@ -120,7 +120,7 @@ lemma getElems_insert_eq_dite (L : List α) (s : Set ℕ) (i : ℕ) :
 
 lemma Nodup.getElems_insert_sdiff (hL : L.Nodup) (s : Set ℕ) (his : i ∉ s) (hi : i < L.length) :
     L.getElems (insert i s) \ {L[i]} = L.getElems s := by
-  rw [getElems_insert_eq_dite, dif_pos hi, insert_sdiff_self_of_notMem]
+  rw [getElems_insert_eq_dite, dite_eq_left hi, insert_sdiff_self_of_notMem]
   rwa [hL.getElem_mem_getElems_iff]
 
 lemma getElems_singleton_subsingleton {i : ℕ} : (L.getElems {i}).Subsingleton := by

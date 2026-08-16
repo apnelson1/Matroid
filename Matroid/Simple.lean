@@ -592,9 +592,9 @@ lemma isSimplification_iff : N.IsSimplification M ↔ N.Loopless ∧ N ≤r M �
   choose f hf using h'
   refine ⟨Partition.RepFun.mk (fun x ↦ if hx : M.IsNonloop x then f hx else x)
     (fun a ha ↦ ?_) (fun a ha ↦ ?_) fun a b (hab : M.Parallel a b) ↦ ?_, ?_⟩
-  · simp_rw [dif_neg (show ¬ M.IsNonloop a from mem_parallelClasses_supp_iff.not.mp ha)]
+  · simp_rw [dite_eq_right (show ¬ M.IsNonloop a from mem_parallelClasses_supp_iff.not.mp ha)]
   · rw [mem_parallelClasses_supp_iff] at ha
-    simp [dif_pos ha, (hf ha).1.2]
+    simp [dite_eq_left ha, (hf ha).1.2]
   · simp only [hab.isNonloop_left, ↓reduceDIte, hab.isNonloop_right]
     exact Eq.symm <| (hf hab.isNonloop_left).2 (f hab.isNonloop_right)
       ⟨(hf hab.isNonloop_right).1.1, hab.trans (hf hab.isNonloop_right).1.2⟩
@@ -603,7 +603,7 @@ lemma isSimplification_iff : N.IsSimplification M ↔ N.Loopless ∧ N ≤r M �
   · rintro ⟨x,(hx : M.IsNonloop x),rfl⟩; simp [hx, (hf hx).1.1]
   have hx := ((isNonloop_of_loopless h).of_isRestriction hr)
   simp only [Partition.RepFun.mk_apply, mem_image, mem_ofPred_eq]
-  exact ⟨x, hx, by rw [dif_pos hx, ← (hf hx).2 _ ⟨h, hx.parallel_self⟩]⟩
+  exact ⟨x, hx, by rw [dite_eq_left hx, ← (hf hx).2 _ ⟨h, hx.parallel_self⟩]⟩
 
 /-- `N` is a simplification of `M` if `N` is minimal in the restriction order simplifying `M`. -/
 lemma isSimplification_iff_minimal_simplifies :

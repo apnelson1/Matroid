@@ -10,8 +10,6 @@ open Set
 
 namespace Matroid
 
-
-
 /-- Contract a set `C`, then put the removed elements back in as loops. -/
 def project (M : Matroid α) (C : Set α) : Matroid α := (M ／ C) ↾ M.E
 

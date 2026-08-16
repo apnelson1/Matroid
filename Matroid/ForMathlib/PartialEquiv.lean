@@ -87,28 +87,28 @@ variable [DecidableEq α] [DecidableEq β] {φ φ' : PartialEquiv α β} {a : α
     rintro x (rfl | hx)
     · rw [update_self]
       apply mem_insert
-    rw [update_apply, if_neg (by rintro rfl; exact ha hx)]
+    rw [update_apply, ite_eq_right (by rintro rfl; exact ha hx)]
     exact mem_insert_of_mem _ <| e.map_source hx
   map_target' := by
     rintro x (rfl | hx)
     · rw [update_self]
       apply mem_insert
-    rw [update_apply, if_neg (by rintro rfl; exact hb hx)]
+    rw [update_apply, ite_eq_right (by rintro rfl; exact hb hx)]
     exact mem_insert_of_mem _ <| e.map_target hx
   left_inv' := by
     rintro x (rfl | hx)
     · rw [update_self, update_self]
-    rw [update_apply, update_apply, if_neg (show x ≠ a from fun h ↦ ha <| h ▸ hx),
-      if_neg (by rintro rfl; exact hb <| e.map_source hx), e.left_inv hx]
+    rw [update_apply, update_apply, ite_eq_right (show x ≠ a from fun h ↦ ha <| h ▸ hx),
+      ite_eq_right (by rintro rfl; exact hb <| e.map_source hx), e.left_inv hx]
   right_inv' := by
     rintro x (rfl | hx)
     · rw [update_self, update_self]
-    rw [update_apply, update_apply, if_neg (show x ≠ b from fun h ↦ hb <| h ▸ hx),
-      if_neg (by rintro rfl; exact ha <| e.map_target hx), e.right_inv hx]
+    rw [update_apply, update_apply, ite_eq_right (show x ≠ b from fun h ↦ hb <| h ▸ hx),
+      ite_eq_right (by rintro rfl; exact ha <| e.map_target hx), e.right_inv hx]
 
 theorem PartialEquiv.insert_apply_mem (e : PartialEquiv α β) (ha : a ∉ e.source) (hb : b ∉ e.target)
     {i : α} (hi : i ∈ e.source) : (e.insert ha hb) i = e i := by
-  rw [insert_apply, update_apply, if_neg]
+  rw [insert_apply, update_apply, ite_eq_right]
   exact fun h ↦ ha <| h ▸ hi
 
 @[simp] theorem insert_symm (e : PartialEquiv α β) (ha : a ∉ e.source) (hb : b ∉ e.target) :

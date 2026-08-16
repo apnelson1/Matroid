@@ -119,7 +119,7 @@ lemma Indep.rep_apply_ne_zero_of_mem {v : M.Rep 𝔽 W} (hI : M.Indep I) (heI : 
     rw [hf]
     apply linearIndependent_equiv' <| Equiv.Set.image _ _ Subtype.val_injective
     ext ⟨⟨x,hx⟩, hx'⟩
-    simp [dif_pos hx] )
+    simp [dite_eq_left hx] )
 
 -- @[simp] lemma Rep.offSubtypeFun_apply (f : M.E → W) [DecidablePred (· ∈ M.E)]
 --     (hf : ∀ {I : Set M.E}, M.Indep (Subtype.val '' I) ↔ LinearIndependent 𝔽 (I.restrict f))
@@ -129,12 +129,12 @@ lemma Indep.rep_apply_ne_zero_of_mem {v : M.Rep 𝔽 W} (hI : M.Indep I) (heI : 
 -- lemma repOfSubtypeFun_apply_mem (f : M.E → W) [DecidablePred (· ∈ M.E)]
 --     (hf : ∀ {I : Set M.E}, M.Indep (Subtype.val '' I) ↔ LinearIndependent 𝔽 (I.restrict f))
 --     {e : α} (he : e ∈ M.E) : repOfSubtypeFun f hf e = f ⟨e,he⟩ := by
---   simp [repOfSubtypeFun, rep_of_ground, dif_pos he]
+--   simp [repOfSubtypeFun, rep_of_ground, dite_eq_left he]
 
 -- lemma repOfSubtypeFun_apply_notMem (f : M.E → W) [DecidablePred (· ∈ M.E)]
 --     (hf : ∀ {I : Set M.E}, M.Indep (Subtype.val '' I) ↔ LinearIndependent 𝔽 (I.restrict f))
 --     {e : α} (he : e ∉ M.E) : repOfSubtypeFun f hf e = 0 := by
---   simp [repOfSubtypeFun, rep_of_ground, dif_neg he]
+--   simp [repOfSubtypeFun, rep_of_ground, dite_eq_right he]
 
 -- lemma rep_of_ground_coe_eq (f : α → W) (h_support : support f ⊆ M.E)
 --   (hf : ∀ {I}, I ⊆ M.E → (M.Indep I ↔ LinearIndependent 𝔽 (f ∘ ((↑) : I → α)))) :
@@ -233,7 +233,7 @@ noncomputable def Rep.matroidMap (v : M.Rep 𝔽 W) (f : α → β) (hf : M.E.In
       have hv' : ∀ x ∈ M.E, v' (f x) = v x := by
         intro x hx
         have h : ∃ y ∈ M.E, f y = f x := ⟨x, hx, rfl⟩
-        simp only [v', dif_pos h, show h.choose = x from hf h.choose_spec.1 hx h.choose_spec.2]
+        simp only [v', dite_eq_left h, show h.choose = x from hf h.choose_spec.1 hx h.choose_spec.2]
       simp only [map_ground, map_indep_iff, forall_subset_image_iff]
       refine fun I hIE ↦ ⟨fun ⟨I', hI', h_eq⟩ ↦ ?_, fun h ↦ ⟨_, ?_, rfl⟩⟩
       · obtain rfl : I = I' := (hf.image_eq_image_iff hIE hI'.subset_ground).1 h_eq
@@ -250,7 +250,7 @@ noncomputable def Rep.matroidMap (v : M.Rep 𝔽 W) (f : α → β) (hf : M.E.In
 lemma Rep.matroidMap_apply (v : M.Rep 𝔽 W) {f : α → β} {hf} [DecidablePred (∃ y ∈ M.E, f y = ·)]
     {x : α} (hx : x ∈ M.E) : v.matroidMap f hf (f x) = v x := by
   have h : ∃ y ∈ M.E, f y = f x := ⟨x, hx, rfl⟩
-  simp [matroidMap, dif_pos h, show h.choose = x from hf h.choose_spec.1 hx h.choose_spec.2]
+  simp [matroidMap, dite_eq_left h, show h.choose = x from hf h.choose_spec.1 hx h.choose_spec.2]
 
 lemma Rep.matroidMap_image (v : M.Rep 𝔽 W) (f : α → β) (hf) [DecidablePred (∃ y ∈ M.E, f y = ·)]
     (hX : X ⊆ M.E) : v.matroidMap f hf '' (f '' X) = v '' X := by
@@ -789,7 +789,7 @@ lemma Rep.parallelExtend_apply (v : M.Rep 𝔽 W) (e f : α) {x : α} (hx : x �
 
 @[simp] lemma Rep.parallelExtend_apply_same (v : M.Rep 𝔽 W) (e f : α) :
     v.parallelExtend e f f = v e := by
-  rw [Rep.parallelExtend, Rep.restrict_apply, indicator, if_pos (mem_insert _ _)]
+  rw [Rep.parallelExtend, Rep.restrict_apply, indicator, ite_eq_left (mem_insert _ _)]
   simp
 
 -- noncomputable def se_foo (𝔽 : Type*) [Field 𝔽] (v : α → W) (e f : α) (a : α) : W × 𝔽 :=

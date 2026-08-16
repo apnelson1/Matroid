@@ -42,11 +42,11 @@ lemma Rep.projFun_eq (v : M.Rep 𝔽 W) :
 -- lemma Rep.projFun_eq [M.Loopless] (v : M.Rep 𝔽 W) (he : e ∈ M.E) :
 --     v.projFun e = Projectivization.mk 𝔽 (v e)
 --  (v.ne_zero_of_isNonloop (isNonloop_of_loopless he)) := by
---   rw [Rep.projFun, dif_pos]
+--   rw [Rep.projFun, dite_eq_left]
 
 -- lemma Rep.projFun_not_isNonloop_eq (v : M.Rep 𝔽 W) (he : ¬ M.IsNonloop e) :
 --     v.projFun e = Classical.arbitrary _ := by
---   rw [Rep.projFun, dif_neg]
+--   rw [Rep.projFun, dite_eq_right]
 --   rwa [v.ne_zero_iff_isNonloop]
 
 lemma Rep.projFun_injective [M.Simple] (v : M.Rep 𝔽 W) : Injective v.projFun := by

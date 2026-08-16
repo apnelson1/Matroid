@@ -47,13 +47,13 @@ lemma signedIncMatrix_apply_of_mem (he : e ∈ E(G)) (D : orientation G) :
     (update (0 : α → 𝔽) (D.dInc ⟨e, he⟩).1 (1 : 𝔽)) := by
   ext y
   simp only [signedIncMatrix, Matrix.of_apply]
-  rw [dif_pos he, Pi.sub_apply]
+  rw [dite_eq_left he, Pi.sub_apply]
 
 lemma signedIncMatrix_apply_of_not_mem (he : e ∉ E(G)) (D : orientation G) :
     signedIncMatrix D 𝔽 e = 0 := by
   ext y
   simp only [signedIncMatrix, Matrix.of_apply]
-  rw [dif_neg he]
+  rw [dite_eq_right he]
 
 lemma signedIncMatrix_anti_submatrix (hGH : G ≤ H) (he : e ∈ E(G)) (D : orientation H) :
     signedIncMatrix (D.anti hGH) 𝔽 e = signedIncMatrix D 𝔽 e := by
@@ -101,13 +101,13 @@ def coeff_walk (hw : G.IsWalk w) (𝔽 : Type*) [Ring 𝔽] (D : orientation G) 
 omit [DecidablePred (· ∈ E(G))] in
 lemma coeff_isCycleWalk_not_zero (hw : G.IsCyclicWalk w) (he : e ∈ w.edge) (𝔽 : Type*) [Ring 𝔽]
     [Nontrivial 𝔽] (D : orientation G) : D.coeff_walk hw.isWalk 𝔽 e ≠ 0 := by
-  simp only [coeff_walk, dif_pos he]
+  simp only [coeff_walk, dite_eq_left he]
   split_ifs <;> simp
 
 lemma coeff_signedIncMatrix (hw : G.IsWalk w) (he : e ∈ w.edge) (D : orientation G) :
     D.coeff_walk hw 𝔽 e • D.signedIncMatrix 𝔽 e = (update (0 : α → 𝔽) (w.dIncLast he).2 (1 : 𝔽)) -
     (update (0 : α → 𝔽) (w.dIncLast he).1 (1 : 𝔽)) := by
-  simp only [coeff_walk, dif_pos he, ite_smul, one_smul, neg_smul]
+  simp only [coeff_walk, dite_eq_left he, ite_smul, one_smul, neg_smul]
   have hd := hw.isLink_of_dInc (w.dIncLast_dInc he)
   split_ifs with heq <;> ext x
   · have hl := D.isLink_of_dInc ⟨e, hw.edge_mem_of_mem he⟩ |>.right_unique (heq ▸ hd)

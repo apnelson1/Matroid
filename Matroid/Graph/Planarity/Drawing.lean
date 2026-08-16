@@ -444,7 +444,7 @@ See its docstring.
 — so an equation between them is ill-typed and forces `HEq`. Mathlib's `Path.cast`
 (`Mathlib/Topology/Path.lean:376`) keeps `toFun` definitionally, so `range` and `Path.Interior` see
 straight through the cast: every computation lemma below is stated at the level of those two sets,
-and each closes by `dif_pos`/`dif_neg` and then `rfl`.
+and each closes by `dite_eq_left`/`dite_eq_right` and then `rfl`.
 
 *`Disjoint E(G₁) E(G₂)` is deliberately not assumed.* A shared edge is resolved in favour of `G₁`,
 and no obligation below needs disjointness: `hsupp` already forbids the configuration that would
@@ -473,7 +473,7 @@ noncomputable def unionVertex (w : V(G₁ ∪ G₂)) : X :=
 @[simp]
 lemma unionVertex_of_mem_left {w : V(G₁ ∪ G₂)} (hw : w.1 ∈ V(G₁)) :
     unionVertex D₁ D₂ w = D₁.vertex ⟨w.1, hw⟩ :=
-  dif_pos hw
+  dite_eq_left hw
 
 /-- The right-hand computation rule. Unlike the left one it needs `Agree`, because a vertex of `G₂`
 may also be a vertex of `G₁`, in which case `unionVertex` took the `D₁` branch. -/
@@ -482,7 +482,7 @@ lemma unionVertex_of_mem_right (ha : D₁.Agree D₂) {w : V(G₁ ∪ G₂)} (hw
   by_cases hw₁ : w.1 ∈ V(G₁)
   · rw [unionVertex_of_mem_left D₁ D₂ hw₁]
     exact ha w.1 hw₁ hw
-  · rw [unionVertex, dif_neg hw₁]
+  · rw [unionVertex, dite_eq_right hw₁]
 
 lemma range_unionVertex (ha : D₁.Agree D₂) :
     range (unionVertex D₁ D₂) = range D₁.vertex ∪ range D₂.vertex := by
@@ -525,7 +525,7 @@ noncomputable def unionEdge (hc : G₁.Compatible G₂) (ha : D₁.Agree D₂) (
       (unionVertex_edgeTarget_right D₁ D₂ hc ha hed₂)
 
 /-! The four computation lemmas for `unionEdge`, at the level of `range` and `Path.Interior`. Each
-is `rw [unionEdge, dif_pos hed]` (resp. `dif_neg`) followed by `rfl`: `Path.cast` does not change
+is `rw [unionEdge, dite_eq_left hed]` (resp. `dite_eq_right`) followed by `rfl`: `Path.cast` does not change
 `toFun`, so both sets are literally the same term. Do not attempt the path-level equation. -/
 
 lemma range_unionEdge_left (hc : G₁.Compatible G₂) (ha : D₁.Agree D₂) {ed : E(G₁ ∪ G₂)}
@@ -681,10 +681,10 @@ lemma continuous_orient (F : Iso K G) (e : E(K)) : Continuous (F.orient e) := by
   by_cases h : F.sameOrientation e
   · convert continuous_id (X := I)
     ext t
-    simp [orient, if_pos h]
+    simp [orient, ite_eq_left h]
   · convert continuous_symm
     ext t
-    simp [orient, if_neg h]
+    simp [orient, ite_eq_right h]
 
 /-- The induced map on pre-realizations. -/
 noncomputable def preRealizationMap (F : Iso K G) : C(K.PreRealization, G.PreRealization) where
@@ -712,21 +712,21 @@ lemma preRealizationMap_glueRel (F : Iso K G) ⦃a b : K.PreRealization⦄
       · convert (glueRel_inl_inr_iff (edgeSource (F.edge e)) (F.edge e) 0).mpr
           (.inl ⟨rfl, rfl⟩) using 1
         · simpa [preRealizationMap] using hori
-        · simp [preRealizationMap, orient, if_pos hori]
+        · simp [preRealizationMap, orient, ite_eq_left hori]
       · obtain ⟨hs, _⟩ := F.vert_of_not_sameOrientation hori
         convert (glueRel_inl_inr_iff (edgeTarget (F.edge e)) (F.edge e) 1).mpr
           (.inr ⟨rfl, rfl⟩) using 1
         · simpa [preRealizationMap] using hs
-        · simp [preRealizationMap, orient, if_neg hori]
+        · simp [preRealizationMap, orient, ite_eq_right hori]
       · convert (glueRel_inl_inr_iff (edgeTarget (F.edge e)) (F.edge e) 1).mpr
           (.inr ⟨rfl, rfl⟩) using 1
         · simpa [preRealizationMap] using F.vert_edgeTarget_of_sameOrientation hori
-        · simp [preRealizationMap, orient, if_pos hori]
+        · simp [preRealizationMap, orient, ite_eq_left hori]
       · obtain ⟨_, ht⟩ := F.vert_of_not_sameOrientation hori
         convert (glueRel_inl_inr_iff (edgeSource (F.edge e)) (F.edge e) 0).mpr
           (.inl ⟨rfl, rfl⟩) using 1
         · simpa [preRealizationMap] using ht
-        · simp [preRealizationMap, orient, if_neg hori]
+        · simp [preRealizationMap, orient, ite_eq_right hori]
 
 lemma vert_symm_vert (F : Iso K G) (x : V(K)) : F.symm.vert (F.vert x) = x := by
   ext
@@ -783,14 +783,14 @@ lemma sameOrientation_edge_symm (F : Iso K G) (e : E(G)) :
 lemma orient_symm_orient (F : Iso K G) (e : E(K)) (t : I) :
     F.symm.orient (F.edge e) (F.orient e t) = t := by
   by_cases h : F.sameOrientation e
-  · simp [orient, if_pos h, if_pos (F.sameOrientation_symm h)]
-  · simp [orient, if_neg h, if_neg (F.not_sameOrientation_symm h), symm_symm]
+  · simp [orient, ite_eq_left h, ite_eq_left (F.sameOrientation_symm h)]
+  · simp [orient, ite_eq_right h, ite_eq_right (F.not_sameOrientation_symm h), symm_symm]
 
 lemma orient_orient_symm (F : Iso K G) (e : E(G)) (t : I) :
     F.orient (F.symm.edge e) (F.symm.orient e t) = t := by
   by_cases h : F.symm.sameOrientation e
-  · simp [orient, if_pos h, if_pos ((F.sameOrientation_edge_symm e).mpr h)]
-  · simp [orient, if_neg h, if_neg (mt (F.sameOrientation_edge_symm e).mp h), symm_symm]
+  · simp [orient, ite_eq_left h, ite_eq_left ((F.sameOrientation_edge_symm e).mpr h)]
+  · simp [orient, ite_eq_right h, ite_eq_right (mt (F.sameOrientation_edge_symm e).mp h), symm_symm]
 
 lemma preRealizationMap_symm_comp (F : Iso K G) (x : K.PreRealization) :
     F.symm.preRealizationMap (F.preRealizationMap x) = x := by

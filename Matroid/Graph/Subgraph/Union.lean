@@ -222,10 +222,10 @@ lemma deleteEdges_union_induce (G : Graph α β) (hX : X ⊆ V(G)) : (G ＼ E(G[
   simp [disjoint_sdiff_left]
 
 lemma Compatible.union_eq_iUnion (h : G.Compatible H) :
-    G ∪ H = Graph.iUnion (fun b ↦ bif b then G else H) (by simpa [pairwise_on_bool]) := by
+    G ∪ H = Graph.iUnion (fun b ↦ bif b then G else H) (by rwa [pairwise_on_bool]) := by
   generalize_proofs h'
-  simp only [le_antisymm_iff, h.union_le_iff, Graph.iUnion_le_iff, Bool.forall_bool, cond_false,
-    h.right_le_union, cond_true, Graph.left_le_union, and_self, and_true]
+  simp only [le_antisymm_iff, h.union_le_iff, Graph.iUnion_le_iff, Bool.forall_bool,
+    Bool.cond_false, h.right_le_union, Bool.cond_true, Graph.left_le_union, and_self, and_true]
   exact ⟨Graph.le_iUnion h' true, Graph.le_iUnion h' false⟩
 
 lemma Compatible.induce_union (h : G.Compatible H) (X : Set α) : (G ∪ H)[X] = G[X] ∪ H[X] := by

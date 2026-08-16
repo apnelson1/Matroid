@@ -172,7 +172,7 @@ lemma IsBase.nonempty_embedding_of_isBase_isChain (hB : M.IsBase B) (hB' : M.IsB
   wlog hss : T ⊆ T' generalizing T T' with aux
   · exact aux T' hT' T hT h_eq.symm hne.symm <| by simpa [hss] using hS_chain hT hT' hne
   have hwin := (hY T hT).2.2.eq_of_subset_isBase (hY T' hT').2.2 (by grind)
-  grind [-Disjoint.mono_left]
+  grind []
 
 /-- No independent set is larger than the power set of a base. -/
 lemma Indep.nonempty_embedding_set_of_isBase (hI : M.Indep I) (hB : M.IsBase B) :

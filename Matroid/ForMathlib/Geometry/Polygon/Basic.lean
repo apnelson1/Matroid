@@ -271,7 +271,7 @@ private lemma edgeSet_subdivide_insert (p : Polygon P n) (i : Fin n) (a : P) :
     · by_cases hji : j = i
       · subst j
         refine ⟨i, ?_⟩
-        rw [edgeSet_subdivide_succAbove, if_pos rfl] at hk
+        rw [edgeSet_subdivide_succAbove, ite_eq_left rfl] at hk
         exact hsplit ▸ Or.inl hk
       · refine ⟨j, ?_⟩
         simpa [edgeSet_subdivide_succAbove, hji] using hk
@@ -281,13 +281,13 @@ private lemma edgeSet_subdivide_insert (p : Polygon P n) (i : Fin n) (a : P) :
       rw [← hsplit] at hj
       rcases hj with hj | hj
       · refine ⟨i.succ.succAbove i, ?_⟩
-        rw [edgeSet_subdivide_succAbove, if_pos rfl]
+        rw [edgeSet_subdivide_succAbove, ite_eq_left rfl]
         exact hj
       · refine ⟨i.succ, ?_⟩
         rw [edgeSet_subdivide_insert]
         exact hj
     · refine ⟨i.succ.succAbove j, ?_⟩
-      rw [edgeSet_subdivide_succAbove, if_neg hji]
+      rw [edgeSet_subdivide_succAbove, ite_eq_right hji]
       exact hj
 
 end Subdivide

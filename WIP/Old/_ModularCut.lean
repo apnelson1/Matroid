@@ -258,7 +258,7 @@ theorem ModularCut.remove {M : Matroid α} (C : M.ModularCut) {B Y : Set α}
   Indep I := M.Indep I ∨ (e ∈ I \ M.E ∧ M.Indep (I \ {e}) ∧ M.closure (I \ {e}) ∉ C)
   indep_empty := Or.inl M.empty_indep
   indep_subset I J := by
-    -- tricks like the line below are good for deconstructing `Or`s without `by_cases, if_pos`, etc.
+    -- tricks like the line below are good for deconstructing `Or`s without `by_cases, ite_eq_left`, etc.
     rintro (hJ | ⟨⟨_, heE⟩, hJ, hJC⟩) hIJ
     · exact Or.inl <| hJ.subset hIJ
     by_cases heI : e ∈ I
@@ -279,7 +279,7 @@ theorem ModularCut.remove {M : Matroid α} (C : M.ModularCut) {B Y : Set α}
     obtain ⟨Y, Y_ind, I_sub_Y, I_ne_Y⟩ := I_nmax I_ind
     dsimp at Y_ind J_ind
     obtain (I_ind | ⟨e_in_I, I_ind, I_closure_notMem⟩) := I_ind
-    · --rw [if_pos (I_sub_Y e_in_I)] at Y_ind
+    · --rw [ite_eq_left (I_sub_Y e_in_I)] at Y_ind
       obtain (J_ind | ⟨e_in_J, J_ind, J_closure_notMem⟩) := J_ind
       ·  --e in neither case
         have I_not_isBase : ¬ M.IsBase I

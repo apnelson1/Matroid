@@ -368,7 +368,6 @@ theorem handshake_eDegree_subtype (G : Graph α β) :
   obtain ⟨e, hex⟩ : ∃ e, G.Inc e x := by simpa [eDegree] using hx
   exact hex.vertex_mem
 
-set_option backward.isDefEq.respectTransparency false in
 lemma handshake_degree_subtype (G : Graph α β) [G.Finite] :
     ∑ᶠ v ∈ V(G), G.degree v = 2 * E(G).ncard := by
   rw [finsum_mem_eq_finite_toFinset_sum _ G.vertexSet_finite, ← ENat.natCast_inj,

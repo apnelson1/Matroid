@@ -170,9 +170,9 @@ noncomputable def freeRep (E : Set α) [DecidablePred (· ∈ E)] (𝔽 : Type*)
     refine ⟨fun h ↦ ?_, fun h e heI ↦ by_contra fun heE ↦ ?_⟩
     · convert (Finsupp.basisSingleOne (R := 𝔽)).linearIndependent.comp _ (Set.inclusion_injective h)
         with ⟨x, hx⟩
-      simp [dif_pos (h hx)]
+      simp [dite_eq_left (h hx)]
     have hcon := h.ne_zero ⟨e, heI⟩
-    rw [dif_neg heE] at hcon
+    rw [dite_eq_right heE] at hcon
     exact hcon rfl
 
 protected noncomputable def ofBaseCobaseFun (B E : Set α) [DecidablePred (· ∈ B)]

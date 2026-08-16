@@ -385,7 +385,7 @@ lemma multiConn_cond {I J X Y : Set α} (hIX : M.IsBasis' I X) (hJY : M.IsBasis'
     simp [disjoint_left]
   have hb (b : Bool) : M.IsBasis' (bif b then I else J) ((bif b then X else Y)) := by
     cases b with simpa
-  simp only [multiConn_eq_comap_nullity hb, iUnion_bool, cond_true, cond_false]
+  simp only [multiConn_eq_comap_nullity hb, iUnion_bool, Bool.cond_true, Bool.cond_false]
   have hI : (M.comap Prod.fst).Indep ((·, true) '' I) := hIX.indep.comap hinv
   rw [← hI.nullity_project_of_disjoint aux_dj, nullity_eq_nullity_add_encard_diff
     (X := (·, false) '' (J \ I)) (image_mono sdiff_subset),
@@ -657,12 +657,16 @@ lemma eLocalConn_delete_eq_of_subset_loops {L : Set α} (hL : L ⊆ M.loops) :
 @[simp]
 lemma eLocalConn_map {β : Type*} (M : Matroid α) (f : α → β) (hf) (X Y : Set β) :
     (M.map f hf).eLocalConn X Y = M.eLocalConn (f ⁻¹' X) (f ⁻¹' Y) := by
-  simp [eLocalConn, multiConn_map, Bool.apply_cond]
+  simp only [eLocalConn, multiConn_map]
+  convert rfl
+  exact Bool.apply_cond .. |>.symm
 
 @[simp]
 lemma eLocalConn_comap {β : Type*} (M : Matroid β) (f : α → β) (X Y : Set α) :
     (M.comap f).eLocalConn X Y = M.eLocalConn (f '' X) (f '' Y) := by
-  simp [eLocalConn, multiConn_comap, Bool.apply_cond]
+  simp only [eLocalConn, multiConn_comap]
+  convert rfl
+  exact Bool.apply_cond .. |>.symm
 
 @[simp] lemma eLocalConn_ground_eq (M : Matroid α) (X : Set α) : M.eLocalConn X M.E = M.eRk X := by
   wlog hX : X ⊆ M.E generalizing X with aux
@@ -837,7 +841,7 @@ lemma IsTriangle.union_diff_singleton_isCircuit {e f g C} (hT : M.IsTriangle {e,
   · exact False.elim <| hfC <| mem_closure_of_mem _ (by simp) hT.subset_ground
   suffices h1 : M.eLocalConn {e, f, g} C ≤ 1 by
     convert hT.isCircuit.union_isCircuit_of_inter_eq_singleton hC (e := e) hne (by simp) heC h1
-    grind
+    grind [-List.eq_or_mem_of_mem_cons]
   grw [pair_comm, insert_comm, ← eLocalConn_closure_left, closure_insert_eq_of_mem_closure
     hT.mem_closure₃, eLocalConn_closure_left, eLocalConn_insert_left_le_add_one,
     eLocalConn_singleton_left_eq_zero hfC, zero_add]
@@ -847,12 +851,13 @@ lemma IsTriangle.union_diff_singleton_isCircuit_four {e f e' f' x} (hT : M.IsTri
     M.IsCircuit {e, f, e', f'} := by
   suffices aux : f ∉ M.closure {x, f', e'} by
     convert hT.reverse.union_diff_singleton_isCircuit hT'.reverse.isCircuit (by simp) aux using 1
-    grind
+    grind [-List.eq_or_mem_of_mem_cons]
   intro hcl
   have hr := (eRk_insert_of_mem_closure hcl).le
   grw [hT'.reverse.eRk, ← eRk_insert_of_mem_closure (e := e)
     (mem_of_mem_of_subset hT.mem_closure₁ <| closure_subset_closure _ (by grind)),
-    ← eRk_subset_le (X := {e, e', x}) _ (by grind), h_indep.eRk_eq_encard, pair_comm, insert_comm,
+    ← eRk_subset_le (X := {e, e', x}) _ (by grind [-List.eq_or_mem_of_mem_cons]),
+    h_indep.eRk_eq_encard, pair_comm, insert_comm,
     encard_insert_of_notMem (by simp [hT.ne₁₃.symm, hT'.ne₁₃.symm]), encard_pair hee'] at hr
   simp at hr
 

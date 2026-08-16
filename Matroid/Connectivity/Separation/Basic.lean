@@ -233,7 +233,7 @@ lemma induce_false_true : P.induce N false true = P true ∩ N.E :=
   induce_not_apply P N true
 
 lemma induce_apply_self : P.induce N i i = N.E \ P (!i) := by
-  rw [induce_apply_eq_cond, BEq.refl, cond_true, ← P.union_bool_eq i]
+  rw [induce_apply_eq_cond, BEq.refl, Bool.cond_true, ← P.union_bool_eq i]
   grind [P.disjoint_bool i]
 
 lemma induce_apply_subset (P : M.Separation) (hNM : N.E ⊆ M.E) (i j : Bool) :
@@ -289,7 +289,7 @@ lemma induce_induce {N' : Matroid α} (P : M.Separation) (hN' : N'.E ⊆ N.E) :
 lemma induce_induce_of_subset {N' : Matroid α} (P : M.Separation) {i} (hss : M.E ⊆ N.E) :
     (P.induce N i).induce N' i = P.induce N' i := by
   refine Separation.ext_bool (!i) ?_
-  simp only [induce_apply_eq_cond, Bool.not_beq_self, cond_false]
+  simp only [induce_apply_eq_cond, Bool.not_beq_self, Bool.cond_false]
   rw [inter_eq_self_of_subset_left (P.subset.trans hss)]
 
 @[simp]

@@ -159,7 +159,7 @@ theorem exists_isEar_or_isLoopAt_of_connected (hG : G.Connected)
   refine hex.isLoopAt_or_isNonloopAt.elim (Or.inr ⟨e, x, hxH, ·, heH⟩) fun ⟨u, hux, h⟩ ↦ Or.inl ?_
   obtain ⟨y₀, hy₀, hy₀x⟩ := hV.exists_ne x
   obtain ⟨Q, hQ, rfl, rfl⟩ := hGx x (hle.vertexSet_mono hxH) |>.connBetween (by grind : u ∈ _)
-    (by grind : y₀ ∈ _) |>.exists_isPath
+    (by grind [ConnBetween.mono] : y₀ ∈ _) |>.exists_isPath
   simp only [isPath_deleteVerts_iff, disjoint_singleton_right, mem_vertexSet_iff] at hQ
   classical
   have hpre := Q.prefixUntil_isPrefix (· ∈ V(H))

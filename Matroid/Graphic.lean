@@ -146,7 +146,7 @@ lemma cycleMatroid_coloop (G : Graph α β) (e : β) : G.cycleMatroid.IsColoop e
   exact singleton_isCocircuit.symm
 
 lemma IsEdgeCut.cycleMatroid_dual_cyclic (hF : G.IsEdgeCut F) : (G.cycleMatroid✶).Cyclic F := by
-  refine ((cyclic_tfae (M := G.cycleMatroid✶) (A := F)).out 0 2).mpr fun e heF ↦ ?_
+  refine ((cyclic_tfae (M := G.cycleMatroid✶) (A := F)).out 1 3).mpr fun e heF ↦ ?_
   obtain ⟨x, y, he⟩ := G.exists_isLink_of_mem_edgeSet <| hF.subset heF
   obtain ⟨B, hBF, hB, hBxy⟩ := exists_isBond_subset_of_not_connBetween he.connBetween
   <| hF.not_connBetween_of_isLink he heF
@@ -666,7 +666,7 @@ noncomputable def cycleMatroidRep (𝔽 : Type*) [Field 𝔽] : G.cycleMatroid.R
       refine sum_congr rfl (fun x₀ hx₀ ↦ ?_)
       simp only [g₀, hx₀, ↓reduceIte]
     have h_zero := h C'₀.edge.toFinset g₀ (fun i hi ↦ hCI <|by simpa using hi)
-      (fun i hi ↦ if_neg hi) hh e₀
+      (fun i hi ↦ ite_eq_right hi) hh e₀
       he₀_finset
     simp only [g₀, he₀_finset, ↓reduceIte] at h_zero
     exact hD.some.coeff_isCycleWalk_not_zero hC'₀_G he₀ 𝔽 h_zero

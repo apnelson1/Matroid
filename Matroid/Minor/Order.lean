@@ -181,7 +181,7 @@ lemma IsMinor.exists_isMinor_of_subset_subset (h : N ≤m M) {X} (hNX : N.E ⊆ 
   obtain ⟨C, D, hC, hD, hCD, rfl⟩ := h.exists_eq_contract_delete_disjoint
   exact ⟨M ／ (C \ X) ＼ (D \ X),
     M.contract_delete_isMinor_contract_delete hCD sdiff_subset sdiff_subset,
-    contract_delete_isMinor .., by grind [-Disjoint.mono_left]⟩
+    contract_delete_isMinor .., by grind []⟩
 
 lemma contractElem_isStrictMinor (he : e ∈ M.E) : M ／ {e} <m M :=
   ⟨contract_isMinor M {e}, fun hM ↦ (hM.subset he).2 rfl⟩
@@ -272,7 +272,7 @@ lemma IsMinor.closure_inter_subset_closure (hN : N ≤m M) (hX : X ⊆ N.E) :
     M.closure X ∩ N.E ⊆ N.closure X := by
   obtain ⟨C, D, hC, hD, hCD, rfl⟩ := hN.exists_contract_indep_delete_coindep
   grw [contract_delete_ground, delete_closure_eq, contract_closure_eq, sdiff_sdiff, subset_sdiff,
-    and_iff_left (by grind [-Disjoint.mono_left]), (show Disjoint X D by grind).sdiff_eq_left,
+    and_iff_left (by grind []), (show Disjoint X D by grind).sdiff_eq_left,
     inter_subset_left, ← subset_union_left]
 
 lemma Spanning.of_isMinor (hX : M.Spanning X) (hN : N ≤m M) (hXN : X ⊆ N.E) : N.Spanning X := by

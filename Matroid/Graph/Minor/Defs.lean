@@ -479,7 +479,6 @@ instance : FunLike (minorMap G H) V(G) (Graph α β) where
   coe f := f.map
   coe_injective _ _ := minorMap_ext
 
-set_option backward.isDefEq.respectTransparency false in
 lemma minorMap.ne_bot (F : minorMap G H) (x : V(G)) : F.map x ≠ ⊥ := by
   simpa using (F.conn x).nonempty
 
@@ -543,7 +542,6 @@ def minorMap.of_le (h : G ≤ H) : minorMap G H where
   link e x y hxy := ⟨x, y, h.isLink_mono hxy, by simp⟩
   conn v := by simp
 
-set_option backward.isDefEq.respectTransparency false in
 def minorMap.of_contract (hφ : (G ↾ C).connPartition.IsRepFun φ) : minorMap (G /[C, φ]) G where
   map v := (G ↾ C).walkable v.val
   map_le v := walkable_isClosedSubgraph.le.trans restrict_le
@@ -551,7 +549,9 @@ def minorMap.of_contract (hφ : (G ↾ C).connPartition.IsRepFun φ) : minorMap 
   disj u v huv := by
     obtain ⟨u, ⟨x, hx, rfl⟩⟩ := u
     obtain ⟨v, ⟨y, hy, rfl⟩⟩ := v
-    simpa [hφ.apply_eq_apply_iff_rel (by simpa : x ∈ _), hφ] using huv
+    simpa only [Graph.disjoint_iff, walkable_disjoint_iff, hφ, connBetween_isRepFun_left_iff,
+      connBetween_isRepFun_right_iff, ne_eq, ← Subtype.coe_ne_coe,
+      hφ.apply_eq_apply_iff_rel (by simpa : x ∈ _), connPartition_rel_iff] using huv
   edge_disj v := by
     simp only [edgeSet_contract]
     refine disjoint_sdiff_inter.mono_right (walkable_isCompOf ?_).le.edgeSet_mono

@@ -109,7 +109,7 @@ lemma finRotate_succAbove_insert (i j : Fin n) : finRotate (n + 1) (i.succ.succA
   obtain rfl | hji := eq_or_ne j i
   · ext
     simp [Fin.succAbove]
-  rw [if_neg hji]
+  rw [ite_eq_right hji]
   by_cases hlt : j < i
   · have hjm : (j : Nat) < m := by
       have hji' : (j : Nat) < i := hlt

@@ -3,13 +3,14 @@
 Update Matroid.lean import list to include every .lean file under the Matroid/ directory.
 
 Behavior:
-- Treat existing lines of the form `import Matroid.xxx` and `-- import Matroid.xxx` as entries already present.
+- Treat existing lines of the form `public import Matroid.xxx` and `-- public import Matroid.xxx` as entries already present.
 - Discover all `.lean` files recursively under the `Matroid/` directory and map each to a module name `Matroid.<path.with.dots>`.
-- For any discovered module missing from `Matroid.lean`, add an active `import Matroid.xxx` line.
-- Re-write `Matroid.lean` as a list of import lines sorted alphabetically by module name (commented state preserved for previously-present entries).
+- For any discovered module missing from `Matroid.lean`, add an active `public import Matroid.xxx` line.
+- Re-write `Matroid.lean` as `module`, a blank line, then import lines sorted alphabetically by module name
+  (commented state preserved for previously-present entries). Requires an existing leading `module`.
 - By default, ignore modules matching any regex in `.matroidignore` located next to this script; pass `--all` to include everything.
 - Always ignore any file whose path contains `WIP` in a directory or file name (e.g. `Matroid/WIP/...` or `.../FooWIP.lean`).
-- With `--uncomment`, test each commented import (`-- import Matroid.xxx`) by running `lake env lean` on the corresponding file. If the file compiles successfully (no output), uncomment the import.
+- With `--uncomment`, test each commented import (`-- public import Matroid.xxx`) by running `lake env lean` on the corresponding file. If the file compiles successfully (no output), uncomment the import.
 
 Usage:
     python scripts/update_matroid_imports.py [--root <repo_root>] [--dry-run] [--comment] [--uncomment] [--workers <num>] [--all]
@@ -18,16 +19,16 @@ Defaults assume this script is located at `<repo_root>/scripts/`.
 """
 from __future__ import annotations
 
-public import argparse
-public import os
-public import re
-public import subprocess
-public import sys
+import argparse
+import os
+import re
+import subprocess
+import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Dict, Iterable, List, Set, Tuple, Optional
 
-public import_RE = re.compile(r"^\s*(--\s*)?import\s+(Matroid\.[\w\.'-]+)\s*$")
+import_RE = re.compile(r"^\s*(--\s*)?public\s+import\s+(Matroid\.[\w\.'-]+)\s*$")
 
 
 def load_ignore_patterns(ignore_file: Path) -> List[re.Pattern[str]]:
@@ -95,7 +96,7 @@ def parse_existing_imports(matroid_lean_path: Path) -> Tuple[List[str], Dict[str
     all_lines = text.splitlines()
     by_module: Dict[str, str] = {}
     for line in all_lines:
-        m = IMPORT_RE.match(line)
+        m = import_RE.match(line)
         if m:
             # m.group(1) is optional comment marker '-- '
             module = m.group(2)
@@ -115,7 +116,7 @@ def merge_and_sort_imports(existing: Dict[str, str], discovered: Iterable[str], 
     for mod in discovered:
         if mod in existing:
             existing_line = existing[mod]
-            if uncomment and existing_line.strip().startswith('-- import'):
+            if uncomment and existing_line.strip().startswith('-- public import'):
                 if (test_only_modules is None) or (mod in test_only_modules):
                     commented_imports_to_test.append(mod)
     
@@ -129,10 +130,10 @@ def merge_and_sort_imports(existing: Dict[str, str], discovered: Iterable[str], 
         if mod in existing:
             existing_line = existing[mod]
             # Check if this is a commented import and we're in uncomment mode
-            if uncomment and existing_line.strip().startswith('-- import'):
+            if uncomment and existing_line.strip().startswith('-- public import'):
                 if test_results.get(mod, False):
                     # Uncomment this import
-                    uncommented_line = existing_line.replace('-- import', 'import', 1)
+                    uncommented_line = existing_line.replace('-- public import', 'public import', 1)
                     out.append((mod, uncommented_line))
                     uncommented_modules.append(mod)
                 else:
@@ -142,9 +143,9 @@ def merge_and_sort_imports(existing: Dict[str, str], discovered: Iterable[str], 
                 out.append((mod, existing_line))
         else:
             if comment:
-                out.append((mod, f"-- import {mod}"))
+                out.append((mod, f"-- public import {mod}"))
             else:
-                out.append((mod, f"import {mod}"))
+                out.append((mod, f"public import {mod}"))
     
     # Also include any existing modules that are NOT in discovered (to preserve them),
     # though typically Matroid.lean should correspond exactly to discovered under Matroid/.
@@ -280,7 +281,8 @@ def test_lean_files_parallel(module_names: List[str], root: Path, workers: int =
 
 
 def build_new_file_content(sorted_imports: List[Tuple[str, str]]) -> str:
-    lines = [line for _, line in sorted_imports]
+    # Required structure: leading `module`, blank line, then sorted public imports.
+    lines = ['module', ''] + [line for _, line in sorted_imports]
     # Ensure trailing newline
     return '\n'.join(lines) + '\n'
 
@@ -291,7 +293,7 @@ def main() -> int:
     parser.add_argument('--matroid-dir', type=str, default=None, help='Path to Matroid/ directory (default: <root>/Matroid).')
     parser.add_argument('--matroid-file', type=str, default=None, help='Path to Matroid.lean (default: <root>/Matroid.lean).')
     parser.add_argument('--dry-run', action='store_true', help='Do not modify files; show summary and diff-like preview.')
-    parser.add_argument('--comment', action='store_true', help='Write newly added modules as commented imports (`-- import ...`).')
+    parser.add_argument('--comment', action='store_true', help='Write newly added modules as commented imports (`-- public import ...`).')
     parser.add_argument('--uncomment', action='store_true', help='Test commented imports and uncomment those that compile successfully.')
     parser.add_argument('--workers', type=int, default=8, help='Number of parallel workers for compilation testing (default: 8).')
     parser.add_argument('--all', action='store_true', help='Do not apply ignore rules from .matroidignore (in scripts/); include all modules discovered.')
@@ -314,6 +316,17 @@ def main() -> int:
     # Validate uncomment mode
     if args.uncomment and not matroid_file.exists():
         raise SystemExit(f"Cannot use --uncomment mode: {matroid_file} does not exist")
+
+    # Require Lean module structure: Matroid.lean must begin with `module`.
+    if matroid_file.exists():
+        first_nonempty = next(
+            (ln.strip() for ln in matroid_file.read_text(encoding='utf-8').splitlines() if ln.strip()),
+            '',
+        )
+        if first_nonempty != 'module':
+            raise SystemExit(
+                f"{matroid_file} must start with `module` (found {first_nonempty!r})."
+            )
 
     discovered = discover_matroid_modules(matroid_dir)
     # Apply ignore file unless --all is given
@@ -339,7 +352,7 @@ def main() -> int:
         # Compute the exact set to test for display purposes
         commented_imports = [
             mod for mod, line in existing_map.items()
-            if line.strip().startswith('-- import') and mod in discovered_filtered
+            if line.strip().startswith('-- public import') and mod in discovered_filtered
         ]
         if test_only_modules is not None:
             to_test = [mod for mod in commented_imports if mod in test_only_modules]
@@ -376,14 +389,14 @@ def main() -> int:
                 print(f"\nSuccessfully uncommented {len(uncommented_modules)} imports:")
                 for mod in uncommented_modules:
                     print(f"  ✓ {mod}")
-            commented_imports = [mod for mod, line in existing_map.items() if line.strip().startswith('-- import')]
+            commented_imports = [mod for mod, line in existing_map.items() if line.strip().startswith('-- public import')]
             failed_count = len(commented_imports) - len(uncommented_modules)
             if failed_count > 0:
                 print(f"Failed to uncomment {failed_count} imports (compilation errors)")
         else:
             print(f"Missing entries to add: {len(missing)}")
             for m in missing[:50]:
-                prefix = "-- import" if args.comment else "import"
+                prefix = "-- public import" if args.comment else "public import"
                 print(f"+ {prefix} {m}")
             if len(missing) > 50:
                 print(f"... and {len(missing) - 50} more")

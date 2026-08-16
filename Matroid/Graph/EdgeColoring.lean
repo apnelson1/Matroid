@@ -47,7 +47,7 @@ noncomputable def edgeColoring.ofSubtypeFun [Nonempty κ] [DecidablePred (· ∈
       c ⟨e, he.edge_mem⟩ = c ⟨f, hf.edge_mem⟩ → e = f) : G.EdgeColoring κ where
   toFun e := if he : e ∈ E(G) then c ⟨e, he⟩ else Classical.arbitrary κ
   apply_eq_of_inc_of_inc_of_eq' x e f he hf := by
-    rw [dif_pos he.edge_mem, dif_pos hf.edge_mem]
+    rw [dite_eq_left he.edge_mem, dite_eq_left hf.edge_mem]
     exact hc x e f he hf
 
 /-- An edge-coloring is an injective function when restricted to an edge-neighborhood of a vertex.

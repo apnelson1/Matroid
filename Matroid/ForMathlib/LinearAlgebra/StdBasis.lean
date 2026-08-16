@@ -87,7 +87,7 @@ theorem LinearMap.extendSubtype_support_subset (x : s → R) :
     support (LinearMap.extendSubtype R s x) ⊆ s := by
   classical
   refine fun i (hi : _ ≠ 0) ↦ by_contra fun his ↦ ?_
-  simp_rw [LinearMap.extendSubtype_eq_ite, dif_neg his] at hi
+  simp_rw [LinearMap.extendSubtype_eq_ite, dite_eq_right his] at hi
   exact hi rfl
 
 def LinearMap.funSubtype (R : Type*) [Semiring R] (s : Set α) : (α → R) →ₗ[R] (s → R) :=

@@ -297,7 +297,6 @@ protected class LocallyFinite (G : Graph α β) where
 lemma finite_incEdges (G : Graph α β) [G.LocallyFinite] (x : α) : E(G, x).Finite :=
   LocallyFinite.finite x
 
-set_option backward.isDefEq.respectTransparency false in
 lemma finite_neighbors (G : Graph α β) [G.LocallyFinite] : N(G, x).Finite := by
   change Finite N(G, x)
   have : Finite E(G, x) := G.finite_incEdges x
@@ -305,9 +304,7 @@ lemma finite_neighbors (G : Graph α β) [G.LocallyFinite] : N(G, x).Finite := b
     (fun y ↦ ⟨y.2.choose, y.2.choose_spec.inc_left⟩) fun ⟨y₁, hy₁⟩ ⟨y₂, hy₂⟩ ↦ ?_
   simp only [Subtype.mk.injEq]
   generalize_proofs h₁ h₂
-  refine fun h ↦ h₁.choose_spec.right_unique ?_
-  rw [h]
-  exact h₂.choose_spec
+  exact fun h ↦ h₁.choose_spec.right_unique <| by grind
 
 lemma finite_setOf_isNonloopAt (G : Graph α β) [G.LocallyFinite] :
   {e | G.IsNonloopAt e x}.Finite := (G.finite_incEdges x).subset fun _ he ↦ he.inc

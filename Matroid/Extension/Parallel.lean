@@ -168,7 +168,7 @@ lemma parallelExtend_parallel (he : M.IsNonloop e) (f : α) :
   rw [he'.parallel_iff_dep hf hef, Dep, pair_subset_iff, and_iff_right he'.mem_ground,
     and_iff_left hf.mem_ground, parallelExtend, restrict_indep_iff, comap_indep_iff,
     image_update, image_id, image_id,
-    if_pos (mem_insert_of_mem _ (show f ∈ ({f} : Set α) from rfl))]
+    ite_eq_left (mem_insert_of_mem _ (show f ∈ ({f} : Set α) from rfl))]
   exact fun hcon ↦ hef <| hcon.1.2 (by simp) (by simp) (by simp [update_of_ne hef e id])
 
 lemma eq_parallelExtend_iff (he : M.IsNonloop e) (hf : f ∉ M.E) :

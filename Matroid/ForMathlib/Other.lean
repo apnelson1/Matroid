@@ -55,8 +55,8 @@ theorem Equiv.exists_bijOn [Nonempty β] {s : Set α} {t : Set β} (e : s ≃ t)
   use fun x ↦ if hx : x ∈ s then e ⟨x,hx⟩ else Classical.arbitrary β
   refine ⟨BijOn.mk (fun x hx ↦ ?_) (fun x hx y hy hxy ↦ ?_) (fun y hy ↦ ⟨e.symm ⟨y, hy⟩, by simp⟩),
     by simp⟩
-  · rw [dif_pos hx]; exact Subtype.prop _
-  simpa [dif_pos hx, dif_pos hy, Subtype.coe_inj] using hxy
+  · rw [dite_eq_left hx]; exact Subtype.prop _
+  simpa [dite_eq_left hx, dite_eq_left hy, Subtype.coe_inj] using hxy
 
 
 

@@ -110,7 +110,7 @@ private lemma iInf_distToVtx_add (x y : PreRealization G) :
       exact congr_arg (ENNReal.ofReal _ + ·) <| by rw [iInf_distToVtx_add]
 
 @[simp]
-private lemma preRealizationEDist_inl_left (u : V(G)) (x : PreRealization G) :
+lemma preRealizationEDist_inl_left (u : V(G)) (x : PreRealization G) :
     preRealizationEDist G (Sum.inl u) x = distToVtx G x u := by
   unfold preRealizationEDist
   rw [iInf_distToVtx_add]
@@ -125,7 +125,7 @@ private lemma preRealizationEDist_inl_left (u : V(G)) (x : PreRealization G) :
   | Sum.inr ⟨e, t⟩ => simp [directDist]
 
 @[simp]
-private lemma preRealizationEDist_inl_right (u : V(G)) (x : PreRealization G) :
+lemma preRealizationEDist_inl_right (u : V(G)) (x : PreRealization G) :
     preRealizationEDist G x (Sum.inl u) = distToVtx G x u := by
   unfold preRealizationEDist
   rw [iInf_distToVtx_add]
