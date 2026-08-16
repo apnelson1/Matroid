@@ -124,8 +124,10 @@ lemma eq_map_of_forall_isLink {H : Graph α' β} {φ : α → α'} (hf : InjOn �
 lemma Compatible.map (h : G.Compatible H) : (f ''ᴳ G).Compatible (f ''ᴳ H) := by
   grind [Compatible, h.isLink_eq]
 
-lemma map_union (G H : Graph α β) (f : α → α') : f ''ᴳ (G ∪ H) = (f ''ᴳ G) ∪ (f ''ᴳ H) := by
-  refine Graph.ext ?_ ?_ <;> grind
+lemma map_union (G H : Graph α β) (f : α → α') : f ''ᴳ (G ∪ H) = (f ''ᴳ G) ∪ (f ''ᴳ H) :=
+  Graph.ext (by grind) <| by grind only [= map_isLink, = union_isLink_iff, = edgeSet_map]
+
+
 
 @[gcongr]
 lemma map_mono (h : G ≤ H) : f ''ᴳ G ≤ f ''ᴳ H where
@@ -265,7 +267,9 @@ lemma map_deleteVerts_of_injective {X : Set α} (hf : Injective f) :
 
 @[simp]
 lemma induce_preimage_map {X : Set α'} (h : X ⊆ f '' V(H)) : f ''ᴳ (H[f ⁻¹' X]) = (f ''ᴳ H)[X] := by
-  ext <;> grind
+  refine Graph.ext (by grind) ?_
+  grind only [→ IsLink.right_mem, = map_isLink, = induce_isLink, = edgeSet_induce_eq_diff,
+    = mem_preimage]
 
 lemma surjOn_of_le_map {G} (h : G ≤ f ''ᴳ H) : SurjOn f V(H) V(G) := by
   intro a' ha'
@@ -459,7 +463,9 @@ lemma edgeMap_adj_eq {φ : β → β'} {hφ} : (G.edgeMap φ hφ).Adj = G.Adj :=
 lemma edgeMap_deleteVerts (G : Graph α β) {φ : β → β'} (hφ) (X : Set α) : (G - X).edgeMap φ
     (fun e₁ he₁ e₂ he₂ he ↦ by simp [funext_iff, hφ _ (edgeSet_mono deleteVerts_le he₁) _
       (edgeSet_mono deleteVerts_le he₂) he]) = (G.edgeMap φ hφ) - X :=
-  Graph.ext (by simp) <| by grind
+  Graph.ext (by simp) <| by grind only [→ IsLink.right_mem, → IsLink.left_mem, = edgeMap_isLink,
+    = deleteVerts_isLink]
+
 
 lemma eq_edgeMap_of_forall_isLink {β' : Type*} {H : Graph α β'} {φ : β → β'} (hφ : InjOn φ E(G))
     (hH : V(G) = V(H)) (hss : E(H) ⊆ φ '' (E(G)))
@@ -474,6 +480,47 @@ lemma eq_edgeMap_of_forall_isLink {β' : Type*} {H : Graph α β'} {φ : β → 
   rintro ⟨e, rfl, he⟩
   exact h e x y he
 
+lemma eq_edgeMap_of_forall_isLink' {β' : Type*} {H : Graph α β'} {φ : β → β'} (hφ : InjOn φ E(G))
+    (hV : V(G) = V(H))
+    (hH : ∀ ⦃e x y⦄, H.IsLink e x y → ∃ e', G.IsLink e' x y ∧ φ e' = e)
+    (hG : ∀ ⦃e x y⦄, G.IsLink e x y → H.IsLink (φ e) x y) : H = G.edgeMap φ
+      (fun e he f hf hef ↦ by simp [hφ he hf hef]) := by
+  refine Graph.ext (by simp [hV]) fun e x y ↦ ⟨fun h' ↦ ?_, ?_⟩
+  · obtain ⟨e, he, rfl⟩ := hH h'
+    exact he.edgeMap
+  rintro ⟨e, rfl, he⟩
+  exact hG he
+
+/-- If `φ` and `ψ` are functions out of the vertex and edge sets respectively,
+a sufficient condition for a graph `H` to be a map of `G` by `φ` and `ψ`. -/
+lemma eq_map_edgeMap_of_forall {α' β' : Type*} {φ : α → α'} {ψ : β → β'} {H : Graph α' β'}
+    (hψ : InjOn ψ E(G)) (hV : V(H) = φ '' V(G))
+    (hG : ∀ ⦃e x y⦄, G.IsLink e x y → H.IsLink (ψ e) (φ x) (φ y))
+    (hH : ∀ ⦃e x y⦄, H.IsLink e x y → ∃ e' x' y', G.IsLink e' x' y' ∧ ψ e' = e) :
+    H = (φ ''ᴳ G).edgeMap ψ (fun e he f hf hef ↦ by simp [hψ he hf hef]) := by
+  refine eq_edgeMap_of_forall_isLink' (by simpa) hV.symm (fun e' x' y' he' ↦ ?_) ?_
+  · obtain ⟨e', x'', y'', he'', rfl⟩ := hH he'
+    obtain ⟨rfl , rfl⟩ | ⟨rfl, rfl⟩ := (hG he'' ).eq_and_eq_or_eq_and_eq he'
+    · exact ⟨_, he''.map φ, rfl⟩
+    exact ⟨_, he''.symm.map φ, rfl⟩
+  rintro e _ _ ⟨x, y, hxy, rfl, rfl⟩
+  exact hG hxy
+
+lemma eq_map_edgeMap_of_forall_inc {α' β' : Type*} {φ : α → α'} {ψ : β → β'} {H : Graph α' β'}
+    (hψ : InjOn ψ E(G)) (hV : V(H) = φ '' V(G)) (hG : ∀ ⦃e x⦄, G.Inc e x → H.Inc (ψ e) (φ x))
+    (hH : ∀ ⦃e x⦄, H.Inc e x → ∃ e' x', G.Inc e' x' ∧ φ x' = x ∧ ψ e' = e) :
+    H = (φ ''ᴳ G).edgeMap ψ (fun e he f hf hef ↦ by simp [hψ he hf hef]) := by
+  refine eq_map_edgeMap_of_forall hψ hV (fun e x y he ↦ ?_) fun e x y he ↦ ?_
+  · obtain ⟨x', hx'⟩ := hG he.inc_left
+    obtain hxy | rfl := (hG he.inc_right).eq_or_eq_of_isLink hx'
+    · obtain ⟨e', x'', he', rfl, hee'⟩ := hH hx'.inc_right
+      obtain rfl : e' = e := hψ he'.edge_mem he.edge_mem hee'
+      obtain rfl | rfl := he'.eq_or_eq_of_isLink he
+      · rwa [hxy]
+      assumption
+    exact hx'
+  obtain ⟨e', x', ⟨z, hz⟩, rfl, rfl⟩ := hH he.inc_left
+  exact ⟨_, _, _, hz, rfl⟩
 
 -- @[simps! (attr := grind =) vertexSet edgeSet]
 -- def map (G : Graph α β) (f : α → α') (σ : β → β')

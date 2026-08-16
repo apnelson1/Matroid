@@ -465,3 +465,68 @@ def CompleteBipartiteGraph.bipartition (m n : ℕ) :
 @[simp]
 lemma completeBipartiteGraph_bipartite (m n : ℕ) : (CompleteBipartiteGraph m n).Bipartite :=
   ⟨CompleteBipartiteGraph.bipartition m n⟩
+
+
+/-- A complete-bipartite graph with vertex set a sum type and edge set a product type. -/
+@[simps]
+def completeBipartiteGraphOn (α β : Type*) : Graph (α ⊕ β) (α × β) where
+  vertexSet := univ
+  edgeSet := univ
+  IsLink e x y := (x = .inl e.1 ∧ y = .inr e.2) ∨ (y = .inl e.1 ∧ x = .inr e.2)
+  isLink_symm := by grind [Std.Symm]
+  eq_or_eq_of_isLink_of_isLink := by grind
+  edge_mem_iff_exists_isLink := by simp
+  left_mem_of_isLink := by simp
+
+@[simp]
+lemma completeBipartiteGraphOn_adj_inl_inr {α β : Type*} {x : α} {y : β} :
+    (completeBipartiteGraphOn α β).Adj (.inl x) (.inr y) := by
+  simp [Graph.Adj]
+
+@[simp]
+lemma completeBipartiteGraphOn_adj_inr_inl {α β : Type*} {x : α} {y : β} :
+    (completeBipartiteGraphOn α β).Adj (.inr y) (.inl x) := by
+  simp [Graph.Adj]
+
+@[simp]
+lemma completeBipartiteGraphOn_not_adj_inl_inl {α β : Type*} {x y : α} :
+    ¬ (completeBipartiteGraphOn α β).Adj (.inl x) (.inl y) := by
+  simp [Graph.Adj]
+
+@[simp]
+lemma completeBipartiteGraphOn_not_adj_inr_inr {α β : Type*} {x y : β} :
+    ¬ (completeBipartiteGraphOn α β).Adj (.inr x) (.inr y) := by
+  simp [Graph.Adj]
+
+@[simp]
+lemma completeBipartiteGraphOn_inc_iff {x : α ⊕ β} {e : α × β} :
+    (completeBipartiteGraphOn α β).Inc e x ↔ x = .inl e.1 ∨ x = .inr e.2 := by
+  simp [Graph.Inc, or_comm]
+
+lemma completeBipartiteGraphOn_adj_iff {x y : α ⊕ β} :
+    (completeBipartiteGraphOn α β).Adj x y ↔ x.isLeft ≠ y.isLeft := by
+  cases x with cases y with simp
+
+instance completeBipartiteGraphOn_simple (α β : Type*) : (completeBipartiteGraphOn α β).Simple := by
+  rw [simple_iff]
+  simp only [loopless_iff, IsLoopAt, completeBipartiteGraphOn_isLink]
+  simp
+
+lemma completeBipartiteGraphOn_map_swap (α β : Type*) :
+    ((completeBipartiteGraphOn α β).map Sum.swap).edgeMap
+      Prod.swap (by simp) = completeBipartiteGraphOn β α :=
+  Eq.symm <| eq_map_edgeMap_of_forall_inc Prod.swap_injective.injOn (by simp [Set.ext_iff])
+    (by simp) (by simp)
+
+lemma completeBipartiteGraphOn_eDegree_inl (x : α) :
+    (completeBipartiteGraphOn α β).eDegree (.inl x) = ENat.card β := by
+  rw [eDegree_eq_encard_adj, ← encard_preimage_of_injective_subset_range Sum.inr_injective,
+    ← encard_univ]
+  · simp [Neighbor]
+  simp [Neighbor, subset_def]
+
+lemma completeBipartiteGraphOn_eDegree_inr (x : β) :
+    (completeBipartiteGraphOn α β).eDegree (.inr x) = ENat.card α := by
+  rw [← completeBipartiteGraphOn_map_swap, eDegree_edgeMap _ _ Prod.swap_injective.injOn,
+    show Sum.inr x = Sum.swap (.inl x) from rfl, eDegree_map_of_injective _ _ (by simp [Injective]),
+    completeBipartiteGraphOn_eDegree_inl]

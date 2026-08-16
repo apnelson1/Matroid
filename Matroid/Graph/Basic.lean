@@ -595,3 +595,17 @@ lemma IsLeaf.not_isLoopAt (h : G.IsLeaf x) (e) : ¬ G.IsLoopAt e x :=
 one of its endpoints. -/
 @[grind]
 def IsLeafEdge (G : Graph α β) (e : β) := ∃ x, G.IsPendant e x
+
+/-- Define a graph using another graph. Allows the incidence predicate and vertex/edge sets to
+be definitionally more convenient. -/
+@[simps]
+def ofExistsGraph  (V : Set α) (E : Set β) (isLink : β → α → α → Prop)
+    (h : ∃ G : Graph α β, V(G) = V ∧ E(G) = E ∧ ∀ e x y, isLink e x y ↔ G.IsLink e x y) :
+    Graph α β :=
+  have h' : ∃ G : Graph α β, V(G) = V ∧ E(G) = E ∧ G.IsLink = isLink :=
+    Exists.imp (fun G h ↦ ⟨h.1, h.2.1, by ext e x y; simp [h.2]⟩) h
+  Graph.mk V isLink E
+    (by obtain ⟨G, rfl, rfl, rfl⟩ := h'; exact G.isLink_symm)
+    (by obtain ⟨G, rfl, rfl, rfl⟩ := h'; exact G.eq_or_eq_of_isLink_of_isLink)
+    (by obtain ⟨G, rfl, rfl, rfl⟩ := h'; exact G.edge_mem_iff_exists_isLink)
+    (by obtain ⟨G, rfl, rfl, rfl⟩ := h'; exact G.left_mem_of_isLink)

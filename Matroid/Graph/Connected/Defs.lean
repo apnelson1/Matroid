@@ -44,6 +44,9 @@ lemma IsComplete.preconnected (h : G.IsComplete) : G.Preconnected := by
   · simpa
   exact h s hs t ht hne |>.connBetween
 
+lemma preconnected_bot : Preconnected (⊥ : Graph α β) :=
+  bot_isComplete.preconnected
+
 lemma preconnected_of_exists_connBetween (h : ∃ x, ∀ y ∈ V(G), G.ConnBetween x y) :
     G.Preconnected := by
   obtain ⟨x, hx⟩ := h
@@ -857,6 +860,24 @@ lemma preconnGE_iff_connGE : G.PreconnGE n ↔ G.ConnGE n ∨ (V(G).encard ≤ n
   rw [preconnGE_iff_connGE_of_not_isComplete, or_iff_left (by simp [hgt.not_ge])]
   simp [hgt.not_ge]
 
+lemma connGE_iff_forall_connected (h' : V(G).encard = n → ¬ G.IsComplete) :
+    G.ConnGE n ↔ ∀ X ⊆ V(G), X.encard < n → (G - X).Connected := by
+  obtain hlt | hge := lt_or_ge V(G).encard n
+  · refine iff_of_false (fun hGE ↦ ?_) fun h ↦ by simpa using h V(G) subset_rfl hlt
+    obtain hss | hcard := hGE.2
+    · rw [connGE_iff_of_vertexSet_subsingleton hss] at hGE
+      exact hlt.not_ge hGE
+    exact hlt.le.not_gt hcard
+  rw [le_antisymm_iff, and_iff_left hge] at h'
+  refine ⟨fun h X hX hXn ↦ connected_iff.2 ⟨?_, h.pre.preconnected_deleteVerts hXn⟩, fun h ↦ ?_⟩
+  · obtain rfl | hssu := hX.eq_or_ssubset
+    · have hcon := preconnGE_add_two_le_encard_of_not_isComplete (h' hXn.le) h.pre
+      enat_to_nat!; lia
+    simp only [vertexSet_deleteVerts]
+    exact sdiff_nonempty.2 hssu.not_subset
+  rw [← preconnGE_iff_connGE_of_not_isComplete h', preconnGE_iff_forall_preconnected]
+  exact fun X hX hXn ↦ (h X hX hXn).pre
+
 lemma connGE_map_iff_of_injOn {α' : Type*} {φ : α → α'} (hφ : InjOn φ V(G)) :
     (φ ''ᴳ G).ConnGE n ↔ G.ConnGE n := by
   obtain hss | hnt := V(G).subsingleton_or_nontrivial
@@ -889,6 +910,14 @@ lemma IsComplete.connGE_iff (h : G.IsComplete) (n : ℕ) :
     simp_all [connGE_iff_of_vertexSet_singleton hsin]
   exact ⟨fun C hC ↦ le_trans (by simp) (lt_of_lt_of_le hn <| encard_le_encard
   <| (h.isSep_iff_subset.mp hC).superset).le, Or.inr hn⟩
+
+lemma IsComplete.connGE_iff' (h : G.IsComplete) (n : ℕ) :
+    G.ConnGE n ↔ (V(G).Subsingleton ∧ n = V(G).encard ∨ n < V(G).encard) := by
+  rw [h.connGE_iff, le_iff_eq_or_lt]
+  tauto
+
+lemma IsComplete.connGE (h : G.IsComplete) (hn : n < V(G).encard) : G.ConnGE n := by
+  simp [h.connGE_iff, hn]
 
 lemma ConnGE.isSpanningSubgraph (h : H.ConnGE n) (hsle : H ≤s G) : G.ConnGE n where
   le_cut C hC := by simpa using h.le_cut <| hC.of_isSpanningSubgraph hsle
@@ -951,14 +980,47 @@ lemma preconnGE_delete_vertex_of_add_one (hG : G.PreconnGE (n + 1)) (x : α) :
     (G - {x}).PreconnGE n :=
   PreconnGE.deleteVerts (by simp) (by simpa)
 
--- lemma ConnGE.deleteEdges_singleton (h : G.ConnGE (n+1)) (e : β) :
---     (G ＼ {e}).ConnGE n where
---   le_cut C hC := by
---     by_contra! hcd
---     have := h.le_cut hC.of_deleteEdges
---   le_card := by
---     rw [← encard_singleton]
+/-- If `v` is adjacent to every other vertex, then deleting it drops the preconnectivity by one. -/
+lemma PreconnGE.preconnGE_add_one_of_delete_of_forall_adj (hG : (G - {v}).PreconnGE n)
+    (hv : ∀ x ∈ V(G), x ≠ v → G.Adj x v) : G.PreconnGE (n + 1) := by
+  obtain rfl | hne := eq_or_ne G ⊥
+  · simp
+  refine preconnGE_iff_forall_preconnected.2 fun X hX hXn ↦ ?_
+  by_cases hvX : v ∈ X
+  · have hwin := hG.preconnected_deleteVerts (X := X \ {v}) ?_
+    · rwa [deleteVerts_deleteVerts, singleton_union, insert_sdiff_self_of_mem hvX] at hwin
+    grw [← ENat.add_one_lt_add_one_iff, encard_sdiff_singleton_add_one hvX, hXn, Nat.cast_add,
+      Nat.cast_one]
+  refine (connected_of_vertex (u := v) ?_ (fun y hy ↦ ?_)).pre
+  · obtain ⟨u, hu⟩ := ne_bot_iff.1 hne
+    obtain rfl | huv := eq_or_ne u v
+    · simp [hu, hvX]
+    simp [hvX, (hv u hu huv).right_mem]
+  obtain rfl | hne := eq_or_ne y v
+  · simpa using hy
+  simp only [vertexSet_deleteVerts, mem_sdiff] at hy
+  refine Adj.connBetween ?_
+  simp [deleteVerts_adj_iff, hvX, hy.2, hv y hy.1 hne]
 
+/-- If `v` is adjacent to every other vertex, then deleting it drops the connectivity by one. -/
+lemma ConnGE.connGE_add_one_of_delete_of_forall_adj (hG : (G - {v}).ConnGE n) (hV : 3 ≤ V(G).encard)
+    (hv : ∀ x ∈ V(G), x ≠ v → G.Adj x v) : G.ConnGE (n + 1) := by
+  have hvV : v ∈ V(G) := by
+    obtain ⟨x, hx⟩ :=
+      (one_lt_encard_iff_nontrivial.1 (show 1 < V(G).encard by enat_to_nat!; lia)).exists_ne v
+    exact (hv x hx.1 hx.2).right_mem
+  by_cases hcomp : G.IsComplete
+  · have h' : (G - {v}).IsComplete := hcomp.isInducedSubgraph <| deleteVerts_isInducedSubgraph ..
+    obtain h | h := (h'.connGE_iff' _).1 hG
+    · grw [← encard_sdiff_add_encard_inter (t := {v}), inter_subset_right,
+        ← vertexSet_deleteVerts, encard_le_one_iff_subsingleton.2 h.1, encard_singleton] at hV
+      enat_to_nat; lia
+    refine (hcomp.connGE_iff' ..).2 <| .inr ?_
+    grw [← encard_sdiff_singleton_add_one hvV, ← vertexSet_deleteVerts, Nat.cast_add, Nat.cast_one,
+      ENat.add_one_lt_add_one_iff]
+    assumption
+  rw [← preconnGE_iff_connGE_of_not_isComplete (fun _ ↦ hcomp)]
+  exact hG.pre.preconnGE_add_one_of_delete_of_forall_adj hv
 
 @[simp]
 lemma EdgeConnGE_zero : G.EdgeConnGE 0 := by

@@ -149,6 +149,52 @@ lemma incFun_vertex_eq_zero_iff : G.incFun e x = 0 ↔ ¬ G.Inc e x := by
   have hrw (y) : ¬ G.IsLink e x y := mt IsLink.inc_left h
   simp [hrw]
 
+lemma map_incFun (G : Graph α β) {α' : Type*} {φ : α → α'} (hf : InjOn φ V(G)) (e : β)
+    (hx : x ∈ V(G)) : (G.map φ).incFun e (φ x) = G.incFun e x := by
+  obtain h0 | h1 | h2 :
+    G.incFun e x = 0 ∨ G.incFun e x = 1 ∨ G.incFun e x = 2 := by grind [G.incFun_le_two e x]
+  · rw [h0]
+    simp only [incFun_vertex_eq_zero_iff, map_inc, not_exists, not_and] at *
+    refine fun x' hx' heq ↦ h0 ?_
+    rwa [hf hx hx'.vertex_mem heq]
+  · rw [h1]
+    simp_rw [incFun_eq_one_iff, IsNonloopAt, map_isLink] at *
+    obtain ⟨y, hyx, he⟩ := h1
+    refine ⟨φ y, ?_, x, y, he, rfl, rfl⟩
+    rwa [Ne, hf.eq_iff he.right_mem he.left_mem]
+  rw [h2]
+  rw [incFun_eq_two_iff, map_isLoopAt] at *
+  exact ⟨x, x, h2, rfl, rfl⟩
+
+lemma edgeMap_incFun (G : Graph α β) {β' : Type*} {φ : β → β'} {hφ} {e : β} (he : e ∈ E(G)) :
+    (G.edgeMap φ hφ).incFun (φ e) = G.incFun e := by
+  ext x
+  obtain h0 | h1 | h2 :
+    G.incFun e x = 0 ∨ G.incFun e x = 1 ∨ G.incFun e x = 2 := by grind [G.incFun_le_two e x]
+  · rw [h0]
+    simp only [incFun_vertex_eq_zero_iff, Inc, not_exists, edgeMap_isLink, not_and] at *
+    refine fun y f hef hf ↦ h0 y ?_
+    rwa [hφ _ he _ hf.edge_mem hef.symm]
+  · rw [h1]
+    simp only [incFun_eq_one_iff, IsNonloopAt, ne_eq, edgeMap_isLink] at h1 ⊢
+    contrapose! h1
+    exact fun y hyx he' ↦ h1 y hyx e rfl he'
+  rw [h2]
+  simp only [incFun_eq_two_iff, IsLoopAt, edgeMap_isLink] at h2 ⊢
+  exact ⟨e, rfl, h2⟩
+
+lemma edgeMap_incFun_of_injective (G : Graph α β) {β' : Type*} {φ : β → β'} (hφ : φ.Injective) {e} :
+    (G.edgeMap φ (by simp +contextual [hφ.eq_iff])).incFun (φ e) = G.incFun e := by
+  by_cases he : e ∈ E(G)
+  · rw [G.edgeMap_incFun he]
+  rw [incFun_eq_zero_iff.2 he, incFun_eq_zero_iff.2 (by grind)]
+
+lemma map_incFun_of_injective (G : Graph α β) {α' : Type*} {φ : α → α'} (hφ : φ.Injective) (e : β) :
+    (G.map φ).incFun e (φ x) = G.incFun e x := by
+  by_cases hx : x ∈ V(G)
+  · rwa [map_incFun _ hφ.injOn]
+  rw [incFun_vertex_eq_zero_iff.2 (by grind), incFun_vertex_eq_zero_iff.2 (by grind)]
+
 /-! ### Vertex Degrees -/
 
 /-- The degree of a vertex as a term in `ℕ∞`. -/
@@ -176,6 +222,28 @@ lemma natCast_degree_eq (G : Graph α β) [G.LocallyFinite] (v : α) :
   rw [degree, ENat.natCast_toNat_eq_self, ← lt_top_iff_ne_top]
   refine (G.eDegree_le_two_mul_encard_setOf_inc v).trans_lt ?_
   simp [lt_top_iff_ne_top, Ne, G.finite_incEdges]
+
+lemma eDegree_map (G : Graph α β) (v : α) {α' : Type*} {φ : α → α'} (h : InjOn φ V(G))
+    (hv : v ∈ V(G)) : (G.map φ).eDegree (φ v) = G.eDegree v := by
+  simp_rw [eDegree, G.map_incFun h _ hv]
+
+lemma eDegree_map_of_injective (G : Graph α β) (v : α) {α' : Type*} {φ : α → α'} (h : φ.Injective) :
+    (G.map φ).eDegree (φ v) = G.eDegree v := by
+  simp_rw [eDegree, G.map_incFun_of_injective h]
+
+lemma eDegree_edgeMap (G : Graph α β) (v : α) {β' : Type*} {φ : β → β'} (hφ : InjOn φ E(G)) :
+    (G.edgeMap φ (by simp +contextual [hφ.eq_iff])).eDegree v = G.eDegree v := by
+  simp_rw [eDegree]
+  generalize_proofs h
+  rw [← tsum_subtype_eq_of_support_subset (s := φ '' E(G)),
+    ← tsum_subtype_eq_of_support_subset (s := E(G)),
+    tsum_image (f := fun x ↦ (((G.edgeMap φ h).incFun x) v : ℕ∞)) hφ]
+  · convert rfl with e
+    rw [G.edgeMap_incFun e.2]
+  · suffices ∀ x, G.Inc x v → x ∈ E(G) by simpa
+    exact fun _ ↦ Inc.edge_mem
+  suffices ∀ f e, φ e = f → G.Inc e v → ∃ e' ∈ E(G), φ e' = f by simpa
+  grind
 
 @[simp]
 lemma eDegree_lt_top [G.LocallyFinite] : G.eDegree x < ⊤ := by
@@ -215,7 +283,6 @@ lemma degree_ne_zero_iff_adj [G.LocallyFinite] : G.degree v ≠ 0 ↔ ∃ x, G.A
 
 lemma eDegree_eq_zero_of_notMem (hv : v ∉ V(G)) : G.eDegree v = 0 := by
   simp [eDegree_eq_tsum_mem, show ∀ e, ¬ G.Inc e v from fun e h ↦ hv h.vertex_mem]
-
 
 lemma degree_eq_zero_of_notMem (hv : v ∉ V(G)) : G.degree v = 0 := by
   simp [degree, eDegree_eq_zero_of_notMem hv]
