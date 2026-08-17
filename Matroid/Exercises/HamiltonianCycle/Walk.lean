@@ -11,6 +11,8 @@ public import Matroid.Exercises.HamiltonianCycle.WList
 -- This file contains all relevant lemmas on walks/paths/cycles.
 -- All three are included together for convenience.
 
+public section
+
 open WList Set
 
 namespace Graph
@@ -149,6 +151,7 @@ lemma pathSet_nonempty (G : Graph α β) (hnonempty : V(G).Nonempty) : G.PathSet
 
 --------- IsLongestPath
 
+@[expose]
 def IsLongestPath (G : Graph α β) (p : WList (α) β) :=
   MaximalFor G.IsPath (fun w => w.length) p
 

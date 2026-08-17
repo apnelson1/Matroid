@@ -264,7 +264,8 @@ theorem exists_radius_edgeInterior [G.Finite] (D : PLDrawing G V) {e : E(G)} {p 
         closedBall p ρ ∩ (segment ℝ a p ∪ segment ℝ p b) := by
       ext x
       refine ⟨fun ⟨hxball, hxsup⟩ ↦ ⟨hxball, ?_⟩, fun ⟨hxball, hxseg⟩ ↦ ⟨hxball, ?_⟩⟩
-      · refine (D.support_eq ▸ hxsup).elim (fun hxV ↦ (hnotK hxball (Or.inl (Or.inl hxV))).elim) fun hxE ↦ ?_
+      · refine (D.support_eq ▸ hxsup).elim (fun hxV ↦ (hnotK hxball (Or.inl (Or.inl hxV))).elim)
+          fun hxE ↦ ?_
         obtain ⟨f, hf⟩ := mem_iUnion.mp hxE
         rw [D.range_edgePath f] at hf
         by_cases hef : f = e
@@ -757,31 +758,77 @@ lemma segment_endTip_inter (D : PLDrawing G V) {v : V(G)} {i j : EndsAt G v} (hi
   · have hi := tip_or_open i hxi
     have hj := tip_or_open j hxj
     have tip_meets_open (k ℓ : EndsAt G v) (hkℓ : endEdge k ≠ endEdge ℓ)
-        (htip : x = D.endTip k)
-        (hopen : x ∈ (D.edgePath (endEdge ℓ)).Interior) : False := by
+        (htip : x = D.endTip k) (hopen : x ∈ (D.edgePath (endEdge ℓ)).Interior) : False := by
       have hxℓ : D.endTip k ∈ (D.edgePath (endEdge ℓ)).Interior := by
         rwa [← htip]
       rcases tip_endpoint_or_interior k with hk | hk | hk
-      · exact (Drawing.pathInterior_edgePath_disjoint_vertex D.toDrawing (endEdge ℓ)).notMem_of_mem_left
-          hxℓ ⟨edgeSource (endEdge k), hk.symm⟩
-      · exact (Drawing.pathInterior_edgePath_disjoint_vertex D.toDrawing (endEdge ℓ)).notMem_of_mem_left
-          hxℓ ⟨edgeTarget (endEdge k), hk.symm⟩
-      · exact (Drawing.pathInterior_edgePath_disjoint D.toDrawing hkℓ).notMem_of_mem_left hk hxℓ
-    rcases hi with hi | hi
-    · rcases hj with hj | hj
-      · have eqt : D.endTip i = D.endTip j := hi.symm.trans hj
-        have hmi : midpoint ℝ p (D.endTip i) ∈
-            (D.edgePath (endEdge i)).Interior :=
-          openSegment_endTip_subset_pathInterior D i (midpoint_mem_openSegment _ _)
-        have hmj : midpoint ℝ p (D.endTip i) ∈
-            (D.edgePath (endEdge j)).Interior := by
-          rw [eqt]
-          exact openSegment_endTip_subset_pathInterior D j (midpoint_mem_openSegment _ _)
-        exact (Drawing.pathInterior_edgePath_disjoint D.toDrawing hedf).notMem_of_mem_left hmi hmj
-      · exact tip_meets_open i j hedf hi hj
-    · rcases hj with hj | hj
-      · exact tip_meets_open j i (Ne.symm hedf) hj hi
-      · exact (Drawing.pathInterior_edgePath_disjoint D.toDrawing hedf).notMem_of_mem_left hi hj
+      · exact D.pathInterior_edgePath_disjoint_vertex (endEdge ℓ) |>.notMem_of_mem_left hxℓ
+          ⟨edgeSource (endEdge k), hk.symm⟩
+      · exact D.pathInterior_edgePath_disjoint_vertex (endEdge ℓ) |>.notMem_of_mem_left hxℓ
+          ⟨edgeTarget (endEdge k), hk.symm⟩
+      · exact (D.pathInterior_edgePath_disjoint hkℓ).notMem_of_mem_left hk hxℓ
+    rcases hi with hi | hi <;> rcases hj with hj | hj
+    · have eqt : D.endTip i = D.endTip j := hi.symm.trans hj
+      have hmi : midpoint ℝ p (D.endTip i) ∈ (D.edgePath (endEdge i)).Interior :=
+        openSegment_endTip_subset_pathInterior D i (midpoint_mem_openSegment _ _)
+      have hmj : midpoint ℝ p (D.endTip i) ∈ (D.edgePath (endEdge j)).Interior := by
+        rw [eqt]
+        exact D.openSegment_endTip_subset_pathInterior j (midpoint_mem_openSegment _ _)
+      exact (D.pathInterior_edgePath_disjoint hedf).notMem_of_mem_left hmi hmj
+    · exact tip_meets_open i j hedf hi hj
+    · exact tip_meets_open j i (Ne.symm hedf) hj hi
+    exact (D.pathInterior_edgePath_disjoint hedf).notMem_of_mem_left hi hj
+
+/-- A cell-edge through `vertex v` is an end segment at `v`. Non-loop cells use
+`eq_first_edge_of_mem_segment` / `eq_last_edge_of_mem_segment`; a loop cell uses
+`IsSimpleLoop.eq_first_or_last_edge_of_mem_segment`. -/
+private lemma mem_iUnion_endSegment_of_mem_cell_edges (D : PLDrawing G V) {v : V(G)} {e : E(G)}
+    {s : V × V} (hs : s ∈ (D.cell e).edges) {x : V} (hx : x ∈ segment ℝ s.1 s.2)
+    (hps : D.toDrawing.vertex v ∈ segment ℝ s.1 s.2) :
+    x ∈ ⋃ i : EndsAt G v, segment ℝ (D.toDrawing.vertex v) (D.endTip i) := by
+  set p := D.toDrawing.vertex v
+  have hcell : p ∈ (D.cell e).toSet := (D.cell e).segment_subset_toSet hs hps
+  have hinc : edgeSource e = v ∨ edgeTarget e = v := by
+    by_contra h
+    push Not at h
+    have hpI : p ∈ (D.edgePath e).Interior := by
+      rw [pathInterior_edgePath_eq_toSet_sdiff]
+      refine ⟨hcell, ?_⟩
+      rintro (h1 | h2)
+      · exact h.1 (D.toDrawing.vertex_injective h1.symm)
+      · exact h.2 (D.toDrawing.vertex_injective h2.symm)
+    exact (D.toDrawing.pathInterior_edgePath_disjoint_vertex e).notMem_of_mem_left hpI ⟨v, rfl⟩
+  by_cases hloop : edgeSource e = edgeTarget e
+  · have hsrc : edgeSource e = v := hinc.elim id (hloop.trans)
+    have htgt : edgeTarget e = v := hinc.elim (hloop.symm.trans) id
+    have hx_eq : D.toDrawing.vertex (edgeSource e) = p := congrArg _ hsrc
+    have hy_eq : D.toDrawing.vertex (edgeTarget e) = p := congrArg _ htgt
+    have hPpos : 0 < ((D.cell e).cast hx_eq hy_eq).length := by
+      simpa [PolygonalPath.cast_length] using D.cell_length_pos e
+    have hP : ((D.cell e).cast hx_eq hy_eq).IsSimpleLoop :=
+      (PolygonalPath.isSimpleArcOrLoop_iff_isSimpleLoop hPpos).mp
+        ((PolygonalPath.isSimpleArcOrLoop_cast hx_eq hy_eq).mpr (D.cell_isSimpleArcOrLoop e))
+    have hs' : s ∈ ((D.cell e).cast hx_eq hy_eq).edges := by
+      rwa [PolygonalPath.edges_cast]
+    rcases PolygonalPath.IsSimpleLoop.eq_first_or_last_edge_of_mem_segment hP hs' hps with h | h
+    · refine mem_iUnion.mpr ⟨.inl ⟨e, hsrc⟩, ?_⟩
+      simpa [h, endTip_inl] using hx
+    · refine mem_iUnion.mpr ⟨.inr ⟨e, htgt⟩, ?_⟩
+      simpa [h, endTip_inr, segment_symm] using hx
+  · have hS := cell_isSimple_of_source_ne_target D e hloop
+    rcases hinc with hsrc | htgt
+    · have hb : (D.toDrawing.vertex (edgeSource e), (D.cell e).firstTip) ∈ (D.cell e).edges :=
+        PolygonalPath.mem_edges_firstTip (D.cell_length_pos e)
+      have hps' : D.toDrawing.vertex (edgeSource e) ∈ segment ℝ s.1 s.2 := by rwa [hsrc]
+      have hs_eq := PolygonalPath.eq_first_edge_of_mem_segment hS hb hs hps'
+      refine mem_iUnion.mpr ⟨.inl ⟨e, hsrc⟩, ?_⟩
+      simpa [hs_eq, endTip_inl, hsrc] using hx
+    · have ha : ((D.cell e).lastTip, D.toDrawing.vertex (edgeTarget e)) ∈ (D.cell e).edges :=
+        PolygonalPath.mem_edges_lastTip (D.cell_length_pos e)
+      have hps' : D.toDrawing.vertex (edgeTarget e) ∈ segment ℝ s.1 s.2 := by rwa [htgt]
+      have hs_eq := PolygonalPath.eq_last_edge_of_mem_segment hS ha hs hps'
+      refine mem_iUnion.mpr ⟨.inr ⟨e, htgt⟩, ?_⟩
+      simpa [hs_eq, endTip_inr, htgt, segment_symm] using hx
 
 /-- **The cover, and the only place a small radius is needed.** Near `v` the drawing is exactly the
 union of the end segments.
@@ -822,7 +869,44 @@ over the finitely many ends together with the distance to the non-incident cells
 theorem exists_radius_support_subset_iUnion_segment_endTip [G.Finite] (D : PLDrawing G V)
     (v : V(G)) : ∃ ρ > 0, D.toDrawing.support ∩ closedBall (D.toDrawing.vertex v) ρ ⊆
     {D.toDrawing.vertex v} ∪ ⋃ i : EndsAt G v, segment ℝ (D.toDrawing.vertex v) (D.endTip i) := by
-  sorry
+  set p := D.toDrawing.vertex v
+  let S : Set (V × V) := ⋃ e : E(G), {s | s ∈ (D.cell e).edges}
+  have hSfin : S.Finite := finite_iUnion fun e ↦ (D.cell e).edges.finite_toSet
+  let Srest : Set (V × V) := {s ∈ S | p ∉ segment ℝ s.1 s.2}
+  have hSrestfin : Srest.Finite := hSfin.subset fun _ h ↦ h.1
+  let K : Set V := (range D.toDrawing.vertex \ {p}) ∪ ⋃ s ∈ Srest, segment ℝ s.1 s.2
+  have hKcompact : IsCompact K :=
+    ((Set.finite_range D.toDrawing.vertex).subset sdiff_subset).isCompact.union
+      (hSrestfin.isCompact_biUnion fun _ _ ↦ isCompact_segment _ _)
+  have hpK : p ∉ K := by
+    refine not_or.mpr ⟨fun h ↦ h.2 rfl, fun hp' ↦ ?_⟩
+    obtain ⟨s, hs, hseg⟩ := mem_iUnion₂.mp hp'
+    exact hs.2 hseg
+  obtain ⟨δ, hδpos, hδle⟩ := exists_pos_le_dist_of_notMem hKcompact.isClosed hpK
+  refine ⟨δ / 2, half_pos hδpos, ?_⟩
+  intro x ⟨hxsupp, hxball⟩
+  have hnotK (hxK : x ∈ K) : False := by
+    have hle := hδle x hxK
+    rw [PseudoMetricSpace.dist_comm] at hle
+    linarith [mem_closedBall.mp hxball, half_lt_self hδpos]
+  rw [Drawing.support_eq] at hxsupp
+  rcases hxsupp with hxV | hxE
+  · obtain ⟨w, hw⟩ := hxV
+    by_cases hxp : x = p
+    · exact Or.inl hxp
+    · exact (hnotK (Or.inl ⟨⟨w, hw⟩, hxp⟩)).elim
+  · obtain ⟨e, he⟩ := mem_iUnion.mp hxE
+    have hxcell : x ∈ (D.cell e).toSet := by rwa [← D.range_edgePath e]
+    rw [PolygonalPath.toSet_eq_insert_biUnion] at hxcell
+    rcases mem_insert_iff.mp hxcell with hlast | hxseg
+    · by_cases hxp : x = p
+      · exact Or.inl hxp
+      · exact (hnotK (Or.inl ⟨⟨edgeTarget e, hlast.symm⟩, hxp⟩)).elim
+    · obtain ⟨s, hs, hxseg⟩ := mem_iUnion₂.mp hxseg
+      by_cases hpseg : p ∈ segment ℝ s.1 s.2
+      · exact Or.inr (mem_iUnion_endSegment_of_mem_cell_edges D hs hxseg hpseg)
+      · have hsS : s ∈ S := mem_iUnion.mpr ⟨e, hs⟩
+        exact (hnotK (Or.inr (mem_iUnion₂.mpr ⟨s, ⟨hsS, hpseg⟩, hxseg⟩))).elim
 
 /-- At a vertex there is one radius per edge end: `degree` counts a loop twice, and a loop does
 contribute two radii. -/
@@ -837,22 +921,19 @@ theorem exists_radius_vertex [G.Finite] (D : PLDrawing G V) (v : V(G)) :
   obtain ⟨ρ₁, hρ₁, hcover₁⟩ := D.exists_radius_support_subset_iUnion_segment_endTip v
   let ρ : ℝ := min ρ₀ ρ₁
   have hρ : 0 < ρ := lt_min hρ₀ hρ₁
-  obtain ⟨Y, hY, -, hstar⟩ :=
-    exists_radius_of_le hρ₀ hY₀ hstar₀ hρ (min_le_left _ _)
+  obtain ⟨Y, hY, -, hstar⟩ := exists_radius_of_le hρ₀ hY₀ hstar₀ hρ (min_le_left _ _)
   refine ⟨ρ, hρ, Y, hY, ?_, hstar⟩
   have : Finite (EndsAt G v) := inferInstance
   let : Fintype (EndsAt G v) := Fintype.ofFinite _
   let U : EndsAt G v → Set V := fun i ↦ segment ℝ p (D.endTip i)
   have hge : Fintype.card (EndsAt G v) ≤ Y.card :=
     le_card_radii_of_pairwise (T := D.toDrawing.support) hρ hY hstar
-      (fun i ↦ segment_endTip_subset_support D i)
-      (fun i ↦ ⟨D.endTip i, endTip_ne D i, subset_rfl⟩)
+      D.segment_endTip_subset_support (fun i ↦ ⟨D.endTip i, endTip_ne D i, subset_rfl⟩)
       (fun i j hij ↦ segment_endTip_inter D hij)
-  have hcover : D.toDrawing.support ∩ closedBall p ρ ⊆ {p} ∪ ⋃ i, U i := by
-    intro x hx
-    exact hcover₁ ⟨hx.1, closedBall_subset_closedBall (min_le_right ρ₀ ρ₁) hx.2⟩
+  have hcover : D.toDrawing.support ∩ closedBall p ρ ⊆ {p} ∪ ⋃ i, U i :=
+    fun x hx ↦ hcover₁ ⟨hx.1, closedBall_subset_closedBall (min_le_right ρ₀ ρ₁) hx.2⟩
   have hle : Y.card ≤ Fintype.card (EndsAt G v) :=
-    card_radii_le_of_cover (T := D.toDrawing.support) hρ hY hstar hcover (endTip_ne D)
+    card_radii_le_of_cover (T := D.toDrawing.support) hρ hY hstar hcover D.endTip_ne
       (fun _ ↦ Set.inter_subset_left)
   have hEq : Y.card = Nat.card (EndsAt G v) := by
     rw [Nat.card_eq_fintype_card]
@@ -893,8 +974,7 @@ theorem exists_segment_sdiff_subset_faceSet [G.Finite]
       (↑) '' (segment ℝ p y \ {p}) ⊆ D.toDrawing.onePoint.faceSet F := by
   classical
   obtain ⟨ρ, hρ, Y, hY, hstar⟩ := D.exists_radius hp
-  have hnhds :
-      (↑) '' (ball p ρ) ∈ 𝓝 (p : OnePoint (EuclideanSpace ℝ (Fin 2))) := by
+  have hnhds : (↑) '' (ball p ρ) ∈ 𝓝 (p : OnePoint (EuclideanSpace ℝ (Fin 2))) := by
     rw [OnePoint.nhds_coe_eq]
     exact Filter.image_mem_map (ball_mem_nhds _ hρ)
   obtain ⟨z', ⟨hzU, hzF⟩⟩ :=
@@ -910,10 +990,8 @@ theorem exists_segment_sdiff_subset_faceSet [G.Finite]
   have hseg_off : segment ℝ p z \ {p} ⊆ D.toDrawing.supportᶜ := by
     intro w ⟨hwseg, hwp⟩ hwS
     have hwball : w ∈ closedBall p ρ :=
-      ball_subset_closedBall <|
-        (convex_ball p ρ).segment_subset (mem_ball_self hρ) hzball hwseg
-    have hwstar : w ∈ ({p} ∪ ⋃ y ∈ Y, segment ℝ p y :
-        Set (EuclideanSpace ℝ (Fin 2))) := by
+      ball_subset_closedBall <| (convex_ball p ρ).segment_subset (mem_ball_self hρ) hzball hwseg
+    have hwstar : w ∈ ({p} ∪ ⋃ y ∈ Y, segment ℝ p y : Set (EuclideanSpace ℝ (Fin 2))) := by
       rw [← hstar]; exact ⟨hwball, hwS⟩
     rcases hwstar with rfl | hwY
     · exact hwp rfl

@@ -387,6 +387,50 @@ lemma _root_.WList.WellFormed.toGraph_connected (hW : W.WellFormed) : W.toGraph.
 lemma IsWalk.toGraph_connected (hW : G.IsWalk W) : W.toGraph.Connected :=
   hW.wellFormed.toGraph_connected
 
+lemma _root_.WList.WellFormed.toGraph_deleteVerts_singleton_connBetween_first_or_last
+    [DecidableEq α] (hQ : Q.WellFormed) (hQnd : Q.vertex.count x ≤ 1) (hv : v ∈ Q) (hne : v ≠ x) :
+    (Q.toGraph - ({x} : Set α)).ConnBetween v Q.first ∨
+    (Q.toGraph - ({x} : Set α)).ConnBetween v Q.last := by
+  obtain h0 | h1 := Nat.le_one_iff_eq_zero_or_eq_one.mp hQnd
+  · rw [List.count_eq_zero, mem_vertex] at h0
+    rw [Q.toGraph.deleteVerts_eq_self_iff {x} |>.mpr (by grind)]
+    exact Or.inl <| hQ.toGraph_connected.connBetween (by grind) (by grind)
+  have hx : x ∈ Q := List.one_le_count_iff.mp h1.ge
+  have hQwalk := hQ.isWalk_toGraph
+  have hPre := hQwalk.prefix (Q.prefixUntilVertex_isPrefix x)
+  have hSuf := hQwalk.suffix (Q.suffixFromVertex_isSuffix x)
+  have hvsplit : v ∈ Q.prefixUntilVertex x ∨ v ∈ Q.suffixFromVertex x := by
+    rw [← prefixUntilVertex_append_suffixFromVertex Q x] at hv
+    exact mem_of_mem_append hv
+  refine hvsplit.imp (fun hvPre ↦ ?_) (fun hvSuf ↦ ?_)
+  · have hPre_ne : (Q.prefixUntilVertex x).Nonempty :=
+      (Q.prefixUntilVertex x).nil_or_nonempty.resolve_left fun hnil ↦ hne <|
+        nil_last.symm.trans <| hnil.eq_nil_of_mem hvPre ▸ prefixUntilVertex_last hx
+    have hx_not : x ∉ (Q.prefixUntilVertex x).dropLast := by
+      refine fun hxdl ↦ (Q.prefixUntil_vertex_dropLast_not_prop (P := (· = x)) ?_ rfl)
+      simpa [prefixUntilVertex] using (show x ∈ (Q.prefixUntilVertex x).vertex.dropLast by
+        rwa [← hPre_ne.vertex_dropLast, mem_vertex])
+    refine isWalk_deleteVerts_iff.mpr ⟨hPre.dropLast, disjoint_singleton_right.mpr hx_not⟩
+      |>.connBetween_of_mem_of_mem ?_ ?_
+    · refine (mem_iff_eq_mem_dropLast_or_eq_last.mp hvPre).resolve_right ?_
+      rwa [prefixUntilVertex_last hx]
+    simpa using (Q.prefixUntilVertex x).dropLast.first_mem
+  have hSuf_ne : (Q.suffixFromVertex x).Nonempty :=
+    (Q.suffixFromVertex x).nil_or_nonempty.resolve_left fun hnil ↦ hne
+      <| nil_first.symm.trans <| hnil.eq_nil_of_mem hvSuf ▸ suffixFromVertex_first hx
+  have hsuf0 : x ∉ (Q.suffixFromVertex x).tail := by
+    rw [← mem_vertex, hSuf_ne.vertex_tail, ← List.count_eq_zero, suffixFromVertex]
+    have ht := Q.prefixUntil_vertex_append_suffixFrom_tail_vertex (· = x) ▸ hQnd
+    rw [List.count_append] at ht
+    have hpre1 := List.one_le_count_iff.mpr (show _ ∈ Q.prefixUntilVertex x from WList.last_mem)
+    rw [Q.prefixUntilVertex_last hx, prefixUntilVertex] at hpre1
+    omega
+  refine isWalk_deleteVerts_iff.mpr ⟨hSuf.tail, disjoint_singleton_right.2 hsuf0⟩
+    |>.connBetween_of_mem_of_mem ?_ ?_
+  · refine (mem_iff_eq_first_or_mem_tail.mp hvSuf).resolve_left ?_
+    rwa [suffixFromVertex_first hx]
+  simpa using (Q.suffixFromVertex x).tail.last_mem
+
 lemma Preconnected.exists_connBetween_deleteEdge_set {X : Set α} (hG : G.Preconnected)
     (hX : (X ∩ V(G)).Nonempty) (hu : u ∈ V(G)) : ∃ x ∈ X, (G ＼ E(G[X])).ConnBetween u x := by
   obtain ⟨x', hx'X, hx'V⟩ := hX

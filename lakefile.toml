@@ -25,9 +25,7 @@ rev = "master"
 [[lean_lib]]
 name = "Matroid"
 
-# Regression tests. Kept out of the source tree so that a test never has to justify its
-# presence in a mathematical file, and in `defaultTargets` so that it cannot silently stop
-# being run. See `tests/README.md`.
+# Regression tests. See `tests/README.md`.
 [[lean_lib]]
 name = "MatroidTests"
 srcDir = "tests"

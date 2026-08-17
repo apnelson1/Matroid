@@ -494,6 +494,22 @@ lemma IsComplete.isSep_iff_subset (h : G.IsComplete) : G.IsSep S ↔ S = V(G) :=
   rintro rfl
   exact vertexSet_isSep
 
+lemma neighbor_isSep (hx : x ∈ V(G)) (h : ∃ v ∈ V(G), v ≠ x ∧ ¬ G.Adj x v) :
+    G.IsSep (N(G, x) \ {x}) := by
+  obtain ⟨v, hv, hne, hna⟩ := h
+  refine ⟨sdiff_subset.trans (G.neighbor_subset x), fun hconn ↦ hne ?_⟩
+  suffices ∀ {y}, Relation.ReflTransGen (G - (N(G, x) \ {x})).Adj x y → y = x from
+    this (connBetween_iff_reflTransGen_adj.mp
+    (hconn.connBetween (x := x) (y := v) (by simp [hx]) (by simp [hv, hna]))).2
+  intro y hy
+  induction hy with
+  | refl => rfl
+  | tail _ hadj ih =>
+    rw [ih, deleteVerts_adj_iff] at hadj
+    obtain ⟨hAdj, -, hc⟩ := hadj
+    simp only [mem_sdiff, mem_singleton_iff, not_and, not_not] at hc
+    exact hc hAdj
+
 @[mk_iff isEdgeSep_iff]
 structure IsEdgeSep (G : Graph α β) (S : Set β) : Prop where
   subset_edgeSet : S ⊆ E(G)
@@ -952,6 +968,17 @@ lemma ConnGE.vertexSet_encard_of_nontrivial (h : G.ConnGE n) (hnt : V(G).Nontriv
   rw [ENat.add_one_le_iff (by simp)]
   exact h.le_card.resolve_left hnt.not_subsingleton
 
+/-- A `2`-connected graph has more than `n` vertices. This is the `le_card` field of `ConnGE`
+with the `V(G).Subsingleton` alternative ruled out: a subsingleton graph is `⊥` or a bouquet, and
+`connGE_bot` and `connGE_bouquet_iff` cap both at `ConnGE 1`. -/
+lemma ConnGE.lt_encard_vertexSet (hG : G.ConnGE n) (hn : 2 ≤ n) : n < V(G).encard := by
+  refine hG.le_card.resolve_left fun h ↦ ?_
+  obtain hempty | ⟨v, hv⟩ := h.eq_empty_or_singleton
+  · obtain rfl := vertexSet_eq_empty_iff.mp hempty
+    grind [connGE_bot]
+  obtain heq := Graph.eq_bouquet_of_subsingleton (hv ▸ rfl : v ∈ _) h
+  grind [connGE_bouquet_iff]
+
 lemma PreconnGE.deleteVerts (hX : X.Finite) (h : G.PreconnGE (n + hX.toFinset.card)) :
     (G - X).PreconnGE n := by
   simp_rw [preconnGE_iff_forall_preconnected, deleteVerts_deleteVerts]
@@ -975,6 +1002,12 @@ lemma connGE_delete_vertex_of_add_one (hG : G.ConnGE (n + 1)) (x : α) : (G - {x
     ENat.add_sub_cancel_right _ (by simp), ENat.toNat_natCast] at this
   · assumption
   simp
+
+lemma ConnGE.deleteVert_connected (hG : G.ConnGE 2) (hx : x ∈ V(G)) : (G - {x}).Connected := by
+  have := hG.deleteVerts (Subsingleton.inter_singleton.finite : (V(G) ∩ {x}).Finite)
+  rw [inter_eq_right.mpr (singleton_subset_iff.mpr hx), encard_singleton] at this
+  rw [← connGE_one_iff]
+  norm_cast
 
 lemma preconnGE_delete_vertex_of_add_one (hG : G.PreconnGE (n + 1)) (x : α) :
     (G - {x}).PreconnGE n :=

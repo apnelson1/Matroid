@@ -114,11 +114,10 @@ Their frontiers are pairwise distinct, so no two of them coincide. -/
 theorem exists_three_regions_theta (hab : a ≠ b) (A : Fin 3 → PolygonalPath a b)
     (hsimple : ∀ i, (A i).IsSimple)
     (hmeet : ∀ i j, i ≠ j → (A i).toSet ∩ (A j).toSet = {a, b}) :
-    ∃ W : Fin 3 → Set 𝕊,
-      (∀ i, IsOpen (W i)) ∧ (∀ i, IsConnected (W i)) ∧
-      (Pairwise fun i j ↦ Disjoint (W i) (W j)) ∧
-      (⋃ i, W i) = ((↑) '' ⋃ i, (A i).toSet)ᶜ ∧
-      ∀ i, frontier (W i) = (↑) '' ⋃ j ∈ ({i}ᶜ : Set (Fin 3)), (A j).toSet := by
+    ∃ W : Fin 3 → Set 𝕊, (∀ i, IsOpen (W i)) ∧ (∀ i, IsConnected (W i)) ∧
+    (Pairwise fun i j ↦ Disjoint (W i) (W j)) ∧ (⋃ i, W i) = ((↑) '' ⋃ i, (A i).toSet)ᶜ ∧
+    ∀ i, frontier (W i) = (↑) '' ⋃ j ∈ ({i}ᶜ : Set (Fin 3)), (A j).toSet := by
+
   sorry
 
 /-! ### 3.10, cutting a face with a crosscut -/
@@ -130,18 +129,14 @@ one of the two arcs into which its endpoints divide `J`.
 The two arcs of `J` are produced rather than assumed, since `Polygon.IsSimple.exists_arcs` supplies
 them at any two points of the boundary; a caller that already has them can rewrite. -/
 theorem exists_two_regions_crosscut {n : ℕ} {p : Polygon ℝ² n} (hp : p.IsSimple ℝ)
-    {F : Set 𝕊} {q : 𝕊} (hq : q ∈ ((↑) '' p.boundary ℝ)ᶜ)
-    (hF : F = connectedComponentIn ((↑) '' p.boundary ℝ)ᶜ q)
-    (hst : s ≠ t) (hs : s ∈ p.boundary ℝ) (ht : t ∈ p.boundary ℝ)
-    (A : PolygonalPath s t) (hA : A.IsSimple) (hAJ : A.toSet ∩ p.boundary ℝ = {s, t})
-    (hAF : (↑) '' (A.toSet \ {s, t}) ⊆ F) :
-    ∃ (J₁ : PolygonalPath s t) (J₂ : PolygonalPath t s) (W₁ W₂ : Set 𝕊),
-      J₁.IsSimple ∧ J₂.IsSimple ∧ J₁.toSet ∩ J₂.toSet = {s, t} ∧
-      J₁.toSet ∪ J₂.toSet = p.boundary ℝ ∧
-      IsOpen W₁ ∧ IsOpen W₂ ∧ IsConnected W₁ ∧ IsConnected W₂ ∧ Disjoint W₁ W₂ ∧
-      W₁ ∪ W₂ = F \ ((↑) '' A.toSet) ∧
-      frontier W₁ = (↑) '' (J₁.toSet ∪ A.toSet) ∧
-      frontier W₂ = (↑) '' (J₂.toSet ∪ A.toSet) := by
+    {F : Set 𝕊} {q : 𝕊} (hq : q ∈ ((↑) '' p.boundary ℝ)ᶜ) {A : PolygonalPath s t}
+    (hF : F = connectedComponentIn ((↑) '' p.boundary ℝ)ᶜ q) (hst : s ≠ t) (hs : s ∈ p.boundary ℝ)
+    (ht : t ∈ p.boundary ℝ) (hA : A.IsSimple) (hAJ : A.toSet ∩ p.boundary ℝ = {s, t})
+    (hAF : (↑) '' (A.toSet \ {s, t}) ⊆ F) : ∃ (J₁ : PolygonalPath s t) (J₂ : PolygonalPath t s)
+    (W₁ W₂ : Set 𝕊), J₁.IsSimple ∧ J₂.IsSimple ∧ J₁.toSet ∩ J₂.toSet = {s, t} ∧
+    J₁.toSet ∪ J₂.toSet = p.boundary ℝ ∧ IsOpen W₁ ∧ IsOpen W₂ ∧ IsConnected W₁ ∧ IsConnected W₂ ∧
+    Disjoint W₁ W₂ ∧ W₁ ∪ W₂ = F \ ((↑) '' A.toSet) ∧ frontier W₁ = (↑) '' (J₁.toSet ∪ A.toSet) ∧
+    frontier W₂ = (↑) '' (J₂.toSet ∪ A.toSet) := by
   sorry
 
 /-! ### 3.11, crosscuts do not alternate -/
@@ -153,15 +148,13 @@ of `B` do not lie on opposite sides of `A`: they cannot be separated by `A`'s en
 Separation is expressed through the two arcs `J₁, J₂` into which `A`'s endpoints cut `J`, which is
 the form §8 uses to produce an alternating quadruple. -/
 theorem not_alternating_crosscut {n : ℕ} {p : Polygon ℝ² n} (hp : p.IsSimple ℝ)
-    {F : Set 𝕊} {q : 𝕊} (hq : q ∈ ((↑) '' p.boundary ℝ)ᶜ)
-    (hF : F = connectedComponentIn ((↑) '' p.boundary ℝ)ᶜ q)
-    (A : PolygonalPath s₁ s₂) (B : PolygonalPath t₁ t₂) (hA : A.IsSimple) (hB : B.IsSimple)
-    (hAB : Disjoint A.toSet B.toSet)
+    {F : Set 𝕊} {q : 𝕊} (hq : q ∈ ((↑) '' p.boundary ℝ)ᶜ) {A : PolygonalPath s₁ s₂}
+    (hF : F = connectedComponentIn ((↑) '' p.boundary ℝ)ᶜ q) {B : PolygonalPath t₁ t₂}
+    (hA : A.IsSimple) (hB : B.IsSimple) (hAB : Disjoint A.toSet B.toSet)
     (hAJ : A.toSet ∩ p.boundary ℝ = {s₁, s₂}) (hBJ : B.toSet ∩ p.boundary ℝ = {t₁, t₂})
     (hAF : (↑) '' (A.toSet \ {s₁, s₂}) ⊆ F) (hBF : (↑) '' (B.toSet \ {t₁, t₂}) ⊆ F)
-    (J₁ : PolygonalPath s₁ s₂) (J₂ : PolygonalPath s₂ s₁)
-    (hJ₁ : J₁.IsSimple) (hJ₂ : J₂.IsSimple) (hJmeet : J₁.toSet ∩ J₂.toSet = {s₁, s₂})
-    (hJcover : J₁.toSet ∪ J₂.toSet = p.boundary ℝ) :
+    {J₁ : PolygonalPath s₁ s₂} {J₂ : PolygonalPath s₂ s₁} (hJ₁ : J₁.IsSimple) (hJ₂ : J₂.IsSimple)
+    (hJmeet : J₁.toSet ∩ J₂.toSet = {s₁, s₂}) (hJcover : J₁.toSet ∪ J₂.toSet = p.boundary ℝ) :
     ¬ (t₁ ∈ J₁.toSet \ {s₁, s₂} ∧ t₂ ∈ J₂.toSet \ {s₁, s₂}) := by
   sorry
 
