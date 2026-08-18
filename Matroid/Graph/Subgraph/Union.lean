@@ -189,6 +189,18 @@ lemma union_eq_self_of_le_left (hle : G ≤ H) : G ∪ H = H :=
 lemma union_eq_self_of_le_right (hle : G ≤ H) : H ∪ G = H :=
   (Graph.union_le rfl.le hle).antisymm <| Graph.left_le_union ..
 
+@[simp]
+lemma bot_union (G : Graph α β) : ⊥ ∪ G = G :=
+  union_eq_self_of_le_left <| bot_le
+
+@[simp]
+lemma union_bot (G : Graph α β) : G ∪ ⊥ = G :=
+  union_eq_self_of_le_right <| bot_le
+
+@[simp]
+lemma union_eq_bot : (G ∪ H) = ⊥ ↔ G = ⊥ ∧ H = ⊥ := by
+  simp_rw [← vertexSet_eq_empty_iff, vertexSet_union, union_empty_iff]
+
 lemma Compatible.union_mono_left (h : H₂.Compatible G) (hle : H₁ ≤ H₂) : H₁ ∪ G ≤ H₂ ∪ G := by
   rw [h.union_comm, (h.mono_left hle).union_comm]
   exact union_mono_right hle

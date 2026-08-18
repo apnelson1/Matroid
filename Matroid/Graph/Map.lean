@@ -127,8 +127,6 @@ lemma Compatible.map (h : G.Compatible H) : (f ''ᴳ G).Compatible (f ''ᴳ H) :
 lemma map_union (G H : Graph α β) (f : α → α') : f ''ᴳ (G ∪ H) = (f ''ᴳ G) ∪ (f ''ᴳ H) :=
   Graph.ext (by grind) <| by grind only [= map_isLink, = union_isLink_iff, = edgeSet_map]
 
-
-
 @[gcongr]
 lemma map_mono (h : G ≤ H) : f ''ᴳ G ≤ f ''ᴳ H where
   vertexSet_mono v := by
@@ -139,6 +137,14 @@ lemma map_mono (h : G ≤ H) : f ''ᴳ G ≤ f ''ᴳ H where
     simp only [map_isLink, forall_exists_index, and_imp]
     rintro a b hab rfl rfl
     use a, b, hab.of_le h
+
+@[simp]
+lemma map_eq_bot_iff (G : Graph α β) (φ : α → α') : φ ''ᴳ G = ⊥ ↔ G = ⊥ := by
+  rw [← vertexSet_eq_empty_iff, vertexSet_map, image_eq_empty, vertexSet_eq_empty_iff]
+
+@[simp]
+lemma map_noEdge (V : Set α) (β : Type*) (φ : α → α') : (noEdge V β).map φ = noEdge (φ '' V) β := by
+  ext <;> simp
 
 @[gcongr]
 lemma map_isSpanningSubgraph (hsle : G ≤s H) : f ''ᴳ G ≤s f ''ᴳ H where
@@ -157,6 +163,42 @@ lemma map_deleteEdges_comm : f ''ᴳ (G ＼ F) = (f ''ᴳ G) ＼ F := by
   · simp
   simp only [map_isLink, deleteEdges_isLink]
   tauto
+
+variable {x y : α}
+
+lemma Adj.map (hG : G.Adj x y) (φ : α → α') : (G.map φ).Adj (φ x) (φ y) := by
+  obtain ⟨e, he⟩ := hG
+  exact ⟨e, he.map φ⟩
+
+lemma map_adj_iff {φ : α → α'} {x y : α'} :
+    (G.map φ).Adj x y ↔ ∃ x₀ y₀, G.Adj x₀ y₀ ∧ φ x₀ = x ∧ φ y₀ = y := by
+  constructor
+  · rintro ⟨e, ⟨x₀, y₀, he, rfl, rfl⟩⟩
+    exact ⟨_, _, he.adj, rfl, rfl⟩
+  rintro ⟨x₀, y₀, ⟨e, he⟩, rfl, rfl⟩
+  exact ⟨e, he.map φ⟩
+
+lemma map_adj_iff_of_injective {φ : α → α'} {x y : α} (hφ : φ.Injective) :
+    (G.map φ).Adj (φ x) (φ y) ↔ G.Adj x y :=
+  ⟨fun ⟨e, he⟩ ↦ ⟨e, by simpa [hφ.eq_iff] using he⟩, fun h ↦ h.map φ⟩
+
+lemma map_adj_iff_of_injOn {φ : α → α'} {x y : α} (hφ : InjOn φ V(G))
+    (hx : x ∈ V(G)) (hy : y ∈ V(G)) : (G.map φ).Adj (φ x) (φ y) ↔ G.Adj x y := by
+  refine ⟨fun ⟨e, he⟩ ↦ ⟨e, ?_⟩, fun h ↦ h.map φ⟩
+  obtain ⟨x', y', h, hx', hy'⟩ := he
+  rw [hφ.eq_iff hx h.left_mem] at hx'
+  rw [hφ.eq_iff hy h.right_mem] at hy'
+  rwa [hx', hy']
+
+lemma IsComplete.map (hG : G.IsComplete) {α' : Type*} (φ : α → α') : (G.map φ).IsComplete := by
+  rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩ hne
+  exact (hG x hx y hy (by grind)).map φ
+
+lemma isComplete_map_iff {φ : α → α'} (hφ : InjOn φ V(G)) :
+    (G.map φ).IsComplete ↔ G.IsComplete := by
+  refine ⟨fun h x hx y hy hxy ↦ ?_, fun h ↦ h.map φ⟩
+  specialize h _ (mem_image_of_mem φ hx) _ (mem_image_of_mem φ hy) (by rwa [Ne, hφ.eq_iff hx hy])
+  rwa [map_adj_iff_of_injOn hφ hx hy] at h
 
 @[simp]
 lemma IsWalk.map (f : α → α') (hw : G.IsWalk w) : (f ''ᴳ G).IsWalk (w.map f) := by
@@ -397,9 +439,29 @@ lemma edgePreimg_inc : (G.edgePreimg σ).Inc e' u ↔ ∃ e, σ e' = e ∧ G.Inc
 
 variable {β' : Type*} {σ : β → β'} {e' : β'}
 
-@[simps (attr := grind =)]
+/-- A tactic for providing the proof required in `edgeMap` in the case where the function
+is known to be injective on the edge set. -/
+syntax "edgeMap_tac" : tactic
+
+macro_rules
+  | `(tactic| edgeMap_tac) =>
+    `(tactic| simp +contextual)
+
+macro_rules
+  | `(tactic| edgeMap_tac) =>
+    `(tactic| simp +contextual [Injective.eq_iff (by assumption)])
+
+macro_rules
+  | `(tactic| edgeMap_tac) =>
+    `(tactic| simp +contextual [InjOn.eq_iff (by assumption)])
+
+-- @[simps (attr := grind =)]
+/-- The assumption `hσ` is needed for an edge-map to be well-defined without choice.
+It holds in particular if `InjOn σ E(G)`, and the `autoParam` will prove it if this is known.
+`simps` doesn't play nice with the `autoParam`, so the simp lemms are proved manually. -/
 def edgeMap (G : Graph α β) (σ : β → β')
-    (hσ : ∀ e₁ ∈ E(G), ∀ e₂ ∈ E(G), σ e₁ = σ e₂ → G.IsLink e₁ = G.IsLink e₂) : Graph α β' where
+    (hσ : ∀ e₁ ∈ E(G), ∀ e₂ ∈ E(G), σ e₁ = σ e₂ → G.IsLink e₁ = G.IsLink e₂ := by edgeMap_tac) :
+    Graph α β' where
   vertexSet := V(G)
   edgeSet := σ '' E(G)
   IsLink e x y := ∃ e', σ e' = e ∧ G.IsLink e' x y
@@ -417,39 +479,39 @@ def edgeMap (G : Graph α β) (σ : β → β')
     rintro e a b ⟨f, rfl, hbtw⟩
     exact G.left_mem_of_isLink hbtw
 
+@[simp, grind =]
+lemma edgeMap_isLink {e x y} {σ : β → β'} {hσ} :
+    (G.edgeMap σ hσ).IsLink e x y ↔ ∃ e', σ e' = e ∧ G.IsLink e' x y := Iff.rfl
+
+@[simp, grind =]
+lemma vertexSet_edgeMap (G : Graph α β) (σ : β → β') {hσ} : V(G.edgeMap σ hσ) = V(G) := rfl
+
+@[simp, grind =]
+lemma edgeSet_edgeMap (G : Graph α β) (σ : β → β') {hσ} : E(G.edgeMap σ hσ) = σ '' E(G) := rfl
+
 @[simp]
 lemma edgeMap_inc (hσ : ∀ e₁ ∈ E(G), ∀ e₂ ∈ E(G), σ e₁ = σ e₂ → G.IsLink e₁ = G.IsLink e₂) :
     (G.edgeMap σ hσ).Inc e' u ↔ ∃ e, σ e = e' ∧ G.Inc e u := by
   simp only [Inc, edgeMap_isLink]
   tauto
 
-variable {x y : α}
+@[simp]
+lemma edgeMap_isLoopAt {e x hσ} :
+    (G.edgeMap σ hσ).IsLoopAt e x ↔ ∃ f, σ f = e ∧ G.IsLoopAt f x := by
+  simp_rw [IsLoopAt, edgeMap_isLink]
 
-lemma Adj.map (hG : G.Adj x y) (φ : α → α') : (G.map φ).Adj (φ x) (φ y) := by
-  obtain ⟨e, he⟩ := hG
-  exact ⟨e, he.map φ⟩
+@[simp]
+lemma edgeMap_isNonloopAt {e x hσ} :
+    (G.edgeMap σ hσ).IsNonloopAt e x ↔ ∃ f, σ f = e ∧ G.IsNonloopAt f x := by
+  simp_rw [IsNonloopAt, edgeMap_isLink]
+  grind
 
-lemma map_adj_iff {φ : α → α'} {x y : α'} :
-    (G.map φ).Adj x y ↔ ∃ x₀ y₀, G.Adj x₀ y₀ ∧ φ x₀ = x ∧ φ y₀ = y := by
-  constructor
-  · rintro ⟨e, ⟨x₀, y₀, he, rfl, rfl⟩⟩
-    exact ⟨_, _, he.adj, rfl, rfl⟩
-  rintro ⟨x₀, y₀, ⟨e, he⟩, rfl, rfl⟩
-  exact ⟨e, he.map φ⟩
+@[simp]
+lemma edgeMap_noEdge (V : Set α) {β β' : Type*} {σ : β → β'} {hσ} :
+    ((noEdge V β ).edgeMap σ hσ) = noEdge V β' := by
+  ext <;> simp
 
-lemma map_adj_iff_of_injective {φ : α → α'} {x y : α} (hφ : φ.Injective) :
-    (G.map φ).Adj (φ x) (φ y) ↔ G.Adj x y :=
-  ⟨fun ⟨e, he⟩ ↦ ⟨e, by simpa [hφ.eq_iff] using he⟩, fun h ↦ h.map φ⟩
-
-lemma map_adj_iff_of_injOn {φ : α → α'} {x y : α} (hφ : InjOn φ V(G))
-    (hx : x ∈ V(G)) (hy : y ∈ V(G)) : (G.map φ).Adj (φ x) (φ y) ↔ G.Adj x y := by
-  refine ⟨fun ⟨e, he⟩ ↦ ⟨e, ?_⟩, fun h ↦ h.map φ⟩
-  obtain ⟨x', y', h, hx', hy'⟩ := he
-  rw [hφ.eq_iff hx h.left_mem] at hx'
-  rw [hφ.eq_iff hy h.right_mem] at hy'
-  rwa [hx', hy']
-
-lemma IsLink.edgeMap (h : G.IsLink e x y) {φ : β → β'} {hφ} : (G.edgeMap φ hφ).IsLink (φ e) x y :=
+lemma IsLink.edgeMap (h : G.IsLink e x y) (φ : β → β') (hφ) : (G.edgeMap φ hφ).IsLink (φ e) x y :=
   ⟨e, rfl, h⟩
 
 @[simp]
@@ -460,12 +522,89 @@ lemma edgeMap_adj_eq {φ : β → β'} {hφ} : (G.edgeMap φ hφ).Adj = G.Adj :=
   simp [funext_iff]
 
 @[simp]
+lemma isComplete_edgeMap_iff {φ : β → β'} {hφ} : (G.edgeMap φ hφ).IsComplete ↔ G.IsComplete := by
+  simp [IsComplete]
+
+@[simp]
+lemma edgeMap_eq_bot_iff {φ : β → β'} {hφ} : G.edgeMap φ hφ = ⊥ ↔ G = ⊥ := by
+  rw [← vertexSet_eq_empty_iff, ← vertexSet_eq_empty_iff, vertexSet_edgeMap]
+
+@[simp]
 lemma edgeMap_deleteVerts (G : Graph α β) {φ : β → β'} (hφ) (X : Set α) : (G - X).edgeMap φ
     (fun e₁ he₁ e₂ he₂ he ↦ by simp [funext_iff, hφ _ (edgeSet_mono deleteVerts_le he₁) _
       (edgeSet_mono deleteVerts_le he₂) he]) = (G.edgeMap φ hφ) - X :=
   Graph.ext (by simp) <| by grind only [→ IsLink.right_mem, → IsLink.left_mem, = edgeMap_isLink,
     = deleteVerts_isLink]
 
+
+@[simp]
+lemma IsWalk.edgeMap (hw : G.IsWalk w) (σ : β → β') (hσ) :
+    (G.edgeMap σ hσ).IsWalk (w.edgeMap σ) := by
+  induction hw with
+  | nil => simpa
+  | cons hw h ih => exact edgeMap_cons .. ▸ ih.cons (by simpa using h.edgeMap σ hσ)
+
+lemma IsWalk.edgeMap_invFunOn [Nonempty β] {w hσ} (hw : (G.edgeMap σ hσ).IsWalk w)
+    (hinj : InjOn σ E(G)) : G.IsWalk (w.edgeMap (invFunOn σ E(G))) := by
+  induction hw with
+  | @nil x hx => simpa using hx
+  | @cons x e w hw h ih =>
+    obtain ⟨e, rfl, h⟩ := h
+    simpa [hinj.leftInvOn_invFunOn h.edge_mem, h]
+
+lemma IsWalk.edgeMap_invFunOn_edgeMap [Nonempty β] {w} {hσ} (hw : (G.edgeMap σ hσ).IsWalk w)
+    (hinj : InjOn σ E(G)) : (w.edgeMap (invFunOn σ E(G))).edgeMap σ = w := by
+  induction hw with
+  | nil => simp
+  | @cons x e w hw h ih =>
+    obtain ⟨e, rfl, h⟩ := h
+    simpa [hinj.leftInvOn_invFunOn h.edge_mem]
+
+@[simp]
+lemma IsTrail.edgeMap (hw : G.IsTrail w) (σ : β → β') (hσ : InjOn σ E(G)) :
+    (G.edgeMap σ).IsTrail (w.edgeMap σ) where
+  isWalk := hw.isWalk.edgeMap σ _
+  edge_nodup := by
+    rw [edgeMap_edge, List.nodup_map_iff_inj_on]
+    · intro x hx y hy hxy
+      rwa [← hσ.eq_iff (hw.edgeSet_subset hx) (hw.edgeSet_subset hy)]
+    exact hw.edge_nodup
+
+@[simp]
+lemma IsTour.edgeMap (hw : G.IsTour w) (σ : β → β') (hσ : InjOn σ E(G)) :
+    (G.edgeMap σ).IsTour (w.edgeMap σ) where
+  toIsTrail := hw.isTrail.edgeMap σ hσ
+  nonempty := by simpa using hw.nonempty
+  isClosed := by simpa [IsClosed] using hw.isClosed
+
+@[simp]
+lemma IsPath.edgeMap (hw : G.IsPath w) (σ : β → β') (hσ : InjOn σ E(G)) :
+    (G.edgeMap σ).IsPath (w.edgeMap σ) where
+  isWalk := hw.isWalk.edgeMap σ _
+  nodup := by simpa using hw.nodup
+
+@[simp]
+lemma IsCyclicWalk.edgeMap (hw : G.IsCyclicWalk w) (σ : β → β') (hσ : InjOn σ E(G)) :
+    (G.edgeMap σ).IsCyclicWalk (w.edgeMap σ) where
+  toIsTour := hw.isTour.edgeMap σ hσ
+  nodup := by
+    rw [edgeMap_tail, edgeMap_vertex]
+    exact hw.nodup
+
+lemma IsCyclicWalk.exists_of_edgeMap_of_injOn {σ : β → β'} (hσ : InjOn σ E(G)) {C}
+    (hC : (G.edgeMap σ).IsCyclicWalk C) : ∃ C₀, G.IsCyclicWalk C₀ ∧ C₀.edgeMap σ = C := by
+  obtain hβ | hβ := isEmpty_or_nonempty β
+  · obtain ⟨e, heC⟩ := hC.nonempty.exists_edge
+    simpa using hC.edgeSet_subset heC
+  use WList.edgeMap (invFunOn σ E(G)) C
+  simp only [isCyclicWalk_iff, isTour_iff, isTrail_iff, hC.isWalk.edgeMap_invFunOn hσ, edgeMap_edge,
+    true_and, edgeMap_nonempty, hC.nonempty, IsClosed, edgeMap_first, hC.isClosed.eq, edgeMap_last,
+    and_self, and_true, Nonempty.vertex_tail, edgeMap_vertex, hC.isWalk.edgeMap_invFunOn_edgeMap hσ]
+  rw [← hC.nonempty.vertex_tail, List.nodup_map_iff_inj_on hC.edge_nodup, and_iff_left hC.nodup]
+  refine fun x hx y hy hxy ↦ ?_
+  rwa [(invFunOn_injOn_image _ _).eq_iff] at hxy
+  · simpa using hC.edgeSet_subset hx
+  simpa using hC.edgeSet_subset hy
 
 lemma eq_edgeMap_of_forall_isLink {β' : Type*} {H : Graph α β'} {φ : β → β'} (hφ : InjOn φ E(G))
     (hH : V(G) = V(H)) (hss : E(H) ⊆ φ '' (E(G)))
@@ -487,12 +626,13 @@ lemma eq_edgeMap_of_forall_isLink' {β' : Type*} {H : Graph α β'} {φ : β →
       (fun e he f hf hef ↦ by simp [hφ he hf hef]) := by
   refine Graph.ext (by simp [hV]) fun e x y ↦ ⟨fun h' ↦ ?_, ?_⟩
   · obtain ⟨e, he, rfl⟩ := hH h'
-    exact he.edgeMap
+    exact he.edgeMap ..
   rintro ⟨e, rfl, he⟩
   exact hG he
 
 /-- If `φ` and `ψ` are functions out of the vertex and edge sets respectively,
-a sufficient condition for a graph `H` to be a map of `G` by `φ` and `ψ`. -/
+a sufficient condition for a graph `H` to be a map of `G` by `φ` and `ψ`.
+This will only apply if `φ` and `ψ` give an isomorphism from `G` to `H`. -/
 lemma eq_map_edgeMap_of_forall {α' β' : Type*} {φ : α → α'} {ψ : β → β'} {H : Graph α' β'}
     (hψ : InjOn ψ E(G)) (hV : V(H) = φ '' V(G))
     (hG : ∀ ⦃e x y⦄, G.IsLink e x y → H.IsLink (ψ e) (φ x) (φ y))
@@ -506,6 +646,9 @@ lemma eq_map_edgeMap_of_forall {α' β' : Type*} {φ : α → α'} {ψ : β → 
   rintro e _ _ ⟨x, y, hxy, rfl, rfl⟩
   exact hG hxy
 
+/-- If `φ` and `ψ` are functions out of the vertex and edge sets respectively,
+a sufficient condition for a graph `H` to be a map of `G` by `φ` and `ψ`.
+This will only apply if `φ` and `ψ` give an isomorphism from `G` to `H`. -/
 lemma eq_map_edgeMap_of_forall_inc {α' β' : Type*} {φ : α → α'} {ψ : β → β'} {H : Graph α' β'}
     (hψ : InjOn ψ E(G)) (hV : V(H) = φ '' V(G)) (hG : ∀ ⦃e x⦄, G.Inc e x → H.Inc (ψ e) (φ x))
     (hH : ∀ ⦃e x⦄, H.Inc e x → ∃ e' x', G.Inc e' x' ∧ φ x' = x ∧ ψ e' = e) :
@@ -521,6 +664,35 @@ lemma eq_map_edgeMap_of_forall_inc {α' β' : Type*} {φ : α → α'} {ψ : β 
     exact hx'
   obtain ⟨e', x', ⟨z, hz⟩, rfl, rfl⟩ := hH he.inc_left
   exact ⟨_, _, _, hz, rfl⟩
+
+lemma setLinkEdges_map_image (G : Graph α β) {S T : Set α} (hS : S ⊆ V(G)) (hT : T ⊆ V(G))
+    {α' : Type*} {φ : α → α'} (hφ : InjOn φ V(G)) : E(φ ''ᴳ G, φ '' S, φ '' T) = E(G, S, T) := by
+  ext e
+  simp only [mem_setLinkEdges_iff, mem_image, map_isLink, exists_exists_and_eq_and]
+  refine ⟨fun ⟨a, haS, b, hbT, x, y, he, hax, hby⟩  ↦ ?_, fun ⟨a, haS, b, hbT, he⟩ ↦ by grind⟩
+  rw [hφ.eq_iff (hS haS) he.left_mem] at hax
+  rw [hφ.eq_iff (hT hbT) he.right_mem] at hby
+  exact ⟨a, haS, b, hbT, by rwa [hax, hby]⟩
+
+lemma setLinkEdges_map_image_of_injective (G : Graph α β) (S T : Set α) {α' : Type*} {φ : α → α'}
+    (hφ : Injective φ) : E(φ ''ᴳ G, φ '' S, φ '' T) = E(G, S, T) := by
+  rw [← setLinkEdges_vertexSet_inter_left, ← setLinkEdges_vertexSet_inter_right,
+    vertexSet_map, ← image_inter hφ, ← image_inter hφ, setLinkEdges_map_image _ (by simp) (by simp)
+    hφ.injOn, setLinkEdges_vertexSet_inter_left, setLinkEdges_vertexSet_inter_right]
+
+lemma setLinkEdges_map (G : Graph α β) {α' : Type*} {φ : α → α'} {S T : Set α'}
+    (hφ : InjOn φ V(G)) : E(φ ''ᴳ G, S, T) = E(G, φ ⁻¹' S, φ ⁻¹' T) := by
+  rw [← G.setLinkEdges_vertexSet_inter_left, ← G.setLinkEdges_vertexSet_inter_right,
+    ← G.setLinkEdges_map_image inter_subset_left inter_subset_left hφ, image_inter_preimage,
+    image_inter_preimage, ← vertexSet_map, setLinkEdges_vertexSet_inter_left,
+    setLinkEdges_vertexSet_inter_right]
+
+@[simp]
+lemma setLinkEdges_edgeMap (G : Graph α β) (S T : Set α) {β' : Type*} {σ : β → β'} {hσ} :
+    E(G.edgeMap σ hσ, S, T) = σ '' E(G, S, T) := by
+  ext e
+  simp only [mem_setLinkEdges_iff, edgeMap_isLink, mem_image]
+  grind
 
 -- @[simps! (attr := grind =) vertexSet edgeSet]
 -- def map (G : Graph α β) (f : α → α') (σ : β → β')

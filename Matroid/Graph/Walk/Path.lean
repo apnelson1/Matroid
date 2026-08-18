@@ -37,6 +37,10 @@ lemma cons_isTrail_iff : G.IsTrail (cons x e w) ↔
   simp only [isTrail_iff, cons_isWalk_iff, cons_edge, List.nodup_cons]
   tauto
 
+protected lemma IsTrail.cons (hw : G.IsTrail w) (he : G.IsLink e x w.first) (hew : e ∉ w.edge) :
+    G.IsTrail (w.cons x e) := by
+  rwa [cons_isTrail_iff, and_iff_left hew, and_iff_left he]
+
 @[simp]
 lemma IsTrail.of_cons (h : G.IsTrail (cons x e w)) : G.IsTrail w := by
   simp_all
@@ -180,6 +184,10 @@ lemma cons_isPath_iff : G.IsPath (cons x e P) ↔ G.IsLink e x P.first ∧ G.IsP
   simp only [isPath_iff, cons_isWalk_iff, cons_vertex, List.nodup_cons, mem_vertex]
   tauto
 
+protected lemma IsPath.cons (hP : G.IsPath P) (he : G.IsLink e x P.first) (hxP : x ∉ P) :
+    G.IsPath (cons x e P) := by
+  rwa [cons_isPath_iff, and_iff_left hxP, and_iff_left hP]
+
 @[simp]
 lemma IsPath.of_cons (h : G.IsPath (cons x e P)) : G.IsPath P := by
   simp_all
@@ -227,6 +235,12 @@ lemma IsPath.edgeSet_subset (hP : G.IsPath P) : E(P) ⊆ E(G) := hP.isWalk.edgeS
 
 lemma IsPath.induce (hP : G.IsPath P) (hX : V(P) ⊆ X) : (G[X]).IsPath P :=
   ⟨hP.isWalk.induce hX, hP.nodup⟩
+
+lemma IsPath.deleteVerts (hP : G.IsPath P) (hX : Disjoint V(P) X) : (G - X).IsPath P :=
+  ⟨hP.isWalk.deleteVerts hX, hP.nodup⟩
+
+lemma IsPath.deleteEdges (hP : G.IsPath P) {F} (hF : Disjoint E(P) F) : (G ＼ F).IsPath P :=
+  ⟨hP.isWalk.deleteEdges hF, hP.nodup⟩
 
 lemma IsPath.sublist (hP : G.IsPath P) (hP₀ : P₀.IsSublist P) : G.IsPath P₀ where
   isWalk := hP.isWalk.sublist hP₀

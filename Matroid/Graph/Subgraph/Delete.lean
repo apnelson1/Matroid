@@ -280,6 +280,19 @@ lemma deleteEdges_eq_noEdge (G : Graph α β) (hF : E(G) ⊆ F) : G ＼ F = Grap
   simp only [deleteEdges_isLink, noEdge_isLink, iff_false, not_and, not_not]
   exact fun h ↦ hF h.edge_mem
 
+@[simp]
+lemma noEdge_induce (X Y : Set α) (β : Type*) : (Graph.noEdge X β)[Y] = Graph.noEdge Y β := by
+  ext <;> simp
+
+@[simp]
+lemma noEdge_deleteVerts (X Y : Set α) (β : Type*) :
+  (Graph.noEdge X β) - Y = Graph.noEdge (X \ Y) β := by
+  ext <;> simp
+
+@[simp]
+lemma noEdge_delete (X : Set α) (F : Set β) :
+  (Graph.noEdge X β ＼ F) = Graph.noEdge X β := by
+  ext <;> simp
 
 lemma IsLink.induce (h : G.IsLink e x y) (hx : x ∈ X) (hy : y ∈ X) : G[X].IsLink e x y :=
   ⟨h, hx, hy⟩

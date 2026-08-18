@@ -67,6 +67,10 @@ lemma setLinkEdges_singleton_compl_eq_incEdges (G : Graph α β) [G.Loopless] (x
   rw [setLinkEdges_singleton_eq_setOf_isNonloopAt, setOf_isNonloopAt_incEdges]
 
 @[simp]
+instance noEdge_loopless {X : Set α} {β : Type*} : (noEdge X β).Loopless := by
+  simp [loopless_iff]
+
+@[simp]
 lemma IsComplete.neighbors [G.Loopless] (h : G.IsComplete) (hx : x ∈ V(G)) :
     N(G, x) = V(G) \ {x} := by
   ext y
@@ -98,6 +102,11 @@ lemma eq_noEdge_or_vertexSet_nontrivial (G : Graph α β) [G.Loopless] :
 
 instance Loopless.union [G.Loopless] [H.Loopless] : (G ∪ H).Loopless where
   not_isLoopAt := by simp [union_isLoopAt_iff]
+
+lemma Compatible.loopless_union_iff (hGH : G.Compatible H) :
+    (G ∪ H).Loopless ↔ G.Loopless ∧ H.Loopless :=
+  ⟨fun h ↦ ⟨h.mono (G.left_le_union H), h.mono hGH.right_le_union⟩,
+    fun h ↦ @Loopless.union _ _ _ _ h.1 h.2⟩
 
 /-- Maximally loopless subgraph of `G`. -/
 @[simps! vertexSet]
@@ -230,6 +239,21 @@ lemma singleEdge_simple (hne : x ≠ y) (e : β) : (Graph.singleEdge x y e).Simp
     aesop
   eq_of_isLink := by aesop
 
+@[simp]
+lemma singleEdge_simple_iff : (Graph.singleEdge x y e).Simple ↔ x ≠ y := by
+  refine ⟨fun h hxy ↦ h.not_isLoopAt (e := e) (x := x) ?_, fun h ↦ singleEdge_simple h e⟩
+  rw [IsLoopAt, singleEdge_isLink_iff, hxy, and_iff_left rfl]
+
+@[simp]
+lemma singleEdge_loopless_iff : (Graph.singleEdge x y e).Loopless ↔ x ≠ y := by
+  refine ⟨fun h hxy ↦ h.not_isLoopAt (e := e) (x := x) ?_,
+    fun h ↦ (singleEdge_simple h e).toLoopless⟩
+  rw [IsLoopAt, singleEdge_isLink_iff, hxy, and_iff_left rfl]
+
+@[simp]
+instance noEdge_simple {X : Set α} {β : Type*} : (noEdge X β).Simple := by
+  simp [simple_iff]
+
 noncomputable def adjIncFun (G : Graph α β) (x : α) : N(G, x) → E(G, x) :=
   fun y ↦ ⟨y.2.choose, _, y.2.choose_spec⟩
 
@@ -293,32 +317,88 @@ lemma Simple.union [H.Simple] (h : ∀ ⦃e f x y⦄, G.IsLink e x y → H.IsLin
     · exact h he hf.1
     exact he.1.unique_edge hf.1
 
-omit [G.Simple] in
-lemma IsPath.toGraph_simple {P : WList α β} (hP : G.IsPath P) : P.toGraph.Simple where
-  not_isLoopAt e x h := by
-    rw [← isLink_self_iff, hP.isWalk.wellFormed.toGraph_isLink] at h
-    induction P with
-    | nil => simp at h
-    | cons u f P ih =>
-      simp only [cons_isPath_iff] at hP
-      simp only [isLink_cons_iff, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq, Prod.swap_prod_mk,
-        and_comm, or_self] at h
-      aesop
-  eq_of_isLink e f x y he hf := by
-    rw [hP.isWalk.wellFormed.toGraph_isLink] at he hf
-    induction P with
-    | nil => simp_all
-    | cons u g P ih =>
-    · simp only [isLink_cons_iff, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq,
-        Prod.swap_prod_mk] at he hf
-      simp only [cons_isPath_iff] at hP
-      have hrw (v' e') : ¬ P.IsLink e' u v' := fun h ↦ hP.2.2 h.left_mem
-      have hrw' (v' e') : ¬ P.IsLink e' v' u := fun h ↦ hP.2.2 h.right_mem
-      obtain rfl | hne := eq_or_ne x u
-      · simp_all
-      obtain rfl | hne' := eq_or_ne y u
-      · simp_all
-      exact ih hP.2.1 (by simpa [hne, hne'] using he) (by simpa [hne, hne'] using hf)
+omit [G.Simple]
+
+lemma Compatible.simple_union_iff (hGH : G.Compatible H) : (G ∪ H).Simple ↔ G.Simple ∧ H.Simple ∧
+    ∀ ⦃e f x y⦄, G.IsLink e x y → H.IsLink f x y → e = f :=
+  ⟨fun h ↦ ⟨h.mono (G.left_le_union H), h.mono hGH.right_le_union, fun _ _ _ _ hG hH ↦
+    h.eq_of_isLink (hGH.union_isLink_iff.2 (.inl hG)) (hGH.union_isLink_iff.2 (.inr hH))⟩,
+    fun h ↦ @Simple.union _ _ _ _ h.1 h.2.1 h.2.2⟩
+
+lemma Compatible.simple_union_iff_of_subsingleton_inter (hGH : G.Compatible H)
+    (hss : (V(G) ∩ V(H)).Subsingleton) : (G ∪ H).Simple ↔ G.Simple ∧ H.Simple := by
+  rw [hGH.simple_union_iff, and_congr_right_iff, and_iff_left_iff_imp]
+  refine fun hG hH e f x y he hf ↦ ?_
+  obtain rfl : x = y := hss ⟨he.left_mem, hf.left_mem⟩ ⟨he.right_mem, hf.right_mem⟩
+  exact False.elim <| hG.not_isLoopAt e x he
+
+lemma IsPath.toGraph_simple {P : WList α β} (hP : G.IsPath P) : P.toGraph.Simple := by
+  induction hP.isWalk with
+  | @nil x hx => simp
+  | @cons x e P hP' h ih =>
+    simp only [cons_isPath_iff] at hP
+    refine @Simple.union _ _ _ _ (ih hP.2.1) (singleEdge_simple (by grind) _) ?_
+    simp only [singleEdge_isLink, and_imp]
+    rintro e' f x' y he' rfl (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)
+    · exact False.elim <| hP.2.2 (by simpa using he'.left_mem)
+    exact False.elim <| hP.2.2 (by simpa using he'.right_mem)
+
+lemma IsCyclicWalk.toGraph_loopless_iff {C : WList α β} (hC : G.IsCyclicWalk C) :
+    C.toGraph.Loopless ↔ C.length ≠ 1 := by
+  refine ⟨fun h hC1 ↦ ?_, fun h ↦ ?_⟩
+  · rw [length_eq_one_iff hC] at hC1
+    obtain ⟨x, e, rfl⟩ := hC1
+    simpa [← isLink_self_iff, union_isLink_iff] using h.not_isLoopAt e x
+  cases C with
+  | nil u => simp
+  | cons u e C =>
+    simp only [toGraph_cons]
+    have hsimp : C.toGraph.Simple := by simpa using hC.tail_isPath.toGraph_simple
+    refine @Loopless.union _ _ _ _ _ <| (singleEdge_simple ?_ e).toLoopless
+    rintro rfl
+    obtain ⟨v, f, w', rfl⟩ := Nonempty.exists_cons (by simpa using h)
+    simpa [List.dropLast_cons_of_ne_nil w'.vertex_ne_nil] using hC.dropLast_isPath.nodup
+
+-- lemma IsCyclicWalk.toGraph_simple_iff {C : WList α β} (hC : G.IsCyclicWalk C) :
+--     C.toGraph.Simple ↔ 2 ≤ C.length := by
+--   cases hC.nonempty with | cons x e W =>
+--   have hcompat : W.toGraph.Compatible (Graph.singleEdge x W.first e) := by
+--     replace hC := hC.isWalk
+--     simp only [cons_isWalk_iff] at hC
+--     exact compatible_of_le_le (G := G) hC.2.toGraph_le (by simpa using hC.1)
+--   simp_rw [toGraph_cons, hcompat.simple_union_iff, singleEdge_simple_iff, and_iff_right
+--     (by simpa using hC.tail_isPath.toGraph_simple), singleEdge_isLink_iff]
+--   cases W with
+--   | nil u => simpa [union_eq_self_of_le_left] using hC.isClosed
+--   | cons y f W =>
+--     have hnd' := hC.dropLast_isPath.nodup
+
+--     simp only [dropLast_cons_cons, cons_vertex, cons_nonempty, Nonempty.vertex_dropLast,
+--       List.dropLast_cons_of_ne_nil W.vertex_ne_nil, List.nodup_cons, List.mem_cons, not_or] at hnd'
+--     simp only [first_cons, ne_eq, hnd'.1.1, not_false_eq_true, toGraph_cons, union_isLink_iff,
+--       singleEdge_isLink, toGraph_edgeSet, mem_edgeSet_iff, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq,
+--       Prod.swap_prod_mk, and_imp, true_and, cons_length, le_add_iff_nonneg_left, zero_le, iff_true]
+--     rintro e' f' x' y' (he' | he') rfl (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)
+--     · simp at hnd'
+--     rw [toGraph_cons, hcompat.simple_union_iff, singleEdge_simple_iff, first_cons,
+--       and_iff_right (by simpa using hC.tail_isPath.toGraph_simple), and_iff_right hnd'.1.1]
+
+--     · simp
+
+--     -- rw [toGraph_cons, Compatible.simple_union_iff, singleEdge_simple_iff,
+--     --   first_cons, and_iff_left hnd'.1.1]
+--     -- · exact iff_of_true (by simpa using hC.tail_isPath.toGraph_simple) <| by simp
+--     · replace hC := hC.isWalk
+--       rw [cons_isWalk_iff] at hC
+--       exact compatible_of_le_le hC.2.toGraph_le <| by simpa using hC.1
+
+--     simp only [toGraph_cons, vertexSet_union, toGraph_vertexSet, vertexSet_singleEdge, union_insert,
+--       union_singleton, mem_vertexSet_iff, first_mem, insert_eq_of_mem, first_cons]
+--     have := hC.
+
+--     sorry
+
+
 
 end Simple
 

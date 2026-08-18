@@ -529,3 +529,22 @@ theorem Fin.sbtw_cast_iff {m n : ℕ} {a b c : Fin m} {hmn : m = n} :
     sbtw (a.cast hmn) (b.cast hmn) (c.cast hmn) ↔ sbtw a b c := by
   subst hmn
   rfl
+
+instance Fin.btw_decidable (a b c : Fin n) : Decidable (btw a b c) := by
+  rw [btw_iff]
+  infer_instance
+
+instance Fin.sbtw_decidable (a b c : Fin n) : Decidable (sbtw a b c) := by
+  rw [sbtw_iff]
+  infer_instance
+
+lemma finRange_congr {m n} (hmn : m = n) :
+    List.finRange m = (List.finRange n).map (Fin.cast hmn.symm) := by
+  subst hmn
+  simp
+
+@[simp]
+lemma finRange_one : List.finRange 1 = [0] := rfl
+
+@[simp]
+lemma finRange_two : List.finRange 2 = [0, 1] := rfl

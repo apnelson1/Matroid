@@ -80,6 +80,18 @@ lemma IsWalk.isCyclicWalk_of_closed_nodup (hC : G.IsWalk C) (hlen : 2 < C.length
   isClosed := h_closed
   nodup := nodup
 
+lemma IsTour.isCyclicWalk_of_dropLast_nodup (h : G.IsTour C) (hC : C.dropLast.vertex.Nodup) :
+    G.IsCyclicWalk C := by
+  refine ⟨h, ?_⟩
+  induction C using WList.concat_induction with
+  | nil u => simp
+  | concat w e x hw =>
+    simp only [dropLast_concat] at hC
+    simp only [concat_nonempty, Nonempty.vertex_tail, concat_vertex, ne_eq, vertex_ne_nil,
+      not_false_eq_true, List.tail_append_of_ne_nil]
+    rwa [← List.concat_eq_append, List.nodup_concat, ← List.nodup_cons, ← show w.first = x by
+      simpa using h.isClosed.eq, ← vertex_head, List.cons_head_tail]
+
 lemma IsTour.isTrail (hC : G.IsTour C) : G.IsTrail C where
   isWalk := hC.isWalk
   edge_nodup := hC.edge_nodup
@@ -102,6 +114,10 @@ lemma IsTour.reverse (hC : G.IsTour C) : G.IsTour C.reverse where
   edge_nodup := by simpa using hC.edge_nodup
   nonempty := by simp [hC.nonempty]
   isClosed := by simp [hC.isClosed]
+
+lemma IsCyclicWalk.reverse (hC : G.IsCyclicWalk C) : G.IsCyclicWalk C.reverse := by
+  refine hC.toIsTour.reverse.isCyclicWalk_of_dropLast_nodup ?_
+  simpa using hC.nodup
 
 lemma IsTour.of_le (hC : H.IsTour C) (hle : H ≤ G) : G.IsTour C where
   isWalk := hC.isWalk.of_le hle
@@ -435,13 +451,6 @@ lemma IsCyclicWalk.eq_or_nil_of_isSublist_of_first_last_eq (hC : G.IsCyclicWalk 
     have htail : w₁ = w₂ := by
       simpa using hC.tail_isPath.eq_of_sublist_of_first_eq_last_eq h h_eq (by simpa using hlast)
     exact Or.inl (by simp [htail])
-
-lemma IsCyclicWalk.reverse (hC : G.IsCyclicWalk C) : G.IsCyclicWalk C.reverse where
-  isWalk := hC.isWalk.reverse
-  edge_nodup := by simpa using hC.edge_nodup
-  nonempty := by simp [hC.nonempty]
-  isClosed := by simp [hC.isClosed]
-  nodup := by simp [hC.dropLast_isPath.nodup]
 
 lemma IsCyclicWalk.ne_iff_isPath_of_isSublist (hC : G.IsCyclicWalk C) (h : w ≤ C) :
     w ≠ C ↔ G.IsPath w := by

@@ -198,6 +198,14 @@ lemma tail_nil (x : α) : (nil x (β := β)).tail = nil x := rfl
 @[simp, grind =]
 lemma tail_cons (x e) (w : WList α β) : (cons x e w).tail = w := rfl
 
+lemma edgeMap_tail {β' : Type*} (w : WList α β) (σ : β → β') :
+    (w.edgeMap σ).tail = w.tail.edgeMap σ := by
+  induction w with simp
+
+lemma map_tail {α' : Type*} (w : WList α β) (f : α → α') :
+    (w.map f).tail = w.tail.map f := by
+  induction w with simp
+
 /-- Remove the last edge and vertex from a wList. This is the reverse of the reversed tail. -/
 def dropLast : WList α β → WList α β
 | nil x => nil x

@@ -224,7 +224,7 @@ lemma breakAt_aux_map_first_eq_vertex_filter (w : WList α β) (P : α → Prop)
   match w with
   | nil x => by_cases hPx : P x <;> simp [hPx]
   | cons x e w =>
-    by_cases hPx : P x <;> simp [hPx, ↓reduceIte, -map_tail]
+    by_cases hPx : P x <;> simp [hPx, ↓reduceIte, -List.map_tail]
     · rw [breakAt_aux_append]
       simp only [List.map_append, List.map_cons, first_cons, List.map_nil, ne_eq,
         breakAt_aux_ne_nil, not_false_eq_true, tail_append_of_ne_nil]
@@ -394,7 +394,7 @@ lemma breakAt_reverse_tail_map_first_eq_vertex_filter_reverse (w : WList α β) 
   | cons x e w =>
     by_cases hPx : P x <;> conv_lhs => simp only [reverse_cons, concat_reverse, reverse_reverse,
       hPx, ↓reduceIte]
-    · conv_lhs => simp [breakAt_aux_eq_concat, -map_tail]
+    · conv_lhs => simp [breakAt_aux_eq_concat, -List.map_tail]
       simp [w.breakAt_aux_map_first_eq_vertex_filter P, hPx]
     simpa [w.breakAt_aux_map_first_eq_vertex_filter P]
 

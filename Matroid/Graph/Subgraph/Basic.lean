@@ -229,6 +229,10 @@ lemma eq_of_edgeSet (h : H ≤s G) (hE : E(H) = E(G)) : H = G := ext_of_edgeSet 
 
 end IsSpanningSubgraph
 
+@[simp]
+lemma bot_isSpanningSubgraph_iff : (⊥ : Graph α β) ≤s G ↔ G = ⊥ := by
+  simp [isSpanningSubgraph_iff, eq_comm (a := ∅)]
+
 /-! ### Induced Subgraphs -/
 
 lemma IsInducedSubgraph.le' (h : H ≤i G) : H ≤ G := h.le

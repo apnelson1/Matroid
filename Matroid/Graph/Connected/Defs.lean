@@ -189,6 +189,12 @@ lemma Connected.of_isSpanningSubgraph (h : H.Connected) (hsle : H ≤s G) : G.Co
   rw [connected_iff] at h ⊢
   exact ⟨hsle.vertexSet_eq ▸ h.1, h.2.isSpanningSubgraph hsle⟩
 
+lemma Preconnected.of_isSpanningSubgraph (h : H.Preconnected) (hsle : H ≤s G) : G.Preconnected := by
+  rw [preconnected_iff] at *
+  refine Or.imp ?_ (fun h ↦ h.of_isSpanningSubgraph hsle) h
+  rintro rfl
+  simpa using hsle
+
 @[simp]
 lemma IsComplete.connected_iff (h : G.IsComplete) : G.Connected ↔ V(G).Nonempty := by
   simp [h, Graph.connected_iff]

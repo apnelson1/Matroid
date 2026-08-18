@@ -1101,7 +1101,8 @@ lemma idxOf_eq_length_iff (h : w.vertex.Nodup) : w.idxOf x = w.length ↔ x = w.
 end indices
 
 /-- Build a `WList` from given lists of edges and vertices of appropriate lengths -/
-protected def zip : (a : List α) → (b : List β) → (hab : b.length + 1 = a.length) → WList α β
+protected def zip : (a : List α) → (b : List β) → (hab : b.length + 1 = a.length := by simp) →
+    WList α β
   | [], _, h => by simp at h
   | x :: a, [], h => WList.nil x
   | x :: a, e :: b, h => cons x e (WList.zip a b (by simpa using h))

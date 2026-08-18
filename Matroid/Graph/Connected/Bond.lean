@@ -44,8 +44,7 @@ lemma setLinkEdges_eq_empty_iff (hS : S ⊆ V(G)) : δ(G, S) = ∅ ↔ G[S] ≤c
   exact hyS <| h.isLink_congr hxS |>.mpr hxy |>.right_mem
 
 /-- A bond is a subset of edges that separates the graph into two connected components -/
-def IsEdgeCut (G : Graph α β) (F : Set β) : Prop :=
-  ∃ S : Set α, δ(G, S) = F
+def IsEdgeCut (G : Graph α β) (F : Set β) : Prop := ∃ S : Set α, δ(G, S) = F
 
 lemma IsEdgeCut.exists (hF : G.IsEdgeCut F) : ∃ S ⊆ V(G), δ(G, S) = F := by
   obtain ⟨S, rfl⟩ := hF
@@ -57,6 +56,38 @@ lemma IsEdgeCut.exists (hF : G.IsEdgeCut F) : ∃ S ⊆ V(G), δ(G, S) = F := by
   simp_rw [hxy.mem_setLinkEdges_iff]
   grind
 
+lemma IsEdgeCut.subset (hF : G.IsEdgeCut F) : F ⊆ E(G) := by
+  obtain ⟨S, rfl⟩ := hF
+  exact setLinkEdges_subset G S (V(G) \ S)
+
+lemma isEdgeCut_map_iff {F : Set β} {α' : Type*} {φ : α → α'} (hφ : InjOn φ V(G)) :
+    (φ ''ᴳ G).IsEdgeCut F ↔ G.IsEdgeCut F := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · obtain ⟨S, hSV, rfl⟩ := h.exists
+    obtain ⟨S, hS, rfl⟩ := subset_image_iff.1 hSV
+    rw [vertexSet_map, ← image_sdiff_of_injOn hφ hS]
+    exact ⟨S, by rw [setLinkEdges_map_image _ hS sdiff_subset hφ]⟩
+  obtain ⟨S, hS, rfl⟩ := h.exists
+  refine ⟨φ '' S, ?_⟩
+  rw [vertexSet_map, ← image_sdiff_of_injOn hφ hS, setLinkEdges_map_image _ hS sdiff_subset hφ]
+
+lemma isEdgeCut_edgeMap_image_iff {F : Set β} {β' : Type*} {σ : β → β'} (hσ : InjOn σ E(G))
+    (hF : F ⊆ E(G)) : (G.edgeMap σ).IsEdgeCut (σ '' F) ↔ G.IsEdgeCut F := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · obtain ⟨S, hS, heq⟩ := h.exists
+    rw [setLinkEdges_edgeMap, hσ.image_eq_image_iff (setLinkEdges_subset ..) hF] at heq
+    simp only [vertexSet_edgeMap] at heq
+    exact ⟨_, heq⟩
+  obtain ⟨S, hS, rfl⟩ := h.exists
+  exact ⟨S, by simp⟩
+
+lemma isEdgeCut_edgeMap_image_iff_of_injective {F : Set β} {β' : Type*} {σ : β → β'}
+    (hσ : Injective σ) : (G.edgeMap σ).IsEdgeCut (σ '' F) ↔ G.IsEdgeCut F := by
+  by_cases! hFE : ¬ (F ⊆ E(G))
+  · refine iff_of_false (fun h ↦ hFE ?_) fun h ↦ hFE <| h.subset ..
+    simpa [preimage_image_eq _ hσ] using h.subset
+  rw [isEdgeCut_edgeMap_image_iff hσ.injOn hFE]
+
 lemma IsEdgeCut.exists_of_isLink (he : G.IsLink e u v) (heF : e ∈ F) (hF : G.IsEdgeCut F) :
     ∃ S ⊆ V(G), δ(G, S) = F ∧ u ∈ S ∧ v ∉ S := by
   obtain ⟨S, hS, rfl⟩ := hF.exists
@@ -67,10 +98,6 @@ lemma IsEdgeCut.exists_of_isLink (he : G.IsLink e u v) (heF : e ∈ F) (hF : G.I
   rw [setLinkEdges_comm]
   simp only [sdiff_sdiff_right_self]
   exact setLinkEdges_vertexSet_inter_left G S (V(G) \ S)
-
-lemma IsEdgeCut.subset (hF : G.IsEdgeCut F) : F ⊆ E(G) := by
-  obtain ⟨S, rfl⟩ := hF
-  exact setLinkEdges_subset G S (V(G) \ S)
 
 lemma IsEdgeCut.not_isLoopAt (hF : G.IsEdgeCut F) (he : e ∈ F) : ¬ G.IsLoopAt e v := by
   obtain ⟨S, rfl⟩ := hF
@@ -400,6 +427,36 @@ lemma IsBond.of_isClosedSubgraph (hGH : G ≤c H) (hB : G.IsBond B) : H.IsBond B
   exact hB.2 ⟨hC.anti hGH.le, e, hB.subset (hCB heC), heC⟩ (inter_subset_right
   |>.trans hCB) |>.trans inter_subset_right
 
+lemma isBond_map_iff {F : Set β} {α' : Type*} {φ : α → α'} (hφ : InjOn φ V(G)) :
+    (φ ''ᴳ G).IsBond F ↔ G.IsBond F := by
+  have aux : (φ ''ᴳ G).IsEdgeCut = G.IsEdgeCut := by simp [funext_iff, isEdgeCut_map_iff hφ]
+  simp [IsBond, aux]
+
+lemma isBond_edgeMap_iff {F : Set β} {β' : Type*} {σ : β → β'} (hσ : InjOn σ E(G)) (hF : F ⊆ E(G)) :
+    (G.edgeMap σ).IsBond (σ '' F) ↔ G.IsBond F := by
+  simp only [IsBond, Minimal, isEdgeCut_edgeMap_image_iff hσ hF, image_nonempty, image_subset_iff,
+    and_imp, and_congr_right_iff]
+  refine fun hFc hFne ↦ ⟨fun h Y hY hYbe hYF ↦ ?_, fun h Y hY hYne hYF ↦ ?_⟩
+  · specialize h (y := σ '' Y)
+    rwa [isEdgeCut_edgeMap_image_iff hσ (hYF.trans hF), imp_iff_right (image_mono hYF),
+      ← image_subset_iff, imp_iff_right hY, imp_iff_right (by simpa),
+      hσ.image_subset_image_iff hF (hYF.trans hF)] at h
+  obtain ⟨Y, hYF', rfl⟩ := subset_image_iff.1 hYF
+  grw [← image_subset_iff, h _ (by simpa using hYne) hYF']
+  rwa [isEdgeCut_edgeMap_image_iff hσ (hYF'.trans hF)] at hY
+
+lemma isBond_edgeMap_iff_of_injective {F : Set β} {β' : Type*} {σ : β → β'} (hσ : Injective σ) :
+    (G.edgeMap σ).IsBond (σ '' F) ↔ G.IsBond F := by
+  by_cases hF : F ⊆ E(G)
+  · rw [isBond_edgeMap_iff hσ.injOn hF]
+  refine iff_of_false (fun h ↦ hF ?_) fun h ↦ hF h.subset
+  simpa [preimage_image_eq _ hσ] using h.subset
+
+lemma isBond_edgeMap_iff' {β' : Type*} {F : Set β'} {σ : β → β'} (hσ : Injective σ)
+    (hF : F ⊆ range σ) : (G.edgeMap σ).IsBond F ↔ G.IsBond (σ ⁻¹' F) := by
+  rw [← G.isBond_edgeMap_iff_of_injective hσ, image_preimage_eq_inter_range,
+    inter_eq_self_of_subset_left hF]
+
 lemma IsBond.exists_minimal_not_connBetween (hB : G.IsBond B) :
     ∃ x y, G.ConnBetween x y ∧ Minimal (fun F ↦ ¬ (G ＼ F).ConnBetween x y) B := by
   obtain ⟨x, y, hxy, hxy'⟩ := hB.isEdgeCut.exists_not_connBetween hB.nonempty
@@ -441,6 +498,20 @@ lemma isBond_of_conn (hS : S ⊆ V(G)) (hScon : G[S].Preconnected) (hS'con : (G 
   have hxyF : (G ＼ F).IsLink e x y := ⟨hxy, heF⟩
   exact hScon u x huS hxS |>.mono hSleF |>.trans hxyF.connBetween |>.trans
   <| hS'con y v (by simp [hy, hyS]) (by simp [h1, huv.right_mem]) |>.mono hS'leF
+
+lemma PreconnGE.isBond_setLinkEdges_singleton (hG : G.PreconnGE 2) (hv : v ∈ V(G))
+    (hnt : V(G).Nontrivial) : G.IsBond (δ(G, {v})) := by
+  refine isBond_of_conn (by simpa) ?_ ?_ ?_
+  · exact preconnected_of_vertexSet_subsingleton (by simp)
+  · exact hG.preconnected_deleteVerts <| by simp
+  by_contra! hcon
+  rw [setLinkEdges_eq_empty_iff (by simpa)] at hcon
+  have := hG.preconnected_deleteVerts (X := {v}) (by simp)
+  have hc := (hG.preconnected_deleteVerts (X := ∅) (by simp))
+  simp only [deleteVerts_empty, preconnected_iff, ← vertexSet_eq_empty_iff, hnt.ne_empty,
+    false_or] at hc
+  rw [← hc.eq_of_isClosedSubgraph hcon (by simp)] at hnt
+  simp at hnt
 
 lemma walkable_deleteEdges_connBetween_iff :
     (G.walkable x ＼ B).ConnBetween x y ↔ (G ＼ B).ConnBetween x y := by

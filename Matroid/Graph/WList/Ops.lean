@@ -821,4 +821,8 @@ lemma mem_edgeMap (w : WList α β) (k : β → β') (x : α) : x ∈ w.edgeMap 
   change x ∈ (w.edgeMap k).vertex ↔ x ∈ w.vertex
   simp [edgeMap_vertex]
 
+@[simp]
+lemma edgeMap_nonempty (w : WList α β) (σ : β → β') : (w.edgeMap σ).Nonempty ↔ w.Nonempty := by
+  simp [nonempty_iff_exists_edge]
+
 end WList

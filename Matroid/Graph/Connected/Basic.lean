@@ -185,6 +185,26 @@ lemma Connected.union (hG : G.Connected) (hH : H.Connected) (hcompat : G.Compati
   rw [or_iff_left (not_disjoint_iff_nonempty_inter.2 hne)] at hHle
   exact hK.le.antisymm (Graph.union_le hGle hHle)
 
+lemma connected_union_iff_of_disjoint (hV : Disjoint V(G) V(H)) :
+    (G ∪ H).Connected ↔ (G = ⊥ ∧ H.Connected) ∨ (G.Connected ∧ H = ⊥) := by
+  obtain rfl | hG := eq_or_ne G ⊥
+  · simp
+  obtain rfl | hH := eq_or_ne H ⊥
+  · simp
+  suffices ¬ (G ∪ H).Connected by simpa [hG, hH]
+  let s : (G ∪ H).Separation := by
+    refine ⟨V(G), V(H), by simpa using hG, by simpa using hH, hV, by simp,
+      fun x y hx hy ⟨e, he⟩ ↦ ?_⟩
+    rw [union_isLink_iff] at he
+    exact he.elim (fun h ↦ hV.notMem_of_mem_left h.right_mem hy) fun ⟨h, _⟩ ↦
+      hV.notMem_of_mem_right h.left_mem hx
+  exact (not_connected_iff_nonempty_separation.2 ⟨s⟩).2
+
+lemma preconnected_union_iff_of_disjoint (hV : Disjoint V(G) V(H)) :
+    (G ∪ H).Preconnected ↔ (G = ⊥ ∧ H.Preconnected) ∨ (G.Preconnected ∧ H = ⊥) := by
+  simp [preconnected_iff, connected_union_iff_of_disjoint hV, union_eq_bot]
+  tauto
+
 lemma Connected.exists_inc_notMem_of_lt (hG : G.Connected) (hlt : H < G) (hne : V(H).Nonempty) :
     ∃ e x, G.Inc e x ∧ e ∉ E(H) ∧ x ∈ V(H) := by
   refine by_contra fun hcon ↦ hlt.ne <| hG.eq_of_isClosedSubgraph

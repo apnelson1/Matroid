@@ -298,6 +298,25 @@ lemma tail_nonempty_iff : w.tail.Nonempty ↔ w.Nontrivial := by
   cases w with simp
 alias ⟨_, Nontrivial.tail_nonempty⟩ := tail_nonempty_iff
 
+@[simp]
+lemma zip_tail (a : List α) {b : List β} (hb : b ≠ []) (h) :
+    (WList.zip a b h).tail = WList.zip a.tail b.tail (by
+      rw [length_tail_add_one _ (by simpa [List.length_pos_iff]),
+        length_tail, ← h, Nat.add_sub_cancel]) := by
+  match a, b with
+  | [], _ => simp at h
+  | _, [] => simp at hb
+  | x :: a, e :: b => simp
+
+@[simp]
+lemma zip_dropLast (a : List α) {b : List β} (hb : b ≠ []) (h) :
+    (WList.zip a b h).dropLast = WList.zip a.dropLast b.dropLast (by
+      rw [length_dropLast, Nat.sub_add_cancel, length_dropLast, ← h, Nat.add_sub_cancel]
+      simpa [one_le_iff_ne_zero]) := by
+  rw! [← reverse_inj_iff, zip_reverse, ← tail_reverse, ← tail_reverse, ← zip_tail _ (by simpa)
+    (by simpa), ← reverse_tail, zip_reverse]
+  rfl
+
 lemma idxOf_dropLast [DecidableEq α] (hw : w.Nonempty) (hx : x ∈ w) :
     (w.dropLast).idxOf x = w.idxOf x := by
   induction w using concat_induction with simp_all | concat w e u IH =>
