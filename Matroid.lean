@@ -92,10 +92,10 @@ public import Matroid.Graph.Connected.Subgraph
 public import Matroid.Graph.Connected.Vertex.Basic
 public import Matroid.Graph.Connected.Vertex.Defs
 public import Matroid.Graph.Connected.Vertex.VertexEnsemble
--- public import Matroid.Graph.Constructions.Apex
 public import Matroid.Graph.Constructions.Basic
 -- public import Matroid.Graph.Constructions.Cycle
 -- public import Matroid.Graph.Constructions.Random
+-- public import Matroid.Graph.Constructions.Sum
 public import Matroid.Graph.Degree.Basic
 public import Matroid.Graph.Degree.Constructions
 public import Matroid.Graph.Degree.Defs
@@ -104,8 +104,13 @@ public import Matroid.Graph.Distance
 -- public import Matroid.Graph.EdgeColoring
 public import Matroid.Graph.Finite
 public import Matroid.Graph.Forest
-public import Matroid.Graph.Hom
 public import Matroid.Graph.Independent
+public import Matroid.Graph.Iso.Hom
+public import Matroid.Graph.Iso.Invariant
+public import Matroid.Graph.Iso.IsoAction
+public import Matroid.Graph.Iso.IsoTransport
+public import Matroid.Graph.Iso.Relabel
+public import Matroid.Graph.Iso.Transfer
 public import Matroid.Graph.Lattice
 public import Matroid.Graph.Map
 public import Matroid.Graph.Matching.Berge
@@ -117,10 +122,12 @@ public import Matroid.Graph.Minor.Conn
 public import Matroid.Graph.Minor.Defs
 -- public import Matroid.Graph.Planarity.CombMap.Basic
 -- public import Matroid.Graph.Planarity.CombMap.Equiv
+-- public import Matroid.Graph.Planarity.Contraction
 -- public import Matroid.Graph.Planarity.Drawing
 -- public import Matroid.Graph.Planarity.Face
 -- public import Matroid.Graph.Planarity.FaceCycle
 public import Matroid.Graph.Planarity.GraphContinuum.Basic
+-- public import Matroid.Graph.Planarity.Insertion
 public import Matroid.Graph.Planarity.Obstructions
 -- public import Matroid.Graph.Planarity.PLDrawing
 -- public import Matroid.Graph.Planarity.PLReduction

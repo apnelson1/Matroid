@@ -1,33 +1,24 @@
-import Matroid.Graph.Planarity.ThetaCurve
-import Matroid.Graph.Connected.Ear
+module
+
+public import Matroid.ForMathlib.Geometry.Polygon.Crosscut
+public import Matroid.Graph.Connected.Ear
+public import Matroid.Graph.Planarity.Face
+public import Matroid.Graph.Planarity.PLDrawing
 
 /-!
 # Faces of a 2-connected polygonal drawing are bounded by cycles
 
-`Status.md` §4.2. In a polygonal drawing of a finite loopless `2`-connected graph, every face has
-a cycle of the graph as its frontier, and is a whole component of the complement of that cycle.
+In a polygonal drawing of a finite loopless `2`-connected graph, every face has a cycle of the
+graph as its frontier, and is a whole component of the complement of that cycle.
 
-This is the theorem §5 and §6 run on: `Face.lean`'s three parked statements
-(`exists_facial_cycle_of_delete_vertex`, `exists_facial_cycle_of_contract`,
-`planar_of_contract_of_facial_cycle_two_paths`) are corollaries of it.
-
-## The hypotheses are weaker than `Status.md` §4.2 states
-
-`Status.md` asks for `G` finite, **simple**, `2 ≤ κ(G)`. The argument uses only **loopless**, which
-is what `ConnGE.exists_isEar` and `ConnGE.ear_induction` were already corrected to after the same
-discovery at §4.1. Nothing downstream pays: `Face.lean`'s consumers carry `[H.Simple]` anyway.
-
-What looseness costs, and why it is the right trade: under `Loopless` the cycle `C` produced can be
-a **digon** — two vertices joined by two parallel edges. That really is a `Graph.IsCycle` here
-(`isCycle_iff_exists_isCyclicWalk_eq`, `Forest.lean:207`, and `IsCyclicWalk` admits a closed walk of
-length `2`), and it really can bound a face, so the conclusion must admit it and does not claim
-`3 ≤ V(C).encard`. A drawn digon is still a simple closed *curve*: its two cells are disjoint but
-for their ends, so at least one of them bends and the traced polygon has at least three vertices.
-Only the *base* cycle needs `3 ≤ V(C₀).encard`, and `ConnGE.exists_isCycle_le` supplies it.
+The main theorem assumes only finiteness, looplessness, and 2-connectivity. The cycle bounding a
+face may be a digon, so the conclusion does not require three distinct cycle vertices; the initial
+cycle used for ear induction has the stronger size bound supplied by `ConnGE.exists_isCycle_le`.
 
 ## Proof of the main theorem, in the steps the statement is built to support
 
-Write `D|H` for `D.restrict`, `|H|` for `(D|H).support` and `𝕊` for `OnePoint ℝ²`.
+Write `D|H` for `D.restrict`, `|H|` for `(D|H).support` and `𝕊` for `OnePoint V`, the sphere over
+the plane `V`.
 
 1. **Base cycle.** `ConnGE.exists_isCycle_le` (`Forest.lean`) gives `C₀ ≤ G` with `C₀.IsCycle` and
    `3 ≤ V(C₀).encard`.
@@ -69,30 +60,17 @@ Write `D|H` for `D.restrict`, `|H|` for `(D|H).support` and `𝕊` for `OnePoint
   simple polygonal loop.
 * `Graph.PLDrawing.exists_polygon_isSimple_of_isCycle` : the `Polygon` form of the latter, which is
   what `exists_two_regions_crosscut` consumes.
-* `Graph.PLDrawing.exists_isCycle_frontier_faceSet_eq` : **Theorem 4.2**.
-* `Graph.PLDrawing.exists_isCycle_isFacialSubgraph` : 4.2 in the packaged form `Face.lean` uses.
-
-## File placement
-
-The three tracing lemmas are `PLDrawing`-level and the ear lemma is `Drawing`-level: none mentions
-a face, JCT or the plane. They sit here because this file is their only consumer. By
-`Decisions.md` D7 they move to `PLDrawing.lean` and `Drawing.lean` as soon as a second consumer
-appears that does not want `ThetaCurve.lean`'s imports — §5 and §6 will both want them, and both
-will already be importing this file.
+* `Graph.PLDrawing.exists_isCycle_frontier_faceSet_eq` : the face-cycle theorem.
+* `Graph.PLDrawing.exists_isCycle_isFacialSubgraph` : the same result in `IsFacialSubgraph` form.
 -/
 
 open Function Set Topology
 
 namespace Graph
 
-noncomputable section
+public noncomputable section
 
-universe u
-
-variable {α β : Type*} {G H C : Graph α β} {V : Type u} [NormedAddCommGroup V] [NormedSpace ℝ V]
-
-local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
-local notation "𝕊" => OnePoint (EuclideanSpace ℝ (Fin 2))
+variable {α β V : Type*} {G H C : Graph α β} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
 namespace Drawing
 
@@ -122,7 +100,7 @@ the corresponding cell of `D` in each case, and `Drawing.restrict_vertex` (`Draw
 the same for vertex images. Nothing here is polygonal, finite, or planar. -/
 /-- **An ear meets the rest of the drawing exactly at its two ends.**
 
-This is the hypothesis `exists_two_regions_crosscut` (`Status.md` 3.10) calls `hAJ`, and the only
+This is the hypothesis `exists_two_regions_crosscut` calls `hAJ`, and the only
 one of its hypotheses that the drawing axioms have to produce rather than a caller. It is stated
 against `H` rather than against the facial cycle `C ≤ H` because that is the stronger statement and
 the one whose proof is the drawing axioms; the `C` version follows by intersecting, since both ends
@@ -149,10 +127,9 @@ those paths gives a polygonal path whose image is the support of the drawing res
 walk's graph. Both statements below are existence statements rather than definitions, for the same
 reason `Drawing.IsPL` (`PLDrawing.lean:81`) is: the concatenation depends on an orientation choice
 per edge — the walk traverses `e` from `edgeSource e` or from `edgeTarget e`, and `PolygonalPath`
-is typed by its endpoints, so the two cases produce *different terms of different types*. That data
-is not canonical (reversal and subdivision both change it), so it is quantified away here exactly
-as `PLDrawing.lean` quantifies it away there. A `def` would have to fix the choice, and a `def`
-with a `sorry` body is barred outright (`DesignPrinciples.md` §10).
+is typed by its endpoints, so the two cases produce *different terms of different types*. The data
+is not canonical under reversal or subdivision, so it is quantified away here as it is in
+`PLDrawing.lean`.
 
 No finiteness anywhere: a walk is finite by construction.
 -/
@@ -219,15 +196,13 @@ the two cells bends"); `three_le_length` is what discharges it, and it needs no 
 The only real step is rewriting `(D.restrict hW.isWalk.toGraph_le).support` to
 `(D.restrict hC).support` along `W.toGraph = C`; that is a `subst`, since `hC` and
 `hW.isWalk.toGraph_le` are proofs of the same proposition once the graphs agree. -/
-/-- The `Polygon` form of the previous lemma. This is the shape `exists_two_regions_crosscut`
-(`Status.md` 3.10) and `Polygon.IsSimple.exists_arcs` consume, so callers cutting a face with a
-crosscut want this one; callers reasoning about the curve itself want the `PolygonalPath` form. -/
+/-- The `Polygon` form of the previous lemma, used when a face is cut by a crosscut. -/
 theorem exists_polygon_isSimple_of_isCycle (D : PLDrawing G V) (hC : C ≤ G) (hCcyc : C.IsCycle) :
     ∃ (n : ℕ) (p : Polygon V n),
       p.IsSimple ℝ ∧ p.boundary ℝ = (D.toDrawing.restrict hC).support := by
   sorry
 
-/-! ### Status.md 4.2 -/
+/-! ### The face-cycle theorem -/
 
 /- **Route for `exists_isCycle_frontier_faceSet_eq`.**
 
@@ -236,8 +211,9 @@ The seven steps are in this file's module docstring; this names the API for each
 *Setting up.* Faces are taken on `𝕊` throughout: `Drawing.onePoint` (`Face.lean:213`) transports
 the drawing, `Drawing.isClosed_support_onePoint` (`Face.lean:228`) supplies the `IsClosed` argument
 that `Drawing.faceSet_isOpen` (`Face.lean:177`) and `Drawing.frontier_faceSet_subset_support`
-(`Face.lean:185`) need, and `EuclideanSpace ℝ (Fin 2)` discharges its `[T2Space]` and
-`[LocallyCompactSpace]`. `Drawing.support_onePoint` (`Face.lean:217`) moves support equations
+(`Face.lean:185`) need, and the plane bundle on `V` discharges its `[T2Space]` and
+`[LocallyCompactSpace]` — the latter through `FiniteDimensional.of_fact_finrank_eq_two`, which is
+a local instance in the `Plane` section below. `Drawing.support_onePoint` (`Face.lean:217`) moves support equations
 across.
 
 *Step 1.* `ConnGE.exists_isCycle_le` (`Forest.lean`) — note it returns `3 ≤ V(C₀).encard`, which
@@ -290,7 +266,13 @@ vertex. `exists_two_regions_crosscut` is `sorry`, and so is `ConnGE.ear_inductio
 `Drawing.support_eq` (`Drawing.lean:137`); `Drawing.exists_faceSet_eq` again recognises each
 surviving face. `IsCyclicWalk.toGraph_isCycle` (`Forest.lean:192`) makes `C₁ + P` and `C₂ + P`
 cycles, and `IsEar.union_le` (`Ear.lean:105`) puts them under `G`. -/
-/-- **The face theorem** (`Status.md` 4.2). In a polygonal drawing of a finite loopless
+section Plane
+
+attribute [local instance] FiniteDimensional.of_fact_finrank_eq_two
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (Module.finrank ℝ V = 2)]
+
+/-- **The face theorem.** In a polygonal drawing of a finite loopless
 `2`-connected graph, every face of the drawing on the sphere has a cycle of the graph as its
 frontier, and *is* a connected component of the complement of that cycle.
 
@@ -299,7 +281,7 @@ whole component of `𝕊 ∖ |C|` and not merely a set whose frontier happens to
 with `connectedComponentIn` rather than as "is a face of the restricted drawing" because that is
 the form `exists_two_regions_crosscut` takes as a hypothesis, and §5 and §6 feed it straight in. -/
 theorem exists_isCycle_frontier_faceSet_eq [G.Finite] [G.Loopless] (hG : G.ConnGE 2)
-    (D : PLDrawing G ℝ²) (F : D.toDrawing.onePoint.Face) :
+    (D : PLDrawing G V) (F : D.toDrawing.onePoint.Face) :
     ∃ (C : Graph α β) (hC : C ≤ G), C.IsCycle ∧
       frontier (D.toDrawing.onePoint.faceSet F) = (D.toDrawing.onePoint.restrict hC).support ∧
       ∀ ⦃q⦄, q ∈ D.toDrawing.onePoint.faceSet F →
@@ -314,9 +296,11 @@ theorem exists_isCycle_frontier_faceSet_eq [G.Finite] [G.Loopless] (hG : G.ConnG
 weaker than `exists_isCycle_frontier_faceSet_eq`, which names the face; use that one unless the
 `IsFacialSubgraph` interface is what the caller already has. -/
 theorem exists_isCycle_isFacialSubgraph [G.Finite] [G.Loopless] (hG : G.ConnGE 2)
-    (D : PLDrawing G ℝ²) (F : D.toDrawing.onePoint.Face) :
+    (D : PLDrawing G V) (F : D.toDrawing.onePoint.Face) :
     ∃ (C : Graph α β) (hC : C ≤ G), C.IsCycle ∧ D.toDrawing.onePoint.IsFacialSubgraph hC := by
   sorry
+
+end Plane
 
 end PLDrawing
 

@@ -43,20 +43,11 @@ variable {α β : Type*} {G : Graph α β} {t t₁ t₂ : I}
 /-!
 # Topological realization of a multigraph
 
-The *geometric realization* `Graph.Realization G` is a 1-dimensional space: the discrete 0-skeleton
-on `V(G)`, a closed 1-cell `I = Icc 0 1` per edge, and the quotient identifying `0`/`1` with chosen
-endpoints of each edge (via `Classical.choice` among the two `IsLink` orientations).
-
-This matches `sk₁` of a relative CW complex with stationary higher skeleta.  Concretely it is the
-quotient of `V(G) ⊔ ⨆_{e ∈ E(G)} I`, i.e. (up to canonical homeomorphism) the pushout in `Top` of
-`Fin 2 × E(G)` against the disjoint union of 1-disks.
-
-`Vtx G` is used so the 0-skeleton carries the discrete topology `⊥`, not the subspace
-topology from `α`.
-
-If `G` is finite (finitely many vertices and edges), then `PreRealization G` is a finite disjoint
-union of compact pieces (finite discrete spaces and copies of `I`), hence compact, and so is the
-quotient `Realization G` (`Quotient.compactSpace`).
+The geometric realization `Graph.Realization G` is the quotient of the discrete vertex set and one
+copy of `I = Icc 0 1` for each edge, identifying the interval endpoints with the chosen edge ends.
+The vertex set has the discrete topology; the quotient topology is used on the realization. The
+file defines the quotient map, vertex and edge inclusions, and the basic open-set and compactness
+lemmas.
 -/
 
 /-- Discrete uniformity (hence discrete topology) on vertices. -/
@@ -90,6 +81,7 @@ abbrev PreRealization (G : Graph α β) := V(G) ⊕ Σ (_ : E(G)), I
 
 variable {e : E(G)} {t t' : I} {u v : V(G)} {w x y z : G.PreRealization}
 
+@[expose]
 def glueRelAux (G : Graph α β) (x y : PreRealization G) : Prop :=
   match x with
   | .inl u => y = Sum.inl u ∨

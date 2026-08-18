@@ -13,10 +13,9 @@ as the piecewise-linear path that visits them in order. It carries strictly more
 the set it traces out (`toSet`) or the path that traverses it (`toPath`): the list of vertices is
 part of the data.
 
-This file contains only the operations that make sense for a path with *arbitrary* endpoints.
-Operations that only make sense for closed paths — rotating the base point, and the notion of a
-simple *closed* curve — belong to `Polygon`; see
-`Matroid.ForMathlib.Geometry.Polygon.PolygonalPath` for the dictionary between the two.
+The operations here apply to paths with arbitrary endpoints. The cyclic polygon API, including
+rotation and closed simplicity, is in `Matroid.ForMathlib.Geometry.Polygon.Basic`; its correspondence
+with closed paths is in `Matroid.ForMathlib.Geometry.Polygon.PolygonalPath`.
 
 ## Main definitions
 
@@ -31,8 +30,7 @@ simple *closed* curve — belong to `Polygon`; see
 * `toPath` : the topological path traversing `P`, used only to interface with topology.
 * `breakAt`, `subdivide` : cut at, resp. insert, a point of `toSet` as a vertex. Purely
   combinatorial, so they are stated before the parametrization and need no topology.
-* `firstTip`, `lastTip` : the far end of the first segment and the near end of the last. Functions
-  rather than existentials, deliberately; see the note above `firstTip`.
+* `firstTip`, `lastTip` : the far end of the first segment and the near end of the last.
 * `IsSimple` : distinct vertices, and distinct segments meeting only in shared endpoints.
 * `IsTrivial`, `HasNondegenerateEdges` : all vertices equal, resp. no segment is a point.
 
@@ -43,46 +41,28 @@ The characterization to work from is `isSimple_append_iff`:
 (A.append B).IsSimple ↔ A.IsSimple ∧ B.IsSimple ∧ A.toSet ∩ B.toSet ⊆ {y}
 ```
 i.e. a concatenation is simple exactly when the two pieces meet only at the point they share.
-`isSimple_cons_iff` is the case `A = direct x y`, and the closed analogue (with the *two* shared
-endpoints on the right) is the bridge to `Polygon.IsSimple`.
+`isSimple_cons_iff` is the case `A = direct x y`; the closed analogue is the bridge to
+`Polygon.IsSimple`.
 
 `injective_toPath_iff` connects `IsSimple` to the parametrization, and
 `exists_isSimple_toSet_subset` is arc extraction: any polygonal path contains a simple path with
 the same endpoints.
 
-## Design notes
-
-* The base case is `nil x : PolygonalPath x x`, with no segments, rather than a single segment.
-  This makes `nil` a two-sided identity for `append`, makes splitting at *any* vertex total
-  (`exists_append_eq_of_mem_vertices`, with no interiority hypothesis), and makes arc extraction
-  hypothesis-free (`M = nil x` when `x = y`).
-* Consequently `IsSimple` cannot be `Injective P.toPath`: since `toPath (cons a b as)` is
-  `(Path.segment a b).trans as.toPath` and `toPath (nil x)` is constant, injectivity of the
-  parametrization would fail for every path. `IsSimple` is therefore combinatorial, in exact
-  parallel with `Polygon.IsSimple`, and `injective_toPath_iff` records the relationship. For the
-  same reason `toPath` special-cases a final segment, so its `cons` equation has a nondegeneracy
-  side condition (`toPath_cons`).
-* `toSet` is likewise defined by recursion rather than as `range toPath`, so that `toSet_nil`,
-  `toSet_cons` and `toSet_append` are cheap. `toSet_eq_range_toPath` is the interface to topology.
-* `ofList` only produces paths with at least one segment, so `PolygonalPath x y` is no longer
-  equivalent to `List α`; `equivList` is stated for `{P // 0 < P.length}`.
-
-The earlier one-segment-base-case development in `WIP/Jun/Planarity/PolygonalPath.lean` informed
-some of these proofs, but the `nil` cases and the combinatorial `IsSimple` API require separate
-arguments.
+The base case `nil x` has no segments and is the identity for concatenation. `toSet` is defined
+recursively over segments, while `toPath` supplies the topological parametrization; the theorem
+`toSet_eq_range_toPath` connects the two views. Simplicity is defined combinatorially and related to
+injectivity of `toPath` by `injective_toPath_iff`.
 -/
 
 @[expose] public section
 
-universe u
-
 open Set Function List
 
-variable {α : Type u} {a b c x y z : α} {L : List α}
+variable {α : Type*} {a b c x y z : α} {L : List α}
 
 /-- A polygonal path from `x` to `y` : a finite sequence of points beginning at `x` and ending at
 `y`, to be joined consecutively by line segments. -/
-inductive PolygonalPath : α → α → Type u where
+inductive PolygonalPath : α → α → Type _ where
   /-- The path that stays at `x`, with no segments. -/
   | nil (x : α) : PolygonalPath x x
   /-- Prepend the segment from `a` to `b` to a path starting at `b`. -/
@@ -204,10 +184,7 @@ lemma vertices_eq_cons : P.vertices = x :: P.vertices.tail :=
 lemma vertices_eq_concat : P.vertices = P.vertices.dropLast ++ [y] :=
   (List.dropLast_append_getLast? y P.vertices_getLast?).symm
 
-/-- Reassembling the vertex list. Deliberately **not** `@[simp]`: its left-hand side contains
-`P.internal ++ [y]`, which `internal_concat` — also `@[simp]` — rewrites first, so the rule loses
-the race in every goal it was written for. Measured: `simp [*]` on this very statement does not
-close it. `grind` keys on the term as written and does not have that problem. -/
+/-- Reassembling the vertex list. -/
 @[grind =]
 lemma cons_internal_concat (h : 0 < P.length) : x :: (P.internal ++ [y]) = P.vertices := by
   have ht : P.vertices.tail ≠ [] := by
@@ -387,9 +364,7 @@ lemma append_assoc {w : α} (R : PolygonalPath z w) :
   | nil => rfl
   | cons a b P ih => simp [reverse, ih]
 
-/-- The pointwise form of `reverse_edges`. Every consumer of `reverse_edges` holds a *membership*,
-not the list equation, and without this each of them re-derives the same
-`List.mem_reverse`/`List.mem_map` shuffle. -/
+/-- The membership form of `reverse_edges`. -/
 @[grind =]
 lemma mem_reverse_edges {P : PolygonalPath x y} {s : α × α} :
     s ∈ P.reverse.edges ↔ s.swap ∈ P.edges := by
@@ -583,9 +558,7 @@ lemma mem_toSet_of_mem_vertices {u : α} (hu : u ∈ P.vertices) : u ∈ P.toSet
 /-- The trichotomy every recursion over `toSet` splits along: a point of `cons u v P` is the
 initial vertex, an interior point of the initial segment, or a point of the tail.
 
-The forward direction is the content — the two easy cases hide the fact that `a = v` puts `a` in
-the *tail*, not in the segment. Every `split_ifs` over `breakAt` and `subdivide` needs exactly
-this, and each of them used to re-derive it inline. -/
+The forward direction separates membership in the first segment from membership in the tail. -/
 @[grind =]
 lemma mem_toSet_cons_iff {u v w : α} {P : PolygonalPath v w} {a : α} :
     a ∈ (cons u v P).toSet ↔ a = u ∨ a ∈ openSegment ℝ u v ∨ a ∈ P.toSet := by
@@ -1212,19 +1185,8 @@ variable {P : PolygonalPath x y}
 
 /-- The two pieces of `IsSimple.breakAt` are the two *parameter* halves of `P.toPath`.
 
-`IsSimple.breakAt` identifies the pieces combinatorially, as polygonal paths; this identifies them
-analytically. An embedded arc has an injective `toPath`, so each piece is a connected subset of the
-image whose parameter preimage is an interval, and the two intervals meet only at `t₀`
-(`Path.image_Icc_subset_of_isConnected`). Callers cutting a cell twice — once at each end — need
-this to compose the two cuts, since the second cut is taken in the *first piece's* parametrisation
-while the conclusion has to be stated in `P`'s.
-
-**Deliberately untagged, and this one is measured.** It carried `@[grind →]`, keyed on the
-antecedent `P.toPath t₀ = a` — the only place every variable occurs together, and specific enough
-that the tag looked free. At `grind.unusedLemmaThreshold 10` over the reverse closure it was the
-*only* declaration of this file's to appear: `Radial.lean:254`, activated 20 times, contributing
-nothing. Its one real consumer (`Radial.lean:173`) names it explicitly. Twenty activations bought
-at one call site, forever, for no proof — so the tag is gone and the lemma is called by name. -/
+`IsSimple.breakAt` identifies the pieces combinatorially. Injectivity of `toPath` identifies their
+images with the two parameter intervals cut at `t₀`. -/
 lemma IsSimple.toSet_breakAt_eq [T2Space α] (hP : P.IsSimple) (hlen : 0 < P.length)
     (ha : a ∈ P.toSet) {t₀ : I} (ht₀ : P.toPath t₀ = a) :
     (P.breakAt ha).1.toSet = P.toPath '' Set.Icc (0 : I) t₀ ∧
@@ -1306,15 +1268,8 @@ section Edges
 
 variable {x y : α}
 
-/-! The first and last edges of a path are *determined* by it — the first edge of `cons a b as` is
-`(a, b)` and nothing else. So the two ends are named by functions, `firstTip` and `lastTip`, and the
-existence statements below are corollaries rather than the primitives.
-
-Naming them is not a convenience. A consumer that obtains the far end of the first segment from an
-`∃` has a term it can say nothing else about: two such terms, from two lemmas about the same path,
-cannot be identified, and `Classical.choose` of the existence statement has no computation rule at
-all. That is what made `Graph.PLDrawing.endTip` unusable, and it is `DesignPrinciples.md` §9's
-"existence statement whose witness the proof already constructed, or which is in fact unique". -/
+/-! The first and last edges of a path are determined by its vertex list; `firstTip` and `lastTip`
+name their nontrivial endpoints. -/
 
 /-- The far end of the first segment: the second vertex of `P`. Junk (namely `x`) when `P = nil x`,
 which `mem_edges_firstTip` excludes by `0 < P.length`. -/
@@ -1339,8 +1294,7 @@ def lastTip (P : PolygonalPath x y) : α := P.reverse.firstTip
 
 lemma firstTip_reverse (P : PolygonalPath x y) : P.reverse.firstTip = P.lastTip := rfl
 
-/-- Casting does not move the tips. Without this the tips of a cell and of a *cast* cell are
-different terms, which is the shape that defeated the earlier `endTip` API. -/
+/-- Casting does not change the tips. -/
 @[simp] lemma firstTip_cast {x y x' y' : α} (P : PolygonalPath x y) (hx : x = x') (hy : y = y') :
     (P.cast hx hy).firstTip = P.firstTip := by
   subst hx hy
@@ -1398,9 +1352,7 @@ section SimpleEdge
 
 variable [AddCommGroup α] [Module ℝ α]
 
-/-- The first segment of a path lies in it. Needs neither simplicity nor a metric, so it is stated
-here rather than inside `exists_ball_inter_subset_firstSegment`, whose conclusion used to carry it
-under an existential `ρ` it does not depend on. -/
+/-- The first segment of a path lies in its traced set. -/
 lemma segment_firstTip_subset_toSet {x y : α} (P : PolygonalPath x y) (h : 0 < P.length) :
     segment ℝ x P.firstTip ⊆ P.toSet :=
   P.segment_subset_toSet (mem_edges_firstTip h)
@@ -1410,8 +1362,7 @@ lemma segment_lastTip_subset_toSet {x y : α} (P : PolygonalPath x y) (h : 0 < P
     segment ℝ P.lastTip y ⊆ P.toSet :=
   P.segment_subset_toSet (mem_edges_lastTip h)
 
-/-- In a simple path of positive length the first tip is not the first vertex. This is the
-`z ≠ x` that `exists_ball_inter_subset_firstSegment` used to carry inside its existential. -/
+/-- In a simple path of positive length the first tip is not the first vertex. -/
 lemma IsSimple.firstTip_ne {x y : α} {P : PolygonalPath x y} (hP : P.IsSimple) (h : 0 < P.length) :
     P.firstTip ≠ x := by
   cases P with
@@ -1447,9 +1398,7 @@ lemma eq_first_edge_of_mem_segment {p y : α} {B : PolygonalPath p y} (hB : B.Is
       hpc <| mem_singleton_iff.mp <| hmeet ⟨left_mem_segment ℝ p b,
       Q.segment_subset_toSet hsQ hps⟩
 
-/-- In a simple path, the only edge whose segment contains the last vertex is the last edge.
-This is `eq_first_edge_of_mem_segment` read backwards; the two used to be separate 40-line
-inductions. -/
+/-- In a simple path, the only edge whose segment contains the last vertex is the last edge. -/
 @[grind →]
 lemma eq_last_edge_of_mem_segment {x p : α} {A : PolygonalPath x p} (hA : A.IsSimple) {a : α}
     (ha : (a, p) ∈ A.edges) {s : α × α} (hs : s ∈ A.edges) (hps : p ∈ segment ℝ s.1 s.2) :
@@ -1463,10 +1412,6 @@ lemma eq_last_edge_of_mem_segment {x p : α} {A : PolygonalPath x p} (hA : A.IsS
 end SimpleEdge
 
 section Metric
-
--- Weaker than the `[NormedAddCommGroup α] [NormedSpace ℝ α]` this section used to carry: the one
--- theorem below takes nothing from a norm beyond a `dist`, a compatible ℝ-module structure, and
--- enough separation to close a compact set.
 variable [MetricSpace α] [AddCommGroup α] [Module ℝ α] [IsTopologicalAddGroup α]
   [ContinuousSMul ℝ α]
 
@@ -1474,23 +1419,12 @@ open Metric
 
 /-- A simple polygonal path meets a small enough ball around its start in its first segment only.
 
-**The radius has to be chosen after the path.** A path may perfectly well leave a *fixed* ball
-around its start and come back into it; what simplicity rules out is only that it returns to `x`
-itself. So the statement produces a `ρ`, and any consumer needing a bound of this shape at a radius
-it also gets from elsewhere must take the minimum of the two.
+**The radius has to be chosen after the path.** A path may leave a fixed ball around its start and
+return to it; simplicity rules out only a return to the start itself. The proof chooses a radius
+from the positive distance to the compact tail of the path.
 
-Route: `toSet_eq_insert_biUnion` writes `P.toSet` as `{y}` together with finitely many segments.
-The tail `Q.toSet` is compact (`isCompact_segment`, `Set.Finite.isCompact_biUnion`) and misses `x`
-by simplicity, so `exists_pos_le_dist_of_notMem` (`ForMathlib/Topology/MetricSpace.lean`) bounds `ρ`
-away from it; half that bound is small enough.
-
-**The segment is `segment ℝ x P.firstTip`, not an anonymous one.** An earlier version existentially
-quantified the far end, which its own proof supplies as the `cons` head. A caller then held a point
-it could not identify with the first tip obtained from anywhere else — see
-`Graph.PLDrawing.endTip` — so the witness is now named. Two conjuncts that were riding along inside
-the existential are gone the same way, each to the statement that actually carries it: `z ≠ x` is
-`IsSimple.firstTip_ne`, and `segment ℝ x P.firstTip ⊆ P.toSet` is `segment_firstTip_subset_toSet`,
-which depends on neither `ρ` nor simplicity. -/
+The tail of the path is compact and misses the initial vertex by simplicity, so a positive distance
+from the tail supplies a radius for which only the first segment meets the ball. -/
 theorem exists_ball_inter_subset_firstSegment {x y : α} {P : PolygonalPath x y} (hP : P.IsSimple)
     (hxy : x ≠ y) : ∃ ρ > 0, P.toSet ∩ closedBall x ρ ⊆ segment ℝ x P.firstTip := by
   cases P with

@@ -12,48 +12,17 @@ public import Matroid.ForMathlib.Topology.MetricSpace
 
 A **segment figure** is a finite union of segments together with finitely many extra points. About
 each of its points such a set is a star of finitely many straight radii — that is `exists_radius`
-below, and it is all the local structure the planarity development uses.
-
-## Why this file exists
-
-`exists_radius` was previously stated about a `PLDrawing` of a finite graph. In its proof the
-drawing occurred exactly twice, both times as `range D.toDrawing.vertex`, and both times only its
-*finiteness* was used; everything else came from `PLDrawing.exists_finite_support`, whose conclusion
-is precisely `IsSegmentFigure`. So the star lemma is a fact about finite unions of segments, and
-stating it about a drawing put it out of reach of every caller that has such a union but no graph —
-notably the θ-curve of Status.md 3.9, which is three polygonal arcs and no drawing.
-
-Nothing here mentions a graph, so by Kuratowski `Decisions.md` D14 it lives in `ForMathlib`.
+below. The radius count records how many distinct directions leave a point.
 
 ## The radius count
 
-`exists_radius` produces a `Y` whose radii cover the figure near `p`, but says nothing about
-`Y.card`. That count is what both known callers actually need — `Y.card = G.degree v` at a vertex of
-a drawing, `Y.card = 3` at an endpoint of a θ-curve — and it is genuinely separate content, because
-`Y` counts *directions* out of `p`, not segment ends: two ends positively parallel to each other
-contribute one radius between them.
+`exists_radius` produces a finite set `Y` of radius endpoints but does not count it. `Y` counts
+directions out of `p`, not segment ends: two ends that are positively parallel contribute one
+radius.
 
-`card_radii_le_of_cover` and `le_card_radii_of_pairwise` are the two bounds, in the form both
-callers instantiate. The primitive underneath them is
-`exists_segment_subset_inter_of_radialPoint_eq` (`Convex/RadialPoint.lean`): two ends in the same
-direction share a nondegenerate initial segment, which is what turns "these two pieces meet only at
-`p`" into "these two pieces point in different directions".
-
-## What deliberately lives elsewhere
-
-Two facts this file used to carry have no `IsSegmentFigure` in their statements, so nobody needing
-them would think to look here:
-
-* `exists_pos_le_dist_of_notMem` — a point off a closed set stays a positive distance from all of
-  it. Pure metric space, and `Graph/Planarity/PLReduction.lean` reinvents it; now in
-  `ForMathlib/Topology/MetricSpace.lean`, generalised from normed groups to `PseudoMetricSpace`.
-* `PolygonalPath.exists_ball_inter_subset_firstSegment` — now in `PolygonalPath/Basic.lean`, whose
-  `section Metric` exists for it. It is what supplies `hUz` for `card_radii_le_of_cover` when the
-  pieces are polygonal arcs.
-
-A bundled `IsStar p ρ Y T` for the recurring `(hY, hstar)` pair was considered and rejected: the
-counting lemmas below are deliberately stated about *any* `Y` satisfying the star equation, and
-pinning `Y` down is what defeated the earlier attempt on `PLDrawing.exists_radius_vertex`.
+`card_radii_le_of_cover` and `le_card_radii_of_pairwise` give the two counting bounds. They use
+`exists_segment_subset_inter_of_radialPoint_eq`: equal radial directions share a nondegenerate
+initial segment.
 
 ## Main definitions
 
@@ -70,13 +39,7 @@ open Set Metric
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {T T₁ T₂ : Set V} {p : V} {ρ : ℝ}
   {Y : Finset V}
 
-/-- `T` is a **segment figure**: finitely many segments together with finitely many extra points.
-
-The extra points are kept as a separate finite set rather than folded into degenerate segments
-`segment ℝ x x = {x}`. That is deliberate: `exists_radius` builds its radii from where each segment
-*through* `p` crosses `sphere p ρ`, and a degenerate segment at `p` has no such crossing, so folding
-them in would add a case to that construction and force a side condition on `↑Y ⊆ sphere p ρ`. In
-this shape the hypothesis matches `PLDrawing.exists_finite_support` term for term. -/
+/-- `T` is a **segment figure**: a finite set of points together with a finite union of segments. -/
 def IsSegmentFigure (T : Set V) : Prop :=
   ∃ (F : Set V) (S : Set (V × V)), F.Finite ∧ S.Finite ∧ T = F ∪ ⋃ s ∈ S, segment ℝ s.1 s.2
 
@@ -254,12 +217,7 @@ theorem IsSegmentFigure.iUnion {ι : Type*} [Finite ι] {U : ι → Set V}
   refine ⟨⋃ i, F i, ⋃ i, S i, finite_iUnion hFfin, finite_iUnion hSfin, ?_⟩
   simp_rw [hEq, iUnion_union_distrib, biUnion_iUnion]
 
-/-- A polygonal path traces a segment figure. This is what lets Status.md §3.9 apply the star lemma
-to a θ-curve, which is three arcs and no drawing.
-
-Route: `PolygonalPath.toSet_eq_insert_biUnion` (`PolygonalPath/Basic.lean:588`) gives
-`P.toSet = insert y (⋃ s ∈ P.edges, segment ℝ s.1 s.2)`. Take `F := {y}` and
-`S := {s | s ∈ P.edges}`, finite by `List.finite_toSet`. -/
+/-- The set traced by a polygonal path is a segment figure. -/
 @[grind .]
 theorem PolygonalPath.isSegmentFigure_toSet {x y : V} (P : PolygonalPath x y) :
     IsSegmentFigure P.toSet := by
@@ -269,27 +227,17 @@ theorem PolygonalPath.isSegmentFigure_toSet {x y : V} (P : PolygonalPath x y) :
 
 /-! ### Shrinking the star
 
-`exists_radius` hands the caller a `ρ` it did not choose, but both counting arguments below need `ρ`
-small enough for some caller-side condition — small enough that `b` is outside the ball, that a
-polygonal arc has not re-entered it, that two cells at a vertex have separated. So the star has to
-be shrinkable, and the radius count has to be invariant under shrinking. **Callers should shrink
-first and count second.** -/
+The star equation remains valid at every smaller positive radius, with the radius endpoints moved
+by `radialPoint`. The number of endpoints is unchanged. -/
 
 /-- The star survives shrinking the radius, with the same number of radii.
 
-Without this the counting lemmas below are unusable: their hypotheses on the pieces `U i` hold only
-for small `ρ`, and `exists_radius` does not let the caller pick `ρ`.
-
-Route: take `Y' := Y.image (radialPoint p · ρ')`. The equality is `hstar` intersected with
-`closedBall p ρ'`, using `segment_inter_closedBall_eq_radial` (`RadialPoint.lean:110`) on each
-radius to cut it at the smaller radius. `↑Y' ⊆ sphere p ρ'` is `mem_sphere_radialPoint`
-(`RadialPoint.lean:136`). For `Y'.card = Y.card` use `Finset.card_image_of_injOn` and
-`radialPoint_eq_iff_pos_parallel` (`RadialPoint.lean:243`): two distinct points of `sphere p ρ` are
-never positively parallel, since `a - p = t • (b - p)` with `‖a - p‖ = ‖b - p‖ = ρ` and `0 < t`
-forces `t = 1`. -/
+Route: take `Y' := Y.image (radialPoint p · ρ')` and intersect the star equation with
+`closedBall p ρ'`. The radial-point lemmas give the new sphere condition and preserve the
+cardinality.
+-/
 theorem exists_radius_of_le {ρ' : ℝ} (hρ : 0 < ρ) (hY : ↑Y ⊆ sphere p ρ)
-    (hstar : closedBall p ρ ∩ T = {p} ∪ ⋃ y ∈ Y, segment ℝ p y)
-    (hρ' : 0 < ρ') (hle : ρ' ≤ ρ) :
+    (hstar : closedBall p ρ ∩ T = {p} ∪ ⋃ y ∈ Y, segment ℝ p y) (hρ' : 0 < ρ') (hle : ρ' ≤ ρ) :
     ∃ Y' : Finset V, ↑Y' ⊆ sphere p ρ' ∧ Y'.card = Y.card ∧
       closedBall p ρ' ∩ T = {p} ∪ ⋃ y ∈ Y', segment ℝ p y := by
   classical
@@ -354,14 +302,12 @@ theorem exists_radius_of_le {ρ' : ℝ} (hρ : 0 < ρ) (hY : ↑Y ⊆ sphere p �
 
 /-! ### Counting the radii
 
-`exists_radius` says nothing about `Y.card`, and that count is what callers need. `Y` counts
-*directions* out of `p`: by `radialPoint_eq_iff_pos_parallel` (`RadialPoint.lean:243`) two ends give
-the same radius exactly when they are positively parallel. The two bounds below are stated in the
-form both known callers instantiate — a family `U` of pieces of `T` meeting only at `p`.
+`Y` counts
+*directions* out of `p`: by `radialPoint_eq_iff_pos_parallel` two ends give
+the same radius exactly when they are positively parallel. The two bounds apply to a family `U` of
+pieces of `T` meeting only at `p`.
 
-Both are stated about *any* `Y` satisfying the star equation, so the caller never has to look inside
-the `Y` that `exists_radius` produced. Pinning `Y` down is what defeated the earlier attempt on
-`PLDrawing.exists_radius_vertex`. -/
+Both are stated about any `Y` satisfying the star equation. -/
 
 /-- **Counting radii from below.** If `T` contains pieces `U i` that pairwise meet only at `p`, each
 leaving `p` along some nondegenerate segment, then there are at least that many radii.
@@ -370,11 +316,9 @@ Route: for each `i` pick `z i ≠ p` with `segment ℝ p (z i) ⊆ U i`. Put a p
 `segment p (z i) \ {p}` into `closedBall ∩ T` via `radialPoint` at `min ρ (dist p z)`, read a radius
 off `hstar`, and inject by shared initial segments on equal images. -/
 theorem le_card_radii_of_pairwise {ι : Type*} [Fintype ι] {U : ι → Set V} (hρ : 0 < ρ)
-    (hY : ↑Y ⊆ sphere p ρ)
-    (hstar : closedBall p ρ ∩ T = {p} ∪ ⋃ y ∈ Y, segment ℝ p y)
+    (hY : ↑Y ⊆ sphere p ρ) (hstar : closedBall p ρ ∩ T = {p} ∪ ⋃ y ∈ Y, segment ℝ p y)
     (hUT : ∀ i, U i ⊆ T) (hUp : ∀ i, ∃ z ≠ p, segment ℝ p z ⊆ U i)
-    (hmeet : ∀ i j, i ≠ j → U i ∩ U j ⊆ {p}) :
-    Fintype.card ι ≤ Y.card := by
+    (hmeet : ∀ i j, i ≠ j → U i ∩ U j ⊆ {p}) : Fintype.card ι ≤ Y.card := by
   classical
   choose z hzne hseg using hUp
   let r (i : ι) : ℝ := min ρ (dist p (z i))
@@ -394,11 +338,9 @@ theorem le_card_radii_of_pairwise {ι : Type*} [Fintype ι] {U : ι → Set V} (
     exact mem_closedBall.mpr (hdist.trans_le (hr_le_ρ i))
   have hwY (i : ι) : ∃ y ∈ Y, w i ∈ segment ℝ p y := by
     have hx : w i ∈ closedBall p ρ ∩ T := ⟨hwball i, hUT i (hwU i)⟩
-    rw [hstar] at hx
-    rcases hx with hwp | hwrad
-    · exact (hwne i hwp).elim
-    · obtain ⟨y, hy, hwy⟩ := mem_iUnion₂.mp hwrad
-      exact ⟨y, hy, hwy⟩
+    replace hx := (hstar ▸ hx).resolve_left (hwne i)
+    obtain ⟨y, hy, hwy⟩ := mem_iUnion₂.mp hx
+    exact ⟨y, hy, hwy⟩
   choose f hfY hwf using hwY
   have hinj : Function.Injective f := by
     intro i j hfij
@@ -465,11 +407,9 @@ Route: every `y ∈ Y` satisfies `segment ℝ p y ⊆ T ∩ closedBall p ρ` by 
 distance exactly `ρ`). So `Y ⊆ image (fun i ↦ radialPoint p (z i) ρ)`, and
 `Finset.card_le_card` with `Finset.card_image_le` finishes. -/
 theorem card_radii_le_of_cover {ι : Type*} [Fintype ι] {U : ι → Set V} {z : ι → V} (hρ : 0 < ρ)
-    (hY : ↑Y ⊆ sphere p ρ)
-    (hstar : closedBall p ρ ∩ T = {p} ∪ ⋃ y ∈ Y, segment ℝ p y)
-    (hcover : T ∩ closedBall p ρ ⊆ {p} ∪ ⋃ i, U i)
-    (hzne : ∀ i, z i ≠ p) (hUz : ∀ i, U i ∩ closedBall p ρ ⊆ segment ℝ p (z i)) :
-    Y.card ≤ Fintype.card ι := by
+    (hY : ↑Y ⊆ sphere p ρ) (hstar : closedBall p ρ ∩ T = {p} ∪ ⋃ y ∈ Y, segment ℝ p y)
+    (hcover : T ∩ closedBall p ρ ⊆ {p} ∪ ⋃ i, U i) (hzne : ∀ i, z i ≠ p)
+    (hUz : ∀ i, U i ∩ closedBall p ρ ⊆ segment ℝ p (z i)) : Y.card ≤ Fintype.card ι := by
   classical
   let g : ι → V := fun i ↦ radialPoint p (z i) ρ
   have hYsub : Y ⊆ Finset.univ.image g := by
@@ -482,30 +422,23 @@ theorem card_radii_le_of_cover {ι : Type*} [Fintype ι] {U : ι → Set V} {z :
         rw [hstar]
         exact Or.inr (mem_iUnion₂.mpr ⟨y, hyY, right_mem_segment _ _ _⟩)
       exact this.2
-    have hycover : y ∈ ({p} : Set V) ∪ ⋃ i, U i :=
-      hcover ⟨hyT, hyball⟩
-    rcases hycover with hyeq | hyU
-    · exact (hyne hyeq).elim
-    · obtain ⟨i, hyUi⟩ := mem_iUnion.mp hyU
-      have hyseg : y ∈ segment ℝ p (z i) := hUz i ⟨hyUi, hyball⟩
-      obtain ⟨t, ⟨ht0, ht1⟩, hyline⟩ :=
-        (segment_eq_image_lineMap (𝕜 := ℝ) p (z i)).symm ▸ hyseg
-      have hydist : dist y p = ρ := mem_sphere.mp hysph
-      have hydist' : dist (AffineMap.lineMap p (z i) t) p = ρ := by
-        rw [hyline]; exact hydist
-      rw [dist_lineMap_left_of_nonneg p (z i) ht0] at hydist'
-      have hle : ρ ≤ dist p (z i) := by
-        calc
-          ρ = t * dist p (z i) := hydist'.symm
-          _ ≤ 1 * dist p (z i) := mul_le_mul_of_nonneg_right ht1 dist_nonneg
-          _ = dist p (z i) := one_mul _
-      have hrad : y ∈ segment ℝ p (radialPoint p (z i) ρ) := by
-        have : y ∈ closedBall p ρ ∩ segment ℝ p (z i) := ⟨hyball, hyseg⟩
-        rwa [segment_inter_closedBall_eq_radial p (z i) hρ (hzne i) hle] at this
-      have hyeq : y = radialPoint p (z i) ρ :=
-        eq_of_mem_segment_of_mem_sphere p hρ
-          (mem_sphere_radialPoint p (z i) hρ.le (hzne i)) hrad hysph
-      exact Finset.mem_image.mpr ⟨i, Finset.mem_univ _, hyeq.symm⟩
+    obtain ⟨i, hyUi⟩ := mem_iUnion.mp <| (hcover ⟨hyT, hyball⟩).resolve_left hyne
+    have hyseg : y ∈ segment ℝ p (z i) := hUz i ⟨hyUi, hyball⟩
+    obtain ⟨t, ⟨ht0, ht1⟩, hyline⟩ := (segment_eq_image_lineMap (𝕜 := ℝ) p (z i)).symm ▸ hyseg
+    have hydist : dist (AffineMap.lineMap p (z i) t) p = ρ := hyline ▸ mem_sphere.mp hysph
+    rw [dist_lineMap_left_of_nonneg p (z i) ht0] at hydist
+    have hle : ρ ≤ dist p (z i) := by
+      calc
+        ρ = t * dist p (z i) := hydist.symm
+        _ ≤ 1 * dist p (z i) := mul_le_mul_of_nonneg_right ht1 dist_nonneg
+        _ = dist p (z i) := one_mul _
+    have hrad : y ∈ segment ℝ p (radialPoint p (z i) ρ) := by
+      have : y ∈ closedBall p ρ ∩ segment ℝ p (z i) := ⟨hyball, hyseg⟩
+      rwa [segment_inter_closedBall_eq_radial p (z i) hρ (hzne i) hle] at this
+    have hyeq : y = radialPoint p (z i) ρ :=
+      eq_of_mem_segment_of_mem_sphere p hρ
+        (mem_sphere_radialPoint p (z i) hρ.le (hzne i)) hrad hysph
+    exact Finset.mem_image.mpr ⟨i, Finset.mem_univ _, hyeq.symm⟩
   calc
     Y.card ≤ (Finset.univ.image g).card := Finset.card_le_card hYsub
     _ ≤ Finset.univ.card := Finset.card_image_le
@@ -514,28 +447,19 @@ theorem card_radii_le_of_cover {ι : Type*} [Fintype ι] {U : ι → Set V} {z :
 /-- **The radius endpoints are exactly the sphere section.** Given a star at `p` for any set `S`,
 the finset `Y` is determined: it is `sphere p ρ ∩ S`.
 
-This is what makes `Y` canonical, and hence what makes the two counting bounds above statements
-about `S` rather than about a particular witness. Nothing about drawings or graphs is involved —
-`S` is an arbitrary set, and the star equation is the only hypothesis. -/
+Thus `Y` is exactly the sphere section `sphere p ρ ∩ S`, so the counting bounds depend only on `S`.
+-/
 theorem coe_eq_sphere_inter_of_star {S : Set V} (hρ : 0 < ρ) (hYsph : ↑Y ⊆ sphere p ρ)
     (hstar : closedBall p ρ ∩ S = {p} ∪ ⋃ y ∈ Y, segment ℝ p y) :
     (Y : Set V) = sphere p ρ ∩ S := by
   ext y
-  constructor
-  · intro hy
-    refine ⟨hYsph hy, ?_⟩
-    have : y ∈ closedBall p ρ ∩ S := by
-      rw [hstar]
-      exact Or.inr (mem_iUnion₂.mpr ⟨y, hy, right_mem_segment _ _ _⟩)
-    exact this.2
-  · intro ⟨hysph, hysup⟩
-    have hyball : y ∈ closedBall p ρ := sphere_subset_closedBall hysph
-    have hy' : y ∈ ({p} : Set V) ∪ ⋃ y ∈ Y, segment ℝ p y := by
-      rw [← hstar]; exact ⟨hyball, hysup⟩
-    rcases hy' with hy' | hy'
-    · exact absurd (mem_singleton_iff.mp hy') (ne_of_mem_sphere hysph hρ.ne')
-    · obtain ⟨y', hy'Y, hyseg⟩ := mem_iUnion₂.mp hy'
-      rw [eq_of_mem_segment_of_mem_sphere p hρ (hYsph hy'Y) hyseg hysph]
-      simpa using hy'Y
+  refine ⟨fun hy ↦ ⟨hYsph hy, (hstar ▸ Or.inr (mem_iUnion₂.mpr ⟨y, hy, right_mem_segment ℝ p y⟩) :
+    y ∈ closedBall p ρ ∩ S).2⟩, fun ⟨hysph, hysup⟩ ↦ ?_⟩
+  have hyball : y ∈ closedBall p ρ := sphere_subset_closedBall hysph
+  obtain hy' | hy' : y ∈ ({p} : Set V) ∪ ⋃ y ∈ Y, segment ℝ p y := hstar ▸ ⟨hyball, hysup⟩
+  · exact absurd (mem_singleton_iff.mp hy') (ne_of_mem_sphere hysph hρ.ne')
+  obtain ⟨y', hy'Y, hyseg⟩ := mem_iUnion₂.mp hy'
+  rw [eq_of_mem_segment_of_mem_sphere p hρ (hYsph hy'Y) hyseg hysph]
+  simpa using hy'Y
 
 end

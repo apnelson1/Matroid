@@ -6,9 +6,8 @@ public import Matroid.ForMathlib.Analysis.Convex.RadialPoint
 /-!
 # Replacing a family of paths by disjoint polygonal arcs ending on given spheres
 
-The analytic and geometric core of the PL reduction (Kuratowski `Status.md` §2.6, steps 3–6),
-with no graph in it. `Matroid/Graph/Planarity/PLReduction.lean` supplies the graph bookkeeping —
-which balls, which paths, which edges — and consumes these two statements.
+This file gives the analytic and geometric replacement lemmas for paths, without graph-specific
+data.
 
 ## Main statements
 
@@ -19,38 +18,24 @@ which balls, which paths, which edges — and consumes these two statements.
   its last exit and first entry and joined to the two centres by radii, giving an *embedded*
   polygonal arc meeting each ball in exactly one radius.
 
-## Implementation notes
-
-Both were `theorem`s inside `namespace Graph` in `PLReduction.lean`, where neither statement
-mentioned a graph. Their proofs there carried local `mdist_comm` / `mdist_triangle` shims, because
-`Graph.dist` shadows the metric `dist` inside that namespace; out here the shims are unnecessary
-and are gone. See Kuratowski `Decisions.md` D14.
-
-The ordering in `exists_isSimple_radial` is what Status.md §2.6 Step 5 insists on: the radii are
-chosen using the *polyline's* last exit, not the original arc's. Two radii of one ball ending at
-distinct sphere points meet only at the centre (`segment_radial_inter_eq_center`), which is what
-makes the assembled arc embedded.
+The first theorem uses a positive minimum separation and uniform polygonal approximation. The
+second cuts at the last exit from the first ball and first entry into the second, then joins the
+middle piece to the ball centres by radial segments; distinct radial segments meet only at their
+common centre.
 -/
 
 @[expose] public section
 
-universe u
-
 open Function Set Topology Metric PolygonalPath
 open scoped unitInterval
 
-variable {V : Type u} [NormedAddCommGroup V] [NormedSpace ℝ V]
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
 
 /-- Finitely many pairwise disjoint paths, each disjoint from a closed set of its own, can be
 replaced by polygonal paths with the same endpoints, still pairwise disjoint and still avoiding
-those closed sets.
-
-This is Status.md's Steps 3 and 4 together, with the separation constant `δ` internal to the proof:
-the ranges are compact and pairwise disjoint, and there are finitely many of them, so their pairwise
-distances and their distances to the `K i` have a positive lower bound, and
-`Path.exists_polygonalPath_of_thickening` at a third of it keeps everything apart. Nothing about
-graphs enters. -/
+those closed sets. The proof uses compactness to choose a common positive separation and then
+polygonal approximation inside a smaller thickening. -/
 theorem exists_polygonalPath_family_of_disjoint {ι : Type*} [Finite ι] {a b : ι → V}
     (Q : ∀ i, Path (a i) (b i)) (hQ : Pairwise fun i j ↦ Disjoint (range (Q i)) (range (Q j)))
     (K : ι → Set V) (hK : ∀ i, IsClosed (K i)) (hQK : ∀ i, Disjoint (range (Q i)) (K i)) :
@@ -61,7 +46,6 @@ theorem exists_polygonalPath_family_of_disjoint {ι : Type*} [Finite ι] {a b : 
   have hrange_nonempty (i : ι) : (range (Q i)).Nonempty := ⟨_, ⟨0, rfl⟩⟩
   have hrange_compact (i : ι) : IsCompact (range (Q i)) := isCompact_range (Q i).continuous
   have hrange_closed (i : ι) : IsClosed (range (Q i)) := (hrange_compact i).isClosed
-  -- Status.md: empty minima default to `1`, encoded by adjoining `1` to the separation set.
   let pairSep (i j : ι) (hij : i ≠ j) : ℝ :=
     Classical.choose <|
       exists_pos_le_dist_of_disjoint (hrange_compact i) (hrange_closed j) (hQ hij)
@@ -137,11 +121,6 @@ theorem exists_polygonalPath_family_of_disjoint {ι : Type*} [Finite ι] {a b : 
       (hδ_le_k i).trans <|
         le_of_lt <| (mul_lt_iff_lt_one_left (hkSep_spec i).1).mpr (by norm_num : (1 / 3 : ℝ) < 1)
   exact (hlt.not_ge hsep).elim
-
-
-
-
-
 
 theorem exists_isSimple_radial {cu cv : V} {ru rv : ℝ} (hru : 0 < ru) (hrv : 0 < rv)
     (hballs : Disjoint (closedBall cu ru) (closedBall cv rv)) {x y : V}
@@ -279,7 +258,5 @@ theorem exists_isSimple_radial {cu cv : V} {ru rv : ℝ} (hru : 0 < ru) (hrv : 0
     have : w ∈ segment ℝ zv cv \ ball cv rv := ⟨hwv, (fun h ↦ hw.2 (Or.inr h))⟩
     rwa [heq, mem_singleton_iff] at this
   exact hMP (hB_subset_M (this ▸ hzv_toSet))
-
-
 
 end

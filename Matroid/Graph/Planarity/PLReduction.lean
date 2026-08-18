@@ -1,56 +1,32 @@
-import Matroid.Graph.Planarity.PLDrawing
-import Matroid.ForMathlib.Geometry.PolygonalPath.Radial
-import Matroid.ForMathlib.Analysis.Convex.RadialPoint
-import Mathlib.Topology.Subpath
+module
+
+public import Matroid.Graph.Planarity.PLDrawing
+public import Matroid.ForMathlib.Geometry.PolygonalPath.Radial
+public import Matroid.ForMathlib.Analysis.Convex.RadialPoint
+public import Mathlib.Topology.Subpath
 
 /-!
 # Every drawing can be replaced by a polygonal one
 
-Status.md §2.6: a finite loopless graph drawn in a real normed space can be drawn with polygonal
-edges, keeping the vertex positions. With `PLPlanar.planar` this gives `Planar ↔ PLPlanar`,
-after which every topological argument in the Kuratowski development runs in the polygonal category,
-where the local structure of a drawing is elementary. It is what removes Jordan–Schoenflies and
-Janiszewski from the project's assumptions.
-
-The theorem does *not* say that the given drawing is ambiently equivalent to a polygonal one — that
-is the Schoenflies statement, which is neither proved nor needed. It produces *some* polygonal
-drawing of the same abstract graph, with the same vertex positions.
-
-Nothing here is special to the plane, so the statements are over a real normed space; `Planar` is
-the case `V := EuclideanSpace ℝ (Fin 2)`. Looplessness is a hypothesis of the argument rather than
-of the truth of the statement: the balls at the two ends of an edge are assumed disjoint throughout.
-Loops are Status.md §12.
-
-## The shape of the argument
-
-Status.md's six steps become four statements. Only the first two mention a graph, and only those
-two are in this file:
+The main theorem replaces a drawing of a finite loopless graph in a real normed space by a
+polygonal drawing with the same vertex positions. It constructs the result in four stages:
 
 1. `Drawing.exists_vertexRadius` — a positive radius at each vertex, with the closed balls pairwise
    disjoint and each ball meeting the drawing only in the vertex and the cells at that vertex.
 2. `Drawing.exists_middlePaths` — the *middle* of each cell: the part between its last exit from
    the ball at one end and its first entry into the ball at the other. Middles are pairwise
    disjoint, avoid the balls at all other vertices, and end on the two spheres.
-3. `exists_polygonalPath_family_of_disjoint` — the analytic step: finitely many pairwise disjoint
-   compact paths, each avoiding a closed set of its own, can be replaced by polygonal paths with
-   the same endpoints and the same disjointness.
-4. `exists_isSimple_radial` — the geometric step: a polygonal path between two disjoint balls can be
-   re-cut at its last exit and first entry and joined to the two centres by radii, giving an
-   *embedded* polygonal arc that meets each ball in exactly one radius.
+3. `exists_polygonalPath_family_of_disjoint` replaces the disjoint middle paths by polygonal paths.
+4. `exists_isSimple_radial` joins each polygonal middle to the appropriate endpoint radii.
 
-Steps 3 and 4 mention no graph, and live in
-`Matroid/ForMathlib/Geometry/PolygonalPath/Radial.lean` (Kuratowski `Decisions.md` D14). Step 4 is
-where Status.md's ordering matters: the radii are chosen using the polyline's last exit, not the
-original arc's.
-
-What remains here is the bookkeeping the graph supplies — which balls, which cells, which edges —
-and `Drawing.exists_plDrawing`, which assembles the result and discharges the disjointness
-obligations `PLDrawing.ofCells` demands.
+The last two stages are graph-free and imported from `ForMathlib`. The graph-specific bookkeeping
+and assembly are in `Drawing.exists_plDrawing`; the plane equivalence is then
+`planar_iff_plPlanar`.
 
 ## Main statements
 
-* `Graph.Drawing.exists_plDrawing` : the reduction, over a real normed space.
-* `Graph.Planar.plPlanar` and `Graph.planar_iff_plPlanar` : Status.md 2.6 and 2.7.
+* `Graph.Drawing.exists_plDrawing` : the reduction over a real normed space.
+* `Graph.Planar.plPlanar` and `Graph.planar_iff_plPlanar` : the plane specialization.
 -/
 
 open Function Set Topology Metric PolygonalPath
@@ -58,11 +34,9 @@ open scoped unitInterval
 
 namespace Graph
 
-noncomputable section
+public noncomputable section
 
-universe u
-
-variable {α β : Type*} {G H : Graph α β} {V : Type u} [NormedAddCommGroup V]
+variable {α β V : Type*} {G H : Graph α β} [NormedAddCommGroup V]
 
 /-! ### Step 1: separating the vertices -/
 
@@ -79,11 +53,9 @@ lemma Drawing.vertex_notMem_range_edgePath_of_not_inc (D : Drawing G V) {x : V(G
   · grind [D.vertex_injective]
   exact (D.pathInterior_edgePath_disjoint_vertex e).notMem_of_mem_left ⟨t, htI, ht⟩ ⟨x, rfl⟩
 
-/-- A radius at each vertex whose closed balls are pairwise disjoint and meet the drawing only in
-that vertex and the cells at it.
-
-Status.md's Step 1 states the last inclusion without the `{D.vertex x}` summand, which fails for an
-isolated vertex, where the union on the right is empty. -/
+/-- A radius at each vertex whose closed ball is disjoint from the other vertex balls and meets the
+drawing only in that vertex and the cells incident with it. The explicit vertex term also handles
+isolated vertices. -/
 theorem Drawing.exists_vertexRadius [G.Finite] (D : Drawing G V) : ∃ r : V(G) → ℝ, (∀ x, 0 < r x) ∧
     (Pairwise fun x y ↦ Disjoint (closedBall (D.vertex x) (r x)) (closedBall (D.vertex y) (r y))) ∧
     ∀ x, closedBall (D.vertex x) (r x) ∩ D.support ⊆ {D.vertex x} ∪
@@ -94,7 +66,7 @@ theorem Drawing.exists_vertexRadius [G.Finite] (D : Drawing G V) : ∃ r : V(G) 
   have one_third_lt_one : (1 / 3 : ℝ) < 1 := by norm_num
   have : Fintype V(G) := Fintype.ofFinite _
   have : Fintype E(G) := Fintype.ofFinite _
-  -- Status.md: empty minima default to `1`, encoded by adjoining `1` to each distance set.
+  -- Empty minima default to `1`, encoded by adjoining `1` to each distance set.
   let vertDists (x : V(G)) : Finset ℝ :=
     (Finset.univ.erase x).image fun y ↦ dist (D.vertex x) (D.vertex y)
   let edgeDists (x : V(G)) : Finset ℝ :=
@@ -231,8 +203,8 @@ theorem Drawing.exists_middlePaths [G.Finite] [G.Loopless] (D : Drawing G V) {r 
 /-! ### The reduction -/
 
 
-/-- Status.md 2.6: a drawing of a finite loopless graph in a real normed space can be replaced by a
-polygonal drawing with the same vertex positions. -/
+/-- Replace a drawing of a finite loopless graph in a real normed space by a polygonal drawing with
+the same vertex positions. -/
 theorem Drawing.exists_plDrawing [G.Finite] [G.Loopless] [NormedSpace ℝ V] (D : Drawing G V) :
     ∃ Q : PLDrawing G V, ∀ x, Q.vertex x = D.vertex x := by
   obtain ⟨r, hpos, hdisj, hball⟩ := D.exists_vertexRadius
@@ -359,11 +331,11 @@ theorem Drawing.exists_plDrawing [G.Finite] [G.Loopless] [NormedSpace ℝ V] (D 
   refine ⟨PLDrawing.ofCells D.vertex D.vertex_injective cell hsimple hcv hcc, fun x ↦ ?_⟩
   exact PLDrawing.ofCells_vertex x
 
-/-- Status.md 2.6 in the plane. -/
+/-- A planar finite loopless graph has a polygonal plane drawing. -/
 theorem Planar.plPlanar [G.Finite] [G.Loopless] (hG : G.Planar) : G.PLPlanar :=
   ⟨hG.some.exists_plDrawing.choose⟩
 
-/-- Status.md 2.7. -/
+/-- Planarity and polygonal planarity are equivalent for finite loopless graphs. -/
 theorem planar_iff_plPlanar [G.Finite] [G.Loopless] : G.Planar ↔ G.PLPlanar :=
   ⟨Planar.plPlanar, PLPlanar.planar⟩
 

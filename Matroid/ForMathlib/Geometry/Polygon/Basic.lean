@@ -9,35 +9,18 @@ public import Matroid.ForMathlib.Analysis.Convex.Segment
 /-!
 # Extra API for `Polygon`
 
-`Mathlib.Geometry.Polygon.Basic` defines `Polygon P n` as a `Fin n`-indexed family of vertices,
-together with `edgePath`, `edgeSet`, `boundary`, `HasNondegenerateEdges` and
-`HasNondegenerateVertices`. This file adds the API that is needed to treat a polygon as a
-*closed polygonal curve*:
+`Mathlib.Geometry.Polygon.Basic` defines `Polygon P n` as a `Fin n`-indexed family of vertices.
+This file adds the API for treating it as a closed polygonal curve:
 
 * the operations `rotate`, `reverse` and `subdivide`, which are exactly the operations that make
   sense for closed curves but not for paths with distinct endpoints;
 * the predicate `IsSimple`, saying that distinct edges meet only in shared endpoints;
-* the local structure of the boundary of a simple polygon: each point of the boundary that is not
-  a vertex lies on a unique edge, and each vertex lies on exactly two edges.
+* the local boundary structure of a simple polygon: nonvertices lie on one edge and vertices lie
+  on two.
 
-## Design notes
-
-* `Mathlib.Geometry.Polygon.Basic` uses `finRotate n i` for "the vertex after `i`". We keep that
-  convention. Use `finRotate_apply` to rewrite it to `i + 1` when a `NeZero n` instance is around.
-* `HasNondegenerateVertices` (three consecutive vertices affinely independent) is *stronger* than
-  what a simple closed curve needs: it forbids collinear adjacent edges, which is what happens at
-  a subdivided vertex. `IsSimple` below is the correct notion for curve-theoretic purposes, and is
-  implied by neither `HasNondegenerateVertices` nor implies it.
-* `IsSimple` asserts `2 ≤ n` rather than `HasNondegenerateEdges`. Given injectivity of the
-  vertices the two are equivalent for `n ≠ 1`, but neither the injectivity nor the edge condition
-  can see the degenerate cases `n = 0` (no edges at all) and `n = 1` (one edge from a point to
-  itself, where `finRotate 1 = id`), both of which pass vacuously. Asserting `2 ≤ n` rules out
-  both, so no `[NeZero n]` instance argument is needed. That `3 ≤ n` is then a theorem, since the
-  digon is excluded by the edge condition (`IsSimple.three_le`).
-
-The operations and incidence lemmas are proved at the stated level of generality; results that
-split an edge or exclude digons use the stronger ordered-field hypotheses needed for interior
-points of segments.
+`IsSimple` requires at least two vertices and says that distinct edges meet only at shared
+endpoints. Rotation, reversal, and subdivision reindex the cyclic vertex sequence; the incidence
+lemmas describe the resulting boundary.
 -/
 
 @[expose] public section

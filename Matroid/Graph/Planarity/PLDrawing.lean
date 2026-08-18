@@ -1,38 +1,22 @@
-import Matroid.Graph.Planarity.Drawing
-import Matroid.ForMathlib.Geometry.PolygonalPath.SimpleArcOrLoop
+module
+
+public import Matroid.Graph.Planarity.Drawing
+public import Matroid.ForMathlib.Geometry.PolygonalPath.SimpleArcOrLoop
+
+@[expose] public section
 
 /-!
 # Polygonal drawings
 
 A drawing is *polygonal*, or *PL*, when the image of every edge is a finite union of segments. This
-file gives that notion two forms — the data `Graph.PLDrawing`, which carries the polygonal path
-realising each edge, and the proposition `Graph.Drawing.IsPL`, which asserts one exists — and states
-the reduction of planarity to PL planarity.
+file gives that notion two forms: `Graph.PLDrawing` stores a polygonal path for every edge, while
+`Graph.Drawing.IsPL` asserts that such paths exist. The edge condition is stated on the path image,
+and `cell_isSimpleArcOrLoop` records that the stored path is embedded. Loops are handled by
+`PolygonalPath.IsSimpleArcOrLoop`.
 
-Everything is stated over a real topological vector space rather than the plane: `PolygonalPath`
-needs exactly `AddCommGroup`, `Module ℝ`, `TopologicalSpace`, `ContinuousAdd` and `ContinuousSMul`,
-and no statement here needs more. The plane and the sphere enter only in the plane-topology files:
-PL structure lives in `ℝ²`, faces are taken in `OnePoint ℝ²` after `Drawing.postcomp`, and no PL
-structure is ever put on the sphere.
-
-## Implementation notes
-
-The conditions constrain the *image* `Set.range (D.edgePath e)` of each edge — Status.md's closed
-cell `Γ_e` — and never the parametrisation. Requiring `D.edgePath e = (cell e).toPath` would pin a
-traversal speed carrying no mathematical content: `PolygonalPath.toPath` traverses at dyadic speeds
-while `Realization.edgePath` is affine, so every re-cutting or concatenation of a cell would carry a
-renormalisation obligation. Nothing is lost, since a drawing restricted to a closed edge is an
-embedding of `I`, so image equality already determines the parametrisation up to a homeomorphism of
-`I` fixing the endpoints.
-
-Loops are allowed: for a loop `edgeSource e = edgeTarget e`, and the cell is a closed polygonal
-path. The arc/loop case split is confined to `PolygonalPath.IsSimpleArcOrLoop` and discharged by
-`PolygonalPath.IsSimpleArcOrLoop.existsUnique_edge`; Mathlib's `Polygon` is reachable through
-`PolygonalPath.toPolygon` and never appears here.
-
-`cell_isSimpleArcOrLoop` is not implied by the other fields — a path traversing the same segments
-twice has the same image — and is what makes the `edges` list of a cell a faithful description of
-it. It is the hypothesis the local structure lemma consumes.
+The definitions work over a real topological vector space. Plane-specific results use
+`EuclideanSpace ℝ (Fin 2)` and take faces after transporting a drawing to its one-point
+compactification.
 
 ## Main definitions
 
@@ -44,10 +28,10 @@ it. It is the hypothesis the local structure lemma consumes.
 
 * `Graph.exists_plDrawing_of_cells` : build a polygonal drawing from vertex positions and cells.
 * `Graph.Drawing.IsPL.restrict` : a subgraph of a polygonal drawing is polygonally drawn.
-* `Graph.PLDrawing.exists_nhds_inter_support_eq_segment` : Status.md 3.6, the edge-interior case.
+* `Graph.PLDrawing.exists_nhds_inter_support_eq_segment` : the local edge-interior description.
 
 The reduction `Planar ↔ PLPlanar` is in `Matroid.Graph.Planarity.PLReduction`, which is where the
-approximation lemmas are imported; this file deliberately does not depend on them.
+approximation lemmas are used.
 -/
 
 open Function Set Topology
@@ -56,13 +40,11 @@ namespace Graph
 
 noncomputable section
 
-universe u
-
 variable {α β : Type*} {G H : Graph α β} {e : β} {u v : α}
 
 /-- A polygonal drawing of `G` in `V`: a drawing together with, for each edge, a polygonal path
 whose image is the closed cell of that edge. -/
-structure PLDrawing (G : Graph α β) (V : Type u) [AddCommGroup V] [Module ℝ V]
+structure PLDrawing (G : Graph α β) (V : Type*) [AddCommGroup V] [Module ℝ V]
     [TopologicalSpace V] [ContinuousSMul ℝ V] [ContinuousAdd V] extends Drawing G V where
   /-- The polygonal path realising the edge `e`. -/
   cell : ∀ e : E(G), PolygonalPath (toDrawing.vertex (edgeSource e))
@@ -72,7 +54,7 @@ structure PLDrawing (G : Graph α β) (V : Type u) [AddCommGroup V] [Module ℝ 
   /-- Each cell traces out exactly the closed cell of its edge. -/
   range_edgePath : ∀ e, range (toDrawing.edgePath e) = (cell e).toSet
 
-variable {V : Type u} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V] [ContinuousSMul ℝ V]
+variable {V : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V] [ContinuousSMul ℝ V]
 
 /-- A drawing is polygonal when every closed cell is the image of an embedded polygonal arc or
 circle. The witnesses are not canonical — subdivision, reversal and the orientation of the edge all
@@ -119,9 +101,7 @@ lemma restrict_toDrawing (D : PLDrawing G V) (h : H ≤ G) :
     (D.restrict h).toDrawing = D.toDrawing.restrict h := rfl
 
 /-- The support of a polygonal drawing of a finite graph is a finite union of segments together
-with the vertex images. Status.md's support-level description of a polygonal drawing, which is a
-consequence of the definition rather than a workable replacement for it: it forgets which segments
-belong to which edge. -/
+with the vertex images. -/
 theorem exists_finite_support [G.Finite] (D : PLDrawing G V) :
     ∃ S : Set (V × V), S.Finite ∧ D.support = range D.vertex ∪ ⋃ s ∈ S, segment ℝ s.1 s.2 := by
   let S : Set (V × V) := ⋃ e : E(G), {s | s ∈ (D.cell e).edges}
@@ -145,9 +125,8 @@ theorem exists_finite_support [G.Finite] (D : PLDrawing G V) :
 
 end PLDrawing
 
-/-- Status.md 3.6, edge-interior case: near a point interior to one cell, the whole drawing looks
-like the single segment of that cell through the point. The vertex case, where the segments of
-every edge at a vertex meet, is stated with the star lemma in the plane-topology development. -/
+/-- Near a point interior to one cell, the support agrees locally with a single segment of that
+cell. The vertex case is given by the star lemma. -/
 theorem exists_nhds_inter_support_eq_segment [G.Finite] [T2Space V] [IsTopologicalAddGroup V]
     (D : PLDrawing G V) {f : E(G)} {a : V} (ha : a ∈ (D.cell f).toSet)
     (hav : a ∉ (D.cell f).vertices) {s : V × V} (hs : s ∈ (D.cell f).edges)
@@ -203,10 +182,9 @@ variable [ContinuousAdd V]
 
 /-! ### Building a polygonal drawing from cells
 
-The two translation theorems below turn the `toSet`-level hypotheses a caller can check
-combinatorially into the `pathInterior`-level hypotheses `Drawing.ofVertexAndEdgePaths` demands.
-They are the reason `PLDrawing.ofCells` is a definition rather than an existence statement: all the
-analysis lives here, and §2.6 and §6 verify their obligations on `toSet`s. -/
+The lemmas below translate `toSet`-level disjointness into the `Path.Interior` conditions required
+by `Drawing.ofVertexAndEdgePaths`. `PLDrawing.ofCells` then packages vertex positions and cells
+into a drawing. -/
 
 /-- The interior of the parametrized cell is its image minus its endpoints — for a loop, minus the
 single base point, which is again the open cell. -/
@@ -281,8 +259,7 @@ end Drawing
 
 /-! ### PL planarity -/
 
-/-- A graph is PL planar if it has a polygonal drawing in the Euclidean plane. The converse
-implication `Planar → PLPlanar`, Status.md 2.6, is in `Matroid.Graph.Planarity.PLReduction`. -/
+/-- A graph is PL planar if it has a polygonal drawing in the Euclidean plane. -/
 def PLPlanar (G : Graph α β) : Prop := Nonempty (PLDrawing G (EuclideanSpace ℝ (Fin 2)))
 
 theorem plPlanar_iff_exists_isPL :

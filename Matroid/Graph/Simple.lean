@@ -359,46 +359,39 @@ lemma IsCyclicWalk.toGraph_loopless_iff {C : WList α β} (hC : G.IsCyclicWalk C
     obtain ⟨v, f, w', rfl⟩ := Nonempty.exists_cons (by simpa using h)
     simpa [List.dropLast_cons_of_ne_nil w'.vertex_ne_nil] using hC.dropLast_isPath.nodup
 
--- lemma IsCyclicWalk.toGraph_simple_iff {C : WList α β} (hC : G.IsCyclicWalk C) :
---     C.toGraph.Simple ↔ 2 ≤ C.length := by
---   cases hC.nonempty with | cons x e W =>
---   have hcompat : W.toGraph.Compatible (Graph.singleEdge x W.first e) := by
---     replace hC := hC.isWalk
---     simp only [cons_isWalk_iff] at hC
---     exact compatible_of_le_le (G := G) hC.2.toGraph_le (by simpa using hC.1)
---   simp_rw [toGraph_cons, hcompat.simple_union_iff, singleEdge_simple_iff, and_iff_right
---     (by simpa using hC.tail_isPath.toGraph_simple), singleEdge_isLink_iff]
---   cases W with
---   | nil u => simpa [union_eq_self_of_le_left] using hC.isClosed
---   | cons y f W =>
---     have hnd' := hC.dropLast_isPath.nodup
+lemma IsCyclicWalk.toGraph_simple_iff {C : WList α β} (hC : G.IsCyclicWalk C) :
+    C.toGraph.Simple ↔ 3 ≤ C.length := by
+  refine ⟨fun h ↦ ?_, fun hlen ↦ ?_⟩
+  · by_contra! hlen
+    have h2 : C.length = 2 := by
+      have := (hC.nonempty.nontrivial_of_length_ne_one
+        (hC.toGraph_loopless_iff.1 h.toLoopless)).two_le_length
+      omega
+    obtain ⟨x, y, e, f, -, hne, rfl⟩ := hC.length_eq_two_iff.mp h2
+    refine hne <| @Simple.eq_of_isLink _ _ _ h e f x y ?_ ?_
+    · rw [hC.isWalk.wellFormed.toGraph_isLink]
+      exact WList.IsLink.cons_left ..
+    · rw [hC.isWalk.wellFormed.toGraph_isLink]
+      exact ((WList.IsLink.cons_left y f _).cons x e).symm
+  cases hC.nonempty with | cons x e W =>
+  have hP : G.IsPath W := by simpa using hC.tail_isPath
+  have hnt : W.Nontrivial := by
+    rw [← two_le_length_iff]
+    simp only [cons_length] at hlen
+    omega
+  rw [toGraph_cons]
+  refine @Simple.union _ _ _ _ hP.toGraph_simple (singleEdge_simple ?_ e) ?_
+  · rintro rfl
+    cases hP.first_eq_last_iff.mp (by simpa using hC.isClosed)
+    simp at hnt
+  simp only [singleEdge_isLink, and_imp]
+  rintro e' f x' y he' rfl (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩) <;>
+    rw [hP.isWalk.wellFormed.toGraph_isLink] at he'
+  · exact (hP.not_nontrivial_of_isLink rfl hC.isClosed.symm he' (.inr rfl) (.inl rfl) hnt).elim
+  exact (hP.not_nontrivial_of_isLink rfl hC.isClosed.symm he' (.inl rfl) (.inr rfl) hnt).elim
 
---     simp only [dropLast_cons_cons, cons_vertex, cons_nonempty, Nonempty.vertex_dropLast,
---       List.dropLast_cons_of_ne_nil W.vertex_ne_nil, List.nodup_cons, List.mem_cons, not_or] at hnd'
---     simp only [first_cons, ne_eq, hnd'.1.1, not_false_eq_true, toGraph_cons, union_isLink_iff,
---       singleEdge_isLink, toGraph_edgeSet, mem_edgeSet_iff, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq,
---       Prod.swap_prod_mk, and_imp, true_and, cons_length, le_add_iff_nonneg_left, zero_le, iff_true]
---     rintro e' f' x' y' (he' | he') rfl (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)
---     · simp at hnd'
---     rw [toGraph_cons, hcompat.simple_union_iff, singleEdge_simple_iff, first_cons,
---       and_iff_right (by simpa using hC.tail_isPath.toGraph_simple), and_iff_right hnd'.1.1]
-
---     · simp
-
---     -- rw [toGraph_cons, Compatible.simple_union_iff, singleEdge_simple_iff,
---     --   first_cons, and_iff_left hnd'.1.1]
---     -- · exact iff_of_true (by simpa using hC.tail_isPath.toGraph_simple) <| by simp
---     · replace hC := hC.isWalk
---       rw [cons_isWalk_iff] at hC
---       exact compatible_of_le_le hC.2.toGraph_le <| by simpa using hC.1
-
---     simp only [toGraph_cons, vertexSet_union, toGraph_vertexSet, vertexSet_singleEdge, union_insert,
---       union_singleton, mem_vertexSet_iff, first_mem, insert_eq_of_mem, first_cons]
---     have := hC.
-
---     sorry
-
-
+lemma IsCyclicWalk.three_le_length_of_simple [G.Simple] (hC : G.IsCyclicWalk P) : 3 ≤ P.length :=
+  hC.toGraph_simple_iff.mp <| Simple.mono ‹_› hC.isWalk.toGraph_le
 
 end Simple
 
@@ -624,13 +617,6 @@ lemma IsCyclicWalk.nontrivial_of_loopless [G.Loopless] (hC : G.IsCyclicWalk P) :
   refine hC.loop_or_nontrivial.elim ?_ id
   rintro ⟨x, e, rfl⟩
   simpa using cons_isTrail_iff.1 hC.isTrail
-
-lemma IsCyclicWalk.three_le_length_of_simple [G.Simple] (hC : G.IsCyclicWalk P) : 3 ≤ P.length := by
-  by_contra! hlen
-  obtain ⟨x, y, e, f, _, hne, rfl⟩ :=
-    hC.length_eq_two_iff.mp (by grind [hC.nontrivial_of_loopless.two_le_length])
-  obtain ⟨he, hf, hx⟩ := by simpa using hC.isWalk
-  exact hne <| he.unique_edge hf.symm
 
 section Map
 

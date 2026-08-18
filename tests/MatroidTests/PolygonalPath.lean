@@ -15,9 +15,7 @@ open Set unitInterval
 
 namespace PolygonalPath
 
-universe u
-
-variable {α : Type u} {a b c x y z : α}
+variable {α : Type*} {a b c x y z : α}
 
 section Combinatorics
 

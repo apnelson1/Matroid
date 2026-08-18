@@ -4,7 +4,6 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2 -- inefficient import
 
 @[expose] public section
 
-universe u
 variable {α β : Type*} {a b c x y z w : α} {C L : List α} {X Y : Set α} {N : ℕ}
 
 open Set Function TopologicalSpace Topology Metric Nat unitInterval Set.Notation
@@ -50,19 +49,7 @@ lemma Icc_eq_univ : Icc (0 : I) 1 = univ := by
   have := t.prop
   tauto
 
-/-- Every parameter is an endpoint of `I` or interior to it.
-
-A wrapper on `Set.eq_endpoints_or_mem_Ioo_of_mem_Icc`, whose `Icc` hypothesis is vacuous here. It
-earns its name by how often a statement about a path splits into "at the source", "at the target"
-and "on the open image": callers get `t = 0` and `t = 1` as substitutable equations rather than
-having to pass through `Subtype.ext`.
-
-**Deliberately untagged; pass it as a hint** — `grind [unitInterval.eq_zero_or_eq_one_or_mem_Ioo]`.
-There is no tag form that fits. `@[grind →]` is rejected outright (`does not have propositional
-hypotheses`) because there is nothing to key on: the lemma holds of *every* `t : I`. `@[grind .]`
-would key on a bare variable and so fire on every `I`-valued term in every goal, imposing a
-three-way case split library-wide for a fact most goals do not need. A hypothesis-free disjunction
-is a splitter, and a splitter is the caller's choice, not the library's. -/
+/-- Every parameter of `I` is an endpoint or lies in its open interior. -/
 lemma eq_zero_or_eq_one_or_mem_Ioo (t : I) : t = 0 ∨ t = 1 ∨ t ∈ Ioo (0 : I) 1 :=
   Set.eq_endpoints_or_mem_Ioo_of_mem_Icc (Icc_eq_univ ▸ mem_univ t)
 
@@ -390,12 +377,7 @@ lemma IsSimpleLoop.injOn_ioo {P : Path x x} (h : P.IsSimpleLoop) : InjOn P (Ioo 
   have heq := h (x₁ := 0) (x₂ := half) (by simp) (by simp) (by rfl)
   exact half_ne_zero heq.symm
 
-/-! ### Cutting a path at a metric ball
-
-Both lemmas below were `private` in `Matroid/Graph/Planarity/PLReduction.lean`, where they were
-stated over a real normed space although neither uses the linear structure. See Kuratowski
-`Decisions.md` D14/D16: a declaration whose statement mentions nothing from its file's namespace is
-misfiled, and stating it at the hypotheses its proof actually uses is what makes it reachable. -/
+/-! ### Cutting a path at a metric ball -/
 
 /-- On an injectively parametrised path, a connected piece of the image containing `γ t₁` and
 `γ t₂` contains the whole parameter interval between them.
@@ -419,18 +401,9 @@ from `a` to `b`, where `a` starts in the first ball and `b` ends in the second. 
 are closed and nonempty, so the extrema exist; disjointness of the balls forces the exit time to
 precede the entry time and puts both endpoints on the spheres.
 
-The centres are deliberately not required to be the endpoints. One caller cuts a path at the balls
-around its own two ends, so its membership hypotheses are `mem_closedBall_self`; another cuts a
-polygonal *approximation*, whose endpoints lie in the balls without being their centres. Positivity
-of the radii is not a hypothesis: it is only ever used to supply the two memberships.
-
-**Deliberately untagged; pass it as a hint.** Both forms are rejected, and the reason is structural
-rather than a matter of choosing better options. `@[grind →]` keys on the antecedents, which mention
-`a, b, c, d, rc, rd` but *never `γ`* — `γ` occurs only in the conclusion, under the `∃ t s` binder —
-so no antecedent multi-pattern determines every variable (`failed to find patterns in the
-antecedents`). `@[grind .]` keys on the conclusion, whose head is `Exists` (`failed to find
-patterns`). A lemma whose principal argument appears only beneath an existential in the conclusion
-has no E-matching pattern at all; it is a *producer*, and producers are invoked, not matched. -/
+The centres may differ from the path endpoints. The proof takes the greatest parameter in the first
+closed-ball preimage and the least subsequent parameter in the second; compactness gives both
+extrema, and disjointness puts the two parameters in order. -/
 lemma exists_lastExit_firstEntry {α : Type*} [PseudoMetricSpace α] {a b c d : α} (γ : Path a b)
     {rc rd : ℝ} (hdisj : Disjoint (closedBall c rc) (closedBall d rd)) (ha : a ∈ closedBall c rc)
     (hb : b ∈ closedBall d rd) : ∃ (t s : I), t < s ∧ dist (γ t) c = rc ∧ dist (γ s) d = rd ∧
@@ -523,9 +496,7 @@ end Path
 
 /-! ### The interior of a path
 
-`pathInterior` used to live in `Matroid/Graph/Planarity/Drawing.lean`. It mentions no graph and no
-drawing — it is the image of a path with both endpoints omitted — so it belongs here. See
-Kuratowski `Decisions.md` D14/D16. -/
+`Path.Interior` is the image of the open parameter interval, with both endpoints omitted. -/
 
 /-- The open image of a path, with both endpoints omitted. -/
 def Path.Interior {X : Type*} [TopologicalSpace X] {x y : X} (P : Path x y) : Set X :=

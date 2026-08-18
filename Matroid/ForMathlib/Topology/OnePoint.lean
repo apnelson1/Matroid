@@ -1,63 +1,53 @@
 module
 
 public import Mathlib.Topology.Compactification.OnePoint.Basic
-public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Normed.Module.Connected
+public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 
 /-!
 # Local connectedness of the one-point compactification
 
 Mathlib gives `OnePoint X` compactness, `T0`/`T1`, normality and connectedness, but not local
-connectedness, which is what makes the components of an open set open — the property that turns
-"connected component of the complement of a drawing" into "open face".
+connectedness, which makes the components of an open set open — the property that turns
+"connected component of an open complement" into an open set.
 
-It is not automatic: `OnePoint ℤ` is a convergent sequence, which is locally connected nowhere near
-`∞`. The obstruction is entirely at `∞`, whose neighbourhoods have a basis of sets `{∞} ∪ Kᶜ` with
-`K` compact *and closed* — the topology on `OnePoint` asks for both, since it does not assume `X` is
-Hausdorff. So the criterion below asks exactly that such a `K` can be enlarged to one whose
-complement is preconnected.
-
-Two details of the statement are forced, and both were wrong in the first version:
-
-* `L` must be **closed** as well as compact, or `{∞} ∪ Lᶜ` need not be open;
-* the complement must be asked to be **preconnected**, not connected. If `X` is itself compact then
-  `L = X` is allowed and `Lᶜ` is empty, and `{∞}` is exactly the connected neighbourhood wanted;
-  demanding `IsConnected` would make the hypothesis unsatisfiable in that case for no reason.
+The criterion controls neighborhoods of `∞`, which have the form `{∞} ∪ Lᶜ` for compact closed
+sets `L`. It requires such an `L` containing each compact set and having preconnected complement.
 
 ## Main statements
 
 * `OnePoint.locallyConnectedSpace_of_forall_exists_isPreconnected_compl` : the criterion.
-* `exists_isCompact_isClosed_isPreconnected_compl_euclidean` : its hypothesis for a Euclidean space
-  of dimension at least two, where a closed ball large enough to swallow `K` has preconnected
+* `exists_isCompact_isClosed_isPreconnected_compl` : its hypothesis for a proper real normed space
+  of rank at least two, where a closed ball large enough to swallow `K` has preconnected
   complement.
-* the instance for `OnePoint (EuclideanSpace ℝ (Fin 2))` — the sphere `𝕊` on which the faces of a
-  plane drawing are taken.
+* `OnePoint.locallyConnectedSpace_of_one_lt_rank` and the corresponding instance on `OnePoint V`.
+
+The normed-space result uses that complements of closed balls are preconnected in rank at least two.
+It is then specialized to the plane to obtain local connectedness of `OnePoint V`.
 -/
 
 @[expose] public section
 
 open Set Topology
 
-/-- The complement of a closed ball in a Euclidean space of dimension at least two is preconnected.
-This is where the dimension enters: in dimension one the complement of a ball falls apart.
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
-Mathlib has `isPathConnected_sphere` for `1 < Module.rank ℝ E`; the complement of a ball is the
+/-- The complement of a closed ball in a real normed space of rank at least two is preconnected.
+This is where the dimension enters: in rank one the complement of a ball falls apart.
+
+Mathlib has `isPathConnected_sphere` for `1 < Module.rank ℝ V`; the complement of a ball is the
 union of the spheres of radius `> r`, each path connected and each meeting a fixed ray. -/
-theorem isPreconnected_compl_closedBall_euclideanSpace {n : ℕ} (hn : 2 ≤ n)
-    (x : EuclideanSpace ℝ (Fin n)) (r : ℝ) : IsPreconnected (Metric.closedBall x r)ᶜ := by
+theorem isPreconnected_compl_closedBall (hV : 1 < Module.rank ℝ V) (x : V) (r : ℝ) :
+    IsPreconnected (Metric.closedBall x r)ᶜ := by
   refine (IsPathConnected.isConnected ?_).isPreconnected
   rcases lt_or_ge r 0 with hr | hr
   · simpa [Metric.closedBall_eq_empty.2 hr] using isPathConnected_univ
-  let f : EuclideanSpace ℝ (Fin n) × ℝ → EuclideanSpace ℝ (Fin n) := fun p ↦ x + p.2 • p.1
-  have hpc : IsPathConnected (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1 ×ˢ Ioi r) :=
-    have hrank : 1 < Module.rank ℝ (EuclideanSpace ℝ (Fin n)) :=
-      Module.one_lt_rank_of_one_lt_finrank
-        (by simpa [finrank_euclideanSpace_fin] using Nat.succ_le_iff.mp hn)
-    (isPathConnected_sphere hrank 0 zero_le_one).prod <|
+  let f : V × ℝ → V := fun p ↦ x + p.2 • p.1
+  have hpc : IsPathConnected (Metric.sphere (0 : V) 1 ×ˢ Ioi r) :=
+    (isPathConnected_sphere hV 0 zero_le_one).prod <|
       (convex_Ioi r).isPathConnected ⟨r + 1, by simp⟩
-  have himg : f '' (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1 ×ˢ Ioi r) =
-      (Metric.closedBall x r)ᶜ := by
+  have himg : f '' (Metric.sphere (0 : V) 1 ×ˢ Ioi r) = (Metric.closedBall x r)ᶜ := by
     ext y
     refine ⟨?_, fun hy ↦ ?_⟩
     · rintro ⟨⟨u, t⟩, hUT, rfl⟩
@@ -74,14 +64,14 @@ theorem isPreconnected_compl_closedBall_euclideanSpace {n : ℕ} (hn : 2 ≤ n)
       rw [smul_smul, mul_inv_cancel₀ hy0, one_smul, add_sub_cancel]
   exact himg ▸ hpc.image (by fun_prop : Continuous f)
 
-/-- Every compact set in a Euclidean plane sits inside a closed ball, whose complement is
-preconnected. This is the hypothesis of the criterion, in the only case the project needs. -/
-theorem exists_isCompact_isClosed_isPreconnected_compl_euclidean
-    (K : Set (EuclideanSpace ℝ (Fin 2))) (hK : IsCompact K) :
-    ∃ L : Set (EuclideanSpace ℝ (Fin 2)), IsCompact L ∧ IsClosed L ∧ K ⊆ L ∧ IsPreconnected Lᶜ := by
-  obtain ⟨r, hr⟩ := hK.isBounded.subset_closedBall (0 : EuclideanSpace ℝ (Fin 2))
+/-- Every compact set in a proper real normed space of rank at least two sits inside a closed ball,
+whose complement is preconnected. This is the hypothesis of the criterion below. -/
+theorem exists_isCompact_isClosed_isPreconnected_compl [ProperSpace V]
+    (hV : 1 < Module.rank ℝ V) (K : Set V) (hK : IsCompact K) :
+    ∃ L : Set V, IsCompact L ∧ IsClosed L ∧ K ⊆ L ∧ IsPreconnected Lᶜ := by
+  obtain ⟨r, hr⟩ := hK.isBounded.subset_closedBall (0 : V)
   exact ⟨Metric.closedBall 0 r, isCompact_closedBall _ _, Metric.isClosed_closedBall, hr,
-    isPreconnected_compl_closedBall_euclideanSpace le_rfl _ _⟩
+    isPreconnected_compl_closedBall hV _ _⟩
 
 namespace OnePoint
 
@@ -134,10 +124,18 @@ theorem locallyConnectedSpace_of_forall_exists_isPreconnected_compl [LocallyConn
     exact (hLp.image coeX continuous_coe.continuousOn).subset_closure
       subset_union_left (union_subset subset_closure (by simpa [singleton_subset_iff] using hcl))
 
-/-- The sphere `𝕊 = OnePoint ℝ²` is locally connected, so the components of the complement of a
-drawing in it are open. -/
-instance : LocallyConnectedSpace (OnePoint (EuclideanSpace ℝ (Fin 2))) :=
+/-- The sphere `OnePoint V` over a proper real normed space of rank at least two is locally
+connected. -/
+theorem locallyConnectedSpace_of_one_lt_rank {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    [ProperSpace V] (hV : 1 < Module.rank ℝ V) : LocallyConnectedSpace (OnePoint V) :=
   locallyConnectedSpace_of_forall_exists_isPreconnected_compl fun K hK _ ↦
-    exists_isCompact_isClosed_isPreconnected_compl_euclidean K hK
+    exists_isCompact_isClosed_isPreconnected_compl hV K hK
+
+/-- The sphere `OnePoint V` over a plane is locally connected. -/
+instance {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    [Fact (Module.finrank ℝ V = 2)] : LocallyConnectedSpace (OnePoint V) :=
+  have : FiniteDimensional ℝ V := .of_fact_finrank_eq_two
+  locallyConnectedSpace_of_one_lt_rank <| Module.one_lt_rank_of_one_lt_finrank <| by
+    rw [Fact.out (p := Module.finrank ℝ V = 2)]; norm_num
 
 end OnePoint

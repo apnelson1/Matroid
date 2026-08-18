@@ -8,25 +8,11 @@ public import Mathlib.Analysis.Convex.PathConnected
 /-!
 # A disk with finitely many radii removed
 
-Remove from an open disk the radii to `d ≥ 1` points of its bounding sphere. What is left falls into
-exactly `d` pieces — the open sectors between consecutive radii — and a point in the relative
-interior of a radius is in the closure of exactly two of them.
-
-This is Status.md 3.5, and the only place in the Kuratowski development where the plane is used for
-its *local* structure rather than for the Jordan curve theorem. It is elementary — polar coordinates
-`(s, θ) ↦ x + s · e^{iθ}` carry a rectangle onto a sector — and it is why the polygonal category is
-worth the trouble: for an arbitrary drawing the corresponding statement is Schoenflies-strength.
-
-The dimension is essential and is not decoration: in `ℝ³` the complement of finitely many radii in a
-ball is connected.
-
-## Statement design
-
-Status.md describes the pieces by their angles. That description is not stated here, for two
-reasons: it forces an ordering of the points by argument, which is bookkeeping that no consumer
-reads, and it commits the proof to polar coordinates. What the consumers (3.7, 3.8, 3.9) actually
-use is three things — how many pieces there are, that each is open and connected, and which pieces a
-radius is adjacent to — so those are what is stated, about the connected components themselves.
+Removing the radii from an open disk in a real inner product plane produces one open connected
+sector between each pair of consecutive radii. A point in the relative interior of a removed radius
+is in the closure of exactly the two adjacent sectors. The sectors are represented as connected
+components of the complement, so their openness, connectedness, and incidence properties can be
+stated directly.
 
 ## Main definitions
 
@@ -38,44 +24,27 @@ radius is adjacent to — so those are what is stated, about the connected compo
 * `isOpen_of_mem_sectors`, `isConnected_of_mem_sectors`
 * `ncard_sectors_closure_eq_two` : a point interior to a radius lies in the closure of exactly two.
 
-## Implementation notes
-
-Polar bookkeeping (`toComplex`, `polar`, `argList`, `openSector`) is `private`. Consumers see
-`diskMinusRadii` and `sectors`. Mathlib already supplies the expensive polar facts this file used
-to re-derive (`arg_exp_mul_I`, `exp_eq_exp_iff_exists_int`); a rotated `polarCoordAt` chart would
-not shorten the counting argument and has no second consumer, so it is not introduced.
-
-`ncard_sectors_closure_eq_two` cannot carry `@[grind =]`: `y` is a phantom on the left-hand side.
-It is keyed on its antecedents. `ncard_sectors` is `@[grind =]` because `(sectors x ρ Y).ncard`
-mentions every variable. `mem_diskMinusRadii` is `@[simp]` only: as a `grind` rule it unfolds
-`diskMinusRadii` into `ball` and `segment`, which explodes every goal over this API.
-`mem_closure_of_mem_sectors` and `pairwiseDisjoint_sectors` are untagged: `@[grind →]` /
-`@[grind .]` instantiate, but grind does not close the corresponding goals (`x ∈ closure C`,
-`PairwiseDisjoint`), so a tag would be activation without contribution.
-
-Measured with `grind.unusedLemmaThreshold`: at 1, `isOpen_of_mem_sectors`,
-`isConnected_of_mem_sectors` and `subset_diskMinusRadii_of_mem_sectors` each activate
-on goals that mention `C ∈ sectors`. At Mathlib's threshold of 10 none of this file's
-lemmas are reported. If `grind` later gets slow here, those three are the first tags to drop.
+The proof uses polar coordinates after identifying the plane with `ℂ` along an orthonormal basis.
+The angular bookkeeping is private; the public API uses only `diskMinusRadii` and `sectors`.
 -/
 
 @[expose] public section
 
 open Set Metric Complex Real Function
 
+attribute [local instance] FiniteDimensional.of_fact_finrank_eq_two
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+
 /-- The disk of radius `ρ` about `x` with the radii to the points of `Y` removed. -/
-def diskMinusRadii (x : EuclideanSpace ℝ (Fin 2)) (ρ : ℝ) (Y : Finset (EuclideanSpace ℝ (Fin 2))) :
-    Set (EuclideanSpace ℝ (Fin 2)) :=
+def diskMinusRadii (x : V) (ρ : ℝ) (Y : Finset V) : Set V :=
   ball x ρ \ ⋃ y ∈ Y, segment ℝ x y
 
-/-- The sectors: the connected components of `diskMinusRadii`, presented as a set of subsets rather
-than as a quotient type, since the consumers count them and take their closures. -/
-def sectors (x : EuclideanSpace ℝ (Fin 2)) (ρ : ℝ) (Y : Finset (EuclideanSpace ℝ (Fin 2))) :
-    Set (Set (EuclideanSpace ℝ (Fin 2))) :=
+/-- The sectors: the connected components of `diskMinusRadii`, represented as a set of subsets. -/
+def sectors (x : V) (ρ : ℝ) (Y : Finset V) : Set (Set V) :=
   (fun p ↦ connectedComponentIn (diskMinusRadii x ρ Y) p) '' diskMinusRadii x ρ Y
 
-variable {x : EuclideanSpace ℝ (Fin 2)} {ρ : ℝ} {Y : Finset (EuclideanSpace ℝ (Fin 2))}
-  {C : Set (EuclideanSpace ℝ (Fin 2))} {p : EuclideanSpace ℝ (Fin 2)}
+variable {x : V} {ρ : ℝ} {Y : Finset V} {C : Set V} {p : V}
 
 @[simp]
 theorem mem_diskMinusRadii : p ∈ diskMinusRadii x ρ Y ↔ p ∈ ball x ρ ∧ p ∉ ⋃ y ∈ Y, segment ℝ x y :=
@@ -116,40 +85,47 @@ theorem pairwiseDisjoint_sectors : (sectors x ρ Y).PairwiseDisjoint id := by
 
 /-! ### Private polar helpers -/
 
-private noncomputable def toComplex (x p : EuclideanSpace ℝ (Fin 2)) : ℂ :=
-  orthonormalBasisOneI.repr.symm (p - x)
+variable [Fact (Module.finrank ℝ V = 2)]
 
-private noncomputable def polar (x : EuclideanSpace ℝ (Fin 2)) (s θ : ℝ) :
-    EuclideanSpace ℝ (Fin 2) :=
-  x + orthonormalBasisOneI.repr (↑s * cexp (↑θ * I))
+/-- A distance-preserving identification of the plane with `ℂ`, along an arbitrary orthonormal
+basis. Every statement this file exports is invariant under it — only the `private` angular
+bookkeeping below sees the choice — so no orientation is asked for and none is needed. -/
+private noncomputable def toPlane : ℂ ≃ₗᵢ[ℝ] V :=
+  Complex.isometryOfOrthonormal <| (stdOrthonormalBasis ℝ V).reindex (finCongr Fact.out)
 
-private lemma toComplex_polar (x : EuclideanSpace ℝ (Fin 2)) (s θ : ℝ) :
+private noncomputable def toComplex (x p : V) : ℂ :=
+  toPlane.symm (p - x)
+
+private noncomputable def polar (x : V) (s θ : ℝ) : V :=
+  x + toPlane (↑s * cexp (↑θ * I))
+
+private lemma toComplex_polar (x : V) (s θ : ℝ) :
     toComplex x (polar x s θ) = ↑s * cexp (↑θ * I) := by
   simp [toComplex, polar]
 
-private lemma toComplex_eq_zero {x p : EuclideanSpace ℝ (Fin 2)} : toComplex x p = 0 ↔ p = x := by
+private lemma toComplex_eq_zero {x p : V} : toComplex x p = 0 ↔ p = x := by
   rw [toComplex, LinearIsometryEquiv.map_eq_zero_iff, sub_eq_zero]
 
-private lemma norm_toComplex (x p : EuclideanSpace ℝ (Fin 2)) : ‖toComplex x p‖ = ‖p - x‖ :=
+private lemma norm_toComplex (x p : V) : ‖toComplex x p‖ = ‖p - x‖ :=
   LinearIsometryEquiv.norm_map ..
 
-private lemma dist_polar (x : EuclideanSpace ℝ (Fin 2)) (s θ : ℝ) : dist (polar x s θ) x = |s| := by
+private lemma dist_polar (x : V) (s θ : ℝ) : dist (polar x s θ) x = |s| := by
   rw [dist_eq_norm_sub, polar, add_sub_cancel_left, LinearIsometryEquiv.norm_map, norm_mul,
     norm_exp_ofReal_mul_I, mul_one, norm_real, Real.norm_eq_abs]
 
-private lemma continuous_uncurry_polar (x : EuclideanSpace ℝ (Fin 2)) :
+private lemma continuous_uncurry_polar (x : V) :
     Continuous (uncurry (polar x)) := by
   unfold polar uncurry
   fun_prop
 
-private lemma polar_of_toComplex {x p : EuclideanSpace ℝ (Fin 2)} :
+private lemma polar_of_toComplex {x p : V} :
     polar x ‖toComplex x p‖ (arg (toComplex x p)) = p := by
   unfold polar
   have h := norm_mul_exp_arg_mul_I (toComplex x p)
   simp only [toComplex] at h ⊢
   rw [h, LinearIsometryEquiv.apply_symm_apply, add_sub_cancel]
 
-private lemma polar_add_two_pi (x : EuclideanSpace ℝ (Fin 2)) (s θ : ℝ) :
+private lemma polar_add_two_pi (x : V) (s θ : ℝ) :
     polar x s (θ + 2 * π) = polar x s θ := by
   unfold polar
   congr 1
@@ -160,10 +136,10 @@ private lemma polar_add_two_pi (x : EuclideanSpace ℝ (Fin 2)) (s θ : ℝ) :
     ring
   rw [this, mul_one]
 
-private lemma sameRay_toComplex_iff {x p q : EuclideanSpace ℝ (Fin 2)} :
+private lemma sameRay_toComplex_iff {x p q : V} :
     SameRay ℝ (toComplex x p) (toComplex x q) ↔ SameRay ℝ (p - x) (q - x) := by
-  simpa [toComplex] using (SameRay.sameRay_map_iff (orthonormalBasisOneI.repr.symm : EuclideanSpace
-    ℝ (Fin 2) ≃ₗᵢ[ℝ] ℂ).toLinearEquiv (x := p - x) (y := q - x))
+  simpa [toComplex] using (SameRay.sameRay_map_iff (toPlane.symm : V ≃ₗᵢ[ℝ] ℂ).toLinearEquiv
+    (x := p - x) (y := q - x))
 
 private lemma polar_eq_iff_angle {s θ₁ θ₂ : ℝ} (hs : 0 < s) :
     polar x s θ₁ = polar x s θ₂ ↔ ∃ n : ℤ, θ₁ = θ₂ + (n : ℝ) * (2 * π) := by
@@ -195,12 +171,10 @@ private lemma polar_inj {s₁ s₂ θ₁ θ₂ : ℝ} (hs₁ : 0 < s₁) (hs₂ 
     Int.abs_lt_one_iff.mp (by exact_mod_cast (mul_lt_mul_iff_of_pos_right Real.two_pi_pos).mp this)
   simpa using hn
 
-private noncomputable def argFinset (x : EuclideanSpace ℝ (Fin 2))
-    (Y : Finset (EuclideanSpace ℝ (Fin 2))) : Finset ℝ :=
+private noncomputable def argFinset (x : V) (Y : Finset V) : Finset ℝ :=
   Y.image fun y ↦ arg (toComplex x y)
 
-private noncomputable def argList (x : EuclideanSpace ℝ (Fin 2))
-    (Y : Finset (EuclideanSpace ℝ (Fin 2))) : List ℝ :=
+private noncomputable def argList (x : V) (Y : Finset V) : List ℝ :=
   (argFinset x Y).sort (· ≤ ·)
 
 private lemma injOn_arg_of_mem_sphere (hρ : 0 < ρ) (hY : ↑Y ⊆ sphere x ρ) :
@@ -211,7 +185,7 @@ private lemma injOn_arg_of_mem_sphere (hρ : 0 < ρ) (hY : ↑Y ⊆ sphere x ρ)
   rw [(mem_sphere_iff_norm.mp (hY hy₁)), (mem_sphere_iff_norm.mp (hY hy₂))] at heq
   have : y₂ - y₁ = 0 := by
     have h : y₂ - y₁ = (y₂ - x) - (y₁ - x) := by abel
-    rw [h, (smul_right_injective (EuclideanSpace ℝ (Fin 2)) hρ.ne' heq), sub_self]
+    rw [h, (smul_right_injective V hρ.ne' heq), sub_self]
   exact (sub_eq_zero.mp this).symm
 
 private lemma card_argFinset (hρ : 0 < ρ) (hY : ↑Y ⊆ sphere x ρ) : (argFinset x Y).card = Y.card :=
@@ -232,22 +206,18 @@ private lemma argList_get_mem_Ioc (i : Fin (argList x Y).length) :
     Finset.mem_image.mp ((Finset.mem_sort (· ≤ ·)).mp <| List.get_mem (argList x Y) i)
   exact hy ▸ arg_mem_Ioc _
 
-private noncomputable def openSector (x : EuclideanSpace ℝ (Fin 2)) (ρ θ₁ θ₂ : ℝ) :
-    Set (EuclideanSpace ℝ (Fin 2)) :=
+private noncomputable def openSector (x : V) (ρ θ₁ θ₂ : ℝ) : Set V :=
   (fun p : ℝ × ℝ ↦ polar x p.1 p.2) '' (Ioo 0 ρ ×ˢ Ioo θ₁ θ₂)
 
-private noncomputable def θLeft (x : EuclideanSpace ℝ (Fin 2))
-    (Y : Finset (EuclideanSpace ℝ (Fin 2))) (i : Fin (argList x Y).length) : ℝ :=
+private noncomputable def θLeft (x : V) (Y : Finset V) (i : Fin (argList x Y).length) : ℝ :=
   (argList x Y).get i
 
-private noncomputable def θRight (x : EuclideanSpace ℝ (Fin 2))
-    (Y : Finset (EuclideanSpace ℝ (Fin 2))) (i : Fin (argList x Y).length) : ℝ :=
+private noncomputable def θRight (x : V) (Y : Finset V) (i : Fin (argList x Y).length) : ℝ :=
   if h : ↑i + 1 < (argList x Y).length then (argList x Y).get ⟨↑i + 1, h⟩
   else (argList x Y).get ⟨0, i.pos⟩ + 2 * π
 
-private noncomputable def openSectorIdx (x : EuclideanSpace ℝ (Fin 2)) (ρ : ℝ)
-    (Y : Finset (EuclideanSpace ℝ (Fin 2))) (i : Fin (argList x Y).length) :
-    Set (EuclideanSpace ℝ (Fin 2)) :=
+private noncomputable def openSectorIdx (x : V) (ρ : ℝ) (Y : Finset V)
+    (i : Fin (argList x Y).length) : Set V :=
   openSector x ρ (θLeft x Y i) (θRight x Y i)
 
 private lemma θLeft_lt_θRight (i : Fin (argList x Y).length) : θLeft x Y i < θRight x Y i := by
@@ -256,11 +226,12 @@ private lemma θLeft_lt_θRight (i : Fin (argList x Y).length) : θLeft x Y i < 
   · exact argList_get_lt (show (i : ℕ) < i + 1 from Nat.lt_succ_self _)
   linarith [(argList_get_mem_Ioc (x := x) (Y := Y) i).2, (argList_get_mem_Ioc ⟨0, i.pos⟩).1]
 
-private lemma lineMap_sub_left {t : ℝ} {a b : EuclideanSpace ℝ (Fin 2)} :
+omit [Fact (Module.finrank ℝ V = 2)] in
+private lemma lineMap_sub_left {t : ℝ} {a b : V} :
     AffineMap.lineMap a b t - a = t • (b - a) := by
   simp [AffineMap.lineMap_apply]
 
-private lemma mem_segment_iff_arg (hρ : 0 < ρ) {y p : EuclideanSpace ℝ (Fin 2)}
+private lemma mem_segment_iff_arg (hρ : 0 < ρ) {y p : V}
     (hy : y ∈ sphere x ρ) (hp : p ∈ ball x ρ) :
     p ∈ segment ℝ x y ↔ p = x ∨ arg (toComplex x p) = arg (toComplex x y) := by
   have hnormy : ‖y - x‖ = ρ := mem_sphere_iff_norm.mp hy
@@ -272,7 +243,8 @@ private lemma mem_segment_iff_arg (hρ : 0 < ρ) {y p : EuclideanSpace ℝ (Fin 
   · rw [segment_eq_image_lineMap] at hseg
     obtain ⟨t, ht, rfl⟩ := hseg
     have hsr : SameRay ℝ (AffineMap.lineMap x y t - x) (y - x) :=
-      lineMap_sub_left.symm ▸ SameRay.sameRay_nonneg_smul_left _ ht.1
+      (lineMap_sub_left (t := t) (a := x) (b := y)).symm ▸
+        SameRay.sameRay_nonneg_smul_left _ ht.1
     exact (Complex.sameRay_iff.mp (sameRay_toComplex_iff.mpr hsr)).resolve_left
       (mt toComplex_eq_zero.mp hpx) |>.resolve_left (mt toComplex_eq_zero.mp hyx)
   obtain rfl | harg := h
@@ -300,14 +272,15 @@ private lemma mem_segment_iff_arg (hρ : 0 < ρ) {y p : EuclideanSpace ℝ (Fin 
   exact this.symm ▸ lineMap_mem_segment ℝ x y ht
 
 
-private lemma ne_center_of_mem_diskMinusRadii (hYne : Y.Nonempty) {p : EuclideanSpace ℝ (Fin 2)}
+omit [Fact (Module.finrank ℝ V = 2)] in
+private lemma ne_center_of_mem_diskMinusRadii (hYne : Y.Nonempty) {p : V}
     (hp : p ∈ diskMinusRadii x ρ Y) : p ≠ x := by
   intro rfl
   obtain ⟨y, hy⟩ := hYne
   exact hp.2 <| mem_iUnion.mpr ⟨y, mem_iUnion.mpr ⟨hy, left_mem_segment ..⟩⟩
 
 private lemma mem_diskMinusRadii_iff (hρ : 0 < ρ) (hYne : Y.Nonempty) (hY : ↑Y ⊆ sphere x ρ)
-    {p : EuclideanSpace ℝ (Fin 2)} : p ∈ diskMinusRadii x ρ Y ↔
+    {p : V} : p ∈ diskMinusRadii x ρ Y ↔
       p ∈ ball x ρ ∧ p ≠ x ∧ arg (toComplex x p) ∉ argFinset x Y := by
   refine ⟨fun hp ↦ ⟨hp.1, ne_center_of_mem_diskMinusRadii hYne hp, fun harg ↦ ?_⟩, fun ⟨hp,
     hpx, harg⟩ ↦ ⟨hp, fun h ↦ ?_⟩⟩
@@ -360,13 +333,13 @@ private lemma isOpen_image_mul_exp {θ₁ θ₂ : ℝ} (hρ : 0 < ρ) :
   exact equivRealProdCLM.symm.isOpenMap _ ((hφim.symm ▸ isOpen_Iio.prod isOpen_Ioo))
 
 private lemma isOpen_openSector {θ₁ θ₂ : ℝ} (hρ : 0 < ρ) : IsOpen (openSector x ρ θ₁ θ₂) := by
-  have him : openSector x ρ θ₁ θ₂ = (fun z : ℂ ↦ x + orthonormalBasisOneI.repr z) ''
+  have him : openSector x ρ θ₁ θ₂ = (fun z : ℂ ↦ x + toPlane z) ''
         ((fun p : ℝ × ℝ ↦ (↑p.1 : ℂ) * cexp (↑p.2 * I)) '' (Ioo 0 ρ ×ˢ Ioo θ₁ θ₂)) := by
     simp only [openSector, ← image_comp]
     rfl
   rw [him]
-  let e : ℂ ≃ₜ EuclideanSpace ℝ (Fin 2) :=
-    orthonormalBasisOneI.repr.toHomeomorph.trans (Homeomorph.addLeft x)
+  let e : ℂ ≃ₜ V :=
+    toPlane.toHomeomorph.trans (Homeomorph.addLeft x)
   exact e.isOpenMap _ (isOpen_image_mul_exp (θ₁ := θ₁) (θ₂ := θ₂) hρ)
 
 private lemma arg_polar {s θ : ℝ} (hs : 0 < s) :
@@ -490,7 +463,7 @@ private lemma pairwiseDisjoint_openSectorIdx (_hρ : 0 < ρ) :
 
 /-- Every point of `diskMinusRadii` lies in some polar sector. -/
 private lemma exists_mem_openSectorIdx (hρ : 0 < ρ) (hYne : Y.Nonempty) (hY : ↑Y ⊆ sphere x ρ)
-    {p : EuclideanSpace ℝ (Fin 2)} (hp : p ∈ diskMinusRadii x ρ Y) :
+    {p : V} (hp : p ∈ diskMinusRadii x ρ Y) :
     ∃ i : Fin (argList x Y).length, p ∈ openSectorIdx x ρ Y i := by
   have hp' := (mem_diskMinusRadii_iff hρ hYne hY).mp hp
   have hlen : 0 < (argList x Y).length :=
@@ -570,7 +543,7 @@ private lemma iUnion_openSectorIdx (hρ : 0 < ρ) (hYne : Y.Nonempty) (hY : ↑Y
   exact mem_iUnion.mpr ⟨i, hi⟩
 
 private lemma connectedComponentIn_eq_openSectorIdx (hρ : 0 < ρ) (hYne : Y.Nonempty)
-    (hY : ↑Y ⊆ sphere x ρ) {p : EuclideanSpace ℝ (Fin 2)} {i : Fin (argList x Y).length}
+    (hY : ↑Y ⊆ sphere x ρ) {p : V} {i : Fin (argList x Y).length}
     (hp : p ∈ openSectorIdx x ρ Y i) :
     connectedComponentIn (diskMinusRadii x ρ Y) p = openSectorIdx x ρ Y i := by
   have hsub := subset_diskMinusRadii_openSectorIdx hρ hYne hY i
@@ -646,7 +619,7 @@ private lemma θRight_le_three_pi (i : Fin (argList x Y).length) : θRight x Y i
   · linarith [(argList_get_mem_Ioc (x := x) (Y := Y) ⟨↑i + 1, hi⟩).2, Real.pi_pos]
   linarith [(argList_get_mem_Ioc (x := x) (Y := Y) ⟨0, i.pos⟩).2, Real.pi_pos]
 
-private lemma exists_get_eq_arg {y : EuclideanSpace ℝ (Fin 2)} (hy : y ∈ Y) :
+private lemma exists_get_eq_arg {y : V} (hy : y ∈ Y) :
     ∃ i : Fin (argList x Y).length, (argList x Y).get i = arg (toComplex x y) :=
   (arg_mem_argFinset_iff (x := x) (Y := Y)).mp <| Finset.mem_image.mpr ⟨y, hy, rfl⟩
 
@@ -659,7 +632,7 @@ private abbrev isEndpoint (α : ℝ) (i : Fin (argList x Y).length) : Prop :=
 
 /-- On a removed radius (away from the centre), a sector meets `p` in its closure iff that radius
 is one of the two angular endpoints of the sector. -/
-private lemma mem_closure_openSectorIdx_iff (hρ : 0 < ρ) {p : EuclideanSpace ℝ (Fin 2)}
+private lemma mem_closure_openSectorIdx_iff (hρ : 0 < ρ) {p : V}
     (hr : 0 < ‖p - x‖) (hrρ : ‖p - x‖ < ρ) (hα : arg (toComplex x p) ∈ argFinset x Y)
     (i : Fin (argList x Y).length) :
     p ∈ closure (openSectorIdx x ρ Y i) ↔ isEndpoint (arg (toComplex x p)) i := by
@@ -667,7 +640,7 @@ private lemma mem_closure_openSectorIdx_iff (hρ : 0 < ρ) {p : EuclideanSpace �
   set r := ‖p - x‖
   have hr0 : 0 < r := hr
   have hpole : polar x r α = p := by
-    simpa [r, α, norm_toComplex] using polar_of_toComplex
+    simpa [r, α, norm_toComplex] using polar_of_toComplex (x := x) (p := p)
   have hαIoc : α ∈ Ioc (-π) π := arg_mem_Ioc _
   refine ⟨fun hp ↦ ?_, fun h ↦ ?_⟩
   · change p ∈ closure (openSector x ρ (θLeft x Y i) (θRight x Y i)) at hp
@@ -721,7 +694,7 @@ private lemma mem_closure_openSectorIdx_iff (hρ : 0 < ρ) {p : EuclideanSpace �
   rw [polar_add_two_pi, hpole]
 
 private lemma card_endpoint_eq_two (hρ : 0 < ρ) (hY : ↑Y ⊆ sphere x ρ) (hd : 1 < Y.card)
-    {y : EuclideanSpace ℝ (Fin 2)} (hy : y ∈ Y) :
+    {y : V} (hy : y ∈ Y) :
     (Finset.univ.filter fun i : Fin (argList x Y).length ↦
       isEndpoint (arg (toComplex x y)) i).card = 2 := by
   have hlen : 1 < (argList x Y).length := (length_argList hρ hY).symm ▸ hd
@@ -803,7 +776,7 @@ private lemma card_endpoint_eq_two (hρ : 0 < ρ) (hY : ↑Y ⊆ sphere x ρ) (h
   exact Finset.card_eq_two.mpr ⟨k, iPred, hne, Finset.Subset.antisymm hS
     (Finset.insert_subset_iff.mpr ⟨hkS, Finset.singleton_subset_iff.mpr hiS⟩)⟩
 
-private lemma arg_eq_of_mem_segment_radius (hρ : 0 < ρ) {y p : EuclideanSpace ℝ (Fin 2)}
+private lemma arg_eq_of_mem_segment_radius (hρ : 0 < ρ) {y p : V}
     (hy : y ∈ sphere x ρ) (hp : p ∈ segment ℝ x y \ {x, y}) :
     0 < ‖p - x‖ ∧ ‖p - x‖ < ρ ∧ arg (toComplex x p) = arg (toComplex x y) := by
   have hp' : p ∈ segment ℝ x y := hp.1
@@ -822,11 +795,10 @@ private lemma arg_eq_of_mem_segment_radius (hρ : 0 < ρ) {y p : EuclideanSpace 
 
 /-- **Adjacency.** A point in the relative interior of one of the radii lies in the closure of
 exactly two sectors — the two on either side of that radius. For `d = 1` the same sector lies on
-both sides, and the count is one; that case is excluded here by `1 < Y.card`, which is the only
-case the consumers need. -/
+both sides, and the count is one; the theorem assumes `1 < Y.card` to exclude this case. -/
 @[grind →]
 theorem ncard_sectors_closure_eq_two (hρ : 0 < ρ) (hY : ↑Y ⊆ sphere x ρ) (hd : 1 < Y.card)
-    {y : EuclideanSpace ℝ (Fin 2)} (hy : y ∈ Y) {p : EuclideanSpace ℝ (Fin 2)}
+    {y : V} (hy : y ∈ Y) {p : V}
     (hp : p ∈ segment ℝ x y \ {x, y}) : {C ∈ sectors x ρ Y | p ∈ closure C}.ncard = 2 := by
   obtain ⟨hr, hrρ, harg⟩ := arg_eq_of_mem_segment_radius hρ (hY hy) hp
   have hα : arg (toComplex x p) ∈ argFinset x Y := Finset.mem_image.mpr ⟨y, hy, harg.symm⟩
@@ -852,8 +824,7 @@ theorem ncard_sectors_closure_eq_two (hρ : 0 < ρ) (hY : ↑Y ⊆ sphere x ρ) 
       (Finset.mem_filter.mp (Finset.mem_coe.mp hi)).2)
   rw [hset, ncard_image_of_injective _ (injective_openSectorIdx hρ), ncard_coe_finset, hScard]
 
-/-- Every sector has the centre in its closure. Used to pass from a sector at a point of the drawing
-to the point itself. -/
+/-- Every sector has the centre in its closure. -/
 theorem mem_closure_of_mem_sectors (hρ : 0 < ρ) (hYne : Y.Nonempty) (hY : ↑Y ⊆ sphere x ρ)
     (hC : C ∈ sectors x ρ Y) : x ∈ closure C := by
   rw [sectors_eq_range_openSectorIdx hρ hYne hY] at hC

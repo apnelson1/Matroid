@@ -12,20 +12,12 @@ public import Matroid.ForMathlib.Geometry.PolygonalPath.Basic
 This file is the dictionary between `Polygon α n` (a cyclic list of vertices, with no base point)
 and `PolygonalPath x x` (a closed polygonal path, which does have a base point).
 
-The point of the dictionary is that closed simplicity is a property of the *cyclic* vertex
-sequence, whereas the parametrized definition `InjOn P.toPath (Ico 0 1)` privileges the base point.
-Consequently:
+`Polygon.IsSimple` describes the cyclic vertex sequence, while
+`PolygonalPath.IsSimpleLoop` describes the parametrized closed path. The dictionary provides:
 
-* `Polygon.IsSimple` is the definition to use downstream. It is manifestly invariant under
-  `Polygon.rotate` and `Polygon.reverse`.
-* `PolygonalPath.IsSimpleLoop`, defined in `Matroid.ForMathlib.Geometry.PolygonalPath.SimpleLoop`,
-  is the parametrized notion, kept because it is what a topological argument consumes, and
-  characterized here by `Polygon.isSimple_iff_isSimpleLoop`.
-
-Only the dictionary lives here. `Path.IsSimpleLoop` is in `Matroid.ForMathlib.Topology.Path` and
-the theory of `PolygonalPath.IsSimpleLoop` — its recursions, and
-`PolygonalPath.IsSimpleLoop.existsUnique_edge` — is in
-`Matroid.ForMathlib.Geometry.PolygonalPath.SimpleLoop`, since none of it mentions `Polygon`.
+* `Polygon.IsSimple`, invariant under `Polygon.rotate` and `Polygon.reverse`;
+* `PolygonalPath.IsSimpleLoop`, the parametrized notion used by topology;
+* equivalences between the two notions and the corresponding arc decompositions.
 
 ## Main definitions
 
@@ -41,20 +33,17 @@ the theory of `PolygonalPath.IsSimpleLoop` — its recursions, and
 * `Polygon.isSimple_iff_isSimpleLoop` : `p.IsSimple ℝ ↔ (p.toPolygonalPath i).IsSimpleLoop`,
   for any (equivalently, every) `i`.
 * `Polygon.IsSimple.exists_arcs` : a simple polygon can be cut at any two points of its boundary
-  into two simple arcs meeting exactly at those two points. This is the form the Jordan curve
-  argument uses.
+  into two simple arcs meeting exactly at those two points.
 
 -/
 
 @[expose] public section
 
-universe u
-
 open Set Function unitInterval
 
 namespace PolygonalPath
 
-variable {α : Type u} [AddCommGroup α] [Module ℝ α] [TopologicalSpace α] [ContinuousSMul ℝ α]
+variable {α : Type*} [AddCommGroup α] [Module ℝ α] [TopologicalSpace α] [ContinuousSMul ℝ α]
   [ContinuousAdd α] {x y b : α}
 
 /-! ### From closed polygonal paths to polygons -/
@@ -160,7 +149,7 @@ end PolygonalPath
 
 namespace Polygon
 
-variable {α : Type u} [AddCommGroup α] [Module ℝ α] [TopologicalSpace α] [ContinuousSMul ℝ α]
+variable {α : Type*} [AddCommGroup α] [Module ℝ α] [TopologicalSpace α] [ContinuousSMul ℝ α]
   [ContinuousAdd α] {n : ℕ} {p : Polygon α n} {i j : Fin n} {a b : α}
 
 /-! ### From polygons to polygonal paths -/
@@ -587,7 +576,7 @@ end Polygon
 
 namespace PolygonalPath
 
-variable {α : Type u} [AddCommGroup α] [Module ℝ α] [TopologicalSpace α] [ContinuousSMul ℝ α]
+variable {α : Type*} [AddCommGroup α] [Module ℝ α] [TopologicalSpace α] [ContinuousSMul ℝ α]
   [ContinuousAdd α] {x : α}
 
 omit [AddCommGroup α] [Module ℝ α] [TopologicalSpace α] [ContinuousSMul ℝ α]

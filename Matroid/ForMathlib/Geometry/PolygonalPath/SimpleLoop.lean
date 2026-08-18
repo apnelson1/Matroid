@@ -8,13 +8,8 @@ public import Matroid.ForMathlib.Topology.Path
 
 `PolygonalPath.IsSimpleLoop` is the closed counterpart of `PolygonalPath.IsSimple`: the path
 traverses each of its points once, apart from returning to its starting point at the end. It is the
-parametrized notion, `InjOn P.toPath (Ico 0 1)`, because that is what a topological argument
-consumes; the base-point-free characterization in terms of `Polygon.IsSimple` is the subject of
-`Matroid.ForMathlib.Geometry.Polygon.PolygonalPath`.
-
-Nothing here mentions `Polygon`, which is why it is here rather than there: a file needing embedded
-closed curves — a drawing of a graph with loops, say — should not have to import the polygon
-dictionary to get them.
+parametrized notion `InjOn P.toPath (Ico 0 1)`. The polygon dictionary relates it to the
+base-point-free notion `Polygon.IsSimple`.
 
 ## Main definitions
 
@@ -22,22 +17,19 @@ dictionary to get them.
 
 ## Main statements
 
-* `PolygonalPath.isSimpleLoop_cons_iff`, `PolygonalPath.isSimpleLoop_append_iff` : the recursions.
-  Compare `PolygonalPath.isSimple_append_iff`, where only *one* shared endpoint is allowed; that
-  single difference is the entire relationship between the open and closed notions.
+* `PolygonalPath.isSimpleLoop_cons_iff`, `PolygonalPath.isSimpleLoop_append_iff` : the recursions
+  for prepending and concatenating closed simple paths.
 * `PolygonalPath.IsSimpleLoop.existsUnique_edge` : a non-vertex point of the image lies on a unique
   segment. The closed half of the hypothesis of `PolygonalPath.exists_nhds_inter_toSet_eq`.
 -/
 
 @[expose] public section
 
-universe u
-
 open Set Function unitInterval
 
 namespace PolygonalPath
 
-variable {α : Type u} [AddCommGroup α] [Module ℝ α] [TopologicalSpace α] [ContinuousSMul ℝ α]
+variable {α : Type*} [AddCommGroup α] [Module ℝ α] [TopologicalSpace α] [ContinuousSMul ℝ α]
   [ContinuousAdd α] {x y b : α}
 
 omit [AddCommGroup α] [Module ℝ α] [TopologicalSpace α] [ContinuousSMul ℝ α]
@@ -401,14 +393,7 @@ lemma IsSimpleLoop.existsUnique_edge {P : PolygonalPath x x} {a : α} (h : P.IsS
 
 /-! ### The two edges at the base point
 
-`eq_first_edge_of_mem_segment` and `eq_last_edge_of_mem_segment` (`Basic.lean`) pin down which edge
-of a *simple path* can contain an endpoint. At the base point of a simple **loop** the answer is a
-disjunction — the first edge and the last edge both end there — and no lemma said so, which is why
-a consumer that handles a cell of a drawing uniformly could close the arc case and not the loop
-case. `Graph.PLDrawing.segment_endTip_inter_loop` is exactly that consumer.
-
-These are stated with `firstTip` and `lastTip` rather than existentially, so that a caller can
-identify the two edges with the ones it already holds. -/
+At the base point of a simple loop, the first and last edges are the two incident edges. -/
 
 /-- At the base point of a simple loop the first tip is not the base point. -/
 lemma IsSimpleLoop.firstTip_ne {P : PolygonalPath x x} (h : P.IsSimpleLoop) : P.firstTip ≠ x := by
@@ -420,8 +405,7 @@ lemma IsSimpleLoop.firstTip_ne {P : PolygonalPath x x} (h : P.IsSimpleLoop) : P.
 lemma IsSimpleLoop.lastTip_ne {P : PolygonalPath x x} (h : P.IsSimpleLoop) : P.lastTip ≠ x :=
   (isSimpleLoop_reverse.mpr h).firstTip_ne
 
-/-- **The two edges at the base point of a simple loop are distinct.** Equivalently, a simple loop
-is not a digon — which is what `three_le_length` says, in the form a caller can use. -/
+/-- **The two edges at the base point of a simple loop are distinct.** -/
 lemma IsSimpleLoop.firstTip_ne_lastTip {P : PolygonalPath x x} (h : P.IsSimpleLoop) :
     P.firstTip ≠ P.lastTip := by
   cases P with
