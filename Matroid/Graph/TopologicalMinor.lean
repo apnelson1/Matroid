@@ -1,6 +1,6 @@
 module
 
-public import Matroid.Graph.Hom
+public import Matroid.Graph.Iso.Hom
 public import Matroid.Graph.Map
 public import Matroid.Graph.Minor.Defs
 public import Matroid.Graph.Simple

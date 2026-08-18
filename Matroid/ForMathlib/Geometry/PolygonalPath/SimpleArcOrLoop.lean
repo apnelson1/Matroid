@@ -5,20 +5,10 @@ public import Matroid.ForMathlib.Geometry.PolygonalPath.SimpleLoop
 /-!
 # Paths that are either a simple arc or a simple loop
 
-`PolygonalPath.IsSimple` describes an embedded arc and forces distinct endpoints once the path has
-a segment; `PolygonalPath.IsSimpleLoop` describes an embedded circle and forces equal endpoints. A
-single polygonal path type covers both, so a context that must allow either — a drawing of a graph
-in which loops are permitted, for instance — needs the disjunction of the two, and needs it named
-once rather than case-split at every use.
-
-`IsSimpleArcOrLoop` is that disjunction (with the arc branch requiring a positive length, so as to
-exclude the constant `nil`). It says exactly that `toPath` is injective except that the two
-endpoints may coincide, i.e. that the path is an embedding of an interval or of a circle.
-
-The point of naming it is `IsSimpleArcOrLoop.existsUnique_edge`: both branches already prove that a
-non-vertex point of the image lies on a unique segment, and that uniqueness is the only hypothesis
-`PolygonalPath.exists_nhds_inter_toSet_eq` — the local structure lemma the plane topology runs on —
-actually consumes. So the case split is discharged here, once, and never reappears downstream.
+`IsSimpleArcOrLoop` is the disjunction of a positive-length simple path and a simple closed path.
+It describes an embedding of an interval or a circle, allowing the endpoints to coincide only in
+the loop case. The shared consequences of the two branches include uniqueness of the segment
+through every nonvertex point and the corresponding local neighborhood description.
 
 ## Main definitions
 
@@ -32,15 +22,13 @@ actually consumes. So the case split is discharged here, once, and never reappea
 
 @[expose] public section
 
-universe u
-
 open Set Function
 open scoped unitInterval
 
 namespace PolygonalPath
 
-variable {α : Type u} [AddCommGroup α] [Module ℝ α] [TopologicalSpace α] [ContinuousSMul ℝ α]
-  [ContinuousAdd α] {x y a : α} {P : PolygonalPath x y}
+variable {α : Type*} [AddCommGroup α] [Module ℝ α] [TopologicalSpace α] [ContinuousSMul ℝ α]
+   {x y a : α} {P : PolygonalPath x y} [ContinuousAdd α]
 
 /-- `P` is an embedded arc or an embedded circle: either `P.IsSimple` with at least one segment
 (so `x ≠ y` and `toPath` is injective), or `P` is closed and `P.IsSimpleLoop`. The equality of
@@ -88,15 +76,6 @@ lemma IsSimpleArcOrLoop.existsUnique_edge (h : P.IsSimpleArcOrLoop) (ha : a ∈ 
   · rw [cast_rfl] at h
     exact h.existsUnique_edge ha hav
 
-/-- Locally, an embedded polygonal arc or circle looks like the unique segment through the given
-point. Status.md 3.6 for a single cell; the ambient version, which also has to see the other cells,
-is stated for a drawing. -/
-lemma IsSimpleArcOrLoop.exists_nhds_inter_toSet_eq [IsTopologicalAddGroup α] [T2Space α]
-    (h : P.IsSimpleArcOrLoop) (ha : a ∈ P.toSet) (hav : a ∉ P.vertices) {s : α × α}
-    (hs : s ∈ P.edges) (has : a ∈ segment ℝ s.1 s.2) :
-    ∃ U ∈ nhds a, U ∩ P.toSet = U ∩ segment ℝ s.1 s.2 :=
-  P.exists_nhds_inter_toSet_eq (h.existsUnique_edge ha hav) hs has
-
 private lemma toSet_diff_endpoints_of_injective (h : Injective P.toPath) :
     P.toSet \ {x, y} = P.toPath '' Ioo (0 : I) 1 := by
   have hI : (univ : Set I) \ {0, 1} = Ioo 0 1 := by
@@ -120,9 +99,8 @@ private lemma toSet_diff_endpoints_of_isSimpleLoop {P : PolygonalPath x x} (h : 
   rw [toSet_eq_range_toPath, hrange, show ({x, x} : Set α) = {x} from by simp, ← hI, himg,
     image_singleton, Path.source]
 
-/-- The image of an embedded arc or circle, with the endpoints removed, is the image of the open
-interval. For an arc this removes both endpoints, for a loop the single base point; in both cases
-the result is the *open cell* of the corresponding drawing. -/
+/-- The image of an embedded arc or circle, with its endpoints removed, is the image of the open
+interval. -/
 lemma IsSimpleArcOrLoop.toSet_diff_endpoints (h : P.IsSimpleArcOrLoop) :
     P.toSet \ {x, y} = P.toPath '' Ioo (0 : I) 1 := by
   obtain ⟨hs, hlen⟩ | ⟨rfl, h⟩ := h
@@ -180,5 +158,20 @@ lemma IsSimpleArcOrLoop.toSet_inter_subset {x p y : α}
     exact ((isSimpleLoop_append_iff hxp).mp hL).2.2.le
 
 end Append
+
+end PolygonalPath
+
+namespace PolygonalPath
+
+variable {α : Type*} [AddCommGroup α] [Module ℝ α] [TopologicalSpace α] [ContinuousSMul ℝ α]
+  {x y a : α} {P : PolygonalPath x y}
+
+/-- Locally, an embedded polygonal arc or circle looks like the unique segment through the given
+point. -/
+lemma IsSimpleArcOrLoop.exists_nhds_inter_toSet_eq [IsTopologicalAddGroup α] [T2Space α]
+    (h : P.IsSimpleArcOrLoop) (ha : a ∈ P.toSet) (hav : a ∉ P.vertices) {s : α × α}
+    (hs : s ∈ P.edges) (has : a ∈ segment ℝ s.1 s.2) :
+    ∃ U ∈ nhds a, U ∩ P.toSet = U ∩ segment ℝ s.1 s.2 :=
+  P.exists_nhds_inter_toSet_eq (h.existsUnique_edge ha hav) hs has
 
 end PolygonalPath

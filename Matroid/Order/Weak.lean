@@ -5,8 +5,6 @@ public import Matroid.Flat.Hyperplane
 
 @[expose] public section
 
-universe u
-
 open Set
 namespace Matroid
 

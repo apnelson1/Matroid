@@ -1,6 +1,8 @@
 name = "Matroid"
 keywords = ["math"]
-defaultTargets = ["Matroid", "MatroidTests"]
+defaultTargets = ["Matroid"]
+# `lake test` builds the regression library. See `tests/README.md`.
+testDriver = "MatroidTests"
 enableArtifactCache = true
 
 [leanOptions]

@@ -9,10 +9,8 @@ public import Mathlib.Analysis.Normed.Module.Convex
 # Approximating paths by polygonal paths
 
 Uniform continuity turns any path into a polygonal path with the same endpoints staying inside any
-given thickening of its image, and hence inside any open set the path lies in. These are the only
-statements in the polygonal-path development that need a norm, and they are kept apart from
-`PolygonalPath.Basic` so that a file wanting only the definition of a polygonal path — a drawing of
-a graph, say — does not pay for the normed and uniform-space imports.
+given thickening of its image, and hence inside any open set containing the image. The construction
+samples the path at a sufficiently fine uniform partition and joins consecutive samples.
 
 ## Main statements
 
@@ -23,20 +21,17 @@ a graph, say — does not pay for the normed and uniform-space imports.
 
 @[expose] public section
 
-universe u
-
 open Set Function
 
 namespace PolygonalPath
 
-variable {α : Type u} {x y : α}
+variable {α : Type*} {x y : α}
 
 /-! ### Approximating paths by polygonal paths -/
 
 section Normed
 
-variable [SeminormedAddCommGroup α] [NormedSpace ℝ α] {X : Set α}
-variable {N : ℕ}
+variable [SeminormedAddCommGroup α] [NormedSpace ℝ α] {X : Set α} {N : ℕ}
 
 private noncomputable def uniform (hN : 0 < N) : List unitInterval :=
   List.finRange (N + 1) |>.map (fun (i : Fin (N + 1)) => ⟨(i : ℝ) / N,

@@ -55,6 +55,11 @@ jobs:
       - name: Build the project
         run: lake build
 
+      # `MatroidTests` is the package's `testDriver`, deliberately outside `defaultTargets` so that
+      # a silent `lake build` means the library is clean. This step is what keeps it running.
+      - name: Run the regression tests
+        run: lake test
+
       - name: Upload Lake cache to R2
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         continue-on-error: true

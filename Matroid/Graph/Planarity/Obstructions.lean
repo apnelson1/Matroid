@@ -21,11 +21,8 @@ private lemma nat_cases5 {i : ℕ} (hi : i < 5) :
     i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := by
   omega
 
-/-- The four alternating arcs of a cycle, together with two adjacent outside vertices, give a
-topological `K₃,₃`.
-
-The route table and the finite verification for `CompleteBipartiteGraph 3 3` are deliberately hidden
-in this theorem. -/
+/-- Four alternating arcs of a cycle, together with two adjacent outside vertices, give a
+topological `K₃,₃`. -/
 theorem isTopologicalMinor_completeBipartiteGraph_of_alternating_cycle
     {G : Graph α β} {W p₀₀ p₁₀ p₁₁ p₀₁ : WList α β} {u v : α} [Inhabited α]
     (hW : G.IsCyclicWalk W) (hdec : W.DecomposeTo [p₀₀, p₁₀, p₁₁, p₀₁])
@@ -274,10 +271,7 @@ theorem isTopologicalMinor_completeBipartiteGraph_of_alternating_cycle
       route_internal_disjoint⟩
 
 /-- Three consecutive arcs of a cycle through three common neighbors of two adjacent outside
-vertices give a topological `K₅`.
-
-The route table and the finite verification for `CompleteGraph 5` are deliberately hidden in this
-theorem. -/
+vertices give a topological `K₅`. -/
 theorem isTopologicalMinor_completeGraph_of_three_common_neighbors
     {G : Graph α β} {W pxy pyz pzx : WList α β} {u v : α} [Inhabited α]
     (hW : G.IsCyclicWalk W) (hdec : W.DecomposeTo [pxy, pyz, pzx])

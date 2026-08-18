@@ -5,10 +5,9 @@ public import Matroid.Graph.Planarity.Realization.Basic
 /-!
 # The unit-edge metric realization of a graph
 
-This file equips a tagged copy `Graph.Realization.Metric G` of the point-set realization with the
-intrinsic extended path metric in which every edge has length one.  In particular, it deliberately
-does not install an `EMetricSpace` instance on the raw quotient `Graph.Realization G`; its quotient
-topology and this metric topology can therefore coexist without an instance diamond.
+This file equips the tagged copy `Graph.Realization.Metric G` with the intrinsic extended path
+metric in which every edge has length one. Distances are defined by direct travel on an edge or by
+detours through vertices, and the realization maps are then given the resulting metric structure.
 -/
 
 @[expose] public section

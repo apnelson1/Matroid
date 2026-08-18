@@ -1,71 +1,45 @@
-import Matroid.Graph.Planarity.PLDrawing
-import Matroid.Graph.Planarity.Face
-import Matroid.ForMathlib.Geometry.DiskMinusRadii
-import Matroid.ForMathlib.Geometry.SegmentFigure
-import Matroid.ForMathlib.Geometry.StarComponents
-import Matroid.ForMathlib.Topology.ConnPartition
-import Matroid.ForMathlib.Analysis.Convex.RadialPoint
-import Mathlib.Analysis.Normed.Affine.AddTorsor
+module
+
+public import Matroid.Graph.Planarity.PLDrawing
+public import Matroid.Graph.Planarity.Face
+public import Matroid.ForMathlib.Geometry.DiskMinusRadii
+public import Matroid.ForMathlib.Geometry.SegmentFigure
+public import Matroid.ForMathlib.Geometry.StarComponents
+public import Matroid.ForMathlib.Topology.ConnPartition
+public import Matroid.ForMathlib.Analysis.Convex.RadialPoint
+public import Mathlib.Analysis.Normed.Affine.AddTorsor
+
+@[expose] public section
 
 /-!
 # The local structure of a polygonal drawing
 
-Status.md 3.6–3.8. Near any of its points, a polygonal drawing of a finite graph is a star of
-finitely many straight radii, and that is all the local structure the rest of the development needs.
-This is the payoff of working in the polygonal category: for an arbitrary drawing these statements
-are Schoenflies-strength, and here they are elementary.
-
-## What each statement costs
-
-`exists_radius` — the star lemma itself — is stated over a **real normed space**, not the plane: a
-finite union of segments looks like a star near each of its points whatever the ambient dimension.
-Only the accessibility and locally-constant-sides statements need the plane, because only they count
-the pieces the radii cut the neighbourhood into, and that count is `d` only in dimension two
-(`Matroid.ForMathlib.Geometry.DiskMinusRadii`).
-
-Loops are allowed throughout. Status.md assumes looplessness in 3.6; that is inherited from §2 and
-is not needed here — a loop at `v` simply contributes two of the radii at `v`, which is what
-`degree` already counts.
-
-Faces are taken on the sphere, since that is where §§4–6 use them.
+Near every point of a finite polygonal drawing, the support is a finite star of straight segments.
+This file proves that local description, identifies the radii at vertices and edge interiors, and
+uses it to access faces and compare the faces on the two sides of an open edge. The star statements
+work in any real normed space; the face statements use a two-dimensional real inner-product space.
 
 ## Main statements
 
 * `PLDrawing.exists_radius` : the star lemma, over any real normed space.
 * `PLDrawing.exists_radius_vertex`, `PLDrawing.exists_radius_edgeInterior` : the two cases, with the
   number of radii identified.
-* `PLDrawing.exists_segment_sdiff_subset_faceSet` : Status.md 3.7, accessibility.
-* `PLDrawing.ncard_faces_at_edgeInterior_le_two` and `PLDrawing.faces_at_edgeInterior_eq` :
-  Status.md 3.8, the two sides of an open cell and their local constancy.
+* `PLDrawing.exists_segment_sdiff_subset_faceSet` : access from a frontier point into a face.
+* `PLDrawing.ncard_faces_at_edgeInterior_le_two` and `PLDrawing.faces_at_edgeInterior_eq` : the
+  two sides of an open cell and their local constancy.
 -/
 
 open Function Set Topology Metric
 
 namespace Graph
 
-noncomputable section
+public noncomputable section
 
-universe u
-
-variable {α β : Type*} {G H : Graph α β} {V : Type u} [NormedAddCommGroup V] [NormedSpace ℝ V]
+variable {α β V : Type*} {G H : Graph α β} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
 namespace PLDrawing
 
 /-! ### 3.6, the star lemma -/
-
-/- `exists_radius` used to be proved here, over ~125 lines. Its proof used the drawing exactly
-twice, both as `range D.toDrawing.vertex` and both times only for finiteness; everything else came
-from `exists_finite_support`, whose conclusion is `IsSegmentFigure`. It is therefore a fact about
-finite unions of segments, and now lives in `Matroid/ForMathlib/Geometry/SegmentFigure.lean`
-(Kuratowski `Decisions.md` D14: a file mentioning no `Graph`, `V(`, `E(` is not a planarity file).
-
-Moving it is what unblocks Status.md 3.9: a θ-curve is three polygonal arcs with no drawing
-anywhere, so it could never reach the drawing-shaped statement, and manufacturing a `PLDrawing` of
-`Graph.banana` to fake one leads back to `exists_radius_vertex`, whose degree conjunct is still
-open (SegmentFigure counting is done; see the handoff on that theorem). -/
-
-/- Dropped `Y.Nonempty`: Status.md's `d ≥ 1` conflicts with `d = deg v` at isolated vertices;
-the star there is `{p}` with `Y = ∅`, so the equality uses `{p} ∪ ⋃ …`. -/
 
 /-- The support of a polygonal drawing of a finite graph is a segment figure. This is the whole of
 what the star lemma uses about a drawing. -/
@@ -489,9 +463,9 @@ private lemma degree_eq_ncard_source_add_target [G.Finite] (v : V(G)) :
 
 /-! ### Ends at a vertex
 
-The packaging the degree conjunct of `exists_radius_vertex` needs. The earlier handoff asked for a
-family `U : Ends → Set V` of *cells*, with four hypotheses to discharge, and bounced on two of them:
-the `Fintype`/`ncard` wiring, and the shrink needed to make distinct pieces meet only at `p`.
+The packaging of the degree conjunct of `exists_radius_vertex` needs a family
+`U : Ends → Set V` with four hypotheses. The useful choice is the first (or last) segment of each
+cell, which avoids both the `Fintype`/`ncard` mismatch and any shrinking argument.
 
 Both dissolve if the piece is the **first (or last) segment of the cell** rather than the whole
 cell. Then `U i = segment p (endTip i)` and:
@@ -513,7 +487,7 @@ rather than the number of incident edges. -/
 abbrev EndsAt (G : Graph α β) (v : V(G)) : Type _ :=
   {e : E(G) // edgeSource e = v} ⊕ {e : E(G) // edgeTarget e = v}
 
-/-- **The count.** This is the `Fintype`/`ncard` bridge the earlier attempt bounced on.
+/-- **The count.** This bridges `Fintype`/`ncard` for the ends at a vertex.
 
 Stated with `Nat.card`, not `Fintype.card`: `E(G)` is a `Set`, so `[G.Finite]` supplies `Finite`
 and *not* `Fintype`, and asking for `Fintype` here is what made the wiring fight back. `Nat.card`
@@ -536,18 +510,13 @@ lemma card_endsAt [G.Finite] (v : V(G)) : Nat.card (EndsAt G v) = G.degree v.1 :
 /-- The far endpoint of the cell segment at `v` belonging to an end: the first segment of the cell
 for an out-end, the last for an in-end.
 
-**This used to be `Classical.choose` of `exists_edge_starting_at_first`.** That is what made the
-star lemma at a vertex hard: the tip was a term with no computation rule, so `endTip (.inl e) = b`
-was not `rfl` for `D.cell e.1 = cons _ b _`, two tips of the same cell could not be identified, and
-the tip of a *cast* cell was a different term again. `PolygonalPath.firstTip` / `lastTip` are now
-functions with `@[simp]` computation and cast lemmas, so all three go away. See
-`PolygonalPath/Basic.lean`'s note above `firstTip`. -/
+The definition uses `firstTip` for an out-end and `lastTip` for an in-end, so the endpoint of the
+corresponding cell is available by computation and remains stable under casts. -/
 def endTip (D : PLDrawing G V) {v : V(G)} : EndsAt G v → V
   | .inl e => (D.cell e.1).firstTip
   | .inr e => (D.cell e.1).lastTip
 
-/-- `endTip` on an out-end is the first tip of the cell, definitionally. This is the rewrite the
-`Classical.choose` version could not offer. -/
+/-- `endTip` on an out-end is the first tip of the cell. -/
 @[simp] lemma endTip_inl (D : PLDrawing G V) {v : V(G)} (e : {e : E(G) // edgeSource e = v}) :
     D.endTip (.inl e) = (D.cell e.1).firstTip := rfl
 
@@ -843,21 +812,7 @@ Then a point of the support in `closedBall (vertex v) ρ` other than `vertex v` 
 through `vertex v`; that segment is an edge of some cell at `v`, and
 `eq_first_edge_of_mem_segment` / `eq_last_edge_of_mem_segment` identify it as an end segment.
 
-**Unblocked 2026-08-14; the previous note recorded this as a tactic problem and it was not.** Both
-routes below used to end at the same wall — "the `z` I have is not the `endTip` I want" — and that
-wall was a statement-layer defect, now fixed in three places:
-
-* `endTip` is no longer `Classical.choose` of an existential. It is `(D.cell _).firstTip` /
-  `lastTip`, so `endTip_inl` and `endTip_inr` above are `rfl` and `simp` rewrites both ways. The
-  `endTip_inl_eq` / `endTip_inr_eq` the old note asked for as "local sugar" are those two lemmas,
-  and they were not sugar: without them nothing about a tip could be transported at all.
-* `PolygonalPath.firstTip_cast` / `lastTip_cast` are `simp`, so a tip of a *cast* cell is the tip
-  of the cell. That was the first of the three recorded failures and it is now automatic.
-* `exists_ball_inter_subset_firstSegment` (`PolygonalPath/Basic.lean`) now concludes about
-  `segment ℝ x P.firstTip` rather than about an existentially quantified `z`. So the per-end route
-  below no longer has anything to identify: what it returns *is* `segment p (endTip i)`.
-
-Preferred route, now that the per-end version composes: for each out-end take the radius from
+Proof route: for each out-end take the radius from
 `exists_ball_inter_subset_firstSegment` applied to `D.cell e.1` (whose `IsSimple` is
 `cell_isSimple_of_source_ne_target`, needing `edgeSource ≠ edgeTarget`); for each in-end apply it
 to the reverse and use `firstTip_reverse`. For a **loop** end, both of the above are unavailable —
@@ -960,29 +915,36 @@ order to put them in. Write `p := D.toDrawing.vertex v` and `U i := segment ℝ 
    `card_endsAt` rewrites it to `G.degree v.1`. Cast to `ℕ∞` last, with `Nat.cast_inj`.
 
 The two `SegmentFigure` bounds are stated about *any* `Y` satisfying the star equation, so `Y` never
-has to be unfolded — which is what defeated the earlier attempt. -/
+has to be unfolded. -/
+
+section Plane
+
+attribute [local instance] FiniteDimensional.of_fact_finrank_eq_two
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+  [Fact (Module.finrank ℝ V = 2)]
 
 /-! ### 3.7, accessibility -/
 
 /-- **Accessibility.** A point on the frontier of a face can be joined to that face by a straight
 segment leaving the drawing immediately. -/
 theorem exists_segment_sdiff_subset_faceSet [G.Finite]
-    (D : PLDrawing G (EuclideanSpace ℝ (Fin 2))) {p : EuclideanSpace ℝ (Fin 2)}
-    (hp : p ∈ D.toDrawing.support) (F : D.toDrawing.onePoint.Face)
-    (hpF : (p : OnePoint (EuclideanSpace ℝ (Fin 2))) ∈ frontier (D.toDrawing.onePoint.faceSet F)) :
-    ∃ y : EuclideanSpace ℝ (Fin 2), y ≠ p ∧
-      (↑) '' (segment ℝ p y \ {p}) ⊆ D.toDrawing.onePoint.faceSet F := by
+    (D : PLDrawing G V) {p : V}
+    (hp : p ∈ D.support) (F : D.onePoint.Face)
+    (hpF : (p : OnePoint V) ∈ frontier (D.onePoint.faceSet F)) :
+    ∃ y : V, y ≠ p ∧
+      (↑) '' (segment ℝ p y \ {p}) ⊆ D.onePoint.faceSet F := by
   classical
   obtain ⟨ρ, hρ, Y, hY, hstar⟩ := D.exists_radius hp
-  have hnhds : (↑) '' (ball p ρ) ∈ 𝓝 (p : OnePoint (EuclideanSpace ℝ (Fin 2))) := by
+  have hnhds : (↑) '' (ball p ρ) ∈ 𝓝 (p : OnePoint V) := by
     rw [OnePoint.nhds_coe_eq]
     exact Filter.image_mem_map (ball_mem_nhds _ hρ)
   obtain ⟨z', ⟨hzU, hzF⟩⟩ :=
     mem_closure_iff_nhds.mp (frontier_subset_closure hpF) ((↑) '' ball p ρ) hnhds
   obtain ⟨z, hzball, rfl⟩ := hzU
   have hzS : z ∉ D.toDrawing.support := by
-    have : (z : OnePoint (EuclideanSpace ℝ (Fin 2))) ∉ D.toDrawing.onePoint.support :=
-      (D.toDrawing.onePoint.faceSet_disjoint_support F).notMem_of_mem_left hzF
+    have : (z : OnePoint V) ∉ D.onePoint.support :=
+      (D.onePoint.faceSet_disjoint_support F).notMem_of_mem_left hzF
     rw [Drawing.support_onePoint] at this
     exact fun hz ↦ this ⟨z, hz, rfl⟩
   have hzne : z ≠ p := fun h ↦ hzS (h ▸ hp)
@@ -991,7 +953,7 @@ theorem exists_segment_sdiff_subset_faceSet [G.Finite]
     intro w ⟨hwseg, hwp⟩ hwS
     have hwball : w ∈ closedBall p ρ :=
       ball_subset_closedBall <| (convex_ball p ρ).segment_subset (mem_ball_self hρ) hzball hwseg
-    have hwstar : w ∈ ({p} ∪ ⋃ y ∈ Y, segment ℝ p y : Set (EuclideanSpace ℝ (Fin 2))) := by
+    have hwstar : w ∈ ({p} ∪ ⋃ y ∈ Y, segment ℝ p y : Set V) := by
       rw [← hstar]; exact ⟨hwball, hwS⟩
     rcases hwstar with rfl | hwY
     · exact hwp rfl
@@ -1004,7 +966,7 @@ theorem exists_segment_sdiff_subset_faceSet [G.Finite]
         lt_of_le_of_ne hs0 fun hs ↦ hwp <|
           hseq.symm.trans (by simp [AffineMap.lineMap_apply, hs])
       have hvec : t • (y - p) = s • (z - p) := by
-        have h1 := congrArg (fun u : EuclideanSpace ℝ (Fin 2) ↦ u - p) hseq
+        have h1 := congrArg (fun u : V ↦ u - p) hseq
         -- hseq : lineMap p z s = lineMap p y t, so s • (z-p) = t • (y-p)
         simp only [AffineMap.lineMap_apply, vadd_eq_add, vsub_eq_sub, add_sub_cancel_right] at h1
         exact h1.symm
@@ -1050,40 +1012,36 @@ theorem exists_segment_sdiff_subset_faceSet [G.Finite]
       refine ⟨⟨t, ⟨ht0.le, ht1⟩, rfl⟩, ?_⟩
       intro h
       have hsmul : t • (z - p) = 0 := by
-        have := congrArg (fun u : EuclideanSpace ℝ (Fin 2) ↦ u - p) h
+        have := congrArg (fun u : V ↦ u - p) h
         simpa [AffineMap.lineMap_apply, vadd_eq_add, vsub_eq_sub] using this
       exact hzne (sub_eq_zero.mp ((smul_eq_zero.mp hsmul).resolve_left ht0.ne'))
   have hconn : IsConnected
-      ((↑) '' (segment ℝ p z \ {p}) : Set (OnePoint (EuclideanSpace ℝ (Fin 2)))) := by
+      ((↑) '' (segment ℝ p z \ {p}) : Set (OnePoint V)) := by
     rw [hseg_eq, ← image_comp]
     exact (isConnected_Ioc (show (0 : ℝ) < 1 by norm_num)).image _
       (OnePoint.continuous_coe.comp AffineMap.lineMap_continuous).continuousOn
-  have himg : (↑) '' (segment ℝ p z \ {p}) ⊆ D.toDrawing.onePoint.supportᶜ := by
+  have himg : (↑) '' (segment ℝ p z \ {p}) ⊆ D.onePoint.supportᶜ := by
     intro w hw
     obtain ⟨w0, hw0, rfl⟩ := hw
     rw [Drawing.support_onePoint]
     exact fun ⟨w1, hw1, hqw⟩ ↦ hseg_off hw0 (OnePoint.coe_injective hqw ▸ hw1)
-  have hz_mem : (z : OnePoint (EuclideanSpace ℝ (Fin 2))) ∈ (↑) '' (segment ℝ p z \ {p}) :=
+  have hz_mem : (z : OnePoint V) ∈ (↑) '' (segment ℝ p z \ {p}) :=
     ⟨z, ⟨right_mem_segment ℝ p z, hzne⟩, rfl⟩
-  rw [D.toDrawing.onePoint.faceSet_eq_connectedComponentIn F hzF]
+  rw [D.onePoint.faceSet_eq_connectedComponentIn F hzF]
   exact hconn.isPreconnected.subset_connectedComponentIn hz_mem himg
 
 /-! ### 3.8, the two sides of an open cell -/
 
 /-- The faces having a given point of an open cell on their frontier. -/
-def facesAt (D : PLDrawing G (EuclideanSpace ℝ (Fin 2))) (p : EuclideanSpace ℝ (Fin 2)) :
-    Set D.toDrawing.onePoint.Face :=
-  {F | (p : OnePoint (EuclideanSpace ℝ (Fin 2))) ∈ frontier (D.toDrawing.onePoint.faceSet F)}
+def facesAt (D : PLDrawing G V) (p : V) :
+    Set D.onePoint.Face :=
+  {F | (p : OnePoint V) ∈ frontier (D.onePoint.faceSet F)}
 
 /-- Distinct faces have disjoint carriers. -/
-/- Both lemmas in this block were graph-free and have moved to `ForMathlib`; what remains is the
-transport into the drawing's `Face` type. `Drawing.Face` is *by definition*
-`ConnectedComponents ↥(supportᶜ)` and `Drawing.faceSet` is *by definition* the corresponding image,
-so neither statement ever needed a graph. See Kuratowski `Decisions.md` D14/D16. -/
+/- The disjointness statement is the transport step from connected components to `Drawing.Face`. -/
 
 private lemma faceSet_disjoint_of_ne {X : Type*} [TopologicalSpace X] {G : Graph α β}
-    (D : Drawing G X) {F G' : D.Face} (hne : F ≠ G') :
-    Disjoint (D.faceSet F) (D.faceSet G') :=
+    (D : Drawing G X) {F G' : D.Face} (hne : F ≠ G') : Disjoint (D.faceSet F) (D.faceSet G') :=
   disjoint_val_image_connectedComponents hne
 
 /-- **Sector extraction.** If the closed ball at `p` meets the drawing in a star, then any face
@@ -1096,53 +1054,53 @@ Stated for a general `q ∈ ball p ρ` rather than for `p` itself: two of the th
 This is `exists_sector_subset_connectedComponentIn` transported along
 `Drawing.faceSet_eq_connectedComponentIn` and `Drawing.support_onePoint`. -/
 private lemma exists_sector_subset_faceSet [G.Finite]
-    (D : PLDrawing G (EuclideanSpace ℝ (Fin 2))) {p q : EuclideanSpace ℝ (Fin 2)}
-    {ρ : ℝ} {Y : Finset (EuclideanSpace ℝ (Fin 2))} (hYne : Y.Nonempty)
+    (D : PLDrawing G V) {p q : V}
+    {ρ : ℝ} {Y : Finset V} (hYne : Y.Nonempty)
     (hstar : closedBall p ρ ∩ D.toDrawing.support = {p} ∪ ⋃ y ∈ Y, segment ℝ p y)
-    (hqball : q ∈ ball p ρ) {F : D.toDrawing.onePoint.Face} (hF : F ∈ D.facesAt q) :
-    ∃ C ∈ sectors p ρ Y, (↑) '' C ⊆ D.toDrawing.onePoint.faceSet F := by
-  obtain ⟨w, hw⟩ := D.toDrawing.onePoint.faceSet_nonempty F
-  have hEq : D.toDrawing.onePoint.faceSet F
+    (hqball : q ∈ ball p ρ) {F : D.onePoint.Face} (hF : F ∈ D.facesAt q) :
+    ∃ C ∈ sectors p ρ Y, (↑) '' C ⊆ D.onePoint.faceSet F := by
+  obtain ⟨w, hw⟩ := D.onePoint.faceSet_nonempty F
+  have hEq : D.onePoint.faceSet F
       = connectedComponentIn ((↑) '' D.toDrawing.support : Set (OnePoint _))ᶜ w := by
-    rw [D.toDrawing.onePoint.faceSet_eq_connectedComponentIn F hw, Drawing.support_onePoint]
+    rw [D.onePoint.faceSet_eq_connectedComponentIn F hw, Drawing.support_onePoint]
   rw [hEq]
-  have hF' : (q : OnePoint (EuclideanSpace ℝ (Fin 2))) ∈
-      frontier (D.toDrawing.onePoint.faceSet F) := hF
+  have hF' : (q : OnePoint V) ∈
+      frontier (D.onePoint.faceSet F) := hF
   exact exists_sector_subset_connectedComponentIn hYne hstar hqball (by rwa [hEq] at hF')
 
 
 /-- An open cell has at most two sides. -/
-theorem ncard_facesAt_le_two [G.Finite] (D : PLDrawing G (EuclideanSpace ℝ (Fin 2))) {e : E(G)}
-    {p : EuclideanSpace ℝ (Fin 2)} (hp : p ∈ (D.edgePath e).Interior) :
+theorem ncard_facesAt_le_two [G.Finite] (D : PLDrawing G V) {e : E(G)}
+    {p : V} (hp : p ∈ (D.edgePath e).Interior) :
     (D.facesAt p).ncard ≤ 2 := by
   classical
   obtain ⟨ρ, hρ, Y, hYsph, hYcard, _, hstar⟩ := D.exists_radius_edgeInterior hp
   have hYne : Y.Nonempty := Finset.card_pos.mp (by omega)
   have hsec : (sectors p ρ Y).ncard = 2 := by
     rw [ncard_sectors hρ hYne hYsph, hYcard]
-  have hex (F : D.toDrawing.onePoint.Face) (hF : F ∈ D.facesAt p) :
-      ∃ C ∈ sectors p ρ Y, (↑) '' C ⊆ D.toDrawing.onePoint.faceSet F :=
+  have hex (F : D.onePoint.Face) (hF : F ∈ D.facesAt p) :
+      ∃ C ∈ sectors p ρ Y, (↑) '' C ⊆ D.onePoint.faceSet F :=
     exists_sector_subset_faceSet D hYne hstar (mem_ball_self hρ) hF
-  let C : D.toDrawing.onePoint.Face → Set (EuclideanSpace ℝ (Fin 2)) := fun F =>
+  let C : D.onePoint.Face → Set V := fun F =>
     if h : F ∈ D.facesAt p then Classical.choose (hex F h) else ∅
-  have hCsec (F : D.toDrawing.onePoint.Face) (hF : F ∈ D.facesAt p) :
+  have hCsec (F : D.onePoint.Face) (hF : F ∈ D.facesAt p) :
       C F ∈ sectors p ρ Y := by
     simp only [C, dite_eq_left hF]
     exact (Classical.choose_spec (hex F hF)).1
-  have hCface (F : D.toDrawing.onePoint.Face) (hF : F ∈ D.facesAt p) :
-      (↑) '' (C F) ⊆ D.toDrawing.onePoint.faceSet F := by
+  have hCface (F : D.onePoint.Face) (hF : F ∈ D.facesAt p) :
+      (↑) '' (C F) ⊆ D.onePoint.faceSet F := by
     simp only [C, dite_eq_left hF]
     exact (Classical.choose_spec (hex F hF)).2
   have hinj : InjOn C (D.facesAt p) := by
     intro F hF G' hG hCG
     by_contra hne
-    have hdisj := faceSet_disjoint_of_ne D.toDrawing.onePoint hne
+    have hdisj := faceSet_disjoint_of_ne D.onePoint hne
     obtain ⟨w0, hw0⟩ := (isConnected_of_mem_sectors (hCsec F hF)).nonempty
-    have hFmem : (w0 : OnePoint (EuclideanSpace ℝ (Fin 2))) ∈
-        D.toDrawing.onePoint.faceSet F :=
+    have hFmem : (w0 : OnePoint V) ∈
+        D.onePoint.faceSet F :=
       hCface F hF ⟨w0, hw0, rfl⟩
-    have hGmem : (w0 : OnePoint (EuclideanSpace ℝ (Fin 2))) ∈
-        D.toDrawing.onePoint.faceSet G' :=
+    have hGmem : (w0 : OnePoint V) ∈
+        D.onePoint.faceSet G' :=
       hCface G' hG ⟨w0, (hCG ▸ hw0), rfl⟩
     exact hdisj.notMem_of_mem_left hFmem hGmem
 
@@ -1152,15 +1110,15 @@ theorem ncard_facesAt_le_two [G.Finite] (D : PLDrawing G (EuclideanSpace ℝ (Fi
 
 /-- Faces meeting a two-radius star are exactly the faces that contain a sector. -/
 private lemma facesAt_eq_image_sectors [G.Finite]
-    (D : PLDrawing G (EuclideanSpace ℝ (Fin 2))) {p : EuclideanSpace ℝ (Fin 2)}
-    {ρ : ℝ} {Y : Finset (EuclideanSpace ℝ (Fin 2))} (hρ : 0 < ρ)
+    (D : PLDrawing G V) {p : V}
+    {ρ : ℝ} {Y : Finset V} (hρ : 0 < ρ)
     (hYsph : ↑Y ⊆ sphere p ρ) (hYcard : Y.card = 2)
     (hstar : closedBall p ρ ∩ D.toDrawing.support =
       {p} ∪ ⋃ y ∈ Y, segment ℝ p y)
-    (hp : (p : OnePoint (EuclideanSpace ℝ (Fin 2))) ∈ D.toDrawing.onePoint.support) :
+    (hp : (p : OnePoint V) ∈ D.onePoint.support) :
     D.facesAt p =
-      {F : D.toDrawing.onePoint.Face |
-        ∃ C ∈ sectors p ρ Y, (↑) '' C ⊆ D.toDrawing.onePoint.faceSet F} := by
+      {F : D.onePoint.Face |
+        ∃ C ∈ sectors p ρ Y, (↑) '' C ⊆ D.onePoint.faceSet F} := by
   classical
   have hYne : Y.Nonempty := Finset.card_pos.mp (by omega)
   have hclsupp := D.toDrawing.isClosed_support_onePoint
@@ -1169,30 +1127,30 @@ private lemma facesAt_eq_image_sectors [G.Finite]
   · exact fun hF ↦ exists_sector_subset_faceSet D hYne hstar (mem_ball_self hρ) hF
   · intro ⟨C, hC, hCface⟩
     have hp_cl :
-        (p : OnePoint (EuclideanSpace ℝ (Fin 2))) ∈
-          closure (D.toDrawing.onePoint.faceSet F) := by
+        (p : OnePoint V) ∈
+          closure (D.onePoint.faceSet F) := by
       have hpC : p ∈ closure C := mem_closure_of_mem_sectors hρ hYne hYsph hC
       have himg_cl :
           (↑) '' closure C ⊆
-            closure ((↑) '' C : Set (OnePoint (EuclideanSpace ℝ (Fin 2)))) :=
+            closure ((↑) '' C : Set (OnePoint V)) :=
         image_closure_subset_closure_image OnePoint.continuous_coe
-      have : (p : OnePoint (EuclideanSpace ℝ (Fin 2))) ∈
-          closure ((↑) '' C : Set (OnePoint (EuclideanSpace ℝ (Fin 2)))) :=
+      have : (p : OnePoint V) ∈
+          closure ((↑) '' C : Set (OnePoint V)) :=
         himg_cl ⟨p, hpC, rfl⟩
       exact closure_mono hCface this
     have hp_not :
-        (p : OnePoint (EuclideanSpace ℝ (Fin 2))) ∉ D.toDrawing.onePoint.faceSet F :=
-      (D.toDrawing.onePoint.faceSet_disjoint_support F).notMem_of_mem_right hp
-    have hFopen := D.toDrawing.onePoint.faceSet_isOpen hclsupp F
-    change _ ∈ frontier (D.toDrawing.onePoint.faceSet F)
+        (p : OnePoint V) ∉ D.onePoint.faceSet F :=
+      (D.onePoint.faceSet_disjoint_support F).notMem_of_mem_right hp
+    have hFopen := D.onePoint.faceSet_isOpen hclsupp F
+    change _ ∈ frontier (D.onePoint.faceSet F)
     rw [hFopen.frontier_eq]
     exact ⟨hp_cl, hp_not⟩
 
 /-- On a two-radius star ball, `facesAt` is constant along the open cell. -/
 private lemma facesAt_eq_of_mem_star_ball [G.Finite]
-    (D : PLDrawing G (EuclideanSpace ℝ (Fin 2))) {e : E(G)}
-    {p q : EuclideanSpace ℝ (Fin 2)} {ρ : ℝ}
-    {Y : Finset (EuclideanSpace ℝ (Fin 2))}
+    (D : PLDrawing G V) {e : E(G)}
+    {p q : V} {ρ : ℝ}
+    {Y : Finset V}
     (hp : p ∈ (D.edgePath e).Interior)
     (hq : q ∈ (D.edgePath e).Interior)
     (hρ : 0 < ρ) (hYsph : ↑Y ⊆ sphere p ρ) (hYcard : Y.card = 2)
@@ -1206,16 +1164,16 @@ private lemma facesAt_eq_of_mem_star_ball [G.Finite]
     Drawing.edgePath_range_subset_support D.toDrawing e (Path.interior_subset_range _ hp)
   have hq_sup : q ∈ D.toDrawing.support :=
     Drawing.edgePath_range_subset_support D.toDrawing e (Path.interior_subset_range _ hq)
-  have hp_one : (p : OnePoint (EuclideanSpace ℝ (Fin 2))) ∈ D.toDrawing.onePoint.support := by
+  have hp_one : (p : OnePoint V) ∈ D.onePoint.support := by
     rw [Drawing.support_onePoint]; exact ⟨p, hp_sup, rfl⟩
-  have hq_one : (q : OnePoint (EuclideanSpace ℝ (Fin 2))) ∈ D.toDrawing.onePoint.support := by
+  have hq_one : (q : OnePoint V) ∈ D.onePoint.support := by
     rw [Drawing.support_onePoint]; exact ⟨q, hq_sup, rfl⟩
   have hfaces_p := facesAt_eq_image_sectors D hρ hYsph hYcard hstar hp_one
   by_cases hqp : q = p
   · subst hqp; rfl
   have hqrad : q ∈ ⋃ y ∈ Y, segment ℝ p y := by
     have hqstar : q ∈ ({p} ∪ ⋃ y ∈ Y, segment ℝ p y :
-        Set (EuclideanSpace ℝ (Fin 2))) := by
+        Set V) := by
       rw [← hstar]
       exact ⟨ball_subset_closedBall hqball, hq_sup⟩
     rcases hqstar with rfl | h
@@ -1239,8 +1197,8 @@ private lemma facesAt_eq_of_mem_star_ball [G.Finite]
     exact eq_of_subset_of_ncard_le hsub (by rw [hn, hall]) hfin
   have hsec_eq :
       D.facesAt q =
-        {F : D.toDrawing.onePoint.Face |
-          ∃ C ∈ sectors p ρ Y, (↑) '' C ⊆ D.toDrawing.onePoint.faceSet F} := by
+        {F : D.onePoint.Face |
+          ∃ C ∈ sectors p ρ Y, (↑) '' C ⊆ D.onePoint.faceSet F} := by
     ext F
     constructor
     · exact fun hF ↦ exists_sector_subset_faceSet D hYne hstar hqball hF
@@ -1251,28 +1209,28 @@ private lemma facesAt_eq_of_mem_star_ball [G.Finite]
         exact this.2
       have hclsupp := D.toDrawing.isClosed_support_onePoint
       have hq_cl :
-          (q : OnePoint (EuclideanSpace ℝ (Fin 2))) ∈
-            closure (D.toDrawing.onePoint.faceSet F) := by
+          (q : OnePoint V) ∈
+            closure (D.onePoint.faceSet F) := by
         have himg_cl :
             (↑) '' closure C ⊆
-              closure ((↑) '' C : Set (OnePoint (EuclideanSpace ℝ (Fin 2)))) :=
+              closure ((↑) '' C : Set (OnePoint V)) :=
           image_closure_subset_closure_image OnePoint.continuous_coe
-        have : (q : OnePoint (EuclideanSpace ℝ (Fin 2))) ∈
-            closure ((↑) '' C : Set (OnePoint (EuclideanSpace ℝ (Fin 2)))) :=
+        have : (q : OnePoint V) ∈
+            closure ((↑) '' C : Set (OnePoint V)) :=
           himg_cl ⟨q, hCadj, rfl⟩
         exact closure_mono hCface this
       have hq_not :
-          (q : OnePoint (EuclideanSpace ℝ (Fin 2))) ∉ D.toDrawing.onePoint.faceSet F :=
-        (D.toDrawing.onePoint.faceSet_disjoint_support F).notMem_of_mem_right hq_one
-      have hFopen := D.toDrawing.onePoint.faceSet_isOpen hclsupp F
-      change _ ∈ frontier (D.toDrawing.onePoint.faceSet F)
+          (q : OnePoint V) ∉ D.onePoint.faceSet F :=
+        (D.onePoint.faceSet_disjoint_support F).notMem_of_mem_right hq_one
+      have hFopen := D.onePoint.faceSet_isOpen hclsupp F
+      change _ ∈ frontier (D.onePoint.faceSet F)
       rw [hFopen.frontier_eq]
       exact ⟨hq_cl, hq_not⟩
   exact hsec_eq.trans hfaces_p.symm
 
 /-- The sides of an open cell are locally constant along the cell. -/
-theorem facesAt_eq [G.Finite] (D : PLDrawing G (EuclideanSpace ℝ (Fin 2))) {e : E(G)}
-    {p q : EuclideanSpace ℝ (Fin 2)} (hp : p ∈ (D.edgePath e).Interior)
+theorem facesAt_eq [G.Finite] (D : PLDrawing G V) {e : E(G)}
+    {p q : V} (hp : p ∈ (D.edgePath e).Interior)
     (hq : q ∈ (D.edgePath e).Interior) :
     D.facesAt p = D.facesAt q := by
   classical
@@ -1281,21 +1239,21 @@ theorem facesAt_eq [G.Finite] (D : PLDrawing G (EuclideanSpace ℝ (Fin 2))) {e 
     simpa only [PI, Path.Interior] using
       (isConnected_Ioo (show (0 : unitInterval) < 1 from zero_lt_one)).image _
         (D.toDrawing.edgePath e).continuous.continuousOn
-  have hloc (x : EuclideanSpace ℝ (Fin 2)) (hx : x ∈ PI) :
+  have hloc (x : V) (hx : x ∈ PI) :
       ∃ ε > 0, ∀ y ∈ PI, dist x y < ε → D.facesAt y = D.facesAt x := by
     obtain ⟨ρ, hρ, Y, hYsph, hYcard, _, hstar⟩ := D.exists_radius_edgeInterior hx
     refine ⟨ρ, hρ, ?_⟩
     intro y hy hydist
     exact facesAt_eq_of_mem_star_ball D hx hy hρ hYsph hYcard hstar
       (mem_ball.mpr (by rwa [PseudoMetricSpace.dist_comm]))
-  let f : PI → Set D.toDrawing.onePoint.Face := fun z => D.facesAt z.1
+  let f : PI → Set D.onePoint.Face := fun z => D.facesAt z.1
   have hf_loc : ∀ z : PI, ∃ U : Set PI, IsOpen U ∧ z ∈ U ∧ ∀ z' ∈ U, f z' = f z := by
     intro z
     obtain ⟨ε, hε, H⟩ := hloc z.1 z.2
-    refine ⟨Subtype.val ⁻¹' ball (z : EuclideanSpace ℝ (Fin 2)) ε,
+    refine ⟨Subtype.val ⁻¹' ball (z : V) ε,
       isOpen_ball.preimage continuous_subtype_val, mem_ball_self hε, ?_⟩
     intro z' hz'
-    have hzball : (z'.1 : EuclideanSpace ℝ (Fin 2)) ∈ ball z.1 ε := hz'
+    have hzball : (z'.1 : V) ∈ ball z.1 ε := hz'
     exact H z'.1 z'.2 (by
       simpa [PseudoMetricSpace.dist_comm] using (mem_ball.mp hzball))
   let U : Set PI := {z | f z = f ⟨p, hp⟩}
@@ -1321,6 +1279,8 @@ theorem facesAt_eq [G.Finite] (D : PLDrawing G (EuclideanSpace ℝ (Fin 2))) {e 
   have hqU : (⟨q, hq⟩ : PI) ∈ U := by
     rw [hUuniv]; trivial
   exact hqU.symm
+
+end Plane
 
 end PLDrawing
 
