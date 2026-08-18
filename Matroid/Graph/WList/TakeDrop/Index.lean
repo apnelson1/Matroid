@@ -209,6 +209,10 @@ lemma dropLast_first (w : WList α β) : (w.dropLast).first = w.first := by
   rw [← reverse_last, ← reverse_tail, tail_last, reverse_last]
 
 @[simp]
+lemma dropLast_cons_concat : (cons x e (concat w e' y)).dropLast = cons x e w := by
+  rw [← cons_concat, dropLast_concat]
+
+@[simp]
 lemma Nonempty.vertex_dropLast (h : w.Nonempty) : w.dropLast.vertex = w.vertex.dropLast := by
   rw [← reverse_tail_reverse, reverse_vertex, Nonempty.vertex_tail (by simpa)]
   simp

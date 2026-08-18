@@ -704,6 +704,12 @@ lemma IsPath.isPath_apex {P} (hP : G.IsPath P) :
   rw [← apex_delete_none] at hP
   exact hP.of_le (by simp)
 
+lemma IsCyclicWalk.isCyclicWalk_apex {C} (hC : G.IsCyclicWalk C) :
+    G.apex.IsCyclicWalk ((C.map Option.some).edgeMap Sum.inl) := by
+  replace hC := (hC.map (some_injective _).injOn).edgeMap (@Sum.inl β α) (by simp)
+  rw [← apex_delete_none] at hC
+  exact hC.of_le (by simp)
+
 /-- Any nontrivial path in `G` can be extended to a cycle of `G.apex` via the apex. -/
 lemma IsPath.isCyclicWalk_apex {P} (hP : G.IsPath P) (hPne : P.Nonempty) :
     G.apex.IsCyclicWalk <|

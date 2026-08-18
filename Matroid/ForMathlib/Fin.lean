@@ -4,6 +4,7 @@ public import Mathlib.Data.Int.ConditionallyCompleteOrder
 public import Mathlib.Order.Interval.Set.Fin
 public import Matroid.ForMathlib.Parity
 public import Mathlib.Order.Circular.ZMod
+public import Mathlib.Logic.Equiv.Fin.Basic
 
 @[expose] public section
 
@@ -548,3 +549,43 @@ lemma finRange_one : List.finRange 1 = [0] := rfl
 
 @[simp]
 lemma finRange_two : List.finRange 2 = [0, 1] := rfl
+
+@[simp]
+lemma finTwoEquiv_apply (n : Fin 2) : finTwoEquiv n = n.1.bodd := by
+  obtain ⟨rfl | rfl | n, hn⟩ := n
+  · simp [finTwoEquiv]
+  · simp [finTwoEquiv]
+  simp at hn
+
+@[simps]
+def finMulTwoEquiv (n : ℕ) : Fin (2 * n) ≃ Fin n × Bool where
+  toFun i := ⟨⟨i.1.div2, by grind [i.1.bodd_add_div2]⟩, i.1.bodd⟩
+  invFun i := ⟨2 * i.1 + i.2.toNat, by grind⟩
+  left_inv := by
+    rintro ⟨i, hi⟩
+    simp [add_comm, Nat.bodd_add_div2]
+  right_inv := by
+    rintro ⟨⟨i, hi⟩, b⟩
+    suffices (2 * i + b.toNat).div2 = i by simpa
+    rw [Nat.div2, Nat.add_div (by simp), (Nat.div_eq_zero_iff_lt (by simp) (x := b.toNat)).2] <;>
+    grind
+
+lemma finMulTwoEquiv_apply_left_val (i : Fin (2 * n)) : (finMulTwoEquiv n i).1 = i.1.div2 := by
+  simp [finMulTwoEquiv]
+
+-- lemma finMulTwoEquiv_add_one (n : ℕ) [hn : NeZero n] (i) :
+--     finMulTwoEquiv n (i + 1) = ((finMulTwoEquiv n i).1 + 1, (finMulTwoEquiv n i).2) := by
+
+-- lemma finMulTwoEquiv_add_two (n : ℕ) [hn : NeZero n] (i) :
+--     finMulTwoEquiv n (i + 2) = ((finMulTwoEquiv n i).1 + 1, (finMulTwoEquiv n i).2) := by
+--   obtain ⟨i, hi⟩ := i
+--   have : NeZero (2 * n) := ⟨by grind [hn.1]⟩
+--   simp only [finMulTwoEquiv_apply, Nat.div2, Fin.val_add, Fin.coe_ofNat_eq_mod, Nat.add_mod_mod,
+--     Nat.mod_bodd (show (2 * n).bodd = false by simp), Nat.bodd_succ, Bool.not_not, Prod.mk.injEq,
+--     ← Fin.val_inj, and_true]
+--   obtain hlt | hle := lt_or_ge (i + 2) (2 * n)
+--   · rw [Nat.mod_eq_of_lt (by lia), Nat.mod_eq_of_lt (by lia)]
+--     simp
+--   rw [← Nat.add_sub_of_le hle, Nat.add_mod_left, Nat.mod_eq_of_lt (by lia),
+--     (Nat.div_eq_zero_iff_lt (by simp)).2 (by lia), eq_comm]
+--   simp [show i / 2 + 1 = n by lia ]

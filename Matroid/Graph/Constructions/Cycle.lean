@@ -14,66 +14,65 @@ section Cycle
 
 attribute [simp] NeZero.ne Nat.pos_of_neZero
 
-namespace WList
-
 variable {α β : Type*} {a : List α} {b : List β}
 
+namespace WList
+
 /-- Given two lists of equal length, the closed `WList` obtained by zipping them together and
-adding the first element at the end. -/
-def cycleZip (a : List α) (b : List β) (hab : a.length = b.length) (ha : a ≠ []) (_ : b.Nodup) :
-    WList α β :=
+adding the first element at the end. Maybe this definition is overkill. -/
+def cycleZip (a : List α) (b : List β) (hab : a.length = b.length) (ha : a ≠ []) : WList α β :=
   WList.zip (a.concat (a.head ha)) b (by simpa using hab.symm)
 
 @[simp]
-lemma cycleZip_vertex (a : List α) (b : List β) {hab ha hb} :
-    (cycleZip a b hab ha hb).vertex = a ++ [a.head ha] := by
+lemma cycleZip_vertex (a : List α) (b : List β) {hab ha} :
+    (cycleZip a b hab ha).vertex = a ++ [a.head ha] := by
   simp [cycleZip]
 
 @[simp]
-lemma cycleZip_vertexSet (a : List α) (b : List β) {hab ha hb} :
-    (cycleZip a b hab ha hb).vertexSet = {x | x ∈ a} := by
+lemma cycleZip_vertexSet (a : List α) (b : List β) {hab ha} :
+    (cycleZip a b hab ha).vertexSet = {x | x ∈ a} := by
   simp only [cycleZip, List.concat_eq_append, zip_vertexSet, List.mem_append, List.mem_cons,
     List.not_mem_nil, or_false]
   grind
 
 @[simp]
-lemma cycleZip_edge (a : List α) (b : List β) {hab ha hb} : (cycleZip a b hab ha hb).edge = b := by
+lemma cycleZip_edge (a : List α) (b : List β) {hab ha} : (cycleZip a b hab ha).edge = b := by
   simp [cycleZip]
 
 @[simp]
-lemma cycleZip_edgeSet (a : List α) (b : List β) {hab ha hb} :
-    (cycleZip a b hab ha hb).edgeSet = {e | e ∈ b} := by
+lemma cycleZip_edgeSet (a : List α) (b : List β) {hab ha} :
+    (cycleZip a b hab ha).edgeSet = {e | e ∈ b} := by
   simp [cycleZip]
 
 @[simp]
-lemma cycleZip_wellFormed (a : List α) (b : List β) {hab ha hb} :
-    (cycleZip a b hab ha hb).WellFormed :=
+lemma cycleZip_wellFormed_of_nodup (a : List α) (b : List β) {hab ha} (hb : b.Nodup) :
+    (cycleZip a b hab ha).WellFormed :=
   WList.wellFormed_of_nodup <| by simpa
 
 @[simp]
-lemma cycleZip_nonempty (a : List α) (b : List β) {hab ha hb} :
-    (cycleZip a b hab ha hb).Nonempty := by
+lemma cycleZip_nonempty (a : List α) (b : List β) {hab ha} :
+    (cycleZip a b hab ha).Nonempty := by
   rwa [← edge_ne_nil_iff, cycleZip_edge, b.ne_nil_iff_length_pos, ← hab, ← a.ne_nil_iff_length_pos]
 
 @[simp]
-lemma cycleZip_isClosed (a : List α) (b : List β) {hab ha hb} :
-    (cycleZip a b hab ha hb).IsClosed := by
+lemma cycleZip_isClosed (a : List α) (b : List β) {hab ha} :
+    (cycleZip a b hab ha).IsClosed := by
   cases a with
   | nil => simp at ha
   | cons x a => simp [IsClosed, ← vertex_head, ← vertex_getLast]
 
 @[simp]
-lemma cycleZip_length (a : List α) (b : List β) {hab ha hb} :
-    (cycleZip a b hab ha hb).length = a.length := by
+lemma cycleZip_length (a : List α) (b : List β) {hab ha} :
+    (cycleZip a b hab ha).length = a.length := by
   simp [← length_edge, hab]
 
 @[simp]
-lemma cycleZip_tail_vertex_nodup_iff (a : List α) (b : List β) {hab ha hb} :
-    (cycleZip a b ha hb hab).tail.vertex.Nodup ↔ a.Nodup := by
-  cases a with | nil => simp at hb | cons => rw [← List.nodup_reverse]; simp
+lemma cycleZip_tail_vertex_nodup_iff (a : List α) (b : List β) {hab ha} :
+    (cycleZip a b hab ha).tail.vertex.Nodup ↔ a.Nodup := by
+  cases a with | nil => simp at ha | cons => rw [← List.nodup_reverse]; simp
 
-lemma cycleZip_dInc_iff (a : List α) (b : List β) {hab ha hb} {x y : α} {e : β} :
-    (cycleZip a b hab ha hb).DInc e x y ↔ ∃ (i : Fin a.length),
+lemma cycleZip_dInc_iff (a : List α) (b : List β) {hab ha} {x y : α} {e : β} :
+    (cycleZip a b hab ha).DInc e x y ↔ ∃ (i : Fin a.length),
       a[i.1] = x ∧ a[(finRotate _ i).1] = y ∧ b[i.1] = e := by
   simp only [cycleZip, List.concat_eq_append, dinc_iff_get, zip_edge, zip_length, exists_and_left,
     finRotate_apply]
@@ -99,41 +98,199 @@ namespace Graph
 
 variable {n : ℕ} {α β : Type*}
 
-def circuitOn' {n : ℕ} [NeZero n] (a : Fin n → α) (b : Fin n → β) (hb : b.Injective) : Graph α β :=
+def circuitOn' {n : ℕ} [NeZero n] (a : Fin n → α) (b : Fin n → β) : Graph α β :=
   WList.toGraph <| WList.cycleZip ((List.finRange n).map a) ((List.finRange n).map b) (by simp)
-    (by simp) ((List.nodup_map_iff hb).2 (List.nodup_finRange n))
+    (by simp)
 
 /-- The cycle graph determined by two nonempty lists of equal length,
 where the edge list has no repeats.
 This graph is Eulerian, and is a cycle if the vertices do not repeat. -/
-def circuitOn (a : List α) (b : List β) (hab : a.length = b.length) (ha : a ≠ []) (hb : b.Nodup) :
-  Graph α β := (WList.cycleZip a b hab ha hb).toGraph
+def circuitOn (a : List α) (b : List β) (hab : a.length = b.length) (ha : a ≠ [])  :
+  Graph α β := (WList.cycleZip a b hab ha).toGraph
 
 @[simp]
-lemma circuitOn_isTour (a : List α) (b : List β) {hab ha hb} :
-    (circuitOn a b hab ha hb).IsTour (WList.cycleZip a b hab ha hb) :=
-  ⟨⟨WList.WellFormed.isWalk_toGraph (by simp), by simpa⟩, by simp, by simp⟩
+lemma circuitOn_isTour (a : List α) (b : List β) {hab ha} (hb : b.Nodup) :
+    (circuitOn a b hab ha).IsTour (WList.cycleZip a b hab ha) :=
+  ⟨⟨WList.WellFormed.isWalk_toGraph (WList.cycleZip_wellFormed_of_nodup _ _ hb), by simpa⟩,
+    by simp, by simp⟩
 
-lemma circuitOn_isCyclicWalk (a : List α) (b : List β) {hab ha hb} (ha' : a.Nodup) :
-    (circuitOn a b hab ha hb).IsCyclicWalk (WList.cycleZip a b hab ha hb) := by
-  rwa [isCyclicWalk_iff, and_iff_right (by simp), WList.cycleZip_tail_vertex_nodup_iff]
+lemma circuitOn_isCyclicWalk {hab ha} (ha' : a.Nodup) (hb : b.Nodup) :
+    (circuitOn a b hab ha).IsCyclicWalk (WList.cycleZip a b hab ha) := by
+  rwa [isCyclicWalk_iff, and_iff_right (circuitOn_isTour _ _ hb),
+    WList.cycleZip_tail_vertex_nodup_iff]
 
-lemma circuitOn_isCycle (a : List α) (b : List β) {hab ha hb} (ha' : a.Nodup) :
-    (circuitOn a b hab ha hb).IsCycle :=
-  (circuitOn_isCyclicWalk a b ha').toGraph_isCycle
+lemma circuitOn_isCycle {hab ha} (ha' : a.Nodup) (hb : b.Nodup) : (circuitOn a b hab ha).IsCycle :=
+  (circuitOn_isCyclicWalk ha' hb).toGraph_isCycle
+
+lemma circuitOn_loopless_iff {hab ha} (ha' : a.Nodup) (hb : b.Nodup) :
+    (circuitOn a b hab ha).Loopless ↔ 2 ≤ a.length := by
+  simp only [circuitOn, (circuitOn_isCyclicWalk ha' hb).toGraph_loopless_iff, WList.cycleZip_length]
+  grind [cases List]
+
+lemma circuitOn_simple_iff {hab ha} (ha' : a.Nodup) (hb : b.Nodup) :
+    (circuitOn a b hab ha).Simple ↔ 3 ≤ a.length := by
+  simp [circuitOn, (circuitOn_isCyclicWalk ha' hb).toGraph_simple_iff]
 
 variable {n : ℕ}
+
+open Fin.NatCast in
+/-- A walk around the cycle arising from lists `a` and `b`, starting at position `i`
+and proceeding `d` steps clockwise. -/
+def cycleWalk (a : List α) (b : List β) (hlen : a.length = b.length) (x : Fin a.length) (d : ℕ) :
+    WList α β :=
+  have := x.neZero
+  have := (x.cast hlen).neZero
+  WList.zip ((range (d + 1)).map fun (i : ℕ) ↦ a.get (x + (i)))
+    ((range d).map fun (i : ℕ) ↦ b.get (x.cast hlen + i)) (by simp)
+
+@[simp]
+lemma cycleWalk_length (a : List α) (b : List β) (hlen) (x : Fin a.length) (d : ℕ) :
+    (cycleWalk a b hlen x d).length = d := by
+  simp [cycleWalk]
+
+@[simp]
+lemma cycleWalk_zero (a : List α) (b : List β) {hlen} (x : Fin a.length) :
+    (cycleWalk a b hlen x 0) = WList.nil a[x] := by
+  simp [cycleWalk]
+
+open Fin.NatCast in
+lemma cycleWalk_one (a : List α) [NeZero a.length] (b : List β) {hlen} (x : Fin a.length) :
+    (cycleWalk a b hlen x 1) = WList.cons a[x] b[x] (WList.nil (a[x + 1])) := by
+  simp [cycleWalk, show range 2 = [0, 1] from rfl, Nat.cast_one]
+
+open Fin.NatCast in
+lemma cycleWalk_get (a : List α) (b : List β) (hlen) (x : Fin a.length) {d i : ℕ} (hid : i ≤ d) :
+    have := x.neZero
+    (cycleWalk a b hlen x d).get i = a.get (x + (i : Fin a.length)) := by
+  rw [WList.get_eq_getElem_vertex _ (by simpa)]
+  simp [cycleWalk]
+
+lemma cycleWalk_zero_length (a : List α) [ha : NeZero a.length] (b : List β) (hlen) :
+    cycleWalk a b hlen 0 a.length = WList.cycleZip a b hlen (by rintro rfl; simpa using ha.1) := by
+  rw [cycleWalk, WList.cycleZip]
+  convert rfl
+  · rw! [range_add_one, List.map_append, map_cons, map_nil, zero_add, get_eq_getElem]
+    simp [getElem_zero_eq_head]
+    exact List.ext_getElem (by simp) (by simp +contextual [Nat.mod_eq_of_lt])
+  rw [hlen] at ha
+  exact List.ext_getElem (by simp [hlen]) <| by simp +contextual [Fin.cast_zero, Nat.mod_eq_of_lt]
+
+open Fin.NatCast in
+@[simp]
+lemma cycleWalk_tail (a : List α) [NeZero a.length] (b : List β) (hlen) (x : Fin a.length) {d : ℕ} :
+    (cycleWalk a b hlen x (d + 1)).tail = cycleWalk a b hlen (x + 1) d := by
+  rw [cycleWalk, cycleWalk, WList.zip_tail _ (by simp)]
+  convert rfl
+  · rw! [← List.map_tail, List.tail_range, range'_eq_map_range, List.map_map]
+    simp [Nat.cast_add, add_assoc]
+  rw! [← List.map_tail, List.tail_range, range'_eq_map_range, List.map_map]
+  have := (x.cast hlen).neZero
+  simp [Nat.cast_add, Fin.cast_add, add_assoc]
+
+@[simp]
+lemma cycleWalk_dropLast (a : List α) (b : List β) (hlen) (x : Fin a.length) {d : ℕ} :
+    (cycleWalk a b hlen x (d + 1)).dropLast = cycleWalk a b hlen x d := by
+  rw! [cycleWalk, cycleWalk, WList.zip_dropLast _ (by simp)]
+  simp [List.range_add_one]
+
+@[simp]
+lemma cycleWalk_first (a : List α) (b : List β) (hlen) (x : Fin a.length) (d : ℕ) :
+    (cycleWalk a b hlen x d).first = a[x] := by
+  simp [cycleWalk]
+
+open Fin.NatCast in
+@[simp]
+lemma cycleWalk_last (a : List α) [NeZero a.length] (b : List β) (hlen) (x : Fin a.length) (d : ℕ) :
+    (cycleWalk a b hlen x d).last = a[(x + d).1] := by
+  simp [cycleWalk]
+
+open Fin.NatCast in
+lemma cycleWalk_isWalk {a : List α} {b : List β} {hlen} (hb : b.Nodup) (x : Fin a.length) (d : ℕ) :
+    (circuitOn a b hlen (by rintro rfl; simpa using x.2)).IsWalk (cycleWalk a b hlen x d) := by
+  rw [cycleWalk, isWalk_zip_iff]
+  simp only [circuitOn, WList.toGraph_vertexSet, WList.cycleZip_vertexSet, get_eq_getElem,
+    getElem_map, getElem_range, Fin.natCast_zero, Fin.add_zero, Set.mem_ofPred_eq, getElem_mem,
+    length_map, length_range, Order.lt_add_one_iff, Order.add_one_le_iff, true_and]
+  intro i hid
+  rw [(WList.cycleZip_wellFormed_of_nodup _ _ hb).toGraph_isLink, WList.cycleZip,
+    WList.zip_isLink_iff]
+  have hnz := x.neZero
+  have hxa := x.2
+  refine ⟨(x + i).1, by simp, by simp [Fin.val_add, hlen], ?_⟩
+  convert rfl using 2
+  · simp_rw [Fin.val_add, hlen, concat_eq_append, Fin.val_natCast, ← hlen, Nat.add_mod_mod]
+    rw [getElem_append_left]
+  obtain htop | hne := eq_or_ne (x + i) ⊤
+  · rw! [htop, Fin.val_top, Nat.sub_add_cancel (by lia), Nat.cast_add, ← add_assoc, htop,
+      Nat.cast_one, Fin.top_add_one, Fin.val_zero]
+    simp [getElem_zero_eq_head]
+  rw! [List.concat_eq_append, getElem_append_left, Nat.cast_add, ← add_assoc, Nat.cast_one,
+    Fin.val_add_one_of_ne_top hne]
+  rfl
+
+lemma cycleWalk_isTrail {a : List α} {b : List β} {hlen} (hb : b.Nodup) (x : Fin a.length)
+    {d : ℕ} (hd : d ≤ a.length) :
+    (circuitOn a b hlen (by rintro rfl; simpa using x.2)).IsTrail (cycleWalk a b hlen x d) := by
+  refine ⟨cycleWalk_isWalk hb x d, ?_⟩
+  simp only [cycleWalk, get_eq_getElem, WList.zip_edge]
+  rw [nodup_map_iff_inj_on (nodup_range ..)]
+  simp only [mem_range, hb.getElem_inj_iff, Fin.val_inj, add_right_inj]
+  intro x hx y hy hxy
+  rwa [← Fin.val_inj, Fin.val_natCast, Fin.val_natCast, Nat.mod_eq_of_lt (by lia),
+    Nat.mod_eq_of_lt (by lia)] at hxy
+
+lemma cycleWalk_isPath {a : List α} {b : List β} {hlen} (ha : a.Nodup) (hb : b.Nodup)
+    (x : Fin a.length) {d : ℕ} (hd : d < a.length) :
+    (circuitOn a b hlen (by rintro rfl; simpa using x.2)).IsPath (cycleWalk a b hlen x d) := by
+  refine ⟨cycleWalk_isWalk hb x d, ?_⟩
+  simp only [cycleWalk, get_eq_getElem, WList.zip_vertex]
+  rw [nodup_map_iff_inj_on (nodup_range ..)]
+  simp only [mem_range, Order.lt_add_one_iff, ha.getElem_inj_iff, Fin.val_inj, add_right_inj]
+  intro x hx y hy hxy
+  rwa [← Fin.val_inj, Fin.val_natCast, Fin.val_natCast, Nat.mod_eq_of_lt (by lia),
+    Nat.mod_eq_of_lt (by lia)] at hxy
+
+lemma cycleWalk_isCyclicWalk {a : List α} {b : List β} {hlen} (ha : a.Nodup) (hb : b.Nodup)
+    (x : Fin a.length) : (circuitOn a b hlen (by rintro rfl; simpa using x.2)).IsCyclicWalk
+    (cycleWalk a b hlen x a.length) := by
+  have hnz := x.neZero
+  refine IsTour.isCyclicWalk_of_dropLast_nodup ⟨cycleWalk_isTrail hb x rfl.le, ?_, ?_⟩ ?_
+  · cases a with | nil => simpa using x.2 | cons => simp [cycleWalk]
+  · simp [WList.IsClosed]
+  cases h : a.length with
+  | zero => simp [hnz.1 h]
+  | succ n =>
+    rw [cycleWalk_dropLast]
+    exact ((cycleWalk_isPath ha hb x (d := n)) (by lia)).nodup
 
 /-- A canonical cycle graph on `Fin n`, where edge `i : Fin n` joins vertices `i, i + 1`. -/
 @[simps]
 def cycle (n : ℕ) : Graph (Fin n) (Fin n) where
   vertexSet := Set.univ
+  edgeSet := Set.univ
   IsLink e i j := have := i.neZero
     (e = i ∧ j = i + 1) ∨ (e = j ∧ i = j + 1)
   isLink_symm := by grind [Std.Symm]
   eq_or_eq_of_isLink_of_isLink := by grind
   edge_mem_iff_exists_isLink := by grind
   left_mem_of_isLink := by simp
+
+lemma cycle_eq_circuitOn (n : ℕ) [NeZero n] :
+    cycle n = circuitOn (List.finRange n) (List.finRange n) rfl (by simp) := by
+  refine Graph.ext (by simp [circuitOn]) fun e x y ↦ ?_
+  rw [circuitOn, WList.WellFormed.toGraph_isLink, WList.isLink_iff_dInc, WList.cycleZip_dInc_iff,
+    WList.cycleZip_dInc_iff, cycle_isLink]
+  · simp only [getElem_finRange, Fin.eta, finRotate_apply, Fin.cast_add, Fin.cast_one]
+    refine ⟨Or.imp ?_ ?_, Or.imp ?_ ?_⟩
+    · rintro ⟨rfl, rfl⟩
+      exact ⟨e.cast (by simp), by simp⟩
+    · rintro ⟨rfl, hx⟩
+      exact ⟨e.cast (by simp), by simp [hx]⟩
+    · rintro ⟨i, rfl, rfl, rfl⟩
+      simp
+    rintro ⟨i, rfl, rfl, rfl⟩
+    simp
+  exact WList.cycleZip_wellFormed_of_nodup _ _ <| nodup_finRange n
 
 lemma cycle_adj_add [NeZero n] (i : Fin n) : (cycle n).Adj i (i + 1) := by
   simp [cycle, Adj]
@@ -150,167 +307,9 @@ lemma cycle_inc_iff [NeZero n] {e x} : (cycle n).Inc e x ↔ e = x ∨ e = x - 1
 lemma cycle_isLink_add_one [NeZero n] (i : Fin n) : (cycle n).IsLink i i (i + 1) := by
   simp [cycle]
 
-
-def cFun (a d : Fin n) (x : Fin ((-d).rev + 1)) := a + x.castLE (by grind)
-
-@[simp]
-lemma cFun_zero [NeZero n] (a : Fin n) : cFun a 0 = fun x ↦ a + x.cast
-  (by cases n with | zero => simpa using a.2 | succ => simp) := rfl
-
-@[simp]
-lemma cFun_fin_one (a d : Fin 1) : cFun a d = fun x ↦ x.cast (by grind) := by
-  rw [a.fin_one_eq_zero, d.fin_one_eq_zero]
-  simp
-
-@[simp]
-lemma cFun_one [hn : Fact (1 < n)] (a : Fin n) : cFun a 1 = fun _ ↦ a := by
-  obtain rfl | rfl | n := n
-  · simpa using hn.elim
-  · simpa using hn.elim
-  ext x
-  obtain rfl : x = 0 := by simpa using x.2
-  simp [cFun]
-
-/-- The `WList` in a cycle of the form `a, a, a + 1, a + 1, ..., b - 1, b`.
-If `a = b`, this is the whole cycle.  -/
-def cyclePath (a b : Fin n) : WList (Fin n) (Fin n) :=
-  let L := (finRange _).map (cFun a (b - a))
-  WList.zip (L.concat b) L (by simp)
-
-@[simp]
-lemma cyclePath_first (a b : Fin n) : (cyclePath a b).first = a := by
-  have := a.neZero
-  simp [cyclePath, cFun, finRange, Fin.castLE]
-
-@[simp]
-lemma cyclePath_last (a b : Fin n) : (cyclePath a b).last = b := by
-  have := a.neZero
-  simp [cyclePath, cFun, finRange, Fin.castLE]
-
-lemma cyclePath_length (a b : Fin n) :
-    (cyclePath a b).length = if a = b then n else (b - a).1 := by
-  obtain rfl | rfl | n := n
-  · simpa using a.2
-  · simp [a.fin_one_eq_zero, b.fin_one_eq_zero, cyclePath]
-  split_ifs with hab
-  · simp [cyclePath, hab]
-  simp only [cyclePath, Fin.val_rev, concat_eq_append, WList.zip_length, length_map,
-    length_finRange, Nat.reduceSubDiff]
-  have hba : (b - a).1 ≠ 0 := by simp [sub_eq_zero, Ne.symm hab]
-  have hblt := (b - a).2
-  rw [Fin.val_neg, ite_eq_right (by grind)]
-  lia
-
-lemma cyclePath_nonempty (a b : Fin n) : (cyclePath a b).Nonempty := by
-  have hnz := a.neZero
-  rw [← WList.length_ne_zero_iff, cyclePath_length]
-  split_ifs with hab
-  · exact hnz.1
-  simp [sub_eq_zero, Ne.symm hab]
-
-open Fin.NatCast in
-lemma cyclePath_get [NeZero n] {a b : Fin n} (i : ℕ) (hi : i ≤ (cyclePath a b).length) :
-    (cyclePath a b).get i = (a + i : Fin n) := by
-  rw [cyclePath, WList.get_eq_getElem_vertex _ (by simpa [cyclePath] using hi)]
-  simp only [Fin.val_rev, concat_eq_append, WList.zip_vertex]
-  obtain rfl | hlt := hi.eq_or_lt
-  · rw [List.getElem_concat_length (by simp [cyclePath])]
-    simp only [cyclePath_length, Nat.cast_ite, Fin.natCast_self, Fin.cast_val_eq_self]
-    grind
-  rw [List.getElem_append_left (by simpa [cyclePath] using hlt)]
-  suffices i = i % n by simpa [cFun, ← Fin.val_inj]
-  have hle' : i ≤ n - (↑(a - b) + 1) := by simpa [cyclePath] using hlt
-  rw [Nat.mod_eq_of_lt (by lia)]
-
-open Fin.NatCast in
-lemma cyclePath_getElem_edge [NeZero n] {a b : Fin n} (i : ℕ)
-    (hi : i < (cyclePath a b).edge.length) : (cyclePath a b).edge[i] = (a + i : Fin n) := by
-  rw [← cyclePath_get (b := b) i (by simpa using hi.le)]
-  rw! [cyclePath, WList.zip_edge, WList.get_eq_getElem_vertex _ (by simpa [cyclePath] using hi.le),
-    concat_eq_append, WList.zip_vertex, getElem_append_left]
-  rfl
-
-open Fin.NatCast in
-lemma cyclePath_isTrail (a b : Fin n) : (cycle n).IsTrail (cyclePath a b) := by
-  obtain rfl | n := n
-  · simpa using a.2
-  refine ⟨?_, ?_⟩
-  · rw [isWalk_iff_forall_isLink_get_of_nonempty (cyclePath_nonempty ..)]
-    intro i hi
-    rw [cyclePath_get _ hi.le, cyclePath_getElem_edge, cyclePath_get _ (by lia),
-      Nat.cast_add, ← add_assoc, Nat.cast_one]
-    exact cycle_isLink_add_one ..
-  simp only [cyclePath, Fin.val_rev, concat_eq_append, WList.zip_edge]
-  rw [nodup_map_iff_inj_on]
-  · simp [cFun]
-  exact nodup_finRange ..
-
-lemma cyclePath_isPath (a b : Fin n) (hab : a ≠ b) : (cycle n).IsPath (cyclePath a b) := by
-  refine ⟨(cyclePath_isTrail ..).isWalk, ?_⟩
-  simp only [cyclePath, Fin.val_rev, concat_eq_append, WList.zip_vertex, nodup_append, nodup_cons,
-    not_mem_nil, not_false_eq_true, nodup_nil, and_self, mem_map, mem_finRange, cFun, true_and,
-    mem_cons, or_false, ne_eq, forall_eq, forall_exists_index, forall_apply_eq_imp_iff]
-  rw [List.nodup_map_iff_inj_on]
-  · simp only [mem_finRange, cFun, Fin.val_rev, add_right_inj, Fin.castLE_inj, imp_self,
-      implies_true, true_and]
-    have := a.neZero
-    rintro ⟨rfl | x, hlt⟩ heq
-    · simp [← heq, Fin.castLE] at hab
-    simp only [← heq, Fin.castLE_mk, add_sub_cancel_left, Fin.val_neg, Fin.mk_eq_zero,
-       NeZero.ne, ↓reduceIte, Order.lt_add_one_iff, Order.add_one_le_iff] at hlt
-    grind
-  exact nodup_finRange ..
-
-lemma cyclePath_isCyclicWalk (a : Fin n) : (cycle n).IsCyclicWalk (cyclePath a a) := by
-  refine IsTour.isCyclicWalk_of_dropLast_nodup ?_ ?_
-  · simp [isTour_iff, cyclePath_isTrail, cyclePath_nonempty, WList.IsClosed]
-  simp only [cyclePath, Fin.val_rev, concat_eq_append, ne_eq, map_eq_nil_iff, finRange_eq_nil_iff,
-    NeZero.ne, not_false_eq_true, WList.zip_dropLast, cons_ne_self,
-    dropLast_append_of_ne_nil, dropLast_singleton, append_nil, WList.zip_vertex]
-  rw [List.nodup_map_iff_inj_on]
-  · simp [cFun]
-  exact nodup_finRange ..
-
-lemma cyclePath_add_one_self [NeZero n] (a : Fin n) :
-    (cyclePath a (a + 1)) = (WList.nil (a + 1)).cons a a := by
-  obtain rfl | rfl | n := n
-  · simpa using a.2
-  · simp [cyclePath, finRange, a.fin_one_eq_zero]
-  have : Fact (1 < n + 1 + 1) := ⟨by lia⟩
-  simp only [cyclePath, Fin.val_rev, concat_eq_append]
-  rw! [add_sub_cancel_left, cFun_one]
-  simp
-
-lemma cycle_eq_circuitOn (n : ℕ) [NeZero n] :
-    cycle n = Graph.circuitOn (List.finRange n) (List.finRange n)
-      rfl (by simp) (List.nodup_finRange n) := by
-  refine ext_inc (by simp [circuitOn]) ?_
-  simp only [cycle_inc_iff, circuitOn, WList.cycleZip_wellFormed, WList.WellFormed.toGraph_inc,
-    WList.Inc, WList.isLink_iff_dInc, WList.cycleZip_dInc_iff, List.getElem_finRange, Fin.eta,
-    finRotate_apply, Fin.cast_add_one]
-  refine fun e x ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · obtain rfl | rfl := h
-    · exact ⟨e + 1, .inl ⟨e.cast (by simp), by simp⟩⟩
-    exact ⟨x - 1, .inr ⟨(x - 1).cast (by simp), by simp⟩⟩
-  obtain ⟨y, ⟨z, rfl, rfl, rfl⟩ | ⟨z, rfl, rfl, rfl⟩⟩ := h <;>
-  simp
-
-lemma cycle_isCyclicWalk (n : ℕ) [NeZero n] : (cycle n).IsCyclicWalk
-    (WList.cycleZip (finRange n) (finRange n) rfl (by simp) (List.nodup_finRange n)) := by
-  rw [isCyclicWalk_iff, isTour_iff, isTrail_iff]
-  simp only [WList.cycleZip_edge, nodup_finRange, and_true, WList.cycleZip_nonempty,
-    WList.cycleZip_isClosed, and_self, WList.Nonempty.vertex_tail, WList.cycleZip_vertex, ne_eq,
-    finRange_eq_nil_iff, NeZero.ne, not_false_eq_true, tail_append_of_ne_nil, nodup_append,
-    Nodup.tail, nodup_cons, not_mem_nil, nodup_nil, mem_cons, or_false, forall_eq, true_and]
-  refine ⟨?_, ?_⟩
-  · rw [cycle_eq_circuitOn, circuitOn]
-    exact WList.WellFormed.isWalk_toGraph (by simp)
-  rintro a ha rfl
-  exact (nodup_finRange n).head_notMem_tail (hne := by simp) ha
-
 lemma cycle_isCycle (n : ℕ) [NeZero n] : (cycle n).IsCycle := by
   rw [cycle_eq_circuitOn]
-  exact (cycle_isCyclicWalk n).toGraph_isCycle
+  exact circuitOn_isCycle (nodup_finRange n) (nodup_finRange n)
 
 lemma cycle_regular_two (n : ℕ) [NeZero n] : (cycle n).Regular 2 :=
   (cycle_isCycle n).regular_two
@@ -328,5 +327,16 @@ lemma cycle_degree (n : ℕ) [NeZero n] (x : Fin n) : (cycle n).degree x = 2 :=
 @[simp]
 lemma cycle_eDegree (n : ℕ) [NeZero n] (x : Fin n) : (cycle n).eDegree x = 2 :=
   cycle_regular_two n <| by simp
+
+@[simp]
+lemma cycle_one : cycle 1 = Graph.singleEdge 0 0 0 := by
+  ext e x y
+  · simp [e.fin_one_eq_zero]
+  simp [e.fin_one_eq_zero, Fin.isValue, x.fin_one_eq_zero, y.fin_one_eq_zero,
+    - isLink_self_iff]
+
+-- @[simp]
+-- lemma cycle_two : cycle 2 = Graph.banana 0 1 {0, 1} := by
+--   _
 
 end Graph

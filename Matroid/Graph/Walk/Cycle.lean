@@ -425,6 +425,15 @@ lemma IsCyclicWalk.dropLast_isPath (hC : G.IsCyclicWalk C) : G.IsPath C.dropLast
 lemma IsCyclicWalk.tail_dropLast_isPath (hC : G.IsCyclicWalk C) : G.IsPath C.tail.dropLast :=
   hC.tail_isPath.prefix C.tail.dropLast_isPrefix
 
+lemma IsCyclicWalk.eq_cons_concat (hC : G.IsCyclicWalk C) (hnt : C.Nontrivial) :
+    ∃ x e f P, G.IsPath P ∧ x ∉ P ∧ e ∉ P.edge ∧ f ∉ P.edge ∧ C = cons x e (P.concat f x) := by
+  obtain ⟨x, e, P, f, y, rfl⟩ := hnt.exists_cons_concat
+  obtain rfl : x = y := by simpa using hC.isClosed.eq
+  refine ⟨x, e, f, P, ?_, fun hxP ↦ ?_, fun heP ↦ ?_, by grind [hC.edge_nodup], rfl⟩
+  · simpa using hC.tail_dropLast_isPath
+  · simpa [hxP] using hC.dropLast_isPath
+  simpa [heP] using hC.edge_nodup
+
 lemma IsCyclicWalk.mem_tail_dropLast_of_ne_first (hC : G.IsCyclicWalk C) (hxC : x ∈ C)
     (hx : x ≠ C.first) : x ∈ C.tail.dropLast := by
   rwa [mem_iff_eq_first_or_mem_tail, or_iff_right hx, mem_iff_eq_mem_dropLast_or_eq_last,

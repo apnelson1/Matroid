@@ -633,6 +633,29 @@ lemma isWalk_iff_forall_isLink_get_of_nonempty (hW : W.Nonempty) : G.IsWalk W �
     · simp [h.1]
     simpa using h.2 i
 
+lemma isWalk_zip_iff (a : List α) (b : List β) (hab) : G.IsWalk (WList.zip a b hab) ↔
+    a[0] ∈ V(G) ∧ ∀ i (hi : i + 1 < a.length), G.IsLink b[i] a[i] a[i + 1] := by
+  match a, b with
+  | [], _ => simp at hab
+  | [x], [] => simp
+  | x :: y :: a, [] => simp at hab
+  | x :: y :: a, e :: b =>
+    rw [isWalk_iff_forall_isLink_get_of_nonempty (by simp)]
+    simp only [zip_cons_cons, cons_length, zip_length, Order.lt_add_one_iff, cons_edge, zip_edge,
+      get_cons_add, List.getElem_cons_zero, List.length_cons, add_le_add_iff_right,
+      List.getElem_cons_succ]
+    simp only [List.length_cons, Nat.add_right_cancel_iff] at hab
+    refine ⟨fun h ↦ ⟨IsLink.left_mem <| by simpa using h 0, fun i hi ↦ ?_⟩,
+      fun h i hi ↦ ?_⟩
+    · specialize h i (by lia)
+      rw! [get_eq_getElem_vertex _ (by grind [cons_length, zip_length]), cons_vertex,
+        zip_vertex, get_eq_getElem_vertex _ (by grind [cons_length, zip_length]),
+        zip_vertex] at h
+      assumption
+    rw! [get_eq_getElem_vertex _ (by grind [cons_length, zip_length]), cons_vertex, zip_vertex,
+      get_eq_getElem_vertex _ (by grind [cons_length, zip_length]), zip_vertex]
+    exact h.2 i (by lia)
+
 end Subgraph
 
 

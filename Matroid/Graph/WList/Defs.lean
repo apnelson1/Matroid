@@ -104,6 +104,11 @@ lemma vertex_length_pos (w : WList α β) : 0 < w.vertex.length :=
 lemma vertex_getElem_zero (w : WList α β) : w.vertex[0] = w.first := by
   cases w with simp
 
+@[simp]
+lemma cons_vertex_dropLast (x : α) (w : WList α β) :
+    (x :: w.vertex).dropLast = x :: w.vertex.dropLast :=
+  List.dropLast_cons_of_ne_nil w.vertex_ne_nil
+
 /-- The list of edges of a `WList` -/
 def edge : WList α β → List β
   | nil _ => []
@@ -1177,9 +1182,30 @@ lemma zip_last (a : List α) (b : List β) (h : b.length + 1 = a.length) :
     (WList.zip a b h).last = a.getLast (by grind) := by
   simp [← vertex_getLast]
 
+@[simp]
+lemma zip_nonempty_iff (a : List α) (b : List β) (h : b.length + 1 = a.length) :
+    (WList.zip a b h).Nonempty ↔ b ≠ [] := by
+  simp [← length_pos_iff, ← List.length_pos_iff]
+
 lemma zip_get_eq_getD (a : List α) (b : List β) (h : b.length + 1 = a.length) (i : ℕ) :
     (WList.zip a b h).get i = a.getD i (a.getLast (by grind)) := by
   rw [get_eq_getD_vertex, zip_vertex, zip_last]
+
+lemma zip_dInc_iff (a : List α) (b : List β) (h : b.length + 1 = a.length) :
+    (WList.zip a b h).DInc e x y ↔ ∃ (i : ℕ) (hi : i + 1 < a.length),
+    e = b[i] ∧ x = a[i] ∧ y = a[i + 1] := by
+  simp only [dinc_iff_get, zip_edge, zip_length, exists_and_left]
+  refine ⟨?_, ?_⟩
+  · rintro ⟨i, rfl, rfl, hi, rfl⟩
+    exact ⟨i, by lia, rfl, by grind [zip_get_eq_getD]⟩
+  rintro ⟨i, hi, rfl, rfl, rfl⟩
+  exact ⟨i, by grind [zip_get_eq_getD]⟩
+
+lemma zip_isLink_iff (a : List α) (b : List β) (h : b.length + 1 = a.length) :
+    (WList.zip a b h).IsLink e x y ↔ ∃ (i : ℕ) (hi : i + 1 < a.length),
+    e = b[i] ∧ s(x, y) = s(a[i], a[i + 1]) := by
+  rw [isLink_iff_dInc, zip_dInc_iff, zip_dInc_iff]
+  grind
 
 end WList
 

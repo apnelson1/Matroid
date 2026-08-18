@@ -269,6 +269,19 @@ lemma IsCycle.toGraph_of_isCyclicWalk {C : WList α β} (hG : G.IsCycle)
   obtain ⟨C', hC', rfl⟩ := by simpa only [isCycle_iff_exists_isCyclicWalk_eq] using hG
   exact hC'.toGraph_eq_of_le hC <| hC.isWalk.toGraph_le
 
+lemma IsCycle.loopless_iff (hG : G.IsCycle) : G.Loopless ↔ V(G).Nontrivial := by
+  obtain ⟨C, hC, rfl⟩ := hG.exists_isCyclicWalk_eq
+  rw [hC.toGraph_loopless_iff, toGraph_vertexSet, ← two_le_encard_iff_nontrivial,
+    hC.encard_vertexSet]
+  have := hC.nonempty.length_pos
+  enat_to_nat!
+  lia
+
+lemma IsCycle.simple_iff (hG : G.IsCycle) : G.Simple ↔ 3 ≤ V(G).encard := by
+  obtain ⟨C, hC, rfl⟩ := hG.exists_isCyclicWalk_eq
+  rw [hC.toGraph_simple_iff, toGraph_vertexSet, hC.encard_vertexSet]
+  enat_to_nat!
+
 /-- Given a cycle and a vertex in the cycle, there exists a cyclic walk that starts with the vertex.
 The direction of the cyclic walk is not known. -/
 lemma IsCycle.exists_isCyclicWalk_of_vertex (hG : G.IsCycle) (hx : x ∈ V(G)) :

@@ -16,6 +16,9 @@ namespace Graph
 /-- `G.IsCycleSet C` means that `C` is the edge set of a cycle of `G`. -/
 def IsCycleSet (G : Graph α β) (C : Set β) : Prop := ∃ C₀, G.IsCyclicWalk C₀ ∧ E(C₀) = C
 
+lemma IsCyclicWalk.isCycleSet_edgeSet (hC : G.IsCyclicWalk C) : G.IsCycleSet E(C) :=
+  ⟨C, hC, rfl⟩
+
 lemma isCycleSet_iff {C' : Set β} : G.IsCycleSet C' ↔ ∃ C ≤ G, C.IsCycle ∧ C' = E(C) := by
   simp_rw [isCycle_iff_exists_isCyclicWalk_eq]
   refine ⟨fun ⟨C₀, hC₀, h⟩ ↦ ?_, ?_⟩

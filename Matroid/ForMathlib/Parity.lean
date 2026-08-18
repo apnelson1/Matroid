@@ -59,6 +59,40 @@ lemma Nat.mod_bodd {n : ℕ} (hn : n.bodd = false) (i) : (i % n).bodd = i.bodd :
   nth_rw 1 [eq_comm, ← i.mod_add_div n, bodd_add, bodd_mul, hn]
   simp
 
+lemma div2_add (a b : ℕ) : (a + b).div2 = a.div2 + b.div2 + (a.bodd && b.bodd).toNat := by
+  nth_rw 1 [← a.bodd_add_div2, ← b.bodd_add_div2]
+  cases ha : a.bodd
+  · cases hb : b.bodd
+    · simp [← mul_add]
+    simp [show 2 * a.div2 + (1 + 2 * b.div2) = 2 * (a.div2 + b.div2) + 1 by lia]
+  cases hb : b.bodd
+  · simp only [Bool.toNat_true, Bool.toNat_false, zero_add, add_assoc, ← mul_add, Bool.and_false,
+      add_zero]
+    rw [add_comm 1]
+    simp
+  simp [show (1 + 2 * a.div2 + (1 + 2 * b.div2)) = 2 * (a.div2 + b.div2 + 1) by lia]
+
+@[simp]
+lemma div2_add_left (m n : ℕ) : (2 * m + n).div2 = m + n.div2 := by
+  simp [div2_add]
+
+@[simp]
+lemma div2_add_right (m n : ℕ) : (m + 2 * n).div2 = m.div2 + n := by
+  simp [div2_add]
+
+lemma div2_mod (m : ℕ) {n} (hn : n.bodd = false) : (m % n).div2 = m.div2 % n.div2 := by
+  have hn' : Even n := by rwa [← Nat.not_odd_iff_even, ← Nat.bodd_eq_odd, Bool.not_eq_true]
+  obtain ⟨a, rfl⟩ : ∃ a, n = 2 * a := (even_iff_exists_two_nsmul n).mp hn'
+  clear hn hn'
+  induction m using Nat.strong_induction_on with | h m ih =>
+  obtain rfl | hne := eq_or_ne a 0
+  · simp
+  obtain hlt | hle := lt_or_ge m (2 * a)
+  · rw [Nat.mod_eq_of_lt hlt, Nat.mod_eq_of_lt]
+    grind [Nat.div2_bit0]
+  obtain ⟨d, rfl⟩ := exists_add_of_le hle
+  simp only [Nat.add_mod_left, Nat.div2_bit0, ih d (by lia), div2_add_left]
+
 lemma encard_Ico_inter_bodd {x y : ℕ} (hxy : x ≤ y) (b : Bool) :
     2 * (Set.Ico x y ∩ {i | i.bodd = b}).encard + x + (b != x.bodd).toNat =
     y + (b != y.bodd).toNat := by

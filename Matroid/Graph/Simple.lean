@@ -359,46 +359,31 @@ lemma IsCyclicWalk.toGraph_loopless_iff {C : WList α β} (hC : G.IsCyclicWalk C
     obtain ⟨v, f, w', rfl⟩ := Nonempty.exists_cons (by simpa using h)
     simpa [List.dropLast_cons_of_ne_nil w'.vertex_ne_nil] using hC.dropLast_isPath.nodup
 
--- lemma IsCyclicWalk.toGraph_simple_iff {C : WList α β} (hC : G.IsCyclicWalk C) :
---     C.toGraph.Simple ↔ 2 ≤ C.length := by
---   cases hC.nonempty with | cons x e W =>
---   have hcompat : W.toGraph.Compatible (Graph.singleEdge x W.first e) := by
---     replace hC := hC.isWalk
---     simp only [cons_isWalk_iff] at hC
---     exact compatible_of_le_le (G := G) hC.2.toGraph_le (by simpa using hC.1)
---   simp_rw [toGraph_cons, hcompat.simple_union_iff, singleEdge_simple_iff, and_iff_right
---     (by simpa using hC.tail_isPath.toGraph_simple), singleEdge_isLink_iff]
---   cases W with
---   | nil u => simpa [union_eq_self_of_le_left] using hC.isClosed
---   | cons y f W =>
---     have hnd' := hC.dropLast_isPath.nodup
-
---     simp only [dropLast_cons_cons, cons_vertex, cons_nonempty, Nonempty.vertex_dropLast,
---       List.dropLast_cons_of_ne_nil W.vertex_ne_nil, List.nodup_cons, List.mem_cons, not_or] at hnd'
---     simp only [first_cons, ne_eq, hnd'.1.1, not_false_eq_true, toGraph_cons, union_isLink_iff,
---       singleEdge_isLink, toGraph_edgeSet, mem_edgeSet_iff, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq,
---       Prod.swap_prod_mk, and_imp, true_and, cons_length, le_add_iff_nonneg_left, zero_le, iff_true]
---     rintro e' f' x' y' (he' | he') rfl (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)
---     · simp at hnd'
---     rw [toGraph_cons, hcompat.simple_union_iff, singleEdge_simple_iff, first_cons,
---       and_iff_right (by simpa using hC.tail_isPath.toGraph_simple), and_iff_right hnd'.1.1]
-
---     · simp
-
---     -- rw [toGraph_cons, Compatible.simple_union_iff, singleEdge_simple_iff,
---     --   first_cons, and_iff_left hnd'.1.1]
---     -- · exact iff_of_true (by simpa using hC.tail_isPath.toGraph_simple) <| by simp
---     · replace hC := hC.isWalk
---       rw [cons_isWalk_iff] at hC
---       exact compatible_of_le_le hC.2.toGraph_le <| by simpa using hC.1
-
---     simp only [toGraph_cons, vertexSet_union, toGraph_vertexSet, vertexSet_singleEdge, union_insert,
---       union_singleton, mem_vertexSet_iff, first_mem, insert_eq_of_mem, first_cons]
---     have := hC.
-
---     sorry
-
-
+lemma IsCyclicWalk.toGraph_simple_iff {C : WList α β} (hC : G.IsCyclicWalk C) :
+    C.toGraph.Simple ↔ 3 ≤ C.length := by
+  match C with
+  | nil x => simpa using hC.nonempty
+  | cons x e (nil y) => simpa [union_eq_self_of_le_left] using hC.isClosed
+  | cons x e (cons y f (nil z)) =>
+    obtain rfl : x = z := by simpa using hC.isClosed
+    have hef : e ≠ f := by simpa using hC.edge_nodup
+    refine iff_of_false (fun hsi ↦ hef ?_) (by simp)
+    exact hsi.eq_of_isLink (x := x) (y := y) (by simp [union_isLink_iff, hef]) <|
+      by simp [union_isLink_iff]
+  | cons x e (cons y f (cons z g W)) =>
+    rw [simple_iff, hC.toGraph_loopless_iff, and_iff_right (by simp),
+      iff_true_intro (show 3 ≤ _ by simp), iff_true]
+    simp_rw [hC.isWalk.wellFormed.toGraph_isLink, isLink_cons_iff, first_cons] at ⊢
+    have hnd := hC.dropLast_isPath.nodup
+    simp only [dropLast_cons_cons, cons_vertex, cons_nonempty, Nonempty.vertex_dropLast,
+        cons_vertex_dropLast, List.nodup_cons, List.mem_cons, not_or] at hnd
+    have hnd' := hC.tail_isPath.nodup
+    simp only [tail_cons, cons_vertex, List.nodup_cons, List.mem_cons, mem_vertex, not_or] at hnd'
+    have hWP : G.IsPath W :=
+      (hC.tail_isPath.sublist (isSublist_cons_self ..)).sublist (isSublist_cons_self ..)
+    have hW := hWP.toGraph_simple.eq_of_isLink
+    simp_rw [hWP.isWalk.wellFormed.toGraph_isLink] at hW
+    grind [WList.IsLink.left_mem, WList.IsLink.right_mem]
 
 end Simple
 
