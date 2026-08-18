@@ -39,5 +39,3 @@ producer case is the model.
 the tactic being defined in the same file, and they belong with it. This directory is for tests of
 *tags*, whose subject is the interaction between a lemma and the automation, and which therefore
 belong to neither file individually.
-
-See `notes/lean/Assimilation.md`, stage 3.

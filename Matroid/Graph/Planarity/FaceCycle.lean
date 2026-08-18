@@ -29,7 +29,7 @@ Only the *base* cycle needs `3 ≤ V(C₀).encard`, and `ConnGE.exists_isCycle_l
 
 Write `D|H` for `D.restrict`, `|H|` for `(D|H).support` and `𝕊` for `OnePoint ℝ²`.
 
-1. **Base cycle.** `ConnGE.exists_isCycle_le` (`Ear.lean:245`) gives `C₀ ≤ G` with `C₀.IsCycle` and
+1. **Base cycle.** `ConnGE.exists_isCycle_le` (`Forest.lean`) gives `C₀ ≤ G` with `C₀.IsCycle` and
    `3 ≤ V(C₀).encard`.
 2. **Induction.** `ConnGE.ear_induction` over `C₀ ≤ H ≤ G`, with motive
    `fun H ↦ ∀ hle : H ≤ G, ∀ F : (D|hle).onePoint.Face, <conclusion for F>`.
@@ -240,7 +240,7 @@ that `Drawing.faceSet_isOpen` (`Face.lean:177`) and `Drawing.frontier_faceSet_su
 `[LocallyCompactSpace]`. `Drawing.support_onePoint` (`Face.lean:217`) moves support equations
 across.
 
-*Step 1.* `ConnGE.exists_isCycle_le` (`Ear.lean:245`) — note it returns `3 ≤ V(C₀).encard`, which
+*Step 1.* `ConnGE.exists_isCycle_le` (`Forest.lean`) — note it returns `3 ≤ V(C₀).encard`, which
 is precisely `ear_induction`'s `h3`, so do not reprove it.
 
 *Step 2.* `ConnGE.ear_induction` (`Connected/Ear.lean`, and cited by name because that file is

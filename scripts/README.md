@@ -4,10 +4,7 @@ This folder contains utility scripts for the Matroid project:
 
 1. **update_matroid_imports.py** - Synchronizes `Matroid.lean` with module files
 2. **detect_inefficient_imports.py** - Identifies inefficient Mathlib imports
-3. **canvas_to_pdf.py** - Converts Obsidian canvas files to PDF visualizations
-4. **analyze_compile_times.py** - Per-module compile times and import critical paths
-
-The proof golfers that used to live here (`golf_grind.py`, `golf_rules.py`, `golf_common.py`) moved to `../../leangolf`, where they work against any lake project rather than only this one. See §5 below.
+3. **analyze_compile_times.py** - Per-module compile times and import critical paths
 
 ---
 
@@ -16,6 +13,7 @@ The proof golfers that used to live here (`golf_grind.py`, `golf_rules.py`, `gol
 Keeps `Matroid.lean` synchronized with the `.lean` modules under the `Matroid/` directory.
 
 What it does:
+
 - Scans `Matroid/` recursively for all `.lean` files and computes their module names `Matroid.<path.with.dots>`.
 - Parses `Matroid.lean` for existing lines of the form `import Matroid.xxx` and `-- import Matroid.xxx`.
 - Adds missing modules as active `import Matroid.xxx` lines.
@@ -33,6 +31,7 @@ uv run scripts/update_matroid_imports.py --all --dry-run
 ```
 
 Options:
+
 - `--root <path>`: explicitly set the repo root (defaults to the parent of `scripts/`).
 - `--matroid-dir <path>`: path to the `Matroid/` directory (defaults to `<root>/Matroid`).
 - `--matroid-file <path>`: path to `Matroid.lean` (defaults to `<root>/Matroid.lean`).
@@ -41,6 +40,7 @@ Options:
 - `--all`: include all discovered modules (opt-out of ignore rules).
 
 Notes:
+
 - Existing commented imports such as `-- import Matroid.Graph.Bipartite` are kept commented.
 - New entries are added as active `import ...` lines by default; you can use `--comment` to add them commented out instead.
 - By default, modules matching any regex in `.matroidignore` (in the `scripts/` directory) are ignored; use `--all` to include them.
@@ -68,6 +68,7 @@ scratch
 Detects and marks inefficient Mathlib imports that could be replaced with more direct imports.
 
 What it does:
+
 - Scans all `.lean` files in the project (excluding `.lake` and hidden directories).
 - For each Mathlib import, checks if the file still compiles when the import is replaced with its transitive imports.
 - If compilation succeeds, the import is inefficient (more direct imports are available).
@@ -82,54 +83,24 @@ uv run scripts/detect_inefficient_imports.py
 ```
 
 Configuration:
+
 - `MATHLIB_PATH`: Path to mathlib (defaults to `.lake/packages/mathlib`).
 - `TARGET_DIR`: Directory to scan for `.lean` files (defaults to `.`).
 
 Notes:
+
 - The script modifies files in place, adding `-- inefficient import` comments to imports that can be improved.
 - Already marked imports (containing `-- inefficient`) are skipped.
 - The script compiles each test case using `lake env lean` to verify changes.
 
 ---
 
-## 3. Canvas to PDF Converter (`canvas_to_pdf.py`)
-
-Converts Obsidian canvas files (`.canvas`) to PDF visualizations.
-
-What it does:
-- Reads `.canvas` files (JSON format) from the `ToDo/` directory.
-- Generates PDF visualizations showing node layouts and connections.
-- Preserves node colors, text content, and edge relationships.
-- Uses landscape A4 format with automatic scaling to fit content.
-
-### Usage
-
-From the repo root:
-
-```bash
-cd scripts && uv run canvas_to_pdf.py
-```
-
-Requirements:
-- `reportlab` library (`uv` handles dependencies automatically via `pyproject.toml`)
-
-Output:
-- For each `.canvas` file in `ToDo/`, creates a corresponding `.pdf` file in the same directory.
-- Example: `ToDo/DiGraph.canvas` → `ToDo/DiGraph.pdf`
-
-Notes:
-- Node colors are preserved from the Obsidian canvas (red, orange, yellow, green, blue, purple).
-- Both file nodes and text nodes are rendered with their content.
-- Edges are drawn with arrows indicating direction.
-- Content is automatically scaled to fit on the page.
-
----
-
-## 4. Compile Time Analyzer (`analyze_compile_times.py`)
+## 3. Compile Time Analyzer (`analyze_compile_times.py`)
 
 Parses a Lake build log and reports per-module **self times** plus **critical import paths** (the longest chain of dependencies that bounds wall-clock compile time with unlimited parallelism).
 
 What it does:
+
 - Extracts `Built Matroid.* (Xs)` lines from a build log.
 - Scans `Matroid.lean` and `Matroid/**/*.lean` for direct `import Matroid.*` edges.
 - Computes `crit(M) = self(M) + max(crit(dep))` over direct imports.
@@ -164,6 +135,7 @@ uv run scripts/analyze_compile_times.py -m Matroid.Graph.Walk.Basic /tmp/build.l
 ```
 
 Options:
+
 - `--prefix`: module prefix for the import graph (default `Matroid.`).
 - `--filter`: restrict tables/chains to modules matching this prefix.
 - `--top N`: rows in the self-time table (default 30; `0` = all).
@@ -172,27 +144,7 @@ Options:
 - `--build TARGET`: run `lake build TARGET` and analyze stdout/stderr.
 
 Notes:
+
 - Self times come from Lake; critical paths use only **direct** `Matroid.*` imports (not Mathlib).
 - If a module is not in the log, it was not rebuilt (cached) — run `lake clean Matroid` (or `lc Matroid`) before rebuilding for fresh numbers.
 - Pipe or `tee` the build log; the script also reads stdin when no file path is given.
-
----
-
-## 5. Proof Golfers (moved to `Projects/leangolf`)
-
-`golf_grind.py`, `golf_rules.py` and their shared `golf_common.py` now live in
-`Projects/leangolf`, as a separate repository — one directory up from this repo.
-
-They were rewritten to locate the lake project from the target file rather than assuming
-this one, so they run against any Lean 4 project. From this repo the invocation is:
-
-```bash
-python3 ../leangolf/golf_rules.py Matroid/Path/To/File.lean          # dry-run diff
-python3 ../leangolf/golf_rules.py Matroid/Path/To/File.lean --write
-python3 ../leangolf/golf_grind.py Matroid/Path/To/File.lean --write
-```
-
-The rule table, options and the measured hand-vs-AI rates that motivate each rewrite are
-in that repo's `README.md`. Behaviour on this repo is unchanged: the scratch module is
-still `Matroid/ZzGolfBench.lean` and the column limit still comes from this lakefile's
-`linter.style.longLine`.

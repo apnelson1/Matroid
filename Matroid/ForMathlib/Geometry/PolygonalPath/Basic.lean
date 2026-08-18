@@ -475,11 +475,10 @@ lemma IsTrivial.first_eq_last (h : P.IsTrivial) : x = y := (h y P.last_mem_verti
 
 lemma IsTrivial.of_cons {P : PolygonalPath x y} (h : (cons a x P).IsTrivial) : P.IsTrivial := by
   intro z hz
-  calc
-    z = a := h z (by simp [hz])
-    _ = x := (h x (by
-      rw [vertices_cons]
-      exact List.mem_cons_of_mem a P.first_mem_vertices)).symm
+  obtain rfl := h z (by simp [hz])
+  refine h x ?_ |>.symm
+  rw [vertices_cons]
+  exact List.mem_cons_of_mem z P.first_mem_vertices
 
 lemma isTrivial_iff_vertices_eq_replicate :
     P.IsTrivial ↔ P.vertices = List.replicate (P.length + 1) x := by
@@ -1444,11 +1443,9 @@ lemma eq_first_edge_of_mem_segment {p y : α} {B : PolygonalPath p y} (hB : B.Is
       exact ((List.nodup_cons.mp hBsimp.1).1 (Q.fst_mem_vertices hbQ)).elim
     have hs_mem : s ∈ (p, b) :: Q.edges := by
       simpa [hBcases, edges_cons] using hs
-    obtain heq | hsQ := List.mem_cons.mp hs_mem
-    · exact heq
-    have : p = b := mem_singleton_iff.mp (hmeet ⟨left_mem_segment ℝ p b,
-      (Q.segment_subset_toSet hsQ hps)⟩)
-    exact (hpc this).elim
+    exact (List.mem_cons.mp hs_mem).resolve_right fun hsQ ↦
+      hpc <| mem_singleton_iff.mp <| hmeet ⟨left_mem_segment ℝ p b,
+      Q.segment_subset_toSet hsQ hps⟩
 
 /-- In a simple path, the only edge whose segment contains the last vertex is the last edge.
 This is `eq_first_edge_of_mem_segment` read backwards; the two used to be separate 40-line

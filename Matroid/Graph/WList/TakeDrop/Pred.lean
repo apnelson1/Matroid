@@ -375,6 +375,15 @@ lemma prefixUntil_last_eq_suffixFrom_first (w : WList α β) (P : α → Prop) [
     · simp
     simpa
 
+lemma prefixUntil_dropLast_vertex_append_suffixFrom_vertex (w : WList α β) (P : α → Prop)
+    [DecidablePred P] :
+    (w.prefixUntil P).vertex.dropLast ++ (w.suffixFrom P).vertex = w.vertex := by
+  rw [← append_vertex, prefixUntil_append_suffixFrom]
+
+lemma prefixUntil_vertex_append_suffixFrom_tail_vertex (w : WList α β) (P : α → Prop)
+    [DecidablePred P] : (w.prefixUntil P).vertex ++ (w.suffixFrom P).vertex.tail = w.vertex := by
+  rw [← append_vertex' (prefixUntil_last_eq_suffixFrom_first w P), prefixUntil_append_suffixFrom]
+
 lemma suffixFrom_vertex_filter_eq_vertex_filter (w : WList α β) (P Q : α → Prop) [DecidablePred P]
     [DecidablePred Q] : (w.suffixFrom P).vertex.filter Q = w.vertex.filter Q ∨
     (w.suffixFrom Q).vertex.filter P = w.vertex.filter P := by

@@ -85,7 +85,7 @@ theorem mem_diskMinusRadii : p ∈ diskMinusRadii x ρ Y ↔ p ∈ ball x ρ ∧
 theorem subset_diskMinusRadii_of_mem_sectors (hC : C ∈ sectors x ρ Y) :
     C ⊆ diskMinusRadii x ρ Y := by
   obtain ⟨_, _, rfl⟩ := hC
-  exact connectedComponentIn_subset _ _
+  exact connectedComponentIn_subset ..
 
 @[grind .]
 theorem isOpen_diskMinusRadii : IsOpen (diskMinusRadii x ρ Y) :=
@@ -131,11 +131,11 @@ private lemma toComplex_eq_zero {x p : EuclideanSpace ℝ (Fin 2)} : toComplex x
   rw [toComplex, LinearIsometryEquiv.map_eq_zero_iff, sub_eq_zero]
 
 private lemma norm_toComplex (x p : EuclideanSpace ℝ (Fin 2)) : ‖toComplex x p‖ = ‖p - x‖ :=
-  LinearIsometryEquiv.norm_map _ _
+  LinearIsometryEquiv.norm_map ..
 
 private lemma dist_polar (x : EuclideanSpace ℝ (Fin 2)) (s θ : ℝ) : dist (polar x s θ) x = |s| := by
-  rw [dist_eq_norm_sub, polar, add_sub_cancel_left, LinearIsometryEquiv.norm_map,
-    norm_mul, norm_exp_ofReal_mul_I, mul_one, norm_real, Real.norm_eq_abs]
+  rw [dist_eq_norm_sub, polar, add_sub_cancel_left, LinearIsometryEquiv.norm_map, norm_mul,
+    norm_exp_ofReal_mul_I, mul_one, norm_real, Real.norm_eq_abs]
 
 private lemma continuous_uncurry_polar (x : EuclideanSpace ℝ (Fin 2)) :
     Continuous (uncurry (polar x)) := by
@@ -162,9 +162,8 @@ private lemma polar_add_two_pi (x : EuclideanSpace ℝ (Fin 2)) (s θ : ℝ) :
 
 private lemma sameRay_toComplex_iff {x p q : EuclideanSpace ℝ (Fin 2)} :
     SameRay ℝ (toComplex x p) (toComplex x q) ↔ SameRay ℝ (p - x) (q - x) := by
-  simpa [toComplex] using (SameRay.sameRay_map_iff
-    (orthonormalBasisOneI.repr.symm : EuclideanSpace ℝ (Fin 2) ≃ₗᵢ[ℝ] ℂ).toLinearEquiv
-    (x := p - x) (y := q - x))
+  simpa [toComplex] using (SameRay.sameRay_map_iff (orthonormalBasisOneI.repr.symm : EuclideanSpace
+    ℝ (Fin 2) ≃ₗᵢ[ℝ] ℂ).toLinearEquiv (x := p - x) (y := q - x))
 
 private lemma polar_eq_iff_angle {s θ₁ θ₂ : ℝ} (hs : 0 < s) :
     polar x s θ₁ = polar x s θ₂ ↔ ∃ n : ℤ, θ₁ = θ₂ + (n : ℝ) * (2 * π) := by
@@ -179,7 +178,9 @@ private lemma polar_eq_iff_angle {s θ₁ θ₂ : ℝ} (hs : 0 < s) :
   congr 1
   rw [ofReal_add, add_mul, Complex.exp_add]
   congr 2
-  nth_rw 2 [Complex.exp_eq_one_iff.mpr ⟨n, by push_cast; ring⟩]
+  nth_rw 2 [Complex.exp_eq_one_iff.mpr ⟨n, by
+    push_cast
+    ring⟩]
   exact mul_one ..
 
 private lemma polar_inj {s₁ s₂ θ₁ θ₂ : ℝ} (hs₁ : 0 < s₁) (hs₂ : 0 < s₂) (hθ : |θ₁ - θ₂| < 2 * π)
@@ -222,17 +223,14 @@ private lemma length_argList (hρ : 0 < ρ) (hY : ↑Y ⊆ sphere x ρ) :
 
 private lemma argList_get_lt {i j : Fin (argList x Y).length} (hij : i < j) :
     (argList x Y).get i < (argList x Y).get j := by
-  have hne : (argList x Y).get i ≠ (argList x Y).get j := fun h ↦
-    (ne_of_lt hij) ((argFinset x Y |>.sort_nodup _).get_inj_iff.mp h)
-  exact lt_of_le_of_ne ((argFinset x Y |>.pairwise_sort _).rel_get_of_lt hij) hne
+  exact ((argFinset x Y |>.pairwise_sort _).rel_get_of_lt hij).lt_of_ne (fun h ↦ (hij.ne)
+    ((argFinset x Y |>.sort_nodup _).get_inj_iff.mp h))
 
 private lemma argList_get_mem_Ioc (i : Fin (argList x Y).length) :
     (argList x Y).get i ∈ Ioc (-π) π := by
-  have hmem : (argList x Y).get i ∈ argFinset x Y :=
-    (Finset.mem_sort (· ≤ ·)).mp <| List.get_mem (argList x Y) i
-  obtain ⟨y, -, hy⟩ := Finset.mem_image.mp hmem
-  rw [← hy]
-  exact arg_mem_Ioc _
+  obtain ⟨y, -, hy⟩ :=
+    Finset.mem_image.mp ((Finset.mem_sort (· ≤ ·)).mp <| List.get_mem (argList x Y) i)
+  exact hy ▸ arg_mem_Ioc _
 
 private noncomputable def openSector (x : EuclideanSpace ℝ (Fin 2)) (ρ θ₁ θ₂ : ℝ) :
     Set (EuclideanSpace ℝ (Fin 2)) :=
@@ -273,17 +271,14 @@ private lemma mem_segment_iff_arg (hρ : 0 < ρ) {y p : EuclideanSpace ℝ (Fin 
   refine ⟨fun hseg ↦ (eq_or_ne p x).imp id fun hpx ↦ ?_, fun h ↦ ?_⟩
   · rw [segment_eq_image_lineMap] at hseg
     obtain ⟨t, ht, rfl⟩ := hseg
-    have hsr : SameRay ℝ (AffineMap.lineMap x y t - x) (y - x) := by
-      rw [lineMap_sub_left]
-      exact SameRay.sameRay_nonneg_smul_left _ ht.1
-    refine (Complex.sameRay_iff.mp (sameRay_toComplex_iff.mpr hsr)).resolve_left ?_
-      |>.resolve_left ?_
-    · exact mt toComplex_eq_zero.mp hpx
-    exact mt toComplex_eq_zero.mp hyx
+    have hsr : SameRay ℝ (AffineMap.lineMap x y t - x) (y - x) :=
+      lineMap_sub_left.symm ▸ SameRay.sameRay_nonneg_smul_left _ ht.1
+    exact (Complex.sameRay_iff.mp (sameRay_toComplex_iff.mpr hsr)).resolve_left
+      (mt toComplex_eq_zero.mp hpx) |>.resolve_left (mt toComplex_eq_zero.mp hyx)
   obtain rfl | harg := h
-  · exact left_mem_segment _ _ _
+  · exact left_mem_segment ..
   obtain rfl | hpx := eq_or_ne p x
-  · exact left_mem_segment _ _ _
+  · exact left_mem_segment ..
   have hsr : SameRay ℝ (p - x) (y - x) := sameRay_toComplex_iff.mp (sameRay_of_arg_eq harg)
   obtain ⟨r, hr0, hr⟩ := hsr.exists_nonneg_right (sub_ne_zero.mpr hyx)
   have hr_eq : r = ‖p - x‖ / ρ := by
@@ -291,9 +286,10 @@ private lemma mem_segment_iff_arg (hρ : 0 < ρ) {y p : EuclideanSpace ℝ (Fin 
       rw [hr, norm_smul, Real.norm_eq_abs, abs_of_nonneg hr0, hnormy]
     field_simp [hρ.ne']
     linarith
-  have ht : r ∈ Icc (0 : ℝ) 1 := ⟨hr0, by
-      rw [hr_eq, div_le_one hρ]
-      exact (mem_ball_iff_norm.mp hp).le⟩
+  have ht : r ∈ Icc (0 : ℝ) 1 := by
+    refine ⟨hr0, ?_⟩
+    rw [hr_eq, div_le_one hρ]
+    exact (mem_ball_iff_norm.mp hp).le
   have : p = AffineMap.lineMap x y r := by
     apply eq_of_sub_eq_zero
     calc
@@ -301,25 +297,23 @@ private lemma mem_segment_iff_arg (hρ : 0 < ρ) {y p : EuclideanSpace ℝ (Fin 
           = (p - x) - (AffineMap.lineMap x y r - x) := by abel
         _ = r • (y - x) - r • (y - x) := by rw [hr, lineMap_sub_left]
         _ = 0 := by rw [sub_self]
-  rw [this]
-  exact lineMap_mem_segment ℝ x y ht
+  exact this.symm ▸ lineMap_mem_segment ℝ x y ht
 
 
 private lemma ne_center_of_mem_diskMinusRadii (hYne : Y.Nonempty) {p : EuclideanSpace ℝ (Fin 2)}
     (hp : p ∈ diskMinusRadii x ρ Y) : p ≠ x := by
   intro rfl
   obtain ⟨y, hy⟩ := hYne
-  exact hp.2 <| mem_iUnion.mpr ⟨y, mem_iUnion.mpr ⟨hy, left_mem_segment _ _ _⟩⟩
+  exact hp.2 <| mem_iUnion.mpr ⟨y, mem_iUnion.mpr ⟨hy, left_mem_segment ..⟩⟩
 
 private lemma mem_diskMinusRadii_iff (hρ : 0 < ρ) (hYne : Y.Nonempty) (hY : ↑Y ⊆ sphere x ρ)
     {p : EuclideanSpace ℝ (Fin 2)} : p ∈ diskMinusRadii x ρ Y ↔
       p ∈ ball x ρ ∧ p ≠ x ∧ arg (toComplex x p) ∉ argFinset x Y := by
-  refine ⟨fun hp ↦ ?_, fun ⟨hp, hpx, harg⟩ ↦ ?_⟩
-  · refine ⟨hp.1, ne_center_of_mem_diskMinusRadii hYne hp, fun harg ↦ ?_⟩
-    obtain ⟨y, hyY, hy⟩ := Finset.mem_image.mp harg
-    have hseg : p ∈ segment ℝ x y := (mem_segment_iff_arg hρ (hY hyY) hp.1).mpr (Or.inr hy.symm)
-    exact hp.2 (mem_iUnion.mpr ⟨y, mem_iUnion.mpr ⟨hyY, hseg⟩⟩)
-  refine ⟨hp, fun h ↦ ?_⟩
+  refine ⟨fun hp ↦ ⟨hp.1, ne_center_of_mem_diskMinusRadii hYne hp, fun harg ↦ ?_⟩, fun ⟨hp,
+    hpx, harg⟩ ↦ ⟨hp, fun h ↦ ?_⟩⟩
+  obtain ⟨y, hyY, hy⟩ := Finset.mem_image.mp harg
+  have hseg : p ∈ segment ℝ x y := (mem_segment_iff_arg hρ (hY hyY) hp.1).mpr (Or.inr hy.symm)
+  exact hp.2 (mem_iUnion.mpr ⟨y, mem_iUnion.mpr ⟨hyY, hseg⟩⟩)
   obtain ⟨y, hy⟩ := mem_iUnion.mp h
   obtain ⟨hyY, hseg⟩ := mem_iUnion.mp hy
   obtain heq | harg' := (mem_segment_iff_arg hρ (hY hyY) hp).mp hseg
@@ -363,9 +357,7 @@ private lemma isOpen_image_mul_exp {θ₁ θ₂ : ℝ} (hρ : 0 < ρ) :
     refine fun hq ↦ ⟨(rexp q.1, q.2), ⟨⟨exp_pos _, (Real.lt_log_iff_exp_lt hρ).mp hq.1⟩, hq.2⟩, ?_⟩
     simp [φ, Real.log_exp]
   rw [hLφ, image_comp]
-  exact equivRealProdCLM.symm.isOpenMap _ (by
-    rw [hφim]
-    exact isOpen_Iio.prod isOpen_Ioo)
+  exact equivRealProdCLM.symm.isOpenMap _ ((hφim.symm ▸ isOpen_Iio.prod isOpen_Ioo))
 
 private lemma isOpen_openSector {θ₁ θ₂ : ℝ} (hρ : 0 < ρ) : IsOpen (openSector x ρ θ₁ θ₂) := by
   have him : openSector x ρ θ₁ θ₂ = (fun z : ℂ ↦ x + orthonormalBasisOneI.repr z) ''
@@ -416,15 +408,15 @@ private lemma toIocMod_not_mem_argFinset (i : Fin (argList x Y).length) {θ : �
   simp only [θLeft, θRight] at hθ
   split_ifs at hθ with hi
   · have hioc : θ ∈ Ioc (-π) π := ⟨lt_trans (argList_get_mem_Ioc (x := x) (Y := Y) i).1 hθ.1,
-      le_of_lt (lt_of_lt_of_le hθ.2 (argList_get_mem_Ioc (x := x) (Y := Y) ⟨↑i + 1, hi⟩).2)⟩
+    le_of_lt (lt_of_lt_of_le hθ.2 (argList_get_mem_Ioc (x := x) (Y := Y) ⟨↑i + 1, hi⟩).2)⟩
     have hmod : θ = (argList x Y).get j := by
       rw [toIocMod_eq_of_mem_Ioc hioc] at hj
       exact hj.symm
     obtain hji | hji := em ((i : ℕ) < (j : ℕ))
     · exact (not_le_of_gt hθ.2) <| (argList_get_le_of_le (Fin.mk_le_mk.mpr (by omega))).trans_eq
         hmod.symm
-    exact (not_le_of_gt hθ.1) <| hmod ▸ argList_get_le_of_le (Fin.mk_le_mk.mpr (Nat.le_of_not_gt
-      hji))
+    exact (not_le_of_gt hθ.1) <| hmod ▸ argList_get_le_of_le
+      (Fin.mk_le_mk.mpr (Nat.le_of_not_gt hji))
   obtain hπ | hπ := em (θ ≤ π)
   · have hioc : θ ∈ Ioc (-π) π := ⟨lt_trans (argList_get_mem_Ioc (x := x) (Y := Y) i).1 hθ.1, hπ⟩
     have hmod : θ = (argList x Y).get j := by
@@ -432,8 +424,8 @@ private lemma toIocMod_not_mem_argFinset (i : Fin (argList x Y).length) {θ : �
       exact hj.symm
     exact (not_le_of_gt hθ.1) <| hmod ▸ argList_get_max i hi j
   push Not at hπ
-  have hmem' : θ - 2 * π ∈ Ioc (-π) π := ⟨by linarith, by linarith [hθ.2,
-    (argList_get_mem_Ioc (x := x) (Y := Y) ⟨0, i.pos⟩).2]⟩
+  have hmem' : θ - 2 * π ∈ Ioc (-π) π :=
+    ⟨by linarith, by linarith [hθ.2, (argList_get_mem_Ioc (x := x) (Y := Y) ⟨0, i.pos⟩).2]⟩
   have hsub : toIocMod two_pi_pos (-π) θ = θ - 2 * π := by
     simpa [toIocMod_sub] using toIocMod_eq_of_mem_Ioc hmem'
   have hmod : θ - 2 * π = (argList x Y).get j := by
@@ -459,11 +451,11 @@ private lemma subset_diskMinusRadii_openSectorIdx (hρ : 0 < ρ) (hYne : Y.Nonem
 private lemma mem_sector_angles_subset {i : Fin (argList x Y).length} {θ : ℝ}
     (hθ : θ ∈ Ioo (θLeft x Y i) (θRight x Y i)) :
     θ ∈ Ioo ((argList x Y).get ⟨0, i.pos⟩) ((argList x Y).get ⟨0, i.pos⟩ + 2 * π) := by
-  refine ⟨lt_of_le_of_lt (argList_get_min i) hθ.1, ?_⟩
+  refine ⟨(argList_get_min i).trans_lt hθ.1, ?_⟩
   simp only [θLeft, θRight] at hθ
   split_ifs at hθ with hi
   · linarith [hθ.2, (argList_get_min ⟨↑i + 1, hi⟩), (argList_get_mem_Ioc ⟨↑i + 1, hi⟩).2,
-      (argList_get_mem_Ioc (x := x) (Y := Y) ⟨0, i.pos⟩).1]
+    (argList_get_mem_Ioc (x := x) (Y := Y) ⟨0, i.pos⟩).1]
   exact hθ.2
 
 private lemma abs_sub_lt_two_pi_of_mem_sector {i j : Fin (argList x Y).length} {θ₁ θ₂ : ℝ}
@@ -501,9 +493,8 @@ private lemma exists_mem_openSectorIdx (hρ : 0 < ρ) (hYne : Y.Nonempty) (hY : 
     {p : EuclideanSpace ℝ (Fin 2)} (hp : p ∈ diskMinusRadii x ρ Y) :
     ∃ i : Fin (argList x Y).length, p ∈ openSectorIdx x ρ Y i := by
   have hp' := (mem_diskMinusRadii_iff hρ hYne hY).mp hp
-  have hlen : 0 < (argList x Y).length := by
-    rw [length_argList hρ hY]
-    exact Nat.pos_of_ne_zero (Finset.card_ne_zero.mpr hYne)
+  have hlen : 0 < (argList x Y).length :=
+    (length_argList hρ hY).symm ▸ Nat.pos_of_ne_zero (Finset.card_ne_zero.mpr hYne)
   set α := arg (toComplex x p)
   set r := ‖toComplex x p‖
   have hr0 : 0 < r := by
@@ -551,7 +542,7 @@ private lemma exists_mem_openSectorIdx (hρ : 0 < ρ) (hYne : Y.Nonempty) (hY : 
   let S := Finset.univ.filter (fun k : Fin (argList x Y).length ↦ (argList x Y).get k < α)
   have hSne : S.Nonempty := ⟨⟨0, hlen⟩, Finset.mem_filter.mpr ⟨Finset.mem_univ _,
     (lt_of_le_of_ne hlt0 ((show α ≠ θ₀ from fun h ↦ hαn ((arg_mem_argFinset_iff).mpr
-      ⟨⟨0, hlen⟩, h.symm⟩)).symm))⟩⟩
+    ⟨⟨0, hlen⟩, h.symm⟩)).symm))⟩⟩
   let i := S.max' hSne
   have hiα : (argList x Y).get i < α := (Finset.mem_filter.mp (S.max'_mem hSne)).2
   have hi_not_last : ↑i + 1 < (argList x Y).length := by
@@ -561,15 +552,13 @@ private lemma exists_mem_openSectorIdx (hρ : 0 < ρ) (hYne : Y.Nonempty) (hY : 
     exact not_lt_of_ge hgt hiα
   have hnext : ¬ (argList x Y).get ⟨↑i + 1, hi_not_last⟩ < α := by
     intro hlt
-    exact Nat.not_succ_le_self _ <| Fin.le_iff_val_le_val.mp (S.le_max' _ (Finset.mem_filter.mpr
-      ⟨Finset.mem_univ _, hlt⟩))
-  have hαlt : α < (argList x Y).get ⟨↑i + 1, hi_not_last⟩ :=
-    lt_of_le_of_ne (le_of_not_gt hnext) fun h ↦
-      hαn ((arg_mem_argFinset_iff).mpr ⟨⟨↑i + 1, hi_not_last⟩, h.symm⟩)
+    exact Nat.not_succ_le_self _ <| Fin.le_iff_val_le_val.mp (S.le_max' _
+      (Finset.mem_filter.mpr ⟨Finset.mem_univ _, hlt⟩))
   refine ⟨i, ⟨(r, α), ⟨⟨hr0, hrρ⟩, ?_⟩, hpole.symm⟩⟩
   change θLeft x Y i < α ∧ α < θRight x Y i
   simp only [θLeft, θRight, hi_not_last, ↓reduceDIte]
-  exact ⟨hiα, hαlt⟩
+  exact ⟨hiα, (lt_of_le_of_ne (le_of_not_gt hnext) fun h ↦ hαn ((arg_mem_argFinset_iff).mpr ⟨⟨↑i +
+    1, hi_not_last⟩, h.symm⟩))⟩
 
 private lemma iUnion_openSectorIdx (hρ : 0 < ρ) (hYne : Y.Nonempty) (hY : ↑Y ⊆ sphere x ρ) :
     ⋃ i : Fin (argList x Y).length, openSectorIdx x ρ Y i = diskMinusRadii x ρ Y := by
@@ -585,11 +574,9 @@ private lemma connectedComponentIn_eq_openSectorIdx (hρ : 0 < ρ) (hYne : Y.Non
     (hp : p ∈ openSectorIdx x ρ Y i) :
     connectedComponentIn (diskMinusRadii x ρ Y) p = openSectorIdx x ρ Y i := by
   have hsub := subset_diskMinusRadii_openSectorIdx hρ hYne hY i
-  have hconn : IsConnected (openSectorIdx x ρ Y i) :=
-    (isPathConnected_openSector hρ (θLeft_lt_θRight i)).isConnected
-  have hsubset : openSectorIdx x ρ Y i ⊆ connectedComponentIn (diskMinusRadii x ρ Y) p :=
-    hconn.isPreconnected.subset_connectedComponentIn hp hsub
-  refine subset_antisymm ?_ hsubset
+  refine subset_antisymm ?_ (((show IsConnected (openSectorIdx x ρ Y i) from
+    (isPathConnected_openSector hρ
+    (θLeft_lt_θRight i)).isConnected).isPreconnected).subset_connectedComponentIn hp hsub)
   have hU : connectedComponentIn (diskMinusRadii x ρ Y) p ⊆ openSectorIdx x ρ Y i ∪
         ⋃ j ∈ ({i}ᶜ : Set (Fin (argList x Y).length)), openSectorIdx x ρ Y j := by
     intro q hq
@@ -600,14 +587,12 @@ private lemma connectedComponentIn_eq_openSectorIdx (hρ : 0 < ρ) (hYne : Y.Non
     · exact Or.inl hj
     right
     exact mem_biUnion hji hj
-  have hVopen : IsOpen (⋃ j ∈ ({i}ᶜ : Set (Fin _)), openSectorIdx x ρ Y j) :=
-    isOpen_biUnion fun _ _ ↦ isOpen_openSector hρ
   have hdisj : Disjoint (openSectorIdx x ρ Y i)
       (⋃ j ∈ ({i}ᶜ : Set (Fin _)), openSectorIdx x ρ Y j) :=
     disjoint_iUnion₂_right.mpr fun j hj ↦ pairwiseDisjoint_openSectorIdx hρ (Ne.symm hj)
-  have hpre : IsPreconnected (connectedComponentIn (diskMinusRadii x ρ Y) p) :=
-    isPreconnected_connectedComponentIn
-  obtain h | h := hpre.subset_or_subset (isOpen_openSector hρ) hVopen hdisj hU
+  obtain h | h := ((show IsPreconnected (connectedComponentIn (diskMinusRadii x ρ Y) p)
+    from isPreconnected_connectedComponentIn).subset_or_subset)
+    (isOpen_openSector hρ) (isOpen_biUnion fun _ _ ↦ isOpen_openSector hρ) hdisj hU
   · exact h
   exfalso
   have : p ∈ ⋃ j ∈ ({i}ᶜ : Set (Fin _)), openSectorIdx x ρ Y j :=
@@ -638,8 +623,8 @@ private lemma injective_openSectorIdx (hρ : 0 < ρ) : Function.Injective (openS
 theorem ncard_sectors (hρ : 0 < ρ) (hYne : Y.Nonempty) (hY : ↑Y ⊆ sphere x ρ) :
     (sectors x ρ Y).ncard = Y.card := by
   rw [sectors_eq_range_openSectorIdx hρ hYne hY,
-    ncard_range_of_injective (injective_openSectorIdx hρ),
-    Nat.card_eq_fintype_card, Fintype.card_fin, length_argList hρ hY]
+    ncard_range_of_injective (injective_openSectorIdx hρ), Nat.card_eq_fintype_card,
+    Fintype.card_fin, length_argList hρ hY]
 
 private lemma closure_openSector {θ₁ θ₂ : ℝ} (hρ : 0 < ρ) (hθ : θ₁ < θ₂) :
     closure (openSector x ρ θ₁ θ₂) = (uncurry (polar x)) '' (Icc (0 : ℝ) ρ ×ˢ Icc θ₁ θ₂) := by
@@ -647,10 +632,9 @@ private lemma closure_openSector {θ₁ θ₂ : ℝ} (hρ : 0 < ρ) (hθ : θ₁
     rw [closure_prod_eq, closure_Ioo hρ.ne, closure_Ioo hθ.ne]
   refine subset_antisymm ?_ ?_
   · refine ((isCompact_Icc.prod isCompact_Icc).image (continuous_uncurry_polar x)
-      |>.isClosed).closure_subset_iff.mpr ?_
+    |>.isClosed).closure_subset_iff.mpr ?_
     exact image_mono fun _ hp ↦ ⟨⟨hp.1.1.le, hp.1.2.le⟩, ⟨hp.2.1.le, hp.2.2.le⟩⟩
-  rw [← hcl]
-  exact image_closure_subset_closure_image (continuous_uncurry_polar x)
+  exact hcl ▸ image_closure_subset_closure_image (continuous_uncurry_polar x)
 
 
 private lemma θLeft_gt_neg_pi (i : Fin (argList x Y).length) : -π < θLeft x Y i :=
@@ -712,7 +696,8 @@ private lemma mem_closure_openSectorIdx_iff (hρ : 0 < ρ) {p : EuclideanSpace �
     have hnot_int : α ∉ Ioo (θLeft x Y i) (θRight x Y i) := fun hmem ↦
       (toIocMod_not_mem_argFinset (x := x) (Y := Y) i hmem)
         (by simpa [α, toIocMod_eq_of_mem_Ioc hαIoc] using hα)
-    have hnot_int2 : α + 2 * π ∉ Ioo (θLeft x Y i) (θRight x Y i) := fun hmem ↦ by
+    have hnot_int2 : α + 2 * π ∉ Ioo (θLeft x Y i) (θRight x Y i) := by
+      refine fun hmem ↦ ?_
       have hmod : toIocMod two_pi_pos (-π) (α + 2 * π) = α := by
         simp [toIocMod_eq_of_mem_Ioc hαIoc]
       exact toIocMod_not_mem_argFinset (x := x) (Y := Y) i hmem (by simpa [hmod, α] using hα)
@@ -729,15 +714,9 @@ private lemma mem_closure_openSectorIdx_iff (hρ : 0 < ρ) {p : EuclideanSpace �
   change p ∈ closure (openSector x ρ (θLeft x Y i) (θRight x Y i))
   rw [closure_openSector hρ (θLeft_lt_θRight i)]
   obtain hL | hR | hRw := h
-  · refine ⟨(r, α), ⟨⟨hr0.le, hrρ.le⟩, ?_⟩, hpole⟩
-    rw [← hL]
-    exact ⟨le_rfl, (θLeft_lt_θRight i).le⟩
-  · refine ⟨(r, α), ⟨⟨hr0.le, hrρ.le⟩, ?_⟩, hpole⟩
-    rw [← hR]
-    exact ⟨(θLeft_lt_θRight i).le, le_rfl⟩
-  refine ⟨(r, α + 2 * π), ⟨⟨hr0.le, hrρ.le⟩, ?_⟩, ?_⟩
-  · rw [← hRw]
-    exact ⟨(θLeft_lt_θRight i).le, le_rfl⟩
+  · exact ⟨(r, α), ⟨⟨hr0.le, hrρ.le⟩, (hL ▸ ⟨le_rfl, (θLeft_lt_θRight i).le⟩)⟩, hpole⟩
+  · exact ⟨(r, α), ⟨⟨hr0.le, hrρ.le⟩, (hR ▸ ⟨(θLeft_lt_θRight i).le, le_rfl⟩)⟩, hpole⟩
+  refine ⟨(r, α + 2 * π), ⟨⟨hr0.le, hrρ.le⟩, (hRw ▸ ⟨(θLeft_lt_θRight i).le, le_rfl⟩)⟩, ?_⟩
   change polar x r (α + 2 * π) = p
   rw [polar_add_two_pi, hpole]
 
@@ -745,16 +724,13 @@ private lemma card_endpoint_eq_two (hρ : 0 < ρ) (hY : ↑Y ⊆ sphere x ρ) (h
     {y : EuclideanSpace ℝ (Fin 2)} (hy : y ∈ Y) :
     (Finset.univ.filter fun i : Fin (argList x Y).length ↦
       isEndpoint (arg (toComplex x y)) i).card = 2 := by
-  classical
-  have hlen : 1 < (argList x Y).length := by
-    rw [length_argList hρ hY]
-    exact hd
+  have hlen : 1 < (argList x Y).length := (length_argList hρ hY).symm ▸ hd
   obtain ⟨k, hk⟩ := exists_get_eq_arg (x := x) (Y := Y) hy
   set α := arg (toComplex x y)
   have hαIoc : α ∈ Ioc (-π) π := by simpa [α] using arg_mem_Ioc (toComplex x y)
   let S := Finset.univ.filter fun i : Fin (argList x Y).length ↦ isEndpoint α i
-  have hkS : k ∈ S := Finset.mem_filter.mpr ⟨Finset.mem_univ _, (Or.inl (by simpa [θLeft,
-    α] using hk))⟩
+  have hkS : k ∈ S :=
+    Finset.mem_filter.mpr ⟨Finset.mem_univ _, (Or.inl (by simpa [θLeft, α] using hk))⟩
   by_cases hk0 : (k : ℕ) = 0
   · have hlen_pos : 0 < (argList x Y).length := lt_trans Nat.zero_lt_one hlen
     let iLast : Fin (argList x Y).length :=
@@ -790,8 +766,8 @@ private lemma card_endpoint_eq_two (hρ : 0 < ρ) (hY : ↑Y ⊆ sphere x ρ) (h
     exact Finset.card_eq_two.mpr ⟨k, iLast, hne, Finset.Subset.antisymm hS
       (Finset.insert_subset_iff.mpr ⟨hkS, Finset.singleton_subset_iff.mpr hiS⟩)⟩
   have hkpos : 0 < (k : ℕ) := Nat.pos_of_ne_zero hk0
-  let iPred : Fin (argList x Y).length := ⟨(k : ℕ) - 1,
-    (Nat.lt_of_le_of_lt (Nat.sub_le _ _) k.isLt)⟩
+  let iPred : Fin (argList x Y).length :=
+    ⟨(k : ℕ) - 1, (Nat.lt_of_le_of_lt (Nat.sub_le _ _) k.isLt)⟩
   have hne : k ≠ iPred := by
     intro h
     have : (k : ℕ) = (k : ℕ) - 1 := congrArg Fin.val h
@@ -802,9 +778,10 @@ private lemma card_endpoint_eq_two (hρ : 0 < ρ) (hY : ↑Y ⊆ sphere x ρ) (h
   have hLeft : isEndpoint α iPred := by
     refine Or.inr (Or.inl ?_)
     simp only [θRight, hpred_succ, ↓reduceDIte]
-    have : (⟨↑iPred + 1, hpred_succ⟩ : Fin _) = k := Fin.ext (by
-        change (k : ℕ) - 1 + 1 = (k : ℕ)
-        omega)
+    have : (⟨↑iPred + 1, hpred_succ⟩ : Fin _) = k := by
+      refine Fin.ext (?_)
+      change (k : ℕ) - 1 + 1 = (k : ℕ)
+      omega
     simpa [this, α] using hk
   have hiS : iPred ∈ S := Finset.mem_filter.mpr ⟨Finset.mem_univ _, hLeft⟩
   have hS : S ⊆ ({k, iPred} : Finset _) := by
@@ -814,8 +791,8 @@ private lemma card_endpoint_eq_two (hρ : 0 < ρ) (hY : ↑Y ⊆ sphere x ρ) (h
     · simp only [θRight] at hR
       split_ifs at hR with hm'
       · have heq : (⟨↑m + 1, hm'⟩ : Fin _) = k := get_eq_arg_unique (hR.trans hk.symm)
-        exact Or.inr (Finset.mem_singleton.mpr (Fin.ext (Nat.eq_sub_of_add_eq
-          (congrArg Fin.val heq))))
+        exact Or.inr
+          (Finset.mem_singleton.mpr (Fin.ext (Nat.eq_sub_of_add_eq (congrArg Fin.val heq))))
       linarith [(argList_get_mem_Ioc (x := x) (Y := Y) ⟨0, m.pos⟩).1, hαIoc.2]
     simp only [θRight] at hRw
     split_ifs at hRw with hm'
@@ -835,15 +812,13 @@ private lemma arg_eq_of_mem_segment_radius (hρ : 0 < ρ) {y p : EuclideanSpace 
     -- interior of segment to a sphere point lies in the open ball
     rw [segment_eq_image_lineMap] at hp'
     obtain ⟨t, ht, rfl⟩ := hp'
-    have htIoo : t ∈ Ioo (0 : ℝ) 1 := ⟨lt_of_le_of_ne ht.1 ((show t ≠ 0 from fun h ↦ hpx
-      (by simp [AffineMap.lineMap_apply, h])).symm), lt_of_le_of_ne ht.2 (fun h ↦ (hp.2 (Or.inr
-      (by simp [AffineMap.lineMap_apply, h]))))⟩
     rw [mem_ball, dist_eq_norm_sub, lineMap_sub_left, norm_smul, Real.norm_eq_abs,
       abs_of_nonneg ht.1, (mem_sphere_iff_norm.mp hy)]
-    exact mul_lt_of_lt_one_left hρ htIoo.2
-  have harg : arg (toComplex x p) = arg (toComplex x y) :=
-    ((mem_segment_iff_arg hρ hy hball).mp hp').resolve_left hpx
-  exact ⟨norm_sub_pos_iff.mpr hpx, mem_ball_iff_norm.mp hball, harg⟩
+    exact mul_lt_of_lt_one_left hρ ((show t ∈ Ioo (0 : ℝ) 1 from ⟨lt_of_le_of_ne ht.1 ((show t ≠ 0
+      from fun h ↦ hpx (by simp [AffineMap.lineMap_apply, h])).symm), lt_of_le_of_ne ht.2 (fun h ↦
+      (hp.2 (Or.inr (by simp [AffineMap.lineMap_apply, h]))))⟩).2)
+  exact ⟨norm_sub_pos_iff.mpr hpx, mem_ball_iff_norm.mp hball,
+    (((mem_segment_iff_arg hρ hy hball).mp hp').resolve_left hpx)⟩
 
 /-- **Adjacency.** A point in the relative interior of one of the radii lies in the closure of
 exactly two sectors — the two on either side of that radius. For `d = 1` the same sector lies on
@@ -853,7 +828,6 @@ case the consumers need. -/
 theorem ncard_sectors_closure_eq_two (hρ : 0 < ρ) (hY : ↑Y ⊆ sphere x ρ) (hd : 1 < Y.card)
     {y : EuclideanSpace ℝ (Fin 2)} (hy : y ∈ Y) {p : EuclideanSpace ℝ (Fin 2)}
     (hp : p ∈ segment ℝ x y \ {x, y}) : {C ∈ sectors x ρ Y | p ∈ closure C}.ncard = 2 := by
-  classical
   obtain ⟨hr, hrρ, harg⟩ := arg_eq_of_mem_segment_radius hρ (hY hy) hp
   have hα : arg (toComplex x p) ∈ argFinset x Y := Finset.mem_image.mpr ⟨y, hy, harg.symm⟩
   set α := arg (toComplex x y)
@@ -874,8 +848,8 @@ theorem ncard_sectors_closure_eq_two (hρ : 0 < ρ) (hY : ↑Y ⊆ sphere x ρ) 
         simpa [α, harg] using this⟩
     rintro ⟨i, hi, rfl⟩
     refine ⟨hsectors ▸ ⟨i, rfl⟩, ?_⟩
-    exact (mem_closure_openSectorIdx_iff hρ hr hrρ hα i).mpr (by simpa [α,
-      harg] using (Finset.mem_filter.mp (Finset.mem_coe.mp hi)).2)
+    exact (mem_closure_openSectorIdx_iff hρ hr hrρ hα i).mpr (by simpa [α, harg] using
+      (Finset.mem_filter.mp (Finset.mem_coe.mp hi)).2)
   rw [hset, ncard_image_of_injective _ (injective_openSectorIdx hρ), ncard_coe_finset, hScard]
 
 /-- Every sector has the centre in its closure. Used to pass from a sector at a point of the drawing

@@ -8,6 +8,8 @@ public import Matroid.Graph.Bipartite
 public import Matroid.Exercises.HamiltonianCycle.Degree
 public import Matroid.Exercises.HamiltonianCycle.Walk
 
+public section
+
 open Set
 
 namespace Graph
