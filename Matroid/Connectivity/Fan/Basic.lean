@@ -229,6 +229,30 @@ lemma IsFan.ground_nontrivial (h : M.IsFan F b c) : M.E.Nontrivial := by
     ← h.two_le_length]
   rfl
 
+lemma IsFan.map (h : M.IsFan F b c) {β : Type*} {φ : α → β} (hφ : InjOn φ M.E) :
+    (M.map φ hφ).IsFan (F.map φ) b c := by
+  have hrw (b : Bool) : (M.map φ hφ).bDual b = (M.bDual b).map φ (by simpa) := by
+    cases b with simp
+  induction h with
+  | of_pair b e f he hf hne =>
+    simp only [map_cons, map_nil]
+    simp_rw [← indep_singleton] at *
+    apply IsFan.of_pair
+    · exact fun b ↦ indep_singleton.1 <| by simpa [← hrw] using (he b).map φ (by simpa)
+    · exact fun b ↦ indep_singleton.1 <| by simpa [← hrw] using (hf b).map φ (by simpa)
+    rwa [Ne, hφ.eq_iff (by simpa using (he false).subset_ground)
+      (by simpa using (hf false).subset_ground)]
+  | cons_triangle e x y F b c h heF hT ih =>
+    simp only [map_cons] at ih ⊢
+    apply ih.cons
+    · simp only [mem_map, not_exists, not_and]
+      refine fun z hzF hxe ↦ heF ?_
+      rwa [← hφ (h.subset_ground (by grind)) (by simpa using hT.mem_ground₁) hxe]
+    rw [isTriangle_iff, ← image_pair, ← image_insert_eq, hrw,
+      (hφ.mono (by simpa using hT.subset_ground)).encard_image, and_iff_left hT.three_elements,
+      map_isCircuit_iff]
+    exact ⟨_, hT.isCircuit, rfl⟩
+
 lemma IsFan.range_get_subset_ground (h : M.IsFan F b c) : range F.get ⊆ M.E := by
   grind [h.subset_ground]
 

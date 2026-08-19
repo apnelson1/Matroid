@@ -116,6 +116,25 @@ lemma IsCyclicFan.rotate (h : M.IsCyclicFan F b) (n : ℕ) :
   have := h.isTriangle_getElem_fin (i.cast (by simp) + (n : Fin _))
   simpa [Fin.bodd_val_add_of_even h.even, mod_bodd h.even, Bool.bne_eq_xor] using this
 
+open Fin.NatCast in
+lemma IsCyclicFan.map (h : M.IsCyclicFan F b) {β : Type*} {φ : α → β} (hφ : InjOn φ M.E) :
+    (M.map φ hφ).IsCyclicFan (F.map φ) b := by
+  have hrw (b : Bool) : (M.map φ hφ).bDual b = (M.bDual b).map φ (by simpa) := by
+    cases b with simp
+  have : NeZero F.length := ⟨by grind⟩
+  have : NeZero (F.map φ).length := ⟨by grind⟩
+  apply isCyclicFan_of_forall
+  · simp [h.length_ge]
+  · rw [nodup_map_iff_inj_on h.isFan.nodup]
+    refine fun x hx y hy hxy ↦ ?_
+    rwa [hφ.eq_iff (h.isFan.subset_ground hx) (h.isFan.subset_ground hy)] at hxy
+  intro i
+  convert ((h.rotate i).isFan.map hφ).isTriangle_getElem 0
+    (by simp [show 2 < F.length by grind]) using 2
+  · simp
+  · simp [Nat.mod_eq_of_lt (show i.1 < F.length by simpa using i.2)]
+  simp [getElem_map, map_rotate, zero_add, getElem_rotate, length_map, Fin.val_add, add_comm i.1]
+
 lemma IsCyclicFan.reverse (h : M.IsCyclicFan F b) : M.IsCyclicFan F.reverse (!b) := by
   refine ⟨by simpa using h.isFan.reverse, ?_, ?_⟩
   · simp only [length_reverse, getElem_reverse, tsub_self, tsub_zero,
