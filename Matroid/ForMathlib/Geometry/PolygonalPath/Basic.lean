@@ -976,33 +976,14 @@ lemma vertices_subset_vertices_subdivide : {u | u ∈ P.vertices}
       split
       next hauv =>
         have hua : u ≠ a := fun h => hau h.symm
-        have huv : u ≠ v := by
-          rintro rfl
-          rw [openSegment_same] at hauv
-          exact hua (mem_singleton_iff.mp hauv).symm
-        have hav : a ≠ v := by
-          rintro rfl
-          exact huv (right_mem_openSegment_iff.mp hauv)
-        have hinter : segment ℝ u a ∩ segment ℝ a v = {a} :=
-          segment_inter_subsegments_eq_singleton huv hauv
-        have hsplit := segment_union_eq_segment (openSegment_subset_segment ℝ u v hauv)
+        have huv : u ≠ v := ne_of_mem_openSegment_of_ne hua hauv
+        have hav : a ≠ v := (ne_of_mem_openSegment_right huv hauv).symm
+        have key := segment_split_inter_subset_iff (S := P.toSet) (T := (∅ : Set α)) hua hauv
+          (empty_subset _)
+        simp only [insert_empty_eq] at key
         simp only [direct_append, isSimple_cons_iff, toSet_cons]
-        refine ⟨fun ⟨_, ⟨_, hP, haP⟩, huaP⟩ ↦ ?_, ?_⟩
-        · refine ⟨huv, hP, fun w ⟨hwuv, hwP⟩ ↦ ?_⟩
-          rw [← hsplit] at hwuv
-          obtain hwa | hwv := hwuv
-          · obtain rfl : w = a := huaP ⟨hwa, mem_union_right _ hwP⟩
-            exact haP ⟨left_mem_segment ℝ w v, hwP⟩
-          exact haP ⟨hwv, hwP⟩
-        refine fun ⟨_, hP, huvP⟩ ↦ ⟨hua, ⟨hav, hP,
-          fun w hw => huvP ⟨(hsplit ▸ subset_union_right) hw.1, hw.2⟩⟩, ?_⟩
-        rintro w ⟨hwu, hwrest⟩
-        obtain hwa | hwP := hwrest
-        · exact (Set.ext_iff.mp hinter w).mp ⟨hwu, hwa⟩
-        obtain rfl : w = v := huvP ⟨(hsplit ▸ subset_union_left) hwu, hwP⟩
-        have hva : w = a := by
-          simpa using (Set.ext_iff.mp hinter w).mp ⟨hwu, right_mem_segment ℝ a w⟩
-        exact (hav hva.symm).elim
+        exact ⟨fun ⟨_, ⟨_, hP, hpb⟩, hap⟩ ↦ ⟨huv, hP, key.1 ⟨hap, hpb⟩⟩,
+          fun ⟨_, hP, hab⟩ ↦ ⟨hua, ⟨hav, hP, (key.2 hab).2⟩, (key.2 hab).1⟩⟩
       next hauv =>
         have ha' : a ∈ P.toSet := ((mem_toSet_cons_iff.mp ha).resolve_left hau).resolve_left hauv
         change (cons u v (P.subdivide ha')).IsSimple ↔ (cons u v P).IsSimple

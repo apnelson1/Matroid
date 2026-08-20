@@ -46,8 +46,7 @@ open Set Function
 `IsOrderedRing`, since it is only convexity of the target. -/
 lemma segment_subset_segment_right {𝕜 E : Type*} [Semiring 𝕜] [PartialOrder 𝕜] [IsOrderedRing 𝕜]
     [AddCommMonoid E] [Module 𝕜 E] {x y z : E} (hz : z ∈ segment 𝕜 x y) :
-    segment 𝕜 x z ⊆ segment 𝕜 x y :=
-  (convex_segment x y).segment_subset (left_mem_segment 𝕜 x y) hz
+    segment 𝕜 x z ⊆ segment 𝕜 x y := (convex_segment x y).segment_subset (left_mem_segment 𝕜 x y) hz
 
 /-- Splitting a segment at one of its points. -/
 lemma segment_union_eq_segment {𝕜 E : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
@@ -55,11 +54,10 @@ lemma segment_union_eq_segment {𝕜 E : Type*} [Field 𝕜] [LinearOrder 𝕜] 
     segment 𝕜 x z ∪ segment 𝕜 z y = segment 𝕜 x y := by
   rw [segment_eq_image_lineMap] at hz
   obtain ⟨t, ht, rfl⟩ := hz
-  have h₁ : AffineMap.lineMap x y '' segment 𝕜 0 t = segment 𝕜 x (AffineMap.lineMap x y t) := by
-    simp [image_segment]
-  have h₂ : AffineMap.lineMap x y '' segment 𝕜 t 1 = segment 𝕜 (AffineMap.lineMap x y t) y := by
-    simp [image_segment]
-  rw [← h₁, ← h₂, ← image_union, segment_eq_Icc ht.1, segment_eq_Icc ht.2,
+  rw [← (show AffineMap.lineMap x y '' segment 𝕜 0 t = segment 𝕜 x (AffineMap.lineMap x y t) from by
+    simp [image_segment]),
+      ← (show AffineMap.lineMap x y '' segment 𝕜 t 1 = segment 𝕜 (AffineMap.lineMap x y t) y from by
+    simp [image_segment]), ← image_union, segment_eq_Icc ht.1, segment_eq_Icc ht.2,
     Icc_union_Icc_eq_Icc ht.1 ht.2, ← segment_eq_image_lineMap]
 
 /-- Splitting an affine segment at one of its points. -/
@@ -94,8 +92,7 @@ lemma segment_inter_subsegments_eq_singleton {E : Type*} [AddCommGroup E] [Modul
       simp only [AffineMap.lineMap_apply_module]
       module
     rw [hleft, hright] at heq
-    have hparam : r * t = t + s * (1 - t) :=
-      (AffineMap.lineMap_injective ℝ huv) heq.symm
+    have hparam : r * t = t + s * (1 - t) := (AffineMap.lineMap_injective ℝ huv) heq.symm
     have hr_eq : r = 1 := by nlinarith [hr.1, hr.2, hs.1, hs.2, ht.1, ht.2]
     subst r
     simp
@@ -132,25 +129,24 @@ lemma isCompact_setOf_lineMap_mem_segment (a b c d : E) :
       z ∈ Φ ⁻¹' {0} ↔ AffineMap.lineMap a b z.1 = AffineMap.lineMap c d z.2 := by
     simp [hΦ, sub_eq_zero]
   -- The zero set is an affine subspace of `ℝ × ℝ`, hence closed.
-  have hclosed : IsClosed (Φ ⁻¹' {0}) := by
-    rcases eq_empty_or_nonempty (Φ ⁻¹' {0}) with h | ⟨z₀, hz₀⟩
+  have hA : IsCompact ((Icc 0 1 ×ˢ Icc 0 1 : Set (ℝ × ℝ)) ∩ Φ ⁻¹' {0}) := by
+    refine (isCompact_Icc.prod isCompact_Icc).inter_right (?_)
+    obtain h | ⟨z₀, hz₀⟩ := eq_empty_or_nonempty (Φ ⁻¹' {0})
     · exact h ▸ isClosed_empty
     have hlin (z : ℝ × ℝ) : Φ.linear (z - z₀) = Φ z := by
       rw [show z - z₀ = z -ᵥ z₀ from rfl, Φ.linearMap_vsub, hz₀, vsub_eq_sub, sub_zero]
-    have heq : Φ ⁻¹' {0} = (· - z₀) ⁻¹' (LinearMap.ker Φ.linear : Set (ℝ × ℝ)) := by
-      ext z
-      simp [← hlin z]
-    exact heq ▸ Φ.linear.ker.closed_of_finiteDimensional.preimage (continuous_sub_right z₀)
-  have hA : IsCompact ((Icc 0 1 ×ˢ Icc 0 1 : Set (ℝ × ℝ)) ∩ Φ ⁻¹' {0}) :=
-    (isCompact_Icc.prod isCompact_Icc).inter_right hclosed
-  have himage : {t : ℝ | t ∈ Icc 0 1 ∧ AffineMap.lineMap a b t ∈ segment ℝ c d} =
-      Prod.fst '' ((Icc 0 1 ×ˢ Icc 0 1 : Set (ℝ × ℝ)) ∩ Φ ⁻¹' {0}) := by
-    ext t
-    simp only [mem_ofPred_eq, segment_eq_image_lineMap, mem_image, mem_inter_iff, mem_prod,
-      Prod.exists, exists_and_right]
-    exact ⟨fun ⟨ht, s, hs, hts⟩ ↦ ⟨t, ⟨s, ⟨⟨ht, hs⟩, (hΦ_iff (t, s)).mpr hts.symm⟩⟩, rfl⟩,
-      fun ⟨t, ⟨s, ⟨⟨ht, hs⟩, hts⟩⟩, heq⟩ ↦ ⟨heq ▸ ht, s, hs, heq ▸ ((hΦ_iff (t, s)).mp hts).symm⟩⟩
-  exact himage ▸ hA.image continuous_fst
+    refine (show Φ ⁻¹' {0} = (· - z₀) ⁻¹' (LinearMap.ker Φ.linear : Set (ℝ × ℝ)) from ?_) ▸
+      Φ.linear.ker.closed_of_finiteDimensional.preimage (continuous_sub_right z₀)
+    ext z
+    simp [← hlin z]
+  refine (show {t : ℝ | t ∈ Icc 0 1 ∧ AffineMap.lineMap a b t ∈ segment ℝ c d} =
+      Prod.fst '' ((Icc 0 1 ×ˢ Icc 0 1 : Set (ℝ × ℝ)) ∩ Φ ⁻¹' {0}) from ?_) ▸ hA.image
+        continuous_fst
+  ext t
+  simp only [mem_ofPred_eq, segment_eq_image_lineMap, mem_image, mem_inter_iff, mem_prod,
+    Prod.exists, exists_and_right]
+  exact ⟨fun ⟨ht, s, hs, hts⟩ ↦ ⟨t, ⟨s, ⟨⟨ht, hs⟩, (hΦ_iff (t, s)).mpr hts.symm⟩⟩, rfl⟩,
+    fun ⟨t, ⟨s, ⟨⟨ht, hs⟩, hts⟩⟩, heq⟩ ↦ ⟨heq ▸ ht, s, hs, heq ▸ ((hΦ_iff (t, s)).mp hts).symm⟩⟩
 
 /-- The parameters of `[a, b]` landing on `[c, d]` form a convex set. -/
 lemma convex_setOf_lineMap_mem_segment (a b c d : E) :
@@ -188,15 +184,13 @@ lemma segment_inter_segment_eq_segment_of_nonempty
 /-- The intersection of `[a, b]` with a segment has a *last* point along `[a, b]`: a point `q` of
 the intersection beyond which `[a, b]` never meets the other segment again. -/
 lemma exists_last_mem_segment_inter_segment (h : (segment ℝ a b ∩ segment ℝ c d).Nonempty) :
-    ∃ q ∈ segment ℝ a b ∩ segment ℝ c d,
-      Disjoint (openSegment ℝ q b \ {b}) (segment ℝ c d) := by
+    ∃ q ∈ segment ℝ a b ∩ segment ℝ c d, Disjoint (openSegment ℝ q b \ {b}) (segment ℝ c d) := by
   set T := {t : ℝ | t ∈ Icc 0 1 ∧ AffineMap.lineMap a b t ∈ segment ℝ c d}
-  have hTne : T.Nonempty := by
+  obtain ⟨m, hmT, hm⟩ := by
+    refine (isCompact_setOf_lineMap_mem_segment a b c d).exists_isMaxOn (?_) continuousOn_id
     obtain ⟨w, hwab, hwcd⟩ := h
     obtain ⟨t, ht, rfl⟩ := segment_eq_image_lineMap ℝ a b ▸hwab
     exact ⟨t, ht, hwcd⟩
-  obtain ⟨m, hmT, hm⟩ :=
-    (isCompact_setOf_lineMap_mem_segment a b c d).exists_isMaxOn hTne continuousOn_id
   refine ⟨AffineMap.lineMap a b m, ⟨lineMap_mem_segment ℝ a b hmT.1, hmT.2⟩,
     disjoint_left.mpr fun w ⟨hwopen, hwb⟩ hwcd ↦ ?_⟩
   by_cases hm1 : m = 1
@@ -209,9 +203,8 @@ lemma exists_last_mem_segment_inter_segment (h : (segment ℝ a b ∩ segment �
     simp only [AffineMap.lineMap_apply_module]
     module
   have hmlt : m < 1 := lt_of_le_of_ne hmT.1.2 hm1
-  have htT : m + r * (1 - m) ∈ T :=
-    ⟨⟨by nlinarith [hmT.1.1, hr.1, hr.2], by nlinarith [hr.2]⟩, by rw [← hnested]; exact hwcd⟩
-  have hle : m + r * (1 - m) ≤ m := hm htT
+  have hle : m + r * (1 - m) ≤ m :=
+    hm (⟨⟨by nlinarith [hmT.1.1, hr.1, hr.2], by nlinarith [hr.2]⟩, by rw [← hnested]; exact hwcd⟩)
   nlinarith [hr.1]
 
 end Real
@@ -239,5 +232,46 @@ lemma ne_of_mem_openSegment_right (hab : a ≠ b) (hp : p ∈ openSegment ℝ a 
   obtain h' | ht := (AffineMap.lineMap_eq_right_iff (k := ℝ)).mp h.symm
   · exact hab h'
   exact ht1.ne ht
+
+
+/-- A segment carrying an interior point other than its left endpoint is nondegenerate.
+The converse direction to `ne_of_mem_openSegment_left`, which needs `a ≠ b` to start with. -/
+lemma ne_of_mem_openSegment_of_ne (hap : a ≠ p) (hp : p ∈ openSegment ℝ a b) : a ≠ b := by
+  rintro rfl
+  rw [openSegment_same] at hp
+  exact hap (mem_singleton_iff.mp hp).symm
+
+/-- Splitting `[a, b]` at an interior point `p`, at the level of the intersection condition that
+says a segment meets a set only in permitted points.
+
+`T` is the extra set of permitted points, beside the far endpoint. It is `∅` when the condition is
+`PolygonalPath.isSimple_cons_iff` and `{a}` when it is `PolygonalPath.isSimpleLoop_cons_iff`, which
+differ in exactly that way; `hT` is what both instances satisfy. This is the geometric core shared
+by `PolygonalPath.isSimple_subdivide_iff` and `PolygonalPath.isSimpleLoop_subdivide_iff`. -/
+lemma segment_split_inter_subset_iff {S T : Set E} (hap : a ≠ p) (hp : p ∈ openSegment ℝ a b)
+    (hT : T ⊆ {a}) : (segment ℝ a p ∩ (segment ℝ p b ∪ S) ⊆ insert p T ∧ segment ℝ p b ∩ S ⊆ {b}) ↔
+      segment ℝ a b ∩ S ⊆ insert b T := by
+  have hab : a ≠ b := ne_of_mem_openSegment_of_ne hap hp
+  have hpb : p ≠ b := (ne_of_mem_openSegment_right hab hp).symm
+  have hinter : segment ℝ a p ∩ segment ℝ p b = {p} := segment_inter_subsegments_eq_singleton hab hp
+  have hsplit : segment ℝ a p ∪ segment ℝ p b = segment ℝ a b :=
+    segment_union_eq_segment (openSegment_subset_segment ℝ a b hp)
+  constructor
+  · rintro ⟨hleft, hright⟩ w ⟨hwab, hwS⟩
+    obtain hwap | hwpb := hsplit ▸ hwab
+    · obtain rfl | hwT := hleft ⟨hwap, Or.inr hwS⟩
+      · exact Or.inl (hright ⟨left_mem_segment ℝ w b, hwS⟩)
+      · exact Or.inr hwT
+    · exact Or.inl (hright ⟨hwpb, hwS⟩)
+  refine fun hwhole ↦ ⟨fun w ⟨hwap, hw⟩ ↦ ?_, fun w ⟨hwpb, hwS⟩ ↦ ?_⟩
+  · obtain hwpb | hwS := hw
+    · exact Or.inl (hinter.subset ⟨hwap, hwpb⟩)
+    obtain rfl | hwT := hwhole ⟨hsplit ▸ subset_union_left hwap, hwS⟩
+    · exact absurd (hinter.subset ⟨hwap, right_mem_segment ℝ p w⟩) hpb.symm
+    · exact Or.inr hwT
+  obtain rfl | hwT := hwhole ⟨hsplit ▸ subset_union_right hwpb, hwS⟩
+  · rfl
+  obtain rfl := hT hwT
+  exact absurd (hinter.subset ⟨left_mem_segment ℝ w p, hwpb⟩) hap
 
 end OpenSegment

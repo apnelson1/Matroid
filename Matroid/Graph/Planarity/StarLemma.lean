@@ -922,7 +922,6 @@ section Plane
 attribute [local instance] FiniteDimensional.of_fact_finrank_eq_two
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-  [Fact (Module.finrank ℝ V = 2)]
 
 /-! ### 3.7, accessibility -/
 
@@ -1068,6 +1067,7 @@ private lemma exists_sector_subset_faceSet [G.Finite]
       frontier (D.onePoint.faceSet F) := hF
   exact exists_sector_subset_connectedComponentIn hYne hstar hqball (by rwa [hEq] at hF')
 
+variable [Fact (Module.finrank ℝ V = 2)]
 
 /-- An open cell has at most two sides. -/
 theorem ncard_facesAt_le_two [G.Finite] (D : PLDrawing G V) {e : E(G)}

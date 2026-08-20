@@ -2,6 +2,7 @@ module
 
 public import Matroid.Graph.Degree.Max
 public import Matroid.Graph.Minor.Defs
+public import Matroid.Graph.Planarity.Realization.Iso
 public import Matroid.Graph.Planarity.Realization.Subgraph
 public import Matroid.Graph.TopologicalMinor
 public import Mathlib.Analysis.Convex.PathConnected
@@ -297,8 +298,8 @@ theorem glueRel_of_map_eq_preRealizationMapOfPaths {a b} (vertex : V(G) → X)
           vertex_injective (by simpa [Path.source, Path.target] using heq)
         refine (glueRel_inr_inr_iff e₁ e₂ 0 1).mpr <| Or.inr ⟨edgeSource e₁, by simp, ?_⟩
         simp [hv]
-      · exact ((edge_interior_disjoint_vertex e₂).notMem_of_mem_left
-          ⟨t₂, ⟨unitInterval.pos_iff_ne_zero.mpr ht₂₀, unitInterval.lt_one_iff_ne_one.mpr ht₂₁⟩, rfl⟩
+      · exact ((edge_interior_disjoint_vertex e₂).notMem_of_mem_left ⟨t₂,
+          ⟨unitInterval.pos_iff_ne_zero.mpr ht₂₀, unitInterval.lt_one_iff_ne_one.mpr ht₂₁⟩, rfl⟩
           ⟨edgeSource e₁, by simpa [Path.source] using heq⟩).elim
     rcases eq_or_ne t₁ 1 with rfl | ht₁₁
     · rcases eq_or_ne t₂ 0 with rfl | ht₂₀
@@ -311,8 +312,8 @@ theorem glueRel_of_map_eq_preRealizationMapOfPaths {a b} (vertex : V(G) → X)
           vertex_injective (by simpa [Path.target] using heq)
         refine (glueRel_inr_inr_iff e₁ e₂ 1 1).mpr <| Or.inr ⟨edgeTarget e₁, by simp, ?_⟩
         simp [hv]
-      · exact ((edge_interior_disjoint_vertex e₂).notMem_of_mem_left
-          ⟨t₂, ⟨unitInterval.pos_iff_ne_zero.mpr ht₂₀, unitInterval.lt_one_iff_ne_one.mpr ht₂₁⟩, rfl⟩
+      · exact ((edge_interior_disjoint_vertex e₂).notMem_of_mem_left ⟨t₂,
+          ⟨unitInterval.pos_iff_ne_zero.mpr ht₂₀, unitInterval.lt_one_iff_ne_one.mpr ht₂₁⟩, rfl⟩
           ⟨edgeTarget e₁, by simpa [Path.target] using heq⟩).elim
     · have ht₁ : t₁ ∈ Ioo (0 : I) 1 :=
         ⟨unitInterval.pos_iff_ne_zero.mpr ht₁₀, unitInterval.lt_one_iff_ne_one.mpr ht₁₁⟩
@@ -406,210 +407,6 @@ lemma range_edgePath_restrict (D : Drawing G X) (h : H ≤ G) (e : E(H)) :
   refine ⟨fun ⟨t, ht⟩ ↦ ⟨t, ?_⟩, fun ⟨t, ht⟩ ↦ ⟨t, ?_⟩⟩ <;>
     rw [← ht, edgePath_apply, edgePath_apply, restrict_apply, h.RealizationEmbedding_edgePath]
 
-/-! ### Gluing
-
-Drawing gluing is specialized in `Insertion.lean`: `Drawing.addEdge` adds an edge along a free arc,
-and `Drawing.addPath` adds a path whose support meets the original drawing only at its ends. -/
-
-end Drawing
-
-namespace Iso
-
-open TopologicalModel unitInterval
-
-/-- The image of a vertex under a graph isomorphism, as a subtype. -/
-noncomputable abbrev vert (F : Iso K G) (x : V(K)) : V(G) :=
-  isoVert F x
-
-/-- The image of an edge under a graph isomorphism, as a subtype. -/
-noncomputable abbrev edge (F : Iso K G) (e : E(K)) : E(G) :=
-  isoEdge F e
-
-lemma isLink_vert_edge (F : Iso K G) (e : E(K)) :
-    G.IsLink (F.edge e) (F.vert (edgeSource e)) (F.vert (edgeTarget e)) :=
-  F.map_isLink (isLink_edgeSource_edgeTarget e) (isoEdge_spec F e)
-    (isoVert_spec F _) (isoVert_spec F _)
-
-/-- Whether `F` sends the preferred orientation of `e` to that of its image. -/
-abbrev sameOrientation (F : Iso K G) (e : E(K)) : Prop :=
-  F.vert (edgeSource e) = edgeSource (F.edge e)
-
-lemma sameOrientation_or_swap (F : Iso K G) (e : E(K)) :
-    F.sameOrientation e ∨
-      (F.vert (edgeSource e) = edgeTarget (F.edge e) ∧
-        F.vert (edgeTarget e) = edgeSource (F.edge e)) := by
-  obtain ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩ :=
-    (isLink_edgeSource_edgeTarget (F.edge e)).eq_and_eq_or_eq_and_eq (F.isLink_vert_edge e)
-  · exact Or.inl <| Subtype.ext h₁.symm
-  · exact Or.inr ⟨Subtype.ext h₂.symm, Subtype.ext h₁.symm⟩
-
-lemma vert_edgeTarget_of_sameOrientation (F : Iso K G) {e : E(K)} (h : F.sameOrientation e) :
-    F.vert (edgeTarget e) = edgeTarget (F.edge e) := by
-  obtain ⟨_, h₂⟩ | ⟨h₁, h₂⟩ :=
-    (isLink_edgeSource_edgeTarget (F.edge e)).eq_and_eq_or_eq_and_eq (F.isLink_vert_edge e)
-  · exact Subtype.ext h₂.symm
-  · have hsrc : F.vert (edgeSource e) = F.vert (edgeTarget e) := by
-      rw [h, Subtype.ext_iff.mpr h₁]
-    exact hsrc.symm.trans (Subtype.ext h₂.symm)
-
-lemma vert_of_not_sameOrientation (F : Iso K G) {e : E(K)} (h : ¬ F.sameOrientation e) :
-    F.vert (edgeSource e) = edgeTarget (F.edge e) ∧
-      F.vert (edgeTarget e) = edgeSource (F.edge e) :=
-  (F.sameOrientation_or_swap e).resolve_left h
-
-/-- Reparametrization of the unit interval along `e`, flipping if `F` reverses orientation. -/
-noncomputable def orient (F : Iso K G) (e : E(K)) : I → I :=
-  open Classical in fun t ↦ if F.sameOrientation e then t else σ t
-
-lemma continuous_orient (F : Iso K G) (e : E(K)) : Continuous (F.orient e) := by
-  classical
-  by_cases h : F.sameOrientation e
-  · convert continuous_id (X := I)
-    ext t
-    simp [orient, ite_eq_left h]
-  · convert continuous_symm
-    ext t
-    simp [orient, ite_eq_right h]
-
-/-- The induced map on pre-realizations. -/
-noncomputable def preRealizationMap (F : Iso K G) : C(K.PreRealization, G.PreRealization) where
-  toFun
-    | .inl v => .inl (F.vert v)
-    | .inr ⟨e, t⟩ => .inr ⟨F.edge e, F.orient e t⟩
-  continuous_toFun := continuous_sum_dom.mpr ⟨continuous_of_discreteTopology,
-    continuous_sigma_iff.mpr fun e ↦ continuous_inr.comp <|
-      continuous_sigmaMk.comp (F.continuous_orient e)⟩
-
-lemma preRealizationMap_glueRel (F : Iso K G) ⦃a b : K.PreRealization⦄
-    (h : K.glueRel a b) : G.glueRel (F.preRealizationMap a) (F.preRealizationMap b) := by
-  classical
-  induction h with
-  | refl => rfl
-  | symm _ _ _ ih => exact Setoid.symm ih
-  | trans _ _ _ _ _ h₁ h₂ => exact Setoid.trans h₁ h₂
-  | rel x y hxy =>
-    match x, y with
-    | .inr _, _ => simp [glueRelAux] at hxy
-    | .inl u, .inl v => rw [(glueRelAux_inl_inl_iff ..).mp hxy]
-    | .inl u, .inr ⟨e, t⟩ =>
-      obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := (glueRelAux_inl_inr_iff ..).mp hxy <;>
-        by_cases hori : F.sameOrientation e
-      · convert (glueRel_inl_inr_iff (edgeSource (F.edge e)) (F.edge e) 0).mpr
-          (.inl ⟨rfl, rfl⟩) using 1
-        · simpa [preRealizationMap] using hori
-        · simp [preRealizationMap, orient, ite_eq_left hori]
-      · obtain ⟨hs, _⟩ := F.vert_of_not_sameOrientation hori
-        convert (glueRel_inl_inr_iff (edgeTarget (F.edge e)) (F.edge e) 1).mpr
-          (.inr ⟨rfl, rfl⟩) using 1
-        · simpa [preRealizationMap] using hs
-        · simp [preRealizationMap, orient, ite_eq_right hori]
-      · convert (glueRel_inl_inr_iff (edgeTarget (F.edge e)) (F.edge e) 1).mpr
-          (.inr ⟨rfl, rfl⟩) using 1
-        · simpa [preRealizationMap] using F.vert_edgeTarget_of_sameOrientation hori
-        · simp [preRealizationMap, orient, ite_eq_left hori]
-      · obtain ⟨_, ht⟩ := F.vert_of_not_sameOrientation hori
-        convert (glueRel_inl_inr_iff (edgeSource (F.edge e)) (F.edge e) 0).mpr
-          (.inl ⟨rfl, rfl⟩) using 1
-        · simpa [preRealizationMap] using ht
-        · simp [preRealizationMap, orient, ite_eq_right hori]
-
-lemma vert_symm_vert (F : Iso K G) (x : V(K)) : F.symm.vert (F.vert x) = x := by
-  ext
-  change (F.vertMap.symm (F.vert x).val).get _ = x.val
-  have hx : F.vertMap.symm (F.vert x).val = some x.val :=
-    (F.vertMap.eq_some_iff).mpr (isoVert_spec F x)
-  simp [hx]
-
-lemma vert_vert_symm (F : Iso K G) (y : V(G)) : F.vert (F.symm.vert y) = y := by
-  ext
-  change (F.vertMap (F.symm.vert y).val).get _ = y.val
-  have hy : F.vertMap (F.symm.vert y).val = some y.val :=
-    (F.vertMap.eq_some_iff).mp (isoVert_spec F.symm y)
-  simp [hy]
-
-lemma edge_symm_edge (F : Iso K G) (e : E(K)) : F.symm.edge (F.edge e) = e := by
-  ext
-  change (F.edgeMap.symm (F.edge e).val).get _ = e.val
-  have he : F.edgeMap.symm (F.edge e).val = some e.val :=
-    (F.edgeMap.eq_some_iff).mpr (isoEdge_spec F e)
-  simp [he]
-
-lemma edge_edge_symm (F : Iso K G) (e : E(G)) : F.edge (F.symm.edge e) = e := by
-  ext
-  change (F.edgeMap (F.symm.edge e).val).get _ = e.val
-  have he : F.edgeMap (F.symm.edge e).val = some e.val :=
-    (F.edgeMap.eq_some_iff).mp (isoEdge_spec F.symm e)
-  simp [he]
-
-lemma sameOrientation_symm (F : Iso K G) {e : E(K)} (h : F.sameOrientation e) :
-    F.symm.sameOrientation (F.edge e) := by
-  unfold sameOrientation at h ⊢
-  simpa [vert_symm_vert, edge_symm_edge] using congrArg F.symm.vert h.symm
-
-lemma not_sameOrientation_symm (F : Iso K G) {e : E(K)} (h : ¬ F.sameOrientation e) :
-    ¬ F.symm.sameOrientation (F.edge e) := by
-  intro hs
-  unfold sameOrientation at hs
-  have hs' : F.symm.vert (edgeSource (F.edge e)) = edgeSource e := by
-    simpa [edge_symm_edge] using hs
-  have : F.vert (edgeSource e) = edgeSource (F.edge e) := by
-    simpa [vert_vert_symm] using congrArg F.vert hs'.symm
-  exact h this
-
-lemma sameOrientation_edge_symm (F : Iso K G) (e : E(G)) :
-    F.sameOrientation (F.symm.edge e) ↔ F.symm.sameOrientation e := by
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩ <;> unfold sameOrientation at h ⊢
-  · have h' : F.vert (edgeSource (F.symm.edge e)) = edgeSource e := by
-      simpa [edge_edge_symm] using h
-    simpa [vert_symm_vert] using congrArg F.symm.vert h'.symm
-  · have := congrArg F.vert h
-    simpa [vert_vert_symm, edge_edge_symm] using this.symm
-
-lemma orient_symm_orient (F : Iso K G) (e : E(K)) (t : I) :
-    F.symm.orient (F.edge e) (F.orient e t) = t := by
-  by_cases h : F.sameOrientation e
-  · simp [orient, ite_eq_left h, ite_eq_left (F.sameOrientation_symm h)]
-  · simp [orient, ite_eq_right h, ite_eq_right (F.not_sameOrientation_symm h), symm_symm]
-
-lemma orient_orient_symm (F : Iso K G) (e : E(G)) (t : I) :
-    F.orient (F.symm.edge e) (F.symm.orient e t) = t := by
-  by_cases h : F.symm.sameOrientation e
-  · simp [orient, ite_eq_left h, ite_eq_left ((F.sameOrientation_edge_symm e).mpr h)]
-  · simp [orient, ite_eq_right h, ite_eq_right (mt (F.sameOrientation_edge_symm e).mp h), symm_symm]
-
-lemma preRealizationMap_symm_comp (F : Iso K G) (x : K.PreRealization) :
-    F.symm.preRealizationMap (F.preRealizationMap x) = x := by
-  match x with
-  | .inl v => simp only [preRealizationMap, ContinuousMap.coe_mk, vert_symm_vert]
-  | .inr ⟨e, t⟩ =>
-    simp only [preRealizationMap, ContinuousMap.coe_mk, edge_symm_edge, orient_symm_orient]
-
-lemma preRealizationMap_comp_symm (F : Iso K G) (x : G.PreRealization) :
-    F.preRealizationMap (F.symm.preRealizationMap x) = x := by
-  match x with
-  | .inl v => simp only [preRealizationMap, ContinuousMap.coe_mk, vert_vert_symm]
-  | .inr ⟨e, t⟩ =>
-    simp only [preRealizationMap, ContinuousMap.coe_mk, edge_edge_symm, orient_orient_symm]
-
-/-- The homeomorphism of weak realizations induced by a graph isomorphism. -/
-noncomputable def realizationHomeomorph (F : Iso K G) : Realization K ≃ₜ Realization G where
-  toFun := Quotient.map F.preRealizationMap F.preRealizationMap_glueRel
-  invFun := Quotient.map F.symm.preRealizationMap F.symm.preRealizationMap_glueRel
-  left_inv x := by
-    induction x using Realization.ind with | h a =>
-    exact congrArg (Realization.mk K) (F.preRealizationMap_symm_comp a)
-  right_inv x := by
-    induction x using Realization.ind with | h a =>
-    exact congrArg (Realization.mk G) (F.preRealizationMap_comp_symm a)
-  continuous_toFun :=
-    continuous_coinduced_dom.mpr <| continuous_coinduced_rng.comp F.preRealizationMap.continuous
-  continuous_invFun := continuous_coinduced_dom.mpr <|
-    continuous_coinduced_rng.comp F.symm.preRealizationMap.continuous
-
-end Iso
-
-namespace Drawing
-
 /-- Pull a drawing back along a graph isomorphism. -/
 noncomputable def ofIso (D : Drawing G X) (F : Iso K G) : Drawing K X where
   toContinuousMap :=
@@ -651,11 +448,6 @@ lemma anti (hG : G.IsDrawable X) (hHG : H ≤ G) : H.IsDrawable X :=
 lemma of_iso (hG : G.IsDrawable X) (F : Iso K G) : K.IsDrawable X :=
   ⟨hG.some.ofIso F⟩
 
--- /-- Drawability is inherited by topological minors. -/
--- theorem isTopologicalMinor (hG : G.IsDrawable X) (hHG : H.IsTopologicalMinor G) :
---H.IsDrawable X := by
---   sorry
-
 end IsDrawable
 
 namespace Planar
@@ -668,12 +460,8 @@ lemma anti (hG : G.Planar) (hHG : H ≤ G) : H.Planar :=
 lemma of_iso (hG : G.Planar) (F : Iso K G) : K.Planar :=
   IsDrawable.of_iso hG F
 
--- /-- Planarity is inherited by topological minors. -/
--- theorem isTopologicalMinor (hG : G.Planar) (hHG : H.IsTopologicalMinor G) : H.Planar :=
---   IsDrawable.isTopologicalMinor hG hHG
-
-/- Drawing-gluing constructions are specialized as `Drawing.addEdge` and `Drawing.addPath` in
-`Insertion.lean`, where their free-arc hypotheses are available. -/
+/- Topological-minor and subdivision transport are in `Planarity.TopologicalMinor`; keeping them
+out of this basic file avoids imposing that API on every use of drawings. -/
 
 end Planar
 

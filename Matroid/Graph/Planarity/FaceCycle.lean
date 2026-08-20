@@ -65,6 +65,7 @@ the plane `V`.
 -/
 
 open Function Set Topology
+open scoped unitInterval
 
 namespace Graph
 
@@ -112,7 +113,153 @@ theorem support_restrict_inter_support_restrict_of_isEar (D : Drawing G X) {P : 
     (D.restrict hP.isPath.isWalk.toGraph_le).support ∩ (D.restrict hle).support =
       {D.vertex ⟨P.first, hP.isPath.isWalk.first_mem⟩,
         D.vertex ⟨P.last, hP.isPath.isWalk.last_mem⟩} := by
-  sorry
+  let hPG := hP.isPath.isWalk.toGraph_le
+  have hedge {K : Graph α β} (hK : K ≤ G) (e : E(K)) (t : I) :
+      (D.restrict hK).edgePath e t = D.edgePath ⟨e.1, edgeSet_mono hK e.2⟩ t := by
+    rw [edgePath_apply, edgePath_apply, restrict_apply, hK.RealizationEmbedding_edgePath]
+  have hinterior {K : Graph α β} (hK : K ≤ G) (e : E(K)) :
+      ((D.restrict hK).edgePath e).Interior =
+        (D.edgePath ⟨e.1, edgeSet_mono hK e.2⟩).Interior := by
+    ext z
+    simp only [Path.Interior, mem_image]
+    exact ⟨fun ⟨t, ht, ht'⟩ ↦ ⟨t, ht, (hedge hK e t).symm ▸ ht'⟩,
+      fun ⟨t, ht, ht'⟩ ↦ ⟨t, ht, hedge hK e t ▸ ht'⟩⟩
+  have hends {z : X} (hzP : z ∈ range (D.restrict hPG).vertex)
+      (hzH : z ∈ range (D.restrict hle).vertex) :
+      z = D.vertex ⟨P.first, hP.isPath.isWalk.first_mem⟩ ∨
+        z = D.vertex ⟨P.last, hP.isPath.isWalk.last_mem⟩ := by
+    obtain ⟨x, rfl⟩ := hzP
+    obtain ⟨y, hy⟩ := hzH
+    have hxG : x.1 ∈ V(G) := vertexSet_mono hPG x.2
+    have hyG : y.1 ∈ V(G) := vertexSet_mono hle y.2
+    have hxy : x.1 = y.1 := by
+      have := D.vertex_injective <|
+        (restrict_vertex D hPG x).symm.trans <| hy.symm.trans (restrict_vertex D hle y)
+      exact Subtype.ext_iff.mp this
+    have hxP : x.1 ∈ P := by
+      rw [← WList.mem_vertexSet_iff, ← WList.toGraph_vertexSet]
+      exact x.2
+    have hxH : x.1 ∈ V(H) := hxy ▸ y.2
+    obtain h1 | hint | h2 := WList.mem_iff_eq_first_or_mem_internalVertexSet_or_eq_last.mp hxP
+    · refine Or.inl ?_
+      rw [restrict_vertex]
+      exact congrArg D.vertex (Subtype.ext h1)
+    · exact (hP.internal_disjoint.notMem_of_mem_left hint hxH).elim
+    · refine Or.inr ?_
+      rw [restrict_vertex]
+      exact congrArg D.vertex (Subtype.ext h2)
+  have not_intP {z : X} (hzH : z ∈ (D.restrict hle).support) (e : E(P.toGraph)) :
+      z ∉ ((D.restrict hPG).edgePath e).Interior := by
+    intro hinter
+    have hinterG : z ∈ (D.edgePath ⟨e.1, edgeSet_mono hPG e.2⟩).Interior := by
+      rwa [← hinterior hPG e]
+    rw [support_eq, mem_union] at hzH
+    rcases hzH with hV | hE
+    · obtain ⟨y, rfl⟩ := hV
+      exact (D.pathInterior_edgePath_disjoint_vertex _).notMem_of_mem_left hinterG
+        ⟨⟨y.1, vertexSet_mono hle y.2⟩, (restrict_vertex D hle y).symm⟩
+    · obtain ⟨f, hf⟩ := mem_iUnion.mp hE
+      rw [range_edgePath_restrict] at hf
+      obtain hsrc | htgt | hinterH :=
+        (D.edgePath ⟨f.1, edgeSet_mono hle f.2⟩).mem_range_iff_mem_interior_or_source_or_target z
+          |>.mp hf
+      · exact (D.pathInterior_edgePath_disjoint_vertex _).notMem_of_mem_left hinterG
+          ⟨edgeSource _, hsrc.symm⟩
+      · exact (D.pathInterior_edgePath_disjoint_vertex _).notMem_of_mem_left hinterG
+          ⟨edgeTarget _, htgt.symm⟩
+      · have hef : (⟨e.1, edgeSet_mono hPG e.2⟩ : E(G)) ≠ ⟨f.1, edgeSet_mono hle f.2⟩ := by
+          intro h
+          have heP : e.1 ∈ P.edgeSet := by
+            rw [← WList.toGraph_edgeSet]
+            exact e.2
+          have hfH : e.1 ∈ H.edgeSet := by
+            rw [Subtype.ext_iff.mp h]
+            exact f.2
+          exact hP.edge_disjoint.notMem_of_mem_left heP hfH
+        exact (D.pathInterior_edgePath_disjoint hef).notMem_of_mem_left hinterG hinterH
+  have not_intH {z : X} (hzP : z ∈ (D.restrict hPG).support) (f : E(H)) :
+      z ∉ ((D.restrict hle).edgePath f).Interior := by
+    intro hinter
+    have hinterG : z ∈ (D.edgePath ⟨f.1, edgeSet_mono hle f.2⟩).Interior := by
+      rwa [← hinterior hle f]
+    rw [support_eq, mem_union] at hzP
+    rcases hzP with hV | hE
+    · obtain ⟨x, rfl⟩ := hV
+      exact (D.pathInterior_edgePath_disjoint_vertex _).notMem_of_mem_left hinterG
+        ⟨⟨x.1, vertexSet_mono hPG x.2⟩, (restrict_vertex D hPG x).symm⟩
+    · obtain ⟨e, he⟩ := mem_iUnion.mp hE
+      rw [range_edgePath_restrict] at he
+      obtain hsrc | htgt | hinterP :=
+        (D.edgePath ⟨e.1, edgeSet_mono hPG e.2⟩).mem_range_iff_mem_interior_or_source_or_target z
+          |>.mp he
+      · exact (D.pathInterior_edgePath_disjoint_vertex _).notMem_of_mem_left hinterG
+          ⟨edgeSource _, hsrc.symm⟩
+      · exact (D.pathInterior_edgePath_disjoint_vertex _).notMem_of_mem_left hinterG
+          ⟨edgeTarget _, htgt.symm⟩
+      · have hef : (⟨e.1, edgeSet_mono hPG e.2⟩ : E(G)) ≠ ⟨f.1, edgeSet_mono hle f.2⟩ := by
+          intro h
+          have heP : e.1 ∈ P.edgeSet := by
+            rw [← WList.toGraph_edgeSet]
+            exact e.2
+          have hfH : e.1 ∈ H.edgeSet := by
+            rw [Subtype.ext_iff.mp h]
+            exact f.2
+          exact hP.edge_disjoint.notMem_of_mem_left heP hfH
+        exact (D.pathInterior_edgePath_disjoint hef).notMem_of_mem_left hinterP hinterG
+  have mem_vertexP {z : X} (hzP : z ∈ (D.restrict hPG).support)
+      (hzH : z ∈ (D.restrict hle).support) :
+      z ∈ range (D.restrict hPG).vertex := by
+    rw [support_eq, mem_union] at hzP
+    rcases hzP with h | hE
+    · exact h
+    · obtain ⟨e, he⟩ := mem_iUnion.mp hE
+      rw [range_edgePath_restrict] at he
+      obtain hsrc | htgt | hinter :=
+        (D.edgePath ⟨e.1, edgeSet_mono hPG e.2⟩).mem_range_iff_mem_interior_or_source_or_target z
+          |>.mp he
+      · refine ⟨edgeSource e, ?_⟩
+        rw [restrict_vertex_edgeSource, hsrc]
+      · refine ⟨edgeTarget e, ?_⟩
+        rw [restrict_vertex_edgeTarget, htgt]
+      · exact (not_intP hzH e (by rwa [hinterior hPG e])).elim
+  have mem_vertexH {z : X} (hzP : z ∈ (D.restrict hPG).support)
+      (hzH : z ∈ (D.restrict hle).support) :
+      z ∈ range (D.restrict hle).vertex := by
+    rw [support_eq, mem_union] at hzH
+    rcases hzH with h | hE
+    · exact h
+    · obtain ⟨f, hf⟩ := mem_iUnion.mp hE
+      rw [range_edgePath_restrict] at hf
+      obtain hsrc | htgt | hinter :=
+        (D.edgePath ⟨f.1, edgeSet_mono hle f.2⟩).mem_range_iff_mem_interior_or_source_or_target z
+          |>.mp hf
+      · refine ⟨edgeSource f, ?_⟩
+        rw [restrict_vertex_edgeSource, hsrc]
+      · refine ⟨edgeTarget f, ?_⟩
+        rw [restrict_vertex_edgeTarget, htgt]
+      · exact (not_intH hzP f (by rwa [hinterior hle f])).elim
+  refine subset_antisymm ?_ ?_
+  · intro z hz
+    obtain h | h := hends (mem_vertexP hz.1 hz.2) (mem_vertexH hz.1 hz.2)
+    · exact mem_insert_iff.mpr (Or.inl h)
+    · exact mem_insert_iff.mpr (Or.inr (mem_singleton_iff.mpr h))
+  · intro z hz
+    simp only [mem_insert_iff, mem_singleton_iff] at hz
+    have hfirstP : P.first ∈ V(P.toGraph) := by
+      simp [WList.toGraph_vertexSet, WList.mem_vertexSet_iff]
+    have hlastP : P.last ∈ V(P.toGraph) := by
+      simp [WList.toGraph_vertexSet, WList.mem_vertexSet_iff]
+    rcases hz with rfl | rfl
+    · refine ⟨?_, ?_⟩
+      · have := (D.restrict hPG).vertex_mem_support ⟨P.first, hfirstP⟩
+        rwa [restrict_vertex] at this
+      · have := (D.restrict hle).vertex_mem_support ⟨P.first, hP.first_mem⟩
+        rwa [restrict_vertex] at this
+    · refine ⟨?_, ?_⟩
+      · have := (D.restrict hPG).vertex_mem_support ⟨P.last, hlastP⟩
+        rwa [restrict_vertex] at this
+      · have := (D.restrict hle).vertex_mem_support ⟨P.last, hP.last_mem⟩
+        rwa [restrict_vertex] at this
 
 end Ear
 
@@ -161,7 +308,240 @@ theorem exists_polygonalPath_toSet_eq_support_of_isPath (D : PLDrawing G V) {W :
     ∃ A : PolygonalPath (D.toDrawing.vertex ⟨W.first, hW.isWalk.first_mem⟩)
         (D.toDrawing.vertex ⟨W.last, hW.isWalk.last_mem⟩),
       A.IsSimple ∧ A.toSet = (D.toDrawing.restrict hW.isWalk.toGraph_le).support := by
-  sorry
+  revert hW
+  induction W with
+  | nil x =>
+    intro hW
+    have hxy : D.toDrawing.vertex ⟨(WList.nil x).first, hW.isWalk.first_mem⟩ =
+        D.toDrawing.vertex ⟨(WList.nil x).last, hW.isWalk.last_mem⟩ :=
+      congrArg D.toDrawing.vertex (Subtype.ext (by simp [WList.nil_first, WList.nil_last]))
+    let A := (PolygonalPath.nil
+        (D.toDrawing.vertex ⟨(WList.nil x).first, hW.isWalk.first_mem⟩)).cast rfl hxy
+    refine ⟨A, (PolygonalPath.isSimple_cast rfl hxy).mpr (PolygonalPath.isSimple_nil _), ?_⟩
+    rw [PolygonalPath.toSet_cast, PolygonalPath.toSet_nil]
+    apply subset_antisymm
+    · intro z hz
+      simp only [mem_singleton_iff] at hz
+      rw [hz]
+      have hmem : (WList.nil x (β := β)).first ∈ V((WList.nil x (β := β)).toGraph) := by simp
+      exact (Drawing.restrict_vertex D.toDrawing hW.isWalk.toGraph_le ⟨_, hmem⟩).symm ▸
+        Drawing.vertex_mem_support _ ⟨_, hmem⟩
+    · intro z hz
+      rw [Drawing.support_eq, mem_union] at hz
+      rcases hz with ⟨v, rfl⟩ | hE
+      · have hv : v.1 = x := by
+          simpa [WList.toGraph_vertexSet, WList.mem_vertexSet_iff] using v.2
+        rw [Drawing.restrict_vertex]
+        exact congrArg D.toDrawing.vertex
+          (Subtype.ext (hv.trans (WList.nil_first (x := x) (β := β)).symm))
+      · obtain ⟨ed, _⟩ := mem_iUnion.mp hE
+        have : ed.1 ∈ E((WList.nil x (β := β)).toGraph) := ed.2
+        simp at this
+  | cons x e W' ih =>
+    intro hW
+    have hW' : G.IsPath W' := (cons_isPath_iff.mp hW).2.1
+    have hxlink : G.IsLink e x W'.first := (cons_isPath_iff.mp hW).1
+    have hxnot : x ∉ W' := (cons_isPath_iff.mp hW).2.2
+    have hxe : e ∈ E(G) := hW.isWalk.edge_mem_of_mem (by simp)
+    let eG : E(G) := ⟨e, hxe⟩
+    have hne : x ≠ W'.first := fun h ↦ hxnot (h ▸ W'.first_mem)
+    obtain ⟨A', hA's, hA'eq⟩ := ih hW'
+    have hxy : D.toDrawing.vertex (edgeSource eG) ≠ D.toDrawing.vertex (edgeTarget eG) := by
+      intro hvt
+      have hse : edgeSource eG = edgeTarget eG := D.toDrawing.vertex_injective hvt
+      rcases hxlink.eq_and_eq_or_eq_and_eq (isLink_edgeSource_edgeTarget eG) with
+        ⟨hxs, hyt⟩ | ⟨hxt, hys⟩
+      · exact hne (hxs.trans ((congrArg Subtype.val hse).trans hyt.symm))
+      · exact hne (hxt.trans ((congrArg Subtype.val hse.symm).trans hys.symm))
+    have hcell_simple : (D.cell eG).IsSimple :=
+      (PolygonalPath.isSimpleArcOrLoop_iff_isSimple hxy).mp (D.cell_isSimpleArcOrLoop eG)
+    have hB : ∃ B : PolygonalPath
+        (D.toDrawing.vertex ⟨x, hW.isWalk.first_mem⟩)
+        (D.toDrawing.vertex ⟨W'.first, hW'.isWalk.first_mem⟩),
+        B.IsSimple ∧ B.toSet = range (D.toDrawing.edgePath eG) := by
+      rcases hxlink.eq_and_eq_or_eq_and_eq (isLink_edgeSource_edgeTarget eG) with
+        ⟨hxs, hyt⟩ | ⟨hxt, hys⟩
+      · have hs : D.toDrawing.vertex (edgeSource eG) =
+            D.toDrawing.vertex ⟨x, hW.isWalk.first_mem⟩ :=
+          congrArg D.toDrawing.vertex (Subtype.ext hxs.symm)
+        have ht : D.toDrawing.vertex (edgeTarget eG) =
+            D.toDrawing.vertex ⟨W'.first, hW'.isWalk.first_mem⟩ :=
+          congrArg D.toDrawing.vertex (Subtype.ext hyt.symm)
+        refine ⟨(D.cell eG).cast hs ht, (PolygonalPath.isSimple_cast hs ht).mpr hcell_simple, ?_⟩
+        rw [PolygonalPath.toSet_cast, D.range_edgePath]
+      · have hs : D.toDrawing.vertex (edgeTarget eG) =
+            D.toDrawing.vertex ⟨x, hW.isWalk.first_mem⟩ :=
+          congrArg D.toDrawing.vertex (Subtype.ext hxt.symm)
+        have ht : D.toDrawing.vertex (edgeSource eG) =
+            D.toDrawing.vertex ⟨W'.first, hW'.isWalk.first_mem⟩ :=
+          congrArg D.toDrawing.vertex (Subtype.ext hys.symm)
+        refine ⟨(D.cell eG).reverse.cast hs ht,
+          (PolygonalPath.isSimple_cast hs ht).mpr
+            (PolygonalPath.isSimple_reverse.mpr hcell_simple), ?_⟩
+        rw [PolygonalPath.toSet_cast, PolygonalPath.toSet_reverse, D.range_edgePath]
+    obtain ⟨B, hBs, hBeq⟩ := hB
+    have hlast : D.toDrawing.vertex ⟨W'.last, hW'.isWalk.last_mem⟩ =
+        D.toDrawing.vertex ⟨(WList.cons x e W').last, hW.isWalk.last_mem⟩ :=
+      congrArg D.toDrawing.vertex (Subtype.ext rfl)
+    let A := B.append (A'.cast rfl hlast)
+    have hend {z : V}
+        (hz : z = D.toDrawing.vertex (edgeSource eG) ∨
+          z = D.toDrawing.vertex (edgeTarget eG)) :
+        z = D.toDrawing.vertex ⟨x, hW.isWalk.first_mem⟩ ∨
+          z = D.toDrawing.vertex ⟨W'.first, hW'.isWalk.first_mem⟩ := by
+      rcases hxlink.eq_and_eq_or_eq_and_eq (isLink_edgeSource_edgeTarget eG) with
+        ⟨hxs, hyt⟩ | ⟨hxt, hys⟩
+      · rcases hz with h | h
+        · exact Or.inl (h.trans (congrArg D.toDrawing.vertex (Subtype.ext hxs.symm)))
+        · exact Or.inr (h.trans (congrArg D.toDrawing.vertex (Subtype.ext hyt.symm)))
+      · rcases hz with h | h
+        · exact Or.inr (h.trans (congrArg D.toDrawing.vertex (Subtype.ext hys.symm)))
+        · exact Or.inl (h.trans (congrArg D.toDrawing.vertex (Subtype.ext hxt.symm)))
+    have hx_cell : D.toDrawing.vertex ⟨x, hW.isWalk.first_mem⟩ ∈
+        range (D.toDrawing.edgePath eG) := by
+      rcases hxlink.eq_and_eq_or_eq_and_eq (isLink_edgeSource_edgeTarget eG) with
+        ⟨hxs, _⟩ | ⟨hxt, _⟩
+      · exact ⟨0, (D.toDrawing.edgePath eG).source.trans
+          (congrArg D.toDrawing.vertex (Subtype.ext hxs.symm))⟩
+      · exact ⟨1, (D.toDrawing.edgePath eG).target.trans
+          (congrArg D.toDrawing.vertex (Subtype.ext hxt.symm))⟩
+    have hleWW : W'.toGraph ≤ (WList.cons x e W').toGraph := by
+      rw [WList.toGraph_cons]
+      exact Graph.left_le_union ..
+    have hfirst : D.toDrawing.vertex ⟨x, hW.isWalk.first_mem⟩ =
+        D.toDrawing.vertex ⟨(WList.cons x e W').first, hW.isWalk.first_mem⟩ := by
+      simp [WList.first_cons]
+    have hAs : A.IsSimple := by
+      rw [PolygonalPath.isSimple_append_iff]
+      refine ⟨hBs, (PolygonalPath.isSimple_cast rfl hlast).mpr hA's, ?_⟩
+      intro z ⟨hzB', hzA'⟩
+      have hzB : z ∈ range (D.toDrawing.edgePath eG) := hBeq ▸ hzB'
+      have hzA : z ∈ (D.toDrawing.restrict hW'.isWalk.toGraph_le).support := by
+        rwa [PolygonalPath.toSet_cast, hA'eq] at hzA'
+      rw [Drawing.support_eq, mem_union] at hzA
+      have hz_first : z = D.toDrawing.vertex ⟨W'.first, hW'.isWalk.first_mem⟩ := by
+        rcases hzA with ⟨v, hv⟩ | hE
+        · have hzV : z = D.toDrawing.vertex
+              ⟨v.1, vertexSet_mono hW'.isWalk.toGraph_le v.2⟩ := by
+            rw [← hv, Drawing.restrict_vertex]
+          obtain hsrc | htgt | hinter :=
+            (Path.mem_range_iff_mem_interior_or_source_or_target (X := V)
+              (D.toDrawing.edgePath eG) z).mp hzB
+          · rcases hend (Or.inl hsrc) with hx | hy
+            · have hxv : x = v.1 := Subtype.ext_iff.mp <|
+                D.toDrawing.vertex_injective (hx.symm.trans hzV)
+              have hvW : v.1 ∈ W' := by
+                simpa [WList.toGraph_vertexSet, WList.mem_vertexSet_iff] using v.2
+              have : x ∈ W' := by rw [hxv]; exact hvW
+              exact (hxnot this).elim
+            · exact hy
+          · rcases hend (Or.inr htgt) with hx | hy
+            · have hxv : x = v.1 := Subtype.ext_iff.mp <|
+                D.toDrawing.vertex_injective (hx.symm.trans hzV)
+              have hvW : v.1 ∈ W' := by
+                simpa [WList.toGraph_vertexSet, WList.mem_vertexSet_iff] using v.2
+              have : x ∈ W' := by rw [hxv]; exact hvW
+              exact (hxnot this).elim
+            · exact hy
+          · exact (D.toDrawing.pathInterior_edgePath_disjoint_vertex eG).notMem_of_mem_left
+              hinter ⟨⟨v.1, vertexSet_mono hW'.isWalk.toGraph_le v.2⟩, hzV.symm⟩ |>.elim
+        · obtain ⟨f, hf⟩ := mem_iUnion.mp hE
+          rw [Drawing.range_edgePath_restrict] at hf
+          have hef : eG ≠ ⟨f.1, edgeSet_mono hW'.isWalk.toGraph_le f.2⟩ := by
+            intro h
+            have heq : e = f.1 := Subtype.ext_iff.mp h
+            have heW : e ∈ W'.edge := by
+              simpa [WList.toGraph_edgeSet, WList.mem_edgeSet_iff, heq] using f.2
+            have hnd := hW.edge_nodup
+            rw [WList.cons_edge, List.nodup_cons] at hnd
+            exact hnd.1 heW
+          have hzinter :=
+            (D.toDrawing.range_edgePath_inter hef).subset ⟨hzB, hf⟩
+          have hzend : z = D.toDrawing.vertex (edgeSource eG) ∨
+              z = D.toDrawing.vertex (edgeTarget eG) := by
+            simp only [mem_inter_iff, mem_insert_iff, mem_singleton_iff] at hzinter
+            exact hzinter.1
+          rcases hend hzend with hx | hy
+          · have hzf : z = D.toDrawing.vertex
+                (edgeSource ⟨f.1, edgeSet_mono hW'.isWalk.toGraph_le f.2⟩) ∨
+                z = D.toDrawing.vertex
+                  (edgeTarget ⟨f.1, edgeSet_mono hW'.isWalk.toGraph_le f.2⟩) := by
+              simp only [mem_inter_iff, mem_insert_iff, mem_singleton_iff] at hzinter
+              exact hzinter.2
+            have hxW : x ∈ V(W'.toGraph) := by
+              rcases hzf with hfs | hft
+              · have hxv := D.toDrawing.vertex_injective (hx.symm.trans hfs)
+                have hxval : x = (edgeSource f).1 :=
+                  (Subtype.ext_iff.mp hxv).trans (hW'.isWalk.toGraph_le.source f.2)
+                rw [hxval]
+                exact (edgeSource f).property
+              · have hxv := D.toDrawing.vertex_injective (hx.symm.trans hft)
+                have hxval : x = (edgeTarget f).1 :=
+                  (Subtype.ext_iff.mp hxv).trans (hW'.isWalk.toGraph_le.target f.2)
+                rw [hxval]
+                exact (edgeTarget f).property
+            have : x ∈ W' := by
+              simpa [WList.toGraph_vertexSet, WList.mem_vertexSet_iff] using hxW
+            exact (hxnot this).elim
+          · exact hy
+      simpa using hz_first
+    have hAeq : A.toSet = (D.toDrawing.restrict hW.isWalk.toGraph_le).support := by
+      rw [PolygonalPath.toSet_append, PolygonalPath.toSet_cast, hBeq, hA'eq]
+      apply subset_antisymm
+      · intro z hz
+        rcases hz with hzB | hzW
+        · have he_cons : e ∈ E((WList.cons x e W').toGraph) := by
+            simp [WList.toGraph_edgeSet]
+          have := Drawing.edgePath_range_subset_support
+            (D.toDrawing.restrict hW.isWalk.toGraph_le) ⟨e, he_cons⟩
+          rw [Drawing.range_edgePath_restrict] at this
+          exact this hzB
+        · rw [Drawing.support_eq, mem_union] at hzW ⊢
+          rcases hzW with ⟨v, rfl⟩ | hE
+          · refine Or.inl ⟨⟨v.1, vertexSet_mono hleWW v.2⟩, ?_⟩
+            rw [Drawing.restrict_vertex, Drawing.restrict_vertex]
+          · obtain ⟨f, hf⟩ := mem_iUnion.mp hE
+            refine Or.inr (mem_iUnion.mpr ⟨⟨f.1, edgeSet_mono hleWW f.2⟩, ?_⟩)
+            rw [Drawing.range_edgePath_restrict] at hf ⊢
+            convert hf using 1
+      · intro z hz
+        rw [Drawing.support_eq, mem_union] at hz
+        rcases hz with ⟨v, rfl⟩ | hE
+        · have hvW : v.1 ∈ WList.cons x e W' := by
+            simpa [WList.toGraph_vertexSet, WList.mem_vertexSet_iff] using v.2
+          rw [WList.mem_cons_iff] at hvW
+          rcases hvW with hxx | hvW'
+          · have : (D.toDrawing.restrict hW.isWalk.toGraph_le).vertex v =
+                D.toDrawing.vertex ⟨x, hW.isWalk.first_mem⟩ := by
+              rw [Drawing.restrict_vertex]
+              exact congrArg D.toDrawing.vertex (Subtype.ext hxx)
+            rw [this]
+            exact Or.inl hx_cell
+          · refine Or.inr ?_
+            have hmem : v.1 ∈ V(W'.toGraph) := by
+              simpa [WList.toGraph_vertexSet, WList.mem_vertexSet_iff] using hvW'
+            rw [Drawing.support_eq]
+            refine Or.inl ⟨⟨v.1, hmem⟩, ?_⟩
+            rw [Drawing.restrict_vertex, Drawing.restrict_vertex]
+        · obtain ⟨f, hf⟩ := mem_iUnion.mp hE
+          rw [Drawing.range_edgePath_restrict] at hf
+          have hfE : f.1 ∈ (WList.cons x e W').edgeSet := by
+            simpa [WList.toGraph_edgeSet] using f.2
+          rw [WList.cons_edgeSet, mem_insert_iff] at hfE
+          rcases hfE with hfE | hfW
+          · have hfe : (⟨f.1, edgeSet_mono hW.isWalk.toGraph_le f.2⟩ : E(G)) = eG :=
+              Subtype.ext hfE
+            rw [hfe] at hf
+            exact Or.inl hf
+          · refine Or.inr ?_
+            rw [Drawing.support_eq]
+            refine Or.inr (mem_iUnion.mpr
+              ⟨⟨f.1, by simpa [WList.toGraph_edgeSet] using hfW⟩, ?_⟩)
+            rw [Drawing.range_edgePath_restrict]
+            convert hf using 1
+    refine ⟨A.cast hfirst rfl, (PolygonalPath.isSimple_cast hfirst rfl).mpr hAs, ?_⟩
+    rw [PolygonalPath.toSet_cast]
+    exact hAeq
 
 /- **Route.** As above, but closing up: a cyclic walk is a closed trail with `W.tail.vertex.Nodup`,
 so `PolygonalPath.isSimpleLoop_append_iff` (`SimpleLoop.lean:157`) applies to the split of `W` at

@@ -201,4 +201,57 @@ theorem fitsOn_iff_cardinal : G.FitsOn V' E' ↔
     Cardinal.lift.{uE'} (Cardinal.mk E(G)) ≤ Cardinal.lift.{uE} (Cardinal.mk E') :=
   and_congr Cardinal.lift_mk_le'.symm Cardinal.lift_mk_le'.symm
 
+
+/-! ### Relabelling as a facade for isomorphism existence -/
+
+/-- The active vertex equivalence of an isomorphism, viewed as an embedding into the ambient
+target vertex carrier. -/
+def Iso.vertexEmbeddingInto {H : Graph V' E'} (i : Iso G H) : V(G) ↪ V' :=
+  i.vertMapEmbedding.trans (Function.Embedding.subtype _)
+
+/-- The active edge equivalence of an isomorphism, viewed as an embedding into the ambient target
+edge carrier. -/
+def Iso.edgeEmbeddingInto {H : Graph V' E'} (i : Iso G H) : E(G) ↪ E' :=
+  i.edgeMapEmbedding.trans (Function.Embedding.subtype _)
+
+/-- Every concrete graph isomorphism exhibits its target as the canonical relabelled copy obtained
+from the induced embeddings of the active vertex and edge sets. -/
+theorem Iso.relabel_eq {H : Graph V' E'} (i : Iso G H) :
+    G.relabel i.vertexEmbeddingInto i.edgeEmbeddingInto = H := by
+  refine Graph.ext ?_ fun e x y ↦ ?_
+  · ext z
+    simp only [relabel_vertexSet, mem_range, Iso.vertexEmbeddingInto, Embedding.trans_apply,
+      Embedding.coe_subtype]
+    constructor
+    · rintro ⟨v, rfl⟩
+      exact (i.vertMapEmbedding v).2
+    · intro hz
+      obtain ⟨v, hv⟩ := i.vertMapEmbedding_surjective ⟨z, hz⟩
+      exact ⟨v, congrArg Subtype.val hv⟩
+  · constructor
+    · rintro ⟨e', x', y', rfl, rfl, rfl, h⟩
+      exact (i.isLink_edgeEquiv_vertexEquiv e' x' y').mp h
+    · intro h
+      refine ⟨i.edgeEquiv.symm ⟨e, h.edge_mem⟩, i.vertexEquiv.symm ⟨x, h.left_mem⟩,
+        i.vertexEquiv.symm ⟨y, h.right_mem⟩, ?_, ?_, ?_, ?_⟩
+      · change e = (i.edgeEquiv (i.edgeEquiv.symm ⟨e, _⟩)).1
+        simp
+      · change x = (i.vertexEquiv (i.vertexEquiv.symm ⟨x, _⟩)).1
+        simp
+      · change y = (i.vertexEquiv (i.vertexEquiv.symm ⟨y, _⟩)).1
+        simp
+      · exact (i.isLink_edgeEquiv_vertexEquiv _ _ _).mpr (by simpa using h)
+
+/-- Existence of an isomorphism is equivalent to being an ambient relabelled copy.  `Iso` remains
+the primary structure; this theorem is the map-first facade useful for proving invariant
+properties. -/
+theorem isIsoTo_iff_exists_relabel (G : Graph V E) (H : Graph V' E') :
+    G.IsIsoTo H ↔
+      ∃ fv : V(G) ↪ V', ∃ fe : E(G) ↪ E', G.relabel fv fe = H := by
+  constructor
+  · rintro ⟨i⟩
+    exact ⟨i.vertexEmbeddingInto, i.edgeEmbeddingInto, i.relabel_eq⟩
+  · rintro ⟨fv, fe, rfl⟩
+    exact ⟨G.relabelIso fv fe⟩
+
 end Graph

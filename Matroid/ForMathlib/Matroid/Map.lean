@@ -277,12 +277,12 @@ instance cardLE {k : ℕ∞} : InvariantSetPred (fun M X ↦ X.encard ≤ k ∧ 
   map_iff' α β M X f hf hXE := by
     rw [(hf.mono hXE).encard_image, map_ground, hf.image_subset_image_iff hXE subset_rfl]
 
+end InvariantSetPred
+
 @[simp]
 lemma map_coindep_iff {f : α → β} {hf : InjOn f M.E} {I : Set β} :
     (M.map f hf).Coindep I ↔ ∃ I₀, M.Coindep I₀ ∧ I = f '' I₀ :=
   InvariantSetPred.map_iff hf
-
-end InvariantSetPred
 
 end InvariantSetPred
 

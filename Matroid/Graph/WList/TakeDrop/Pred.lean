@@ -389,13 +389,19 @@ lemma suffixFrom_vertex_filter_eq_vertex_filter (w : WList α β) (P Q : α → 
     (w.suffixFrom Q).vertex.filter P = w.vertex.filter P := by
   induction w with | nil u => simp | cons u e w ih => grind
 
+lemma prefixUntilLast_append_suffixFromLast (w : WList α β) (P : α → Prop) [DecidablePred P] :
+    w.prefixUntilLast P ++ w.suffixFromLast P = w := by
+  have hends : (w.prefixUntilLast P).last = (w.suffixFromLast P).first := by
+    simp only [prefixUntilLast, suffixFromLast, reverse_last, reverse_first]
+    exact (w.reverse.prefixUntil_last_eq_suffixFrom_first P).symm
+  rw [← reverse_inj_iff, reverse_append hends, prefixUntilLast, suffixFromLast, reverse_reverse,
+    reverse_reverse, prefixUntil_append_suffixFrom]
+
 lemma vertex_suffixFrom (w : WList α β) (P : α → Prop) [DecidablePred P] :
     (w.suffixFrom P).vertex = w.vertex.drop (min (w.vertex.findIdx P) w.length) := by
   induction w with
   | nil u => simp
   | cons u e w ih => by_cases hPu : P u <;> simp [hPu, ih, findIdx_cons]
-
-
 
 lemma suffixFromVertex_cons_of_ne [DecidableEq α] (w : WList α β) (hne : x ≠ y) (e : β) :
     (cons x e w).suffixFromVertex y = w.suffixFromVertex y := by
