@@ -10,7 +10,7 @@ public import Matroid.Triangle
 
 universe u
 
-variable {α η : Type*} {ι : Sort*} {M : Matroid α} {e f : α} {Xs Ys Is : ι → Set α} {i j : ι}
+variable {α η : Type*} {ι : Type*} {M : Matroid α} {e f : α} {Xs Ys Is : ι → Set α} {i j : ι}
     {B I J X X' Y Y' F : Set α}
 
 open Set Function
@@ -42,7 +42,7 @@ lemma IsSkewFamily.pairwise_subset_loops {Xs : η → Set α} (h : M.IsSkewFamil
     Pairwise (fun i j ↦ Xs i ∩ Xs j ⊆ M.loops) :=
   fun _ _ ↦ h.subset_loops_of_ne
 
-lemma IsSkewFamily.comp {ζ : Sort*} (h : M.IsSkewFamily Xs) (t : ζ → ι) (ht : Injective t) :
+lemma IsSkewFamily.comp {ζ : Type*} (h : M.IsSkewFamily Xs) (t : ζ → ι) (ht : Injective t) :
     M.IsSkewFamily (Xs ∘ t) :=
   ⟨h.isModularFamily.comp t, fun _ _ hne ↦ h.subset_loops_of_ne fun h' ↦ hne <| ht h'⟩
 
@@ -170,19 +170,9 @@ set_option backward.isDefEq.respectTransparency false in
   For a skew family `Xs`, the union of some independent subsets of the `Xs` is independent.
   Quite a nasty proof. Probably the right proof involves relating modularity to the
   lattice of Flats. -/
-lemma IsSkewFamily.iUnion_indep_subset_indep {ι : Sort u} {Is Xs : ι → Set α}
+lemma IsSkewFamily.iUnion_indep_subset_indep {ι : Type u} {Is Xs : ι → Set α}
     (h : M.IsSkewFamily Xs) (hIX : ∀ i, Is i ⊆ Xs i) (hIs : ∀ i, M.Indep (Is i)) :
     M.Indep (⋃ i, Is i) := by
-  -- reduce to the case where `ι` is a type.
-  suffices aux : ∀ (η : Type u) (Is Xs : η → Set α), M.IsSkewFamily Xs → (∀ i, Is i ⊆ Xs i) →
-      (∀ i, M.Indep (Is i)) → M.Indep (⋃ i, Is i) by
-    convert aux (PLift ι) (fun i ↦ Is i.down) (fun i ↦ Xs i.down) ?_
-      (by simpa [PLift.forall]) (by simpa [PLift.forall])
-    · exact (iUnion_plift_down Is).symm
-    convert h
-    simp [isSkewFamily_iff, IsModularFamily, isMutualBasis_iff, PLift.forall]
-  clear! Is Xs
-  intro η Is Xs h hIX hIs
   -- extend each `I i` to a basis `J i` of `X i`, and let `J` be a basis for the union of the `J i`.
   choose Js hJs using fun i ↦ (hIs i).subset_isBasis_of_subset (hIX i)
   refine Indep.subset ?_ <| iUnion_mono (fun i ↦ (hJs i).2)
@@ -199,7 +189,7 @@ lemma IsSkewFamily.iUnion_indep_subset_indep {ι : Sort u} {Is Xs : ι → Set �
   -- Let `K i` be a modular collection of bases.
   obtain ⟨Ks, hdj, hKs, huKs⟩ := isSkewFamily_iff_exist_isBases.1 h
 
-  have hssE : Js i₀ ∪ (⋃ i ∈ ({i₀}ᶜ : Set η), Ks i) ⊆ M.E := by
+  have hssE : Js i₀ ∪ (⋃ i ∈ ({i₀}ᶜ : Set ι), Ks i) ⊆ M.E := by
     refine union_subset (hJs i₀).1.indep.subset_ground ?_
     simp only [mem_compl_iff, mem_singleton_iff, iUnion_subset_iff]
     exact fun i _ ↦ (huKs i).indep.subset_ground
@@ -246,16 +236,8 @@ lemma IsSkewFamily.iUnion_indep_subset_indep {ι : Sort u} {Is Xs : ι → Set �
 
   exact hK'.indep.notMem_closure_sdiff_of_mem (hss hei₀) he'
 
-lemma IsSkewFamily.mono {ι : Sort u} {Xs Ys : ι → Set α} (h : M.IsSkewFamily Xs)
+lemma IsSkewFamily.mono {ι : Type u} {Xs Ys : ι → Set α} (h : M.IsSkewFamily Xs)
     (hYX : ∀ i, Ys i ⊆ Xs i) : M.IsSkewFamily Ys := by
-  -- reduce to the case where `ι` is a type.
-  suffices aux : ∀ (η : Type u) (Xs Ys : η → Set α), M.IsSkewFamily Xs → (∀ i, Ys i ⊆ Xs i) →
-      M.IsSkewFamily Ys by
-    convert aux (PLift ι) (fun i ↦ Xs i.down) (fun i ↦ Ys i.down) ?_ (by simpa [PLift.forall])
-    · simp [isSkewFamily_iff, IsModularFamily, isMutualBasis_iff, PLift.forall]
-    simpa [isSkewFamily_iff, IsModularFamily, isMutualBasis_iff, PLift.forall] using h
-  clear! Xs Ys
-  intro η Xs Ys h hYX
   choose Is hIs using fun i ↦ M.exists_isBasis (Ys i) ((hYX i).trans (h.subset_ground_of_mem i))
   refine Indep.isSkewFamily_of_disjoint_isBases ?_ ?_ hIs
   · exact h.iUnion_indep_subset_indep (fun i ↦ (hIs i).subset.trans (hYX i)) (fun i ↦ (hIs i).indep)

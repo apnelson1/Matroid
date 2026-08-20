@@ -31,6 +31,11 @@ lemma closure_ground_union_left (M : Matroid α) {X : Set α} : M.closure (M.E �
 lemma closure_ground_union_right (M : Matroid α) {X : Set α} : M.closure (X ∪ M.E) = M.E := by
   rw [M.closure_eq_ground Set.subset_union_right]
 
+lemma spanning_iff_compl_coindep' : M.Spanning X ↔ M.Coindep (M.E \ X) ∧ X ⊆ M.E := by
+  by_cases hXE : X ⊆ M.E
+  · rw [spanning_iff_compl_coindep, and_iff_left hXE]
+  exact iff_of_false (hXE ∘ Spanning.subset_ground) (hXE ∘ And.right)
+
 /-- `M.Nonspanning X` means that `X` is a subset of `M.E` that is not `Spanning`. -/
 @[mk_iff]
 structure Nonspanning (M : Matroid α) (X : Set α) : Prop where

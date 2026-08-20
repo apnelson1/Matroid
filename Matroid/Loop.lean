@@ -22,6 +22,23 @@ open scoped symmDiff
 
 namespace Matroid
 
+instance : GroundedPred (γ := id) IsLoop := ⟨fun _ _ _ ↦ IsLoop.mem_ground⟩
+instance : GroundedPred (γ := id) IsColoop := ⟨fun _ _ _ ↦ IsColoop.mem_ground⟩
+instance : GroundedPred (γ := id) IsNonloop := ⟨fun _ _ _ ↦ IsNonloop.mem_ground⟩
+
+instance : InvariantFun (γ := id) (δ := id) IsLoop IsLoop where
+  of_empty := by simp
+  map_eq α β M f hf x (hx : x ∈ M.E) := by
+    simp only [← singleton_dep, transfer_elem_eq, ← image_singleton, id_eq, eq_iff_iff]
+    exact Iff.symm <| InvariantFun.map_set_image_iff (by simpa) hf
+
+instance : InvariantFun (γ := id) (δ := id) IsNonloop IsNonloop := by
+  simpa [id_eq, supported_elem_iff, ← isNonloop_iff] using
+    InvariantFun.notAndSupported (γ := id) (δ := id) IsLoop IsLoop
+
+instance : InvariantFun (γ := id) (δ := id) IsColoop IsColoop :=
+  InvariantFun.dual (γ := id) (δ := id) IsLoop IsLoop
+
 @[simp]
 lemma isFlat_loops (M : Matroid α) : M.IsFlat M.loops :=
   isFlat_closure ..
@@ -38,6 +55,8 @@ lemma IsNonColoop.not_isColoop (h : M.IsNonColoop e) : ¬ M.IsColoop e :=
 
 lemma IsColoop.not_isNonColoop (h : M.IsColoop e) : ¬ M.IsNonColoop e :=
   IsLoop.not_isNonloop (M := M✶) h
+
+instance : GroundedPred (γ := id) IsNonColoop := ⟨fun _ _ _ ↦ IsNonColoop.mem_ground⟩
 
 @[simp]
 lemma isNonColoop_dual : M✶.IsNonColoop e ↔ M.IsNonloop e := by

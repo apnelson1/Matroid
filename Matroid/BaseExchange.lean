@@ -49,18 +49,21 @@ lemma IsFreeBase.indep_of_ssubset_insert (hB : M.IsFreeBase B) (hI : I ⊂ inser
   refine (hB.isBase_insert_diff_singleton (e := f) (f := e) ?_ ?_).indep.subset ?_ <;>
   grind
 
-instance InvariantSetPred.instIsFreeBase : InvariantSetPred IsFreeBase IsFreeBase where
-  subset_ground_left _ _ _ h := h.isBase.subset_ground
-  subset_ground_right _ _ _ h := h.isBase.subset_ground
-  map_iff' α β M B f hf hBE := by
-    simp_rw [isFreeBase_iff, map_image_isBase_iff hBE, map_ground, subset_image_iff,
-      and_congr_right_iff]
-    refine fun hB ↦ ⟨?_, fun h B' hB'E hB'B ↦ ?_⟩
-    · rintro h _ ⟨B', hB'E, rfl⟩ hB'
-      rw [isExchange_image_iff_of_injOn hf hB'E hBE] at hB'
-      exact (h B' hB'E hB').map hf
-    specialize h _ ⟨_, hB'E, rfl⟩ (by rwa [isExchange_image_iff_of_injOn hf hB'E hBE])
-    rwa [map_image_isBase_iff hB'E] at h
+instance : GroundedPred IsFreeBase := ⟨fun _ _ _ h ↦ h.1.subset_ground⟩
+
+instance : InvariantFun IsFreeBase IsFreeBase where
+  of_empty := by simp [isFreeBase_iff]
+  map_eq α β M f hf B (hBE : B ⊆ M.E) := by
+    simp only [transfer_set_eq, eq_iff_iff, isFreeBase_iff, map_ground, subset_image_iff,
+      map_image_isBase_iff hBE, and_congr_right_iff, map_isBase_iff, forall_exists_index, and_imp,
+      forall_apply_eq_imp_iff₂]
+    refine fun hB ↦ ⟨fun h' B' hB'E h ↦ ⟨B', h' B' hB'E ?_, rfl⟩, fun h B' hB' hB'B ↦ ?_⟩
+    · rwa [isExchange_image_iff_of_injOn hf hB'E hBE] at h
+    specialize h B' hB'
+    rw [isExchange_image_iff_of_injOn hf hB' hBE, imp_iff_right hB'B] at h
+    obtain ⟨B₀, hB₀, heq⟩ := h
+    rw [hf.image_eq_image_iff hB' hB₀.subset_ground] at heq
+    rwa [heq]
 
 end IsFreeBase
 
@@ -139,12 +142,28 @@ lemma IsCircuitHyperplane.isBase_of_isExchange (hH : M.IsCircuitHyperplane H) (h
 /-- `M.IsNonbase K` means that `K` is not a base, but differs from a base by a finite
 number of exchanges. For a matroid of rank `r ≠ ∞`, this amounts to saying that `K` is a
 dependent `r`-set. -/
+@[mk_iff]
 structure IsNonbase (M : Matroid α) (K : Set α) : Prop where
   subset_ground : K ⊆ M.E
   not_isBase : ¬ M.IsBase K
   exists_findiff : ∃ B, M.IsBase B ∧ B.FinDiff K
 
 attribute [aesop unsafe 10% (rule_sets := [Matroid]), grind →] IsNonbase.subset_ground
+
+instance : GroundedPred IsNonbase := ⟨fun _ _ _ ↦ IsNonbase.subset_ground⟩
+
+instance : InvariantFun IsNonbase IsNonbase where
+  of_empty := by simp [isNonbase_iff]
+  map_eq α β M f hf X (hXE : X ⊆ M.E) := by
+    simp only [isNonbase_iff, transfer_set_eq, map_ground, image_subset_iff, map_isBase_iff,
+      not_exists, not_and, ↓existsAndEq, and_true, eq_iff_iff, and_iff_right hXE]
+    refine ⟨fun ⟨hX, B, hB, hBX⟩ ↦ ⟨hXE.trans (subset_preimage_image ..),
+      ⟨fun B' hB' hB'X ↦ hX ?_, ?_⟩⟩, fun ⟨_, hXnb, B, hB, hBX⟩ ↦ ⟨fun hX ↦ by grind, ⟨B, hB, ?_⟩⟩⟩
+    · rw [hf.image_eq_image_iff hXE hB'.subset_ground] at hB'X
+      rwa [hB'X]
+    · refine ⟨B, hB, ?_⟩
+      rwa [finDiff_image_iff_of_injOn hf hB.subset_ground hXE]
+    rwa [← finDiff_image_iff_of_injOn hf hB.subset_ground hXE]
 
 lemma IsNonbase.compl_isNonbase_dual (h : M.IsNonbase K) : M✶.IsNonbase (M.E \ K) := by
   refine ⟨sdiff_subset, ?_, ?_⟩

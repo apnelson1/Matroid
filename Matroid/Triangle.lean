@@ -16,12 +16,25 @@ namespace Matroid
 
 variable {i b : Bool} {α : Type*} {e f g : α} {C K T X Y : Set α} {M : Matroid α}
 
+/-- A triangle is a three-element circuit. -/
 @[mk_iff]
 structure IsTriangle (M : Matroid α) (T : Set α) : Prop where
   isCircuit : M.IsCircuit T
   three_elements : T.encard = 3
 
-abbrev IsTriad (M : Matroid α) (T : Set α) := M✶.IsTriangle T
+instance : GroundedPred IsTriangle := ⟨fun _ _ _ h ↦ h.isCircuit.subset_ground⟩
+
+instance : InvariantFun IsTriangle IsTriangle := by
+  have h3 := InvariantFun.encard.comp_right (s := fun (x : ℕ∞) ↦ x = 3)
+  simpa [← isTriangle_iff] using @InvariantFun.and _ _ _ _ _ IsCircuit _ IsCircuit _ _ h3
+
+/-- A triad is a three-element cocircuit -/
+def IsTriad (M : Matroid α) (T : Set α) := M✶.IsTriangle T
+
+instance : GroundedPred IsTriad := ⟨fun _ _ _ h ↦ h.isCircuit.subset_ground⟩
+
+instance : InvariantFun IsTriad IsTriad :=
+  InvariantFun.dual IsTriangle IsTriangle
 
 lemma isTriad_iff : M.IsTriad T ↔ M.IsCocircuit T ∧ T.encard = 3 :=
   isTriangle_iff (M := M✶) (T := T)
@@ -43,11 +56,11 @@ lemma IsTriad.dual_isTriangle (h : M.IsTriad T) : M✶.IsTriangle T := by
 
 @[simp]
 lemma dual_isTriad_iff : M✶.IsTriad T ↔ M.IsTriangle T := by
-  simp [isTriangle_iff]
+  simp [isTriangle_iff, isTriad_iff]
 
 @[simp]
 lemma dual_isTriangle_iff : M✶.IsTriangle T ↔ M.IsTriad T := by
-  simp [isTriangle_iff]
+  simp [isTriangle_iff, isTriad_iff]
 
 @[simp]
 lemma bDual_isTriad_iff : (M.bDual b).IsTriad X ↔ (M.bDual (!b)).IsTriangle X := by

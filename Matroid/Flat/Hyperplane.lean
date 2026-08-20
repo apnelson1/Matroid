@@ -80,6 +80,11 @@ lemma isHyperplane_iff_maximal_nonspanning :
       (M.closure_subset_ground _).ssubset_of_ne ?_⟩)
   rwa [spanning_iff, and_iff_left hSE] at hS
 
+instance : GroundedPred IsHyperplane := ⟨fun _ _ _ ↦ IsHyperplane.subset_ground⟩
+
+instance : InvariantFun IsHyperplane IsHyperplane := by
+  simpa [← isHyperplane_iff_maximal_nonspanning] using InvariantFun.maximal Nonspanning Nonspanning
+
 lemma IsHyperplane.eq_of_subset_nonspanning (hH : M.IsHyperplane H) (hX : M.Nonspanning X)
     (hHX : H ⊆ X) : H = X := by
   rw [isHyperplane_iff_maximal_nonspanning] at hH
@@ -378,6 +383,12 @@ lemma Spanning.isHyperplane_restrict_iff {S : Set α} (hS : M.Spanning S) :
 structure IsCircuitHyperplane (M : Matroid α) (C : Set α) : Prop where
   isCircuit : M.IsCircuit C
   isHyperplane : M.IsHyperplane C
+
+instance : GroundedPred IsCircuitHyperplane := ⟨fun _ _ _ h ↦ h.isCircuit.subset_ground⟩
+
+instance : InvariantFun IsCircuitHyperplane IsCircuitHyperplane := by
+  simpa [← isCircuitHyperplane_iff] using InvariantFun.and IsCircuit IsHyperplane IsCircuit
+    IsHyperplane
 
 -- do aesop tag
 @[grind →]

@@ -302,6 +302,12 @@ lemma finDiff_iff {X Y : Set α} :
     inter_singleton_eq_empty.2 he.2, union_empty, encard_sdiff_singleton_add_one hf, hXY]
 termination_by (X \ Y).encard
 
+lemma finDiff_image_iff_of_injOn {X Y S} {β : Type*} {f : α → β} (hS : InjOn f S) (hX : X ⊆ S)
+    (hY : Y ⊆ S) : FinDiff (f '' X) (f '' Y) ↔ FinDiff X Y := by
+  rw [finDiff_iff, ← hS.image_sdiff' hX hY, ← hS.image_sdiff' hY hX, finDiff_iff,
+    (hS.mono (by grind)).encard_image, (hS.mono (by grind)).encard_image,
+    finite_image_iff (hS.mono (by grind))]
+
 lemma FinDiff.encard_eq_encard (h : FinDiff X Y) : X.encard = Y.encard := by
   rw [← encard_sdiff_add_encard_inter X Y, ← encard_sdiff_add_encard_inter Y X, h.encard_sdiff_comm,
     inter_comm]

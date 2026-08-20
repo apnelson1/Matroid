@@ -12,7 +12,7 @@ open Set BigOperators Set.Notation
 
 namespace Matroid
 
-variable {α : Type*} {ι : Sort*} {η : Type*} {A : Set η} {M : Matroid α} {B I J X X' Y Y' F : Set α}
+variable {α : Type*} {ι : Type*} {η : Type*} {A : Set η} {M : Matroid α} {B I J X X' Y Y' F : Set α}
     {e : α} {i j : ι} {Xs Ys Is Js : ι → Set α}
 
 section IsMutualBasis
@@ -23,6 +23,15 @@ for each set in the family. -/
 structure IsMutualBasis (M : Matroid α) (B : Set α) (Xs : ι → Set α) : Prop where
   indep : M.Indep B
   forall_isBasis : ∀ i, M.IsBasis ((Xs i) ∩ B) (Xs i)
+
+instance : GroundedPred₂ (γ := Set) (γ' := fun α ↦ (ι → Set α)) IsMutualBasis where
+  supported _ _ _ _ h := ⟨h.indep.subset_ground, fun i ↦ (h.forall_isBasis i).subset_ground⟩
+
+-- instance : InvariantFun₂ (γ := Set) (γ' := fun α ↦ (ι → Set α))
+--     (δ := Set) (δ' := fun α ↦ (ι → Set α)) IsMutualBasis IsMutualBasis where
+--       of_empty := _
+--       map_eq := _
+
 
 lemma IsMutualBasis.isBasis_inter (h : M.IsMutualBasis B Xs) (i : ι) :
     M.IsBasis ((Xs i) ∩ B) (Xs i) :=
@@ -154,7 +163,7 @@ lemma IsMutualBasis.switch (hB : M.IsMutualBasis B Xs) (hIX : M.IsBasis I (⋂ i
   rw [hJB.closure_eq_closure]
   exact hIX.isBasis_closure_right
 
-lemma IsMutualBasis.comp {ζ : Sort*} {Xs : ι → Set α} (h : M.IsMutualBasis B Xs) (t : ζ → ι) :
+lemma IsMutualBasis.comp {ζ : Type*} {Xs : ι → Set α} (h : M.IsMutualBasis B Xs) (t : ζ → ι) :
     M.IsMutualBasis B (Xs ∘ t) where
   indep := h.indep
   forall_isBasis i := h.forall_isBasis (t i)
@@ -274,7 +283,7 @@ lemma IsModularFamily.ofRestrict {M : Matroid α} {R : Set α} (hR : R ⊆ M.E)
   rw [inter_eq_self_of_subset_left <| (h.subset_ground_of_mem i).trans hR]
 
 /-- A subfamily of a modular family is a modular family. -/
-lemma IsModularFamily.comp {ζ : Sort*} (h : M.IsModularFamily Xs) (t : ζ → ι) :
+lemma IsModularFamily.comp {ζ : Type*} (h : M.IsModularFamily Xs) (t : ζ → ι) :
     M.IsModularFamily (Xs ∘ t) := by
   obtain ⟨B, hB, hBXs⟩ := h
   exact ⟨B, hB, fun i ↦ (by simpa using hBXs (t i))⟩

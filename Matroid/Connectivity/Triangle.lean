@@ -72,7 +72,7 @@ lemma IsTriangle.small_of_isTriangle_isTriad {a b c d : α} (habc : M.IsTriangle
     (habd : M.IsTriangle {a, b, d}) (hbcd : M.IsTriad {b, c, d}) (ha : (M ／ {a}).Connected) :
     M ＼ {d} = unifOn {a, b, c} 2 := by
   obtain rfl | hne := eq_or_ne c d
-  · simp at hbcd
+  · simpa using hbcd.dual_isTriangle
   have hss : {a, b, c, d} ⊆ M.closure {a, b} := by simp [insert_subset_iff, habc.mem_closure₃,
     habd.mem_closure₃, mem_closure_of_mem', habc.mem_ground₁, habc.mem_ground₂]
   have hacl : a ∈ M.closure {b, c, d} :=

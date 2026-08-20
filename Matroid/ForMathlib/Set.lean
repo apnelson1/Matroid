@@ -184,6 +184,10 @@ lemma union_sdiff_eq_sdiff {A B C : Set α} (hBC : B ⊆ C) : (A ∪ B) \ C = A 
   simp only [mem_sdiff, mem_union, and_congr_left_iff, or_iff_left_iff_imp]
   exact fun a a_1 ↦ (a (hBC a_1)).elim
 
+lemma InjOn.image_sdiff' {β : Type*} {s x y : Set α} {f : α → β} (hs : InjOn f s) (hx : x ⊆ s)
+    (hy : y ⊆ s) : f '' (x \ y) = f '' x \ f '' y := by
+  rw [image_sdiff (hs.mono hx), hs.image_inter hx hy, sdiff_self_inter]
+
 @[simp]
 lemma insert_eq_singleton_iff {x y : α} {s : Set α} :
     insert x s = {y} ↔ x = y ∧ ∀ a ∈ s, a = y := by

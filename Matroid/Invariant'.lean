@@ -16,49 +16,43 @@ universe u v w u' v'
 
 variable {α : Type u} {β : Type v} {M : Matroid α} {f : α → β}
 
-/-- `Matroid.SupportClass γ` means that for `M : Matroid α`, terms of type `γ α` have a notion of
+/-- MatroidSupportClass `γ` means that for `M : Matroid α`, terms of type `γ α` have a notion of
 'supported' that depends only on the ground set of `M`. For sets, this is containment in `M.E`,
 and for elements, this is membership in `M.E`.  -/
-protected class SupportClass (γ : Type u → Type u') where
+class MatroidSupportClass (γ : Type u → Type u') where
   supported : ∀ {α : Type u}, Matroid α → γ α → Prop
   congr : ∀ {α} {M M' : Matroid α}, M.E = M'.E → ∀ X, supported M X ↔ supported M' X
 
-/-- Supportedness of sets. -/
-instance : Matroid.SupportClass Set where
+instance : MatroidSupportClass Set where
   supported M X := X ⊆ M.E
   congr := by simp +contextual
 
-/-- Supportedness of elements. -/
-instance : Matroid.SupportClass id where
+instance : MatroidSupportClass id where
   supported M x := x ∈ M.E
   congr := by simp +contextual
 
-/-- Supportedness of tuples of sets. -/
-instance {ι : Type w} : Matroid.SupportClass (fun α ↦ (ι → Set α)) where
-  supported M X := ∀ i, X i ⊆ M.E
-  congr := by simp +contextual
+class MatroidSupportedMonoClass (γ : Type u → Type u') [S : MatroidSupportClass γ]
+    [∀ α, Preorder (γ α)] : Prop where
+  mono : ∀ {α} {M : Matroid α} x y, S.supported M y → x ≤ y → S.supported M x
+
+instance : MatroidSupportedMonoClass Set where
+  mono := fun _ _ hY hXY ↦ hXY.trans hY
 
 @[simp]
-lemma supported_setFun_iff {ι : Type*} (M : Matroid α) (X : ι → Set α) :
-    Matroid.SupportClass.supported (γ := fun α ↦ (ι → Set α)) M X ↔ ∀ i, X i ⊆ M.E :=
-  Iff.rfl
-
-@[simp]
-lemma supported_set_iff (M : Matroid α) (X) : Matroid.SupportClass.supported M X ↔ X ⊆ M.E :=
-  Iff.rfl
+lemma supported_set_iff (M : Matroid α) (X) : MatroidSupportClass.supported M X ↔ X ⊆ M.E := Iff.rfl
 
 @[simp]
 lemma supported_elem_iff (M : Matroid α) (x : α) :
-    Matroid.SupportClass.supported M (γ := id) x ↔ x ∈ M.E := Iff.rfl
+    MatroidSupportClass.supported (γ := id) M x ↔ x ∈ M.E := Iff.rfl
 
-/-- A predicate of type `γ α → Prop` is a `GroundedPred` if it is only true for elements of `γ α`
-that are supported by `M`. -/
-class GroundedPred {γ : Type u → Type u'} [S : Matroid.SupportClass γ]
+/-- A predicate of type `γ α → Prop` is grounded if it is only true for elements of `γ α`
+that are grounded. -/
+class GroundedPred {γ : Type u → Type u'} [S : MatroidSupportClass γ]
     (P : ∀ {α}, Matroid α → γ α → Prop) where
   supported : ∀ ⦃α⦄ ⦃M : Matroid α⦄ ⦃x⦄, P M x → S.supported M x
 
-class GroundedPred₂ {γ γ' : Type u → Type u'} [S : Matroid.SupportClass γ]
-    [S' : Matroid.SupportClass γ'] (P : ∀ {α}, Matroid α → γ α → γ' α → Prop) where
+class GroundedPred₂ {γ γ' : Type u → Type u'} [S : MatroidSupportClass γ]
+    [S' : MatroidSupportClass γ'] (P : ∀ {α}, Matroid α → γ α → γ' α → Prop) where
   supported : ∀ ⦃α⦄ ⦃M : Matroid α⦄ ⦃x y⦄, P M x y → (S.supported M x ∧ S'.supported M y)
 
 instance : GroundedPred Indep where
@@ -85,76 +79,73 @@ instance : GroundedPred Codep where
 instance : GroundedPred₂ IsBasis where
   supported _ _ _ _ h := ⟨h.indep.subset_ground, h.subset_ground⟩
 
-/-- `Matroid.TransferClass γ δ` contains the data needed to move terms of type
-`γ α` to ones of type `δ β` via a function `f : α → β`. Transferred values need to respect
-supportedness in a given matroid. -/
-protected class TransferClass (γ : Type u → Type u') (δ : Type v → Type v')
-    [Sγ : Matroid.SupportClass γ] [Sδ : Matroid.SupportClass δ] where
+class MatroidTransferClass (γ : Type u → Type u') (δ : Type v → Type v')
+    [Sγ : MatroidSupportClass γ] [Sδ : MatroidSupportClass δ] where
   transfer : ∀ {α : Type u} {β : Type v}, (α → β) → (γ α → δ β)
-  transferEmpty : ∀ {α β}, IsEmpty β → (x : γ α) → Sγ.supported (emptyOn α) x → δ β
+  transferEmpty : ∀ (α β), IsEmpty β → (x : γ α) → Sγ.supported (emptyOn α) x → δ β
   supported_transfer : ∀ ⦃α β⦄ ⦃M : Matroid α⦄ ⦃f : α → β⦄ (hf : InjOn f M.E) ⦃x : γ α⦄,
     Sγ.supported M x → Sδ.supported (M.map f hf) (transfer f x)
-  supported_transferEmpty : ∀ ⦃α β⦄ (hβ : IsEmpty β) (x : γ α) (hx : Sγ.supported (emptyOn α) x),
-    Sδ.supported (emptyOn β) (transferEmpty hβ x hx)
+  supported_transferEmpty : ∀ (α β) (hβ : IsEmpty β) (x : γ α) (hx : Sγ.supported (emptyOn α) x),
+    Sδ.supported (emptyOn β) (transferEmpty α β hβ x hx)
 
-instance instId : Matroid.TransferClass id id where
+class MatroidTransferClass' (γ : Type u → Type u') (δ : Type v → Type v')
+    [Sγ : MatroidSupportClass γ] [Sδ : MatroidSupportClass δ] where
+  transfer : ∀ {α : Type u} {β : Type v} {M : Matroid α} {N : Matroid β},
+    (M.E ≃ N.E) → {x : γ α | Sγ.supported M x} → {y : δ β | Sδ.supported N y}
+  --     (γ α → δ β)
+  -- transferEmpty : ∀ (α β), IsEmpty β → (x : γ α) → Sγ.supported (emptyOn α) x → δ β
+  -- supported_transfer : ∀ ⦃α β⦄ ⦃M : Matroid α⦄ ⦃f : α → β⦄ (hf : InjOn f M.E) ⦃x : γ α⦄,
+  --   Sγ.supported M x → Sδ.supported (M.map f hf) (transfer f x)
+  -- supported_transferEmpty : ∀ (α β) (hβ : IsEmpty β) (x : γ α) (hx : Sγ.supported (emptyOn α) x),
+  --   Sδ.supported (emptyOn β) (transferEmpty α β hβ x hx)
+
+instance instId : MatroidTransferClass id id where
   transfer := id
-  transferEmpty _ _ h := by simp [supported_elem_iff] at h
+  transferEmpty _ _ _ _ h := by simp [supported_elem_iff] at h
   supported_transfer _ _ _ _ _ x hx := ⟨x, hx, rfl⟩
   supported_transferEmpty := by simp
 
-@[simp]
-lemma transfer_elem_eq (x : α) (f : α → β) :
-    Matroid.TransferClass.transfer (γ := id) (δ := id) f x = f x := rfl
-
-instance instSet : Matroid.TransferClass Set Set where
+instance instSet : MatroidTransferClass Set Set where
   transfer := Set.image
-  transferEmpty := fun _ _ _ ↦ ∅
+  transferEmpty := fun _ _ _ _ _ ↦ ∅
   supported_transfer _ _ _ _ _ _ := image_mono
-  supported_transferEmpty := by simp
-
-instance {ι : Type*} : Matroid.TransferClass (fun α ↦ (ι → Set α)) (fun α ↦ (ι → Set α)) where
-  transfer f X i := f '' (X i)
-  transferEmpty _ _ _ _ := ∅
-  supported_transfer α β M f hf X hX i := image_mono <| hX i
   supported_transferEmpty := by simp
 
 @[simp]
 lemma transfer_set_eq (X : Set α) (f : α → β) :
-    Matroid.TransferClass.transfer f X = f '' X := rfl
+    MatroidTransferClass.transfer f X = f '' X := rfl
 
 @[simp]
 lemma transferEmpty_set_eq [hβ : IsEmpty β] {X : Set α}
-    (hX : Matroid.SupportClass.supported (emptyOn α) X) :
-  Matroid.TransferClass.transferEmpty (γ := Set) (δ := Set) hβ X hX = ∅ := rfl
+    (hX : MatroidSupportClass.supported (emptyOn α) X) :
+  MatroidTransferClass.transferEmpty (γ := Set) (δ := Set) α β hβ X hX = ∅ := rfl
 
 class InvariantFun {γ : Type u → Type u'} {δ : Type v → Type v'} {μ : Sort w}
-    [S : Matroid.SupportClass γ] [T : Matroid.SupportClass δ] [C : Matroid.TransferClass γ δ]
+    [S : MatroidSupportClass γ] [T : MatroidSupportClass δ] [C : MatroidTransferClass γ δ]
     (F : ∀ {α}, Matroid α → (γ α) → μ) (G : ∀ {β}, Matroid β → (δ β) → μ) : Prop where
   of_empty : ∀ ⦃α β⦄ (hβ : IsEmpty β) ⦃x : γ α⦄ (hx : S.supported (emptyOn α) x),
-    F (emptyOn α) x = G (emptyOn β) (C.transferEmpty hβ x hx)
+    F (emptyOn α) x = G (emptyOn β) (C.transferEmpty α β hβ x hx)
   map_eq : ∀ ⦃α β⦄ ⦃M : Matroid α⦄ ⦃f : α → β⦄ (hf : InjOn f M.E) ⦃x : γ α⦄,
     S.supported M x → F M x = G (M.map f hf) (C.transfer f x)
 
 class InvariantFun₂ {γ γ' : Type u → Type u'} {δ δ' : Type v → Type v'} {μ : Sort w}
-    [S : Matroid.SupportClass γ] [T : Matroid.SupportClass δ] [C : Matroid.TransferClass γ δ]
-    [S' : Matroid.SupportClass γ'] [T' : Matroid.SupportClass δ'] [C' : Matroid.TransferClass γ' δ']
+    [S : MatroidSupportClass γ] [T : MatroidSupportClass δ] [C : MatroidTransferClass γ δ]
+    [S' : MatroidSupportClass γ'] [T' : MatroidSupportClass δ'] [C' : MatroidTransferClass γ' δ']
     (F : ∀ {α}, Matroid α → (γ α) → (γ' α) → μ) (G : ∀ {β}, Matroid β → (δ β) → (δ' β) → μ) : Prop
       where
-  of_empty : ∀ ⦃α β⦄ (hβ : IsEmpty β) ⦃x : γ α⦄ ⦃x' : γ' α⦄ (hx : S.supported (emptyOn α) x)
-      (hx' : S'.supported (emptyOn α) x'),
-    F (emptyOn α) x x' = G (emptyOn β) (C.transferEmpty hβ x hx) (C'.transferEmpty hβ x' hx')
+  of_empty_left : ∀ ⦃α β⦄ (hβ : IsEmpty β) ⦃x : γ α⦄ (hx : S.supported (emptyOn α) x),
+    F (emptyOn α) x = G (emptyOn β) (C.transferEmpty α β hβ x hx)
   map_eq : ∀ ⦃α β⦄ ⦃M : Matroid α⦄ ⦃f : α → β⦄ (hf : InjOn f M.E) ⦃x x'⦄, S.supported M x →
     S'.supported M x' → F M x x' = G (M.map f hf) (C.transfer f x) (C'.transfer f x')
 
 namespace InvariantFun
 
 variable {γ : Type u → Type u'} {δ : Type v → Type v'} {μ : Sort w}
-    [S : Matroid.SupportClass γ] [T : Matroid.SupportClass δ] [C : Matroid.TransferClass γ δ]
+    [S : MatroidSupportClass γ] [T : MatroidSupportClass δ] [C : MatroidTransferClass γ δ]
     {F : ∀ {α}, Matroid α → (γ α) → μ} {G : ∀ {β}, Matroid β → (δ β) → μ}
 
 protected lemma comp_right (F : ∀ {α}, Matroid α → (γ α) → μ) (G : ∀ {β}, Matroid β → (δ β) → μ)
-    [h : InvariantFun F G] {μ' : Type*} (s : μ → μ') :
+    [h : InvariantFun F G] (s : μ → μ) :
     InvariantFun (fun M x ↦ s (F M x)) (fun N y ↦ s (G N y)) where
   of_empty _ _ _ _ _ := by rw [h.of_empty]
   map_eq _ _ _ _ hf _ hx := by rw [h.map_eq hf hx]
@@ -163,7 +154,8 @@ protected lemma comp (F : ∀ {α}, Matroid α → (γ α) → μ) (G : ∀ {β}
     [h : InvariantFun F G] (a : ∀ {α}, Matroid α → γ α → γ α) (b : ∀ {β}, Matroid β → δ β → δ β)
     (ha : ∀ {α} (M : Matroid α) x, S.supported M x → S.supported M (a M x))
     (hab0 : ∀ {α β} (hβ : IsEmpty β) (x) (hx : S.supported (emptyOn α) x),
-      C.transferEmpty hβ (a (emptyOn α) x) (ha _ _ hx) = b (emptyOn β) (C.transferEmpty hβ x hx))
+      C.transferEmpty α β hβ (a (emptyOn α) x) (ha _ _ hx)
+      = b (emptyOn β) (C.transferEmpty α β hβ x hx))
     (hab : ∀ {α β} (M) (f : α → β) (hf : InjOn f M.E) (x), S.supported M x →
       (C.transfer f (a M x)) = b (M.map f hf) (C.transfer f x)) :
     InvariantFun (γ := γ) (δ := δ) (fun M X ↦ F M (a M X)) (fun N Y ↦ G N (b N Y)) where
@@ -176,6 +168,14 @@ protected lemma combine (F F' : ∀ {α}, Matroid α → (γ α) → μ) (G G' :
       (fun {β} (N : Matroid β) (x : δ β) ↦ φ (G N x) (G' N x)) where
   of_empty α β hβ x hx := by rw [h.of_empty hβ hx, h'.of_empty hβ hx]
   map_eq α β M f hf x hxE := by rw [h.map_eq hf hxE, h'.map_eq hf hxE]
+
+protected lemma of_const (F : ∀ {α}, (γ α) → μ) (G : ∀ {β}, (δ β) → μ)
+    (h0 : ∀ {α β} (hβ : IsEmpty β) ⦃x : γ α⦄ (hx : S.supported (emptyOn α) x),
+      F x = G (C.transferEmpty α β hβ x hx))
+    (hFG : ∀ {α β} (f : α → β) (X : γ α), F X = G (C.transfer f X)) :
+    InvariantFun (γ := γ) (δ := δ) (fun _ X ↦ F X) (fun _ X ↦ G X) where
+  of_empty _ _ _ _ _ := by rw [h0]
+  map_eq _ _ _ _ _ _ _ := by rw [hFG]
 
 protected lemma dual (F : ∀ {α}, Matroid α → γ α → μ) (G : ∀ {β}, Matroid β → δ β → μ)
     [h : InvariantFun F G] : InvariantFun (fun M X ↦ F M✶ X) (fun N Y ↦ G N✶ Y) where
@@ -197,11 +197,6 @@ protected lemma compl (F : ∀ {α}, Matroid α → Set α → μ) (G : ∀ {β}
     simp only [transfer_set_eq, map_ground, hf.image_sdiff_subset hXE]
   simp
 
-protected lemma encard : InvariantFun (fun {α : Type u} (_ : Matroid α) (X : Set α) ↦ X.encard)
-    (fun {β : Type v} (_ : Matroid β) (Y : Set β) ↦ Y.encard) where
-  of_empty := by simp
-  map_eq α β M f hf X hX := by simp [(hf.mono hX).encard_image]
-
 section Pred
 
 variable {P : ∀ {α : Type u}, Matroid α → (γ α) → Prop}
@@ -222,29 +217,6 @@ protected lemma map_elem {P : ∀ {α}, Matroid α → α → Prop} {Q : ∀ {β
     (hx : P M x) (hf : InjOn f M.E) : Q (M.map f hf) (f x) :=
   h.map hx hf
 
-protected lemma map_set_image_iff {P : ∀ {α}, Matroid α → Set α → Prop}
-    {Q : ∀ {β}, Matroid β → Set β → Prop} [h : InvariantFun P Q] {M : Matroid α} {f : α → β} {X}
-    (hX : X ⊆ M.E) (hf : InjOn f M.E) :  Q (M.map f hf) (f '' X) ↔ P M X := by
-  simpa using (h.map_eq hf hX).symm
-
-protected lemma map_set_iff_exists {P : ∀ {α}, Matroid α → Set α → Prop}
-    {Q : ∀ {β}, Matroid β → Set β → Prop} [h : InvariantFun P Q] [hP : GroundedPred P]
-    [hQ : GroundedPred Q] {M : Matroid α} {f : α → β} {X} (hf : InjOn f M.E) :
-    Q (M.map f hf) X ↔ ∃ X₀, P M X₀ ∧ X = f '' X₀ := by
-  refine ⟨fun h' ↦ ?_, ?_⟩
-  · obtain ⟨X, hX, rfl⟩ := subset_image_iff.1 <| hQ.supported h'
-    rw [h.map_set_image_iff hX] at h'
-    exact ⟨X, h', rfl⟩
-  rintro ⟨X, hX, rfl⟩
-  exact h.map_set hX hf
-
-protected lemma mapEquiv_set_iff {P : ∀ {α}, Matroid α → Set α → Prop}
-    {Q : ∀ {β}, Matroid β → Set β → Prop} [h : InvariantFun P Q] [hP : GroundedPred P]
-    [hQ : GroundedPred Q] {M : Matroid α} {f : α ≃ β} {X : Set β} :
-    Q (M.mapEquiv f) X ↔ P M (f ⁻¹' X) := by
-  rw [mapEquiv_eq_map, h.map_set_iff_exists]
-  exact ⟨by rintro ⟨X, hX, rfl⟩; simpa, fun h ↦ ⟨f ⁻¹' X, ⟨h, by simp⟩⟩⟩
-
 protected lemma and (P P' : ∀ {α}, Matroid α → (γ α) → Prop)
     (Q Q' : ∀ {β}, Matroid β → (δ β) → Prop) [h : InvariantFun P Q] [h' : InvariantFun P' Q'] :
     InvariantFun.{u,v} (fun M X ↦ P M X ∧ P' M X) (fun M X ↦ Q M X ∧ Q' M X) :=
@@ -254,7 +226,7 @@ protected lemma andSupported (P : ∀ {α}, Matroid α → γ α → Prop) (Q : 
     [h : InvariantFun P Q] :
     InvariantFun (fun M X ↦ P M X ∧ S.supported M X) (fun M X ↦ Q M X ∧ T.supported M X) where
   of_empty α β hβ x hx := by
-    rw [← h.of_empty, and_iff_left (C.supported_transferEmpty hβ x hx), and_iff_left hx]
+    rw [← h.of_empty, and_iff_left (C.supported_transferEmpty α β hβ x hx), and_iff_left hx]
   map_eq α β M f hf x hx := by simp [← h.map_eq hf, hx, C.supported_transfer]
 
 protected lemma notAndSupported (P : ∀ {α}, Matroid α → γ α → Prop)
@@ -284,7 +256,7 @@ protected lemma maximal (P : ∀ {α}, Matroid α → Set α → Prop) (Q : ∀ 
   of_empty α β hβ x hx := by
     obtain rfl : x = ∅ := by simpa using hx
     have aux ⦃y⦄ (hy : P (emptyOn α) y) : y = ∅ := by simpa using hP.supported hy
-    simpa [Maximal, and_iff_left aux] using h.of_empty (α := α) hβ hx
+    simpa [Maximal, and_iff_left aux] using h.of_empty (α := α) hβ
   map_eq α β M f hf X (hX : X ⊆ M.E) := by
     simp_rw [eq_iff_iff, maximal_subset_iff, ← h.map_eq hf hX, transfer_set_eq, and_congr_right_iff]
     refine fun hPX ↦ ⟨fun h' Y hY hYX ↦ ?_, fun h' Y hPY hYX ↦ ?_⟩
@@ -321,10 +293,6 @@ instance instSpanning : InvariantFun Spanning Spanning := by
 
 instance instNonspanning : InvariantFun Nonspanning Nonspanning := by
   simpa [← nonspanning_iff] using InvariantFun.notAndSupported Spanning Spanning
-
-instance instIsBasis : InvariantFun₂ IsBasis IsBasis where
-  of_empty := by simp
-  map_eq α β M f hf I X hI hX := by simp [map_isBasis_iff _ _ hI hX]
 
 end instances
 
@@ -498,23 +466,23 @@ protected lemma map {P Q} [hi : InvariantSetPred P Q] {X : Set α} (hX : P M X) 
   rw [InvariantSetPred.map_iff (P := P) (Q := Q)]
   exact ⟨X, hX, rfl⟩
 
--- end InvariantSetPred
+end InvariantSetPred
 
--- class InvariantElemPred (P : ∀ {α : Type u}, Matroid α → α → Prop)
---     (Q : ∀ {β : Type v}, Matroid β → β → Prop) where
---   mem_ground_left : ∀ ⦃α : Type u⦄ ⦃M : Matroid α⦄ ⦃x⦄, P M x → x ∈ M.E
---   subset_ground_right : ∀ ⦃β : Type v⦄ ⦃M : Matroid β⦄ ⦃x⦄, Q M x → x ∈ M.E
---   map_iff' : ∀ ⦃α : Type u⦄ ⦃β : Type v⦄ ⦃M : Matroid α⦄ ⦃x⦄ ⦃f : α → β⦄ (hf : InjOn f M.E),
---       x ∈ M.E → (P M x ↔ Q (M.map f hf) (f x))
+class InvariantElemPred (P : ∀ {α : Type u}, Matroid α → α → Prop)
+    (Q : ∀ {β : Type v}, Matroid β → β → Prop) where
+  mem_ground_left : ∀ ⦃α : Type u⦄ ⦃M : Matroid α⦄ ⦃x⦄, P M x → x ∈ M.E
+  subset_ground_right : ∀ ⦃β : Type v⦄ ⦃M : Matroid β⦄ ⦃x⦄, Q M x → x ∈ M.E
+  map_iff' : ∀ ⦃α : Type u⦄ ⦃β : Type v⦄ ⦃M : Matroid α⦄ ⦃x⦄ ⦃f : α → β⦄ (hf : InjOn f M.E),
+      x ∈ M.E → (P M x ↔ Q (M.map f hf) (f x))
 
--- class InvariantSetPred₂ (P : ∀ {α : Type u}, Matroid α → Set α → Set α → Prop)
---     (Q : ∀ {β : Type v}, Matroid β → Set β → Set β → Prop) where
---   subset_ground_left : ∀ ⦃α : Type u⦄ ⦃M : Matroid α⦄ ⦃X Y⦄, P M X Y → X ⊆ M.E ∧ Y ⊆ M.E
---   subset_ground_right : ∀ ⦃β : Type v⦄ ⦃M : Matroid β⦄ ⦃X Y⦄, Q M X Y → X ⊆ M.E ∧ Y ⊆ M.E
---   map_iff' : ∀ ⦃α : Type u⦄ ⦃β : Type v⦄ ⦃M : Matroid α⦄ ⦃X Y⦄ ⦃f : α → β⦄ (hf : InjOn f M.E),
---       X ⊆ M.E → Y ⊆ M.E → (P M X Y ↔ Q (M.map f hf) (f '' X) (f '' Y))
+class InvariantSetPred₂ (P : ∀ {α : Type u}, Matroid α → Set α → Set α → Prop)
+    (Q : ∀ {β : Type v}, Matroid β → Set β → Set β → Prop) where
+  subset_ground_left : ∀ ⦃α : Type u⦄ ⦃M : Matroid α⦄ ⦃X Y⦄, P M X Y → X ⊆ M.E ∧ Y ⊆ M.E
+  subset_ground_right : ∀ ⦃β : Type v⦄ ⦃M : Matroid β⦄ ⦃X Y⦄, Q M X Y → X ⊆ M.E ∧ Y ⊆ M.E
+  map_iff' : ∀ ⦃α : Type u⦄ ⦃β : Type v⦄ ⦃M : Matroid α⦄ ⦃X Y⦄ ⦃f : α → β⦄ (hf : InjOn f M.E),
+      X ⊆ M.E → Y ⊆ M.E → (P M X Y ↔ Q (M.map f hf) (f '' X) (f '' Y))
 
--- end InvariantSetPred
+end InvariantSetPred
 
 -- protected class hasSupport (M : Matroid α) (γ : Type u) where
 --   supported : γ → Prop

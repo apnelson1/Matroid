@@ -45,6 +45,10 @@ lemma bDual_isCocircuit_iff : (M.bDual b).IsCocircuit X ↔ (M.bDual (!b)).IsCir
 lemma bDual_coindep_iff : (M.bDual b).Coindep X ↔ (M.bDual (!b)).Indep X := by
   simp [coindep_def]
 
+lemma bDual_map {β : Type*} {f : α → β} (hf : InjOn f M.E) :
+    (M.map f hf).bDual b = (M.bDual b).map f (by simpa) := by
+  cases b with simp
+
 @[simp]
 lemma bDual_bDual {c} : (M.bDual b).bDual c = M.bDual (b != c) := by
   cases b <;> cases c <;> simp [bDual]

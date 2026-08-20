@@ -16,6 +16,12 @@ structure IsNonspanningCircuit (M : Matroid α) (C : Set α) : Prop where
   nonspanning : M.Nonspanning C
   isCircuit : M.IsCircuit C
 
+instance : GroundedPred IsNonspanningCircuit := ⟨fun _ _ _ h ↦ h.isCircuit.subset_ground⟩
+
+instance : InvariantFun IsNonspanningCircuit IsNonspanningCircuit := by
+  simpa [← isNonspanningCircuit_iff] using
+    InvariantFun.and Nonspanning IsCircuit Nonspanning IsCircuit
+
 @[grind →, aesop unsafe 10% (rule_sets := [Matroid])]
 lemma IsNonspanningCircuit.subset_ground (h : M.IsNonspanningCircuit C) : C ⊆ M.E :=
   h.1.subset_ground

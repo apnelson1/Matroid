@@ -323,15 +323,21 @@ lemma mem_closure_iff_mem_or_exists_isCircuit (hX : X ⊆ M.E := by aesop_mat) :
   (em (e ∈ X)).elim (fun heX ↦ by simp [heX, M.mem_closure_of_mem heX])
     fun heX ↦ by rw [mem_closure_iff_exists_isCircuit heX, or_iff_right heX]
 
-instance : InvariantSetPred IsCircuit IsCircuit :=
-  InvariantSetPred.instMinimal (P := Dep) (Q := Dep)
+instance : GroundedPred IsCircuit where
+  supported _ _ _ := IsCircuit.subset_ground
 
-instance : InvariantSetPred IsCocircuit IsCocircuit :=
-  InvariantSetPred.instDual (P := IsCircuit) (Q := IsCircuit)
+instance : GroundedPred IsCocircuit where
+  supported _ _ _ := IsCocircuit.subset_ground
+
+instance : InvariantFun IsCircuit IsCircuit :=
+  InvariantFun.minimal Dep Dep
+
+instance : InvariantFun IsCocircuit IsCocircuit :=
+  InvariantFun.dual IsCircuit IsCircuit
 
 lemma map_isCircuit_iff {β : Type*} {C : Set β} (f : α → β) (hf : M.E.InjOn f) :
     (M.map f hf).IsCircuit C ↔ ∃ C₀, M.IsCircuit C₀ ∧ C = f '' C₀ :=
-  InvariantSetPred.map_iff hf
+  InvariantFun.map_set_iff_exists hf
 
 lemma mapEquiv_isCircuit_iff {β : Type*} {C : Set β} (f : α ≃ β) :
     (M.mapEquiv f).IsCircuit C ↔ M.IsCircuit (f.symm '' C) := by
@@ -340,7 +346,7 @@ lemma mapEquiv_isCircuit_iff {β : Type*} {C : Set β} (f : α ≃ β) :
 
 lemma map_isCocircuit_iff {β : Type*} {C : Set β} (f : α → β) (hf : M.E.InjOn f) :
     (M.map f hf).IsCocircuit C ↔ ∃ C₀, M.IsCocircuit C₀ ∧ C = f '' C₀ :=
-  InvariantSetPred.map_iff hf
+  InvariantFun.map_set_iff_exists hf
 
 @[simp]
 lemma restrictSubtype_ground_isCircuit_iff {C : Set M.E} :
