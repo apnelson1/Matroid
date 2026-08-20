@@ -118,26 +118,34 @@ public import Matroid.Graph.Matching.Defs
 public import Matroid.Graph.Matching.Konigs
 -- public import Matroid.Graph.Matching.TutteBerge
 public import Matroid.Graph.Matrix
-public import Matroid.Graph.Minor.Conn
 public import Matroid.Graph.Minor.Defs
+-- public import Matroid.Graph.Minor.Topological
+public import Matroid.Graph.Minor.Walk
 -- public import Matroid.Graph.Planarity.CombMap.Basic
 -- public import Matroid.Graph.Planarity.CombMap.Equiv
 -- public import Matroid.Graph.Planarity.Contraction
--- public import Matroid.Graph.Planarity.Drawing
--- public import Matroid.Graph.Planarity.Face
+public import Matroid.Graph.Planarity.CycleDichotomy
+public import Matroid.Graph.Planarity.Drawing
+-- public import Matroid.Graph.Planarity.Drawing.Union
+public import Matroid.Graph.Planarity.Face
 -- public import Matroid.Graph.Planarity.FaceCycle
 public import Matroid.Graph.Planarity.GraphContinuum.Basic
--- public import Matroid.Graph.Planarity.Insertion
+-- public import Matroid.Graph.Planarity.Insertion.Basic
+-- public import Matroid.Graph.Planarity.Insertion.Plane
 public import Matroid.Graph.Planarity.Obstructions
--- public import Matroid.Graph.Planarity.PLDrawing
--- public import Matroid.Graph.Planarity.PLReduction
+public import Matroid.Graph.Planarity.PLDrawing
+public import Matroid.Graph.Planarity.PLReduction
+-- public import Matroid.Graph.Planarity.PLTopologicalMinor
 public import Matroid.Graph.Planarity.Realization.Basic
 public import Matroid.Graph.Planarity.Realization.CWComplex
+public import Matroid.Graph.Planarity.Realization.Iso
 public import Matroid.Graph.Planarity.Realization.Metric
 public import Matroid.Graph.Planarity.Realization.Subgraph
--- public import Matroid.Graph.Planarity.StarLemma
+public import Matroid.Graph.Planarity.StarLemma
 -- public import Matroid.Graph.Planarity.ThetaCurve
+-- public import Matroid.Graph.Planarity.TopologicalMinor
 public import Matroid.Graph.Simple
+public import Matroid.Graph.Subdivision
 public import Matroid.Graph.Subgraph.Basic
 public import Matroid.Graph.Subgraph.Compatible
 public import Matroid.Graph.Subgraph.Defs

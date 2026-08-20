@@ -306,53 +306,14 @@ lemma IsSimpleLoop.three_le_length {P : PolygonalPath x x} (h : P.IsSimpleLoop) 
       split
       next hauv =>
         have hua : x ≠ a := fun h => hau h.symm
-        have huv : x ≠ v := by
-          intro h
-          subst v
-          rw [openSegment_same] at hauv
-          exact hua (mem_singleton_iff.mp hauv).symm
-        have hav : a ≠ v := by
-          intro h
-          subst a
-          exact huv (right_mem_openSegment_iff.mp hauv)
-        have hinter : segment ℝ x a ∩ segment ℝ a v = {a} :=
-          segment_inter_subsegments_eq_singleton huv hauv
-        have hsplit := segment_union_eq_segment (openSegment_subset_segment ℝ x v hauv)
-        have hsub₁ : segment ℝ x a ⊆ segment ℝ x v := hsplit ▸ subset_union_left
-        have hsub₂ : segment ℝ a v ⊆ segment ℝ x v := hsplit ▸ subset_union_right
+        have huv : x ≠ v := ne_of_mem_openSegment_of_ne hua hauv
+        have hav : a ≠ v := (ne_of_mem_openSegment_right huv hauv).symm
+        have key := segment_split_inter_subset_iff (S := P.toSet) (T := ({x} : Set α)) hua hauv
+          subset_rfl
+        rw [Set.pair_comm a x, Set.pair_comm v x] at key
         simp only [direct_append, isSimpleLoop_cons_iff, isSimple_cons_iff, toSet_cons]
-        constructor
-        · rintro ⟨_, ⟨_, hP, haP⟩, huaP⟩
-          refine ⟨huv, hP, ?_⟩
-          rintro w ⟨hwuv, hwP⟩
-          rw [← hsplit] at hwuv
-          rcases hwuv with hwu | hwv
-          · have hw : w ∈ ({x, a} : Set α) := huaP ⟨hwu, Or.inr hwP⟩
-            rcases hw with hwu' | hwa
-            · exact Or.inl hwu'
-            · have hw' : w = v := haP ⟨hwa ▸ left_mem_segment ℝ a v, hwP⟩
-              exact Or.inr hw'
-          · exact Or.inr <| haP ⟨hwv, hwP⟩
-        · rintro ⟨_, hP, huvP⟩
-          refine ⟨hua, ⟨hav, hP, ?_⟩, ?_⟩
-          · rintro w ⟨hwav, hwP⟩
-            have hw : w ∈ ({x, v} : Set α) := huvP ⟨hsub₂ hwav, hwP⟩
-            rcases hw with hwu | hwv
-            · have : x = a := by
-                simpa using (Set.ext_iff.mp hinter x).mp
-                  ⟨hwu ▸ left_mem_segment ℝ x a, hwu ▸ hwav⟩
-              exact (hua this).elim
-            · exact hwv
-          · rintro w ⟨hwua, hwrest⟩
-            rcases hwrest with hwav | hwP
-            · exact Or.inr <| (Set.ext_iff.mp hinter w).mp ⟨hwua, hwav⟩
-            · have hw : w ∈ ({x, v} : Set α) := huvP ⟨hsub₁ hwua, hwP⟩
-              rcases hw with hwu | hwv
-              · exact Or.inl hwu
-              · have : v = a := by
-                  simpa using (Set.ext_iff.mp hinter v).mp
-                    ⟨hwv ▸ hwua, right_mem_segment ℝ a v⟩
-                exact (hav this.symm).elim
+        exact ⟨fun ⟨_, ⟨_, hP, hpb⟩, hap⟩ ↦ ⟨huv, hP, key.1 ⟨hap, hpb⟩⟩,
+          fun ⟨_, hP, hab⟩ ↦ ⟨hua, ⟨hav, hP, (key.2 hab).2⟩, (key.2 hab).1⟩⟩
       next hauv =>
         have ha' : a ∈ P.toSet :=
           ((mem_toSet_cons_iff.mp ha).resolve_left hau).resolve_left hauv

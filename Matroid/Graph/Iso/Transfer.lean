@@ -11,16 +11,14 @@ public import Matroid.Graph.Iso.Relabel
 /-!
 # Transferring results between carriers
 
-`FitsOn` produces an isomorphic copy of a graph on chosen ambient carriers.  There are now two
-levels of transfer:
+Carrier-copy arguments split cleanly into two cases in the restructured API:
 
-* `Invariant` / `IsoAction` transfer inside one carrier-universe pair;
-* `IsoTransport` transfer across unrelated carrier universes.
+* witnesses/data move through `IsoTransport`;
+* proposition-valued facts move through `InvariantTransport`.
 
-The second point removes the old reason for a universe-indexed `NatCarrier`: a finite graph whose
-carriers live in arbitrary universes can be copied to `Graph ℕ ℕ`, and a cross-universe
-`IsoTransport` moves the property or witness back.  Thus `Graph ℕ ℕ` really is the canonical
-finite proving ground whenever the object being transferred has an `IsoTransport` instance.
+`IsoAction` remains available as the diagonal compatibility view for same-universe witness
+transport, while fixed-codomain `Invariant` remains available for ordinary equality-valued
+invariants.
 -/
 
 @[expose] public section
@@ -52,8 +50,7 @@ theorem FitsOn.of_finite [Infinite V'] [Infinite E'] (hV : V(G).Finite) (hE : E(
   exact ⟨⟨(⟨f, hf⟩ : V(G) ↪ ℕ).trans (Infinite.natEmbedding V')⟩,
     ⟨(⟨g, hg⟩ : E(G) ↪ ℕ).trans (Infinite.natEmbedding E')⟩⟩
 
-/-- Every finite graph fits on `ℕ, ℕ`, regardless of the universes of its original carriers. -/
-theorem FitsOn.of_finite_nat (hV : V(G).Finite) (hE : E(G).Finite) : G.FitsOn ℕ ℕ :=
+ theorem FitsOn.of_finite_nat (hV : V(G).Finite) (hE : E(G).Finite) : G.FitsOn ℕ ℕ :=
   FitsOn.of_finite hV hE
 
 theorem FitsOn.fin {n k : ℕ} (hV : V(G).ncard ≤ n) (hE : E(G).ncard ≤ k)
@@ -63,20 +60,17 @@ theorem FitsOn.fin {n k : ℕ} (hV : V(G).ncard ≤ n) (hE : E(G).ncard ≤ k)
   refine ⟨Function.Embedding.nonempty_of_card_le ?_, Function.Embedding.nonempty_of_card_le ?_⟩ <;>
     simpa [← Nat.card_eq_fintype_card, Nat.card_coe_set_eq, Nat.card_fin]
 
-/-! ### Same-universe transfer -/
+/-! ### Same-universe fixed-codomain invariants -/
 
 namespace Invariant
 
 variable {V₁ V₂ : Type uV} {E₁ E₂ : Type uE} {G : Graph V₁ E₁}
   {R : Sort uO} {f : {V : Type uV} → {E : Type uE} → Graph V E → R}
 
-/-- A fixed-codomain invariant takes on `G` whatever value it takes on every graph on carriers
-that `G` fits on. -/
 theorem eq_of_forall_on [Invariant f] {r : R} (h : ∀ H : Graph V₂ E₂, f H = r)
     (hfit : G.FitsOn V₂ E₂) : f G = r :=
   (Invariant.eq_of_iso (f := f) hfit.copyOn.iso).trans (h _)
 
-/-- Predicate-valued version of `eq_of_forall_on`. -/
 theorem holds_of_forall_on [Invariant f] (Q : R → Prop) (h : ∀ H : Graph V₂ E₂, Q (f H))
     (hfit : G.FitsOn V₂ E₂) : Q (f G) := by
   rw [Invariant.eq_of_iso (f := f) hfit.copyOn.iso]
@@ -84,61 +78,61 @@ theorem holds_of_forall_on [Invariant f] (Q : R → Prop) (h : ∀ H : Graph V�
 
 end Invariant
 
+/-! ### Same-universe witness transfer -/
+
 namespace IsoAction
 
 variable {V₁ V₂ : Type uV} {E₁ E₂ : Type uE} {G : Graph V₁ E₁}
   {F : {V : Type uV} → {E : Type uE} → Graph V E → Sort uO} [IsoAction F]
 
-/-- Same-universe witness transfer. -/
-theorem nonempty_of_forall_on (h : ∀ H : Graph V₂ E₂, Nonempty (F H))
-    (hfit : G.FitsOn V₂ E₂) : Nonempty (F G) :=
+ theorem nonempty_of_forall_on
+    (h : ∀ H : Graph V₂ E₂, Nonempty (F H)) (hfit : G.FitsOn V₂ E₂) :
+    Nonempty (F G) :=
   ⟨(IsoAction.map (F := F) hfit.copyOn.iso).symm (h _).some⟩
 
 end IsoAction
 
-/-! ### Cross-universe transfer
+/-! ### Cross-universe proposition transfer -/
 
-These are the versions used by constructions such as incidence graphs, where the canonical copy
-or comparison graph naturally lands in a different carrier universe. -/
-
-namespace IsoTransport
+namespace InvariantTransport
 
 variable
   {P : {V : Type uV} → {E : Type uE} → Graph V E → Prop}
   {P' : {V : Type uV'} → {E : Type uE'} → Graph V E → Prop}
-  [IsoTransport P P']
+  [InvariantTransport P P']
 
-/-- A cross-universe invariant property proved on every graph on target carriers holds on `G`. -/
-theorem of_forall_on (h : ∀ H : Graph V' E', P' H) (hfit : G.FitsOn V' E') : P G :=
-  (IsoTransport.map hfit.copyOn.iso).symm (h _)
+/-- A cross-universe invariant property proved on every graph on the target carriers holds
+on `G`. -/
+ theorem of_forall_on (h : ∀ H : Graph V' E', P' H) (hfit : G.FitsOn V' E') : P G :=
+  InvariantTransport.comap hfit.copyOn.iso (h _)
 
-/-- To prove a transportable property for every finite graph in arbitrary carrier universes, it is
-enough to prove its `Type 0` incarnation for finite `Graph ℕ ℕ`. -/
-theorem of_forall_finite_nat
-    {P₀ : {V : Type} → {E : Type} → Graph V E → Prop} [IsoTransport P P₀]
-    (h : ∀ H : Graph ℕ ℕ, V(H).Finite → E(H).Finite → P₀ H)
+/-- To prove a transportable property for every finite graph, it is enough to prove the `Type 0`
+incarnation on finite `Graph ℕ ℕ`. -/
+ theorem of_forall_finite_nat {P₀ : {V : Type} → {E : Type} → Graph V E → Prop}
+    [InvariantTransport P P₀] (h : ∀ H : Graph ℕ ℕ, V(H).Finite → E(H).Finite → P₀ H)
     (hV : V(G).Finite) (hE : E(G).Finite) : P G :=
   let i := (FitsOn.of_finite_nat hV hE).copyOn.iso
-  (IsoTransport.map i).symm (h _ (i.vertexSet_finite hV) (i.edgeSet_finite hE))
+  InvariantTransport.comap i (h _ (i.vertexSet_finite hV) (i.edgeSet_finite hE))
 
-/-- Bounded finite carriers, now also cross-universe. -/
-theorem of_forall_fin
-    {n k : ℕ} {P₀ : {V : Type} → {E : Type} → Graph V E → Prop}
-    [IsoTransport P P₀] (h : ∀ H : Graph (Fin n) (Fin k), P₀ H)
-    (hV : V(G).ncard ≤ n) (hE : E(G).ncard ≤ k)
-    (hVfin : V(G).Finite) (hEfin : E(G).Finite) : P G :=
+/-- Bounded finite carriers, cross-universe. -/
+ theorem of_forall_fin {n k : ℕ} {P₀ : {V : Type} → {E : Type} → Graph V E → Prop}
+    [InvariantTransport P P₀] (h : ∀ H : Graph (Fin n) (Fin k), P₀ H)
+    (hV : V(G).ncard ≤ n) (hE : E(G).ncard ≤ k) (hVfin : V(G).Finite) (hEfin : E(G).Finite) : P G :=
   of_forall_on h (FitsOn.fin hV hE hVfin hEfin)
 
-/-- Cross-universe witness transfer. -/
-theorem nonempty_of_forall_on
+end InvariantTransport
+
+/-! ### Cross-universe witness transfer -/
+
+namespace IsoTransport
+
+ theorem nonempty_of_forall_on
     {F : {V : Type uV} → {E : Type uE} → Graph V E → Sort uO}
-    {F' : {V : Type uV'} → {E : Type uE'} → Graph V E → Sort uO'}
-    [IsoTransport F F'] (h : ∀ H : Graph V' E', Nonempty (F' H))
-    (hfit : G.FitsOn V' E') : Nonempty (F G) :=
+    {F' : {V : Type uV'} → {E : Type uE'} → Graph V E → Sort uO'} [IsoTransport F F']
+    (h : ∀ H : Graph V' E', Nonempty (F' H)) (hfit : G.FitsOn V' E') : Nonempty (F G) :=
   ⟨(IsoTransport.map hfit.copyOn.iso).symm (h _).some⟩
 
-/-- Finite witness transfer from the canonical `Graph ℕ ℕ` universe. -/
-theorem nonempty_of_forall_finite_nat
+ theorem nonempty_of_forall_finite_nat
     {F : {V : Type uV} → {E : Type uE} → Graph V E → Sort uO}
     {F₀ : {V : Type} → {E : Type} → Graph V E → Sort uO'}
     [IsoTransport F F₀]
@@ -151,7 +145,7 @@ end IsoTransport
 
 /-! ### Equivariant functions -/
 
-theorem Equivariant.map_eq_copyOn
+ theorem Equivariant.map_eq_copyOn
     {V₁ V₂ : Type uV} {E₁ E₂ : Type uE} {G : Graph V₁ E₁}
     {F : {V : Type uV} → {E : Type uE} → Graph V E → Sort uO} [IsoAction F]
     {f : {V : Type uV} → {E : Type uE} → (G : Graph V E) → F G}
@@ -159,11 +153,40 @@ theorem Equivariant.map_eq_copyOn
     IsoAction.map hfit.copyOn.iso (f G) = f hfit.copyOn.graph :=
   Equivariant.map_eq _
 
-theorem Equivariant.isoRelated_of_isIsoTo
+ theorem Equivariant.isoRelated_of_isIsoTo
     {V₁ V₂ : Type uV} {E₁ E₂ : Type uE} {G : Graph V₁ E₁} {H : Graph V₂ E₂}
     {F : {V : Type uV} → {E : Type uE} → Graph V E → Sort uO} [IsoAction F]
     {f : {V : Type uV} → {E : Type uE} → (G : Graph V E) → F G}
     [Equivariant F f] (h : G.IsIsoTo H) : IsoRelated (f G) (f H) :=
   ⟨h.some, Equivariant.map_eq _⟩
+
+
+/-! ### Relabel-first proof interfaces -/
+
+/-- Prove a heterogeneous invariant property by checking only canonical relabelled copies.
+
+This is the proof-facing counterpart to `Iso.relabel_eq`; the semantic interface remains
+`InvariantTransport.iff_of_iso`. -/
+theorem InvariantTransport.of_relabel_iff
+    {P : {V : Type uV} → {E : Type uE} → Graph V E → Prop}
+    {P' : {V : Type uV'} → {E : Type uE'} → Graph V E → Prop}
+    (h : ∀ {V : Type uV} {E : Type uE} {G : Graph V E}
+      {V' : Type uV'} {E' : Type uE'}
+      (fv : V(G) ↪ V') (fe : E(G) ↪ E'),
+      P G ↔ P' (G.relabel fv fe)) :
+    InvariantTransport P P' :=
+  InvariantTransport.of_iff fun i ↦ by
+    rw [h i.vertexEmbeddingInto i.edgeEmbeddingInto, i.relabel_eq]
+
+/-- Same-universe convenience wrapper around `InvariantTransport.of_relabel_iff`. -/
+theorem Invariant.of_relabel_iff
+    {P : {V : Type uV} → {E : Type uE} → Graph V E → Prop}
+    (h : ∀ {V : Type uV} {E : Type uE} {G : Graph V E}
+      {V' : Type uV} {E' : Type uE}
+      (fv : V(G) ↪ V') (fe : E(G) ↪ E'),
+      P G ↔ P (G.relabel fv fe)) :
+    Invariant P :=
+  Invariant.of_iff fun i ↦ by
+    rw [h i.vertexEmbeddingInto i.edgeEmbeddingInto, i.relabel_eq]
 
 end Graph

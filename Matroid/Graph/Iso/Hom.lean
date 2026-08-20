@@ -388,25 +388,23 @@ lemma Iso.edgeMapEmbedding_surjective (F : Iso G H) :
 def Iso.vertexEquiv (F : Iso G H) : V(G) ≃ V(H) where
   toFun := F.vertMapEmbedding
   invFun := F.symm.vertMapEmbedding
-  left_inv _ := Subtype.ext <| Option.mem_unique (Option.get_mem _)
-    <| F.vertMap.mem_iff_mem.mpr (Option.get_mem _)
-  right_inv _ := Subtype.ext <| Option.mem_unique (Option.get_mem _)
-    <| F.vertMap.mem_iff_mem.mp (Option.get_mem _)
+  left_inv _ := Subtype.ext <| Option.mem_unique
+    (Option.get_mem _) (F.vertMap.mem_iff_mem.mpr (Option.get_mem _))
+  right_inv _ := Subtype.ext <| Option.mem_unique
+    (Option.get_mem _) (F.vertMap.mem_iff_mem.mp (Option.get_mem _))
 
 /-- The bijection between edge sets induced by an isomorphism. -/
 def Iso.edgeEquiv (F : Iso G H) : E(G) ≃ E(H) where
   toFun := F.edgeMapEmbedding
   invFun := F.symm.edgeMapEmbedding
-  left_inv _ := Subtype.ext <| Option.mem_unique (Option.get_mem _)
-    <| F.edgeMap.mem_iff_mem.mpr (Option.get_mem _)
-  right_inv _ := Subtype.ext <| Option.mem_unique (Option.get_mem _)
-    <| F.edgeMap.mem_iff_mem.mp (Option.get_mem _)
+  left_inv _ := Subtype.ext <| Option.mem_unique
+    (Option.get_mem _) (F.edgeMap.mem_iff_mem.mpr (Option.get_mem _))
+  right_inv _ := Subtype.ext <| Option.mem_unique
+    (Option.get_mem _) (F.edgeMap.mem_iff_mem.mp (Option.get_mem _))
 
-@[simp] lemma Iso.vertexEquiv_apply (F : Iso G H) (x : V(G)) :
-    F.vertexEquiv x = F.vertMapEmbedding x := rfl
+lemma Iso.vertexEquiv_apply (F : Iso G H) (x : V(G)) : F.vertexEquiv x = F.vertMapEmbedding x := rfl
 
-@[simp] lemma Iso.edgeEquiv_apply (F : Iso G H) (e : E(G)) :
-    F.edgeEquiv e = F.edgeMapEmbedding e := rfl
+lemma Iso.edgeEquiv_apply (F : Iso G H) (e : E(G)) : F.edgeEquiv e = F.edgeMapEmbedding e := rfl
 
 /-- The characterising property of `vertexEquiv`: it picks out the value of the partial vertex
 map. This, not the definition, is what downstream proofs should use. -/
@@ -444,5 +442,117 @@ lemma Iso.isLink_iff_isLink (F : Iso G H) ⦃e : E⦄ ⦃x y : V⦄ ⦃e' : E'�
   · exact fun h ↦ F.map_isLink h he hx hy
   · exact (F.invMap_isLink · ((F.edgeMap.eq_some_iff).mpr he)
       ((F.vertMap.eq_some_iff).mpr hx) ((F.vertMap.eq_some_iff).mpr hy))
+
+
+/-! ### Active-equivalence coherence
+
+These lemmas are part of the API of `Iso` itself.  Although `Iso` is represented by ambient
+partial equivalences, its action on graph-dependent data is through the induced equivalences on
+the active vertex and edge subtypes.  The transport machinery should consume this API rather than
+re-prove facts about the underlying `PEquiv`s.
+-/
+
+universe uV₁ uE₁ uV₂ uE₂ uV₃ uE₃
+
+variable {V : Type uV₁} {E : Type uE₁} {V' : Type uV₂} {E' : Type uE₂} {V'' : Type uV₃}
+  {E'' : Type uE₃} {G : Graph V E} {H : Graph V' E'} {K : Graph V'' E''} {F F' : Iso G H}
+
+@[ext] theorem Iso.ext (hV : F.vertMap = F'.vertMap) (hE : F.edgeMap = F'.edgeMap) : F = F' := by
+  cases F; cases F'; subst hV; subst hE; rfl
+
+@[simp] theorem Iso.vertexEquiv_id (G : Graph V E) (x : V(G)) : (Iso.id G).vertexEquiv x = x :=
+  Subtype.ext <| Option.mem_unique ((Iso.id G).mem_vertMap_vertexEquiv x) <| by
+    simp [Iso.id, PEquiv.ofSet, x.2]
+
+@[simp] theorem Iso.edgeEquiv_id (G : Graph V E) (e : E(G)) : (Iso.id G).edgeEquiv e = e :=
+  Subtype.ext <| Option.mem_unique ((Iso.id G).mem_edgeMap_edgeEquiv e) <| by
+    simp [Iso.id, PEquiv.ofSet, e.2]
+
+@[simp] theorem Iso.vertexEquiv_comp (F : Iso G H) (F' : Iso H K) (x : V(G)) :
+    (F.comp F').vertexEquiv x = F'.vertexEquiv (F.vertexEquiv x) :=
+  Subtype.ext <| Option.mem_unique ((F.comp F').mem_vertMap_vertexEquiv x) <|
+    (F.vertMap.mem_trans F'.vertMap _ _).2
+      ⟨_, F.mem_vertMap_vertexEquiv x, F'.mem_vertMap_vertexEquiv _⟩
+
+@[simp] theorem Iso.edgeEquiv_comp (F : Iso G H) (F' : Iso H K) (e : E(G)) :
+    (F.comp F').edgeEquiv e = F'.edgeEquiv (F.edgeEquiv e) :=
+  Subtype.ext <| Option.mem_unique ((F.comp F').mem_edgeMap_edgeEquiv e) <|
+    (F.edgeMap.mem_trans F'.edgeMap _ _).2
+      ⟨_, F.mem_edgeMap_edgeEquiv e, F'.mem_edgeMap_edgeEquiv _⟩
+
+@[simp] theorem Iso.vertexEquiv_symm (F : Iso G H) : F.symm.vertexEquiv = F.vertexEquiv.symm :=
+  Equiv.ext fun y ↦ F.vertexEquiv.eq_symm_apply.symm.mp <|
+    Subtype.ext <| Option.mem_unique (F.mem_vertMap_vertexEquiv _) <|
+      F.vertMap.mem_iff_mem.mp <| by
+        simpa [Iso.symm_vertMap] using F.symm.mem_vertMap_vertexEquiv y
+
+@[simp] theorem Iso.edgeEquiv_symm (F : Iso G H) : F.symm.edgeEquiv = F.edgeEquiv.symm :=
+  Equiv.ext fun f ↦ F.edgeEquiv.eq_symm_apply.symm.mp <|
+    Subtype.ext <| Option.mem_unique (F.mem_edgeMap_edgeEquiv _) <|
+      F.edgeMap.mem_iff_mem.mp <| by
+        simpa [Iso.symm_edgeMap] using F.symm.mem_edgeMap_edgeEquiv f
+
+lemma Iso.vertexEquiv_symm_apply_apply (F : Iso G H) (x : V(G)) :
+    F.symm.vertexEquiv (F.vertexEquiv x) = x := by simp
+
+lemma Iso.vertexEquiv_apply_symm_apply (F : Iso G H) (y : V(H)) :
+    F.vertexEquiv (F.symm.vertexEquiv y) = y := by simp
+
+lemma Iso.edgeEquiv_symm_apply_apply (F : Iso G H) (e : E(G)) :
+    F.symm.edgeEquiv (F.edgeEquiv e) = e := by simp
+
+lemma Iso.edgeEquiv_apply_symm_apply (F : Iso G H) (e : E(H)) :
+    F.edgeEquiv (F.symm.edgeEquiv e) = e := by simp
+
+@[simp] theorem Iso.vertexEquiv_id_eq (G : Graph V E) :
+    (Iso.id G).vertexEquiv = Equiv.refl V(G) :=
+  Equiv.ext (vertexEquiv_id G)
+
+@[simp] theorem Iso.edgeEquiv_id_eq (G : Graph V E) : (Iso.id G).edgeEquiv = Equiv.refl E(G) :=
+  Equiv.ext (edgeEquiv_id G)
+
+theorem Iso.vertexEquiv_comp_eq (i : Iso G H) (j : Iso H K) :
+    (i.comp j).vertexEquiv = i.vertexEquiv.trans j.vertexEquiv :=
+  Equiv.ext (vertexEquiv_comp i j)
+
+theorem Iso.edgeEquiv_comp_eq (i : Iso G H) (j : Iso H K) :
+    (i.comp j).edgeEquiv = i.edgeEquiv.trans j.edgeEquiv :=
+  Equiv.ext (edgeEquiv_comp i j)
+
+theorem Iso.comp_symm (i : Iso G H) : i.comp i.symm = Iso.id G := by
+  refine Iso.ext ?_ ?_
+  · ext x
+    simp [Iso.comp_vertMap, Iso.symm_vertMap, Iso.id, PEquiv.self_trans_symm, PEquiv.ofSet,
+      i.vertMap_isSome_iff]
+  · ext e
+    simp [Iso.comp_edgeMap, Iso.symm_edgeMap, Iso.id, PEquiv.self_trans_symm, PEquiv.ofSet,
+      i.edgeMap_isSome_iff]
+
+theorem Iso.symm_comp (i : Iso G H) : i.symm.comp i = Iso.id H := by
+  refine Iso.ext ?_ ?_
+  · ext x
+    simp [Iso.comp_vertMap, Iso.symm_vertMap, Iso.id, PEquiv.symm_trans_self, PEquiv.ofSet,
+      i.invVertMap_isSome_iff]
+  · ext e
+    simp [Iso.comp_edgeMap, Iso.symm_edgeMap, Iso.id, PEquiv.symm_trans_self, PEquiv.ofSet,
+      i.invEdgeMap_isSome_iff]
+
+/-- The subtype-level form of `Iso.isLink_iff_isLink`; this is the form transport code normally
+wants. -/
+@[simp] theorem Iso.isLink_edgeEquiv_vertexEquiv (i : Iso G H) (e : E(G)) (x y : V(G)) :
+    G.IsLink e.1 x.1 y.1 ↔ H.IsLink (i.edgeEquiv e).1 (i.vertexEquiv x).1 (i.vertexEquiv y).1 :=
+  i.isLink_iff_isLink (i.mem_edgeMap_edgeEquiv e) (i.mem_vertMap_vertexEquiv x)
+    (i.mem_vertMap_vertexEquiv y)
+
+@[simp] theorem Iso.adj_vertexEquiv (i : Iso G H) (x y : V(G)) :
+    G.Adj x.1 y.1 ↔ H.Adj (i.vertexEquiv x).1 (i.vertexEquiv y).1 := by
+  constructor
+  · rintro ⟨e, he⟩
+    exact ⟨(i.edgeEquiv ⟨e, he.edge_mem⟩).1,
+      (i.isLink_edgeEquiv_vertexEquiv ⟨e, he.edge_mem⟩ x y).mp he⟩
+  · rintro ⟨e', he'⟩
+    refine ⟨(i.edgeEquiv.symm ⟨e', he'.edge_mem⟩).1,
+      (i.isLink_edgeEquiv_vertexEquiv (i.edgeEquiv.symm ⟨e', he'.edge_mem⟩) x y).mpr ?_⟩
+    simpa using he'
 
 end Graph

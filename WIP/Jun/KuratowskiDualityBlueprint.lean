@@ -1173,8 +1173,11 @@ end PLDrawing
     ########################################################################### -/
 
 /-- PUBLIC-SPECIALIZED.
-This is the existing `K33_K5_lemma` from WIP/Jun/Planarity/K33.lean.  Finish the current auxiliary
-branches, but keep the final theorem at this clean level.
+This now lives in `Matroid.Graph.Planarity.CycleDichotomy` as `Graph.K33_K5_lemma`.  Finish the
+remaining `sorry`s in `K33_K5_lemma_aux2` there, but keep the final theorem at this clean level.
+
+Note the obstruction alternatives are stated with `IsIsoTopologicalMinor`, since
+`CompleteBipartiteGraph 3 3` and `CompleteGraph 5` do not live on `α`/`β`.
 
 It is stronger than needed for the minor-free induction because the obstruction alternative gives
 a topological minor. -/
@@ -1190,8 +1193,8 @@ theorem K33_K5_lemma
       (∀ x ∈ P₁.vertex.tail.dropLast, ¬ G.Adj u x) ∧
       (∀ x ∈ P₂.vertex.tail.dropLast, ¬ G.Adj v x) ∧
       C.IsCyclicWalk (P₁ ++ P₂)) ∨
-    (CompleteBipartiteGraph 3 3).IsTopologicalMinor G ∨
-    (CompleteGraph 5).IsTopologicalMinor G := by
+    (CompleteBipartiteGraph 3 3).IsIsoTopologicalMinor G ∨
+    (CompleteGraph 5).IsIsoTopologicalMinor G := by
   sorry
 
 /-! ###########################################################################

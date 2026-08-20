@@ -332,4 +332,8 @@ lemma Nodup.toSet_dropLast_eq (hl : l.Nodup) (h0 : l ≠ []) :
   simp only [tail_reverse, mem_reverse, head_reverse] at this
   assumption
 
+lemma Nodup.getLast_not_mem_dropLast {l : List α} (hnd : l.Nodup) (hne : l ≠ []) :
+    l.getLast hne ∉ l.dropLast := by
+  simp [mem_dropLast_iff hnd hne]
+
 -- Variant of getElem?_reverse with a hypothesis giving the linear relation between the indices.

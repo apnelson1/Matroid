@@ -5,42 +5,19 @@ Authors: Jun Kwon
 -/
 module
 
-public import Matroid.Graph.Iso.IsoAction
+public import Matroid.Graph.Iso.Hom
 
 /-!
-# Transport across carrier universes
+# Transport of graph-dependent data across carrier universes
 
-`IsoAction F` is deliberately local to one vertex-universe / edge-universe pair.  `IsoTransport
-F F'` is the heterogeneous companion: it transports `F G` to `F' H` along an isomorphism whose
-source and target carrier universes may be unrelated.
+`IsoTransport F F'` is the sole structural transport typeclass.  The former homogeneous
+`IsoAction` hierarchy is represented internally by `IsoActionCore`, a non-typeclass structure.
+Every heterogeneous transport carries the coherent actions on its source and target universe
+slices, but structural instances are registered only once, for `IsoTransport`.
 
-The class is stronger than a bare assignment of equivalences.  It contains the ordinary
-`IsoAction`s on both universe slices and requires the heterogeneous map to commute with
-precomposition by source isomorphisms and postcomposition by target isomorphisms.  Thus a
-same-universe instance `IsoTransport F F` contains an `IsoAction F`; a low-priority bridge exposes
-that action automatically when no more direct `IsoAction` instance exists.
-
-The user-facing notation
-
-```lean
-IsoTransport ⧉ fun G ↦ Set V(G)
-```
-
-is syntax, not a function.  `f ⧉ e` expands *before elaboration* to `f e e`, so
-
-```lean
-IsoTransport (fun G ↦ Set V(G)) (fun G ↦ Set V(G))
-```
-
-and the two copies may acquire different universe levels.  This is the mechanism by which ordinary
-universe-polymorphic Lean expressions remain polymorphic at the API boundary; no first-class
-`Family` object is needed.
-
-`ULift` is intentionally not baked into the class. If `α : Type u`, then `ULift.{v} α` lives in
-`Type (max u v)`, not in `Type v` in general. Thus a canonical lift between arbitrary source and
-target universe slices needs a *third* incarnation at the common `max` universe. The two naturality
-laws below are the intrinsic coherence condition and do not privilege such a factorization; a
-future common-`ULift` constructor can build an `IsoTransport` satisfying them.
+The compatibility module `IsoAction.lean` exposes `IsoAction F` as the diagonal view
+`IsoTransport F F` and projects its source action.  It deliberately contains no structural
+instances of its own.
 -/
 
 @[expose] public section
@@ -51,27 +28,189 @@ namespace Graph
 
 universe uV₁ uE₁ uO₁ uV₂ uE₂ uO₂ uO₃ uO₄
 
-/-- Coherent transport between two universe incarnations of graph-dependent data. -/
-class IsoTransport (F : {V : Type uV₁} → {E : Type uE₁} → Graph V E → Sort uO₁)
-    (F' : outParam ({V : Type uV₂} → {E : Type uE₂} → Graph V E → Sort uO₂)) where
-  /-- The ordinary action on the source universe slice. -/
-  sourceAction : IsoAction F
-  /-- The ordinary action on the target universe slice. -/
-  targetAction : IsoAction F'
-  /-- Heterogeneous transport along an isomorphism. -/
-  map : {V : Type uV₁} → {E : Type uE₁} → {V' : Type uV₂} → {E' : Type uE₂} →
-    {G : Graph V E} → {H : Graph V' E'} → Iso G H → F G ≃ F' H
-  /-- Precomposing the graph isomorphism acts first by the source `IsoAction`. -/
-  map_pre : ∀ {V₀ V₁ : Type uV₁} {E₀ E₁ : Type uE₁} {V₂ : Type uV₂} {E₂ : Type uE₂}
-    {G₀ : Graph V₀ E₀} {G₁ : Graph V₁ E₁} {H : Graph V₂ E₂}
-    (i : Iso G₀ G₁) (j : Iso G₁ H) (x : F G₀), map (i.comp j) x = map j (sourceAction.map i x)
-  /-- Postcomposing the graph isomorphism acts afterwards by the target `IsoAction`. -/
-  map_post : ∀ {V₀ : Type uV₁} {E₀ : Type uE₁} {V₁ V₂ : Type uV₂} {E₁ E₂ : Type uE₂}
-    {G : Graph V₀ E₀} {H₁ : Graph V₁ E₁} {H₂ : Graph V₂ E₂}
-    (i : Iso G H₁) (j : Iso H₁ H₂) (x : F G), map (i.comp j) x = targetAction.map j (map i x)
+set_option linter.checkUnivs false in
+/-- A graph-indexed family, uniform in the vertex and edge carriers of one universe slice. -/
+abbrev Family := {V : Type uV₁} → {E : Type uE₁} → Graph V E → Sort uO₁
 
-/-- Duplicate an argument before elaboration, so the two copies may be instantiated at independent
-universe levels. `f ⧉ e` expands to `f e e`. -/
+set_option linter.checkUnivs false in
+/-- A `Family` whose fibers are `Type`s. -/
+abbrev TypeFamily := {V : Type uV₁} → {E : Type uE₁} → Graph V E → Type uO₁
+
+/-- A section of a graph-indexed family. -/
+abbrev Family.Section (F : Family.{uV₁, uE₁, uO₁}) :=
+  {V : Type uV₁} → {E : Type uE₁} → (G : Graph V E) → F G
+
+/-! ## Internal homogeneous action data -/
+
+/-- Coherent transport inside one carrier-universe slice.
+
+This is intentionally a structure, not a class.  Users and instance search should depend on
+`IsoTransport`; `IsoActionCore` is the coherence payload required at each endpoint of a
+heterogeneous transport. -/
+structure IsoActionCore (F : Family.{uV₁, uE₁, uO₁}) where
+  map : {V V' : Type uV₁} → {E E' : Type uE₁} →
+    {G : Graph V E} → {H : Graph V' E'} → Iso G H → F G ≃ F H
+  map_id : ∀ {V : Type uV₁} {E : Type uE₁} (G : Graph V E) (x : F G),
+    map (Iso.id G) x = x
+  map_comp : ∀ {V V' V'' : Type uV₁} {E E' E'' : Type uE₁}
+    {G : Graph V E} {H : Graph V' E'} {K : Graph V'' E''}
+    (i : Iso G H) (j : Iso H K) (x : F G),
+    map (i.comp j) x = map j (map i x)
+
+namespace IsoActionCore
+
+/-- Equivalence of proof types corresponding to an iff. -/
+def equivOfIff {P Q : Prop} (h : P ↔ Q) : P ≃ Q where
+  toFun := h.mp
+  invFun := h.mpr
+  left_inv _ := Subsingleton.elim _ _
+  right_inv _ := Subsingleton.elim _ _
+
+/-- Homogeneous proof-type action generated by an iff theorem.  This is internal coherence data;
+property registration should normally use `InvariantTransport`. -/
+noncomputable def of_iff
+    (P : {V : Type uV₁} → {E : Type uE₁} → Graph V E → Prop)
+    (h : ∀ {V V' : Type uV₁} {E E' : Type uE₁}
+      {G : Graph V E} {H : Graph V' E'}, Iso G H → (P G ↔ P H)) :
+    IsoActionCore P where
+  map i := equivOfIff (h i)
+  map_id _ _ := Subsingleton.elim _ _
+  map_comp _ _ _ := Subsingleton.elim _ _
+
+variable {F : Family.{uV₁, uE₁, uO₁}} (a : IsoActionCore F)
+
+/-- Transport by an inverse is the inverse equivalence. -/
+theorem map_symm {V V' : Type uV₁} {E E' : Type uE₁}
+    {G : Graph V E} {H : Graph V' E'} (i : Iso G H) :
+    a.map i.symm = (a.map i).symm :=
+  Equiv.ext fun y ↦ (a.map i).eq_symm_apply.symm.mp <| by
+    rw [← a.map_comp, i.symm_comp, a.map_id]
+
+@[simp] theorem map_symm_apply {V V' : Type uV₁} {E E' : Type uE₁}
+    {G : Graph V E} {H : Graph V' E'} (i : Iso G H) (y : F H) :
+    a.map i.symm y = (a.map i).symm y := by
+  rw [a.map_symm]
+
+@[simp] theorem map_id_eq_refl {V : Type uV₁} {E : Type uE₁} (G : Graph V E) :
+    a.map (Iso.id G) = Equiv.refl (F G) :=
+  Equiv.ext (a.map_id G)
+
+theorem map_comp_eq_trans
+    {V V' V'' : Type uV₁} {E E' E'' : Type uE₁}
+    {G : Graph V E} {H : Graph V' E'} {K : Graph V'' E''}
+    (i : Iso G H) (j : Iso H K) :
+    a.map (i.comp j) = (a.map i).trans (a.map j) :=
+  Equiv.ext (a.map_comp i j)
+
+/-- Conjugate a homogeneous action through pointwise equivalences of fibers. -/
+def congr {K : Family.{uV₁, uE₁, uO₂}}
+    (e : {V : Type uV₁} → {E : Type uE₁} → (G : Graph V E) → K G ≃ F G) : IsoActionCore K where
+  map i := (e _).trans ((a.map i).trans (e _).symm)
+  map_id G x := by simp
+  map_comp i j x := by simp [a.map_comp]
+
+/-- Constant families carry the trivial action. -/
+def const (R : Sort uO₁) : IsoActionCore (fun {_ : Type uV₁} {_ : Type uE₁} _ ↦ R) where
+  map _ := Equiv.refl R
+  map_id _ _ := rfl
+  map_comp _ _ _ := rfl
+
+/-- The active vertex subtype carries the equivalence induced by `Iso`. -/
+def vertices : IsoActionCore (fun {V : Type uV₁} {E : Type uE₁} (G : Graph V E) ↦ V(G)) where
+  map := Iso.vertexEquiv
+  map_id := Iso.vertexEquiv_id
+  map_comp := Iso.vertexEquiv_comp
+
+/-- The active edge subtype carries the equivalence induced by `Iso`. -/
+def edges : IsoActionCore (fun {V : Type uV₁} {E : Type uE₁} (G : Graph V E) ↦ E(G)) where
+  map := Iso.edgeEquiv
+  map_id := Iso.edgeEquiv_id
+  map_comp := Iso.edgeEquiv_comp
+
+/-- Function spaces are transported by conjugation. -/
+def arrow {A : Family.{uV₁, uE₁, uO₁}} {B : Family.{uV₁, uE₁, uO₂}}
+    (aA : IsoActionCore A) (aB : IsoActionCore B) : IsoActionCore (fun G ↦ A G → B G) where
+  map i :=
+    { toFun := fun f y ↦ aB.map i (f ((aA.map i).symm y))
+      invFun := fun g x ↦ (aB.map i).symm (g (aA.map i x))
+      left_inv := by intro f; funext x; simp
+      right_inv := by intro g; funext y; simp }
+  map_id := fun G f ↦ by
+    change (fun y ↦ aB.map (Iso.id G) (f ((aA.map (Iso.id G)).symm y))) = f
+    rw [aA.map_id_eq_refl, aB.map_id_eq_refl]
+    rfl
+  map_comp := fun i j f ↦ by
+    change (fun y ↦ aB.map (i.comp j) (f ((aA.map (i.comp j)).symm y))) =
+      (fun y ↦ aB.map j (aB.map i (f ((aA.map i).symm ((aA.map j).symm y)))))
+    rw [aA.map_comp_eq_trans, aB.map_comp_eq_trans]
+    rfl
+
+def prod {A : TypeFamily.{uV₁, uE₁, uO₁}} {B : TypeFamily.{uV₁, uE₁, uO₂}}
+    (aA : IsoActionCore A) (aB : IsoActionCore B) : IsoActionCore (fun G ↦ A G × B G) where
+  map i := Equiv.prodCongr (aA.map i) (aB.map i)
+  map_id := fun G x ↦ by
+    rw [aA.map_id_eq_refl, aB.map_id_eq_refl]
+    rfl
+  map_comp := fun i j x ↦ by
+    rw [aA.map_comp_eq_trans, aB.map_comp_eq_trans]
+    rfl
+
+def sum {A : TypeFamily.{uV₁, uE₁, uO₁}} {B : TypeFamily.{uV₁, uE₁, uO₂}}
+    (aA : IsoActionCore A) (aB : IsoActionCore B) : IsoActionCore (fun G ↦ A G ⊕ B G) where
+  map i := Equiv.sumCongr (aA.map i) (aB.map i)
+  map_id := fun G x ↦ by
+    rw [aA.map_id_eq_refl, aB.map_id_eq_refl]
+    cases x <;> rfl
+  map_comp := fun i j x ↦ by
+    rw [aA.map_comp_eq_trans, aB.map_comp_eq_trans]
+    cases x <;> rfl
+
+def option {A : TypeFamily.{uV₁, uE₁, uO₁}} (aA : IsoActionCore A) :
+    IsoActionCore (fun G ↦ Option (A G)) where
+  map i := Equiv.optionCongr (aA.map i)
+  map_id := fun G x ↦ by rw [aA.map_id_eq_refl]; cases x <;> rfl
+  map_comp := fun i j x ↦ by rw [aA.map_comp_eq_trans]; cases x <;> rfl
+
+def set {A : TypeFamily.{uV₁, uE₁, uO₁}} (aA : IsoActionCore A) :
+    IsoActionCore (fun G ↦ Set (A G)) where
+  map i := Equiv.Set.congr (aA.map i)
+  map_id := fun G s ↦ by
+    rw [aA.map_id_eq_refl]
+    ext x
+    simp [Equiv.Set.congr]
+  map_comp := fun i j s ↦ by
+    rw [aA.map_comp_eq_trans]
+    exact (Set.image_image (aA.map j) (aA.map i) s).symm
+
+end IsoActionCore
+
+/-! ## Heterogeneous transport -/
+
+/-- Coherent transport between two universe incarnations of graph-dependent data.
+
+The source and target homogeneous actions are data fields, not separately inferred classes.  This
+is the key to having one structural instance hierarchy while retaining enough coherence to compose
+a heterogeneous map with isomorphisms lying entirely in either endpoint universe slice. -/
+class IsoTransport
+    (F : {V : Type uV₁} → {E : Type uE₁} → Graph V E → Sort uO₁)
+    (F' : outParam ({V : Type uV₂} → {E : Type uE₂} → Graph V E → Sort uO₂)) where
+  sourceAction : IsoActionCore F
+  targetAction : IsoActionCore F'
+  map : {V : Type uV₁} → {E : Type uE₁} →
+    {V' : Type uV₂} → {E' : Type uE₂} →
+    {G : Graph V E} → {H : Graph V' E'} → Iso G H → F G ≃ F' H
+  map_pre : ∀ {V₀ V₁ : Type uV₁} {E₀ E₁ : Type uE₁}
+    {V₂ : Type uV₂} {E₂ : Type uE₂}
+    {G₀ : Graph V₀ E₀} {G₁ : Graph V₁ E₁} {H : Graph V₂ E₂}
+    (i : Iso G₀ G₁) (j : Iso G₁ H) (x : F G₀),
+    map (i.comp j) x = map j (sourceAction.map i x)
+  map_post : ∀ {V₀ : Type uV₁} {E₀ : Type uE₁}
+    {V₁ V₂ : Type uV₂} {E₁ E₂ : Type uE₂}
+    {G : Graph V₀ E₀} {H₁ : Graph V₁ E₁} {H₂ : Graph V₂ E₂}
+    (i : Iso G H₁) (j : Iso H₁ H₂) (x : F G),
+    map (i.comp j) x = targetAction.map j (map i x)
+
+/-- Duplicate a universe-polymorphic expression before elaboration. -/
 syntax:max term:max "⧉" term : term
 macro_rules | `($f:term ⧉ $x:term) => `($f $x $x)
 
@@ -80,29 +219,66 @@ namespace IsoTransport
 variable {F : {V : Type uV₁} → {E : Type uE₁} → Graph V E → Sort uO₁}
   {F' : {V : Type uV₂} → {E : Type uE₂} → Graph V E → Sort uO₂} [t : IsoTransport F F']
 
-/-- The pointwise source-coherence law as an equality of equivalences. -/
+/-- The homogeneous source action carried by a transport. -/
+def sourceMap
+    {V V' : Type uV₁} {E E' : Type uE₁}
+    {G : Graph V E} {H : Graph V' E'} (i : Iso G H) : F G ≃ F H :=
+  t.sourceAction.map i
+
+/-- The homogeneous target action carried by a transport. -/
+def targetMap
+    {V V' : Type uV₂} {E E' : Type uE₂}
+    {G : Graph V E} {H : Graph V' E'} (i : Iso G H) : F' G ≃ F' H :=
+  t.targetAction.map i
+
+@[simp] theorem sourceMap_id
+    {V : Type uV₁} {E : Type uE₁} (G : Graph V E) (x : F G) :
+    sourceMap (F := F) (F' := F') (Iso.id G) x = x :=
+  t.sourceAction.map_id G x
+
+@[simp] theorem targetMap_id
+    {V : Type uV₂} {E : Type uE₂} (G : Graph V E) (x : F' G) :
+    targetMap (F := F) (F' := F') (Iso.id G) x = x :=
+  t.targetAction.map_id G x
+
+theorem sourceMap_comp
+    {V V' V'' : Type uV₁} {E E' E'' : Type uE₁}
+    {G : Graph V E} {H : Graph V' E'} {K : Graph V'' E''}
+    (i : Iso G H) (j : Iso H K) (x : F G) :
+    sourceMap (F := F) (F' := F') (i.comp j) x =
+      sourceMap (F := F) (F' := F') j (sourceMap (F := F) (F' := F') i x) :=
+  t.sourceAction.map_comp i j x
+
+theorem targetMap_comp
+    {V V' V'' : Type uV₂} {E E' E'' : Type uE₂}
+    {G : Graph V E} {H : Graph V' E'} {K : Graph V'' E''}
+    (i : Iso G H) (j : Iso H K) (x : F' G) :
+    targetMap (F := F) (F' := F') (i.comp j) x =
+      targetMap (F := F) (F' := F') j (targetMap (F := F) (F' := F') i x) :=
+  t.targetAction.map_comp i j x
+
 theorem map_pre_eq_trans {V₀ V₁ : Type uV₁} {E₀ E₁ : Type uE₁} {V₂ : Type uV₂} {E₂ : Type uE₂}
     {G₀ : Graph V₀ E₀} {G₁ : Graph V₁ E₁} {H : Graph V₂ E₂} (i : Iso G₀ G₁) (j : Iso G₁ H) :
     t.map (i.comp j) = (t.sourceAction.map i).trans (t.map j) :=
   Equiv.ext (t.map_pre i j)
 
-/-- The pointwise target-coherence law as an equality of equivalences. -/
 theorem map_post_eq_trans {V₀ : Type uV₁} {E₀ : Type uE₁} {V₁ V₂ : Type uV₂} {E₁ E₂ : Type uE₂}
     {G : Graph V₀ E₀} {H₁ : Graph V₁ E₁} {H₂ : Graph V₂ E₂} (i : Iso G H₁) (j : Iso H₁ H₂) :
     t.map (i.comp j) = (t.map i).trans (t.targetAction.map j) :=
   Equiv.ext (t.map_post i j)
 
-/-- Proposition-valued transport, in the form callers normally want. -/
+/-- Compatibility helper: a proof-type transport supplies the corresponding iff.
+New invariant-property code should prefer `InvariantTransport.iff_of_iso`. -/
 theorem iff_of_iso {P : {V : Type uV₁} → {E : Type uE₁} → Graph V E → Prop}
     {P' : {V : Type uV₂} → {E : Type uE₂} → Graph V E → Prop} [IsoTransport P P']
     {V : Type uV₁} {E : Type uE₁} {V' : Type uV₂} {E' : Type uE₂} {G : Graph V E} {H : Graph V' E'}
     (i : Iso G H) : P G ↔ P' H :=
   ⟨IsoTransport.map i, (IsoTransport.map i).symm⟩
 
-/-- Build proposition-valued transport from source, target, and heterogeneous iff theorems.
-The coherence fields are automatic by proof irrelevance. -/
+/-- Backwards-compatible constructor for proof-type transport.  It is intentionally not the
+preferred property-registration API; `InvariantTransport.of_iff` needs only the cross theorem. -/
 @[instance_reducible]
-def of_iff {P : {V : Type uV₁} → {E : Type uE₁} → Graph V E → Prop}
+noncomputable def of_iff {P : {V : Type uV₁} → {E : Type uE₁} → Graph V E → Prop}
     {P' : {V : Type uV₂} → {E : Type uE₂} → Graph V E → Prop}
     (hsource : ∀ {V V' : Type uV₁} {E E' : Type uE₁} {G : Graph V E} {H : Graph V' E'},
       Iso G H → (P G ↔ P H))
@@ -110,27 +286,38 @@ def of_iff {P : {V : Type uV₁} → {E : Type uE₁} → Graph V E → Prop}
       Iso G H → (P' G ↔ P' H))
     (hcross : ∀ {V : Type uV₁} {E : Type uE₁} {V' : Type uV₂} {E' : Type uE₂}
       {G : Graph V E} {H : Graph V' E'}, Iso G H → (P G ↔ P' H)) : IsoTransport P P' where
-  sourceAction := IsoAction.of_iff P hsource
-  targetAction := IsoAction.of_iff P' htarget
-  map i := IsoAction.equivOfIff (hcross i)
+  sourceAction := IsoActionCore.of_iff P hsource
+  targetAction := IsoActionCore.of_iff P' htarget
+  map i := IsoActionCore.equivOfIff (hcross i)
   map_pre _ _ _ := Subsingleton.elim _ _
   map_post _ _ _ := Subsingleton.elim _ _
 
+/-- Conjugate a heterogeneous transport through pointwise fiber equivalences.
+
+No naturality hypothesis is needed on the fiber equivalences: the source and target actions are
+conjugated by the same endpoint equivalences. -/
+@[instance_reducible]
+def ofFiberEquiv {K : {V : Type uV₁} → {E : Type uE₁} → Graph V E → Sort uO₃}
+    {K' : {V : Type uV₂} → {E : Type uE₂} → Graph V E → Sort uO₄}
+    (e : {V : Type uV₁} → {E : Type uE₁} → (G : Graph V E) → K G ≃ F G)
+    (e' : {V : Type uV₂} → {E : Type uE₂} → (G : Graph V E) → K' G ≃ F' G) : IsoTransport K K' where
+  sourceAction := t.sourceAction.congr e
+  targetAction := t.targetAction.congr e'
+  map i := (e _).trans ((t.map i).trans (e' _).symm)
+  map_pre i j x := by simp [IsoActionCore.congr, t.map_pre]
+  map_post i j x := by simp [IsoActionCore.congr, t.map_post]
+
 end IsoTransport
 
-/-- A coherent same-universe transport contains an ordinary action.  This is deliberately low
-priority: direct `IsoAction` instances remain the canonical same-universe resolution path. -/
-instance (priority := 100) instIsoActionOfTransport
-    (F : {V : Type uV₁} → {E : Type uE₁} → Graph V E → Sort uO₁) [t : IsoTransport F F] :
-    IsoAction F :=
-  t.sourceAction
+/-! ## Structural transport instances
 
-/-! ### Structural transport instances -/
+There is one instance per type constructor.  These instances simultaneously determine the source
+and target homogeneous actions and the heterogeneous map. -/
 
 instance instTransportConst (R : Sort uO₁) : IsoTransport (fun {_ : Type uV₁} {_ : Type uE₁} _ ↦ R)
     (fun {_ : Type uV₂} {_ : Type uE₂} _ ↦ R) where
-  sourceAction := inferInstance
-  targetAction := inferInstance
+  sourceAction := IsoActionCore.const R
+  targetAction := IsoActionCore.const R
   map _ := Equiv.refl R
   map_pre _ _ _ := rfl
   map_post _ _ _ := rfl
@@ -138,8 +325,8 @@ instance instTransportConst (R : Sort uO₁) : IsoTransport (fun {_ : Type uV₁
 instance instTransportVertices : IsoTransport
     (fun {V : Type uV₁} {E : Type uE₁} (G : Graph V E) ↦ V(G))
     (fun {V : Type uV₂} {E : Type uE₂} (G : Graph V E) ↦ V(G)) where
-  sourceAction := inferInstance
-  targetAction := inferInstance
+  sourceAction := IsoActionCore.vertices
+  targetAction := IsoActionCore.vertices
   map := Iso.vertexEquiv
   map_pre := Iso.vertexEquiv_comp
   map_post := Iso.vertexEquiv_comp
@@ -147,115 +334,125 @@ instance instTransportVertices : IsoTransport
 instance instTransportEdges : IsoTransport
     (fun {V : Type uV₁} {E : Type uE₁} (G : Graph V E) ↦ E(G))
     (fun {V : Type uV₂} {E : Type uE₂} (G : Graph V E) ↦ E(G)) where
-  sourceAction := inferInstance
-  targetAction := inferInstance
+  sourceAction := IsoActionCore.edges
+  targetAction := IsoActionCore.edges
   map := Iso.edgeEquiv
   map_pre := Iso.edgeEquiv_comp
   map_post := Iso.edgeEquiv_comp
 
-instance instTransportArrow (F : {V : Type uV₁} → {E : Type uE₁} → Graph V E → Sort uO₁)
-    (F' : {V : Type uV₂} → {E : Type uE₂} → Graph V E → Sort uO₂)
-    (K : {V : Type uV₁} → {E : Type uE₁} → Graph V E → Sort uO₃)
-    (K' : {V : Type uV₂} → {E : Type uE₂} → Graph V E → Sort uO₄) [tF : IsoTransport F F']
-    [tK : IsoTransport K K'] : IsoTransport (fun G ↦ F G → K G) (fun G ↦ F' G → K' G) where
-  sourceAction := by
-    letI := tF.sourceAction
-    letI := tK.sourceAction
-    infer_instance
-  targetAction := by
-    letI := tF.targetAction
-    letI := tK.targetAction
-    infer_instance
+instance instTransportArrow (A : {V : Type uV₁} → {E : Type uE₁} → Graph V E → Sort uO₁)
+    (A' : {V : Type uV₂} → {E : Type uE₂} → Graph V E → Sort uO₂)
+    (B : {V : Type uV₁} → {E : Type uE₁} → Graph V E → Sort uO₃)
+    (B' : {V : Type uV₂} → {E : Type uE₂} → Graph V E → Sort uO₄)
+    [tA : IsoTransport A A'] [tB : IsoTransport B B'] :
+    IsoTransport (fun G ↦ A G → B G) (fun G ↦ A' G → B' G) where
+  sourceAction := IsoActionCore.arrow tA.sourceAction tB.sourceAction
+  targetAction := IsoActionCore.arrow tA.targetAction tB.targetAction
   map i :=
-    { toFun := fun f y ↦ tK.map i (f ((tF.map i).symm y))
-      invFun := fun g x ↦ (tK.map i).symm (g (tF.map i x))
+    { toFun := fun f y ↦ tB.map i (f ((tA.map i).symm y))
+      invFun := fun g x ↦ (tB.map i).symm (g (tA.map i x))
       left_inv := by intro f; funext x; simp
       right_inv := by intro g; funext y; simp }
   map_pre i j f := by
     funext y
-    change tK.map (i.comp j) (f ((tF.map (i.comp j)).symm y)) = _
-    rw [tF.map_pre_eq_trans i j, tK.map_pre_eq_trans i j]
+    change tB.map (i.comp j) (f ((tA.map (i.comp j)).symm y)) = _
+    rw [tA.map_pre_eq_trans i j, tB.map_pre_eq_trans i j]
     rfl
   map_post i j f := by
     funext y
-    change tK.map (i.comp j) (f ((tF.map (i.comp j)).symm y)) = _
-    rw [tF.map_post_eq_trans i j, tK.map_post_eq_trans i j]
+    change tB.map (i.comp j) (f ((tA.map (i.comp j)).symm y)) = _
+    rw [tA.map_post_eq_trans i j, tB.map_post_eq_trans i j]
     rfl
 
-instance instTransportProd (F : {V : Type uV₁} → {E : Type uE₁} → Graph V E → Type uO₁)
-    (F' : {V : Type uV₂} → {E : Type uE₂} → Graph V E → Type uO₂)
-    (K : {V : Type uV₁} → {E : Type uE₁} → Graph V E → Type uO₃)
-    (K' : {V : Type uV₂} → {E : Type uE₂} → Graph V E → Type uO₄) [tF : IsoTransport F F']
-    [tK : IsoTransport K K'] : IsoTransport (fun G ↦ F G × K G) (fun G ↦ F' G × K' G) where
-  sourceAction := by
-    letI := tF.sourceAction
-    letI := tK.sourceAction
-    infer_instance
-  targetAction := by
-    letI := tF.targetAction
-    letI := tK.targetAction
-    infer_instance
-  map i := Equiv.prodCongr (tF.map i) (tK.map i)
+instance instTransportProd (A : {V : Type uV₁} → {E : Type uE₁} → Graph V E → Type uO₁)
+    (A' : {V : Type uV₂} → {E : Type uE₂} → Graph V E → Type uO₂)
+    (B : {V : Type uV₁} → {E : Type uE₁} → Graph V E → Type uO₃)
+    (B' : {V : Type uV₂} → {E : Type uE₂} → Graph V E → Type uO₄)
+    [tA : IsoTransport A A'] [tB : IsoTransport B B'] :
+    IsoTransport (fun G ↦ A G × B G) (fun G ↦ A' G × B' G) where
+  sourceAction := IsoActionCore.prod tA.sourceAction tB.sourceAction
+  targetAction := IsoActionCore.prod tA.targetAction tB.targetAction
+  map i := Equiv.prodCongr (tA.map i) (tB.map i)
   map_pre i j x := by
-    rw [tF.map_pre_eq_trans i j, tK.map_pre_eq_trans i j]
+    rw [tA.map_pre_eq_trans i j, tB.map_pre_eq_trans i j]
     rfl
   map_post i j x := by
-    rw [tF.map_post_eq_trans i j, tK.map_post_eq_trans i j]
+    rw [tA.map_post_eq_trans i j, tB.map_post_eq_trans i j]
     rfl
 
-instance instTransportSum (F : {V : Type uV₁} → {E : Type uE₁} → Graph V E → Type uO₁)
-    (F' : {V : Type uV₂} → {E : Type uE₂} → Graph V E → Type uO₂)
-    (K : {V : Type uV₁} → {E : Type uE₁} → Graph V E → Type uO₃)
-    (K' : {V : Type uV₂} → {E : Type uE₂} → Graph V E → Type uO₄) [tF : IsoTransport F F']
-    [tK : IsoTransport K K'] : IsoTransport (fun G ↦ F G ⊕ K G) (fun G ↦ F' G ⊕ K' G) where
-  sourceAction := by
-    letI := tF.sourceAction
-    letI := tK.sourceAction
-    infer_instance
-  targetAction := by
-    letI := tF.targetAction
-    letI := tK.targetAction
-    infer_instance
-  map i := Equiv.sumCongr (tF.map i) (tK.map i)
+instance instTransportSum (A : {V : Type uV₁} → {E : Type uE₁} → Graph V E → Type uO₁)
+    (A' : {V : Type uV₂} → {E : Type uE₂} → Graph V E → Type uO₂)
+    (B : {V : Type uV₁} → {E : Type uE₁} → Graph V E → Type uO₃)
+    (B' : {V : Type uV₂} → {E : Type uE₂} → Graph V E → Type uO₄)
+    [tA : IsoTransport A A'] [tB : IsoTransport B B'] :
+    IsoTransport (fun G ↦ A G ⊕ B G) (fun G ↦ A' G ⊕ B' G) where
+  sourceAction := IsoActionCore.sum tA.sourceAction tB.sourceAction
+  targetAction := IsoActionCore.sum tA.targetAction tB.targetAction
+  map i := Equiv.sumCongr (tA.map i) (tB.map i)
   map_pre i j x := by
-    rw [tF.map_pre_eq_trans i j, tK.map_pre_eq_trans i j]
+    rw [tA.map_pre_eq_trans i j, tB.map_pre_eq_trans i j]
     cases x <;> rfl
   map_post i j x := by
-    rw [tF.map_post_eq_trans i j, tK.map_post_eq_trans i j]
+    rw [tA.map_post_eq_trans i j, tB.map_post_eq_trans i j]
     cases x <;> rfl
 
-instance instTransportOption (F : {V : Type uV₁} → {E : Type uE₁} → Graph V E → Type uO₁)
-    (F' : {V : Type uV₂} → {E : Type uE₂} → Graph V E → Type uO₂)
-    [tF : IsoTransport F F'] : IsoTransport (fun G ↦ Option (F G)) (fun G ↦ Option (F' G)) where
-  sourceAction := by
-    letI := tF.sourceAction
-    infer_instance
-  targetAction := by
-    letI := tF.targetAction
-    infer_instance
-  map i := Equiv.optionCongr (tF.map i)
+instance instTransportOption (A : {V : Type uV₁} → {E : Type uE₁} → Graph V E → Type uO₁)
+    (A' : {V : Type uV₂} → {E : Type uE₂} → Graph V E → Type uO₂)
+    [tA : IsoTransport A A'] : IsoTransport (fun G ↦ Option (A G)) (fun G ↦ Option (A' G)) where
+  sourceAction := IsoActionCore.option tA.sourceAction
+  targetAction := IsoActionCore.option tA.targetAction
+  map i := Equiv.optionCongr (tA.map i)
   map_pre i j x := by
-    rw [tF.map_pre_eq_trans i j]
+    rw [tA.map_pre_eq_trans i j]
     cases x <;> rfl
   map_post i j x := by
-    rw [tF.map_post_eq_trans i j]
+    rw [tA.map_post_eq_trans i j]
     cases x <;> rfl
 
-instance instTransportSet (F : {V : Type uV₁} → {E : Type uE₁} → Graph V E → Type uO₁)
-    (F' : {V : Type uV₂} → {E : Type uE₂} → Graph V E → Type uO₂) [tF : IsoTransport F F'] :
-    IsoTransport (fun G ↦ Set (F G)) (fun G ↦ Set (F' G)) where
-  sourceAction := by
-    letI := tF.sourceAction
-    infer_instance
-  targetAction := by
-    letI := tF.targetAction
-    infer_instance
-  map i := Equiv.Set.congr (tF.map i)
+instance instTransportSet (A : {V : Type uV₁} → {E : Type uE₁} → Graph V E → Type uO₁)
+    (A' : {V : Type uV₂} → {E : Type uE₂} → Graph V E → Type uO₂) [tA : IsoTransport A A'] :
+    IsoTransport (fun G ↦ Set (A G)) (fun G ↦ Set (A' G)) where
+  sourceAction := IsoActionCore.set tA.sourceAction
+  targetAction := IsoActionCore.set tA.targetAction
+  map i := Equiv.Set.congr (tA.map i)
   map_pre i j s := by
-    rw [tF.map_pre_eq_trans i j]
-    exact (Set.image_image (tF.map j) (tF.sourceAction.map i) s).symm
+    rw [tA.map_pre_eq_trans i j]
+    exact (Set.image_image (tA.map j) (tA.sourceAction.map i) s).symm
   map_post i j s := by
-    rw [tF.map_post_eq_trans i j]
-    exact (Set.image_image (tF.targetAction.map j) (tF.map i) s).symm
+    rw [tA.map_post_eq_trans i j]
+    exact (Set.image_image (tA.targetAction.map j) (tA.map i) s).symm
+
+/-! ## Ambient subsets supported on an active set -/
+
+/-- An ambient subset of `α` supported on `S` is equivalent to an intrinsic subset of the subtype
+`S`.  This is the bridge used for statements written as `X ⊆ V(G)` or `X ⊆ E(G)`. -/
+def setSubtypeEquiv {α : Type*} (S : Set α) : {X : Set α // X ⊆ S} ≃ Set S where
+  toFun X := Subtype.val ⁻¹' X.1
+  invFun t := ⟨Subtype.val '' t, Subtype.coe_image_subset S t⟩
+  left_inv := by
+    rintro ⟨X, hX⟩
+    ext x
+    constructor
+    · rintro ⟨⟨y, hy⟩, hyX, rfl⟩
+      exact hyX
+    · exact fun hx ↦ ⟨⟨x, hX hx⟩, hx, rfl⟩
+  right_inv := by
+    intro t
+    ext ⟨x, hx⟩
+    simp
+
+/-- Ambient vertex subsets supported on `V(G)` transport because they are fiberwise equivalent to
+`Set V(G)`. -/
+instance instTransportVertexSubsets : IsoTransport
+    (fun {V : Type uV₁} {E : Type uE₁} (G : Graph V E) ↦ {X : Set V // X ⊆ V(G)})
+    (fun {V : Type uV₂} {E : Type uE₂} (G : Graph V E) ↦ {X : Set V // X ⊆ V(G)}) :=
+  IsoTransport.ofFiberEquiv (fun G ↦ setSubtypeEquiv V(G)) (fun G ↦ setSubtypeEquiv V(G))
+
+/-- Ambient edge subsets supported on `E(G)` transport because they are fiberwise equivalent to
+`Set E(G)`. -/
+instance instTransportEdgeSubsets : IsoTransport
+    (fun {V : Type uV₁} {E : Type uE₁} (G : Graph V E) ↦ {X : Set E // X ⊆ E(G)})
+    (fun {V : Type uV₂} {E : Type uE₂} (G : Graph V E) ↦ {X : Set E // X ⊆ E(G)}) :=
+  IsoTransport.ofFiberEquiv (fun G ↦ setSubtypeEquiv E(G)) (fun G ↦ setSubtypeEquiv E(G))
 
 end Graph

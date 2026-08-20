@@ -2,6 +2,7 @@ module
 
 public import Matroid.Graph.TopologicalMinor
 public import Matroid.Graph.Walk.Cycle
+public import Mathlib.Logic.Equiv.Fin.Basic
 
 @[expose] public section
 
@@ -30,7 +31,7 @@ theorem isTopologicalMinor_completeBipartiteGraph_of_alternating_cycle
     (h₀₁ : p₀₁.Nonempty) (huW : u ∉ V(W)) (hvW : v ∉ V(W)) (huv : u ≠ v)
     (hu₀ : G.Adj u p₀₀.first) (hu₁ : G.Adj u p₁₀.last)
     (hv₀ : G.Adj v p₀₀.last) (hv₁ : G.Adj v p₁₁.last) (huv_adj : G.Adj u v) :
-    (CompleteBipartiteGraph 3 3).IsTopologicalMinor G := by
+    (CompleteBipartiteGraph 3 3).IsIsoTopologicalMinor G := by
   have hne : ∀ P ∈ [p₀₀, p₁₀, p₁₁, p₀₁], P.Nonempty := by simp [h₀₀, h₁₀, h₁₁, h₀₁]
   have hp₀₀ : G.IsPath p₀₀ := hW.isPath_of_mem_decomposeTo hdec hne (by simp) (by simp)
   have hp₁₀ : G.IsPath p₁₀ := hW.isPath_of_mem_decomposeTo hdec hne (by simp) (by simp)
@@ -266,9 +267,9 @@ theorem isTopologicalMinor_completeBipartiteGraph_of_alternating_cycle
       · simpa [he, hf] using h₁₀₁₁.symm
       · simpa [he, hf] using h₁₁₀₁
       · exact (hef (Subtype.ext (he2.trans hf2.symm))).elim
-  exact ⟨TopologicalModel.ofPathRoutes (H := CompleteBipartiteGraph 3 3) (G := G) branch
-      branch_mem branch_injective route route_isPath route_ends route_internal_disjoint_branch
-      route_internal_disjoint⟩
+  exact ⟨IsoTopologicalMinor.ofPathRoutes_of_simple (J := CompleteBipartiteGraph 3 3) (G := G)
+    branch branch_mem branch_injective route route_isPath route_ends route_internal_disjoint_branch
+    route_internal_disjoint⟩
 
 /-- Three consecutive arcs of a cycle through three common neighbors of two adjacent outside
 vertices give a topological `K₅`. -/
@@ -279,7 +280,7 @@ theorem isTopologicalMinor_completeGraph_of_three_common_neighbors
     (huW : u ∉ V(W)) (hvW : v ∉ V(W)) (huv : u ≠ v)
     (hux : G.Adj u pxy.first) (huy : G.Adj u pxy.last) (huz : G.Adj u pyz.last)
     (hvx : G.Adj v pxy.first) (hvy : G.Adj v pxy.last) (hvz : G.Adj v pyz.last)
-    (huv_adj : G.Adj u v) : (CompleteGraph 5).IsTopologicalMinor G := by
+    (huv_adj : G.Adj u v) : (CompleteGraph 5).IsIsoTopologicalMinor G := by
   have hne : ∀ P ∈ [pxy, pyz, pzx], P.Nonempty := by simp [hxy, hyz, hzx]
   have hpxy : G.IsPath pxy :=
     hW.isPath_of_mem_decomposeTo hdec hne (by simp) (by simp)
@@ -477,8 +478,8 @@ theorem isTopologicalMinor_completeGraph_of_three_common_neighbors
       · simpa [he, hf] using hxy_yz.symm
       · simpa [he, hf] using hyz_zx
       · exact (hef (Subtype.ext (he2.trans hf2.symm))).elim
-  have hmodel : (CompleteGraph 5).TopologicalModel G :=
-    TopologicalModel.ofPathRoutes (H := CompleteGraph 5) (G := G) branch branch_mem
+  have hmodel : (CompleteGraph 5).IsoTopologicalMinor G :=
+    IsoTopologicalMinor.ofPathRoutes_of_simple (J := CompleteGraph 5) (G := G) branch branch_mem
       branch_injective route route_isPath route_ends route_internal_disjoint_branch
       route_internal_disjoint
   exact ⟨hmodel⟩

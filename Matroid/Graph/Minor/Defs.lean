@@ -15,10 +15,6 @@ variable {α β ι ι' : Type*} {x y z u v w : α} {e f : β} {G G₁ G₂ H H�
 
 open Set Function WList
 
-lemma List.Nodup.getLast_not_mem_dropLast {l : List ι} (hnd : l.Nodup) (hne : l ≠ []) :
-    l.getLast hne ∉ l.dropLast := by
-  simp [List.mem_dropLast_iff hnd hne]
-
 namespace Graph
 
 lemma ConnBetween.eq_or_isLink_of_edgeSet_singleton (h : G.ConnBetween x y) (hE : E(G) = {e}) :
