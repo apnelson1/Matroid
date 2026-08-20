@@ -179,111 +179,14 @@ lemma restrictSubtype_ground_closure (M : Matroid α) (Y : Set M.E) :
     (M.restrictSubtype M.E).closure Y = M.closure ((↑) '' Y) := by
   rw [M.restrictSubtype_closure M.E, inter_eq_self_of_subset_left <| M.closure_subset_ground ..]
 
-
-section InvariantSetPred
-
-universe u v
-
-variable {α : Type u} {β : Type v} {M : Matroid α} {f : α → β}
-
-class InvariantSetPred (P : ∀ {α : Type u}, Matroid α → Set α → Prop)
-    (Q : ∀ {β : Type v}, Matroid β → Set β → Prop) where
-  subset_ground_left : ∀ ⦃α : Type u⦄ ⦃M : Matroid α⦄ ⦃X⦄, P M X → X ⊆ M.E
-  subset_ground_right : ∀ ⦃β : Type v⦄ ⦃M : Matroid β⦄ ⦃X⦄, Q M X → X ⊆ M.E
-  map_iff' : ∀ ⦃α : Type u⦄ ⦃β : Type v⦄ ⦃M : Matroid α⦄ ⦃X⦄ ⦃f : α → β⦄ (hf : InjOn f M.E),
-      X ⊆ M.E → (P M X ↔ Q (M.map f hf) (f '' X))
-
-namespace InvariantSetPred
-
-protected lemma map_iff {P Q} [hi : InvariantSetPred P Q] {Y : Set β} (hf : InjOn f M.E) :
-    Q (M.map f hf) Y ↔ ∃ X, P M X ∧ Y = f '' X := by
-  refine ⟨fun h ↦ ?_, ?_⟩
-  · obtain ⟨X, hX, rfl⟩ := subset_image_iff.1 <| hi.subset_ground_right h
-    rw [← hi.map_iff' _ hX] at h
-    exact ⟨X, h, rfl⟩
-  rintro ⟨X, hX, rfl⟩
-  rwa [← hi.map_iff' _ (hi.subset_ground_left hX)]
-
-protected instance instAnd {P P' Q Q'} [h : InvariantSetPred P Q]
-    [h' : InvariantSetPred P' Q'] :
-    InvariantSetPred.{u,v} (fun M X ↦ P M X ∧ P' M X) (fun M X ↦ Q M X ∧ Q' M X) where
-  subset_ground_left _ _ _ h' := h.subset_ground_left h'.1
-  subset_ground_right _ _ _ h' := h.subset_ground_right h'.1
-  map_iff' α β M X f hf hX := by rw [h.map_iff' hf hX, h'.map_iff' hf hX]
-
-protected instance instNot {P Q} [h : InvariantSetPred P Q] :
-    InvariantSetPred.{u, v} (fun M X ↦ ¬ P M X ∧ X ⊆ M.E) (fun M X ↦ ¬ Q M X ∧ X ⊆ M.E) where
-  subset_ground_left _ _ _ := And.right
-  subset_ground_right _ _ _ := And.right
-  map_iff' α β M X f hf hXE := by
-    rw [← h.map_iff' _ hXE, map_ground, hf.image_subset_image_iff hXE subset_rfl]
-
-protected instance instInvariantSetPredCompl {P Q} [h : InvariantSetPred.{u, v} P Q] :
-    InvariantSetPred.{u, v} (fun M X ↦ P M (M.E \ X) ∧ X ⊆ M.E)
-      (fun M X ↦ Q M (M.E \ X) ∧ X ⊆ M.E) where
-  subset_ground_left _ _ _ := And.right
-  subset_ground_right _ _ _ := And.right
-  map_iff' α β M X f hf hXE := by
-    rw [map_ground, ← hf.image_sdiff_subset hXE, ← h.map_iff' _ sdiff_subset,
-      hf.image_subset_image_iff hXE subset_rfl]
-
-protected instance instDual {P Q} [h : InvariantSetPred.{u, v} P Q] :
-    InvariantSetPred.{u, v} (fun M X ↦ P M✶ X) (fun M X ↦ Q M✶ X) where
-  subset_ground_left _ _ _ hP := by simpa using h.subset_ground_left hP
-  subset_ground_right _ _ _ hP := by simpa using h.subset_ground_right hP
-  map_iff' α β M X f hf hXE := by rw [map_dual, h.map_iff' (by simpa) (by simpa)]
-
-protected instance instMinimal {P Q} [h : InvariantSetPred.{u, v} P Q] :
-    InvariantSetPred.{u,v} (fun M X ↦ Minimal (P M) X) (fun M X ↦ Minimal (Q M) X) where
-  subset_ground_left _ _ _ hP := h.subset_ground_left hP.1
-  subset_ground_right _ _ _ hP := h.subset_ground_right hP.1
-  map_iff' α β M X f hf hXE := by
-    simp_rw [minimal_subset_iff, ← h.map_iff' _ hXE, and_congr_right_iff]
-    refine fun hPX ↦ ⟨fun h' Y hQY hYX ↦ ?_, fun h' Y hY hYX ↦ ?_⟩
-    · obtain ⟨Y, hY, rfl⟩ := subset_image_iff.1 (h.subset_ground_right hQY)
-      rw [← h.map_iff' _ hY] at hQY
-      rw [hf.image_subset_image_iff hY hXE] at hYX
-      rw [h' hQY hYX]
-    specialize h' (t := f '' Y) (by rwa [← h.map_iff' _ (hYX.trans hXE)]) (image_mono hYX)
-    rwa [hf.image_eq_image_iff hXE (hYX.trans hXE)] at h'
-
-protected instance instMaximal {P Q} [h : InvariantSetPred.{u, v} P Q] :
-    InvariantSetPred.{u,v} (fun M X ↦ Maximal (P M) X) (fun M X ↦ Maximal (Q M) X) where
-  subset_ground_left _ _ _ hP := h.subset_ground_left hP.1
-  subset_ground_right _ _ _ hP := h.subset_ground_right hP.1
-  map_iff' α β M X f hf hXE := by
-    simp_rw [maximal_subset_iff, ← h.map_iff' _ hXE, and_congr_right_iff]
-    refine fun hPX ↦ ⟨fun h' Y hQY hYX ↦ ?_, fun h' Y hY hYX ↦ ?_⟩
-    · obtain ⟨Y, hY, rfl⟩ := subset_image_iff.1 (h.subset_ground_right hQY)
-      rw [← h.map_iff' _ hY] at hQY
-      rw [hf.image_subset_image_iff hXE hY] at hYX
-      rw [h' hQY hYX]
-    have hYE := h.subset_ground_left hY
-    specialize h' (t := f '' Y) (by rwa [← h.map_iff' _ hYE]) (image_mono hYX)
-    rwa [hf.image_eq_image_iff hXE hYE] at h'
-
-instance instIndep : InvariantSetPred Indep Indep where
-  subset_ground_left _ _ _ := Indep.subset_ground
-  subset_ground_right _ _ _ := Indep.subset_ground
-  map_iff' α β M X f hf hX := by rwa [map_image_indep_iff]
-
-instance instCoindep : InvariantSetPred Coindep Coindep :=
-  InvariantSetPred.instDual (h := instIndep)
-
-instance cardLE {k : ℕ∞} : InvariantSetPred (fun M X ↦ X.encard ≤ k ∧ X ⊆ M.E)
-    (fun M X ↦ X.encard ≤ k ∧ X ⊆ M.E) where
-  subset_ground_left _ _ _ := And.right
-  subset_ground_right _ _ _ := And.right
-  map_iff' α β M X f hf hXE := by
-    rw [(hf.mono hXE).encard_image, map_ground, hf.image_subset_image_iff hXE subset_rfl]
+/-- `map_dual` is a bad lemma because it uses `InjOn f M.E` rather than `InjOn f M✶.E` in its def.-/
+lemma map_dual' {f : α → β} {M : Matroid α} {hf : InjOn f M.E} :
+    (M.map f hf)✶ = M✶.map f (show InjOn f M✶.E by simpa using hf) := by
+  exact map_dual
 
 @[simp]
 lemma map_coindep_iff {f : α → β} {hf : InjOn f M.E} {I : Set β} :
-    (M.map f hf).Coindep I ↔ ∃ I₀, M.Coindep I₀ ∧ I = f '' I₀ :=
-  InvariantSetPred.map_iff hf
-
-end InvariantSetPred
-
-end InvariantSetPred
+    (M.map f hf).Coindep I ↔ ∃ I₀, M.Coindep I₀ ∧ I = f '' I₀ := by
+  rw [Coindep, map_dual', map_indep_iff]
 
 end Matroid

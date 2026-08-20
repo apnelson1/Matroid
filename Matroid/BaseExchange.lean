@@ -49,6 +49,19 @@ lemma IsFreeBase.indep_of_ssubset_insert (hB : M.IsFreeBase B) (hI : I ⊂ inser
   refine (hB.isBase_insert_diff_singleton (e := f) (f := e) ?_ ?_).indep.subset ?_ <;>
   grind
 
+instance InvariantSetPred.instIsFreeBase : InvariantSetPred IsFreeBase IsFreeBase where
+  subset_ground_left _ _ _ h := h.isBase.subset_ground
+  subset_ground_right _ _ _ h := h.isBase.subset_ground
+  map_iff' α β M B f hf hBE := by
+    simp_rw [isFreeBase_iff, map_image_isBase_iff hBE, map_ground, subset_image_iff,
+      and_congr_right_iff]
+    refine fun hB ↦ ⟨?_, fun h B' hB'E hB'B ↦ ?_⟩
+    · rintro h _ ⟨B', hB'E, rfl⟩ hB'
+      rw [isExchange_image_iff_of_injOn hf hB'E hBE] at hB'
+      exact (h B' hB'E hB').map hf
+    specialize h _ ⟨_, hB'E, rfl⟩ (by rwa [isExchange_image_iff_of_injOn hf hB'E hBE])
+    rwa [map_image_isBase_iff hB'E] at h
+
 end IsFreeBase
 
 lemma IsBase.isBase_of_indep_of_finDiff (hB : M.IsBase B) (hI : M.Indep I) (hBI : FinDiff B I) :

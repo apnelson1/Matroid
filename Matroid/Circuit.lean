@@ -5,8 +5,10 @@ public import Mathlib.Combinatorics.Matroid.Rank.ENat
 public import Matroid.ForMathlib.Matroid.Basic
 public import Matroid.Sum
 public import Matroid.ForMathlib.Set
+public import Matroid.Invariant
 public import Batteries.CodeAction.Basic
 public import Batteries.CodeAction.Misc
+
 
 @[expose] public section
 
@@ -143,6 +145,11 @@ lemma dual_cyclic_iff' : M✶.Cyclic A ↔ M.IsFlat (M.E \ A) ∧ A ⊆ M.E := b
 lemma cyclic_iff_compl_isFlat_dual (hA : A ⊆ M.E := by aesop_mat) :
     M.Cyclic A ↔ M✶.IsFlat (M.E \ A) := by
   rw [← dual_ground, ← dual_cyclic_iff, dual_dual]
+
+lemma cyclic_iff_compl_isFlat_dual' : M.Cyclic A ↔ M✶.IsFlat (M.E \ A) ∧ A ⊆ M.E := by
+  by_cases hA : A ⊆ M.E
+  · rw [cyclic_iff_compl_isFlat_dual, and_iff_left hA]
+  exact iff_of_false (hA ∘ Cyclic.subset_ground) <| hA ∘ And.right
 
 lemma Cyclic.compl_isFlat_dual (hA : M.Cyclic A) : M✶.IsFlat (M.E \ A) := by
   rwa [← dual_dual M, dual_cyclic_iff, dual_ground] at hA
@@ -316,23 +323,24 @@ lemma mem_closure_iff_mem_or_exists_isCircuit (hX : X ⊆ M.E := by aesop_mat) :
   (em (e ∈ X)).elim (fun heX ↦ by simp [heX, M.mem_closure_of_mem heX])
     fun heX ↦ by rw [mem_closure_iff_exists_isCircuit heX, or_iff_right heX]
 
+instance : InvariantSetPred IsCircuit IsCircuit :=
+  InvariantSetPred.instMinimal (P := Dep) (Q := Dep)
+
+instance : InvariantSetPred IsCocircuit IsCocircuit :=
+  InvariantSetPred.instDual (P := IsCircuit) (Q := IsCircuit)
+
 lemma map_isCircuit_iff {β : Type*} {C : Set β} (f : α → β) (hf : M.E.InjOn f) :
-    (M.map f hf).IsCircuit C ↔ ∃ C₀, M.IsCircuit C₀ ∧ C = f '' C₀ := by
-  simp only [isCircuit_iff, map_dep_iff, forall_exists_index, and_imp]
-  constructor
-  · rintro ⟨⟨C, hC, rfl⟩, h⟩
-    refine ⟨C, ⟨hC, fun D hD hDC ↦ ?_⟩, rfl⟩
-    rw [← hf.image_eq_image_iff hD.subset_ground hC.subset_ground]
-    exact h _ hD rfl (image_mono hDC)
-  rintro ⟨C₀, ⟨h,h'⟩, rfl⟩
-  refine ⟨⟨C₀, h, rfl⟩, ?_⟩
-  rintro _ D hD rfl hss
-  rw [h' hD ((hf.image_subset_image_iff hD.subset_ground h.subset_ground).1 hss)]
+    (M.map f hf).IsCircuit C ↔ ∃ C₀, M.IsCircuit C₀ ∧ C = f '' C₀ :=
+  InvariantSetPred.map_iff hf
 
 lemma mapEquiv_isCircuit_iff {β : Type*} {C : Set β} (f : α ≃ β) :
     (M.mapEquiv f).IsCircuit C ↔ M.IsCircuit (f.symm '' C) := by
   rw [mapEquiv_eq_map, map_isCircuit_iff]
   exact ⟨by rintro ⟨C, hC, rfl⟩; simpa, fun h ↦ ⟨_, h, by simp⟩⟩
+
+lemma map_isCocircuit_iff {β : Type*} {C : Set β} (f : α → β) (hf : M.E.InjOn f) :
+    (M.map f hf).IsCocircuit C ↔ ∃ C₀, M.IsCocircuit C₀ ∧ C = f '' C₀ :=
+  InvariantSetPred.map_iff hf
 
 @[simp]
 lemma restrictSubtype_ground_isCircuit_iff {C : Set M.E} :

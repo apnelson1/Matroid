@@ -155,6 +155,21 @@ lemma isExchange_pair_iff_left {a b c : α} : IsExchange {a, c} {b, c} ↔ a ≠
   rw [pair_comm, pair_comm b, isExchange_pair_iff_right]
   tauto
 
+lemma isExchange_image_iff_of_injOn {β : Type*} {f : α → β} {S : Set α} (hS : InjOn f S)
+    (hX : X ⊆ S) (hY : Y ⊆ S) : IsExchange (f '' X) (f '' Y) ↔ IsExchange X Y := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · obtain ⟨_, ⟨⟨x, hx, rfl⟩, hx'⟩, _, ⟨⟨y, hy, rfl⟩, hy'⟩, heq⟩ := h.exists
+    rw [← image_singleton, ← image_sdiff_of_injOn (hS.mono hX) (by simpa), ← image_insert_eq,
+      hS.image_eq_image_iff hY (by grind)] at heq
+    rw [hS.mem_image_iff hX (hY hy)] at hy'
+    rw [heq]
+    refine isExchange_sdiff_insert hx hy'
+  obtain ⟨x, ⟨hx, hx'⟩, y, ⟨hy, hy'⟩, rfl⟩ := h.exists
+  rw [image_insert_eq, image_sdiff_of_injOn (hS.mono hX) (by simpa), image_singleton]
+  refine isExchange_sdiff_insert ?_ ?_
+  · rwa [hS.mem_image_iff hX (hX hx)]
+  rwa [hS.mem_image_iff hX (by grind)]
+
 /-- `X.FinDiff Y` means that `Y` is obtained from `X` by inserting and then removing `k` elements,
 for some finite `k`. -/
 def FinDiff : Set α → Set α → Prop := Relation.ReflTransGen IsExchange

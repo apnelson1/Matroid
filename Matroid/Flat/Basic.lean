@@ -188,27 +188,26 @@ lemma uniqueBaseOn_isFlat_iff {I E : Set α} (hIE : I ⊆ E) :
 @[simp] lemma freeOn_isFlat_iff {E : Set α} : (freeOn E).IsFlat F ↔ F ⊆ E := by
   simp [← uniqueBaseOn_self, uniqueBaseOn_isFlat_iff Subset.rfl]
 
+instance InvariantSetPred.instIsFlat : InvariantSetPred IsFlat IsFlat where
+  subset_ground_left _ _ _ := IsFlat.subset_ground
+  subset_ground_right _ _ _ := IsFlat.subset_ground
+  map_iff' α β M X f hf hX := by
+    rw [isFlat_iff_closure_eq, isFlat_iff_closure_eq, map_closure_eq,
+      ← closure_inter_ground (X := f ⁻¹' _), hf.preimage_image_inter hX,
+      hf.image_eq_image_iff (M.closure_subset_ground X) hX]
 
 lemma isFlat_map_iff {β : Type*} {f : α → β} (hf : M.E.InjOn f) {F : Set β} :
-    (M.map f hf).IsFlat F ↔ ∃ F₀, M.IsFlat F₀ ∧ F = f '' F₀ := by
-  simp only [isFlat_iff_closure_eq, map_closure_eq]
-  refine ⟨fun h ↦ ⟨M.closure (f ⁻¹' F), by simp, h.symm⟩, ?_⟩
-  rintro ⟨F, hF, rfl⟩
-  rw [← closure_inter_ground, hf.preimage_image_inter, hF]
-  exact hF.symm.subset.trans <| M.closure_subset_ground _
+    (M.map f hf).IsFlat F ↔ ∃ F₀, M.IsFlat F₀ ∧ F = f '' F₀ :=
+  InvariantSetPred.map_iff hf
 
 @[simp]
 lemma isFlat_mapEquiv_iff {β : Type*} {f : α ≃ β} {F : Set β} :
     (M.mapEquiv f).IsFlat F ↔ M.IsFlat (f.symm '' F) := by
-  rw [mapEquiv_eq_map, isFlat_map_iff]
-  refine ⟨?_, fun h ↦ ⟨f.symm '' F, by simpa⟩⟩
-  rintro ⟨F, hF, rfl⟩
-  simpa
+  rw [InvariantSetPred.mapEquiv_iff (P := IsFlat) (Q := IsFlat), f.image_symm_eq_preimage]
 
 lemma IsFlat.map {β : Type*} {f : α → β} (hF : M.IsFlat F) (hf : M.E.InjOn f) :
-    (M.map f hf).IsFlat (f '' F) := by
-  rw [isFlat_iff_closure_eq, map_closure_eq, ← closure_inter_ground,
-    hf.preimage_image_inter hF.subset_ground, hF.closure]
+    (M.map f hf).IsFlat (f '' F) :=
+  InvariantSetPred.map hF hf
 
 lemma IsFlat.comap {β : Type*} {F : Set β} {M : Matroid β} (hF : M.IsFlat F) (f : α → β) :
     (M.comap f).IsFlat (f ⁻¹' F) := by
@@ -224,9 +223,10 @@ lemma isFlat_comap_iff_exists {β : Type*} {f : α → β} {F : Set α} {M : Mat
   rintro ⟨F₀, hF₀, rfl⟩
   exact hF₀.comap f
 
-
-
-
+instance InvariantSetPred.instCyclic : InvariantSetPred Cyclic Cyclic := by
+  have h1 := InvariantSetPred.instDual (P := IsFlat) (Q := IsFlat)
+  convert @InvariantSetPred.instCompl _ _ h1 with α M X <;>
+  exact cyclic_iff_compl_isFlat_dual'
 
   -- TODO : Cyclic flats.
 
