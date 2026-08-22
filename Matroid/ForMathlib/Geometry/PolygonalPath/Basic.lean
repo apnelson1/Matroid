@@ -14,8 +14,8 @@ the set it traces out (`toSet`) or the path that traverses it (`toPath`): the li
 part of the data.
 
 The operations here apply to paths with arbitrary endpoints. The cyclic polygon API, including
-rotation and closed simplicity, is in `Matroid.ForMathlib.Geometry.Polygon.Basic`; its correspondence
-with closed paths is in `Matroid.ForMathlib.Geometry.Polygon.PolygonalPath`.
+rotation and closed simplicity, is in `Matroid.ForMathlib.Geometry.Polygon.Basic`; its
+correspondence with closed paths is in `Matroid.ForMathlib.Geometry.Polygon.PolygonalPath`.
 
 ## Main definitions
 

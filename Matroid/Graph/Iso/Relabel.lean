@@ -242,7 +242,7 @@ theorem Iso.relabel_eq {H : Graph V' E'} (i : Iso G H) :
         simp
       · exact (i.isLink_edgeEquiv_vertexEquiv _ _ _).mpr (by simpa using h)
 
-/-- Existence of an isomorphism is equivalent to being an ambient relabelled copy.  `Iso` remains
+/-- Existence of an isomorphism is equivalent to being an ambient relabelled copy. `Iso` remains
 the primary structure; this theorem is the map-first facade useful for proving invariant
 properties. -/
 theorem isIsoTo_iff_exists_relabel (G : Graph V E) (H : Graph V' E') :

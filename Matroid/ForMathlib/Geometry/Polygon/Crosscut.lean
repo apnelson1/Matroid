@@ -26,11 +26,10 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 /-- **Crosscut theorem.** A simple polygon bounds two regions; a simple arc through one region,
 meeting the polygon exactly at its endpoints, splits that region into two. -/
 theorem IsSimple.exists_two_regions_crosscut {n : ℕ} {p : Polygon V n} (hp : p.IsSimple ℝ)
-    {F : Set (OnePoint V)} {q : OnePoint V} (hq : q ∈ ((↑) '' p.boundary ℝ)ᶜ) {A : PolygonalPath s t}
-    (hF : F = connectedComponentIn ((↑) '' p.boundary ℝ)ᶜ q) (hst : s ≠ t)
-    (hs : s ∈ p.boundary ℝ) (ht : t ∈ p.boundary ℝ)
-    (hA : A.IsSimple) (hAJ : A.toSet ∩ p.boundary ℝ = {s, t})
-    (hAF : (↑) '' (A.toSet \ {s, t}) ⊆ F) :
+    {F : Set (OnePoint V)} {q : OnePoint V} (hq : q ∈ ((↑) '' p.boundary ℝ)ᶜ)
+    {A : PolygonalPath s t} (hF : F = connectedComponentIn ((↑) '' p.boundary ℝ)ᶜ q) (hst : s ≠ t)
+    (hs : s ∈ p.boundary ℝ) (ht : t ∈ p.boundary ℝ) (hA : A.IsSimple)
+    (hAJ : A.toSet ∩ p.boundary ℝ = {s, t}) (hAF : (↑) '' (A.toSet \ {s, t}) ⊆ F) :
     ∃ (J₁ : PolygonalPath s t) (J₂ : PolygonalPath t s) (W₁ W₂ : Set (OnePoint V)),
       J₁.IsSimple ∧ J₂.IsSimple ∧
       J₁.toSet ∩ J₂.toSet = {s, t} ∧

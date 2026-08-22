@@ -6,7 +6,8 @@ Authors: Jun Kwon
 module
 
 public import Mathlib.Data.PEquiv
-public import Matroid.Graph.Subgraph.Basic
+public import Mathlib.Data.Set.Card
+public import Mathlib.Combinatorics.Graph.Basic
 
 /-!
 # Homomorphisms, embeddings and isomorphisms
@@ -244,71 +245,71 @@ def Iso.comp (F : Iso G H) (F' : Iso H K) : Iso G K where
   map_isLink := F.toEmb.comp F'.toEmb |>.map_isLink
   invMap_isLink := F'.symm.toEmb.comp F.symm.toEmb |>.map_isLink
 
-/-- Restrict the source of a graph homomorphism. -/
-noncomputable def Hom.anti_left (G' : Graph V E) (hG' : G' ≤ G) (F : Hom G H) : Hom G' H := by
-  classical
-  exact
-    { vertMap := fun x ↦ if x ∈ V(G') then F.vertMap x else none
-      vertMap_isSome_iff := fun x ↦ by grind [F.vertMap_isSome_iff, hG'.vertexSet_mono]
-      vertMap_vertexSet := fun _ _ hx' ↦ by
-        split_ifs at hx'
-        · exact F.vertMap_vertexSet hx'
-        · simp at hx'
-      edgeMap := fun e ↦ if e ∈ E(G') then F.edgeMap e else none
-      edgeMap_isSome_iff := fun e ↦ by grind [F.edgeMap_isSome_iff, hG'.edgeSet_mono]
-      map_isLink := fun _ _ _ _ _ _ hxy he' hx' hy' ↦ by
-        simp only [hxy.edge_mem, hxy.left_mem, hxy.right_mem, ↓reduceIte] at he' hx' hy'
-        exact F.map_isLink (hG'.isLink_mono hxy) he' hx' hy' }
+-- /-- Restrict the source of a graph homomorphism. -/
+-- noncomputable def Hom.anti_left (G' : Graph V E) (hG' : G' ≤ G) (F : Hom G H) : Hom G' H := by
+--   classical
+--   exact
+--     { vertMap := fun x ↦ if x ∈ V(G') then F.vertMap x else none
+--       vertMap_isSome_iff := fun x ↦ by grind [F.vertMap_isSome_iff, hG'.vertexSet_mono]
+--       vertMap_vertexSet := fun _ _ hx' ↦ by
+--         split_ifs at hx'
+--         · exact F.vertMap_vertexSet hx'
+--         · simp at hx'
+--       edgeMap := fun e ↦ if e ∈ E(G') then F.edgeMap e else none
+--       edgeMap_isSome_iff := fun e ↦ by grind [F.edgeMap_isSome_iff, hG'.edgeSet_mono]
+--       map_isLink := fun _ _ _ _ _ _ hxy he' hx' hy' ↦ by
+--         simp only [hxy.edge_mem, hxy.left_mem, hxy.right_mem, ↓reduceIte] at he' hx' hy'
+--         exact F.map_isLink (hG'.isLink_mono hxy) he' hx' hy' }
 
-/-- Restrict the source of a graph embedding. -/
-noncomputable def Emb.anti_left (G' : Graph V E) (hG' : G' ≤ G) (F : Emb G H) : Emb G' H := by
-  classical
-  let v := (PEquiv.ofSet V(G')).trans F.vertMap
-  let e := (PEquiv.ofSet E(G')).trans F.edgeMap
-  exact
-    { vertMap := v
-      vertMap_isSome_iff := fun x ↦ by
-        simp only [v, option_isSome_iff_exists_mem, PEquiv.mem_trans, PEquiv.mem_ofSet_iff]
-        refine ⟨fun ⟨_, _, ⟨rfl, hx⟩, _⟩ ↦ hx, fun hx ↦ ?_⟩
-        obtain ⟨z, hz⟩ := option_isSome_iff_exists_mem.mp <|
-          (F.vertMap_isSome_iff x).mpr (hG'.vertexSet_mono hx)
-        exact ⟨z, x, ⟨rfl, hx⟩, hz⟩
-      vertMap_vertexSet := fun _ _ hx' ↦ by
-        obtain ⟨_, -, hx'⟩ := (PEquiv.mem_trans _ _ _ _).mp hx'
-        exact F.vertMap_vertexSet hx'
-      edgeMap := e
-      edgeMap_isSome_iff := fun f ↦ by
-        simp only [e, option_isSome_iff_exists_mem, PEquiv.mem_trans, PEquiv.mem_ofSet_iff]
-        refine ⟨fun ⟨_, _, ⟨rfl, hf⟩, _⟩ ↦ hf, fun hf ↦ ?_⟩
-        obtain ⟨g, hg⟩ := option_isSome_iff_exists_mem.mp <|
-          (F.edgeMap_isSome_iff f).mpr (hG'.edgeSet_mono hf)
-        exact ⟨g, f, ⟨rfl, hf⟩, hg⟩
-      map_isLink := fun f x y f' x' y' hxy hf' hx' hy' ↦ by
-        simp only [e, v, PEquiv.mem_trans, PEquiv.mem_ofSet_iff] at hf' hx' hy'
-        obtain ⟨_, ⟨rfl, -⟩, hf'⟩ := hf'
-        obtain ⟨_, ⟨rfl, -⟩, hx'⟩ := hx'
-        obtain ⟨_, ⟨rfl, -⟩, hy'⟩ := hy'
-        exact F.map_isLink (hG'.isLink_mono hxy) hf' hx' hy' }
+-- /-- Restrict the source of a graph embedding. -/
+-- noncomputable def Emb.anti_left (G' : Graph V E) (hG' : G' ≤ G) (F : Emb G H) : Emb G' H := by
+--   classical
+--   let v := (PEquiv.ofSet V(G')).trans F.vertMap
+--   let e := (PEquiv.ofSet E(G')).trans F.edgeMap
+--   exact
+--     { vertMap := v
+--       vertMap_isSome_iff := fun x ↦ by
+--         simp only [v, option_isSome_iff_exists_mem, PEquiv.mem_trans, PEquiv.mem_ofSet_iff]
+--         refine ⟨fun ⟨_, _, ⟨rfl, hx⟩, _⟩ ↦ hx, fun hx ↦ ?_⟩
+--         obtain ⟨z, hz⟩ := option_isSome_iff_exists_mem.mp <|
+--           (F.vertMap_isSome_iff x).mpr (hG'.vertexSet_mono hx)
+--         exact ⟨z, x, ⟨rfl, hx⟩, hz⟩
+--       vertMap_vertexSet := fun _ _ hx' ↦ by
+--         obtain ⟨_, -, hx'⟩ := (PEquiv.mem_trans _ _ _ _).mp hx'
+--         exact F.vertMap_vertexSet hx'
+--       edgeMap := e
+--       edgeMap_isSome_iff := fun f ↦ by
+--         simp only [e, option_isSome_iff_exists_mem, PEquiv.mem_trans, PEquiv.mem_ofSet_iff]
+--         refine ⟨fun ⟨_, _, ⟨rfl, hf⟩, _⟩ ↦ hf, fun hf ↦ ?_⟩
+--         obtain ⟨g, hg⟩ := option_isSome_iff_exists_mem.mp <|
+--           (F.edgeMap_isSome_iff f).mpr (hG'.edgeSet_mono hf)
+--         exact ⟨g, f, ⟨rfl, hf⟩, hg⟩
+--       map_isLink := fun f x y f' x' y' hxy hf' hx' hy' ↦ by
+--         simp only [e, v, PEquiv.mem_trans, PEquiv.mem_ofSet_iff] at hf' hx' hy'
+--         obtain ⟨_, ⟨rfl, -⟩, hf'⟩ := hf'
+--         obtain ⟨_, ⟨rfl, -⟩, hx'⟩ := hx'
+--         obtain ⟨_, ⟨rfl, -⟩, hy'⟩ := hy'
+--         exact F.map_isLink (hG'.isLink_mono hxy) hf' hx' hy' }
 
-/-- Enlarge the target of a graph homomorphism. -/
-@[simps (attr := grind =)]
-def Hom.mono_right (H' : Graph V' E') (hH' : H ≤ H') (F : Hom G H) : Hom G H' where
-  vertMap := F.vertMap
-  vertMap_isSome_iff := F.vertMap_isSome_iff
-  vertMap_vertexSet := fun _ _ h ↦ hH'.vertexSet_mono (F.vertMap_vertexSet h)
-  edgeMap := F.edgeMap
-  edgeMap_isSome_iff := F.edgeMap_isSome_iff
-  map_isLink := fun _ _ _ _ _ _ h he hx hy ↦ hH'.isLink_mono (F.map_isLink h he hx hy)
+-- /-- Enlarge the target of a graph homomorphism. -/
+-- @[simps (attr := grind =)]
+-- def Hom.mono_right (H' : Graph V' E') (hH' : H ≤ H') (F : Hom G H) : Hom G H' where
+--   vertMap := F.vertMap
+--   vertMap_isSome_iff := F.vertMap_isSome_iff
+--   vertMap_vertexSet := fun _ _ h ↦ hH'.vertexSet_mono (F.vertMap_vertexSet h)
+--   edgeMap := F.edgeMap
+--   edgeMap_isSome_iff := F.edgeMap_isSome_iff
+--   map_isLink := fun _ _ _ _ _ _ h he hx hy ↦ hH'.isLink_mono (F.map_isLink h he hx hy)
 
-/-- Enlarge the target of a graph embedding. -/
-@[simps (attr := grind =)]
-def Emb.mono_right (H' : Graph V' E') (hH' : H ≤ H') (F : Emb G H) : Emb G H' where
-  vertMap := F.vertMap
-  vertMap_isSome_iff := F.vertMap_isSome_iff
-  vertMap_vertexSet := fun _ _ h ↦ hH'.vertexSet_mono (F.vertMap_vertexSet h)
-  edgeMap := F.edgeMap
-  edgeMap_isSome_iff := F.edgeMap_isSome_iff
-  map_isLink := fun _ _ _ _ _ _ h he hx hy ↦ hH'.isLink_mono (F.map_isLink h he hx hy)
+-- /-- Enlarge the target of a graph embedding. -/
+-- @[simps (attr := grind =)]
+-- def Emb.mono_right (H' : Graph V' E') (hH' : H ≤ H') (F : Emb G H) : Emb G H' where
+--   vertMap := F.vertMap
+--   vertMap_isSome_iff := F.vertMap_isSome_iff
+--   vertMap_vertexSet := fun _ _ h ↦ hH'.vertexSet_mono (F.vertMap_vertexSet h)
+--   edgeMap := F.edgeMap
+--   edgeMap_isSome_iff := F.edgeMap_isSome_iff
+--   map_isLink := fun _ _ _ _ _ _ h he hx hy ↦ hH'.isLink_mono (F.map_isLink h he hx hy)
 
 /-! ### Isomorphism as a relation
 
