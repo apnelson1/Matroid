@@ -1,5 +1,3 @@
-
--- import Mathlib.Data.Set.Pairwise.Basic -- inefficient import
 module
 
 public import Mathlib.Data.Set.Subset -- inefficient import
@@ -216,7 +214,7 @@ lemma Pairwise.onFun_of_refl [Std.Refl r] (hr : Pairwise r) (f : ι → α) : Pa
 
 lemma Set.pairwise_image_of_refl {s : Set ι} [Std.Refl r] :
     (f '' s).Pairwise r ↔ s.Pairwise (r on f) :=
-  ⟨fun h i hi j hj _ => h.of_refl (by use i : f i ∈ f '' s) (by use j : f j ∈ f '' s),
+  ⟨fun h i hi j hj _ => h.forall₂ (by use i : f i ∈ f '' s) (by use j : f j ∈ f '' s),
     Pairwise.image⟩
 
 lemma Pairwise.onFun_comp_of_refl [Std.Refl r] (hr : Pairwise (r on f)) (g : ι' → ι) :

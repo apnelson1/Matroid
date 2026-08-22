@@ -272,7 +272,7 @@ set_option backward.isDefEq.respectTransparency false in
 protected lemma inter_distrib_sUnion (hs : Gs.Pairwise Compatible) :
     G ∩ (Graph.sUnion Gs hs) = Graph.sUnion ((fun K ↦ G ∩ K) '' Gs) (by
       rintro _ ⟨K₁, hK₁, rfl⟩ _ ⟨K₂, hK₂, rfl⟩ -
-      exact (hs.of_refl hK₁ hK₂).mono Graph.inter_le_right Graph.inter_le_right) := by
+      exact (hs.forall₂ hK₁ hK₂).mono Graph.inter_le_right Graph.inter_le_right) := by
   ext <;> aesop
 
 lemma Pairwise.union_compatible {s t : Set (Graph α β)} (hst : (s ∪ t).Pairwise Compatible) :
