@@ -1,6 +1,7 @@
 module
 
 public import Mathlib.Data.Set.Lattice.Image
+public import Mathlib.Data.Set.Lattice.Disjoint
 
 @[expose] public section
 

@@ -54,6 +54,9 @@ def Iso.elementDomain (i : M ≂ N) : IRw.SupportedDomain α β where
 @[irw_equiv]
 def Iso.groundSetEquiv (i : M ≂ N) : Set M.E ≃ Set N.E := Equiv.Set.congr i.toEquiv
 
+@[irw_equiv]
+def Iso.listGroundSetEquiv (i : M ≂ N) : List M.E ≃ List N.E := i.toEquiv.listEquivOfEquiv
+
 @[simp]
 theorem Iso.groundSetEquiv_apply (i : M ≂ N) (I : Set M.E) :
     i.groundSetEquiv I = i '' I := rfl

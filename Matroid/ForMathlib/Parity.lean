@@ -45,6 +45,12 @@ lemma Bool.toNat_bodd (b : Bool) : b.toNat.bodd = b := by
 lemma Nat.bodd_toNat_le (n : ℕ) : n.bodd.toNat ≤ n := by
   cases n with grind
 
+lemma Nat.bodd_toNat_eq_self {n : ℕ} (hn : n ≤ 1) : n.bodd.toNat = n := by
+  obtain rfl | rfl | n := n
+  · rfl
+  · rfl
+  simp at hn
+
 lemma Nat.bodd_sub {a b : ℕ} (hab : a ≤ b) : (b - a).bodd = (b.bodd != a.bodd) := by
   obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hab
   simp
