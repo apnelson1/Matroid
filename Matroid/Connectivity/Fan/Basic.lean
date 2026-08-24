@@ -142,8 +142,13 @@ macro_rules
 lemma IsFan.ne_nil (h : M.IsFan F b c) : F ≠ [] := by
   grind [h.two_le_length]
 
--- lemma IsFan.alt_ne_nil (h : M.IsFan F b c) {d} : F.alt d ≠ [] := by
---   cases d <;> grind [F.alt_true_length_eq, h.two_le_length, F.alt_length_add]
+@[simp]
+lemma not_isFan_nil : ¬ M.IsFan [] b c :=
+  fun h ↦ h.ne_nil rfl
+
+@[simp]
+lemma not_isFan_single : ¬ M.IsFan [e] b c :=
+  fun h ↦ by simpa using h.two_le_length
 
 lemma IsFan.cons' (h : M.IsFan F b c) (heF : e ∉ F)  (hT : (M.bDual !b).IsTriangle
     {e, F.head h.ne_nil, F.tail.head (by grind [length_tail, h.two_le_length])}) :
@@ -228,30 +233,6 @@ lemma IsFan.ground_nontrivial (h : M.IsFan F b c) : M.E.Nontrivial := by
   grw [← two_le_encard_iff_nontrivial, ← h.subset_ground, h.nodup.encard_toSet_eq,
     ← h.two_le_length]
   rfl
-
-lemma IsFan.map (h : M.IsFan F b c) {β : Type*} {φ : α → β} (hφ : InjOn φ M.E) :
-    (M.map φ hφ).IsFan (F.map φ) b c := by
-  have hrw (b : Bool) : (M.map φ hφ).bDual b = (M.bDual b).map φ (by simpa) := by
-    cases b with simp
-  induction h with
-  | of_pair b e f he hf hne =>
-    simp only [map_cons, map_nil]
-    simp_rw [← indep_singleton] at *
-    apply IsFan.of_pair
-    · exact fun b ↦ indep_singleton.1 <| by simpa [← hrw] using (he b).map φ (by simpa)
-    · exact fun b ↦ indep_singleton.1 <| by simpa [← hrw] using (hf b).map φ (by simpa)
-    rwa [Ne, hφ.eq_iff (by simpa using (he false).subset_ground)
-      (by simpa using (hf false).subset_ground)]
-  | cons_triangle e x y F b c h heF hT ih =>
-    simp only [map_cons] at ih ⊢
-    apply ih.cons
-    · simp only [mem_map, not_exists, not_and]
-      refine fun z hzF hxe ↦ heF ?_
-      rwa [← hφ (h.subset_ground (by grind)) (by simpa using hT.mem_ground₁) hxe]
-    rw [isTriangle_iff, ← image_pair, ← image_insert_eq, hrw,
-      (hφ.mono (by simpa using hT.subset_ground)).encard_image, and_iff_left hT.three_elements,
-      map_isCircuit_iff]
-    exact ⟨_, hT.isCircuit, rfl⟩
 
 lemma IsFan.range_get_subset_ground (h : M.IsFan F b c) : range F.get ⊆ M.E := by
   grind [h.subset_ground]
@@ -378,6 +359,45 @@ lemma isFan_iff_forall (hF : 3 ≤ F.length) :
     (M.bDual (b != i.bodd)).IsTriangle {F[i], F[i + 1], F[i + 2]} :=
   ⟨fun h ↦ ⟨h.length_bodd_eq.symm, h.nodup, fun _ _ ↦ h.isTriangle_getElem ..⟩, fun ⟨hbc, hnd, h⟩ ↦
     isFan_of_eq_of_forall_triangle (by lia) hnd hbc (by lia) h⟩
+
+lemma isFan_iff_forall' : M.IsFan F b c ↔ (b == c) = F.length.bodd ∧ 2 ≤ F.length ∧ F.Nodup ∧
+    (F.length = 2 → ∀ d i (hi : i < F.length), (M.bDual d).IsNonloop F[i]) ∧
+    ∀ i (hi : i + 2 < F.length), (M.bDual (b != i.bodd)).IsTriangle {F[i], F[i + 1], F[i + 2]} := by
+  obtain hle | hgt := le_or_gt 3 F.length
+  · simp [isFan_iff_forall hle, and_iff_right (show 2 ≤ F.length by lia), show F.length ≠ 2 by lia]
+  match F with
+  | [] => simp
+  | [_] => simp
+  | [x, y] =>
+    refine ⟨fun h ↦ ⟨h.length_bodd_eq.symm, by simp, h.nodup, fun _ d i hi ↦ h.isNonloop_bDual_get,
+      by simp⟩, fun ⟨hbc, _, hnd, h, _⟩ ↦ ?_⟩
+    obtain rfl | rfl := c.eq_or_eq_not b
+    · simp at hbc
+    exact IsFan.of_pair _ _ _ _ (fun d ↦ h rfl d 0 (by lia))
+      (fun d ↦ h rfl d 1 (by lia)) (by simpa using hnd)
+
+instance InvariantFun.isFan {b c : Bool} :
+  InvariantFun (fun M L ↦ Matroid.IsFan M L b c) (fun M L ↦ Matroid.IsFan M L b c) where
+  of_empty α β hβ x := by simp +contextual [← eq_nil_iff_forall_not_mem]
+  map_eq α β M f hf F hF := by
+    simp only [SupportClass.list_supported] at hF
+    rw! [isFan_iff_forall', TransferClass.pure_transfer, TransferClass.list_transfer,
+      isFan_iff_forall', List.nodup_map_iff_of_injOn (by grind [hf.eq_iff]), length_map, eq_iff_iff]
+    convert Iff.rfl with a b i _ i
+    · rw [getElem_map, bDual_map, isNonloop_map_iff _ (by grind)]
+    rw [getElem_map, getElem_map, getElem_map, ← image_pair, ← image_insert_eq, bDual_map,
+      InvariantFun.map_set_image_iff (X := {F[i], F[i + 1], F[i + 2]}) (P := IsTriangle)
+        (Q := IsTriangle) (by simp [insert_subset_iff, hF])]
+
+lemma isFan_map_iff {β : Type*} {f : α → β} {b c : Bool} {hf : InjOn f M.E}
+    (hF : {e | e ∈ F} ⊆ M.E) : (M.map f hf).IsFan (F.map f) b c ↔ M.IsFan F b c := by
+  apply InvariantFun.map_iff (P := fun M L ↦ Matroid.IsFan M L b c)
+    (Q := fun M L ↦ Matroid.IsFan M L b c)
+  simpa
+
+lemma IsFan.map (hF : M.IsFan F b c) {β : Type*} {f : α → β} (hf : InjOn f M.E) :
+    (M.map f hf).IsFan (F.map f) b c := by
+  rwa [isFan_map_iff hF.subset_ground]
 
 @[simp]
 lemma isFan_three_iff : M.IsFan [e, f, g] b c ↔ b = c ∧ (M.bDual b).IsTriangle {e, f, g} := by

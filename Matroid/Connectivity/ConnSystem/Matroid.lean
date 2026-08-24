@@ -128,6 +128,24 @@ lemma loopyOn_eConn (E X : Set α) : (loopyOn E).eConn X = 0 := by
 lemma eConn_ground (M : Matroid α) : M.eConn M.E = 0 := by
   simp [eConn]
 
+instance : InvariantFun (fun {α} (M : Matroid α) ↦ M.eConn)
+    (fun {α} (M : Matroid α) ↦ M.eConn) where
+  of_empty := by simp
+  map_eq α β M f hf X hX := by
+    simp only [TransferClass.pure_transfer, TransferClass.set_transfer]
+    rw [eConn_eq_eLocalConn, eConn_eq_eLocalConn, map_ground, ← hf.image_sdiff' subset_rfl hX]
+    convert InvariantFun₂.map_eq (F := eLocalConn) (G := eLocalConn) hf hX sdiff_subset <;> rfl
+
+lemma map_eConn_image {β : Type*} {f : α → β} (hf : InjOn f M.E) (hXE : X ⊆ M.E) :
+    (M.map f hf).eConn (f '' X) = M.eConn X :=
+  Eq.symm <| InvariantFun.map_eq (F := (fun {α} (M : Matroid α) ↦ M.eConn))
+      (G := (fun {α} (M : Matroid α) ↦ M.eConn)) hf hXE
+
+lemma map_eConn {β : Type*} {f : α → β} (hf : InjOn f M.E) (X : Set β) :
+    (M.map f hf).eConn X = M.eConn (f ⁻¹' X ∩ M.E) := by
+  rw [← M.map_eConn_image hf inter_subset_right, image_preimage_inter, ← map_ground _ _ hf,
+    eConn_inter_ground]
+
 /-- Connectivity is self-dual. -/
 @[simp]
 lemma eConn_dual (M : Matroid α) : M✶.eConn = M.eConn :=

@@ -194,9 +194,9 @@ instance : GroundedPred IsFlat where
 instance : InvariantFun IsFlat IsFlat where
   of_empty := by simp
   map_eq α β M f hf F (hFE : F ⊆ M.E) := by
-    rw [transfer_set_eq, eq_iff_iff, isFlat_iff_closure_eq, isFlat_iff_closure_eq, map_closure_eq,
-      ← closure_inter_ground (X := f ⁻¹' _), hf.preimage_image_inter hFE,
-      hf.image_eq_image_iff (M.closure_subset_ground F) hFE]
+    rw [TransferClass.set_transfer, eq_iff_iff, isFlat_iff_closure_eq, isFlat_iff_closure_eq,
+      map_closure_eq, ← closure_inter_ground (X := f ⁻¹' _), hf.preimage_image_inter hFE,
+      hf.image_eq_image_iff (M.closure_subset_ground F) hFE, TransferClass.pure_transfer]
 
 lemma isFlat_map_iff {β : Type*} {f : α → β} (hf : M.E.InjOn f) {F : Set β} :
     (M.map f hf).IsFlat F ↔ ∃ F₀, M.IsFlat F₀ ∧ F = f '' F₀ :=
@@ -225,11 +225,10 @@ lemma isFlat_comap_iff_exists {β : Type*} {f : α → β} {F : Set α} {M : Mat
   rintro ⟨F₀, hF₀, rfl⟩
   exact hF₀.comap f
 
-instance : GroundedPred Cyclic := ⟨fun _ _ _ ↦ Cyclic.subset_ground⟩
+instance GroundedPred.instCyclic : GroundedPred Cyclic := ⟨fun _ _ _ ↦ Cyclic.subset_ground⟩
 
-instance : InvariantFun Cyclic Cyclic := by
-  simpa [supported_set_iff, ← cyclic_iff_compl_isFlat_dual'] using
-    (InvariantFun.dual IsFlat IsFlat).compl.andSupported
+instance InvariantFun.instCyclic : InvariantFun Cyclic Cyclic := by
+  simpa [← cyclic_iff_compl_isFlat_dual'] using (InvariantFun.dual IsFlat IsFlat).compl.andSupported
   -- TODO : Cyclic flats.
 
 

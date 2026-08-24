@@ -336,4 +336,14 @@ lemma Nodup.getLast_not_mem_dropLast {l : List α} (hnd : l.Nodup) (hne : l ≠ 
     l.getLast hne ∉ l.dropLast := by
   simp [mem_dropLast_iff hnd hne]
 
--- Variant of getElem?_reverse with a hypothesis giving the linear relation between the indices.
+lemma nodup_map_iff_of_injOn {β : Type*} {f : α → β}
+    (hf : ∀ x ∈ L, ∀ y ∈ L, f x = f y → x = y) : Nodup (L.map f) ↔ Nodup L := by
+  induction L with grind
+
+lemma get_map {β : Type*} {f : α → β} (L : List α) (i : Fin (L.map f).length) :
+    (L.map f).get i = f (L.get (i.cast (by simp))) := by
+  simp
+
+lemma get_map_image {β : Type*} {f : α → β} (L : List α) (s : Set (Fin (L.map f).length)) :
+    (L.map f).get '' s = f '' (L.get '' (Fin.cast (by simp) '' s)) := by
+  simp [Set.ext_iff]

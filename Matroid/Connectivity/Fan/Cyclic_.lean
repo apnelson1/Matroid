@@ -136,15 +136,6 @@ lemma IsCyclicFan.rotate (h : M.IsCyclicFan F b) (n : ℕ) :
   simpa [Fin.bodd_val_add_of_even h.even, mod_bodd h.even, Bool.bne_eq_xor] using this
 
 open Fin.NatCast in
-lemma IsCyclicFan.of_rotate {n : ℕ} (h : (M.IsCyclicFan (F.rotate n) (b != n.bodd))) :
-    M.IsCyclicFan F b := by
-  have heven : F.length.bodd = false := by simpa using h.even
-  have : NeZero F.length := ⟨by grind [show 4 ≤ F.length by simpa using h.length_ge]⟩
-  rw [← rotate_rotate_neg_fin_self (a := (n : Fin F.length)), Fin.val_natCast, rotate_mod]
-  convert h.rotate _
-  cases b with simp [Fin.bodd_val_neg_of_even, Nat.mod_bodd, heven]
-
-open Fin.NatCast in
 lemma IsCyclicFan.map (h : M.IsCyclicFan F b) {β : Type*} {φ : α → β} (hφ : InjOn φ M.E) :
     (M.map φ hφ).IsCyclicFan (F.map φ) b := by
   have hrw (b : Bool) : (M.map φ hφ).bDual b = (M.bDual b).map φ (by simpa) := by
@@ -393,7 +384,8 @@ lemma IsFan.isCyclicFan_of_tutteConnected_three_of_mem_closure (h : M.IsFan F b 
   refine mem_of_mem_of_subset ?_ hss
   simp [h.getElem_mem_ground, mem_dropLast_iff h.nodup h.ne_nil, getLast_eq_getElem]
 
-lemma IsCyclicFan.joints_indep (h : M.IsCyclicFan F b) : M.Indep (F.get '' {i | i.1.bodd = b}) :=
+lemma IsCyclicFan.joints_indep (h : M.IsCyclicFan F b) :
+    M.Indep ((fun x : Fin F.length ↦ F[x.1]) '' Fin.val ⁻¹' {i | i.bodd = b}) :=
   h.isFan.joints_indep (by simp +contextual)
 
 /-- `IsFanCircuit F b C` means that `C` consists of a pair of joints `F[p], F[q]` of `C`,
@@ -550,33 +542,18 @@ lemma IsCyclicFan.isCircuitHyperplane_or_isBase_cojoints (hF : M.IsCyclicFan F b
     hF.isFan.nodup.injective_getElem_fin.preimage_image] at hCJ
   simpa [hp] using hCJ (x := p)
 
-lemma IsCyclicFan.indep_cojoints_iff_bDual (hF : M.IsCyclicFan F b)
-    (hM : M.TutteConnected 2) (c d : Bool) : (M.bDual d).Indep (F.get '' {i | i.1.bodd = c})
-    ↔ M.Indep (F.get '' {i | i.1.bodd = (c != d)}) := by
-  obtain rfl | rfl := d
-  · simp
-  simp only [bDual_true, Bool.bne_true]
-  have hrw (d : Bool) : F.get '' {i | i.1.bodd = d} = M.E \ F.get '' {i | i.1.bodd = !d} := by
-    rw [← hF.setOf_eq_ground hM, ← range_list_get, range_sdiff_image hF.isFan.nodup.injective_get]
-    simp [Set.ext_iff]
-  obtain rfl | rfl := c.eq_or_eq_not b
-  · rw [hrw]
-    obtain hch | hb := hF.isCircuitHyperplane_or_isBase_cojoints hM
-    · exact iff_of_false hch.compl_dual.isCircuit.not_indep hch.isCircuit.not_indep
-    exact iff_of_true hb.compl_isBase_dual.indep hb.indep
-  exact iff_of_true hF.dual.joints_indep <| by simpa using hF.joints_indep
-
 /-- If `F` is a cyclic fan on distinct matroids `M` and `N`,
 and the cojoints are at least as free in `M` as they are in `N`,
 then `M` is obtained from `N` by relaxing the cojoints. -/
 lemma IsCyclicFan.eq_relax {M N : Matroid α} (hFM : M.IsCyclicFan F b) (hFN : N.IsCyclicFan F b)
     (hM : M.TutteConnected 2) (hN : N.TutteConnected 2) (hMN : M ≠ N)
-    (hI : N.Indep (F.get '' {i | i.1.bodd = !b}) → M.Indep (F.get '' {i | i.1.bodd = !b})) :
-    ∃ (h : N.IsCircuitHyperplane (F.get '' {i | i.1.bodd = !b})),
+    (hI : N.Indep (F.get '' Fin.val ⁻¹' {i | i.bodd = !b}) →
+      M.Indep (F.get '' Fin.val ⁻¹' {i | i.bodd = !b})) :
+    ∃ (h : N.IsCircuitHyperplane (F.get '' Fin.val ⁻¹' {i | i.bodd = !b})),
       M = N.relax _ (IsLawfulRelaxation.single h) := by
   have hJM := hFM.isCircuitHyperplane_or_isBase_cojoints hM
   have hJN := hFN.isCircuitHyperplane_or_isBase_cojoints hN
-  set J := (F.get '' {i | i.1.bodd = !b}) with hJ
+  set J := (F.get '' Fin.val ⁻¹' {i | i.bodd = !b}) with hJ
   have := hFM.finite hM
   have hE : M.E = N.E := by rw [← hFM.setOf_eq_ground hM, hFN.setOf_eq_ground hN]
   have hr : M.eRank = N.eRank := by rw [hFM.eRank_eq' hM, hFN.eRank_eq' hN]
@@ -602,46 +579,3 @@ lemma IsCyclicFan.eq_relax {M N : Matroid α} (hFM : M.IsCyclicFan F b) (hFN : N
   · exact iff_of_false (fun h ↦ h.isCircuit.not_indep hi.1) (by simp)
   rw [and_iff_left (by simpa), hFM.isNonspanningCircuit_iff hM hne,
     hFN.isNonspanningCircuit_iff hN hne]
-
-lemma IsCyclicFan.eq_of_isCyclicFan {M N : Matroid α} (hFM : M.IsCyclicFan F b)
-    (hFN : N.IsCyclicFan F b) (hM : M.TutteConnected 2) (hN : N.TutteConnected 2)
-    (hI : N.Indep (F.get '' {i | i.1.bodd = !b}) ↔ M.Indep (F.get '' {i | i.1.bodd = !b})) :
-    M = N := by
-  by_contra hcon
-  obtain ⟨h, rfl⟩ := (hFM.eq_relax hFN hM hN hcon hI.1)
-  exact h.isCircuit.not_indep <| by simpa using hI
-
--- open Fin.NatCast in
--- lemma IsCyclicFan.map_eq (hF : M.IsCyclicFan F b) [NeZero F.length] (hM : M.TutteConnected 2)
---     (k : ℕ) {f : α → α} (hf : ∀ (i : Fin F.length), f F[i.1] = F[(i + (k : Fin F.length)).1]) :
---     ∃ (hf : InjOn f M.E), M.map f hf = M.bDual k.bodd := by
-
---   have hinj : InjOn f M.E := by
---     rw [← hF.setOf_eq_ground hM]
---     intro x hx y hy hxy
---     obtain ⟨i, rfl⟩ := List.get_of_mem hx
---     obtain ⟨j, rfl⟩ := List.get_of_mem hy
---     rw [get_eq_getElem, get_eq_getElem, hf, hf, hF.isFan.nodup.getElem_inj_iff, Fin.val_inj,
---       add_left_inj] at hxy
---     rw [hxy]
-
---   have hbij : BijOn f M.E M.E := by
---     refine ⟨by grind [MapsTo, List.mem_iff_get, hF.setOf_eq_ground hM], hinj, ?_⟩
---     simp only [SurjOn, ← hF.setOf_eq_ground hM, mem_iff_get, get_eq_getElem, subset_image_iff]
---     refine ⟨
---     _
-
---   have hFr : F.map f = F.rotate k := by
---     refine ext_get (by simp) fun i hi hi' ↦ ?_
---     lift i to Fin F.length using (by simpa using hi)
---     simp [hf, Fin.val_add]
---   refine ⟨hinj, (hF.map hinj).eq_of_isCyclicFan ?_ (by simpa) (by simpa) ?_⟩
---   · cases b with simpa [hFr] using (hF.rotate k).bDual k.bodd
---   nth_rw 1 [iff_comm, List.get_map_image, map_image_indep_iff (by grind)]
---   rw! [hFr, rotate_get_image, preimage_preimage, preimage_ofPred_eq]
---   simp_rw [Fin.cast_sub, Fin.bodd_val_sub_of_even (hF.rotate k).even, Fin.val_cast,
--- Fin.image_cast,
---     preimage_ofPred_eq, Fin.val_cast,
---     show ∀ x y : Bool, (x ^^ y) = !b ↔ x = (y != !b) by grind [cases Bool],
---     hF.indep_cojoints_iff_bDual hM, Fin.val_natCast, Nat.mod_bodd hF.even]
---   cases b with simp

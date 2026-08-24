@@ -26,18 +26,17 @@ instance : GroundedPred (γ := id) IsLoop := ⟨fun _ _ _ ↦ IsLoop.mem_ground�
 instance : GroundedPred (γ := id) IsColoop := ⟨fun _ _ _ ↦ IsColoop.mem_ground⟩
 instance : GroundedPred (γ := id) IsNonloop := ⟨fun _ _ _ ↦ IsNonloop.mem_ground⟩
 
-instance : InvariantFun (γ := id) (δ := id) IsLoop IsLoop where
+instance InvariantFun.isLoop : InvariantFun (γ₁ := id) (δ₁ := id) IsLoop IsLoop where
   of_empty := by simp
   map_eq α β M f hf x (hx : x ∈ M.E) := by
-    simp only [← singleton_dep, transfer_elem_eq, ← image_singleton, id_eq, eq_iff_iff]
-    exact Iff.symm <| InvariantFun.map_set_image_iff (by simpa) hf
+    simp only [← singleton_dep, ← image_singleton, id_eq, eq_iff_iff]
+    exact Iff.symm <| InvariantFun.map_set_image_iff (P := Dep) (by simpa) hf
 
-instance : InvariantFun (γ := id) (δ := id) IsNonloop IsNonloop := by
-  simpa [id_eq, supported_elem_iff, ← isNonloop_iff] using
-    InvariantFun.notAndSupported (γ := id) (δ := id) IsLoop IsLoop
+instance InvariantFun.isNonLoop : InvariantFun (γ₁ := id) (δ₁ := id) IsNonloop IsNonloop := by
+  simpa [← isNonloop_iff] using InvariantFun.notAndSupported (γ₁ := id) (δ₁ := id) IsLoop IsLoop
 
-instance : InvariantFun (γ := id) (δ := id) IsColoop IsColoop :=
-  InvariantFun.dual (γ := id) (δ := id) IsLoop IsLoop
+instance InvariantFun.IsColoop : InvariantFun (γ₁ := id) (δ₁ := id) IsColoop IsColoop :=
+  InvariantFun.dual (γ₁ := id) (δ₁ := id) IsLoop IsLoop
 
 @[simp]
 lemma isFlat_loops (M : Matroid α) : M.IsFlat M.loops :=
@@ -57,6 +56,29 @@ lemma IsColoop.not_isNonColoop (h : M.IsColoop e) : ¬ M.IsNonColoop e :=
   IsLoop.not_isNonloop (M := M✶) h
 
 instance : GroundedPred (γ := id) IsNonColoop := ⟨fun _ _ _ ↦ IsNonColoop.mem_ground⟩
+
+instance InvariantFun.IsNonColoop : InvariantFun (γ₁ := id) (δ₁ := id) IsNonColoop IsNonColoop :=
+  InvariantFun.dual (γ₁ := id) (δ₁ := id) IsNonloop IsNonloop
+
+@[simp]
+lemma isLoop_map_iff {β : Type*} {f : α → β} {x : α} (hf : InjOn f M.E) (hx : x ∈ M.E) :
+    (M.map f hf).IsLoop (f x) ↔ M.IsLoop x :=
+  InvariantFun.map_elem_iff hf hx
+
+@[simp]
+lemma isNonloop_map_iff {β : Type*} {f : α → β} {x : α} (hf : InjOn f M.E) (hx : x ∈ M.E) :
+    (M.map f hf).IsNonloop (f x) ↔ M.IsNonloop x :=
+  InvariantFun.map_elem_iff hf hx
+
+@[simp]
+lemma isColoop_map_iff {β : Type*} {f : α → β} {x : α} (hf : InjOn f M.E) (hx : x ∈ M.E) :
+    (M.map f hf).IsColoop (f x) ↔ M.IsColoop x :=
+  InvariantFun.map_elem_iff hf hx
+
+@[simp]
+lemma isNonColoop_map_iff {β : Type*} {f : α → β} {x : α} (hf : InjOn f M.E) (hx : x ∈ M.E) :
+    (M.map f hf).IsNonColoop (f x) ↔ M.IsNonColoop x :=
+  InvariantFun.map_elem_iff hf hx
 
 @[simp]
 lemma isNonColoop_dual : M✶.IsNonColoop e ↔ M.IsNonloop e := by

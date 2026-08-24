@@ -216,6 +216,21 @@ lemma multiConn_map {β : Type*} {f : α → β} (M : Matroid α) (hf : InjOn f 
     (subset_inter ?_ inter_subset_right)
   rw [hf.preimage_image_inter (hY.1 i)]
 
+instance : InvariantFun (γ₁ := fun α ↦ (ι → Set α)) (δ₁ := fun α ↦ (ι → Set α))
+    multiConn multiConn where
+  of_empty α β hβ X hX := by
+    have hX : X = fun _ ↦ ∅ := by simpa [funext_iff] using hX
+    simp only [SupportClass.supported_pure, TransferClass.pure_transferEmpty, forall_const]
+    rw [multiConn_eq_nullity_iUnion (I := fun _ ↦ ∅) (by simp [Pairwise]) (by simp [hX]),
+      multiConn_eq_nullity_iUnion (I := fun _ ↦ ∅) (by simp [Pairwise]) (by simp)]
+    simp
+  map_eq α β M f hf X (hX : ∀ i, X i ⊆ M.E) := by
+    simp only [TransferClass.pure_transfer, TransferClass.toFun_transfer_eq,
+      TransferClass.set_transfer, multiConn_map]
+    rw [eq_comm, ← multiConn_inter_ground]
+    convert rfl with i
+    rw [hf.preimage_image_inter (hX i)]
+
 lemma multiConn_closure (M : Matroid α) (X : ι → Set α) :
     M.multiConn (fun i ↦ M.closure (X i)) = M.multiConn X := by
   choose I hI using fun i ↦ M.exists_isBasis' (X i)
@@ -660,6 +675,12 @@ lemma eLocalConn_map {β : Type*} (M : Matroid α) (f : α → β) (hf) (X Y : S
   simp only [eLocalConn, multiConn_map]
   convert rfl
   exact Bool.apply_cond .. |>.symm
+
+instance : InvariantFun₂ eLocalConn eLocalConn where
+  of_empty := by simp
+  map_eq α β M f hf X Y (hX : X ⊆ M.E) (hY : Y ⊆ M.E) := by
+    simp only [TransferClass.set_transfer, eLocalConn_map]
+    rw [eq_comm, ← eLocalConn_inter_ground, hf.preimage_image_inter hX, hf.preimage_image_inter hY]
 
 @[simp]
 lemma eLocalConn_comap {β : Type*} (M : Matroid β) (f : α → β) (X Y : Set α) :

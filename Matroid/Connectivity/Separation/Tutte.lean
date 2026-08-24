@@ -248,6 +248,16 @@ For this reason, we use `TutteConnected (k+1)` in the API in all places except w
 no convenience is lost. Vertical and Cyclic connectivities have the same issues. -/
 def TutteConnected (M : Matroid α) (k : ℕ∞) := M.NumConnected TutteDegen k
 
+instance invariant_tutteConnected {k : ℕ∞} : Invariant (fun {_} M ↦ M.TutteConnected k)
+    (fun {_} M ↦ M.TutteConnected k) :=
+  invariant_numConnected TutteDegen TutteDegen k
+
+@[simp]
+lemma map_tutteConnected_iff {k : ℕ∞} {β : Type*} {f : α → β} (hf : InjOn f M.E) :
+    (M.map f hf).TutteConnected k ↔ M.TutteConnected k := by
+  rw [iff_comm, ← eq_iff_iff]
+  exact invariant_tutteConnected.map_eq hf
+
 lemma tutteConnected_iff_numConnected_tutteWeight_eq_zero : M.TutteConnected k ↔
     M.NumConnected (fun M X ↦ M.tutteWeight X = 0) k := by
   simp [TutteConnected]
@@ -456,7 +466,7 @@ lemma TutteConnected.of_map {β : Type*} {f : α → β} (hf : InjOn f M.E)
     (hM : (M.map f hf).TutteConnected k) : M.TutteConnected k := by
   obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
   rw [tutteConnected_iff_forall] at hM ⊢
-  exact fun P hP hPsep ↦ hM (P.map f hf) (by rwa [map_eConn]) <| hPsep.map _ hf
+  exact fun P hP hPsep ↦ hM (P.map f hf) (by rwa [Separation.map_eConn]) <| hPsep.map _ hf
 
 lemma TutteConnected.map {β : Type*} (hM : M.TutteConnected k) (f : α → β) (hf : InjOn f M.E) :
     (M.map f hf).TutteConnected k := by

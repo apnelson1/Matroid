@@ -72,6 +72,15 @@ lemma IsStrictMinor.bDual {N : Matroid α} (hNM : N <m M) (b : Bool) : N.bDual b
   | false => assumption
   | true => exact hNM.dual
 
+instance InvariantFun.bDual.{u,v} {γ₁ γ₂ : Type u → Sort*} {δ₁ δ₂ : Type v → Sort*}
+    [Matroid.SupportClass γ₁] [Matroid.SupportClass γ₂] [Matroid.SupportClass δ₁]
+    [Matroid.SupportClass δ₂] [Matroid.TransferClass γ₁ δ₁] [Matroid.TransferClass γ₂ δ₂]
+    (F : ∀ {α}, Matroid α → γ₁ α → γ₂ α) (G : ∀ {β}, Matroid β → δ₁ β → δ₂ β) [h : InvariantFun F G]
+    (b : Bool) : InvariantFun (fun M X ↦ F (M.bDual b) X) (fun N Y ↦ G (N.bDual b) Y) := by
+  obtain rfl | rfl := b
+  · simpa
+  simpa using h.dual
+
 /-- If `b` is false, then `M ＼ X`, and if `b` is true, then `M ／ X`. Used in self-dual settings. -/
 def remove (M : Matroid α) (b : Bool) (X : Set α) := bif b then M ／ X else M ＼ X
 

@@ -452,19 +452,18 @@ lemma IsFan.forall_cojoint_mem_le_or_forall_cojoint_mem_le (hF : M.IsFan F b c) 
 
 /-- Each proper subset of the cojoints is independent. -/
 lemma IsFan.indep_of_ssubset_cojoints (hF : M.IsFan F b c) {I : Set α}
-    (hI : I ⊂ (fun x : Fin F.length ↦ F[x.1]) '' Fin.val ⁻¹' Nat.bodd ⁻¹' {!b}) : M.Indep I := by
-
-  have hss : (fun x ↦ F[x.1]) '' Fin.val ⁻¹' Nat.bodd ⁻¹' {!b} ⊆ {e | e ∈ F} := by grind
+    (hI : I ⊂ F.get '' Fin.val ⁻¹' Nat.bodd ⁻¹' {!b}) : M.Indep I := by
+  have hss : F.get '' Fin.val ⁻¹' Nat.bodd ⁻¹' {!b} ⊆ {e | e ∈ F} := by grind
   rw [indep_iff_forall_subset_not_isCircuit (hI.subset.trans (hss.trans hF.subset_ground))]
   refine fun C hCI hC ↦ hI.not_subset ?_
   have hCb : ∀ {i} {hi : i < F.length}, F[i] ∈ C → i.bodd = !b :=
     fun h ↦ by simpa [hF.nodup.mem_image_getElem_preimage_val_iff] using (hI.subset (hCI h))
-  rw [image_getElem_preimage_val_subset_iff]
+  simp only [get_eq_getElem, image_subset_iff, ge_iff_le, preimage_singleton, preimage_ofPred_eq]
   by_cases! hi : ∃ (i : ℕ) (hi : i + 2 < F.length), F[i + 1] ∈ C
   · obtain ⟨i, hi, hiC⟩ := hi
     have hib : i.bodd = b := by
       simpa [hF.nodup.mem_image_getElem_preimage_val_iff] using hI.subset <| hCI hiC
-    refine fun q hq hqb ↦ hCI ?_
+    refine fun ⟨q, hq⟩ hqb ↦ hCI ?_
     obtain hiq | hiq := le_or_gt (i + 1) q
     · exact hF.cojoint_mem_of_subsingleton_joint_mem_le (by lia) (by simpa) hC (by grind) hiC
         (by lia) (by lia) hqb

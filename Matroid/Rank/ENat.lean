@@ -26,6 +26,9 @@ variable {α ι : Type*} {M N : Matroid α} {I B X X' Y Y' Z R : Set α} {n : �
 
 section Basic
 
+instance : InvariantFun eRk eRk where
+  of_empty := by simp
+  map_eq α β M f hf X (hX : X ⊆ M.E) := Eq.symm <| M.eRk_map hf hX
 
 @[gcongr]
 lemma eRk_subset_le (M : Matroid α) (hXY : X ⊆ Y) : M.eRk X ≤ M.eRk Y :=

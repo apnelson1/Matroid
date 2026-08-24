@@ -54,9 +54,9 @@ instance : GroundedPred IsFreeBase := ⟨fun _ _ _ h ↦ h.1.subset_ground⟩
 instance : InvariantFun IsFreeBase IsFreeBase where
   of_empty := by simp [isFreeBase_iff]
   map_eq α β M f hf B (hBE : B ⊆ M.E) := by
-    simp only [transfer_set_eq, eq_iff_iff, isFreeBase_iff, map_ground, subset_image_iff,
-      map_image_isBase_iff hBE, and_congr_right_iff, map_isBase_iff, forall_exists_index, and_imp,
-      forall_apply_eq_imp_iff₂]
+    simp only [isFreeBase_iff, TransferClass.pure_transfer, TransferClass.set_transfer,
+      map_ground, forall_subset_image_iff, eq_iff_iff, map_image_isBase_iff hBE]
+    simp only [map_isBase_iff, and_congr_right_iff]
     refine fun hB ↦ ⟨fun h' B' hB'E h ↦ ⟨B', h' B' hB'E ?_, rfl⟩, fun h B' hB' hB'B ↦ ?_⟩
     · rwa [isExchange_image_iff_of_injOn hf hB'E hBE] at h
     specialize h B' hB'
@@ -155,8 +155,9 @@ instance : GroundedPred IsNonbase := ⟨fun _ _ _ ↦ IsNonbase.subset_ground⟩
 instance : InvariantFun IsNonbase IsNonbase where
   of_empty := by simp [isNonbase_iff]
   map_eq α β M f hf X (hXE : X ⊆ M.E) := by
-    simp only [isNonbase_iff, transfer_set_eq, map_ground, image_subset_iff, map_isBase_iff,
-      not_exists, not_and, ↓existsAndEq, and_true, eq_iff_iff, and_iff_right hXE]
+    simp only [isNonbase_iff, and_iff_right hXE, TransferClass.pure_transfer,
+      TransferClass.set_transfer, map_ground, image_subset_iff, map_isBase_iff, not_exists, not_and,
+      ↓existsAndEq, and_true, eq_iff_iff]
     refine ⟨fun ⟨hX, B, hB, hBX⟩ ↦ ⟨hXE.trans (subset_preimage_image ..),
       ⟨fun B' hB' hB'X ↦ hX ?_, ?_⟩⟩, fun ⟨_, hXnb, B, hB, hBX⟩ ↦ ⟨fun hX ↦ by grind, ⟨B, hB, ?_⟩⟩⟩
     · rw [hf.image_eq_image_iff hXE hB'.subset_ground] at hB'X

@@ -418,12 +418,26 @@ lemma nontrivial_copy_iff {M' : Matroid α} (h : M = M') (P : M.Separation) :
     (P.copy h).Nontrivial ↔ P.Nontrivial := by
   simp [Separation.nontrivial_def]
 
-/-- Push a separation forward along a matroid map. -/
+/-- Push a separation forward along a matroid map. `simps` misbehaves here.  -/
 protected def map {β : Type*} (P : M.Separation) (f : α → β) (hf : InjOn f M.E) :
     (M.map f hf).Separation where
   toFun i := f '' (P i)
   pairwise_disjoint' i j hij := (P.pairwise_disjoint' hij).image (f := f) hf (by simp) (by simp)
   iUnion_eq' := by rw [← image_iUnion, P.iUnion_eq, map_ground]
+
+protected def ofMap {β : Type*} {f : α → β} {hf : InjOn f M.E} (P : (M.map f hf).Separation) :
+    M.Separation where
+  toFun i := f ⁻¹' (P i) ∩ M.E
+  pairwise_disjoint' := by
+    simp only [Pairwise, ne_eq, disjoint_left, mem_inter_iff, mem_preimage, Bool.forall_bool]
+    grind
+  iUnion_eq' := by
+    rw [← iUnion_inter, ← preimage_iUnion, P.iUnion_eq, map_ground, hf.preimage_image_inter
+      subset_rfl]
+
+@[simp]
+protected lemma ofMap_apply {β : Type*} {f : α → β} (hf : InjOn f M.E) (P : (M.map f hf).Separation)
+    (i : Bool) : P.ofMap i = f ⁻¹' (P i) ∩ M.E := rfl
 
 @[simp]
 protected lemma map_apply {β : Type*} (P : M.Separation) {f : α → β} (hf : InjOn f M.E) (i : Bool) :
@@ -528,6 +542,11 @@ lemma map_eConn {β : Type*} (P : M.Separation) (f : α → β) (hf : InjOn f M.
     (P.map f hf).eConn = P.eConn := by
   rw [Separation.eConn, eLocalConn_map, Separation.eConn, P.map_apply, ← M.eLocalConn_inter_ground,
     InjOn.preimage_image_inter hf (by simp), P.map_apply, InjOn.preimage_image_inter hf (by simp)]
+
+@[simp]
+lemma ofMap_eConn {β : Type*} (f : α → β) (hf : InjOn f M.E) (P : (M.map f hf).Separation) :
+    P.ofMap.eConn = P.eConn := by
+  rw [← Separation.eConn_eq _ true, ← P.eConn_eq true, M.map_eConn, ← P.ofMap_apply]
 
 @[simp]
 protected lemma not_indep_iff : ¬ M.Indep (P i) ↔ M.Dep (P i) := by

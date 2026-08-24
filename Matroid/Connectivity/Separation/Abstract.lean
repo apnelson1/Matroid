@@ -164,6 +164,24 @@ lemma PredConnected.dual (hdegen : ∀ ⦃i k M X⦄, X ⊆ M.E → dg i k M X �
     (h : M.PredConnected dg) : M✶.PredConnected dg' :=
   h.dual' fun i k N X hX h' ↦ by simp [hdegen hX h']
 
+lemma invariant_predConnected (dg dg' : ∀ {α : Type*}, Bool → ℕ∞ → Matroid α → Set α → Prop)
+    [hdg : ∀ b i, InvariantFun (dg b i) (dg' b i)] :
+    Invariant (fun {α} (M : Matroid α) ↦ M.PredConnected dg)
+      (fun {β} (N : Matroid β) ↦ N.PredConnected dg') where
+  map_eq α β N f hf := by
+    simp only [TransferClass.pure_transfer, eq_iff_iff]
+    refine ⟨fun h S ↦ Exists.imp (fun i hdgi ↦ ?_) (h S.ofMap),
+      fun h S ↦ Exists.imp (fun i hdgi ↦ ?_) (h (S.map f hf))⟩
+    · have hrw := (hdg i S.eConn).map_eq hf
+      simp only [SupportClass.set_supported, TransferClass.pure_transfer,
+        TransferClass.set_transfer, eq_iff_iff] at hrw
+      rwa [S.ofMap_eConn, hrw (by simp), Separation.ofMap_apply, image_preimage_inter,
+        inter_eq_self_of_subset_left (by simpa using S.subset_ground)] at hdgi
+    rw [S.map_eConn, S.map_apply] at hdgi
+    have hrw := (hdg i S.eConn).map_eq hf (S.subset_ground (i := i))
+    simp only [TransferClass.pure_transfer, TransferClass.set_transfer, eq_iff_iff] at hrw
+    rwa [hrw]
+
 /-- A slightly more concrete notion of connectivity that still abstracts Tutte, vertical and cyclic
 connectivity. `M.numConnected dg (k+1)` means that every separation of connectivity less than `k`
 has a degenerate side in the of a specified `dg`.
@@ -175,6 +193,11 @@ def NumConnected (M : Matroid α) (dg : Matroid α → Set α → Prop) (k : ℕ
 
 lemma NumConnected.mono {dg} (h : M.NumConnected dg k) (hjk : j ≤ k) : M.NumConnected dg j :=
   PredConnected.mono (fun _ _ _ _ _ h hle ↦ h (hle.trans hjk)) h
+
+lemma invariant_numConnected (dg dg' : ∀ {α : Type*}, Matroid α → Set α → Prop)
+    [hdg : InvariantFun dg dg'] (k : ℕ∞) : Invariant (fun {α} (M : Matroid α) ↦ M.NumConnected dg k)
+    (fun {β} (M : Matroid β) ↦ M.NumConnected dg' k) :=
+  @invariant_predConnected _ _ fun _ i ↦ hdg.comp_right (s := fun P ↦ (i + 1 + 1 ≤ k → P))
 
 /-- A version with `k`-connectedness rather than `(k+1)`. Usually the latter is preferred-/
 lemma numConnected_iff_forall' {dg} : M.NumConnected dg k ↔
@@ -327,6 +350,12 @@ lemma SeqConnected.dual {w} (h : M.SeqConnected w f) : M✶.SeqConnected (fun M 
   rw [seqConnected_iff_exists] at h
   convert fun (P : M✶.Separation) ↦ h (P.induce M) using 3
   simp
+
+lemma invariant_seqConnected (w : ∀ {α : Type*}, Matroid α → Set α → ℕ∞)
+    (w' : ∀ {β : Type*}, Matroid β → Set β → ℕ∞) (f : ℕ∞ → ℕ∞) [hw : InvariantFun w w'] :
+    Invariant (fun {α} (M : Matroid α) ↦ M.SeqConnected w f)
+    (fun {β} (M : Matroid β) ↦ M.SeqConnected w' f) :=
+  @invariant_predConnected _ _ fun _ i ↦ hw.comp_right (s := fun k ↦ (k ≤ f i))
 
 lemma seqConnected_dual_iff {w} : M✶.SeqConnected w f ↔ M.SeqConnected (fun M X ↦ w M✶ X) f :=
   ⟨fun h ↦ M.dual_dual ▸ h.dual, fun h ↦ by simpa using h.dual⟩

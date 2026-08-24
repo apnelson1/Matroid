@@ -15,7 +15,6 @@ open Set
 
 section Relax
 
-
 lemma IsBase.exists_exchange_of_isCircuitHyperplane (hB : M.IsBase B) (hH : M.IsCircuitHyperplane H)
     (he : e ∈ B) : ∃ f, f ∈ H \ B ∧ (M.IsBase (insert f (B \ {e})) ∨ insert f (B \ {e}) = H) := by
   by_contra! h
@@ -44,6 +43,24 @@ lemma IsBase.exists_exchange_of_isCircuitHyperplane (hB : M.IsBase B) (hH : M.Is
 /-- `M.IsLawfulRelaxation T` means that `T` is a set of circuit-hyperplanes of `M`. -/
 def IsLawfulRelaxation (M : Matroid α) (T : Set (Set α)) : Prop :=
   ∀ ⦃X⦄, X ∈ T → M.IsCircuitHyperplane X
+
+instance GroundedPred.IsLawfulRelaxation : GroundedPred IsLawfulRelaxation where
+  supported := fun _ _ _ h _ hXT ↦ (h hXT).subset_ground
+
+instance InvariantFun.IsLawfulRelaxation : InvariantFun IsLawfulRelaxation IsLawfulRelaxation where
+  of_empty := by simp +contextual [Matroid.IsLawfulRelaxation, isCircuitHyperplane_iff]
+  map_eq α β M f hf S := by
+    simp only [SupportClass.toSet_supported, SupportClass.set_supported, Matroid.IsLawfulRelaxation,
+      TransferClass.pure_transfer, TransferClass.toSet_transfer, TransferClass.set_transfer,
+      mem_image, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂, eq_iff_iff]
+    intro h
+    convert Iff.rfl with X hX
+    rw [InvariantFun.map_set_image_iff (P := IsCircuitHyperplane) (Q := IsCircuitHyperplane)]
+    exact h _ hX
+
+lemma IsLawfulRelaxation.map {β : Type*} {f : α → β} (h : M.IsLawfulRelaxation T)
+    (hf : InjOn f M.E) : (M.map f hf).IsLawfulRelaxation ((image f) '' T) :=
+  InvariantFun.map (P := IsLawfulRelaxation) (Q := IsLawfulRelaxation) h hf
 
 @[grind →]
 lemma IsLawfulRelaxation.ssubset_ground (h : M.IsLawfulRelaxation T) (hX : X ∈ T) : X ⊂ M.E :=
@@ -154,6 +171,14 @@ lemma relax_eRank_eq (h : M.IsLawfulRelaxation T) : (M.relax T h).eRank = M.eRan
 @[simp]
 lemma relax_empty (M : Matroid α) : M.relax ∅ (by simp [IsLawfulRelaxation]) = M := by
   simp [relax]
+
+lemma relax_map (h : M.IsLawfulRelaxation T) {β : Type*} {f : α → β} (hf : InjOn f M.E) :
+    (M.relax T h).map f (by simpa using hf) = (M.map f hf).relax (image f '' T) (h.map hf) := by
+  refine ext_isBase (by simp) fun B hB ↦ ?_
+  simp only [map_ground, relax_E] at hB
+  obtain ⟨B, hBE, rfl⟩ := subset_image_iff.1 hB
+  rw [relax_IsBase, map_image_isBase_iff (by simpa), map_image_isBase_iff hBE, relax_IsBase,
+    hf.image.mem_image_iff (fun X hXT ↦ (h.ssubset_ground hXT).subset) hBE]
 
 -- set_option backward.isDefEq.respectTransparency false in
 lemma relax_nonspanning_iff (h : M.IsLawfulRelaxation T) :

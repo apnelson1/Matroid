@@ -17,21 +17,29 @@ variable {α : Type*} {ι : Type*} {η : Type*} {A : Set η} {M : Matroid α} {B
 
 section IsMutualBasis
 
-/-- An independent sets is a mutual basis for an indexed set family if it contains a basis
+/-- An independent set is a mutual basis for an indexed set family if it contains a basis
 for each set in the family. -/
 @[mk_iff]
 structure IsMutualBasis (M : Matroid α) (B : Set α) (Xs : ι → Set α) : Prop where
   indep : M.Indep B
   forall_isBasis : ∀ i, M.IsBasis ((Xs i) ∩ B) (Xs i)
 
-instance : GroundedPred₂ (γ := Set) (γ' := fun α ↦ (ι → Set α)) IsMutualBasis where
+instance : GroundedPred₂ (γ₁ := Set) (γ₂ := fun α ↦ (ι → Set α)) IsMutualBasis where
   supported _ _ _ _ h := ⟨h.indep.subset_ground, fun i ↦ (h.forall_isBasis i).subset_ground⟩
 
--- instance : InvariantFun₂ (γ := Set) (γ' := fun α ↦ (ι → Set α))
---     (δ := Set) (δ' := fun α ↦ (ι → Set α)) IsMutualBasis IsMutualBasis where
---       of_empty := _
---       map_eq := _
-
+instance : InvariantFun₂ (γ₁ := Set) (γ₂ := fun α ↦ (ι → Set α))
+    (δ₁ := Set) (δ₂ := fun β ↦ (ι → Set β)) IsMutualBasis IsMutualBasis where
+  of_empty := by simp +contextual [isMutualBasis_iff]
+  map_eq α β M f hf I X (hIE : I ⊆ M.E) (hXE : ∀ i, X i ⊆ M.E) := by
+    simp only [TransferClass.set_transfer, eq_iff_iff, isMutualBasis_iff,
+      TransferClass.toFun_transfer_eq, TransferClass.set_transfer, map_image_indep_iff hIE,
+      and_congr_right_iff]
+    refine fun hI ↦ ⟨fun hIX i ↦ ?_, fun h i ↦ ?_⟩
+    · rw [← hf.image_inter (hXE i) hIE]
+      exact (hIX i).map hf
+    specialize h i
+    rwa [← hf.image_inter (hXE i) hIE, map_isBasis_iff _ _ (inter_subset_right.trans hIE) (hXE i)]
+      at h
 
 lemma IsMutualBasis.isBasis_inter (h : M.IsMutualBasis B Xs) (i : ι) :
     M.IsBasis ((Xs i) ∩ B) (Xs i) :=
@@ -196,6 +204,27 @@ section IsModularFamily
 
 /-- A set family is a `IsModularFamily` if it has a modular base. -/
 def IsModularFamily (M : Matroid α) (Xs : ι → Set α) := ∃ B, M.IsMutualBasis B Xs
+
+instance : GroundedPred (γ := fun α ↦ (ι → Set α)) IsModularFamily where
+  supported _ _ _ h i := by
+    obtain ⟨B, hB⟩ := h
+    exact (hB.forall_isBasis i).subset_ground
+
+instance : InvariantFun (γ₁ := fun α ↦ (ι → Set α)) (δ₁ := fun α ↦ (ι → Set α))
+    IsModularFamily IsModularFamily where
+  of_empty := by simp [IsModularFamily, isMutualBasis_iff]
+  map_eq α β M f hf X (hXE : ∀ i, X i ⊆ M.E) := by
+    simp only [TransferClass.pure_transfer, eq_iff_iff]
+    refine ⟨fun ⟨B, hB, hBX⟩ ↦ ⟨f '' B, hB.map f hf, fun i ↦ ?_⟩, fun ⟨B, hB, hBX⟩ ↦ ?_⟩
+    · simp only [TransferClass.toFun_transfer_eq, TransferClass.set_transfer,
+        ← hf.image_inter (hXE i) hB.subset_ground]
+      exact (hBX i).map hf
+    obtain ⟨B, hB', rfl⟩ := map_indep_iff.1 hB
+    refine ⟨B, hB', fun i ↦ ?_⟩
+    specialize hBX i
+    simp_rw [TransferClass.toFun_transfer_eq, TransferClass.set_transfer,
+      ← hf.image_inter (hXE i) hB'.subset_ground] at hBX
+    rwa [map_isBasis_iff _ _ (by grind) (hXE i)] at hBX
 
 lemma Indep.isModularFamily (hI : M.Indep I) (hXs : ∀ i, M.IsBasis ((Xs i) ∩ I) (Xs i)) :
     M.IsModularFamily Xs := by

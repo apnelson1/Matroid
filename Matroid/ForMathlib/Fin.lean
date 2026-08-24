@@ -557,35 +557,17 @@ lemma finTwoEquiv_apply (n : Fin 2) : finTwoEquiv n = n.1.bodd := by
   · simp [finTwoEquiv]
   simp at hn
 
-@[simps]
-def finMulTwoEquiv (n : ℕ) : Fin (2 * n) ≃ Fin n × Bool where
-  toFun i := ⟨⟨i.1.div2, by grind [i.1.bodd_add_div2]⟩, i.1.bodd⟩
-  invFun i := ⟨2 * i.1 + i.2.toNat, by grind⟩
-  left_inv := by
-    rintro ⟨i, hi⟩
-    simp [add_comm, Nat.bodd_add_div2]
-  right_inv := by
-    rintro ⟨⟨i, hi⟩, b⟩
-    suffices (2 * i + b.toNat).div2 = i by simpa
-    rw [Nat.div2, Nat.add_div (by simp), (Nat.div_eq_zero_iff_lt (by simp) (x := b.toNat)).2] <;>
-    grind
+lemma image_image_fin_getElem {α β : Type*} (L : List α) (f : β → Fin L.length)
+    (s : Set β) : (fun i ↦ L[(f i).1]) '' s = (fun (i : Fin L.length) ↦ L[i.1]) '' (f '' s) := by
+  simp [image_image]
 
-lemma finMulTwoEquiv_apply_left_val (i : Fin (2 * n)) : (finMulTwoEquiv n i).1 = i.1.div2 := by
-  simp [finMulTwoEquiv]
-
--- lemma finMulTwoEquiv_add_one (n : ℕ) [hn : NeZero n] (i) :
---     finMulTwoEquiv n (i + 1) = ((finMulTwoEquiv n i).1 + 1, (finMulTwoEquiv n i).2) := by
-
--- lemma finMulTwoEquiv_add_two (n : ℕ) [hn : NeZero n] (i) :
---     finMulTwoEquiv n (i + 2) = ((finMulTwoEquiv n i).1 + 1, (finMulTwoEquiv n i).2) := by
---   obtain ⟨i, hi⟩ := i
---   have : NeZero (2 * n) := ⟨by grind [hn.1]⟩
---   simp only [finMulTwoEquiv_apply, Nat.div2, Fin.val_add, Fin.coe_ofNat_eq_mod, Nat.add_mod_mod,
---     Nat.mod_bodd (show (2 * n).bodd = false by simp), Nat.bodd_succ, Bool.not_not, Prod.mk.injEq,
---     ← Fin.val_inj, and_true]
---   obtain hlt | hle := lt_or_ge (i + 2) (2 * n)
---   · rw [Nat.mod_eq_of_lt (by lia), Nat.mod_eq_of_lt (by lia)]
---     simp
---   rw [← Nat.add_sub_of_le hle, Nat.add_mod_left, Nat.mod_eq_of_lt (by lia),
---     (Nat.div_eq_zero_iff_lt (by simp)).2 (by lia), eq_comm]
---   simp [show i / 2 + 1 = n by lia ]
+open Fin.NatCast in
+lemma rotate_get_image {α : Type*} (L : List α) [NeZero L.length] (k : ℕ)
+    (s : Set (Fin (L.rotate k).length)) : (L.rotate k).get '' s =
+    L.get '' (fun i ↦ i - (k : Fin L.length)) ⁻¹' (Fin.cast (by simp) ⁻¹' s) := by
+  ext a
+  rw [preimage_preimage, mem_image, mem_image]
+  simp_rw [List.get_rotate, mem_preimage, ← Fin.val_natCast, Nat.cast_add]
+  refine ⟨fun ⟨i, his, hi⟩ ↦ ⟨_, ?_, hi⟩, fun ⟨i, hix, hia⟩ ↦ ⟨_, hix, by simpa using hia⟩⟩
+  convert his
+  simp [← Fin.val_inj, Nat.mod_eq_of_lt (show i.1 < L.length by simpa using i.2)]

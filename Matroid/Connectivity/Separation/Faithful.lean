@@ -474,6 +474,11 @@ lemma tutteDegen_dual : M✶.TutteDegen X ↔ M.TutteDegen X := by
 lemma tutteDegen_empty (M : Matroid α) : M.TutteDegen ∅ := by
   simp [tutteDegen_iff]
 
+instance : GroundedPred TutteDegen where supported _ _ _ h := h.indep.subset_ground
+
+instance : InvariantFun TutteDegen TutteDegen := by
+  simpa [← tutteDegen_iff] using InvariantFun.and Indep Coindep Indep Coindep
+
 lemma TutteDegen.antitone : Antitone M.TutteDegen :=
   fun _ _ hYX h ↦ ⟨h.indep.subset hYX, h.coindep.subset hYX⟩
 
@@ -589,7 +594,5 @@ lemma IsFaithfulMono.isLawfulDG {w} (h : IsFaithfulMono (α := α) w) {t : ℕ�
   intro N M P hP i hle
   grw [h i hP, hle, P.eConn_eq, ← hP.eConn_induce_eq, ← Separation.eConn_eq _ i,
     Separation.induce_apply_subset _ hP.isMinor.subset]
-
-
 
 end Matroid
