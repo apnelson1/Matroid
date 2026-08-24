@@ -1,6 +1,6 @@
 module
 
-public import Matroid.Graph.Iso.Relabel
+public import Matroid.Graph.Relabel
 public import Matroid.Graph.Map
 public import Matroid.Graph.Simple
 public import Matroid.Graph.WList.TakeDrop.Index
@@ -118,17 +118,6 @@ structure IsoTopologicalMinor (J : Graph γ δ) (G : Graph α β) where
 /-- The proposition that `J` is an isomorphism-invariant topological minor of `G`. -/
 def IsIsoTopologicalMinor (J : Graph γ δ) (G : Graph α β) : Prop :=
   Nonempty (J.IsoTopologicalMinor G)
-
-/-! ## Small route lemmas -/
-
-lemma mem_internalVertexSet_of_mem_ne_ends {W : WList α β} {x : α} (hx : x ∈ W)
-    (hne : x ≠ W.first ∧ x ≠ W.last) : x ∈ W.internalVertexSet := by
-  obtain rfl | hx_tail := (mem_iff_eq_vertex_first_or_mem_tail).mp hx
-  · exact (hne.1 rfl).elim
-  have htail_ne : W.vertex.tail ≠ [] := List.ne_nil_of_mem hx_tail
-  obtain hx_dl | rfl := (List.mem_iff_mem_dropLast_or_eq_getLast htail_ne).mp hx_tail
-  · exact hx_dl
-  exact (hne.2 (by rw [← vertex_getLast, ← List.getLast_tail htail_ne])).elim
 
 /-! ## Label-coherent topological minors -/
 

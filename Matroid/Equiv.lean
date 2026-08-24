@@ -4,6 +4,7 @@ public import Matroid.Rank.Nat
 public import Matroid.ForMathlib.PreimageVal
 public import Matroid.ForMathlib.Logic_Embedding_Set
 public import Matroid.ForMathlib.Matroid.Basic
+public import Matroid.ForMathlib.Tactic.IRw
 
 @[expose] public section
 
@@ -18,6 +19,10 @@ namespace Matroid
 @[pp_nodot] structure Iso (M : Matroid α) (N : Matroid β) where
   toEquiv : M.E ≃ N.E
   indep_image_iff' : ∀ (I : Set M.E), M.Indep I ↔ N.Indep (↑(toEquiv '' I))
+
+attribute [irw_system] Matroid.Iso
+
+attribute [irw_equiv] Iso.toEquiv
 
 infixl:65  " ≂ " => Iso
 

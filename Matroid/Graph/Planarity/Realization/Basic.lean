@@ -1,6 +1,7 @@
 module
 
 public import Matroid.Graph.Finite
+public import Matroid.Graph.Planarity.Realization.VertexSpace
 public import Matroid.Graph.GraphLike.ArbRel
 public import Matroid.Graph.Distance
 public import Mathlib.Topology.CWComplex.Classical.Subcomplex
@@ -49,15 +50,6 @@ The vertex set has the discrete topology; the quotient topology is used on the r
 file defines the quotient map, vertex and edge inclusions, and the basic open-set and compactness
 lemmas.
 -/
-
-/-- Discrete uniformity (hence discrete topology) on vertices. -/
-instance (G : Graph α β) : UniformSpace V(G) := ⊥
-
-instance : DiscreteTopology V(G) where
-  eq_bot := rfl
-
-instance instFiniteVertex [G.Finite] : Finite V(G) := G.vertexSet_finite
-instance instFiniteEdge [G.EdgeFinite] : Finite E(G) := G.edgeSet_finite
 
 @[expose]
 noncomputable def edgeSource (e : E(G)) : V(G) :=

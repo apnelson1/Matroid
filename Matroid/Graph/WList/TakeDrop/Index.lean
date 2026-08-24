@@ -87,6 +87,52 @@ lemma mem_iff_eq_first_or_mem_internalVertexSet_or_eq_last :
   · exact mem_of_mem_tail (List.mem_of_mem_dropLast hx)
   · simp
 
+/-- The internal vertices of `cons x e w` are the vertices of `w` other than its last one.
+This subsumes the `nil`/`cons` case split on the tail: `w.vertex.dropLast` is already empty when
+`w` is trivial. -/
+lemma internalVertexSet_cons (x : α) (e : β) (w : WList α β) :
+    (cons x e w).internalVertexSet = {z | z ∈ w.vertex.dropLast} := rfl
+
+lemma mem_internalVertexSet_cons {x : α} {e : β} {w : WList α β} :
+    z ∈ (cons x e w).internalVertexSet ↔ z ∈ w.vertex.dropLast := Iff.rfl
+
+lemma internalVertexSet_cons_nil (x : α) (e : β) (y : α) :
+    (cons x e (nil y)).internalVertexSet = ∅ := by
+  simp [internalVertexSet]
+
+lemma internalVertexSet_cons_cons (x : α) (e : β) (y : α) (f : β) (w : WList α β) :
+    (cons x e (cons y f w)).internalVertexSet =
+      insert y (cons y f w).internalVertexSet := by
+  simp [internalVertexSet, cons_vertex_dropLast]
+  ext z
+  simp [mem_insert_iff]
+
+lemma internalVertexSet_reverse (w : WList α β) :
+    w.reverse.internalVertexSet = w.internalVertexSet := by
+  simp only [internalVertexSet, reverse_vertex]
+  ext x
+  cases w with
+  | nil => simp
+  | cons a e w =>
+    cases w with
+    | nil => simp
+    | cons b f w => simp [List.mem_reverse, or_comm]
+
+/-- An internal vertex is a vertex. -/
+lemma mem_of_mem_internalVertexSet (hx : x ∈ w.internalVertexSet) : x ∈ w :=
+  mem_iff_eq_first_or_mem_internalVertexSet_or_eq_last.mpr (Or.inr (Or.inl hx))
+
+/-- A vertex that is neither end is internal.  No `Nodup` hypothesis is needed in this
+direction; see `mem_internalVertexSet_iff_of_nodup` for the converse. -/
+lemma mem_internalVertexSet_of_mem_ne_ends {W : WList α β} {x : α} (hx : x ∈ W)
+    (hne : x ≠ W.first ∧ x ≠ W.last) : x ∈ W.internalVertexSet := by
+  obtain rfl | hx_tail := (mem_iff_eq_vertex_first_or_mem_tail).mp hx
+  · exact (hne.1 rfl).elim
+  have htail_ne : W.vertex.tail ≠ [] := List.ne_nil_of_mem hx_tail
+  obtain hx_dl | rfl := (List.mem_iff_mem_dropLast_or_eq_getLast htail_ne).mp hx_tail
+  · exact hx_dl
+  exact (hne.2 (by rw [← vertex_getLast, ← List.getLast_tail htail_ne])).elim
+
 /-- An internal vertex of `w` is `w.get m` for some `0 < m < w.length`. -/
 lemma exists_get_of_mem_internalVertexSet (hx : x ∈ w.internalVertexSet) :
     ∃ m, 0 < m ∧ m < w.length ∧ w.get m = x := by
@@ -277,6 +323,40 @@ lemma mem_dropLast_iff_of_nodup (hw : w.vertex.Nodup) (hne : w.Nonempty) :
     x ∈ w.dropLast ↔ x ∈ w ∧ x ≠ w.last := by
   rw [← reverse_tail_reverse, mem_reverse, mem_tail_iff_of_nodup (by simpa) (by simpa),
     mem_reverse, reverse_first]
+
+/-- Membership in the vertex list with the last vertex removed.  Unlike
+`mem_dropLast_iff_of_nodup` this needs no `Nonempty` hypothesis: both sides are false when `w`
+is trivial. -/
+lemma mem_vertex_dropLast_iff_of_nodup (hw : w.vertex.Nodup) :
+    x ∈ w.vertex.dropLast ↔ x ∈ w ∧ x ≠ w.last := by
+  obtain hnil | hne := w.nil_or_nonempty
+  · obtain ⟨y, rfl⟩ := hnil.exists_eq_nil
+    simp
+  · rw [← hne.vertex_dropLast]
+    exact mem_dropLast_iff_of_nodup hw hne
+
+/-- On a walk without repeated vertices, the internal vertices are exactly the vertices that are
+neither end. -/
+lemma mem_internalVertexSet_iff_of_nodup (hw : w.vertex.Nodup) :
+    x ∈ w.internalVertexSet ↔ x ∈ w ∧ x ≠ w.first ∧ x ≠ w.last := by
+  refine ⟨fun hx ↦ ?_,
+    fun ⟨hx, h1, h2⟩ ↦ mem_internalVertexSet_of_mem_ne_ends hx ⟨h1, h2⟩⟩
+  cases w with
+  | nil y => simp [internalVertexSet] at hx
+  | cons u e w =>
+    rw [cons_vertex, List.nodup_cons] at hw
+    rw [mem_internalVertexSet_cons, mem_vertex_dropLast_iff_of_nodup hw.2] at hx
+    refine ⟨by simp [hx.1], fun h ↦ hw.1 ?_, by simpa using hx.2⟩
+    subst h
+    exact hx.1
+
+lemma first_notMem_internalVertexSet_of_nodup (hw : w.vertex.Nodup) :
+    w.first ∉ w.internalVertexSet :=
+  fun h ↦ ((mem_internalVertexSet_iff_of_nodup hw).1 h).2.1 rfl
+
+lemma last_notMem_internalVertexSet_of_nodup (hw : w.vertex.Nodup) :
+    w.last ∉ w.internalVertexSet :=
+  fun h ↦ ((mem_internalVertexSet_iff_of_nodup hw).1 h).2.2 rfl
 
 lemma dropLast_isPrefix (w : WList α β) : w.dropLast.IsPrefix w := by
   rw [← reverse_isSuffix_reverse_iff, ← reverse_tail]

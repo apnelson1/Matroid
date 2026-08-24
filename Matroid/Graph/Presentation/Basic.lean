@@ -203,6 +203,51 @@ theorem toGraph_eq (F : P.Equiv Q) : P.toGraph = Q.toGraph := by
 
 end Equiv
 
+/-! ## Loop reflections
+
+The fibres of `toGraph` carry a nontrivial automorphism group as soon as the graph has a loop,
+which is why no construction can single out a presentation of a coarse graph, and why an
+identification of two presentations must be carried as an `Equiv` rather than recovered from an
+equality of their coarse graphs. -/
+
+/-- Exchanging the two incidences of a loop is an automorphism of the presentation.
+
+The hypothesis is exactly that `i` is an incidence of a loop; no assumption is made about the
+other edges, and they are all left fixed. -/
+noncomputable def loopSwap (P : Presentation V E) (i : P.I)
+    (h : P.attach (P.other i) = P.attach i) : P.Equiv P :=
+  letI := Classical.decEq P.I
+  { vertexSet_eq := rfl
+    incEquiv := _root_.Equiv.swap i (P.other i)
+    edge_eq := fun j ↦ by
+      obtain rfl | hji := eq_or_ne j i
+      · rw [_root_.Equiv.swap_apply_left, P.edgeMap_other]
+      obtain rfl | hjo := eq_or_ne j (P.other i)
+      · rw [_root_.Equiv.swap_apply_right]
+        exact (P.edgeMap_other i).symm
+      rw [_root_.Equiv.swap_apply_of_ne_of_ne hji hjo]
+    vertex_eq := fun j ↦ by
+      obtain rfl | hji := eq_or_ne j i
+      · rw [_root_.Equiv.swap_apply_left]
+        exact h
+      obtain rfl | hjo := eq_or_ne j (P.other i)
+      · rw [_root_.Equiv.swap_apply_right]
+        exact h.symm
+      rw [_root_.Equiv.swap_apply_of_ne_of_ne hji hjo] }
+
+/-- Note both this and `loopSwap_incEquiv_other` are `rw`-only where it matters: the index of a
+half-edge occurs in the *type* of `Realization.halfPath P i`, so `simp` will not rewrite it there,
+while `rw` abstracts the occurrences in the type along with the rest. -/
+@[simp]
+lemma loopSwap_incEquiv_self (P : Presentation V E) (i : P.I)
+    (h : P.attach (P.other i) = P.attach i) : (P.loopSwap i h).incEquiv i = P.other i :=
+  @_root_.Equiv.swap_apply_left P.I (Classical.decEq P.I) i (P.other i)
+
+@[simp]
+lemma loopSwap_incEquiv_other (P : Presentation V E) (i : P.I)
+    (h : P.attach (P.other i) = P.attach i) : (P.loopSwap i h).incEquiv (P.other i) = i :=
+  @_root_.Equiv.swap_apply_right P.I (Classical.decEq P.I) i (P.other i)
+
 end Presentation
 
 end Graph

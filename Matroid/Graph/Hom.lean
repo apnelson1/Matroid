@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.PEquiv
 public import Mathlib.Data.Set.Card
 public import Mathlib.Combinatorics.Graph.Basic
+public import Matroid.ForMathlib.Tactic.IRw
 
 /-!
 # Homomorphisms, embeddings and isomorphisms
@@ -119,6 +120,8 @@ structure Iso (G : Graph V E) (H : Graph V' E') where
   invMap_isLink ⦃e' : E'⦄ ⦃x' y' : V'⦄ ⦃e : E⦄ ⦃x y : V⦄ :
     H.IsLink e' x' y' → e ∈ edgeMap.symm e' → x ∈ vertMap.symm x' → y ∈ vertMap.symm y' →
       G.IsLink e x y
+
+attribute [irw_system] Graph.Iso
 
 /-- The identity graph isomorphism. -/
 noncomputable def Iso.id (G : Graph V E) : Iso G G := by
@@ -386,6 +389,7 @@ lemma Iso.edgeMapEmbedding_surjective (F : Iso G H) :
   simp [Iso.edgeMapEmbedding, show F.edgeMap e = some f from Option.mem_def.mp hfe]
 
 /-- The bijection between vertex sets induced by an isomorphism. -/
+@[irw_equiv]
 def Iso.vertexEquiv (F : Iso G H) : V(G) ≃ V(H) where
   toFun := F.vertMapEmbedding
   invFun := F.symm.vertMapEmbedding
@@ -395,6 +399,7 @@ def Iso.vertexEquiv (F : Iso G H) : V(G) ≃ V(H) where
     (Option.get_mem _) (F.vertMap.mem_iff_mem.mp (Option.get_mem _))
 
 /-- The bijection between edge sets induced by an isomorphism. -/
+@[irw_equiv]
 def Iso.edgeEquiv (F : Iso G H) : E(G) ≃ E(H) where
   toFun := F.edgeMapEmbedding
   invFun := F.symm.edgeMapEmbedding
@@ -540,12 +545,14 @@ theorem Iso.symm_comp (i : Iso G H) : i.symm.comp i = Iso.id H := by
 
 /-- The subtype-level form of `Iso.isLink_iff_isLink`; this is the form transport code normally
 wants. -/
-@[simp] theorem Iso.isLink_edgeEquiv_vertexEquiv (i : Iso G H) (e : E(G)) (x y : V(G)) :
+@[simp]
+theorem Iso.isLink_edgeEquiv_vertexEquiv (i : Iso G H) (e : E(G)) (x y : V(G)) :
     G.IsLink e.1 x.1 y.1 ↔ H.IsLink (i.edgeEquiv e).1 (i.vertexEquiv x).1 (i.vertexEquiv y).1 :=
   i.isLink_iff_isLink (i.mem_edgeMap_edgeEquiv e) (i.mem_vertMap_vertexEquiv x)
     (i.mem_vertMap_vertexEquiv y)
 
-@[simp] theorem Iso.adj_vertexEquiv (i : Iso G H) (x y : V(G)) :
+@[simp]
+theorem Iso.adj_vertexEquiv (i : Iso G H) (x y : V(G)) :
     G.Adj x.1 y.1 ↔ H.Adj (i.vertexEquiv x).1 (i.vertexEquiv y).1 := by
   constructor
   · rintro ⟨e, he⟩

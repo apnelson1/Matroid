@@ -55,43 +55,6 @@ noncomputable def pathOfIsWalk {w : WList α β} (hw : G.IsWalk w) (hne : w.None
       ((pathOfIsWalk h.2 (cons_nonempty y f w)).cast (vertexMk_congr rfl)
         (vertexMk_congr rfl))).cast (vertexMk_congr rfl) (vertexMk_congr rfl)
 
-lemma path_trans_interior {X : Type*} [TopologicalSpace X] {x y z : X}
-    {P : Path x y} {Q : Path y z} :
-    (P.trans Q).Interior = P.Interior ∪ {y} ∪ Q.Interior := by
-  apply subset_antisymm
-  · rintro p ⟨t, ht, rfl⟩
-    rw [trans_apply_ite_lt]
-    split_ifs with hlt
-    · have ht0 : (0 : ℝ) < t := ht.1
-      have h2t : 2 * (t : ℝ) < 1 := by linarith
-      refine .inl <| .inl ⟨⟨2 * (t : ℝ), (mul_pos_mem_iff zero_lt_two).2 ⟨t.2.1, hlt.le⟩⟩,
-        ⟨mul_pos two_pos ht0, h2t⟩, rfl⟩
-    · have hle : (1 / 2 : ℝ) ≤ t := le_of_not_gt hlt
-      by_cases heq : (t : ℝ) = 1 / 2
-      · refine .inl <| .inr ?_
-        simp [heq, Path.source]
-      · have ht1 : (t : ℝ) < 1 := ht.2
-        have hpos : (0 : ℝ) < 2 * t - 1 := by linarith [lt_of_le_of_ne hle (Ne.symm heq)]
-        have hlt1 : 2 * (t : ℝ) - 1 < 1 := by linarith
-        refine .inr ⟨⟨2 * (t : ℝ) - 1, two_mul_sub_one_mem_iff.2 ⟨hle, t.2.2⟩⟩, ?_, rfl⟩
-        rw [mem_Ioo, ← coe_pos, ← coe_lt_one]
-        exact ⟨hpos, hlt1⟩
-  · intro p hp
-    rcases hp with h | ⟨s, hs, rfl⟩
-    · rcases h with ⟨s, hs, rfl⟩ | rfl
-      · have hs0 : (0 : ℝ) < s := hs.1
-        refine ⟨squishLeft s, ?_, trans_squishLeft s⟩
-        constructor
-        · rw [← coe_pos]; change (0 : ℝ) < (s : ℝ) / 2; linarith
-        · rw [← coe_lt_one]; change (s : ℝ) / 2 < 1; linarith [s.2.2]
-      · exact ⟨half, ⟨zero_lt_half, half_lt_one⟩, by simp [trans_apply, half, Path.target]⟩
-    · have hs0 : (0 : ℝ) < s := hs.1
-      have hs1 : (s : ℝ) < 1 := hs.2
-      refine ⟨squishRight s, ?_, trans_squishRight s⟩
-      constructor
-      · rw [← coe_pos]; change (0 : ℝ) < ((s : ℝ) + 1) / 2; linarith
-      · rw [← coe_lt_one]; change ((s : ℝ) + 1) / 2 < 1; linarith
-
 lemma pathOfIsLink_interior {e : β} {x y : α} (h : G.IsLink e x y) :
     (pathOfIsLink h).Interior = edgePath ⟨e, h.edge_mem⟩ '' Ioo (0 : I) 1 := by
   have hσ {t : I} (ht : t ∈ Ioo (0 : I) 1) : σ t ∈ Ioo (0 : I) 1 := by
@@ -120,37 +83,6 @@ lemma pathOfIsLink_injOn_Ioo {e : β} {x y : α} (h : G.IsLink e x y) :
     have hsσ : (σ s : ℝ) ∈ Ioo 0 1 := by
       rw [coe_symm_eq, mem_Ioo]; constructor <;> linarith
     simpa [symm_symm] using congrArg σ (edgePath_inj_of_mem_Ioo hsσ hst)
-
-lemma mem_of_mem_internalVertexSet {w : WList α β} {x : α} (hx : x ∈ w.internalVertexSet) :
-    x ∈ w :=
-  mem_iff_eq_first_or_mem_internalVertexSet_or_eq_last.mpr (Or.inr (Or.inl hx))
-
-lemma path_cast_interior {X : Type*} [TopologicalSpace X] {x y x' y' : X}
-    {P : Path x y} (h1 : x' = x) (h2 : y' = y) :
-    (P.cast h1 h2).Interior = P.Interior := by
-  simp [Path.Interior, Path.cast_coe]
-
-lemma internalVertexSet_cons_nil (x : α) (e : β) (y : α) :
-    (cons x e (nil y)).internalVertexSet = ∅ := by
-  simp [internalVertexSet]
-
-lemma internalVertexSet_cons_cons (x : α) (e : β) (y : α) (f : β) (w : WList α β) :
-    (cons x e (cons y f w)).internalVertexSet =
-      insert y (cons y f w).internalVertexSet := by
-  simp [internalVertexSet, cons_vertex_dropLast]
-  ext z
-  simp [mem_insert_iff]
-
-lemma internalVertexSet_reverse (w : WList α β) :
-    w.reverse.internalVertexSet = w.internalVertexSet := by
-  simp only [internalVertexSet, reverse_vertex]
-  ext x
-  cases w with
-  | nil => simp
-  | cons a e w =>
-    cases w with
-    | nil => simp
-    | cons b f w => simp [List.mem_reverse, or_comm]
 
 lemma pathOfIsWalk_cons_nil {x : α} {e : β} {y : α} (hw : G.IsWalk (cons x e (nil y)))
     (hne : (cons x e (nil y)).Nonempty) :
@@ -355,7 +287,7 @@ lemma pathOfIsWalk_interior_subset {w : WList α β} (hw : G.IsWalk w) (hne : w.
         ((pathOfIsWalk (cons_isWalk_iff.mp hw).2 (cons_nonempty y f rest)).cast
           (vertexMk_congr rfl) (vertexMk_congr rfl))).Interior :=
       ⟨t, ht, hfun.symm.trans htzeq⟩
-    rw [path_trans_interior] at hzT
+    rw [Path.trans_interior] at hzT
     rcases hzT with hz | hzQ
     · rcases hz with hzP | hzmid
       · rw [pathOfIsLink_interior] at hzP
@@ -365,7 +297,7 @@ lemma pathOfIsWalk_interior_subset {w : WList α β} (hw : G.IsWalk w) (hne : w.
         refine .inl ⟨y, ?_, hzmid.trans (vertexMk_congr rfl)⟩
         · rw [internalVertexSet_cons_cons]
           exact mem_insert _ _
-    · rw [path_cast_interior] at hzQ
+    · rw [Path.cast_interior] at hzQ
       obtain hzI | hzE := pathOfIsWalk_interior_subset _ _ hzQ
       · obtain ⟨u, hu, hu'⟩ := hzI
         refine .inl ⟨u, ?_, hu'.trans (vertexMk_congr rfl)⟩
@@ -377,7 +309,45 @@ lemma pathOfIsWalk_interior_subset {w : WList α β} (hw : G.IsWalk w) (hne : w.
 lemma pathOfIsWalk_injOn_Ioo_of_simple {w : WList α β} (hw : G.IsWalk w) (hne : w.Nonempty)
     (hsimple : G.IsPath w ∨ G.IsCyclicWalk w) :
     InjOn (pathOfIsWalk hw hne) (Ioo (0 : I) 1) := by
-  sorry
+  match w, hne with
+  | .cons x e (.nil y), hne =>
+    intro s hs t ht heq
+    rw [pathOfIsWalk_apply_cons_nil, pathOfIsWalk_apply_cons_nil] at heq
+    exact pathOfIsLink_injOn_Ioo _ hs ht heq
+  | .cons x e (.cons y f rest), hne =>
+    have htail : G.IsPath (cons y f rest) ∧ e ∉ (cons y f rest).edge := by
+      obtain hp | hc := hsimple
+      · have hnd := hp.edge_nodup
+        rw [cons_edge, List.nodup_cons] at hnd
+        exact ⟨(cons_isPath_iff.1 hp).2.1, hnd.1⟩
+      · have hnd := hc.edge_nodup
+        rw [cons_edge, List.nodup_cons] at hnd
+        exact ⟨hc.tail_isPath, hnd.1⟩
+    obtain ⟨hpath, hedge⟩ := htail
+    intro s hs t ht heq
+    rw [pathOfIsWalk_apply_cons_cons, pathOfIsWalk_apply_cons_cons] at heq
+    refine Path.trans_injOn_ioo_iff.2 ⟨pathOfIsLink_injOn_Ioo _, ?_, ?_, ?_, ?_⟩ hs ht heq
+    · intro a ha b hb hab
+      refine pathOfIsWalk_injOn_Ioo_of_simple (cons_isWalk_iff.mp hw).2
+        (cons_nonempty y f rest) (Or.inl hpath) ha hb ?_
+      exact hab
+    · rw [pathOfIsLink_interior]
+      exact vertexMk_not_mem_edgePath_Ioo _ _
+    · rw [Path.cast_interior]
+      intro hmem
+      obtain ⟨u, hu, hu'⟩ | ⟨ee, hee, r, hr, hr'⟩ := pathOfIsWalk_interior_subset _ _ hmem
+      · obtain rfl : y = u := congrArg Subtype.val (vertexMk_injective hu')
+        exact first_notMem_internalVertexSet_of_nodup (w := cons y f rest) hpath.nodup hu
+      · exact vertexMk_not_mem_edgePath_Ioo _ _ ⟨r, hr, hr'.symm⟩
+    · rw [pathOfIsLink_interior, Path.cast_interior]
+      refine Set.disjoint_left.2 fun z hzP hzQ ↦ ?_
+      obtain ⟨u, hu, hu'⟩ | ⟨ee, hee, r, hr, hr'⟩ := pathOfIsWalk_interior_subset _ _ hzQ
+      · exact vertexMk_not_mem_edgePath_Ioo _ _ (hu' ▸ hzP)
+      · refine ((disjoint_edgePath_Ioo_iff (G := G) ⟨e, _⟩ ⟨ee, _⟩).2 ?_).le_bot
+          ⟨hzP, ⟨r, hr, hr'.symm⟩⟩
+        refine fun hEq ↦ hedge ?_
+        rw [show e = ee from congrArg Subtype.val hEq]
+        exact hee
 
 /-- Two graphs are topologically equivalent when their realizations are homeomorphic. For finite
 graphs, the intended combinatorial source of such a homeomorphism is an isomorphism followed by
@@ -474,7 +444,7 @@ theorem routePath_interior_disjoint_branchVertices (e : E(H)) :
   intro z hz hzV
   have hz' : z ∈ (pathOfIsWalk (M.orientedRoute_isWalk e)
       (M.orientedRoute_nonempty e)).Interior := by
-    simpa [routePath, path_cast_interior] using hz
+    simpa [routePath, Path.cast_interior] using hz
   obtain hzI | hzE := pathOfIsWalk_interior_subset _ _ hz'
   · obtain ⟨x, hx, rfl⟩ := hzI
     obtain ⟨v, hv⟩ := hzV
@@ -493,10 +463,10 @@ theorem routePath_interior_disjoint {e f : E(H)} (hef : e ≠ f) :
   intro z hze hzf
   have hze' : z ∈ (pathOfIsWalk (M.orientedRoute_isWalk e)
       (M.orientedRoute_nonempty e)).Interior := by
-    simpa [routePath, path_cast_interior] using hze
+    simpa [routePath, Path.cast_interior] using hze
   have hzf' : z ∈ (pathOfIsWalk (M.orientedRoute_isWalk f)
       (M.orientedRoute_nonempty f)).Interior := by
-    simpa [routePath, path_cast_interior] using hzf
+    simpa [routePath, Path.cast_interior] using hzf
   obtain hzeI | hzeE := pathOfIsWalk_interior_subset _ _ hze'
   · obtain ⟨x, hxe, rfl⟩ := hzeI
     obtain hzfI | hzfE := pathOfIsWalk_interior_subset _ _ hzf'

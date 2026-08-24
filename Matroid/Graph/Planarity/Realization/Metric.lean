@@ -353,6 +353,19 @@ namespace Metric
 def vertexMk (v : V(G)) : Metric G :=
   G.vertexMk v
 
+/-- The vertex inclusion is isometric for the graph distance.
+
+This is the precise sense in which the realization metric extends `Graph.eDist`, and together with
+`edgeMk_lipschitz` it pins the convention that an edge has length one: the two ends of an edge are
+the images of adjacent vertices, so they are at distance at most one -- and exactly one unless the
+edge is a loop, when the two ends are the same point, or the graph provides a shorter route. -/
+@[simp]
+theorem edist_vertexMk (u v : V(G)) :
+    EDist.edist (vertexMk (G := G) u) (vertexMk (G := G) v) =
+      (G.eDist u.val v.val : ℝ≥0∞) := by
+  change G.preRealizationEDist (Sum.inl u) (Sum.inl v) = _
+  rw [preRealizationEDist_inl_left, distToVtx_inl_left, eDist_comm]
+
 /-- Include a parameter point of an edge in the metric realization. -/
 noncomputable def edgeMk (e : E(G)) (t : I) : Metric G :=
   G.edgePath e t

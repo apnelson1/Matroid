@@ -4,6 +4,7 @@ defaultTargets = ["Matroid"]
 # `lake test` builds the regression library. See `tests/README.md`.
 testDriver = "MatroidTests"
 enableArtifactCache = true
+restoreAllArtifacts = true
 
 [leanOptions]
 pp.unicode.fun = true # pretty-prints `fun a ↦ b`

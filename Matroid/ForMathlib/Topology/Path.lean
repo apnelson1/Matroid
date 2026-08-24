@@ -64,6 +64,12 @@ noncomputable def squishRight : I → I := fun t =>
   ⟨((t : ℝ) + 1) / 2, by constructor <;> nlinarith [t.2.1, t.2.2]⟩
 noncomputable def half : I := ⟨2⁻¹, by constructor <;> linarith⟩
 
+lemma continuous_squishLeft : Continuous squishLeft :=
+  Continuous.subtype_mk (continuous_subtype_val.div_const 2) _
+
+lemma continuous_squishRight : Continuous squishRight :=
+  Continuous.subtype_mk ((continuous_subtype_val.add continuous_const).div_const 2) _
+
 @[simp]
 lemma squishLeft_le_half (t : I) : squishLeft t ≤ half := by
   simp only [half, squishLeft, ← Subtype.coe_le_coe]
@@ -115,6 +121,62 @@ lemma squishLeft_injective : Injective squishLeft :=
 lemma squishRight_injective : Injective squishRight :=
   fun s t hst ↦ Subtype.ext <| by grind [squishRight]
 
+/-- A parameter is interior exactly when it is neither endpoint. -/
+lemma mem_Ioo_iff : t ∈ Ioo (0 : I) 1 ↔ t ≠ 0 ∧ t ≠ 1 := by
+  rw [mem_Ioo, unitInterval.pos_iff_ne_zero, unitInterval.lt_one_iff_ne_one]
+
+@[simp]
+lemma symm_mem_Ioo_iff : σ t ∈ Ioo (0 : I) 1 ↔ t ∈ Ioo (0 : I) 1 := by
+  rw [mem_Ioo_iff, mem_Ioo_iff, ne_eq, ne_eq, ne_eq, ne_eq, symm_eq_zero, symm_eq_one, and_comm]
+
+lemma squishLeft_eq_zero_iff : squishLeft t = 0 ↔ t = 0 :=
+  ⟨fun h ↦ squishLeft_injective (by rw [h, squishLeft_zero]),
+    fun h ↦ by rw [h, squishLeft_zero]⟩
+
+lemma squishRight_eq_one_iff : squishRight t = 1 ↔ t = 1 :=
+  ⟨fun h ↦ squishRight_injective (by rw [h, squishRight_one]),
+    fun h ↦ by rw [h, squishRight_one]⟩
+
+/-- `squishLeft` lands in the interior exactly when it is not squishing the left endpoint;
+the upper bound is automatic, since `squishLeft` never exceeds `half`. -/
+lemma squishLeft_mem_Ioo_iff : squishLeft t ∈ Ioo (0 : I) 1 ↔ t ≠ 0 := by
+  rw [mem_Ioo, and_iff_left ((squishLeft_le_half t).trans_lt half_lt_one),
+    unitInterval.pos_iff_ne_zero, ne_eq, ne_eq, squishLeft_eq_zero_iff]
+
+/-- `squishRight` lands in the interior exactly when it is not squishing the right endpoint. -/
+lemma squishRight_mem_Ioo_iff : squishRight t ∈ Ioo (0 : I) 1 ↔ t ≠ 1 := by
+  rw [mem_Ioo, and_iff_right (zero_lt_half.trans_le (half_le_squishRight t)),
+    unitInterval.lt_one_iff_ne_one, ne_eq, ne_eq, squishRight_eq_one_iff]
+
+/-- Every interior parameter is `squishLeft` of an interior parameter, the midpoint, or
+`squishRight` of an interior parameter.  This is the trichotomy that `Path.trans` induces on its
+parameter.  Like `eq_zero_or_eq_one_or_mem_Ioo` it is a splitter, so it carries no attribute and
+is passed to `grind` explicitly where it is wanted. -/
+lemma mem_Ioo_iff_exists_squishLeft_or_eq_half_or_exists_squishRight :
+    t ∈ Ioo (0 : I) 1 ↔ (∃ s ∈ Ioo (0 : I) 1, squishLeft s = t) ∨ t = half ∨
+      (∃ s ∈ Ioo (0 : I) 1, squishRight s = t) := by
+  refine ⟨fun ht ↦ ?_, ?_⟩
+  · have h0 : (0 : ℝ) < t := coe_pos.2 ht.1
+    have h1 : (t : ℝ) < 1 := coe_lt_one.2 ht.2
+    rcases lt_trichotomy (t : ℝ) (1 / 2) with h | h | h
+    · refine Or.inl
+        ⟨⟨2 * t.val, (mul_pos_mem_iff zero_lt_two).2 ⟨t.2.1, h.le⟩⟩, ?_, ?_⟩
+      · rw [mem_Ioo_iff]
+        constructor <;> simp only [ne_eq, Subtype.ext_iff, Icc.coe_zero, Icc.coe_one] <;>
+          intro hc <;> linarith
+      · exact Subtype.ext (by simp only [squishLeft]; ring)
+    · exact Or.inr (Or.inl (Subtype.ext (by simp only [half]; linarith)))
+    · refine Or.inr (Or.inr
+        ⟨⟨2 * t.val - 1, two_mul_sub_one_mem_iff.2 ⟨h.le, t.2.2⟩⟩, ?_, ?_⟩)
+      · rw [mem_Ioo_iff]
+        constructor <;> simp only [ne_eq, Subtype.ext_iff, Icc.coe_zero, Icc.coe_one] <;>
+          intro hc <;> linarith
+      · exact Subtype.ext (by simp only [squishRight]; ring)
+  rintro (⟨s, hs, rfl⟩ | rfl | ⟨s, hs, rfl⟩)
+  · exact squishLeft_mem_Ioo_iff.2 (mem_Ioo_iff.1 hs).1
+  · exact ⟨zero_lt_half, half_lt_one⟩
+  · exact squishRight_mem_Ioo_iff.2 (mem_Ioo_iff.1 hs).2
+
 lemma squishLeft_Icc (i j : I) : squishLeft '' Icc i j = Icc (squishLeft i) (squishLeft j) := by
   obtain ⟨i, hi⟩ := i
   obtain ⟨j, hj⟩ := j
@@ -133,6 +195,27 @@ lemma squishRight_Icc (i j : I) : squishRight '' Icc i j = Icc (squishRight i) (
   refine ⟨fun h => ?_, fun ⟨hit, htj⟩ => ?_⟩
   · grind
   refine ⟨2 * t - 1, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ?_⟩ <;> grind
+
+/-- Every nonempty open subinterval of the unit interval is path-connected.  `unitInterval` is not
+a real vector space, so `Convex.isPathConnected` does not apply to it directly; the statement is
+pulled back along `Set.projIcc` from the corresponding interval of `ℝ`. -/
+lemma isPathConnected_Ioo {a b : I} (hab : a < b) : IsPathConnected (Ioo a b) := by
+  have himg : Set.projIcc (0 : ℝ) 1 zero_le_one '' Ioo (a : ℝ) (b : ℝ) = Ioo a b := by
+    ext t
+    constructor
+    · rintro ⟨r, hr, rfl⟩
+      have h0 : (0 : ℝ) ≤ r := a.2.1.trans hr.1.le
+      have h1 : r ≤ 1 := hr.2.le.trans b.2.2
+      have hcoe : ((Set.projIcc (0 : ℝ) 1 zero_le_one r : I) : ℝ) = r := by
+        simp [Set.projIcc, min_eq_right h1, max_eq_right h0]
+      rw [mem_Ioo, ← Subtype.coe_lt_coe, ← Subtype.coe_lt_coe, hcoe]
+      exact hr
+    · intro ht
+      refine ⟨(t : ℝ), ⟨Subtype.coe_lt_coe.2 ht.1, Subtype.coe_lt_coe.2 ht.2⟩, ?_⟩
+      simp [Set.projIcc, min_eq_right t.2.2, max_eq_right t.2.1]
+  rw [← himg]
+  exact ((convex_Ioo (a : ℝ) (b : ℝ)).isPathConnected
+    (Set.nonempty_Ioo.2 (Subtype.coe_lt_coe.2 hab))).image continuous_projIcc
 
 end unitInterval
 
@@ -498,17 +581,20 @@ end Path
 
 `Path.Interior` is the image of the open parameter interval, with both endpoints omitted. -/
 
+namespace Path
+
+variable {X : Type*} [TopologicalSpace X] {x y z : X}
+
 /-- The open image of a path, with both endpoints omitted. -/
-def Path.Interior {X : Type*} [TopologicalSpace X] {x y : X} (P : Path x y) : Set X :=
+def Interior (P : Path x y) : Set X :=
   P '' Ioo (0 : unitInterval) 1
 
-lemma Path.interior_subset_range {X : Type*} [TopologicalSpace X] {x y : X} (P : Path x y) :
-    P.Interior ⊆ range P := by
+lemma interior_subset_range (P : Path x y) : P.Interior ⊆ range P := by
   rintro _ ⟨t, ht, rfl⟩
   exact ⟨t, rfl⟩
 
-lemma Path.mem_range_iff_mem_interior_or_source_or_target {X : Type*} [TopologicalSpace X]
-    {x y} (P : Path x y) (z : X) : z ∈ range P ↔ z = x ∨ z = y ∨ z ∈ P.Interior := by
+lemma mem_range_iff_mem_interior_or_source_or_target (P : Path x y) (z : X) :
+    z ∈ range P ↔ z = x ∨ z = y ∨ z ∈ P.Interior := by
   constructor
   · rintro ⟨t, rfl⟩
     obtain rfl | rfl | ht := eq_zero_or_eq_one_or_mem_Ioo t
@@ -519,3 +605,118 @@ lemma Path.mem_range_iff_mem_interior_or_source_or_target {X : Type*} [Topologic
   · exact ⟨0, P.source⟩
   · exact ⟨1, P.target⟩
   · exact P.interior_subset_range h
+
+/-- Recasting the endpoints of a path does not move its interior. -/
+lemma cast_interior {x' y' : X} (P : Path x y) (h1 : x' = x) (h2 : y' = y) :
+    (P.cast h1 h2).Interior = P.Interior := by
+  simp [Interior, Path.cast_coe]
+
+/-- Reversing a path does not move its interior. -/
+@[simp]
+lemma symm_interior (P : Path x y) : P.symm.Interior = P.Interior := by
+  ext z
+  simp only [Interior, mem_image, Path.symm_apply]
+  refine ⟨fun ⟨t, ht, h⟩ ↦ ⟨σ t, symm_mem_Ioo_iff.2 ht, h⟩, fun ⟨t, ht, h⟩ ↦ ⟨σ t, ?_, ?_⟩⟩
+  · exact symm_mem_Ioo_iff.2 ht
+  · simpa only [Function.comp_apply, unitInterval.symm_symm] using h
+
+/-- The interior of a concatenation is the two interiors together with the junction point. -/
+lemma trans_interior {P : Path x y} {Q : Path y z} :
+    (P.trans Q).Interior = P.Interior ∪ {y} ∪ Q.Interior := by
+  apply subset_antisymm
+  · rintro p ⟨t, ht, rfl⟩
+    rw [trans_apply_ite_lt]
+    split_ifs with hlt
+    · have ht0 : (0 : ℝ) < t := ht.1
+      have h2t : 2 * (t : ℝ) < 1 := by linarith
+      refine .inl <| .inl
+        ⟨⟨2 * (t : ℝ), (mul_pos_mem_iff zero_lt_two).2 ⟨t.2.1, hlt.le⟩⟩,
+          ⟨mul_pos two_pos ht0, h2t⟩, rfl⟩
+    · have hle : (1 / 2 : ℝ) ≤ t := le_of_not_gt hlt
+      by_cases heq : (t : ℝ) = 1 / 2
+      · refine .inl <| .inr ?_
+        simp [heq, Path.source]
+      · have ht1 : (t : ℝ) < 1 := ht.2
+        have hpos : (0 : ℝ) < 2 * t - 1 := by linarith [lt_of_le_of_ne hle (Ne.symm heq)]
+        have hlt1 : 2 * (t : ℝ) - 1 < 1 := by linarith
+        refine .inr
+          ⟨⟨2 * (t : ℝ) - 1, two_mul_sub_one_mem_iff.2 ⟨hle, t.2.2⟩⟩, ?_, rfl⟩
+        rw [mem_Ioo, ← coe_pos, ← coe_lt_one]
+        exact ⟨hpos, hlt1⟩
+  · intro p hp
+    rcases hp with h | ⟨s, hs, rfl⟩
+    · rcases h with ⟨s, hs, rfl⟩ | rfl
+      · have hs0 : (0 : ℝ) < s := hs.1
+        refine ⟨squishLeft s, ?_, trans_squishLeft s⟩
+        constructor
+        · rw [← coe_pos]; change (0 : ℝ) < (s : ℝ) / 2; linarith
+        · rw [← coe_lt_one]; change (s : ℝ) / 2 < 1; linarith [s.2.2]
+      · exact ⟨half, ⟨zero_lt_half, half_lt_one⟩, by simp [trans_apply, half, Path.target]⟩
+    · have hs0 : (0 : ℝ) < s := hs.1
+      have hs1 : (s : ℝ) < 1 := hs.2
+      refine ⟨squishRight s, ?_, trans_squishRight s⟩
+      constructor
+      · rw [← coe_pos]; change (0 : ℝ) < ((s : ℝ) + 1) / 2; linarith
+      · rw [← coe_lt_one]; change ((s : ℝ) + 1) / 2 < 1; linarith
+
+lemma trans_apply_half {P : Path x y} {Q : Path y z} : (P.trans Q) half = y := by
+  rw [← squishLeft_one, trans_squishLeft, P.target]
+
+/-- A concatenation is injective on the open parameter interval exactly when both halves are, the
+two interiors are disjoint, and neither contains the junction point.  Equivalently, the union
+displayed by `Path.trans_interior` is a disjoint one. -/
+lemma trans_injOn_ioo_iff {P : Path x y} {Q : Path y z} :
+    InjOn (P.trans Q) (Ioo 0 1) ↔ InjOn P (Ioo 0 1) ∧ InjOn Q (Ioo 0 1) ∧
+      y ∉ P.Interior ∧ y ∉ Q.Interior ∧ Disjoint P.Interior Q.Interior := by
+  have hhalf : (P.trans Q) half = y := trans_apply_half
+  have hmemL {a : I} (ha : a ∈ Ioo (0 : I) 1) : squishLeft a ∈ Ioo (0 : I) 1 :=
+    squishLeft_mem_Ioo_iff.2 (mem_Ioo_iff.1 ha).1
+  have hmemR {a : I} (ha : a ∈ Ioo (0 : I) 1) : squishRight a ∈ Ioo (0 : I) 1 :=
+    squishRight_mem_Ioo_iff.2 (mem_Ioo_iff.1 ha).2
+  have hhalfmem : half ∈ Ioo (0 : I) 1 := ⟨zero_lt_half, half_lt_one⟩
+  constructor
+  · intro h
+    refine ⟨fun a ha b hb hab ↦ squishLeft_injective
+        (h (hmemL ha) (hmemL hb) (by rw [trans_squishLeft, trans_squishLeft, hab])),
+      fun a ha b hb hab ↦ squishRight_injective
+        (h (hmemR ha) (hmemR hb) (by rw [trans_squishRight, trans_squishRight, hab])),
+      ?_, ?_, ?_⟩
+    · rintro ⟨a, ha, hay⟩
+      have h1 : squishLeft a = half :=
+        h (hmemL ha) hhalfmem (by rw [trans_squishLeft, hay, hhalf])
+      exact (mem_Ioo_iff.1 ha).2 (squishLeft_injective (by rw [h1, squishLeft_one]))
+    · rintro ⟨a, ha, hay⟩
+      have h1 : squishRight a = half :=
+        h (hmemR ha) hhalfmem (by rw [trans_squishRight, hay, hhalf])
+      exact (mem_Ioo_iff.1 ha).1 (squishRight_injective (by rw [h1, squishRight_zero]))
+    · rw [disjoint_left]
+      rintro _ ⟨a, ha, rfl⟩ ⟨b, hb, hba⟩
+      have h1 : squishLeft a = squishRight b :=
+        h (hmemL ha) (hmemR hb) (by rw [trans_squishLeft, trans_squishRight, hba])
+      have hcoe : (a : ℝ) / 2 = ((b : ℝ) + 1) / 2 := congrArg Subtype.val h1
+      have hb0 : (0 : ℝ) < b := hb.1
+      linarith [a.2.2]
+  rintro ⟨hP, hQ, hyP, hyQ, hPQ⟩ s hs t ht hst
+  obtain ⟨a, ha, rfl⟩ | rfl | ⟨a, ha, rfl⟩ :=
+      mem_Ioo_iff_exists_squishLeft_or_eq_half_or_exists_squishRight.1 hs <;>
+    obtain ⟨b, hb, rfl⟩ | rfl | ⟨b, hb, rfl⟩ :=
+      mem_Ioo_iff_exists_squishLeft_or_eq_half_or_exists_squishRight.1 ht
+  · rw [trans_squishLeft, trans_squishLeft] at hst
+    exact congrArg squishLeft (hP ha hb hst)
+  · rw [trans_squishLeft, hhalf] at hst
+    exact absurd ⟨a, ha, hst⟩ hyP
+  · rw [trans_squishLeft, trans_squishRight] at hst
+    exact (hPQ.notMem_of_mem_left ⟨a, ha, rfl⟩ ⟨b, hb, hst.symm⟩).elim
+  · rw [trans_squishLeft, hhalf] at hst
+    exact absurd ⟨b, hb, hst.symm⟩ hyP
+  · rfl
+  · rw [trans_squishRight, hhalf] at hst
+    exact absurd ⟨b, hb, hst.symm⟩ hyQ
+  · rw [trans_squishLeft, trans_squishRight] at hst
+    exact (hPQ.notMem_of_mem_left ⟨b, hb, rfl⟩ ⟨a, ha, hst⟩).elim
+  · rw [trans_squishRight, hhalf] at hst
+    exact absurd ⟨a, ha, hst⟩ hyQ
+  · rw [trans_squishRight, trans_squishRight] at hst
+    exact congrArg squishRight (hQ ha hb hst)
+
+end Path

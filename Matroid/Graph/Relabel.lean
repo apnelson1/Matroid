@@ -5,8 +5,8 @@ Authors: Jun Kwon
 -/
 module
 
-public import Matroid.Graph.Iso.Hom
-public import Mathlib.Data.PFun
+public import Matroid.ForMathlib.PEquiv
+public import Matroid.Graph.Hom
 
 /-!
 # Copying a graph onto other carriers
@@ -24,9 +24,6 @@ and move the vertices alone. That would be a mistake for the intended use: a pro
 canonical carrier needs room to *add* an edge, so the edge type has to have space to spare as
 well. `relabel` leaves exactly that, since only the images of the two embeddings are used.
 
-This file is independent of `IsoAction.lean` and `Invariant.lean`: relabelling a graph is useful
-without the invariance machinery, and vice versa. The theorems that combine them are in
-`Transfer.lean`.
 -/
 
 @[expose] public section
@@ -38,65 +35,6 @@ namespace Graph
 universe uV uE uV' uE'
 
 variable {V : Type uV} {E : Type uE} {V' : Type uV'} {E' : Type uE'} {G : Graph V E}
-
-/-! ### For Mathlib
-
-Ways to regard an embedding defined on a subset as a partial map on the ambient type; all belong
-in `ForMathlib`, and are here while this file is the only consumer. `PEquiv.ofEmbedding` and its
-three characterisation lemmas are what `relabelIso` is built from; `toPFun` and `invPFun` have no
-consumer yet. -/
-
-/-- An embedding defined on a subset, as a partial function on the ambient type. -/
-noncomputable def _root_.Function.Embedding.toPFun {α β : Type*} {s : Set α} (f : s ↪ β) :
-    α →. β := fun a => ⟨a ∈ s, fun h => f ⟨a, h⟩⟩
-
-/-- The partial inverse of an embedding defined on a subset, defined exactly on its range. -/
-noncomputable def _root_.Function.Embedding.invPFun {α β : Type*} {s : Set α} (f : s ↪ β) :
-    β →. α :=
-  fun b => ⟨b ∈ Set.range f, fun h => ((Equiv.ofInjective f f.injective).symm ⟨b, h⟩ : s)⟩
-
-/-- An embedding defined on a subset, as a partial equivalence. -/
-noncomputable def _root_.PEquiv.ofEmbedding {α β : Type*} {s : Set α} (f : s ↪ β) : α ≃. β := by
-  classical
-  exact
-    { toFun := fun a => if h : a ∈ s then some (f ⟨a, h⟩) else none
-      invFun := fun b =>
-        if h : b ∈ Set.range f then some (((Equiv.ofInjective f f.injective).symm ⟨b, h⟩ : s) : α)
-        else none
-      inv a b:= by
-        by_cases ha : a ∈ s
-        · by_cases hb : b ∈ Set.range (f : s → β)
-          · simp only [ha, hb, ↓reduceDIte, Option.some.injEq]
-            constructor
-            · rintro rfl
-              simpa using Equiv.apply_ofInjective_symm (f := (f : s → β)) f.injective ⟨b, hb⟩
-            · rintro rfl
-              simp
-          · simp only [ha, hb, ↓reduceDIte, Option.some.injEq, reduceCtorEq, false_iff]
-            exact fun h ↦ hb ⟨⟨a, ha⟩, h⟩
-        · by_cases hb : b ∈ Set.range (f : s → β)
-          · simp only [ha, hb, ↓reduceDIte, Option.some.injEq, reduceCtorEq, iff_false]
-            exact fun h ↦ ha (h ▸ Subtype.coe_prop _)
-          · simp [ha, hb] }
-
-/-- The characterisation of `PEquiv.ofEmbedding`: it is defined exactly on `s`, where it is `f`.
-Callers should use this rather than unfolding the `dite`s. -/
-@[simp] theorem _root_.PEquiv.mem_ofEmbedding_iff {α β : Type*} {s : Set α} (f : s ↪ β) {a : α}
-    {b : β} : b ∈ PEquiv.ofEmbedding f a ↔ ∃ h : a ∈ s, f ⟨a, h⟩ = b := by
-  classical
-  show PEquiv.ofEmbedding f a = some b ↔ _
-  by_cases ha : a ∈ s <;> simp [PEquiv.ofEmbedding, ha]
-
-@[simp] theorem _root_.PEquiv.ofEmbedding_isSome_iff {α β : Type*} {s : Set α} (f : s ↪ β)
-    (a : α) : (PEquiv.ofEmbedding f a).isSome ↔ a ∈ s := by
-  simp only [Option.isSome_iff_exists, ← Option.mem_def, PEquiv.mem_ofEmbedding_iff]
-  exact ⟨fun ⟨_, h, _⟩ ↦ h, fun h ↦ ⟨f ⟨a, h⟩, h, rfl⟩⟩
-
-@[simp] theorem _root_.PEquiv.ofEmbedding_symm_isSome_iff {α β : Type*} {s : Set α} (f : s ↪ β)
-    (b : β) : ((PEquiv.ofEmbedding f).symm b).isSome ↔ b ∈ Set.range f := by
-  simp only [Option.isSome_iff_exists, ← Option.mem_def, PEquiv.mem_iff_mem,
-    PEquiv.mem_ofEmbedding_iff]
-  exact ⟨fun ⟨_, h, heq⟩ ↦ ⟨_, heq⟩, fun ⟨x, hx⟩ ↦ ⟨x, x.2, by simpa using hx⟩⟩
 
 /-! ### The copy -/
 

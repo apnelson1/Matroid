@@ -1,6 +1,6 @@
 module
 
-public import Matroid.Graph.Iso.Hom
+public import Matroid.Graph.Hom
 public import Matroid.Graph.Planarity.Realization.Basic
 
 /-!

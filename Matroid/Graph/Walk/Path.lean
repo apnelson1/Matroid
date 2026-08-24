@@ -800,9 +800,29 @@ lemma cons_isTrailFrom : G.IsTrailFrom S T (cons x e w) ↔
 lemma nil_isTrailFrom : G.IsTrailFrom S T (nil x) ↔ x ∈ V(G) ∧ x ∈ S ∧ x ∈ T := by
   simp [isTrailFrom_iff]
 
--- /-! ### The type of paths -/
+/-! ### The type of paths -/
 
--- protected def Path (G : Graph α β) : Type _ := {P // G.IsPath P}
+/-- A path bundled with its proof of validity in `G`. -/
+protected abbrev Path (G : Graph α β) : Type _ := {P // G.IsPath P}
+
+namespace Path
+
+/-- The first vertex of a bundled path, intrinsically typed in the graph's vertex set. -/
+def first (P : G.Path) : V(G) := ⟨P.1.first, P.2.isWalk.first_mem⟩
+
+/-- The last vertex of a bundled path, intrinsically typed in the graph's vertex set. -/
+def last (P : G.Path) : V(G) := ⟨P.1.last, P.2.isWalk.last_mem⟩
+
+/-- Reverse a bundled path. -/
+def reverse (P : G.Path) : G.Path := ⟨P.1.reverse, P.2.reverse⟩
+
+/-- The vertices used by a bundled path, intrinsically typed in the graph's vertex set. -/
+def vertexSet (P : G.Path) : Set V(G) := {x | x.1 ∈ P.1}
+
+/-- The edges used by a bundled path, intrinsically typed in the graph's edge set. -/
+def edgeSet (P : G.Path) : Set E(G) := {e | e.1 ∈ P.1.edge}
+
+end Path
 
 
 /-! ### Longest Paths -/

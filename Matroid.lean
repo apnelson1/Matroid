@@ -36,7 +36,6 @@ public import Matroid.Connectivity.Separation.Minor
 public import Matroid.Connectivity.Separation.Tutte
 public import Matroid.Connectivity.Separation.Two
 public import Matroid.Connectivity.Separation.Vertical
--- public import Matroid.Connectivity.Separation._vert_diag
 public import Matroid.Connectivity.Skew
 public import Matroid.Connectivity.Splitter.Cretaceous
 public import Matroid.Connectivity.Splitter.Triassic
@@ -95,7 +94,7 @@ public import Matroid.Graph.Connected.Vertex.VertexEnsemble
 public import Matroid.Graph.Constructions.Basic
 -- public import Matroid.Graph.Constructions.Cycle
 -- public import Matroid.Graph.Constructions.Random
--- public import Matroid.Graph.Constructions.Sum
+public import Matroid.Graph.Constructions.Sum
 public import Matroid.Graph.Degree.Basic
 public import Matroid.Graph.Degree.Constructions
 public import Matroid.Graph.Degree.Defs
@@ -104,13 +103,9 @@ public import Matroid.Graph.Distance
 -- public import Matroid.Graph.EdgeColoring
 public import Matroid.Graph.Finite
 public import Matroid.Graph.Forest
+public import Matroid.Graph.Hom
+public import Matroid.Graph.IRw
 public import Matroid.Graph.Independent
-public import Matroid.Graph.Iso.Equiv
-public import Matroid.Graph.Iso.Hom
-public import Matroid.Graph.Iso.Invariant
-public import Matroid.Graph.Iso.Lawful
--- public import Matroid.Graph.Iso.Relabel
--- public import Matroid.Graph.Iso.Transfer
 public import Matroid.Graph.Lattice
 public import Matroid.Graph.Map
 public import Matroid.Graph.Matching.Berge
@@ -136,6 +131,7 @@ public import Matroid.Graph.Planarity.Obstructions
 public import Matroid.Graph.Planarity.PLDrawing
 public import Matroid.Graph.Planarity.PLReduction
 -- public import Matroid.Graph.Planarity.PLTopologicalMinor
+public import Matroid.Graph.Planarity.Realization.VertexSpace
 public import Matroid.Graph.Planarity.Realization.Basic
 public import Matroid.Graph.Planarity.Realization.CWComplex
 public import Matroid.Graph.Planarity.Realization.Iso
@@ -148,6 +144,7 @@ public import Matroid.Graph.Planarity.ThetaCurve
 public import Matroid.Graph.Presentation.Basic
 public import Matroid.Graph.Presentation.Orientation
 public import Matroid.Graph.Presentation.Quotient
+public import Matroid.Graph.Relabel
 public import Matroid.Graph.Simple
 public import Matroid.Graph.Subdivision
 public import Matroid.Graph.Subgraph.Basic
@@ -158,6 +155,7 @@ public import Matroid.Graph.Subgraph.Inter
 public import Matroid.Graph.Subgraph.Lemma
 public import Matroid.Graph.Subgraph.Union
 public import Matroid.Graph.TopologicalMinor
+public import Matroid.Graph.Transport
 public import Matroid.Graph.Tree
 public import Matroid.Graph.WList.Cycle
 public import Matroid.Graph.WList.Defs
@@ -172,15 +170,13 @@ public import Matroid.Graph.WList.TakeDrop.Pred
 public import Matroid.Graph.Walk.Basic
 public import Matroid.Graph.Walk.Cycle
 -- public import Matroid.Graph.Walk.Dart
+public import Matroid.Graph.Walk.Iso
 -- public import Matroid.Graph.Walk.OrientationWalk
 public import Matroid.Graph.Walk.Path
 public import Matroid.Graphic
+public import Matroid.IRw
 public import Matroid.Intersection
 -- public import Matroid.Invariant
--- public import Matroid.Invariant'
-public import Matroid.Iso.Equiv
-public import Matroid.Iso.Invariant
-public import Matroid.Iso.Lawful
 public import Matroid.Loop
 public import Matroid.Minor.Contract
 public import Matroid.Minor.Delete
@@ -219,6 +215,7 @@ public import Matroid.Simple
 public import Matroid.Spikes
 public import Matroid.Sum
 public import Matroid.Tame
+public import Matroid.Transport
 public import Matroid.Triangle
 public import Matroid.Uniform.Basic
 public import Matroid.Uniform.Finite
