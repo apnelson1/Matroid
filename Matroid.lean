@@ -105,12 +105,12 @@ public import Matroid.Graph.Distance
 public import Matroid.Graph.Finite
 public import Matroid.Graph.Forest
 public import Matroid.Graph.Independent
+public import Matroid.Graph.Iso.Equiv
 public import Matroid.Graph.Iso.Hom
 public import Matroid.Graph.Iso.Invariant
-public import Matroid.Graph.Iso.IsoAction
-public import Matroid.Graph.Iso.IsoTransport
-public import Matroid.Graph.Iso.Relabel
-public import Matroid.Graph.Iso.Transfer
+public import Matroid.Graph.Iso.Lawful
+-- public import Matroid.Graph.Iso.Relabel
+-- public import Matroid.Graph.Iso.Transfer
 public import Matroid.Graph.Lattice
 public import Matroid.Graph.Map
 public import Matroid.Graph.Matching.Berge
@@ -119,7 +119,7 @@ public import Matroid.Graph.Matching.Konigs
 -- public import Matroid.Graph.Matching.TutteBerge
 public import Matroid.Graph.Matrix
 public import Matroid.Graph.Minor.Defs
--- public import Matroid.Graph.Minor.Topological
+public import Matroid.Graph.Minor.Topological
 public import Matroid.Graph.Minor.Walk
 -- public import Matroid.Graph.Planarity.CombMap.Basic
 -- public import Matroid.Graph.Planarity.CombMap.Equiv
@@ -140,10 +140,14 @@ public import Matroid.Graph.Planarity.Realization.Basic
 public import Matroid.Graph.Planarity.Realization.CWComplex
 public import Matroid.Graph.Planarity.Realization.Iso
 public import Matroid.Graph.Planarity.Realization.Metric
+public import Matroid.Graph.Planarity.Realization.Presentation
 public import Matroid.Graph.Planarity.Realization.Subgraph
 public import Matroid.Graph.Planarity.StarLemma
--- public import Matroid.Graph.Planarity.ThetaCurve
+public import Matroid.Graph.Planarity.ThetaCurve
 -- public import Matroid.Graph.Planarity.TopologicalMinor
+public import Matroid.Graph.Presentation.Basic
+public import Matroid.Graph.Presentation.Orientation
+public import Matroid.Graph.Presentation.Quotient
 public import Matroid.Graph.Simple
 public import Matroid.Graph.Subdivision
 public import Matroid.Graph.Subgraph.Basic
@@ -172,6 +176,11 @@ public import Matroid.Graph.Walk.Cycle
 public import Matroid.Graph.Walk.Path
 public import Matroid.Graphic
 public import Matroid.Intersection
+-- public import Matroid.Invariant
+-- public import Matroid.Invariant'
+public import Matroid.Iso.Equiv
+public import Matroid.Iso.Invariant
+public import Matroid.Iso.Lawful
 public import Matroid.Loop
 public import Matroid.Minor.Contract
 public import Matroid.Minor.Delete

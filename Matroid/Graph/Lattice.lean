@@ -259,7 +259,7 @@ lemma coe_iInf (H : ι → G.Subgraph) :
 
 @[simp]
 lemma iInf_of_isEmpty [IsEmpty ι] (H : ι → G.Subgraph) : (⨅ i, H i : G.Subgraph) = G := by
-  simp [_root_.iInf_of_isEmpty ..]
+  simp only [_root_.iInf_of_isEmpty, sInf_empty, coe_top]
 
 @[simp]
 lemma coe_iInf_of_nonempty [Nonempty ι] (H : ι → G.Subgraph) :
@@ -746,8 +746,7 @@ lemma coe_iInf_of_nonempty [Nonempty ι] (f : ι → G.ClosedSubgraph) :
 
 @[simp]
 lemma coe_iInf_of_empty [IsEmpty ι] (f : ι → G.ClosedSubgraph) :
-    ((⨅ i, f i : G.ClosedSubgraph) : Graph α β) = G := by
-  simp [_root_.iInf_of_isEmpty ..]
+    ((⨅ i, f i : G.ClosedSubgraph) : Graph α β) = G := by simp
 
 @[simp]
 lemma toSubgraph_sInf (s : Set G.ClosedSubgraph) :

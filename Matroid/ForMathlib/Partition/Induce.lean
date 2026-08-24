@@ -485,7 +485,7 @@ lemma set_pairwise_agree_iff_sUnion_pairwiseDisjoint {Ps : Set (Partition α)} :
     obtain ⟨Pa, hPa, haPa⟩ := ha
     obtain ⟨Pb, hPb, hbPb⟩ := hb
     contrapose! hne
-    exact (h.of_refl hPa hPb).eq_of_not_disjoint haPa hbPb hne
+    exact (h.forall₂ hPa hPb).eq_of_not_disjoint haPa hbPb hne
   rw [agree_iff_union_pairwiseDisjoint]
   apply h.subset
   simp [hP, hQ, subset_biUnion_of_mem]

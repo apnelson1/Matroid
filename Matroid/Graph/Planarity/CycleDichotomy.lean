@@ -66,17 +66,17 @@ private lemma decomposeTo_three [Inhabited α] {W₁ W₂ W₃ : WList α β}
     (h₁ : W₁.last = W₂.first) (h₂ : W₂.last = W₃.first) :
     (W₁ ++ (W₂ ++ W₃)).DecomposeTo [W₁, W₂, W₃] := by
   have h₂₃ : (W₂ ++ W₃).first = W₂.first := append_first_of_eq h₂
-  refine (DecomposeTo.append_cons_iff (by rw [h₂₃]; exact h₁) (by simp)).mpr ?_
-  refine (DecomposeTo.append_cons_iff h₂ (by simp)).mpr ?_
-  exact ⟨by simp, by simp [appendList], by simp⟩
+  refine (DecomposeTo.append_cons_iff (by rw [h₂₃]; exact h₁) (by simp)).mpr
+    <| (DecomposeTo.append_cons_iff h₂ (by simp)).mpr
+    <| ⟨by simp, by simp [appendList], by simp⟩
 
 private lemma decomposeTo_four [Inhabited α] {W₁ W₂ W₃ W₄ : WList α β}
     (h₁ : W₁.last = W₂.first) (h₂ : W₂.last = W₃.first) (h₃ : W₃.last = W₄.first) :
     (W₁ ++ (W₂ ++ (W₃ ++ W₄))).DecomposeTo [W₁, W₂, W₃, W₄] := by
   have h₃₄ : (W₃ ++ W₄).first = W₃.first := append_first_of_eq h₃
   have h₂₃₄ : (W₂ ++ (W₃ ++ W₄)).first = W₂.first := append_first_of_eq (by rw [h₃₄]; exact h₂)
-  refine (DecomposeTo.append_cons_iff (by rw [h₂₃₄]; exact h₁) (by simp)).mpr ?_
-  exact decomposeTo_three h₂ h₃
+  exact (DecomposeTo.append_cons_iff (by rw [h₂₃₄]; exact h₁) (by simp)).mpr
+    <| decomposeTo_three h₂ h₃
 
 lemma K33_K5_lemma_aux1 (hCG : C ≤ G) (hC : C.IsCycle) (hu : u ∉ V(C)) (hv : v ∉ V(C)) (huv : u ≠ v)
     (hadj : G.Adj u v) (hu2 : (N(G, u) ∩ V(C)).Nontrivial) (hv2 : (N(G, v) ∩ V(C)).Nontrivial)
@@ -174,8 +174,8 @@ lemma K33_K5_lemma_aux1 (hCG : C ≤ G) (hC : C.IsCycle) (hu : u ∉ V(C)) (hv :
       replace hx : x ∈ VQ.vertex.tail.dropLast :=
         (suffixFromVertex_isSuffix VQ uf).suffix.tail.dropLast.mem hx
       simp only [concat_vertex, ne_eq, vertex_ne_nil, not_false_eq_true, List.tail_append_of_ne_nil,
-      List.cons_ne_self, List.dropLast_append_of_ne_nil, List.dropLast_singleton, List.append_nil,
-      VQ] at hx
+        List.cons_ne_self, List.dropLast_append_of_ne_nil, List.dropLast_singleton, List.append_nil,
+        VQ] at hx
       exact suffixFromLast_vertex_tail_not_prop hx hvx
     have hUQ_eq : UQ = Q.prefixUntilVertex uf := by
       have hufeqlast : (Q.tail.prefixUntil (G.Adj u)).last = uf :=
