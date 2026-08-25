@@ -164,6 +164,12 @@ lemma restrict_eq_delete_disjointSum_loopyOn (M : Matroid α) (R : Set α) :
   exact ⟨fun h ↦ ⟨h.inter_right _, h.subset_ground⟩, fun ⟨h1, h2⟩ ↦ by
     rwa [← inter_eq_self_of_subset_left h2]⟩
 
+lemma restrict_eq_restrict_inter_ground_disjointSum_loopyOn (M : Matroid α) (R : Set α) :
+    (M ↾ R) = (M ↾ (R ∩ M.E)).disjointSum (loopyOn (R \ M.E)) disjoint_sdiff_inter.symm := by
+  rw! [restrict_eq_delete_disjointSum_loopyOn, delete_eq_restrict, sdiff_sdiff_right_self,
+    inter_comm]
+  rfl
+
 lemma deleteElem_of_notMem_ground (h : e ∉ M.E) : M ＼ {e} = M := by
   rw [← delete_inter_ground_eq, singleton_inter_eq_empty.2 h, delete_empty]
 

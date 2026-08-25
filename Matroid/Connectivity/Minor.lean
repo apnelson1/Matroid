@@ -622,6 +622,36 @@ lemma eConn_insert_add_one_eq {e : α} (he : e ∈ M.closure X) (he' : e ∈ M�
   rw [← union_singleton, ← M.eConn_union_eq_of_subset_closure_subset_closure_dual (X := X)
     (Y := {e}) (by simpa) (by simpa) (by simpa), encard_singleton]
 
+-- lemma eConn_pair_eq_zero_iff (hxy : x ≠ y) (hxE : x ∈ M.E) (hyE : y ∈ M.E) :
+--       M.eConn {x, y} = 0 ↔ (∀ d, (M.bDual d).Parallel x y) ∨
+--       ((∃ d, (M.bDual d).IsLoop x) ∧ (∃ d, (M.bDual d).IsLoop y)) := by
+--   -- wlog hcl : M.IsColoop x →
+--   wlog hxcl : ¬ M.IsColoop x generalizing M with aux
+--   · simp only [not_not] at hxcl
+--     specialize aux (M := M✶) hxE hyE hxcl.dual_isLoop.not_isColoop
+--     rw [← M.eConn_dual, aux]
+--     simp [or_comm, and_comm]
+--   obtain hl | hnl := M.isLoop_or_isNonloop x
+--   · rw [ or_iff_right (fun h ↦ False.elim <| (h false).isNonloop_left.not_isLoop hl),
+--       ← union_singleton, eConn_union_eq_of_subset_loops _ (by simpa),
+--       eConn_singleton_eq_zero_iff hyE, and_iff_right ⟨false, hl⟩, Bool.exists_bool]
+--     simp
+--   have hx : M.eConn {x} = 1 := by
+--     rw [Indep.eConn_eq_encard_of_coindep]
+--   rw [or_iff_left]
+--   · refine ⟨fun h d ↦ ?_, fun h ↦ ?_⟩
+--     · sorry
+--     rw [← ENat.add_one_eq_add_one_iff, eConn_insert_add_one_eq
+--       (by simpa using (h false).mem_closure) (by simpa using (h true).mem_closure)
+--       (by simpa using hxy),
+--       Indep.eConn_eq_encard_of_coindep (by simpa using (h false).isNonloop_right.indep)
+--       (by simpa using (h true).isNonloop_right.indep), zero_add, encard_singleton]
+--   rintro ⟨⟨rfl | rfl, hx⟩, -⟩
+--   · exact hnl.not_isLoop hx
+--   exact hxcl hx
+
+
+
 lemma Skew.eConn_contract_diff_eq_self (h : M.Skew X C) : (M ／ C).eConn (X \ C) = M.eConn X := by
   nth_rw 1 [← inter_union_sdiff C X, eConn_contract_eq_eConn_project, ← project_closure_eq,
     union_comm, closure_union_eq_closure_of_subset_loops _ _ h.symm.inter_subset_loops,

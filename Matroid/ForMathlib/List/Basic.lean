@@ -347,3 +347,6 @@ lemma get_map {β : Type*} {f : α → β} (L : List α) (i : Fin (L.map f).leng
 lemma get_map_image {β : Type*} {f : α → β} (L : List α) (s : Set (Fin (L.map f).length)) :
     (L.map f).get '' s = f '' (L.get '' (Fin.cast (by simp) '' s)) := by
   simp [Set.ext_iff]
+
+lemma toSet_map {β : Type*} {f : α → β} (L : List α) : {e | e ∈ L.map f} = f '' {e | e ∈ L} := by
+  simp [Set.ext_iff]
