@@ -306,6 +306,19 @@ lemma IsTriangle.eRk_union_le (hT : M.IsTriangle T) (hTX : (X ∩ T).Nonempty) :
   · exact M.eRk_mono <| union_subset (by grind) (by grind)
   exact mem_of_mem_of_subset hT.mem_closure₃ <| M.closure_subset_closure (by grind)
 
+lemma isTriangle_triple_of_dep {e f g : α} (hT : M.Dep {e, f, g}) (he : M.IsNonloop e)
+    (hf : M.IsNonloop f) (hg : M.IsNonloop g) (hef : ¬ M.Parallel e f) (heg : ¬ M.Parallel e g)
+    (hfg : ¬ M.Parallel f g) : M.IsTriangle {e, f, g} := by
+  have hnd : [e, f, g].Nodup := by grind [IsNonloop.parallel_self]
+  rw [isTriangle_iff, encard_insert_of_notMem (by grind), encard_pair (by grind),
+    two_add_one_eq_three, and_iff_left rfl, isCircuit_iff_dep_forall_sdiff_singleton_indep,
+    and_iff_right hT]
+  simp only [mem_insert_iff, mem_singleton_iff, forall_eq_or_imp, insert_sdiff_of_mem, forall_eq]
+  rw [sdiff_singleton_eq_self (by grind), insert_comm, insert_sdiff_self_of_notMem (by grind),
+    pair_comm e g, insert_comm f, insert_sdiff_self_of_notMem (by grind), ← not_dep_iff,
+    ← not_dep_iff, ← not_dep_iff]
+  grind [IsNonloop.parallel_iff_dep, parallel_comm]
+
 lemma isTriangle_of_dep_of_encard_le [h : M.Simple] (hT : M.Dep T) (hcard : T.encard ≤ 3) :
     M.IsTriangle T := by
   rw [← three_le_girth_iff] at h

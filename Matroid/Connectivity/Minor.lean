@@ -622,36 +622,6 @@ lemma eConn_insert_add_one_eq {e : α} (he : e ∈ M.closure X) (he' : e ∈ M�
   rw [← union_singleton, ← M.eConn_union_eq_of_subset_closure_subset_closure_dual (X := X)
     (Y := {e}) (by simpa) (by simpa) (by simpa), encard_singleton]
 
--- lemma eConn_pair_eq_zero_iff (hxy : x ≠ y) (hxE : x ∈ M.E) (hyE : y ∈ M.E) :
---       M.eConn {x, y} = 0 ↔ (∀ d, (M.bDual d).Parallel x y) ∨
---       ((∃ d, (M.bDual d).IsLoop x) ∧ (∃ d, (M.bDual d).IsLoop y)) := by
---   -- wlog hcl : M.IsColoop x →
---   wlog hxcl : ¬ M.IsColoop x generalizing M with aux
---   · simp only [not_not] at hxcl
---     specialize aux (M := M✶) hxE hyE hxcl.dual_isLoop.not_isColoop
---     rw [← M.eConn_dual, aux]
---     simp [or_comm, and_comm]
---   obtain hl | hnl := M.isLoop_or_isNonloop x
---   · rw [ or_iff_right (fun h ↦ False.elim <| (h false).isNonloop_left.not_isLoop hl),
---       ← union_singleton, eConn_union_eq_of_subset_loops _ (by simpa),
---       eConn_singleton_eq_zero_iff hyE, and_iff_right ⟨false, hl⟩, Bool.exists_bool]
---     simp
---   have hx : M.eConn {x} = 1 := by
---     rw [Indep.eConn_eq_encard_of_coindep]
---   rw [or_iff_left]
---   · refine ⟨fun h d ↦ ?_, fun h ↦ ?_⟩
---     · sorry
---     rw [← ENat.add_one_eq_add_one_iff, eConn_insert_add_one_eq
---       (by simpa using (h false).mem_closure) (by simpa using (h true).mem_closure)
---       (by simpa using hxy),
---       Indep.eConn_eq_encard_of_coindep (by simpa using (h false).isNonloop_right.indep)
---       (by simpa using (h true).isNonloop_right.indep), zero_add, encard_singleton]
---   rintro ⟨⟨rfl | rfl, hx⟩, -⟩
---   · exact hnl.not_isLoop hx
---   exact hxcl hx
-
-
-
 lemma Skew.eConn_contract_diff_eq_self (h : M.Skew X C) : (M ／ C).eConn (X \ C) = M.eConn X := by
   nth_rw 1 [← inter_union_sdiff C X, eConn_contract_eq_eConn_project, ← project_closure_eq,
     union_comm, closure_union_eq_closure_of_subset_loops _ _ h.symm.inter_subset_loops,
@@ -768,6 +738,49 @@ lemma eConn_union_eq_eConn_contract_add_eConn_delete (M : Matroid α) (hXY : Dis
     eLocalConn_restrict_of_subset _ (by simp) (sdiff_subset_sdiff_right subset_union_right),
     ← inter_sdiff_assoc, (hXY.mono_left inter_subset_left).sdiff_eq_left,
     eLocalConn_inter_ground_left, eLocalConn_comm]
+
+lemma eConn_pair_eq_zero_iff (hxy : x ≠ y) (hxE : x ∈ M.E) (hyE : y ∈ M.E) :
+      M.eConn {x, y} = 0 ↔ (∀ d, (M.bDual d).Parallel x y) ∨
+      ((∃ d, (M.bDual d).IsLoop x) ∧ (∃ d, (M.bDual d).IsLoop y)) := by
+  wlog hyx : (∃ d, (M.bDual d).IsLoop y) → (∃ d, (M.bDual d).IsLoop x) generalizing x y with aux
+  · specialize aux hxy.symm hyE hxE (by grind)
+    rw [pair_comm, aux, and_comm]
+    simp_rw [parallel_comm (e := x)]
+  wlog hxcl : ¬ M.IsColoop x generalizing M with aux
+  · simp only [not_not] at hxcl
+    specialize aux (M := M✶) hxE hyE (by simpa [or_comm] using hyx) hxcl.dual_isLoop.not_isColoop
+    rw [← M.eConn_dual, aux]
+    simp [or_comm, and_comm]
+  obtain hl | hnl := M.isLoop_or_isNonloop x
+  · rw [ or_iff_right (fun h ↦ False.elim <| (h false).isNonloop_left.not_isLoop hl),
+      ← union_singleton, eConn_union_eq_of_subset_loops _ (by simpa),
+      eConn_singleton_eq_zero_iff hyE, and_iff_right ⟨false, hl⟩, Bool.exists_bool]
+    simp
+  rw [not_isColoop_iff] at hxcl
+  have hx : M.eConn {x} = 1 := by
+    rw [Indep.eConn_eq_encard_of_coindep hnl.indep hxcl.indep, encard_singleton]
+  simp only [Bool.exists_bool, bDual_false, bDual_true, dual_isLoop_iff_isColoop, hnl.not_isLoop,
+    hxcl.not_isColoop, or_self, imp_false, not_or, not_isLoop_iff hyE, not_isColoop_iff hyE] at hyx
+  simp only [Bool.forall_bool, bDual_false, bDual_true, Bool.exists_bool, hnl.not_isLoop,
+    dual_isLoop_iff_isColoop, hxcl.not_isColoop, or_self, false_and, or_false]
+  rw [parallel_comm, hyx.1.parallel_iff_mem_closure, hxcl.isNonloop_dual.parallel_iff_mem_closure]
+  rw [← singleton_union, eConn_union_eq_eConn_contract_add_eConn_delete _ (by simpa), add_eq_zero,
+    eConn_singleton_eq_zero_iff (by simp [hyE, hxy.symm]),
+    eConn_singleton_eq_zero_iff (by simp [hxE, hxy]), contract_isLoop_iff_mem_closure,
+    contract_isColoop_iff, or_iff_left (by simp [hyx.2.not_isColoop]), delete_isLoop_iff,
+    or_iff_right (by simp [hnl.not_isLoop]), IsColoop, dual_delete, contract_isLoop_iff_mem_closure,
+    and_iff_left (show y ∉ ({x} : Set α) from hxy.symm),
+    and_iff_left (show x ∉ ({y} : Set α) from hxy)]
+
+/-- A dependent, codependent set on at most two elements has connectivity zero. -/
+lemma eConn_eq_zero_of_dep_dep {X : Set α} (hX : X.encard ≤ 2) (hd : M.Dep X) (hd' : M✶.Dep X) :
+    M.eConn X = 0 := by
+  have hr := (M.eRk_add_eRk_dual_eq X).ge
+  grw [← ENat.add_one_le_add_one_iff, add_assoc (eRk ..), hd'.eRk_add_one_le_encard,
+    add_comm (M.eRk X), ← ENat.add_one_le_add_one_iff, add_assoc (encard ..),
+    hd.eRk_add_one_le_encard, add_assoc, one_add_one_eq_two] at hr
+  enat_to_nat!
+  lia
 
 lemma eConn_insert_le_eConn_contract_add_one (M : Matroid α) (X : Set α) (e : α) :
     M.eConn (insert e X) ≤ (M ／ {e}).eConn X + 1 := by
@@ -953,6 +966,16 @@ lemma eConn_eq_zero_of_contract_eq_delete (h : M ／ X = M ＼ X) : M.eConn X = 
   · rw [← eConn_inter_ground, aux (by simpa) inter_subset_right]
   rw [contract_eq_delete_iff_skew_compl] at h
   rw [M.eConn_eq_eLocalConn, h.eLocalConn]
+
+lemma contract_eq_delete_of_eConn_eq_zero (h : M.eConn X = 0) : M ／ X = M ＼ X := by
+  wlog hXE : X ⊆ M.E generalizing X with aux
+  · rw [← contract_inter_ground_eq, aux (by simpa) inter_subset_right, delete_inter_ground_eq]
+  rwa [contract_eq_delete_iff_skew_compl, ← eLocalConn_eq_zero, ← eConn_eq_eLocalConn]
+
+@[simp]
+lemma restrict_eConn_self (M : Matroid α) (X : Set α) : (M ↾ X).eConn X = 0 := by
+  convert (M ↾ X).eConn_ground
+  rfl
 
 lemma IsRkFinite.eConn_eq_zero_of_eRk_delete_le_eRk_contract (h : M.IsRkFinite (M.E \ X))
     (hr : (M ＼ X).eRank ≤ (M ／ X).eRank) : M.eConn X = 0 := by

@@ -212,6 +212,13 @@ lemma IsFan.isNonloop_left (h : M.IsFan [x,y] b c) : (M.bDual b).IsNonloop x := 
 lemma IsFan.isNonloop_right (h : M.IsFan [x,y] b c) : (M.bDual !b).IsNonloop y := by
   cases h with | of_pair => assumption
 
+lemma isFan_pair_iff : M.IsFan [e, f] b c ↔
+    (c = !b) ∧ e ≠ f ∧ (M.bDual b).IsNonloop e ∧ (M.bDual !b).IsNonloop f := by
+  refine ⟨fun h ↦ ⟨by simpa using h.bool_right_eq, by simpa using h.nodup,
+    h.isNonloop_left, h.isNonloop_right⟩, ?_⟩
+  rintro ⟨rfl, hef, he, hf⟩
+  exact IsFan.of_pair _ _ _ _ he hf hef
+
 lemma IsFan.isNonloop_bDual (h : M.IsFan F b c) (heF : e ∈ F) (d : Bool)
     (h2 : F.length = 2 → e = F[(b != d).toNat] := by lia) : (M.bDual d).IsNonloop e := by
   induction h with
