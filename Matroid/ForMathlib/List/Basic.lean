@@ -101,6 +101,10 @@ lemma Nodup.mem_iff_eq_getLast_or_mem_dropLast {α} {x : α} {l : List α} (hnd 
   induction l using List.reverseRec with | nil => simp at hne | append_singleton l a _ =>
   grind
 
+@[simp]
+lemma toSet_nonempty_iff {l : List α} : {e | e ∈ l}.Nonempty ↔ l ≠ [] := by
+  cases l with simp [ofPred_or]
+
 lemma Nodup.toSet_eq_of_subset_of_length_ge {l l' : List α} (hl : l.Nodup) (hss : l ⊆ l')
     (hlen : l'.length ≤ l.length) : {x | x ∈ l} = {x | x ∈ l'} := by
   classical
