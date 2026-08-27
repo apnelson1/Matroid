@@ -77,6 +77,15 @@ lemma wheel_isCycleSet_true {n : ℕ} [NeZero n] : (wheel n).IsCycleSet {e | e.2
   ext ⟨x, b⟩
   simp
 
+lemma wheel_isBond_false {n : ℕ} [NeZero n] : (wheel n).IsBond {e | e.2 = false} := by
+  rw [wheel, isBond_edgeMap_iff' (by simp [Injective]) (by simp [Set.subset_def]),
+    preimage_ofPred_eq]
+  convert PreconnGE.isBond_setLinkEdges_singleton (v := none) ?_ ?_ ?_
+  · simp [Set.ext_iff, Option.exists, mem_setLinkEdges_iff]
+  · exact PreconnGE.apex <| by simpa using (cycle_isCycle n).connected.pre
+  · simp
+  simp [show _root_.Nontrivial (Option (Fin n)) by infer_instance]
+
 end Graph
 
 namespace Matroid
@@ -114,6 +123,10 @@ lemma wheelFanEquiv_symm_apply_left (x : Fin (n * 2)) : (wheelFanEquiv.symm x).1
 lemma wheelFanEquiv_symm_apply_right (x : Fin (n * 2)) : (wheelFanEquiv.symm x).2 = x.1.bodd := by
   simp [wheelFanEquiv, Nat.mod_bodd]
 
+lemma wheelFanEquiv_symm_apply (x : Fin (n * 2)) :
+    wheelFanEquiv.symm x = ⟨⟨x.1.div2, by grind⟩, x.1.bodd⟩ := by
+  ext <;> simp
+
 open Fin.NatCast in
 lemma wheelFanEquiv_add_one (x : Fin n × Bool) [NeZero n] :
     wheelFanEquiv x + 1 = wheelFanEquiv (x.1 + (x.2.toNat : Fin n), !x.2) := by
@@ -136,8 +149,17 @@ lemma wheelFanEquiv_image_eq {n : ℕ} {b : Bool} :
   simp [wheelFanEquiv, Nat.mod_bodd]
 
 open Fin.NatCast in
-lemma wheel_isCyclicFan' (hn : 2 ≤ n) :
+lemma wheel_isCyclicFan' (hn : n ≠ 0) :
     (Matroid.wheel n).IsCyclicFan ((List.finRange (n * 2)).map wheelFanEquiv.symm) false := by
+  obtain rfl | hne := eq_or_ne n 1
+  · have hbond : (Graph.wheel 1).IsBond {(0, false)} := by
+      convert Graph.wheel_isBond_false (n := 1); simp [Set.ext_iff]
+    have hcyc : (Graph.wheel 1).IsCycleSet {(0, true)} := by
+      convert Graph.wheel_isCycleSet_true (n := 1); simp [Set.ext_iff]
+    suffices (Matroid.wheel 1).IsCyclicFan [(0, false), (0, true)] false by
+      simpa [wheelFanEquiv_symm_apply 0, wheelFanEquiv_symm_apply 1]
+    rw [isCyclicFan_two_iff rfl, and_iff_right (by simp)]
+    simp [← singleton_isCircuit, ← isCocircuit_def, Matroid.wheel, hbond, hcyc]
   have hnzn : Fact (1 < n) := ⟨by lia⟩
   refine isCyclicFan_of_forall_get (by grind) ?_ fun i ↦ ?_
   · rw [List.nodup_map_iff_of_injOn (by simp)]
@@ -150,13 +172,12 @@ lemma wheel_isCyclicFan' (hn : 2 ≤ n) :
     id_eq, Fin.cast_one, Fin.cast_ofNat, wheelFanEquiv_add_one, wheelFanEquiv_add_two,
     Equiv.symm_apply_apply]
   obtain ht | hf := p.2.eq_false_or_eq_true
-  · convert (wheel_isTriad hn p.1).isCircuit using 3 <;>
+  · convert (wheel_isTriad (by lia) p.1).isCircuit using 3 <;>
     simp [ht]
-  convert (wheel_isTriangle hn p.1).isCircuit using 3 <;>
+  convert (wheel_isTriangle (by lia) p.1).isCircuit using 3 <;>
   simp [hf]
 
-
-lemma wheel_isCyclicFan (hn : 2 ≤ n) : ∃ (F : List (Fin n × Bool)) (hF : F.length = 2 * n),
+lemma wheel_isCyclicFan (hn : n ≠ 0) : ∃ (F : List (Fin n × Bool)) (hF : F.length = 2 * n),
     (Matroid.wheel n).IsCyclicFan F false ∧ {e | e ∈ F} = univ ∧
       (∀ (i : Fin n) (b : Bool), F[2 * i + b.toNat] = (i, b)) ∧
       (∀ i (hi : i < F.length), F[i] = (⟨i.div2, by grind⟩, i.bodd)) := by
@@ -167,9 +188,20 @@ lemma wheel_isCyclicFan (hn : 2 ≤ n) : ∃ (F : List (Fin n × Bool)) (hF : F.
   simp [Prod.ext_iff, ← Fin.val_inj]
 
 lemma wheel_connected (hn : 2 ≤ n) : (Matroid.wheel n).Connected := by
-  obtain ⟨F, -, hF, hfU, -, -⟩ := wheel_isCyclicFan hn
+  obtain ⟨F, -, hF, hfU, -, -⟩ := wheel_isCyclicFan (show n ≠ 0 by lia)
   rw [← hF.setOf_eq_ground_iff, hfU]
-  simp [Matroid.wheel]
+  · simp [Matroid.wheel]
+  intro h2
+  have hcon : 2 = (n : ℕ∞) * 2 := by
+    simpa [hF.isFan.nodup.encard_toSet_eq, h2] using congr_arg encard hfU
+  enat_to_nat
+  lia
+
+/-- This statement is designed to exactly fit the API for cyclic fans. -/
+lemma wheel_tutteConnected (hn : 2 < (Matroid.wheel n).E.encard) :
+    (Matroid.wheel n).TutteConnected 2 := by
+  have h2 : 2 < (n : ℕ∞) * 2 := by simpa [Matroid.wheel] using hn
+  exact (wheel_connected (by enat_to_nat! <;> lia)).tutteConnected_two
 
 lemma wheel_isCircuitHyperplane (hn : n ≠ 0) :
     (Matroid.wheel n).IsCircuitHyperplane {e | e.2 = true} := by
@@ -190,8 +222,7 @@ lemma wheel_isCircuitHyperplane (hn : n ≠ 0) :
   have hrw :  (F.get '' {i | i.1.bodd = !false}) = {e | e.2 = true} := by
     ext ⟨i, b⟩
     grind [hF.isFan.getElem_inj_iff, Fin.exists_iff]
-  obtain hch | hb := hF.isCircuitHyperplane_or_isBase_cojoints
-    (wheel_connected hn2).tutteConnected_two
+  obtain hch | hb := hF.isCircuitHyperplane_or_isBase_cojoints wheel_tutteConnected
   · rwa [← hrw]
   refine False.elim <| hb.indep.not_dep <| IsCircuit.dep ?_
   have hwin := @Graph.wheel_isCycleSet_true (n := n) ⟨hn⟩
@@ -207,35 +238,35 @@ def whirl (n : ℕ) := (Matroid.wheel n).relax (T := if n = 0 then ∅ else {{e 
 
 /-- Every connected matroid with a cyclic fan is isomorphic to a wheel or a whirl. -/
 lemma IsCyclicFan.exists_eq_map_wheel_or_whirl (hF : M.IsCyclicFan F false)
-    (hc : M.TutteConnected 2) : ∃ (n : ℕ) (φ : Fin n × Bool → α) (hφ : Injective φ),
+    (h : 2 < M.E.encard → M.TutteConnected 2) : ∃ (n : ℕ) (φ : Fin n × Bool → α) (hφ : Injective φ),
     M = (Matroid.wheel n).map φ hφ.injOn ∨ M = (Matroid.whirl n).map φ hφ.injOn := by
   set n := F.length.div2 with hn
-  have h2n : 2 ≤ n := by grind
   have hFn : F.length = n * 2 := mul_comm 2 _ ▸ hF.two_mul_div2.symm
   set φ : Fin n × Bool → α := F.get ∘ ((Fin.cast hFn.symm) ∘ wheelFanEquiv) with hφ
   have hinj : Injective φ :=
     hF.isFan.nodup.injective_get.comp <| (Fin.cast_injective _).comp wheelFanEquiv.injective
   refine ⟨n, φ, hinj, or_iff_not_imp_left.2 fun hMw ↦ ?_⟩
   have hF' : ((Matroid.wheel n).map φ hinj.injOn).IsCyclicFan F false := by
-    convert (wheel_isCyclicFan' h2n).map hinj.injOn
+    convert (wheel_isCyclicFan' (by grind)).map hinj.injOn
     simpa [List.map_map, hφ, List.ext_get_iff]
   have hni : ¬ ((Matroid.wheel n).map φ hinj.injOn).Indep
       (F.get '' Fin.val ⁻¹' {i | i.bodd = !false}) := by
     refine fun h ↦ False.elim <| h.not_dep <| IsCircuit.dep ?_
     convert (InvariantFun.map_set (P := IsCircuitHyperplane) (Q := IsCircuitHyperplane)
-      (wheel_isCircuitHyperplane (n := n) (by lia)) hinj.injOn).isCircuit
+      (wheel_isCircuitHyperplane (n := n) (by grind)) hinj.injOn).isCircuit
     rw [hφ, image_comp, image_comp,  wheelFanEquiv_image_eq]
     simp
-  obtain ⟨hch, hM_eq⟩ := hF.eq_relax hF' hc
-    (by simpa using (wheel_connected h2n).tutteConnected_two) hMw (fun h ↦ (hni h).elim)
-  rw! [whirl, ite_eq_right (by lia)]
+  obtain ⟨hch, hM_eq⟩ := hF.eq_relax hF' h
+    (by simpa [hinj.encard_image] using wheel_tutteConnected (n := n))
+    hMw (fun h ↦ (hni h).elim)
+  rw! [whirl, ite_eq_right (by grind)]
   rw! [relax_map _ hinj.injOn, hφ, image_singleton, image_comp, image_comp,
     wheelFanEquiv_image_eq, ← map_map _ (by simp) hF.isFan.nodup.injective_get.injOn,
     hM_eq, hφ, ← map_map _ (by simp) hF.isFan.nodup.injective_get.injOn]
   simp
 
 lemma IsCyclicFan.nonempty_iso_wheel_or_whirl (hF : M.IsCyclicFan F false)
-    (hc : M.TutteConnected 2) :
+    (hc : 2 < M.E.encard → M.TutteConnected 2) :
     ∃ (n : ℕ), Nonempty (M ≂ Matroid.wheel n) ∨ Nonempty (M ≂ Matroid.whirl n) := by
   obtain ⟨n, φ, hφ, h⟩ := hF.exists_eq_map_wheel_or_whirl hc
   refine ⟨n , Or.imp ?_ ?_ h⟩

@@ -17,7 +17,7 @@ namespace Matroid
 -- variable {J : Bool → List α}
 
 variable {α : Type*} {M : Matroid α} {X Y C K T : Set α} {e f g x y : α} {b c d : Bool}
-    {J : Bool → List α} {L : List α} {n i j : ℕ} {F J : List α} {b c : Bool} {L : List ℕ}
+    {L : List α} {n i j : ℕ} {F J : List α} {b c : Bool} {L : List ℕ}
 
 /-- A fan of a matroid `M` is a sequence `[e₀, f₀, e₁, f₁, ...]` of at least two
 distinct elements of `M`, where consecutive triples alternate between being triangles and triads.
@@ -39,8 +39,8 @@ statement `M.IsFan [e, f, g] false false`.
 If, additionally, `{f, g, h}` is a triad of `M`, then the fan `e, f, g, h` corresponds to the
 statement `M.IsFan [e, f, g, h] false true`. -/
 inductive IsFan : Matroid α → List α → Bool → Bool → Prop
-  | of_pair (M : Matroid α) (b e f) (he : ∀ i, (M.bDual i).IsNonloop e)
-      (hf : ∀ i, (M.bDual i).IsNonloop f) (hne : e ≠ f) : IsFan M [e, f] b (!b)
+  | of_pair (M : Matroid α) (b e f) (he : (M.bDual b).IsNonloop e)
+      (hf : (M.bDual !b).IsNonloop f) (hne : e ≠ f) : IsFan M [e, f] b (!b)
   | cons_triangle (M : Matroid α) e x y F b c (h : IsFan M (x :: y :: F) b c) (heF : e ∉ F)
       (hT : (M.bDual (!b)).IsTriangle {e, x, y}) : IsFan M (e :: x :: y :: F) (!b) c
 
@@ -52,27 +52,26 @@ lemma IsFan.cons_not (h : M.IsFan (x :: y :: F) (!b) c) (heF : e ∉ F)
     (hT : (M.bDual b).IsTriangle {e, x, y}) : M.IsFan (e :: x :: y :: F) b c := by
   simpa using h.cons heF (by simpa)
 
-lemma isFan_pair (he : ∀ i, (M.bDual i).IsNonloop e) (hf : ∀ i, (M.bDual i).IsNonloop f)
-    (hef : e ≠ f) {b} : M.IsFan [e, f] b (!b) :=
+lemma isFan_pair {b} (he : (M.bDual b).IsNonloop e) (hf : (M.bDual (!b)).IsNonloop f)
+    (hef : e ≠ f) : M.IsFan [e, f] b (!b) :=
   IsFan.of_pair _ _ _ _ he hf hef
 
-lemma isFan_pair_not (he : ∀ i, (M.bDual i).IsNonloop e) (hf : ∀ i, (M.bDual i).IsNonloop f)
-    (hef : e ≠ f) {b} : M.IsFan [e, f] (!b) b :=
-  by simpa using isFan_pair he hf hef (b := !b)
-
-lemma IsTriangle.isFan_of_bDual (h : (M.bDual b).IsTriangle {e, f, g}) : M.IsFan [e, f, g] b b := by
-  refine (isFan_pair_not ?_ ?_ h.ne₂₃).cons_not (by simp) h
-  · exact fun i ↦ by simpa using h.isNonloop_bDual₂ (b := b != i)
-  exact fun i ↦ by simpa using h.isNonloop_bDual₃ (b := b != i)
-
-lemma IsTriangle.isFan (h : M.IsTriangle {e, f, g}) : M.IsFan [e, f, g] false false :=
-  IsTriangle.isFan_of_bDual (b := false) h
+lemma isFan_pair_not {b} (he : (M.bDual !b).IsNonloop e) (hf : (M.bDual b).IsNonloop f)
+    (hef : e ≠ f) : M.IsFan [e, f] (!b) b :=
+  by simpa using isFan_pair he (by simpa using hf) hef (b := !b)
 
 lemma IsFan.dual (h : M.IsFan F b c) : M✶.IsFan F (!b) (!c) := by
   induction h with
   | of_pair b e f he hf hef =>
       exact isFan_pair (by simpa [and_comm] using he) (by simpa [and_comm] using hf) hef
   | cons_triangle e x y F b c h heF hT ih => exact ih.cons heF <| by simpa
+
+lemma IsTriangle.isFan_of_bDual (h : (M.bDual b).IsTriangle {e, f, g}) : M.IsFan [e, f, g] b b :=
+  (isFan_pair_not (by simpa [IsNonColoop] using h.isNonColoop₂) h.isNonloop₃ h.ne₂₃).cons_not
+    (by simp) h
+
+lemma IsTriangle.isFan (h : M.IsTriangle {e, f, g}) : M.IsFan [e, f, g] false false :=
+  IsTriangle.isFan_of_bDual (b := false) h
 
 lemma IsFan.of_dual (h : M✶.IsFan F b c) : M.IsFan F (!b) (!c) := by
   simpa using h.dual
@@ -207,27 +206,56 @@ lemma IsFan.take {k} (h : M.IsFan F b c) (hk : 2 ≤ k) (hkle : k ≤ F.length) 
   simp only [h.bool_left_eq, h_eq, Nat.bodd_add, add_tsub_cancel_left]
   cases c with cases hd : d.bodd with simp
 
-lemma IsFan.isNonloop_bDual (h : M.IsFan F b c) (heF : e ∈ F) (d : Bool) :
-    (M.bDual d).IsNonloop e := by
+lemma IsFan.isNonloop_left (h : M.IsFan [x,y] b c) : (M.bDual b).IsNonloop x := by
+  cases h with | of_pair => assumption
+
+lemma IsFan.isNonloop_right (h : M.IsFan [x,y] b c) : (M.bDual !b).IsNonloop y := by
+  cases h with | of_pair => assumption
+
+lemma isFan_pair_iff : M.IsFan [e, f] b c ↔
+    (c = !b) ∧ e ≠ f ∧ (M.bDual b).IsNonloop e ∧ (M.bDual !b).IsNonloop f := by
+  refine ⟨fun h ↦ ⟨by simpa using h.bool_right_eq, by simpa using h.nodup,
+    h.isNonloop_left, h.isNonloop_right⟩, ?_⟩
+  rintro ⟨rfl, hef, he, hf⟩
+  exact IsFan.of_pair _ _ _ _ he hf hef
+
+lemma IsFan.isNonloop_bDual (h : M.IsFan F b c) (heF : e ∈ F) (d : Bool)
+    (h2 : F.length = 2 → e = F[(b != d).toNat] := by lia) : (M.bDual d).IsNonloop e := by
   induction h with
-  | of_pair => grind
-  | cons_triangle a x y F b c h haF hT ih =>
-      obtain rfl | hne := mem_cons.1 heF
-      · simpa using hT.isNonloop_bDual₁ (b := !(b != d))
-      exact ih (by grind)
+  | of_pair b e' f' he hf hne =>
+    obtain rfl | rfl := b.eq_or_eq_not d
+    · rwa [show e = e' by simpa using h2]
+    simpa [show e = f' by simpa using h2] using hf
+  | cons_triangle e' x y F b c h heF hT ih =>
+    by_cases heT : e ∈ ({e', x, y} : Set α)
+    · simpa using hT.isNonloop_bDual_of_mem heT (b := !(b != d))
+    cases F with
+    | nil => grind
+    | cons z F => exact ih (by grind) (by simp)
 
-lemma IsFan.isNonloop (h : M.IsFan F b c) (heF : e ∈ F) : M.IsNonloop e :=
-  h.isNonloop_bDual heF false
+lemma IsFan.isNonloop (h : M.IsFan F b c) (heF : e ∈ F)
+    (h2 : F.length = 2 → e = F[b.toNat] := by lia) : M.IsNonloop e :=
+  h.isNonloop_bDual (d := false) heF <| by simpa
 
-lemma IsFan.isNonloop_getElem_fin (h : M.IsFan F b c) {i : Fin F.length} : M.IsNonloop F[i.1] :=
-  h.isNonloop (by simp)
+lemma IsFan.isNonloop_getElem_fin (h : M.IsFan F b c) {i : Fin F.length}
+    (h2 : F.length = 2 → i.1.bodd = b := by lia) : M.IsNonloop F[i.1] := by
+  refine h.isNonloop (by simp) fun h2' ↦ ?_
+  rw! [← h2 h2', Nat.bodd_toNat_eq_self (by grind)]
+  rfl
 
-lemma IsFan.isNonloop_bDual_get (h : M.IsFan F b c) {i : Fin F.length} {d : Bool} :
-    (M.bDual d).IsNonloop (F.get i) :=
-  h.isNonloop_bDual (by simp) _
+lemma IsFan.isNonloop_getElem (h : M.IsFan F b c) (i : ℕ) (hi : i < F.length)
+    (h2 : F.length = 2 → i.bodd = b := by lia) : M.IsNonloop F[i] := by
+  refine h.isNonloop (by simp) fun h2' ↦ ?_
+  rw! [← h2 h2', Nat.bodd_toNat_eq_self (by grind)]
+  rfl
 
-lemma IsFan.subset_ground (h : M.IsFan F b c) : {x | x ∈ F} ⊆ M.E :=
-  fun _ heF ↦ IsNonloop.mem_ground <| h.isNonloop heF
+lemma IsFan.subset_ground (h : M.IsFan F b c) : {x | x ∈ F} ⊆ M.E := by
+  induction h with
+  | of_pair b e f he hf hne =>
+    simp [show e ∈ M.E by simpa using he.mem_ground, show f ∈ M.E by simpa using hf.mem_ground,
+      Set.subset_def]
+  | cons_triangle e x y F b c h heF hT ih =>
+    rwa [toSet_cons_eq, insert_subset_iff, and_iff_right (by simpa using hT.mem_ground₁)]
 
 lemma IsFan.ground_nontrivial (h : M.IsFan F b c) : M.E.Nontrivial := by
   grw [← two_le_encard_iff_nontrivial, ← h.subset_ground, h.nodup.encard_toSet_eq,
@@ -306,47 +334,48 @@ lemma IsFan.isTriangle_image_get (h : M.IsFan F b c) (hF : F.length = n + 2) (i 
   convert h.isTriangle_getElem i.1 (by grind)
   simp [image_insert_eq]
 
-lemma isFan_of_forall_triangle (h2 : 2 ≤ F.length) (hnd : F.Nodup)
-    (hnl : F.length = 2 → ∀ d i (hi : i < F.length), (M.bDual d).IsNonloop F[i])
+lemma isFan_of_forall_isCircuit (h2 : 2 ≤ F.length) (hnd : F.Nodup)
+    (hnl : F.length = 2 → ∀ i (hi : i < F.length), (M.bDual (b != i.bodd)).IsNonloop F[i])
     (hT : ∀ i (hi : i + 2 < F.length),
-      (M.bDual (b != i.bodd)).IsTriangle {F[i], F[i + 1], F[i + 2]}) :
+      (M.bDual (b != i.bodd)).IsCircuit {F[i], F[i + 1], F[i + 2]}) :
     M.IsFan F b (b == F.length.bodd) := by
+  replace hT : ∀ i (hi : i + 2 < F.length), (M.bDual (b != i.bodd)).IsTriangle
+      {F[i], F[i + 1], F[i + 2]} := by
+    refine fun i hi ↦ ⟨hT i hi, ?_⟩
+    rw [encard_insert_of_notMem, encard_pair, show (2 : ℕ∞) + 1 = 3 from rfl]
+    · simp [hnd.getElem_inj_iff]
+    simp [hnd.getElem_inj_iff]
   induction F generalizing b with
   | nil => simp at h2
   | cons e F ih =>
-    match F with
-    | [] => simp at h2
-    | [f] =>
-      simpa using IsFan.of_pair M b e f (fun d ↦ hnl rfl d 0 (by simp))
-        (fun d ↦ hnl rfl d 1 (by simp)) (by simpa using hnd)
-    | f :: g :: F =>
-      specialize ih (b := !b) (by grind) (by simpa using hnd.tail) ?_ ?_
-      · refine fun h d i hi ↦ ?_
-        obtain rfl | rfl | i := i
-        · simpa using (hT 0 (by grind)).isNonloop_bDual₂ (b := (b != d))
-        · simpa using (hT 0 (by grind)).isNonloop_bDual₃ (b := (b != d))
-        have hwin := (hT (i + 1) (by lia)).isNonloop_bDual₃ (b := (b != (i.bodd == d)))
-        cases b with simpa using hwin
-      · exact fun i hi ↦ by simpa using! hT (i + 1) (by grind)
-      cases b with simpa using
-        ih.cons (e := e) (by grind) (by simpa using hT 0 (by simp))
+    cases F with | nil => simp at h2 | cons f F =>
+    cases F with
+    | nil =>
+      rw [show (b == [e, f].length.bodd) = !b by simp]
+      exact IsFan.of_pair M b e f (by simpa using hnl rfl 0 (by simp))
+        (by simpa using hnl rfl 1 (by simp)) (by simpa using hnd)
+    | cons g F =>
+    cases F with | nil => simpa using (hT 0 (by simp)).isFan_of_bDual | cons g' F =>
+    specialize ih (b := !b) (by grind) (by simpa using hnd.tail) (by simp) fun i hi ↦
+      by simpa [add_assoc] using hT (i + 1) (by grind)
+    cases b with simpa using ih.cons_not (e := e) (by grind) (by simpa using hT 0 (by simp))
 
-lemma isFan_of_eq_of_forall_triangle (h2 : 2 ≤ F.length) (hnd : F.Nodup)
+lemma isFan_of_eq_of_forall_isCircuit (h2 : 2 ≤ F.length) (hnd : F.Nodup)
     (hbc : (b == c) = F.length.bodd)
-    (hnl : F.length = 2 → ∀ d i (hi : i < F.length), (M.bDual d).IsNonloop F[i])
+    (hnl : F.length = 2 → ∀ i (hi : i < F.length), (M.bDual (b != i.bodd)).IsNonloop F[i])
     (hT : ∀ i (hi : i + 2 < F.length),
-      (M.bDual (b != i.bodd)).IsTriangle {F[i], F[i + 1], F[i + 2]}) :
+      (M.bDual (b != i.bodd)).IsCircuit {F[i], F[i + 1], F[i + 2]}) :
     M.IsFan F b c := by
-  convert isFan_of_forall_triangle h2 hnd hnl hT
+  convert isFan_of_forall_isCircuit h2 hnd hnl hT
   cases c with grind
 
 lemma isFan_of_eq_of_forall_triangle_get [NeZero F.length] (h2 : 2 ≤ F.length) (hnd : F.Nodup)
     (hbc : (b == c) = F.length.bodd)
-    (hnl : F.length = 2 → ∀ d i (hi : i < F.length), (M.bDual d).IsNonloop F[i])
+    (hnl : F.length = 2 → ∀ i (hi : i < F.length), (M.bDual (b != i.bodd)).IsNonloop F[i])
     (hT : ∀ (i : Fin F.length), i ≠ 0 → i ≠ ⊤ →
-      (M.bDual (b == i.1.bodd)).IsTriangle {F[i - 1], F[i], F[i + 1]}) :
+      (M.bDual (b == i.1.bodd)).IsCircuit {F[i - 1], F[i], F[i + 1]}) :
     M.IsFan F b c := by
-  refine isFan_of_eq_of_forall_triangle h2 hnd hbc hnl fun i hi ↦ ?_
+  refine isFan_of_eq_of_forall_isCircuit h2 hnd hbc hnl fun i hi ↦ ?_
   convert hT ⟨i + 1, by lia⟩ (by simp) (by simp [← Fin.val_inj, show i + 1 ≠ F.length - 1 by lia])
   · cases b with simp
   · simp [Fin.val_sub_one_of_ne_zero (show (⟨i + 1, by lia⟩ : Fin F.length) ≠ 0 by simp)]
@@ -356,25 +385,30 @@ lemma isFan_of_eq_of_forall_triangle_get [NeZero F.length] (h2 : 2 ≤ F.length)
 
 lemma isFan_iff_forall (hF : 3 ≤ F.length) :
     M.IsFan F b c ↔ (b == c) = F.length.bodd ∧ F.Nodup ∧ ∀ i (hi : i + 2 < F.length),
-    (M.bDual (b != i.bodd)).IsTriangle {F[i], F[i + 1], F[i + 2]} :=
-  ⟨fun h ↦ ⟨h.length_bodd_eq.symm, h.nodup, fun _ _ ↦ h.isTriangle_getElem ..⟩, fun ⟨hbc, hnd, h⟩ ↦
-    isFan_of_eq_of_forall_triangle (by lia) hnd hbc (by lia) h⟩
+    (M.bDual (b != i.bodd)).IsCircuit {F[i], F[i + 1], F[i + 2]} :=
+  ⟨fun h ↦ ⟨h.length_bodd_eq.symm, h.nodup, fun _ _ ↦ (h.isTriangle_getElem ..).isCircuit⟩,
+    fun ⟨hbc, hnd, h⟩ ↦
+    isFan_of_eq_of_forall_isCircuit (by lia) hnd hbc (by lia) h⟩
 
 lemma isFan_iff_forall' : M.IsFan F b c ↔ (b == c) = F.length.bodd ∧ 2 ≤ F.length ∧ F.Nodup ∧
-    (F.length = 2 → ∀ d i (hi : i < F.length), (M.bDual d).IsNonloop F[i]) ∧
-    ∀ i (hi : i + 2 < F.length), (M.bDual (b != i.bodd)).IsTriangle {F[i], F[i + 1], F[i + 2]} := by
+    (F.length = 2 → ∀ i (hi : i < F.length), (M.bDual (b != i.bodd)).IsNonloop F[i]) ∧
+    ∀ i (hi : i + 2 < F.length), (M.bDual (b != i.bodd)).IsCircuit {F[i], F[i + 1], F[i + 2]} := by
   obtain hle | hgt := le_or_gt 3 F.length
   · simp [isFan_iff_forall hle, and_iff_right (show 2 ≤ F.length by lia), show F.length ≠ 2 by lia]
   match F with
   | [] => simp
   | [_] => simp
   | [x, y] =>
-    refine ⟨fun h ↦ ⟨h.length_bodd_eq.symm, by simp, h.nodup, fun _ d i hi ↦ h.isNonloop_bDual_get,
-      by simp⟩, fun ⟨hbc, _, hnd, h, _⟩ ↦ ?_⟩
+    refine ⟨fun h ↦ ⟨h.length_bodd_eq.symm, by simp, h.nodup, ?_, by simp⟩,
+      fun ⟨hbc, _, hnd, h, _⟩ ↦ ?_⟩
+    · rintro - (rfl | rfl | i) hi
+      · simpa using h.isNonloop_left
+      · simpa using h.isNonloop_right
+      simp at hi
     obtain rfl | rfl := c.eq_or_eq_not b
     · simp at hbc
-    exact IsFan.of_pair _ _ _ _ (fun d ↦ h rfl d 0 (by lia))
-      (fun d ↦ h rfl d 1 (by lia)) (by simpa using hnd)
+    exact IsFan.of_pair _ _ _ _ (by simpa using h rfl 0 (by lia))
+      (by simpa using h rfl 1 (by lia)) (by simpa using hnd)
 
 instance InvariantFun.isFan {b c : Bool} :
   InvariantFun (fun M L ↦ Matroid.IsFan M L b c) (fun M L ↦ Matroid.IsFan M L b c) where
@@ -383,11 +417,11 @@ instance InvariantFun.isFan {b c : Bool} :
     simp only [SupportClass.list_supported] at hF
     rw! [isFan_iff_forall', TransferClass.pure_transfer, TransferClass.list_transfer,
       isFan_iff_forall', List.nodup_map_iff_of_injOn (by grind [hf.eq_iff]), length_map, eq_iff_iff]
-    convert Iff.rfl with a b i _ i
+    convert Iff.rfl with a b _ i
     · rw [getElem_map, bDual_map, isNonloop_map_iff _ (by grind)]
     rw [getElem_map, getElem_map, getElem_map, ← image_pair, ← image_insert_eq, bDual_map,
-      InvariantFun.map_set_image_iff (X := {F[i], F[i + 1], F[i + 2]}) (P := IsTriangle)
-        (Q := IsTriangle) (by simp [insert_subset_iff, hF])]
+      InvariantFun.map_set_image_iff (X := {F[i], F[i + 1], F[i + 2]}) (P := IsCircuit)
+        (Q := IsCircuit) (by simp [insert_subset_iff, hF])]
 
 lemma isFan_map_iff {β : Type*} {f : α → β} {b c : Bool} {hf : InjOn f M.E}
     (hF : {e | e ∈ F} ⊆ M.E) : (M.map f hf).IsFan (F.map f) b c ↔ M.IsFan F b c := by
@@ -420,70 +454,70 @@ lemma IsFan.swap_middle (h : M.IsFan F b c) (h4 : F.length = 4) :
   simp only [isFan_four_iff, ne_eq, getElem_cons_zero, getElem_cons_succ] at *
   exact ⟨h.1, h.2.1.swap_left, h.2.2.1.swap_right, h.2.2.2⟩
 
-/-- Induct by stripping two layers off the front of a fan to get a fan of the same type. -/
-@[elab_as_elim]
-lemma IsFan.induction₂
-    {motive : (M : Matroid α) → (F : List α) → (b c : Bool) → M.IsFan F b c → Prop}
-    (of_pair : ∀ M e f (he : ∀ i, (M.bDual i).IsNonloop e) (hf : ∀ i, (M.bDual i).IsNonloop f)
-      (hef : e ≠ f) d, motive M [e, f] d (!d) (isFan_pair he hf hef))
-    (of_isTriangle : ∀ M e f g d (h : (M.bDual d).IsTriangle {e, f, g}),
-      motive M [e, f, g] d d h.isFan_of_bDual)
-    (cons_cons : ∀ M e f x y F c d (h : M.IsFan (x :: y :: F) c d)
-      (hT : (M.bDual (!c)).IsTriangle {f, x, y}) (hf : f ∉ F)
-      (hT' : (M.bDual c).IsTriangle {e, f, x}) (he : e ∉ F) (hey : e ≠ y),
-      motive M _ _ _ h → motive M _ c d ((h.cons hf hT).cons_not (by grind) hT'))
-    (h : M.IsFan F b c) : motive M F b c h := by
-  obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_le h.two_le_length
-  induction k using Nat.twoStepInduction generalizing F b with
-  | zero =>
-    obtain ⟨e, f, rfl⟩ := length_eq_two.1 <| (add_zero (M := ℕ) _ ▸ hk)
-    obtain rfl | rfl := c.eq_or_eq_not b
-    · simpa using h.length_bodd_eq
-    apply of_pair _ _ _ (h.isNonloop_bDual (by simp)) (h.isNonloop_bDual (by simp))
-      (by simpa using h.nodup)
-  | one =>
-    obtain ⟨e, f, g, rfl⟩ := length_eq_three.1 <| (add_zero (M := ℕ) _ ▸ hk)
-    convert of_isTriangle M e f g b <| h.isTriangle_bDual (by simp)
-    simp [h.right_eq, show Odd 3 by decide]
-  | more n ih _ =>
-    obtain ⟨e, F, rfl, h1⟩ := h.exists_cons (by grind)
-    obtain ⟨f, F, rfl, h2⟩ := h1.exists_cons (by grind)
-    obtain ⟨x, F, rfl⟩ := F.exists_cons_of_length_pos (by grind)
-    obtain ⟨y, F, rfl⟩ := F.exists_cons_of_length_pos (by grind)
-    have hnd := h.nodup
-    exact cons_cons M e f x y F _ _ (by simpa using h2) (h1.isTriangle_bDual (by grind)) (by grind)
-      (h.isTriangle_bDual (by grind)) (by grind) (by grind) <| ih (by simpa using h2) (by grind)
+-- /-- Induct by stripping two layers off the front of a fan to get a fan of the same type. -/
+-- @[elab_as_elim]
+-- lemma IsFan.induction₂
+--     {motive : (M : Matroid α) → (F : List α) → (b c : Bool) → M.IsFan F b c → Prop}
+--     (of_pair : ∀ M e f (he : ∀ i, (M.bDual i).IsNonloop e) (hf : ∀ i, (M.bDual i).IsNonloop f)
+--       (hef : e ≠ f) d, motive M [e, f] d (!d) (isFan_pair he hf hef))
+--     (of_isTriangle : ∀ M e f g d (h : (M.bDual d).IsTriangle {e, f, g}),
+--       motive M [e, f, g] d d h.isFan_of_bDual)
+--     (cons_cons : ∀ M e f x y F c d (h : M.IsFan (x :: y :: F) c d)
+--       (hT : (M.bDual (!c)).IsTriangle {f, x, y}) (hf : f ∉ F)
+--       (hT' : (M.bDual c).IsTriangle {e, f, x}) (he : e ∉ F) (hey : e ≠ y),
+--       motive M _ _ _ h → motive M _ c d ((h.cons hf hT).cons_not (by grind) hT'))
+--     (h : M.IsFan F b c) : motive M F b c h := by
+--   obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_le h.two_le_length
+--   induction k using Nat.twoStepInduction generalizing F b with
+--   | zero =>
+--     obtain ⟨e, f, rfl⟩ := length_eq_two.1 <| (add_zero (M := ℕ) _ ▸ hk)
+--     obtain rfl | rfl := c.eq_or_eq_not b
+--     · simpa using h.length_bodd_eq
+--     apply of_pair _ _ _ (h.isNonloop_bDual (by simp)) (h.isNonloop_bDual (by simp))
+--       (by simpa using h.nodup)
+--   | one =>
+--     obtain ⟨e, f, g, rfl⟩ := length_eq_three.1 <| (add_zero (M := ℕ) _ ▸ hk)
+--     convert of_isTriangle M e f g b <| h.isTriangle_bDual (by simp)
+--     simp [h.right_eq, show Odd 3 by decide]
+--   | more n ih _ =>
+--     obtain ⟨e, F, rfl, h1⟩ := h.exists_cons (by grind)
+--     obtain ⟨f, F, rfl, h2⟩ := h1.exists_cons (by grind)
+--     obtain ⟨x, F, rfl⟩ := F.exists_cons_of_length_pos (by grind)
+--     obtain ⟨y, F, rfl⟩ := F.exists_cons_of_length_pos (by grind)
+--     have hnd := h.nodup
+--     exact cons_cons M e f x y F _ _ (by simpa using h2) (h1.isTriangle_bDual (by grind)) (by grind)
+--       (h.isTriangle_bDual (by grind)) (by grind) (by grind) <| ih (by simpa using h2) (by grind)
 
-/-- An induction principle about fans of even length. -/
-@[elab_as_elim]
-lemma IsFan.induction₂_even
-   {motive : (M : Matroid α) → (F : List α) → (b : Bool) → M.IsFan F b (!b) → Prop}
-    (of_pair : ∀ M e f (he : ∀ i, (M.bDual i).IsNonloop e) (hf : ∀ i, (M.bDual i).IsNonloop f)
-      (hef : e ≠ f) d, motive M [e, f] d (isFan_pair he hf hef))
-    (cons_cons : ∀ M e f x y F b (h : M.IsFan (x :: y :: F) b !b)
-      (hT : (M.bDual (!b)).IsTriangle {f, x, y}) (hf : f ∉ F)
-      (hT' : (M.bDual b).IsTriangle {e, f, x}) (he : e ∉ F) (hey : e ≠ y),
-      motive M _ _ h → motive M _ b ((h.cons hf hT).cons_not (by grind) hT'))
-    (h : M.IsFan F b !b) : motive M F b h := by
-  generalize hbc : (!b) = c
-  have h' : M.IsFan F b c := by rwa [← hbc]
-  induction h' using IsFan.induction₂ with
-  | of_pair => apply of_pair <;> assumption
-  | of_isTriangle => simpa using h.length_bodd_eq
-  | cons_cons => grind
+-- /-- An induction principle about fans of even length. -/
+-- @[elab_as_elim]
+-- lemma IsFan.induction₂_even
+--    {motive : (M : Matroid α) → (F : List α) → (b : Bool) → M.IsFan F b (!b) → Prop}
+--     (of_pair : ∀ M e f (he : ∀ i, (M.bDual i).IsNonloop e) (hf : ∀ i, (M.bDual i).IsNonloop f)
+--       (hef : e ≠ f) d, motive M [e, f] d (isFan_pair he hf hef))
+--     (cons_cons : ∀ M e f x y F b (h : M.IsFan (x :: y :: F) b !b)
+--       (hT : (M.bDual (!b)).IsTriangle {f, x, y}) (hf : f ∉ F)
+--       (hT' : (M.bDual b).IsTriangle {e, f, x}) (he : e ∉ F) (hey : e ≠ y),
+--       motive M _ _ h → motive M _ b ((h.cons hf hT).cons_not (by grind) hT'))
+--     (h : M.IsFan F b !b) : motive M F b h := by
+--   generalize hbc : (!b) = c
+--   have h' : M.IsFan F b c := by rwa [← hbc]
+--   induction h' using IsFan.induction₂ with
+--   | of_pair => apply of_pair <;> assumption
+--   | of_isTriangle => simpa using h.length_bodd_eq
+--   | cons_cons => grind
 
-@[elab_as_elim]
-lemma IsFan.induction₂_odd
-   {motive : (M : Matroid α) → (F : List α) → (b : Bool) → M.IsFan F b b → Prop}
-    (of_triangle : ∀ M e f g b (hT : (M.bDual b).IsTriangle {e, f, g}),
-      motive M [e, f, g] b hT.isFan_of_bDual)
-    (cons_cons : ∀ M e f x y F b (h : M.IsFan (x :: y :: F) b b)
-      (hT : (M.bDual (!b)).IsTriangle {f, x, y}) (hf : f ∉ F)
-      (hT' : (M.bDual b).IsTriangle {e, f, x}) (he : e ∉ F) (hey : e ≠ y),
-      motive M _ _ h → motive M _ b ((h.cons hf hT).cons_not (by grind) hT'))
-    (h : M.IsFan F b b) : motive M F b h := by
-  obtain ⟨c, hcb, h'⟩ : ∃ c, c = b ∧ M.IsFan F b c := ⟨b, rfl, h⟩
-  induction h' using IsFan.induction₂ with grind
+-- @[elab_as_elim]
+-- lemma IsFan.induction₂_odd
+--    {motive : (M : Matroid α) → (F : List α) → (b : Bool) → M.IsFan F b b → Prop}
+--     (of_triangle : ∀ M e f g b (hT : (M.bDual b).IsTriangle {e, f, g}),
+--       motive M [e, f, g] b hT.isFan_of_bDual)
+--     (cons_cons : ∀ M e f x y F b (h : M.IsFan (x :: y :: F) b b)
+--       (hT : (M.bDual (!b)).IsTriangle {f, x, y}) (hf : f ∉ F)
+--       (hT' : (M.bDual b).IsTriangle {e, f, x}) (he : e ∉ F) (hey : e ≠ y),
+--       motive M _ _ h → motive M _ b ((h.cons hf hT).cons_not (by grind) hT'))
+--     (h : M.IsFan F b b) : motive M F b h := by
+--   obtain ⟨c, hcb, h'⟩ : ∃ c, c = b ∧ M.fIsFan F b c := ⟨b, rfl, h⟩
+-- induction h' using IsFan.induction₂ with grind
 
 lemma IsFan.eRk_le (h : M.IsFan F b c) (hlen : 3 ≤ F.length) :
     2 * M.eRk {e | e ∈ F} ≤ F.length + 1 + b.toNat + c.toNat := by
@@ -535,71 +569,6 @@ lemma IsFan.contract_disjoint_aux (hF : M.IsFan F false c) (h4 : 4 ≤ F.length)
     (by grind), hC.closure_sdiff_singleton_eq]
   exact M.mem_closure_of_mem h0C
 
-/- Contractions preserve the property of being a fan, unless one of the ends is a joint
-spanned by the contract-set. -/
-lemma IsFan.contract_disjoint (hF : M.IsFan F b c) (h4 : 4 ≤ F.length) (hX : Disjoint {e | e ∈ F} X)
-    (hb : b = false → F[0] ∉ M.closure X) (hc : c = false → F[F.length - 1] ∉ M.closure X) :
-    (M ／ X).IsFan F b c := by
-  wlog hXE : X ⊆ M.E generalizing X with aux
-  · grind [M.closure_inter_ground X, M.contract_inter_ground_eq X]
-  rw [isFan_iff_forall (by lia), hF.length_bodd_eq, and_iff_right rfl, and_iff_right hF.nodup]
-  rintro i hi
-  rw [isTriangle_iff, and_iff_left (hF.isTriangle_getElem i hi).three_elements]
-  obtain rfl | rfl := b.eq_or_eq_not !i.bodd
-  · simp only [Bool.not_bne, bne_self_eq_false, Bool.not_false, bDual_true, dual_contract,
-      delete_isCircuit_iff, disjoint_insert_left, disjoint_singleton_left,
-      (hF.isTriad_getElem_of_eq i (by simp)).isCircuit]
-    grind
-  obtain rfl | i := i
-  · simp only [Nat.bodd_zero, Bool.not_false, Bool.not_true, forall_const] at hb
-    simpa using (hF.contract_disjoint_aux h4 hX hb hXE).isCircuit
-  obtain heq | hlt := (show i + 4 ≤ F.length from hi).eq_or_lt
-  · obtain rfl : c = false := by simpa [← heq] using hF.bool_right_eq
-    have hT := (hF.reverse.contract_disjoint_aux (by simpa) (by simpa)
-      (by simpa using hc) hXE).reverse
-    simpa [← heq] using hT.isCircuit
-  simp only [Nat.bodd_succ, Bool.not_not, bne_self_eq_false, bDual_false]
-  have hT := hF.isTriangle_getElem_of_eq (i + 1) (by simp)
-  have hTdj : Disjoint {F[i + 1], F[i + 1 + 1], F[i + 1 + 2]} X := by
-    simp only [disjoint_insert_left, disjoint_singleton_left]
-    grind
-  refine Skew.isCircuit_contract (by_contra fun hsk ↦ ?_) hT.isCircuit hTdj.symm
-  rw [skew_comm] at hsk
-  obtain ⟨C, hC, hCss, hCi, hCX⟩ := hT.isCircuit.exists_isCircuit_mem_subset_union_of_not_skew hTdj
-    (e := F[i + 2]) hsk (by simp) hXE
-  have hi1C : F[i + 1] ∈ C := (hF.isTriad_getElem_of_eq i
-    (by simp)).reverse.swap_right.mem_of_mem_of_notMem_of_is_Cocircuit (by simpa) hCi
-    (by grind [hF.nodup.getElem_inj_iff])
-  have hi3C : F[i + 3] ∈ C := (hF.isTriad_getElem_of_eq
-    (i + 2) (by simp)).swap_right.mem_of_mem_of_notMem_of_is_Cocircuit (by simpa) hCi
-    (by grind [hF.nodup.getElem_inj_iff])
-  simp [← hT.isCircuit.eq_of_subset_isCircuit hC (by grind [insert_subset_iff]),
-    hTdj.inter_eq] at hCX
-
-/-- If `N` is a minor of `M`, and `F` is a fan of `M` contained in `E(N)`, whose (co)joint ends are
-are not (co)loops of `N`, then `F` is also a fan of `N`.  -/
-lemma IsFan.minor {N : Matroid α} (hF : M.IsFan F b c) (h4 : 4 ≤ F.length) (hNM : N ≤m M)
-    (hFN : {e | e ∈ F} ⊆ N.E) (h_first : (N.bDual b).IsNonloop F[0])
-    (h_last : (N.bDual c).IsNonloop F[F.length - 1]) : N.IsFan F b c := by
-  obtain ⟨C, D, hC, hD, hCD, rfl⟩ := hNM.exists_eq_contract_delete_disjoint
-  have hCF := hF.contract_disjoint h4 (X := C) (by grind) ?_ ?_
-  · have hwin := (hCF.dual.contract_disjoint (X := D) h4 (by grind) ?_ ?_).dual
-    · simpa using hwin
-    · simp only [Bool.not_eq_eq_eq_not, Bool.not_false, dual_contract, delete_closure_eq, mem_sdiff,
-        not_and, not_not, hCD.sdiff_eq_right]
-      rintro rfl hcl
-      refine False.elim <| h_first.not_isLoop ?_
-      grind [bDual_true, dual_delete, dual_contract, contract_isLoop_iff_mem_closure,
-        delete_closure_eq, hCD.sdiff_eq_right]
-    simp only [Bool.not_eq_eq_eq_not, Bool.not_false, dual_contract, delete_closure_eq, mem_sdiff]
-    rintro rfl hcl
-    refine h_last.not_isLoop ?_
-    grind [bDual_true, dual_delete, dual_contract, contract_isLoop_iff_mem_closure,
-      delete_closure_eq]
-  · rintro rfl hcl
-    grind [bDual_false, delete_isLoop_iff, contract_isLoop_iff_mem_closure, h_first.not_isLoop]
-  rintro rfl hcl
-  grind [h_last.not_isLoop, bDual_false, delete_isLoop_iff, contract_isLoop_iff_mem_closure]
 
 -- lemma Triassic.exists_fan (hM : M.Triassic) (hfin : M.Finite) (hne : M.Nonempty)
 --     (hconn : M.TutteConnected 3) : ∃ F c, M.IsFan F false c ∧ {e | e ∈ F} = M.E := by

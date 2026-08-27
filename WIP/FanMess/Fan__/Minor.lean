@@ -1,6 +1,6 @@
 module
 
-public import Matroid.Connectivity.Fan_.Basic
+public import Matroid.Connectivity.Fan.Basic
 public import Matroid.Connectivity.Triangle
 public import Matroid.Connectivity.Separation.Vertical
 public import Mathlib.Order.Interval.Set.Fin

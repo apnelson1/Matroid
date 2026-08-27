@@ -2,6 +2,7 @@ module
 
 public import Matroid.Connectivity.Separation.Tutte
 public import Matroid.ForMathlib.List.Basic
+public import Mathlib.Data.Vector.Snoc
 public import Matroid.ForMathlib.Parity
 
 @[expose] public section
@@ -10,14 +11,14 @@ attribute [-grind] Disjoint.mono_left List.Nodup.getElem_inj List.eq_or_mem_of_m
 
 set_option linter.style.longLine false
 
-open Set List
+open Set List.Vector
 
 namespace Matroid
 
 -- variable {J : Bool → List α}
 
 variable {α : Type*} {M : Matroid α} {X Y C K T : Set α} {e f g x y : α} {b c d : Bool}
-    {L : List α} {n i j : ℕ} {F J : List α} {b c : Bool} {L : List ℕ}
+    {L : List α} {n i j : ℕ} {F J : List.Vector α n} {b c : Bool} {L : List ℕ}
 
 /-- A fan of a matroid `M` is a sequence `[e₀, f₀, e₁, f₁, ...]` of at least two
 distinct elements of `M`, where consecutive triples alternate between being triangles and triads.
@@ -38,99 +39,101 @@ statement `M.IsFan [e, f, g] false false`.
 
 If, additionally, `{f, g, h}` is a triad of `M`, then the fan `e, f, g, h` corresponds to the
 statement `M.IsFan [e, f, g, h] false true`. -/
-inductive IsFan : Matroid α → List α → Bool → Bool → Prop
+inductive IsFan : Matroid α → (n : ℕ) → List.Vector α n → Bool → Bool → Prop
   | of_pair (M : Matroid α) (b e f) (he : (M.bDual b).IsNonloop e)
-      (hf : (M.bDual !b).IsNonloop f) (hne : e ≠ f) : IsFan M [e, f] b (!b)
-  | cons_triangle (M : Matroid α) e x y F b c (h : IsFan M (x :: y :: F) b c) (heF : e ∉ F)
-      (hT : (M.bDual (!b)).IsTriangle {e, x, y}) : IsFan M (e :: x :: y :: F) (!b) c
+      (hf : (M.bDual !b).IsNonloop f) (hne : e ≠ f) : IsFan M 2 (e ::ᵥ f ::ᵥ nil) b (!b)
+  | cons_triangle (M : Matroid α) (n : ℕ) (hn : 2 ≤ n) e (F : List.Vector α n) b c
+      (h : IsFan M n F b c) (heF : e ∉ F.toList)
+      (hT : (M.bDual (!b)).IsTriangle {e, F[0], F[1]}) : IsFan M (n + 1) (e ::ᵥ F) (!b) c
 
-lemma IsFan.cons (h : M.IsFan (x :: y :: F) b c) (heF : e ∉ F)
-    (hT : (M.bDual (!b)).IsTriangle {e, x, y}) : M.IsFan (e :: x :: y :: F) (!b) c := by
+lemma IsFan.cons (h : M.IsFan n F b c) (heF : e ∉ F.toList) (hn : 2 ≤ n)
+    (hT : (M.bDual (!b)).IsTriangle {e, F[0], F[1]}) : M.IsFan (n + 1) (e ::ᵥ F) (!b) c := by
   apply IsFan.cons_triangle <;> assumption
 
-lemma IsFan.cons_not (h : M.IsFan (x :: y :: F) (!b) c) (heF : e ∉ F)
-    (hT : (M.bDual b).IsTriangle {e, x, y}) : M.IsFan (e :: x :: y :: F) b c := by
-  simpa using h.cons heF (by simpa)
+lemma IsFan.cons' {F} (h : M.IsFan (n + 2) F b c) (heF : e ∉ F.toList)
+    (hT : (M.bDual (!b)).IsTriangle {e, F[0], F[1]}) : M.IsFan (n + 3) (e ::ᵥ F) (!b) c :=
+  h.cons heF (by simp) hT
+
+lemma IsFan.cons_not (h : M.IsFan n F (!b) c) (heF : e ∉ F.toList) (hn : 2 ≤ n)
+    (hT : (M.bDual b).IsTriangle {e, F[0], F[1]}) : M.IsFan (n + 1) (e ::ᵥ F) b c := by
+  simpa using h.cons heF hn (by simpa)
 
 lemma isFan_pair {b} (he : (M.bDual b).IsNonloop e) (hf : (M.bDual (!b)).IsNonloop f)
-    (hef : e ≠ f) : M.IsFan [e, f] b (!b) :=
+    (hef : e ≠ f) : M.IsFan 2 (e ::ᵥ f ::ᵥ nil) b (!b) :=
   IsFan.of_pair _ _ _ _ he hf hef
 
 lemma isFan_pair_not {b} (he : (M.bDual !b).IsNonloop e) (hf : (M.bDual b).IsNonloop f)
-    (hef : e ≠ f) : M.IsFan [e, f] (!b) b :=
+    (hef : e ≠ f) : M.IsFan 2 (e ::ᵥ f ::ᵥ nil) (!b) b :=
   by simpa using isFan_pair he (by simpa using hf) hef (b := !b)
 
-lemma IsFan.dual (h : M.IsFan F b c) : M✶.IsFan F (!b) (!c) := by
+lemma IsFan.dual (h : M.IsFan n F b c) : M✶.IsFan n F (!b) (!c) := by
   induction h with
   | of_pair b e f he hf hef =>
       exact isFan_pair (by simpa [and_comm] using he) (by simpa [and_comm] using hf) hef
-  | cons_triangle e x y F b c h heF hT ih => exact ih.cons heF <| by simpa
+  | cons_triangle n hn e F b c h heF hT ih => exact ih.cons heF hn (by simpa)
 
-lemma IsTriangle.isFan_of_bDual (h : (M.bDual b).IsTriangle {e, f, g}) : M.IsFan [e, f, g] b b :=
+lemma IsTriangle.isFan_of_bDual (h : (M.bDual b).IsTriangle {e, f, g}) :
+    M.IsFan 3 (e ::ᵥ f ::ᵥ g ::ᵥ nil) b b :=
   (isFan_pair_not (by simpa [IsNonColoop] using h.isNonColoop₂) h.isNonloop₃ h.ne₂₃).cons_not
-    (by simp) h
+    (by simp [h.ne₁₂, h.ne₁₃]) rfl.le (by simpa)
 
-lemma IsTriangle.isFan (h : M.IsTriangle {e, f, g}) : M.IsFan [e, f, g] false false :=
+lemma IsTriangle.isFan (h : M.IsTriangle {e, f, g}) : M.IsFan 3 ⟨[e, f, g], rfl⟩ false false :=
   IsTriangle.isFan_of_bDual (b := false) h
 
-lemma IsFan.of_dual (h : M✶.IsFan F b c) : M.IsFan F (!b) (!c) := by
+lemma IsFan.congr {m : ℕ} {b' c' : Bool} (h : M.IsFan n F b c) {F' : List.Vector α m}
+    (hmn : m = n) (hF : F.1 = F'.1) (hb : b = b') (hc : c = c') : M.IsFan m F' b' c' := by
+  subst hmn hb hc
+  rwa [List.Vector.eq _ _ hF.symm]
+
+lemma IsFan.of_dual (h : M✶.IsFan n F b c) : M.IsFan n F (!b) (!c) := by
   simpa using h.dual
 
 @[simp]
-lemma isFan_dual_iff : M✶.IsFan F b c ↔ M.IsFan F (!b) (!c) :=
+lemma isFan_dual_iff : M✶.IsFan n F b c ↔ M.IsFan n F (!b) (!c) :=
   ⟨fun h ↦ by simpa using h.dual, fun h ↦ by simpa using h.dual⟩
 
-lemma isFan_dual_bnot_iff : M✶.IsFan F (!b) (!c) ↔ M.IsFan F b c := by
+lemma isFan_dual_bnot_iff : M✶.IsFan n F (!b) (!c) ↔ M.IsFan n F b c := by
   simp
 
 @[simp]
-lemma isFan_bDual_iff : (M.bDual d).IsFan F b c ↔ M.IsFan F (b != d) (c != d) := by
+lemma isFan_bDual_iff : (M.bDual d).IsFan n F b c ↔ M.IsFan n F (b != d) (c != d) := by
   cases d with simp
 
 alias ⟨IsFan.of_bDual, _⟩ := isFan_bDual_iff
 
-lemma IsFan.bDual (h : M.IsFan F b c) (d : Bool) : (M.bDual d).IsFan F (b != d) (c != d) := by
+lemma IsFan.bDual (h : M.IsFan n F b c) (d : Bool) : (M.bDual d).IsFan n F (b != d) (c != d) := by
   simpa
 
-lemma IsFan.length_bodd_eq (h : M.IsFan F b c) : F.length.bodd = (b == c) := by
+lemma IsFan.length_bodd_eq (h : M.IsFan n F b c) : n.bodd = (b == c) := by
   induction h with
   | of_pair => simp
   | cons_triangle e x y F b => cases b with simp_all
 
-lemma IsFan.bool_right_eq (h : M.IsFan F b c) : c = (b == F.length.bodd) := by
+lemma IsFan.bool_right_eq (h : M.IsFan n F b c) : c = (b == n.bodd) := by
   simp [h.length_bodd_eq]
 
-lemma IsFan.bool_left_eq (h : M.IsFan F b c) : b = (c == F.length.bodd) := by
+lemma IsFan.bool_left_eq (h : M.IsFan n F b c) : b = (c == n.bodd) := by
   cases b with simp [h.length_bodd_eq]
 
 @[grind →]
-lemma IsFan.two_le_length (h : M.IsFan F b c) : 2 ≤ F.length := by
-  induction h with simp_all
+lemma IsFan.two_le_length (h : M.IsFan n F b c) : 2 ≤ n := by
+  induction h with lia
 
-lemma IsFan.neZero (h : M.IsFan F b c) : NeZero F.length := ⟨by grind⟩
+lemma IsFan.neZero (h : M.IsFan n F b c) : NeZero n := ⟨by grind⟩
 
-lemma IsFan.fact_one_lt_length (h : M.IsFan F b c) : Fact (1 < F.length) := ⟨by grind⟩
+lemma IsFan.fact_one_lt_length (h : M.IsFan n F b c) : Fact (1 < n) := ⟨by grind⟩
 
-lemma IsFan.length_sub_one_bodd_eq (h : M.IsFan F b c) : (F.length - 1).bodd = (b != c) := by
+lemma IsFan.length_sub_one_bodd_eq (h : M.IsFan n F b c) : (n - 1).bodd = (b != c) := by
   rw [Nat.bodd_sub (by grind)]
   simp [h.length_bodd_eq]
 
-lemma IsFan.val_one (h : M.IsFan F b c) (hF : NeZero F.length := h.neZero) :
-    (1 : Fin F.length).1 = 1 := by
-  simp [Nat.mod_eq_of_lt h.fact_one_lt_length.elim]
-
-lemma IsFan.val_two (h : M.IsFan F b c) (hF : 3 ≤ F.length) (hF : NeZero F.length := h.neZero) :
-    (2 : Fin F.length).1 = 2 := by
-  simp only [Fin.coe_ofNat_eq_mod, Nat.mod_eq_of_lt (show 2 < F.length by lia)]
-
 @[grind →]
-lemma IsFan.three_le_length (h : M.IsFan F b b) : 3 ≤ F.length := by
-  obtain h2 | h3 := h.two_le_length.eq_or_lt
-  · have hcon := h2 ▸ h.length_bodd_eq
-    simp at hcon
+lemma IsFan.three_le_length (h : M.IsFan n F b b) : 3 ≤ n := by
+  obtain rfl | h3 := h.two_le_length.eq_or_lt
+  · simpa using h.length_bodd_eq
   lia
 
-lemma IsFan.mod_lt_length (h : M.IsFan F b c) (i : ℕ) : i % F.length < F.length :=
+lemma IsFan.mod_lt_length (h : M.IsFan n F b c) (i : ℕ) : i % n < n :=
   Nat.mod_lt i (by grind)
 
 macro_rules
@@ -138,31 +141,44 @@ macro_rules
     `(tactic| grind[IsFan.two_le_length, IsFan.three_le_length, IsFan.mod_lt_length,
       List.length_rotate, Nat.add_one_lt_of_bodd_eq])
 
-lemma IsFan.ne_nil (h : M.IsFan F b c) : F ≠ [] := by
-  grind [h.two_le_length]
+-- lemma IsFan.ne_nil (h : M.IsFan n F b c) : F ≠ ⟨[], rfl⟩ := by
+--   grind [h.two_le_length]
 
 @[simp]
-lemma not_isFan_nil : ¬ M.IsFan [] b c :=
-  fun h ↦ h.ne_nil rfl
-
-@[simp]
-lemma not_isFan_single : ¬ M.IsFan [e] b c :=
+lemma not_isFan_nil : ¬ M.IsFan 0 ⟨[], rfl⟩ b c :=
   fun h ↦ by simpa using h.two_le_length
 
-lemma IsFan.cons' (h : M.IsFan F b c) (heF : e ∉ F)  (hT : (M.bDual !b).IsTriangle
-    {e, F.head h.ne_nil, F.tail.head (by grind [length_tail, h.two_le_length])}) :
-    M.IsFan (e :: F) (!b) c := by
-  cases h with
-  | of_pair => simpa using hT.isFan_of_bDual
-  | cons_triangle e x y F b c h he'F hT' =>
-    simpa using (h.cons he'F hT').cons (by grind) (by simpa using hT)
+@[simp]
+lemma not_isFan_single : ¬ M.IsFan 1 ⟨[e], rfl⟩ b c :=
+  fun h ↦ by simpa using h.two_le_length
 
-lemma IsFan.concat (h : M.IsFan F b c) (hT : (M.bDual (!c)).IsTriangle
-    {F.dropLast.getLast (by grind [length_dropLast, h.two_le_length]), (F.getLast h.ne_nil), e})
-    (heL : e ∉ F) : M.IsFan (F.concat e) b !c := by
+-- lemma IsFan.cons' (h : M.IsFan n F b c) (heF : e ∉ F)  (hT : (M.bDual !b).IsTriangle
+--     {e, F.head h.ne_nil, F.tail.head (by grind [length_tail, h.two_le_length])}) :
+--     M.IsFan (e :: F) (!b) c := by
+--   cases h with
+--   | of_pair => simpa using hT.isFan_of_bDual
+--   | cons_triangle e x y F b c h he'F hT' =>
+--     simpa using (h.cons he'F hT').cons (by grind) (by simpa using hT)
+
+lemma IsFan.concat (h : M.IsFan n F b c) (heL : e ∉ F.toList)
+    (hT : (M.bDual (!c)).IsTriangle {F[n - 2], F[n - 1], e}) : M.IsFan (n + 1) (F.snoc e) b !c := by
+  obtain rfl | rfl | n := n
+  · simpa using h.two_le_length
+  · simpa using h.two_le_length
   induction h with
-  | of_pair => simpa using hT.isFan_of_bDual
-  | cons_triangle => grind [IsFan.cons]
+  | of_pair b x y hx hy hne =>
+    exact hT.isFan_of_bDual.congr rfl (by simp [List.Vector.getElem_def]) (by simp) rfl
+
+
+  | cons_triangle n hn x F b c h hxF hT ih =>
+    simp only [toList_cons, List.mem_cons, not_or] at heL
+    simp at hT
+    _
+    -- {F.dropLast.getLast (by grind [length_dropLast, h.two_le_length]), (F.getLast h.ne_nil), e})
+
+  -- induction h with
+  -- | of_pair => simpa using hT.isFan_of_bDual
+  -- | cons_triangle => grind [IsFan.cons]
 
 lemma IsFan.nodup (h : M.IsFan F b c) : F.Nodup := by
   induction h with grind

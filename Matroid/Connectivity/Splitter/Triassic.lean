@@ -1,6 +1,7 @@
 module
 
 public import Matroid.Connectivity.Fan.ThreeConnected
+public import Matroid.Connectivity.Fan.Wheel
 public import Matroid.Connectivity.Splitter.Cretaceous
 
 @[expose] public section
@@ -23,7 +24,7 @@ lemma Simple.nonempty_isoMinor_deleteElem_of_parallel (hN : N.Simple) (hNM : N �
   · obtain ⟨i⟩ := aux hef.symm hne.symm (by grind)
     rw [hef.parallel'.deleteElem_eq_mapEquiv]
     exact ⟨i.trans_iso <| isoMapEquiv ..⟩
-  suffices aux : M₀ ≤m M ＼ {e} ∨ M₀ ≤m M ＼ {f}
+  suffices aux : (M₀ ≤m (M ＼ {e})) ∨ M₀ ≤m M ＼ {f}
   · obtain h | h := aux
     · exact ⟨i.transIsMinor h⟩
     rw [hef.parallel'.deleteElem_eq_mapEquiv]
@@ -39,6 +40,7 @@ lemma Simple.nonempty_isoMinor_deleteElem_of_parallel (hN : N.Simple) (hNM : N �
     exact hcon.1 <| hf.trans <| contract_delete_isMinor_delete _ (by simpa using hne.symm)
   by_cases heE : e ∈ M₀.E
   · exact hne (hef.parallel'.of_isMinor hM₀ heE (hefM₀ heE)).eq
+  -- have := hM₀.exists_isMinor_removeElem heE
   simpa [hcon.1, hec] using hM₀.exists_isMinor_removeElem heE
 
 /-- If `M ／ {e}` has an `N`-minor for some simple `N`, then `M ＼ {f}` has an `N`-minor for
@@ -184,7 +186,8 @@ private lemma splitter_small {N : Matroid α} (hM : M.TutteConnected 3) (h5 : M.
   obtain rfl | ⟨e, heD⟩ := D.eq_empty_or_nonempty
   · simp [isStrictMinor_irrefl] at hNM
   simp_rw [contract_empty] at *
-  have hmin : M ＼ D ≤m M.remove false {e}:= (delete_isRestriction_of_subset _ (by simpa)).isMinor
+  have hmin : (M ＼ D) ≤m M.remove false {e} :=
+    (delete_isRestriction_of_subset _ (by simpa)).isMinor
   refine ⟨e, false, hD.subset_ground heD, ⟨hmin.isoMinor⟩, ?_⟩
   apply TutteConnected.tutteConnected_of_tutteConnected_isSpanningRestriction hN hM
     hD.delete_isSpanningRestriction hmin (remove_isMinor ..)
