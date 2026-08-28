@@ -1,6 +1,6 @@
 module
 
-public import Matroid.Parallel
+public import Matroid.Parallel.Basic
 public import Matroid.Minor.Iso
 public import Matroid.ForMathlib.Card
 public import Matroid.Closure

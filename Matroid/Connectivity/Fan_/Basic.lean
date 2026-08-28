@@ -209,6 +209,19 @@ lemma isFan_of_forall_isCircuit (hnd : F.Nodup) (hc : c = (b == F.length.bodd))
     · simpa [add_assoc] using hT (i + 1) (by grind)
     cases b with simpa using ih'
 
+lemma isFan_of_forall_isCircuit_getElem_fin [NeZero F.length] (hnd : F.Nodup)
+    (hc : c = (b == F.length.bodd))
+    (hnl : F.length ≤ 2 → ∀ i : Fin F.length, (M.bDual (b != i.1.bodd)).IsNonloop (F[i.1]))
+    (hT : ∀ i : Fin F.length, i ≠ ⊤ → i + 1 ≠ ⊤ →
+      (M.bDual (b != i.1.bodd)).IsCircuit {F[i.1], F[(i + 1).1], F[(i + 2).1]}) :
+    M.IsFan F b c := by
+  refine isFan_of_forall_isCircuit hnd hc (by simpa [Fin.forall_iff] using hnl) fun i hi ↦ ?_
+  simp only [ne_eq, ← Fin.val_inj, Fin.val_top, Fin.val_add, Fin.coe_ofNat_eq_mod, Nat.add_mod_mod,
+    Fin.forall_iff] at hT
+  specialize hT i
+  rw! [Nat.mod_eq_of_lt (by lia), Nat.mod_eq_of_lt hi] at hT
+  exact hT (by lia) (by lia) (by lia)
+
 lemma IsFan.isTriangle_getElem (h : M.IsFan F b c) (i) (hi : i + 2 < F.length := by lia) :
     (M.bDual (b != i.bodd)).IsTriangle {F[i], F[i + 1], F[i + 2]} := by
   induction h generalizing i with

@@ -191,7 +191,7 @@ public import Matroid.OnUniv
 public import Matroid.Order.Discrepancy
 public import Matroid.Order.Quotient
 public import Matroid.Order.Weak
-public import Matroid.Parallel
+public import Matroid.Parallel.Basic
 public import Matroid.Rank.Cardinal
 public import Matroid.Rank.ENat
 public import Matroid.Rank.Nat
