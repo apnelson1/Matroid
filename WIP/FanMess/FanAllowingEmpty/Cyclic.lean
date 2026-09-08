@@ -45,6 +45,10 @@ lemma IsCyclicFan.isTriad_end (hF : M.IsCyclicFan F b) (hF3 : 3 ≤ F.length) :
   · simp [hF.isFan.nodup.getElem_inj_iff]
   simp [hF.isFan.nodup.getElem_inj_iff, show F.length - 1 ≠ 0 by grind, show F.length ≠ 2 by lia]
 
+@[simp]
+lemma isCyclicFan_nil {b} : M.IsCyclicFan [] b := by
+  simp [isCyclicFan_iff]
+
 lemma isCyclicFan_two_iff (h2 : F.length = 2) : M.IsCyclicFan F b ↔
     F[0] ≠ F[1] ∧ ((∀ d, (M.bDual d).Parallel F[0] F[1]) ∨
     (∀ d, (M.bDual (b == d)).IsLoop F[d.toNat])) := by
@@ -94,7 +98,13 @@ lemma IsCyclicFan.one_lt_length (h : M.IsCyclicFan F b) [NeZero F.length] : Fact
   ⟨by grind⟩
 
 @[grind! .]
-lemma IsCyclicFan.length_eq_or_ge (h : M.IsCyclicFan F b) :
+lemma IsCyclicFan.eq_nil_or_ge (h : M.IsCyclicFan F b) :
+    F = [] ∨ 2 ≤ F.length := by
+  rw [← length_eq_zero_iff]
+  grind
+
+@[grind! .]
+lemma IsCyclicFan.eq_nil_or_two_or_ge (h : M.IsCyclicFan F b) :
     F = [] ∨ F.length = 2 ∨ 4 ≤ F.length := by
   rw [← length_eq_zero_iff]
   grind
@@ -104,7 +114,7 @@ lemma IsCyclicFan.length_sub_one_bodd (h : M.IsCyclicFan F b) (h0 : F ≠ []) :
   simpa using h.isFan.length_sub_one_bodd_eq (by simpa)
 
 lemma IsCyclicFan.length_sub_two_bodd (h : M.IsCyclicFan F b) : (F.length - 2).bodd = false := by
-  obtain rfl | h2 | h4 := h.length_eq_or_ge
+  obtain rfl | h2 | h4 := h.eq_nil_or_two_or_ge
   · simp
   all_goals
   rw [bodd_sub (by grind)]
@@ -143,46 +153,32 @@ lemma isCyclicFan_of_forall (M : Matroid α) (F : List α) [NeZero F.length] (b 
         ((M.bDual (b != i.1.bodd)).IsCircuit {F[i.1], F[(i + 1).1], F[(i + 2).1]})) :
     M.IsCyclicFan F b := by
   have : Fact (1 < F.length) := ⟨by lia⟩
-  replace hmod : ∀ (i : Fin F.length), (M.bDual (b != i.1.bodd)).IsTriangle
-      {F[i.1], F[(i + 1).1], F[(i + 2).1]} := by
-    refine fun i ↦ ⟨hmod i, ?_⟩
-    rw [encard_insert_of_notMem, encard_pair, show (2 : ℕ∞) + 1 = 3 from rfl]
-    · simp only [ne_eq, hnd.getElem_inj_iff, val_inj, add_right_inj]
-      simp [← Fin.val_inj, show 2 < F.length by lia, Nat.mod_eq_of_lt]
-    simp only [Set.mem_insert_iff, hnd.getElem_inj_iff, val_inj, left_eq_add, one_eq_zero_iff,
-      show F.length ≠ 1 by lia, mem_singleton_iff, false_or]
-    simp [← Fin.val_inj, show 2 < F.length by lia, Nat.mod_eq_of_lt]
-  have hT : (M.bDual (b != F.length.bodd)).IsTriangle {F[F.length - 2], F[F.length - 1], F[0]} := by
+  have hT : (M.bDual (b != F.length.bodd)).IsCircuit {F[F.length - 2], F[F.length - 1], F[0]} := by
     specialize hmod (-2)
     rw! [Fin.val_neg', coe_ofNat_eq_mod, mod_eq_of_lt (show 2 < F.length by lia),
       mod_eq_of_lt (by lia), bodd_sub (by lia), bodd_two, Bool.bne_false,
         show (-2 : Fin F.length) + 1 = -1 by grind, Fin.neg_one, Fin.val_top,
         neg_add_cancel, val_zero] at hmod
     assumption
+  -- `F` has even length, since otherwise we have a problem with orthogonality.
   obtain hodd | heven := F.length.bodd.eq_false_or_eq_true
-  · obtain h4 | h5 := hF.eq_or_lt
-    · simp [← h4] at hodd
-    have hT' : (M.bDual b).IsTriangle {F[0], F[1], F[2]} := by
+  · obtain hF | hF := hF.eq_or_lt
+    · simp [hF.symm] at hodd
+    obtain ⟨x, hx, hne⟩ := (hT.isCocircuit_inter_nontrivial (by simpa [hodd] using hmod 0)
+      ⟨F[0], by simp⟩).exists_ne F[0]
+    rw! [pair_comm, insert_comm, inter_comm, ← insert_inter_distrib, Set.mem_insert_iff,
+      or_iff_right hne, insert_inter_of_notMem, Nat.mod_eq_of_lt (by lia),
+      singleton_inter_of_notMem] at hx
+    · simp at hx
+    · simp [hnd.getElem_inj_iff, show 2 ≠ F.length - 1 by lia, show 2 ≠ F.length - 2 by lia]
+    simp [hnd.getElem_inj_iff, show 1 ≠ F.length - 2 by lia, show 1 ≠ F.length - 1 by lia]
+  refine ⟨isFan_of_forall_isCircuit_getElem_fin hnd (by simp [heven]) (by lia)
+    (fun i _ _ ↦ by simpa using hmod i), fun h2 h0 ↦ (by simpa [heven] using hT), fun h2 h0 ↦ ?_⟩
 
-      simpa [Nat.mod_eq_of_lt (show 2 < F.length by lia)] using hmod 0
-    have := hT.reverse.mem_or_mem_of_isCircuit_bDual (K := {F[0], F[1], F[2]})
-      (by simpa [hodd] using hT'.isCircuit)
-    simp only [Set.mem_insert_iff, hnd.getElem_inj_iff, _root_.zero_ne_one, mem_singleton_iff,
-      OfNat.zero_ne_ofNat, or_self, or_false, pred_eq_succ_iff, zero_add, Nat.reduceAdd,
-      forall_const] at this
-    lia
-  refine ⟨?_, fun _ ↦ ?_, fun _ ↦ ?_⟩
-  · refine isFan_of_forall_triangle_get (by lia) hnd (by simp [heven]) (by lia)
-      fun i hi hi' ↦ ?_
-    have hT := hmod (i - 1)
-    rw! [Fin.bodd_val_sub_one hi, show i - 1 + 2 = i + 1 by grind, sub_add_cancel] at hT
-    cases b with simpa using hT.isCircuit
-  · simpa [heven] using hT.isCircuit
-  have hT := hmod ⊤
-  rw! [val_top, bodd_sub (by lia), bodd_one, heven, Bool.false_bne, Bool.bne_true,
-    ← Fin.one_add_one, ← add_assoc, top_add_one, val_zero, zero_add, Fin.val_one',
-    one_mod'] at hT
-  exact hT.isCircuit
+  suffices hrw : (⊤ + 2 : Fin F.length).1 = 1 by
+    simpa [bodd_sub (show 1 ≤ F.length by lia), heven, hrw] using hmod ⊤
+  rw! [← Fin.one_add_one, ← add_assoc, top_add_one, zero_add, Fin.val_one', one_mod']
+  rfl
 
 /-- A version of `isCyclicFan_of_forall` that doesn't use `NeZero`. -/
 lemma isCyclicFan_of_forall_get {M : Matroid α} {F : List α} {b : Bool} (hF : 4 ≤ F.length)
@@ -206,25 +202,27 @@ lemma IsCyclicFan.rotate (h : M.IsCyclicFan F b) (n : ℕ) :
   · clear hn
     induction n generalizing M F b with | zero => simpa | succ n ih => simpa using aux (ih h) 1 rfl
   subst hn
-  by_cases h2 : F.length = 2
+  obtain rfl | h2 | h4 := h.eq_nil_or_two_or_ge
+  · simp [isCyclicFan_iff]
   · obtain ⟨x, y, rfl⟩ := length_eq_two.1 h2
     simpa using h.reverse
-  have := h.isFan.neZero
-  have : NeZero (F.rotate 1).length := by simpa using h.isFan.neZero
+  have hnz : NeZero F.length := ⟨by lia⟩
+  have : NeZero (F.rotate 1).length := by simpa
   refine M.isCyclicFan_of_forall (F.rotate 1) _ (by grind [length_rotate])
       (by simpa using h.isFan.nodup) fun i ↦ ?_
   rw! [rotate_getElem_fin, rotate_getElem_fin, rotate_getElem_fin, Fin.cast_add, Fin.cast_one,
     Fin.cast_add, Fin.cast_one, add_right_comm, Fin.cast_add i 2, Fin.cast_ofNat (k := 2),
     add_right_comm _ 2, Bool.bne_assoc]
-  have hwin := (h.isTriangle_getElem_fin h2 (i.cast (by simp) + 1)).isCircuit
+  have hwin := (h.isTriangle_getElem_fin (by lia) (i.cast (by simp) + 1)).isCircuit
   simpa [Fin.bodd_val_add_of_even, h.even, mod_bodd] using hwin
-
 
 open Fin.NatCast in
 lemma IsCyclicFan.of_rotate {n : ℕ} (h : (M.IsCyclicFan (F.rotate n) (b != n.bodd))) :
     M.IsCyclicFan F b := by
   have heven : F.length.bodd = false := by simpa using h.even
-  have : NeZero F.length := ⟨by grind [h.length_eq_or_ge, length_rotate]⟩
+  obtain h0 | hne := eq_or_ne F.length 0
+  · simp [eq_nil_of_length_eq_zero h0]
+  have : NeZero F.length := ⟨by lia⟩
   rw [← rotate_rotate_neg_fin_self (a := (n : Fin F.length)), Fin.val_natCast, rotate_mod]
   convert h.rotate _
   cases b with simp [Fin.bodd_val_neg_of_even, Nat.mod_bodd, heven]
@@ -234,15 +232,17 @@ lemma IsCyclicFan.map (h : M.IsCyclicFan F b) {β : Type*} {φ : α → β} (hφ
     (M.map φ hφ).IsCyclicFan (F.map φ) b := by
   have hrw (b : Bool) : (M.map φ hφ).bDual b = (M.bDual b).map φ (by simpa) := by
     cases b with simp
-  simp_rw [isCyclicFan_iff, h.isFan.map, bDual_map hφ, getElem_map, ← image_pair,
-    ← image_insert_eq, length_map, exists_true_left]
+  obtain rfl | hle := h.eq_nil_or_ge
+  · simp
+  simp only [isCyclicFan_iff, h.isFan.map, length_map, hle, bDual_map hφ, getElem_map, ← image_pair,
+    ← image_insert_eq, forall_true_left, true_and]
   rw [(M.bDual !b).isNonloop_map_iff _ (by simpa using h.isFan.subset_ground (by simp)),
     (M.bDual b).isNonloop_map_iff _ (by simpa using h.isFan.subset_ground (by simp)),
     InvariantFun.map_set_image_iff (P := IsCircuit) (Q := IsCircuit)
       (by simp [insert_subset_iff, h.isFan.getElem_mem_ground]),
     InvariantFun.map_set_image_iff (P := IsCircuit) (Q := IsCircuit)
       (by simp [insert_subset_iff, h.isFan.getElem_mem_ground])]
-  exact ⟨h.imp_left, h.imp_right⟩
+  exact ⟨h.imp_left hle, h.imp_right hle⟩
 
 lemma IsCyclicFan.dual (h : M.IsCyclicFan F b) : M✶.IsCyclicFan F (!b) :=
   ⟨by simpa using h.isFan.dual, by simpa using h.imp_left, by simpa using h.imp_right⟩
@@ -263,17 +263,21 @@ lemma IsCyclicFan.of_bDual (h : (M.bDual c).IsCyclicFan F b) : M.IsCyclicFan F (
 /-- A fan on the ground set of a simple, cosimple matroid is cyclic. -/
 lemma IsFan.isCyclicFan_of_ground_eq (hF : M.IsFan F b c) (hM : M.Simple) (hM' : M✶.Simple)
     (hE : {e | e ∈ F} = M.E) : c = !b ∧ M.IsCyclicFan F b := by
+  obtain rfl | hne := eq_or_ne F []
+  · simp [hF.bool_right_eq]
+  have h4 := hF.length_ge_four_of_eq_ground hE hne
   obtain ⟨h_even, hT⟩ := hF.isTriangle_bDual_of_simple (n := F.length - 2) (by grind) hM hM' hE
   obtain ⟨-, hT'⟩ := hF.reverse.dual.isTriangle_bDual_of_simple (n := F.length - 2) (by grind) hM'
     (by simpa) (by simpa)
   obtain rfl : c = !b := by simpa [h_even] using hF.bool_right_eq
-  refine ⟨rfl, ⟨hF, fun _ ↦ ?_, fun _ ↦ ?_⟩⟩
+  refine ⟨rfl, ⟨hF, fun _ _ ↦ ?_, fun _ _ ↦ ?_⟩⟩
   · simpa [show F.length - 2 + 1 = F.length - 1 by grind] using hT.isCircuit
   simpa [show F.length - 1 - (F.length - 2) = 1 by grind,
     show F.length - 1 - (F.length - 2 + 1) = 0 by lia] using hT'.reverse.isCircuit
 
 lemma IsCyclicFan.eConn_eq (h : M.IsCyclicFan F b) : M.eConn {e | e ∈ F} = 0 := by
-  obtain h2 | h2 := eq_or_ne F.length 2
+  obtain rfl | h2 | h4 := h.eq_nil_or_two_or_ge
+  · simp
   · obtain ⟨x, y, rfl⟩ := length_eq_two.1 h2
     rw [isCyclicFan_two_iff rfl] at h
     simp only [getElem_cons_zero, getElem_cons_succ, ne_eq, Bool.forall_bool, bDual_false,
@@ -287,29 +291,30 @@ lemma IsCyclicFan.eConn_eq (h : M.IsCyclicFan F b) : M.eConn {e | e ∈ F} = 0 :
     have : {x, y} ⊆ M.E := pair_subset (by simpa using hx.mem_ground) (by simpa using hy.mem_ground)
     exact eConn_eq_zero_of_dep_dep (by simp) (hy.dep.superset (by simp) (by simpa))
       (by simpa using hx.dep.superset (by simp) (by simpa))
-  refine h.isFan.eConn_eq_zero_of_mem_closure_mem_closure ?_ ?_
-  · refine mem_of_mem_of_subset (h.isTriad_end h2).mem_closure₂ <| closure_subset_closure _ ?_
-    exact pair_subset (getElem_mem_tail _ (by grind) _) (getElem_mem_tail _ (by grind) _)
-  refine mem_of_mem_of_subset (h.isTriangle_end h2).mem_closure₂ <| closure_subset_closure _ ?_
-  exact pair_subset (getElem_mem_dropLast (by grind)) (getElem_mem_dropLast (by grind))
+  refine h.isFan.eConn_eq_zero_of_mem_closure_mem_closure (by grind) ?_ ?_
+  · exact mem_of_mem_of_subset (h.isTriad_end (by lia)).mem_closure₂ <| closure_subset_closure _ <|
+      pair_subset (getElem_mem_tail _ (by grind) _) (getElem_mem_tail _ (by grind) _)
+  exact mem_of_mem_of_subset (h.isTriangle_end (by lia)).mem_closure₂ <| closure_subset_closure _
+    <| pair_subset (getElem_mem_dropLast (by grind)) (getElem_mem_dropLast (by grind))
 
 /-- A cyclic fan in a `2`-connected matroid is the entire ground set.
 The hypothesis is slightly weakened to allow `M` to be a `1`-wheel, which is not `2`-connected . -/
-lemma IsCyclicFan.setOf_eq_ground (h : M.IsCyclicFan F b)
+lemma IsCyclicFan.setOf_eq_ground (h : M.IsCyclicFan F b) (hF : F ≠ [])
     (hM : 2 < M.E.encard → M.TutteConnected 2) : {e | e ∈ F} = M.E := by
   have hne : M.Nonempty := ⟨F[0], h.isFan.subset_ground (by simp)⟩
   by_cases hMc : M.TutteConnected 2
   · exact (hMc.connected rfl.le).eq_ground_of_eConn_eq_zero h.eConn_eq ⟨F[0], by simp⟩
       h.isFan.subset_ground
   refine Finite.eq_of_subset_of_encard_le (by simp) h.isFan.subset_ground ?_
-  grw [h.isFan.nodup.encard_toSet_eq, ← h.isFan.two_le_length, not_lt.1 (mt hM hMc)]
+  grw [h.isFan.nodup.encard_toSet_eq, ← show 2 ≤ F.length by grind, not_lt.1 (mt hM hMc)]
   rfl
 
-lemma IsCyclicFan.restrict_connected (hF : M.IsCyclicFan F b) (hF2 : F.length ≠ 2) :
+lemma IsCyclicFan.restrict_connected (hF : M.IsCyclicFan F b) (h3 : 3 ≤ F.length) :
     (M ↾ {e | e ∈ F}).Connected := by
   wlog hb : b = false generalizing F b with aux
   · obtain rfl : b = true := by grind
     simpa using aux hF.reverse (by simpa) rfl
+  have h4 : 4 ≤ F.length := by grind [hF.eq_nil_or_two_or_ge]
   subst hb
   refine connected_iff_exists.2 ⟨F[0], by simp, fun f hf ↦ ?_⟩
   obtain ⟨rfl | i, hi, rfl⟩ := getElem_of_mem hf
@@ -318,7 +323,7 @@ lemma IsCyclicFan.restrict_connected (hF : M.IsCyclicFan F b) (hF2 : F.length �
     obtain ⟨C, hCss, hC, h0C, hiC⟩ := hC
     exact (hC.isCircuit_restrict_of_subset hCss).mem_connectedTo_mem h0C hiC
   obtain hi' | hne := eq_or_ne (i + 2) F.length
-  · exact ⟨_, by simp [insert_subset_iff], (hF.isTriangle_end hF2).isCircuit,
+  · exact ⟨_, by simp [insert_subset_iff], (hF.isTriangle_end (by lia)).isCircuit,
       by simp, by simp [← hi']⟩
   have hC := hF.isFan.isCircuit_interval (p := 0) (q := i + 1 + (!i.bodd).toNat) (by lia) (by grind)
     rfl (by simp) (by simp)
@@ -326,13 +331,13 @@ lemma IsCyclicFan.restrict_connected (hF : M.IsCyclicFan F b) (hF2 : F.length �
   exact getElem_mem_image_getElem_preimage_val <| by simp
 
 /-- A cyclic fan is the entire matroid iff the matroid is connected. -/
-lemma IsCyclicFan.setOf_eq_ground_iff (hF : M.IsCyclicFan F b) (hF2 : F.length ≠ 2) :
+lemma IsCyclicFan.setOf_eq_ground_iff (hF : M.IsCyclicFan F b) (h3 : 3 ≤ F.length) :
     {e | e ∈ F} = M.E ↔ M.Connected := by
-  refine ⟨fun h ↦ ?_, fun h ↦ hF.setOf_eq_ground fun _ ↦ h.tutteConnected_two⟩
+  refine ⟨fun h ↦ ?_, fun h ↦ hF.setOf_eq_ground (by grind) fun _ ↦ h.tutteConnected_two⟩
   rw [← M.restrict_ground_eq_self]
-  exact h ▸ hF.restrict_connected hF2
+  exact h ▸ hF.restrict_connected h3
 
-lemma IsCyclicFan.setOf_eq_ground_iff' (hF : M.IsCyclicFan F b) :
+lemma IsCyclicFan.setOf_eq_ground_iff' (hF : M.IsCyclicFan F b) (h3 : 3 ≤ F.length) :
     {e | e ∈ F} = M.E ↔ (2 < M.E.encard → M.TutteConnected 2) := by
   refine ⟨fun h h2 ↦ ?_, hF.setOf_eq_ground⟩
   rw [← h, hF.isFan.nodup.encard_toSet_eq, show (2 : ℕ∞) = (2 : ℕ) from rfl, Nat.cast_lt] at h2

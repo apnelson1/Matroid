@@ -106,6 +106,10 @@ lemma remove_bDual (M : Matroid α) (X : Set α) (b c : Bool) :
     (M.bDual b).remove c X = (M.remove (b != c) X).bDual b := by
   simp
 
+@[simp]
+lemma emptyOn_bDual (α : Type*) (b : Bool) : (emptyOn α).bDual b = emptyOn α := by
+  cases b with simp
+
 lemma bDual_delete (M : Matroid α) (X : Set α) (b : Bool) :
     (M.bDual b) ＼ X = (M.remove b X).bDual b := by
   cases b with simp

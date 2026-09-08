@@ -409,8 +409,41 @@ lemma Simplifies.eRank_eq (h : N ≤si M) : N.eRank = M.eRank :=
   h.isSpanningRestriction.eRank_eq
 
 @[simp]
+lemma loopyOn_simplifies_iff {X : Set α} : loopyOn X ≤si M ↔ X ⊆ M.E ∧ M.eRank = 0 := by
+  refine ⟨fun h ↦ ⟨h.isRestriction.subset, by simp [← h.eRank_eq]⟩, fun h ↦ ?_⟩
+  simp only [simplifies_iff, loopyOn_ground]
+  rw [eRank_eq_zero_iff] at h
+  rw [h.2]
+  simp only [isRestriction_iff_exists, loopyOn_ground, loopyOn_restrict, loopyOn_not_isNonloop,
+    IsEmpty.forall_iff, implies_true, and_true]
+  exact ⟨X, h.1, rfl⟩
+
+@[simp]
+lemma emptyOn_simplifies_iff : emptyOn α ≤si M ↔ M.eRank = 0 := by
+  simp [← loopyOn_empty]
+
+@[simp]
 lemma removeLoops_eRank_eq (M : Matroid α) : M.removeLoops.eRank = M.eRank :=
   M.removeLoops_simplifies.eRank_eq
+
+lemma Simplifies.exists_eq_delete (h : N ≤si M) :
+    ∃ D, N = M ＼ D ∧ M.Coindep D ∧ ∀ e, M.IsNonloop e → ∃ f ∉ D, M.Parallel e f := by
+  obtain ⟨D, hDE, rfl⟩ := h.isRestriction.exists_eq_delete
+  refine ⟨D, rfl, ?_, fun e he ↦ ?_⟩
+  · exact (delete_isSpanningRestriction_iff hDE).1 h.isSpanningRestriction
+  obtain ⟨f, hf, hef, h⟩ := h.exists_imp_eq_of_isNonloop he
+  obtain rfl | hne := eq_or_ne e f
+  · exact ⟨e, hf.2, he.parallel_self⟩
+  exact ⟨f, hf.2, hef⟩
+
+lemma delete_simplifies_iff : M ＼ D ≤si M ↔ ∀ e ∈ D, M.IsNonloop e → ∃ f ∉ D, M.Parallel e f := by
+  refine ⟨fun h e heD he ↦ ?_, fun h ↦ ⟨delete_isRestriction .., fun e he ↦ ?_⟩⟩
+  · obtain ⟨f, hf, hef⟩ := h.exists_of_isNonloop he
+    exact ⟨f, hf.2, hef⟩
+  by_cases heD : e ∈ D
+  · obtain ⟨f, hfD, hef⟩ := h e heD he
+    exact ⟨f, ⟨hef.mem_ground_right, hfD⟩, hef⟩
+  exact ⟨e, ⟨he.mem_ground, heD⟩, he.parallel_self⟩
 
 /-- If `N` simplifies `M`, then `M` is a comap of `N` under some function that is the identity
 outside the nonloops of `M`, is the identity on `N`, and maps the nonloops of `M` to the
@@ -477,6 +510,18 @@ lemma Simplifies.exists_eq_comap [M.Loopless] (h : N ≤si M) :
     grw [← hinl he, id_eq, h.isRestriction.subset] at h'
     assumption
   exact ⟨φ, by rwa [hM, comapOn, restrict_eq_self_iff, comap_ground_eq], hφN, him, aux.symm, hidem⟩
+
+lemma Simplifies.simplifies_right_iff_of_subset {M₀ : Matroid α} (h : N ≤si M) (hM₀ : M₀.E ⊆ N.E) :
+    M₀ ≤si N ↔ M₀ ≤si M := by
+  refine ⟨fun h' ↦ h'.trans h, fun h' ↦ ?_⟩
+  obtain ⟨D, rfl, hDi, hD⟩ := h'.exists_eq_delete
+  obtain ⟨P, rfl, hPi, hP⟩ := h.exists_eq_delete
+  rw [delete_ground, delete_ground, sdiff_subset_sdiff_iff_subset
+    hDi.subset_ground hPi.subset_ground] at hM₀
+  refine ⟨delete_isRestriction_of_subset _ hM₀, fun e he ↦ ?_⟩
+  obtain ⟨f, hfD, hef⟩ := hD e he.of_delete
+  exact ⟨f, ⟨hef.mem_ground_right, hfD⟩,
+    delete_parallel_iff.2 ⟨hef, he.mem_ground.2, notMem_subset hM₀ hfD⟩⟩
 
 end LE
 -- end Simple
