@@ -62,8 +62,9 @@ lemma IsBase.fundCoord_of_mem (hB : M.IsBase B) (he : e ∈ B) :
 
 lemma IsBase.fundCoord_of_notMem_ground (hB : M.IsBase B) (he : e ∉ M.E) :
     hB.fundCoord R e = 0 := by
-  rw [fundCoord, coords_of_notMem_ground hB he]
-  rfl
+  classical
+  ext x
+  simp [fundCoord, coords_of_notMem_ground hB he, Finsupp.indicator_apply]
 
 lemma IsBase.support_fundCoord_subset (hB : M.IsBase B) : support (hB.fundCoord R) ⊆ M.E :=
   support_subset_iff'.2 fun _ ↦ hB.fundCoord_of_notMem_ground

@@ -247,9 +247,7 @@ lemma IsCycle.connGE_two (hG : G.IsCycle) (h3 : 3 ≤ V(G).encard) : G.ConnGE 2 
     by_contra hlt
     have hle1 : C.encard ≤ 1 := by
       contrapose! hlt
-      convert Order.add_one_le_of_lt hlt
-      · rfl
-      norm_num
+      exact Order.add_one_le_of_lt hlt
     obtain rfl | ⟨x, rfl⟩ := encard_le_one_iff_eq.1 hle1
     · exact empty_isSep_iff.mp hC hG.connected
     obtain ⟨W, hW, rfl⟩ := hG.exists_isCyclicWalk_eq

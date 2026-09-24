@@ -221,7 +221,7 @@ lemma wheel_isCircuitHyperplane (hn : n ≠ 0) :
   obtain ⟨F, hFn, hF, hFuniv, hFi, hFinv⟩ := (wheel_isCyclicFan (n := n) (by simpa))
   have hrw :  (F.get '' {i | i.1.bodd = !false}) = {e | e.2 = true} := by
     ext ⟨i, b⟩
-    grind [hF.isFan.getElem_inj_iff, Fin.exists_iff]
+    grind [-IsFan.getElem_inj_iff, -List.Nodup.getElem_inj, Fin.exists_iff]
   obtain hch | hb := hF.isCircuitHyperplane_or_isBase_cojoints wheel_tutteConnected
   · rwa [← hrw]
   refine False.elim <| hb.indep.not_dep <| IsCircuit.dep ?_

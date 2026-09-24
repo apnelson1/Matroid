@@ -157,17 +157,17 @@ theorem sumCongr_apply_inr {α₁ α₂ β₁ β₂ : Type*}
     (e₁ : α₁ ≃ α₂) (e₂ : β₁ ≃ β₂) (y : β₁) :
     Equiv.sumCongr e₁ e₂ (Sum.inr y) = Sum.inr (e₂ y) := rfl
 
-/-- `Equiv.Set.congr` transports a set by image.  Applying the element transport to the inverse
+/-- `Equiv.setCongr` transports a set by image.  Applying the element transport to the inverse
 transport of a set therefore cancels.  This is the set-level analogue of
 `Equiv.apply_symm_apply`. -/
 theorem image_setCongr_symm_apply {α β : Type*} (e : α ≃ β) (S : Set β) :
-    e '' ((Equiv.Set.congr e).symm S) = S := by
+    e '' ((Equiv.setCongr e).symm S) = S := by
   change e '' (e.symm '' S) = S
   exact e.image_symm_image S
 
 /-- Expose the image representation used by set-valued naturality rules. -/
 theorem setCongr_apply_eq_image {α β : Type*} (e : α ≃ β) (S : Set α) :
-    Equiv.Set.congr e S = e '' S := rfl
+    Equiv.setCongr e S = e '' S := rfl
 
 /-- Applying a function transported backwards by `arrowCongr` to an argument transported backwards,
 then transporting the result forwards, recovers ordinary target-side application. -/
@@ -309,7 +309,7 @@ def SupportedDomain.set {A : Type u} {B : Type v} (d : SupportedDomain A B) :
   sourceSupport X := ∀ ⦃x⦄, x ∈ X → d.sourceSupport x
   targetSupport Y := ∀ ⦃y⦄, y ∈ Y → d.targetSupport y
   equiv := (supportedSetEquiv d.sourceSupport).trans <|
-    (Equiv.Set.congr d.equiv).trans (supportedSetEquiv d.targetSupport).symm
+    (Equiv.setCongr d.equiv).trans (supportedSetEquiv d.targetSupport).symm
 
 /-- Restrict a universal quantifier to a supported domain when its body is automatic outside that
 domain. -/
@@ -980,7 +980,7 @@ partial def deriveEquiv (ctx : TransportContext) (source : Expr) : MetaM EquivRe
   if isConstApp s ``Set 1 then
     let α := s.getAppArgs[0]!
     let ea ← deriveEquiv ctx α
-    let e ← mkAppM ``Equiv.Set.congr #[ea.equiv]
+    let e ← mkAppM ``Equiv.setCongr #[ea.equiv]
     let ty ← inferType e
     let some (_, target) ← equivSides? ty | throwError "irw internal error in Set equivalence"
     return ← checkedEquivResult source { target, equiv := e }

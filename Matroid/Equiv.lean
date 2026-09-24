@@ -98,7 +98,7 @@ lemma Iso.image_symm_image (e : M ≂ N) (X : Set N.E) : e '' (e.symm '' X) = X 
     rfl
 
 @[simps] def Iso.ofEq {M N : Matroid α} (hMN : M = N) : M ≂ N where
-  toEquiv := Equiv.setCongr (congr_arg Matroid.E hMN)
+  toEquiv := Set.equivOfEq (congr_arg Matroid.E hMN)
   indep_image_iff' := by subst hMN; simp
 
 @[simps] def Iso.ofForallDep (e : M.E ≃ N.E) (he : ∀ (D : Set M.E), M.Dep D ↔ N.Dep ↑(e '' D)) :
@@ -279,7 +279,7 @@ end map
 section dual
 
 def Iso.dual (e : M ≂ N) : M✶ ≂ N✶ :=
-  let e' : M✶.E ≃ N✶.E := ((Equiv.setCongr rfl).trans (e : M.E ≃ N.E)).trans (Equiv.setCongr rfl)
+  let e' : M✶.E ≃ N✶.E := ((Set.equivOfEq rfl).trans (e : M.E ≃ N.E)).trans (Set.equivOfEq rfl)
   Iso.ofForallBase e' (by
     simp only [dual_ground, image_subset_iff, Subtype.coe_preimage_self, subset_univ,
       dual_isBase_iff]

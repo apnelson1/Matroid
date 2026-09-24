@@ -9,9 +9,6 @@ public import Matroid.Exercises.HamiltonianCycle.Walk
 public import Matroid.Exercises.HamiltonianCycle.Connected
 public import Matroid.Exercises.HamiltonianCycle.Bipartite
 
--- TODO: remember to remove this Loogle import at the end of the project
-public import Loogle.Find
-
 open Qq Lean Meta Elab Tactic WList Set
 
 namespace Graph
@@ -24,9 +21,6 @@ Every graph with n >= 3 vertices and minimum degree at least n/2 has a Hamiltoni
 -/
 
 --The exercises start here
-@[deprecated "use IsCompOf.subset" (since := "2025-11-28")]
-lemma isCompOf_subset (hHG : H.IsCompOf G) : V(H) ⊆ V(G) := hHG.isClosedSubgraph.vertexSet_mono
-
 @[gcongr]
 lemma IsClosedSubgraph.minDegree_le_minDegree [G.LocallyFinite] (hHG : H ≤c G)
     (hHne : V(H).Nonempty) : G.minDegree ≤ H.minDegree := by

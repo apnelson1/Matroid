@@ -295,7 +295,7 @@ lemma Even.add_even [Semiring α] {a b : α} (ha : Even a) (hb : Even b) : Even 
 --     exact hAfin.subset (by tauto_set)
 
 --   have hssu : A \ C ⊂ A := by
---     have := sdiff_ssubset hCA hC.nonempty
+--     have := hCA.sdiff_ssubset_of_nonempty hC.nonempty
 --     norm_cast at this
 --   have h_even := IH _ hssu ?_ (Finset.finite_toSet ..)
 --   · rwa [← hcard hK]

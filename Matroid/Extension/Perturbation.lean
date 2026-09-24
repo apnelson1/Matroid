@@ -52,8 +52,8 @@ lemma IsPerturbation.trans_le {M₁ M₂ M₃ : Matroid α} {j : ℕ∞} (h₁ :
 lemma Projector.isPerturbation (P : M.Projector N β) : M.IsPerturbation N P.pivot.encard := by
   obtain ⟨γ, Q, hQu, hQi, hQci, -, ⟨f⟩⟩ := P.exists_good_projector
   refine ((IsPerturbation.refl' M).cons_left Q).mono ?_
-  grw [hQu, encard_univ, Function.Injective.encard_range f.2, encard_le_card, ENat.card_coe_set_eq,
-    zero_add]
+  grw [hQu, encard_univ, ← Function.Injective.encard_range f.2, encard_le_card,
+    ENat.card_coe_set_eq, zero_add]
 
 lemma IsPerturbation.symm (h : M.IsPerturbation N k) : N.IsPerturbation M k := by
   induction h with
@@ -62,7 +62,7 @@ lemma IsPerturbation.symm (h : M.IsPerturbation N k) : N.IsPerturbation M k := b
     obtain ⟨γ, Q, hQu, hQi, hQci, -, ⟨f⟩⟩ := P.exists_good_projector
     rw [add_comm]
     refine (((IsPerturbation.refl' _).cons_right Q).mono ?_).trans ih
-    grw [hQu, encard_univ, Function.Injective.encard_range f.2, encard_le_card,
+    grw [hQu, encard_univ, ← Function.Injective.encard_range f.2, encard_le_card,
       ENat.card_coe_set_eq, zero_add]
   | cons_right h P ih => rw [add_comm]; exact P.isPerturbation.trans ih
 

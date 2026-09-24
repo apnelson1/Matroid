@@ -151,16 +151,6 @@ lemma stronglyDisjoint_iff_vertexSet_disjoint_compatible :
   ⟨fun h => ⟨h.vertex, h.compatible⟩,
     fun ⟨hdisj, hco⟩ => ⟨hdisj, hco.edgeSet_disjoint_of_vertexSet_disjoint hdisj⟩⟩
 
-@[deprecated "Pairwise.const_of_refl" (since := "2025-07-30")]
-lemma pairwise_compatible_const (G : Graph α β) : Pairwise (Compatible on fun (_ : ι) ↦ G) := by
-  simp [Pairwise]
-
-@[deprecated "Pairwise.onFun_comp_of_refl" (since := "2025-07-30")]
-lemma pairwise_compatible_comp {ι ι' : Type*} {G : ι → Graph α β} (hG : Pairwise (Compatible on G))
-    (f : ι' → ι): Pairwise (Compatible on (G ∘ f)) := by
-  rw [onFun_comp]
-  exact Pairwise.onFun_of_refl hG _
-
 /-- useful with `Pairwise` and `Set.Pairwise`.-/
 @[simp]
 lemma stronglyDisjoint_le_compatible : @StronglyDisjoint α β ≤ Compatible :=

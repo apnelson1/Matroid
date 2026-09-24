@@ -203,7 +203,7 @@ lemma VertexEnsemble.vertexSet_encard_of_length_one_subsingleton (hι : ENat.car
       obtain rfl : w.last = t := by simpa [hi] using A.last_eq i
       obtain rfl : x = s' := by simpa [hi] using hs
       simpa [hi] using A.isPath i
-  grw [← ENat.add_one_le_iff (by simp), this, ← encard_insert_of_notMem hsn]
+  grw [← ENat.add_one_le_iff (by simp), ← this, ← encard_insert_of_notMem hsn]
   apply encard_le_encard
   simp only [insert_subset_iff, hs, true_and]
   rintro - ⟨i, rfl⟩

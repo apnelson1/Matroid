@@ -215,7 +215,6 @@ lemma Rep.FunStandard.IsBase [M.RankFinite] (hv : v.FunStandard i) : M.IsBase (r
       (f := Finsupp.lcoeFun (R := 𝔽)) (by simp [Finsupp.ker_lcoeFun])
     · ext x y
       simp [Finsupp.single, Pi.single, hv.apply_eq_single]
-    · rfl
   have hβ : Finite β := h1.finite.of_injective_finite_range hv.injective
   refine h1.isBase_of_spanning ?_
   rw [v.spanning_iff, le_antisymm_iff, and_iff_right (span_mono (image_subset_range ..))]

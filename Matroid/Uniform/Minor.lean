@@ -154,7 +154,7 @@ theorem nonempty_freeOn_isoMinor_iff_of_finite {β : Type*} {E : Set α} {M : Ma
     (hEfin : E.Finite) : Nonempty (freeOn E ≤i M) ↔ E.encard ≤ M.eRank := by
   rw [nonempty_freeOn_isoMinor_iff]
   refine ⟨fun ⟨f, hf⟩ ↦ ?_, fun h ↦ ?_⟩
-  · grw [← hf.encard_le_eRank, ← f.injective.encard_range]
+  · grw [← hf.encard_le_eRank, f.injective.encard_range]
     simp
   obtain ⟨B, hB⟩ := M.exists_isBase
   rw [← hB.encard_eq_eRank, hEfin.encard_le_iff_nonempty_embedding] at h

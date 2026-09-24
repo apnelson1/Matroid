@@ -611,10 +611,9 @@ lemma orientation.isAcyclicSet_linearIndepOn {𝔽 : Type*} [Field 𝔽] [Decida
       · have := this.2 x hxe₀
         rw [signedIncMatrix_anti_submatrix _ (by simp [hxt, hxG])] at this
         convert this
-        rfl
       simp [signedIncMatrix_apply_of_not_mem hxG]
     rw [sum_eq_zero hforall, add_zero, mul_eq_zero, Matrix.col_apply] at hgI'
-    replace hgI' : g e₀ = 0 := hgI'.resolve_right (by convert this.1; rfl)
+    replace hgI' : g e₀ = 0 := hgI'.resolve_right (by convert this.1)
     simp only [hgI', zero_smul, zero_add, sdiff_singleton_eq_erase] at hgI
     specialize ih (t.erase e₀) (by simp [subset_insert_iff.mpr (Or.inl htI)]) ?_ hgI
       (by simp [het.2, ht])

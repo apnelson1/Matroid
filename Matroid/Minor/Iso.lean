@@ -249,7 +249,7 @@ theorem IsoMinor.exists_iso (i : N ≤i M) :
   obtain ⟨M₀, hM₀, hE, h⟩ := i.exists_isMinor
   refine ⟨M₀, hM₀,  ?_⟩
   let e := Equiv.ofInjective _ (Subtype.val_injective.comp (EmbeddingLike.injective i))
-  exact ⟨Iso.mk (e.trans (Equiv.setCongr (by simp [hE, range_comp])))
+  exact ⟨Iso.mk (e.trans (Set.equivOfEq (by simp [hE, range_comp])))
     fun _ ↦ by simp [h, image_image, e], fun ⟨x,hx⟩ ↦ rfl⟩
 
 theorem StrictIsoMinor.exists_iso (i : N <i M) :
@@ -258,7 +258,7 @@ theorem StrictIsoMinor.exists_iso (i : N <i M) :
   obtain ⟨M₀, hM₀, hE, h⟩ := i.exists_isMinor
   refine ⟨M₀, hM₀,  ?_⟩
   let e := Equiv.ofInjective _ (Subtype.val_injective.comp (EmbeddingLike.injective i))
-  exact ⟨Iso.mk (e.trans (Equiv.setCongr (by simp [hE, range_comp])))
+  exact ⟨Iso.mk (e.trans (Set.equivOfEq (by simp [hE, range_comp])))
     fun _ ↦ by simp [h, image_image, e], fun ⟨x,hx⟩ ↦ rfl⟩
 
 @[simps!]
@@ -673,7 +673,7 @@ theorem freeOn_isoMinor_iff_of_finite {E : Set α} (hE : E.Finite) :
     Nonempty (freeOn E ≤i M) ↔ E.encard ≤ M.eRank := by
   rw [freeOn_isoMinor_iff]
   refine ⟨fun ⟨f, hf⟩ ↦ ?_, fun h ↦ ?_⟩
-  · grw [← hf.encard_le_eRank, ← f.injective.encard_range, ENat.card_coe_set_eq]
+  · grw [← hf.encard_le_eRank, f.injective.encard_range, ENat.card_coe_set_eq]
   obtain ⟨B, hB⟩ := M.exists_isBase
   obtain ⟨f'⟩ := hE.encard_le_iff_nonempty_embedding.1 (hB.encard_eq_eRank ▸ h)
   refine ⟨f'.trans (Embedding.setSubtype _), hB.indep.subset ?_⟩

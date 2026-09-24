@@ -81,7 +81,7 @@ noncomputable def ofGraph (G : Graph V E) : Presentation V E where
   edgeMap_eq_iff i j := by
     refine ⟨fun h ↦ ?_, by grind⟩
     have he : i.down.1 = j.down.1 := Subtype.ext h
-    refine (eq_or_ne j.down.2 i.down.2).imp (ULift.ext _ _ <| Prod.ext he.symm ·) (fun hb ↦ ?_)
+    refine (eq_or_ne j.down.2 i.down.2).imp (ULift.ext <| Prod.ext he.symm ·) (fun hb ↦ ?_)
     apply ULift.ext
     ext
     · simpa using h.symm
@@ -262,11 +262,6 @@ relabelling. -/
 theorem nonempty_equiv_iff_toGraph_eq (P Q : Presentation V E) :
     Nonempty (P.Equiv Q) ↔ P.toGraph = Q.toGraph :=
   ⟨fun ⟨F⟩ ↦ F.toGraph_eq, fun h ↦ ⟨equivOfToGraphEq h⟩⟩
-
-@[deprecated nonempty_equiv_iff_toGraph_eq (since := "2026-08-20")]
-theorem incidenceRel_iff_toGraph_eq (P Q : Presentation V E) :
-    IncidenceRel P Q ↔ P.toGraph = Q.toGraph :=
-  nonempty_equiv_iff_toGraph_eq P Q
 
 /-- The literal incidence quotient is equivalent to the current `Graph`. -/
 theorem quotientToGraph_injective : Injective (quotientToGraph (V := V) (E := E)) := by

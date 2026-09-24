@@ -18,8 +18,11 @@ lemma WithTop.eq_top_iff_forall_le {α : Type*} [Preorder α] [NoMaxOrder α] {x
   exact hy.not_ge <| by simpa using h y
 
 lemma WithBot.eq_bot_iff_forall_ge {α : Type*} [Preorder α] [NoMinOrder α] {x : WithBot α} :
-    x = ⊥ ↔ ∀ (a : α), x ≤ a :=
-  WithTop.eq_top_iff_forall_le (α := αᵒᵈ) (x := x)
+    x = ⊥ ↔ ∀ (a : α), x ≤ a := by
+  refine ⟨by simp +contextual, fun h ↦ by_contra fun hne ↦ ?_⟩
+  lift x to α using hne
+  obtain ⟨y, hy⟩ := exists_lt x
+  exact hy.not_ge <| by simpa using h y
 
 -- lemma ENat.eq_top_iff_forall_le {n : ℕ∞} : n = ⊤ ↔ ∀ (m : ℕ), m ≤ n := by
 --   refine ⟨by rintro rfl; simp, fun h ↦ by_contra fun hne ↦ ?_⟩

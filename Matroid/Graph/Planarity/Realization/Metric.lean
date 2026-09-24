@@ -102,7 +102,6 @@ private lemma iInf_distToVtx_add (x y : PreRealization G) :
       rw [distToVtx, add_comm _ (ENNReal.ofReal _), add_comm _ (ENNReal.ofReal _)]
       exact (min_add_add_right _ _ _).symm
     convert iInf_inf_eq
-    · rfl
     all_goals
     · simp_rw [add_assoc, ← ENNReal.add_iInf]
       change _ = _ + (⨅ v, distToVtx G (Sum.inl _) v  + _)

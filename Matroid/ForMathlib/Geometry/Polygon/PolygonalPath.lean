@@ -391,9 +391,6 @@ private lemma edges_toPolygonalPath (p : Polygon α n) (i : Fin n) :
     change q.edges.get _ = _
     rw [List.get_of_eq q.edges_eq_zip]
     convert hget using 1
-    apply congr_arg (List.get (q.vertices.zip q.vertices.tail))
-    apply Fin.ext
-    rfl
   rw [hget']
   apply Prod.ext
   · simp [q, PolygonalPath.toPolygon, Polygon.ofList, cycleFrom]

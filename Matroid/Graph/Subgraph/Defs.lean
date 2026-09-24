@@ -27,10 +27,6 @@ section deleteEdges
 /-- `G ＼ F` is the subgraph of `G` with the edges in `F` deleted. Vertices are not changed. -/
 scoped infixl:75 " ＼ "  => Graph.deleteEdges
 
-@[deprecated restrict_edgeSet_sdiff_eq_deleteEdges (since := "2026-05-04")]
-lemma deleteEdges_eq_restrict (G : Graph α β) (F : Set β) :
-    G ＼ F = G ↾ (E(G) \ F) := copy_eq ..
-
 end deleteEdges
 
 section induce

@@ -419,7 +419,7 @@ lemma matchingNumber_le_coverNumber : ν(G) ≤ τ(G) := by
   rintro t ⟨C, hS, rfl⟩ n ⟨M, hM, rfl⟩
   have solver := (hM.mapToCover_inj hS).encard_range
   simp only [ENat.card_coe_set_eq, range] at solver
-  refine le_trans solver ?_
+  refine le_trans solver.symm.le ?_
   rw [show C.encard = (univ : Set ↑C).encard by simp]
   exact encard_le_encard (by grind)
 

@@ -315,20 +315,17 @@ lemma finsum_incFun_eq (he : e ∈ E(G)) : ∑ᶠ v, G.incFun e v = 2 := by
 @[simp]
 lemma tsum_incFun_eq (he : e ∈ E(G)) : ∑' v, (G.incFun e v : ℕ∞) = 2 := by
   convert (ENat.natCast_inj).2 <| G.sum_incFun_eq_two he
-  · rw [Finsupp.sum, tsum_eq_sum' (s := (G.incFun e).support) (by simp)]
-    simp only [Nat.cast_sum]
-  rfl
+  rw [Finsupp.sum, tsum_eq_sum' (s := (G.incFun e).support) (by simp)]
+  simp only [Nat.cast_sum]
 
 lemma IsLoopAt.two_le_eDegree (h : G.IsLoopAt e x) : 2 ≤ G.eDegree x := by
   rw [eDegree]
   convert le_tsum e (M := ℕ∞)
-  · rfl
   simp [h.incFun_eq_two]
 
 lemma IsNonloopAt.one_le_eDegree (h : G.IsNonloopAt e x) : 1 ≤ G.eDegree x := by
   rw [eDegree]
   convert le_tsum (M := ℕ∞) e
-  · rfl
   simp [h.incFun_eq_one]
 
 lemma Inc.one_le_eDegree (h : G.Inc e x) : 1 ≤ G.eDegree x := by
@@ -442,7 +439,6 @@ lemma locallyFinite_of_eDegree_ne_top (hG : ∀ x, G.eDegree x ≠ ⊤) : G.Loca
   use x
   rw [eq_top_iff]
   convert ← G.encard_setOf_inc_le_eDegree x
-  · rfl
   simpa
 
 lemma forall_eDegree_ne_top_iff : (∀ x, G.eDegree x ≠ ⊤) ↔ G.LocallyFinite :=

@@ -49,10 +49,10 @@ def Iso.elementDomain (i : M ≂ N) : IRw.SupportedDomain α β where
   equiv := i.toEquiv
 
 /-- Sets of ground elements.  Registering this explicitly (rather than letting the tactic build
-`Equiv.Set.congr` from `toEquiv`) is what lets the rules below name the equivalence that
+`Equiv.setCongr` from `toEquiv`) is what lets the rules below name the equivalence that
 `irw` will actually substitute. -/
 @[irw_equiv]
-def Iso.groundSetEquiv (i : M ≂ N) : Set M.E ≃ Set N.E := Equiv.Set.congr i.toEquiv
+def Iso.groundSetEquiv (i : M ≂ N) : Set M.E ≃ Set N.E := Equiv.setCongr i.toEquiv
 
 @[irw_equiv]
 def Iso.listGroundSetEquiv (i : M ≂ N) : List M.E ≃ List N.E := i.toEquiv.listEquivOfEquiv

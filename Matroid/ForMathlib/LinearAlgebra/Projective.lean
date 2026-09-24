@@ -214,9 +214,9 @@ lemma Projectivization.Subspace.mem_span_iff_rep (K : Type*) {V : Type*} [Field 
     [Module K V] (s : Set (Projectivization K V)) (b : Projectivization K V) :
     b ∈ Subspace.span s ↔ b.rep ∈ Submodule.span K (Projectivization.rep '' s) := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · induction h with
-  | of x hxs => exact mem_of_mem_of_subset (mem_image_of_mem _ hxs) Submodule.subset_span
-  | mem_add x₁ x₂ hx₁0 hx₂0 hx₁x₂ hx₁ hx₂ hx₁' hx₂' =>
+  · induction h using Projectivization.Subspace.span_induction with
+  | of_mem x hxs => exact mem_of_mem_of_subset (mem_image_of_mem _ hxs) Submodule.subset_span
+  | add x₁ x₂ hx₁0 hx₂0 hx₁x₂ hx₁ hx₂ hx₁' hx₂' =>
     simp only [Submodule.mk_rep_mem_iff_mem] at hx₁' hx₂' ⊢
     exact Submodule.add_mem _ hx₁' hx₂'
   suffices aux : ∀ ⦃a⦄ (hasp : a ∈ Submodule.span K (Projectivization.rep '' s)) (ha : a ≠ 0),
@@ -334,7 +334,7 @@ def Projectivization.subspace_orderIso_submodule (K V : Type*) [Field K] [AddCom
   right_inv := Submodule.toProjSubspace_toSubmodule
   map_rel_iff' := by
     intro X₁ X₂
-    simp only [Equiv.coe_fn_mk, SetLike.le_def, Subspace.mem_toSubmodule_iff, ne_eq, true_and,
+    simp only [Equiv.coe_fn_mk, IsConcreteLE.le_iff, Subspace.mem_toSubmodule_iff, ne_eq, true_and,
       forall_eq_or_imp, not_true_eq_false, IsEmpty.exists_iff, or_false, forall_exists_index]
     exact ⟨fun h x hx₁ ↦ by simpa [x.rep_nonzero, hx₁] using h x.rep,
       fun h v hv hvX₁ ↦ .inr ⟨hv, h hvX₁⟩⟩
@@ -390,7 +390,7 @@ lemma Projectivization.Subspace.span_toSubmodule {K V : Type*} [Field K] [AddCom
   refine (Submodule.span_eq_of_le _ ?_ ?_).symm
   · suffices ∀ a ∈ s, a ∈ span s by simpa [Subspace.mem_toSubmodule_iff, subset_def, rep_nonzero]
     exact fun a has ↦ subset_span _ has
-  simp only [SetLike.le_def, mem_toSubmodule_iff, ne_eq, forall_eq_or_imp, Submodule.zero_mem,
+  simp only [IsConcreteLE.le_iff, mem_toSubmodule_iff, ne_eq, forall_eq_or_imp, Submodule.zero_mem,
     forall_exists_index, true_and]
   intro a ha hasp
   rwa [mem_span_image_rep_iff _ _ ha]

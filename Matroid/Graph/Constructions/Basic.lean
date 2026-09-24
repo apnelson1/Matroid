@@ -131,10 +131,6 @@ lemma deleteEdges_bouquet (v : α) (F R : Set β) :
     Graph.deleteEdges (bouquet v F) R = bouquet v (F \ R) := by
   exact deleteEdges_banana v v F R
 
-@[deprecated IsSpanningSubgraph.banana_mono (since := "2026-05-04")]
-lemma banana_mono {X Y : Set β} (hXY : X ⊆ Y) : banana a b X ≤s banana a b Y :=
-  IsSpanningSubgraph.banana_mono hXY
-
 @[simp]
 lemma banana_incEdges_left : E(banana a b F, a) = F := by
   ext e

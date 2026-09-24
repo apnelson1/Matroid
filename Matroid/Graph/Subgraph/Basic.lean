@@ -54,11 +54,6 @@ lemma edgeSet_monotone : Monotone (Graph.edgeSet (α := α) (β := β)) :=
 lemma le_iff : H ≤ G ↔ (V(H) ⊆ V(G)) ∧ ∀ ⦃e x y⦄, H.IsLink e x y → G.IsLink e x y :=
   ⟨fun h ↦ ⟨h.1, h.2⟩, fun h ↦ ⟨h.1, h.2⟩⟩
 
-@[deprecated IsSubgraph.isLink_iff (since := "2026-05-04")]
-lemma isLink_iff_isLink_of_le_of_mem (hle : H ≤ G) (he : e ∈ E(H)) :
-    G.IsLink e x y ↔ H.IsLink e x y :=
-  ⟨fun h ↦ h.of_le_of_mem hle he, fun h ↦ h.of_le hle⟩
-
 @[grind =_]
 lemma isLink_iff_isLink_and_mem_of_le (hle : H ≤ G) : H.IsLink e x y ↔ G.IsLink e x y ∧ e ∈ E(H) :=
   ⟨fun h ↦ ⟨h.of_le hle, h.edge_mem⟩, fun h ↦ h.1.of_le_of_mem hle h.2⟩
@@ -199,7 +194,7 @@ lemma setLinkEdges_eq_inter_of_le' (hle : G ≤ H) (S) : δ(G, S) = E(G) ∩ δ(
   grind
 
 instance [Finite α] [Finite β] : WellFoundedLT (Graph α β) :=
-  ⟨Subrelation.wf sum_ncard_lt_of_lt (measure fun (G : Graph α β) => V(G).ncard + E(G).ncard).2⟩
+  Subrelation.wf sum_ncard_lt_of_lt (measure fun (G : Graph α β) => V(G).ncard + E(G).ncard).2
 
 /- TODO : Is is reasonable to only keep the `EqOn` versions of the above?
 Also, what about functional `≤` versions? -/
@@ -216,17 +211,6 @@ lemma mk' (hV : V(H) = V(G)) (hl : ∀ ⦃e x y⦄, H.IsLink e x y → G.IsLink 
 
 lemma le' (h : H ≤s G) : H ≤ G := h.le
 
-@[deprecated IsSpanningSubgraph.anti_right (since := "2026-05-04")]
-lemma of_isSpanningSubgraph_left (h : H ≤s G) (hHK : H ≤ K) (hKG : K ≤ G) : H ≤s K :=
-  anti_right hHK hKG h
-
-@[deprecated IsSpanningSubgraph.mono_left (since := "2026-05-04")]
-lemma of_isSpanningSubgraph_right (h : H ≤s G) (hHK : H ≤ K) (hKG : K ≤ G) : K ≤s G :=
-  mono_left hHK hKG h
-
-@[deprecated IsSpanningSubgraph.ext_of_edgeSet (since := "2026-05-04")]
-lemma eq_of_edgeSet (h : H ≤s G) (hE : E(H) = E(G)) : H = G := ext_of_edgeSet hE h
-
 end IsSpanningSubgraph
 
 @[simp]
@@ -237,39 +221,11 @@ lemma bot_isSpanningSubgraph_iff : (⊥ : Graph α β) ≤s G ↔ G = ⊥ := by
 
 lemma IsInducedSubgraph.le' (h : H ≤i G) : H ≤ G := h.le
 
-@[deprecated IsInducedSubgraph.adj_congr (since := "2026-05-04")]
-lemma IsInducedSubgraph.adj_of_mem_mem (h : H ≤i G) (hxy : G.Adj x y) (hx : x ∈ V(H))
-    (hy : y ∈ V(H)) : H.Adj x y := (adj_congr hx hy h).mpr hxy
-
-@[deprecated IsInducedSubgraph.adj_congr (since := "2026-05-04")]
-lemma IsInducedSubgraph.adj_of_adj (h : H ≤i G) (hxy : G.Adj x y) (hx : x ∈ V(H)) (hy : y ∈ V(H)) :
-    H.Adj x y := (adj_congr hx hy h).mpr hxy
-
-@[deprecated IsInducedSubgraph.ext_of_vertexSet (since := "2026-05-04")]
-lemma IsInducedSubgraph.eq_of_vertexSet (h : H ≤i G) (hV : V(H) = V(G)) : H = G :=
-  ext_of_vertexSet hV h
-
 /-! ### Closed Subgraphs -/
 
 -- lemma IsClosedSubgraph.edgeSet_mono (h : H ≤c G) : E(H) ⊆ E(G) := h.le.edgeSet_mono
 
 lemma IsClosedSubgraph.le' (h : H ≤c G) : H ≤ G := h.le
-
-@[deprecated IsClosedSubgraph.inc_congr (since := "2026-05-04")]
-lemma Inc.of_isClosedSubgraph_of_mem (h : G.Inc e x) (hle : H ≤c G) (hx : x ∈ V(H)) : H.Inc e x :=
-  (hle.inc_congr hx).mpr h
-
-@[deprecated IsClosedSubgraph.isLink_congr (since := "2026-05-04")]
-lemma IsLink.of_isClosedSubgraph_of_mem (h : G.IsLink e x y) (hle : H ≤c G) (hx : x ∈ V(H)) :
-    H.IsLink e x y := (hle.isLink_congr hx).mpr h
-
-@[deprecated IsClosedSubgraph.isLink_congr (since := "2026-05-04")]
-lemma IsClosedSubgraph.isLink_iff_of_mem (h : H ≤c G) (hx : x ∈ V(H)) :
-    H.IsLink e x y ↔ G.IsLink e x y := isLink_congr hx h
-
-@[deprecated IsClosedSubgraph.mem_iff_of_isLink (since := "2026-05-04")]
-lemma IsClosedSubgraph.mem_iff_mem_of_isLink (h : H ≤c G) (he : G.IsLink e x y) :
-    x ∈ V(H) ↔ y ∈ V(H) := mem_iff_of_isLink he h
 
 lemma isClosedSubgraph_iff_le_and_setLinkEdges_empty : H ≤c G ↔ (H ≤i G) ∧ δ(G, V(H)) = ∅ := by
   refine ⟨fun h ↦ ⟨h.isInducedSubgraph, ?_⟩,
@@ -293,18 +249,6 @@ lemma IsClosedSubgraph.adj_of_adj_of_mem (h : H ≤c G) (hx : x ∈ V(H)) (hxy :
     H.Adj x y := by
   obtain ⟨e, hexy⟩ := hxy
   exact (h.isLink_congr hx).mpr hexy |>.adj
-
-@[deprecated IsClosedSubgraph.mem_iff_of_adj (since := "2026-05-04")]
-lemma IsClosedSubgraph.mem_iff_mem_of_adj (h : H ≤c G) (hxy : G.Adj x y) :
-    x ∈ V(H) ↔ y ∈ V(H) := mem_iff_of_adj hxy h
-
-@[deprecated IsClosedSubgraph.anti_right (since := "2026-05-04")]
-lemma IsClosedSubgraph.of_le_of_le {G₁ : Graph α β} (hHG : H ≤c G) (hHG₁ : H ≤ G₁) (hG₁ : G₁ ≤ G):
-    H ≤c G₁ := anti_right hHG₁ hG₁ hHG
-
-@[deprecated IsInducedSubgraph.not_isClosedSubgraph_iff_exists_adj (since := "2026-05-04")]
-lemma not_isClosedSubgraph_iff_of_IsInducedSubgraph (hle : H ≤i G) : ¬ H ≤c G ↔ ∃ x y, G.Adj x y ∧
-    x ∈ V(H) ∧ y ∉ V(H) := IsInducedSubgraph.not_isClosedSubgraph_iff_exists_adj hle
 
 /-! ### Components -/
 

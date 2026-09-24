@@ -385,7 +385,7 @@ lemma Projector.exists_good_projector {α : Type u} {γ : Type v} {M N : Matroid
     obtain ⟨f⟩ := hi.nonempty_embedding_set_of_isBase hB'
     refine ⟨(Embedding.trans ?_ f).trans ?_⟩
     · exact (Equiv.ofInjective Sum.inr Sum.inr_injective).toEmbedding
-    refine Embedding.trans (Equiv.Set.congr ?_).symm.toEmbedding (Embedding.setSubtype B).image
+    refine Embedding.trans (Equiv.setCongr ?_).symm.toEmbedding (Embedding.setSubtype B).image
     exact Set.BijOn.equiv Sum.inl Sum.inl_injective.injOn.bijOn_image
   refine ⟨_, Q'.map (Equiv.ofInjective f f.injective) (by simp), ?_, ?_, ?_, ?_, ?_⟩
   · simp only [map_pivot, Equiv.ofInjective_apply, hJE, image_univ]

@@ -823,7 +823,7 @@ lemma base_isCover {a : ℕ} (hr : M.eRank ≤ a + 1) (ha : 1 ≤ a) (hXfin : X.
     have heX : e ∉ X := by
       by_contra hc
       exact hcon' (singleton e) (singleton_subset_iff.mpr hc)
-        (by simp only [encard_singleton, ENat.one_le_coe, ha ]) (mem_closure_self M e he)
+        (by simp only [encard_singleton, Nat.one_le_cast, ha ]) (mem_closure_self M e he)
     --have hwin := h.not_prop_of_ssuperset (t := insert e X) (by grind)
     have hwin := h.not_prop_of_gt (j := insert e X)
       (Finite.encard_lt_encard hXfin (ssubset_insert heX))

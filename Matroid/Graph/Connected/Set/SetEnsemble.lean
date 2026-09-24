@@ -654,8 +654,6 @@ lemma between.extend_right_le_two (hAST : A.between S (T ∪ V(P))) (hP : G.IsPa
     generalize_proofs hP'su heq hP'
     refine hAST.extend_right hP'su heq hP' |>.left ?_ |>.right ?_
     · convert disjoint_empty _
-      · rfl
-      · rfl
       change ((S \ (V(P') \ {P'.first})) ∆ S) = _
       rw [sdiff_symmDiff, ← inter_sdiff_assoc, sdiff_eq_empty, ← heq, inter_comm]
       exact subset_inter ((inter_subset_inter hP'sf.subset subset_rfl).trans hST) inter_subset_left
@@ -697,12 +695,8 @@ lemma between.extend_right_le_two (hAST : A.between S (T ∪ V(P))) (hP : G.IsPa
   generalize_proofs hP'su
   refine hAST.extend_right_two hP'su h2 hP |>.left ?_ |>.right ?_
   · convert disjoint_empty _
-    · rfl
-    · rfl
     rwa [sdiff_symmDiff, ← inter_sdiff_assoc, sdiff_eq_empty, inter_comm]
   convert disjoint_empty _
-  · rfl
-  · rfl
   ext x
   simp +contextual only [union_insert, union_singleton, symmDiff_def, mem_sdiff, mem_union,
     WList.mem_vertexSet_iff, first_mem, or_true, mem_insert_iff, mem_singleton_iff, true_or,

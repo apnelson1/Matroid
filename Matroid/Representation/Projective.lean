@@ -187,7 +187,7 @@ lemma exists_isoRestr_projectiveGeometry [M.Simple] (h : M.Representable 𝔽) (
       rw [iMN.symm.isBase_image_iff]
       simpa [inter_eq_self_of_subset_right hB.subset_ground]
     have e1 : (M.E ↓∩ B) ≃ B :=
-      (Equiv.Set.image val _ val_injective).trans <| Equiv.setCongr <| by simp [hB.subset_ground]
+      (Equiv.Set.image val _ val_injective).trans <| Set.equivOfEq <| by simp [hB.subset_ground]
     have e2 : B ≃ B' := by
       refine e1.symm.trans <| ?_
       refine (Equiv.Set.image iMN _ iMN.toEquiv.injective).trans ?_

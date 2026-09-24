@@ -275,7 +275,6 @@ lemma eq_sUnion_components (G : Graph α β) : G = Graph.sUnion G.Components
   apply_fun Subtype.val at h
   rw [ClosedSubgraph.coe_sSup, eq_comm] at h
   convert h
-  · rfl
   ext H
   simp only [mem_components_iff_isCompOf, ClosedSubgraph.isAtom_iff_isCompOf, mem_image,
     mem_ofPred_eq, Subtype.exists, exists_and_left, exists_prop, exists_eq_right_right,
@@ -351,7 +350,8 @@ lemma ClosedSubgraph.le_of_mem_orderIso_set_components (H H' : G.ClosedSubgraph)
 --     Subtype.val '' H.val.Components := by
 --   ext H'
 --   simp only [le_eq_subset, mem_image, Subtype.exists, exists_and_right, exists_eq_right]
---   refine ⟨fun ⟨hH'Gcl, hH'Gco, hH'iso⟩ => ⟨hH'Gcl.of_le_of_le hH'iso H.prop.le, ?_⟩,
+--   refine ⟨fun ⟨hH'Gcl, hH'Gco, hH'iso⟩ =>
+--     ⟨IsClosedSubgraph.anti_right hH'iso H.prop.le hH'Gcl, ?_⟩,
 --     fun ⟨hH'Hcl, hH'Hco⟩ => ⟨hH'Hcl.trans H.prop, ?_, ?_⟩⟩
 --   · rw [components_isAtom_iff] at hH'Gco ⊢
 --     simp only [IsAtom, ne_eq, bot_isClosedSubgraph, Subtype.mk_eq_bot_iff, Subtype.forall,
@@ -361,7 +361,7 @@ lemma ClosedSubgraph.le_of_mem_orderIso_set_components (H H' : G.ClosedSubgraph)
 --     simp only [IsAtom, ne_eq, bot_isClosedSubgraph, Subtype.mk_eq_bot_iff, Subtype.forall,
 --       Subtype.mk_lt_mk] at hH'Hco ⊢
 --     refine ⟨hH'Hco.1, fun H₀ hH₀clH hH₀ltH' => hH'Hco.2 H₀ ?_ hH₀ltH'⟩
---     exact hH₀clH.of_le_of_le (hH₀ltH'.le.trans hH'Hcl.le) H.prop.le
+--     exact IsClosedSubgraph.anti_right (hH₀ltH'.le.trans hH'Hcl.le) H.prop.le hH₀clH
 --   · simp?
 --   all_goals sorry
 

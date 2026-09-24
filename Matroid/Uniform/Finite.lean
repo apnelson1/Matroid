@@ -76,8 +76,7 @@ lemma IsFiniteRankUniform.isBase_iff (hM : M.IsFiniteRankUniform a) :
     M.IsBase B ↔ B.encard = a ∧ B ⊆ M.E := by
   by_cases hBE : B ⊆ M.E
   · obtain ⟨E, rfl, hle⟩ := hM.exists_eq_unifOn
-    rw [unifOn_isBase_iff _ (by simpa), and_iff_left hBE]
-    assumption
+    rwa [unifOn_isBase_iff _ (by simpa), and_iff_left hBE]
   exact iff_of_false (fun h ↦ hBE h.subset_ground) <| by simp [hBE]
 
 lemma IsFiniteRankUniform.isCocircuit_iff (hM : M.IsFiniteRankUniform a) :

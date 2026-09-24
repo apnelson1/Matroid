@@ -379,7 +379,6 @@ lemma isFan_of_eq_of_forall_triangle_get [NeZero F.length] (h2 : 2 ≤ F.length)
   convert hT ⟨i + 1, by lia⟩ (by simp) (by simp [← Fin.val_inj, show i + 1 ≠ F.length - 1 by lia])
   · cases b with simp
   · simp [Fin.val_sub_one_of_ne_zero (show (⟨i + 1, by lia⟩ : Fin F.length) ≠ 0 by simp)]
-  · rfl
   rw! [Fin.getElem_fin, Fin.val_add_one_of_lt' (by simpa [add_assoc])]
   rfl
 

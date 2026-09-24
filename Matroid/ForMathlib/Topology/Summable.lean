@@ -99,7 +99,7 @@ variable [CompleteLattice M] [SupConvergenceClass M] [CanonicallyOrderedMul M]
 
 @[to_additive]
 theorem hasProd : HasProd f (⨆ s : Finset α, ∏ a ∈ s, f a) :=
-  tendsto_atTop_iSup fun _ _ ↦ Finset.prod_le_prod_of_subset'
+  tendsto_atTop_iSup fun _ _ ↦ Finset.prod_le_prod_of_subset
 
 @[to_additive (attr := simp)]
 theorem multipliable : Multipliable f :=

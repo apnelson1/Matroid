@@ -275,8 +275,7 @@ lemma gah (hM : G.IsMatching M) (hx : E(G ↾ M, x).encard = 0) (hy : E(G ↾ M,
     <;> [contradiction ; contradiction ; skip]
   have := hM.incEdges_encard_le_one u
   rw [isMatching_iff_restrict_isMatching] at hM
-  rw [addEdge_restrict_commutes, addEdge_incEdges_encard_of_ne he' hux huy]
-  assumption
+  rwa [addEdge_restrict_commutes, addEdge_incEdges_encard_of_ne he' hux huy]
 
 private lemma gah2 (hM : G.IsMatching M) (he : e ∉ M) : (G.addEdge e x y).IsMatching M := by
   rw [isMatching_iff_restrict_isMatching] at hM

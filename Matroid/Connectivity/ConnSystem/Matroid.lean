@@ -134,7 +134,7 @@ instance : InvariantFun (fun {α} (M : Matroid α) ↦ M.eConn)
   map_eq α β M f hf X hX := by
     simp only [TransferClass.pure_transfer, TransferClass.set_transfer]
     rw [eConn_eq_eLocalConn, eConn_eq_eLocalConn, map_ground, ← hf.image_sdiff' subset_rfl hX]
-    convert InvariantFun₂.map_eq (F := eLocalConn) (G := eLocalConn) hf hX sdiff_subset <;> rfl
+    convert InvariantFun₂.map_eq (F := eLocalConn) (G := eLocalConn) hf hX sdiff_subset
 
 lemma map_eConn_image {β : Type*} {f : α → β} (hf : InjOn f M.E) (hXE : X ⊆ M.E) :
     (M.map f hf).eConn (f '' X) = M.eConn X :=

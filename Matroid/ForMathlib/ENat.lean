@@ -2,7 +2,6 @@ module
 
 public import Mathlib.Data.ENat.Lattice -- inefficient import
 public import Mathlib.Tactic.ENatToNat
-public import Mathlib.Tactic.Recall
 public import Mathlib.Data.Nat.Cast.Order.Basic
 
 @[expose] public section
@@ -101,18 +100,6 @@ protected lemma one_le_ofNat {n : ℕ} [n.AtLeastTwo] : (1 : ℕ∞) ≤ ofNat(n
 @[simp]
 protected lemma not_ofNat_le_one {n : ℕ} [n.AtLeastTwo] : ¬ ofNat(n) ≤ (1 : ℕ∞) := by
   simp [← not_lt]
-
-@[deprecated Nat.one_le_cast (since := "2026-07-21")]
-protected lemma one_le_coe {n : ℕ} : (1 : ℕ∞) ≤ n ↔ 1 ≤ n := Nat.one_le_cast
-
-@[deprecated Nat.cast_le_one (since := "2026-07-21")]
-protected lemma coe_le_one {n : ℕ} : (n : ℕ∞) ≤ 1 ↔ n ≤ 1 := Nat.cast_le_one
-
-@[deprecated Nat.cast_lt_one (since := "2026-07-21")]
-protected lemma coe_lt_one {n : ℕ} : (n : ℕ∞) < 1 ↔ n = 0 := Nat.cast_lt_one
-
-@[deprecated Nat.cast_eq_one (since := "2026-07-21")]
-protected lemma coe_eq_one {n : ℕ} : (n : ℕ∞) = 1 ↔ n = 1 := Nat.cast_eq_one
 
 protected lemma coe_eq_ofNat {n : ℕ} [n.AtLeastTwo] : (n : ℕ∞) = ofNat(n) := rfl
 

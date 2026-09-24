@@ -956,7 +956,7 @@ lemma isSkewFamily_iff_nearly_forall_skew_compl_singleton
     apply hnot.2
     obtain ⟨j, hji : j ≠ i, hej⟩ := mem_iUnion₂.1 <| (sdiff_subset_iff.2 hCss) ⟨he.1, he.2⟩
     grw [(h j hji).subset_of_isCircuit_of_mem_left hC  ?_ he.1 hej, ← subset_biUnion_of_mem hji]
-    rwa [← biUnion_insert, ← union_singleton, compl_union_self] at hCss ⊢
+    simpa only [← biUnion_insert, ← union_singleton, compl_union_self] using hCss
   · simpa using fun j hne ↦ hdj (Ne.symm hne)
   · grw [← (h j₀ hj₀i).subset_ground_right]
     apply subset_biUnion_of_mem hj₀i.symm

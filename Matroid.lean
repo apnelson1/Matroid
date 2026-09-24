@@ -122,7 +122,7 @@ public import Matroid.Graph.Minor.Walk
 public import Matroid.Graph.Planarity.CycleDichotomy
 public import Matroid.Graph.Planarity.Drawing
 -- public import Matroid.Graph.Planarity.Drawing.Union
-public import Matroid.Graph.Planarity.Face
+-- public import Matroid.Graph.Planarity.Face
 -- public import Matroid.Graph.Planarity.FaceCycle
 public import Matroid.Graph.Planarity.GraphContinuum.Basic
 -- public import Matroid.Graph.Planarity.Insertion.Basic
@@ -138,8 +138,8 @@ public import Matroid.Graph.Planarity.Realization.Iso
 public import Matroid.Graph.Planarity.Realization.Metric
 public import Matroid.Graph.Planarity.Realization.Presentation
 public import Matroid.Graph.Planarity.Realization.Subgraph
-public import Matroid.Graph.Planarity.StarLemma
-public import Matroid.Graph.Planarity.ThetaCurve
+-- public import Matroid.Graph.Planarity.StarLemma
+-- public import Matroid.Graph.Planarity.ThetaCurve
 -- public import Matroid.Graph.Planarity.TopologicalMinor
 public import Matroid.Graph.Presentation.Basic
 public import Matroid.Graph.Presentation.Orientation

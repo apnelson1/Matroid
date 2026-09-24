@@ -503,7 +503,8 @@ lemma cyclicallyConnected_of_le_one (M : Matroid α) (hk : k ≤ 1) : M.Cyclical
 lemma IsLoop.not_tutteConnected {e : α} (he : M.IsLoop e) (hME : M.E.Nontrivial) (hk : 1 ≤ k) :
     ¬ M.TutteConnected (k + 1) := by
   have hM : M.Nonempty := ⟨hME.nonempty⟩
-  exact fun h ↦ he.not_connected hME <| tutteConnected_two_iff.1 <| h.mono <| add_left_mono hk
+  exact fun h ↦ he.not_connected hME <| tutteConnected_two_iff.1 <| h.mono <|
+    tsub_le_iff_right.mp hk
 
 lemma IsColoop.not_tutteConnected {e : α} (he : M.IsColoop e) (hME : M.E.Nontrivial) (hk : 1 ≤ k) :
     ¬ M.TutteConnected (k + 1) := by

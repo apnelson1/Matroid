@@ -2,7 +2,6 @@ module
 
 public import Mathlib.Combinatorics.Matroid.Closure
 public import Mathlib.Tactic.Have
-public import Mathlib.Tactic.Recall
 
 @[expose] public section
 

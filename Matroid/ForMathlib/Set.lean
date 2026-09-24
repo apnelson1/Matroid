@@ -141,10 +141,6 @@ lemma biInter_diff_singleton_eq_diff (s : Set α) {t : Set α} (ht : t.Nonempty)
 lemma subset_sdiff_singleton_iff {s t : Set α} {x : α} : s ⊆ t \ {x} ↔ (s ⊆ t ∧ x ∉ s) := by
   rw [subset_sdiff, disjoint_singleton_right]
 
-@[deprecated LE.le.sdiff_ssubset_of_nonempty (since := "2026-07-21")]
-lemma sdiff_ssubset {s t : Set α} (hst : s ⊆ t) (hs : s.Nonempty) : t \ s ⊂ t :=
-  hst.sdiff_ssubset_of_nonempty hs
-
 theorem image_preimage_image {β : Type*} {s : Set α} {f : α → β} : f '' (f ⁻¹' (f '' s)) = f '' s :=
   subset_antisymm (by simp) (image_mono (subset_preimage_image _ _))
 

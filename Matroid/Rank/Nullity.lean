@@ -399,8 +399,7 @@ lemma IsCircuit.two_le_nullity_union_of_ne {C C' : Set α} (hC : M.IsCircuit C)
   have hr := M.nullity_supermodular C C'
   have hi : M.Indep (C ∩ C') :=
     hC.ssubset_indep <| by grind [inter_ssubset_left_iff, hC.eq_of_subset_isCircuit hC']
-  rw [hC.nullity_eq, hC'.nullity_eq, hi.nullity_eq, add_zero] at hr
-  assumption
+  rwa [hC.nullity_eq, hC'.nullity_eq, hi.nullity_eq, add_zero] at hr
 
 lemma Cyclic.two_le_nullity_union_of_ne {C C' : Set α} (hC : M.Cyclic C) (hCne : C.Nonempty)
     (hC' : M.Cyclic C') (hC'ne : C'.Nonempty) (hCC' : C ≠ C') : 2 ≤ M.nullity (C ∪ C') := by

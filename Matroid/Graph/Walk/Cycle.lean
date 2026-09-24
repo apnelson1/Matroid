@@ -325,12 +325,8 @@ lemma IsCyclicWalk.idxOf_adj_first [DecidableEq α] (hC : G.IsCyclicWalk C) (hab
       rw [hb]
       omega
     exact idxOf_le_length_iff_mem.mp hle
-  obtain h0 | hnt := DecidableNonempty C
-  · simp only [WList.not_nonempty_iff] at h0
-    rw [length_eq_zero.2 h0, zero_tsub, ← ha] at hb
-    exact hab (C.idxOf_inj_of_left_mem haC hb.symm) |>.elim
   obtain h1 | hle := le_or_gt C.length 1
-  · rw [h1.antisymm (one_le_length_iff.mpr hnt), tsub_self, ← ha] at hb
+  · rw [h1.antisymm (one_le_length_iff.mpr hC.nonempty), tsub_self, ← ha] at hb
     exact hab (C.idxOf_inj_of_left_mem haC hb.symm) |>.elim
   have hn : C.idxOf b < C.length := by
     rw [hb]
