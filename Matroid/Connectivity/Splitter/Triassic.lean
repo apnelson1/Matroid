@@ -10,8 +10,6 @@ open Set Function
 
 namespace Matroid
 
-.
-
 variable {α β : Type*} {M : Matroid α} {N : Matroid β} {X Y C K T : Set α} {e f g x y : α}
     {b c d : Bool} {n i j : ℕ} {F : List α} {J : Bool → ZMod n → α}
 
