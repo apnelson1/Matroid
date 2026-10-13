@@ -5,7 +5,7 @@ Authors: Jun Kwon
 -/
 module
 
-public import Matroid.Graph.Hom
+public import Matroid.Graph.Hom.Basic
 
 /-!
 # Canonical transport under graph isomorphism
@@ -31,7 +31,7 @@ variable {V : Type uV} {E : Type uE} {V' : Type uV'} {E' : Type uE'}
 def Iso.vertexDomain (i : Iso G H) : IRw.SupportedDomain V V' where
   sourceSupport x := x ∈ V(G)
   targetSupport y := y ∈ V(H)
-  equiv := i.vertexEquiv
+  equiv := i.vertEquiv
 
 /-- Primitive supported action on ambient graph edges. -/
 @[irw_domain]

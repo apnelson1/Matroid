@@ -485,31 +485,28 @@ noncomputable def ofPathRoutes_of_simple {J : Graph γ δ} {G : Graph α β} [J.
 /-- Transport a topological-minor witness along an isomorphism of the pattern graph. -/
 noncomputable def ofIso {γ' δ' : Type*} {J : Graph γ δ} {K : Graph γ' δ'} {G : Graph α β}
     (F : Iso J K) (M : K.IsoTopologicalMinor G) : J.IsoTopologicalMinor G where
-  branchVertex := F.vertMapEmbedding.trans M.branchVertex
-  branchVertex_mem x := M.branchVertex_mem (F.vertMapEmbedding x)
-  route e := M.route (F.edgeMapEmbedding e)
+  branchVertex := F.vertEmbedding.trans M.branchVertex
+  branchVertex_mem x := M.branchVertex_mem (F.vertMap x)
+  route e := M.route (F.edgeMap e)
   route_isSimple e := M.route_isSimple _
   route_nonempty e := M.route_nonempty _
   route_ends e := by
     obtain ⟨u, v, huv⟩ := exists_isLink_of_mem_edgeSet e.prop
     let uJ : V(J) := ⟨u, huv.left_mem⟩
     let vJ : V(J) := ⟨v, huv.right_mem⟩
-    have hK : K.IsLink (F.edgeMapEmbedding e) (F.vertMapEmbedding uJ) (F.vertMapEmbedding vJ) :=
-      F.map_isLink huv
-        (by simpa [F.edgeEquiv_apply] using F.mem_edgeMap_edgeEquiv e)
-        (by simpa [F.vertexEquiv_apply] using F.mem_vertMap_vertexEquiv uJ)
-        (by simpa [F.vertexEquiv_apply] using F.mem_vertMap_vertexEquiv vJ)
-    rw [huv.ends_eq, Sym2.map_mk, ← M.route_ends (F.edgeMapEmbedding e), hK.ends_eq,
+    have hK : K.IsLink (F.edgeMap e) (F.vertMap uJ) (F.vertMap vJ) :=
+      F.map_isLink (e := e) (x := uJ) (y := vJ) huv
+    rw [huv.ends_eq, Sym2.map_mk, ← M.route_ends (F.edgeMap e), hK.ends_eq,
       Sym2.map_mk]
     rfl
   route_internal_disjoint_branchVertices e := by
-    refine (M.route_internal_disjoint_branchVertices (F.edgeMapEmbedding e)).mono_right ?_
+    refine (M.route_internal_disjoint_branchVertices (F.edgeMap e)).mono_right ?_
     rintro _ ⟨x, rfl⟩
-    exact ⟨F.vertMapEmbedding x, rfl⟩
+    exact ⟨F.vertMap x, rfl⟩
   route_internal_disjoint e f hef :=
-    M.route_internal_disjoint _ _ fun h ↦ hef (F.edgeMapEmbedding.injective h)
+    M.route_internal_disjoint _ _ fun h ↦ hef (F.edgeMap_injective h)
   route_edge_disjoint e f hef :=
-    M.route_edge_disjoint _ _ fun h ↦ hef (F.edgeMapEmbedding.injective h)
+    M.route_edge_disjoint _ _ fun h ↦ hef (F.edgeMap_injective h)
 
 /-! ### Normalization by relabelling -/
 

@@ -103,7 +103,10 @@ public import Matroid.Graph.Distance
 -- public import Matroid.Graph.EdgeColoring
 public import Matroid.Graph.Finite
 public import Matroid.Graph.Forest
-public import Matroid.Graph.Hom
+public import Matroid.Graph.Hom.Basic
+public import Matroid.Graph.Hom.Factorization
+public import Matroid.Graph.Hom.Image
+public import Matroid.Graph.Hom.Map
 public import Matroid.Graph.IRw
 public import Matroid.Graph.Independent
 public import Matroid.Graph.Lattice
@@ -124,7 +127,6 @@ public import Matroid.Graph.Planarity.Drawing
 -- public import Matroid.Graph.Planarity.Drawing.Union
 -- public import Matroid.Graph.Planarity.Face
 -- public import Matroid.Graph.Planarity.FaceCycle
-public import Matroid.Graph.Planarity.GraphContinuum.Basic
 -- public import Matroid.Graph.Planarity.Insertion.Basic
 -- public import Matroid.Graph.Planarity.Insertion.Plane
 public import Matroid.Graph.Planarity.Obstructions
@@ -142,6 +144,8 @@ public import Matroid.Graph.Planarity.Realization.Subgraph
 -- public import Matroid.Graph.Planarity.ThetaCurve
 -- public import Matroid.Graph.Planarity.TopologicalMinor
 public import Matroid.Graph.Presentation.Basic
+public import Matroid.Graph.Presentation.Hom
+public import Matroid.Graph.Presentation.OfGraph
 public import Matroid.Graph.Presentation.Orientation
 public import Matroid.Graph.Presentation.Quotient
 public import Matroid.Graph.Relabel

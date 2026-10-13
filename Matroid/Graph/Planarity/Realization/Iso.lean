@@ -1,6 +1,6 @@
 module
 
-public import Matroid.Graph.Hom
+public import Matroid.Graph.Hom.Basic
 public import Matroid.Graph.Planarity.Realization.Basic
 
 /-!
@@ -34,63 +34,62 @@ namespace Iso
 open unitInterval
 
 lemma isLink_vert_edge (F : Iso K G) (e : E(K)) :
-    G.IsLink (F.edgeEquiv e) (F.vertexEquiv (edgeSource e)) (F.vertexEquiv (edgeTarget e)) := by
-  rw [← F.isLink_edgeEquiv_vertexEquiv e ..]
-  exact isLink_edgeSource_edgeTarget e
+    G.IsLink (F.edgeEquiv e) (F.vertEquiv (edgeSource e)) (F.vertEquiv (edgeTarget e)) :=
+  F.map_isLink (isLink_edgeSource_edgeTarget e)
 
 /-! ### Orientation -/
 
 /-- Whether `F` sends the preferred orientation of `e` to that of its image. -/
 abbrev sameOrientation (F : Iso K G) (e : E(K)) : Prop :=
-  F.vertexEquiv (edgeSource e) = edgeSource (F.edgeEquiv e)
+  F.vertEquiv (edgeSource e) = edgeSource (F.edgeEquiv e)
 
 lemma sameOrientation_or_swap (F : Iso K G) (e : E(K)) :
     F.sameOrientation e ∨
-      (F.vertexEquiv (edgeSource e) = edgeTarget (F.edgeEquiv e) ∧
-        F.vertexEquiv (edgeTarget e) = edgeSource (F.edgeEquiv e)) := by
+      (F.vertEquiv (edgeSource e) = edgeTarget (F.edgeEquiv e) ∧
+        F.vertEquiv (edgeTarget e) = edgeSource (F.edgeEquiv e)) := by
   obtain ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩ :=
     (isLink_edgeSource_edgeTarget (F.edgeEquiv e)).eq_and_eq_or_eq_and_eq (F.isLink_vert_edge e)
   · exact Or.inl <| Subtype.ext h₁.symm
   · exact Or.inr ⟨Subtype.ext h₂.symm, Subtype.ext h₁.symm⟩
 
 lemma vert_edgeTarget_of_sameOrientation (F : Iso K G) {e : E(K)} (h : F.sameOrientation e) :
-    F.vertexEquiv (edgeTarget e) = edgeTarget (F.edgeEquiv e) := by
+    F.vertEquiv (edgeTarget e) = edgeTarget (F.edgeEquiv e) := by
   obtain ⟨_, h₂⟩ | ⟨h₁, h₂⟩ :=
     (isLink_edgeSource_edgeTarget (F.edgeEquiv e)).eq_and_eq_or_eq_and_eq (F.isLink_vert_edge e)
   · exact Subtype.ext h₂.symm
-  · have hsrc : F.vertexEquiv (edgeSource e) = F.vertexEquiv (edgeTarget e) := by
+  · have hsrc : F.vertEquiv (edgeSource e) = F.vertEquiv (edgeTarget e) := by
       rw [h, Subtype.ext_iff.mpr h₁]
     exact hsrc.symm.trans (Subtype.ext h₂.symm)
 
 lemma vert_of_not_sameOrientation (F : Iso K G) {e : E(K)} (h : ¬ F.sameOrientation e) :
-    F.vertexEquiv (edgeSource e) = edgeTarget (F.edgeEquiv e) ∧
-      F.vertexEquiv (edgeTarget e) = edgeSource (F.edgeEquiv e) :=
+    F.vertEquiv (edgeSource e) = edgeTarget (F.edgeEquiv e) ∧
+      F.vertEquiv (edgeTarget e) = edgeSource (F.edgeEquiv e) :=
   (F.sameOrientation_or_swap e).resolve_left h
 
 lemma sameOrientation_symm (F : Iso K G) {e : E(K)} (h : F.sameOrientation e) :
     F.symm.sameOrientation (F.edgeEquiv e) := by
   unfold sameOrientation at h ⊢
-  simpa [vertexEquiv_symm_apply_apply, edgeEquiv_symm_apply_apply] using
-    congrArg F.symm.vertexEquiv h.symm
+  simpa [vertEquiv_symm, edgeEquiv_symm] using
+    congrArg F.symm.vertEquiv h.symm
 
 lemma not_sameOrientation_symm (F : Iso K G) {e : E(K)} (h : ¬ F.sameOrientation e) :
     ¬ F.symm.sameOrientation (F.edgeEquiv e) := by
   intro hs
   unfold sameOrientation at hs
-  have hs' : F.symm.vertexEquiv (edgeSource (F.edgeEquiv e)) = edgeSource e := by
-    simpa [edgeEquiv_symm_apply_apply] using hs
-  have : F.vertexEquiv (edgeSource e) = edgeSource (F.edgeEquiv e) := by
-    simpa [vertexEquiv_apply_symm_apply] using congrArg F.vertexEquiv hs'.symm
+  have hs' : F.symm.vertEquiv (edgeSource (F.edgeEquiv e)) = edgeSource e := by
+    simpa [edgeEquiv_symm, Equiv.symm_apply_apply] using hs
+  have : F.vertEquiv (edgeSource e) = edgeSource (F.edgeEquiv e) := by
+    simpa [vertEquiv_symm, Equiv.apply_symm_apply] using congrArg F.vertEquiv hs'.symm
   exact h this
 
 lemma sameOrientation_edge_symm (F : Iso K G) (e : E(G)) :
     F.sameOrientation (F.symm.edgeEquiv e) ↔ F.symm.sameOrientation e := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩ <;> unfold sameOrientation at h ⊢
-  · have h' : F.vertexEquiv (edgeSource (F.symm.edgeEquiv e)) = edgeSource e := by
-      simpa [edgeEquiv_apply_symm_apply] using h
-    simpa [vertexEquiv_symm_apply_apply] using congrArg F.symm.vertexEquiv h'.symm
-  · have := congrArg F.vertexEquiv h
-    simpa [vertexEquiv_apply_symm_apply, edgeEquiv_apply_symm_apply] using this.symm
+  · have h' : F.vertEquiv (edgeSource (F.symm.edgeEquiv e)) = edgeSource e := by
+      simpa [edgeEquiv_symm, Equiv.apply_symm_apply] using h
+    simpa [vertEquiv_symm, Equiv.symm_apply_apply] using congrArg F.symm.vertEquiv h'.symm
+  · have := congrArg F.vertEquiv h
+    simpa [vertEquiv_symm, edgeEquiv_symm] using this.symm
 
 /-! ### Reparametrisation of edges -/
 
@@ -112,20 +111,20 @@ lemma orient_symm_orient (F : Iso K G) (e : E(K)) (t : I) :
     F.symm.orient (F.edgeEquiv e) (F.orient e t) = t := by
   by_cases h : F.sameOrientation e
   · simp [orient, ite_eq_left h, ite_eq_left (F.sameOrientation_symm h)]
-  · simp [orient, ite_eq_right h, ite_eq_right (F.not_sameOrientation_symm h), symm_symm]
+  · simp [orient, ite_eq_right h, ite_eq_right (F.not_sameOrientation_symm h)]
 
 lemma orient_orient_symm (F : Iso K G) (e : E(G)) (t : I) :
     F.orient (F.symm.edgeEquiv e) (F.symm.orient e t) = t := by
   by_cases h : F.symm.sameOrientation e
   · simp [orient, ite_eq_left h, ite_eq_left ((F.sameOrientation_edge_symm e).mpr h)]
-  · simp [orient, ite_eq_right h, ite_eq_right (mt (F.sameOrientation_edge_symm e).mp h), symm_symm]
+  · simp [orient, ite_eq_right h, ite_eq_right (mt (F.sameOrientation_edge_symm e).mp h)]
 
 /-! ### The induced maps on realizations -/
 
 /-- The induced map on pre-realizations. -/
 noncomputable def preRealizationMap (F : Iso K G) : C(K.PreRealization, G.PreRealization) where
   toFun
-    | .inl v => .inl (F.vertexEquiv v)
+    | .inl v => .inl (F.vertEquiv v)
     | .inr ⟨e, t⟩ => .inr ⟨F.edgeEquiv e, F.orient e t⟩
   continuous_toFun := continuous_sum_dom.mpr ⟨continuous_of_discreteTopology,
     continuous_sigma_iff.mpr fun e ↦ continuous_inr.comp <|
@@ -167,18 +166,21 @@ lemma preRealizationMap_glueRel (F : Iso K G) ⦃a b : K.PreRealization⦄
 lemma preRealizationMap_symm_comp (F : Iso K G) (x : K.PreRealization) :
     F.symm.preRealizationMap (F.preRealizationMap x) = x := by
   match x with
-  | .inl v => simp only [preRealizationMap, ContinuousMap.coe_mk, vertexEquiv_symm_apply_apply]
+  | .inl v =>
+    simp only [preRealizationMap, ContinuousMap.coe_mk, vertEquiv_symm, Equiv.symm_apply_apply]
   | .inr ⟨e, t⟩ =>
-    simp only [preRealizationMap, ContinuousMap.coe_mk, edgeEquiv_symm_apply_apply,
+    simp only [preRealizationMap, ContinuousMap.coe_mk, edgeEquiv_symm, Equiv.symm_apply_apply,
       orient_symm_orient]
 
 lemma preRealizationMap_comp_symm (F : Iso K G) (x : G.PreRealization) :
     F.preRealizationMap (F.symm.preRealizationMap x) = x := by
   match x with
-  | .inl v => simp only [preRealizationMap, ContinuousMap.coe_mk, vertexEquiv_apply_symm_apply]
+  | .inl v =>
+    simp only [preRealizationMap, ContinuousMap.coe_mk, vertEquiv_symm, Equiv.apply_symm_apply]
   | .inr ⟨e, t⟩ =>
-    simp only [preRealizationMap, ContinuousMap.coe_mk, edgeEquiv_apply_symm_apply,
-      orient_orient_symm]
+    simp only [preRealizationMap, ContinuousMap.coe_mk]
+    rw [orient_orient_symm]
+    simp
 
 /-- The homeomorphism of weak realizations induced by a graph isomorphism. -/
 noncomputable def realizationHomeomorph (F : Iso K G) : Realization K ≃ₜ Realization G where

@@ -235,19 +235,9 @@ theorem Drawing.exists_plDrawing [G.Finite] [G.Loopless] [NormedSpace ℝ V] (D 
   have hcell_tgt (e : E(G)) : (cell e).toSet ∩ closedBall (D.vertex (edgeTarget e))
       (r (edgeTarget e)) = segment ℝ (D.vertex (edgeTarget e)) (zv e) := (hcell e).2.2.2.2.1
   have hcell_mid (e : E(G)) : (cell e).toSet \ (ball (D.vertex (edgeSource e)) (r (edgeSource e)) ∪
-      ball (D.vertex (edgeTarget e)) (r (edgeTarget e))) ⊆ (Ppoly e).toSet := (hcell e).2.2.2.2.2
-  have hzu_mem_P (e : E(G)) : zu e ∈ (Ppoly e).toSet := by
-    refine hcell_mid e ⟨(hcell_src .. ▸ right_mem_segment ℝ ..).1, ?_⟩
-    rintro (hu | hv)
-    · exact (lt_self_iff_false _).mp <| (mem_ball.mp hu).trans_eq (hzu_dist e).symm
-    exact (hdisj (hsrc_ne_tgt e)).notMem_of_mem_left (mem_closedBall.mpr (hzu_dist e).le)
-      (mem_closedBall.mpr (mem_ball.mp hv).le)
-  have hzv_mem_P (e : E(G)) : zv e ∈ (Ppoly e).toSet := by
-    refine hcell_mid e ⟨(hcell_tgt .. ▸ right_mem_segment ..).1, ?_⟩
-    rintro (hu | hv)
-    · exact (hdisj (hsrc_ne_tgt e)).notMem_of_mem_left (mem_closedBall.mpr (mem_ball.mp hu).le)
-        (mem_closedBall.mpr (hzv_dist e).le)
-    exact (lt_self_iff_false _).mp <| (mem_ball.mp hv).trans_eq (hzv_dist e).symm
+      ball (D.vertex (edgeTarget e)) (r (edgeTarget e))) ⊆ (Ppoly e).toSet := (hcell e).2.2.2.2.2.1
+  have hzu_mem_P (e : E(G)) : zu e ∈ (Ppoly e).toSet := (hcell e).2.2.2.2.2.2.1
+  have hzv_mem_P (e : E(G)) : zv e ∈ (Ppoly e).toSet := (hcell e).2.2.2.2.2.2.2
   have hcell_avoid (e : E(G)) (x : V(G)) (hxu : x ≠ edgeSource e) (hxv : x ≠ edgeTarget e) :
       Disjoint (cell e).toSet (closedBall (D.vertex x) (r x)) := by
     refine disjoint_left.mpr fun w hwcell hwB ↦ ?_
@@ -262,7 +252,7 @@ theorem Drawing.exists_plDrawing [G.Finite] [G.Loopless] [NormedSpace ℝ V] (D 
     exact (hP_K e).notMem_of_mem_left hwP <| mem_iUnion₂.mpr ⟨x, ⟨hxu, hxv⟩, hwB⟩
   have hlen (e : E(G)) : 0 < (cell e).length :=
     length_pos_of_ne (cell e) (D.vertex_injective.ne (hsrc_ne_tgt e))
-  have hsimple (e : E(G)) : (cell e).IsSimpleArcOrLoop := (hcell e).1.isSimpleArcOrLoop (hlen e)
+  have hsimple (e : E(G)) : (cell e).toPath.IsPrimitive := (hcell e).1.isPrimitive (hlen e)
   have hcv (e : E(G)) : Disjoint ((cell e).toSet \
       {D.vertex (edgeSource e), D.vertex (edgeTarget e)}) (range D.vertex) := by
     refine disjoint_left.mpr ?_

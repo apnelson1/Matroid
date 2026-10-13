@@ -824,6 +824,21 @@ theorem ncard_sectors_closure_eq_two (hρ : 0 < ρ) (hY : ↑Y ⊆ sphere x ρ) 
       (Finset.mem_filter.mp (Finset.mem_coe.mp hi)).2)
   rw [hset, ncard_image_of_injective _ (injective_openSectorIdx hρ), ncard_coe_finset, hScard]
 
+/-- If a star has exactly two radii, every sector has any relative-interior point of either radius
+in its closure. -/
+theorem sectors_mem_closure_eq_of_card_eq_two (hρ : 0 < ρ) (hY : ↑Y ⊆ sphere x ρ)
+    (hYcard : Y.card = 2) {y : V} (hy : y ∈ Y) {p : V}
+    (hp : p ∈ segment ℝ x y \ {x, y}) :
+    {C ∈ sectors x ρ Y | p ∈ closure C} = sectors x ρ Y := by
+  have hn := ncard_sectors_closure_eq_two hρ hY (by omega) hy hp
+  have hYne : Y.Nonempty := Finset.card_pos.mp (by omega)
+  have hall : (sectors x ρ Y).ncard = 2 := by
+    rw [ncard_sectors hρ hYne hY, hYcard]
+  have hsub : {C ∈ sectors x ρ Y | p ∈ closure C} ⊆ sectors x ρ Y := sep_subset _ _
+  have hfin : (sectors x ρ Y).Finite :=
+    finite_of_ncard_ne_zero (by rw [hall]; norm_num)
+  exact eq_of_subset_of_ncard_le hsub (by rw [hn, hall]) hfin
+
 /-- Every sector has the centre in its closure. -/
 theorem mem_closure_of_mem_sectors (hρ : 0 < ρ) (hYne : Y.Nonempty) (hY : ↑Y ⊆ sphere x ρ)
     (hC : C ∈ sectors x ρ Y) : x ∈ closure C := by

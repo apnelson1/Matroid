@@ -1,7 +1,7 @@
 module
 
 public import Matroid.Graph.Planarity.Drawing
-public import Matroid.ForMathlib.Geometry.PolygonalPath.SimpleArcOrLoop
+public import Matroid.ForMathlib.Geometry.PolygonalPath.PrimitivePath
 
 @[expose] public section
 
@@ -11,8 +11,8 @@ public import Matroid.ForMathlib.Geometry.PolygonalPath.SimpleArcOrLoop
 A drawing is *polygonal*, or *PL*, when the image of every edge is a finite union of segments. This
 file gives that notion two forms: `Graph.PLDrawing` stores a polygonal path for every edge, while
 `Graph.Drawing.IsPL` asserts that such paths exist. The edge condition is stated on the path image,
-and `cell_isSimpleArcOrLoop` records that the stored path is embedded. Loops are handled by
-`PolygonalPath.IsSimpleArcOrLoop`.
+and `cell_isPrimitive` records that the stored path is embedded. Loops are handled by
+`Path.IsPrimitive`.
 
 The definitions work over a real topological vector space. Plane-specific results use
 `EuclideanSpace ℝ (Fin 2)` and take faces after transporting a drawing to its one-point
@@ -50,7 +50,7 @@ structure PLDrawing (G : Graph α β) (V : Type*) [AddCommGroup V] [Module ℝ V
   cell : ∀ e : E(G), PolygonalPath (toDrawing.vertex (edgeSource e))
     (toDrawing.vertex (edgeTarget e))
   /-- Each cell is an embedded arc, or an embedded circle when the edge is a loop. -/
-  cell_isSimpleArcOrLoop : ∀ e, (cell e).IsSimpleArcOrLoop
+  cell_isPrimitive : ∀ e, (cell e).toPath.IsPrimitive
   /-- Each cell traces out exactly the closed cell of its edge. -/
   range_edgePath : ∀ e, range (toDrawing.edgePath e) = (cell e).toSet
 
@@ -62,14 +62,14 @@ change them — so they are existentially quantified here and carried by `PLDraw
 construction needs them. -/
 def Drawing.IsPL [ContinuousAdd V] (D : Drawing G V) : Prop :=
   ∀ e : E(G), ∃ P : PolygonalPath (D.vertex (edgeSource e)) (D.vertex (edgeTarget e)),
-    P.IsSimpleArcOrLoop ∧ range (D.edgePath e) = P.toSet
+    P.toPath.IsPrimitive ∧ range (D.edgePath e) = P.toSet
 
 namespace PLDrawing
 
 variable [ContinuousAdd V] {D : PLDrawing G V}
 
 lemma isPL (D : PLDrawing G V) : D.IsPL :=
-  fun e ↦ ⟨D.cell e, D.cell_isSimpleArcOrLoop e, D.range_edgePath e⟩
+  fun e ↦ ⟨D.cell e, D.cell_isPrimitive e, D.range_edgePath e⟩
 
 /-- Restrict a polygonal drawing to a subgraph. The cells transport unchanged: a subgraph has the
 same ends for each of its edges, and the orientation of an edge is determined by its ends — `ArbRel`
@@ -81,10 +81,10 @@ def restrictCell (D : PLDrawing G V) (h : H ≤ G) (e : E(H)) :
   (D.cell ⟨e.1, edgeSet_mono h e.2⟩).cast (D.restrict_vertex_edgeSource h e).symm
     (D.restrict_vertex_edgeTarget h e).symm
 
-theorem isSimpleArcOrLoop_restrictCell (D : PLDrawing G V) (h : H ≤ G) (e : E(H)) :
-    (D.restrictCell h e).IsSimpleArcOrLoop :=
-  (PolygonalPath.isSimpleArcOrLoop_cast ..).mpr
-    (D.cell_isSimpleArcOrLoop ⟨e.1, edgeSet_mono h e.2⟩)
+theorem isPrimitive_restrictCell (D : PLDrawing G V) (h : H ≤ G) (e : E(H)) :
+    (D.restrictCell h e).toPath.IsPrimitive :=
+  (PolygonalPath.isPrimitive_cast ..).mpr
+    (D.cell_isPrimitive ⟨e.1, edgeSet_mono h e.2⟩)
 
 theorem range_edgePath_restrictCell (D : PLDrawing G V) (h : H ≤ G) (e : E(H)) :
     range ((D.restrict h).edgePath e) = (D.restrictCell h e).toSet := by
@@ -93,7 +93,7 @@ theorem range_edgePath_restrictCell (D : PLDrawing G V) (h : H ≤ G) (e : E(H))
 def restrict (D : PLDrawing G V) (h : H ≤ G) : PLDrawing H V where
   toDrawing := D.toDrawing.restrict h
   cell := D.restrictCell h
-  cell_isSimpleArcOrLoop := D.isSimpleArcOrLoop_restrictCell h
+  cell_isPrimitive := D.isPrimitive_restrictCell h
   range_edgePath := D.range_edgePath_restrictCell h
 
 @[simp]
@@ -132,7 +132,7 @@ theorem exists_nhds_inter_support_eq_segment [G.Finite] [T2Space V] [IsTopologic
     (hav : a ∉ (D.cell f).vertices) {s : V × V} (hs : s ∈ (D.cell f).edges)
     (has : a ∈ segment ℝ s.1 s.2) : ∃ U ∈ 𝓝 a, U ∩ D.support = U ∩ segment ℝ s.1 s.2 := by
   obtain ⟨U₀, hU₀, hU₀eq⟩ :=
-    (D.cell_isSimpleArcOrLoop f).exists_nhds_inter_toSet_eq ha hav hs has
+    PolygonalPath.exists_nhds_inter_toSet_eq_of_isPrimitive (D.cell_isPrimitive f) ha hav hs has
   have hend : a ∉ ({D.vertex (edgeSource f), D.vertex (edgeTarget f)} : Set V) := by
     rintro (rfl | rfl)
     · exact hav (D.cell f).first_mem_vertices
@@ -188,28 +188,28 @@ into a drawing. -/
 
 /-- The interior of the parametrized cell is its image minus its endpoints — for a loop, minus the
 single base point, which is again the open cell. -/
-theorem Path.interior_toPath {x y : V} {P : PolygonalPath x y} (h : P.IsSimpleArcOrLoop) :
+theorem Path.interior_toPath {x y : V} {P : PolygonalPath x y} (h : P.toPath.IsPrimitive) :
     P.toPath.Interior = P.toSet \ {x, y} :=
-  h.toSet_diff_endpoints.symm
+  (PolygonalPath.toSet_diff_endpoints_of_isPrimitive h).symm
 
 theorem Path.interior_toPath_range {x y : V} {P : PolygonalPath x y} {S : Set V}
-    (h : P.IsSimpleArcOrLoop) (hdisj : Disjoint (P.toSet \ {x, y}) S) :
+    (h : P.toPath.IsPrimitive) (hdisj : Disjoint (P.toSet \ {x, y}) S) :
     Disjoint (P.toPath.Interior) S :=
   (Path.interior_toPath h) ▸ hdisj
 
 theorem Path.interior_toPath_disjoint {x y x' y' : V} {P : PolygonalPath x y}
-    {Q : PolygonalPath x' y'} (hP : P.IsSimpleArcOrLoop) (hQ : Q.IsSimpleArcOrLoop)
+    {Q : PolygonalPath x' y'} (hP : P.toPath.IsPrimitive) (hQ : Q.toPath.IsPrimitive)
     (hdisj : Disjoint (P.toSet \ {x, y}) (Q.toSet \ {x', y'})) :
     Disjoint (P.toPath.Interior) (Q.toPath.Interior) :=
   (Path.interior_toPath hP) ▸ (Path.interior_toPath hQ) ▸ hdisj
 
 /-- Build a polygonal drawing from vertex positions and cells. The hypotheses are the polygonal form
 of the conditions in `Drawing.ofVertexAndEdgePaths`: injectivity of each cell is replaced by
-`IsSimpleArcOrLoop`, which is combinatorial, and the interior of a cell is `toSet` minus its
+`Path.IsPrimitive`, and the interior of a cell is `toSet` minus its
 endpoints, which is the open cell for a loop as well as for a non-loop. -/
 noncomputable def PLDrawing.ofCells (vertex : V(G) → V) (vertex_injective : Injective vertex)
     (cell : ∀ e : E(G), PolygonalPath (vertex (edgeSource e)) (vertex (edgeTarget e)))
-    (cell_isSimpleArcOrLoop : ∀ e, (cell e).IsSimpleArcOrLoop)
+    (cell_isPrimitive : ∀ e, (cell e).toPath.IsPrimitive)
     (cell_inter_vertex : ∀ e, Disjoint
       ((cell e).toSet \ {vertex (edgeSource e), vertex (edgeTarget e)}) (range vertex))
     (cell_inter : ∀ e f, e ≠ f → Disjoint
@@ -217,18 +217,18 @@ noncomputable def PLDrawing.ofCells (vertex : V(G) → V) (vertex_injective : In
       ((cell f).toSet \ {vertex (edgeSource f), vertex (edgeTarget f)})) :
     PLDrawing G V where
   toDrawing := Drawing.ofVertexAndEdgePaths vertex vertex_injective (fun e ↦ (cell e).toPath)
-    (fun e ↦ (cell_isSimpleArcOrLoop e).injOn_toPath_Ioo)
-    (fun e ↦ Path.interior_toPath_range (cell_isSimpleArcOrLoop e) (cell_inter_vertex e))
-    (fun e f hef ↦ Path.interior_toPath_disjoint (cell_isSimpleArcOrLoop e)
-      (cell_isSimpleArcOrLoop f) (cell_inter e f hef))
+    (fun e ↦ (cell_isPrimitive e).injOn_Ioo)
+    (fun e ↦ Path.interior_toPath_range (cell_isPrimitive e) (cell_inter_vertex e))
+    (fun e f hef ↦ Path.interior_toPath_disjoint (cell_isPrimitive e)
+      (cell_isPrimitive f) (cell_inter e f hef))
   cell := cell
-  cell_isSimpleArcOrLoop := cell_isSimpleArcOrLoop
+  cell_isPrimitive := cell_isPrimitive
   range_edgePath := fun e ↦ (cell e).toSet_eq_range_toPath.symm
 
 @[simp]
 lemma PLDrawing.ofCells_vertex {vertex : V(G) → V} {hv : Injective vertex}
     {cell : ∀ e : E(G), PolygonalPath (vertex (edgeSource e)) (vertex (edgeTarget e))}
-    {hc : ∀ e, (cell e).IsSimpleArcOrLoop} {hcv : ∀ e, Disjoint
+    {hc : ∀ e, (cell e).toPath.IsPrimitive} {hcv : ∀ e, Disjoint
       ((cell e).toSet \ {vertex (edgeSource e), vertex (edgeTarget e)}) (range vertex)}
     {hcc : ∀ e f, e ≠ f → Disjoint
       ((cell e).toSet \ {vertex (edgeSource e), vertex (edgeTarget e)})

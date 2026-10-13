@@ -153,8 +153,8 @@ theorem IsSimple.exists_two_regions_crosscut {n : ℕ} {p : Polygon V n} (hp : p
     eq_connectedComponentIn_of_frontier_subset (hWopen 2) (hWconn 2).isPreconnected hW2J
       (by rw [hWfront 2, hfront2]) hw2
   have hinter : (A.toSet \ {s, t}).Nonempty := by
-    have hsa : A.IsSimpleArcOrLoop := Or.inl ⟨hA, A.length_pos_of_ne hst⟩
-    rw [hsa.toSet_diff_endpoints]
+    have hsa : A.toPath.IsPrimitive := hA.isPrimitive (A.length_pos_of_ne hst)
+    rw [PolygonalPath.toSet_diff_endpoints_of_isPrimitive hsa]
     exact (nonempty_Ioo.2 (zero_lt_one : (0 : I) < 1)).image _
   have hFW : F ≠ W 2 := by
     intro hEq
@@ -260,9 +260,9 @@ theorem IsSimple.not_alternating_crosscut {n : ℕ} {p : Polygon V n} (hp : p.Is
   have hK₂sub : K₂.toSet ⊆ J₁.toSet ∪ J₂.toSet :=
     (hKcover.trans hJcover.symm) ▸ subset_union_right
   have hBlen : 0 < B.length := B.length_pos_of_ne ht₁₂
-  have hBsa : B.IsSimpleArcOrLoop := Or.inl ⟨hB, hBlen⟩
+  have hBsa : B.toPath.IsPrimitive := hB.isPrimitive hBlen
   have hinterB : IsConnected (B.toSet \ {t₁, t₂}) := by
-    rw [hBsa.toSet_diff_endpoints]
+    rw [PolygonalPath.toSet_diff_endpoints_of_isPrimitive hBsa]
     exact (isConnected_Ioo (zero_lt_one : (0 : I) < 1)).image
       (B.toPath : I → V) B.toPath.continuous.continuousOn
   have hBimg : (↑) '' (B.toSet \ {t₁, t₂}) ⊆ W₁ ∪ W₂ := by
@@ -340,10 +340,10 @@ theorem IsSimple.not_alternating_crosscut {n : ℕ} {p : Polygon V n} (hp : p.Is
   have hfalse (K : PolygonalPath s₁ s₂) (hK : K.IsSimple)
       (hKsub : K.toSet ⊆ J₁.toSet ∪ J₂.toSet)
       (ht₁K : t₁ ∈ K.toSet) (ht₂K : t₂ ∈ K.toSet) : False := by
-    have hKsa : K.IsSimpleArcOrLoop := Or.inl ⟨hK, K.length_pos_of_ne hs₁₂⟩
+    have hKsa : K.toPath.IsPrimitive := hK.isPrimitive (K.length_pos_of_ne hs₁₂)
     have ht₁K' : t₁ ∈ K.toSet \ {s₁, s₂} := ⟨ht₁K, ht₁.2⟩
     have ht₂K' : t₂ ∈ K.toSet \ {s₁, s₂} := ⟨ht₂K, ht₂.2⟩
-    rw [hKsa.toSet_diff_endpoints] at ht₁K' ht₂K'
+    rw [PolygonalPath.toSet_diff_endpoints_of_isPrimitive hKsa] at ht₁K' ht₂K'
     obtain ⟨u, hu, hu1⟩ := ht₁K'
     obtain ⟨v, hv, hv1⟩ := ht₂K'
     let a : I := min u v
@@ -355,7 +355,7 @@ theorem IsSimple.not_alternating_crosscut {n : ℕ} {p : Polygon V n} (hp : p.Is
     have hCI : Icc a b ⊆ Ioo (0 : I) 1 :=
       fun t ht ↦ ⟨(lt_min hu.1 hv.1).trans_le ht.1, ht.2.trans_lt (max_lt hu.2 hv.2)⟩
     have hCsubK : C ⊆ K.toSet \ {s₁, s₂} := by
-      rw [hKsa.toSet_diff_endpoints]
+      rw [PolygonalPath.toSet_diff_endpoints_of_isPrimitive hKsa]
       exact image_mono hCI
     have hCsubJ : C ⊆ J₁.toSet ∪ J₂.toSet :=
       (hCsubK.trans sdiff_subset).trans hKsub

@@ -93,8 +93,10 @@ theorem exists_radius_edgeInterior [G.Finite] (D : PLDrawing G V) {e : E(G)} {p 
       simpa [hAB, PolygonalPath.append_edges] using Or.inl haA
     have hb : (p, b) ∈ (D.cell e).edges := by
       simpa [hAB, PolygonalPath.append_edges] using Or.inr hbB
-    have hA : A.IsSimple := (hAB ▸ D.cell_isSimpleArcOrLoop e).isSimple_left hpx.symm
-    have hB : B.IsSimple := (hAB ▸ D.cell_isSimpleArcOrLoop e).isSimple_right hpx.symm
+    have hA : A.IsSimple :=
+      PolygonalPath.isSimple_left_of_isPrimitive (hAB ▸ D.cell_isPrimitive e) hpx.symm
+    have hB : B.IsSimple :=
+      PolygonalPath.isSimple_right_of_isPrimitive (hAB ▸ D.cell_isPrimitive e) hpx.symm
     have hne_a : a ≠ p := hA.hasNondegenerateEdges _ haA
     have hne_b : b ≠ p := (hB.hasNondegenerateEdges _ hbB).symm
     have honly : ∀ s ∈ (D.cell e).edges, p ∈ segment ℝ s.1 s.2 → s = (a, p) ∨ s = (p, b) := by
@@ -106,7 +108,7 @@ theorem exists_radius_edgeInterior [G.Finite] (D : PLDrawing G V) {e : E(G)} {p 
       · exact Or.inr (PolygonalPath.eq_first_edge_of_mem_segment hB hbB hsB hps)
     have hinter : A.toSet ∩ B.toSet ⊆ ({D.toDrawing.vertex (edgeSource e), p} : Set V) := by
       intro u hu
-      obtain ⟨hS, _⟩ | ⟨heq', hL⟩ := hAB ▸ D.cell_isSimpleArcOrLoop e
+      obtain ⟨hS, _⟩ | ⟨heq', hL⟩ := PolygonalPath.isPrimitive_iff.mp (hAB ▸ D.cell_isPrimitive e)
       · exact Or.inr ((PolygonalPath.isSimple_append_iff.mp hS).2.2 hu)
       · let B' : PolygonalPath p (D.toDrawing.vertex (edgeSource e)) := B.cast rfl heq'
         have hBset : B'.toSet = B.toSet := PolygonalPath.toSet_cast B rfl heq'
@@ -264,7 +266,7 @@ theorem exists_radius_edgeInterior [G.Finite] (D : PLDrawing G V) {e : E(G)} {p 
     rw [hloc, closedBall_inter_two_segments_at_endpoint p a b hρpos hne_a hne_b hρ_le_a hρ_le_b,
       two_radii_union_eq_star p ya yb, ← hYunion]
   · obtain ⟨s, ⟨hs, has⟩, _⟩ :=
-      (D.cell_isSimpleArcOrLoop e).existsUnique_edge hp_cell hvert
+      PolygonalPath.existsUnique_edge_of_isPrimitive (D.cell_isPrimitive e) hp_cell hvert
     have hne1 : s.1 ≠ p := fun h ↦ hvert (h ▸ (D.cell e).fst_mem_vertices hs)
     have hne2 : s.2 ≠ p := fun h ↦ hvert (h ▸ (D.cell e).snd_mem_vertices hs)
     have hab : s.1 ≠ s.2 := fun heq ↦ by
@@ -368,7 +370,7 @@ private lemma pathInterior_edgePath_eq_toSet_sdiff (D : PLDrawing G V) (e : E(G)
         rw [h1]; simp [Path.target]
 
 private lemma cell_length_pos (D : PLDrawing G V) (e : E(G)) : 0 < (D.cell e).length := by
-  rcases D.cell_isSimpleArcOrLoop e with ⟨_, hlen⟩ | ⟨heq, hL⟩
+  rcases PolygonalPath.isPrimitive_iff.mp (D.cell_isPrimitive e) with ⟨_, hlen⟩ | ⟨heq, hL⟩
   · exact hlen
   · have := PolygonalPath.IsSimpleLoop.length_pos (P := (D.cell e).cast rfl heq) hL
     rwa [PolygonalPath.cast_length] at this
@@ -376,7 +378,7 @@ private lemma cell_length_pos (D : PLDrawing G V) (e : E(G)) : 0 < (D.cell e).le
 private lemma cell_out_ne_source (D : PLDrawing G V) (e : E(G)) {b : V}
     (hb : (D.toDrawing.vertex (edgeSource e), b) ∈ (D.cell e).edges) :
     b ≠ D.toDrawing.vertex (edgeSource e) := by
-  rcases D.cell_isSimpleArcOrLoop e with ⟨hS, _⟩ | ⟨heq, hL⟩
+  rcases PolygonalPath.isPrimitive_iff.mp (D.cell_isPrimitive e) with ⟨hS, _⟩ | ⟨heq, hL⟩
   · exact (hS.hasNondegenerateEdges _ hb).symm
   · have hL' : ((D.cell e).cast rfl heq).IsSimpleLoop := hL
     have hb' : (D.toDrawing.vertex (edgeSource e), b) ∈ ((D.cell e).cast rfl heq).edges := by
@@ -386,7 +388,7 @@ private lemma cell_out_ne_source (D : PLDrawing G V) (e : E(G)) {b : V}
 private lemma cell_in_ne_target (D : PLDrawing G V) (e : E(G)) {a : V}
     (ha : (a, D.toDrawing.vertex (edgeTarget e)) ∈ (D.cell e).edges) :
     a ≠ D.toDrawing.vertex (edgeTarget e) := by
-  rcases D.cell_isSimpleArcOrLoop e with ⟨hS, _⟩ | ⟨heq, hL⟩
+  rcases PolygonalPath.isPrimitive_iff.mp (D.cell_isPrimitive e) with ⟨hS, _⟩ | ⟨heq, hL⟩
   · exact hS.hasNondegenerateEdges _ ha
   · have hL' : ((D.cell e).cast rfl heq).IsSimpleLoop := hL
     have ha0 : (a, D.toDrawing.vertex (edgeTarget e)) ∈ ((D.cell e).cast rfl heq).edges := by
@@ -578,8 +580,8 @@ private def endEdge {v : V(G)} : EndsAt G v → E(G)
 
 private lemma cell_isSimple_of_source_ne_target (D : PLDrawing G V) (e : E(G))
     (hne : edgeSource e ≠ edgeTarget e) : (D.cell e).IsSimple :=
-  (PolygonalPath.isSimpleArcOrLoop_iff_isSimple
-    (D.toDrawing.vertex_injective.ne hne)).mp (D.cell_isSimpleArcOrLoop e)
+  (PolygonalPath.isPrimitive_iff_isSimple
+    (D.toDrawing.vertex_injective.ne hne)).mp (D.cell_isPrimitive e)
 
 /-- The open end segment at `v`, excluding the tip, lies in the open cell. -/
 private lemma openSegment_endTip_subset_pathInterior (D : PLDrawing G V) {v : V(G)}
@@ -659,11 +661,9 @@ private lemma segment_endTip_inter_loop (D : PLDrawing G V) {v : V(G)}
   have hy : D.toDrawing.vertex (edgeTarget e.1) = p := by rw [hef, f.2]
   rw [← PolygonalPath.firstTip_cast (D.cell e.1) hx hy] at hzOut
   rw [← PolygonalPath.lastTip_cast (D.cell e.1) hx hy] at hzIn
-  have hPpos : 0 < ((D.cell e.1).cast hx hy).length := by
-    simpa [PolygonalPath.cast_length] using D.cell_length_pos e.1
   have hP : ((D.cell e.1).cast hx hy).IsSimpleLoop :=
-    (PolygonalPath.isSimpleArcOrLoop_iff_isSimpleLoop hPpos).mp
-      ((PolygonalPath.isSimpleArcOrLoop_cast hx hy).mpr (D.cell_isSimpleArcOrLoop e.1))
+    PolygonalPath.isPrimitive_iff_isSimpleLoop.mp
+      ((PolygonalPath.isPrimitive_cast hx hy).mpr (D.cell_isPrimitive e.1))
   suffices ∀ {P : PolygonalPath p p}, P.IsSimpleLoop →
       z ∈ segment ℝ p P.firstTip → z ∈ segment ℝ p P.lastTip → z ∈ ({p} : Set V) from
     this hP hzOut hzIn
@@ -772,11 +772,9 @@ private lemma mem_iUnion_endSegment_of_mem_cell_edges (D : PLDrawing G V) {v : V
     have htgt : edgeTarget e = v := hinc.elim (hloop.symm.trans) id
     have hx_eq : D.toDrawing.vertex (edgeSource e) = p := congrArg _ hsrc
     have hy_eq : D.toDrawing.vertex (edgeTarget e) = p := congrArg _ htgt
-    have hPpos : 0 < ((D.cell e).cast hx_eq hy_eq).length := by
-      simpa [PolygonalPath.cast_length] using D.cell_length_pos e
     have hP : ((D.cell e).cast hx_eq hy_eq).IsSimpleLoop :=
-      (PolygonalPath.isSimpleArcOrLoop_iff_isSimpleLoop hPpos).mp
-        ((PolygonalPath.isSimpleArcOrLoop_cast hx_eq hy_eq).mpr (D.cell_isSimpleArcOrLoop e))
+      PolygonalPath.isPrimitive_iff_isSimpleLoop.mp
+        ((PolygonalPath.isPrimitive_cast hx_eq hy_eq).mpr (D.cell_isPrimitive e))
     have hs' : s ∈ ((D.cell e).cast hx_eq hy_eq).edges := by
       rwa [PolygonalPath.edges_cast]
     rcases PolygonalPath.IsSimpleLoop.eq_first_or_last_edge_of_mem_segment hP hs' hps with h | h

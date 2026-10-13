@@ -149,15 +149,15 @@ noncomputable def ofIso {γ' δ' : Type*} {K : Graph γ' δ'} (F : Iso J K) (S :
     · have hx' := S.vertex_covers hx
       simp only [mem_union, mem_iUnion, mem_range] at hx' ⊢
       obtain ⟨y, rfl⟩ | ⟨f, hf⟩ := hx'
-      · obtain ⟨z, hz⟩ := F.vertMapEmbedding_surjective y
-        exact Or.inl ⟨z, by simp [IsoTopologicalMinor.ofIso, hz]⟩
-      obtain ⟨e, he⟩ := F.edgeMapEmbedding_surjective f
-      exact Or.inr ⟨e, by simpa [IsoTopologicalMinor.ofIso, he] using hf⟩
+      · obtain ⟨z, rfl⟩ := F.vertEquiv.surjective y
+        exact Or.inl ⟨z, rfl⟩
+      obtain ⟨e, rfl⟩ := F.edgeEquiv.surjective f
+      exact Or.inr ⟨e, hf⟩
     have hx' := S.edge_covers hx
     simp only [mem_iUnion] at hx' ⊢
     obtain ⟨f, hf⟩ := hx'
-    obtain ⟨e, he⟩ := F.edgeMapEmbedding_surjective f
-    exact ⟨e, by simpa [IsoTopologicalMinor.ofIso, he] using hf⟩
+    obtain ⟨e, rfl⟩ := F.edgeEquiv.surjective f
+    exact ⟨e, hf⟩
 
 end IsoSubdivision
 

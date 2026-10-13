@@ -2,7 +2,6 @@ module
 
 public import Matroid.ForMathlib.Analysis.Convex.RadialPoint
 public import Matroid.ForMathlib.Analysis.Convex.Segment
-public import Matroid.ForMathlib.Geometry.PolygonalPath.Basic
 public import Matroid.ForMathlib.Topology.MetricSpace
 
 @[expose] public section
@@ -216,14 +215,6 @@ theorem IsSegmentFigure.iUnion {ι : Type*} [Finite ι] {U : ι → Set V}
   choose F S hFfin hSfin hEq using hU
   refine ⟨⋃ i, F i, ⋃ i, S i, finite_iUnion hFfin, finite_iUnion hSfin, ?_⟩
   simp_rw [hEq, iUnion_union_distrib, biUnion_iUnion]
-
-/-- The set traced by a polygonal path is a segment figure. -/
-@[grind .]
-theorem PolygonalPath.isSegmentFigure_toSet {x y : V} (P : PolygonalPath x y) :
-    IsSegmentFigure P.toSet := by
-  refine ⟨{y}, {s | s ∈ P.edges}, finite_singleton _, P.edges.finite_toSet, ?_⟩
-  rw [PolygonalPath.toSet_eq_insert_biUnion]
-  rfl
 
 /-! ### Shrinking the star
 
@@ -443,6 +434,22 @@ theorem card_radii_le_of_cover {ι : Type*} [Fintype ι] {U : ι → Set V} {z :
     Y.card ≤ (Finset.univ.image g).card := Finset.card_le_card hYsub
     _ ≤ Finset.univ.card := Finset.card_image_le
     _ = Fintype.card ι := Finset.card_univ
+
+/-- **Exact radius count.** A pairwise family of nondegenerate local pieces that also covers the
+figure near `p`, with each piece confined to one direction, is in bijection with the star radii. -/
+theorem card_radii_eq {ι : Type*} [Finite ι] {U : ι → Set V} {z : ι → V} (hρ : 0 < ρ)
+    (hY : ↑Y ⊆ sphere p ρ) (hstar : closedBall p ρ ∩ T = {p} ∪ ⋃ y ∈ Y, segment ℝ p y)
+    (hUT : ∀ i, U i ⊆ T) (hUp : ∀ i, ∃ w ≠ p, segment ℝ p w ⊆ U i)
+    (hmeet : ∀ i j, i ≠ j → U i ∩ U j ⊆ {p})
+    (hcover : T ∩ closedBall p ρ ⊆ {p} ∪ ⋃ i, U i) (hzne : ∀ i, z i ≠ p)
+    (hUz : ∀ i, U i ∩ closedBall p ρ ⊆ segment ℝ p (z i)) :
+    Y.card = Nat.card ι := by
+  classical
+  let _ := Fintype.ofFinite ι
+  rw [Nat.card_eq_fintype_card]
+  exact Nat.le_antisymm
+    (card_radii_le_of_cover hρ hY hstar hcover hzne hUz)
+    (le_card_radii_of_pairwise hρ hY hstar hUT hUp hmeet)
 
 /-- **The radius endpoints are exactly the sphere section.** Given a star at `p` for any set `S`,
 the finset `Y` is determined: it is `sphere p ρ ∩ S`.

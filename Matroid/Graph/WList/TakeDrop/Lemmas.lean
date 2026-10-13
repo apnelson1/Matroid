@@ -206,4 +206,71 @@ termination_by w.length
 
 end Dedup
 
+/-- Bypass repeated vertices while preserving endpoints and nonemptiness.
+For different endpoints, apply `dedup` to the entire list. For equal endpoints,
+retain the first edge and apply `dedup` to the tail. -/
+def cycleBypass [DecidableEq α] : WList α β → WList α β
+  | .nil x => .nil x
+  | .cons x e w => if x = w.last then cons x e w.dedup else (cons x e w).dedup
+
+@[simp]
+lemma cycleBypass_first [DecidableEq α] (w : WList α β) : w.cycleBypass.first = w.first := by
+  cases w with
+  | nil x => rfl
+  | cons x e w => simp only [cycleBypass]; split_ifs <;> simp
+
+@[simp]
+lemma cycleBypass_last [DecidableEq α] (w : WList α β) : w.cycleBypass.last = w.last := by
+  cases w with
+  | nil x => rfl
+  | cons x e w => simp only [cycleBypass]; split_ifs <;> simp
+
+lemma cycleBypass_isSublist [DecidableEq α] (w : WList α β) : w.cycleBypass.IsSublist w := by
+  cases w with
+  | nil x => exact isSublist_refl _
+  | cons x e w =>
+    simp only [cycleBypass]
+    split_ifs
+    · exact w.dedup_isSublist.cons₂ x e (by simp)
+    · exact (cons x e w).dedup_isSublist
+
+lemma cycleBypass_nonempty [DecidableEq α] {w : WList α β} (hw : w.Nonempty) :
+    w.cycleBypass.Nonempty := by
+  obtain ⟨x, e, w, rfl⟩ := hw.exists_cons
+  simp only [cycleBypass]
+  split_ifs with heq
+  · simp
+  · apply not_nil_iff.mp
+    intro hnil
+    exact heq (by simpa using hnil.first_eq_last)
+
+@[simp]
+lemma cycleBypass_nonempty_iff [DecidableEq α] : w.cycleBypass.Nonempty ↔ w.Nonempty :=
+  ⟨fun h ↦ w.cycleBypass_isSublist.nonempty h, cycleBypass_nonempty⟩
+
+/-- `cycleBypass` fixes vertex-simple lists and closed lists with vertex-simple tails. -/
+lemma cycleBypass_eq_self_iff [DecidableEq α] :
+    w.cycleBypass = w ↔ w.vertex.Nodup ∨ (w.first = w.last ∧ w.tail.vertex.Nodup) := by
+  cases w with
+  | nil x => simp [cycleBypass]
+  | cons x e w =>
+    simp only [cycleBypass]
+    split_ifs with heq
+    · simp only [cons.injEq, true_and, dedup_eq_self_iff, cons_vertex, List.nodup_cons,
+        first_cons, last_cons, tail_cons, heq, true_and]
+      tauto
+    · simp [dedup_eq_self_iff, heq]
+
+@[simp]
+lemma cycleBypass_cycleBypass [DecidableEq α] (w : WList α β) :
+    w.cycleBypass.cycleBypass = w.cycleBypass := by
+  apply cycleBypass_eq_self_iff.mpr
+  cases w with
+  | nil x => simp [cycleBypass]
+  | cons x e w =>
+    simp only [cycleBypass]
+    split_ifs with heq
+    · exact Or.inr ⟨by simpa using heq, by simpa using w.dedup_vertex_nodup⟩
+    · exact Or.inl (cons x e w).dedup_vertex_nodup
+
 end WList

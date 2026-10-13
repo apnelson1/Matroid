@@ -1,7 +1,6 @@
 module
 
 public import Matroid.ForMathlib.Geometry.DiskMinusRadii
-public import Matroid.ForMathlib.Geometry.SegmentFigure
 public import Matroid.ForMathlib.Topology.OnePoint
 
 @[expose] public section
@@ -18,8 +17,9 @@ uses the corresponding local sector component to obtain a subset of the global c
 
 ## Main statements
 
+* `exists_sector_subset_connectedComponentIn_compl` : Euclidean component form.
 * `exists_sector_subset_connectedComponentIn` : a component whose frontier reaches inside the ball
-  contains a whole sector.
+  contains the image of a whole sector in the one-point compactification.
 -/
 
 open Set Metric Topology Filter
@@ -27,14 +27,48 @@ open Set Metric Topology Filter
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   {S : Set V} {p q : V} {ρ : ℝ} {Y : Finset V}
 
+/-- **Euclidean sector extraction.** If the closed ball at `p` meets `S` in a nonempty star, then
+any component of `Sᶜ` whose frontier reaches a point `q` of the open ball contains a whole sector
+of the punctured disk. -/
+theorem exists_sector_subset_connectedComponentIn_compl (hYne : Y.Nonempty)
+    (hstar : closedBall p ρ ∩ S = {p} ∪ ⋃ y ∈ Y, segment ℝ p y)
+    (hqball : q ∈ ball p ρ) {w : V}
+    (hq : q ∈ frontier (connectedComponentIn Sᶜ w)) :
+    ∃ C ∈ sectors p ρ Y, C ⊆ connectedComponentIn Sᶜ w := by
+  obtain ⟨z, hzball, hzK⟩ :=
+    mem_closure_iff.mp (frontier_subset_closure hq) (ball p ρ) isOpen_ball hqball
+  have hzS : z ∉ S := connectedComponentIn_subset Sᶜ w hzK
+  have hzD : z ∈ diskMinusRadii p ρ Y := by
+    refine ⟨hzball, fun hzrad ↦ hzS ?_⟩
+    have hzstar : z ∈ closedBall p ρ ∩ S := by
+      rw [hstar]
+      exact Or.inr (by simpa [mem_iUnion] using hzrad)
+    exact hzstar.2
+  refine ⟨connectedComponentIn (diskMinusRadii p ρ Y) z, ⟨z, hzD, rfl⟩, ?_⟩
+  have hCsub := connectedComponentIn_subset (diskMinusRadii p ρ Y) z
+  have hCS : connectedComponentIn (diskMinusRadii p ρ Y) z ⊆ Sᶜ := by
+    intro z hzC hzS
+    have hzDisk := hCsub hzC
+    have hzstar : z ∈ closedBall p ρ ∩ S := ⟨ball_subset_closedBall hzDisk.1, hzS⟩
+    rw [hstar] at hzstar
+    obtain rfl | hzY := hzstar
+    · exact hzDisk.2 (by
+        obtain ⟨y, hy⟩ := hYne
+        exact mem_iUnion.mpr ⟨y, mem_iUnion.mpr ⟨hy, left_mem_segment _ _ _⟩⟩)
+    exact hzDisk.2 (by simpa [mem_iUnion] using hzY)
+  rw [connectedComponentIn_eq hzK]
+  exact (isConnected_connectedComponentIn_iff.mpr hzD).isPreconnected.subset_connectedComponentIn
+    (mem_connectedComponentIn hzD) hCS
+
 /-- **Sector extraction.** If the closed ball at `p` meets `S` in a star, then any connected
 component of the complement of `S` on the sphere whose frontier reaches a point `q` of the open ball
 contains the image of a whole sector of the punctured disk.
 
 The point `q` may be any point of `ball p ρ`; the argument uses only this membership.
 
-`hYne` is needed: with `Y = ∅` the "star" is the single point `p`, `diskMinusRadii p ρ ∅` is the
-punctured disk, and the argument that `p` itself is not in the component breaks. -/
+`hYne` is needed: with `Y = ∅` the "star" is the single point `p`, while
+`diskMinusRadii p ρ ∅` is the full open ball and still contains `p`; hence it need not lie in the
+complement of `S`. -/
 theorem exists_sector_subset_connectedComponentIn (hYne : Y.Nonempty)
     (hstar : closedBall p ρ ∩ S = {p} ∪ ⋃ y ∈ Y, segment ℝ p y)
     (hqball : q ∈ ball p ρ) {w : OnePoint V}

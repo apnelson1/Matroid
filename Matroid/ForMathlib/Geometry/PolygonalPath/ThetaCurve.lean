@@ -2,7 +2,7 @@ module
 
 public import Matroid.ForMathlib.Geometry.Polygon.JordanCurve
 public import Matroid.ForMathlib.Geometry.PolygonalPath.LocalStar
-public import Matroid.ForMathlib.Geometry.PolygonalPath.SimpleArcOrLoop
+public import Matroid.ForMathlib.Geometry.PolygonalPath.PrimitivePath
 public import Matroid.ForMathlib.Geometry.StarComponents
 public import Matroid.ForMathlib.Topology.ConnectedComponent
 
@@ -242,13 +242,13 @@ private theorem exists_candidate_region
   have hJ : IsJordanCurve Ploop.toSet := IsSimpleLoop.isJordanCurve hPloop
   have hPset : Ploop.toSet = (A j).toSet ∪ (A k).toSet := by
     rw [toSet_append, toSet_reverse]
-  have hsa : (A i).IsSimpleArcOrLoop :=
-    Or.inl ⟨hsimple i, (A i).length_pos_of_ne hab⟩
+  have hsa : (A i).toPath.IsPrimitive :=
+    (hsimple i).isPrimitive ((A i).length_pos_of_ne hab)
   have hinter : ((A i).toSet \ {a, b}).Nonempty := by
-    rw [hsa.toSet_diff_endpoints]
+    rw [PolygonalPath.toSet_diff_endpoints_of_isPrimitive hsa]
     exact (nonempty_Ioo.2 (zero_lt_one : (0 : I) < 1)).image _
   have hinter_conn : IsConnected ((A i).toSet \ {a, b}) := by
-    rw [hsa.toSet_diff_endpoints]
+    rw [PolygonalPath.toSet_diff_endpoints_of_isPrimitive hsa]
     exact (isConnected_Ioo (zero_lt_one : (0 : I) < 1)).image _
       (A i).toPath.continuous.continuousOn
   have hinterJ : Disjoint ((A i).toSet \ {a, b}) Ploop.toSet := by
@@ -389,10 +389,10 @@ private theorem exists_candidate_regions
   intro i j hij
   have hne : W i ≠ W j := by
     intro hWW
-    have hsa : (A i).IsSimpleArcOrLoop :=
-      Or.inl ⟨hsimple i, (A i).length_pos_of_ne hab⟩
+    have hsa : (A i).toPath.IsPrimitive :=
+      (hsimple i).isPrimitive ((A i).length_pos_of_ne hab)
     have hinter : ((A i).toSet \ {a, b}).Nonempty := by
-      rw [hsa.toSet_diff_endpoints]
+      rw [PolygonalPath.toSet_diff_endpoints_of_isPrimitive hsa]
       exact (nonempty_Ioo.2 (zero_lt_one : (0 : I) < 1)).image _
     obtain ⟨q, hq⟩ := hinter
     have hqj : OnePoint.some q ∈ frontier (W j) := by

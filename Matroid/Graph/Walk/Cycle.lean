@@ -192,6 +192,25 @@ lemma IsTour.dedup_tail_isCyclicWalk [DecidableEq α] (hC : G.IsTour (cons x e w
     simp_all
   nodup := w.dedup_vertex_nodup
 
+lemma IsTrail.cycleBypass_isSimple [DecidableEq α] {w : WList α β} (hw : G.IsTrail w) :
+    G.IsPath w.cycleBypass ∨ G.IsCyclicWalk w.cycleBypass := by
+  cases w with
+  | nil x => exact .inl (nil_isPath hw.isWalk.first_mem)
+  | cons x e w =>
+    simp only [WList.cycleBypass]
+    split_ifs with heq
+    · exact .inr (IsTour.dedup_tail_isCyclicWalk ⟨hw, by simp, heq⟩)
+    · exact .inl hw.isWalk.dedup
+
+/-- `WList.cycleBypass` fixes exactly the paths and cyclic walks among trails. -/
+lemma IsTrail.cycleBypass_eq_self_iff [DecidableEq α] {w : WList α β} (hw : G.IsTrail w) :
+    w.cycleBypass = w ↔ G.IsPath w ∨ G.IsCyclicWalk w := by
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · simpa only [h] using hw.cycleBypass_isSimple
+  rintro (hp | hc)
+  · exact WList.cycleBypass_eq_self_iff.mpr (Or.inl hp.nodup)
+  · exact WList.cycleBypass_eq_self_iff.mpr (Or.inr ⟨hc.isClosed, hc.nodup⟩)
+
 /-- Every tour contains a cycle as a sublist. -/
 lemma IsTour.exists_isCyclicWalk (hC : G.IsTour C) : ∃ C', G.IsCyclicWalk C' ∧ C'.IsSublist C := by
   classical

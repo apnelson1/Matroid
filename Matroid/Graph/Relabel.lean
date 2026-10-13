@@ -5,8 +5,7 @@ Authors: Jun Kwon
 -/
 module
 
-public import Matroid.ForMathlib.PEquiv
-public import Matroid.Graph.Hom
+public import Matroid.Graph.Hom.Basic
 
 /-!
 # Copying a graph onto other carriers
@@ -15,9 +14,9 @@ public import Matroid.Graph.Hom
 forward along two embeddings, and `G.relabelIso` is the isomorphism onto it. `FitsOn` names the
 hypothesis that the two embeddings exist.
 
-**The embeddings are from the active sets, not from the ambient types.** A graph may have a tiny
-vertex set inside an enormous ambient type, so `V(G) ↪ V'` is the right hypothesis and `V ↪ V'`
-would be far too strong.
+**The embeddings are from the vertex and edge sets, not from the ambient types.** A graph may have
+a tiny vertex set inside an enormous ambient type, so `V(G) ↪ V'` is the right hypothesis;
+`V ↪ V'` would be far too strong.
 
 **The edge carrier is relabelled too, not only the vertices.** One might expect to keep `E` fixed
 and move the vertices alone. That would be a mistake for the intended use: a proof that works on a
@@ -38,7 +37,7 @@ variable {V : Type uV} {E : Type uE} {V' : Type uV'} {E' : Type uE'} {G : Graph 
 
 /-! ### The copy -/
 
-/-- The copy of `G` on the carriers `V'`, `E'` determined by two embeddings of its active sets.
+/-- The copy of `G` on the carriers `V'`, `E'` determined by embeddings of `V(G)` and `E(G)`.
 Only the images of `V(G)` and `E(G)` are used; the rest of the target carriers stays unused, which
 is exactly what makes fresh labels available there. -/
 noncomputable def relabel (G : Graph V E) (fv : V(G) ↪ V') (fe : E(G) ↪ E') : Graph V' E' where
@@ -83,34 +82,13 @@ use this rather than unfolding the definition. -/
 
 /-- The isomorphism onto the copy. -/
 noncomputable def relabelIso (G : Graph V E) (fv : V(G) ↪ V') (fe : E(G) ↪ E') :
-    Iso G (G.relabel fv fe) where
-  vertMap := PEquiv.ofEmbedding fv
-  vertMap_isSome_iff x := by simp
-  invVertMap_isSome_iff x := by simp
-  edgeMap := PEquiv.ofEmbedding fe
-  edgeMap_isSome_iff e := by simp
-  invEdgeMap_isSome_iff e := by simp
-  map_isLink := by
-    rintro e x y e' x' y' h he hx hy
-    rw [PEquiv.mem_ofEmbedding_iff] at he hx hy
-    obtain ⟨he', rfl⟩ := he
-    obtain ⟨hx', rfl⟩ := hx
-    obtain ⟨hy', rfl⟩ := hy
-    exact (relabel_isLink fv fe ⟨e, he'⟩ ⟨x, hx'⟩ ⟨y, hy'⟩).2 h
-  invMap_isLink := by
-    rintro e' x' y' e x y ⟨e'', x'', y'', rfl, rfl, rfl, h⟩ he hx hy
-    rw [PEquiv.mem_iff_mem, PEquiv.mem_ofEmbedding_iff] at he hx hy
-    obtain ⟨he', hee⟩ := he
-    obtain ⟨hx', hxx⟩ := hx
-    obtain ⟨hy', hyy⟩ := hy
-    obtain rfl := fe.injective hee
-    obtain rfl := fv.injective hxx
-    obtain rfl := fv.injective hyy
-    exact h
+    Iso G (G.relabel fv fe) :=
+  Iso.ofEquivs (Equiv.ofInjective fv fv.injective) (Equiv.ofInjective fe fe.injective)
+    (fun {e x y} h ↦ (relabel_isLink fv fe e x y).2 h)
 
 /-! ### `FitsOn` -/
 
-/-- `G` can be represented on the carriers `V'`, `E'`: its active sets embed into them.
+/-- `G` can be represented on the carriers `V'`, `E'`: its vertex and edge sets embed into them.
 
 Stated with embeddings rather than cardinals because that is the form both the construction and
 the callers want; `fitsOn_iff_cardinal` is the bridge for "sufficiently large" statements. -/
@@ -131,8 +109,8 @@ noncomputable def FitsOn.copyOn (h : G.FitsOn V' E') : G.CopyOn V' E' where
 
 theorem fitsOn_iff_exists_iso : G.FitsOn V' E' ↔ ∃ H : Graph V' E', Nonempty (Iso G H) :=
   ⟨fun h ↦ ⟨h.copyOn.graph, ⟨h.copyOn.iso⟩⟩, fun ⟨_, ⟨i⟩⟩ ↦
-    ⟨⟨i.vertMapEmbedding.trans (Function.Embedding.subtype _)⟩,
-      ⟨i.edgeMapEmbedding.trans (Function.Embedding.subtype _)⟩⟩⟩
+    ⟨⟨i.vertEmbedding.trans (Function.Embedding.subtype _)⟩,
+      ⟨i.edgeEmbedding.trans (Function.Embedding.subtype _)⟩⟩⟩
 
 theorem fitsOn_iff_cardinal : G.FitsOn V' E' ↔
     Cardinal.lift.{uV'} (Cardinal.mk V(G)) ≤ Cardinal.lift.{uV} (Cardinal.mk V') ∧
@@ -142,18 +120,18 @@ theorem fitsOn_iff_cardinal : G.FitsOn V' E' ↔
 
 /-! ### Relabelling as a facade for isomorphism existence -/
 
-/-- The active vertex equivalence of an isomorphism, viewed as an embedding into the ambient
+/-- The vertex equivalence of an isomorphism, viewed as an embedding into the ambient
 target vertex carrier. -/
 def Iso.vertexEmbeddingInto {H : Graph V' E'} (i : Iso G H) : V(G) ↪ V' :=
-  i.vertMapEmbedding.trans (Function.Embedding.subtype _)
+  i.vertEmbedding.trans (Function.Embedding.subtype _)
 
-/-- The active edge equivalence of an isomorphism, viewed as an embedding into the ambient target
+/-- The edge equivalence of an isomorphism, viewed as an embedding into the ambient target
 edge carrier. -/
 def Iso.edgeEmbeddingInto {H : Graph V' E'} (i : Iso G H) : E(G) ↪ E' :=
-  i.edgeMapEmbedding.trans (Function.Embedding.subtype _)
+  i.edgeEmbedding.trans (Function.Embedding.subtype _)
 
 /-- Every concrete graph isomorphism exhibits its target as the canonical relabelled copy obtained
-from the induced embeddings of the active vertex and edge sets. -/
+from the induced embeddings of the vertex and edge sets. -/
 theorem Iso.relabel_eq {H : Graph V' E'} (i : Iso G H) :
     G.relabel i.vertexEmbeddingInto i.edgeEmbeddingInto = H := by
   refine Graph.ext ?_ fun e x y ↦ ?_
@@ -162,23 +140,23 @@ theorem Iso.relabel_eq {H : Graph V' E'} (i : Iso G H) :
       Embedding.coe_subtype]
     constructor
     · rintro ⟨v, rfl⟩
-      exact (i.vertMapEmbedding v).2
+      exact (i.vertEmbedding v).2
     · intro hz
-      obtain ⟨v, hv⟩ := i.vertMapEmbedding_surjective ⟨z, hz⟩
+      obtain ⟨v, hv⟩ := i.vertEquiv.surjective ⟨z, hz⟩
       exact ⟨v, congrArg Subtype.val hv⟩
   · constructor
     · rintro ⟨e', x', y', rfl, rfl, rfl, h⟩
-      exact (i.isLink_edgeEquiv_vertexEquiv e' x' y').mp h
+      exact (i.isLink_iff_isLink e' x' y').mp h
     · intro h
-      refine ⟨i.edgeEquiv.symm ⟨e, h.edge_mem⟩, i.vertexEquiv.symm ⟨x, h.left_mem⟩,
-        i.vertexEquiv.symm ⟨y, h.right_mem⟩, ?_, ?_, ?_, ?_⟩
+      refine ⟨i.edgeEquiv.symm ⟨e, h.edge_mem⟩, i.vertEquiv.symm ⟨x, h.left_mem⟩,
+        i.vertEquiv.symm ⟨y, h.right_mem⟩, ?_, ?_, ?_, ?_⟩
       · change e = (i.edgeEquiv (i.edgeEquiv.symm ⟨e, _⟩)).1
         simp
-      · change x = (i.vertexEquiv (i.vertexEquiv.symm ⟨x, _⟩)).1
+      · change x = (i.vertEquiv (i.vertEquiv.symm ⟨x, _⟩)).1
         simp
-      · change y = (i.vertexEquiv (i.vertexEquiv.symm ⟨y, _⟩)).1
+      · change y = (i.vertEquiv (i.vertEquiv.symm ⟨y, _⟩)).1
         simp
-      · exact (i.isLink_edgeEquiv_vertexEquiv _ _ _).mpr (by simpa using h)
+      · exact i.invMap_isLink h
 
 /-- Existence of an isomorphism is equivalent to being an ambient relabelled copy. `Iso` remains
 the primary structure; this theorem is the map-first facade useful for proving invariant

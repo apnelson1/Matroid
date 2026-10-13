@@ -10,35 +10,6 @@ variable {α β E : Type*} [MetricSpace E] {G H : Graph α β} {S T : Set α}
 open Set Function TopologicalSpace Topology Relation UniformSpace Sum Path
 open scoped unitInterval
 
-lemma isOpen_of_Ioo_subset {U : Set I} (h : Ioo (0 : I) 1 ⊆ U) : IsOpen U := by
-  have huniv : ∀ x : I, x ∈ insert 0 (insert 1 (Ioo (0 : I) 1)) := by
-    rintro x
-    simp [x.prop.2, ← Subtype.coe_le_coe]
-  have h1 : (U = Ioo (0 : I) 1 ∨ U = Ioc (0 : I) 1) ∨ (U = Ico (0 : I) 1 ∨ U = univ) := by
-    by_cases h0 : (0 : I) ∈ U <;> [right; left] <;> by_cases h1 : (1 : I) ∈ U
-    <;> [right; left; right; left] <;> ext x
-    · grind
-    · rw [← Ioo_insert_left (by simp)]
-      grind
-    · rw [← Ioo_insert_right (by simp)]
-      grind
-    · grind
-  rcases h1 with (rfl | rfl) | (rfl | rfl)
-  · exact isOpen_Ioo
-  · have : Ioc (0 : I) 1 = (fun x : I ↦ (x : ℝ)) ⁻¹' Ioi 0 := by
-      ext x
-      simp only [mem_Ioc, mem_preimage, mem_Ioi]
-      exact ⟨fun h => h.1, fun h => ⟨h, x.prop.2⟩⟩
-    rw [this]
-    exact continuous_subtype_val.isOpen_preimage _ isOpen_Ioi
-  · have : Ico (0 : I) 1 = (fun x : I ↦ (x : ℝ)) ⁻¹' Iio 1 := by
-      ext x
-      simp only [mem_Ico, mem_preimage, mem_Iio]
-      exact ⟨fun h => h.2, fun h => ⟨x.prop.1, h⟩⟩
-    rw [this]
-    exact continuous_subtype_val.isOpen_preimage _ isOpen_Iio
-  · exact isOpen_univ
-
 namespace Graph.IsSubgraph
 
 def RealizationEmbeddingAux (h : H ≤ G) : C(H.PreRealization, G.PreRealization) where

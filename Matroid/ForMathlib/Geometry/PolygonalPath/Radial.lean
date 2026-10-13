@@ -16,7 +16,8 @@ data.
   still pairwise disjoint and still avoiding those closed sets.
 * `exists_isSimple_radial` : a polygonal path running between two disjoint balls can be re-cut at
   its last exit and first entry and joined to the two centres by radii, giving an *embedded*
-  polygonal arc meeting each ball in exactly one radius.
+  polygonal arc meeting each ball in exactly one radius. The two contact points remain on the
+  original path.
 
 The first theorem uses a positive minimum separation and uniform polygonal approximation. The
 second cuts at the last exit from the first ball and first entry into the second, then joins the
@@ -129,7 +130,8 @@ theorem exists_isSimple_radial {cu cv : V} {ru rv : ℝ} (hru : 0 < ru) (hrv : 0
       dist zu cu = ru ∧ dist zv cv = rv ∧
       R.toSet ∩ closedBall cu ru = segment ℝ cu zu ∧
       R.toSet ∩ closedBall cv rv = segment ℝ cv zv ∧
-      R.toSet \ (ball cu ru ∪ ball cv rv) ⊆ P.toSet := by
+      R.toSet \ (ball cu ru ∪ ball cv rv) ⊆ P.toSet ∧
+      zu ∈ P.toSet ∧ zv ∈ P.toSet := by
   have hBu {z : V} (hz : dist z cu = ru) :
       segment ℝ cu z ⊆ closedBall cu ru :=
     (convex_closedBall cu ru).segment_subset (mem_closedBall_self hru.le)
@@ -220,7 +222,7 @@ theorem exists_isSimple_radial {cu cv : V} {ru rv : ℝ} (hru : 0 < ru) (hrv : 0
     obtain hwu | hwQ := hw'.1
     · exact (hballs.notMem_of_mem_left (hBu hzu_dist hwu) hwBv).elim
     exact hQ_v ⟨hwQ, hwBv⟩
-  refine ⟨zu, zv, R, hRsimple, hzu_dist, hzv_dist, ?_, ?_, fun w hw ↦ ?_⟩
+  refine ⟨zu, zv, R, hRsimple, hzu_dist, hzv_dist, ?_, ?_, ?_, ?_, ?_⟩
   · refine subset_antisymm ?_ ?_
     · intro w hw
       have hwR : w ∈ segment ℝ cu zu ∪ Q.toSet ∪ segment ℝ zv cv := hR_toSet ▸ hw.1
@@ -244,19 +246,23 @@ theorem exists_isSimple_radial {cu cv : V} {ru rv : ℝ} (hru : 0 < ru) (hrv : 0
       refine ⟨?_, hBv hzv_dist hw⟩
       rw [hR_toSet]
       exact Or.inr (segment_symm (𝕜 := ℝ) cv zv ▸ hw)
-  obtain hwuQ | hwv : w ∈ segment ℝ cu zu ∪ Q.toSet ∪ segment ℝ zv cv := hR_toSet ▸ hw.1
-  · obtain hwu | hwQ := hwuQ
-    · have : w = zu := by
-        have : w ∈ segment ℝ cu zu \ ball cu ru := ⟨hwu, (fun h ↦ hw.2 (Or.inl h))⟩
-        rwa [segment_diff_ball_eq_singleton hru hzu_dist, mem_singleton_iff] at this
-      exact hMP (this ▸ hzu_toSet)
-    · exact hMP (hB_subset_M (hQ_subset_B hwQ))
-  have : w = zv := by
-    have heq : segment ℝ zv cv \ ball cv rv = {zv} := by
-      rw [segment_symm]
-      exact segment_diff_ball_eq_singleton hrv (dist_comm zv cv ▸ hzv_dist)
-    have : w ∈ segment ℝ zv cv \ ball cv rv := ⟨hwv, (fun h ↦ hw.2 (Or.inr h))⟩
-    rwa [heq, mem_singleton_iff] at this
-  exact hMP (hB_subset_M (this ▸ hzv_toSet))
+  · intro w hw
+    obtain hwuQ | hwv : w ∈ segment ℝ cu zu ∪ Q.toSet ∪ segment ℝ zv cv :=
+      hR_toSet ▸ hw.1
+    · obtain hwu | hwQ := hwuQ
+      · have : w = zu := by
+          have : w ∈ segment ℝ cu zu \ ball cu ru := ⟨hwu, (fun h ↦ hw.2 (Or.inl h))⟩
+          rwa [segment_diff_ball_eq_singleton hru hzu_dist, mem_singleton_iff] at this
+        exact hMP (this ▸ hzu_toSet)
+      · exact hMP (hB_subset_M (hQ_subset_B hwQ))
+    have : w = zv := by
+      have heq : segment ℝ zv cv \ ball cv rv = {zv} := by
+        rw [segment_symm]
+        exact segment_diff_ball_eq_singleton hrv (dist_comm zv cv ▸ hzv_dist)
+      have : w ∈ segment ℝ zv cv \ ball cv rv := ⟨hwv, (fun h ↦ hw.2 (Or.inr h))⟩
+      rwa [heq, mem_singleton_iff] at this
+    exact hMP (hB_subset_M (this ▸ hzv_toSet))
+  · exact hMP hzu_toSet
+  · exact hMP (hB_subset_M hzv_toSet)
 
 end

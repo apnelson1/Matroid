@@ -15,12 +15,23 @@ That is what happened to `Path.lean`'s block.
 the package's `testDriver`, so it builds under `lake test` and not under `lake build`.
 
 ```
-tests/MatroidTests.lean            -- root, imports every test module
+tests/MatroidTests.lean            -- root, imports the regression suite
 tests/MatroidTests/GrindTags.lean  -- one section per source module under test
+tests/MatroidTests/Hom.lean        -- graph homomorphism consumers
 tests/MatroidTests/IRw.lean        -- all transport and registration regressions
+tests/MatroidTests/Immersion.lean  -- immersion routes and composition
+tests/MatroidTests/JordanCurve.lean -- Jordan curve tag regressions
+tests/MatroidTests/PolygonalPath.lean -- polygonal path regressions
 ```
 
 Add a module here, `public import` it from `tests/MatroidTests.lean`, and `lake test` covers it.
+
+`MatroidTests/TopologicalMinor.lean` retains older standalone regression tests; it is not
+currently imported by the test root or covered by `lake test`.
+
+Editor-completion experiments and the obsolete `PresentationRevised` checks are preserved in
+the Git-ignored [resources/TestArchive](../resources/TestArchive/). They are not part of the
+regression suite.
 
 The split exists so that a silent `lake build` means the mathematical library is clean while
 caller-facing tactic and tag behavior remains covered by `lake test`.

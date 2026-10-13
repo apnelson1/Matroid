@@ -62,7 +62,7 @@ This is what §13.1's geometry actually produces. `IsFreePolygonalArc.isFreeArc`
 segments and hands `Drawing.addEdge` what it needs; `isPL_addEdge` keeps them. -/
 structure IsFreePolygonalArc (D : Drawing G Plane) {z w : Plane}
     (Q : PolygonalPath z w) : Prop where
-  isSimpleArcOrLoop : Q.IsSimpleArcOrLoop
+  isPrimitive : Q.toPath.IsPrimitive
   disjoint_support : Disjoint (Q.toSet \ {z, w}) D.support
 
 /-- The bridge out of the polygonal category: `Path.interior_toPath` identifies the relative
@@ -70,15 +70,15 @@ interior of the parametrized arc with `toSet` minus the two ends, which is exact
 `IsFreePolygonalArc` controls. -/
 lemma IsFreePolygonalArc.isFreeArc {D : Drawing G Plane} {z w : Plane} {Q : PolygonalPath z w}
     (hQ : D.IsFreePolygonalArc Q) : D.IsFreeArc Q.toPath where
-  injOn := hQ.isSimpleArcOrLoop.injOn_toPath_Ioo
-  disjoint_support := Path.interior_toPath_range hQ.isSimpleArcOrLoop hQ.disjoint_support
+  injOn := hQ.isPrimitive.injOn_Ioo
+  disjoint_support := Path.interior_toPath_range hQ.isPrimitive hQ.disjoint_support
 
 /-- An arc whose relative interior lies inside a face is free, because a face misses the support.
 This is how the routing primitive's conclusion becomes an `IsFreePolygonalArc`. -/
 lemma isFreePolygonalArc_of_subset_faceSet (D : Drawing G Plane) {z w : Plane}
-    {Q : PolygonalPath z w} (F : D.Face) (hQ : Q.IsSimpleArcOrLoop)
+    {Q : PolygonalPath z w} (F : D.Face) (hQ : Q.toPath.IsPrimitive)
     (hsub : Q.toSet \ {z, w} ⊆ D.faceSet F) : D.IsFreePolygonalArc Q where
-  isSimpleArcOrLoop := hQ
+  isPrimitive := hQ
   disjoint_support := (D.faceSet_disjoint_support F).mono_left hsub
 
 /-- Plane form of `exists_sector_subset_connectedComponentIn`: a face whose frontier meets the
@@ -261,7 +261,7 @@ insertion construction. -/
 theorem exists_freePolygonalArc_in_faceSet [G.Finite] (D : PLDrawing G Plane)
     (F : D.toDrawing.Face) {z w : Plane} (hz : z ∈ frontier (D.toDrawing.faceSet F))
     (hw : w ∈ frontier (D.toDrawing.faceSet F)) :
-    ∃ Q : PolygonalPath z w, Q.IsSimpleArcOrLoop ∧ Q.toSet \ {z, w} ⊆ D.toDrawing.faceSet F := by
+    ∃ Q : PolygonalPath z w, Q.toPath.IsPrimitive ∧ Q.toSet \ {z, w} ⊆ D.toDrawing.faceSet F := by
   sorry
 
 /-- **Lemma 13.2(1), parallel edge.** If `e` joins `u` and `v`, a polygonal drawing admits a free
@@ -301,7 +301,7 @@ one, with angular interval `(θᵢ, θᵢ₊₁)`, choose `θᵢ < θ' < θ'' < 
 `0 < r < ρ`, and take the boundary of the triangle with vertices `p v`, `p v + r·e^{iθ'}`,
 `p v + r·e^{iθ''}`. Every point of that triangle has argument in `[θ', θ'']` and radius `≤ r`, so it
 lies in the closed sector and meets `supp D` only at `p v`. That triangle is a `PolygonalPath` with
-equal ends, so `IsSimpleArcOrLoop` is its circle case — which is why `IsFreeArc` was never allowed
+equal ends, so `Path.IsPrimitive` is its circle case — which is why `IsFreeArc` was never allowed
 to demand `u ≠ v`. -/
 theorem exists_isFreePolygonalArc_loop [G.Finite] (D : PLDrawing G Plane) (hu : u ∈ V(G)) :
     ∃ Q : PolygonalPath (D.vertex ⟨u, hu⟩) (D.vertex ⟨u, hu⟩),

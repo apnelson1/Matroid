@@ -24,21 +24,20 @@ def randomGraph : Graph ℕ (Sym2 ℕ) where
   vertexSet := univ
   edgeSet := {e | Nat.testBit e.sup e.inf}
   IsLink e x y := Nat.testBit e.sup e.inf ∧ e = s(x, y)
-  isLink_symm e he x y hxy := by
-    simpa only [hxy, Sym2.sup_mk, Sym2.inf_mk, and_true, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq,
-      Prod.swap_prod_mk, or_true] using hxy
+  isLink_symm e _ := ⟨fun x y h ↦ ⟨h.1, h.2.trans (Sym2.eq_swap ..)⟩⟩
   eq_or_eq_of_isLink_of_isLink e x y z w h₁ h₂ := by
     simp only [h₁, Sym2.sup_mk, Sym2.inf_mk, and_true, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq,
       Prod.swap_prod_mk] at h₁ h₂
     tauto
   edge_mem_iff_exists_isLink e := by
     simp only [mem_ofPred_eq, exists_and_left, iff_def, and_imp, forall_exists_index]
-    exact imp_and.mp fun h ↦ ⟨⟨h, ⟨e.out.1, e.out.2, by simp⟩⟩, fun _ _ _ ↦ h⟩
+    exact imp_and.mp fun h ↦
+      ⟨⟨h, ⟨e.out.1, e.out.2, by rw [Sym2.mk, e.out_eq]⟩⟩, fun _ _ _ ↦ h⟩
   left_mem_of_isLink e x y h := mem_univ _
 
 @[simp]
 lemma randomGraph_inc (e x) : randomGraph.Inc e x ↔ e ∈ E(randomGraph) ∧ x ∈ e := by
-  simp_rw [randomGraph_edgeSet, mem_ofPred_eq, Inc, randomGraph_isLink, exists_and_left]
+  simp_rw [Inc, randomGraph_isLink, exists_and_left]
   rfl
 
 @[simp]

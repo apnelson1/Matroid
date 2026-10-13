@@ -260,3 +260,79 @@ lemma Pairwise.sum_right {γ : Type*} {G : ι → γ} {H : ι' → γ} {r : γ �
     (h : Pairwise (r on Sum.elim G H)) : Pairwise (r on H) := by
   rw [← Sum.elim_comp_inr G H, onFun_comp]
   exact h.comp_of_injective Sum.inr_injective
+
+/-! ### Factorization along a surjective function -/
+
+/-- Evaluate `g` at a chosen preimage under the surjection `f`.
+This is a factor of `g` exactly when `g` is constant on the fibers of `f`. -/
+noncomputable def Function.Surjective.factor {A B C : Sort*} {f : A → B}
+    (hf : Function.Surjective f) (g : A → C) : B → C :=
+  g ∘ Function.surjInv hf
+
+namespace Function.FactorsThrough
+
+variable {A B C D : Sort*} {f : A → B} {g : A → C} {k : A → D}
+
+/-- Fiber containment is transitive, even when the codomains differ. -/
+theorem trans (hg : g.FactorsThrough f) (hf : f.FactorsThrough k) : g.FactorsThrough k :=
+  fun _ _ hab ↦ hg (hf hab)
+
+@[simp]
+theorem factor_apply (h : g.FactorsThrough f) (hf : Surjective f) (a : A) :
+    hf.factor g (f a) = g a :=
+  h (surjInv_eq hf (f a))
+
+/-- The factor function solves the factorization equation. -/
+theorem factor_comp (h : g.FactorsThrough f) (hf : Surjective f) : hf.factor g ∘ f = g := by
+  funext a
+  exact factor_apply h hf a
+
+/-- Surjectivity makes the factorization unique. -/
+theorem factor_eq_iff (h : g.FactorsThrough f) (hf : Surjective f) (d : B → C) :
+    hf.factor g = d ↔ d ∘ f = g := by
+  refine ⟨fun hd ↦ hd ▸ factor_comp h hf, fun hd ↦ funext fun b ↦ ?_⟩
+  obtain ⟨a, rfl⟩ := hf b
+  rw [factor_apply h]
+  simpa only [comp_apply] using (congr_fun hd a).symm
+
+/-- A factor has exactly the same range as the original function. -/
+theorem range_factor {C' : Type*} {g : A → C'} (h : g.FactorsThrough f) (hf : Surjective f) :
+    Set.range (hf.factor g) = Set.range g := by
+  have := hf.range_comp (hf.factor g)
+  rwa [h.factor_comp hf, eq_comm] at this
+
+/-- Factoring preserves surjectivity, also for Sort-valued functions. -/
+theorem surjective_factor_iff (h : g.FactorsThrough f) (hf : Surjective f) :
+    Surjective (hf.factor g) ↔ Surjective g := by
+  have hcomp := factor_comp h hf
+  exact ⟨fun hs ↦ hcomp ▸ hs.comp hf, fun hs ↦ (hcomp.symm ▸ hs).of_comp⟩
+
+/-- The factor is injective exactly when no additional fibers were identified. -/
+theorem injective_factor_iff (h : g.FactorsThrough f) (hf : Surjective f) :
+    Injective (hf.factor g) ↔ f.FactorsThrough g := by
+  refine ⟨fun hi a b hab ↦ hi ?_, fun hfg b₁ b₂ h₁₂ ↦ ?_⟩
+  · rw [factor_apply h hf, factor_apply h hf, hab]
+  · obtain ⟨a₁, rfl⟩ := hf b₁
+    obtain ⟨a₂, rfl⟩ := hf b₂
+    apply hfg
+    simpa only [factor_apply h] using h₁₂
+
+@[simp]
+theorem _root_.Function.Surjective.factor_self (hf : Surjective f) : hf.factor f = id :=
+  (factor_eq_iff (FactorsThrough.rfl (f := f)) hf id).2 rfl
+
+/-- Factorization through an intermediate quotient agrees with direct factorization. -/
+theorem factor_trans (hk : k.FactorsThrough g) (hf : Surjective f) (hgSurj : Surjective g) :
+    hgSurj.factor k ∘ hf.factor g = hf.factor k := by
+  funext b
+  obtain ⟨a, rfl⟩ := hf b
+  simp only [Surjective.factor, comp_apply]
+  rw [hk (surjInv_eq hgSurj _)]
+
+/-- The constructed function solves the factorization equation exactly when `g` respects fibers. -/
+theorem _root_.Function.Surjective.factor_comp_eq_iff (hf : Surjective f) (g : A → C) :
+    hf.factor g ∘ f = g ↔ g.FactorsThrough f :=
+  ⟨fun h a b hab ↦ (congr_fun h a).symm.trans ((congrArg (hf.factor g) hab).trans (congr_fun h b)),
+    fun h ↦ factor_comp h hf⟩
+
+end Function.FactorsThrough

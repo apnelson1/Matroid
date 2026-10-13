@@ -1,7 +1,9 @@
+module
 
 public import Matroid.Graph.Matching.Defs
 public import Matroid.Parallel.Basic
 
+@[expose] public section
 
 namespace Graph
 

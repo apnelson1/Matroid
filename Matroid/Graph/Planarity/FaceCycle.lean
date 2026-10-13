@@ -354,7 +354,7 @@ theorem exists_polygonalPath_toSet_eq_support_of_isPath (D : PLDrawing G V) {W :
       · exact hne (hxs.trans ((congrArg Subtype.val hse).trans hyt.symm))
       · exact hne (hxt.trans ((congrArg Subtype.val hse.symm).trans hys.symm))
     have hcell_simple : (D.cell eG).IsSimple :=
-      (PolygonalPath.isSimpleArcOrLoop_iff_isSimple hxy).mp (D.cell_isSimpleArcOrLoop eG)
+      (PolygonalPath.isPrimitive_iff_isSimple hxy).mp (D.cell_isPrimitive eG)
     have hB : ∃ B : PolygonalPath
         (D.toDrawing.vertex ⟨x, hW.isWalk.first_mem⟩)
         (D.toDrawing.vertex ⟨W'.first, hW'.isWalk.first_mem⟩),
@@ -547,7 +547,7 @@ theorem exists_polygonalPath_toSet_eq_support_of_isPath (D : PLDrawing G V) {W :
 so `PolygonalPath.isSimpleLoop_append_iff` (`SimpleLoop.lean:157`) applies to the split of `W` at
 any interior vertex, its `hxy : x ≠ y` coming from `hW.nodup`. Loops of the graph are not a special
 case to worry about *here* — a loop edge gives a one-edge cyclic walk whose cell is already an
-embedded circle by `cell_isSimpleArcOrLoop` — but they are excluded by `[G.Loopless]` at every
+embedded circle by `cell_isPrimitive` — but they are excluded by `[G.Loopless]` at every
 consumer below. -/
 /-- **A polygonal drawing of a cyclic walk traces a simple polygonal loop.** Digons and loop edges
 are included: the cells of a drawing are disjoint but for their ends, so the traced loop is

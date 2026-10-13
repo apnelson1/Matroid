@@ -36,10 +36,10 @@ def Iso.walkMapAux (i : Iso G H) :
     (W : WList V E) → (hW : G.IsWalk W) →
       {W' : WList V' E' //
         H.IsWalk W' ∧
-          W'.first = (i.vertexEquiv ⟨W.first, hW.first_mem⟩).1}
+          W'.first = (i.vertEquiv ⟨W.first, hW.first_mem⟩).1}
   | .nil x, hW =>
-      ⟨.nil (i.vertexEquiv ⟨x, hW.first_mem⟩).1,
-        IsWalk.nil (i.vertexEquiv ⟨x, hW.first_mem⟩).2, rfl⟩
+      ⟨.nil (i.vertEquiv ⟨x, hW.first_mem⟩).1,
+        IsWalk.nil (i.vertEquiv ⟨x, hW.first_mem⟩).2, rfl⟩
   | .cons x e W, hW => by
       have hW' := hW.of_cons
       have he := (cons_isWalk_iff.mp hW).1
@@ -47,12 +47,12 @@ def Iso.walkMapAux (i : Iso G H) :
       let hx : V(G) := ⟨x, he.left_mem⟩
       let hf : E(G) := ⟨e, he.edge_mem⟩
       let hy : V(G) := ⟨W.first, hW'.first_mem⟩
-      have he' := (i.isLink_edgeEquiv_vertexEquiv hf hx hy).mp he
-      refine ⟨.cons (i.vertexEquiv hx).1 (i.edgeEquiv hf).1 W'.1,
+      have he' := (i.isLink_iff_isLink hf hx hy).mp he
+      refine ⟨.cons (i.vertEquiv hx).1 (i.edgeEquiv hf).1 W'.1,
         W'.2.1.cons ?_, ?_⟩
       · rwa [W'.2.2]
-      · change (i.vertexEquiv hx).1 =
-          (i.vertexEquiv ⟨x, hW.first_mem⟩).1
+      · change (i.vertEquiv hx).1 =
+          (i.vertEquiv ⟨x, hW.first_mem⟩).1
         congr 2
 
 /-- The underlying raw `WList` obtained by transporting a supported walk. -/
@@ -67,13 +67,13 @@ theorem Iso.walkMap_symm_apply_val (i : Iso G H) {W : WList V E}
   induction W with
   | nil x =>
       simp only [Iso.walkMap, Iso.walkMapAux, WList.nil_inj_iff]
-      exact congrArg Subtype.val (i.vertexEquiv.symm_apply_apply ⟨x, hW.first_mem⟩)
+      exact congrArg Subtype.val (i.vertEquiv.symm_apply_apply ⟨x, hW.first_mem⟩)
   | cons x e W ih =>
       simp only [Iso.walkMap, Iso.walkMapAux]
       rw [WList.cons_inj_iff]
       refine ⟨?_, ?_, ?_⟩
       · exact congrArg Subtype.val
-          (i.vertexEquiv.symm_apply_apply ⟨x, (cons_isWalk_iff.mp hW).1.left_mem⟩)
+          (i.vertEquiv.symm_apply_apply ⟨x, (cons_isWalk_iff.mp hW).1.left_mem⟩)
       · exact congrArg Subtype.val
           (i.edgeEquiv.symm_apply_apply ⟨e, (cons_isWalk_iff.mp hW).1.edge_mem⟩)
       · exact ih hW.of_cons
@@ -110,15 +110,15 @@ theorem Iso.walkMap_edge_mem_iff (i : Iso G H) {W : WList V E}
 /-- Vertex membership is preserved by supported walk transport. -/
 theorem Iso.walkMap_vertex_mem_iff (i : Iso G H) {W : WList V E}
     (hW : G.IsWalk W) (x : V(G)) :
-    (i.vertexEquiv x).1 ∈ (i.walkMap ⟨W, hW⟩).1 ↔ x.1 ∈ W := by
+    (i.vertEquiv x).1 ∈ (i.walkMap ⟨W, hW⟩).1 ↔ x.1 ∈ W := by
   induction W with
   | nil y =>
       simp only [Iso.walkMap, Iso.walkMapAux, WList.mem_nil_iff]
       constructor
       · intro hxy
-        have hsub : i.vertexEquiv x = i.vertexEquiv ⟨y, hW.first_mem⟩ :=
+        have hsub : i.vertEquiv x = i.vertEquiv ⟨y, hW.first_mem⟩ :=
           Subtype.ext hxy
-        exact congrArg Subtype.val (i.vertexEquiv.injective hsub)
+        exact congrArg Subtype.val (i.vertEquiv.injective hsub)
       · rintro rfl
         rfl
   | cons y e W ih =>
@@ -126,9 +126,9 @@ theorem Iso.walkMap_vertex_mem_iff (i : Iso G H) {W : WList V E}
       constructor
       · rintro (hxy | hxW)
         · left
-          have hsub : i.vertexEquiv x =
-              i.vertexEquiv ⟨y, (cons_isWalk_iff.mp hW).1.left_mem⟩ := Subtype.ext hxy
-          exact congrArg Subtype.val (i.vertexEquiv.injective hsub)
+          have hsub : i.vertEquiv x =
+              i.vertEquiv ⟨y, (cons_isWalk_iff.mp hW).1.left_mem⟩ := Subtype.ext hxy
+          exact congrArg Subtype.val (i.vertEquiv.injective hsub)
         · right
           exact (ih hW.of_cons).mp hxW
       · rintro (hxy | hxW)
@@ -141,13 +141,13 @@ theorem Iso.walkMap_vertex_mem_iff (i : Iso G H) {W : WList V E}
 /-- The first vertex of a transported walk is the transported first vertex. -/
 theorem Iso.walkMap_first (i : Iso G H) {W : WList V E} (hW : G.IsWalk W) :
     (i.walkMap ⟨W, hW⟩).1.first =
-      (i.vertexEquiv ⟨W.first, hW.first_mem⟩).1 :=
+      (i.vertEquiv ⟨W.first, hW.first_mem⟩).1 :=
   (i.walkMapAux W hW).2.2
 
 /-- The last vertex of a transported walk is the transported last vertex. -/
 theorem Iso.walkMap_last (i : Iso G H) {W : WList V E} (hW : G.IsWalk W) :
     (i.walkMap ⟨W, hW⟩).1.last =
-      (i.vertexEquiv ⟨W.last, hW.last_mem⟩).1 := by
+      (i.vertEquiv ⟨W.last, hW.last_mem⟩).1 := by
   induction W with
   | nil x => rfl
   | cons x e W ih =>
@@ -160,7 +160,7 @@ theorem Iso.walkMap_concat (i : Iso G H) {W : WList V E} {e : E} {x : V}
     (i.walkMap ⟨W.concat e x, hW.concat he⟩).1 =
       (i.walkMap ⟨W, hW⟩).1.concat
         (i.edgeEquiv ⟨e, he.edge_mem⟩).1
-        (i.vertexEquiv ⟨x, he.right_mem⟩).1 := by
+        (i.vertEquiv ⟨x, he.right_mem⟩).1 := by
   induction W with
   | nil y => rfl
   | cons y f W ih =>
@@ -178,7 +178,7 @@ theorem Iso.walkMap_reverse (i : Iso G H) {W : WList V E} (hW : G.IsWalk W) :
       have hlink := (cons_isWalk_iff.mp hW).1
       have hrevlink : G.IsLink e W.reverse.last x := by simpa using hlink.symm
       change (i.walkMap ⟨W.reverse.concat e x, htail.reverse.concat hrevlink⟩).1 =
-        (WList.cons (i.vertexEquiv ⟨x, hlink.left_mem⟩).1
+        (WList.cons (i.vertEquiv ⟨x, hlink.left_mem⟩).1
           (i.edgeEquiv ⟨e, hlink.edge_mem⟩).1
           (i.walkMap ⟨W, htail⟩).1).reverse
       rw [i.walkMap_concat htail.reverse hrevlink]
@@ -196,7 +196,7 @@ theorem Iso.isTrail_walkMap (i : Iso G H) {W : WList V E} (hW : G.IsTrail W) :
       simp only [Iso.walkMap, Iso.walkMapAux, cons_isTrail_iff]
       refine ⟨ih hW.1, ?_, ?_⟩
       · rw [(i.walkMapAux W hW.1.isWalk).2.2]
-        exact (i.isLink_edgeEquiv_vertexEquiv ⟨e, hW.2.1.edge_mem⟩ ⟨x, hW.2.1.left_mem⟩
+        exact (i.isLink_iff_isLink ⟨e, hW.2.1.edge_mem⟩ ⟨x, hW.2.1.left_mem⟩
           ⟨W.first, hW.1.isWalk.first_mem⟩).mp hW.2.1
       · intro heW
         exact hW.2.2 <| (i.walkMap_edge_mem_iff hW.1.isWalk
@@ -213,7 +213,7 @@ theorem Iso.isPath_walkMap (i : Iso G H) {W : WList V E} (hW : G.IsPath W) :
       simp only [Iso.walkMap, Iso.walkMapAux, cons_isPath_iff]
       refine ⟨?_, ih hW.2.1, ?_⟩
       · rw [(i.walkMapAux W hW.2.1.isWalk).2.2]
-        exact (i.isLink_edgeEquiv_vertexEquiv ⟨e, hW.1.edge_mem⟩ ⟨x, hW.1.left_mem⟩
+        exact (i.isLink_iff_isLink ⟨e, hW.1.edge_mem⟩ ⟨x, hW.1.left_mem⟩
           ⟨W.first, hW.2.1.isWalk.first_mem⟩).mp hW.1
       · intro hxW
         exact hW.2.2 <| (i.walkMap_vertex_mem_iff hW.2.1.isWalk
@@ -234,7 +234,7 @@ theorem Iso.isTour_walkMap (i : Iso G H) {W : WList V E} (hW : G.IsTour W) :
     rw [i.walkMap_first, i.walkMap_last]
     have hsub : (⟨W.first, hW.isTrail.isWalk.first_mem⟩ : V(G)) =
         ⟨W.last, hW.isTrail.isWalk.last_mem⟩ := Subtype.ext hW.isClosed
-    exact congrArg Subtype.val (congrArg i.vertexEquiv hsub)
+    exact congrArg Subtype.val (congrArg i.vertEquiv hsub)
 
 /-- Supported walk transport preserves cyclic walks. -/
 theorem Iso.isCyclicWalk_walkMap (i : Iso G H) {W : WList V E} (hW : G.IsCyclicWalk W) :
@@ -261,7 +261,7 @@ def Iso.walkEquiv (i : Iso G H) :
 /-- Supported walk transport commutes with taking the first vertex. -/
 @[irw_naturality]
 theorem Iso.walkEquiv_first (i : Iso G H) (W : {W : WList V E // G.IsWalk W}) :
-    i.vertexEquiv ⟨W.1.first, W.2.first_mem⟩ =
+    i.vertEquiv ⟨W.1.first, W.2.first_mem⟩ =
       ⟨(i.walkEquiv W).1.first,
         (i.walkEquiv W).2.first_mem⟩ := by
   exact Subtype.ext (i.walkMap_first W.2).symm
@@ -269,7 +269,7 @@ theorem Iso.walkEquiv_first (i : Iso G H) (W : {W : WList V E // G.IsWalk W}) :
 /-- Supported walk transport commutes with taking the last vertex. -/
 @[irw_naturality]
 theorem Iso.walkEquiv_last (i : Iso G H) (W : {W : WList V E // G.IsWalk W}) :
-    i.vertexEquiv ⟨W.1.last, W.2.last_mem⟩ =
+    i.vertEquiv ⟨W.1.last, W.2.last_mem⟩ =
       ⟨(i.walkEquiv W).1.last,
         (i.walkEquiv W).2.last_mem⟩ := by
   exact Subtype.ext (i.walkMap_last W.2).symm
@@ -287,14 +287,14 @@ def Iso.pathEquiv (i : Iso G H) : G.Path ≃ H.Path where
 /-- Path transport commutes with taking the first vertex. -/
 @[irw_naturality]
 theorem Iso.pathEquiv_first (i : Iso G H) (P : G.Path) :
-    i.vertexEquiv P.first = (i.pathEquiv P).first := by
+    i.vertEquiv P.first = (i.pathEquiv P).first := by
   apply Subtype.ext
   exact (i.walkMap_first P.2.isWalk).symm
 
 /-- Path transport commutes with taking the last vertex. -/
 @[irw_naturality]
 theorem Iso.pathEquiv_last (i : Iso G H) (P : G.Path) :
-    i.vertexEquiv P.last = (i.pathEquiv P).last := by
+    i.vertEquiv P.last = (i.pathEquiv P).last := by
   apply Subtype.ext
   exact (i.walkMap_last P.2.isWalk).symm
 
@@ -308,13 +308,13 @@ theorem Iso.pathEquiv_reverse (i : Iso G H) (P : G.Path) :
 /-- Path transport commutes with taking the intrinsic vertex set. -/
 @[irw_naturality]
 theorem Iso.pathEquiv_vertexSet (i : Iso G H) (P : G.Path) :
-    i.vertexEquiv '' P.vertexSet = (i.pathEquiv P).vertexSet := by
+    i.vertEquiv '' P.vertexSet = (i.pathEquiv P).vertexSet := by
   ext y
   constructor
   · rintro ⟨x, hx, rfl⟩
     exact (i.walkMap_vertex_mem_iff P.2.isWalk x).mpr hx
   · intro hy
-    let x := i.vertexEquiv.symm y
+    let x := i.vertEquiv.symm y
     refine ⟨x, ?_, by simp [x]⟩
     change y.1 ∈ (i.walkMap ⟨P.1, P.2.isWalk⟩).1 at hy
     exact (i.walkMap_vertex_mem_iff P.2.isWalk x).mp (by simpa [x] using hy)

@@ -118,6 +118,26 @@ lemma internalVertexSet_reverse (w : WList α β) :
     | nil => simp
     | cons b f w => simp [List.mem_reverse, or_comm]
 
+lemma internalVertexSet_append_of_nonempty {w₁ w₂ : WList α β}
+    (h₁ : w₁.Nonempty) (h₂ : w₂.Nonempty) :
+    (w₁ ++ w₂).internalVertexSet = w₁.internalVertexSet ∪ insert w₂.first w₂.internalVertexSet := by
+  induction w₁ with
+  | nil x => simp at h₁
+  | cons x e w ih =>
+    cases w with
+    | nil y =>
+      cases w₂ with
+      | nil z => simp at h₂
+      | cons z f w =>
+        ext z
+        simp [internalVertexSet, cons_vertex_dropLast]
+    | cons y f w =>
+      simp only [cons_append, internalVertexSet_cons_cons]
+      rw [← cons_append, ih (by simp)]
+      ext z
+      simp only [mem_insert_iff, mem_union]
+      tauto
+
 /-- An internal vertex is a vertex. -/
 lemma mem_of_mem_internalVertexSet (hx : x ∈ w.internalVertexSet) : x ∈ w :=
   mem_iff_eq_first_or_mem_internalVertexSet_or_eq_last.mpr (Or.inr (Or.inl hx))
@@ -145,6 +165,14 @@ lemma exists_get_of_mem_internalVertexSet (hx : x ∈ w.internalVertexSet) :
 /-- The internal vertices of a sublist belong to the ambient wList. -/
 lemma IsSublist.internalVertexSet_subset (h : w₀.IsSublist w) : w₀.internalVertexSet ⊆ V(w) :=
   fun _ hx ↦ h.mem <| mem_of_mem_tail <| List.mem_of_mem_dropLast hx
+
+/-- Internal vertices of a sublist are internal vertices of the original list. -/
+lemma IsSublist.internalVertexSet_subset_internalVertexSet {w w' : WList α β}
+    (h : w'.IsSublist w) : w'.internalVertexSet ⊆ w.internalVertexSet := by
+  have hsub : List.Sublist w'.vertex.tail.dropLast w.vertex.tail.dropLast := by
+    simpa only [List.tail_reverse, List.reverse_reverse] using
+      h.sublist.tail.reverse.tail.reverse
+  exact hsub.subset
 
 lemma IsSublist.le_tail_of_ne_first {w₀} (h : w₀ ≤ w) (hne : w₀.first ≠ w.first) : w₀ ≤ w.tail := by
   induction h with

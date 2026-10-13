@@ -1,6 +1,6 @@
 module
 
-public import Matroid.ForMathlib.Geometry.SegmentFigure
+public import Matroid.ForMathlib.Geometry.PolygonalPath.SegmentFigure
 
 /-!
 # Local structure of a simple polygonal arc

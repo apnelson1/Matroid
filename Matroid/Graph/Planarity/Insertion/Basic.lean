@@ -39,68 +39,6 @@ universe u
 
 variable {X : Type u} [TopologicalSpace X]
 
-/-! ### Reorienting an arc
-
-`Graph.source` and `Graph.target` pick the orientation of an edge from `ArbRel`, one linear order
-per *type*, so a caller who supplies an arc from `D.vertex u` to `D.vertex v` cannot know which of
-its ends the new edge calls its source. `Path.reorient` absorbs the swap, and the two lemmas after
-it say the swap is invisible to `range` and to `Path.Interior` — which are the only two things
-`ofVertexAndEdgePaths` looks at.
-
-These declarations only reorient paths and identify the resulting range and interior. -/
-
-namespace unitInterval
-
-lemma closure_Ioo_zero_one : closure (Ioo (0 : I) 1) = univ := by
-  rw [closure_Ioo (zero_ne_one (α := I))]
-  simp [Set.eq_univ_iff_forall, unitInterval.le_one']
-
-lemma symm_mem_Ioo {t : I} (ht : t ∈ Ioo (0 : I) 1) : σ t ∈ Ioo (0 : I) 1 :=
-  ⟨unitInterval.pos_iff_ne_zero.mpr <| by
-      simp [unitInterval.symm_eq_zero, unitInterval.lt_one_iff_ne_one.mp ht.2],
-    unitInterval.lt_one_iff_ne_one.mpr <| by
-      simp [unitInterval.symm_eq_one, unitInterval.pos_iff_ne_zero.mp ht.1]⟩
-
-end unitInterval
-
-namespace Path
-
-open Classical in
-/-- Reorient `γ` so that its ends are the prescribed pair, given that the two pairs agree as
-unordered pairs. -/
-noncomputable def reorient {a b x y : X} (γ : Path a b) (h : s(x, y) = s(a, b)) : Path x y :=
-  if hx : x = a ∧ y = b then γ.cast hx.1 hx.2
-  else
-    have h' : x = b ∧ y = a := (Sym2.eq_iff.mp h).resolve_left hx
-    γ.symm.cast h'.1 h'.2
-
-@[simp]
-lemma range_reorient {a b x y : X} (γ : Path a b) (h : s(x, y) = s(a, b)) :
-    range (γ.reorient h) = range γ := by
-  rw [reorient]
-  split_ifs <;> simp
-
-@[simp]
-lemma reorient_interior {a b x y : X} (γ : Path a b) (h : s(x, y) = s(a, b)) :
-    (γ.reorient h).Interior = γ.Interior := by
-  rw [reorient]
-  split_ifs
-  · rfl
-  refine subset_antisymm ?_ ?_ <;> rintro _ ⟨t, ht, rfl⟩
-  · exact ⟨σ t, unitInterval.symm_mem_Ioo ht, rfl⟩
-  · exact ⟨σ t, unitInterval.symm_mem_Ioo ht, by simp⟩
-
-lemma injOn_reorient {a b x y : X} (γ : Path a b) (h : s(x, y) = s(a, b))
-    (hγ : InjOn γ (Ioo (0 : I) 1)) : InjOn (γ.reorient h) (Ioo (0 : I) 1) := by
-  rw [reorient]
-  split_ifs
-  · exact hγ
-  intro s hs t ht hst
-  have := hγ (unitInterval.symm_mem_Ioo hs) (unitInterval.symm_mem_Ioo ht) hst
-  simpa using congrArg σ this
-
-end Path
-
 namespace Graph
 
 public noncomputable section
@@ -381,7 +319,7 @@ theorem addPathSubdivision_branchVertex {P : WList α β} (hP : P.toGraph.IsPath
     (hu : u ∈ V(G)) (hv : v ∈ V(G)) (hends : P.first = u ∧ P.last = v)
     (hint : V(G) ∩ V(P.toGraph) = {P.first, P.last})
     (hE : Disjoint E(G) E(P.toGraph)) (x : V(G.addFreshEdge u v)) :
-    ((addPathSubdivision hP hu hv hends hint hE).branchVertex x).1 = x.1 := by
+    (addPathSubdivision hP hu hv hends hint hE).branchVertex x = x.1 := by
   sorry
 
 /-- Insert `P` along a free arc by adding one fresh edge and subdividing that edge. -/

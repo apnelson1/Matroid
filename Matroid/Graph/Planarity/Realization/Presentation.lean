@@ -104,11 +104,12 @@ namespace Graph.Presentation
 This namespace is intentionally verbose so that it can be prototyped in a separate file.  In the
 final realization module it should become private implementation detail. -/
 
-variable {V E : Type*} {P Q R : Presentation V E} {e : E} {i j : P.I} {t : I}
+variable {V E ι κ ρ : Type*} {P : Presentation V ι E} {Q : Presentation V κ E}
+  {R : Presentation V ρ E} {e : E} {i j : ι} {t : I}
 
 /-- Disjoint union of the discrete vertices and one half-interval for each incidence. -/
-abbrev PreRealization (P : Presentation V E) :=
-  V(P.toGraph) ⊕ Σ (_ : P.I), unitInterval
+abbrev PreRealization (P : Presentation V ι E) :=
+  V(P.toGraph) ⊕ Σ (_ : ι), unitInterval
 
 /-- Generating gluings for the incidence realization.
 
@@ -116,13 +117,13 @@ abbrev PreRealization (P : Presentation V E) :=
 * the `0` endpoint of incidence `i` is attached to `P.attach i`;
 * the `1` endpoints of `i` and `P.other i` are identified.
 -/
-inductive GlueRelAux (P : Presentation V E) : P.PreRealization → P.PreRealization → Prop
+inductive GlueRelAux (P : Presentation V ι E) : P.PreRealization → P.PreRealization → Prop
   | vertex (v : V(P.toGraph)) : GlueRelAux P (.inl v) (.inl v)
-  | attach (i : P.I) : GlueRelAux P (.inl ⟨P.attach i, P.attach_mem i⟩) (.inr ⟨i, 0⟩)
-  | other (i : P.I) : GlueRelAux P (.inr ⟨i, 1⟩) (.inr ⟨P.other i, 1⟩)
+  | attach (i : ι) : GlueRelAux P (.inl ⟨P.attach i, P.attach_mem i⟩) (.inr ⟨i, 0⟩)
+  | other (i : ι) : GlueRelAux P (.inr ⟨i, 1⟩) (.inr ⟨P.other i, 1⟩)
 
 /-- Equivalence closure of the generating incidence gluings. -/
-instance glueRel (P : Presentation V E) : Setoid P.PreRealization :=
+instance glueRel (P : Presentation V ι E) : Setoid P.PreRealization :=
   EqvGen.setoid (GlueRelAux P)
 
 instance : Std.Symm (glueRel P) where
@@ -143,12 +144,12 @@ private lemma one_ne_zero' : (1 : I) ≠ 0 := fun h ↦ one_ne_zero (congrArg Su
 private lemma zero_ne_one' : (0 : I) ≠ 1 := fun h ↦ zero_ne_one (congrArg Subtype.val h)
 
 /-- Membership of the class of the vertex `u`. -/
-private def AtVertex (P : Presentation V E) (u : V(P.toGraph)) : P.PreRealization → Prop
+private def AtVertex (P : Presentation V ι E) (u : V(P.toGraph)) : P.PreRealization → Prop
   | .inl v => v = u
   | .inr ⟨j, t⟩ => t = 0 ∧ P.attach j = (u : V)
 
 /-- Membership of the class of the midpoint of the edge through `i`. -/
-private def AtMidpoint (P : Presentation V E) (i : P.I) : P.PreRealization → Prop
+private def AtMidpoint (P : Presentation V ι E) (i : ι) : P.PreRealization → Prop
   | .inl _ => False
   | .inr ⟨j, t⟩ => t = 1 ∧ (j = i ∨ j = P.other i)
 
@@ -165,7 +166,7 @@ private lemma atVertex_eqvGen (u : V(P.toGraph)) {z w : P.PreRealization} (h : g
   | symm x y _ ih => simpa [iff_comm] using ih u
   | trans x y z _ _ ixy iyz => exact (ixy u).trans (iyz u)
 
-private lemma atMidpoint_eqvGen (i : P.I) {z w : P.PreRealization} (h : glueRel P z w) :
+private lemma atMidpoint_eqvGen (i : ι) {z w : P.PreRealization} (h : glueRel P z w) :
     AtMidpoint P i z ↔ AtMidpoint P i w := by
   induction h generalizing i with
   | refl => rfl
@@ -197,7 +198,7 @@ private theorem glueRel_inl_iff_atVertex (u : V(P.toGraph)) (x : P.PreRealizatio
     exact EqvGen.rel _ _ (.attach j)
 
 /-- The class of a midpoint is exactly the two `1` ends of its edge. -/
-private theorem glueRel_inr_one_iff_atMidpoint (i : P.I) (x : P.PreRealization) :
+private theorem glueRel_inr_one_iff_atMidpoint (i : ι) (x : P.PreRealization) :
     glueRel P (.inr ⟨i, (1 : I)⟩) x ↔ AtMidpoint P i x := by
   refine ⟨fun h ↦ (atMidpoint_eqvGen i h).mp ⟨rfl, Or.inl rfl⟩, ?_⟩
   match x with
@@ -239,18 +240,18 @@ lemma glueRel_inl_inl_iff (u v : V(P.toGraph)) : glueRel P (.inl u) (.inl v) ↔
 /-- A vertex meets a half-edge only at its `0` end, and only the half-edge attached to it.  The
 whole-edge model needs two cases here, one for each end of the edge. -/
 @[simp]
-theorem glueRel_inl_inr_iff (u : V(P.toGraph)) (j : P.I) (t : I) :
+theorem glueRel_inl_inr_iff (u : V(P.toGraph)) (j : ι) (t : I) :
     glueRel P (.inl u) (.inr ⟨j, t⟩) ↔ t = 0 ∧ P.attach j = (u : V) :=
   glueRel_inl_iff_atVertex u _
 
 @[simp]
-theorem glueRel_inr_inl_iff (j : P.I) (t : I) (u : V(P.toGraph)) :
+theorem glueRel_inr_inl_iff (j : ι) (t : I) (u : V(P.toGraph)) :
     glueRel P (.inr ⟨j, t⟩) (.inl u) ↔ t = 0 ∧ P.attach j = (u : V) :=
   Iff.trans ⟨EqvGen.symm _ _, EqvGen.symm _ _⟩ (glueRel_inl_inr_iff u j t)
 
 /-- Two half-edge points are glued only when they coincide, when both are `0` ends attached to the
 same vertex, or when both are the `1` ends of one edge. -/
-theorem glueRel_inr_inr_iff (i j : P.I) (t s : I) :
+theorem glueRel_inr_inr_iff (i j : ι) (t s : I) :
     glueRel P (.inr ⟨i, t⟩) (.inr ⟨j, s⟩) ↔ (i = j ∧ t = s) ∨
       (t = 0 ∧ s = 0 ∧ P.attach i = P.attach j) ∨ (t = 1 ∧ s = 1 ∧ j = P.other i) := by
   refine ⟨fun h ↦ ?_, ?_⟩
@@ -273,32 +274,32 @@ theorem glueRel_inr_inr_iff (i j : P.I) (t s : I) :
     · exact EqvGen.rel _ _ (.other i)
 
 /-- Presentation-level realization.  This should be private in the final public module. -/
-abbrev Realization (P : Presentation V E) := Quotient (glueRel P)
+abbrev Realization (P : Presentation V ι E) := Quotient (glueRel P)
 
 namespace Realization
 
 /-- Quotient projection. -/
-def mk (P : Presentation V E) : C(P.PreRealization, P.Realization) where
+def mk (P : Presentation V ι E) : C(P.PreRealization, P.Realization) where
   toFun := Quotient.mk'
   continuous_toFun := continuous_quotient_mk'
 
 /-- Inclusion of a vertex in the presentation realization. -/
-def vertexMk (P : Presentation V E) (v : V(P.toGraph)) : P.Realization :=
+def vertexMk (P : Presentation V ι E) (v : V(P.toGraph)) : P.Realization :=
   Quotient.mk' (Sum.inl v)
 
 /-- The midpoint representative supplied by one incidence.  The mate incidence gives the same
 point in the quotient. -/
-def midpointMk (P : Presentation V E) (i : P.I) : P.Realization :=
+def midpointMk (P : Presentation V ι E) (i : ι) : P.Realization :=
   Quotient.mk' (Sum.inr ⟨i, (1 : unitInterval)⟩)
 
 @[simp]
-lemma midpointMk_other (P : Presentation V E) (i : P.I) :
+lemma midpointMk_other (P : Presentation V ι E) (i : ι) :
     midpointMk P (P.other i) = midpointMk P i := by
   apply Quotient.sound
   exact EqvGen.symm _ _ <| EqvGen.rel _ _ <| GlueRelAux.other i
 
 /-- The half-edge path from the incident vertex to the midpoint of the edge. -/
-def halfPath (P : Presentation V E) (i : P.I) :
+def halfPath (P : Presentation V ι E) (i : ι) :
     Path (vertexMk P ⟨P.attach i, P.attach_mem i⟩) (midpointMk P i) where
   toFun t := Quotient.mk' (Sum.inr ⟨i, t⟩)
   source' := Quotient.sound <| EqvGen.symm _ _ <| EqvGen.rel _ _ <| GlueRelAux.attach i
@@ -324,9 +325,9 @@ lemma isOpen_iff_isOpen_preimage_mk (U : Set P.Realization) : IsOpen U ↔ IsOpe
 lemma mk_inl (v : V(P.toGraph)) : mk P (.inl v) = vertexMk P v := rfl
 
 @[simp]
-lemma mk_inr (i : P.I) (t : I) : mk P (.inr ⟨i, t⟩) = halfPath P i t := rfl
+lemma mk_inr (i : ι) (t : I) : mk P (.inr ⟨i, t⟩) = halfPath P i t := rfl
 
-lemma vertexMk_injective (P : Presentation V E) : Injective (vertexMk P) := fun u v h ↦
+lemma vertexMk_injective (P : Presentation V ι E) : Injective (vertexMk P) := fun u v h ↦
   (glueRel_inl_inl_iff u v).mp (Quotient.exact h)
 
 @[simp]
@@ -336,7 +337,7 @@ lemma vertexMk_inj {u v : V(P.toGraph)} : vertexMk P u = vertexMk P v ↔ u = v 
 /-- Openness in the realization is a condition on the half-edges only: the `0`-skeleton is
 discrete, so the vertex half of the quotient criterion is automatic. -/
 lemma isOpen_iff (U : Set P.Realization) :
-    IsOpen U ↔ ∀ i : P.I, IsOpen (halfPath P i ⁻¹' U) := by
+    IsOpen U ↔ ∀ i : ι, IsOpen (halfPath P i ⁻¹' U) := by
   rw [isOpen_iff_isOpen_preimage_mk, isOpen_sum_iff, isOpen_sigma_iff]
   simp only [isOpen_discrete, true_and]
   rfl
@@ -348,16 +349,16 @@ half-edge point, and when two half-edge points agree.  Everything else in this s
 corollary. -/
 
 @[simp]
-theorem vertexMk_eq_halfPath_iff {v : V(P.toGraph)} {i : P.I} {t : I} :
+theorem vertexMk_eq_halfPath_iff {v : V(P.toGraph)} {i : ι} {t : I} :
     vertexMk P v = halfPath P i t ↔ t = 0 ∧ P.attach i = (v : V) :=
   Iff.trans mk_eq_mk (glueRel_inl_inr_iff v i t)
 
 @[simp]
-theorem halfPath_eq_vertexMk_iff {v : V(P.toGraph)} {i : P.I} {t : I} :
+theorem halfPath_eq_vertexMk_iff {v : V(P.toGraph)} {i : ι} {t : I} :
     halfPath P i t = vertexMk P v ↔ t = 0 ∧ P.attach i = (v : V) :=
   eq_comm.trans vertexMk_eq_halfPath_iff
 
-theorem halfPath_eq_halfPath_iff {i j : P.I} {t s : I} :
+theorem halfPath_eq_halfPath_iff {i j : ι} {t s : I} :
     halfPath P i t = halfPath P j s ↔ (i = j ∧ t = s) ∨
       (t = 0 ∧ s = 0 ∧ P.attach i = P.attach j) ∨ (t = 1 ∧ s = 1 ∧ j = P.other i) :=
   Iff.trans mk_eq_mk (glueRel_inr_inr_iff i j t s)
@@ -365,7 +366,7 @@ theorem halfPath_eq_halfPath_iff {i j : P.I} {t s : I} :
 /-- **Every** half-edge is injectively parametrised, with no nonloop hypothesis.  This is the
 first place the incidence model is stronger than the whole-edge model, where the corresponding
 statement fails for a loop and has to be guarded by `IsNonloopAt`. -/
-theorem halfPath_injective (P : Presentation V E) (i : P.I) : Injective (halfPath P i) := by
+theorem halfPath_injective (P : Presentation V ι E) (i : ι) : Injective (halfPath P i) := by
   intro t s h
   obtain ⟨-, hts⟩ | ⟨rfl, rfl, -⟩ | ⟨-, -, hi⟩ := halfPath_eq_halfPath_iff.mp h
   · exact hts
@@ -373,19 +374,19 @@ theorem halfPath_injective (P : Presentation V E) (i : P.I) : Injective (halfPat
   · exact absurd hi.symm (P.other_ne i)
 
 @[simp]
-theorem halfPath_inj {i : P.I} {t s : I} : halfPath P i t = halfPath P i s ↔ t = s :=
+theorem halfPath_inj {i : ι} {t s : I} : halfPath P i t = halfPath P i s ↔ t = s :=
   (halfPath_injective P i).eq_iff
 
 private lemma zero_lt_one_I : (0 : I) < 1 := unitInterval.pos_iff_ne_zero.2 one_ne_zero'
 
 @[simp]
-lemma halfPath_one (P : Presentation V E) (i : P.I) : halfPath P i 1 = midpointMk P i := rfl
+lemma halfPath_one (P : Presentation V ι E) (i : ι) : halfPath P i 1 = midpointMk P i := rfl
 
 @[simp]
-lemma halfPath_zero (P : Presentation V E) (i : P.I) :
+lemma halfPath_zero (P : Presentation V ι E) (i : ι) :
     halfPath P i 0 = vertexMk P ⟨P.attach i, P.attach_mem i⟩ := (halfPath P i).source
 
-private lemma midpointMk_mem_image (i : P.I) : midpointMk P i ∈ halfPath P i '' Ioc 0 1 :=
+private lemma midpointMk_mem_image (i : ι) : midpointMk P i ∈ halfPath P i '' Ioc 0 1 :=
   ⟨1, right_mem_Ioc.2 zero_lt_one_I, rfl⟩
 
 /-- Two half-edges meet away from their attached vertices exactly when they are the two halves of
@@ -393,7 +394,7 @@ one edge, and then only at the midpoint.  Both conjuncts on the right are needed
 two images equal, and `j = P.other i` makes them share the midpoint.  Compare
 `disjoint_halfPath_Ioo_iff`, whose right-hand side is the single condition `j ≠ i` because `Ioo`
 omits the midpoint. -/
-theorem disjoint_halfPath_Ioc_iff {i j : P.I} :
+theorem disjoint_halfPath_Ioc_iff {i j : ι} :
     Disjoint (halfPath P i '' Ioc 0 1) (halfPath P j '' Ioc 0 1) ↔
       j ≠ i ∧ j ≠ P.other i := by
   constructor
@@ -413,16 +414,16 @@ theorem disjoint_halfPath_Ioc_iff {i j : P.I} :
 /-! ### Half-edges are closed embeddings -/
 
 lemma isClosed_iff (S : Set P.Realization) :
-    IsClosed S ↔ ∀ i : P.I, IsClosed (halfPath P i ⁻¹' S) := by
+    IsClosed S ↔ ∀ i : ι, IsClosed (halfPath P i ⁻¹' S) := by
   rw [← isOpen_compl_iff, isOpen_iff]
   simp only [preimage_compl, isOpen_compl_iff]
 
 @[simp]
-lemma preimage_halfPath_image_self (i : P.I) (X : Set I) :
+lemma preimage_halfPath_image_self (i : ι) (X : Set I) :
     halfPath P i ⁻¹' (halfPath P i '' X) = X :=
   (halfPath_injective P i).preimage_image X
 
-private lemma preimage_halfPath_image_subset_endpoints {i j : P.I} (hne : j ≠ i) (X : Set I) :
+private lemma preimage_halfPath_image_subset_endpoints {i j : ι} (hne : j ≠ i) (X : Set I) :
     halfPath P j ⁻¹' (halfPath P i '' X) ⊆ {0, 1} := by
   rintro t ⟨c, hc, hct⟩
   obtain ⟨hij, -⟩ | ⟨-, ht0, -⟩ | ⟨-, ht1, -⟩ := halfPath_eq_halfPath_iff.mp hct
@@ -430,7 +431,7 @@ private lemma preimage_halfPath_image_subset_endpoints {i j : P.I} (hne : j ≠ 
   · exact Or.inl ht0
   · exact Or.inr ht1
 
-lemma preimage_halfPath_image_eq_empty {i j : P.I} (hne : j ≠ i) {X : Set I} (h0X : 0 ∉ X)
+lemma preimage_halfPath_image_eq_empty {i j : ι} (hne : j ≠ i) {X : Set I} (h0X : 0 ∉ X)
     (h1X : 1 ∉ X) : halfPath P j ⁻¹' (halfPath P i '' X) = ∅ := by
   refine eq_empty_of_forall_notMem fun t ht ↦ ?_
   obtain ⟨c, hc, hct⟩ := ht
@@ -439,7 +440,7 @@ lemma preimage_halfPath_image_eq_empty {i j : P.I} (hne : j ≠ i) {X : Set I} (
   · exact h0X (hc0 ▸ hc)
   · exact h1X (hc1 ▸ hc)
 
-theorem isOpen_halfPath_image (i : P.I) {X : Set I} (h0X : 0 ∉ X) (h1X : 1 ∉ X) :
+theorem isOpen_halfPath_image (i : ι) {X : Set I} (h0X : 0 ∉ X) (h1X : 1 ∉ X) :
     IsOpen (halfPath P i '' X) ↔ IsOpen X := by
   rw [isOpen_iff]
   refine ⟨fun h ↦ ?_, fun h j ↦ ?_⟩
@@ -452,7 +453,7 @@ theorem isOpen_halfPath_image (i : P.I) {X : Set I} (h0X : 0 ∉ X) (h1X : 1 ∉
     · rw [preimage_halfPath_image_eq_empty hne h0X h1X]
       exact isOpen_empty
 
-theorem isClosedMap_halfPath (P : Presentation V E) (i : P.I) : IsClosedMap (halfPath P i) := by
+theorem isClosedMap_halfPath (P : Presentation V ι E) (i : ι) : IsClosedMap (halfPath P i) := by
   intro C hC
   rw [isClosed_iff]
   intro j
@@ -466,7 +467,7 @@ theorem isClosedMap_halfPath (P : Presentation V E) (i : P.I) : IsClosedMap (hal
 /-- **Every** half-edge is a closed embedding.  The whole-edge model can only say this for an edge
 that is not a loop; here the statement is unconditional, because a half-edge is never glued to
 itself. -/
-theorem isClosedEmbedding_halfPath (P : Presentation V E) (i : P.I) :
+theorem isClosedEmbedding_halfPath (P : Presentation V ι E) (i : ι) :
     IsClosedEmbedding (halfPath P i) :=
   IsClosedEmbedding.of_continuous_injective_isClosedMap (halfPath P i).continuous
     (halfPath_injective P i) (isClosedMap_halfPath P i)
@@ -475,7 +476,7 @@ theorem isClosedEmbedding_halfPath (P : Presentation V E) (i : P.I) :
 
 This path first traverses the selected half-edge to the midpoint, then traverses the mate
 half-edge backwards from the midpoint to its incident vertex. -/
-def edgePathAt (P : Presentation V E) (a : P.IncidenceAt e) :
+def edgePathAt (P : Presentation V ι E) (a : P.IncidenceAt e) :
     Path (vertexMk P ⟨P.attach a.1, P.attach_mem a.1⟩)
       (vertexMk P ⟨P.attach (P.other a.1), P.attach_mem (P.other a.1)⟩) :=
   (halfPath P a.1).trans <| ((halfPath P (P.other a.1)).symm).cast (midpointMk_other P a.1).symm rfl
@@ -483,7 +484,7 @@ def edgePathAt (P : Presentation V E) (a : P.IncidenceAt e) :
 /-- Distinct half-edges have disjoint open parts.  Note this is a cleaner statement than the
 whole-edge analogue: there is no exception for the two halves of one edge, because the shared
 midpoint sits at parameter `1`, outside `Ioo`. -/
-theorem disjoint_halfPath_Ioo_iff {i j : P.I} :
+theorem disjoint_halfPath_Ioo_iff {i j : ι} :
     Disjoint (halfPath P i '' Ioo 0 1) (halfPath P j '' Ioo 0 1) ↔ j ≠ i := by
   constructor
   · refine fun h hji ↦ ?_
@@ -500,7 +501,7 @@ theorem disjoint_halfPath_Ioo_iff {i j : P.I} :
     · rw [ht1] at ht
       exact absurd ht.2 (lt_irrefl 1)
 
-lemma midpointMk_notMem_halfPath_Ioo (i j : P.I) : midpointMk P i ∉ halfPath P j '' Ioo 0 1 := by
+lemma midpointMk_notMem_halfPath_Ioo (i j : ι) : midpointMk P i ∉ halfPath P j '' Ioo 0 1 := by
   rintro ⟨s, hs, hst⟩
   obtain ⟨-, hs1⟩ | ⟨-, h10, -⟩ | ⟨hs1, -, -⟩ := halfPath_eq_halfPath_iff.mp hst
   · rw [hs1] at hs
@@ -511,7 +512,7 @@ lemma midpointMk_notMem_halfPath_Ioo (i j : P.I) : midpointMk P i ∉ halfPath P
 
 /-- The open part of a whole edge is injectively parametrised, for every edge including a loop.
 The two halves meet only at the midpoint, which is the junction of the concatenation. -/
-theorem edgePathAt_injOn_Ioo (P : Presentation V E) {e : E} (a : P.IncidenceAt e) :
+theorem edgePathAt_injOn_Ioo (P : Presentation V ι E) {e : E} (a : P.IncidenceAt e) :
     InjOn (edgePathAt P a) (Ioo 0 1) := by
   have hQint : (((halfPath P (P.other a.1)).symm).cast (midpointMk_other P a.1).symm rfl).Interior
       = halfPath P (P.other a.1) '' Ioo 0 1 := by
@@ -529,7 +530,7 @@ theorem edgePathAt_injOn_Ioo (P : Presentation V E) {e : E} (a : P.IncidenceAt e
     exact disjoint_halfPath_Ioo_iff.2 (P.other_ne a.1)
 
 @[simp]
-lemma edgePathAt_other_range (P : Presentation V E) (a : P.IncidenceAt e) :
+lemma edgePathAt_other_range (P : Presentation V ι E) (a : P.IncidenceAt e) :
     Set.range (edgePathAt P a.other) = Set.range (edgePathAt P a) := by
   have hrange (b : P.IncidenceAt e) :
       Set.range (edgePathAt P b) =
@@ -545,11 +546,11 @@ lemma edgePathAt_other_range (P : Presentation V E) (a : P.IncidenceAt e) :
 
 /-- The intrinsic range of the edge represented by an incidence.  This is independent of which of
 its two incidences is chosen. -/
-def edgeRangeAt (P : Presentation V E) (a : P.IncidenceAt e) : Set P.Realization :=
+def edgeRangeAt (P : Presentation V ι E) (a : P.IncidenceAt e) : Set P.Realization :=
   Set.range (halfPath P a.1) ∪ Set.range (halfPath P (P.other a.1))
 
 @[simp]
-lemma edgeRangeAt_other (P : Presentation V E) (a : P.IncidenceAt e) :
+lemma edgeRangeAt_other (P : Presentation V ι E) (a : P.IncidenceAt e) :
     edgeRangeAt P a.other = edgeRangeAt P a := by
   unfold edgeRangeAt
   simp only [IncidenceAt.other_val]
@@ -558,11 +559,11 @@ lemma edgeRangeAt_other (P : Presentation V E) (a : P.IncidenceAt e) :
 
 /-- The intrinsic open edge in the half-edge model.  Each incident vertex (`t = 0`) is omitted,
 while the common midpoint (`t = 1`) is retained. -/
-def edgeInteriorAt (P : Presentation V E) (a : P.IncidenceAt e) : Set P.Realization :=
+def edgeInteriorAt (P : Presentation V ι E) (a : P.IncidenceAt e) : Set P.Realization :=
   halfPath P a.1 '' Ioc 0 1 ∪ halfPath P (P.other a.1) '' Ioc 0 1
 
 @[simp]
-lemma edgeInteriorAt_other (P : Presentation V E) (a : P.IncidenceAt e) :
+lemma edgeInteriorAt_other (P : Presentation V ι E) (a : P.IncidenceAt e) :
     edgeInteriorAt P a.other = edgeInteriorAt P a := by
   unfold edgeInteriorAt
   simp only [IncidenceAt.other_val]
@@ -575,14 +576,14 @@ Every point is a vertex or an interior point of exactly one edge.  `mem_edgeInte
 is the computation the rest of the section rests on. -/
 
 /-- The points of the realization that are not vertices. -/
-def edgeInteriorSet (P : Presentation V E) : Set P.Realization := (Set.range (vertexMk P))ᶜ
+def edgeInteriorSet (P : Presentation V ι E) : Set P.Realization := (Set.range (vertexMk P))ᶜ
 
 /-- A half-edge point lies on the open edge of `a` exactly when it belongs to that edge and is not
 one of its endpoints.  Note the parameter condition is `Ioc`, not `Ioo`: the midpoint belongs to
 the open edge, and is the point at which the two halves meet. -/
-theorem mem_edgeInteriorAt_halfPath_iff (a : P.IncidenceAt e) (j : P.I) (t : I) :
+theorem mem_edgeInteriorAt_halfPath_iff (a : P.IncidenceAt e) (j : ι) (t : I) :
     halfPath P j t ∈ edgeInteriorAt P a ↔ P.edgeMap j = e ∧ t ∈ Ioc 0 1 := by
-  have key : ∀ (k : P.I) (s : I), P.edgeMap k = e → s ∈ Ioc 0 1 →
+  have key : ∀ (k : ι) (s : I), P.edgeMap k = e → s ∈ Ioc 0 1 →
       halfPath P k s = halfPath P j t → P.edgeMap j = e ∧ t ∈ Ioc 0 1 := by
     intro k s hk hs hks
     obtain ⟨rfl, rfl⟩ | ⟨hs0, -, -⟩ | ⟨-, rfl, hj⟩ := halfPath_eq_halfPath_iff.mp hks
@@ -656,7 +657,7 @@ theorem disjoint_edgeInteriorAt_iff {f : E} (a : P.IncidenceAt e) (b : P.Inciden
 /-- The open edge is the interior of the whole-edge path through either of its incidences. -/
 theorem interior_edgePathAt (a : P.IncidenceAt e) :
     (edgePathAt P a).Interior = edgeInteriorAt P a := by
-  have himg : ∀ j : P.I,
+  have himg : ∀ j : ι,
       halfPath P j '' Ioc 0 1 = (halfPath P j).Interior ∪ {midpointMk P j} := by
     intro j
     rw [← Set.Ioo_union_right zero_lt_one_I, Set.image_union, Set.image_singleton, halfPath_one]
@@ -754,7 +755,7 @@ A point is a vertex or a point of a half-edge; in the second case it lies over t
 half-edge is attached to, and `Graph.walkable` names the component.  The content of the
 definition is that this descends to the quotient: the two half-edges of an edge are attached to
 the two ends of that edge, which are connected. -/
-def component (P : Presentation V E) : P.Realization → Graph V E :=
+def component (P : Presentation V ι E) : P.Realization → Graph V E :=
   Quotient.lift
     (fun z ↦ match z with
       | .inl v => P.toGraph.walkable v.1
@@ -778,7 +779,7 @@ lemma component_vertexMk (v : V(P.toGraph)) :
 application, it is not retrieved by a bare `simp`, only by `simp only [component_halfPath]`
 or `rw`. -/
 @[simp]
-lemma component_halfPath (i : P.I) (t : I) :
+lemma component_halfPath (i : ι) (t : I) :
     component P (halfPath P i t) = P.toGraph.walkable (P.attach i) := rfl
 
 lemma component_mem_components (x : P.Realization) : component P x ∈ P.toGraph.Components := by
@@ -792,7 +793,7 @@ lemma component_mem_components (x : P.Realization) : component P x ∈ P.toGraph
 the fibres.  A half-edge lies over a single vertex, so each `halfPath` preimage is `univ` or `∅`,
 and the `0`-skeleton is discrete. -/
 theorem isClopen_preimage_component (S : Set (Graph V E)) : IsClopen (component P ⁻¹' S) := by
-  have key : ∀ i : P.I, IsClopen (halfPath P i ⁻¹' (component P ⁻¹' S)) := by
+  have key : ∀ i : ι, IsClopen (halfPath P i ⁻¹' (component P ⁻¹' S)) := by
     intro i
     by_cases h : P.toGraph.walkable (P.attach i) ∈ S
     · convert isClopen_univ
@@ -904,19 +905,6 @@ end Realization
 
 namespace Equiv
 
-/-- Identity-on-labels equivalence of the vertex subtypes. -/
-def vertexEquiv (F : P.Equiv Q) : V(P.toGraph) ≃ V(Q.toGraph) where
-  toFun v := ⟨v.1, by
-    change v.1 ∈ Q.vertexSet
-    rw [← F.vertexSet_eq]
-    exact v.2⟩
-  invFun v := ⟨v.1, by
-    change v.1 ∈ P.vertexSet
-    rw [F.vertexSet_eq]
-    exact v.2⟩
-  left_inv v := Subtype.ext rfl
-  right_inv v := Subtype.ext rfl
-
 /-- Relabel incidences in the pre-realization and leave interval coordinates unchanged. -/
 def preMap (F : P.Equiv Q) : P.PreRealization → Q.PreRealization
   | .inl v => .inl (vertexEquiv F v)
@@ -927,7 +915,7 @@ lemma preMap_inl (F : P.Equiv Q) (v : V(P.toGraph)) :
     F.preMap (.inl v) = .inl (F.vertexEquiv v) := rfl
 
 @[simp]
-lemma preMap_inr (F : P.Equiv Q) (i : P.I) (t : unitInterval) :
+lemma preMap_inr (F : P.Equiv Q) (i : ι) (t : unitInterval) :
     F.preMap (.inr ⟨i, t⟩) = .inr ⟨F.incEquiv i, t⟩ := rfl
 
 lemma continuous_preMap (F : P.Equiv Q) : Continuous F.preMap := by
@@ -935,7 +923,7 @@ lemma continuous_preMap (F : P.Equiv Q) : Continuous F.preMap := by
   constructor
   · exact continuous_inl.comp continuous_of_discreteTopology
   exact continuous_sigma_iff.mpr fun i ↦ continuous_inr.comp
-    <| @continuous_sigmaMk Q.I (fun _ : Q.I ↦ unitInterval) _ (F.incEquiv i)
+    <| @continuous_sigmaMk κ (fun _ : κ ↦ unitInterval) _ (F.incEquiv i)
 
 lemma map_glueRelAux (F : P.Equiv Q) {x y : P.PreRealization}
     (h : GlueRelAux P x y) : GlueRelAux Q (F.preMap x) (F.preMap y) := by
@@ -945,7 +933,10 @@ lemma map_glueRelAux (F : P.Equiv Q) {x y : P.PreRealization}
     have hv : F.vertexEquiv ⟨P.attach i, P.attach_mem i⟩ =
         ⟨Q.attach (F.incEquiv i), Q.attach_mem (F.incEquiv i)⟩ :=
       Subtype.ext <| (F.vertex_eq i).symm
-    simpa only [preMap_inl, preMap_inr, hv] using GlueRelAux.attach (F.incEquiv i)
+    change GlueRelAux Q (.inl (F.vertexEquiv ⟨P.attach i, P.attach_mem i⟩))
+      (.inr ⟨F.incEquiv i, 0⟩)
+    rw [hv]
+    exact GlueRelAux.attach (F.incEquiv i)
   | other i =>
     simpa only [preMap_inr, F.map_other] using GlueRelAux.other (F.incEquiv i)
 
@@ -970,12 +961,12 @@ lemma realizationMap_vertexMk (F : P.Equiv Q) (v : V(P.toGraph)) :
   rfl
 
 @[simp]
-lemma realizationMap_midpointMk (F : P.Equiv Q) (i : P.I) :
+lemma realizationMap_midpointMk (F : P.Equiv Q) (i : ι) :
     F.realizationMap (Realization.midpointMk P i) = Realization.midpointMk Q (F.incEquiv i) :=
   rfl
 
 @[simp]
-lemma realizationMap_halfPath (F : P.Equiv Q) (i : P.I) (t : unitInterval) :
+lemma realizationMap_halfPath (F : P.Equiv Q) (i : ι) (t : unitInterval) :
     F.realizationMap (Realization.halfPath P i t) = Realization.halfPath Q (F.incEquiv i) t :=
   rfl
 
@@ -987,7 +978,7 @@ private lemma preMap_symm_apply (F : P.Equiv Q) (x : P.PreRealization) :
     cases p with
     | mk i t =>
       simp only [preMap]
-      exact congrArg (fun j : P.I => Sum.inr (⟨j, t⟩ : (_ : P.I) × unitInterval))
+      exact congrArg (fun j : ι => Sum.inr (⟨j, t⟩ : (_ : ι) × unitInterval))
         <| F.incEquiv.symm_apply_apply i
 
 private lemma preMap_apply_symm (F : P.Equiv Q) (x : Q.PreRealization) :
@@ -998,8 +989,8 @@ private lemma preMap_apply_symm (F : P.Equiv Q) (x : Q.PreRealization) :
     cases p with
     | mk i t =>
       simp only [preMap]
-      exact congrArg (fun j : Q.I =>
-        Sum.inr (⟨j, t⟩ : (_ : Q.I) × unitInterval)) <| F.incEquiv.apply_symm_apply i
+      exact congrArg (fun j : κ =>
+        Sum.inr (⟨j, t⟩ : (_ : κ) × unitInterval)) <| F.incEquiv.apply_symm_apply i
 
 /-- Presentation equivalence gives a homeomorphism of the half-edge realizations. -/
 def realizationHomeomorph (F : P.Equiv Q) : P.Realization ≃ₜ Q.Realization where
@@ -1032,7 +1023,7 @@ lemma realizationHomeomorph_symm_apply (F : P.Equiv Q) (x : Q.Realization) :
     F.realizationHomeomorph.symm x = F.symm.realizationMap x := rfl
 
 @[simp]
-lemma realizationMap_refl (P : Presentation V E) :
+lemma realizationMap_refl (P : Presentation V ι E) :
     (Presentation.Equiv.refl P).realizationMap = id := by
   funext z
   induction z using Quotient.inductionOn with | _ x =>
@@ -1045,7 +1036,7 @@ lemma realizationMap_trans (F : P.Equiv Q) (F' : Q.Equiv R) :
   obtain v | ⟨i, t⟩ := x <;> rfl
 
 @[simp]
-lemma realizationHomeomorph_refl (P : Presentation V E) :
+lemma realizationHomeomorph_refl (P : Presentation V ι E) :
     (Presentation.Equiv.refl P).realizationHomeomorph = Homeomorph.refl P.Realization :=
   Homeomorph.ext fun z ↦ congrFun (realizationMap_refl P) z
 
@@ -1069,7 +1060,7 @@ presentations of the same coarse graph is genuine extra data: it is not determin
 `P.toGraph = Q.toGraph`.  This is the reason the functoriality above is indexed by
 `Presentation.Equiv` rather than by an equality of coarse graphs, and the reason
 `Presentation.homeomorphOfToGraphEq` can only be a choice. -/
-theorem realizationHomeomorph_loopSwap_ne_refl (P : Presentation V E) (i : P.I)
+theorem realizationHomeomorph_loopSwap_ne_refl (P : Presentation V ι E) (i : ι)
     (h : P.attach (P.other i) = P.attach i) :
     (P.loopSwap i h).realizationHomeomorph ≠ Homeomorph.refl P.Realization := by
   intro hEq

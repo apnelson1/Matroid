@@ -7,6 +7,7 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2 -- inefficient import
 variable {α β : Type*} {a b c x y z w : α} {C L : List α} {X Y : Set α} {N : ℕ}
 
 open Set Function TopologicalSpace Topology Metric Nat unitInterval Set.Notation
+open scoped Sym2
 
 lemma pathConnectedSpace_Ioo {E} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
     [ContinuousAdd E] [PartialOrder E] [ContinuousSMul ℝ E] [IsOrderedCancelAddMonoid E]
@@ -129,6 +130,10 @@ lemma mem_Ioo_iff : t ∈ Ioo (0 : I) 1 ↔ t ≠ 0 ∧ t ≠ 1 := by
 lemma symm_mem_Ioo_iff : σ t ∈ Ioo (0 : I) 1 ↔ t ∈ Ioo (0 : I) 1 := by
   rw [mem_Ioo_iff, mem_Ioo_iff, ne_eq, ne_eq, ne_eq, ne_eq, symm_eq_zero, symm_eq_one, and_comm]
 
+lemma closure_Ioo_zero_one : closure (Ioo (0 : I) 1) = univ := by
+  rw [closure_Ioo (zero_ne_one (α := I))]
+  simp [Set.eq_univ_iff_forall, unitInterval.le_one']
+
 lemma squishLeft_eq_zero_iff : squishLeft t = 0 ↔ t = 0 :=
   ⟨fun h ↦ squishLeft_injective (by rw [h, squishLeft_zero]),
     fun h ↦ by rw [h, squishLeft_zero]⟩
@@ -218,6 +223,36 @@ lemma isPathConnected_Ioo {a b : I} (hab : a < b) : IsPathConnected (Ioo a b) :=
     (Set.nonempty_Ioo.2 (Subtype.coe_lt_coe.2 hab))).image continuous_projIcc
 
 end unitInterval
+
+/-- Any subset of the unit interval containing its relative interior is open. -/
+lemma isOpen_of_Ioo_subset {U : Set I} (h : Ioo (0 : I) 1 ⊆ U) : IsOpen U := by
+  have huniv : ∀ x : I, x ∈ insert 0 (insert 1 (Ioo (0 : I) 1)) := by
+    rintro x
+    simp [x.prop.2, ← Subtype.coe_le_coe]
+  have h1 : (U = Ioo (0 : I) 1 ∨ U = Ioc (0 : I) 1) ∨ (U = Ico (0 : I) 1 ∨ U = univ) := by
+    by_cases h0 : (0 : I) ∈ U <;> [right; left] <;> by_cases h1 : (1 : I) ∈ U
+    <;> [right; left; right; left] <;> ext x
+    · grind
+    · rw [← Ioo_insert_left (by simp)]
+      grind
+    · rw [← Ioo_insert_right (by simp)]
+      grind
+    · grind
+  rcases h1 with (rfl | rfl) | (rfl | rfl)
+  · exact isOpen_Ioo
+  · have : Ioc (0 : I) 1 = (fun x : I ↦ (x : ℝ)) ⁻¹' Ioi 0 := by
+      ext x
+      simp only [mem_Ioc, mem_preimage, mem_Ioi]
+      exact ⟨fun h => h.1, fun h => ⟨h, x.prop.2⟩⟩
+    rw [this]
+    exact continuous_subtype_val.isOpen_preimage _ isOpen_Ioi
+  · have : Ico (0 : I) 1 = (fun x : I ↦ (x : ℝ)) ⁻¹' Iio 1 := by
+      ext x
+      simp only [mem_Ico, mem_preimage, mem_Iio]
+      exact ⟨fun h => h.2, fun h => ⟨x.prop.1, h⟩⟩
+    rw [this]
+    exact continuous_subtype_val.isOpen_preimage _ isOpen_Iio
+  · exact isOpen_univ
 
 namespace Path
 
@@ -588,6 +623,55 @@ variable {X : Type*} [TopologicalSpace X] {x y z : X}
 /-- The open image of a path, with both endpoints omitted. -/
 def Interior (P : Path x y) : Set X :=
   P '' Ioo (0 : unitInterval) 1
+
+lemma interior_segment [AddCommGroup X] [Module ℝ X] [ContinuousAdd X] [ContinuousSMul ℝ X]
+    (a b : X) : (Path.segment a b).Interior = openSegment ℝ a b := by
+  ext z
+  constructor
+  · rintro ⟨t, ht, rfl⟩
+    rw [openSegment_eq_image_lineMap]
+    exact ⟨t, ht, by simp [Path.segment_apply]⟩
+  · rw [openSegment_eq_image_lineMap]
+    rintro ⟨t, ht, rfl⟩
+    exact ⟨⟨t, ht.1.le, ht.2.le⟩, ht, by simp [Path.segment_apply]⟩
+
+lemma range_subset_closure_interior (P : Path x y) : range P ⊆ closure P.Interior := by
+  rintro z ⟨i, rfl⟩
+  refine ((image_closure_subset_closure_image P.continuous ⟨i, ?_, rfl⟩))
+  grind [unitInterval.closure_Ioo_zero_one]
+
+open Classical in
+/-- Reorient a path to a prescribed ordering of the same unordered pair of endpoints. -/
+noncomputable def reorient {a b x y : X} (γ : Path a b) (h : s(x, y) = s(a, b)) : Path x y :=
+  if hx : x = a ∧ y = b then γ.cast hx.1 hx.2
+  else
+    have h' : x = b ∧ y = a := (Sym2.eq_iff.mp h).resolve_left hx
+    γ.symm.cast h'.1 h'.2
+
+@[simp]
+lemma range_reorient {a b x y : X} (γ : Path a b) (h : s(x, y) = s(a, b)) :
+    range (γ.reorient h) = range γ := by
+  rw [reorient]
+  split_ifs <;> simp
+
+@[simp]
+lemma reorient_interior {a b x y : X} (γ : Path a b) (h : s(x, y) = s(a, b)) :
+    (γ.reorient h).Interior = γ.Interior := by
+  rw [reorient]
+  split_ifs
+  · rfl
+  refine subset_antisymm ?_ ?_ <;> rintro _ ⟨t, ht, rfl⟩
+  · exact ⟨σ t, unitInterval.symm_mem_Ioo_iff.2 ht, rfl⟩
+  · exact ⟨σ t, unitInterval.symm_mem_Ioo_iff.2 ht, by simp⟩
+
+lemma injOn_reorient {a b x y : X} (γ : Path a b) (h : s(x, y) = s(a, b))
+    (hγ : InjOn γ (Ioo (0 : I) 1)) : InjOn (γ.reorient h) (Ioo (0 : I) 1) := by
+  rw [reorient]
+  split_ifs
+  · exact hγ
+  intro s hs t ht hst
+  have := hγ (unitInterval.symm_mem_Ioo_iff.2 hs) (unitInterval.symm_mem_Ioo_iff.2 ht) hst
+  simpa using congrArg σ this
 
 lemma interior_subset_range (P : Path x y) : P.Interior ⊆ range P := by
   rintro _ ⟨t, ht, rfl⟩
