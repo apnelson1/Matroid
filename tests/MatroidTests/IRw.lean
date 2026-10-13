@@ -318,7 +318,7 @@ variable {V : Type uV} {E : Type uE} {V' : Type uV'} {E' : Type uE'}
   {G : Graph V E} {H : Graph V' E'} {K : Graph V'' E''}
 
 example (i : Graph.Iso G H) (x y : V(G))
-    (h : H.Adj (i.vertexEquiv x).1 (i.vertexEquiv y).1) : G.Adj x.1 y.1 := by
+    (h : H.Adj (i.vertEquiv x).1 (i.vertEquiv y).1) : G.Adj x.1 y.1 := by
   irw i
   exact h
 
@@ -411,30 +411,30 @@ example (i : Graph.Iso G H)
 /-! ## Every registered local graph predicate individually -/
 
 example (i : Graph.Iso G H) (e : E(G)) (x : V(G))
-    (h : H.Inc (i.edgeEquiv e).1 (i.vertexEquiv x).1) : G.Inc e.1 x.1 := by
+    (h : H.Inc (i.edgeEquiv e).1 (i.vertEquiv x).1) : G.Inc e.1 x.1 := by
   irw i
   exact h
 
 example (i : Graph.Iso G H) (e : E(G)) (x : V(G))
-    (h : H.IsLoopAt (i.edgeEquiv e).1 (i.vertexEquiv x).1) :
+    (h : H.IsLoopAt (i.edgeEquiv e).1 (i.vertEquiv x).1) :
     G.IsLoopAt e.1 x.1 := by
   irw i
   exact h
 
 example (i : Graph.Iso G H) (e : E(G)) (x : V(G))
-    (h : H.IsNonloopAt (i.edgeEquiv e).1 (i.vertexEquiv x).1) :
+    (h : H.IsNonloopAt (i.edgeEquiv e).1 (i.vertEquiv x).1) :
     G.IsNonloopAt e.1 x.1 := by
   irw i
   exact h
 
 example (i : Graph.Iso G H) (e : E(G)) (x : V(G))
-    (h : (i.edgeEquiv e).1 ∈ H.incidenceSet (i.vertexEquiv x).1) :
+    (h : (i.edgeEquiv e).1 ∈ H.incidenceSet (i.vertEquiv x).1) :
     e.1 ∈ G.incidenceSet x.1 := by
   irw i
   exact h
 
 example (i : Graph.Iso G H) (e : E(G)) (x : V(G))
-    (h : (i.edgeEquiv e).1 ∈ H.loopSet (i.vertexEquiv x).1) :
+    (h : (i.edgeEquiv e).1 ∈ H.loopSet (i.vertEquiv x).1) :
     e.1 ∈ G.loopSet x.1 := by
   irw i
   exact h
@@ -1377,7 +1377,7 @@ example (i : Graph.Iso G H) :
 -- `IsCyclicWalk` is deliberately separated from the binder by unrelated positive implications.
 -- The supported-domain solver must discover `IsWalk W` before it can transport the raw binder.
 example (i : Graph.Iso G H) (v : V) (hv : v ∈ V(G))
-    (h : ∀ W : WList V' E', H.IsCyclicWalk W → W.last = (i.vertexEquiv ⟨v, hv⟩).1) :
+    (h : ∀ W : WList V' E', H.IsCyclicWalk W → W.last = (i.vertEquiv ⟨v, hv⟩).1) :
     ∀ W : WList V E, G.IsCyclicWalk W → W.last = v := by
   irw i
   exact h
