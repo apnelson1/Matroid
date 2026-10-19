@@ -1,5 +1,6 @@
 module
 
+public import Matroid.ForMathlib.Finset
 public import Mathlib.Topology.Separation.Connected
 public import Matroid.ForMathlib.Analysis.Convex.Segment
 public import Matroid.ForMathlib.Topology.Path
@@ -46,7 +47,8 @@ i.e. a concatenation is simple exactly when the two pieces meet only at the poin
 
 `injective_toPath_iff` connects `IsSimple` to the parametrization, and
 `exists_isSimple_toSet_subset` is arc extraction: any polygonal path contains a simple path with
-the same endpoints.
+the same endpoints. `Path.exists_polygonalPath_of_finite_cuts` assembles polygonal representatives
+of finitely many subpaths into a representative of the whole path.
 
 The base case `nil x` has no segments and is the identity for concatenation. `toSet` is defined
 recursively over segments, while `toPath` supplies the topological parametrization; the theorem
@@ -56,7 +58,7 @@ injectivity of `toPath` by `injective_toPath_iff`.
 
 @[expose] public section
 
-open Set Function List
+open Set Function List unitInterval
 
 variable {α : Type*} {a b c x y z : α} {L : List α}
 
@@ -1052,7 +1054,6 @@ end Segments
 
 section Path
 
-
 variable [AddCommGroup α] [Module ℝ α] [TopologicalSpace α] [ContinuousSMul ℝ α] [ContinuousAdd α]
 
 /-- The path traversing the segments of `P` in order. A final segment is traversed on all of
@@ -1115,8 +1116,6 @@ lemma isTrivial_iff_toSet_eq_singleton [T1Space α] : P.IsTrivial ↔ P.toSet = 
   have hz' := P.mem_toSet_of_mem_vertices hz
   rw [h] at hz'
   simpa using hz'
-
-open unitInterval
 
 /-- Simplicity is injectivity of the parametrization, except that `nil` is simple while its
 parametrization is constant. -/
@@ -1242,6 +1241,23 @@ lemma exists_nhds_inter_toSet_eq [IsTopologicalAddGroup α] [T2Space α] {s : α
   exact fun ⟨hwK, hws⟩ ↦ ⟨hwK, P.segment_subset_toSet hs hws⟩
 
 end Path
+
+/-- If a finite set of parameter cuts separates a path into polygonal pieces, its whole range
+is represented by a polygonal path with the same endpoints. -/
+lemma _root_.Path.exists_polygonalPath_of_finite_cuts [TopologicalSpace α] [AddCommGroup α]
+    [Module ℝ α] (γ : Path x y) {F : Set I} (hF : F.Finite) (hpieces : ∀ s t, s < t →
+      (∀ u ∈ Ioo s t, u ∉ F) → ∃ Q : PolygonalPath (γ s) (γ t), Q.toSet = range (γ.subpath s t)) :
+    ∃ Q : PolygonalPath x y, Q.toSet = range γ := by
+  let R (s t : I) := ∃ Q : PolygonalPath (γ s) (γ t), Q.toSet = γ '' Icc s t
+  have hjoin : ∀ s u t, s < u → u < t → R s u → R u t → R s t := by
+    refine fun s u t hsu hut ⟨A, hA⟩ ⟨B, hB⟩ ↦ ⟨A.append B, ?_⟩
+    rw [PolygonalPath.toSet_append, hA, hB, ← image_union, Icc_union_Icc_eq_Icc hsu.le hut.le]
+  obtain ⟨Q, hQ⟩ : R 0 1 := by
+    refine hF.toFinset.interval_induction hjoin zero_lt_one fun s t _ hst _ _ _ hcut ↦ ?_
+    obtain ⟨Q, hQ⟩ := hpieces s t hst (fun u hu huF ↦ hcut u (hF.mem_toFinset.mpr huF) hu)
+    exact ⟨Q, hQ.trans (γ.range_subpath_of_le _ _ hst.le)⟩
+  refine ⟨Q.cast γ.source γ.target, ?_⟩
+  simpa only [PolygonalPath.toSet_cast, unitInterval.Icc_eq_univ, image_univ] using hQ
 
 /-! ### First and last edges of a path -/
 

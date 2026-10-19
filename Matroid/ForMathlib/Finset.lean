@@ -2,6 +2,7 @@
 module
 
 public import Mathlib.Data.Finset.Powerset -- inefficient import
+public import Mathlib.Order.Interval.Set.Basic
 
 @[expose] public section
 -- import Mathlib.Data.Fintype.Lattice
@@ -82,9 +83,7 @@ lemma finset_biUnion_inter (s t : Finset α) (u : α → Finset β) [DecidableEq
   simp only [biUnion_subset_iff_forall_subset]
   intro x h
   obtain ⟨hs, ht⟩ := mem_inter.mp h
-  refine subset_inter ?_ ?_
-  <;> intro a ha
-  <;> aesop
+  refine subset_inter ?_ ?_ <;> intro a ha <;> aesop
 
 lemma erase_inter_distrib (s : Finset α) (t : Finset α) (a : α) :
     (s ∩ t).erase a = s.erase a ∩ t.erase a := by
@@ -99,9 +98,33 @@ lemma subset_range_two {P : Finset ℕ} (hP : P ⊆ Finset.range 2) :
   rw [Finset.range_add_one, Finset.range_one] at hP
   grind
 
-
 end Finset
 
 lemma List.toFinset_subset [DecidableEq α] {a b : List α} (hab : a ⊆ b) :
     a.toFinset ⊆ b.toFinset :=
   fun i hi ↦ by simpa using hab <| by simpa using hi
+
+/-- A relation that joins adjacent intervals holds across an interval if it holds on each
+successive gap of a finite set of cut points. The gaps are the subintervals whose endpoints lie in
+`{a, b} ∪ F` and whose interiors avoid `F`. -/
+theorem Finset.interval_induction [LinearOrder α] {F : Finset α} {R : α → α → Prop}
+    (hjoin : ∀ a c b, a < c → c < b → R a c → R c b → R a b) (hab : a < b)
+    (hgap : ∀ s t, a ≤ s → s < t → t ≤ b → (s = a ∨ s ∈ F) → (t = b ∨ t ∈ F) →
+      (∀ u ∈ F, u ∉ Set.Ioo s t) → R s t) : R a b := by
+  induction F using Finset.induction_on generalizing a b with
+  | empty => exact hgap a b le_rfl hab le_rfl (Or.inl rfl) (Or.inl rfl) (by simp)
+  | @insert c F hc ih =>
+    by_cases hcI : c ∈ Set.Ioo a b
+    · refine hjoin a c b hcI.left hcI.right
+        (ih hcI.left fun s t has hst htc hs ht hcut ↦ hgap s t has hst (htc.trans hcI.right.le)
+          (hs.imp_right Finset.mem_insert_of_mem)
+          (Or.inr <| ht.elim (fun h => h ▸ Finset.mem_insert_self c F) Finset.mem_insert_of_mem) ?_)
+        (ih hcI.right fun s t hcs hst htb hs ht hcut ↦ hgap s t (hcI.left.le.trans hcs) hst htb
+          (Or.inr <| hs.elim (fun h => h ▸ Finset.mem_insert_self c F) Finset.mem_insert_of_mem)
+          (ht.imp_right Finset.mem_insert_of_mem) ?_)
+        <;> intro u hu <;> rcases Finset.mem_insert.mp hu with rfl | hu <;> grind
+    refine ih hab fun s t has hst htb hs ht hcut ↦ hgap s t has hst htb
+      (hs.imp_right Finset.mem_insert_of_mem) (ht.imp_right Finset.mem_insert_of_mem) fun u hu ↦ ?_
+    obtain rfl | hu := Finset.mem_insert.mp hu
+    · exact fun hu ↦ hcI ⟨has.trans_lt hu.1, hu.2.trans_le htb⟩
+    exact hcut u hu

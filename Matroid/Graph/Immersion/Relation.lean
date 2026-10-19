@@ -41,7 +41,7 @@ lemma Immersion.refl_route_length (G : Graph V E) (e : G.edgeSet) :
 @[simp]
 lemma Immersion.refl_route_edgeSet (G : Graph V E) (e : G.edgeSet) :
     ((Immersion.refl G).route e).edgeSet = {e.1} := by
-  rw [Immersion.refl, Graph.Emb.toImmersion_route_edgeSet]
+  rw [Immersion.refl, Graph.Emb.toImmersion_route, IsLink.walk_edgeSet]
   rfl
 
 @[simp]

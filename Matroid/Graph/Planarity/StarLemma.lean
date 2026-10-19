@@ -3,7 +3,7 @@ module
 public import Matroid.Graph.Planarity.PLDrawing
 public import Matroid.Graph.Planarity.Face
 public import Matroid.ForMathlib.Geometry.DiskMinusRadii
-public import Matroid.ForMathlib.Geometry.SegmentFigure
+public import Matroid.ForMathlib.Geometry.SegmentFigure.Star
 public import Matroid.ForMathlib.Geometry.StarComponents
 public import Matroid.ForMathlib.Topology.ConnPartition
 public import Matroid.ForMathlib.Analysis.Convex.RadialPoint
@@ -46,7 +46,8 @@ what the star lemma uses about a drawing. -/
 theorem isSegmentFigure_support [G.Finite] (D : PLDrawing G V) :
     IsSegmentFigure D.toDrawing.support := by
   obtain ⟨S, hSfin, hsupp⟩ := D.exists_finite_support
-  exact ⟨_, S, Set.finite_range _, hSfin, hsupp⟩
+  rw [hsupp]
+  exact (IsSegmentFigure.of_finite (Set.finite_range _)).union ⟨S, hSfin, rfl⟩
 
 /-- **The star lemma.** About each of its points, a polygonal drawing of a finite graph meets a
 small enough closed ball in a union of straight radii, one for each direction in which the drawing

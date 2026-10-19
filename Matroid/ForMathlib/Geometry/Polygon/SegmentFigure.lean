@@ -1,7 +1,7 @@
 module
 
 public import Matroid.ForMathlib.Geometry.Polygon.Basic
-public import Matroid.ForMathlib.Geometry.SegmentFigure
+public import Matroid.ForMathlib.Geometry.SegmentFigure.Basic
 
 /-!
 # Polygon boundaries as segment figures
@@ -11,7 +11,7 @@ This file is the bridge from polygons to the representation-independent segment-
 
 @[expose] public section
 
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+variable {V : Type*} [AddCommGroup V] [Module ℝ V]
 
 /-- The boundary of a polygon is a segment figure. -/
 @[grind .]

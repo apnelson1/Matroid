@@ -1,8 +1,9 @@
 module
 
 public import Matroid.ForMathlib.Geometry.Polygon.JordanCurve
-public import Matroid.ForMathlib.Geometry.PolygonalPath.LocalStar
 public import Matroid.ForMathlib.Geometry.PolygonalPath.PrimitivePath
+public import Matroid.ForMathlib.Geometry.PolygonalPath.SegmentFigure
+public import Matroid.ForMathlib.Geometry.PrimitiveLink
 public import Matroid.ForMathlib.Geometry.StarComponents
 public import Matroid.ForMathlib.Topology.ConnectedComponent
 
@@ -52,7 +53,7 @@ section
 upper bound makes the lemma stable under later shrinking requirements.
 
 This is private because the theta statement is currently a bootstrap theorem.  The reusable
-dimension-free local theorem is `IsSimple.exists_local_star_two`; a future abstract
+dimension-free local theorem is `IsPrimitiveLink.exists_local_star_two_le`; a future abstract
 two-dimensional version of the sector theory should subsume this endpoint packaging. -/
 private theorem exists_endpoint_star_three
     (hab : a ≠ b) (A : Fin 3 → PolygonalPath a b)
@@ -153,7 +154,7 @@ private theorem exists_endpoint_star_three
 /-- At an interior point of one arm, sufficiently small neighborhoods of the whole theta set have
 exactly two radial germs. -/
 private theorem exists_arm_interior_star_two
-    (_hab : a ≠ b) (A : Fin 3 → PolygonalPath a b)
+    (hab : a ≠ b) (A : Fin 3 → PolygonalPath a b)
     (hsimple : ∀ i, (A i).IsSimple)
     (hmeet : ∀ i j, i ≠ j → (A i).toSet ∩ (A j).toSet = {a, b})
     (i : Fin 3) {q : V} (hq : q ∈ (A i).toSet \ {a, b})
@@ -163,8 +164,9 @@ private theorem exists_arm_interior_star_two
         (Y : Set V) ⊆ sphere q ρ ∧
         closedBall q ρ ∩ (⋃ j, (A j).toSet) =
           {q} ∪ ⋃ y ∈ Y, segment ℝ q y := by
-  have hqa : q ≠ a := fun h ↦ hq.2 (mem_insert_iff.mpr (Or.inl h))
-  have hqb : q ≠ b := fun h ↦ hq.2 (by simp [h])
+  have hlink : IsPrimitiveLink (A i).toSet a b :=
+    ⟨(A i).toPath, (hsimple i).isPrimitive ((A i).length_pos_of_ne hab),
+      (A i).toSet_eq_range_toPath.symm⟩
   let K : Set V := ⋃ j : {j : Fin 3 // j ≠ i}, (A j.1).toSet
   have hKcompact : IsCompact K := isCompact_iUnion fun j ↦ (A j.1).isCompact_toSet
   have hqK : q ∉ K := by
@@ -175,7 +177,7 @@ private theorem exists_arm_interior_star_two
   let ε' : ℝ := min ε (δ / 2)
   have hε' : 0 < ε' := lt_min hε (half_pos hδpos)
   obtain ⟨ρ, hρ, hρ_le, Y, hYcard, hYsph, hstar⟩ :=
-    IsSimple.exists_local_star_two (hsimple i) hq.1 hqa hqb hε'
+    hlink.exists_local_star_two_le (A i).isSegmentFigure_toSet hq.1 (Or.inr hq.2) hε'
   have hρ_le_ε : ρ ≤ ε := hρ_le.trans (min_le_left _ _)
   have hρ_le_half : ρ ≤ δ / 2 := hρ_le.trans (min_le_right _ _)
   have hTK : (⋃ j, (A j).toSet) = (A i).toSet ∪ K := by

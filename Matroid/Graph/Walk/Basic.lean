@@ -452,6 +452,10 @@ def IsLink.walk (_h : G.IsLink e u v) : WList α β := cons u e (nil v)
 namespace IsLink
 
 @[simp]
+lemma walk_nonempty (h : G.IsLink e u v) : h.walk.Nonempty := by
+  simp [walk]
+
+@[simp]
 lemma walk_first (h : G.IsLink e u v): h.walk.first = u := rfl
 
 @[simp]
@@ -477,6 +481,10 @@ lemma walk_edgeSet (h : G.IsLink e u v): E(h.walk) = {e} := by
 
 @[simp]
 lemma walk_length (h : G.IsLink e u v): h.walk.length = 1 := rfl
+
+@[simp]
+lemma walk_internalVertexSet (h : G.IsLink e u v) : h.walk.internalVertexSet = ∅ := by
+  simp [walk, internalVertexSet]
 
 @[simp]
 lemma walk_isWalk (h : G.IsLink e u v) : G.IsWalk h.walk := by

@@ -1,5 +1,6 @@
 module
 
+public import Matroid.ForMathlib.Topology.PrimitivePath
 public import Matroid.Graph.Degree.Max
 public import Matroid.Graph.Minor.Defs
 public import Matroid.Graph.Planarity.Realization.Iso
@@ -136,9 +137,23 @@ lemma support_eq (D : Drawing G X) :
     · exact ⟨G.edgePath e t, rfl⟩
 
 /-- The open part of each edge path is injectively parametrized. -/
-lemma edgePath_injOn_Ioo (D : Drawing G X) (e : E(G)) :
-    InjOn (D.edgePath e) (Ioo (0 : unitInterval) 1) :=
+lemma edgePath_injOn_Ioo (D : Drawing G X) (e : E(G)) : InjOn (D.edgePath e) (Ioo (0 : I) 1) :=
   fun _ ht₁ _ _ heq ↦ edgePath_inj_of_mem_Ioo (mod_cast ht₁) <| D.injective heq
+
+/-- An edge of a drawing is parametrized primitively, including when it is a loop. -/
+lemma edgePath_isPrimitive (D : Drawing G X) (e : E(G)) : (D.edgePath e).IsPrimitive := by
+  intro s t heq
+  obtain rfl | hst := eq_or_ne s t
+  · exact Or.inl rfl
+  have hends {s t : I} (hne : s ≠ t) (heq : D.edgePath e s = D.edgePath e t) : s = 0 ∨ s = 1 := by
+    by_contra! h
+    exact hne (edgePath_inj_of_mem_Ioo
+      ⟨by exact_mod_cast (bot_lt_iff_ne_bot.mpr h.left),
+        by exact_mod_cast (lt_top_iff_ne_top.mpr h.right)⟩ (D.injective heq))
+  right
+  have hs := hends hst heq
+  have ht := hends hst.symm heq.symm
+  obtain rfl | rfl := hs <;> obtain rfl | rfl := ht <;> grind
 
 /-- The open part of an edge is disjoint from all vertex images. -/
 lemma pathInterior_edgePath_disjoint_vertex (D : Drawing G X) (e : E(G)) :
@@ -147,10 +162,23 @@ lemma pathInterior_edgePath_disjoint_vertex (D : Drawing G X) (e : E(G)) :
   rintro _ ⟨t, ht, rfl⟩ ⟨v, hv⟩
   exact vertexMk_not_mem_edgePath_Ioo v e ⟨t, ht, D.injective hv.symm⟩
 
+/-- A vertex image does not lie on the path of a nonincident edge. -/
+lemma vertex_notMem_range_edgePath_of_not_inc (D : Drawing G X) {x : V(G)} {e : E(G)}
+    (h : ¬ G.Inc e.1 x.1) : D.vertex x ∉ range (D.edgePath e) := by
+  rintro ⟨t, ht⟩
+  have hends : x = edgeSource e ∨ x = edgeTarget e → G.Inc e.val x.val := by
+    rintro (rfl | rfl)
+    · exact (isLink_edgeSource_edgeTarget e).inc_left
+    exact (isLink_edgeSource_edgeTarget e).inc_right
+  obtain rfl | rfl | htI := unitInterval.eq_zero_or_eq_one_or_mem_Ioo t
+  · grind [D.vertex_injective]
+  · grind [D.vertex_injective]
+  exact (D.pathInterior_edgePath_disjoint_vertex e).notMem_of_mem_left ⟨t, htI, ht⟩ ⟨x, rfl⟩
+
 /-- The open parts of distinct edges are disjoint. -/
 lemma pathInterior_edgePath_disjoint (D : Drawing G X) {e f : E(G)} (hef : e ≠ f) :
     Disjoint (D.edgePath e).Interior (D.edgePath f).Interior := by
-  refine disjoint_left.mpr ?_
+  rw [disjoint_left]
   rintro _ ⟨t, ht, rfl⟩ ⟨s, hs, heq⟩
   exact ((disjoint_edgePath_Ioo_iff e f).mpr hef).notMem_of_mem_left ⟨t, ht, rfl⟩
     ⟨s, hs, D.injective heq⟩

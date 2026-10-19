@@ -1,61 +1,27 @@
-import Matroid.ForMathlib.Geometry.PolygonalPath.Basic
-import Matroid.Graph.Bipartite
-import Matroid.Graph.Presentation.Quotient
-import Matroid.Graph.Immersion.Basic
+import Matroid.ForMathlib.Topology.PrimitiveLink
+import Matroid.ForMathlib.Geometry.PolygonalPath.PrimitivePath
+import Matroid.Graph.Finite
 import Matroid.Graph.Hom.Basic
+import Matroid.Graph.Planarity.Realization.Presentation
+import Matroid.Graph.Immersion.Basic
 import Mathlib.Topology.Connected.Clopen
 import Mathlib.Topology.Constructions
 import Mathlib.Topology.Homeomorph.Lemmas
-import Mathlib.Topology.Path
 
--- Standalone bundled variant of Defs.lean; do not import both files.
+/-! # Graph-like spaces, drawings, and faces -/
 
 open Set Function TopologicalSpace Set.Notation Graph
-open scoped Sym2
 
-variable {V ι E V' E' X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {G : Graph V E}
-  {P : Presentation V ι E} {e : E(G)} {u v : V(G)} {S Z : Set X} [T2Space S] {x y : X}
+variable {X : Type*} [TopologicalSpace X]
 
-
-section Realization
-
-namespace Graph.Presentation
-
-instance (P : Presentation V ι E) : TopologicalSpace P.vertexSet := ⊥
-
-abbrev PreRealization (P : Presentation V ι E) := P.vertexSet ⊕ Σ (_ : ι), unitInterval
-
-inductive RealizationRel (P : Presentation V ι E) : P.PreRealization → P.PreRealization → Prop
-  | attach (i) : RealizationRel P (.inl ⟨P.attach i, P.attach_mem i⟩) (.inr ⟨i, 0⟩)
-  | other (i) : RealizationRel P (.inr ⟨i, 1⟩) (.inr ⟨P.other i, 1⟩)
-
-abbrev Realization (P : Presentation V ι E) :=
-  Quotient (Relation.EqvGen.setoid (RealizationRel P))
-
-def Realization.vertex (v : P.vertexSet) : P.Realization := Quotient.mk _ (.inl v)
-
-end Graph.Presentation
-
-end Realization
-
-def Path.IsPrimitive (γ : Path x y) : Prop :=
-  ∀ ⦃s t : unitInterval⦄, γ s = γ t → s = t ∨ ({s, t} : Set unitInterval) = {0, 1}
-
-def IsPrimitiveLink (L : Set X) (x y : X) : Prop :=
-  ∃ γ : Path x y, γ.IsPrimitive ∧ range γ = L
-
-section GraphLike
-
-abbrev edgePiece (S Z : Set X) := ConnectedComponents ↥(S \ Z)
-
-def edgePiece.interior (e : edgePiece S Z) : Set X :=
+private def componentInterior (S Z : Set X) (e : ConnectedComponents ↥(S \ Z)) : Set X :=
   Subtype.val '' (ConnectedComponents.mk ⁻¹' {e})
 
-def edgePiece.Range (e : edgePiece S Z) : Set X :=
-  S ∩ closure e.interior
+private def componentRange (S Z : Set X) (e : ConnectedComponents ↥(S \ Z)) : Set X :=
+  S ∩ closure (componentInterior S Z e)
 
-def edgePiece.boundary (e : edgePiece S Z) : Set X :=
-  e.Range \ e.interior
+private def componentBoundary (S Z : Set X) (e : ConnectedComponents ↥(S \ Z)) : Set X :=
+  componentRange S Z e \ componentInterior S Z e
 
 structure GraphLike (X : Type*) [TopologicalSpace X] where
   carrier : Set X
@@ -64,22 +30,30 @@ structure GraphLike (X : Type*) [TopologicalSpace X] where
   subset : vertexSet ⊆ carrier
   isClosed : IsClosed (carrier ↓∩ vertexSet)
   isTotallySeparated : IsTotallySeparated (carrier ↓∩ vertexSet)
-  interior_isOpen (e : edgePiece carrier vertexSet) : IsOpen (carrier ↓∩ e.interior)
-  boundary_isPair (e : edgePiece carrier vertexSet) :
-    ∃ x y : vertexSet, e.boundary = {x.1, y.1} ∧ IsPrimitiveLink e.Range x.1 y.1
+  interior_isOpen (e : ConnectedComponents ↥(carrier \ vertexSet)) :
+    IsOpen (carrier ↓∩ componentInterior carrier vertexSet e)
+  boundary_isPair (e : ConnectedComponents ↥(carrier \ vertexSet)) :
+    ∃ x y : vertexSet, componentBoundary carrier vertexSet e = {x.1, y.1} ∧
+      IsPrimitiveLink (componentRange carrier vertexSet e) x.1 y.1
 
 attribute [instance] GraphLike.t2Space
 
-def IsGraphLike (S : Set X) [T2Space S] : Prop := ∃ T : GraphLike X, T.carrier = S
+variable {G : GraphLike X}
 
-namespace IsGraphLike
+namespace GraphLike
 
-def degreeTwo (S : Set X) (p : X) : Prop :=
-  ∃ U : Set X, U ⊆ S ∧ IsOpen (S ↓∩ U) ∧ p ∈ U ∧ Nonempty (U ≃ₜ ℝ)
+def edge (G : GraphLike X) := ConnectedComponents ↥(G.carrier \ G.vertexSet)
 
-end IsGraphLike
+def edge.interior (e : G.edge) : Set X :=
+  Subtype.val '' (ConnectedComponents.mk ⁻¹' {e})
 
-def GraphLike.toGraph (hZ : GraphLike X) : Graph X (edgePiece hZ.carrier hZ.vertexSet) where
+def edge.range (e : G.edge) : Set X :=
+  G.carrier ∩ closure e.interior
+
+def edge.boundary (e : G.edge) : Set X :=
+  e.range \ e.interior
+
+def toGraph (hZ : GraphLike X) : Graph X hZ.edge where
   vertexSet := hZ.vertexSet
   edgeSet := univ
   IsLink e x y := e.boundary = {x, y}
@@ -92,56 +66,74 @@ def GraphLike.toGraph (hZ : GraphLike X) : Graph X (edgePiece hZ.carrier hZ.vert
     exact ⟨fun _ ↦ ⟨x, y, h⟩, fun _ ↦ mem_univ e⟩
   left_mem_of_isLink e x y h := by
     obtain ⟨v, w, h', -⟩ := hZ.boundary_isPair e
+    change e.boundary = {v.1, w.1} at h'
     have : x ∈ ({v.1, w.1} : Set X) := h' ▸ h.symm ▸ mem_insert x {y}
     rcases mem_insert_iff.mp this with rfl | hx
     · exact v.2
     · exact mem_singleton_iff.mp hx ▸ w.2
 
-def GraphLike.IsPolygonal [AddCommGroup X] [Module ℝ X] [ContinuousSMul ℝ X] [ContinuousAdd X]
+def IsPolygonal [AddCommGroup X] [Module ℝ X] [ContinuousSMul ℝ X] [ContinuousAdd X]
     (T : GraphLike X) : Prop :=
-  ∀ {e : edgePiece T.carrier T.vertexSet} {x y : X}, e.boundary = {x, y} →
-    ∃ P : PolygonalPath x y, P.toPath.IsPrimitive ∧ P.toSet = e.Range
+  ∀ {e : T.edge} {x y : X}, e.boundary = {x, y} →
+    ∃ P : PolygonalPath x y, P.toPath.IsPrimitive ∧ P.toSet = e.range
+
+def Face (G : GraphLike X) := ConnectedComponents ↥(G.carrierᶜ)
+
+def faceAt (G : GraphLike X) {x : X} (hx : x ∉ G.carrier) : G.Face :=
+  ConnectedComponents.mk ⟨x, hx⟩
+
+namespace Face
+
+variable {G : GraphLike X} (F : G.Face)
+
+def set (F : G.Face) : Set X :=
+  Subtype.val '' (ConnectedComponents.mk ⁻¹' {F})
+
+def boundary : Set X := frontier F.set
+
+def FaceBoundaryComponent := ConnectedComponents ↥F.boundary
+
+end Face
+
+def FaceInc (v : G.vertexSet) (F : G.Face) : Prop :=
+  v.1 ∈ F.boundary
+
+def IsBoundaryEdge (e : G.edge) (F : G.Face) : Prop :=
+  (e.interior ∩ F.boundary).Nonempty
 
 end GraphLike
 
-section Drawing
-
 namespace Graph
+
+variable {V ι E V' E' Y : Type*} [TopologicalSpace Y]
 
 structure Drawing (V E X : Type*) [TopologicalSpace X] extends GraphLike X where
   graph : Graph V E
   iso : Graph.Iso graph toGraphLike.toGraph
 
-def IsDrawing (G : Graph V E) (S : Set X) [T2Space S] : Prop :=
+def IsDrawing (G : Graph V E) (S : Set X) : Prop :=
   ∃ D : Drawing V E X, D.graph = G ∧ D.carrier = S
 
 def Drawing.vertex (D : Drawing V E X) : V(D.graph) ↪ X :=
   D.iso.vertEquiv.toEmbedding.trans ⟨Subtype.val, Subtype.val_injective⟩
 
-def Drawing.edge (D : Drawing V E X) : E(D.graph) ≃ edgePiece D.carrier D.vertexSet :=
+def Drawing.edge (D : Drawing V E X) : E(D.graph) ≃ D.toGraphLike.edge :=
   D.iso.edgeEquiv.trans (Equiv.Set.univ _)
-
-theorem Drawing.boundary_eq (D : Drawing V E X) {e : E(D.graph)} {u v : V(D.graph)}
-    (h : D.graph.IsLink e.1 u.1 v.1) : (D.edge e).boundary = {D.vertex u, D.vertex v} :=
-  D.iso.map_isLink h
 
 def Drawing.edgeInterior (D : Drawing V E X) (e : E(D.graph)) : Set X :=
   (D.edge e).interior
 
 def Drawing.edgeRange (D : Drawing V E X) (e : E(D.graph)) : Set X :=
-  (D.edge e).Range
+  (D.edge e).range
 
 def Drawing.edgeBoundary (D : Drawing V E X) (e : E(D.graph)) : Set X :=
   (D.edge e).boundary
 
 noncomputable def GraphLike.drawing (hZ : GraphLike X) :
-    Drawing X (edgePiece hZ.carrier hZ.vertexSet) X where
+    Drawing X hZ.edge X where
   toGraphLike := hZ
   graph := hZ.toGraph
   iso := Graph.Iso.id _
-
-theorem Drawing.isGraphLike (D : Drawing V E X) : IsGraphLike D.carrier :=
-  ⟨D.toGraphLike, rfl⟩
 
 def Drawing.support (D : Drawing V E X) (K : Graph V E) (hK : K ≤ D.graph) : Set X :=
   range (fun v : V(K) ↦ D.vertex ⟨v.1, hK.vertexSet_mono v.2⟩) ∪
@@ -161,7 +153,7 @@ noncomputable def Drawing.restrict (D : Drawing V E X) (K : Graph V E) (hK : K �
   let vertex : V(K) ↪ X := ⟨fun v ↦ D.vertex ⟨v.1, hK.vertexSet_mono v.2⟩, by
     intro v w h
     exact Subtype.ext (congrArg (fun v : V(D.graph) ↦ v.1) (D.vertex.injective h))⟩
-  let edge : E(K) ≃ edgePiece (D.support K hK) (range vertex) := {
+  let edge : E(K) ≃ ConnectedComponents ↥(D.support K hK \ range vertex) := {
     toFun := fun e ↦
       ConnectedComponents.mk
         ⟨(Quotient.out (D.edge ⟨e.1, hK.edgeSet_mono e.2⟩)).1, by sorry⟩
@@ -192,7 +184,7 @@ noncomputable def Drawing.addEdge [T2Space X] {e : E} (D : Drawing V E X)
   let vertex : V(G) ↪ X := ⟨fun w ↦ D.vertex ⟨w.1, hG ▸ w.2⟩, by
     intro w z h
     exact Subtype.ext (congrArg (fun w : V(D.graph) ↦ w.1) (D.vertex.injective h))⟩
-  let edge : E(G) ≃ edgePiece (D.carrier ∪ L) (range vertex) := {
+  let edge : E(G) ≃ ConnectedComponents ↥((D.carrier ∪ L) \ range vertex) := {
     toFun := fun f ↦ if h : f.1 = e then
       ConnectedComponents.mk ⟨hL.choose unitInterval.half, by sorry⟩
     else
@@ -226,7 +218,7 @@ open Classical in
 noncomputable def Drawing.precompSubdivision {H : Graph V' E'} [H.Finite] (D : Drawing V E X)
     (M : Immersion H D.graph) (hM : M.Topological) (hSurj : M.Surjective) : Drawing V' E' X :=
   let vertex := M.vertex.trans D.vertex
-  let edge : E(H) ≃ edgePiece D.carrier (range vertex) := {
+  let edge : E(H) ≃ ConnectedComponents ↥(D.carrier \ range vertex) := {
     toFun := fun e ↦
       let f : E(D.graph) := ⟨(M.route_nonempty e).firstEdge, by
         exact (M.route_isTrail e).isWalk.edgeSet_subset (M.route_nonempty e).firstEdge_mem⟩
@@ -279,7 +271,7 @@ noncomputable def Drawing.postcomp (D : Drawing V E X) (φ : X → Y)
     exact congrArg (fun x : D.carrier ↦ x.1) (hφ.injective (a₁ :=
       ⟨D.vertex u, D.subset (D.iso.vertMap u).2⟩) (a₂ :=
       ⟨D.vertex v, D.subset (D.iso.vertMap v).2⟩) huv)⟩
-  let edge : E(D.graph) ≃ edgePiece (φ '' D.carrier) (range vertex) := {
+  let edge : E(D.graph) ≃ ConnectedComponents ↥((φ '' D.carrier) \ range vertex) := {
     toFun := fun e ↦
       ConnectedComponents.mk ⟨φ (Quotient.out (D.edge e)).1, by sorry⟩
     invFun := fun C ↦
@@ -306,68 +298,28 @@ noncomputable def Drawing.postcomp (D : Drawing V E X) (φ : X → Y)
     iso := Graph.Iso.ofEquivs (Equiv.ofInjective vertex vertex.injective)
       (edge.trans (Equiv.Set.univ _).symm) (by sorry) }
 
-end Graph
+def IsDrawable (G : Graph V E) (X : Type*) [TopologicalSpace X] : Prop :=
+  ∃ D : Drawing V E X, D.graph = G
 
-end Drawing
+def Planar (G : Graph V E) : Prop := G.IsDrawable ℂ
 
-section Faces
-
-namespace Graph.Drawing
-
-def Face (D : Drawing V E X) := ConnectedComponents ↥(D.carrierᶜ)
-
-def faceSet (D : Drawing V E X) (F : D.Face) : Set X :=
-  Subtype.val '' ConnectedComponents.mk ⁻¹' {F}
-
-def faceAt (D : Drawing V E X) {x : X} (hx : x ∉ D.carrier) : D.Face :=
-  ConnectedComponents.mk ⟨x, hx⟩
-
-def faceBoundary (D : Drawing V E X) (F : D.Face) : Set X := frontier (D.faceSet F)
-
-def VertexFaceInc (D : Drawing V E X) (v : V(D.graph)) (F : D.Face) : Prop :=
-  D.vertex v ∈ D.faceBoundary F
-
-def edgeFaceBoundary (D : Drawing V E X) (e : E(D.graph)) (F : D.Face) : Set X :=
-  D.edgeInterior e ∩ D.faceBoundary F
-
-def EdgeFaceInc (D : Drawing V E X) (e : E(D.graph)) (F : D.Face) : Prop :=
-  (D.edgeFaceBoundary e F).Nonempty
-
-def IsBoundaryEdge (D : Drawing V E X) (e : E(D.graph)) (F : D.Face) : Prop :=
-  D.edgeRange e ⊆ D.faceBoundary F
-
-def FaceBoundaryComponent (D : Drawing V E X) (F : D.Face) :=
-  ConnectedComponents ↥(D.faceBoundary F)
-
-def faceBoundaryComponentSet (D : Drawing V E X) {F : D.Face}
-    (C : D.FaceBoundaryComponent F) : Set X :=
-  Subtype.val '' ConnectedComponents.mk ⁻¹' {C}
-
-end Graph.Drawing
-
-end Faces
-
-
-section Theorems
-
-namespace Graph
-
-variable {V E : Type*} {X : Type*} [TopologicalSpace X] {G : Graph V E}
+def IsPolygonallyDrawable (G : Graph V E) (X : Type*) [TopologicalSpace X]
+    [AddCommGroup X] [Module ℝ X] [ContinuousSMul ℝ X] [ContinuousAdd X] : Prop :=
+  ∃ D : Drawing V E X, D.graph = G ∧ D.IsPolygonal
 
 theorem realization_drawing {P : Presentation V ι E} [P.toGraph.Finite] (S : Set X)
     [T2Space S] : IsDrawing P.toGraph S ↔ Nonempty (P.Realization ≃ₜ S) := by
   sorry
 
-theorem EdgeFaceInc_iff_IsBoundaryEdge {D : Drawing V E ℂ} [D.graph.Finite]
-    {e : E(D.graph)} {F : D.Face} : D.EdgeFaceInc e F ↔ D.IsBoundaryEdge e F := by
+theorem isBoundaryEdge_iff_edgeRange_subset {D : Drawing V E ℂ} [D.graph.Finite]
+    {e : E(D.graph)} {F : D.Face} :
+    GraphLike.IsBoundaryEdge (D.edge e) F ↔ D.edgeRange e ⊆ F.boundary := by
   sorry
 
 theorem exists_polygonalPath_in_face {V E : Type*} {D : Drawing V E ℂ} [D.graph.Finite]
     (hD : D.IsPolygonal) {F : D.Face} {x y : ℂ}
-    (hx : x ∈ D.faceBoundary F) (hy : y ∈ D.faceBoundary F) :
-    ∃ Q : PolygonalPath x y, Q.toPath.IsPrimitive ∧ Q.toSet \ {x, y} ⊆ D.faceSet F := by
+    (hx : x ∈ F.boundary) (hy : y ∈ F.boundary) :
+    ∃ Q : PolygonalPath x y, Q.toPath.IsPrimitive ∧ Q.toSet \ {x, y} ⊆ F.set := by
   sorry
 
 end Graph
-
-end Theorems

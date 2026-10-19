@@ -113,3 +113,49 @@ lemma IsPrimitiveLink.endpoints_mem_of_diff_subset (h : IsPrimitiveLink L x y) {
   have hmem : ∀ t : I, γ t ∈ S :=
     fun t ↦ hS.closure_subset (closure_mono hsub (γ.range_subset_closure_interior ⟨t, rfl⟩))
   exact ⟨by simpa using hmem 0, by simpa using hmem 1⟩
+
+variable {L M : Set X} {x y z : X}
+
+theorem IsPrimitiveLink.union (hL : IsPrimitiveLink L x y) (hM : IsPrimitiveLink M y z)
+    (hxy : x ≠ y) (hyz : y ≠ z) (hinter : L ∩ M = {y}) : IsPrimitiveLink (L ∪ M) x z := by
+  obtain ⟨P, hP, rfl⟩ := hL
+  obtain ⟨Q, hQ, rfl⟩ := hM
+  refine ⟨P.trans Q, Path.IsPrimitive.of_injective ?_, P.trans_range Q⟩
+  rw [Path.trans_injective_iff]
+  exact ⟨hP.injective hxy, hQ.injective hyz,
+    disjoint_left.mpr fun a ha haQ ↦ ha.right (hinter ▸ ⟨ha.1, haQ⟩)⟩
+
+theorem IsPrimitiveLink.union_loop (hL : IsPrimitiveLink L x y) (hM : IsPrimitiveLink M y x)
+    (hxy : x ≠ y) (hinter : L ∩ M = {x, y}) : IsPrimitiveLink (L ∪ M) x x := by
+  obtain ⟨P, hP, rfl⟩ := hL
+  obtain ⟨Q, hQ, rfl⟩ := hM
+  refine ⟨P.trans Q, Path.IsSimpleLoop.isPrimitive ?_, P.trans_range Q⟩
+  rw [Path.IsSimpleLoop, Path.trans_injOn_ico_iff]
+  refine ⟨hP.injective hxy, hQ.injective hxy.symm, disjoint_left.mpr fun a ha haQ ↦ ?_⟩
+  grind [show a ∈ ({x, y} : Set X) from hinter ▸ ⟨ha.left, haQ.left⟩]
+
+/-- Join two arcs meeting only at their common endpoints. The union is an arc or a loop
+according to whether the outer endpoints differ. -/
+theorem IsPrimitiveLink.union_of_inter_subset (hL : IsPrimitiveLink L x y)
+    (hM : IsPrimitiveLink M y z) (hxy : x ≠ y) (hyz : y ≠ z)
+    (hinter : L ∩ M ⊆ ({x, y} : Set X) ∩ {y, z}) : IsPrimitiveLink (L ∪ M) x z := by
+  obtain rfl | hxz := eq_or_ne x z
+  · refine hL.union_loop hM hxy <| (hinter.trans inter_subset_left).antisymm ?_
+    rintro w (rfl | rfl)
+    · exact ⟨hL.left_mem, hM.right_mem⟩
+    exact ⟨hL.right_mem, hM.left_mem⟩
+  refine hL.union hM hxy hyz <| Subset.antisymm (fun w hw ↦ by grind) ?_
+  rintro w rfl
+  exact ⟨hL.right_mem, hM.left_mem⟩
+
+/-- Split a primitive link at an interior point into two arcs. For a loop the arcs also
+meet at the original basepoint. -/
+theorem IsPrimitiveLink.exists_split (hL : IsPrimitiveLink L x y) :
+    ∃ m ∈ L \ {x, y}, ∃ A B : Set X, IsPrimitiveLink A x m ∧ IsPrimitiveLink B m y ∧
+      A ∪ B = L ∧ A ∩ B = {m} ∪ ({x} ∩ {y}) := by
+  obtain ⟨γ, hγ, rfl⟩ := hL
+  refine ⟨γ half, ⟨mem_range_self _, ?_⟩, range γ.firstHalf, range γ.secondHalf,
+    .of_injective hγ.injective_firstHalf, .of_injective hγ.injective_secondHalf,
+    γ.firstHalf_range_union_secondHalf_range, hγ.firstHalf_range_inter_secondHalf_range⟩
+  simpa only [mem_insert_iff, mem_singleton_iff, not_or] using
+    And.intro hγ.half_ne_source hγ.half_ne_target

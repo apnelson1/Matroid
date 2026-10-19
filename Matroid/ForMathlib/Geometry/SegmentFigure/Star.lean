@@ -1,48 +1,22 @@
 module
 
+public import Matroid.ForMathlib.Geometry.SegmentFigure.Basic
 public import Matroid.ForMathlib.Analysis.Convex.RadialPoint
-public import Matroid.ForMathlib.Analysis.Convex.Segment
 public import Matroid.ForMathlib.Topology.MetricSpace
+
+/-!
+# Metric stars in segment figures
+
+Local descriptions by straight radii, shrinking their radius, and counting directions.
+The underlying segment-figure theory is independent of these metric descriptions.
+-/
 
 @[expose] public section
 
-/-!
-# Segment figures and the star lemma
-
-A **segment figure** is a finite union of segments together with finitely many extra points. About
-each of its points such a set is a star of finitely many straight radii — that is `exists_radius`
-below. The radius count records how many distinct directions leave a point.
-
-## The radius count
-
-`exists_radius` produces a finite set `Y` of radius endpoints but does not count it. `Y` counts
-directions out of `p`, not segment ends: two ends that are positively parallel contribute one
-radius.
-
-`card_radii_le_of_cover` and `le_card_radii_of_pairwise` give the two counting bounds. They use
-`exists_segment_subset_inter_of_radialPoint_eq`: equal radial directions share a nondegenerate
-initial segment.
-
-## Main definitions
-
-* `IsSegmentFigure`
-
-## Main statements
-
-* `IsSegmentFigure.exists_radius` : the star lemma, over any real normed space.
-* `le_card_radii_of_pairwise`, `card_radii_le_of_cover` : the radius count.
--/
-
 open Set Metric
 
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {T T₁ T₂ : Set V} {p : V} {ρ : ℝ}
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {T : Set V} {p : V} {ρ : ℝ}
   {Y : Finset V}
-
-/-- `T` is a **segment figure**: a finite set of points together with a finite union of segments. -/
-def IsSegmentFigure (T : Set V) : Prop :=
-  ∃ (F : Set V) (S : Set (V × V)), F.Finite ∧ S.Finite ∧ T = F ∪ ⋃ s ∈ S, segment ℝ s.1 s.2
-
-/-! ### The star lemma -/
 
 /-- **The star lemma.** About each of its points, a segment figure meets a small enough closed ball
 in a union of straight radii, one for each direction in which the figure leaves the point.
@@ -57,17 +31,17 @@ theorem IsSegmentFigure.exists_radius (hT : IsSegmentFigure T) (hp : p ∈ T) :
     ∃ ρ > 0, ∃ Y : Finset V, ↑Y ⊆ sphere p ρ ∧
       closedBall p ρ ∩ T = {p} ∪ ⋃ y ∈ Y, segment ℝ p y := by
   classical
-  obtain ⟨F, S0, hFfin, hSfin, hsupp⟩ := hT
+  obtain ⟨S0, hSfin, hsupp⟩ := hT
   let Sp : Set (V × V) := {s ∈ S0 | p ∈ segment ℝ s.1 s.2}
   let Srest : Set (V × V) := {s ∈ S0 | p ∉ segment ℝ s.1 s.2}
   have hSpfin : Sp.Finite := hSfin.subset fun _ h ↦ h.1
   have hSrestfin : Srest.Finite := hSfin.subset fun _ h ↦ h.1
-  let K : Set V := (F \ {p}) ∪ ⋃ s ∈ Srest, segment ℝ s.1 s.2
-  have hKcompact : IsCompact K := ((hFfin.subset sdiff_subset).isCompact).union
-    (hSrestfin.isCompact_biUnion fun _ _ ↦ isCompact_segment _ _)
+  let K : Set V := ⋃ s ∈ Srest, segment ℝ s.1 s.2
+  have hKcompact : IsCompact K :=
+    hSrestfin.isCompact_biUnion fun _ _ ↦ isCompact_segment _ _
   have hKclosed : IsClosed K := hKcompact.isClosed
   have hpK : p ∉ K := by
-    refine not_or.mpr ⟨fun h ↦ h.2 rfl, fun hp' ↦ ?_⟩
+    intro hp'
     obtain ⟨s, hs, hseg⟩ := mem_iUnion₂.mp hp'
     exact hs.2 hseg
   obtain ⟨δ, hδpos, hδle⟩ := exists_pos_le_dist_of_notMem hKclosed (by simpa using hpK)
@@ -100,7 +74,7 @@ theorem IsSegmentFigure.exists_radius (hT : IsSegmentFigure T) (hp : p ∈ T) :
     intro d hd
     obtain ⟨z, hz, rfl⟩ := Finset.mem_image.mp hd
     exact dist_pos.mpr (hends_ne z hz).symm
-  let bounds : Finset ℝ := insert δ (insert (1 : ℝ) dists)
+  let bounds : Finset ℝ := Insert.insert δ (Insert.insert (1 : ℝ) dists)
   have hbounds_ne : bounds.Nonempty := Finset.insert_nonempty _ _
   let ρ : ℝ := bounds.min' hbounds_ne / 2
   have hρpos : 0 < ρ := half_pos <| by
@@ -136,36 +110,32 @@ theorem IsSegmentFigure.exists_radius (hT : IsSegmentFigure T) (hp : p ∈ T) :
   refine ⟨ρ, hρpos, Y, hYsphere, subset_antisymm ?_ ?_⟩
   · intro x ⟨hxball, hxsup⟩
     rw [hsupp] at hxsup
-    rcases hxsup with hxV | hxS
-    · rcases eq_or_ne x p with rfl | hxp
-      · exact Or.inl rfl
-      · exact (hnotK hxball (Or.inl ⟨hxV, hxp⟩)).elim
-    · obtain ⟨s, hsS0, hxseg⟩ := mem_iUnion₂.mp hxS
-      by_cases hpseg : p ∈ segment ℝ s.1 s.2
-      · have hsSp : s ∈ Sp := ⟨hsS0, hpseg⟩
-        -- One argument for either endpoint, applied twice below.
-        have hcap : ∀ z, z = s.1 ∨ z = s.2 → z ≠ p → x ∈ segment ℝ p z →
-            x ∈ ({p} : Set V) ∪ ⋃ y ∈ Y, segment ℝ p y := by
-          intro z hz hzp hxz
-          have hzend := hmem_ends s hsSp z hz hzp
-          have hxrad : x ∈ segment ℝ p (radialPoint p z ρ) := by
-            have hx' : x ∈ closedBall p ρ ∩ segment ℝ p z := ⟨hxball, hxz⟩
-            rwa [segment_inter_closedBall_eq_radial p z hρpos hzp (hρ_le_end z hzend)] at hx'
-          exact Or.inr
-            (mem_iUnion₂.mpr ⟨radialPoint p z ρ, Finset.mem_image_of_mem _ hzend, hxrad⟩)
-        have hx' : x ∈ segment ℝ s.1 p ∪ segment ℝ p s.2 :=
-          (segment_union_eq_segment hpseg).symm ▸ hxseg
-        obtain hx1 | hx2 := hx'
-        · rw [segment_symm] at hx1
-          obtain heq | hne := eq_or_ne s.1 p
-          · subst heq
-            exact Or.inl (by simpa [segment_same] using hx1)
-          exact hcap s.1 (Or.inl rfl) hne hx1
-        obtain heq | hne := eq_or_ne s.2 p
+    obtain ⟨s, hsS0, hxseg⟩ := mem_iUnion₂.mp hxsup
+    by_cases hpseg : p ∈ segment ℝ s.1 s.2
+    · have hsSp : s ∈ Sp := ⟨hsS0, hpseg⟩
+      -- One argument for either endpoint, applied twice below.
+      have hcap : ∀ z, z = s.1 ∨ z = s.2 → z ≠ p → x ∈ segment ℝ p z →
+          x ∈ ({p} : Set V) ∪ ⋃ y ∈ Y, segment ℝ p y := by
+        intro z hz hzp hxz
+        have hzend := hmem_ends s hsSp z hz hzp
+        have hxrad : x ∈ segment ℝ p (radialPoint p z ρ) := by
+          have hx' : x ∈ closedBall p ρ ∩ segment ℝ p z := ⟨hxball, hxz⟩
+          rwa [segment_inter_closedBall_eq_radial p z hρpos hzp (hρ_le_end z hzend)] at hx'
+        exact Or.inr
+          (mem_iUnion₂.mpr ⟨radialPoint p z ρ, Finset.mem_image_of_mem _ hzend, hxrad⟩)
+      have hx' : x ∈ segment ℝ s.1 p ∪ segment ℝ p s.2 :=
+        (segment_union_eq_segment hpseg).symm ▸ hxseg
+      obtain hx1 | hx2 := hx'
+      · rw [segment_symm] at hx1
+        obtain heq | hne := eq_or_ne s.1 p
         · subst heq
-          exact Or.inl (by simpa [segment_same] using hx2)
-        exact hcap s.2 (Or.inr rfl) hne hx2
-      exact (hnotK hxball (Or.inr (mem_iUnion₂.mpr ⟨s, ⟨hsS0, hpseg⟩, hxseg⟩))).elim
+          exact Or.inl (by simpa [segment_same] using hx1)
+        exact hcap s.1 (Or.inl rfl) hne hx1
+      obtain heq | hne := eq_or_ne s.2 p
+      · subst heq
+        exact Or.inl (by simpa [segment_same] using hx2)
+      exact hcap s.2 (Or.inr rfl) hne hx2
+    exact (hnotK hxball (mem_iUnion₂.mpr ⟨s, ⟨hsS0, hpseg⟩, hxseg⟩)).elim
   · intro x hx
     obtain rfl | hx := hx
     · exact ⟨mem_closedBall_self hρpos.le, hp⟩
@@ -177,44 +147,7 @@ theorem IsSegmentFigure.exists_radius (hT : IsSegmentFigure T) (hp : p ∈ T) :
     have h1 : segment ℝ p (radialPoint p z ρ) ⊆ segment ℝ p z :=
       segment_subset_segment_right (radialPoint_mem_segment p z hρpos.le (hρ_le_end z hzend))
     rw [hsupp]
-    exact Or.inr (mem_iUnion₂.mpr ⟨s, hsSp.1, hsub (h1 hxseg)⟩)
-
-/-! ### Recognising segment figures -/
-
-/- Route: take `F := ∅` and `S := {(x, y)}`; `Set.finite_singleton`, `Set.finite_empty`, then
-`simp` for the union. -/
-@[grind .]
-theorem isSegmentFigure_segment (x y : V) : IsSegmentFigure (segment ℝ x y) :=
-  ⟨∅, {(x, y)}, finite_empty, finite_singleton _, by simp⟩
-
-/- Route: take `S := ∅`. -/
-@[grind .]
-theorem IsSegmentFigure.of_finite (hF : T.Finite) : IsSegmentFigure T :=
-  ⟨T, ∅, hF, finite_empty, by simp⟩
-
-/- Route: destructure both, take `F₁ ∪ F₂` and `S₁ ∪ S₂`; `Set.Finite.union`, then
-`Set.biUnion_union` and `union_assoc`/`union_comm` to reassociate. -/
-@[grind .]
-theorem IsSegmentFigure.union (h₁ : IsSegmentFigure T₁) (h₂ : IsSegmentFigure T₂) :
-    IsSegmentFigure (T₁ ∪ T₂) := by
-  obtain ⟨F₁, S₁, hF₁, hS₁, rfl⟩ := h₁
-  obtain ⟨F₂, S₂, hF₂, hS₂, rfl⟩ := h₂
-  refine ⟨F₁ ∪ F₂, S₁ ∪ S₂, hF₁.union hF₂, hS₁.union hS₂, ?_⟩
-  rw [biUnion_union]
-  ac_rfl
-
-/- Route: `choose F S hFfin hSfin hEq using hU`, then take `⋃ i, F i` and `⋃ i, S i`, both finite by
-`Set.finite_iUnion` (this is where `[Finite ι]` is used). Finish with `Set.iUnion_union_distrib` and
-`Set.biUnion_iUnion` to reassociate.
-
-Not an induction over the index type: `ι` is a `Finite` type, not a finite `Set`, so
-`Set.Finite.induction_on` does not apply and `IsSegmentFigure.union` is not needed here. -/
-@[grind .]
-theorem IsSegmentFigure.iUnion {ι : Type*} [Finite ι] {U : ι → Set V}
-    (hU : ∀ i, IsSegmentFigure (U i)) : IsSegmentFigure (⋃ i, U i) := by
-  choose F S hFfin hSfin hEq using hU
-  refine ⟨⋃ i, F i, ⋃ i, S i, finite_iUnion hFfin, finite_iUnion hSfin, ?_⟩
-  simp_rw [hEq, iUnion_union_distrib, biUnion_iUnion]
+    exact mem_iUnion₂.mpr ⟨s, hsSp.1, hsub (h1 hxseg)⟩
 
 /-! ### Shrinking the star
 

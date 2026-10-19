@@ -425,7 +425,7 @@ theorem exists_polygonalPath_toSet_eq_support_of_isPath (D : PLDrawing G V) {W :
               ⟨v.1, vertexSet_mono hW'.isWalk.toGraph_le v.2⟩ := by
             rw [← hv, Drawing.restrict_vertex]
           obtain hsrc | htgt | hinter :=
-            (Path.mem_range_iff_mem_interior_or_source_or_target (X := V)
+            (Path.mem_range_iff_mem_interior_or_source_or_target
               (D.toDrawing.edgePath eG) z).mp hzB
           · rcases hend (Or.inl hsrc) with hx | hy
             · have hxv : x = v.1 := Subtype.ext_iff.mp <|
