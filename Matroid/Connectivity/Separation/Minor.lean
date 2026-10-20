@@ -540,8 +540,8 @@ lemma eConn_induce_contract_add_of_subset_guts (hX : X ⊆ P.guts) :
         ← inter_union_distrib_left, P.union_eq, contract_inter_ground_eq,
         eRk_inter_ground, ← induce_symm_of_subset _ (by simp), eConn_symm]
     · rw [guts_symm, guts_induce_contract_of_subset_guts (by grind), subset_sdiff]
-      grind
-    grind [Separation.symm_apply, induce_apply_contract]
+      grind [P.disjoint_true_false]
+    grind [Separation.symm_apply, induce_apply_contract, P.disjoint_true_false]
   rw [eConn_eq_eConn_induce_contract_add _ hXP, ← eLocalConn_closure_left,
     eLocalConn_comm, M.eLocalConn_subset (by grind)]
 

@@ -127,7 +127,7 @@ lemma Quotient.quotient_projectBy_modularCut [N.Finitary] (h : N ≤q M) :
     rwa [← project_closure_eq, closure_insert_eq_of_mem_closure hcl, project_closure_eq,
       ← N.project_closure_eq, closure_insert_eq_of_mem_closure (h.closure_subset_closure _ hcl),
       project_closure_eq] at h_eq
-  contrapose! h_ne
+  contrapose h_ne
   obtain ⟨B, hB⟩ := (M.project (insert e I)).exists_isBase
   have hBi := hB.indep
   rw [h_eq, ← union_singleton, ← project_project, project_indep_iff, Indep.contract_indep_iff,

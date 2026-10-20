@@ -428,9 +428,8 @@ protected def map {β : Type*} (P : M.Separation) (f : α → β) (hf : InjOn f 
 protected def ofMap {β : Type*} {f : α → β} {hf : InjOn f M.E} (P : (M.map f hf).Separation) :
     M.Separation where
   toFun i := f ⁻¹' (P i) ∩ M.E
-  pairwise_disjoint' := by
-    simp only [Pairwise, ne_eq, disjoint_left, mem_inter_iff, mem_preimage, Bool.forall_bool]
-    grind
+  pairwise_disjoint' i j hij :=
+    ((P.pairwise_disjoint' hij).preimage f).mono inter_subset_left inter_subset_left
   iUnion_eq' := by
     rw [← iUnion_inter, ← preimage_iUnion, P.iUnion_eq, map_ground, hf.preimage_image_inter
       subset_rfl]

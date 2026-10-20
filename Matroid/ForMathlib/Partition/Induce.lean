@@ -294,7 +294,7 @@ lemma cover_le_of_le (h : Q ≤ P) : Q.cover a ≤ P.cover a := by
   rintro x ⟨hxQ, hdisj⟩
   obtain ⟨y, hyP, hxy⟩ := h x hxQ
   refine ⟨y, ⟨hyP, ?_⟩, hxy⟩
-  contrapose! hdisj
+  contrapose hdisj
   exact hdisj.mono_right hxy
 
 @[simp]
@@ -368,7 +368,7 @@ lemma Agree.mem_of_mem (h : P.Agree Q) (hx : a ∈ P) (hndisj : ¬ Disjoint Q.su
 lemma Agree.eq_of_not_disjoint (h : P.Agree Q) (ha : a ∈ P) (hb : b ∈ Q) (hndisj : ¬ Disjoint a b) :
     a = b := by
   refine P.eq_of_not_disjoint ha (h.symm.mem_of_mem hb ?_) hndisj
-  contrapose! hndisj
+  contrapose hndisj
   exact hndisj.mono_left <| P.le_supp_of_mem ha
 
 lemma Agree.mem_or_disjoint (h : P.Agree Q) (ha : a ∈ P) : a ∈ Q ∨ Disjoint Q.supp a := by
@@ -426,7 +426,7 @@ variable [Order.Frame α] {P Q : Partition α}
 lemma cover_eq_bot_iff : P.cover a = ⊥ ↔ ∀ x ∈ P, Disjoint a x := by
   simp only [← supp_eq_bot_iff, cover_supp, mem_parts, sSup_eq_bot, mem_ofPred_eq, and_imp]
   refine ⟨fun h b hbP ↦ ?_, fun h b hbP hndj ↦ (hndj <| h b hbP).elim⟩
-  by_contra! hndisj
+  by_contra hndisj
   exact P.ne_bot_of_mem hbP <| h b hbP hndisj
 
 lemma induce_sSup_eq_restrict (P : Partition α) (a : α) :
@@ -445,7 +445,7 @@ lemma induce_sSup_eq_restrict (P : Partition α) (a : α) :
 
 lemma agree_iff_union_pairwiseDisjoint : P.Agree Q ↔ (P.parts ∪ Q.parts).PairwiseDisjoint id :=
   Iff.trans ⟨fun ⟨S, hPS, hQS⟩ => S.indep.mono (union_subset_iff.mpr ⟨hPS, hQS⟩),
-    fun h => ⟨ofIndependent h (·.elim P.bot_not_mem Q.bot_not_mem),
+    fun h => ⟨ofIndependent h (·.elim P.bot_not_mem Q.bot_not_mem : ⊥ ∉ P.parts ∪ Q.parts),
     (fun x hx ↦ by simp [ofIndependent, hx]), (fun x hx ↦ by simp [ofIndependent, hx])⟩⟩
     sSupIndep_iff_pairwiseDisjoint
 
@@ -484,7 +484,7 @@ lemma set_pairwise_agree_iff_sUnion_pairwiseDisjoint {Ps : Set (Partition α)} :
   · simp only [mem_iUnion, mem_parts, exists_prop] at ha hb
     obtain ⟨Pa, hPa, haPa⟩ := ha
     obtain ⟨Pb, hPb, hbPb⟩ := hb
-    contrapose! hne
+    contrapose hne
     exact (h.forall₂ hPa hPb).eq_of_not_disjoint haPa hbPb hne
   rw [agree_iff_union_pairwiseDisjoint]
   apply h.subset

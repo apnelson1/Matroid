@@ -63,7 +63,8 @@ private lemma exists_polygonalPath_in_star (hγ : γ.IsPrimitive) (hr : 0 < r) {
       ⟨w, hw, (hKB hw).resolve_left hwy⟩
     obtain ⟨v, hv, hqv⟩ := mem_iUnion₂.mp hqB
     exact hp <| eq_center_of_mem_two_radii (ne_of_mem_sphere (hY hy) hr.ne')
-      ((hY (Finset.mem_erase.mp hv).right).trans (hY hy).symm) (Finset.mem_erase.mp hv).left.symm hqy hqv ▸ hq
+      ((hY (Finset.mem_erase.mp hv).right).trans (hY hy).symm) (Finset.mem_erase.mp hv).left.symm
+        hqy hqv ▸ hq
   have hpiece : range (γ.subpath s t) ⊆ segment ℝ p y := by
     simpa only [γ.range_subpath_of_le _ _ hst.le, ← closure_Ioo hst.ne] using
       (image_closure_subset_closure_image γ.continuous).trans <|

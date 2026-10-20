@@ -262,7 +262,7 @@ lemma eDegree_eq_zero_iff_inc : G.eDegree v = 0 ↔ ∀ e, ¬ G.Inc e v := by
   simp [eDegree]
 
 lemma eDegree_eq_zero_iff_adj : G.eDegree v = 0 ↔ ∀ x, ¬ G.Adj v x := by
-  simp only [eDegree, tsum_eq_zero, ENat.coe_eq_zero, incFun_vertex_eq_zero_iff]
+  simp only [eDegree, tsum_eq_zero_iff, ENat.coe_eq_zero, incFun_vertex_eq_zero_iff]
   exact ⟨fun h x ⟨e, hvx⟩ ↦ h e hvx.inc_left, fun h e ⟨y, hev⟩ ↦ h y hev.adj⟩
 
 lemma degree_eq_zero_iff_inc [G.LocallyFinite] : G.degree v = 0 ↔ ∀ e, ¬ G.Inc e v := by
@@ -320,12 +320,12 @@ lemma tsum_incFun_eq (he : e ∈ E(G)) : ∑' v, (G.incFun e v : ℕ∞) = 2 := 
 
 lemma IsLoopAt.two_le_eDegree (h : G.IsLoopAt e x) : 2 ≤ G.eDegree x := by
   rw [eDegree]
-  convert le_tsum e (M := ℕ∞)
+  convert le_tsum (fun e ↦ (G.incFun e x : ℕ∞)) e
   simp [h.incFun_eq_two]
 
 lemma IsNonloopAt.one_le_eDegree (h : G.IsNonloopAt e x) : 1 ≤ G.eDegree x := by
   rw [eDegree]
-  convert le_tsum (M := ℕ∞) e
+  convert le_tsum (fun e ↦ (G.incFun e x : ℕ∞)) e
   simp [h.incFun_eq_one]
 
 lemma Inc.one_le_eDegree (h : G.Inc e x) : 1 ≤ G.eDegree x := by
@@ -391,7 +391,7 @@ lemma eDegree_eq_encard_add_encard (G : Graph α β) (x : α) : G.eDegree x =
       IsLoopAt.inc, IsNonloopAt.inc]
   rw [eDegree_eq_tsum_mem]
   rw [tsum_congr_set_coe (fun e ↦ (G.incFun e x : ℕ∞)) hrw,
-    tsum_union_disjoint (f := (fun e ↦ (G.incFun e x : ℕ∞))) disjoint_isLoopAt_isNonLoopAt]
+    tsum_union_of_disjoint (f := (fun e ↦ (G.incFun e x : ℕ∞))) disjoint_isLoopAt_isNonLoopAt]
   have hrw2 : ∀ e : {e | G.IsLoopAt e x}, (G.incFun e x : ℕ∞) = 2 :=
     fun ⟨e, he⟩ ↦ by simp [he.incFun_eq_two]
   have hrw1 : ∀ e : {e | G.IsNonloopAt e x}, (G.incFun e x : ℕ∞) = 1 :=
@@ -463,7 +463,7 @@ lemma incFun_eq_of_le (hle : H ≤ G) (he : e ∈ E(H)) : H.incFun e x = G.incFu
     · rw [(hl.of_le hle).incFun_eq_two, hl.incFun_eq_two]
     rw [(hnl.of_le hle).incFun_eq_one, hnl.incFun_eq_one]
   rw [incFun_vertex_eq_zero_iff.2 hex, incFun_vertex_eq_zero_iff.2]
-  contrapose! hex
+  contrapose hex
   obtain ⟨y, hey⟩ := hex
   exact (hey.of_le_of_mem hle he).inc_left
 
@@ -489,6 +489,8 @@ lemma IsClosedSubgraph.degree_eq (h : H ≤c G) (hx : x ∈ V(H)) : H.degree x =
 lemma incEdges_of_degree [G.LocallyFinite] (hle : H ≤ G) (h : H.degree x = G.degree x) :
     E(H, x) = E(G, x) := by
   have : H.LocallyFinite := ‹G.LocallyFinite›.mono hle
+  have hl : {e | H.IsLoopAt e x} ⊆ {e | G.IsLoopAt e x} := fun _ he ↦ he.of_le hle
+  have hnl : {e | H.IsNonloopAt e x} ⊆ {e | G.IsNonloopAt e x} := fun _ he ↦ he.of_le hle
   have hlfin : Finite ↑{e | G.IsLoopAt e x} := G.finite_setOf_isLoopAt
   have hnlfin : Finite ↑{e | G.IsNonloopAt e x} := G.finite_setOf_isNonloopAt
   refine subset_antisymm (incEdges_mono hle x) ?_
@@ -496,11 +498,11 @@ lemma incEdges_of_degree [G.LocallyFinite] (hle : H ≤ G) (h : H.degree x = G.d
   rw [degree_eq_ncard_add_ncard, degree_eq_ncard_add_ncard, add_eq_add_iff_eq_and_eq] at h
   obtain ⟨hlcd, hnlcd⟩ := h
   simp only [mul_eq_mul_left_iff, OfNat.ofNat_ne_zero, or_false] at hlcd
-  rw [eq_of_subset_of_ncard_le (fun e he ↦ he.of_le hle) hlcd.ge,
-    eq_of_subset_of_ncard_le (fun e he ↦ he.of_le hle) hnlcd.ge]
+  rw [eq_of_subset_of_ncard_le hl hlcd.ge,
+    eq_of_subset_of_ncard_le hnl hnlcd.ge]
   · simp only [Nat.ofNat_pos, mul_le_mul_iff_right₀]
-    exact ncard_le_ncard (fun e he ↦ he.of_le hle) hlfin
-  · exact ncard_le_ncard (fun e he ↦ he.of_le hle) hnlfin
+    exact ncard_le_ncard hl hlfin
+  · exact ncard_le_ncard hnl hnlfin
 
 /-! ### Isolated vertices -/
 

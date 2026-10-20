@@ -53,7 +53,7 @@ lemma singleton_of_mem_card_le_one {e : α} {s : Finset α} (hs : s.card ≤ 1)
 
 lemma inter_ssubset_of_not_subset_left {s t : Finset α} (h : ¬s ⊆ t) : s ∩ t ⊂ s := by
   refine ssubset_iff_subset_ne.mpr ⟨inter_subset_left, ?_⟩
-  contrapose! h
+  contrapose h
   rwa [inter_eq_left] at h
 
 lemma inter_ssubset_of_not_subset_right {s t : Finset α} (h : ¬t ⊆ s) : s ∩ t ⊂ t := by

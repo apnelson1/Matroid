@@ -130,7 +130,7 @@ lemma eq_of_subset_of_supp_eq (hsu : P.subset Q) (hsupp : P.supp = Q.supp) : P =
 
 lemma mem_of_subset_of_not_disjoint (hPQ : P.subset Q) (hxQ : x ∈ Q)
     (hndisj : ¬ Disjoint P.supp x) : x ∈ P := by
-  contrapose! hndisj
+  contrapose hndisj
   exact Q.indep hxQ |>.symm.mono_left (sSup_le_sSup <| subset_sdiff_singleton hPQ hndisj)
 
 lemma mem_iff_mem_of_parts_eq {S : Set α} (hP : P.parts = S) : x ∈ P ↔ x ∈ S := by
@@ -171,7 +171,7 @@ lemma supp_ofPairwiseDisjoint' (pairwiseDisjoint : parts.PairwiseDisjoint id)
     x ∈ parts := Iff.rfl
 
 lemma mem_of_mem_subset (hPQ : P.subset Q) (hx : x ∈ Q) (hsupp : ¬ Disjoint P.supp x) : x ∈ P := by
-  contrapose! hsupp
+  contrapose hsupp
   rw [supp, sSup_disjoint_iff]
   exact fun _ hyP ↦ Q.disjoint (hPQ hyP) hx fun h ↦ hsupp (h ▸ hyP)
 
@@ -460,7 +460,7 @@ lemma exists_unique_of_mem_le {x : α} {P Q : Partition α} (h : P ≤ Q) (hx : 
   obtain ⟨y, hy, hxy⟩ := h x hx
   refine ⟨y, ⟨hy, hxy⟩, fun z ⟨hz, hxz⟩ => Q.eq_of_not_disjoint hz hy ?_⟩
   have := P.ne_bot_of_mem hx
-  contrapose! this
+  contrapose this
   exact le_bot_iff.mp (this hxz hxy)
 
 lemma le_of_supp_le_part (ha : a ∈ P) (hQa : Q.supp ≤ a) : Q ≤ P :=

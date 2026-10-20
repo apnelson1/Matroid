@@ -40,7 +40,7 @@ lemma connBetweenGE_iff_setConnGE (hne : s ≠ t) (hadj : ¬ G.Adj s t) : G.Conn
   · simp only [vertexSet_deleteVerts, subset_sdiff, disjoint_insert_right, disjoint_singleton_right]
     exact ⟨hC.subset, hC.left_not_mem, hC.right_not_mem⟩
   have hh := hC.not_connBetween
-  contrapose! hh
+  contrapose hh
   obtain ⟨a, ⟨hsa, hsane⟩, b, ⟨htb, htbne⟩, hab⟩ := hh
   have hsa' := (G.deleteVerts_adj_iff C).mpr ⟨hsa, hC.left_not_mem, hab.left_mem.2⟩
   have htb' := (G.deleteVerts_adj_iff C).mpr ⟨htb, hC.right_not_mem, hab.right_mem.2⟩

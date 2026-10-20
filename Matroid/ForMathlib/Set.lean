@@ -10,8 +10,6 @@ variable {α ι : Type*}
 open Function symmDiff
 namespace Set
 
-lemma preimage_singleton {α β : Type*} (f : α → β) (y : β) : f ⁻¹' {y} = {x | f x = y} := rfl
-
 lemma iUnion_eq_single_of_forall_subset {ι : Sort*} {s : ι → Set α} {a : ι}
     (hi : ∀ i ≠ a, s i ⊆ s a) : ⋃ i, s i = s a := by
   refine (subset_iUnion ..).antisymm' <| iUnion_subset fun i ↦ ?_
@@ -166,7 +164,7 @@ lemma sdiff_ssubset_sdiff_iff (A B C : Set α) : A \ B ⊂ A \ C ↔ A ∩ C ⊂
   refine ⟨fun ⟨hle, x, ⟨hxA, hxC⟩, hxB⟩ => ⟨?_, ?_⟩, fun ⟨hle, x, hxB, hxC⟩ => ⟨?_, ?_⟩⟩
   · rintro a ⟨haA, haC⟩
     simp only [mem_inter_iff, haA, true_and]
-    by_contra! haB
+    by_contra haB
     exact hle ⟨haA, haB⟩ |>.2 haC
   · simp only [mem_sdiff, hxA, true_and, not_not] at hxB
     use x, ⟨hxA, hxB⟩, by simp [hxC]

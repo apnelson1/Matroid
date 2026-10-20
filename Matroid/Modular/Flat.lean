@@ -765,7 +765,7 @@ private lemma modular_finitary_aux (hM : ∀ F, M.IsFlat F → M.eRk F ≤ 2 →
       exact insert_subset_insert (insert_subset hg (image_subset_range _ _))
     rw [mem_insert_iff, not_or, and_iff_right hxy.symm, mem_insert_iff, not_or,
       and_iff_left (notMem_subset (image_subset_range _ _) hye)]
-    contrapose! hye
+    contrapose hye
     rwa [mem_insert_iff, ← hye, or_iff_right hxy.symm] at hgins
 
   have aux2 : ∀ i (g : ↑(M.E \ range e)), M.IsCircuit (insert x (insert g.1 (e '' (Ici i)))) →

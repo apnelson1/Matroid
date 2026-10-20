@@ -134,7 +134,7 @@ lemma isCompact_setOf_lineMap_mem_segment (a b c d : E) :
     obtain h | ⟨z₀, hz₀⟩ := eq_empty_or_nonempty (Φ ⁻¹' {0})
     · exact h ▸ isClosed_empty
     have hlin (z : ℝ × ℝ) : Φ.linear (z - z₀) = Φ z := by
-      rw [show z - z₀ = z -ᵥ z₀ from rfl, Φ.linearMap_vsub, hz₀, vsub_eq_sub, sub_zero]
+      rw [show z - z₀ = z -ᵥ z₀ from rfl, Φ.linear_apply_vsub, hz₀, vsub_eq_sub, sub_zero]
     refine (show Φ ⁻¹' {0} = (· - z₀) ⁻¹' (LinearMap.ker Φ.linear : Set (ℝ × ℝ)) from ?_) ▸
       Φ.linear.ker.closed_of_finiteDimensional.preimage (continuous_sub_right z₀)
     ext z

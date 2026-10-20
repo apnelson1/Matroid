@@ -128,7 +128,7 @@ lemma IsFan.remove_tutteConnected_three_of_maximalFor_setOf (hF : M.IsFan F b c)
     (hF4 : 4 ≤ F.length) (hM : M.TutteConnected 3)
     (hmax : MaximalFor (fun L : List α ↦ ∃ b, M.IsFan L b c) (fun L ↦ {e | e ∈ L}) F)
     (hFc : ¬ M.IsCyclicFan F b) : (M.remove b {F[0]}).TutteConnected 3 := by
-  by_contra! hcon
+  by_contra hcon
   obtain h4 | h4 := hF4.eq_or_lt
   · obtain ⟨x, hx | hx⟩ := hF.exists_extend_of_not_tutteConnected_remove₄ h4.symm hM hFc hcon
     · exact (nodup_cons.1 hx.nodup).1 <| by simpa using hmax.2 ⟨!b, hx⟩ (by grind)
@@ -143,7 +143,7 @@ lemma IsFan.remove_tutteConnected_three_of_maximalFor_length (hF : M.IsFan F b c
     (hF4 : 4 ≤ F.length) (hM : M.TutteConnected 3)
     (hmax : MaximalFor (fun L : List α ↦ ∃ b, M.IsFan L b c) length F)
     (hFc : ¬ M.IsCyclicFan F b) : (M.remove b {F[0]}).TutteConnected 3 := by
-  by_contra! hcon
+  by_contra hcon
   obtain h4 | h4 := hF4.eq_or_lt
   · obtain ⟨x, hx | hx⟩ := hF.exists_extend_of_not_tutteConnected_remove₄ h4.symm hM hFc hcon
     · simpa using hmax.2 ⟨!b, hx⟩ (by simp)
@@ -187,7 +187,7 @@ lemma IsFan.exists_suffix_removable [M.RankFinite] {F₀ : List α} (hF₀ : M.I
   refine ⟨F, F₁, hF₁_eq, (suffix_cons ..).trans hF₁F, or_iff_not_imp_left.2 fun hFc ↦
     ⟨d, hF, by_contra fun hcon ↦ ?_⟩⟩
   have hnc : ¬ M.IsCyclicFan F d := by
-    contrapose! hFc
+    contrapose hFc
     simpa [hF.bool_right_eq, hFc.even]
   have h5 : 5 ≤ F.length := by grind [hF₁F.length_le, length_cons]
   obtain ⟨y, hy⟩ := hF.exists_extend_of_not_tutteConnected_remove h5 hM hnc hcon

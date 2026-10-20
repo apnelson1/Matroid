@@ -92,7 +92,7 @@ private lemma IsSimpleLoop.first_ne_second {P : PolygonalPath b x}
     intro hq0
     apply half_ne_zero
     apply squishLeft_injective
-    simpa [q] using hq0
+    simp [q] at hq0
   exact hq0 heq.symm
 
 private lemma isSimpleLoop_cons_iff_aux {P : PolygonalPath b x} (hxb : x ≠ b) :

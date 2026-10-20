@@ -695,7 +695,7 @@ lemma source_eq_of_edge_eq {i : ι} {e : E(R.replacementGraph)} (hi : R.edge i =
   R.edge_injective ((R.edge_source e).trans hi.symm)
 
 /-- Internal vertices of the selected route in component `i`. -/
-def internal (i : ι) : Set α := (R.route i).internalVertexSet
+noncomputable def internal (i : ι) : Set α := (R.route i).internalVertexSet
 
 lemma internal_subset_component (i : ι) : R.internal i ⊆ V(R.component i) := by
   rintro x hx

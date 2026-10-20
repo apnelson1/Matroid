@@ -281,7 +281,7 @@ private lemma symmDiff_edge_mem_or_mem [G.Loopless] (hle : H ≤ Subgraph.ofEdge
 private lemma symmDiff_matching_edge_at [G.Loopless] (hM : G.IsMatching M)
     (hle : H ≤ Subgraph.ofEdge G (M ∆ M')) (hex : e ∈ E(H, x)) (hfx : f ∈ E(H, x)) (hne : e ≠ f)
     (heM : e ∈ M) : f ∈ M' := by
-  by_contra! hfM
+  by_contra hfM
   replace hfM : f ∈ M := by
     have := symmDiff_edge_mem_or_mem hle f (H.incEdges_subset x hfx)
     grind only [= mem_sdiff]
@@ -512,7 +512,7 @@ lemma exists_isAugmenter_of_matching_encard_lt [G.Loopless] [G.EdgeFinite] (hM :
       omega
     have nontrivial : E(P').Nonempty := by
       rw [← encard_ne_zero]
-      by_contra! hcon
+      by_contra hcon
       have h : (E(P') ∩ M').encard ≤ E(P').encard := encard_le_encard (inter_subset_left)
       clear P'_deg
       enat_to_nat! <;> omega

@@ -1,6 +1,7 @@
 module
 
 public import Mathlib.Analysis.CStarAlgebra.Unitary.Connected
+public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Matroid.ForMathlib.Topology.Path
 
 @[expose] public section

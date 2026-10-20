@@ -53,7 +53,7 @@ lemma Menger'sTheorem_aux [G.Finite] {S T : Set α} (hS : S ⊆ V(G)) (hT : T �
       hP.last_mem.1).isPath hdj.symm
     refine ⟨A', hA.path_insert (hP.of_deleteVerts.subset subset_union_left (by simp) hP.first_mem
         hP.last_mem.1) hdj.symm, P.last, ?_, by simp [A', image_insert_eq]⟩
-    by_contra! hdj'
+    by_contra hdj'
     absurd hdj
     rw [not_disjoint_iff]
     exact ⟨P.last, last_mem, A.image_last_subset hdj'⟩
@@ -316,7 +316,7 @@ theorem Menger'sTheorem [G.Finite] (hι : ENat.card ι = n) (hnt : V(G).Nontrivi
   obtain hem | ⟨e, he⟩ := E(G, s, t).eq_empty_or_nonempty
   · obtain ⟨A⟩ := Menger'sTheoremPre hι |>.mp h.pre hs ht
     use A
-    convert subsingleton_empty
+    convert subsingleton_empty using 1
     simp only [WList.length_eq_one_iff, mem_ofPred_eq, mem_empty_iff_false, iff_false,
       not_exists, Set.ext_iff]
     intro i u e v hi
@@ -366,7 +366,7 @@ theorem Menger'sTheorem_mixed [G.Finite] (hs : s ∈ V(G)) (ht : t ∈ V(G)) (h�
     have hSep : (L'(G)).IsSepBetween (Sum.inl s) (Sum.inl t) (Sum.inl '' X ∪ Sum.inr '' F) := by
       refine ⟨?_, ?_, ?_, ?_⟩
       on_goal 4 =>
-        contrapose! hXF
+        contrapose hXF
         rwa [← connBetween_mixedLineGraph_del_iff]
       all_goals simp [Sum.inl_injective.preimage_image, Sum.inr_injective.preimage_image, hX, hF,
       hsX, htX]

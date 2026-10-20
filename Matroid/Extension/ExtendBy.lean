@@ -104,7 +104,7 @@ private lemma maximal_extIndep_iff (hX : X ⊆ insert e M.E) (hI : U.ExtIndep e 
   by_cases heI : e ∈ I
   · have hxe : x ≠ e := by rintro rfl; contradiction
     rw [extIndep_iff_of_mem heI] at hI
-    rw [extIndep_iff_of_mem (.inr heI), ← insert_sdiff_singleton_comm hxe,
+    rw [extIndep_iff_of_mem (mem_insert_of_mem _ heI), ← insert_sdiff_singleton_comm hxe,
       hI.1.insert_indep_iff_of_notMem (by simp [hxI, hxe])] at hind
     simp only [hIX heI, heI, true_iff, true_implies, true_and] at h
     obtain (⟨h_eq, -⟩ | ⟨hcv, h⟩) := h
@@ -116,7 +116,7 @@ private lemma maximal_extIndep_iff (hX : X ⊆ insert e M.E) (hI : U.ExtIndep e 
   simp only [heI, not_false_eq_true, sdiff_singleton_eq_self, false_iff, not_not, false_and,
     and_false, or_false] at h
   obtain (rfl | hne) := eq_or_ne e x
-  · rw [extIndep_iff_of_mem (.inl rfl)] at hind
+  · rw [extIndep_iff_of_mem (mem_insert e I)] at hind
     simp only [mem_singleton_iff, insert_sdiff_of_mem, hxI, not_false_eq_true,
       sdiff_singleton_eq_self, h.1] at hind
     exact hind.2 <| h.2 hi
@@ -217,7 +217,7 @@ lemma existsMaximalSubsetProperty (U : M.ModularCut) (hXE : X ⊆ insert e M.E) 
   have hconJe : e ∈ X → M.closure (X \ {e}) ∈ U := by
     refine fun heX ↦ by_contra fun hclosure ↦ ?_
     have hind : U.ExtIndep e (insert e J) := by
-      rw [extIndep_iff_of_mem (.inl rfl)]
+      rw [extIndep_iff_of_mem (mem_insert e J)]
       simpa [heJ, hJ.indep, hJ.closure_eq_closure]
     specialize hcon (insert e J) (by simpa using hIJ)
     rw [maximal_extIndep_iff  hXE hind (insert_subset heX hJX)] at hcon
@@ -237,7 +237,7 @@ lemma existsMaximalSubsetProperty (U : M.ModularCut) (hXE : X ⊆ insert e M.E) 
   · rw [hJ.closure_eq_closure] at hI; exact hI.2 hconJe
 
   refine hI.2 <| U.mem_of_ssubset_indep_of_forall_diff hJ.indep hssu (fun x hx ↦ ?_)
-  by_contra! hJu
+  by_contra hJu
   have hxe : x ≠ e := by rintro rfl; simp [heJ] at hx
   have hxJI : x ∈ J \ I := by simpa [hxe] using hx
 
@@ -359,7 +359,7 @@ lemma mem_closure_extendBy_iff (U : M.ModularCut) (he : e ∉ M.E) :
   have heI := notMem_subset hI'.subset heX
   rw [← hI.closure_eq_closure, ← hI'.closure_eq_closure, or_iff_right heX,
     ← not_iff_not, hI.indep.notMem_closure_iff_of_notMem heI, extendBy_Indep,
-    U.extIndep_iff_of_mem (.inl rfl)]
+    U.extIndep_iff_of_mem (mem_insert e I)]
   simp [heI, hI'.indep]
 
 lemma mem_closure_extendBy_dual_iff (U : M.ModularCut) (he : e ∉ M.E)
@@ -417,7 +417,7 @@ lemma insert_isFlat_extendBy_of_not_covBy (U : M.ModularCut) (he : e ∉ M.E)
     · simpa using (M.extendBy e U).ground_isFlat
     obtain ⟨F', hF'⟩ := hF.exists_covby_of_ne_ground hne
     exact False.elim <| h_not_covBy ⟨F', U.superset_mem hFU hF'.isFlat_right hF'.subset, hF'⟩
-  contrapose! h_not_covBy
+  contrapose h_not_covBy
   obtain ⟨f, hfmem⟩ := exists_mem_closure_notMem_of_not_isFlat h_not_covBy
     (insert_subset_insert hF.subset_ground)
   simp only [mem_sdiff, mem_insert_iff, not_or] at hfmem

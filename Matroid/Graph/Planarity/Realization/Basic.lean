@@ -291,7 +291,7 @@ lemma disjoint_edgePath_Ioo_iff (e₁ e₂ : E(G)) :
     have : half ∈ (Ioo 0 1 : Set I) := by
       refine ⟨(?_ : (0 : ℝ) < 2⁻¹), (?_ : 2⁻¹ < (1 : ℝ))⟩ <;> linarith
     grind
-  by_contra! h
+  by_contra h
   rw [not_disjoint_iff] at h
   obtain ⟨x, ⟨t1, ht1, rfl⟩, ⟨t2, ht2, heq⟩⟩ := h
   have := Quotient.exact heq
@@ -492,7 +492,7 @@ lemma isClopen_edgePath_Ioo (e : E(G)) : IsClopen (G.edgeInteriorSet ↓∩ edge
       (((disjoint_edgePath_Ioo_iff e' e).mpr hne).le_bot ⟨mem_image_of_mem _ ht', ·⟩)⟩
   have hU_compl_open : IsOpen (G.edgeInteriorSet \ edgePath e '' Ioo 0 1) := by
     rw [hU_compl]
-    refine isOpen_biUnion fun e' _ ↦ ?_
+    refine isOpen_iUnion fun e' ↦ isOpen_iUnion fun (_ : e' ≠ e) ↦ ?_
     rw [isOpen_edgePath_image e' (by simp) (by simp)]
     exact isOpen_Ioo
   refine ⟨?_, hU_open.preimage continuous_subtype_val⟩

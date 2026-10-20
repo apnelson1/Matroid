@@ -92,7 +92,7 @@ lemma tsum_nullity_eq_nullity_iUnion_iff_isSkewFamily {X : ι → Set α}
     refine lt_of_le_of_lt (tsum_le_tsum fun i ↦ (encard_le_encard ?_)) hfin
     grw [← sdiff_self_inter (t := I), (hIs i).2]
   rw [tsum_congr (fun i ↦ (hIs i).1.nullity_eq), tsum_congr hrw, tsum_add,
-    ENat.add_eq_left_iff, tsum_eq_zero, or_iff_right hfin'.ne]
+    ENat.add_eq_left_iff, tsum_eq_zero_iff, or_iff_right hfin'.ne]
   simp only [encard_eq_zero, sdiff_eq_empty]
   refine ⟨fun h ↦ ?_, fun h i ↦ ?_⟩
   · exact Indep.isSkewFamily_of_disjoint_isBases (hI.indep.subset (iUnion_subset h))

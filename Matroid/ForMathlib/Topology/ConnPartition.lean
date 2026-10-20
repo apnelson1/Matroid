@@ -61,7 +61,7 @@ lemma frontier_subset_of_mem_pathComponentPartition [LocallyPathConnectedSpace �
   rintro u ⟨huc, hui⟩
   rw [(h.pathComponentPartition_isOpen hT).interior_eq] at hui
   obtain ⟨v, -, rfl⟩ := mem_pathComponentPartition_iff S T |>.mp hT
-  by_contra! huS
+  by_contra huS
   simp only [mem_compl_iff, not_not] at huS
   have hUopen : IsOpen (pathComponentIn S u) := h.pathComponentIn u
   have huU : u ∈ pathComponentIn S u := mem_pathComponentIn_self huS

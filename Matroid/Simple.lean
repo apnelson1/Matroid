@@ -862,7 +862,7 @@ section Simplification
 /-- A classically chosen simplification of `M`.
 The definition depends on `M.removeLoops` rather than `M`, so the choice is a bit more stable;
 deleting a subset of the loops does not change the choice of simplification. -/
-def simplification (M : Matroid α) : Matroid α :=
+noncomputable def simplification (M : Matroid α) : Matroid α :=
   let si := fun (M : Matroid α) ↦ M ↾ M.parallelClasses.nonempty_repFun.some '' {e | M.IsNonloop e}
   si M.removeLoops
 

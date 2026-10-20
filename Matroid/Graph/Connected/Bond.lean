@@ -183,7 +183,7 @@ lemma connBetween_deleteEdgesd_eq_iff_subset_not_isEdgeCut : (G.ConnBetween = (G
     fun h x y ↦ ⟨fun hxy ↦ ?_, fun hxy ↦ hxy.mono deleteEdges_le⟩⟩
   · obtain ⟨x, y, hxy, hxy'⟩ := hF'.exists_not_connBetween hF'ne
     exact hxy' <| h x y |>.mp hxy |>.mono <| G.deleteEdges_anti_right hF'F
-  by_contra! hF
+  by_contra hF
   obtain ⟨F', hF', hF'F, hF'ne, hF'xy⟩ := isEdgeCut_subset_of_not_connBetween hxy hF
   exact h F' hF'F hF'ne hF'
 
@@ -204,7 +204,7 @@ lemma IsLink.isBridge_iff_not_connBetween (he : G.IsLink e x y) :
   use V((G ＼ {e}).walkable x)
   ext f
   refine ⟨fun ⟨u, hxu, v, ⟨hv, hxv⟩, hfuv⟩ ↦ ?_, ?_⟩
-  · by_contra! hfe
+  · by_contra hfe
     replace hfuv : (G ＼ {e}).IsLink f u v := by simpa [hfuv]
     exact hxv <| hxu.trans hfuv.connBetween
   rintro rfl
@@ -219,19 +219,19 @@ lemma IsBridge.anti_of_mem (hHG : H ≤ G) (heH : e ∈ E(H)) (he : G.IsBridge e
   obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet heH
   rw [hxy.isBridge_iff_not_connBetween]
   rw [(hxy.of_le hHG).isBridge_iff_not_connBetween] at he
-  contrapose! he
+  contrapose he
   exact he.mono (by grw [hHG])
 
 lemma not_isBridge_mono_of_mem (hHG : H ≤ G) (he : ¬ H.IsBridge e) (heH : e ∈ E(H)) :
     ¬ G.IsBridge e := by
-  contrapose! he
+  contrapose he
   exact he.anti_of_mem (by grw [hHG]) heH
 
 lemma IsBridge.of_isClosedSubgraph (hcle : H ≤c G) (he : H.IsBridge e) : G.IsBridge e := by
   obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet he.mem_edgeSet
   rw [hxy.isBridge_iff_not_connBetween] at he
   rw [(hxy.of_le hcle.le).isBridge_iff_not_connBetween]
-  contrapose! he
+  contrapose he
   obtain ⟨P, hP, rfl, rfl⟩ := he
   simp only [isWalk_deleteEdges_iff, disjoint_singleton_right, mem_edgeSet_iff] at hP
   use P, ?_
@@ -256,10 +256,10 @@ lemma IsBridge.singleton_linkEdges (he : G.IsBridge e) (hl : G.IsLink e u v) :
 
 lemma ConnBetween.deleteEdges_singleton_connBetween (h : G.ConnBetween x y) (he : ¬ G.IsBridge e) :
     (G ＼ {e}).ConnBetween x y := by
-  by_contra! hecon
+  by_contra hecon
   obtain ⟨P, hP, rfl, rfl⟩ := h.exists_isPath
   have heP : e ∈ P.edge := by
-    contrapose! hecon
+    contrapose hecon
     use P, by simpa [hP.isWalk]
   apply hecon
   obtain ⟨w, w', hw, hw', hew, hew', hVdj, hEdj, rfl⟩ := hP.eq_append_cons_of_edge_mem heP
@@ -306,7 +306,7 @@ lemma Connected.isBridge_iff_isEdgeSep (hG : G.Connected) (e : β) :
   rw [hG.isBridge_iff, isEdgeSep_iff]
   simp only [singleton_subset_iff, iff_and_self]
   rintro hGe
-  by_contra! he
+  by_contra he
   rw [deleteEdges_eq _ (by simpa)] at hGe
   tauto
 
@@ -468,7 +468,7 @@ lemma IsBond.exists_minimal_not_connBetween (hB : G.IsBond B) :
 lemma isBond_of_conn (hS : S ⊆ V(G)) (hScon : G[S].Preconnected) (hS'con : (G - S).Preconnected)
     (h : δ(G, S).Nonempty) : G.IsBond δ(G, S) := by
   refine ⟨⟨(by use S), h⟩, fun F hF hFδ e he ↦ ?_⟩
-  by_contra! heF
+  by_contra heF
   obtain ⟨u, v, huv, huv'⟩ := hF.1.exists_not_connBetween hF.2
   absurd huv'
   clear h huv'
@@ -529,11 +529,11 @@ lemma exists_isBond_subset_of_not_connBetween (hcon : G.ConnBetween x y)
   · have hcomp := G.walkable_isCompOf hcon.left_mem
     have h := hcomp.preconnected x y (mem_walkable hcon.left_mem) hcon
     have hn : ¬(G.walkable x ＼ F).ConnBetween x y := by
-      contrapose! hcon'
+      contrapose hcon'
       rwa [walkable_deleteEdges_connBetween_iff] at hcon'
     obtain ⟨B, hBF, hB, hBxy⟩ := this (G := G.walkable x) h hn hcomp.preconnected
     use B, hBF, hB.of_isClosedSubgraph hcomp.isClosedSubgraph
-    contrapose! hBxy
+    contrapose hBxy
     rwa [walkable_deleteEdges_connBetween_iff]
 
   let Gx := (G ＼ F).walkable x
@@ -544,12 +544,12 @@ lemma exists_isBond_subset_of_not_connBetween (hcon : G.ConnBetween x y)
   have hyGy : y ∈ V(Gy) := by simpa [mem_walkable, Gy, hyGx] using hcon.right_mem
   have hδGx : δ(G, V(Gx)) ⊆ F := by
     rintro e ⟨u, huGx, v, ⟨hv, hvGx⟩, huv⟩
-    contrapose! hvGx
+    contrapose hvGx
     exact huGx.trans (IsLink.connBetween ⟨huv, hvGx⟩)
   have hδGy : δ(G, V(Gy)) ⊆ δ(G, V(Gx)) := by
     rintro e ⟨u, huGy, v, ⟨hv, hvGy⟩, huv⟩
     simp [huv.mem_setLinkEdges_iff, huGy.right_mem.2, huv.left_mem]
-    contrapose! hvGy
+    contrapose hvGy
     exact huGy.trans (IsLink.connBetween ⟨huv, huGy.right_mem, huv.right_mem, hvGy⟩)
   have hnxy : ¬(G ＼ δ(G, V(Gy))).ConnBetween x y := by
     rw [connBetween_comm]

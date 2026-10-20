@@ -373,7 +373,7 @@ lemma IsTriangle.mem_or_mem_of_isCocircuit (h : M.IsTriangle {e, f, g}) (hK : M.
 
 lemma IsTriangle.mem_of_mem_of_notMem_of_is_Cocircuit (h : M.IsTriangle {e, f, g})
     (hK : M.IsCocircuit K) (heK : e ∈ K) (hfK : f ∉ K) : g ∈ K := by
-  by_contra! hcon
+  by_contra hcon
   exact h.isCircuit.inter_isCocircuit_ne_singleton hK (e := e) <| by
     grind [-List.eq_or_mem_of_mem_cons]
 
@@ -387,7 +387,7 @@ lemma IsTriangle.mem_iff_mem_of_isCircuit_bDual (h : (M.bDual b).IsTriangle {e, 
 
 lemma IsTriangle.mem_of_mem_of_notMem_of_isCircuit_bDual {b} (h : (M.bDual b).IsTriangle {e, f, g})
     (hK : (M.bDual (!b)).IsCircuit K) (heK : e ∈ K) (hfK : f ∉ K) : g ∈ K := by
-  by_contra! hcon
+  by_contra hcon
   exact h.isCircuit.inter_isCocircuit_ne_singleton (by simpa using hK) (e := e) <| by
     grind [-List.eq_or_mem_of_mem_cons]
 

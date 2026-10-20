@@ -267,7 +267,7 @@ lemma truncate_contract (M : Matroid α) (C : Set α) : (M ／ C).truncate = M.t
   · obtain ⟨B, hB⟩ := (M ／ C).exists_isBase
     obtain ⟨f, hf⟩ := hB.nonempty
     have hf' : f ∈ M.E \ C := ⟨(hB.subset_ground.trans sdiff_subset) hf, (hB.subset_ground hf).2⟩
-    rw [insert_eq_of_mem (.inr heC)] at he
+    rw [insert_eq_of_mem (mem_union_right _ heC)] at he
     exact ⟨f, ⟨hf'.1, hf'.2⟩, he.2.superset (subset_insert _ _), hf'.2⟩
   exact ⟨e, ⟨he.1, heC⟩, he.2, heC⟩
 

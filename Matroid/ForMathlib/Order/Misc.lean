@@ -129,7 +129,7 @@ instance {M : Type*} [LinearOrderedAddCommMonoidWithTop M] : AddTopClass M where
 instance {M : Type*} [LinearOrderedAddCommMonoidWithTop M] [Nontrivial M] : AddEqTopClass M where
   zero_ne_top := by
     obtain ⟨b, hb⟩ := exists_ne (⊤ : M)
-    contrapose! hb
+    contrapose hb
     rw [← zero_add b, hb, top_add]
   eq_or_eq_of_add a b hab := by
     contrapose! hab

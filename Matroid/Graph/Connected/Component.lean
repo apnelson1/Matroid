@@ -221,7 +221,7 @@ def connPartition (G : Graph α β) : Partition (Set α) where
       mem_components_iff_isCompOf, mem_singleton_iff, and_imp, forall_exists_index,
       forall_apply_eq_imp_iff₂]
     rintro H₀ hH₀co hne
-    contrapose! hne
+    contrapose hne
     obtain rfl := IsCompOf.eq_of_not_disjoint hH hH₀co hne
     rfl
   bot_not_mem := by

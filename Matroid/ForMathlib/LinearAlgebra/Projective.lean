@@ -265,7 +265,7 @@ lemma Projectivization.Subspace.mem_span_image_iff (K : Type*) {V ι : Type*} [F
   exact mem_of_mem_of_subset (mem_image_of_mem f has) Submodule.subset_span
 
 /-- The projective subspace corresponding to a given submodule -/
-def Submodule.toProjSubspace (W : Submodule K V) : Projectivization.Subspace K V where
+noncomputable def Submodule.toProjSubspace (W : Submodule K V) : Projectivization.Subspace K V where
   carrier := Projectivization.rep ⁻¹' W
   mem_add' := by
     intro v w hv hw hvw hv' hw'
@@ -283,7 +283,7 @@ lemma Submodule.toProjSubspace_span_image_eq (K : Type*) {V ι : Type*} [Field K
   ext x
   exact (Subspace.mem_span_image_iff ..).symm
 
-def Projectivization.Subspace.toSubmodule (W : Subspace K V) :=
+noncomputable def Projectivization.Subspace.toSubmodule (W : Subspace K V) :=
   Submodule.span K (Projectivization.rep '' (W : Set (Projectivization K V)))
 
 /-- The submodule corresponding to a given projective subspace -/
@@ -326,8 +326,8 @@ lemma Projectivization.toSubmodule_toProjSubspace (W : Subspace K V) :
 
 /-- The natural isomorphism between the projective subspace lattice and the subspace lattice. -/
 @[simps]
-def Projectivization.subspace_orderIso_submodule (K V : Type*) [Field K] [AddCommGroup V]
-    [Module K V] : Subspace K V ≃o Submodule K V where
+noncomputable def Projectivization.subspace_orderIso_submodule (K V : Type*)
+    [Field K] [AddCommGroup V] [Module K V] : Subspace K V ≃o Submodule K V where
   toFun := Subspace.toSubmodule
   invFun := Submodule.toProjSubspace
   left_inv := toSubmodule_toProjSubspace

@@ -61,7 +61,7 @@ instance [G.LocallyFinite] : L'(G).LocallyFinite where
   finite x := by match x with
   | inl v =>
     simp only [IncEdges, mixedLineGraph_inc, reduceCtorEq, inl.injEq, false_or]
-    convert G.finite_incEdges v |>.image (fun e ↦ (v, e))
+    convert (G.finite_incEdges v).image (fun e ↦ (v, e)) using 1
     refine Set.ext fun ⟨a, b⟩ ↦ ?_
     simp only [eq_comm, mem_ofPred_eq, mem_image, mem_incEdges_iff, Prod.mk.injEq,
       exists_eq_right_right', and_congr_left_iff]
@@ -69,7 +69,7 @@ instance [G.LocallyFinite] : L'(G).LocallyFinite where
     tauto
   | inr e =>
     simp only [IncEdges, mixedLineGraph_inc, inr.injEq, reduceCtorEq, or_false]
-    convert G.endSet_finite e |>.image fun x ↦ (x, e)
+    convert (G.endSet_finite e).image (fun x ↦ (x, e)) using 1
     refine Set.ext fun ⟨a, b⟩ ↦ ?_
     simp only [eq_comm, mem_ofPred_eq, mem_image, mem_endSet_iff, Prod.mk.injEq, ↓existsAndEq,
       true_and, and_congr_left_iff]

@@ -75,7 +75,7 @@ lemma Indep.aug (hI : M.Indep I) (hInotmax : ¬ Maximal M.Indep I) (hBmax : Maxi
     by_cases hyB : y ∈ B
     · exact M.subset_closure_self hBmax.prop.subset_ground hyB
     rw [hBmax.prop.mem_closure_iff hy hyB]
-    contrapose! hyB
+    contrapose hyB
     exact hBmax.mem_of_prop_insert hyB
 
   by_contra! hcon
@@ -145,7 +145,7 @@ variable {M : ClosureMatroid α}
   · exact M.subset_closure_self hi.subset_ground hfI
 
   rw [hi.mem_closure_iff hfE hfI]
-  contrapose! hfI
+  contrapose hfI
   exact hI.mem_of_insert_indep hfX <| by simpa
 
 -- protected def ofFinite (E : Set α) (closure : Set α → Set α)

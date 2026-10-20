@@ -74,7 +74,7 @@ lemma gutsProject_compl (M : Matroid α) (X : Set α) :
 
 lemma spanning_of_gutsProject_spanning_of_union_eq (hci : (M.gutsProject X).Spanning Y)
     (hXY : X ∪ Y = M.E) : M.Spanning Y := by
-  contrapose! hci
+  contrapose hci
   rw [gutsProject, ModularCut.projectBy_spanning_iff (by simp) (by grind),
     closure_mem_gutsModularCutSet_iff (by grind), or_iff_right hci, not_and, not_not]
   refine fun _ ↦ (skew_of_subset_loops ?_ ?_).symm
@@ -83,7 +83,7 @@ lemma spanning_of_gutsProject_spanning_of_union_eq (hci : (M.gutsProject X).Span
 lemma spanning_of_gutsProject_spanning_of_superset (hci : (M.gutsProject X).Spanning Y)
     (hXY : X ⊆ Y) : M.Spanning Y := by
   have hYE : Y ⊆ M.E := by simpa [gutsProject] using hci.subset_ground
-  contrapose! hci
+  contrapose hci
   rw [gutsProject, ModularCut.projectBy_spanning_iff (by simp) (by grind),
     closure_mem_gutsModularCutSet_iff (by grind), or_iff_right hci, not_and, not_not]
   exact fun _ ↦ (skew_of_subset_loops (by grind [project_loops]) sdiff_subset)

@@ -691,7 +691,7 @@ lemma diff_edgeSet {H₁ H₂ : Graph α β} (h₁ : H₁ ≤c G) (h₂ : H₂ �
   |>.left_mem), fun heH₂ ↦ ?_⟩
   obtain ⟨x, y, hexy⟩ := exists_isLink_of_mem_edgeSet heH₁
   have hexy' := hexy.of_le h₁.le
-  use x, y, hexy, ?_, ?_ <;> contrapose! heH₂
+  use x, y, hexy, ?_, ?_ <;> contrapose heH₂
   · exact (h₂.isLink_congr heH₂).mpr hexy' |>.edge_mem
   exact ((h₂.isLink_congr heH₂).mpr hexy'.symm).edge_mem
 
@@ -708,7 +708,7 @@ lemma eq_union_deleteVerts (h : H ≤c G) : H ∪ (G - V(H)) = G := by
 lemma of_deleteEdges_iff (hclF : H ≤c G ＼ F) : H ≤c G ↔ E(G) ∩ F ⊆ E(G - V(H)) := by
   rw [edgeSet_deleteVerts]
   refine ⟨fun hcl f hf ↦ ?_, fun hF ↦ mk' (hclF.le.trans deleteEdges_le) fun e x he hxH => ?_⟩
-  · by_contra! hfH
+  · by_contra hfH
     simp only [mem_ofPred_eq, not_exists, not_and, not_not] at hfH
     refine (hclF.edgeSet_mono ?_).2 hf.2
     obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet hf.1

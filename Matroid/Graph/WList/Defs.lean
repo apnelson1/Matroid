@@ -376,7 +376,7 @@ lemma Nonempty.first_ne_last_of_nodup (hne : w.Nonempty) (hv : w.vertex.Nodup) :
   obtain ⟨x, e, w, rfl⟩ := hne.exists_cons
   obtain ⟨hxw, hh⟩ := by simpa only [cons_vertex, nodup_cons, mem_vertex] using hv
   simp only [first_cons, last_cons, ne_eq]
-  contrapose! hxw
+  contrapose hxw
   exact hxw ▸ last_mem
 
 @[elab_as_elim]

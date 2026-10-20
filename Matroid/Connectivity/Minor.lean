@@ -390,7 +390,7 @@ lemma multiConn_project_eq_multiConn_add_iff (M : Matroid α) {X : ι → Set α
     simpa [hCfin, lt_top_iff_ne_top]
   rw [← M.eLocalConn_add_eRelRk_union_eq_eRk C (⋃ i, X i), ← add_assoc, eLocalConn_comm,
     ← multiConn_project_add_tsum_eLocalConn_eq, add_assoc, ENat.eq_add_left_iff, add_eq_zero,
-      tsum_eq_zero, eRelRk_eq_zero_iff, union_subset_iff,
+      tsum_eq_zero_iff, eRelRk_eq_zero_iff, union_subset_iff,
       and_iff_left (M.subset_closure _), and_comm, or_iff_left hlt.ne]
   convert Iff.rfl with i
   rw [eLocalConn_eq_zero]

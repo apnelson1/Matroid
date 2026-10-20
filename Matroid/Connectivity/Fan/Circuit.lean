@@ -711,7 +711,7 @@ lemma IsFan.eConn_le_one_of_mem_closure (h : M.IsFan F b c)
       ← (h.bDual !b).eConn_le_two,
       ← (M.bDual !b).eConn_insert_add_one_eq hcl' (by simpa using hcl) (by grind)]
     convert rfl.le
-    grind
+    simp
 
 /-- TODO : I think this should hold even if the fan has odd length. -/
 lemma IsFan.eConn_eq_zero_of_mem_closure_mem_closure (h : M.IsFan F b (!b))

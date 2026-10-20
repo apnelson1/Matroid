@@ -25,7 +25,7 @@ lemma IsBase.exists_isBase_contract_inter_of_eConn_le_one {B} (hB : M.IsBase B) 
   have hcard : (J false \ B).encard + (J true \ B).encard ≤ 1 := by
     rwa [← P.eConn_eq false, (hJ false).1.eConn_eq (J := J true) (by simpa using hb),
       nullity_eq_nullity_add_encard_diff (X := B), hB.indep.nullity_eq, zero_add,
-      union_sdiff_distrib, encard_union_eq (by grind)] at hP
+      union_sdiff_distrib, encard_union_eq (by grind [P.disjoint_true_false])] at hP
     · grind [P.union_inter_left B (i := false)]
     grind [hB.closure_eq]
   -- In fact, there is some `i` for which `J i` is no bigger than `B ∩ P i`.
@@ -347,7 +347,8 @@ lemma Separation.isMinor_twoSummand (hP : P.eConn = 1) (hNM : N ≤m M) (hf : P 
   /- `C ∩ P !i` is spanning, because of the fact that `D` is coindependent and `f` is not a
   coloop of `N`.-/
   have hsp : (M ／ P i).Spanning (C ∩ P !i) := by
-    grw [contract_spanning_iff, and_iff_left (by grind)]
+    grw [contract_spanning_iff,
+      and_iff_left ((P.disjoint_bool i).symm.mono_left inter_subset_right)]
     refine (Coindep.compl_spanning ?_).superset hrw
     rw [Coindep, hD.insert_indep_iff_of_notMem (by grind), mem_sdiff, and_iff_right (by grind)]
     refine fun hfD' ↦ hfncl.not_isColoop ?_
@@ -462,7 +463,8 @@ lemma Separation.isoMinor_contract_of_notMem_closure (hP : P.eConn = 1) (hNM : N
   obtain ⟨f, hfP, hf⟩ := exists_twoSummand_isMinor_contract hP (show {e} ⊆ P !i by simpa)
     (by rwa [(isNonloop_of_notMem_closure hecl).skew_left_iff])
   obtain ⟨g, hg, h2⟩ := isMinor_twoSummand' hP hNM hl hl' hss
-  rw [← P.twoSummand_mapEquiv (e := f) (f := g) (i := i) (by grind) (by grind)] at hf
+  rw [← P.twoSummand_mapEquiv (e := f) (f := g) (i := i)
+    (by grind [P.disjoint_bool i]) (by grind [P.disjoint_bool i])] at hf
   let i' := (P.twoSummand i g).isoMapEquiv (Equiv.swap g f)
   exact ⟨(h2.isoMinor.trans_iso i').trans hf.isoMinor⟩
 

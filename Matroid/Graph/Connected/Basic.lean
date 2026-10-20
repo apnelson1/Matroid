@@ -133,7 +133,7 @@ lemma Connected.exists_isCompOf_ge (h : H.Connected) (hle : H ≤ G) :
   have hne : s.Nonempty := ⟨G, by simpa [s]⟩
   let G₁ := Graph.sInter s hne
   have hHG₁ : H ≤ G₁ := (Graph.le_sInter_iff ..).2 fun K hK ↦ hK.2
-  have hG₁G : G₁ ≤c G := sInter_isClosedSubgraph (fun _ hK ↦ hK.1) _
+  have hG₁G : G₁ ≤c G := sInter_isClosedSubgraph (fun _ (hK : _ ∈ s) ↦ hK.1) _
   refine ⟨G₁, hHG₁, ⟨hG₁G, h.nonempty.mono (vertexSet_mono hHG₁)⟩, fun K ⟨hKG, hKne⟩ hKG₁ ↦ ?_⟩
   refine Graph.sInter_le ?_
   simp only [mem_ofPred_eq, hKG, true_and, s]
@@ -331,7 +331,7 @@ lemma IsCompOf.isSepSet_of_not_connected_of_ssubset
     (components_nontrivial_of_not_connected (hH.nonempty.mono hH.subset) hG).exists_ne H
   have K_isCompOf_GS : K.IsCompOf (G - S) :=
     K_isCompOf_G.of_deleteVerts <| by
-      contrapose! hne
+      contrapose hne
       obtain ⟨y, hyK, hyS⟩ := Set.not_disjoint_iff.mp hne
       exact K_isCompOf_G.eq_of_mem_mem hH hyK (hSH hyS)
   refine not_connected_of_nontrivial_components ⟨K, K_isCompOf_GS, Cx, hCx_isCompOf, ?_⟩
@@ -555,7 +555,7 @@ lemma Preconnected.deleteEdges_linkEdges_connBetween_or (hG : G.Preconnected) (h
 
 lemma Preconnected.deleteEdges_linkEdges_not_connBetween (hG : G.Preconnected)
     (h' : ¬ (G ＼ E(G, u, v)).Preconnected) : ¬ (G ＼ E(G, u, v)).ConnBetween u v := by
-  contrapose! h'
+  contrapose h'
   apply preconnected_of_exists_connBetween
   use u
   intro x hx
@@ -584,10 +584,10 @@ lemma Preconnected.walkable_singleton_left_of_deleteVerts_connected (hG : G.Prec
   obtain rfl | h := h
   · simp at huconn
   have hu : u ∈ V(G) := by
-    by_contra! hu
+    by_contra hu
     simp [hu, hG] at h
   have hv : v ∈ V(G) := by
-    by_contra! hv
+    by_contra hv
     simp [hv, hG] at h
   have hne : u ≠ v := by
     by_contra huv
@@ -610,7 +610,7 @@ lemma Preconnected.walkable_singleton_left_of_deleteVerts_connected (hG : G.Prec
     exact hG.deleteEdges_linkEdges_not_connBetween h this
   · rw [disjoint_iff_forall_notMem, deleteVerts_edgeSet_diff, setIncEdges_singleton]
     intro e ⟨he, heu⟩
-    contrapose! heu
+    contrapose heu
     exact G.linkEdges_subset_incEdges_left u v heu
 
 lemma Preconnected.walkable_singleton_right_of_deleteVerts_connected (hG : G.Preconnected)
@@ -624,10 +624,10 @@ lemma not_connected_or_singleton_isSep_or_pair (h : ¬ (G ＼ E(G, u, v)).Connec
   simp only [or_iff_not_imp_left, not_not]
   intro hG husep hvsep
   have hu : u ∈ V(G) := by
-    by_contra! hu
+    by_contra hu
     simp [hu, hG] at h
   have hv : v ∈ V(G) := by
-    by_contra! hv
+    by_contra hv
     simp [hv, hG] at h
   simp only [isSep_iff, singleton_subset_iff, hu, hv, true_and, not_not] at husep hvsep
   have hcomp := (G ＼ E(G, u, v)).eq_sUnion_components

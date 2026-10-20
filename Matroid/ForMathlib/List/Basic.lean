@@ -17,9 +17,8 @@ lemma getElem_mem_dropLast {i} (hi : i < l.length - 1) : l[i] ∈ l.dropLast := 
   exact getElem_mem ..
 
 lemma Nodup.countP_eq_card {α} {l : List α} {P : α → Prop} [DecidableEq α] [DecidablePred P]
-    (h : l.Nodup) : countP P l = (l.toFinset.filter P).card := by
-  rw [countP_eq_length_filter, ← toFinset_card_of_nodup (h.filter ..)]
-  simp
+    (h : l.Nodup) : countP P l = (l.toFinset.filter P).card :=
+  h.card_eq_countP.symm
 
 lemma Nodup.eq_singleton_iff_head_getLast {α} {l : List α} (hnd : l.Nodup) (hne : l ≠ []) :
     l.head hne = l.getLast hne ↔ ∃ x, l = [x] :=

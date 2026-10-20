@@ -283,7 +283,7 @@ lemma trans_injective_iff : Injective (P.trans Q) ↔
     exact squishLeft_injective <| h h1
   · refine strictMono_squishRight.injective <| h ?_
     simpa [trans_squishRight] using hst
-  · by_contra! hdj
+  · by_contra hdj
     rw [not_disjoint_iff] at hdj
     obtain ⟨-, ⟨⟨t1, hPQ⟩, hay⟩, t2, rfl⟩ := hdj
     rw [← trans_squishRight t2, ← trans_squishLeft t1] at hPQ
@@ -326,7 +326,7 @@ lemma trans_injOn_ico_iff {Q : Path y x} : InjOn (P.trans Q) (Ico 0 1) ↔
     replace h : InjOn (⇑(P.trans Q)) <| Icc half 1 :=
       h.mono <| (Icc_subset_Ioc_iff le_one').mpr ⟨zero_lt_half, le_rfl⟩
     exact ((P.injective_right_iff_trans_injOn Q).mp h).eq_iff.mp hst
-  · by_contra! hdj
+  · by_contra hdj
     rw [not_disjoint_iff] at hdj
     obtain ⟨-, ⟨⟨t1, hPQ⟩, hay⟩, ⟨t2, rfl⟩, hax⟩ := hdj
     rw [← trans_squishRight t2, ← trans_squishLeft t1] at hPQ

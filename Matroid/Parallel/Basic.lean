@@ -225,7 +225,7 @@ lemma contract_parallel_iff {C : Set α} :
     exact ⟨hfcl, (contract_isNonloop_iff.1 h.isNonloop_right).2⟩
   rw [parallel_comm, IsNonloop.parallel_iff_mem_closure, contract_closure_eq, singleton_union,
     mem_sdiff, and_iff_right h1]
-  · contrapose! h2
+  · contrapose h2
     exact mem_closure_of_mem' M h2
   simp [mem_ground_of_mem_closure h1, h2]
 

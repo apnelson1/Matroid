@@ -204,7 +204,7 @@ lemma IsPath.uncontract_isPath (hφ : G.connPartition.IsRepFun φ) (hGH : G ≤ 
     replace ih := ih hw2 hwf hv
     unfold IsWalk.uncontract at ih
     have A : hw11.choose ∉ IsWalk.uncontract hφ hw22 hwf hv := by
-      contrapose! huw
+      contrapose huw
       have : _ ∈ (hw2.isWalk.uncontract hφ hwf hv).map φ := mem_map_iff _ φ _ |>.mpr ⟨_, huw, rfl⟩
       rwa [hw2.isWalk.mem_uncontract_map_iff hφ hGH hwf hv,
         ← hw11.choose_spec.choose_spec.2.1] at this

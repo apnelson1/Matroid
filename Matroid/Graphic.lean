@@ -98,7 +98,7 @@ lemma cycleMatroid_coindep : G.cycleMatroid.Coindep F ↔
   obtain ⟨B, hB⟩ := (G ＼ F).exists_isMaximalAcyclicSet
   have hBF := by simpa [subset_sdiff] using hB.prop.subset
   use B, ⟨hB.prop.mono deleteEdges_le, fun R hR hBR ↦ ?_⟩, hB.prop.1
-  by_contra! hRB
+  by_contra hRB
   obtain ⟨e, heR, heB⟩ := not_subset.mp hRB
   obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet (hR.subset heR)
   have hRexy : ¬((G ↾ R) ＼ {e}).ConnBetween x y := hR.isBridge heR |>.not_connBetween_of_isLink
@@ -151,7 +151,7 @@ lemma IsEdgeCut.cycleMatroid_dual_cyclic (hF : G.IsEdgeCut F) : (G.cycleMatroid�
   obtain ⟨B, hBF, hB, hBxy⟩ := exists_isBond_subset_of_not_connBetween he.connBetween
   <| hF.not_connBetween_of_isLink he heF
   use B, hBF, by simpa, ?_
-  contrapose! hBxy
+  contrapose hBxy
   exact IsLink.connBetween ⟨he, hBxy⟩
 
 lemma IsMaximalAcyclicSet.isTree (hG : G.Connected) (hF : G.IsMaximalAcyclicSet F) :
@@ -644,7 +644,8 @@ noncomputable def cycleMatroidRep (𝔽 : Type*) [Field 𝔽] : G.cycleMatroid.R
     rw [cycleMatroid_indep]
     refine ⟨hD.some.isAcyclicSet_linearIndepOn, fun h ↦ ?_⟩
     replace h := linearIndepOn_iff''.mp h
-    wlog hIE : I ⊆ E(G)
+    by_cases hIE : I ⊆ E(G)
+    swap
     · obtain ⟨e₀, he₀I, he₀E⟩ := not_subset.mp hIE
       let g₀ : β → 𝔽 := fun x₀ => if x₀ = e₀ then 1 else 0
       have h_finset : (↑({e₀} : Finset β) : Set β) ⊆ I := by
@@ -653,7 +654,7 @@ noncomputable def cycleMatroidRep (𝔽 : Type*) [Field 𝔽] : G.cycleMatroid.R
         simp [g₀, hD.some.signedIncMatrix_apply_of_not_mem he₀E]
       absurd (by simp [g₀] : g₀ e₀ ≠ 0)
       exact h {e₀} g₀ h_finset (by simp [g₀]) h_sum e₀ (mem_singleton.mpr rfl)
-    by_contra! hI
+    by_contra hI
     obtain ⟨C₀, hC₀, hCG, hCI⟩ := (not_isAcyclicSet_iff hIE).mp hI
     obtain ⟨C'₀, hC'₀, rfl⟩ := isCycle_iff_exists_isCyclicWalk_eq.mp hC₀
     have hC'₀_G := hC'₀.of_le hCG

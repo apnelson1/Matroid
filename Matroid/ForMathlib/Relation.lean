@@ -350,7 +350,7 @@ lemma Schroder_leftResidual {r : α → β → Prop} {s : β → γ → Prop} {t
   refine ⟨fun hrs b c hsbc ⟨a, hrab, hntac⟩ => hntac <| hrs a c ⟨b, hrab, hsbc⟩,
     fun hsle a c ⟨b, hrab, hsbc⟩ => ?_⟩
   have := hsle b c hsbc
-  contrapose! this
+  contrapose this
   simp only [leftResidual, Pi.compl_apply, compl_iff_not, not_not]
   use a, hrab, this
 
@@ -364,7 +364,7 @@ lemma Schroder_rightResidual {r : α → β → Prop} {s : β → γ → Prop} {
   refine ⟨fun hrs a b hrac ⟨c, hntac, hsbc⟩ => hntac <| hrs a c ⟨b, hrac, hsbc⟩,
     fun hrle a c ⟨b, hrab, hsbc⟩ => ?_⟩
   have := hrle a b hrab
-  contrapose! this
+  contrapose this
   simp only [rightResidual, Pi.compl_apply, compl_iff_not, not_not]
   use c, this, hsbc
 

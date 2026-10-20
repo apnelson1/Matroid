@@ -410,7 +410,7 @@ lemma cover_rel (P : Partition (Set α)) (S : Set α) :
   refine ⟨fun ⟨⟨s, ⟨hsP, z, hzS, hzs⟩, hxs⟩, t, htP, hxt, hyt⟩ ↦ ?_,
     fun ⟨a, hxa, b, ⟨hbS, haS, hba⟩, hby⟩ ↦ ⟨?_, (hxa.trans (hba.symm)).trans hby⟩⟩
   · obtain rfl := P.eq_of_mem_of_mem hsP htP hxs hxt
-    use z, (by use s), z, ⟨hzS, hzS, (by use s)⟩, (by use s)
+    exact ⟨z, ⟨s, hsP, hxs, hzs⟩, z, ⟨hzS, hzS, s, hsP, hzs, hzs⟩, s, hsP, hzs, hyt⟩
   obtain ⟨t, htP, hxt, hat⟩ := hxa
   exact ⟨t, ⟨htP, by use a⟩, hxt⟩
 

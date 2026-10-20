@@ -447,7 +447,7 @@ theorem Konig'sTheorem [H.Simple] [H.Finite] (hB : H.Bipartite) : τ(H) = ν(H) 
     `τ` and `ν` are additive over the components so at least one component must have `τ` or `ν`
     different.
     That component is a smaller counterexample to the theorem, contradicting minimality.-/
-    by_contra! hcon
+    by_contra hcon
     apply nonempty_separation_of_not_connected hnonempty at hcon
     obtain ⟨S⟩ := hcon
     have hdisj := S.induce_stronglyDisjoint

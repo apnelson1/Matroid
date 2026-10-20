@@ -162,7 +162,7 @@ theorem quotient_of_forall_eRelRk_le (hE : M₁.E = M₂.E)
 
   refine IsFlat.closure_subset_of_subset ?_ hXin
 
-  by_contra! hc
+  by_contra hc
   obtain ⟨e, he, he'⟩ := exists_mem_closure_notMem_of_not_isFlat hc
     ((M₂.closure_subset_ground X).trans hE.symm.subset)
   have heE := mem_of_mem_of_subset he <| M₁.closure_subset_ground _

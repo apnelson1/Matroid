@@ -1,6 +1,7 @@
 module
 
 public import Matroid.Rank.Skew
+import Mathlib.Tactic.TautoSet
 
 @[expose] public section
 

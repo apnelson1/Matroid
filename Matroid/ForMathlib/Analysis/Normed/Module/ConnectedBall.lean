@@ -2,6 +2,8 @@ module
 
 public import Mathlib.Analysis.Normed.Module.Connected
 
+import Mathlib.Analysis.Convex.PathConnected
+
 /-!
 # Connectedness of the complement of a ball
 

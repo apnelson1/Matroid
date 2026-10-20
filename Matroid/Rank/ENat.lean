@@ -161,9 +161,9 @@ lemma eRk_union_eq_of_subset_of_eRk_le_eRk (Z : Set α) (hXY : X ⊆ Y) (hr : M.
   · rw [← eRk_union_closure_left_eq, hX'.closure_eq_closure_of_subset_of_eRk_ge_eRk hXY hr,
       eRk_union_closure_left_eq]
   rw [eRk_eq_top_iff.2, eRk_eq_top_iff.2]
-  · contrapose! hX'
+  · contrapose hX'
     exact hX'.subset (hXY.trans subset_union_left)
-  contrapose! hX'
+  contrapose hX'
   exact hX'.subset subset_union_left
 
 lemma eRk_union_eq_of_subsets_of_eRks_le (hX : X ⊆ X') (hY : Y ⊆ Y') (hXX' : M.eRk X' ≤ M.eRk X)
@@ -173,7 +173,7 @@ lemma eRk_union_eq_of_subsets_of_eRks_le (hX : X ⊆ X') (hY : Y ⊆ Y') (hXX' :
 
 lemma not_isRkFinite_of_eRk_ge (h : ¬M.IsRkFinite X) (hXY : M.eRk X ≤ M.eRk Y) :
     ¬M.IsRkFinite Y := by
-  contrapose! h
+  contrapose h
   exact eRk_lt_top_iff.1 <| hXY.trans_lt h.eRk_lt_top
 
 lemma eRk_restrict (M : Matroid α) (R X : Set α) : (M ↾ R).eRk X = M.eRk (X ∩ R) := by

@@ -91,7 +91,7 @@ lemma single_eq_diff_iUnion (P : s.IndexedPartition ι) (i : ι) : P i = s \ (�
   intro j
   obtain rfl | hne := eq_or_ne j i
   · simp
-  exact (subset_biUnion_of_mem hne).trans subset_union_left
+  exact fun x hx ↦ Or.inl (mem_iUnion₂.mpr ⟨j, hne, hx⟩)
 
 protected lemma ext' {P Q : s.IndexedPartition ι} {j : ι} (h : ∀ i ≠ j, P i = Q i) : P = Q := by
   refine P.ext fun i ↦ ?_
@@ -139,7 +139,8 @@ noncomputable def equivSubtype (s : Set α) (ι : Type*) : (s.IndexedPartition �
       ((ofSubtypeFun f).exists_mem x.prop).choose_spec ⟨x, by simp, rfl⟩
 
 noncomputable def equivPFun (ι : Type*) : (Σ s : Set α, s.IndexedPartition ι) ≃ (α →. ι) :=
-  (Equiv.sigmaCongrRight (equivSubtype · ι)).trans PFun.equivSubtype.symm
+  ((Equiv.sigmaCongrRight (equivSubtype · ι)).trans
+    (Equiv.sigmaCongr Set.memEquiv (fun _ ↦ Equiv.refl _))).trans PFun.equivSubtype.symm
 
 /-- Transfer a partition across a set equality. -/
 protected def copy (P : s.IndexedPartition ι) (h_eq : s = t) : t.IndexedPartition ι where

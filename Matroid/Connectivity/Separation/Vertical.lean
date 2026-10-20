@@ -872,7 +872,7 @@ lemma CyclicallyConnected.coguts_diff_indep_contract (hM : M.CyclicallyConnected
 lemma Separation.IsTutteSeparation.isVerticalSeparation_of_girth (hP : P.IsTutteSeparation)
     (hPgirth : P.eConn + 1 < M.girth) : P.IsVerticalSeparation := by
   refine isVerticalSeparation_iff_forall_nonspanning.2 fun j ↦ ?_
-  by_contra! hcon
+  by_contra hcon
   rw [not_nonspanning_iff] at hcon
   refine (hP.dep_of_spanning hcon).not_indep ?_
   rw [← P.eConn_eq j, hcon.eConn_eq, P.compl_eq] at hPgirth
@@ -900,7 +900,7 @@ lemma TutteConnected.exists_notMem_guts_notMem_coguts (h : M.TutteConnected (k +
       and_iff_right inter_subset_left, guts_eq_inter_bool _ i, subset_inter_iff, inter_subset_right,
       and_iff_right (by grind), coindep_iff_subset_closure_compl.1 (hci.subset inter_subset_left),
       ← P.union_bool_eq i, union_sdiff_distrib, sdiff_inter_self_eq_sdiff,
-      (show Disjoint (P !i) (P.coguts ∩ P i) by grind).sdiff_eq_left]
+      ((P.disjoint_bool i).symm.mono_right inter_subset_right).sdiff_eq_left]
     refine closure_subset_closure_of_subset_closure <| union_subset ?_ (by grind)
     grw [hu, union_sdiff_right, sdiff_subset, guts_subset_closure]
   have hi : M.Indep (P i) := by

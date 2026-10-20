@@ -71,7 +71,7 @@ theorem Set.embeddingOfSubset_preimage {s t : Set α} (hst : s ⊆ t) (r : Set t
 /-- The same as `Function.Embedding.subtype`, but for the special case of a set coercion.
 Can be more convenient for rewriting.  -/
 @[simps!] def Function.Embedding.setSubtype {α : Type*} (s : Set α) : s ↪ α :=
-  Embedding.subtype s
+  Embedding.subtype (· ∈ s)
 
 @[simp] theorem Function.Embedding.preimage_setSubtype (s : Set α) (x : Set α) :
     ((Embedding.setSubtype s) ⁻¹' x : Set s) = s ↓∩ x := rfl

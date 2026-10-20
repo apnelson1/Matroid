@@ -12,7 +12,7 @@ open Set Function Submodule Finsupp Set.Notation Module
 
 theorem Function.ExtendByZero.linearMap_injective (R : Type*) {ι η : Type _} [Semiring R]
   {s : ι → η} (hs : Function.Injective s) :
-    Injective <| Function.ExtendByZero.linearMap R s := by
+    Injective <| Function.ExtendByZero.linearMap R R s := by
   intro x x' h
   ext i
   replace h := _root_.congr_fun h (s i)
@@ -385,7 +385,7 @@ def Representable (M : Matroid α) (𝔽 : Type*) [Semiring 𝔽] : Prop :=
 /-- Any representation makes a matroid representable. -/
 lemma Rep.representable (v : M.Rep 𝔽 W) : M.Representable 𝔽 :=
   let ⟨B, hB⟩ := M.exists_isBase
-  ⟨(v.standardRep hB).comp' (ExtendByZero.linearMap 𝔽 ((↑) : B → α))
+  ⟨(v.standardRep hB).comp' (ExtendByZero.linearMap 𝔽 𝔽 ((↑) : B → α))
     (LinearMap.ker_eq_bot.2 (ExtendByZero.linearMap_injective _ Subtype.val_injective))⟩
 
 @[simp] lemma loopyOn_representable (E : Set α) (𝔽 : Type*) [DivisionRing 𝔽] :

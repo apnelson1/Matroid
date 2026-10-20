@@ -24,7 +24,7 @@ lemma singleEdge_eDegree_left (hxy : x ≠ y) (e : β) : (Graph.singleEdge x y e
   rw [eDegree_eq_encard_add_encard, encard_eq_zero.2, ← encard_singleton e, mul_zero, zero_add]
   · convert rfl
     suffices ∃ z, ¬z = x ∧ (z = y ∨ x = y ∧ z = x) by
-      simpa +contextual [iff_def, IsNonloopAt, Set.ext_iff]
+      simpa +contextual [iff_def, IsNonloopAt, Set.ext_iff] using fun _ ↦ this
     exact ⟨y, hxy.symm, by simp [hxy]⟩
   simp_rw [IsLoopAt, singleEdge_isLink_iff]
   simp [hxy]

@@ -1,7 +1,8 @@
 module
 
-public import Matroid.Circuit
 public import Mathlib.Combinatorics.Matroid.Loop -- inefficient import
+public import Mathlib.Tactic.TautoSet
+public import Matroid.Circuit
 public import Matroid.ForMathlib.Finset
 public import Matroid.ForMathlib.Matroid.Closure
 public import Matroid.OnUniv
@@ -540,7 +541,7 @@ lemma disjointSigma_removeLoops {ι : Type*} (M : ι → Matroid α) hdj :
   simp_rw [removeLoops_eq_restrict, disjointSigma_isNonloop_iff]
   rw [← disjointSigma_restrict_iUnion hdj (fun i ↦ {e | (M i).IsNonloop e})
     (fun i _ ↦ IsNonloop.mem_ground)]
-  convert rfl
+  congr 1
   ext
   simp
 

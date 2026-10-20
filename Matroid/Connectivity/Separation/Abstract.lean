@@ -126,7 +126,7 @@ lemma not_predConnected_iff :
 
 lemma PredConnected.not_IsPredSeparation (h : M.PredConnected dg) (P : M.Separation) :
     ¬ P.IsPredSeparation (dg · P.eConn) := by
-  contrapose! h
+  contrapose h
   rw [not_predConnected_iff]
   exact ⟨P, h⟩
 

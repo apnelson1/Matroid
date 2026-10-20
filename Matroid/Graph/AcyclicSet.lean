@@ -227,7 +227,7 @@ lemma IsMaximalAcyclicSet.connBetween_iff (hF : G.IsMaximalAcyclicSet F) :
   obtain ⟨e, heS, x, hxS, y, ⟨hy, hyS⟩, hxy⟩ :=
     hw.inter_setLinkEdges_nonempty ((G ↾ F).mem_walkable hw.first_mem) h'
   have heF : e ∉ F := by
-    contrapose! hyS
+    contrapose hyS
     exact ConnBetween.trans hxS (IsLink.connBetween ⟨hyS, hxy⟩)
   have := hF.insert_not_isBridge ⟨hxy.edge_mem, heF⟩
   rw [IsLink.isBridge_iff_not_connBetween (by simpa), not_not] at this

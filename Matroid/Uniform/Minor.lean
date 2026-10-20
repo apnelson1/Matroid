@@ -54,7 +54,7 @@ def NoUniformMinor (M : Matroid α) (a b : ℕ) : Prop := IsEmpty (unif a b ≤i
 
 lemma NoUniformMinor.minor {N a b} (hM : M.NoUniformMinor a b) (hNM : N ≤m M) :
     N.NoUniformMinor a b := by
-  contrapose! hM
+  contrapose hM
   simp only [not_noUniformMinor_iff] at hM ⊢
   exact ⟨hM.some.trans_isMinor hNM⟩
 
@@ -92,7 +92,7 @@ lemma no_line_minor_iff_of_eRank_le_two (hM : M.eRank ≤ 2) :
 
 lemma NoUniformMinor.le_minor {a b b' : ℕ} (hM : M.NoUniformMinor a b) (ha : a ≤ b) (hb' : b ≤ b') :
     M.NoUniformMinor a b' := by
-  contrapose! hM
+  contrapose hM
   simp only [not_noUniformMinor_iff] at hM ⊢
   exact ⟨((unif_isoMinor_unif_iff' ha (Nat.le_trans ha hb')).2 ⟨ Nat.le_refl a,
       Nat.sub_le_sub_right hb' a ⟩).some.trans hM.some⟩

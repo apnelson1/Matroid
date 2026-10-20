@@ -2,6 +2,7 @@ module
 
 public import Matroid.ForMathlib.Topology.Summable
 public import Mathlib.Topology.Instances.ENat
+public import Mathlib.Topology.Order.T5
 public import Matroid.ForMathlib.ENat
 public import Matroid.ForMathlib.Card
 public import Mathlib.Topology.Algebra.InfiniteSum.Constructions
@@ -43,7 +44,7 @@ protected theorem tsum_eq_top_iff : ∑' a, f a = ⊤ ↔ f.support.Infinite ∨
   · rw [← tsum_subtype_support, tsum_eq_top_iff_of_finite hfin] at htop
     exact Exists.elim htop <| fun a h ↦ ⟨a, h.2⟩
   rw [← top_le_iff, ← ha]
-  exact le_tsum a
+  exact le_tsum f a
 
 protected theorem tsum_subtype_eq_top_iff {s : Set α} :
     ∑' (a : s), f a = ⊤ ↔ (s ∩ f.support).Infinite ∨ ∃ a ∈ s, f a = ⊤ := by
@@ -138,7 +139,7 @@ theorem tsum_encard_eq_encard_biUnion_iff {ι} {s : ι → Set α} {t : Set ι}
   simp only [PairwiseDisjoint, Set.Pairwise, ne_eq, onFun, disjoint_left, not_forall, not_not,
     exists_prop] at hndj
   obtain ⟨a, ha, b, hb, hab, x, hxa, hxb⟩ := hndj
-  have h1 := tsum_insert (a := a) (s := t \ {a}) (f := fun i ↦ (s i).encard) (by simp)
+  have h1 := tsum_insert (i := a) (s := t \ {a}) (f := fun i ↦ (s i).encard) (by simp)
   rw [tsum_congr_set_coe (insert_sdiff_self_of_mem ha) (f := fun i ↦ (s i).encard), h] at h1
   have h2 := biUnion_insert a (t \ {a}) s
   rw [insert_sdiff_self_of_mem ha] at h2

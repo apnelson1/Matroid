@@ -4,7 +4,6 @@ public import Matroid.Graph.Degree.Max
 import all Mathlib.Combinatorics.Graph.Delete
 public import Mathlib.Combinatorics.Graph.Delete
 
-
 @[expose] public section
 
 namespace Graph
@@ -235,7 +234,7 @@ lemma isMatching_of_encard_incEdges_le_one (M : Set β) (hM_subset : M ⊆ E(G))
     (h : ∀ x ∈ V(G), E(G ↾ M, x).encard ≤ 1) : G.IsMatching M where
   subset := hM_subset
   disjoint e f he hf hne := by
-    by_contra! hcon
+    by_contra hcon
     rw [not_disjoint_iff_nonempty_inter] at hcon
     obtain ⟨x, hxe, hxf⟩ := hcon
     have hxP : x ∈ G.vertexSet := hxe.vertex_mem
@@ -247,7 +246,7 @@ lemma isMatching_of_eDegree_le_one (M : Set β) (hM_subset : M ⊆ E(G))
     (h : ∀ x ∈ V(G), (G ↾ M).eDegree x ≤ 1) : G.IsMatching M where
   subset := hM_subset
   disjoint e f he hf hne := by
-    by_contra! hcon
+    by_contra hcon
     rw [not_disjoint_iff_nonempty_inter] at hcon
     obtain ⟨x, hxe, hxf⟩ := hcon
     have hxP : x ∈ G.vertexSet := hxe.vertex_mem

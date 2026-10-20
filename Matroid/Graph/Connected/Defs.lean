@@ -208,7 +208,7 @@ lemma Preconnected.eq_of_isClosedSubgraph (hG : G.Preconnected) (hH : H ≤c G) 
 lemma not_preconnected_of_ne_of_isClosedSubgraph {H₁ H₂ : Graph α β} (h₁ : H₁ ≤c G)
     (hV₁ : V(H₁).Nonempty) (h₂ : H₂ ≤c G) (hV₂ : V(H₂).Nonempty) (hdj : H₁ ≠ H₂) :
     ¬ G.Preconnected := by
-  contrapose! hdj
+  contrapose hdj
   obtain rfl := hdj.eq_of_isClosedSubgraph h₂ hV₂
   exact hdj.eq_of_isClosedSubgraph h₁ hV₁
 
@@ -299,7 +299,7 @@ lemma vertexSet_nontrivial (S : G.Separation) : V(G).Nontrivial :=
 
 lemma induce_left_isClosedSubgraph (S : G.Separation) : G[S.left].IsClosedSubgraph G :=
   IsClosedSubgraph.mk' (by simp [S.left_subset]) fun e x hex hx => by
-    contrapose! hx
+    contrapose hx
     have := hex.of_le_of_mem (by simp [S.right_subset])
       (S.edge_mem_or_mem hex.edge_mem |>.resolve_left hx) |>.vertex_mem
     simp only [vertexSet_induce] at this ⊢
@@ -460,8 +460,9 @@ lemma isSep_empty_iff_isMinSep_empty : G.IsSep ∅ ↔ G.IsMinSep ∅ :=
   ⟨fun hyp ↦ ⟨hyp, by simp⟩, fun h ↦ h.toIsSep⟩
 
 lemma conn_iff_forall_isSep : G.Connected ↔ ∀ ⦃S⦄, IsSep G S → S.Nonempty := by
-  refine ⟨fun h S hS => ?_, fun h => ?_⟩ <;> by_contra! hC
-  · simpa [hC, h] using hS.not_connected
+  refine ⟨fun h S hS => ?_, fun h => ?_⟩ <;> by_contra hC
+  · rw [Set.not_nonempty_iff_eq_empty] at hC
+    simpa [hC, h] using hS.not_connected
   simpa using h (empty_isSep_iff.mpr hC)
 
 lemma IsSep.nonempty_of_connected (hG : G.Connected) (hS : G.IsSep S) : S.Nonempty :=
@@ -813,9 +814,9 @@ lemma ConnGE.anti_right (hle : n ≤ m) (h : G.ConnGE m) : G.ConnGE n where
 @[simp]
 lemma connGE_one_iff : G.ConnGE 1 ↔ G.Connected := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · by_contra! hc
+  · by_contra hc
     simpa using h.le_cut <| empty_isSep_iff.mpr hc
-  by_contra! hCcd
+  by_contra hCcd
   simp [connGE_iff, one_lt_encard_iff_nontrivial, V(G).subsingleton_or_nontrivial,
     Set.not_nonempty_iff_eq_empty, h] at hCcd
 
@@ -848,7 +849,7 @@ lemma connGE_iff_of_vertexSet_subsingleton (hss : V(G).Subsingleton) :
 lemma ConnGE.pre (h : G.ConnGE n) : G.PreconnGE n := by
   rw [preconnGE_iff_forall_preconnected]
   intro X hXV hX
-  by_contra! hc
+  by_contra hc
   have := mt Connected.pre hc
   have : ↑n ≤ (V(G) ∩ X).encard := by simpa using h.le_cut (isSep_of_not_connected this)
   exact hX.not_ge <| this.trans <| encard_le_encard inter_subset_right

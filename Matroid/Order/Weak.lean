@@ -52,7 +52,7 @@ lemma WeakLE.nonspanning_of_nonspanning_of_dual {S : Set α} (h : N✶ ≤w M✶
 
 lemma WeakLE.dep_of_dep (h : N ≤w M) (hD : M.Dep D) : N.Dep D := by
   have hIN := h.subset_ground_of_subset_ground_right hD.subset_ground
-  contrapose! hD
+  contrapose hD
   rw [not_dep_iff] at hD ⊢
   exact h.indep_of_indep hD
 
@@ -60,7 +60,7 @@ lemma weakLE_iff_forall_dep_of_dep : N ≤w M ↔ N.E = M.E ∧ ∀ D, M.Dep D �
   refine ⟨fun h ↦ ⟨h.ground_eq, fun _ ↦ h.dep_of_dep⟩, fun h ↦ ⟨fun D hD ↦ ?_, h.1⟩⟩
   have hDN : D ⊆ N.E := hD.subset_ground
   have hDM : D ⊆ M.E := hDN.trans_eq h.1
-  contrapose! hD
+  contrapose hD
   rw [not_indep_iff] at hD ⊢
   exact h.2 _ hD
 
@@ -89,7 +89,7 @@ lemma WeakLE.delete (h : N ≤w M) (D : Set α) : N ＼ D ≤w M ＼ D := by
 
 lemma WeakLE.loops_subset_loops (h : N ≤w M) : M.loops ⊆ N.loops := by
   intro e he
-  by_contra! hcon
+  by_contra hcon
   rw [mem_loops_iff, not_isLoop_iff _] at hcon
   · rw [mem_loops_iff] at he
     exact he.dep.not_indep <| h.indep_of_indep (show N.Indep {e} by simpa)

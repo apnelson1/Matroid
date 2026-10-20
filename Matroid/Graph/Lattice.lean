@@ -41,7 +41,8 @@ noncomputable instance : CompleteSemilatticeInf (WithTop <| Graph α β) where
       unfold sInter
       split_ifs with h
       · exact WithTop.coe_le_coe.mpr <|
-          (Graph.le_sInter_iff h).mpr fun _ hHs => WithTop.coe_le_coe.mp (hG hHs)
+          (Graph.le_sInter_iff (show {G | some G ∈ s}.Nonempty from h)).mpr
+          fun _ hHs => WithTop.coe_le_coe.mp (hG hHs)
       · exact le_top
 
 noncomputable instance : CompleteLattice (WithTop <| Graph α β) where
@@ -500,7 +501,7 @@ lemma inf_compl_eq_bot_iff : H₁ ⊓ H₁ᶜ = ⊥ ↔ H₁.val ≤c G := by
   -- why is this needed? for some reason `coe_bot` won't fire manually as of mathlib update.
   have hbot : ((⊥ : G.Subgraph) : Graph α β) = ⊥ := rfl
   refine ⟨fun h => IsClosedSubgraph.mk' H₁.prop fun e x hex hxH ↦ ?_, fun h => ?_⟩
-  · by_contra! he
+  · by_contra he
     apply_fun Graph.vertexSet ∘ Subtype.val at h
     simp only [comp_apply, coe_inf, vertexSet_inter, ← sep_eq_vertexSet_inter_compl, hbot,
       vertexSet_bot, eq_empty_iff_forall_notMem] at h

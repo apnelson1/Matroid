@@ -265,7 +265,7 @@ lemma IsComplete.not_isSepBetween (h : G.IsComplete) (hs : s ∈ V(G)) (ht : t �
 theorem isSepBetween_of_not_adj (hne : s ≠ t) (hnst : ¬ G.Adj s t) :
     G.IsSepBetween s t (V(G) \ {s, t}) := by
   refine ⟨sdiff_subset, by simp, by simp, ?_⟩
-  contrapose! hnst
+  contrapose hnst
   obtain ⟨W, hW, rfl, rfl⟩ := hnst.exists_isPath
   match W with
   | .nil u => simp at hne

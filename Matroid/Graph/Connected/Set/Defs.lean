@@ -239,7 +239,7 @@ lemma IsSetCut.not_disjoint_of_mem (hW : G.IsWalk W) (hu : u ∈ V(W) ∩ S) (hv
     · exact h.subset
     simpa [reverse_vertexSet] using h.subset
   have := hw.not_disjoint_isSetCut hC
-  contrapose! this
+  contrapose this
   exact this.mono_left hwW
 
 lemma IsSetCut.exists_mem_of_mem (hW : G.IsWalk W) (hu : u ∈ V(W) ∩ S) (hv : v ∈ V(W) ∩ T)
@@ -362,7 +362,7 @@ lemma IsWalkFrom.exists_mem_isEdgeSetCut (hW : G.IsWalkFrom S T W) (hC : G.IsEdg
   rwa [not_disjoint_iff] at this
 
 lemma IsEdgeSetCut.disjoint (hF : G.IsEdgeSetCut S T F) : Disjoint V(G) (S ∩ T) := by
-  by_contra! h
+  by_contra h
   rw [not_disjoint_iff] at h
   obtain ⟨x, hx, hxS, hxT⟩ := h
   exact hF.ST_disconnects ⟨x, hxS, x, hxT, by simpa⟩
@@ -575,7 +575,7 @@ lemma setConnectivity_vertexSet_inter_right :
 lemma one_le_setConnectivity_iff : 1 ≤ G.setConnectivity S T ↔ G.SetConnected S T := by
   simp_rw [le_setConnectivity_iff, one_le_encard_iff_nonempty]
   refine ⟨fun h ↦ ?_, ?_⟩
-  · by_contra! hc
+  · by_contra hc
     simpa using h <| isSetCut_empty hc
   rintro ⟨s, hs, t, ht, w, hw, rfl, rfl⟩ C hC
   obtain ⟨x, hxw, hxC⟩ := (show G.IsWalkFrom S T w from ⟨hw, hs, ht⟩).exists_mem_isSetCut hC
@@ -776,7 +776,7 @@ lemma EdgeSetConnGE.anti_right (hle : n ≤ m) (h : G.EdgeSetConnGE S T m) :
 @[simp]
 lemma EdgeSetConnGE_one_iff : G.EdgeSetConnGE S T 1 ↔ G.SetConnected S T := by
   refine ⟨fun h => ?_, fun h F hF => ?_⟩
-  · by_contra! hc
+  · by_contra hc
     simpa using h <| isEdgeSetCut_empty hc
   obtain ⟨s, hs, t, ht, w, hw, rfl, rfl⟩ := h
   have hwF : G.IsWalkFrom S T w := ⟨hw, hs, ht⟩

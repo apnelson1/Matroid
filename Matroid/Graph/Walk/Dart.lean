@@ -212,7 +212,7 @@ lemma preimage_fᵥ_encard_eq_eDegree (M : DartStructure G D) (v : V) :
     (M.fᵥ.preimage {v}).encard = G.eDegree v := by
   rw [eDegree_eq_encard_add_encard, M.fᵥ_preimage_eq_iUnion_dartFiber v,
     ← ENat.tsum_encard_eq_encard_biUnion (M.dartFiber_pairwiseDisjoint v),
-    incEdges_eq_isLoopAt_union_isNonloopAt, tsum_union_disjoint (f := (M.dartFiber v · |>.encard))
+    incEdges_eq_isLoopAt_union_isNonloopAt, tsum_union_of_disjoint (f := (M.dartFiber v · |>.encard))
     G.disjoint_isLoopAt_isNonLoopAt, tsum_congr (fun e ↦ M.dartFiber_encard_isLoopAt e.prop),
     tsum_congr (fun e ↦ M.dartFiber_encard_isNonloopAt e.prop), ENat.tsum_const, ENat.tsum_const,
     one_mul, ENat.card_coe_set_eq, ENat.card_coe_set_eq]

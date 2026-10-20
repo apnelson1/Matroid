@@ -416,11 +416,11 @@ lemma exists_infix_of_prop {p q : α → Prop} (hfirst : p w.first) (hlast : q w
     ∃ w' : WList α β, w'.IsInfix w ∧ p w'.first ∧ q w'.last ∧ (∀ x ∈ w'.vertex.tail, ¬ p x) ∧
       (∀ x ∈ w'.vertex.dropLast, ¬ q x) := by
   classical
-  exact ⟨w.betweenSets p q, betweenSets_isInfix w p q,
+  exact ⟨w.betweenSets {x | p x} {x | q x}, betweenSets_isInfix w {x | p x} {x | q x},
     betweenSets_first_mem ⟨w.first, by simp, hfirst⟩,
     betweenSets_last_mem ⟨w.last, (w.suffixFromLast_last p) ▸ last_mem, hlast⟩,
-    betweenSets_vertex_tail_not_prop w p q,
-    betweenSets_vertex_dropLast_not_prop w p q⟩
+    betweenSets_vertex_tail_not_prop w {x | p x} {x | q x},
+    betweenSets_vertex_dropLast_not_prop w {x | p x} {x | q x}⟩
 
 lemma exists_infix_of_exists_prop {p q : α → Prop} (hp : ∃ x ∈ w, p x) (hq : ∃ x ∈ w, q x) :
     ∃ w' : WList α β, w'.IsInfix w ∧ ((p w'.first ∧ q w'.last ∧ (∀ x ∈ w'.vertex.tail, ¬ p x) ∧

@@ -122,7 +122,8 @@ lemma Separation.contract_exists_disjoint_base_of_eConn_eq_one {N : Matroid α}
   · simp [h0]
   -- otherwise, coindependence of the singleton in `M ／ (P i)` is equivalent to being
   -- a noncoloop in `M` and disjoint from `P i`. We get the disjointness for free.
-  rw [coindep_contract_iff, and_iff_left (by grind), he, Coindep, indep_singleton]
+  rw [coindep_contract_iff, and_iff_left ((P.disjoint_bool i).symm.mono_left inter_subset_right),
+    he, Coindep, indep_singleton]
   -- `e` is a non-coloop of `N`, and therefore a non-coloop of the major `M`.
   have hNe := hN.isNonloop_of_mem <| show e ∈ N.E by grind [he.symm.subset]
   simpa [he] using hNe.of_isMinor hNM.dual
@@ -177,8 +178,7 @@ lemma Separation.indep_coindep_exists_basis_contraction_minor
     union_comm] at hDc
   have h₁ : (M ／ (P i)).Spanning C := by
     rw [contract_spanning_iff]
-    exact ⟨hDc, by grind only [= subset_def, !Separation.disjoint_bool, = disjoint_left,
-      = disjoint_comm, #758b, #def2]⟩
+    exact ⟨hDc, (P.disjoint_bool i).symm.mono_left hC⟩
   rw [spanning_iff_exists_isBase_subset] at h₁
   obtain ⟨B, hB, hBC⟩ := h₁
   use B
@@ -239,12 +239,12 @@ lemma exists_flexible {N : Matroid α} (hM : M.TutteConnected 3) (h4 : 4 ≤ M.E
   rw [induce_apply_subset _ hNM.subset] at hi
   rintro (rfl | rfl)
   · obtain ⟨φ⟩ := P.isoMinor_delete_of_notMem_coguts hPconn hNM hNl hNcl (i := !i)
-      (by simpa using hi) (by grind) hfcg
+      (by simpa using hi) (by grind [P.disjoint_bool i]) hfcg
     refine ⟨φ.trans_isMinor ?_⟩
     simp only [delete_delete, union_singleton, remove_false]
     exact delete_isMinor_delete_of_subset _ (by simp)
   obtain ⟨φ⟩ := P.isoMinor_contract_of_notMem_guts hPconn hNM hNl hNcl (i := !i)
-    (by simpa using hi) (by grind) hfg
+    (by simpa using hi) (by grind [P.disjoint_bool i]) hfg
   exact ⟨φ.trans_isMinor ((delete_isMinor ..).contract_isMinor_contract (by grind))⟩
 
 /-- A golfed version of the main result here. This uses `exists_flexible` as well as

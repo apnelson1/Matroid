@@ -8,7 +8,7 @@ module
 public import Mathlib.Order.Extension.Linear
 -- import Mathlib.Combinatorics.Graph.Subgraph
 public import Matroid.Graph.Subgraph.Basic
-public import Mathlib.Data.Sym.Sym2.Order
+public import Mathlib.Order.Sym2
 
 public section
 

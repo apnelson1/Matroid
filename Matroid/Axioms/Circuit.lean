@@ -172,7 +172,7 @@ protected def ofNonspanningCircuit
             rw [←hS.2.1]
             exact ncard_le_ncard hcon (h1.1)
           omega
-        · by_contra! hcon
+        · by_contra hcon
           have hcard : C₁.ncard ≤ C.ncard := by omega
           refine hCC₁ (eq_of_subset_of_ncard_le hcon hcard hS1.1)
 
@@ -280,7 +280,7 @@ protected def ofNonspanningCircuit
                 simp only [singleton_subset_iff]
                 exact mem_of_mem_of_subset (mem_of_mem_sdiff hf) h1
             · intro C₂ hC2
-              by_contra! hcon
+              by_contra hcon
               have hC2c : ∃ C₃, IsNonspanningCircuit C₃ ∧ C₃ ⊆ C \ {e} ∪ {f} := by
                 use C₂
               exact hsub hC2c

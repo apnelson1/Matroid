@@ -97,7 +97,7 @@ def relax (M : Matroid α) (T : Set (Set α)) (hT : M.IsLawfulRelaxation T) :
   Indep I := M.Indep I ∨ I ∈ T
   indep_iff' I := by
     constructor
-    · grind [Indep.exists_isBase_superset]
+    · grind [Indep.exists_isBase_superset (M := M)]
     rintro ⟨B, (hB | hBT), hIB⟩
     · exact .inl (hB.indep.subset hIB)
     obtain rfl | hssu := hIB.eq_or_ssubset

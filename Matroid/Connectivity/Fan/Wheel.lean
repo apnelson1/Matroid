@@ -70,7 +70,7 @@ lemma wheel_isCycleSet_true {n : ℕ} [NeZero n] : (wheel n).IsCycleSet {e | e.2
   obtain ⟨C, hC, hC_eq⟩ := (cycle_isCycle n).exists_isCyclicWalk_eq
   replace hC := hC.isCyclicWalk_apex.edgeMap
     (fun (x : Fin n ⊕ Fin n) ↦ ((x.elim id id, x.isLeft) : Fin n × Bool)) (by simp [InjOn])
-  convert hC.isCycleSet_edgeSet
+  convert hC.isCycleSet_edgeSet using 1
   · rfl
   simp only [edgeedgeSet_map, WList.edgeSet_map,
     show E(C) = univ by simpa using congr_arg Graph.edgeSet hC_eq, image_univ]
@@ -80,7 +80,7 @@ lemma wheel_isCycleSet_true {n : ℕ} [NeZero n] : (wheel n).IsCycleSet {e | e.2
 lemma wheel_isBond_false {n : ℕ} [NeZero n] : (wheel n).IsBond {e | e.2 = false} := by
   rw [wheel, isBond_edgeMap_iff' (by simp [Injective]) (by simp [Set.subset_def]),
     preimage_ofPred_eq]
-  convert PreconnGE.isBond_setLinkEdges_singleton (v := none) ?_ ?_ ?_
+  convert PreconnGE.isBond_setLinkEdges_singleton (v := none) ?_ ?_ ?_ using 1
   · simp [Set.ext_iff, Option.exists, mem_setLinkEdges_iff]
   · exact PreconnGE.apex <| by simpa using (cycle_isCycle n).connected.pre
   · simp
@@ -153,9 +153,9 @@ lemma wheel_isCyclicFan' (hn : n ≠ 0) :
     (Matroid.wheel n).IsCyclicFan ((List.finRange (n * 2)).map wheelFanEquiv.symm) false := by
   obtain rfl | hne := eq_or_ne n 1
   · have hbond : (Graph.wheel 1).IsBond {(0, false)} := by
-      convert Graph.wheel_isBond_false (n := 1); simp [Set.ext_iff]
+      convert Graph.wheel_isBond_false (n := 1) using 1; simp [Set.ext_iff]
     have hcyc : (Graph.wheel 1).IsCycleSet {(0, true)} := by
-      convert Graph.wheel_isCycleSet_true (n := 1); simp [Set.ext_iff]
+      convert Graph.wheel_isCycleSet_true (n := 1) using 1; simp [Set.ext_iff]
     suffices (Matroid.wheel 1).IsCyclicFan [(0, false), (0, true)] false by
       simpa [wheelFanEquiv_symm_apply 0, wheelFanEquiv_symm_apply 1]
     rw [isCyclicFan_two_iff rfl, and_iff_right (by simp)]

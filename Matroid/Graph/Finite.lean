@@ -204,7 +204,7 @@ lemma Simple.vertexSet_finite_iff [G.Simple] : V(G).Finite ↔ G.Finite :=
 instance (G : Graph α β) [G.Finite] : Finite G.Subgraph := finite_setOf_le G
 
 instance (G : Graph α β) [G.Finite] : Finite G.ClosedSubgraph :=
-  G.finite_setOf_le.subset fun _ hH ↦ hH.le
+  G.finite_setOf_le.subset (t := {H | H ≤c G}) fun _ hH ↦ hH.le
 
 instance [G.Finite] [H.Finite] : (G ∪ H).Finite where
   vertexSet_finite := G.vertexSet_finite.union H.vertexSet_finite
@@ -276,7 +276,7 @@ lemma ncard_delete_edgeSet_lt [G.Finite] (hF : (E(G) ∩ F).Nonempty) :
 
 lemma of_not_exists_minimal {P : Graph α β → Prop} [G.Finite]
     (h : ∀ H, H ≤ G → H.Finite → ¬ Minimal (¬ P ·) H) : P G := by
-  by_contra! hPG
+  by_contra hPG
   let P' := fun (H : G.Subgraph) ↦ ¬ P H.val
   obtain ⟨H, hH⟩ := exists_minimal_of_wellFoundedLT P' ⟨⟨G, le_refl _⟩, hPG⟩
   refine h H H.prop (‹G.Finite›.mono H.prop) ⟨hH.prop, fun H' hH' hH'' ↦ ?_⟩

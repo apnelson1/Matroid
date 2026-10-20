@@ -93,7 +93,7 @@ lemma IsForest.union_isForest_of_subsingleton_inter (hG : G.IsForest) (hH : H.Is
   obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet heG
   have := hxy.isBridge_iff_not_connBetween.mp (hG (hxy.edge_mem))
   rw [hxy.of_le (Graph.left_le_union ..) |>.isBridge_iff_not_connBetween]
-  contrapose! this
+  contrapose this
   obtain ⟨P, hP, rfl, rfl⟩ := this.exists_isPath
   use P, ?_
   obtain ⟨hP, heP⟩ : (G ∪ H).IsPath P ∧ e ∉ P.edge := by simpa using hP
@@ -172,7 +172,7 @@ lemma isCycle_iff : G.IsCycle ↔ Minimal (fun G : Graph α β ↦ ∃ e ∈ E(G
   simp [IsCycle, IsForest]
 
 lemma IsCycle.isForest_of_lt (hG : G.IsCycle) (hH : H < G) : H.IsForest := by
-  by_contra! hnotF
+  by_contra hnotF
   obtain rfl := Minimal.eq_of_le hG hnotF hH.le
   simp at hH
 
@@ -614,7 +614,7 @@ lemma isCycle_iff_minimal_connGE_two [G.Simple] : G.IsCycle ↔ Minimal (·.Conn
 
 lemma IsForest.of_deleteEdges_singleton (he : G.IsBridge e) (hG : (G ＼ {e}).IsForest) :
     G.IsForest := by
-  by_contra! h
+  by_contra h
   rw [not_isForest_iff_exists_isCycle] at h
   obtain ⟨H, hH, hHle⟩ := h
   have hHGe : H ≤ G ＼ {e} := by simpa [hHle] using (hH.not_isBridge <| he.anti_of_mem hHle ·)
@@ -660,7 +660,7 @@ lemma IsForest.exists_isPendant [G.EdgeFinite] (hG : G.IsForest) (hne : E(G).Non
   refine False.elim <| hG _ <| (hP'.cons_isCyclicWalk_of_nontrivial (e := e) ?_ ?_)
   · simpa only [prefixUntilVertex_first, first_cons, prefixUntilVertex_last hwP]
   rw [prefixUntilVertex_cons_of_ne _ he.adj.ne, cons_nontrivial_iff, ← not_nil_iff]
-  contrapose! hne
+  contrapose hne
   replace hne := hne.first_eq_last
   rwa [prefixUntilVertex_last, eq_comm, prefixUntilVertex_first] at hne
   rwa [mem_cons_iff, or_iff_right he.adj.ne.symm] at hwP

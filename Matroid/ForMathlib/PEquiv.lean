@@ -5,7 +5,7 @@ Authors: Jun Kwon
 -/
 module
 
-public import Mathlib.Data.PEquiv
+public import Mathlib.Basic.PEquiv
 public import Mathlib.Data.Set.Card
 
 /-!

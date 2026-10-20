@@ -1,6 +1,6 @@
 module
 
-public meta import Mathlib.Data.Ineq
+public meta import Mathlib.Tactic.Ineq
 public meta import Mathlib.Tactic.ENatToNat
 public import Mathlib.Data.Nat.Cast.Order.Basic
 

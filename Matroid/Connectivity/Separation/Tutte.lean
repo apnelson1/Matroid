@@ -712,8 +712,9 @@ lemma TutteConnected.tutteConnected_of_tutteConnected_isSpanningRestriction
     rw [hNM.isRestriction.indep_iff, and_iff_left P.subset_ground] at hPsep
     contradiction
   rw [induce_apply_self, i.not_not] at ⊢ hi
-  have hb := (hM₀M.spanning_of_spanning hs).isBase_of_indep (hi.subset (by grind))
-  have heq := (hb.eq_of_subset_indep hi (by grind)).symm.subset
+  have hb := (hM₀M.spanning_of_spanning hs).isBase_of_indep
+    (hi.subset (by grind [P.disjoint_bool i]))
+  have heq := (hb.eq_of_subset_indep hi (by grind [P.disjoint_bool i])).symm.subset
   grw [sdiff_subset_iff, P.subset_ground, P.subset_ground,
     union_eq_self_of_subset_right inter_subset_left] at heq
   simp [hNM.isMinor.eq_of_ground_subset heq] at hne

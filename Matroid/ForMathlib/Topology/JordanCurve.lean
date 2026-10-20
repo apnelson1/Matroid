@@ -365,7 +365,8 @@ theorem frontier_outsideOnePoint (hJ : IsJordanCurve J) :
   rw [hcompl, frontier_compl, isClosed_closure.frontier_eq, hcl]
   set Jimg : Set (OnePoint E) := OnePoint.some '' J
   have hinter : interior (hJ.insideOnePoint ∪ Jimg) = hJ.insideOnePoint := by
-    refine subset_antisymm (fun p hp ↦ (interior_subset hp).elim id fun hpJ ↦ ?_)
+    refine subset_antisymm (fun p hp ↦ (interior_subset (s := hJ.insideOnePoint ∪ Jimg) hp).elim id
+      fun hpJ ↦ ?_)
       <| hJ.insideOnePoint_isOpen.interior_eq.symm.subset.trans (interior_mono subset_union_left)
     obtain ⟨t, htss, htopen, hpt⟩ := mem_interior.1 hp
     obtain ⟨q, hqt, hqout⟩ := by

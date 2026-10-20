@@ -150,7 +150,7 @@ def path_insert (A : G.SetEnsemble) (P : WList α β) (hP : G.IsPath P)
 lemma path_insert_paths_encard (hP : G.IsPath P) (hdj : Disjoint A.vertexSet V(P)) :
     (A.path_insert P hP hdj).paths.encard = A.paths.encard + 1 := by
   rw [path_insert_paths, Set.encard_insert_of_notMem ?_]
-  contrapose! hdj
+  contrapose hdj
   rw [disjoint_comm, not_disjoint_iff]
   exact ⟨P.last, P.last_mem, A.mem_vertexSet_iff.mpr ⟨P, hdj, P.last_mem⟩⟩
 
@@ -219,7 +219,7 @@ lemma pathr_first_eq_of_vertex_last (hAST : A.between S T)
 lemma disjoint_pathr_of_ne_of_vertex (hAST : A.between S T)
     (hPfirst : A.vertexSet ∩ V(P) = {P.first}) (hPT : V(P) ⊆ T) (hQ : Q ∈ A.paths)
     (hQne : Q ≠ A.of_vertex P.first (A.pathr_mem hPfirst)) : Disjoint V(P) V(Q) := by
-  contrapose! hQne
+  contrapose hQne
   apply A.disjoint.eq hQ (A.of_vertex_mem_setEnsemble (A.pathr_mem hPfirst))
   rw [not_disjoint_iff] at hQne ⊢
   use P.first, ?_, A.mem_of_vertex (A.pathr_mem hPfirst)

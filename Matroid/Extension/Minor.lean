@@ -197,7 +197,7 @@ lemma exists_splice_of_contract_eq_deleteElem (heC : e ∉ C) (h_eq : M ／ C = 
 
   have hwin : C ⊆ M.closure (I \ {e} ∪ C) := M.subset_closure_of_subset' subset_union_right
 
-  rw [UM.extIndep_iff_of_mem (.inl heI)]
+  rw [UM.extIndep_iff_of_mem (mem_union_left _ heI)]
   simp [← h_eq, hrw1, hrw2, hrw3, hwin, hIC.contract_indep_iff, hdj.mono_right sdiff_subset, UM]
 
 lemma exists_splice_of_delete_eq_contractElem (heD : e ∉ D) (h_eq : M ＼ D = N ／ {e}) :

@@ -1,6 +1,6 @@
 module
 
-public import Mathlib.Data.Int.ConditionallyCompleteOrder
+public import Mathlib.Order.Int.ConditionallyCompleteOrder
 public import Mathlib.Order.Interval.Set.Fin
 public import Matroid.ForMathlib.Parity
 public import Mathlib.Order.Circular.ZMod
@@ -95,7 +95,8 @@ lemma Fin.one_ne_top {n : ℕ} [NeZero n] (hn : 2 < n) : (1 : Fin n) ≠ ⊤ := 
 
 lemma Fin.ofNat_ne_top {n k : ℕ} [NeZero n] [k.AtLeastTwo] (hn : k + 1 < n) :
     (ofNat(k) : Fin n) ≠ ⊤ := by
-  rw [Ne, ← Fin.val_inj, coe_ofNat_eq_mod, val_top, Nat.mod_eq_of_lt (by grind)]
+  rw [Ne, ← Fin.val_inj, coe_ofNat_eq_mod, val_top,
+    Nat.mod_eq_of_lt (show OfNat.ofNat k < n from Nat.lt_of_succ_lt hn)]
   change ¬ (k = n - 1)
   lia
 
@@ -320,10 +321,9 @@ lemma Fin.Icc_add_one_right_eq_insert {n : ℕ} [NeZero n] {a b : Fin n} (hab : 
   · grind
   · grind
   rw! [Icc, ofPred_and, Icc, ofPred_and, ← inter_insert_of_mem]
-  · convert rfl
+  · congr
     ext i
-    simp only [Set.mem_insert_iff, mem_ofPred_eq, le_iff_lt_or_eq (b := b + 1),
-      Fin.lt_add_one_iff_le hb, or_comm]
+    simp only [le_iff_lt_or_eq (b := b + 1), Fin.lt_add_one_iff_le hb, mem_ofPred_eq, or_comm]
   exact (hab.trans (by simpa))
 
 open Fin.NatCast in
