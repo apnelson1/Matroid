@@ -1,6 +1,9 @@
 module
 
+public import Mathlib.Data.ZMod.Basic
+public import Mathlib.Algebra.Group.Indicator
 public import Mathlib.Data.Nat.Bits
+public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Algebra.Ring.Parity
 public import Mathlib.Order.Basic
 public import Matroid.ForMathlib.Bool
@@ -167,3 +170,48 @@ lemma Fin.rev_bodd_of_even {n : ℕ} (hn : n.bodd = false) (a : Fin n) :
     a.rev.1.bodd = !a.1.bodd := by
   rw [a.rev_bodd]
   simp [hn]
+
+open scoped BigOperators symmDiff
+
+private theorem bool_change_cast (a b : Bool) :
+    ((if a ≠ b then 1 else 0 : ℕ) : ZMod 2) = (b.toNat : ZMod 2) - a.toNat := by
+  have h := Set.apply_indicator_symmDiff (g := id) ZMod.neg_eq_self_mod_two
+    {u : Unit | b = true} {u : Unit | a = true}
+    (fun _ ↦ (1 : ZMod 2)) ()
+  convert h using 1 <;> cases a <;> cases b <;> simp [symmDiff_def]
+
+private theorem fin_sum_differences {A : Type*} [AddCommGroup A] {n : ℕ}
+    (f : Fin (n + 1) → A) :
+    ∑ i : Fin n, (f i.succ - f i.castSucc) = f (Fin.last n) - f 0 := by
+  have h := (Fin.sum_univ_succ f).symm.trans (Fin.sum_univ_castSucc f)
+  rw [Finset.sum_sub_distrib]
+  apply sub_eq_sub_iff_add_eq_add.mpr
+  simpa [add_comm, add_left_comm] using h
+
+private theorem sequence_cast {n : ℕ} (l : Fin (n + 1) → Bool) :
+    ((Finset.univ.filter fun i : Fin n ↦ l i.castSucc ≠ l i.succ).card : ZMod 2) =
+      (l (Fin.last n)).toNat - (l 0).toNat := by
+  rw [Finset.card_eq_sum_ones, Finset.sum_filter, Nat.cast_sum]
+  simp_rw [bool_change_cast]
+  exact fin_sum_differences (fun i ↦ (l i).toNat : Fin (n + 1) → ZMod 2)
+
+/-- The number of changes in a finite Boolean sequence has the parity of its endpoint
+discrepancy. -/
+theorem Bool.card_changes_mod_two {n : ℕ} (l : Fin (n + 1) → Bool) :
+    (Finset.univ.filter fun i : Fin n ↦ l i.castSucc ≠ l i.succ).card % 2 =
+      if l 0 = l (Fin.last n) then 0 else 1 := by
+  have h := congrArg ZMod.val (sequence_cast l)
+  rw [ZMod.val_natCast] at h
+  cases h0 : l 0 <;> cases hn : l (Fin.last n) <;>
+    simpa [h0, hn, ZMod.val_one_eq_one_mod] using h
+
+/-- A Boolean labelling changes an even number of times under a permutation of a finite set. -/
+theorem Bool.even_card_permutation_changes {ι : Type*} [Fintype ι]
+    (perm : Equiv.Perm ι) (l : ι → Bool) :
+    Even ((Finset.univ.filter fun i ↦ l i ≠ l (perm i)).card) := by
+  classical
+  apply ZMod.natCast_eq_zero_iff_even.mp
+  rw [Finset.card_eq_sum_ones, Finset.sum_filter, Nat.cast_sum]
+  simp_rw [bool_change_cast]
+  rw [Finset.sum_sub_distrib,
+    Equiv.sum_comp perm (fun i ↦ ((l i).toNat : ZMod 2)), sub_self]

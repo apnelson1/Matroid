@@ -104,28 +104,47 @@ lemma IsPrimitive.symm : γ.symm.IsPrimitive := by
   rw [pair_eq_pair_iff] at hp ⊢
   simpa [symm_eq_zero, symm_eq_one, or_comm] using hp
 
+omit hγ in
+@[simp]
+lemma isPrimitive_symm_iff : γ.symm.IsPrimitive ↔ γ.IsPrimitive :=
+  ⟨fun h ↦ by simpa using h.symm, IsPrimitive.symm⟩
+
 lemma IsPrimitive.injOn_Ioo : InjOn γ <| Ioo (0 : I) 1 := hγ.injOn_Ico.mono Ioo_subset_Ico_self
 
-lemma IsPrimitive.source_notMem_interior : x ∉ γ.Interior :=
-  fun ⟨t, ht, htx⟩ ↦ ht.left.ne' <| hγ.injOn_Ico ⟨ht.left.le, ht.right⟩ (by simp) <|
-    htx.trans γ.source.symm
+/-- A primitive path visits its source only at the start, and also at the end exactly when it
+is a loop. -/
+lemma IsPrimitive.apply_eq_source_iff : γ t = x ↔ t = 0 ∨ t = 1 ∧ y = x := by
+  refine ⟨fun h ↦ ?_, by rintro (rfl | ⟨rfl, rfl⟩) <;> simp⟩
+  obtain h0 | hp := hγ (h.trans γ.source.symm)
+  · exact .inl h0
+  obtain ⟨rfl, -⟩ | ⟨rfl, -⟩ := pair_eq_pair_iff.mp hp
+  · exact .inl rfl
+  exact .inr ⟨rfl, γ.target.symm.trans h⟩
+
+/-- A primitive path visits its target only at the end, and also at the start exactly when it
+is a loop. -/
+lemma IsPrimitive.apply_eq_target_iff : γ t = y ↔ t = 1 ∨ t = 0 ∧ x = y := by
+  refine ⟨fun h ↦ ?_, by rintro (rfl | ⟨rfl, rfl⟩) <;> simp⟩
+  obtain h1 | hp := hγ (h.trans γ.target.symm)
+  · exact .inl h1
+  obtain ⟨rfl, -⟩ | ⟨rfl, -⟩ := pair_eq_pair_iff.mp hp
+  · exact .inr ⟨rfl, γ.source.symm.trans h⟩
+  exact .inl rfl
+
+lemma IsPrimitive.source_notMem_interior : x ∉ γ.Interior := by
+  rintro ⟨t, ht, htx⟩
+  obtain rfl | ⟨rfl, -⟩ := hγ.apply_eq_source_iff.1 htx <;> simp at ht
 
 lemma IsPrimitive.target_notMem_interior : y ∉ γ.Interior := by
-  simpa using hγ.symm.source_notMem_interior
+  rintro ⟨t, ht, hty⟩
+  obtain rfl | ⟨rfl, -⟩ := hγ.apply_eq_target_iff.1 hty <;> simp at ht
 
 lemma IsPrimitive.range_diff_endpoints : range γ \ {x, y} = γ.Interior :=
   Path.range_diff_endpoints hγ.source_notMem_interior hγ.target_notMem_interior
 
-lemma IsPrimitive.range_diff_endpoints_nonempty : (range γ \ {x, y}).Nonempty := by
-  rw [hγ.range_diff_endpoints]
-  exact γ.interior_nonempty
-
 lemma IsPrimitive.isPathConnected_range_diff_endpoints : IsPathConnected (range γ \ {x, y}) := by
   rw [hγ.range_diff_endpoints]
   exact γ.isPathConnected_interior
-
-lemma IsPrimitive.isConnected_range_diff_endpoints : IsConnected (range γ \ {x, y}) :=
-  hγ.isPathConnected_range_diff_endpoints.isConnected
 
 /-! ### Subpaths and halves -/
 
@@ -182,5 +201,40 @@ lemma IsPrimitive.injective_firstHalf : Injective γ.firstHalf :=
 
 lemma IsPrimitive.injective_secondHalf : Injective γ.secondHalf :=
   hγ.injective_subpath (show γ half ≠ γ 1 by simpa using hγ.half_ne_target)
+
+end Path
+
+/-! ### Selecting subpaths of two paths -/
+
+namespace Path
+
+variable {a b c : X} {η : Path a b}
+
+/-- If both endpoints of an injective path lie on the range of a primitive path, visited at a
+closed set of parameters, a point of the first path outside that range lies in an excursion
+subarc. A subarc of the second path joins its endpoints, in either parameter direction, and the
+two subpaths meet exactly at those distinct endpoints. -/
+theorem exists_subpaths_inter_eq_pair (hγ : Injective γ) (hη : η.IsPrimitive)
+    (hηc : IsClosed (γ ⁻¹' range η)) (hx : x ∈ range η) (hy : y ∈ range η)
+    (hc : c ∈ range γ \ range η) :
+    ∃ u v s t : I, (u, v) ∈ γ.excursions (range η) ∧
+      γ u = η s ∧ γ v = η t ∧ c ∈ γ '' Ioo u v ∧
+      Injective (γ.subpath u v) ∧ Injective (η.subpath s t) ∧
+      range (γ.subpath u v) ∩ range (η.subpath s t) = {γ u, γ v} := by
+  obtain ⟨⟨r, rfl⟩, hr⟩ := hc
+  obtain ⟨uv, huv, hruv⟩ := γ.exists_mem_excursions hηc hx hy hr
+  obtain ⟨s, hs⟩ := huv.2.1
+  obtain ⟨t, ht⟩ := huv.2.2.1
+  refine ⟨uv.1, uv.2, s, t, huv, hs.symm, ht.symm, ⟨r, hruv, rfl⟩,
+    injective_subpath hγ huv.1.ne, hη.injective_subpath (hs ▸ ht ▸ hγ.ne huv.1.ne), ?_⟩
+  apply Subset.antisymm
+  · intro z hz
+    apply (γ.range_subpath_inter_of_mem_excursions huv).subset
+    refine ⟨hz.1, ?_⟩
+    rw [η.range_subpath] at hz
+    exact image_subset_range η _ hz.2
+  rintro z (rfl | rfl)
+  · exact ⟨(γ.subpath uv.1 uv.2).source_mem_range, hs ▸ (η.subpath s t).source_mem_range⟩
+  exact ⟨(γ.subpath uv.1 uv.2).target_mem_range, ht ▸ (η.subpath s t).target_mem_range⟩
 
 end Path

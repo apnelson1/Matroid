@@ -1,20 +1,28 @@
 module
 
+public import Matroid.ForMathlib.Topology.Order
+public import Matroid.ForMathlib.Analysis.Convex.SegmentCover
 public import Mathlib.Analysis.Convex.Between
+public import Mathlib.Analysis.Convex.Topology
 public import Mathlib.Analysis.Normed.Module.Convex
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
+public import Mathlib.Topology.UnitInterval
 
 /-!
-# Unions and intersections of segments
+# Unions, intersections, and compact connected subsets of segments
 
 This file collects the facts about `segment` that are needed for polygonal curves, and that belong
 in `Mathlib.Analysis.Convex.Segment`.
 
 ## Main statements
 
+The imported `SegmentCover` module supplies affine injectivity and fiber criteria without topology.
+
 * `segment_union_eq_segment`, `affineSegment_union_eq_affineSegment` : splitting a segment at one
   of its points, in a module and in an affine space respectively.
 * `segment_subset_segment_right` : shortening a segment at its right endpoint.
+* `IsCompact.exists_eq_segment_of_isConnected_of_subset_segment` : a nonempty compact connected
+  subset of a Hausdorff segment is a segment; ambient Hausdorffness is not required.
 * `isCompact_setOf_lineMap_mem_segment`, `convex_setOf_lineMap_mem_segment` : the set of
   parameters `t ∈ [0,1]` with `lineMap a b t ∈ [c, d]` is compact and convex, hence a closed
   interval (`exists_eq_Icc_setOf_lineMap_mem_segment`).
@@ -30,14 +38,14 @@ No topology on `E` is assumed for the results about intersections: the parameter
 affine subspace of `ℝ × ℝ`, which is closed because `ℝ × ℝ` is finite-dimensional. Everything else
 (compactness, connectedness, the extreme value theorem) then happens in `ℝ`.
 
-`isCompact_setOf_lineMap_mem_segment` is the only place where that argument is made; all the
-statements below are corollaries of it together with the — purely algebraic — convexity of the same
-set.
+`isCompact_setOf_lineMap_mem_segment` is the only place where that argument is made; the
+intersection results below are corollaries of it together with the — purely algebraic — convexity
+of the same set.
 -/
 
 @[expose] public section
 
-open Set Function
+open Set Function AffineMap Topology Path
 
 /-! ### Splitting a segment -/
 
@@ -53,12 +61,10 @@ lemma segment_union_eq_segment {𝕜 E : Type*} [Field 𝕜] [LinearOrder 𝕜] 
     [AddCommGroup E] [Module 𝕜 E] {x y z : E} (hz : z ∈ segment 𝕜 x y) :
     segment 𝕜 x z ∪ segment 𝕜 z y = segment 𝕜 x y := by
   rw [segment_eq_image_lineMap] at hz
-  obtain ⟨t, ht, rfl⟩ := hz
-  rw [← (show AffineMap.lineMap x y '' segment 𝕜 0 t = segment 𝕜 x (AffineMap.lineMap x y t) from by
-    simp [image_segment]),
-      ← (show AffineMap.lineMap x y '' segment 𝕜 t 1 = segment 𝕜 (AffineMap.lineMap x y t) y from by
-    simp [image_segment]), ← image_union, segment_eq_Icc ht.1, segment_eq_Icc ht.2,
-    Icc_union_Icc_eq_Icc ht.1 ht.2, ← segment_eq_image_lineMap]
+  obtain ⟨t, ⟨ht0, ht1⟩, rfl⟩ := hz
+  trans ⇑(lineMap x y) '' (Icc 0 t ∪ Icc t 1)
+  · simp [image_union, image_segment, ← segment_eq_Icc ht0, ← segment_eq_Icc ht1]
+  rw [Icc_union_Icc_eq_Icc ht0 ht1, segment_eq_image_lineMap]
 
 /-- Splitting an affine segment at one of its points. -/
 lemma affineSegment_union_eq_affineSegment {R V P : Type*} [Field R] [LinearOrder R]
@@ -77,35 +83,96 @@ lemma segment_inter_subsegments_eq_singleton {E : Type*} [AddCommGroup E] [Modul
     {u v a : E} (huv : u ≠ v) (ha : a ∈ openSegment ℝ u v) :
     segment ℝ u a ∩ segment ℝ a v = {a} := by
   rw [openSegment_eq_image_lineMap] at ha
-  obtain ⟨t, ht, rfl⟩ := ha
-  apply Set.Subset.antisymm
-  · rintro w ⟨hw₁, hw₂⟩
-    rw [segment_eq_image_lineMap] at hw₁ hw₂
-    obtain ⟨r, hr, rfl⟩ := hw₁
-    obtain ⟨s, hs, heq⟩ := hw₂
-    have hleft : AffineMap.lineMap u (AffineMap.lineMap u v t) r =
-        AffineMap.lineMap u v (r * t) := by
-      simp only [AffineMap.lineMap_apply_module]
-      module
-    have hright : AffineMap.lineMap (AffineMap.lineMap u v t) v s =
-        AffineMap.lineMap u v (t + s * (1 - t)) := by
-      simp only [AffineMap.lineMap_apply_module]
-      module
-    rw [hleft, hright] at heq
-    have hparam : r * t = t + s * (1 - t) := (AffineMap.lineMap_injective ℝ huv) heq.symm
-    have hr_eq : r = 1 := by nlinarith [hr.1, hr.2, hs.1, hs.2, ht.1, ht.2]
-    subst r
-    simp
-  · simp [right_mem_segment, left_mem_segment]
+  obtain ⟨t, ⟨_, _⟩, rfl⟩ := ha
+  refine subset_antisymm (fun w ⟨hwu, hwv⟩ ↦ ?_) (by simp [right_mem_segment, left_mem_segment])
+  rw [segment_eq_image_lineMap] at hwu hwv
+  obtain ⟨r, ⟨_, _⟩, rfl⟩ := hwu
+  obtain ⟨s, ⟨_, _⟩, heq⟩ := hwv
+  rw [lineMap_lineMap_right u v t r, lineMap_lineMap_left u v t s,
+    (lineMap_injective ℝ huv).eq_iff] at heq
+  obtain rfl : r = 1 := by nlinarith
+  simp
 
 /-! ### Compactness -/
 
-/-- A segment is compact: it is the image of `[0, 1]` under `lineMap`. Mathlib has no such lemma,
-and every caller that has wanted one so far has reproved it locally. -/
+/-- A segment is compact as the image of the unit interval. -/
 lemma isCompact_segment {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
-    [IsTopologicalAddGroup E] [ContinuousSMul ℝ E] (u v : E) : IsCompact (segment ℝ u v) := by
-  rw [segment_eq_image_lineMap]
-  exact isCompact_Icc.image AffineMap.lineMap_continuous
+    [ContinuousAdd E] [ContinuousSMul ℝ E] (u v : E) : IsCompact (segment ℝ u v) := by
+  rw [← Path.range_segment]
+  exact isCompact_range (Path.segment u v).continuous
+
+lemma Path.segment_isEmbedding {V : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
+    [ContinuousAdd V] [ContinuousSMul ℝ V] {a b : V} [T2Space ↑(segment ℝ a b)] (hab : a ≠ b) :
+    IsEmbedding (Path.segment a b) := by
+  let f : unitInterval → segment ℝ a b :=
+    fun t ↦ ⟨Path.segment a b t, range_segment a b ▸ mem_range_self t⟩
+  have hf : Continuous f := (Path.segment a b).continuous.subtype_mk _
+  have hinj : Injective f := fun _ _ h ↦ segment_injective_of_ne hab (congrArg Subtype.val h)
+  exact IsEmbedding.subtypeVal.comp (hf.isClosedEmbedding hinj).isEmbedding
+
+/-- A compact connected subset of a Hausdorff segment is a segment, including the
+singleton case. Only the segment, not the ambient vector space, must be Hausdorff. -/
+lemma IsCompact.exists_eq_segment_of_isConnected_of_subset_segment {V : Type*}
+    [AddCommGroup V] [Module ℝ V] [TopologicalSpace V] [ContinuousAdd V] [ContinuousSMul ℝ V]
+    {C : Set V} {a b : V} [T2Space ↥(segment ℝ a b)] (hc : IsCompact C) (hconn : IsConnected C)
+    (hsub : C ⊆ segment ℝ a b) : ∃ x y, C = segment ℝ x y := by
+  obtain rfl | hab := eq_or_ne a b
+  · use a, a
+    rw [segment_same] at hsub ⊢
+    exact hconn.nonempty.subset_singleton_iff.mp hsub
+  obtain ⟨s, t, hst, rfl⟩ :=
+    (segment_isEmbedding hab).exists_eq_image_Icc_of_isConnected_isCompact
+    (by rwa [range_segment]) hconn hc
+  refine ⟨Path.segment a b s, Path.segment a b t, Eq.symm ?_⟩
+  simp only [segment_apply] -- this also probably should be an API about segment and Path.segment
+  rw [← image_image, image_subtype_val_Icc,
+    ← segment_eq_Icc (show (s : ℝ) ≤ t from hst), image_segment]
+
+/-! ### Approaching a strict halfspace along an open segment -/
+
+section OrderedRing
+
+variable {K V : Type*} [Ring K] [LinearOrder K] [IsStrictOrderedRing K]
+  [DenselyOrdered K] [TopologicalSpace K] [OrderTopology K]
+  [AddCommGroup V] [Module K V] [TopologicalSpace V]
+  [ContinuousConstVAdd V V] [ContinuousSMul K V] {S : Set V}
+
+theorem AffineMap.mem_closure_lt_of_openSegment_subset (f : V →ᵃ[K] K) {p a : V}
+    (hseg : openSegment K p a ⊆ S) (hfa : f p < f a) :
+    p ∈ closure {q | q ∈ S ∧ f p < f q} := by
+  have hline : Continuous (lineMap p a : K → V) := by
+    have hsmul : Continuous (fun t : K ↦ t • (a - p)) :=
+      continuous_id.smul continuous_const
+    have htrans : Continuous (fun x : V ↦ p +ᵥ x) := continuous_const_vadd p
+    change Continuous (fun t : K ↦ t • (a - p) + p)
+    simpa only [Function.comp_def, lineMap_apply_module', vadd_eq_add, add_comm]
+      using htrans.comp hsmul
+  have hpcl : p ∈ closure (openSegment K p a) := by
+    rw [openSegment_eq_image_lineMap]
+    apply image_closure_subset_closure_image hline
+    refine ⟨0, ?_, by simp⟩
+    rw [closure_Ioo (zero_ne_one' K)]
+    exact ⟨le_rfl, zero_le_one⟩
+  refine closure_mono ?_ hpcl
+  intro q hq
+  refine ⟨hseg hq, ?_⟩
+  exact (openSegment_subset_Ioo hfa (image_openSegment K f p a ▸ mem_image_of_mem f hq)).1
+
+end OrderedRing
+
+theorem openSegment_subset_openSegment_right_of_mem {K V : Type*}
+    [Ring K] [LinearOrder K] [IsStrictOrderedRing K] [AddCommGroup V] [Module K V]
+    {a b p : V} (hp : p ∈ openSegment K a b) :
+    openSegment K p b ⊆ openSegment K a b := by
+  obtain ⟨t, ⟨ht0, ht1⟩, rfl⟩ := openSegment_eq_image_lineMap K a b ▸ hp
+  intro q hq
+  obtain ⟨s, ⟨hs0, hs1⟩, rfl⟩ := openSegment_eq_image_lineMap K _ b ▸ hq
+  rw [lineMap_lineMap_left]
+  apply lineMap_mem_openSegment
+  refine ⟨?_, sub_lt_self _ (mul_pos (sub_pos.mpr hs1) (sub_pos.mpr ht1))⟩
+  refine sub_pos.mpr <| (mul_lt_mul_of_pos_left (sub_lt_self _ ht0) (sub_pos.mpr hs1)).trans ?_
+  rw [mul_one]
+  exact sub_lt_self 1 hs0
 
 /-! ### Intersections of segments
 
@@ -185,27 +252,20 @@ lemma segment_inter_segment_eq_segment_of_nonempty
 the intersection beyond which `[a, b]` never meets the other segment again. -/
 lemma exists_last_mem_segment_inter_segment (h : (segment ℝ a b ∩ segment ℝ c d).Nonempty) :
     ∃ q ∈ segment ℝ a b ∩ segment ℝ c d, Disjoint (openSegment ℝ q b \ {b}) (segment ℝ c d) := by
-  set T := {t : ℝ | t ∈ Icc 0 1 ∧ AffineMap.lineMap a b t ∈ segment ℝ c d}
-  obtain ⟨m, hmT, hm⟩ := by
-    refine (isCompact_setOf_lineMap_mem_segment a b c d).exists_isMaxOn (?_) continuousOn_id
+  set T := {t : ℝ | t ∈ Icc 0 1 ∧ lineMap a b t ∈ segment ℝ c d}
+  have hTne : T.Nonempty := by
     obtain ⟨w, hwab, hwcd⟩ := h
-    obtain ⟨t, ht, rfl⟩ := segment_eq_image_lineMap ℝ a b ▸hwab
+    obtain ⟨t, ht, rfl⟩ := segment_eq_image_lineMap ℝ a b ▸ hwab
     exact ⟨t, ht, hwcd⟩
-  refine ⟨AffineMap.lineMap a b m, ⟨lineMap_mem_segment ℝ a b hmT.1, hmT.2⟩,
+  obtain ⟨m, ⟨⟨hm0, hm1⟩, hmcd⟩, hm⟩ :=
+    (isCompact_setOf_lineMap_mem_segment a b c d).exists_isMaxOn hTne continuousOn_id
+  refine ⟨lineMap a b m, ⟨lineMap_mem_segment ℝ a b ⟨hm0, hm1⟩, hmcd⟩,
     disjoint_left.mpr fun w ⟨hwopen, hwb⟩ hwcd ↦ ?_⟩
-  by_cases hm1 : m = 1
-  · rw [hm1] at hwopen
-    simp only [AffineMap.lineMap_apply_one, openSegment_same, mem_singleton_iff] at hwopen
-    exact hwb hwopen
-  obtain ⟨r, hr, rfl⟩ := openSegment_eq_image_lineMap ℝ _ b ▸ hwopen
-  have hnested : AffineMap.lineMap (AffineMap.lineMap a b m) b r =
-      AffineMap.lineMap a b (m + r * (1 - m)) := by
-    simp only [AffineMap.lineMap_apply_module]
-    module
-  have hmlt : m < 1 := lt_of_le_of_ne hmT.1.2 hm1
-  have hle : m + r * (1 - m) ≤ m :=
-    hm (⟨⟨by nlinarith [hmT.1.1, hr.1, hr.2], by nlinarith [hr.2]⟩, by rw [← hnested]; exact hwcd⟩)
-  nlinarith [hr.1]
+  obtain rfl | _ := hm1.eq_or_lt
+  · simp only [lineMap_apply_one, openSegment_same, hwb] at hwopen
+  obtain ⟨r, ⟨_, _⟩, rfl⟩ := openSegment_eq_image_lineMap ℝ _ b ▸ hwopen
+  have : 1 - (1 - r) * (1 - m) ≤ m := hm ⟨⟨?_, ?_⟩, lineMap_lineMap_left a b m r ▸ hwcd⟩
+  all_goals nlinarith
 
 end Real
 
@@ -233,6 +293,14 @@ lemma ne_of_mem_openSegment_right (hab : a ≠ b) (hp : p ∈ openSegment ℝ a 
   · exact hab h'
   exact ht1.ne ht
 
+/-- Removing the endpoints of a nondegenerate segment leaves its open segment. -/
+lemma segment_sdiff_pair (hab : a ≠ b) : segment ℝ a b \ {a, b} = openSegment ℝ a b := by
+  ext x
+  refine ⟨fun ⟨hx, hn⟩ ↦ mem_openSegment_of_ne_left_right (fun h ↦ hn (Or.inl h.symm))
+    (fun h ↦ hn (Or.inr h.symm)) hx, fun hx ↦ ⟨openSegment_subset_segment ℝ a b hx, ?_⟩⟩
+  rintro (rfl | rfl)
+  · exact ne_of_mem_openSegment_left hab hx rfl
+  exact ne_of_mem_openSegment_right hab hx rfl
 
 /-- A segment carrying an interior point other than its left endpoint is nondegenerate.
 The converse direction to `ne_of_mem_openSegment_left`, which needs `a ≠ b` to start with. -/

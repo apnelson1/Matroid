@@ -139,6 +139,10 @@ lemma IsCircuit.isPathConnected (hC : IsCircuit C) : IsPathConnected C := by
   obtain ⟨f, hf, rfl⟩ := hC
   exact isPathConnected_range f.continuous
 
+lemma IsCircuit.isCompact (hC : IsCircuit C) : IsCompact C := by
+  obtain ⟨f, -, rfl⟩ := hC
+  exact isCompact_range f.continuous
+
 lemma circle_isCircuit : IsCircuit (univ : Set Circle) :=
   ⟨ContinuousMap.id Circle, injective_id, by simp⟩
 
@@ -305,6 +309,11 @@ lemma isCircuit_iff_range_path_injOn_Ico :
     rw [Path.range_ofCircle f]
   rintro ⟨x, P, hPinj, rfl⟩
   use P.onCircle, Path.onCircle_injective hPinj, by simp
+
+lemma IsCircuit.infinite (hC : IsCircuit C) : C.Infinite := by
+  obtain ⟨x, P, hP, rfl⟩ := isCircuit_iff_range_path_injOn_Ico.mp hC
+  exact ((Ico_infinite (show (0 : I) < 1 from zero_lt_one)).image hP).mono
+    (image_subset_range ..)
 
 lemma IsCircuit.exists_path_injOn_Ico (hC : IsCircuit C) (hx : x ∈ C) :
     ∃ P : Path x x, InjOn P (Ico 0 1) ∧ range P = C := by

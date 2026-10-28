@@ -141,7 +141,7 @@ lemma RealizationEmbedding_isEmbedding (h : H ≤ G) :
       by_cases heH : e.val ∈ E(H)
       · rw [preimage_edgePath_image_union_compl_range h heH]
         exact hs ⟨e.val, heH⟩
-      · exact isOpen_of_Ioo_subset fun _ ht ↦
+      · exact unitInterval.isOpen_of_Ioo_subset fun _ ht ↦
           Or.inr (h.edgePath_notMem_range_RealizationEmbedding heH ht)
     rintro ⟨t, ht, rfl⟩
     exact (Realization.isOpen_iff _).mp (ht.preimage h.continuous_RealizationEmbedding)

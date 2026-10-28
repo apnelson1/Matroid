@@ -1,12 +1,15 @@
 This repo is aiming to formalize the bread and butter of matroid theory in lean4.
-The goal is eventually to have is all included in the lean4 math library : 
+The goal is eventually to have is all included in the lean4 math library :
 https://github.com/leanprover-community/mathlib4
 
-Experimental : the following link should give an auto-updating repo-specific documentation page: 
+Experimental : the following link should give an auto-updating repo-specific documentation page:
 https://apnelson1.github.io/Matroid/docs
 
+To build the repository without compiling the whole library, use the prebuilt build cache:
+see [CACHE.md](CACHE.md).
+
 At the time of writing, the contents of this repo are being submitted to mathlib piece by piece.
-Currently already in mathlib are : 
+Currently already in mathlib are :
 
 * The definition of a matroid in terms of the base axioms : Mathlib/Data/Matroid/Basic
 * Construction of matroids in terms of independence axioms : Mathlib/Data/Matroid/IndepAxioms
@@ -46,5 +49,5 @@ Topics in this repo are listed below.
 * Circuit/cocircuit intersections : Matroid/Binary/Crossing
 * Tutte's excluded minor theorem for finitary binary matroids : Matroid/Binary/Representation
 
-If you have any feature requests or thoughts, please contact me at apnelson@uwaterloo.ca - 
+If you have any feature requests or thoughts, please contact me at <apnelson@uwaterloo.ca> -
 I am more than happy to see others make use of this code!

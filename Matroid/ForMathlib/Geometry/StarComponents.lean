@@ -27,6 +27,22 @@ open Set Metric Topology Filter
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   {S : Set V} {p q : V} {ρ : ℝ} {Y : Finset V}
 
+/-- Every point of the figure in the open ball of a two-radius star lies in the closure of
+any sector. This includes the centre and the relative interiors of both radii. -/
+theorem ball_inter_subset_closure_sector_of_card_eq_two [Fact (Module.finrank ℝ V = 2)] (hρ : 0 < ρ)
+    (hY : ↑Y ⊆ sphere p ρ) (hcard : Y.card = 2) {C : Set V}
+    (hstar : closedBall p ρ ∩ S = {p} ∪ ⋃ y ∈ Y, segment ℝ p y) (hC : C ∈ sectors p ρ Y) :
+    ball p ρ ∩ S ⊆ closure C := by
+  rintro q ⟨hqball, hqS⟩
+  obtain rfl | hqp := eq_or_ne q p
+  · exact mem_closure_of_mem_sectors hρ (Finset.card_pos.mp (by omega)) hY hC
+  obtain ⟨y, hy, hqseg⟩ :=
+    mem_iUnion₂.mp <| (show q ∈ ({p} ∪ ⋃ y ∈ Y,
+      segment ℝ p y : Set V) from hstar ▸ ⟨ball_subset_closedBall hqball, hqS⟩).resolve_left hqp
+  exact ((sectors_mem_closure_eq_of_card_eq_two hρ hY hcard hy (⟨hqseg, by
+    simp [hqp, (show q ≠ y from ((mem_ball.mp hqball).ne <| · ▸ mem_sphere.mp (hY hy)))]⟩)).symm ▸
+    hC).right
+
 /-- **Euclidean sector extraction.** If the closed ball at `p` meets `S` in a nonempty star, then
 any component of `Sᶜ` whose frontier reaches a point `q` of the open ball contains a whole sector
 of the punctured disk. -/

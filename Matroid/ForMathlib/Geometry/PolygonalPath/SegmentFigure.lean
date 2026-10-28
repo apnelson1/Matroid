@@ -24,11 +24,11 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {a b p x y : V} 
 theorem PolygonalPath.isSegmentFigure_toSet (P : PolygonalPath x y) : IsSegmentFigure P.toSet := by
   rw [PolygonalPath.toSet_eq_insert_biUnion]
   exact (IsSegmentFigure.biUnion P.edges.finite_toSet
-    (fun s _ ↦ isSegmentFigure_segment s.1 s.2)).insert y
+    (fun s _ ↦ isSegmentFigure_segment s.fst s.snd)).insert y
 
 open Function Metric unitInterval PolygonalPath Or
 
-open Classical in
+open Classical Finset in
 private lemma exists_polygonalPath_in_star (hγ : γ.IsPrimitive) (hr : 0 < r) {Y : Finset V}
     (hY : ↑Y ⊆ sphere p r) (hsub : range γ ⊆ {p} ∪ ⋃ y ∈ Y, segment ℝ p y) :
     ∃ P : PolygonalPath a b, P.toSet = range γ := by
@@ -36,9 +36,7 @@ private lemma exists_polygonalPath_in_star (hγ : γ.IsPrimitive) (hr : 0 < r) {
     ((hγ.finite_preimage <| finite_singleton p).insert half) fun s t hst hcut ↦ ?_
   have hne : γ s ≠ γ t := by
     intro heq
-    obtain heq | heq := hγ heq
-    · exact hst.ne heq
-    obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := pair_eq_pair_iff.mp heq
+    obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := pair_eq_pair_iff.mp <| (hγ heq).resolve_left hst.ne
     · exact hcut half ⟨zero_lt_half, half_lt_one⟩ <| inl rfl
     exact hst.not_ge zero_le_one
   let K := γ '' Ioo s t
@@ -54,16 +52,16 @@ private lemma exists_polygonalPath_in_star (hγ : γ.IsPrimitive) (hr : 0 < r) {
     have hKB : K ⊆ segment ℝ p y ∪ ⋃ v ∈ Y.erase y, segment ℝ p v := by
       intro q hq
       obtain ⟨v, hv, hqv⟩ := mem_iUnion₂.mp <| hcover hq
-      by_cases hvy : v = y
-      · exact inl <| hvy ▸ hqv
-      exact inr <| mem_iUnion₂.mpr ⟨v, Finset.mem_erase.mpr ⟨hvy, hv⟩, hqv⟩
-    obtain ⟨q, hq, hqy, hqB⟩ := isPreconnected_closed_iff.mp hK.isPreconnected
-      _ _ (isCompact_segment p y).isClosed ((Y.erase y).finite_toSet.isClosed_biUnion
-        fun v _ ↦ (isCompact_segment p v).isClosed) hKB ⟨z, hz, hzy⟩
-      ⟨w, hw, (hKB hw).resolve_left hwy⟩
+      obtain rfl | hvy := eq_or_ne v y
+      · exact inl hqv
+      exact inr <| mem_iUnion₂.mpr ⟨v, mem_erase.mpr ⟨hvy, hv⟩, hqv⟩
+    obtain ⟨q, hq, hqy, hqB⟩ :=
+      isPreconnected_closed_iff.mp hK.isPreconnected _ _ (isCompact_segment p y).isClosed
+      ((Y.erase y).finite_toSet.isClosed_biUnion fun v _ ↦ (isCompact_segment p v).isClosed) hKB
+      ⟨z, hz, hzy⟩ ⟨w, hw, (hKB hw).resolve_left hwy⟩
     obtain ⟨v, hv, hqv⟩ := mem_iUnion₂.mp hqB
     exact hp <| eq_center_of_mem_two_radii (ne_of_mem_sphere (hY hy) hr.ne')
-      ((hY (Finset.mem_erase.mp hv).right).trans (hY hy).symm) (Finset.mem_erase.mp hv).left.symm
+      ((hY (mem_erase.mp hv).right).trans (hY hy).symm) (mem_erase.mp hv).left.symm
         hqy hqv ▸ hq
   have hpiece : range (γ.subpath s t) ⊆ segment ℝ p y := by
     simpa only [γ.range_subpath_of_le _ _ hst.le, ← closure_Ioo hst.ne] using
@@ -85,26 +83,26 @@ private theorem Path.IsPrimitive.exists_polygonalPath_of_isSegmentFigure (hγ : 
   have hpieces (n) : ∃ P : PolygonalPath (γ <| t n) <| γ <| t <| n + 1,
       P.toSet = γ '' (Icc (t n) <| t <| n + 1) := by
     obtain heq | hlt := (hmono <| le_succ n).eq_or_lt
-    · exact ⟨(nil <| γ <| t n).cast rfl <| congrArg γ heq, by
-      simp only [toSet_cast, toSet_nil, heq, Icc_self, image_singleton]⟩
+    · refine ⟨(nil <| γ <| t n).cast rfl <| congrArg γ heq, ?_⟩
+      simp only [toSet_cast, toSet_nil, heq, Icc_self, image_singleton]
     obtain ⟨u, hu⟩ := hcover n
     obtain ⟨P, hP⟩ := exists_polygonalPath_in_star (hγ.subpath hlt.ne) (hr u) (hY u) (by
       rw [range_subpath_of_le _ _ _ hlt.le]
       rintro z ⟨v, hv, rfl⟩
       exact (hstar u).subset ⟨ball_subset_closedBall <| hu hv, hsub <| mem_range_self v⟩)
     exact ⟨P, hP.trans <| γ.range_subpath_of_le _ _ hlt.le⟩
-  have hprefix (n) : ∃ P : PolygonalPath (γ <| t 0) <| γ <| t n,
-      P.toSet = γ '' Icc (t 0) (t n) := by
+  have hprfix (n) : ∃ P : PolygonalPath (γ <| t 0) <| γ <| t n, P.toSet = γ '' Icc (t 0) (t n) := by
     induction n with
-    | zero => exact ⟨nil _, by
-      simp only [toSet_nil, Icc_self, image_singleton]⟩
+    | zero =>
+      refine ⟨nil _, ?_⟩
+      simp only [toSet_nil, Icc_self, image_singleton]
     | succ n ih =>
       obtain ⟨P, hP⟩ := ih
       obtain ⟨Q, hQ⟩ := hpieces n
-      exact ⟨P.append Q, by
-        rw [toSet_append, hP, hQ, ← image_union,
-          Icc_union_Icc_eq_Icc (hmono <| zero_le n) <| hmono <| le_succ n]⟩
-  obtain ⟨P, hP⟩ := hprefix N
+      refine ⟨P.append Q, ?_⟩
+      rw [toSet_append, hP, hQ, ← image_union,
+        Icc_union_Icc_eq_Icc (hmono <| zero_le n) <| hmono <| le_succ n]
+  obtain ⟨P, hP⟩ := hprfix N
   refine ⟨P.cast (ht0 ▸ γ.source) <| hN N le_rfl ▸ γ.target, ?_⟩
   simpa only [toSet_cast, ht0, hN N le_rfl, Icc_eq_univ, image_univ] using hP
 
@@ -137,14 +135,12 @@ theorem isPrimitiveLink_and_isSegmentFigure_iff {L : Set V} :
 /-- A primitive link that is a segment figure has a primitive polygonal representative,
 including when its endpoints coincide. -/
 theorem IsPrimitiveLink.exists_polygonalPath {L : Set V} (hL : IsPrimitiveLink L a b)
-    (hpoly : IsSegmentFigure L) :
-    ∃ P : PolygonalPath a b, P.toPath.IsPrimitive ∧ P.toSet = L :=
+    (hpoly : IsSegmentFigure L) : ∃ P : PolygonalPath a b, P.toPath.IsPrimitive ∧ P.toSet = L :=
   isPrimitiveLink_and_isSegmentFigure_iff.mp ⟨hL, hpoly⟩
 
 /-- A primitive link contained in a segment figure is itself a segment figure. -/
 theorem IsSegmentFigure.of_isPrimitiveLink_subset {S L : Set V} {a b : V}
-    (hS : IsSegmentFigure S) (hL : IsPrimitiveLink L a b) (hsub : L ⊆ S) :
-    IsSegmentFigure L :=
+    (hS : IsSegmentFigure S) (hL : IsPrimitiveLink L a b) (hsub : L ⊆ S) : IsSegmentFigure L :=
   hS.of_isClosed_isPreconnected hsub hL.isCompact.isClosed hL.isConnected.isPreconnected
 
 end

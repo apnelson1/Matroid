@@ -2,11 +2,16 @@ module
 
 public import Mathlib.SetTheory.Cardinal.Finite
 public import Mathlib.Topology.Connected.LocallyConnected
+public import Mathlib.Topology.Connected.Clopen
 
 public section
 
 /-!
-# Frontiers and counting of connected components
+# Point sets, frontiers, and counting of connected components
+
+`ConnectedComponents.toSet` extracts the points of a component in its underlying space.
+For a component of a subspace, its image under subtype inclusion is relatively closed;
+`ConnectedComponents.inter_closure_image_toSet` states that fact in the ambient space.
 
 Small facts about `connectedComponentIn` and the frontiers of its components: where the frontier of
 a component lies, when that frontier is nonempty, and when an open set is a component of a
@@ -16,7 +21,7 @@ complement.
 nonempty open connected pieces.
 -/
 
-open Set Topology
+open Set Topology Function
 
 variable {X : Type*} [TopologicalSpace X] {U S : Set X} {x : X}
 
@@ -82,9 +87,50 @@ theorem eq_connectedComponentIn_of_frontier_subset {W K : Set X} {a : X} (hW : I
   simp only [mem_sdiff, hzc, true_and, not_not] at hzf
   exact hzf
 
-/-! ### Counting the components of a two-piece open partition -/
+/-! ### Point sets of connected components -/
 
 namespace ConnectedComponents
+
+/-- The points in a connected component, as the fiber of the component quotient. -/
+@[expose] def toSet (c : ConnectedComponents X) : Set X := mk ⁻¹' {c}
+
+@[simp] lemma mem_toSet (c : ConnectedComponents X) (x : X) :
+    x ∈ c.toSet ↔ mk x = c := Iff.rfl
+
+@[simp] lemma toSet_mk (x : X) : (mk x).toSet = connectedComponent x :=
+  connectedComponents_preimage_singleton
+
+lemma toSet_nonempty (c : ConnectedComponents X) : c.toSet.Nonempty := by
+  obtain ⟨x, rfl⟩ := surjective_coe c
+  exact ⟨x, rfl⟩
+
+lemma isConnected_toSet (c : ConnectedComponents X) : IsConnected c.toSet := by
+  obtain ⟨x, rfl⟩ := surjective_coe c
+  rw [toSet_mk]
+  exact isConnected_connectedComponent
+
+lemma isClosed_toSet (c : ConnectedComponents X) : IsClosed c.toSet := by
+  obtain ⟨x, rfl⟩ := surjective_coe c
+  rw [toSet_mk]
+  exact isClosed_connectedComponent
+
+lemma toSet_injective : Injective (toSet (X := X)) := by
+  intro c d h
+  obtain ⟨x, hx⟩ := c.toSet_nonempty
+  exact hx.symm.trans (show x ∈ d.toSet from h ▸ hx)
+
+lemma disjoint_toSet {c d : ConnectedComponents X} (h : c ≠ d) :
+    Disjoint c.toSet d.toSet :=
+  disjoint_left.mpr fun _ hc hd ↦ h (hc.symm.trans hd)
+
+/-- A component of a subspace is closed in that subspace, without ambient closedness. -/
+lemma inter_closure_image_toSet {S : Set X} (c : ConnectedComponents ↥S) :
+    S ∩ closure (Subtype.val '' c.toSet) = Subtype.val '' c.toSet := by
+  apply subset_antisymm
+  · rintro x ⟨hxS, hx⟩
+    exact ⟨⟨x, hxS⟩, c.isClosed_toSet.closure_subset (closure_subtype.mpr hx), rfl⟩
+  · rintro x ⟨y, hy, rfl⟩
+    exact ⟨y.2, subset_closure ⟨y, hy, rfl⟩⟩
 
 /-- A set that splits into two disjoint nonempty open connected pieces has exactly two connected
 components.
@@ -136,3 +182,25 @@ theorem card_eq_two {s u v : Set X} (hu : IsOpen u) (hv : IsOpen v) (hcu : IsCon
     · exact hnu
 
 end ConnectedComponents
+
+/-- The component indexed by a member of a clopen connected partition is that member. -/
+theorem ConnectedComponents.preimage_singleton_equivOfIsClopenOfIsConnected_symm
+    {ι : Type*} {U : ι → Set X}
+    (hclopen : ∀ i, IsClopen (U i)) (hdisj : Pairwise (Disjoint on U))
+    (hcover : ⋃ i, U i = univ) (hconn : ∀ i, IsConnected (U i)) (i : ι) :
+    ConnectedComponents.mk ⁻¹'
+      {(ConnectedComponents.equivOfIsClopenOfIsConnected hclopen hdisj hcover hconn).symm i} =
+        U i := by
+  let q := ConnectedComponents.equivOfIsClopenOfIsConnected hclopen hdisj hcover hconn
+  ext x
+  change ConnectedComponents.mk x = q.symm i ↔ x ∈ U i
+  constructor
+  · intro hx
+    obtain ⟨j, hj⟩ := iUnion_eq_univ_iff.mp hcover x
+    have hq : q (ConnectedComponents.mk x) = j :=
+      ConnectedComponents.equivOfIsClopenOfIsConnected_mk hclopen hdisj hcover hconn x hj
+    have hji : j = i := by simpa [hx] using hq.symm
+    exact hji ▸ hj
+  · intro hx
+    exact q.injective (by simpa using
+      ConnectedComponents.equivOfIsClopenOfIsConnected_mk hclopen hdisj hcover hconn x hx)

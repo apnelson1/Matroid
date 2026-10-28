@@ -4,7 +4,7 @@ public import Lake.CLI.Main
 
 /-!
 
-Usage: `lean --run script/Modulize.lean [--meta] file1.lean file2.lean ...`
+Usage: `lean --run scripts/Modulize.lean [--meta] file1.lean file2.lean ...`
 
 A simple script that inserts `module` and `public section` into un-modulized files and
 bumps their imports to `public`.
@@ -14,7 +14,7 @@ When `--meta` is passed, `public meta section` and `public meta import` is used 
 
 open Lean Parser.Module
 
-def main (args : List String) : IO Unit := do
+public def main (args : List String) : IO Unit := do
   let mut args := args
   let mut doMeta := false
   while !args.isEmpty && args[0]!.startsWith "-" do

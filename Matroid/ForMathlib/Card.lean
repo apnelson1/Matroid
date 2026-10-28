@@ -1,6 +1,7 @@
 module
 
 public import Mathlib.Data.Set.Card
+public import Mathlib.Algebra.Ring.Parity
 public import Matroid.ForMathlib.ENat
 public import Mathlib.Algebra.BigOperators.WithTop
 public import Mathlib.Algebra.BigOperators.Finprod
@@ -376,3 +377,10 @@ lemma Nat.encard_Iio (n : ℕ) : (Set.Iio n).encard = n := by
 @[simp]
 lemma Nat.encard_Iic (n : ℕ) : (Set.Iic n).encard = n + 1 := by
   rw [← Iio_insert, encard_insert_of_notMem (by simp), encard_Iio]
+
+theorem Set.even_ncard_union {A B : Set α} (hAB : Disjoint A B)
+    (hA : Even A.ncard) (hB : Even B.ncard) : Even (A ∪ B).ncard := by
+  rcases (A ∪ B).finite_or_infinite with hfin | hinf
+  · rw [ncard_union_eq hAB (hfin.subset subset_union_left) (hfin.subset subset_union_right)]
+    exact hA.add hB
+  · simp [hinf.ncard]

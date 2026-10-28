@@ -41,7 +41,7 @@ def diskMinusRadii (x : V) (ρ : ℝ) (Y : Finset V) : Set V :=
   ball x ρ \ ⋃ y ∈ Y, segment ℝ x y
 
 /-- The sectors: the connected components of `diskMinusRadii`, represented as a set of subsets. -/
-def sectors (x : V) (ρ : ℝ) (Y : Finset V) : Set (Set V) :=
+noncomputable def sectors (x : V) (ρ : ℝ) (Y : Finset V) : Set (Set V) :=
   (fun p ↦ connectedComponentIn (diskMinusRadii x ρ Y) p) '' diskMinusRadii x ρ Y
 
 variable {x : V} {ρ : ℝ} {Y : Finset V} {C : Set V} {p : V}

@@ -119,6 +119,16 @@ theorem exists_finite_convexHull_eq (hS : IsSegmentFigure S) :
   exact (convex_convexHull ℝ _).segment_subset
     (subset_convexHull ℝ _ (Or.inl (Or.inl rfl))) (subset_convexHull ℝ _ (Or.inl (Or.inr rfl)))
 
+theorem finite_iff (hS : IsSegmentFigure S) : S.Finite ↔ ∀ a b, segment ℝ a b ⊆ S → a = b := by
+  refine ⟨fun h a b hab ↦ finite_segment_iff.mp (h.subset hab), fun h ↦ ?_⟩
+  obtain ⟨E, hE, rfl⟩ := hS
+  exact hE.biUnion fun e he ↦ finite_segment_iff.mpr <| h e.1 e.2 (fun x hx ↦ mem_biUnion he hx)
+
+theorem infinite_iff (hS : IsSegmentFigure S) : S.Infinite ↔ ∃ a b, a ≠ b ∧ segment ℝ a b ⊆ S := by
+  rw [Set.Infinite, hS.finite_iff]
+  push Not
+  aesop
+
 end IsSegmentFigure
 
 end

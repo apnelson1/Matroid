@@ -99,21 +99,22 @@ example {t : I} (h₀ : t ≠ 0) (h₁ : t ≠ 1) : t = 0 ∨ t = 1 ∨ t ∈ Io
   grind [unitInterval.eq_zero_or_eq_one_or_mem_Ioo]
 
 -- `Path.image_Icc_subset_of_isConnected`, `@[grind →]`: keyed on the antecedents, which do mention
--- every variable, unlike `exists_lastExit_firstEntry` below.
+-- every variable, unlike `exists_lastExit_firstEntry_closedBall` below.
 example {α : Type*} [TopologicalSpace α] [T2Space α] {x y : α} {γ : Path x y}
     (hinj : Function.Injective γ) {S : Set α} (hS : IsConnected S) (hSsub : S ⊆ range γ)
     {t₁ t₂ : I} (h₁ : γ t₁ ∈ S) (h₂ : γ t₂ ∈ S) : γ '' Icc t₁ t₂ ⊆ S := by grind
 
--- `Path.exists_lastExit_firstEntry` is a *producer*, and `grind` cannot use it even as a hint:
--- `grind [Path.exists_lastExit_firstEntry]` is rejected with `failed to find an usable pattern
--- using different modifiers`, for the same reason both attribute forms were. The working shape is
--- to instantiate it and let `grind` consume the facts it yields. That is not a defect, and it is
--- the answer whenever a lemma's principal argument lives only under an existential.
+-- `Path.exists_lastExit_firstEntry_closedBall` is a *producer*, and `grind` cannot use it even
+-- as a hint: `grind [Path.exists_lastExit_firstEntry_closedBall]` is rejected with `failed to find
+-- an usable pattern using different modifiers`, for the same reason both attribute forms were.
+-- The working shape is to instantiate it and let `grind` consume the facts it yields. That is not
+-- a defect, and it is the answer whenever a lemma's principal argument lives only under an
+-- existential.
 example {α : Type*} [PseudoMetricSpace α] {a b c d : α} (γ : Path a b) {rc rd : ℝ}
     (hdisj : Disjoint (closedBall c rc) (closedBall d rd))
     (ha : a ∈ closedBall c rc) (hb : b ∈ closedBall d rd) :
     ∃ t : I, dist (γ t) c = rc ∧ γ t ∈ closedBall c rc := by
-  obtain ⟨t, s, hts, hc, hd, hmc, hmd⟩ := γ.exists_lastExit_firstEntry hdisj ha hb
+  obtain ⟨t, s, hts, hc, hd, hmc, hmd⟩ := γ.exists_lastExit_firstEntry_closedBall hdisj ha hb
   grind [mem_closedBall]
 
 end Path

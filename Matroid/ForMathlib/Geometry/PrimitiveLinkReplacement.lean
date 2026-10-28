@@ -35,7 +35,7 @@ theorem IsPrimitiveLink.exists_radial {cu cv : V} {ru rv : ℝ} (hru : 0 < ru) (
       zu ∈ L ∧ zv ∈ L := by
   obtain ⟨γ, hγ, rfl⟩ := hL
   obtain ⟨τ, τv, hτlt, hzu_dist, hzv_dist, hmid_u, hmid_v⟩ :=
-    γ.exists_lastExit_firstEntry hballs hx hy
+    γ.exists_lastExit_firstEntry_closedBall hballs hx hy
   set zu := γ τ
   set zv := γ τv
   have hsub : range (γ.subpath τ τv) ⊆ range γ := by
@@ -58,25 +58,17 @@ theorem IsPrimitiveLink.exists_radial {cu cv : V} {ru rv : ℝ} (hru : 0 < ru) (
   have hcv_ne : zv ≠ cv := ne_of_mem_sphere hzv_dist hrv.ne'
   have hzz : zu ≠ zv := fun h ↦ hballs.notMem_of_mem_left
     (mem_closedBall.mpr hzu_dist.le) (h ▸ mem_closedBall.mpr hzv_dist.le)
-  have hleft : IsPrimitiveLink (segment ℝ cu zu) cu zu := by
-    rw [← Path.range_segment]
-    exact .of_injective (Path.segment_injective_of_ne hcu_ne)
-  have hright : IsPrimitiveLink (segment ℝ zv cv) zv cv := by
-    rw [← Path.range_segment]
-    exact .of_injective (Path.segment_injective_of_ne hcv_ne)
+  have hleft := isPrimitiveLink_segment hcu_ne
+  have hright := isPrimitiveLink_segment hcv_ne
   have hjoin : IsPrimitiveLink (segment ℝ cu zu ∪ Q) cu zv :=
-    hleft.union hQlink hcu_ne hzz (Subset.antisymm
-      (fun w hw ↦ hQ_u ⟨hw.2, hBu hw.1⟩)
-      (singleton_subset_iff.mpr ⟨hleft.right_mem, hQlink.left_mem⟩))
+    hleft.union hQlink hcu_ne hzz fun w hw ↦ hQ_u ⟨hw.2, hBu hw.1⟩
   let S := segment ℝ cu zu ∪ Q ∪ segment ℝ zv cv
   have hS : IsPrimitiveLink S cu cv := by
     apply hjoin.union hright (fun h ↦ hballs.notMem_of_mem_left
       (mem_closedBall_self hru.le) (h ▸ mem_closedBall.mpr hzv_dist.le)) hcv_ne
-    apply Subset.antisymm
-    · rintro w ⟨hw | hw, hv⟩
-      · exact ((hballs.mono hBu hBv).notMem_of_mem_left hw hv).elim
-      · exact hQ_v ⟨hw, hBv hv⟩
-    · exact singleton_subset_iff.mpr ⟨hjoin.right_mem, hright.left_mem⟩
+    rintro w ⟨hw | hw, hv⟩
+    · exact ((hballs.mono hBu hBv).notMem_of_mem_left hw hv).elim
+    · exact hQ_v ⟨hw, hBv hv⟩
   have hu : segment ℝ cu zu ∩ closedBall cv rv = ∅ := (hballs.mono_left hBu).inter_eq
   have hv : segment ℝ zv cv ∩ closedBall cu ru = ∅ := (hballs.symm.mono_left hBv).inter_eq
   refine ⟨zu, zv, S, hS,
@@ -129,7 +121,7 @@ private theorem exists_polygonal_arc_family
     · exact hxa (Subtype.ext ha)
     · exact hxb (Subtype.ext hb)
   choose t s hts hdistu hdistv hinteru hinterv using fun i ↦
-    (F i).exists_lastExit_firstEntry (hdisj (hne i))
+    (F i).exists_lastExit_firstEntry_closedBall (hdisj (hne i))
       (mem_closedBall_self (hpos _).le) (mem_closedBall_self (hpos _).le)
   let Q := fun i ↦ (F i).subpath (t i) (s i)
   have hQr (i) : range (Q i) = F i '' Icc (t i) (s i) :=
@@ -265,10 +257,18 @@ theorem exists_polygonal_primitiveLink_family {ι : Type*} [Finite ι]
       (∀ i, M i ∩ Z = {(a i).1, (b i).1}) ∧
       (Pairwise fun i j ↦ M i ∩ M j ⊆ Z) ∧ ∀ i, M i ⊆ U i := by
   classical
-  choose m hm A B hA hB hunion hinter using fun i ↦ (hL i).exists_split
+  choose m hm using fun i ↦ (hL i).diff_endpoints_nonempty
   have hmZ (i) : m i ∉ Z := fun h ↦ (hm i).2 (hLV i ⟨(hm i).1, h⟩)
   have hma (i) : m i ≠ (a i).1 := fun h ↦ hmZ i (h ▸ (a i).2)
   have hmb (i) : m i ≠ (b i).1 := fun h ↦ hmZ i (h ▸ (b i).2)
+  let A (i) := (hL i).splitLeft (m i)
+  let B (i) := (hL i).splitRight (m i)
+  have hA (i) : IsPrimitiveLink (A i) (a i).1 (m i) :=
+    (hL i).isPrimitiveLink_splitLeft (hm i).1 (hma i)
+  have hB (i) : IsPrimitiveLink (B i) (m i) (b i).1 :=
+    (hL i).isPrimitiveLink_splitRight (hm i).1 (hmb i)
+  have hinter (i) : A i ∩ B i = {m i} ∪ ({(a i).1} ∩ {(b i).1}) :=
+    (hL i).splitLeft_inter_splitRight (hm i).1
   have howner {i j} (h : m j ∈ L i) : i = j := by
     by_contra hij
     exact hmZ j (hLL hij ⟨h, (hm j).1⟩)
@@ -290,8 +290,8 @@ theorem exists_polygonal_primitiveLink_family {ι : Type*} [Finite ι]
   have hKsub (j) : K j ⊆ L j.1 := by
     obtain ⟨i, q⟩ := j
     cases q
-    · exact (hunion i) ▸ subset_union_left
-    · exact (hunion i) ▸ subset_union_right
+    · exact (hL i).splitLeft_subset (m i)
+    · exact (hL i).splitRight_subset (m i)
   have hKV (j) : K j ∩ Z' ⊆ {(c j).1, (d j).1} := by
     rintro z ⟨hz, hzZ | ⟨i, rfl⟩⟩
     · have hzends := hLV j.1 ⟨hKsub j hz, hzZ⟩

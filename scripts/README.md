@@ -92,6 +92,20 @@ Notes:
 - The script modifies files in place, adding `-- inefficient import` comments to imports that can be improved.
 - Already marked imports (containing `-- inefficient`) are skipped.
 - The script compiles each test case using `lake env lean` to verify changes.
+- Headers may contain `module`, `prelude`, nested comments, and `public`, `meta`,
+  or `all` import modifiers. Replacement imports respect visibility through both
+  import steps. The scanner supports complete single-line imports with ASCII
+  module names; other layouts end the scan. Imports with trailing multiline
+  block comments are left untouched.
+- Compilation checks the current file, not compatibility with downstream users
+  of its exported API. Interrupted compilation restores the source file.
+
+Run the regression tests, including Lean checks of import visibility and `meta`
+evaluation, from the repository root:
+
+```bash
+uv run python -m unittest discover -s scripts -p 'test_detect_inefficient_imports.py' -v
+```
 
 ---
 
