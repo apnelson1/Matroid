@@ -24,7 +24,7 @@ lemma ModularCut.multiconn_add_eq_multiConn_projectBy_add (U : M.ModularCut)
   · convert aux (fun i ↦ X i ∩ M.E) (fun i ↦ inter_subset_right) using 2 with i
     · rw [multiConn_inter_ground]
     · simp [← iUnion_inter]
-    · exact multiConn_inter_ground_congr <| by simp [inter_assoc]
+    · exact multiConn_inter_ground_congr <| by simp
     simp
   wlog h : ∃ e, e ∉ M.E generalizing α M X U with aux
   · have ho := Option.some_injective α
@@ -61,7 +61,7 @@ lemma ModularCut.multiconn_dual_add_eq_multiConn_projectBy_dual_add (U : M.Modul
   · convert aux (fun i ↦ X i ∩ M.E) (fun i ↦ inter_subset_right) using 2 with i
     · rw [← M.dual_ground, multiConn_inter_ground]
     · simp
-    · exact multiConn_inter_ground_congr <| by simp [inter_assoc]
+    · exact multiConn_inter_ground_congr <| by simp
     simp [← iUnion_inter]
   wlog h : ∃ e, e ∉ M.E generalizing α M X U with aux
   · have ho := Option.some_injective α

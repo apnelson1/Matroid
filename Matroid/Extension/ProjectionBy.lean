@@ -597,11 +597,9 @@ lemma Projector.exists_contract_delete_of_embedding (P : N.Projector M β) (φ :
   refine ⟨(P : Matroid (α ⊕ β)).map (Sum.elim id φ) hinj, ?_, ?_⟩
   · rw [← contract_inter_ground_eq, map_ground]
     convert ((P : Matroid (α ⊕ β)).contract_map hinj hss).symm
-    · simp [image_sumElim, inter_union_distrib_left, hφ.inter_eq,
-        inter_eq_self_of_subset_right (image_subset_range ..), pivot, image_image]
+    · simp [image_sumElim, inter_union_distrib_left, hφ.inter_eq, pivot, image_image]
     simp [P.contract_image_pivot, map_map]
   rw [← delete_inter_ground_eq, map_ground]
   convert ((P : Matroid (α ⊕ β)).delete_map hinj hss).symm
-  · simp [image_sumElim, inter_union_distrib_left, hφ.inter_eq,
-      inter_eq_self_of_subset_right (image_subset_range ..), pivot, image_image]
+  · simp [image_sumElim, inter_union_distrib_left, hφ.inter_eq, pivot, image_image]
   simp [P.delete_image_pivot, map_map]

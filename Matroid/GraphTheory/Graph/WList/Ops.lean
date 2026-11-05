@@ -322,7 +322,7 @@ lemma append_right_injective : Injective (w ++ ·) :=
 @[simp]
 lemma append_vertexSet_of_eq (h : w₁.last = w₂.first) : V(w₁ ++ w₂) = V(w₁) ∪ V(w₂) := by
   induction w₁ with
-  | nil u => simp [insert_eq_of_mem, show u = w₂.first from h]
+  | nil u => simp [show u = w₂.first from h]
   | cons u e w ih =>
     simp only [last_cons] at h
     simp [ih h, insert_union]

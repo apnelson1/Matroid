@@ -1025,10 +1025,10 @@ def toggle (P : M.Separation) (X : Set α) : M.Separation where
   toFun i := (P i) ∆ (X ∩ M.E)
   pairwise_disjoint' := by
     simp only [symmDiff_def, _root_.pairwise_disjoint_on_bool' true,
-      P.diff_eq_inter_bool _ inter_subset_right, sup_eq_union]
+      P.diff_eq_inter_bool _ inter_subset_right]
     grind [P.disjoint_true_false]
   iUnion_eq' := by
-    simp only [symmDiff_def, P.diff_eq_inter_bool _ inter_subset_right, sup_eq_union, iUnion_bool]
+    simp only [symmDiff_def, P.diff_eq_inter_bool _ inter_subset_right, iUnion_bool]
     grind [P.union_eq]
 
 lemma toggle_apply' (P : M.Separation) (X : Set α) (i : Bool) :
@@ -1049,7 +1049,6 @@ lemma toggle_apply_eq_diff (P : M.Separation) (hX : X ⊆ P i) : P.toggle X i = 
 
 lemma toggle_apply_eq_union (P : M.Separation) (hX : X ⊆ P (!i)) : P.toggle X i = P i ∪ X := by
   rw [toggle_apply, (symmDiff_eq_sup ..).2 <| (P.disjoint_bool i).mono_right hX]
-  rfl
 
 @[simp]
 lemma toggle_toggle (P : M.Separation) (X Y : Set α) :

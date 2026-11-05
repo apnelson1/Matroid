@@ -667,8 +667,7 @@ lemma discrete_le_iff : Partition.discrete S ≤ P ↔ S ⊆ P.supp := by
 @[simp]
 lemma discrete_isInducedSubpartition_iff :
     Partition.discrete S ≤ip Q ↔ S ⊆ Q.supp ∧ Atomic (Q.induce S) := by
-  simp only [isInducedSubpartition_iff, supp_discrete, atomic_iff_eq_discrete, ↓induce_supp',
-    inf_eq_inter]
+  simp only [isInducedSubpartition_iff, supp_discrete, atomic_iff_eq_discrete, ↓induce_supp']
   refine ⟨fun h => ?_, fun ⟨hsu, heq⟩ => by rw [heq, inter_eq_left.mpr hsu]⟩
   have hsupp : S ⊆ Q.supp := by
     rw [← supp_discrete S, ← h]

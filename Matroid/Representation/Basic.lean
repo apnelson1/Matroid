@@ -2,7 +2,6 @@ module
 
 public import Mathlib.LinearAlgebra.Dimension.Free
 public import Matroid.Connectivity.Skew
--- import Matroid.ForMathlib.LinearAlgebra.LinearIndependent
 public import Matroid.ForMathlib.LinearAlgebra.LinearIndepOn
 
 @[expose] public section

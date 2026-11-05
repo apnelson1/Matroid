@@ -93,7 +93,7 @@ lemma div2_mod (m : ℕ) {n} (hn : n.bodd = false) : (m % n).div2 = m.div2 % n.d
   have hn' : Even n := by rwa [← Nat.not_odd_iff_even, ← Nat.bodd_eq_odd, Bool.not_eq_true]
   obtain ⟨a, rfl⟩ : ∃ a, n = 2 * a := (even_iff_exists_two_nsmul n).mp hn'
   clear hn hn'
-  induction m using Nat.strong_induction_on with | h m ih =>
+  induction m using Nat.strong_induction_on with | ind m ih =>
   obtain rfl | hne := eq_or_ne a 0
   · simp
   obtain hlt | hle := lt_or_ge m (2 * a)

@@ -294,7 +294,7 @@ lemma length_induction {motive : ∀ {x y : α}, PolygonalPath x y → Prop}
     (P : PolygonalPath x y) : motive P := by
   generalize hn : P.length = n
   induction n using Nat.strong_induction_on generalizing x y with
-  | h n hrec => exact ih P fun Q hQ ↦ hrec Q.length (hn ▸ hQ) Q rfl
+  | ind n hrec => exact ih P fun Q hQ ↦ hrec Q.length (hn ▸ hQ) Q rfl
 
 /-! ### Concatenation, reversal, suffixes -/
 

@@ -17,8 +17,8 @@ section map
 lemma Projectivization.mk_apply_rep {K L V W : Type*} [DivisionRing K] [AddCommGroup V]
     [Module K V] [DivisionRing L] [AddCommGroup W] [Module L W] {σ : K →+* L} {τ : L →+* K}
     [RingHomInvPair σ τ] (f : V →ₛₗ[σ] W) (hf : Injective f) (x : Projectivization K V) :
-    mk L (f x.rep) (by simp [f.map_eq_zero_iff hf, x.rep_nonzero]) = map (σ := σ) f hf x := by
-  simpa using (map_mk (W := W) (σ := σ) f hf x.rep x.rep_nonzero).symm
+    mk L (f x.rep) (by simp [f.map_eq_zero_iff hf, x.rep_ne_zero]) = map (σ := σ) f hf x := by
+  simpa using (map_mk (W := W) (σ := σ) f hf x.rep x.rep_ne_zero).symm
 
 @[simps]
 def Projectivization.mapEquiv {K L V W : Type*} [DivisionRing K] [AddCommGroup V]
@@ -95,7 +95,7 @@ lemma Projectivization.mapEquiv_mapEquiv_symm {K L V W : Type*} [DivisionRing K]
 lemma Projectivization.mapEquiv_mk_symm_mk {K L V W : Type*} [Field K] [AddCommGroup V]
     [Module K V] [DivisionRing L] [AddCommGroup W] [Module L W] {σ : K →+* L} {τ : L →+* K}
     [RingHomInvPair σ τ] [RingHomInvPair τ σ] (f : V ≃ₛₗ[σ] W) (x : Projectivization K V) :
-    mk K (f.symm (mapEquiv f x).rep) (by simp [rep_nonzero]) = x := by
+    mk K (f.symm (mapEquiv f x).rep) (by simp [rep_ne_zero]) = x := by
   have h := mk_apply_rep (σ := τ) (V := W) (W := V) (f := (f.symm : W →ₛₗ[τ] V))
     f.symm.injective (mapEquiv f x)
   refine (Eq.trans ?_ h).trans ?_
@@ -126,7 +126,7 @@ lemma Projectivization.mapEquiv_indep_iff {W K : Type*} [Field K] [Module K V] [
   rw [independent_iff]
   rw [← f.symm.linearIndependent_iff_of_injOn f.symm.injective.injOn]
   change LinearIndependent K (fun i ↦ f.symm ((mapEquiv f (v i)).rep)) ↔ Independent v
-  rw [← independent_comp_mk_iff _ (by simp [rep_nonzero])]
+  rw [← independent_comp_mk_iff _ (by simp [rep_ne_zero])]
   simp only [mapEquiv_mk_symm_mk]
 
 end map
@@ -136,7 +136,7 @@ end map
 @[simp]
 theorem Projectivization.independent_subsingleton [Subsingleton ι] (f : ι → Projectivization K V) :
     Independent f := by
-  simp [independent_iff, rep_nonzero]
+  simp [independent_iff, rep_ne_zero]
 
 lemma Projectivization.independent_equiv {ι' : Type*} (e : ι ≃ ι') {f : ι' → Projectivization K V} :
     Independent (f ∘ e) ↔ Independent f := by
@@ -171,7 +171,7 @@ lemma Projectivization.mem_submodule_iff' (K : Type*) {V : Type*} [DivisionRing 
     [Module K V] {v : V} {w : Projectivization K V} (hv : v ≠ 0) :
     v ∈ w.submodule ↔ mk K v hv = w := by
   obtain ⟨a, ha⟩ := exists_smul_eq_mk_rep K v hv
-  rw [w.submodule_eq, Submodule.mem_span_singleton₀ hv, ← mk_eq_mk_iff _ _ _ hv w.rep_nonzero,
+  rw [w.submodule_eq, Submodule.mem_span_singleton₀ hv, ← mk_eq_mk_iff _ _ _ hv w.rep_ne_zero,
     mk_rep]
 
 @[simp]
@@ -186,12 +186,12 @@ lemma Projectivization.independent_pair {u v : Projectivization K V} :
     Independent (fun x : ({u,v} : Set _) ↦ x.1) := by
   rw [independent_iff]
   obtain rfl | hne := eq_or_ne u v
-  · simp [u.rep_nonzero]
-  rw [linearIndependent_comp_subtype_iff, linearIndepOn_pair_iff _ hne (rep_nonzero u)]
+  · simp [u.rep_ne_zero]
+  rw [linearIndependent_comp_subtype_iff, linearIndepOn_pair_iff _ hne (rep_ne_zero u)]
   refine fun c hc ↦ hne ?_
   rw [← v.mk_rep]
-  have hc0 : c ≠ 0 := by rintro rfl; simpa [v.rep_nonzero] using hc.symm
-  simp_rw [← hc, mk_smul_eq' u.rep_nonzero hc0, mk_rep]
+  have hc0 : c ≠ 0 := by rintro rfl; simpa [v.rep_ne_zero] using hc.symm
+  simp_rw [← hc, mk_smul_eq' u.rep_ne_zero hc0, mk_rep]
 
 @[simp]
 lemma Projectivization.submodule_span_range_rep (K W : Type*) [DivisionRing K] [AddCommGroup W]
@@ -205,7 +205,7 @@ lemma Projectivization.submodule_span_range_rep (K W : Type*) [DivisionRing K] [
   have hmem : b i ∈ Submodule.span K {(mk (K := K) (V := W) (b i) hi0).rep} := by
     rw [Submodule.mem_span_singleton₀ (b.ne_zero i), ← mk_eq_mk_iff _ _ _ hi0]
     · simp only [mk_rep]
-    exact rep_nonzero (mk K (b i) hi0)
+    exact rep_ne_zero (mk K (b i) hi0)
   exact mem_of_mem_of_subset hmem <| Submodule.span_mono <| by simp
 
 variable {ι K V : Type*} [Field K] [AddCommGroup V] [Module K V]
@@ -221,10 +221,10 @@ lemma Projectivization.Subspace.mem_span_iff_rep (K : Type*) {V : Type*} [Field 
     exact Submodule.add_mem _ hx₁' hx₂'
   suffices aux : ∀ ⦃a⦄ (hasp : a ∈ Submodule.span K (Projectivization.rep '' s)) (ha : a ≠ 0),
       Projectivization.mk K a ha ∈ Subspace.span s by
-    simpa using aux h b.rep_nonzero
+    simpa using aux h b.rep_ne_zero
   refine fun a ↦ Submodule.span_induction
     (p := fun a ha ↦ ∀ ha0, Projectivization.mk K a ha0 ∈ Subspace.span s) ?_ (by simp) ?_ ?_
-  · simpa [rep_nonzero] using fun _ h ↦ Subspace.subset_span _ h
+  · simpa [rep_ne_zero] using fun _ h ↦ Subspace.subset_span _ h
   · intro x y hx hy hx' hy' hxy
     obtain rfl | hx0 := eq_or_ne x 0
     · simpa using hy' (by simpa using hxy)
@@ -322,7 +322,7 @@ lemma Submodule.toProjSubspace_toSubmodule (W : Submodule K V) :
 lemma Projectivization.toSubmodule_toProjSubspace (W : Subspace K V) :
     W.toSubmodule.toProjSubspace = W := by
   ext
-  simp [Subspace.mem_toSubmodule_iff, rep_nonzero]
+  simp [Subspace.mem_toSubmodule_iff, rep_ne_zero]
 
 /-- The natural isomorphism between the projective subspace lattice and the subspace lattice. -/
 @[simps]
@@ -336,7 +336,7 @@ noncomputable def Projectivization.subspace_orderIso_submodule (K V : Type*)
     intro X₁ X₂
     simp only [Equiv.coe_fn_mk, IsConcreteLE.le_iff, Subspace.mem_toSubmodule_iff, ne_eq, true_and,
       forall_eq_or_imp, not_true_eq_false, IsEmpty.exists_iff, or_false, forall_exists_index]
-    exact ⟨fun h x hx₁ ↦ by simpa [x.rep_nonzero, hx₁] using h x.rep,
+    exact ⟨fun h x hx₁ ↦ by simpa [x.rep_ne_zero, hx₁] using h x.rep,
       fun h v hv hvX₁ ↦ .inr ⟨hv, h hvX₁⟩⟩
 
 @[simp]
@@ -388,7 +388,7 @@ lemma Projectivization.Subspace.span_toSubmodule {K V : Type*} [Field K] [AddCom
     [Module K V] (s : Set (Projectivization K V)) :
     (span s).toSubmodule = Submodule.span K (Projectivization.rep '' s) := by
   refine (Submodule.span_eq_of_le _ ?_ ?_).symm
-  · suffices ∀ a ∈ s, a ∈ span s by simpa [Subspace.mem_toSubmodule_iff, subset_def, rep_nonzero]
+  · suffices ∀ a ∈ s, a ∈ span s by simpa [Subspace.mem_toSubmodule_iff, subset_def, rep_ne_zero]
     exact fun a has ↦ subset_span _ has
   simp only [IsConcreteLE.le_iff, mem_toSubmodule_iff, ne_eq, forall_eq_or_imp, Submodule.zero_mem,
     forall_exists_index, true_and]

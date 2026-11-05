@@ -37,7 +37,7 @@ lemma closureBy_subset_ground (M : Matroid α) (h : ∀ X ⊆ M.E, P X → cl X 
 @[simp]
 lemma closureBy_inter_ground (M : Matroid α) :
     M.closureBy P cl (X ∩ M.E) = M.closureBy P cl X := by
-  simp [closureBy, inter_assoc]
+  simp [closureBy]
 
 @[gcongr]
 lemma closureBy_subset (M : Matroid α) (hXY : X ⊆ Y) :

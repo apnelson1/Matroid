@@ -37,7 +37,7 @@ lemma multiConn_project_eq_multiConn_contract (M : Matroid α) (C : Set α) :
   wlog hXE : ∀ i, X i ⊆ M.E generalizing X with aux
   · rw [← multiConn_inter_ground, aux _ (by simp), ← multiConn_inter_ground, eq_comm,
       ← multiConn_inter_ground]
-    simp [inter_assoc, inter_eq_self_of_subset_right sdiff_subset]
+    simp [inter_assoc]
   rwa [eq_comm, ← (M ／ C).multiConn_restrict_of_subset (R := M.E), project]
 
 end Multi
@@ -277,7 +277,7 @@ lemma multiConn_union_eq_multiConn_project_add (M : Matroid α) (X : ι → Set 
     ENat.tsum_const, ENat.card_coe_setOf_ne, mul_comm]
   convert rfl using 2
   apply multiConn_closure_congr
-  simp [union_assoc]
+  simp
 
 lemma multiConn_project_add_disjoint (M : Matroid α) {C : Set α} (hCX : C ⊆ ⋃ i, X i)
     (hdj : Pairwise (Disjoint on X)) (hC : M.Indep C) :

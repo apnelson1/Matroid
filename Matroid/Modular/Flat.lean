@@ -148,8 +148,7 @@ lemma IsFlat.isModularFlat_iff_forall_skew_of_inter (hX : M.IsFlat X) :
     hZ.isFlat_right.exists_modularCompl hW.isFlat_right hY hZ.right_subset hW.subset_right
   --
   specialize h hX'.isFlat_right ?_ ?_
-  · simp [← hZ.inter_eq, ← hX'.inter_eq, subset_inter_iff, inter_subset_left, true_and,
-      inter_subset_right, and_true, and_self, loops]
+  · simp [← hZ.inter_eq, ← hX'.inter_eq, subset_inter_iff, true_and, and_true, and_self, loops]
     rw [← hW.inter_eq, subset_inter_iff]
     exact ⟨inter_subset_left.trans (M.subset_closure_of_subset' subset_union_left),
       inter_subset_right.trans hX'.right_subset⟩
@@ -791,7 +790,7 @@ private lemma modular_finitary_aux (hM : ∀ F, M.IsFlat F → M.eRk F ≤ 2 →
     rw [insert_comm] at hgg'
     rw [insert_sdiff_of_notMem _ (by simp [hxg, hxi]), insert_sdiff_of_mem _ (by simp),
       ← union_singleton (a := g), ← sdiff_sdiff, sdiff_singleton_eq_self, insert_comm,
-      ← Ioi_insert, image_insert_eq, insert_sdiff_of_mem _ (by simp),
+      ← insert_Ioi, image_insert_eq, insert_sdiff_of_mem _ (by simp),
       sdiff_singleton_eq_self, show Ioi i = Ici (i+1) from rfl] at hg'x
     · refine ⟨⟨g',?_⟩, ?_, hgg', hg'x⟩
       · exact ⟨hgg'.subset_ground (by simp), (aux1 hg'x).2⟩

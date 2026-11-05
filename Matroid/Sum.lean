@@ -325,12 +325,12 @@ lemma disjointSum_restrict_right (hMN : Disjoint M.E N.E) : (disjointSum M N hMN
 set_option backward.isDefEq.respectTransparency false in
 @[simp]
 lemma emptyOn_disjointSum : disjointSum (emptyOn α) M (by simp) = M :=
-  ext_indep (by simp) <| by simp +contextual [inter_eq_self_of_subset_left]
+  ext_indep (by simp) <| by simp +contextual
 
 set_option backward.isDefEq.respectTransparency false in
 @[simp]
 lemma disjointSum_emptyOn : disjointSum M (emptyOn α) (by simp) = M :=
-  ext_indep (by simp) <| by simp +contextual [inter_eq_self_of_subset_left]
+  ext_indep (by simp) <| by simp +contextual
 
 instance disjointSum_nonempty_left [M.Nonempty] (hMN : Disjoint M.E N.E) :
     (M.disjointSum N hMN).Nonempty := by
@@ -369,8 +369,8 @@ set_option backward.isDefEq.respectTransparency false in
 lemma disjointSum_spanning_iff (hMN : Disjoint M.E N.E) {X : Set α} :
     (disjointSum M N hMN).Spanning X ↔
       M.Spanning (X ∩ M.E) ∧ N.Spanning (X ∩ N.E) ∧ X ⊆ M.E ∪ N.E := by
-    rw [disjointSum_eq_disjointSigma, disjointSigma_spanning_iff]
-    simp [and_comm, and_assoc, iUnion_bool]
+    rw [disjointSum_eq_disjointSigma, disjointSigma_spanning_iff, Bool.forall_bool]
+    grind [iUnion_bool]
 
 lemma disjointSum_dep_iff (hMN : Disjoint M.E N.E) {X : Set α} :
     (disjointSum M N hMN).Dep X ↔ (M.Dep (X ∩ M.E) ∨ N.Dep (X ∩ N.E)) ∧ X ⊆ M.E ∪ N.E := by
@@ -413,8 +413,7 @@ lemma disjointSum_assoc {M₁ M₂ M₃ : Matroid α} (h₁₂ : Disjoint M₁.E
   refine ext_indep (by simp [union_assoc]) fun I hI ↦ ?_
   simp only [disjointSum_ground_eq, disjoint_union_left] at h₁₂ h₁₃
   simp only [disjointSum_ground_eq] at hI
-  simp [inter_assoc, union_inter_distrib_right, h₁₂.symm.inter_eq, h₁₂.inter_eq, hI,
-    h₁₃.2.symm.inter_eq, h₁₃.2.inter_eq, ← union_assoc, and_assoc]
+  simp [inter_assoc, ← union_assoc, and_assoc]
 
 set_option backward.isDefEq.respectTransparency false in
 lemma disjointSum_restrict_union {S T : Set α} (hdj : Disjoint M.E N.E) (hS : S ⊆ M.E)

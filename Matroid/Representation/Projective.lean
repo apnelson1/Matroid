@@ -116,7 +116,7 @@ lemma matroidRep_fullRank : (matroidRep (𝔽 := 𝔽) (W := W)).FullRank :=
   Rep.fullRank_iff.2 <| submodule_span_range_rep 𝔽 W ..
 
 instance : (Projectivization.matroid 𝔽 W).Loopless := by
-  simp [loopless_iff_forall_isNonloop, ← matroidRep.ne_zero_iff_isNonloop, rep_nonzero]
+  simp [loopless_iff_forall_isNonloop, ← matroidRep.ne_zero_iff_isNonloop, rep_ne_zero]
 
 @[simp]
 lemma matroidRep_indep_iff {I : Set (Projectivization 𝔽 W)} :

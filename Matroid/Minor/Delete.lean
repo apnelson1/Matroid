@@ -154,9 +154,9 @@ lemma restrict_eq_delete_disjointSum_loopyOn (M : Matroid α) (R : Set α) :
       (by simp [loopyOn_ground, inter_comm M.E, disjoint_sdiff_inter.symm]) := by
   generalize_proofs h
   refine ext_indep ?_ fun I (hIR : I ⊆ R) ↦ ?_
-  · simp [inter_comm M.E, inter_union_sdiff]
+  · simp [inter_comm M.E]
   simp only [restrict_indep_iff, hIR, and_true, disjointSum_indep_iff, delete_ground,
-    _root_.sdiff_sdiff_right_self, inf_eq_inter, inter_comm M.E, delete_indep_iff,
+    _root_.sdiff_sdiff_right_self, inter_comm M.E, delete_indep_iff,
     disjoint_iff_inter_eq_empty, inter_assoc, loopyOn_ground, loopyOn_indep_iff, inter_union_sdiff]
   suffices M.Indep I ↔ M.Indep (I ∩ M.E) ∧ I ⊆ M.E by
     simpa [← inter_assoc R (M.E \ R), ← inter_assoc, ← inter_sdiff_assoc,

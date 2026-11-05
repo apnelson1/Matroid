@@ -216,7 +216,7 @@ lemma sdiff_symmDiff (A B : Set α) : (A \ B) ∆ A = A ∩ B := by
 
 lemma symmDiff_union_left (A B C : Set α) : (A ∪ B) ∆ (A ∪ C) = (B ∆ C) \ A := by
   ext x
-  simp only [symmDiff_def, sup_eq_union, mem_union, mem_sdiff]
+  simp only [symmDiff_def, mem_union, mem_sdiff]
   tauto
 
 lemma union_diff_diff (A B : Set α) : (A ∪ B) \ (A \ B) = B := by

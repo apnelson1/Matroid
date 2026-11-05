@@ -366,7 +366,7 @@ lemma ENat.encard_Iio (n : ℕ∞) : (Set.Iio n).encard = n := by
 
 @[simp]
 lemma ENat.encard_Iic (n : ℕ∞) : (Set.Iic n).encard = n + 1 := by
-  rw [← Iio_insert, encard_insert_of_notMem (by simp), ENat.encard_Iio]
+  rw [← insert_Iio, encard_insert_of_notMem (by simp), ENat.encard_Iio]
 
 @[simp]
 lemma Nat.encard_Iio (n : ℕ) : (Set.Iio n).encard = n := by
@@ -376,7 +376,7 @@ lemma Nat.encard_Iio (n : ℕ) : (Set.Iio n).encard = n := by
 
 @[simp]
 lemma Nat.encard_Iic (n : ℕ) : (Set.Iic n).encard = n + 1 := by
-  rw [← Iio_insert, encard_insert_of_notMem (by simp), encard_Iio]
+  rw [← insert_Iio, encard_insert_of_notMem (by simp), encard_Iio]
 
 theorem Set.even_ncard_union {A B : Set α} (hAB : Disjoint A B)
     (hA : Even A.ncard) (hB : Even B.ncard) : Even (A ∪ B).ncard := by

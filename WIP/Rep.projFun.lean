@@ -91,7 +91,7 @@ instance : (projectiveGeometry 𝔽 W).Loopless := by
   rintro e -
   rw [← projectiveGeometryRep.ne_zero_iff_isNonloop, projectiveGeometryRep,
     repOfFun_apply _ (by simp)]
-  exact rep_nonzero e
+  exact rep_ne_zero e
 
 lemma projectiveGeometry_indep_iff {I : Set (Projectivization 𝔽 W)} :
     (projectiveGeometry 𝔽 W).Indep I ↔ Projectivization.Independent (fun (x : I) ↦ x.1) := by

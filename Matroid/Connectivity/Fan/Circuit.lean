@@ -272,7 +272,7 @@ lemma IsFan.isCircuit_interval (hF : M.IsFan F b c) {p q : ℕ} (hpq : p < q) (h
     · rw! [add_assoc, one_add_one_eq_two, pair_comm, insert_union, union_insert, pair_comm,
       insert_union, insert_sdiff_self_of_notMem]
       · rfl
-      rw [← Ico_insert_right (by lia), insert_inter_of_notMem (by simp [hpb, hqb])] at hC₀
+      rw [← insert_right_Ico (by lia), insert_inter_of_notMem (by simp [hpb, hqb])] at hC₀
       simp +contextual [← hC₀, hF.nodup.getElem_inj_iff, hne, ne_of_lt]
     grw [← hC₀, inter_subset_left, union_eq_self_of_subset_left
       (pair_subset (getElem_mem_image_getElem_preimage_val (by simp))
@@ -326,7 +326,7 @@ lemma IsFan.eq_interval_of_mem_mem_mem (hF : M.IsFan F b c) (hpq : p < q)
     (hpC : F[p] ∈ C) (hp1C : F[p + 1] ∈ C) (hqC : F[q] ∈ C) :
     C = (fun x : Fin F.length ↦ F[x.1]) ''
       Fin.val ⁻¹' ({p, q} ∪ (Icc p q ∩ Nat.bodd ⁻¹' {!b})) := by
-  induction q using Nat.strong_induction_on with | h q ihq =>
+  induction q using Nat.strong_induction_on with | ind q ihq =>
   suffices ∀ i (hi : i < F.length), p ≤ i → i ≤ q → i.bodd = !b → F[i] ∈ C by
     refine hC.eq_of_superset_isCircuit (hF.isCircuit_interval hpq hqF hpb hqb ?_) <| by
       refine image_getElem_preimage_val_subset_iff.2 fun i hiF hi ↦ by grind
@@ -393,7 +393,7 @@ lemma IsFan.exists_eq_interval_of_notMem_mem_notMem {s t r : ℕ} (hF : M.IsFan 
     (hC : M.IsCircuit C) (hsC : F[s] ∉ C) (hrC : F[r] ∈ C) (htC : F[t] ∉ C) :
     ∃ (p q : ℕ) (_ : s < p) (_ : p < q) (_ : q < t), p.bodd = b ∧ q.bodd = b ∧
     C = (fun x : Fin F.length ↦ F[x.1]) '' Fin.val ⁻¹' ({p, q} ∪ (Icc p q ∩ Nat.bodd ⁻¹' {!b})) := by
-  induction h : r - s using Nat.strong_induction_on generalizing r s with | h d ih =>
+  induction h : r - s using Nat.strong_induction_on generalizing r s with | ind d ih =>
   by_cases hs1 : F[s + 1] ∈ C
   · obtain ⟨j, hsj, hjt, rfl, rfl⟩ :=
       hF.exists_eq_interval_of_notMem_mem_add_one (by lia) ht hsb htb hC hsC hs1 htC

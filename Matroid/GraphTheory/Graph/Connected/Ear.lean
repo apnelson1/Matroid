@@ -176,7 +176,7 @@ theorem ConnGE.ear_induction [G.Finite] [G.Loopless] (hG : G.ConnGE 2) (hC₀G :
   suffices ∀ n (H : Graph α β), (E(G) \ E(H)).ncard = n → C₀ ≤ H → H ≤ G → motive H → motive G from
     this _ C₀ rfl le_rfl hC₀G base
   intro n
-  induction n using Nat.strong_induction_on with | h n ih => _
+  induction n using Nat.strong_induction_on with | ind n ih => _
   rintro H rfl hC₀H hHG hH
   obtain rfl | hHne := eq_or_ne H G
   · exact hH
@@ -294,31 +294,30 @@ theorem ConnGE.exists_isEarDecomposition [G.Finite] [G.Loopless] (hG : G.ConnGE 
     obtain ⟨Ps, hPs⟩ := this _ C₀ rfl le_rfl hC₀G
     exact ⟨C₀, Ps, hC₀, h3, hC₀G, hPs⟩
   intro n
-  induction n using Nat.strong_induction_on with
-  | h n ih =>
-    intro H hn hC₀H hHG
-    obtain rfl | hHeq := eq_or_ne H G
-    · exact ⟨List.nil, EarBuild.nil H⟩
-    have hV : V(H).Nontrivial := by
-      obtain ⟨x, hx, y, hy, hxy⟩ : V(C₀).Nontrivial := one_lt_encard_iff_nontrivial.1 <|
-        (by norm_num : (1 : ℕ∞) < 3).trans_le h3
-      exact ⟨x, vertexSet_mono hC₀H hx, y, vertexSet_mono hC₀H hy, hxy⟩
-    obtain ⟨P, hP⟩ := hG.exists_isEar hHG hV hHeq
-    refine (ih (E(G) \ E(H ∪ P.toGraph)).ncard ?_ (H ∪ P.toGraph) rfl
-      (hC₀H.trans hP.le_union) (hP.union_le hHG)).elim fun Ps hPs ↦ ⟨P :: Ps, EarBuild.cons hP hPs⟩
-    rw [← hn]
-    refine ncard_lt_ncard ?_ (G.edgeSet_finite.subset sdiff_subset)
-    have hss : E(G) \ E(H ∪ P.toGraph) ⊆ E(G) \ E(H) := by
-      intro e
-      simp only [edgeSet_union, toGraph_edgeSet, mem_sdiff, mem_union, not_or, and_imp]
-      exact fun heG heH _ ↦ ⟨heG, heH⟩
-    obtain ⟨e, heP⟩ := hP.edgeSet_nonempty
-    have heP' : e ∈ E(P.toGraph) := by simpa [toGraph_edgeSet] using heP
-    refine hss.ssubset_of_not_subset fun hsub ↦ ?_
-    have := hsub ⟨edgeSet_mono hP.toGraph_le heP', hP.edge_disjoint.notMem_of_mem_left heP⟩
-    simp only [edgeSet_union, toGraph_edgeSet, mem_sdiff, mem_union, mem_edgeSet_iff,
-      not_or] at this
-    exact this.2.2 heP
+  induction n using Nat.strong_induction_on with | ind n ih => _
+  intro H hn hC₀H hHG
+  obtain rfl | hHeq := eq_or_ne H G
+  · exact ⟨List.nil, EarBuild.nil H⟩
+  have hV : V(H).Nontrivial := by
+    obtain ⟨x, hx, y, hy, hxy⟩ : V(C₀).Nontrivial := one_lt_encard_iff_nontrivial.1 <|
+      (by norm_num : (1 : ℕ∞) < 3).trans_le h3
+    exact ⟨x, vertexSet_mono hC₀H hx, y, vertexSet_mono hC₀H hy, hxy⟩
+  obtain ⟨P, hP⟩ := hG.exists_isEar hHG hV hHeq
+  refine (ih (E(G) \ E(H ∪ P.toGraph)).ncard ?_ (H ∪ P.toGraph) rfl
+    (hC₀H.trans hP.le_union) (hP.union_le hHG)).elim fun Ps hPs ↦ ⟨P :: Ps, EarBuild.cons hP hPs⟩
+  rw [← hn]
+  refine ncard_lt_ncard ?_ (G.edgeSet_finite.subset sdiff_subset)
+  have hss : E(G) \ E(H ∪ P.toGraph) ⊆ E(G) \ E(H) := by
+    intro e
+    simp only [edgeSet_union, toGraph_edgeSet, mem_sdiff, mem_union, not_or, and_imp]
+    exact fun heG heH _ ↦ ⟨heG, heH⟩
+  obtain ⟨e, heP⟩ := hP.edgeSet_nonempty
+  have heP' : e ∈ E(P.toGraph) := by simpa [toGraph_edgeSet] using heP
+  refine hss.ssubset_of_not_subset fun hsub ↦ ?_
+  have := hsub ⟨edgeSet_mono hP.toGraph_le heP', hP.edge_disjoint.notMem_of_mem_left heP⟩
+  simp only [edgeSet_union, toGraph_edgeSet, mem_sdiff, mem_union, mem_edgeSet_iff,
+    not_or] at this
+  exact this.2.2 heP
 
 /-- **Whitney's theorem.** For a finite loopless graph, `2`-connectivity is exactly the existence of
 an ear decomposition. -/

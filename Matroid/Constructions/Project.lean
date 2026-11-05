@@ -34,7 +34,7 @@ lemma project_closure (M : Matroid α) (C X : Set α) :
 
 lemma project_closure_eq_project_closure_union (M : Matroid α) (C X : Set α) :
     (M.project C).closure X = (M.project C).closure (X ∪ C) := by
-  simp [union_assoc]
+  simp
 
 lemma project_closure_congr (h : M.closure X = M.closure Y) (C : Set α) :
     (M.project C).closure X = (M.project C).closure Y := by

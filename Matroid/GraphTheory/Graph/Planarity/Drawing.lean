@@ -651,8 +651,7 @@ private lemma not_mem_openSegment_pts4 {i j k : Fin 4}
   have hx := congrArg (fun v : Plane => v 0) heq
   have hy := congrArg (fun v : Plane => v 1) heq
   simp [PiLp.add_apply, PiLp.sub_apply, PiLp.smul_apply] at hx hy
-  fin_cases i <;> fin_cases j <;> fin_cases k <;>
-    simp_all [pts4] <;> (try linarith)
+  fin_cases i <;> fin_cases j <;> fin_cases k <;> simp_all [pts4] <;> linarith
 
 private lemma openSegment_eq_of_sym2 {a b c d : Fin 4} (h : s(a, b) = s(c, d)) :
     openSegment ℝ (pts4 a) (pts4 b) = openSegment ℝ (pts4 c) (pts4 d) := by

@@ -61,7 +61,7 @@ lemma IsUpperTriangular.isBase_right (h : M.IsUpperTriangular a b) : M.IsBase (r
     refine ((h.isCircuit 0).sdiff_singleton_indep (e := a 0) (by grind)).subset ?_
     simp [Set.Iic, h.apply_ne.symm]
   | succ i ih =>
-    rw [← Iio_insert, image_insert_eq, Indep.insert_indep_iff_of_notMem, mem_sdiff, and_iff_right]
+    rw [← insert_Iio, image_insert_eq, Indep.insert_indep_iff_of_notMem, mem_sdiff, and_iff_right]
     · intro hcl
       have hss : M.closure (b '' Iio i.succ) ⊆ M.closure (a '' Iio i.succ) := by
         refine closure_subset_closure_of_subset_closure ?_

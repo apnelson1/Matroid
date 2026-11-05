@@ -123,7 +123,7 @@ lemma Codep.restrict (hD : M.Codep X) (hXR : X ⊆ R) : (M ↾ R).Codep X := by
   rw [restrict_eq_delete_disjointSum_loopyOn, Codep]
   generalize_proofs h
   simp only [disjointSum_dual, dual_delete, loopyOn_dual_eq, disjointSum_dep_iff, contract_ground,
-    dual_ground, _root_.sdiff_sdiff_right_self, inf_eq_inter, freeOn_ground, freeOn_not_dep,
+    dual_ground, _root_.sdiff_sdiff_right_self, freeOn_ground, freeOn_not_dep,
     or_false]
   rw [inter_comm M.E, ← inter_assoc, and_iff_left (by grind), inter_eq_self_of_subset_left hXR,
     inter_eq_self_of_subset_left hD.subset_ground]

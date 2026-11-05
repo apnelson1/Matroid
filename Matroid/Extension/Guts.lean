@@ -197,7 +197,7 @@ def gutsModularCutSet (M : Matroid α) (X : Set α) : M.ModularCut :=
 lemma gutsModularCutSet_inter_ground : M.gutsModularCutSet (X ∩ M.E) = M.gutsModularCutSet X := by
   simp only [gutsModularCutSet, gutsModularCut, ModularCut.mk.injEq]
   convert rfl using 5
-  simp [IndexedPartition.ofSubset, inter_assoc]
+  simp [IndexedPartition.ofSubset]
 
 lemma mem_gutsModularCutSet_iff' :
     F ∈ M.gutsModularCutSet X ↔ M.IsFlat F ∧ (M.project F).Skew (X ∩ M.E) (M.E \ X) := by

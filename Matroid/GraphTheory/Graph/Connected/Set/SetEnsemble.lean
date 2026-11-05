@@ -664,11 +664,11 @@ lemma between.extend_right_le_two (hAST : A.between S (T ∪ V(P))) (hP : G.IsPa
       ((V(P) \ V(P')) \ {P.first}) := by
       rw [suffixFromLast_last]
       ext x
-      simp +contextual only [union_insert, union_singleton, symmDiff_def, sup_eq_union, mem_union,
-        mem_sdiff, WList.mem_vertexSet_iff, mem_singleton_iff, not_and, not_not, mem_insert_iff,
-        not_or, Classical.not_imp, iff_def, or_true, IsEmpty.forall_iff, and_self,
-        not_false_eq_true, implies_true, and_true, true_and, not_true_eq_false, and_false, or_false,
-        false_or, false_and, imp_false, and_imp]
+      simp +contextual only [union_insert, union_singleton, symmDiff_def, mem_union, mem_sdiff,
+        WList.mem_vertexSet_iff, mem_singleton_iff, not_and, not_not, mem_insert_iff, not_or,
+        not_imp, iff_def, or_true, IsEmpty.forall_iff, and_self, not_false_eq_true, implies_true,
+        and_true, true_and, not_true_eq_false, and_false, or_false, false_or, false_and, imp_false,
+        and_imp]
       refine ⟨?_, ?_⟩
       · rintro (⟨⟨hTP, hxP'⟩, hxf, hxl, hxTP⟩ | ⟨(rfl | rfl | hxT), himp⟩)
         · use (by use hTP.elim hxTP id, fun h => hxl (hxP' h)), hxf
@@ -701,8 +701,8 @@ lemma between.extend_right_le_two (hAST : A.between S (T ∪ V(P))) (hP : G.IsPa
   simp +contextual only [union_insert, union_singleton, symmDiff_def, mem_sdiff, mem_union,
     WList.mem_vertexSet_iff, first_mem, or_true, mem_insert_iff, mem_singleton_iff, true_or,
     not_true_eq_false, and_false, not_false_eq_true, and_self, insert_sdiff_of_mem, last_mem,
-    sup_eq_union, not_or, not_and, not_not, Classical.not_imp, mem_empty_iff_false, iff_def,
-    imp_false, and_imp, or_false, false_and, implies_true, and_true, IsEmpty.forall_iff]
+    not_or, not_and, not_not, not_imp, mem_empty_iff_false, iff_def, imp_false, and_imp, or_false,
+    false_and, implies_true, and_true, IsEmpty.forall_iff]
   rintro (hxT | hxP) himp hxf hxl
   · use hxT
     exact fun a ↦ hxl (himp a hxf)

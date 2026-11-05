@@ -250,8 +250,8 @@ lemma trans_apply_ite_lt (i : I) : (P.trans Q) i = if h : i.val < 1/2 then
   simp [hi.not_ge, hi.not_gt, trans_apply]
 
 lemma injOn_ico_iff_injOn_ioc (P : Path x x) : InjOn P (Ico 0 1) ↔ InjOn P (Ioc 0 1) := by
-  rw [← Ioo_insert_left (show (0 : I) < 1 from zero_lt_one),
-    ← Ioo_insert_right (show (0 : I) < 1 from zero_lt_one),
+  rw [← insert_left_Ioo (show (0 : I) < 1 from zero_lt_one),
+    ← insert_right_Ioo (show (0 : I) < 1 from zero_lt_one),
     injOn_insert (by simp), injOn_insert (by simp), P.source, P.target]
 
 lemma sSup_notMem (P : Path x y) (hS : IsOpen S) (hy : y ∉ S) : P (sSup <| P ⁻¹' S) ∉ S := by

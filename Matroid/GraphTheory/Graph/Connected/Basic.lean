@@ -176,8 +176,8 @@ lemma Connected.union (hG : G.Connected) (hH : H.Connected) (hcompat : G.Compati
   simp only [le_deleteVerts_iff, hcompat.right_le_union, true_and] at hHle
   obtain hGK | hGK := disjoint_or_nonempty_inter V(G) V(K)
   · obtain hHK | hHK := disjoint_or_nonempty_inter V(H) V(K)
-    · simpa [vertexSet_union, ← inter_eq_right, union_inter_distrib_right, hGK.inter_eq,
-        hHK.inter_eq, hKne.ne_empty.symm] using vertexSet_mono hK.le
+    · simpa only [vertexSet_union, ← inter_eq_right, union_inter_distrib_right, hGK.inter_eq,
+        hHK.inter_eq, empty_union, hKne.ne_empty.symm] using vertexSet_mono hK.le
     rw [or_iff_left (not_disjoint_iff_nonempty_inter.2 hHK)] at hHle
     simpa [hGK.symm.inter_eq] using hi.mono (inter_subset_inter_left _ (vertexSet_mono hHle))
   rw [or_iff_left (not_disjoint_iff_nonempty_inter.2 hGK)] at hGle

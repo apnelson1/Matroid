@@ -9,11 +9,10 @@ public import Matroid.ForMathlib.Topology.ENat
 theorem ENat.strong_induction_on {p : ℕ∞ → Prop} (n : ℕ∞)
     (h : ∀ (n : ℕ∞), (∀ (m : ℕ∞), m < n → p m) → p n) : p n := by
   have aux (k : ℕ) : p k := by
-    induction k using Nat.strong_induction_on with
-    | h n IH =>
-      refine h _ fun m hm ↦ ?_
-      lift m to ℕ using (hm.trans_le <| le_top).ne
-      exact IH _ (by simpa using hm)
+    induction k using Nat.strong_induction_on with | ind n IH => _
+    refine h _ fun m hm ↦ ?_
+    lift m to ℕ using (hm.trans_le <| le_top).ne
+    exact IH _ (by simpa using hm)
   apply h _ fun i hin ↦ ?_
   lift i to ℕ using (hin.trans_le le_top).ne
   apply aux

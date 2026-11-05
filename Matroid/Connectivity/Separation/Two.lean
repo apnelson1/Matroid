@@ -197,8 +197,7 @@ lemma parallelSum_union_indep_iff_of_notMem_notMem {N : Matroid β} {f : β} (he
     simp [ModularCut.principal_eq_top_iff', Set.subset_def, he.not_isLoop, he.mem_ground]
   suffices (M.Indep I ∧ N.Indep J) ∧ (e ∈ M.closure I → f ∉ N.closure J) ↔
       M.Indep (insert e I) ∧ N.Indep J ∨ M.Indep I ∧ N.Indep (insert f J) by
-    simpa [parallelSum, ModularCut.projectBy_indep_iff_of_ne_top htop,
-      ModularCut.mem_principal_iff', Set.subset_def, he.mem_ground, hf.mem_ground, htop]
+    simpa [parallelSum, union_empty, empty_union, htop, subset_def, he.mem_ground, hf.mem_ground]
   by_cases! hI : ¬ M.Indep I
   · simp [hI, show ¬ M.Indep (insert e I) from fun h ↦ hI (h.subset (subset_insert ..))]
   by_cases! hJ : ¬ N.Indep J

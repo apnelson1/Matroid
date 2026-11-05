@@ -4,6 +4,7 @@ import Mathlib.Algebra.Group.Defs
 import Mathlib.Combinatorics.Quiver.Basic
 import Mathlib.Data.Sym.Sym2
 import Mathlib.Order.Cover
+import Mathlib.Algebra.Group.Generators
 
 universe u v
 
@@ -21,33 +22,30 @@ instance : HypergraphLike Prop ((Prop × Prop) × Bool) (Prop × Prop) Prop wher
   mem_incs_iff i := by grind
 
 /-- The Hasse digraph of a lattice, with edges directed from a vertex to one covering it. -/
-instance Lattice.hypergraphLike {α : Type*} (L : Lattice α) :
-    HypergraphLike α ((α × α) × Bool) (α × α) L := by
-  letI := L
-  exact {
-    verts := univ
-    edges := {e | e.1 ⋖ e.2}
-    incs := {i | i.1.1 ⋖ i.1.2}
-    edgeMap' i := ⟨i.1.1, i.2⟩
-    attach' i := ⟨cond i.1.2 i.1.1.1 i.1.1.2, mem_univ _⟩
-    IsSource i := i.2 ∧ i.1.1 ⋖ i.1.2
-    IsTarget i := ¬i.2 ∧ i.1.1 ⋖ i.1.2
-    mem_incs_iff := by grind }
+instance Lattice.hypergraphLike (α : Type*) [Lattice α] :
+    HypergraphLike α ((α × α) × Bool) (α × α) α where
+  verts := univ
+  edges := {e | e.1 ⋖ e.2}
+  incs := {i | i.1.1 ⋖ i.1.2}
+  edgeMap' i := ⟨i.1.1, i.2⟩
+  attach' i := ⟨cond i.1.2 i.1.1.1 i.1.1.2, mem_univ _⟩
+  IsSource i := i.2 ∧ i.1.1 ⋖ i.1.2
+  IsTarget i := ¬i.2 ∧ i.1.1 ⋖ i.1.2
+  mem_incs_iff := by grind
 
 /-- The Cayley digraph for a group and a chosen element. Edge `x` runs from `x` to `x * p.2`.
 The chosen element need not generate the whole group. -/
-instance Group.cayleyHypergraphLike {α : Type*} (p : Group α × α) :
-    HypergraphLike α (α × Bool) α p := by
-  letI := p.1
-  exact {
-    verts := univ
-    edges := univ
-    incs := univ
-    edgeMap' i := ⟨i.1.1, mem_univ _⟩
-    attach' i := ⟨cond i.1.2 i.1.1 (i.1.1 * p.2), mem_univ _⟩
-    IsSource i := i.2
-    IsTarget i := ¬i.2
-    mem_incs_iff := by simp }
+@[instance_reducible]
+def Group.cayleyHypergraphLike {α : Type*} [Group α] (p : Group.Generators α) :
+    HypergraphLike α (α × Bool) α α where
+  verts := univ
+  edges := univ
+  incs := univ
+  edgeMap' i := ⟨i.1.1, mem_univ _⟩
+  attach' i := ⟨cond i.1.2 i.1.1 (i.1.1 * p), mem_univ _⟩
+  IsSource i := i.2
+  IsTarget i := ¬i.2
+  mem_incs_iff := by simp
 
 /-- A quiver as a directed multigraph, retaining each arrow as a separate edge. -/
 instance Quiver.hypergraphLike {V : Type u} (Q : Quiver.{v} V) :

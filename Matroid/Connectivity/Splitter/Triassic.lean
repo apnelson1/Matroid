@@ -139,7 +139,7 @@ lemma IsFan.isGoodFan_of_single (hF : M.IsFan F b c) (h5 : 5 ≤ F.length)
       rw [Nat.bodd_sub (by lia), hF.length_sub_one_bodd_eq, F.getElem_reverse' (j := i) (by lia)]
         at aux
       cases b with cases c with simpa using aux
-    induction i using Nat.strong_induction_on with | h n ih =>
+    induction i using Nat.strong_induction_on with | ind n ih =>
     obtain rfl | hslt := hsi.eq_or_lt
     · assumption
     obtain rfl | rfl | n := n

@@ -285,7 +285,7 @@ lemma IsNonloop.contractElem_isFlat_iff (he : M.IsNonloop e) :
 /-- Flats of `M ／ C` are equivalent to flats of `M` containing `C`-/
 @[simps] def isFlatContractEquiv (M : Matroid α) (C : Set α) (hC : C ⊆ M.E := by aesop_mat) :
     {F // (M ／ C).IsFlat F} ≃ {F // M.IsFlat F ∧ C ⊆ F} where
-  toFun F := ⟨F ∪ C, by simp [subset_union_right, F.prop.union_isFlat_of_contract]⟩
+  toFun F := ⟨F ∪ C, by simp [F.prop.union_isFlat_of_contract]⟩
   invFun F := ⟨F \ C, by simp
     [isFlat_contract_iff hC, union_eq_self_of_subset_right F.prop.2, disjoint_sdiff_left, F.prop.1]⟩
   left_inv := by rintro ⟨-, hF⟩; simp [(subset_sdiff.1 hF.subset_ground).2]
@@ -441,7 +441,8 @@ set_option backward.isDefEq.respectTransparency false in
 @[simp]
 lemma disjointSum_isFlat_iff {M N : Matroid α} (hdj : Disjoint M.E N.E) :
     (M.disjointSum N hdj).IsFlat F ↔ M.IsFlat (F ∩ M.E) ∧ N.IsFlat (F ∩ N.E) ∧ F ⊆ M.E ∪ N.E := by
-  simp [iUnion_bool, disjointSum_eq_disjointSigma, and_assoc, and_comm]
+  rw [disjointSum_eq_disjointSigma, disjointSigma_isFlat_iff, Bool.forall_bool]
+  grind [iUnion_bool]
 
 @[simp]
 lemma sum_isFlat_iff {β : Type*} {N : Matroid β} (F : Set (α ⊕ β)) :

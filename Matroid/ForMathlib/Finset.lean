@@ -19,8 +19,7 @@ variable [DecidableEq α]
 lemma sdiff_erase_notMem (h : a ∉ s) : s \ t.erase a = s \ t := by
   rw [sdiff_eq_sdiff_iff_inter_eq_inter, inter_erase, erase_eq_of_notMem (by simp [h])]
 
-lemma sdiff_subset_iff : s \ t ⊆ r ↔ s ⊆ t ∪ r := by
-  simp [← coe_subset, Set.sdiff_subset_iff]
+lemma sdiff_subset_iff : s \ t ⊆ r ↔ s ⊆ t ∪ r := sdiff_le_iff
 
 lemma pair_sdiff_left (hne : a ≠ b) : ({a, b} : Finset α) \ ({a} : Finset α) = {b} := by
   aesop

@@ -272,7 +272,7 @@ lemma IsFan.isCircuit_interval (hF : M.IsFan F b c) {p q : ℕ} (hpq : p < q) (h
     · rw! [add_assoc, one_add_one_eq_two, pair_comm, insert_union, union_insert, pair_comm,
       insert_union, insert_sdiff_self_of_notMem]
       · rfl
-      rw [← Ico_insert_right (by lia), insert_inter_of_notMem (by simp [hpb, hqb])] at hC₀
+      rw [← insert_right_Ico (by lia), insert_inter_of_notMem (by simp [hpb, hqb])] at hC₀
       simp +contextual [← hC₀, hF.nodup.getElem_inj_iff, hne, ne_of_lt]
     grw [← hC₀, inter_subset_left, union_eq_self_of_subset_left
       (pair_subset (getElem_mem_image_getElem_preimage_val (by simp))

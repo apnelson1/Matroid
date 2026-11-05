@@ -12,6 +12,6 @@ macro "tauto_set!" : tactic => `(tactic|
       Set.symmDiff_def, Set.sdiff_eq, Set.disjoint_iff
     ]
     try intro x
-    try specialize_all x
+    -- try specialize_all x
     <;> grind
 )
