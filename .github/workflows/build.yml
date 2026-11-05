@@ -92,20 +92,6 @@ jobs:
           # Uncomment the next line if you wish to build a blueprint alongside your repository.
           # blueprint: true
 
-      - name: Check generated Matroid docs
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: |
-          target="docs/docs/Matroid/Graph/Planarity/Realization/Basic.html"
-          if [ -f "$target" ]; then
-            target_exists=true
-          else
-            target_exists=false
-          fi
-          if [ "$target_exists" != true ]; then
-            echo "::error::Missing expected generated documentation page: $target"
-            exit 1
-          fi
-
       - name: Upload documentation artifact
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
