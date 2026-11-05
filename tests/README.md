@@ -34,23 +34,10 @@ axioms. Its dependency `Graph.Topology.Draft` uses Lean's legacy module format a
 imported by the module-format test root. Run `lake build MatroidTests.GraphLikeReplacement`
 separately when changing that interface.
 
-`MatroidTests/StraightLine.lean` checks the extracted `GraphLike` foundation, finite straight-line
-presentations, geometric incidence, refinement, isolated vertices, crossings, and overlaps.
-It is included in `lake test`. Its graph-facing companion uses the legacy drawing modules:
-run `lake build MatroidTests.StraightLineDrawing` to check the drawing bridge and its axioms.
+`ConnectedComponentSets` is included in `lake test` and checks connected component sets on
+connected and disconnected spaces and a nonclosed subspace.
 
-`GraphLikeEdges` checks the raw point-set edge API, `V(G)`/`E(G)` notation alongside `Graph`,
-and incidence and topology lemmas without subtype edge wrappers. It runs under `lake test`.
-It also imports `ConnectedComponentSets`, which tests the shared point-set operation on
-connected and disconnected spaces and a nonclosed subspace, independently of graph data.
-
-`GraphLikeAssembly` tests the explicit assembly constructors on a circle loop, parallel arcs,
-isolated vertices, and countably many disjoint circles. It is included in `lake test` and
-guards the constructors' axiom dependencies.
-
-`GraphLikeRestriction`, `GraphLikeMap`, `GraphLikeOperations`, and `GraphLikeSubset` are
-included in `lake test`. They cover whole-edge selection, finite-support differences,
-carrier-local embedding transport, restriction/transport compatibility, and geometry.
+`GraphLikeSubset` is included in `lake test` and covers geometric subset operations.
 Run `lake build MatroidTests.GraphLikeDrawingOperations MatroidTests.StraightLineDrawing`
 for the legacy-format drawing adapters and their guarded axiom checks.
 
