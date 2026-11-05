@@ -21,8 +21,6 @@ current `Graph V E` is the coarse quotient of presentations.
 
 open Set Function Classical
 
-universe uV uI uE
-
 namespace Graph
 
 /-- An incidence presentation of a multigraph on ambient vertex and edge types `V` and `E`.
@@ -30,7 +28,7 @@ namespace Graph
 `I` is the type of incidences, with no unused incidence labels. The involution `other` exchanges
 the two incidences of an edge.
 -/
-structure Presentation (V : Type uV) (I : Type uI) (E : Type uE) where
+structure Presentation (V I E : Type*) where
   /-- The vertices present in the presentation. -/
   vertexSet : Set V
   /-- The vertex incident with an incidence. -/
@@ -50,8 +48,7 @@ structure Presentation (V : Type uV) (I : Type uI) (E : Type uE) where
 
 namespace Presentation
 
-variable {V : Type uV} {I : Type uI} {E : Type uE} {P Q R : Presentation V I E}
-  {i j : I} {e : E} {x y : V}
+variable {V I E : Type*} {P Q R : Presentation V I E} {i j : I} {e : E} {x y : V}
 
 attribute [simp] other_ne edgeMap_other
 

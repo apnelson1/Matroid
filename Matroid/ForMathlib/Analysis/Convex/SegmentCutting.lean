@@ -51,9 +51,8 @@ private theorem exists_Icc_avoiding_finite {F : Set ℝ} (hF : F.Finite) {a b x 
 
 variable {V : Type*} [AddCommGroup V] [Module ℝ V] {F : Set V} {a b x : V}
 
-theorem segment_eq_of_common_point_avoiding {c d : V}
-    (ha : a ∈ F) (hb : b ∈ F) (hc : c ∈ F) (hd : d ∈ F)
-    (h₁ : segment ℝ a b ∩ F ⊆ {a, b}) (h₂ : segment ℝ c d ∩ F ⊆ {c, d})
+theorem segment_eq_of_common_point_avoiding {c d : V} (ha : a ∈ F) (hb : b ∈ F) (hc : c ∈ F)
+    (hd : d ∈ F) (h₁ : segment ℝ a b ∩ F ⊆ {a, b}) (h₂ : segment ℝ c d ∩ F ⊆ {c, d})
     (hx₁ : x ∈ segment ℝ a b) (hx₂ : x ∈ segment ℝ c d) (hxF : x ∉ F)
     (hcL : c ∈ affineSpan ℝ {a, b}) (hdL : d ∈ affineSpan ℝ {a, b}) :
     segment ℝ a b = segment ℝ c d := by
@@ -91,7 +90,7 @@ theorem segment_eq_of_common_point_avoiding {c d : V}
     rw [hp]
     rcases h with h | h
     · exact Or.inl (hf h)
-    · exact Or.inr (hf h)
+    exact Or.inr (hf h)
   have hmin : min u v ∈ f ⁻¹' F := by
     rcases le_total u v with h | h
     · simpa [min_eq_left h] using hc
@@ -100,10 +99,8 @@ theorem segment_eq_of_common_point_avoiding {c d : V}
     rcases le_total u v with h | h
     · simpa [max_eq_right h] using hd
     · simpa [max_eq_left h] using hc
-  have heq := Icc_eq_of_common_point_avoiding
-    (show (0 : ℝ) ∈ f ⁻¹' F by simpa [f] using ha)
-    (show (1 : ℝ) ∈ f ⁻¹' F by simpa [f] using hb)
-    hmin hmax hF₁ hF₂ ht ht₂ hxF
+  have heq := Icc_eq_of_common_point_avoiding (show (0 : ℝ) ∈ f ⁻¹' F by simpa [f] using ha)
+    (show (1 : ℝ) ∈ f ⁻¹' F by simpa [f] using hb) hmin hmax hF₁ hF₂ ht ht₂ hxF
   rw [← habim, heq, hcim]
 
 /-- Every point of a segment lies in a subsegment between consecutive marked points.
@@ -112,9 +109,8 @@ theorem exists_subsegment_avoiding_finite (hF : F.Finite) (ha : a ∈ F) (hb : b
     (hx : x ∈ segment ℝ a b) :
     ∃ u ∈ F, ∃ v ∈ F, x ∈ segment ℝ u v ∧ segment ℝ u v ⊆ segment ℝ a b ∧
       segment ℝ u v ∩ F ⊆ {u, v} := by
-  by_cases hab : a = b
-  · subst b
-    simp only [segment_same, mem_singleton_iff] at hx
+  obtain rfl | hab := eq_or_ne a b
+  · simp only [segment_same, mem_singleton_iff] at hx
     subst x
     exact ⟨a, ha, a, ha, by simp, subset_rfl, by simp⟩
   let f : ℝ →ᵃ[ℝ] V := AffineMap.lineMap a b
@@ -130,10 +126,6 @@ theorem exists_subsegment_avoiding_finite (hF : F.Finite) (ha : a ∈ F) (hb : b
   refine ⟨f u, hu, f v, hv, him ▸ mem_image_of_mem f htuv, ?_, ?_⟩
   · rw [← him, segment_eq_image_lineMap]
     exact image_mono huv
-  · rintro y ⟨hy, hyF⟩
-    rw [← him] at hy
-    obtain ⟨s, hs, rfl⟩ := hy
-    obtain h | h := hav ⟨hs, hyF⟩
-    · exact Or.inl (congrArg f h)
-    · exact Or.inr (congrArg f h)
-
+  rintro y ⟨hy, hyF⟩
+  obtain ⟨s, hs, rfl⟩ := him ▸ hy
+  grind [hav ⟨hs, hyF⟩]

@@ -8,3 +8,4 @@ resources/*
 .DS_Store
 __pycache__/
 .claude/*
+AGENTS.md

@@ -70,7 +70,7 @@ lemma IsFreeArc.disjoint_range_edgePath (hγ : D.IsFreeArc γ) (e : E(G)) :
 
 lemma IsFreeArc.reorient {x' y' : X} (hγ : D.IsFreeArc γ) (h : s(x', y') = s(x, y)) :
     D.IsFreeArc (γ.reorient h) where
-  injOn := γ.injOn_reorient h hγ.injOn
+  injOn := (γ.injOn_reorient_iff h).2 hγ.injOn
   disjoint_support := by rw [Path.reorient_interior]; exact hγ.disjoint_support
 
 /-! ### Adding one edge
@@ -199,7 +199,7 @@ lemma addEdgeEdge_injOn (hγ : D.IsFreeArc γ) (ed : E(G.addEdge f u v)) :
   rw [addEdgeEdge]
   split_ifs with hed
   · exact D.edgePath_injOn_Ioo ⟨ed.1, hed⟩
-  exact γ.injOn_reorient _ hγ.injOn
+  exact (γ.injOn_reorient_iff _).2 hγ.injOn
 
 include hu hv in
 lemma addEdgeEdge_interior_disjoint_vertex (hγ : D.IsFreeArc γ) (ed : E(G.addEdge f u v)) :

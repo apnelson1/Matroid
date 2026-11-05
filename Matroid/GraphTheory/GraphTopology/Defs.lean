@@ -30,6 +30,8 @@ structure GraphLike (X : Type*) [TopologicalSpace X] where
 
 attribute [instance] GraphLike.t2Space
 
+def IsGraphLike (S : Set X) : Prop := ∃ G : GraphLike X, G.carrier = S
+
 variable {G : GraphLike X}
 
 namespace GraphLike

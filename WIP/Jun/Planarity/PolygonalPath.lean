@@ -428,7 +428,7 @@ lemma closedSimple.cons_simple (h : P.closedSimple) :
   | .cons a b as =>
   have has : as.simple := by
     rw [closedSimple, toPath, Path.injOn_ico_iff_injOn_ioc] at h
-    refine (Path.segment a b).injective_right_iff_trans_injOn as.toPath |>.mp ?_
+    refine (Path.segment a b).trans_injOn_Icc_half_one_iff as.toPath |>.mp ?_
     exact h.mono <| (Icc_subset_Ioc_iff le_one').mpr ⟨zero_lt_half, le_one'⟩
   refine ⟨b, as, rfl, has, ?_⟩
   rw [closedSimple, toPath, Path.trans_injOn_ico_iff] at h

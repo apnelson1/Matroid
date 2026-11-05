@@ -1,8 +1,20 @@
 module
 
+public import MatroidTests.GraphLikeAssembly
+public import MatroidTests.GraphLikeEdges
+public import MatroidTests.GraphLikeRestriction
+public import MatroidTests.GraphLikeMap
+public import MatroidTests.GraphLikeOperations
+public import MatroidTests.GraphLikeSubset
 public import MatroidTests.GrindTags
 public import MatroidTests.Hom
 public import MatroidTests.IRw
 public import MatroidTests.Immersion
 public import MatroidTests.JordanCurve
+public import MatroidTests.PathDecomposition
 public import MatroidTests.PolygonalPath
+public import MatroidTests.PolygonalReplacement
+public import MatroidTests.PrimitiveLinkLocalStar
+public import MatroidTests.SegmentFigure
+public import MatroidTests.SegmentFigureSubset
+public import MatroidTests.StraightLine

@@ -70,113 +70,113 @@ public import Matroid.Flat.Cyclic
 public import Matroid.Flat.Hyperplane
 public import Matroid.Flat.Lattice
 public import Matroid.Flat.LowRank
-public import Matroid.Graph.AcyclicSet
-public import Matroid.Graph.Basic
-public import Matroid.Graph.Bipartite
-public import Matroid.Graph.Connected.Basic
-public import Matroid.Graph.Connected.Bond
-public import Matroid.Graph.Connected.Component
-public import Matroid.Graph.Connected.Construction
-public import Matroid.Graph.Connected.Defs
-public import Matroid.Graph.Connected.Ear
--- public import Matroid.Graph.Connected.Gammoid
-public import Matroid.Graph.Connected.LineGraph
-public import Matroid.Graph.Connected.Menger
-public import Matroid.Graph.Connected.Minor
-public import Matroid.Graph.Connected.MixedLineGraph
-public import Matroid.Graph.Connected.Set.Defs
-public import Matroid.Graph.Connected.Set.Leg
-public import Matroid.Graph.Connected.Set.SetEnsemble
-public import Matroid.Graph.Connected.Subgraph
-public import Matroid.Graph.Connected.Vertex.Basic
-public import Matroid.Graph.Connected.Vertex.Defs
-public import Matroid.Graph.Connected.Vertex.VertexEnsemble
-public import Matroid.Graph.Constructions.Basic
--- public import Matroid.Graph.Constructions.Cycle
--- public import Matroid.Graph.Constructions.Random
-public import Matroid.Graph.Constructions.Sum
-public import Matroid.Graph.Degree.Basic
-public import Matroid.Graph.Degree.Constructions
-public import Matroid.Graph.Degree.Defs
-public import Matroid.Graph.Degree.Max
-public import Matroid.Graph.Distance
--- public import Matroid.Graph.EdgeColoring
-public import Matroid.Graph.Finite
-public import Matroid.Graph.Forest
-public import Matroid.Graph.Hom.Basic
-public import Matroid.Graph.Hom.Factorization
-public import Matroid.Graph.Hom.Image
-public import Matroid.Graph.Hom.Map
-public import Matroid.Graph.IRw
-public import Matroid.Graph.Independent
-public import Matroid.Graph.Lattice
-public import Matroid.Graph.Map
-public import Matroid.Graph.Matching.Berge
-public import Matroid.Graph.Matching.Defs
-public import Matroid.Graph.Matching.Konigs
--- public import Matroid.Graph.Matching.TutteBerge
-public import Matroid.Graph.Matrix
-public import Matroid.Graph.Minor.Defs
-public import Matroid.Graph.Minor.Topological
-public import Matroid.Graph.Minor.Walk
--- public import Matroid.Graph.Planarity.CombMap.Basic
--- public import Matroid.Graph.Planarity.CombMap.Equiv
--- public import Matroid.Graph.Planarity.Contraction
-public import Matroid.Graph.Planarity.CycleDichotomy
-public import Matroid.Graph.Planarity.Drawing
--- public import Matroid.Graph.Planarity.Drawing.Union
--- public import Matroid.Graph.Planarity.Face
--- public import Matroid.Graph.Planarity.FaceCycle
--- public import Matroid.Graph.Planarity.Insertion.Basic
--- public import Matroid.Graph.Planarity.Insertion.Plane
-public import Matroid.Graph.Planarity.Obstructions
-public import Matroid.Graph.Planarity.PLDrawing
-public import Matroid.Graph.Planarity.PLReduction
--- public import Matroid.Graph.Planarity.PLTopologicalMinor
-public import Matroid.Graph.Planarity.Realization.VertexSpace
-public import Matroid.Graph.Planarity.Realization.Basic
-public import Matroid.Graph.Planarity.Realization.CWComplex
-public import Matroid.Graph.Planarity.Realization.Iso
-public import Matroid.Graph.Planarity.Realization.Metric
-public import Matroid.Graph.Planarity.Realization.Presentation
-public import Matroid.Graph.Planarity.Realization.Subgraph
--- public import Matroid.Graph.Planarity.StarLemma
--- public import Matroid.Graph.Planarity.ThetaCurve
--- public import Matroid.Graph.Planarity.TopologicalMinor
-public import Matroid.Graph.Presentation.Basic
-public import Matroid.Graph.Presentation.Hom
-public import Matroid.Graph.Presentation.OfGraph
-public import Matroid.Graph.Presentation.Orientation
-public import Matroid.Graph.Presentation.Quotient
-public import Matroid.Graph.Relabel
-public import Matroid.Graph.Simple
-public import Matroid.Graph.Subdivision
-public import Matroid.Graph.Subgraph.Basic
-public import Matroid.Graph.Subgraph.Compatible
-public import Matroid.Graph.Subgraph.Defs
-public import Matroid.Graph.Subgraph.Delete
-public import Matroid.Graph.Subgraph.Inter
-public import Matroid.Graph.Subgraph.Lemma
-public import Matroid.Graph.Subgraph.Union
-public import Matroid.Graph.TopologicalMinor
-public import Matroid.Graph.Transport
-public import Matroid.Graph.Tree
-public import Matroid.Graph.WList.Cycle
-public import Matroid.Graph.WList.Defs
-public import Matroid.Graph.WList.Ops
-public import Matroid.Graph.WList.Remove
-public import Matroid.Graph.WList.Sublist
-public import Matroid.Graph.WList.TakeDrop.Decompose
-public import Matroid.Graph.WList.TakeDrop.Defs
-public import Matroid.Graph.WList.TakeDrop.Index
-public import Matroid.Graph.WList.TakeDrop.Lemmas
-public import Matroid.Graph.WList.TakeDrop.Pred
-public import Matroid.Graph.Walk.Basic
-public import Matroid.Graph.Walk.Cycle
--- public import Matroid.Graph.Walk.Dart
-public import Matroid.Graph.Walk.Iso
--- public import Matroid.Graph.Walk.OrientationWalk
-public import Matroid.Graph.Walk.Path
+public import Matroid.GraphTheory.Graph.AcyclicSet
+public import Matroid.GraphTheory.Graph.Basic
+public import Matroid.GraphTheory.Graph.Bipartite
+public import Matroid.GraphTheory.Graph.Connected.Basic
+public import Matroid.GraphTheory.Graph.Connected.Bond
+public import Matroid.GraphTheory.Graph.Connected.Component
+public import Matroid.GraphTheory.Graph.Connected.Construction
+public import Matroid.GraphTheory.Graph.Connected.Defs
+public import Matroid.GraphTheory.Graph.Connected.Ear
+-- public import Matroid.GraphTheory.Graph.Connected.Gammoid
+public import Matroid.GraphTheory.Graph.Connected.LineGraph
+public import Matroid.GraphTheory.Graph.Connected.Menger
+public import Matroid.GraphTheory.Graph.Connected.Minor
+public import Matroid.GraphTheory.Graph.Connected.MixedLineGraph
+public import Matroid.GraphTheory.Graph.Connected.Set.Defs
+public import Matroid.GraphTheory.Graph.Connected.Set.Leg
+public import Matroid.GraphTheory.Graph.Connected.Set.SetEnsemble
+public import Matroid.GraphTheory.Graph.Connected.Subgraph
+public import Matroid.GraphTheory.Graph.Connected.Vertex.Basic
+public import Matroid.GraphTheory.Graph.Connected.Vertex.Defs
+public import Matroid.GraphTheory.Graph.Connected.Vertex.VertexEnsemble
+public import Matroid.GraphTheory.Graph.Constructions.Basic
+-- public import Matroid.GraphTheory.Graph.Constructions.Cycle
+-- public import Matroid.GraphTheory.Graph.Constructions.Random
+public import Matroid.GraphTheory.Graph.Constructions.Sum
+public import Matroid.GraphTheory.Graph.Degree.Basic
+public import Matroid.GraphTheory.Graph.Degree.Constructions
+public import Matroid.GraphTheory.Graph.Degree.Defs
+public import Matroid.GraphTheory.Graph.Degree.Max
+public import Matroid.GraphTheory.Graph.Distance
+-- public import Matroid.GraphTheory.Graph.EdgeColoring
+public import Matroid.GraphTheory.Graph.Finite
+public import Matroid.GraphTheory.Graph.Forest
+public import Matroid.GraphTheory.Graph.Hom.Basic
+public import Matroid.GraphTheory.Graph.Hom.Factorization
+public import Matroid.GraphTheory.Graph.Hom.Image
+public import Matroid.GraphTheory.Graph.Hom.Map
+public import Matroid.GraphTheory.Graph.IRw
+public import Matroid.GraphTheory.Graph.Independent
+public import Matroid.GraphTheory.Graph.Lattice
+public import Matroid.GraphTheory.Graph.Map
+public import Matroid.GraphTheory.Graph.Matching.Berge
+public import Matroid.GraphTheory.Graph.Matching.Defs
+public import Matroid.GraphTheory.Graph.Matching.Konigs
+-- public import Matroid.GraphTheory.Graph.Matching.TutteBerge
+public import Matroid.GraphTheory.Graph.Matrix
+public import Matroid.GraphTheory.Graph.Minor.Defs
+public import Matroid.GraphTheory.Graph.Minor.Topological
+public import Matroid.GraphTheory.Graph.Minor.Walk
+-- public import Matroid.GraphTheory.Graph.Planarity.CombMap.Basic
+-- public import Matroid.GraphTheory.Graph.Planarity.CombMap.Equiv
+-- public import Matroid.GraphTheory.Graph.Planarity.Contraction
+public import Matroid.GraphTheory.Graph.Planarity.CycleDichotomy
+public import Matroid.GraphTheory.Graph.Planarity.Drawing
+-- public import Matroid.GraphTheory.Graph.Planarity.Drawing.Union
+-- public import Matroid.GraphTheory.Graph.Planarity.Face
+-- public import Matroid.GraphTheory.Graph.Planarity.FaceCycle
+-- public import Matroid.GraphTheory.Graph.Planarity.Insertion.Basic
+-- public import Matroid.GraphTheory.Graph.Planarity.Insertion.Plane
+public import Matroid.GraphTheory.Graph.Planarity.Obstructions
+public import Matroid.GraphTheory.Graph.Planarity.PLDrawing
+public import Matroid.GraphTheory.Graph.Planarity.PLReduction
+-- public import Matroid.GraphTheory.Graph.Planarity.PLTopologicalMinor
+public import Matroid.GraphTheory.Graph.Planarity.Realization.Basic
+public import Matroid.GraphTheory.Graph.Planarity.Realization.CWComplex
+public import Matroid.GraphTheory.Graph.Planarity.Realization.Iso
+public import Matroid.GraphTheory.Graph.Planarity.Realization.Metric
+public import Matroid.GraphTheory.Graph.Planarity.Realization.Presentation
+public import Matroid.GraphTheory.Graph.Planarity.Realization.Subgraph
+public import Matroid.GraphTheory.Graph.Planarity.Realization.VertexSpace
+-- public import Matroid.GraphTheory.Graph.Planarity.StarLemma
+-- public import Matroid.GraphTheory.Graph.Planarity.ThetaCurve
+-- public import Matroid.GraphTheory.Graph.Planarity.TopologicalMinor
+public import Matroid.GraphTheory.Graph.Relabel
+public import Matroid.GraphTheory.Graph.Simple
+public import Matroid.GraphTheory.Graph.Subdivision
+public import Matroid.GraphTheory.Graph.Subgraph.Basic
+public import Matroid.GraphTheory.Graph.Subgraph.Compatible
+public import Matroid.GraphTheory.Graph.Subgraph.Defs
+public import Matroid.GraphTheory.Graph.Subgraph.Delete
+public import Matroid.GraphTheory.Graph.Subgraph.Inter
+public import Matroid.GraphTheory.Graph.Subgraph.Lemma
+public import Matroid.GraphTheory.Graph.Subgraph.Union
+public import Matroid.GraphTheory.Graph.TopologicalMinor
+public import Matroid.GraphTheory.Graph.Transport
+public import Matroid.GraphTheory.Graph.Tree
+public import Matroid.GraphTheory.Graph.WList.Cycle
+public import Matroid.GraphTheory.Graph.WList.Defs
+public import Matroid.GraphTheory.Graph.WList.Ops
+public import Matroid.GraphTheory.Graph.WList.Remove
+public import Matroid.GraphTheory.Graph.WList.Sublist
+public import Matroid.GraphTheory.Graph.WList.TakeDrop.Decompose
+public import Matroid.GraphTheory.Graph.WList.TakeDrop.Defs
+public import Matroid.GraphTheory.Graph.WList.TakeDrop.Index
+public import Matroid.GraphTheory.Graph.WList.TakeDrop.Lemmas
+public import Matroid.GraphTheory.Graph.WList.TakeDrop.Pred
+public import Matroid.GraphTheory.Graph.Walk.Basic
+public import Matroid.GraphTheory.Graph.Walk.Cycle
+-- public import Matroid.GraphTheory.Graph.Walk.Dart
+public import Matroid.GraphTheory.Graph.Walk.Iso
+-- public import Matroid.GraphTheory.Graph.Walk.OrientationWalk
+public import Matroid.GraphTheory.Graph.Walk.Path
+public import Matroid.GraphTheory.Pseudograph.Presentation.Basic
+public import Matroid.GraphTheory.Pseudograph.Presentation.Hom
+public import Matroid.GraphTheory.Pseudograph.Presentation.OfGraph
+public import Matroid.GraphTheory.Pseudograph.Presentation.Orientation
+public import Matroid.GraphTheory.Pseudograph.Presentation.Quotient
 public import Matroid.Graphic
 public import Matroid.IRw
 public import Matroid.Intersection

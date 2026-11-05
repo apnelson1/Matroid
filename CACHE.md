@@ -6,11 +6,34 @@ The cache covers the `Matroid` library. Dependencies such as Mathlib and loogle 
 
 ## One-time setup
 
+The registration script requires Linux, macOS, or WSL, Python 3.11+, and `tomlkit` for editing TOML
+without discarding comments or unrelated settings. Install it in the Python
+environment used by `python3` (for example, in an activated virtual environment):
+
+```bash
+python3 -m pip install 'tomlkit>=0.13.3,<1'
+```
+
 ```bash
 scripts/register_lake_cache.sh
 ```
 
 Before using the cache, we first need to tell the computer where to find the cache. `scripts/register_lake_cache.sh` registers the public cache service `matroid-r2-public` in `~/.lake/config.toml`, the per-user Lake configuration file read by every Lake workspace on the machine. It also makes that service the default unless another default is already configured, in which case it leaves the existing default in place.
+
+Both dotted keys (`cache.defaultService = "other-service"`) and tables
+(`[cache]` followed by `defaultService = "other-service"`) are supported.
+Existing service definitions are preserved, including a previously registered
+`matroid-r2-public`. Pass `--set-default` to explicitly replace an existing default.
+The script validates the input and output, writes a temporary file beside the
+config, then replaces it atomically, preserving its permission bits. Invalid
+input or a failed write leaves the original config untouched. Concurrent runs
+of this script share a persistent `config.toml.lock` sidecar.
+
+Regression tests use temporary configurations and do not change your Lake setup:
+
+```bash
+python3 -m unittest discover -s scripts -p 'test_register_lake_cache.py' -v
+```
 
 ## Everyday use
 

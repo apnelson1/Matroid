@@ -14,8 +14,7 @@ open Set Function TopologicalSpace Topology Set.Notation
 
 namespace GraphLike
 
-variable {X : Type*} [TopologicalSpace X]
-variable (G : GraphLike X) (A : Set X) (B : Set (Set X))
+variable {X : Type*} [TopologicalSpace X] (G : GraphLike X) (A : Set X) (B : Set (Set X))
 
 /-- The selected vertices and selected whole edges, clipped to the graph. -/
 def support : Set X := (A ∩ V(G)) ∪ ⋃₀ (B ∩ E(G))

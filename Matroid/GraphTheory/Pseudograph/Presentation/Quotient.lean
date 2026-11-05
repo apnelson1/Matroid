@@ -178,8 +178,7 @@ def quotientToGraph : QuotientGraph V E → Graph V E :=
 
 /-- A noncomputably chosen ordered representative of the unordered ends of an edge. -/
 noncomputable def chosenLink (G : Graph V E) (e : {e : E // e ∈ G.edgeSet}) :
-    {p : ({v : V // v ∈ G.vertexSet} × {v : V // v ∈ G.vertexSet}) //
-      G.IsLink e.1 p.1.1 p.2.1} :=
+    {p : ({v : V // v ∈ G.vertexSet} × {v : V // v ∈ G.vertexSet}) // G.IsLink e.1 p.1.1 p.2.1} :=
   have hex := G.exists_isLink_of_mem_edgeSet e.2
   have hxy := hex.choose_spec.choose_spec
   ⟨(⟨hex.choose, hxy.left_mem⟩, ⟨hex.choose_spec.choose, hxy.right_mem⟩), hxy⟩

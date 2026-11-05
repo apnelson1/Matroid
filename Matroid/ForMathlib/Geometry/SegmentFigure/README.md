@@ -144,8 +144,3 @@ maximal-segment, and subset theorems use only Lean's standard logical axioms.
 exercise carrier-relative hypotheses, the finite straight-line consumer, empty and singleton
 cases, a connected subset with a disconnected segment intersection, and the finite-component
 reverse implication. Both test modules are imported by the `lake test` root.
-
-The crossing and parity regressions are checked separately with
-`lake build MatroidTests.PolygonalCrossing MatroidTests.BoundaryCrossing MatroidTests.PolygonalJordan`.
-They cover crossings, touches, a corner vertex, the zero direction, the half-plane characterization,
-and full ray avoidance for both compact sets and a noncompact one-sided-bounded half-plane.
