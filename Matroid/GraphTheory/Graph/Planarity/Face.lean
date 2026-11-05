@@ -1,6 +1,6 @@
 module
 
-public import Matroid.Graph.Planarity.Drawing
+public import Matroid.GraphTheory.Graph.Planarity.Drawing
 public import Matroid.ForMathlib.Topology.OnePoint
 public import Matroid.ForMathlib.Topology.JordanCurve
 public import Matroid.ForMathlib.Topology.ConnectedComponent

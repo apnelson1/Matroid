@@ -1,7 +1,7 @@
 module
 
-public import Matroid.Graph.Hom.Basic
-public import Matroid.Graph.Subgraph.Delete
+public import Matroid.GraphTheory.Graph.Hom.Basic
+public import Matroid.GraphTheory.Graph.Subgraph.Delete
 
 /-!
 # Images and surjective graph homomorphisms

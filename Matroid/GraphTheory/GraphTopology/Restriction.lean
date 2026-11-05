@@ -1,6 +1,6 @@
 module
 
-public import Matroid.GraphLike.Basic
+public import Matroid.GraphTheory.GraphTopology.Basic
 
 /-! # Restrictions and finite supports of graph-like spaces
 

@@ -1,6 +1,6 @@
 module
 
-public import Matroid.Graph.Planarity.TopologicalMinor
+public import Matroid.GraphTheory.Graph.Planarity.TopologicalMinor
 
 @[expose] public section
 

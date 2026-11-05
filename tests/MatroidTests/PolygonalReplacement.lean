@@ -1,7 +1,7 @@
 module
 
 public import Matroid.ForMathlib.Geometry.PrimitiveLinkReplacement
-public import Matroid.Graph.Planarity.PLReduction
+public import Matroid.GraphTheory.Graph.Planarity.PLReduction
 
 open Set Metric PolygonalPath
 

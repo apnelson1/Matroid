@@ -1,8 +1,8 @@
 module
 
-public import Matroid.Graph.Lattice
-public import Matroid.Graph.Simple
-public import Matroid.Graph.Connected.Vertex.Defs
+public import Matroid.GraphTheory.Graph.Lattice
+public import Matroid.GraphTheory.Graph.Simple
+public import Matroid.GraphTheory.Graph.Connected.Vertex.Defs
 
 @[expose] public section
 

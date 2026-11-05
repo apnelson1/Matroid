@@ -2,12 +2,12 @@ module
 
 public import Matroid.Axioms.Circuit
 public import Matroid.Minor.Contract
-public import Matroid.Graph.AcyclicSet
-public import Matroid.Graph.Minor.Walk
-public import Matroid.Graph.Connected.Minor
+public import Matroid.GraphTheory.Graph.AcyclicSet
+public import Matroid.GraphTheory.Graph.Minor.Walk
+public import Matroid.GraphTheory.Graph.Connected.Minor
 public import Matroid.Connectivity.Skew
 public import Matroid.Connectivity.ConnSystem.Matroid
-public import Matroid.Graph.Matrix
+public import Matroid.GraphTheory.Graph.Matrix
 public import Matroid.Binary.Representation
 
 @[expose] public section

@@ -1,8 +1,8 @@
 module
 
 public import Mathlib.Geometry.Polygon.Basic
-public import Matroid.Graph.Planarity.PolygonalPath
-public import Matroid.Graph.Finite
+public import Matroid.GraphTheory.Graph.Planarity.PolygonalPath
+public import Matroid.GraphTheory.Graph.Finite
 
 variable {α β : Type*} {x y z w : EuclideanSpace ℝ (Fin 2)} {C L : List (EuclideanSpace ℝ (Fin 2))}
   {X Y : Set (EuclideanSpace ℝ (Fin 2))} {N : ℕ}

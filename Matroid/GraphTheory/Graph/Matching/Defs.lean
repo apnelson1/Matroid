@@ -1,6 +1,6 @@
 module
 
-public import Matroid.Graph.Degree.Max
+public import Matroid.GraphTheory.Graph.Degree.Max
 import all Mathlib.Combinatorics.Graph.Delete
 public import Mathlib.Combinatorics.Graph.Delete
 

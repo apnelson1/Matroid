@@ -2,7 +2,7 @@ module
 
 public import Matroid.ForMathlib.Analysis.Convex.Segment
 public import Matroid.ForMathlib.Geometry.SegmentFigure.Topology
-public import Matroid.GraphLike.Subset
+public import Matroid.GraphTheory.GraphTopology.Subset
 
 /-!
 # Convex clipping of segment figures

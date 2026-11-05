@@ -1,7 +1,7 @@
 module
 
-public import Matroid.Graph.Walk.Cycle
-public import Matroid.Graph.Forest
+public import Matroid.GraphTheory.Graph.Walk.Cycle
+public import Matroid.GraphTheory.Graph.Forest
 public import Mathlib.Combinatorics.Graph.Basic
 public import Mathlib.Logic.Equiv.Fin.Rotate
 public import Matroid.ForMathlib.Fin

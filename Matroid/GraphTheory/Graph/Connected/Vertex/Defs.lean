@@ -1,9 +1,9 @@
 module
 
-public import Matroid.Graph.Walk.Path
+public import Matroid.GraphTheory.Graph.Walk.Path
 import all Mathlib.Combinatorics.Graph.Delete
 public import Mathlib.Combinatorics.Graph.Delete
-public import Matroid.Graph.Map
+public import Matroid.GraphTheory.Graph.Map
 
 
 @[expose] public section

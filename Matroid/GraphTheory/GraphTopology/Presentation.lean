@@ -1,7 +1,7 @@
 module
 
-public import Matroid.GraphLike.StraightLine
-public import Matroid.GraphLike.Assembly
+public import Matroid.GraphTheory.GraphTopology.StraightLine
+public import Matroid.GraphTheory.GraphTopology.Assembly
 public import Matroid.ForMathlib.Analysis.Convex.SegmentCutting
 
 /-! # Finite straight-line presentations

@@ -1,9 +1,9 @@
 module
 
 public import Matroid.ForMathlib.Geometry.Polygon.Crosscut
-public import Matroid.Graph.Connected.Ear
-public import Matroid.Graph.Planarity.Face
-public import Matroid.Graph.Planarity.PLDrawing
+public import Matroid.GraphTheory.Graph.Connected.Ear
+public import Matroid.GraphTheory.Graph.Planarity.Face
+public import Matroid.GraphTheory.Graph.Planarity.PLDrawing
 
 /-!
 # Faces of a 2-connected polygonal drawing are bounded by cycles

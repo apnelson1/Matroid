@@ -1,7 +1,7 @@
 module
 
-public import Matroid.Graph.Matching.Defs
-public import Matroid.Graph.Bipartite
+public import Matroid.GraphTheory.Graph.Matching.Defs
+public import Matroid.GraphTheory.Graph.Bipartite
 
 variable {α β : Type*} {G H C : Graph α β} {S X Y : Set α} {M M' : Set β} {u v x y z : α} {e f : β}
   {hM : G.IsMatching M} {P P' : WList α β}

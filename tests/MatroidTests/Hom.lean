@@ -1,8 +1,8 @@
 module
 
-public import Matroid.Graph.Hom.Map
-public import Matroid.Graph.Immersion.Embedding
-public import Matroid.Graph.Walk.Iso
+public import Matroid.GraphTheory.Graph.Hom.Map
+public import Matroid.GraphTheory.Graph.Immersion.Embedding
+public import Matroid.GraphTheory.Graph.Walk.Iso
 
 /-!
 # Regression tests for graph homomorphisms

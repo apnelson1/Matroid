@@ -1,9 +1,9 @@
 module
 
-public import Matroid.Graph.Finite
-public import Matroid.Graph.Planarity.Realization.VertexSpace
-public import Matroid.Graph.GraphLike.ArbRel
-public import Matroid.Graph.Distance
+public import Matroid.GraphTheory.Graph.Finite
+public import Matroid.GraphTheory.Graph.Planarity.Realization.VertexSpace
+public import Matroid.GraphTheory.Graph.GraphLike.ArbRel
+public import Matroid.GraphTheory.Graph.Distance
 public import Mathlib.Topology.CWComplex.Classical.Subcomplex
 public import Matroid.ForMathlib.Topology.Path
 public import Matroid.ForMathlib.Topology.ConnPartition

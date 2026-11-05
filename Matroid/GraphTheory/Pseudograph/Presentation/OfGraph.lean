@@ -1,7 +1,7 @@
 module
 
-public import Matroid.Graph.Presentation.Hom
-public import Matroid.Graph.Presentation.Quotient
+public import Matroid.GraphTheory.Pseudograph.Presentation.Hom
+public import Matroid.GraphTheory.Pseudograph.Presentation.Quotient
 
 /-!
 # Lifting coarse graph embeddings to chosen presentations

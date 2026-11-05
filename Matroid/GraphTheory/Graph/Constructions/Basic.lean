@@ -1,6 +1,6 @@
 module
 
-public import Matroid.Graph.Subgraph.Basic
+public import Matroid.GraphTheory.Graph.Subgraph.Basic
 public import Mathlib.Data.PFun
 public import Mathlib.Combinatorics.SimpleGraph.Basic
 public import Mathlib.Data.Sym.Card

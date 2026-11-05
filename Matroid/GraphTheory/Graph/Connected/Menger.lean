@@ -1,10 +1,10 @@
 module
 
-public import Matroid.Graph.Connected.Set.Leg
-public import Matroid.Graph.Connected.Vertex.VertexEnsemble
-public import Matroid.Graph.Connected.MixedLineGraph
-public import Matroid.Graph.Connected.LineGraph
-public import Matroid.Graph.Finite
+public import Matroid.GraphTheory.Graph.Connected.Set.Leg
+public import Matroid.GraphTheory.Graph.Connected.Vertex.VertexEnsemble
+public import Matroid.GraphTheory.Graph.Connected.MixedLineGraph
+public import Matroid.GraphTheory.Graph.Connected.LineGraph
+public import Matroid.GraphTheory.Graph.Finite
 public import Mathlib.SetTheory.Cardinal.NatCard
 import all Mathlib.Combinatorics.Graph.Delete
 public import Mathlib.Combinatorics.Graph.Delete

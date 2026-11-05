@@ -1,6 +1,6 @@
 module
 
-public import Matroid.GraphLike.Polygonal
+public import Matroid.GraphTheory.GraphTopology.Polygonal
 public import Matroid.ForMathlib.Geometry.SegmentFigure.Basic
 
 /-! # Straight-line graph-like spaces

@@ -1,8 +1,8 @@
 module
 
-public import Matroid.Graph.Planarity.Insertion.Basic
-public import Matroid.Graph.Planarity.PLTopologicalMinor
-public import Matroid.Graph.Planarity.StarLemma
+public import Matroid.GraphTheory.Graph.Planarity.Insertion.Basic
+public import Matroid.GraphTheory.Graph.Planarity.PLTopologicalMinor
+public import Matroid.GraphTheory.Graph.Planarity.StarLemma
 
 @[expose] public section
 

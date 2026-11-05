@@ -1,6 +1,6 @@
 module
 
-public import Matroid.Graph.Connected.MixedLineGraph
+public import Matroid.GraphTheory.Graph.Connected.MixedLineGraph
 
 @[expose] public section
 

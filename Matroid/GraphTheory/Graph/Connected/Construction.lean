@@ -1,7 +1,7 @@
 module
 
-public import Matroid.Graph.Connected.Menger
-public import Matroid.Graph.Connected.Bond
+public import Matroid.GraphTheory.Graph.Connected.Menger
+public import Matroid.GraphTheory.Graph.Connected.Bond
 
 @[expose] public section
 

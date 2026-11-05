@@ -5,8 +5,8 @@ Authors: Jun Kwon
 -/
 module
 
-public import Matroid.Graph.Transport
-public import Matroid.Graph.Minor.Walk
+public import Matroid.GraphTheory.Graph.Transport
+public import Matroid.GraphTheory.Graph.Minor.Walk
 
 /-!
 # Walks under graph isomorphism

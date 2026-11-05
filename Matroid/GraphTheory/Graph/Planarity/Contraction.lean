@@ -1,6 +1,6 @@
 module
 
-public import Matroid.Graph.Planarity.FaceCycle
+public import Matroid.GraphTheory.Graph.Planarity.FaceCycle
 
 /-!
 # Contraction and vertex splitting in a polygonal plane drawing

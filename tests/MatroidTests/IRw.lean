@@ -1,9 +1,9 @@
 module
 
 public import Matroid.IRw
-public import Matroid.Graph.IRw
-public import Matroid.Graph.Relabel
-public import Matroid.Graph.Walk.Iso
+public import Matroid.GraphTheory.Graph.IRw
+public import Matroid.GraphTheory.Graph.Relabel
+public import Matroid.GraphTheory.Graph.Walk.Iso
 public import Matroid.Transport
 public import Matroid.ForMathlib.Tactic.IRw.Equiv
 

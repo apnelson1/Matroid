@@ -1,6 +1,6 @@
 module
 
-public import Matroid.Graph.Planarity.Drawing
+public import Matroid.GraphTheory.Graph.Planarity.Drawing
 public import Matroid.ForMathlib.Geometry.PolygonalPath.PrimitivePath
 
 @[expose] public section

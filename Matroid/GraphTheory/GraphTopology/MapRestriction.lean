@@ -1,7 +1,7 @@
 module
 
-public import Matroid.GraphLike.Map
-public import Matroid.GraphLike.Restriction
+public import Matroid.GraphTheory.GraphTopology.Map
+public import Matroid.GraphTheory.GraphTopology.Restriction
 
 /-! # Transport and whole-edge restriction
 

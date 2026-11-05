@@ -1,9 +1,9 @@
 module
 
 public import Matroid.ForMathlib.Card
-public import Matroid.Graph.Planarity.Plane
-public import Matroid.Graph.Planarity.Cut
-public import Matroid.Graph.Planarity.PolygonalPath
+public import Matroid.GraphTheory.Graph.Planarity.Plane
+public import Matroid.GraphTheory.Graph.Planarity.Cut
+public import Matroid.GraphTheory.Graph.Planarity.PolygonalPath
 
 open Set EuclideanSpace RealInnerProductSpace Metric Plane
 variable {x y z a b c u v : ℝ²} {S : Set ℝ²} {P : PolygonalPath x x}

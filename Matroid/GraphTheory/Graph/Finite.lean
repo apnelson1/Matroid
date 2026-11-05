@@ -1,8 +1,8 @@
 module
 
-public import Matroid.Graph.Walk.Cycle
-public import Matroid.Graph.Simple
-public import Matroid.Graph.Lattice
+public import Matroid.GraphTheory.Graph.Walk.Cycle
+public import Matroid.GraphTheory.Graph.Simple
+public import Matroid.GraphTheory.Graph.Lattice
 public import Mathlib.Data.Set.Finite.List
 import all Mathlib.Combinatorics.Graph.Delete
 public import Mathlib.Combinatorics.Graph.Delete

@@ -1,7 +1,7 @@
 module
 
-public import Matroid.Graph.Connected.Basic
-public import Matroid.Graph.Walk.Cycle
+public import Matroid.GraphTheory.Graph.Connected.Basic
+public import Matroid.GraphTheory.Graph.Walk.Cycle
 public import Matroid.ForMathlib.Tactic.ENatToNat
 public import Matroid.ForMathlib.Minimal
 

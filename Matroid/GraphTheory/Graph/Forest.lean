@@ -1,8 +1,8 @@
 module
 
-public import Matroid.Graph.Distance
-public import Matroid.Graph.Connected.Subgraph
-public import Matroid.Graph.Connected.Bond
+public import Matroid.GraphTheory.Graph.Distance
+public import Matroid.GraphTheory.Graph.Connected.Subgraph
+public import Matroid.GraphTheory.Graph.Connected.Bond
 import all Mathlib.Combinatorics.Graph.Delete
 public import Mathlib.Combinatorics.Graph.Delete
 

@@ -1,3 +1,3 @@
 module
 
-public import Matroid.Graph.Connected.Basic
+public import Matroid.GraphTheory.Graph.Connected.Basic

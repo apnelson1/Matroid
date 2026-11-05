@@ -1,6 +1,6 @@
 module
 
-public import Matroid.Graph.Matching.Defs
+public import Matroid.GraphTheory.Graph.Matching.Defs
 public import Matroid.Parallel.Basic
 
 @[expose] public section

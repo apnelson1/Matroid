@@ -5,7 +5,7 @@ Authors: Jun Kwon
 -/
 module
 
-public import Matroid.Graph.Walk.Iso
+public import Matroid.GraphTheory.Graph.Walk.Iso
 -- public import Mathlib.Combinatorics.Graph.Simple
 
 /-!

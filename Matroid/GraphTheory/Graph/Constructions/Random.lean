@@ -1,7 +1,7 @@
 module
 
 public import Mathlib.Data.Sym.Sym2.Order
-public import Matroid.Graph.Simple
+public import Matroid.GraphTheory.Graph.Simple
 
 @[expose] public section
 

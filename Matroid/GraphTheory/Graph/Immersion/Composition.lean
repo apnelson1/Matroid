@@ -1,6 +1,6 @@
 module
 
-public import Matroid.Graph.Immersion.Basic
+public import Matroid.GraphTheory.Graph.Immersion.Basic
 
 /-!
 # Composition of immersions

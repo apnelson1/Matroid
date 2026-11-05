@@ -1,6 +1,6 @@
 module
 
-public import Matroid.Graph.Bipartite
+public import Matroid.GraphTheory.Graph.Bipartite
 
 @[expose] public section
 

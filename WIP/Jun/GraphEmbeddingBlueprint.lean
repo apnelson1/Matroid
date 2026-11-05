@@ -2,9 +2,9 @@ module
 
 public import Matroid.Binary.Representation
 public import Matroid.ForMathlib.Data.Set.IndexedPartition
-public import Matroid.Graph.Planarity.K33
-public import Matroid.Graph.Planarity.Realization.Celluar
-public import Matroid.Graph.Planarity.Realization.Metric
+public import Matroid.GraphTheory.Graph.Planarity.K33
+public import Matroid.GraphTheory.Graph.Planarity.Realization.Celluar
+public import Matroid.GraphTheory.Graph.Planarity.Realization.Metric
 public import Matroid.Minor.Iso
 public import Matroid.Tame
 public import Mathlib.Order.UpperLower.Basic

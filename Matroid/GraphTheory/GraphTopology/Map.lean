@@ -1,6 +1,6 @@
 module
 
-public import Matroid.GraphLike.Basic
+public import Matroid.GraphTheory.GraphTopology.Basic
 public import Mathlib.Topology.Homeomorph.Lemmas
 
 /-! # Embedding transport of graph-like spaces

@@ -1,11 +1,11 @@
 module
 
 public import Matroid.ForMathlib.Tactic.ENatToNat
-public import Matroid.Graph.Connected.Component
-public import Matroid.Graph.Map
-public import Matroid.Graph.Connected.Set.Defs
+public import Matroid.GraphTheory.Graph.Connected.Component
+public import Matroid.GraphTheory.Graph.Map
+public import Matroid.GraphTheory.Graph.Connected.Set.Defs
 public import Mathlib.Combinatorics.Graph.Delete
-public import Matroid.Graph.Connected.Vertex.Basic
+public import Matroid.GraphTheory.Graph.Connected.Vertex.Basic
 
 @[expose] public section
 

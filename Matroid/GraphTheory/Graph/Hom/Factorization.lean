@@ -1,7 +1,7 @@
 module
 
 public import Matroid.ForMathlib.Function
-public import Matroid.Graph.Hom.Image
+public import Matroid.GraphTheory.Graph.Hom.Image
 
 /-!
 # Factorization of graph homomorphisms

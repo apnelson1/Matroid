@@ -5,7 +5,7 @@ public import Mathlib.Topology.UniformSpace.Path
 public import Mathlib.Topology.Separation.Connected
 public import Mathlib.Geometry.Polygon.Basic -- inefficient import
 public import Matroid.ForMathlib.List.Basic
-public import Matroid.Graph.Planarity.Topology.Path
+public import Matroid.GraphTheory.Graph.Planarity.Topology.Path
 
 universe u
 variable {α β : Type u} {a b c x y z w : α} {C L : List α} {X Y : Set α} {N : ℕ}

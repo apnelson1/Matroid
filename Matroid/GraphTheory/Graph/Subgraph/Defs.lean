@@ -1,6 +1,6 @@
 module
 
-public import Matroid.Graph.Constructions.Basic
+public import Matroid.GraphTheory.Graph.Constructions.Basic
 public import Matroid.ForMathlib.Set
 public import Matroid.ForMathlib.Function
 import all Mathlib.Combinatorics.Graph.Delete

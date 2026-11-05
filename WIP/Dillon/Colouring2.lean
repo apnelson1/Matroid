@@ -1,9 +1,9 @@
 module
 
 public import Mathlib.Combinatorics.Graph.Basic
-public import Matroid.Graph.Degree.Max
-public import Matroid.Graph.Walk.Cycle
-public import Matroid.Graph.Constructions.Basic
+public import Matroid.GraphTheory.Graph.Degree.Max
+public import Matroid.GraphTheory.Graph.Walk.Cycle
+public import Matroid.GraphTheory.Graph.Constructions.Basic
 
 open Set Graph
 

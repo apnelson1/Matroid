@@ -1,8 +1,8 @@
 module
 
-public import Matroid.Graph.Planarity.CombMap.Equiv
-public import Matroid.Graph.Walk.Dart
-public import Matroid.Graph.Simple
+public import Matroid.GraphTheory.Graph.Planarity.CombMap.Equiv
+public import Matroid.GraphTheory.Graph.Walk.Dart
+public import Matroid.GraphTheory.Graph.Simple
 import all Mathlib.Combinatorics.Graph.Delete
 public import Mathlib.Combinatorics.Graph.Delete
 

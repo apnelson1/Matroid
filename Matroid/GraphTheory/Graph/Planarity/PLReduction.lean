@@ -1,6 +1,6 @@
 module
 
-public import Matroid.Graph.Planarity.PLDrawing
+public import Matroid.GraphTheory.Graph.Planarity.PLDrawing
 public import Matroid.ForMathlib.Geometry.PrimitiveLinkReplacement
 
 /-!

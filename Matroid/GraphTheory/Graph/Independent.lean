@@ -1,7 +1,7 @@
 module
 
 public import Matroid.ForMathlib.Card
-public import Matroid.Graph.Simple
+public import Matroid.GraphTheory.Graph.Simple
 
 @[expose] public section
 

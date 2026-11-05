@@ -1,7 +1,7 @@
 module
 
-public import Matroid.Graph.Planarity.Drawing
-public import Matroid.Graph.Subdivision
+public import Matroid.GraphTheory.Graph.Planarity.Drawing
+public import Matroid.GraphTheory.Graph.Subdivision
 
 @[expose] public section
 

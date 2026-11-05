@@ -1,6 +1,6 @@
 module
 
-public import Matroid.Graph.Presentation.Basic
+public import Matroid.GraphTheory.Pseudograph.Presentation.Basic
 
 /-!
 # The coarse quotient of incidence presentations

@@ -1,6 +1,6 @@
 module
 
-public import Matroid.Graph.WList.Defs
+public import Matroid.GraphTheory.Graph.WList.Defs
 
 @[expose] public section
 

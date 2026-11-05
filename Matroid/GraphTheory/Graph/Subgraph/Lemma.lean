@@ -1,8 +1,8 @@
 module
 
-public import Matroid.Graph.Subgraph.Delete
-public import Matroid.Graph.Subgraph.Union
-public import Matroid.Graph.Subgraph.Inter
+public import Matroid.GraphTheory.Graph.Subgraph.Delete
+public import Matroid.GraphTheory.Graph.Subgraph.Union
+public import Matroid.GraphTheory.Graph.Subgraph.Inter
 
 @[expose] public section
 

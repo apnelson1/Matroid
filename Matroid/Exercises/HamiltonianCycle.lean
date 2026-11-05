@@ -1,7 +1,7 @@
 module
 
-public import Matroid.Graph.Independent
-public import Matroid.Graph.Connected.Menger
+public import Matroid.GraphTheory.Graph.Independent
+public import Matroid.GraphTheory.Graph.Connected.Menger
 public import Matroid.ForMathlib.Minimal
 
 public import Matroid.Exercises.HamiltonianCycle.Degree

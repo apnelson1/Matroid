@@ -1,6 +1,6 @@
 module
 
-public import Matroid.Graph.Immersion.Relation
+public import Matroid.GraphTheory.Graph.Immersion.Relation
 
 /-!
 # Regression tests for immersion routes

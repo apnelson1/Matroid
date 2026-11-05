@@ -1,9 +1,9 @@
 module
 
 public import Matroid.Graphic
-public import Matroid.Graph.Constructions.Sum
-public import Matroid.Graph.Constructions.Cycle
-public import Matroid.Graph.Connected.Ear
+public import Matroid.GraphTheory.Graph.Constructions.Sum
+public import Matroid.GraphTheory.Graph.Constructions.Cycle
+public import Matroid.GraphTheory.Graph.Connected.Ear
 public import Matroid.Connectivity.Fan.Cyclic
 
 

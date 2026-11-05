@@ -1,11 +1,11 @@
 module
 
 public import Matroid.ForMathlib.Topology.PrimitivePath
-public import Matroid.Graph.Degree.Max
-public import Matroid.Graph.Minor.Defs
-public import Matroid.Graph.Planarity.Realization.Iso
-public import Matroid.Graph.Planarity.Realization.Subgraph
-public import Matroid.Graph.TopologicalMinor
+public import Matroid.GraphTheory.Graph.Degree.Max
+public import Matroid.GraphTheory.Graph.Minor.Defs
+public import Matroid.GraphTheory.Graph.Planarity.Realization.Iso
+public import Matroid.GraphTheory.Graph.Planarity.Realization.Subgraph
+public import Matroid.GraphTheory.Graph.TopologicalMinor
 public import Mathlib.Analysis.Convex.PathConnected
 public import Mathlib.LinearAlgebra.LinearIndependent.Basic
 

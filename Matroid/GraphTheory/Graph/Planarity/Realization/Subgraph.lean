@@ -1,6 +1,6 @@
 module
 
-public import Matroid.Graph.Planarity.Realization.Basic
+public import Matroid.GraphTheory.Graph.Planarity.Realization.Basic
 public import Matroid.ForMathlib.Topology.Path
 
 @[expose] public section

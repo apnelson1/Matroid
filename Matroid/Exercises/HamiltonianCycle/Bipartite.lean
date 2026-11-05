@@ -1,9 +1,9 @@
 module
 
-public import Matroid.Graph.Independent
+public import Matroid.GraphTheory.Graph.Independent
 public import Matroid.ForMathlib.Minimal
 public import Matroid.ForMathlib.Tactic.ENatToNat
-public import Matroid.Graph.Bipartite
+public import Matroid.GraphTheory.Graph.Bipartite
 
 public import Matroid.Exercises.HamiltonianCycle.Degree
 public import Matroid.Exercises.HamiltonianCycle.Walk

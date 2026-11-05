@@ -1,9 +1,9 @@
 module
 
-public import Matroid.Graph.Relabel
-public import Matroid.Graph.Map
-public import Matroid.Graph.Simple
-public import Matroid.Graph.WList.TakeDrop.Index
+public import Matroid.GraphTheory.Graph.Relabel
+public import Matroid.GraphTheory.Graph.Map
+public import Matroid.GraphTheory.Graph.Simple
+public import Matroid.GraphTheory.Graph.WList.TakeDrop.Index
 
 /-!
 # Topological minors

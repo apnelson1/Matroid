@@ -1,6 +1,6 @@
 module
 
-public import Matroid.GraphLike.Defs
+public import Matroid.GraphTheory.GraphTopology.Defs
 public import Matroid.ForMathlib.Topology.ConnectedComponent
 
 /-! # Edges and finite carriers of graph-like spaces -/

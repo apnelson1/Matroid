@@ -1,6 +1,6 @@
 module
 
-public import Matroid.Graph.WList.TakeDrop.Pred
+public import Matroid.GraphTheory.Graph.WList.TakeDrop.Pred
 
 @[expose] public section
 

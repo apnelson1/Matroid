@@ -34,16 +34,3 @@ def toGraph (G : Pseudograph V I E) : Graph V E where
   eq_or_eq_of_isLink_of_isLink := fun _ _ _ _ _ h h' ↦ h.left_eq_or_eq h'
   edge_mem_iff_exists_isLink _ := mem_edges_iff_exists_isLink
   left_mem_of_isLink _ _ _ hxy := IsLink.left_mem_vertexSet hxy
-
-def incidenceRelabeling (G : Pseudograph V I E) (f : J → I) : Pseudograph V J E where
-  vertexSet := V(G)
-  incidenceSet := f ⁻¹' I(G)
-  edgeSet := E(G)
-  edgeMap' i := edgeMap' (f i)
-  attach' := fun i ↦ f i
-  other' := fun i ↦ f (other G i)
-  other'_ne := fun i ↦ f.injective.ne (other_ne i)
-  edgeMap'_other' := fun i ↦ f.injective.ne (edgeMap_other i)
-  edgeMap'_eq := fun i j hij ↦ f.injective.ne (edgeMap_eq_iff i j hij)
-  edgeMap_range := by
-    simp [edgeMap_range]

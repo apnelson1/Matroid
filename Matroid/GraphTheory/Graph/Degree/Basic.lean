@@ -1,6 +1,6 @@
 module
 
-public import Matroid.Graph.Finite
+public import Matroid.GraphTheory.Graph.Finite
 public import Mathlib.Algebra.BigOperators.Finsupp.Basic
 public import Matroid.ForMathlib.Topology.ENat
 public import Matroid.ForMathlib.Tactic.ENatToNat

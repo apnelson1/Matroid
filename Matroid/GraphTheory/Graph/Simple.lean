@@ -1,9 +1,9 @@
 module
 
-public import Matroid.Graph.Subgraph.Union
-public import Matroid.Graph.Walk.Cycle
+public import Matroid.GraphTheory.Graph.Subgraph.Union
+public import Matroid.GraphTheory.Graph.Walk.Cycle
 public import Matroid.ForMathlib.Partition.Rep
-public import Matroid.Graph.Map
+public import Matroid.GraphTheory.Graph.Map
 import all Mathlib.Combinatorics.Graph.Delete
 public import Mathlib.Combinatorics.Graph.Delete
 

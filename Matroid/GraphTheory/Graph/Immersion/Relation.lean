@@ -1,8 +1,8 @@
 module
 
-public import Matroid.Graph.Immersion.Embedding
-public import Matroid.Graph.Immersion.Composition
-public import Matroid.Graph.Immersion.TopologicalMinor
+public import Matroid.GraphTheory.Graph.Immersion.Embedding
+public import Matroid.GraphTheory.Graph.Immersion.Composition
+public import Matroid.GraphTheory.Graph.Immersion.TopologicalMinor
 
 /-!
 # Immersion relations

@@ -1,6 +1,6 @@
 module
 
-public import Matroid.Graph.Tree
+public import Matroid.GraphTheory.Graph.Tree
 
 
 variable {α β γ: Type*} {x y z u v w : α} {e f : β} {G : Graph α β} {H : Graph γ β} {X Y : Set α}

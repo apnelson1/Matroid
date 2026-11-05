@@ -1,7 +1,7 @@
 module
 
-public import Matroid.Graph.Connected.Defs
-public import Matroid.Graph.Degree.Constructions
+public import Matroid.GraphTheory.Graph.Connected.Defs
+public import Matroid.GraphTheory.Graph.Degree.Constructions
 public import Matroid.ForMathlib.Data.Set.Subsingleton
 import all Mathlib.Combinatorics.Graph.Delete
 public import Mathlib.Combinatorics.Graph.Delete

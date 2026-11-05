@@ -1,6 +1,6 @@
 module
 
-public import Matroid.Graph.Connected.Basic
+public import Matroid.GraphTheory.Graph.Connected.Basic
 
 /-!
 This file is intended as a **student exercise sheet** for the `Graph` theory library used in this

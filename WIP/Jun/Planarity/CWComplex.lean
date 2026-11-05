@@ -2,7 +2,7 @@ module
 
 public import Mathlib.Topology.CWComplex.Classical.Graph
 public import Mathlib.Topology.CWComplex.Classical.Subcomplex
-public import Matroid.Graph.Planarity.Topology.Circuit
+public import Matroid.GraphTheory.Graph.Planarity.Topology.Circuit
 public import Matroid.Graphic
 public import Matroid.ForMathlib.Analysis.Normed.Module.Connected
 public import Mathlib.Geometry.Manifold.Instances.Sphere

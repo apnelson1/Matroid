@@ -1,7 +1,7 @@
 module
 
-public import Matroid.Graph.Planarity.PLDrawing
-public import Matroid.Graph.Planarity.TopologicalMinor
+public import Matroid.GraphTheory.Graph.Planarity.PLDrawing
+public import Matroid.GraphTheory.Graph.Planarity.TopologicalMinor
 
 @[expose] public section
 

@@ -1,6 +1,6 @@
 module
 
-public import Matroid.GraphLike.Basic
+public import Matroid.GraphTheory.GraphTopology.Basic
 public import Matroid.ForMathlib.Geometry.PolygonalPath.PrimitivePath
 
 /-! # Polygonal graph-like spaces -/

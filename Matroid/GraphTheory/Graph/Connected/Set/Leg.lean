@@ -1,6 +1,6 @@
 module
 
-public import Matroid.Graph.Connected.Set.SetEnsemble
+public import Matroid.GraphTheory.Graph.Connected.Set.SetEnsemble
 
 @[expose] public section
 

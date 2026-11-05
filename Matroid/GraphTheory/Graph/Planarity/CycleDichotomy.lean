@@ -1,7 +1,7 @@
 module
 
-public import Matroid.Graph.Degree.Max
-public import Matroid.Graph.Planarity.Obstructions
+public import Matroid.GraphTheory.Graph.Degree.Max
+public import Matroid.GraphTheory.Graph.Planarity.Obstructions
 
 /-!
 # The combinatorial K₃,₃ / K₅ dichotomy around a cycle

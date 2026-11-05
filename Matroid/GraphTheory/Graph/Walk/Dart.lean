@@ -2,7 +2,7 @@ module
 
 public import Mathlib.GroupTheory.Perm.Basic
 public import Mathlib.GroupTheory.OrderOfElement
-public import Matroid.Graph.Minor.Defs
+public import Matroid.GraphTheory.Graph.Minor.Defs
 public import Matroid.ForMathlib.Data.PFun
 public import Matroid.ForMathlib.Topology.ENat
 import all Mathlib.Combinatorics.Graph.Delete

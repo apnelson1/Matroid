@@ -1,7 +1,7 @@
 module
 
-public import Matroid.Graph.Hom.Basic
-public import Matroid.Graph.Planarity.Realization.Basic
+public import Matroid.GraphTheory.Graph.Hom.Basic
+public import Matroid.GraphTheory.Graph.Planarity.Realization.Basic
 
 /-!
 # Transporting realizations along a graph isomorphism

@@ -1,6 +1,6 @@
 module
 
-public import Matroid.GraphLike.RestrictionGeometry
+public import Matroid.GraphTheory.GraphTopology.RestrictionGeometry
 public import Matroid.ForMathlib.Analysis.Convex.Segment
 public import Matroid.ForMathlib.Geometry.SegmentFigure.Topology
 

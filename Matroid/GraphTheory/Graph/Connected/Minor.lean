@@ -1,7 +1,7 @@
 module
 
-public import Matroid.Graph.Connected.Basic
-public import Matroid.Graph.Minor.Defs
+public import Matroid.GraphTheory.Graph.Connected.Basic
+public import Matroid.GraphTheory.Graph.Minor.Defs
 import all Mathlib.Combinatorics.Graph.Delete
 public import Mathlib.Combinatorics.Graph.Delete
 

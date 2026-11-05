@@ -1,6 +1,6 @@
 module
 
-public import Matroid.Graph.Tree
+public import Matroid.GraphTheory.Graph.Tree
 
 @[expose] public section
 

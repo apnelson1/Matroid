@@ -1,6 +1,6 @@
 module
 
-public import Matroid.Graph.Subgraph.Defs
+public import Matroid.GraphTheory.Graph.Subgraph.Defs
 import all Mathlib.Combinatorics.Graph.Delete
 public import Mathlib.Combinatorics.Graph.Delete
 

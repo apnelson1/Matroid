@@ -1,6 +1,6 @@
 module
 
-public import Matroid.Graph.TopologicalMinor
+public import Matroid.GraphTheory.Graph.TopologicalMinor
 
 /-!
 # Graph subdivisions

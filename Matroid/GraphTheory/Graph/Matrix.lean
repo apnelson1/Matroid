@@ -1,10 +1,10 @@
 module
 
-public import Matroid.Graph.Basic
+public import Matroid.GraphTheory.Graph.Basic
 public import Mathlib.LinearAlgebra.Matrix.Determinant.TotallyUnimodular
 public import Mathlib.LinearAlgebra.Matrix.Adjugate
 public import Mathlib.LinearAlgebra.LinearIndependent.Defs
-public import Matroid.Graph.Walk.Cycle
+public import Matroid.GraphTheory.Graph.Walk.Cycle
 
 @[expose] public section
 

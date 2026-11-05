@@ -1,9 +1,9 @@
 module
 
-public import Matroid.Graph.WList.TakeDrop.Pred
-public import Matroid.Graph.WList.TakeDrop.Index
-public import Matroid.Graph.WList.Remove
-public import Matroid.Graph.Subgraph.Delete
+public import Matroid.GraphTheory.Graph.WList.TakeDrop.Pred
+public import Matroid.GraphTheory.Graph.WList.TakeDrop.Index
+public import Matroid.GraphTheory.Graph.WList.Remove
+public import Matroid.GraphTheory.Graph.Subgraph.Delete
 import all Mathlib.Combinatorics.Graph.Delete
 public import Mathlib.Combinatorics.Graph.Delete
 

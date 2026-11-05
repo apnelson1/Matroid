@@ -1,6 +1,6 @@
 module
 
-public import Matroid.GraphLike.Subset
+public import Matroid.GraphTheory.GraphTopology.Subset
 public import Matroid.ForMathlib.Geometry.SegmentFigure.Real
 public import Matroid.ForMathlib.Analysis.Convex.Segment
 

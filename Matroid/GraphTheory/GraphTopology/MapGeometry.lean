@@ -1,7 +1,7 @@
 module
 
-public import Matroid.GraphLike.Map
-public import Matroid.GraphLike.StraightLine
+public import Matroid.GraphTheory.GraphTopology.Map
+public import Matroid.GraphTheory.GraphTopology.StraightLine
 
 /-! # Affine transport of straight-line and polygonal graph-like spaces -/
 

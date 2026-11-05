@@ -1,7 +1,7 @@
 module
 
-public import Matroid.Graph.Planarity.PLDrawing
-public import Matroid.Graph.Planarity.Face
+public import Matroid.GraphTheory.Graph.Planarity.PLDrawing
+public import Matroid.GraphTheory.Graph.Planarity.Face
 public import Matroid.ForMathlib.Geometry.DiskMinusRadii
 public import Matroid.ForMathlib.Geometry.SegmentFigure.Star
 public import Matroid.ForMathlib.Geometry.StarComponents

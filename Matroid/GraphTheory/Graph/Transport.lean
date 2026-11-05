@@ -5,7 +5,7 @@ Authors: Jun Kwon
 -/
 module
 
-public import Matroid.Graph.Hom.Basic
+public import Matroid.GraphTheory.Graph.Hom.Basic
 
 /-!
 # Canonical transport under graph isomorphism

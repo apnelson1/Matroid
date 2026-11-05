@@ -1,7 +1,7 @@
 module
 
-public import Matroid.Graph.Immersion.Basic
-public import Matroid.Graph.Subdivision
+public import Matroid.GraphTheory.Graph.Immersion.Basic
+public import Matroid.GraphTheory.Graph.Subdivision
 
 /-!
 # Topological immersions, topological minors, and subdivisions

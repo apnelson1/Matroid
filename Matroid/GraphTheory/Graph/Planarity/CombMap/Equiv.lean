@@ -3,7 +3,7 @@ module
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
 public import Mathlib.GroupTheory.Perm.Cycle.Concrete
 public import Mathlib.GroupTheory.Perm.Support
-public import Matroid.Graph.Walk.Dart
+public import Matroid.GraphTheory.Graph.Walk.Dart
 
 @[expose] public section
 

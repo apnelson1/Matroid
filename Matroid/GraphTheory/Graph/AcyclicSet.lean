@@ -1,6 +1,6 @@
 module
 
-public import Matroid.Graph.Forest
+public import Matroid.GraphTheory.Graph.Forest
 import all Mathlib.Combinatorics.Graph.Delete
 public import Mathlib.Combinatorics.Graph.Delete
 

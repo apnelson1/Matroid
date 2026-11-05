@@ -1,5 +1,5 @@
-import Matroid.Graph.Topology.Defs
-import Matroid.GraphLike.StraightLine
+import Matroid.GraphTheory.Graph.Topology.Defs
+import Matroid.GraphTheory.GraphTopology.StraightLine
 
 /-! # Straight-line drawings -/
 

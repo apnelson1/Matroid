@@ -1,9 +1,9 @@
 module
 
-public import Matroid.Graph.Presentation.Quotient
-public import Matroid.Graph.Connected.Defs
-public import Matroid.Graph.Planarity.Realization.VertexSpace
-public import Matroid.Graph.Presentation.Orientation
+public import Matroid.GraphTheory.Pseudograph.Presentation.Quotient
+public import Matroid.GraphTheory.Graph.Connected.Defs
+public import Matroid.GraphTheory.Graph.Planarity.Realization.VertexSpace
+public import Matroid.GraphTheory.Pseudograph.Presentation.Orientation
 public import Matroid.ForMathlib.Topology.Path
 public import Mathlib.Topology.Constructions
 

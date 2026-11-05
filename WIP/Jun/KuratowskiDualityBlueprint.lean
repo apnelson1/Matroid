@@ -86,19 +86,19 @@ when the half-edge graph redesign lands, the same declarations should be lifted 
 module
 
 -- Proposed imports, intentionally schematic while this remains a WIP blueprint.
-public import Matroid.Graph.Planarity.PLDrawing
-public import Matroid.Graph.Planarity.PLReduction
-public import Matroid.Graph.Planarity.FaceCycle
-public import Matroid.Graph.TopologicalMinor
--- public import Matroid.Graph.Minor.Iso
-public import Matroid.Graph.Connected.Bond
-public import Matroid.Graph.Connected.Ear
-public import Matroid.Graph.Planarity.Obstructions
-public import Matroid.Graph.Planarity.StarLemma
-public import Matroid.Graph.Planarity.ThetaCurve
+public import Matroid.GraphTheory.Graph.Planarity.PLDrawing
+public import Matroid.GraphTheory.Graph.Planarity.PLReduction
+public import Matroid.GraphTheory.Graph.Planarity.FaceCycle
+public import Matroid.GraphTheory.Graph.TopologicalMinor
+-- public import Matroid.GraphTheory.Graph.Minor.Iso
+public import Matroid.GraphTheory.Graph.Connected.Bond
+public import Matroid.GraphTheory.Graph.Connected.Ear
+public import Matroid.GraphTheory.Graph.Planarity.Obstructions
+public import Matroid.GraphTheory.Graph.Planarity.StarLemma
+public import Matroid.GraphTheory.Graph.Planarity.ThetaCurve
 public import Matroid.Graphic
 public import Matroid.Equiv
--- public import Matroid.Graph.Iso.Transfer
+-- public import Matroid.GraphTheory.Graph.Iso.Transfer
 
 open Set Function
 open scoped Sym2

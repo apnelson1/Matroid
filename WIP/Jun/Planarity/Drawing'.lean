@@ -1,9 +1,9 @@
 module
 
-public import Matroid.Graph.Degree.Max
-public import Matroid.Graph.Minor.Defs
-public import Matroid.Graph.Planarity.Realization.Subgraph
-public import Matroid.Graph.TopologicalMinor
+public import Matroid.GraphTheory.Graph.Degree.Max
+public import Matroid.GraphTheory.Graph.Minor.Defs
+public import Matroid.GraphTheory.Graph.Planarity.Realization.Subgraph
+public import Matroid.GraphTheory.Graph.TopologicalMinor
 
 /-!
 # Drawings of graphs

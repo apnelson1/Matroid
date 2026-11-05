@@ -1,6 +1,6 @@
 module
 
-public import Matroid.Graph.Finite
+public import Matroid.GraphTheory.Graph.Finite
 public import Mathlib.Topology.UniformSpace.Basic
 
 /-!

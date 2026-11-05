@@ -1,7 +1,7 @@
 module
 
-public import Matroid.Graph.Presentation.Basic
-public import Matroid.Graph.Hom.Basic
+public import Matroid.GraphTheory.Pseudograph.Presentation.Basic
+public import Matroid.GraphTheory.Graph.Hom.Basic
 public import Matroid.ForMathlib.PEquiv
 public import Mathlib.Combinatorics.Graph.Subgraph
 

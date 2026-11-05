@@ -1,7 +1,7 @@
 module
 
-public import Matroid.Graph.Hom.Image
-public import Matroid.Graph.Immersion.Basic
+public import Matroid.GraphTheory.Graph.Hom.Image
+public import Matroid.GraphTheory.Graph.Immersion.Basic
 
 /-!
 # Embeddings as immersions

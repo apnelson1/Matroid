@@ -1,6 +1,6 @@
 module
 
-public import Matroid.Graph.Connected.Vertex.Defs
+public import Matroid.GraphTheory.Graph.Connected.Vertex.Defs
 public import Matroid.ForMathlib.Partition.Set
 import all Mathlib.Combinatorics.Graph.Delete
 public import Mathlib.Combinatorics.Graph.Delete

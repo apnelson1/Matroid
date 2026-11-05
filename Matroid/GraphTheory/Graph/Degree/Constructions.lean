@@ -1,6 +1,6 @@
 module
 
-public import Matroid.Graph.Degree.Defs
+public import Matroid.GraphTheory.Graph.Degree.Defs
 
 @[expose] public section
 

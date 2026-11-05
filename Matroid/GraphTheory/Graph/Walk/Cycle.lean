@@ -1,7 +1,7 @@
 module
 
-public import Matroid.Graph.Walk.Path
-public import Matroid.Graph.WList.Cycle
+public import Matroid.GraphTheory.Graph.Walk.Path
+public import Matroid.GraphTheory.Graph.WList.Cycle
 import all Mathlib.Combinatorics.Graph.Delete
 public import Mathlib.Combinatorics.Graph.Delete
 

@@ -1,6 +1,6 @@
 module
 
-public import Matroid.GraphLike.Basic
+public import Matroid.GraphTheory.GraphTopology.Basic
 
 /-! # Assembly from primitive links
 

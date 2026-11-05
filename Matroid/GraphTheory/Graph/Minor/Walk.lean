@@ -1,7 +1,7 @@
 module
 
-public import Matroid.Graph.Minor.Defs
-public import Matroid.Graph.Forest
+public import Matroid.GraphTheory.Graph.Minor.Defs
+public import Matroid.GraphTheory.Graph.Forest
 
 @[expose] public section
 

@@ -1,7 +1,7 @@
 module
 
-public import Matroid.Graph.Hom.Factorization
-public import Matroid.Graph.Map
+public import Matroid.GraphTheory.Graph.Hom.Factorization
+public import Matroid.GraphTheory.Graph.Map
 
 /-!
 # Homomorphisms between vertex-mapped graphs

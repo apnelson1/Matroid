@@ -1,7 +1,7 @@
 module
 
-public import Matroid.Graph.Subdivision
-public import Matroid.Graph.Minor.Defs
+public import Matroid.GraphTheory.Graph.Subdivision
+public import Matroid.GraphTheory.Graph.Minor.Defs
 
 /-!
 # Topological minors, subdivisions, and contraction

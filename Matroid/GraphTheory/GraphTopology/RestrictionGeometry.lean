@@ -1,8 +1,8 @@
 module
 
-public import Matroid.GraphLike.StraightLine
-public import Matroid.GraphLike.Restriction
-public import Matroid.GraphLike.Presentation
+public import Matroid.GraphTheory.GraphTopology.StraightLine
+public import Matroid.GraphTheory.GraphTopology.Restriction
+public import Matroid.GraphTheory.GraphTopology.Presentation
 
 /-! # Geometry of whole-edge restrictions
 
