@@ -18,7 +18,7 @@ Two candidates were probed and rejected, recorded here so they are not re-propos
   on. Keying the conclusion instead would mean a bare `V(G) ⊆ V(H)`, which fires on every `⊆` goal.
 * `TopologicalModel.vertexSet_normalized` / `edgeSet_normalized` were tagged `@[simp]` and
   **reverted**: they broke the two `simpa … using he` steps in
-  `IsoSubdivision.exists_iso_subdivision`. Both are `rfl`, and both call sites already pass them
+  `Subdivision.exists_iso_subdivision`. Both are `rfl`, and both call sites already pass them
   to `simp` explicitly.
 -/
 

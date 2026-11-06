@@ -470,37 +470,37 @@ lemma IsTopologicalMinor.isMinor {H G : Graph α β} (h : H.IsTopologicalMinor G
 
 /-! ## Heterogeneous topological minors and ordinary minors -/
 
-namespace IsoTopologicalMinor
+namespace TopologicalMinor
 
-variable (M : J.IsoTopologicalMinor G)
+variable (M : J.TopologicalMinor G)
 
 /-- A heterogeneous topological minor has an isomorphic same-carrier copy that is an ordinary
 minor of the host. -/
-theorem exists_iso_minor (M : J.IsoTopologicalMinor G) :
+theorem exists_iso_minor (M : J.TopologicalMinor G) :
     ∃ K : Graph α β, Nonempty (Iso J K) ∧ K ≤m G :=
   ⟨M.normalized, ⟨M.isoNormalized⟩, M.toTopologicalMinor.isMinor⟩
 
-end IsoTopologicalMinor
+end TopologicalMinor
 
-lemma IsIsoTopologicalMinor.exists_iso_minor {J : Graph γ δ} {G : Graph α β}
-    (h : J.IsIsoTopologicalMinor G) : ∃ K : Graph α β, Nonempty (Iso J K) ∧ K ≤m G :=
+lemma IsTopologicalMinor.exists_iso_minor {J : Graph γ δ} {G : Graph α β}
+    (h : J.IsTopologicalMinor G) : ∃ K : Graph α β, Nonempty (Iso J K) ∧ K ≤m G :=
   h.some.exists_iso_minor
 
-namespace IsoSubdivision
+namespace Subdivision
 
 open scoped Classical
 
 /-- A heterogeneous subdivision has an isomorphic same-carrier copy obtained by contraction of the
 host. -/
-theorem exists_iso_eq_contract (S : J.IsoSubdivision G) : ∃ K : Graph α β, Nonempty (Iso J K) ∧
+theorem exists_iso_eq_contract (S : J.Subdivision G) : ∃ K : Graph α β, Nonempty (Iso J K) ∧
     ∃ φ : α → α, (G ↾ (E(G) \ E(K))).connPartition.IsRepFun φ ∧ K = G /[E(G) \ E(K), φ] := by
   obtain ⟨K, ⟨F⟩, ⟨T⟩⟩ := S.exists_iso_subdivision
   exact ⟨K, ⟨F⟩, T.contractRepFun, T.contractRepFun_isRepFun, T.eq_contract⟩
 
-end IsoSubdivision
+end Subdivision
 
-lemma IsIsoSubdivision.exists_iso_eq_contract {J : Graph γ δ} {G : Graph α β}
-    (h : J.IsIsoSubdivision G) : ∃ K : Graph α β, Nonempty (Iso J K) ∧
+lemma IsSubdivision.exists_iso_eq_contract {J : Graph γ δ} {G : Graph α β}
+    (h : J.IsSubdivision G) : ∃ K : Graph α β, Nonempty (Iso J K) ∧
     ∃ φ : α → α, (G ↾ (E(G) \ E(K))).connPartition.IsRepFun φ ∧ K = G /[E(G) \ E(K), φ] :=
   h.some.exists_iso_eq_contract
 

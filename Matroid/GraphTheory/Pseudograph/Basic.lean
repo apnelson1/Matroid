@@ -37,6 +37,9 @@ structure Pseudograph (V I E : Type*) extends IncidenceHypergraph V I E where
   /-- Every incidence of an edge is one of its two paired incidences. -/
   edgeMap'_eq : ∀ i j, edgeMap' i = edgeMap' j → j = i ∨ j = other' i
 
+initialize_simps_projections Pseudograph
+  (as_prefix vertexSet, as_prefix incidenceSet, as_prefix edgeSet)
+
 variable {V I E : Type*} {G H : Pseudograph V I E} {i j : I}
 
 namespace Pseudograph

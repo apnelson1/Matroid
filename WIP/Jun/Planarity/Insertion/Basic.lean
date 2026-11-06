@@ -310,7 +310,7 @@ noncomputable def addPathSubdivision {P : WList α β} (hP : P.toGraph.IsPath P)
     (hu : u ∈ V(G)) (hv : v ∈ V(G)) (hends : P.first = u ∧ P.last = v)
     (hint : V(G) ∩ V(P.toGraph) = {P.first, P.last})
     (hE : Disjoint E(G) E(P.toGraph)) :
-    (G.addFreshEdge u v).IsoSubdivision (G ∪ P.toGraph) := by
+    (G.addFreshEdge u v).Subdivision (G ∪ P.toGraph) := by
   sorry
 
 /-- On every original vertex, the subdivision certificate uses the corresponding vertex of the

@@ -218,7 +218,7 @@ lemma IsPaving.exists_isCircuit_of_isBase [M✶.RankPos] (hM : M.IsPaving) (hB :
   obtain ⟨C, hCss, hC⟩ := (hB.insert_dep ⟨heE, heB⟩).exists_isCircuit_subset
   refine ⟨C, hC, ?_, ?_⟩
   · exact Subsingleton.anti (by simp [insert_sdiff_eq_singleton heB]) (sdiff_subset_sdiff_left hCss)
-  rw [show B \ C = B \ (C \ {e}) by tauto_set!, ← encard_le_one_iff_subsingleton,
+  rw [show B \ C = B \ (C \ {e}) by grind, ← encard_le_one_iff_subsingleton,
     ← hB.indep.eRelRk_of_subset (by simpa [sdiff_subset_iff]), ← eRelRk_closure_left,
     hC.closure_sdiff_singleton_eq, eRelRk_closure_left, ← eRelRk_closure_right, hB.closure_eq]
   exact hM.eRelRk_ground_le_of_dep hC.dep

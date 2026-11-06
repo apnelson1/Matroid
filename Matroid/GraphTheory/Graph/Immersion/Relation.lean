@@ -108,16 +108,16 @@ theorem IsTopologicalMinor'.map (h : IsTopologicalMinor' H G) (F : G.Emb K) :
   ⟨h.choose.comp F.toImmersion,
     Immersion.Topological.comp h.choose_spec F.toImmersion_topological⟩
 
-theorem IsIsoTopologicalMinor.trans (hHG : H.IsIsoTopologicalMinor G)
-    (hGK : G.IsIsoTopologicalMinor K) : H.IsIsoTopologicalMinor K := by
-  rw [Graph.isIsoTopologicalMinor_iff_isTopologicalMinor] at hHG hGK ⊢
+theorem IsTopologicalMinor.trans (hHG : H.IsTopologicalMinor G)
+    (hGK : G.IsTopologicalMinor K) : H.IsTopologicalMinor K := by
+  rw [Graph.isTopologicalMinor_iff_isTopologicalMinor] at hHG hGK ⊢
   exact hHG.trans hGK
 
-theorem IsIsoSubdivision.trans (hHG : H.IsIsoSubdivision G)
-    (hGK : G.IsIsoSubdivision K) : H.IsIsoSubdivision K := by
-  obtain ⟨M, hM, hMS⟩ := Graph.isIsoSubdivision_iff_exists_immersion.mp hHG
-  obtain ⟨N, hN, hNS⟩ := Graph.isIsoSubdivision_iff_exists_immersion.mp hGK
-  exact Graph.isIsoSubdivision_iff_exists_immersion.mpr
+theorem IsSubdivision.trans (hHG : H.IsSubdivision G)
+    (hGK : G.IsSubdivision K) : H.IsSubdivision K := by
+  obtain ⟨M, hM, hMS⟩ := Graph.isSubdivision_iff_exists_immersion.mp hHG
+  obtain ⟨N, hN, hNS⟩ := Graph.isSubdivision_iff_exists_immersion.mp hGK
+  exact Graph.isSubdivision_iff_exists_immersion.mpr
     ⟨M.comp N, Immersion.Topological.comp hM hN, Immersion.Surjective.comp hMS hNS⟩
 
 end Graph

@@ -1,24 +1,7 @@
 module
 
 public import Matroid.GraphTheory.Graph.Degree.Max
-public import Matroid.GraphTheory.Graph.Planarity.Obstructions
-
-/-!
-# The combinatorial K₃,₃ / K₅ dichotomy around a cycle
-
-Let `C` be a cycle of `G` and let `u`, `v` be two adjacent vertices outside `C`, each with at least
-two neighbours on `C`. The main result `Graph.K33_K5_lemma` says that either
-
-* `C` splits into two paths `P₁ ++ P₂` such that no interior vertex of `P₁` is a neighbour of `u`
-  and no interior vertex of `P₂` is a neighbour of `v` (the "clean boundary paths" alternative,
-  which is what the uncontraction step of the 3-connected Kuratowski induction consumes), or
-* `G` has a topological `K₃,₃` or a topological `K₅`.
-
-The obstructions are produced by the one-off constructors in
-`Matroid.Graph.Planarity.Obstructions`.
--/
-
-@[expose] public section
+public import Matroid.GraphTheory.Graph.Obstructions
 
 variable {α β : Type*} {G C : Graph α β} {u v : α}
 
@@ -26,57 +9,13 @@ open Set WList
 
 namespace Graph
 
-private lemma nonempty_of_first_ne_last {w : WList α β} (h : w.first ≠ w.last) : w.Nonempty :=
-  not_nil_iff.mp fun hnil ↦ h hnil.first_eq_last
-
-/-- A vertex in the interior of a walk with no repeated vertices is a vertex of the walk
-distinct from both of its ends. -/
-private lemma internal_facts {w : WList α β} {x : α} (hnd : w.vertex.Nodup)
-    (hx : x ∈ w.vertex.tail.dropLast) : x ∈ w ∧ x ≠ w.first ∧ x ≠ w.last := by
-  have hxt : x ∈ w.vertex.tail := List.mem_of_mem_dropLast hx
-  have hxd : x ∈ w.vertex.dropLast := List.mem_of_mem_tail (List.tail_dropLast ▸ hx)
-  refine ⟨mem_vertex.mp (List.mem_of_mem_tail hxt), ?_, ?_⟩
-  · have h1 : w.vertex = w.first :: w.vertex.tail := by
-      conv_lhs => rw [← List.cons_head_tail w.vertex_ne_nil]
-      rw [w.vertex_head]
-    rw [h1, List.nodup_cons] at hnd
-    exact fun hxf ↦ hnd.1 (hxf ▸ hxt)
-  · have h2 : w.vertex = w.vertex.dropLast ++ [w.last] := by
-      conv_lhs => rw [← List.dropLast_append_getLast w.vertex_ne_nil]
-      rw [w.vertex_getLast]
-    rw [h2, List.nodup_append] at hnd
-    exact fun hxl ↦ hnd.2.2 x hxd w.last (by simp) hxl
-
-/-- Split a walk at an interior vertex into two nonempty pieces. -/
-private lemma exists_split {w : WList α β} {x : α} (hx : x ∈ w) (hxf : x ≠ w.first)
-    (hxl : x ≠ w.last) : ∃ w₁ w₂ : WList α β, w₁ ++ w₂ = w ∧ w₁.first = w.first ∧ w₁.last = x ∧
-      w₂.first = x ∧ w₂.last = w.last ∧ w₁.Nonempty ∧ w₂.Nonempty := by
-  classical
-  refine ⟨w.prefixUntilVertex x, w.suffixFromVertex x,
-    prefixUntilVertex_append_suffixFromVertex w x, prefixUntilVertex_first .., ?_, ?_,
-    suffixFromVertex_last .., ?_, ?_⟩
-  · exact prefixUntilVertex_last hx
-  · exact suffixFromVertex_first hx
-  · exact nonempty_of_first_ne_last (by
-      rw [prefixUntilVertex_first, prefixUntilVertex_last hx]; exact fun hh ↦ hxf hh.symm)
-  · exact nonempty_of_first_ne_last (by
-      rw [suffixFromVertex_first hx, suffixFromVertex_last]; exact hxl)
-
-private lemma decomposeTo_three [Inhabited α] {W₁ W₂ W₃ : WList α β}
-    (h₁ : W₁.last = W₂.first) (h₂ : W₂.last = W₃.first) :
-    (W₁ ++ (W₂ ++ W₃)).DecomposeTo [W₁, W₂, W₃] := by
-  have h₂₃ : (W₂ ++ W₃).first = W₂.first := append_first_of_eq h₂
-  refine (DecomposeTo.append_cons_iff (by rw [h₂₃]; exact h₁) (by simp)).mpr
-    <| (DecomposeTo.append_cons_iff h₂ (by simp)).mpr
-    <| ⟨by simp, by simp [appendList], by simp⟩
-
-private lemma decomposeTo_four [Inhabited α] {W₁ W₂ W₃ W₄ : WList α β}
-    (h₁ : W₁.last = W₂.first) (h₂ : W₂.last = W₃.first) (h₃ : W₃.last = W₄.first) :
-    (W₁ ++ (W₂ ++ (W₃ ++ W₄))).DecomposeTo [W₁, W₂, W₃, W₄] := by
-  have h₃₄ : (W₃ ++ W₄).first = W₃.first := append_first_of_eq h₃
-  have h₂₃₄ : (W₂ ++ (W₃ ++ W₄)).first = W₂.first := append_first_of_eq (by rw [h₃₄]; exact h₂)
-  exact (DecomposeTo.append_cons_iff (by rw [h₂₃₄]; exact h₁) (by simp)).mpr
-    <| decomposeTo_three h₂ h₃
+lemma prefixUntilLast_append_suffixFromLast (w : WList α β) (P : α → Prop) [DecidablePred P] :
+    w.prefixUntilLast P ++ w.suffixFromLast P = w := by
+  have hends : (w.prefixUntilLast P).last = (w.suffixFromLast P).first := by
+    simp only [prefixUntilLast, suffixFromLast, reverse_last, reverse_first]
+    exact (w.reverse.prefixUntil_last_eq_suffixFrom_first P).symm
+  rw [← reverse_inj_iff, reverse_append hends, prefixUntilLast, suffixFromLast, reverse_reverse,
+    reverse_reverse, prefixUntil_append_suffixFrom]
 
 lemma K33_K5_lemma_aux1 (hCG : C ≤ G) (hC : C.IsCycle) (hu : u ∉ V(C)) (hv : v ∉ V(C)) (huv : u ≠ v)
     (hadj : G.Adj u v) (hu2 : (N(G, u) ∩ V(C)).Nontrivial) (hv2 : (N(G, v) ∩ V(C)).Nontrivial)
@@ -84,7 +23,7 @@ lemma K33_K5_lemma_aux1 (hCG : C ≤ G) (hC : C.IsCycle) (hu : u ∉ V(C)) (hv :
       P.Nonempty) :
     (∃ P₁ P₂ : WList α β, C.IsPath P₁ ∧ C.IsPath P₂ ∧ (∀ x ∈ P₁.vertex.tail.dropLast, ¬ G.Adj u x) ∧
     (∀ x ∈ P₂.vertex.tail.dropLast, ¬ G.Adj v x) ∧ C.IsCyclicWalk (P₁ ++ P₂)) ∨
-    (CompleteBipartiteGraph 3 3).IsIsoTopologicalMinor G := by
+    (CompleteBipartiteGraph 3 3).IsTopologicalMinor G := by
   classical
   obtain ⟨P, hPC, hpPtl, hpPdl, hPne⟩ := h
   have hPfv : ¬ G.Adj v P.first := by
@@ -174,8 +113,8 @@ lemma K33_K5_lemma_aux1 (hCG : C ≤ G) (hC : C.IsCycle) (hu : u ∉ V(C)) (hv :
       replace hx : x ∈ VQ.vertex.tail.dropLast :=
         (suffixFromVertex_isSuffix VQ uf).suffix.tail.dropLast.mem hx
       simp only [concat_vertex, ne_eq, vertex_ne_nil, not_false_eq_true, List.tail_append_of_ne_nil,
-        List.cons_ne_self, List.dropLast_append_of_ne_nil, List.dropLast_singleton, List.append_nil,
-        VQ] at hx
+      List.cons_ne_self, List.dropLast_append_of_ne_nil, List.dropLast_singleton, List.append_nil,
+      VQ] at hx
       exact suffixFromLast_vertex_tail_not_prop hx hvx
     have hUQ_eq : UQ = Q.prefixUntilVertex uf := by
       have hufeqlast : (Q.tail.prefixUntil (G.Adj u)).last = uf :=
@@ -246,140 +185,28 @@ lemma K33_K5_lemma_aux1 (hCG : C ≤ G) (hC : C.IsCycle) (hu : u ∉ V(C)) (hv :
     conv_lhs => rw [hmid]
     rw [cons_concat, cons_append, ← WList.append_concat, ← cons_append]
   let : Inhabited α := ⟨P.first⟩
+  have hdec_RVQ : (R ++ VQ).DecomposeTo [R, VQ] :=
+    (DecomposeTo.append_cons_iff hR_VQ (by simp)).mpr ⟨by simp, by simp [appendList], by simp⟩
+  have hdec_UQRVQ : (UQ ++ (R ++ VQ)).DecomposeTo [UQ, R, VQ] :=
+    (DecomposeTo.append_cons_iff (by simpa [append_first_of_eq hR_VQ] using hUQlast) (by simp)).mpr
+      hdec_RVQ
   have hdec : (P ++ Q).DecomposeTo [P, UQ, R, VQ] := by
     rw [hQeq, append_assoc]
-    exact decomposeTo_four hUQ_first.symm hUQlast hR_VQ
+    exact (DecomposeTo.append_cons_iff (by simpa [append_first_of_nonempty hUQne] using
+      hUQ_first.symm) (by simp)).mpr hdec_UQRVQ
   exact isTopologicalMinor_completeBipartiteGraph_of_alternating_cycle (hPQ.of_le hCG) hdec hPne
     hUQne hRne hVQne (by simpa using hu) (by simpa using hv) huv
     (hpPtl P.first first_mem |>.mpr rfl) huf (hpPdl P.last last_mem |>.mpr rfl)
     (by simpa [hRlast] using hvl) hadj
 
-/-- If `u` has a neighbour in the interior of each of the two arcs `P`, `Q` of a cycle `C`, while
-`v` is adjacent to both ends of `P`, then `G` has a topological `K₃,₃`. -/
-private lemma isIsoTopologicalMinor_completeBipartiteGraph_of_internal
-    (hCG : C ≤ G) (hu : u ∉ V(C)) (hv : v ∉ V(C)) (huv : u ≠ v) (hadj : G.Adj u v)
-    {P Q : WList α β} (hP : C.IsPath P) (hQ : C.IsPath Q) (hPQ : C.IsCyclicWalk (P ++ Q))
-    (hQf : Q.first = P.last) (hQl : Q.last = P.first)
-    (hvf : G.Adj v P.first) (hvl : G.Adj v P.last)
-    (ha : ∃ a ∈ P.vertex.tail.dropLast, G.Adj u a)
-    (hb : ∃ b ∈ Q.vertex.tail.dropLast, G.Adj u b) :
-    (CompleteBipartiteGraph 3 3).IsIsoTopologicalMinor G := by
-  classical
-  let _ : Inhabited α := ⟨P.first⟩
-  obtain ⟨a, haP, hua⟩ := ha
-  obtain ⟨b, hbQ, hub⟩ := hb
-  obtain ⟨haP, haf, hal⟩ := internal_facts hP.nodup haP
-  obtain ⟨hbQ, hbf, hbl⟩ := internal_facts hQ.nodup hbQ
-  obtain ⟨pre, suf, hps, hpref, hprel, hsuff, hsufl, hprene, hsufne⟩ := exists_split haP haf hal
-  obtain ⟨Q₁, Q₂, hqs, hQ₁f, hQ₁l, hQ₂f, hQ₂l, hQ₁ne, hQ₂ne⟩ := exists_split hbQ hbf hbl
-  -- The four alternating arcs, in cyclic order starting at the `u`-neighbour `a`.
-  have hrot : suf ++ (Q₁ ++ (Q₂ ++ pre)) = (P ++ Q).rotate pre.length := by
-    rw [← append_assoc Q₁ Q₂ pre, hqs, ← append_assoc suf Q pre,
-      ← rotate_eq_append (by rw [hpref, append_last, hQl])
-        (by rw [hprel, append_first_of_eq (by rw [hsufl, hQf]), hsuff]),
-      ← append_assoc pre suf Q, hps]
-  have hWc : C.IsCyclicWalk (suf ++ (Q₁ ++ (Q₂ ++ pre))) := by
-    rw [hrot]
-    exact hPQ.rotate pre.length
-  exact isTopologicalMinor_completeBipartiteGraph_of_alternating_cycle (hWc.of_le hCG)
-    (decomposeTo_four (by rw [hsufl, hQ₁f, hQf]) (by rw [hQ₁l, hQ₂f])
-      (by rw [hQ₂l, hpref, hQl])) hsufne hQ₁ne hQ₂ne hprene
-    (fun hmem ↦ hu (hWc.isWalk.vertexSet_subset hmem))
-    (fun hmem ↦ hv (hWc.isWalk.vertexSet_subset hmem)) huv (by rwa [hsuff]) (by rwa [hQ₁l])
-    (by rw [hsufl]; exact hvl) (by rw [hQ₂l, hQl]; exact hvf) hadj
-
-/-- If `u` and `v` are both adjacent to the two ends of an arc `P` of a cycle `C` and to a
-common vertex in the interior of `P`, then `G` has a topological `K₅`. -/
-private lemma isIsoTopologicalMinor_completeGraph_of_internal
-    (hCG : C ≤ G) (hu : u ∉ V(C)) (hv : v ∉ V(C)) (huv : u ≠ v) (hadj : G.Adj u v)
-    {P Q : WList α β} (hP : C.IsPath P) (hPQ : C.IsCyclicWalk (P ++ Q))
-    (hQf : Q.first = P.last) (hQl : Q.last = P.first)
-    (huf : G.Adj u P.first) (hvf : G.Adj v P.first)
-    (hul : G.Adj u P.last) (hvl : G.Adj v P.last)
-    (hz : ∃ z ∈ P.vertex.tail.dropLast, G.Adj u z ∧ G.Adj v z) :
-    (CompleteGraph 5).IsIsoTopologicalMinor G := by
-  classical
-  let _ : Inhabited α := ⟨P.first⟩
-  obtain ⟨z, hzP, huz, hvz⟩ := hz
-  obtain ⟨hzP, hzf, hzl⟩ := internal_facts hP.nodup hzP
-  obtain ⟨pre, suf, hps, hpref, hprel, hsuff, hsufl, hprene, hsufne⟩ := exists_split hzP hzf hzl
-  have hPne : P.Nonempty := by
-    rw [← hps]
-    exact append_nonempty.mpr (Or.inl hprene)
-  have hQne : Q.Nonempty := nonempty_of_first_ne_last (by
-    rw [hQf, hQl]
-    exact fun hh ↦ hPne.not_nil ((first_eq_last_iff hP.nodup).mp hh.symm))
-  have hWc : C.IsCyclicWalk (pre ++ (suf ++ Q)) := by
-    rw [← append_assoc, hps]
-    exact hPQ
-  exact isTopologicalMinor_completeGraph_of_three_common_neighbors (hWc.of_le hCG)
-    (decomposeTo_three (by rw [hprel, hsuff]) (by rw [hsufl, hQf])) hprene hsufne hQne
-    (fun hmem ↦ hu (hWc.isWalk.vertexSet_subset hmem))
-    (fun hmem ↦ hv (hWc.isWalk.vertexSet_subset hmem)) huv (by rwa [hpref]) (by rwa [hprel])
-    (by rw [hsufl]; exact hul) (by rwa [hpref]) (by rwa [hprel]) (by rw [hsufl]; exact hvl) hadj
-
-/-- If every path of change is trivial, then a `u`-neighbour and a `v`-neighbour in the interior
-of a path `P` of `C` force a common neighbour of `u` and `v` in that interior. -/
-private lemma exists_common_internal_neighbor {P : WList α β} (hP : C.IsPath P)
-    (h : ∀ W, C.IsPath W → (∀ x ∈ W, G.Adj u x ↔ x = W.first) →
-      (∀ x ∈ W, G.Adj v x ↔ x = W.last) → W.Nil)
-    (ha : ∃ a ∈ P.vertex.tail.dropLast, G.Adj u a)
-    (hb : ∃ b ∈ P.vertex.tail.dropLast, G.Adj v b) :
-    ∃ z ∈ P.vertex.tail.dropLast, G.Adj u z ∧ G.Adj v z := by
-  classical
-  have hPnt : P.Nontrivial := by
-    obtain ⟨a, haP, -⟩ := ha
-    match P with
-    | nil x => simp at haP
-    | cons x e (nil y) => simp at haP
-    | cons x e (cons y f P) => simp
-  have hMv : P.tail.dropLast.vertex = P.vertex.tail.dropLast := by
-    rw [hPnt.tail_nonempty.vertex_dropLast, hPnt.nonempty.vertex_tail]
-  have hMsub : P.tail.dropLast.IsSublist P :=
-    P.tail.dropLast_isPrefix.isSublist.trans P.tail_isSuffix.isSublist
-  simp only [← hMv, mem_vertex] at ha hb ⊢
-  obtain ⟨W, hWin, hcase⟩ :=
-    P.tail.dropLast.exists_infix_of_exists_prop (p := G.Adj u) (q := G.Adj v) ha hb
-  have hWpath : C.IsPath W := hP.sublist (hWin.isSublist.trans hMsub)
-  obtain ⟨hpf, hql, htl, hdl⟩ | ⟨hqf, hpl, htl, hdl⟩ := hcase
-  · have hnil : W.Nil := by
-      refine h W hWpath (fun x hx ↦ ?_) (fun x hx ↦ ?_)
-      · obtain heq | ⟨hne, hmem⟩ := hWpath.nodup.eq_head_or_mem_tail_ne hx <;> grind
-      · obtain heq | ⟨hne, hmem⟩ := hWpath.nodup.eq_getLast_or_mem_dropLast_ne hx <;> grind
-    exact ⟨W.first, hWin.isSublist.mem first_mem, hpf, hnil.first_eq_last ▸ hql⟩
-  · have hnil : W.reverse.Nil := by
-      refine h W.reverse hWpath.reverse (fun x hx ↦ ?_) (fun x hx ↦ ?_)
-      · obtain heq | ⟨hne, hmem⟩ :=
-          hWpath.nodup.eq_getLast_or_mem_dropLast_ne (by simpa using hx) <;> grind
-      · obtain heq | ⟨hne, hmem⟩ :=
-          hWpath.nodup.eq_head_or_mem_tail_ne (by simpa using hx) <;> grind
-    simp only [reverse_nil_iff] at hnil
-    exact ⟨W.first, hWin.isSublist.mem first_mem, hnil.first_eq_last ▸ hpl, hqf⟩
-
-/- Let a path satisfying the condition of `h` be path of change.
-First, we show that there are at least two paths of change.
-Take some neighbor of u in C, u₁ and some neighbor of v in C, v₁. Then, C is partitioned into two
-trails, one from u₁ to v₁ and v₁ to u₁. From `exists_infix_of_prop` we get that each of these
-trails has a path of change.
-By assumption, both of these paths are a single vertex path. Let those vertices be x and y.
-Then, C is partitioned into two paths, one from x to y and one from y to x.
-If both paths internally have a neighbor of u, then we can construct a K3,3 similar to the
-construction in `K33_K5_lemma_aux1`.
-WLOG, assume that all neighbors of u appear in x-y path leaving y-x path internally disjoint with
-neighbors of u.
-If any neighbor of v appears in x-y path, then `exists_infix_of_exists_prop` gives us another
-path of change, nil z. Then, x, y and z form a K5 together with u and v.
-Otherwise, all neighbors of v must appear in y-x path leaving x-y path internally disjoint with
-neighbors of v.
-Therefore, x-y path and y-x path is the two paths as desired.-/
 lemma K33_K5_lemma_aux2 (hCG : C ≤ G) (hC : C.IsCycle) (hu : u ∉ V(C)) (hv : v ∉ V(C)) (huv : u ≠ v)
     (hadj : G.Adj u v) (hu2 : (N(G, u) ∩ V(C)).Nontrivial) (hv2 : (N(G, v) ∩ V(C)).Nontrivial)
     (h : ∀ P, C.IsPath P → (∀ x ∈ P, G.Adj u x ↔ x = P.first) → (∀ x ∈ P, G.Adj v x ↔ x = P.last) →
       P.Nil) :
     (∃ P₁ P₂ : WList α β, C.IsPath P₁ ∧ C.IsPath P₂ ∧ (∀ x ∈ P₁.vertex.tail.dropLast, ¬ G.Adj u x) ∧
     (∀ x ∈ P₂.vertex.tail.dropLast, ¬ G.Adj v x) ∧ C.IsCyclicWalk (P₁ ++ P₂)) ∨
-    (CompleteBipartiteGraph 3 3).IsIsoTopologicalMinor G ∨
-    (CompleteGraph 5).IsIsoTopologicalMinor G := by
+    (CompleteBipartiteGraph 3 3).IsTopologicalMinor G ∨
+    (CompleteGraph 5).IsTopologicalMinor G := by
   have h1 : ∀ x ∈ V(C), ∃ y ∈ V(C), x ≠ y ∧ G.Adj u y ∧ G.Adj v y := by
     intro x hxC
     obtain ⟨P, hP, hPeq⟩ := hC.deleteVerts_singleton_isPathGraph (hu2.mono inter_subset_right) hxC
@@ -393,22 +220,16 @@ lemma K33_K5_lemma_aux2 (hCG : C ≤ G) (hC : C.IsCycle) (hu : u ∉ V(C)) (hv :
       specialize h P' hP'path (fun x hx ↦ ?_) fun x hx ↦ ?_
       · obtain heq | ⟨hne, htl⟩ := hP'path.nodup.eq_head_or_mem_tail_ne hx <;> grind
       · obtain heq | ⟨hne, hdl⟩ := hP'path.nodup.eq_getLast_or_mem_dropLast_ne hx <;> grind
-      have hne : x ≠ P'.first := by
-        have hmem := hP.infix hP'in |>.vertexSet_subset (first_mem (w := P'))
-        rw [deleteVerts_vertexSet] at hmem
-        exact Ne.symm hmem.2
-      exact ⟨P'.first, hP'path.vertexSet_subset first_mem, hne, huf, h.first_eq_last ▸ hvl⟩
+      exact ⟨P'.first, hP'path.vertexSet_subset first_mem, Ne.symm (hP.infix hP'in
+        |>.vertexSet_subset first_mem |>.2), huf, h.first_eq_last ▸ hvl⟩
     have hP'path := hP.infix hP'in |>.of_le deleteVerts_le
     specialize h P'.reverse hP'path.reverse (fun x hx ↦ ?_) fun x hx ↦ ?_
     · obtain heq | ⟨hne, htl⟩ := hP'path.nodup.eq_getLast_or_mem_dropLast_ne (by simpa using hx)
       <;> grind
     · obtain heq | ⟨hne, hdl⟩ := hP'path.nodup.eq_head_or_mem_tail_ne (by simpa using hx) <;> grind
     simp only [reverse_nil_iff] at h
-    have hne : x ≠ P'.first := by
-      have hmem := hP.infix hP'in |>.vertexSet_subset (first_mem (w := P'))
-      rw [deleteVerts_vertexSet] at hmem
-      exact Ne.symm hmem.2
-    exact ⟨P'.first, hP'path.vertexSet_subset first_mem, hne, h.first_eq_last ▸ huf, hvl⟩
+    exact ⟨P'.first, hP'path.vertexSet_subset first_mem, Ne.symm (hP.infix hP'in
+      |>.vertexSet_subset first_mem |>.2), h.first_eq_last ▸ huf, hvl⟩
   obtain ⟨x, hxC, -, hux, hvx⟩ := h1 hu2.nonempty.some hu2.nonempty.some_mem.2
   obtain ⟨y, hyC, hxy, huy, hvy⟩ := h1 x hxC
   clear h1 hu2 hv2
@@ -425,26 +246,36 @@ lemma K33_K5_lemma_aux2 (hCG : C ≤ G) (hC : C.IsCycle) (hu : u ∉ V(C)) (hv :
     · use Pyx, Pxy, hPyx, hPxy, huyx, hvxy
       exact (rotate_eq_append hPyxdl.symm hPxytl.symm) ▸ hC.rotate Pxy.length
   · rintro (⟨huxy, huyx⟩ | ⟨hvxy, hvyx⟩)
-    · exact isIsoTopologicalMinor_completeBipartiteGraph_of_internal hCG hu hv huv hadj hPxy hPyx
-        hC hPxytl hPyxdl hvx hvy huxy huyx
-    · exact isIsoTopologicalMinor_completeBipartiteGraph_of_internal hCG hv hu huv.symm hadj.symm
-        hPxy hPyx hC hPxytl hPyxdl hux huy hvxy hvyx
+    · sorry
+    · sorry
   rintro (⟨huxy, hvxy⟩ | ⟨huyx, hvyx⟩)
-  · exact isIsoTopologicalMinor_completeGraph_of_internal hCG hu hv huv hadj hPxy hC hPxytl hPyxdl
-      hux hvx huy hvy (exists_common_internal_neighbor hPxy h huxy hvxy)
-  · have hC' : C.IsCyclicWalk (Pyx ++ Pxy) :=
-      (rotate_eq_append hPyxdl.symm hPxytl.symm) ▸ hC.rotate Pxy.length
-    exact isIsoTopologicalMinor_completeGraph_of_internal hCG hu hv huv hadj hPyx hC' hPyxdl.symm
-      hPxytl.symm (by rw [hPxytl]; exact huy) (by rw [hPxytl]; exact hvy)
-      (by rw [hPyxdl]; exact hux) (by rw [hPyxdl]; exact hvx)
-      (exists_common_internal_neighbor hPyx h huyx hvyx)
+  · sorry
+  · sorry
+
+
+  /- Let a path satisfying the condition of `h` be path of change.
+  First, we show that there are at least two paths of change.
+  Take some neighbor of u in C, u₁ and some neighbor of v in C, v₁. Then, C is partitioned into two
+  trails, one from u₁ to v₁ and v₁ to u₁. From `exists_infix_of_prop` we get that each of these
+  trails has a path of change.
+  By assumption, both of these paths are a single vertex path. Let those vertices be x and y.
+  Then, C is partitioned into two paths, one from x to y and one from y to x.
+  If both paths internally have a neighbor of u, then we can construct a K3,3 similar to the
+  construction in `K33_K5_lemma_aux1`.
+  WLOG, assume that all neighbors of u appear in x-y path leaving y-x path internally disjoint with
+  neighbors of u.
+  If any neighbor of v appears in x-y path, then `exists_infix_of_exists_prop` gives us another
+  path of change, nil z. Then, x, y and z form a K5 together with u and v.
+  Otherwise, all neighbors of v must appear in y-x path leaving x-y path internally disjoint with
+  neighbors of v.
+  Therefore, x-y path and y-x path is the two paths as desired.-/
 
 lemma K33_K5_lemma (hCG : C ≤ G) (hC : IsCycle C) (hu : u ∉ V(C)) (hv : v ∉ V(C)) (huv : u ≠ v)
     (hadj : G.Adj u v) (hu2 : (N(G, u) ∩ V(C)).Nontrivial) (hv2 : (N(G, v) ∩ V(C)).Nontrivial) :
     (∃ P₁ P₂ : WList α β, C.IsPath P₁ ∧ C.IsPath P₂ ∧ (∀ x ∈ P₁.vertex.tail.dropLast, ¬ G.Adj u x) ∧
     (∀ x ∈ P₂.vertex.tail.dropLast, ¬ G.Adj v x) ∧ C.IsCyclicWalk (P₁ ++ P₂)) ∨
-    (CompleteBipartiteGraph 3 3).IsIsoTopologicalMinor G ∨
-    (CompleteGraph 5).IsIsoTopologicalMinor G := by
+    (CompleteBipartiteGraph 3 3).IsTopologicalMinor G ∨
+    (CompleteGraph 5).IsTopologicalMinor G := by
   by_cases h : ∃ P, C.IsPath P ∧ (∀ x ∈ P, G.Adj u x ↔ x = P.first) ∧
     (∀ x ∈ P, G.Adj v x ↔ x = P.last) ∧ P.Nonempty
   · rw [← or_assoc]
@@ -453,4 +284,28 @@ lemma K33_K5_lemma (hCG : C ≤ G) (hC : IsCycle C) (hu : u ∉ V(C)) (hv : v �
   push Not at h
   exact K33_K5_lemma_aux2 hCG hC hu hv huv hadj hu2 hv2 h
 
-end Graph
+/- The intended conclusion of this unfinished theorem has not yet been specified.
+lemma Kuratowski_aux_1 [G.Finite] (hcon : G.Connected) (hK5 : ∀ K, Nonempty
+    (Iso (CompleteGraph 5) K) → IsEmpty (K.TopologicalMinor G)) (hK33 : ∀ K, Nonempty
+    (Iso (CompleteBipartiteGraph 3 3) K) → IsEmpty (K.TopologicalMinor G)) :
+     := by
+  generalize hm : E(G).ncard = m
+  induction m using Nat.strong_induction_on with | h m ih => _
+  subst m
+  wlog h3 : 3 < V(G).ncard
+  · simp only [not_lt] at h3
+
+    sorry
+  wlog hconn3 : G.ConnGE 3
+  · obtain ⟨C, hHC, hC3⟩ := exists_isSepSet_encard_lt_of_not_connGE (by norm_cast) hconn3
+
+    sorry
+
+
+  -- sorry
+-/
+
+
+-- theorem K33_not_planar (f : (CompleteBipartiteGraph 3 3).Realization → E)
+--     (hf : Topology.IsEmbedding f) : ∃ C : Set E, IsCircuit C ∧ C ⊆ range f ∧ IsConnected Cᶜ := by
+--   sorry

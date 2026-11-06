@@ -44,27 +44,22 @@ lemma parallel_iff [Nonempty V] : Parallel G e f ↔
       (∀ i, IsTarget G (φ i : I) ↔ IsTarget G (i : I)) := by
   simp only [Parallel, Subtype.ext_iff, val_attach']
 
-@[grind →]
-lemma Parallel.left_mem (h : Parallel G e f) : e ∈ E(G) := h.1
+@[grind →] lemma Parallel.left_mem (h : Parallel G e f) : e ∈ E(G) := h.1
 
-@[grind →]
-lemma Parallel.right_mem (h : Parallel G e f) : f ∈ E(G) := h.2.1
+@[grind →] lemma Parallel.right_mem (h : Parallel G e f) : f ∈ E(G) := h.2.1
 
 lemma Parallel.refl (he : e ∈ E(G)) : Parallel G e e :=
   ⟨he, he, Equiv.refl _, fun _ ↦ rfl, fun _ ↦ Iff.rfl, fun _ ↦ Iff.rfl⟩
 
-@[simp]
-lemma parallel_self_iff : Parallel G e e ↔ e ∈ E(G) := ⟨Parallel.left_mem, Parallel.refl⟩
+@[simp] lemma parallel_self_iff : Parallel G e e ↔ e ∈ E(G) := ⟨Parallel.left_mem, Parallel.refl⟩
 
 @[simp]
 lemma not_parallel_of_notMem_edges (he : e ∉ E(G)) : ¬ Parallel G e f := fun h ↦ he h.left_mem
 
-@[simp]
-lemma not_parallel_of_notMem_edges_right (hf : f ∉ E(G)) : ¬ Parallel G e f :=
+@[simp] lemma not_parallel_of_notMem_edges_right (hf : f ∉ E(G)) : ¬ Parallel G e f :=
   fun h ↦ hf h.right_mem
 
-@[symm]
-lemma Parallel.symm (h : Parallel G e f) : Parallel G f e := by
+@[symm] lemma Parallel.symm (h : Parallel G e f) : Parallel G f e := by
   obtain ⟨he, hf, φ, hv, hs, ht⟩ := h
   refine ⟨hf, he, φ.symm, by grind⟩
 
@@ -103,9 +98,8 @@ lemma Parallel.isLink_iff (h : Parallel G e f) : IsLink G e u v ↔ IsLink G f u
   let a : edgeFiber G e := ⟨i, mem_edgeFiber.mpr ⟨hi.mem_incs, hie⟩⟩
   let b : edgeFiber G e := ⟨j, mem_edgeFiber.mpr ⟨hj.mem_incs, hje⟩⟩
   exact isLink_iff_exists_incidence.mpr ⟨φ a, φ b,
-    fun heq ↦ hij (congrArg Subtype.val (φ.injective (Subtype.ext heq))),
-    (hs a).mpr hi, (ht b).mpr hj,
-    (mem_edgeFiber.mp (φ a).property).2, (mem_edgeFiber.mp (φ b).property).2,
+    fun heq ↦ hij (congrArg Subtype.val (φ.injective (Subtype.ext heq))), (hs a).mpr hi,
+    (ht b).mpr hj, (mem_edgeFiber.mp (φ a).property).2, (mem_edgeFiber.mp (φ b).property).2,
     (hv a).trans hiu, (hv b).trans hjv⟩
 
 -- lemma Parallel.of_compatible (h : Parallel G e f) (hGH : Compatible G H)

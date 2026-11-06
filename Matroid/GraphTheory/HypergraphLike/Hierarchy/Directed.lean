@@ -34,17 +34,13 @@ section Undirected
 
 variable [Undirected G]
 
-@[simp, grind =]
-lemma isSource_iff (G : Gr) [HypergraphLike V I E G] [Undirected G] (i : I) :
-    IsSource G i ↔ IsTarget G i :=
-  Undirected.isSource_iff (i := i)
+@[simp, grind =] lemma isSource_iff (G : Gr) [HypergraphLike V I E G] [Undirected G] (i : I) :
+    IsSource G i ↔ IsTarget G i := Undirected.isSource_iff (i := i)
 
-@[grind →]
-lemma isSource_of_mem_incs (hi : i ∈ I(G)) : IsSource G i :=
+@[grind →] lemma isSource_of_mem_incs (hi : i ∈ I(G)) : IsSource G i :=
   (mem_incs_iff.mp hi).elim id (isSource_iff G i).mpr
 
-@[grind →]
-lemma isTarget_of_mem_incs (hi : i ∈ I(G)) : IsTarget G i :=
+@[grind →] lemma isTarget_of_mem_incs (hi : i ∈ I(G)) : IsTarget G i :=
   (isSource_iff G i).mp (isSource_of_mem_incs hi)
 
 private lemma isLink_iff_of_undirected : IsLink G e u v ↔
@@ -109,8 +105,7 @@ section Directed
 
 variable [Directed G]
 
-@[grind →]
-lemma IsSource.not_isTarget (h : IsSource G i) : ¬ IsTarget G i :=
+@[grind →] lemma IsSource.not_isTarget (h : IsSource G i) : ¬ IsTarget G i :=
   Directed.not_isTarget_of_isSource h
 
 lemma IsTarget.not_isSource (h : IsTarget G i) : ¬ IsSource G i :=

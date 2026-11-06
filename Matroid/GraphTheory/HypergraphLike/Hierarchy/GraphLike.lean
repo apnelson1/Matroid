@@ -43,16 +43,6 @@ class GraphLike (G : Gr) [HypergraphLike V I E G] where
   exists_isTarget_of_mem_edgeSet' ⦃e : E⦄ :
     e ∈ E(G) → ∃ i : I(G), (edgeMap' i : E) = e ∧ IsTarget G (i : I)
 
-lemma edgeSet_nonempty_of_incSet_nonempty (h : I(G).Nonempty) : E(G).Nonempty := by
-  obtain ⟨i, hi⟩ := h
-  obtain ⟨e, he⟩ := edgeMap' ⟨i, hi⟩
-  exact ⟨e, he⟩
-
-lemma vertexSet_nonempty_of_incSet_nonempty (h : I(G).Nonempty) : V(G).Nonempty := by
-  obtain ⟨i, hi⟩ := h
-  obtain ⟨v, hv⟩ := attach' ⟨i, hi⟩
-  exact ⟨v, hv⟩
-
 section constructors
 
 /-- Construct a `GraphLike` instance from two-element incidence fibres, using classical choice for

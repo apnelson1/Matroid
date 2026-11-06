@@ -93,8 +93,8 @@ example (F : G.Hom H) (hF : Function.Injective F.vertMap) (e : E(G)) (x : V(G))
 
 -- Crossing both bridge interfaces preserves the chosen routes exactly.
 example (M : Immersion G H) (hM : M.Topological) (hS : M.Surjective) (e : E(G)) :
-    ((M.toIsoSubdivision hM hS).toImmersion.toIsoTopologicalMinor
-      (M.toIsoSubdivision hM hS).toImmersion_topological).route e = M.route e := by
+    ((M.toSubdivision hM hS).toImmersion.toTopologicalMinor
+      (M.toSubdivision hM hS).toImmersion_topological).route e = M.route e := by
   simp
 
 -- Normalization is stable on repeated use, and does not change a topological immersion.
@@ -121,9 +121,9 @@ end Consumers
 /-- info: 'Graph.Immersion.Surjective.comp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms Immersion.Surjective.comp
-/-- info: 'Graph.IsIsoSubdivision.trans' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'Graph.IsSubdivision.trans' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
-#print axioms Graph.IsIsoSubdivision.trans
+#print axioms Graph.IsSubdivision.trans
 /--
 info: 'Graph.isStrongImmersion_iff_exists_simple_routes' depends on axioms: [propext, Classical.choice, Quot.sound]
 -/

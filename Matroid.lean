@@ -95,6 +95,7 @@ public import Matroid.GraphTheory.Graph.Constructions.Basic
 -- public import Matroid.GraphTheory.Graph.Constructions.Cycle
 -- public import Matroid.GraphTheory.Graph.Constructions.Random
 public import Matroid.GraphTheory.Graph.Constructions.Sum
+public import Matroid.GraphTheory.Graph.CycleDichotomy
 public import Matroid.GraphTheory.Graph.Degree.Basic
 public import Matroid.GraphTheory.Graph.Degree.Constructions
 public import Matroid.GraphTheory.Graph.Degree.Defs
@@ -103,7 +104,7 @@ public import Matroid.GraphTheory.Graph.Distance
 -- public import Matroid.GraphTheory.Graph.EdgeColoring
 public import Matroid.GraphTheory.Graph.Finite
 public import Matroid.GraphTheory.Graph.Forest
-public import Matroid.GraphTheory.Graph.GraphLike.ArbRel
+-- public import Matroid.GraphTheory.Graph.GraphLike.ArbRel
 public import Matroid.GraphTheory.Graph.Hom.Basic
 public import Matroid.GraphTheory.Graph.Hom.Factorization
 public import Matroid.GraphTheory.Graph.Hom.Image
@@ -123,28 +124,27 @@ public import Matroid.GraphTheory.Graph.Matching.Konigs
 -- public import Matroid.GraphTheory.Graph.Matching.TutteBerge
 public import Matroid.GraphTheory.Graph.Matrix
 public import Matroid.GraphTheory.Graph.Minor.Defs
-public import Matroid.GraphTheory.Graph.Minor.Topological
+-- public import Matroid.GraphTheory.Graph.Minor.Topological
 public import Matroid.GraphTheory.Graph.Minor.Walk
+public import Matroid.GraphTheory.Graph.Obstructions
 -- public import Matroid.GraphTheory.Graph.Planarity.CombMap.Basic
 -- public import Matroid.GraphTheory.Graph.Planarity.CombMap.Equiv
 -- public import Matroid.GraphTheory.Graph.Planarity.Contraction
-public import Matroid.GraphTheory.Graph.Planarity.CycleDichotomy
-public import Matroid.GraphTheory.Graph.Planarity.Drawing
+-- public import Matroid.GraphTheory.Graph.Planarity.Drawing
 -- public import Matroid.GraphTheory.Graph.Planarity.Face
 -- public import Matroid.GraphTheory.Graph.Planarity.FaceCycle
 -- public import Matroid.GraphTheory.Graph.Planarity.Insertion.Basic
 -- public import Matroid.GraphTheory.Graph.Planarity.Insertion.Plane
-public import Matroid.GraphTheory.Graph.Planarity.Obstructions
-public import Matroid.GraphTheory.Graph.Planarity.PLDrawing
-public import Matroid.GraphTheory.Graph.Planarity.PLReduction
+-- public import Matroid.GraphTheory.Graph.Planarity.PLDrawing
+-- public import Matroid.GraphTheory.Graph.Planarity.PLReduction
 -- public import Matroid.GraphTheory.Graph.Planarity.PLTopologicalMinor
-public import Matroid.GraphTheory.Graph.Planarity.Realization.Basic
-public import Matroid.GraphTheory.Graph.Planarity.Realization.CWComplex
-public import Matroid.GraphTheory.Graph.Planarity.Realization.Iso
-public import Matroid.GraphTheory.Graph.Planarity.Realization.Metric
-public import Matroid.GraphTheory.Graph.Planarity.Realization.Presentation
-public import Matroid.GraphTheory.Graph.Planarity.Realization.Subgraph
-public import Matroid.GraphTheory.Graph.Planarity.Realization.VertexSpace
+-- public import Matroid.GraphTheory.Graph.Planarity.Realization.Basic
+-- public import Matroid.GraphTheory.Graph.Planarity.Realization.CWComplex
+-- public import Matroid.GraphTheory.Graph.Planarity.Realization.Iso
+-- public import Matroid.GraphTheory.Graph.Planarity.Realization.Metric
+-- public import Matroid.GraphTheory.Graph.Planarity.Realization.Presentation
+-- public import Matroid.GraphTheory.Graph.Planarity.Realization.Subgraph
+-- public import Matroid.GraphTheory.Graph.Planarity.Realization.VertexSpace
 -- public import Matroid.GraphTheory.Graph.Planarity.StarLemma
 -- public import Matroid.GraphTheory.Graph.Planarity.ThetaCurve
 -- public import Matroid.GraphTheory.Graph.Planarity.TopologicalMinor

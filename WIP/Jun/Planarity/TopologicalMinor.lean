@@ -355,9 +355,9 @@ edge subdivisions. -/
 def TopologicallyEquivalent (G : Graph α β) (H : Graph γ δ) : Prop :=
   Nonempty (Realization G ≃ₜ Realization H)
 
-namespace IsoTopologicalMinor
+namespace TopologicalMinor
 
-variable (M : H.IsoTopologicalMinor G)
+variable (M : H.TopologicalMinor G)
 
 open Classical
 
@@ -507,7 +507,7 @@ theorem routePath_interior_disjoint {e f : E(H)} (hef : e ≠ f) :
         ⟨t, ht, rfl⟩ ⟨s, hs, hseq.symm⟩
 
 /-- The drawing of the pattern into the host realization along a topological-minor witness. -/
-noncomputable def realizationDrawing (M : H.IsoTopologicalMinor G) :
+noncomputable def realizationDrawing (M : H.TopologicalMinor G) :
     Drawing H (Realization G) :=
   Drawing.ofVertexAndEdgePaths
     (fun v ↦ vertexMk ⟨M.branchVertex v, M.branchVertex_mem v⟩)
@@ -518,7 +518,7 @@ noncomputable def realizationDrawing (M : H.IsoTopologicalMinor G) :
 
 /-- The continuous map of realizations that sends branch vertices to branch vertices and each
 pattern edge along its route in the host. -/
-noncomputable def realizationMap (M : H.IsoTopologicalMinor G) :
+noncomputable def realizationMap (M : H.TopologicalMinor G) :
     C(Realization H, Realization G) :=
   M.realizationDrawing.toContinuousMap
 
@@ -542,15 +542,15 @@ theorem realizationMap_injective : Injective M.realizationMap :=
 /-- The image of the realization map is the realization of the used subgraph, included in the
 host realization. -/
 theorem range_realizationMap :
-    range (IsoTopologicalMinor.realizationMap M) =
+    range (TopologicalMinor.realizationMap M) =
       range (M.usedSubgraph_le.realizationContinuousMap) := by
   sorry
 
-end IsoTopologicalMinor
+end TopologicalMinor
 
-namespace IsoSubdivision
+namespace Subdivision
 
-variable (S : H.IsoSubdivision G)
+variable (S : H.Subdivision G)
 
 /-- Exhaustiveness of a subdivision makes the realization map onto the refined realization. -/
 theorem realizationMap_surjective : Surjective (S.realizationMap) := by
@@ -558,7 +558,7 @@ theorem realizationMap_surjective : Surjective (S.realizationMap) := by
 
 /-- The inverse point map sends each refined cell to the appropriate subinterval of its coarse
 edge. -/
-noncomputable def inverseRealizationMap (S : H.IsoSubdivision G) :
+noncomputable def inverseRealizationMap (S : H.Subdivision G) :
     Realization G → Realization H := by
   sorry
 
@@ -576,7 +576,7 @@ theorem continuous_inverseRealizationMap : Continuous S.inverseRealizationMap :=
 
 /-- The homeomorphism from the realization of a subdivision to the realization of the graph it
 subdivides. Its inverse cuts every coarse edge into the cells of its subdivision route. -/
-noncomputable def realizationHomeomorph (S : H.IsoSubdivision G) :
+noncomputable def realizationHomeomorph (S : H.Subdivision G) :
     Realization G ≃ₜ Realization H := by
   sorry
 
@@ -587,10 +587,10 @@ theorem realizationHomeomorph_branchVertex (v : V(H)) :
   sorry
 
 /-- A subdivision exhibits the two graphs as topologically equivalent. -/
-theorem topologicallyEquivalent (S : H.IsoSubdivision G) : G.TopologicallyEquivalent H :=
-  ⟨IsoSubdivision.realizationHomeomorph S⟩
+theorem topologicallyEquivalent (S : H.Subdivision G) : G.TopologicallyEquivalent H :=
+  ⟨Subdivision.realizationHomeomorph S⟩
 
-end IsoSubdivision
+end Subdivision
 
 namespace Drawing
 
@@ -616,35 +616,35 @@ theorem support_ofHomeomorph (D : Drawing G X) (h : Realization H ≃ₜ Realiza
   exact ⟨fun ⟨y, hy⟩ ↦ ⟨h y, hy⟩, fun ⟨z, hz⟩ ↦ ⟨h.symm z, by simp [hz]⟩⟩
 
 /-- Restrict a drawing to the subdivision model of a topological minor. -/
-noncomputable def ofIsoTopologicalMinor (D : Drawing G X) (M : H.IsoTopologicalMinor G) :
+noncomputable def ofTopologicalMinor (D : Drawing G X) (M : H.TopologicalMinor G) :
     Drawing H X where
-  toContinuousMap := ⟨D ∘ IsoTopologicalMinor.realizationMap M,
-    D.continuous.comp (IsoTopologicalMinor.realizationMap M).continuous⟩
-  inj' := D.injective.comp (IsoTopologicalMinor.realizationMap_injective M)
+  toContinuousMap := ⟨D ∘ TopologicalMinor.realizationMap M,
+    D.continuous.comp (TopologicalMinor.realizationMap M).continuous⟩
+  inj' := D.injective.comp (TopologicalMinor.realizationMap_injective M)
 
 /-- A drawing of a topological minor uses no points outside the host drawing. -/
-theorem support_ofIsoTopologicalMinor_subset (D : Drawing G X) (M : H.IsoTopologicalMinor G) :
-    (D.ofIsoTopologicalMinor M).support ⊆ D.support := by
+theorem support_ofTopologicalMinor_subset (D : Drawing G X) (M : H.TopologicalMinor G) :
+    (D.ofTopologicalMinor M).support ⊆ D.support := by
   rintro _ ⟨x, rfl⟩
-  exact ⟨IsoTopologicalMinor.realizationMap M x, rfl⟩
+  exact ⟨TopologicalMinor.realizationMap M x, rfl⟩
 
 /-- Subdivide the cells of a drawing. The resulting drawing has the refined graph as its domain. -/
-noncomputable def subdivide (D : Drawing H X) (S : H.IsoSubdivision G) : Drawing G X :=
-  D.ofHomeomorph (IsoSubdivision.realizationHomeomorph S)
+noncomputable def subdivide (D : Drawing H X) (S : H.Subdivision G) : Drawing G X :=
+  D.ofHomeomorph (Subdivision.realizationHomeomorph S)
 
 /-- Suppress the subdivision vertices of a drawing. -/
-noncomputable def suppress (D : Drawing G X) (S : H.IsoSubdivision G) : Drawing H X :=
-  D.ofHomeomorph (IsoSubdivision.realizationHomeomorph S).symm
+noncomputable def suppress (D : Drawing G X) (S : H.Subdivision G) : Drawing H X :=
+  D.ofHomeomorph (Subdivision.realizationHomeomorph S).symm
 
 /-- Subdividing a drawing preserves its image exactly. -/
 @[simp]
-theorem support_subdivide (D : Drawing H X) (S : H.IsoSubdivision G) :
+theorem support_subdivide (D : Drawing H X) (S : H.Subdivision G) :
     (D.subdivide S).support = D.support :=
   D.support_ofHomeomorph _
 
 /-- Suppressing subdivision vertices preserves the image exactly. -/
 @[simp]
-theorem support_suppress (D : Drawing G X) (S : H.IsoSubdivision G) :
+theorem support_suppress (D : Drawing G X) (S : H.Subdivision G) :
     (D.suppress S).support = D.support :=
   D.support_ofHomeomorph _
 
@@ -663,11 +663,11 @@ end Drawing
 namespace IsDrawable
 
 /-- Drawability is inherited by up-to-isomorphism topological minors. -/
-theorem isoTopologicalMinor (hG : G.IsDrawable X) (M : H.IsoTopologicalMinor G) : H.IsDrawable X :=
-  ⟨hG.some.ofIsoTopologicalMinor M⟩
+theorem TopologicalMinor (hG : G.IsDrawable X) (M : H.TopologicalMinor G) : H.IsDrawable X :=
+  ⟨hG.some.ofTopologicalMinor M⟩
 
 /-- Subdivision does not change drawability in a fixed topological space. -/
-theorem isoSubdivision_iff (S : H.IsoSubdivision G) : H.IsDrawable X ↔ G.IsDrawable X :=
+theorem Subdivision_iff (S : H.Subdivision G) : H.IsDrawable X ↔ G.IsDrawable X :=
   ⟨fun h ↦ ⟨h.some.subdivide S⟩, fun h ↦ ⟨h.some.suppress S⟩⟩
 
 end IsDrawable
@@ -675,12 +675,12 @@ end IsDrawable
 namespace Planar
 
 /-- Planarity is inherited by up-to-isomorphism topological minors. -/
-theorem isoTopologicalMinor (hG : G.Planar) (M : H.IsoTopologicalMinor G) : H.Planar :=
-  IsDrawable.isoTopologicalMinor hG M
+theorem TopologicalMinor (hG : G.Planar) (M : H.TopologicalMinor G) : H.Planar :=
+  IsDrawable.TopologicalMinor hG M
 
 /-- Subdivision does not change planarity. -/
-theorem isoSubdivision_iff (S : H.IsoSubdivision G) : H.Planar ↔ G.Planar :=
-  IsDrawable.isoSubdivision_iff S
+theorem Subdivision_iff (S : H.Subdivision G) : H.Planar ↔ G.Planar :=
+  IsDrawable.Subdivision_iff S
 
 end Planar
 

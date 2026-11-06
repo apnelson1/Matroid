@@ -6,7 +6,6 @@ Authors: Jun Kwon
 module
 
 public import Mathlib.Order.Extension.Linear
--- import Mathlib.Combinatorics.Graph.Subgraph
 public import Matroid.GraphTheory.Graph.Subgraph.Basic
 public import Mathlib.Order.Sym2
 
