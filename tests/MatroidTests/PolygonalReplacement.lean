@@ -1,7 +1,6 @@
 module
 
 public import Matroid.ForMathlib.Geometry.PrimitiveLinkReplacement
-public import Matroid.GraphTheory.Graph.Planarity.PLReduction
 
 open Set Metric PolygonalPath
 
@@ -47,10 +46,6 @@ example {S T L : Set V} {a b : V} (hS : IsSegmentFigure S) (hT : IsSegmentFigure
     ∃ P : PolygonalPath a b, P.toPath.IsPrimitive ∧ P.toSet = L :=
   hL.exists_polygonalPath ((hS.union hT).of_isPrimitiveLink_subset hL hsub)
 
--- Finite graph drawing replacement no longer needs a loopless hypothesis.
-example {α β : Type*} {G : Graph α β} [G.Finite] (D : Graph.Drawing G V) :
-    ∃ P : Graph.PLDrawing G V, ∀ x, P.vertex x = D.vertex x := D.exists_plDrawing
-
 /-- info: 'exists_polygonal_primitiveLink_family' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms exists_polygonal_primitiveLink_family
@@ -62,7 +57,3 @@ example {α β : Type*} {G : Graph α β} [G.Finite] (D : Graph.Drawing G V) :
 /-- info: 'IsPrimitiveLink.exists_polygonalPath' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms IsPrimitiveLink.exists_polygonalPath
-
-/-- info: 'Graph.Drawing.exists_plDrawing' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms Graph.Drawing.exists_plDrawing
