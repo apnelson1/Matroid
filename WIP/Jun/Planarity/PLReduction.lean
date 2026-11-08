@@ -1,7 +1,7 @@
 module
 
 public import Matroid.GraphTheory.Graph.Planarity.PLDrawing
-public import Matroid.ForMathlib.Geometry.PrimitiveLinkReplacement
+public import Matroid.MiniTauCeti.JCT.Geometry.PrimitiveLinkReplacement
 
 /-!
 # Polygonal replacement of finite graph drawings

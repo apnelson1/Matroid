@@ -8,7 +8,7 @@ public import Matroid.GraphTheory.Graph.Subdivision
 
 `Immersion.Topological` and `Graph.TopologicalMinor` impose the same conditions on the same
 branch vertices and routes. The conversions below preserve those data, including their image.
-The relation `Graph.IsTopologicalMinor` therefore agrees with `Graph.IsTopologicalMinor`.
+The relation `Graph.IsTopologicalMinor` therefore agrees with `Graph.IsTopologicalMinor'`.
 Adding `Immersion.Surjective` gives exactly the existing `Graph.Subdivision` witnesses.
 -/
 

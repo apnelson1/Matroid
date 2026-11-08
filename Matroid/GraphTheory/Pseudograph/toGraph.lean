@@ -5,7 +5,7 @@ Authors: Jun Kwon
 -/
 module
 
-public import Matroid.GraphTheory.Graph.Basic
+public import Matroid.GraphTheory.Graph.Finite
 public import Matroid.GraphTheory.Pseudograph.Basic
 
 /-!
@@ -34,3 +34,8 @@ def toGraph (G : Pseudograph V I E) : Graph V E where
   eq_or_eq_of_isLink_of_isLink := fun _ _ _ _ _ h h' ↦ h.left_eq_or_eq h'
   edge_mem_iff_exists_isLink _ := mem_edges_iff_exists_isLink
   left_mem_of_isLink _ _ _ hxy := IsLink.left_mem_vertexSet hxy
+
+/-- Forgetting incidence labels preserves finiteness. -/
+instance [HypergraphLike.Finite G] : G.toGraph.Finite where
+  vertexSet_finite := HypergraphLike.Finite.vertexSet_finite
+  edgeSet_finite := HypergraphLike.Finite.edgeSet_finite

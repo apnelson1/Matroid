@@ -2,11 +2,11 @@ module
 
 public import Matroid.GraphTheory.Graph.Planarity.PLDrawing
 public import Matroid.GraphTheory.Graph.Planarity.Face
-public import Matroid.ForMathlib.Geometry.DiskMinusRadii
-public import Matroid.ForMathlib.Geometry.SegmentFigure.Star
-public import Matroid.ForMathlib.Geometry.StarComponents
+public import Matroid.MiniTauCeti.JCT.Geometry.DiskMinusRadii
+public import Matroid.MiniTauCeti.JCT.Geometry.SegmentFigure.Star
+public import Matroid.MiniTauCeti.JCT.Geometry.StarComponents
 public import Matroid.ForMathlib.Topology.ConnPartition
-public import Matroid.ForMathlib.Analysis.Convex.RadialPoint
+public import Matroid.MiniTauCeti.JCT.Analysis.Convex.RadialPoint
 public import Mathlib.Analysis.Normed.Affine.AddTorsor
 
 @[expose] public section

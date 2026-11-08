@@ -1,7 +1,7 @@
 module
 
 public import Matroid.GraphTheory.Graph.Walk.Cycle
-public import Matroid.GraphTheory.Graph.WList.TakeDrop.Index
+public import Matroid.GraphTheory.Graph.WList.Operations
 
 /-!
 # Graph immersions

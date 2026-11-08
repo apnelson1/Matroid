@@ -1,6 +1,6 @@
 module
 
-public import Matroid.ForMathlib.Topology.PrimitivePath
+public import Matroid.MiniTauCeti.JCT.Topology.PrimitivePath
 public import Matroid.GraphTheory.Graph.Degree.Max
 public import Matroid.GraphTheory.Graph.Minor.Defs
 public import Matroid.GraphTheory.Graph.Planarity.Realization.Iso

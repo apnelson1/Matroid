@@ -15,10 +15,10 @@ python3 -m pip install 'tomlkit>=0.13.3,<1'
 ```
 
 ```bash
-scripts/register_lake_cache.sh
+scripts/cache/register_lake_cache.sh
 ```
 
-Before using the cache, we first need to tell the computer where to find the cache. `scripts/register_lake_cache.sh` registers the public cache service `matroid-r2-public` in `~/.lake/config.toml`, the per-user Lake configuration file read by every Lake workspace on the machine. It also makes that service the default unless another default is already configured, in which case it leaves the existing default in place.
+Before using the cache, we first need to tell the computer where to find the cache. `scripts/cache/register_lake_cache.sh` registers the public cache service `matroid-r2-public` in `~/.lake/config.toml`, the per-user Lake configuration file read by every Lake workspace on the machine. It also makes that service the default unless another default is already configured, in which case it leaves the existing default in place.
 
 Both dotted keys (`cache.defaultService = "other-service"`) and tables
 (`[cache]` followed by `defaultService = "other-service"`) are supported.
@@ -32,7 +32,7 @@ of this script share a persistent `config.toml.lock` sidecar.
 Regression tests use temporary configurations and do not change your Lake setup:
 
 ```bash
-python3 -m unittest discover -s scripts -p 'test_register_lake_cache.py' -v
+uv run --no-project --with tomlkit python -m unittest scripts.cache.test_register_lake_cache -v
 ```
 
 ## Everyday use

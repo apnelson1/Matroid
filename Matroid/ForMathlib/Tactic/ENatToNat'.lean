@@ -321,7 +321,7 @@ example {a : ℤ} (h : (3 : ℕ∞) ≤ f a) : f a ≠ 0 := by
   enat_to_nat!
   omega
 
-/-- Regression mirroring `Matroid.Graph.Connected.Basic.ConnGE.edgeDelete_linkEdges.le_card`:
+/-- Regression mirroring `Matroid.GraphTheory.Graph.Connected.Basic.ConnGE.edgeDelete_linkEdges.le_card`:
 the only ℕ∞ subterm is an opaque compound expression (`Set.encard _`), with Nat casts
 on each side. -/
 example {α : Type*} {n : ℕ} {X : Set α} (h : (n+1 : ℕ∞) < X.encard) :

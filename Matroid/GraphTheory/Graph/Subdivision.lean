@@ -4,17 +4,6 @@ public import Matroid.GraphTheory.Graph.TopologicalMinor
 
 /-!
 # Graph subdivisions
-
-A subdivision is an *exhaustive* topological-minor model: every host vertex and edge belongs to the
-model.  This file is downstream of `Graph.TopologicalMinor`; users who only need topological-minor
-containment do not need to import subdivision theory.
-
-The central bridge is that every topological-minor witness becomes a subdivision after restricting
-the host to its `usedSubgraph`.  Consequently,
-
-`H` is a topological minor of `G` iff some subgraph of `G` is a subdivision of `H`.
-
-Both label-coherent and isomorphism-invariant versions are developed in parallel.
 -/
 
 @[expose] public section
@@ -48,7 +37,10 @@ end TopologicalMinor
 
 /-! ## Subdivision witness structures -/
 
-/-- An isomorphism-invariant subdivision of `J` onto all of `G`. -/
+/-- An isomorphism-invariant subdivision of `J` onto all of `G`.
+
+This definition is temporary: it is to be redefined as a label-coherent exhaustive topological
+minor. Adapting its constructions to that definition remains deferred. -/
 structure Subdivision (J : Graph γ δ) (G : Graph α β) extends J.TopologicalMinor G where
   exhaustive : toTopologicalMinor.IsExhaustive
 
@@ -156,14 +148,37 @@ theorem isExhaustive_iff_usedSubgraph_eq : M.IsExhaustive ↔ M.usedSubgraph = G
 
 end TopologicalMinor
 
-/-! ## Characterizing topological minors by subdivisions of subgraphs -/
+/-! ## Normalization of subdivisions -/
 
-/-- A label-coherent topological minor is exactly a subdivision occurring as a subgraph of the
-host. -/
-theorem isTopologicalMinor_iff_exists_subdivision_subgraph {H G : Graph α β} :
-    H.IsTopologicalMinor G ↔ ∃ K : Graph α β, K ≤ G ∧ H.IsSubdivision K :=
-  ⟨fun ⟨M⟩ ↦ ⟨M.usedSubgraph, M.usedSubgraph_le, ⟨M.subdivisionUsedSubgraph⟩⟩,
-    fun ⟨_, hKG, ⟨S⟩⟩ ↦ ⟨S.toTopologicalMinor.mono_right hKG⟩⟩
+namespace Subdivision
+
+variable (S : J.Subdivision G)
+
+/-- The subdivision with its pattern relabelled onto host carriers. -/
+noncomputable def normalizedSubdivision : S.toTopologicalMinor.normalized.Subdivision G where
+  toTopologicalMinor := S.toTopologicalMinor.normalizedModel
+  exhaustive := by
+    let M := S.toTopologicalMinor
+    refine ⟨fun x hx ↦ ?_, fun x hx ↦ ?_⟩
+    · have hx' := S.vertex_covers hx
+      simp only [mem_union, mem_iUnion, mem_range] at hx' ⊢
+      obtain ⟨y, rfl⟩ | ⟨e, he⟩ := hx'
+      · exact Or.inl ⟨⟨S.branchVertex y, by simp [TopologicalMinor.vertexSet_normalized]⟩, rfl⟩
+      refine Or.inr ⟨⟨M.repEdge e, by
+        simpa only [TopologicalMinor.edgeSet_normalized] using
+          (mem_range_self e : M.repEdge e ∈ range M.repEdge)⟩, ?_⟩
+      simpa [TopologicalMinor.normalizedModel, M, TopologicalMinor.source_repEdge] using he
+    have hx' := S.edge_covers hx
+    simp only [mem_iUnion] at hx' ⊢
+    obtain ⟨e, he⟩ := hx'
+    refine ⟨⟨M.repEdge e, by
+        simpa only [TopologicalMinor.edgeSet_normalized] using
+          (mem_range_self e : M.repEdge e ∈ range M.repEdge)⟩, ?_⟩
+    simpa [TopologicalMinor.normalizedModel, M, TopologicalMinor.source_repEdge] using he
+
+end Subdivision
+
+/-! ## Characterizing topological minors by subdivisions of subgraphs -/
 
 /-- An isomorphism-invariant topological minor is exactly an isomorphism-invariant subdivision
 occurring as a subgraph of the host. -/
@@ -172,13 +187,19 @@ theorem isTopologicalMinor_iff_exists_Subdivision_subgraph {J : Graph γ δ} {G 
   ⟨fun ⟨M⟩ ↦ ⟨M.usedSubgraph, M.usedSubgraph_le, ⟨M.subdivisionUsedSubgraph⟩⟩,
     fun ⟨_, hKG, ⟨S⟩⟩ ↦ ⟨S.toTopologicalMinor.mono_right hKG⟩⟩
 
+theorem isTopologicalMinor_iff_exists_subdivision_subgraph {H G : Graph α β} :
+    H.IsTopologicalMinor G ↔ ∃ K : Graph α β, K ≤ G ∧ H.IsSubdivision K :=
+  ⟨fun ⟨M⟩ ↦ ⟨M.usedSubgraph, M.usedSubgraph_le, ⟨M.subdivisionUsedSubgraph⟩⟩,
+    fun ⟨_, hKG, ⟨S⟩⟩ ↦ ⟨S.toTopologicalMinor.mono_right hKG⟩⟩
+
 /-! ## Reflexivity -/
 
 /-- Every graph is a subdivision of itself. -/
 noncomputable def Subdivision.refl (G : Graph α β) : G.Subdivision G where
   toTopologicalMinor := TopologicalMinor.of_le le_rfl
-  exhaustive := ⟨fun x hx ↦ Or.inl ⟨⟨x, hx⟩, rfl⟩,
-    fun e he ↦ mem_iUnion.mpr ⟨⟨e, he⟩, by simp [TopologicalMinor.of_le]⟩⟩
+  exhaustive := by
+    refine ⟨?_, fun e he ↦ mem_iUnion.mpr ⟨⟨e, he⟩, by simp [TopologicalMinor.of_le]⟩⟩
+    simp [TopologicalMinor.of_le]
 
 @[simp]
 lemma IsSubdivision.refl (G : Graph α β) : G.IsSubdivision G :=

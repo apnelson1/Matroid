@@ -1,7 +1,7 @@
 module
 
 public import Matroid.GraphTheory.Graph.Forest
-public import Matroid.GraphTheory.Graph.WList.TakeDrop.Pred
+public import Matroid.GraphTheory.Graph.WList.Operations
 import all Mathlib.Combinatorics.Graph.Delete
 
 @[expose] public section

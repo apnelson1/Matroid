@@ -5,7 +5,7 @@ public import Matroid.GraphTheory.Graph.Planarity.Realization.VertexSpace
 -- public import Matroid.GraphTheory.Graph.GraphLike.ArbRel
 public import Matroid.GraphTheory.Graph.Distance
 public import Mathlib.Topology.CWComplex.Classical.Subcomplex
-public import Matroid.ForMathlib.Topology.Path
+public import Matroid.MiniTauCeti.JCT.Topology.Path
 public import Matroid.ForMathlib.Topology.ConnPartition
 
 public section

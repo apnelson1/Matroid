@@ -3,7 +3,7 @@ module
 public import Matroid.GraphTheory.Graph.Relabel
 public import Matroid.GraphTheory.Graph.Map
 public import Matroid.GraphTheory.Graph.Simple
-public import Matroid.GraphTheory.Graph.WList.TakeDrop.Index
+public import Matroid.GraphTheory.Graph.WList.Operations
 
 /-!
 # Topological minors
@@ -12,18 +12,9 @@ This file contains the intrinsic theory of topological-minor witnesses.  It deli
 import graph minors or contraction theory; those live downstream in `Graph/Minor/Topological`.
 Subdivision/exhaustiveness is also kept in a separate module.
 
-There are two witness structures.
-
-* `Graph.TopologicalMinor H G` is the label-coherent version: `H` and `G` use the same ambient
-  vertex and edge types, every vertex of `H` is literally a vertex of `G`, and the label of each
-  edge `e` of `H` occurs on its own route.
-* `Graph.TopologicalMinor H G` is the isomorphism-invariant version.  The pattern may live on
-  unrelated carrier types and is placed in `G` through an embedding of its active vertex set.
-
-The route geometry is intentionally aligned between the two structures.  Internal route vertices
-avoid branch vertices, distinct routes have disjoint interiors, and in the heterogeneous structure
-edge-disjointness is recorded explicitly.  In the label-coherent structure route edge-disjointness
-is derived from the distinguished edge labels.
+`Graph.TopologicalMinor J G` allows unrelated carrier types. An embedding places the pattern
+vertices in the host. Routes avoid other branch vertices, have disjoint interiors, and use disjoint
+host edges.
 
 ## Construction interfaces
 
@@ -57,16 +48,16 @@ namespace Graph
 
 /-! ## Core witness structures -/
 
-/-- An topological-minor model of `J` in `G`.
+/-- An isomorphism-invariant topological-minor model of `J` in `G`.
 
 The pattern and host may use unrelated carrier types.  Branch vertices are embedded directly in the
-ambient vertex type of the host; membership in the active host vertex set is recorded separately.
+ambient vertex type of the host; membership in the host vertex set is recorded separately.
 This makes relabelling and composition with graph isomorphisms straightforward.
 -/
 structure TopologicalMinor (J : Graph γ δ) (G : Graph α β) where
   /-- Placement of the pattern vertices in the ambient host carrier. -/
   branchVertex : V(J) ↪ α
-  /-- Every branch vertex is active in the host. -/
+  /-- Every branch vertex is in the host. -/
   branchVertex_mem : ∀ x, branchVertex x ∈ V(G)
   /-- The route replacing each pattern edge. -/
   route : E(J) → WList α β
@@ -90,11 +81,13 @@ structure TopologicalMinor (J : Graph γ δ) (G : Graph α β) where
 def IsTopologicalMinor (J : Graph γ δ) (G : Graph α β) : Prop :=
   Nonempty (J.TopologicalMinor G)
 
+/-! ## Topological minors -/
+
 namespace TopologicalMinor
 
 variable (M : J.TopologicalMinor G)
 
-/-- The branch-vertex embedding with codomain restricted to the active host vertex set. -/
+/-- The branch-vertex embedding with codomain restricted to the host vertex set. -/
 def branchVertexEmbedding : V(J) ↪ V(G) where
   toFun x := ⟨M.branchVertex x, M.branchVertex_mem x⟩
   inj' _ _ hxy := M.branchVertex.injective (congrArg Subtype.val hxy)
@@ -146,28 +139,37 @@ noncomputable def mono_right {K : Graph α β} (hGK : G ≤ K) : J.TopologicalMi
 
 /-- Every graph is a topological minor of any supergraph, using one-edge routes. -/
 noncomputable def of_le (hHG : H ≤ G) : H.TopologicalMinor G where
-  branchVertex := ⟨Subtype.val, Subtype.val_injective⟩
+  branchVertex := Function.Embedding.subtype _
   branchVertex_mem x := hHG.vertexSet_mono x.prop
-  route e := (exists_isLink_of_mem_edgeSet e.prop).choose_spec.choose_spec.walk
+  route e :=
+    let h := exists_isLink_of_mem_edgeSet e.prop
+    cons h.choose e.val (nil h.choose_spec.choose)
+  route_nonempty e := by simp
   route_isSimple e := by
     let h := exists_isLink_of_mem_edgeSet e.prop
-    have huv := h.choose_spec.choose_spec
-    change G.IsPath (cons h.choose ↑e (nil h.choose_spec.choose)) ∨
-      G.IsCyclicWalk (cons h.choose ↑e (nil h.choose_spec.choose))
     obtain hxy | hxy := eq_or_ne h.choose h.choose_spec.choose
-    · rw [← hxy] at huv ⊢
-      exact Or.inr <| ((nil_isPath huv.left_mem).cons_isCyclicWalk huv (by simp)).of_le hHG
-    exact Or.inl <| (huv.walk_isPath hxy).of_le hHG
-  route_nonempty _ := by simp
+    · right
+      have hlink := h.choose_spec.choose_spec.of_le hHG
+      change G.IsCyclicWalk (cons h.choose e.val (nil h.choose_spec.choose))
+      rw [← hxy] at hlink ⊢
+      exact (nil_isPath hlink.left_mem).cons_isCyclicWalk hlink (by simp)
+    · left
+      simp [isPath_iff, h.choose_spec.choose_spec.of_le hHG,
+        (h.choose_spec.choose_spec.of_le hHG).right_mem, hxy]
   route_ends e := by
     let h := exists_isLink_of_mem_edgeSet e.prop
     rw [h.choose_spec.choose_spec.ends_eq, Sym2.map_mk]
     rfl
-  route_internal_disjoint_branchVertices _ := by simp
-  route_internal_disjoint _ _ _ := by simp
+  route_internal_disjoint_branchVertices e := by
+    let h := exists_isLink_of_mem_edgeSet e.prop
+    simp [WList.internalVertexSet]
+  route_internal_disjoint e f hef := by
+    let he := exists_isLink_of_mem_edgeSet e.prop
+    simp [WList.internalVertexSet]
+
   route_edge_disjoint e f hef := by
-    simp only [IsLink.walk_edgeSet, disjoint_singleton]
-    exact Subtype.val_injective.ne hef
+    simp only [cons_edgeSet, nil_edgeSet, insert_empty_eq, disjoint_singleton]
+    exact fun h ↦ hef (Subtype.ext h)
 
 /-! ### Path-route constructors -/
 
@@ -327,86 +329,101 @@ noncomputable def ofIso {γ' δ' : Type*} {J : Graph γ δ} {K : Graph γ' δ'} 
   route_edge_disjoint e f hef :=
     M.route_edge_disjoint _ _ fun h ↦ hef (F.edgeMap_injective h)
 
--- /-! ### Normalization by relabelling -/
+/-! ### Normalization by relabelling -/
 
--- /-- A representative host edge chosen from each route. -/
--- noncomputable def repEdge (e : E(J)) : β :=
---   (M.route_nonempty e).exists_edge.choose
+/-- A representative host edge chosen from each route. -/
+noncomputable def repEdge (e : E(J)) : β :=
+  (M.route_nonempty e).exists_edge.choose
 
--- lemma repEdge_mem (e : E(J)) : M.repEdge e ∈ E(M.route e) :=
---   (M.route_nonempty e).exists_edge.choose_spec
+lemma repEdge_mem (e : E(J)) : M.repEdge e ∈ E(M.route e) :=
+  (M.route_nonempty e).exists_edge.choose_spec
 
--- lemma repEdge_injective : Injective M.repEdge :=
---   fun e f hef ↦ by_contra fun hne ↦ (M.route_edge_disjoint e f hne).notMem_of_mem_left
---     (M.repEdge_mem e) (hef ▸ M.repEdge_mem f)
+lemma repEdge_injective : Injective M.repEdge :=
+  fun e f hef ↦ by_contra fun hne ↦ (M.route_edge_disjoint e f hne).notMem_of_mem_left
+    (M.repEdge_mem e) (hef ▸ M.repEdge_mem f)
 
--- /-- The embedding of pattern edges into representative host-edge labels. -/
--- noncomputable def repEdgeEmbedding : E(J) ↪ β :=
---   ⟨M.repEdge, M.repEdge_injective⟩
+/-- The embedding of pattern edges into representative host-edge labels. -/
+noncomputable def repEdgeEmbedding : E(J) ↪ β :=
+  ⟨M.repEdge, M.repEdge_injective⟩
 
--- /-- Same-carrier copy of the pattern using the model's branch vertices and representative edges. -/
--- noncomputable def normalized : Graph α β :=
---   J.relabel M.branchVertex M.repEdgeEmbedding
+/-- Same-carrier copy of the pattern using the model's branch vertices and representative edges. -/
+noncomputable def normalized : Graph α β :=
+  J.relabel M.branchVertex M.repEdgeEmbedding
 
--- @[simp]
--- lemma vertexSet_normalized : V(M.normalized) = range M.branchVertex := by
---   simp [normalized]
+@[simp]
+lemma vertexSet_normalized : V(M.normalized) = range M.branchVertex := by
+  simp [normalized]
 
--- @[simp]
--- lemma edgeSet_normalized : E(M.normalized) = range M.repEdge := by
---   simp [normalized, repEdgeEmbedding]
+@[simp]
+lemma edgeSet_normalized : E(M.normalized) = range M.repEdge := by
+  simp [normalized, repEdgeEmbedding]
 
--- /-- The canonical isomorphism from the abstract pattern to its normalized same-carrier copy. -/
--- noncomputable def isoNormalized : Iso J M.normalized :=
---   J.relabelIso M.branchVertex M.repEdgeEmbedding
+/-- The canonical isomorphism from the abstract pattern to its normalized same-carrier copy. -/
+noncomputable def isoNormalized : Iso J M.normalized :=
+  J.relabelIso M.branchVertex M.repEdgeEmbedding
 
--- /-- The source pattern edge corresponding to an edge of the normalized copy. -/
--- noncomputable def source (e : E(M.normalized)) : E(J) :=
---   (Equiv.ofInjective M.repEdge M.repEdge_injective).symm ⟨e.val, by
---     simpa [edgeSet_normalized] using e.prop⟩
+/-- The source pattern edge corresponding to an edge of the normalized copy. -/
+noncomputable def source (e : E(M.normalized)) : E(J) :=
+  (Equiv.ofInjective M.repEdge M.repEdge_injective).symm ⟨e.val, by
+    simpa [edgeSet_normalized] using e.prop⟩
 
--- lemma repEdge_source (e : E(M.normalized)) : M.repEdge (M.source e) = e.val :=
---   congrArg Subtype.val <|
---     (Equiv.ofInjective M.repEdge M.repEdge_injective).apply_symm_apply ⟨e.val, by
---       simpa [edgeSet_normalized] using e.prop⟩
+lemma repEdge_source (e : E(M.normalized)) : M.repEdge (M.source e) = e.val :=
+  congrArg Subtype.val <|
+    (Equiv.ofInjective M.repEdge M.repEdge_injective).apply_symm_apply ⟨e.val, by
+      simpa [edgeSet_normalized] using e.prop⟩
 
--- lemma source_repEdge (e : E(J)) :
---     M.source ⟨M.repEdge e, by simp [edgeSet_normalized]⟩ = e :=
---   M.repEdge_injective <| (M.repEdge_source _).trans rfl
+lemma source_repEdge (e : E(J)) :
+    M.source ⟨M.repEdge e, by simp [edgeSet_normalized]⟩ = e :=
+  M.repEdge_injective <| (M.repEdge_source _).trans rfl
 
--- /-- The normalized copy is a label-coherent topological minor of the host. -/
--- noncomputable def toTopologicalMinor : M.normalized.TopologicalMinor G where
---   vertex_subset x hx := by
---     rw [vertexSet_normalized] at hx
---     obtain ⟨v, rfl⟩ := hx
---     exact M.branchVertex_mem v
---   route e := M.route (M.source e)
---   route_edge_mem e := by
---     simpa [← M.repEdge_source e] using M.repEdge_mem (M.source e)
---   route_isSimple e := M.route_isSimple (M.source e)
---   route_ends e := by
---     obtain ⟨u, v, huv⟩ := exists_isLink_of_mem_edgeSet (M.source e).prop
---     let uJ : V(J) := ⟨u, huv.left_mem⟩
---     let vJ : V(J) := ⟨v, huv.right_mem⟩
---     have hnorm : M.normalized.IsLink e.val (M.branchVertex uJ) (M.branchVertex vJ) := by
---       have h := (J.relabel_isLink M.branchVertex M.repEdgeEmbedding (M.source e) uJ vJ).2 huv
---       simpa [normalized, repEdgeEmbedding, M.repEdge_source e] using h
---     rw [hnorm.ends_eq, Sym2.map_mk]
---     simpa [uJ, vJ] using M.route_ends_eq huv
---   route_internal_disjoint_branchVertices e := by
---     rw [vertexSet_normalized]
---     exact M.route_internal_disjoint_branchVertices (M.source e)
---   route_internal_disjoint e f hef := by
---     have hsource : M.source e ≠ M.source f := fun h ↦ hef <| Subtype.ext <|
---       (M.repEdge_source e).symm.trans ((congrArg M.repEdge h).trans (M.repEdge_source f))
---     exact M.route_internal_disjoint _ _ hsource
+/-- The normalized copy is a topological minor of the host. -/
+noncomputable def normalizedModel : M.normalized.TopologicalMinor G where
+  branchVertex := Function.Embedding.subtype _
+  branchVertex_mem x := by
+    have hx := x.prop
+    change x.val ∈ V(G)
+    obtain ⟨v, hv⟩ := (M.vertexSet_normalized ▸ hx : x.val ∈ range M.branchVertex)
+    exact hv ▸ M.branchVertex_mem v
+  route e := M.route (M.source e)
+  route_nonempty e := M.route_nonempty (M.source e)
+  route_isSimple e := M.route_isSimple (M.source e)
+  route_ends e := by
+    obtain ⟨u, v, huv⟩ := exists_isLink_of_mem_edgeSet (M.source e).prop
+    let uJ : V(J) := ⟨u, huv.left_mem⟩
+    let vJ : V(J) := ⟨v, huv.right_mem⟩
+    have hnorm : M.normalized.IsLink e.val (M.branchVertex uJ) (M.branchVertex vJ) := by
+      have h := (J.relabel_isLink M.branchVertex M.repEdgeEmbedding (M.source e) uJ vJ).2 huv
+      simpa [normalized, repEdgeEmbedding, M.repEdge_source e] using h
+    rw [hnorm.ends_eq, Sym2.map_mk]
+    simpa [uJ, vJ] using M.route_ends_eq huv
+  route_internal_disjoint_branchVertices e := by
+    simpa only [Function.Embedding.coe_subtype, Subtype.range_coe, vertexSet_normalized] using
+      M.route_internal_disjoint_branchVertices (M.source e)
+  route_internal_disjoint e f hef := by
+    have hsource : M.source e ≠ M.source f := fun h ↦ hef <| Subtype.ext <|
+      (M.repEdge_source e).symm.trans ((congrArg M.repEdge h).trans (M.repEdge_source f))
+    exact M.route_internal_disjoint _ _ hsource
 
--- /-- Normalize an abstract topological-minor model to a same-carrier copy of the pattern. -/
--- theorem exists_iso_topologicalMinor (M : J.TopologicalMinor G) :
---     ∃ K : Graph α β, Nonempty (Iso J K) ∧ Nonempty (K.TopologicalMinor G) :=
---   ⟨M.normalized, ⟨M.isoNormalized⟩, ⟨M.toTopologicalMinor⟩⟩
+  route_edge_disjoint e f hef := M.route_edge_disjoint _ _ fun h ↦ hef <| Subtype.ext <|
+    (M.repEdge_source e).symm.trans ((congrArg M.repEdge h).trans (M.repEdge_source f))
+
+lemma normalizedModel_branchVertex :
+    M.normalizedModel.branchVertex = Function.Embedding.subtype _ := rfl
+
+lemma normalizedModel_route_edge_mem (e : E(M.normalized)) :
+    e.val ∈ E(M.normalizedModel.route e) := by
+  simpa [normalizedModel, ← M.repEdge_source e] using M.repEdge_mem (M.source e)
+
+/-- Normalize an abstract topological-minor model to a same-carrier copy of the pattern. -/
+theorem exists_iso_topologicalMinor (M : J.TopologicalMinor G) :
+    ∃ K : Graph α β, Nonempty (Iso J K) ∧ Nonempty (K.TopologicalMinor G) :=
+  ⟨M.normalized, ⟨M.isoNormalized⟩, ⟨M.normalizedModel⟩⟩
 
 end TopologicalMinor
+
+@[simp]
+lemma IsTopologicalMinor.refl (G : Graph α β) : G.IsTopologicalMinor G :=
+  ⟨TopologicalMinor.of_le le_rfl⟩
 
 lemma IsTopologicalMinor.mono_right {J : Graph γ δ} {G K : Graph α β}
     (hJG : J.IsTopologicalMinor G) (hGK : G ≤ K) : J.IsTopologicalMinor K :=
@@ -417,14 +434,54 @@ lemma IsTopologicalMinor.ofIso {γ' δ' : Type*} {J : Graph γ δ} {K : Graph γ
     J.IsTopologicalMinor G :=
   ⟨TopologicalMinor.ofIso F hKG.some⟩
 
--- /-- The heterogeneous definition is equivalent to an isomorphic same-carrier copy equipped with a
--- label-coherent topological-minor witness. -/
--- theorem isTopologicalMinor_iff_exists_iso_topologicalMinor {J : Graph γ δ}
---     {G : Graph α β} :
---     J.IsTopologicalMinor G ↔
---       ∃ K : Graph α β, Nonempty (Iso J K) ∧ Nonempty (K.TopologicalMinor G) :=
---   ⟨fun ⟨M⟩ ↦ M.exists_iso_topologicalMinor,
---     fun ⟨_, ⟨F⟩, ⟨M⟩⟩ ↦ ⟨TopologicalMinor.ofIso F M.toTopologicalMinor⟩⟩
+/-- The heterogeneous definition is equivalent to an isomorphic same-carrier copy equipped with a
+same-carrier topological-minor witness. -/
+theorem isTopologicalMinor_iff_exists_iso_topologicalMinor {J : Graph γ δ}
+    {G : Graph α β} :
+    J.IsTopologicalMinor G ↔
+      ∃ K : Graph α β, Nonempty (Iso J K) ∧ Nonempty (K.TopologicalMinor G) :=
+  ⟨fun ⟨M⟩ ↦ M.exists_iso_topologicalMinor,
+    fun ⟨_, ⟨F⟩, ⟨M⟩⟩ ↦ ⟨TopologicalMinor.ofIso F M⟩⟩
+
+namespace TopologicalMinor
+
+variable (M : H.TopologicalMinor G)
+
+lemma vertexSet_mono (hb : M.branchVertex = Function.Embedding.subtype _) : V(H) ⊆ V(G) :=
+  fun x hx ↦ by simpa [hb] using M.branchVertex_mem ⟨x, hx⟩
+
+lemma edgeSet_mono (he : ∀ e, e.val ∈ E(M.route e)) : E(H) ⊆ E(G) :=
+  fun e heH ↦ (M.route_isTrail ⟨e, heH⟩).edgeSet_subset (he ⟨e, heH⟩)
+
+lemma route_isLink (hb : M.branchVertex = Function.Embedding.subtype _) (e : E(H)) :
+    H.IsLink e.val (M.route e).first (M.route e).last := by
+  obtain ⟨u, v, huv⟩ := exists_isLink_of_mem_edgeSet e.prop
+  have hends := M.route_ends_eq huv
+  simp only [hb, Function.Embedding.coe_subtype] at hends
+  obtain ⟨h1, h2⟩ | ⟨h1, h2⟩ := Sym2.eq_iff.mp hends
+  · simpa [h1, h2] using huv
+  · simpa [h1, h2] using huv.symm
+
+lemma route_ends_mem_vertexSet (hb : M.branchVertex = Function.Embedding.subtype _) (e : E(H)) :
+    (M.route e).first ∈ V(H) ∧ (M.route e).last ∈ V(H) :=
+  ⟨(M.route_isLink hb e).left_mem, (M.route_isLink hb e).right_mem⟩
+
+lemma route_internal_disjoint_vertexSet
+    (hb : M.branchVertex = Function.Embedding.subtype _) (e : E(H)) :
+    Disjoint (M.route e).internalVertexSet V(H) := by
+  simpa only [hb, Function.Embedding.coe_subtype, Subtype.range_coe] using
+    M.route_internal_disjoint_branchVertices e
+
+lemma route_inter_edgeSet (he : ∀ e, e.val ∈ E(M.route e)) (e : E(H)) :
+    E(M.route e) ∩ E(H) = {e.val} := by
+  refine subset_antisymm ?_ (singleton_subset_iff.mpr ⟨he e, e.prop⟩)
+  rintro f ⟨hfroute, hfH⟩
+  rw [mem_singleton_iff]
+  by_contra hfe
+  exact (M.route_edge_disjoint e ⟨f, hfH⟩
+    (fun h ↦ hfe (congrArg Subtype.val h).symm)).notMem_of_mem_left hfroute (he ⟨f, hfH⟩)
+
+end TopologicalMinor
 
 /-! ## Host-first construction: subgraph replacement -/
 
@@ -572,33 +629,77 @@ lemma internal_disjoint_replacement_vertices (i : ι) :
 lemma internal_disjoint_of_ne {i j : ι} (hij : i ≠ j) : Disjoint (R.internal i) (R.internal j) :=
   (R.internal_disjoint_component_of_ne hij).mono_right (R.internal_subset_component j)
 
--- /-- The replacement graph is a label-coherent topological minor of the ambient graph. -/
--- noncomputable def topologicalMinor : R.replacementGraph.TopologicalMinor G where
---   vertex_subset x hx := by
---     simp only [vertexSet_replacementGraph, mem_iUnion, mem_insert_iff, mem_singleton_iff] at hx
---     obtain ⟨i, rfl | rfl⟩ := hx
---     · exact (R.component_le i).vertexSet_mono (R.ends_mem_component i).1
---     exact (R.component_le i).vertexSet_mono (R.ends_mem_component i).2
---   route e := R.route (R.source e)
---   route_edge_mem e := by
---     simpa [← R.edge_source e] using R.edge_mem_route (R.source e)
---   route_isSimple e :=
---     (R.route_isSimple (R.source e)).imp (·.of_le (R.component_le _)) (·.of_le (R.component_le _))
---   route_ends e := by
---     have hlink : R.replacementGraph.IsLink e.val
---         (R.left (R.source e)) (R.right (R.source e)) := by
---       rw [← R.edge_source e]
---       exact R.replacementGraph_isLink_left_right (R.source e)
---     rw [hlink.ends_eq, Sym2.map_mk, R.route_first, R.route_last]
---   route_internal_disjoint_branchVertices e := R.internal_disjoint_replacement_vertices (R.source e)
---   route_internal_disjoint e f hef := by
---     have hsf : R.source e ≠ R.source f := fun h ↦ hef <| Subtype.ext <|
---       (R.edge_source e).symm.trans ((congrArg R.edge h).trans (R.edge_source f))
---     exact R.internal_disjoint_of_ne hsf
+lemma eq_end_of_mem_of_mem_route {i j : ι} {x : α} (hij : i ≠ j)
+    (hxi : x ∈ R.route i) (hxj : x ∈ R.route j) :
+    x = (R.route i).first ∨ x = (R.route i).last := by
+  by_contra hx
+  have hxi' := mem_internalVertexSet_of_mem_ne_ends hxi (not_or.mp hx)
+  exact (R.internal_disjoint_component_of_ne hij).notMem_of_mem_left hxi'
+    ((R.route_isTrail j).vertexSet_subset hxj)
 
--- /-- The replacement graph is a topological minor of the ambient graph. -/
--- theorem isTopologicalMinor : R.replacementGraph.IsTopologicalMinor G :=
---   ⟨R.topologicalMinor⟩
+lemma eq_of_mem_edgeSet_route {e f : ι} {g : β} (hef : e ≠ f)
+    (hge : g ∈ E(R.route e)) (hgf : g ∈ E(R.route f)) : R.edge e = g := by
+  obtain ⟨a, b, hab⟩ := exists_dInc_of_mem_edge hge
+  obtain ⟨c, d, hcd⟩ := exists_dInc_of_mem_edge hgf
+  have hmem : a ∈ R.route f ∧ b ∈ R.route f := by
+    have he := ((R.route_isTrail e).of_le (R.component_le e)).isWalk.isLink_of_dInc hab
+    have hf := ((R.route_isTrail f).of_le (R.component_le f)).isWalk.isLink_of_dInc hcd
+    obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := he.eq_and_eq_or_eq_and_eq hf
+    · exact ⟨hcd.left_mem, hcd.right_mem⟩
+    exact ⟨hcd.right_mem, hcd.left_mem⟩
+  have ha := R.eq_end_of_mem_of_mem_route hef hab.left_mem hmem.1
+  have hb := R.eq_end_of_mem_of_mem_route hef hab.right_mem hmem.2
+  obtain hp | hc := R.route_isSimple e
+  · have hlen := Nat.succ_le_of_lt (R.route_nonempty e).length_pos |>.eq_of_not_lt'
+      <| one_lt_length_iff.not.mpr <| hp.not_nontrivial_of_dInc rfl rfl hab ha hb
+    obtain ⟨u, g', v, heq⟩ := (R.route e).length_eq_one_iff.mp hlen
+    obtain rfl : g = g' := by simpa [heq] using hge
+    simpa [heq] using R.edge_mem_route e
+  · obtain rfl : b = a := by
+      grind [hc.isClosed, hc.isClosed.symm]
+    simpa [hc.eq_loop_of_isLink_self (isLink_iff_dInc.mpr (Or.inl hab))] using
+      R.edge_mem_route e
+
+lemma route_edge_disjoint {i j : ι} (hij : i ≠ j) : Disjoint E(R.route i) E(R.route j) :=
+  disjoint_left.mpr fun _ hi hj ↦ hij <| R.edge_injective <|
+    (R.eq_of_mem_edgeSet_route hij hi hj).trans (R.eq_of_mem_edgeSet_route hij.symm hj hi).symm
+
+/-- The replacement graph is a topological minor of the ambient graph. -/
+noncomputable def topologicalMinor : R.replacementGraph.TopologicalMinor G where
+  branchVertex := Function.Embedding.subtype _
+  branchVertex_mem x := by
+    have hx := x.prop
+    change x.val ∈ V(G)
+    simp only [vertexSet_replacementGraph, mem_iUnion, mem_insert_iff, mem_singleton_iff] at hx
+    obtain ⟨i, hi | hi⟩ := hx
+    · exact hi ▸ (R.component_le i).vertexSet_mono (R.ends_mem_component i).1
+    exact hi ▸ (R.component_le i).vertexSet_mono (R.ends_mem_component i).2
+  route e := R.route (R.source e)
+  route_nonempty e := R.route_nonempty (R.source e)
+  route_isSimple e :=
+    (R.route_isSimple (R.source e)).imp (·.of_le (R.component_le _)) (·.of_le (R.component_le _))
+  route_ends e := by
+    have hlink : R.replacementGraph.IsLink e.val
+        (R.left (R.source e)) (R.right (R.source e)) := by
+      rw [← R.edge_source e]
+      exact R.replacementGraph_isLink_left_right (R.source e)
+    rw [hlink.ends_eq, Sym2.map_mk, R.route_first, R.route_last]
+    rfl
+  route_internal_disjoint_branchVertices e := by
+    simpa only [Function.Embedding.coe_subtype, Subtype.range_coe, internal] using
+      R.internal_disjoint_replacement_vertices (R.source e)
+  route_internal_disjoint e f hef := by
+    have hsf : R.source e ≠ R.source f := fun h ↦ hef <| Subtype.ext <|
+      (R.edge_source e).symm.trans ((congrArg R.edge h).trans (R.edge_source f))
+    exact R.internal_disjoint_of_ne hsf
+
+  route_edge_disjoint e f hef := by
+    exact R.route_edge_disjoint (fun h ↦ hef <| Subtype.ext <|
+      (R.edge_source e).symm.trans ((congrArg R.edge h).trans (R.edge_source f)))
+
+/-- The replacement graph is a topological minor of the ambient graph. -/
+theorem isTopologicalMinor : R.replacementGraph.IsTopologicalMinor G :=
+  ⟨R.topologicalMinor⟩
 
 end SubgraphReplacement
 

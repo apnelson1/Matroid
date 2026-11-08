@@ -1,7 +1,7 @@
 module
 
 public import Matroid.GraphTheory.Graph.Planarity.Drawing
-public import Matroid.ForMathlib.Geometry.PolygonalPath.PrimitivePath
+public import Matroid.MiniTauCeti.JCT.Geometry.PolygonalPath.PrimitivePath
 
 @[expose] public section
 

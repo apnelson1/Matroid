@@ -6,6 +6,8 @@ Authors: Jun Kwon
 module
 
 public import Matroid.GraphTheory.HypergraphLike.Degree
+public import Matroid.GraphTheory.HypergraphLike.Finite
+public import Mathlib.Data.Set.Finite.Lattice
 
 /-!
 # Hypergraph-like structures with two incidences per edge
@@ -110,6 +112,22 @@ end constructors
 variable [GraphLike G]
 
 open GraphLike
+
+/-- A graph-like object with finitely many edges has finitely many incidences. -/
+instance GraphLike.finite_incidence [_root_.Finite E(G)] : Finite I(G) := by
+  apply Set.finite_univ_iff.mp
+  refine Set.Finite.of_finite_fibers (fun i : I(G) ↦ edgeMap' i) (Set.toFinite _) ?_
+  rintro e ⟨i, -, rfl⟩
+  refine (Set.toFinite {i, other' i}).subset ?_
+  rintro j ⟨-, hj⟩
+  have hj' : edgeMap' j = edgeMap' i := hj
+  simpa only [mem_insert_iff, mem_singleton_iff] using edgeMap'_eq i j hj'.symm
+
+/-- For graph-like objects, finite vertices and edges also give finite incidences. -/
+lemma GraphLike.finite_of_finite_verts_edges (hV : V(G).Finite) (hE : E(G).Finite) :
+    HypergraphLike.Finite G := by
+  have : _root_.Finite E(G) := hE
+  exact ⟨hV, Set.toFinite _, hE⟩
 
 lemma exists_isSource_of_mem_edgeSet [Nonempty E] (he : e ∈ E(G)) :
     ∃ i, edgeMap G i = e ∧ IsSource G i := by

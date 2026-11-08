@@ -1,9 +1,9 @@
 module
 
 public import Matroid.GraphTheory.Graph.Planarity.Drawing
-public import Matroid.ForMathlib.Topology.OnePoint
-public import Matroid.ForMathlib.Topology.JordanCurve
-public import Matroid.ForMathlib.Topology.ConnectedComponent
+public import Matroid.MiniTauCeti.JCT.Topology.OnePoint
+public import Matroid.MiniTauCeti.JCT.Topology.JordanCurve
+public import Matroid.MiniTauCeti.JCT.Topology.ConnectedComponent
 
 /-!
 # Faces of a drawing

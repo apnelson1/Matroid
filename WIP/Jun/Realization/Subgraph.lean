@@ -1,7 +1,7 @@
 module
 
 public import Matroid.GraphTheory.Graph.Planarity.Realization.Basic
-public import Matroid.ForMathlib.Topology.Path
+public import Matroid.MiniTauCeti.JCT.Topology.Path
 
 @[expose] public section
 

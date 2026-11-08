@@ -47,16 +47,6 @@ instance {v : V} : HypergraphLike.Directed (Walk.nil I E v) where
 def single (u : V) (i : I) (e : E) (j : I) (v : V) : Walk I E u v :=
   .cons u i e j (.nil I E v)
 
-instance [DecidableEq I]: HypergraphLike V I E (single u i e j v) where
-  verts := {u, v}
-  incs := {i, j}
-  edges := {e}
-  edgeMap' k := ⟨e, rfl⟩
-  attach' k := if k = i then ⟨u, by grind⟩ else ⟨v, by grind⟩
-  IsSource k := if k = i then true else false
-  IsTarget k := if k = j then true else false
-  mem_incs_iff k := by grind
-
 /-- The number of edge traversals, with repetitions counted. -/
 def length {u v : V} : Walk I E u v → ℕ
   | .nil _ _ _ => 0
@@ -95,8 +85,7 @@ lemma support_cons (p : Walk I E v w) : (cons u i e j p).support = u :: p.suppor
 @[simp] lemma incidences_cons (p : Walk I E v w) :
     (cons u i e j p).incidences = i :: j :: p.incidences := rfl
 
-@[simp, grind =]
-lemma length_support (p : Walk I E u v) : p.support.length = p.length + 1 := by
+@[simp, grind =] lemma length_support (p : Walk I E u v) : p.support.length = p.length + 1 := by
   induction p with
   | nil => rfl
   | cons u i e j p ih => simp [ih]
@@ -294,6 +283,33 @@ lemma ext {p q : Walk I E u v} (hV : p.support = q.support) (hE : p.edges = q.ed
       subst_vars
       exact congrArg (cons u i e j) (ih hV (by simpa using hE) (by simpa using hI))
 
+/-- Compare the constructors and labels directly, stopping at the first mismatch. -/
+private def structuralDecEq [DecidableEq V] [DecidableEq I] [DecidableEq E] :
+    {u v : V} → (p q : Walk I E u v) → Decidable (p = q)
+  | _, _, .nil _ _ _, .nil _ _ _ => isTrue rfl
+  | _, _, .nil _ _ _, .cons _ _ _ _ _ => isFalse (by intro h; cases h)
+  | _, _, .cons _ _ _ _ _, .nil _ _ _ => isFalse (by intro h; cases h)
+  | _, _, .cons (v := a) u i e j p, .cons (v := b) _ i' e' j' q =>
+    if hi : i = i' then
+      if he : e = e' then
+        if hj : j = j' then
+          if hv : a = b then by
+            subst i' e' j' b
+            letI := structuralDecEq p q
+            exact decidable_of_iff (p = q)
+              ⟨congrArg (Walk.cons u i e j), fun h => eq_of_heq (Walk.cons.inj h).2.2.2.2⟩
+          else isFalse (fun h => hv (Walk.cons.inj h).2.2.2.1)
+        else isFalse (fun h => hj (Walk.cons.inj h).2.2.1)
+      else isFalse (fun h => he (Walk.cons.inj h).2.1)
+    else isFalse (fun h => hi (Walk.cons.inj h).1)
+
+-- Match the instance's binder order while keeping structural recursion over the endpoints.
+private def structuralDecEqImpl {V I E : Type*} {u v : V}
+    [DecidableEq V] [DecidableEq I] [DecidableEq E] : DecidableEq (Walk I E u v) :=
+  structuralDecEq
+
+-- Preserve list-based definitional reduction; compiled evaluation compares constructors directly.
+@[implemented_by structuralDecEqImpl]
 instance [DecidableEq V] [DecidableEq I] [DecidableEq E] : DecidableEq (Walk I E u v) :=
   fun p q => decidable_of_iff
     (p.support = q.support ∧ p.edges = q.edges ∧ p.incidences = q.incidences)

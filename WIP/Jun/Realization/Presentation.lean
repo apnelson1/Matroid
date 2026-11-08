@@ -1,10 +1,10 @@
 module
 
-public import Matroid.GraphTheory.Pseudograph.Presentation.Quotient
+public import Matroid.GraphTheory.Pseudograph.Quotient
 public import Matroid.GraphTheory.Graph.Connected.Defs
 public import Matroid.GraphTheory.Graph.Planarity.Realization.VertexSpace
-public import Matroid.GraphTheory.Pseudograph.Presentation.Orientation
-public import Matroid.ForMathlib.Topology.Path
+public import Matroid.GraphTheory.Pseudograph.Incidence
+public import Matroid.MiniTauCeti.JCT.Topology.Path
 public import Mathlib.Topology.Constructions
 
 /-!
@@ -97,7 +97,7 @@ length `1/2`, so the metric is not merely transported.
 open Set Function TopologicalSpace Topology Sum Path Relation
 open scoped unitInterval
 
-namespace Graph.Presentation
+namespace Pseudograph
 
 /- Internal realization model attached to an incidence presentation.
 

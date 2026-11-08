@@ -150,6 +150,9 @@ lemma Finite.induce (hG : G.Finite) (hX : X ⊆ V(G)) : G[X].Finite where
 
 @[simp] lemma vertexSet_finite [G.Finite] : G.vertexSet.Finite := Finite.vertexSet_finite
 
+instance instFiniteVertex [G.Finite] : Finite V(G) := G.vertexSet_finite
+instance instFiniteEdge [G.EdgeFinite] : Finite E(G) := G.edgeSet_finite
+
 lemma isTrail_finite (G : Graph α β) [G.Finite] : {P | G.IsTrail P}.Finite := by
   have hVfin := G.vertexSet_finite.to_subtype
   have hEfin := G.edgeSet_finite.to_subtype

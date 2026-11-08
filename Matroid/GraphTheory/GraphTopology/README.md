@@ -50,10 +50,10 @@ including any prescribed finite subset among its vertices. The common-presentati
 preserves each input figure as vertices and whole edges. Its vertex term retains isolated points.
 
 The construction is owned by [Presentation](Presentation.lean), using the algebraic
-[segment-cutting lemmas](../ForMathlib/Analysis/Convex/SegmentCutting.lean).
+[segment-cutting lemmas](../../MiniTauCeti/JCT/Analysis/Convex/SegmentCutting.lean).
 [Subset](Subset.lean) owns the connected-subset argument using edge remainders. The
-[segment-figure wrapper](../ForMathlib/Geometry/SegmentFigure/Subset.lean) supplies a finite
-straight-line presentation. [Closure of differences](../ForMathlib/Geometry/SegmentFigure/Clipping.lean)
+[segment-figure wrapper](../../MiniTauCeti/JCT/Geometry/SegmentFigure/Subset.lean) supplies a finite
+straight-line presentation. [Closure of differences](../../MiniTauCeti/JCT/Geometry/SegmentFigure/Clipping.lean)
 uses common restrictions and the general support-difference law. Neither consumer reconstructs
 a second segment-family representation.
 
@@ -62,16 +62,10 @@ Transport requires an embedding only on the carrier. Restriction retains the sel
 sets, and transport takes their images, preserving loops and parallel edges.
 
 The association with an abstract graph stays in
-[`Graph/Topology/Defs.lean`](../Graph/Topology/Defs.lean).
+[`Graph/Topology/Drawing/Defs.lean`](../Graph/Topology/Drawing/Defs.lean).
 The [straight-line drawing bridge](../Graph/Topology/StraightLine.lean) uses
-`D.toGraphLike.IsStraightLine` directly. Importing this folder does not introduce the legacy
-carrier/vertex inclusion order from `Graph/Topology/Draft.lean`; the meaning and notation
-of a more general relation remain open.
+`D.toGraphLike.IsStraightLine` directly for `Graph.Drawing G X`.
+`Drawing.restrict` and `Drawing.postcomp` reuse the graph-like constructions.
 
-[Core regression consumers](../../tests/MatroidTests/StraightLine.lean) run under `lake test`.
-The raw-edge, assembly, restriction, map, compatibility, and subset tests run under `lake test`.
-Assembly tests construct a loop, parallel arcs, isolated vertices, and an infinite family of loops.
-The [drawing operation regressions](../../tests/MatroidTests/GraphLikeDrawingOperations.lean)
-and [straight-line drawing regression](../../tests/MatroidTests/StraightLineDrawing.lean) are
-built separately because the existing graph drawing files use Lean's legacy module format.
-`Drawing.restrict` and `Drawing.postcomp` now reuse the graph-like constructions.
+Approximation, polygonal faces, and duality use the segment-figure polygonality interface.
+The regression consumers are retained in [tests/MatroidTests](../../../tests/MatroidTests).

@@ -1,7 +1,6 @@
 module
 
-public import Matroid.GraphTheory.Graph.WList.TakeDrop.Decompose
-public import Matroid.GraphTheory.Graph.WList.TakeDrop.Lemmas
+public import Matroid.GraphTheory.Graph.WList.Operations
 public import Matroid.GraphTheory.Graph.Walk.Basic
 import all Mathlib.Combinatorics.Graph.Delete
 public import Mathlib.Combinatorics.Graph.Delete

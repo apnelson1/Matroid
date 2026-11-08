@@ -16,11 +16,20 @@ the package's `testDriver`, so it builds under `lake test` and not under `lake b
 
 ```
 tests/MatroidTests.lean            -- root, imports the regression suite
+tests/MatroidTests/ConstructionPolygonal.lean -- polygonal construction consumers
+tests/MatroidTests/ConstructionSubdivision.lean -- segment partition consumers
+tests/MatroidTests/ConstructionTopology.lean -- path and circle construction consumers
 tests/MatroidTests/GrindTags.lean  -- one section per source module under test
 tests/MatroidTests/Hom.lean        -- graph homomorphism consumers
 tests/MatroidTests/IRw.lean        -- all transport and registration regressions
 tests/MatroidTests/Immersion.lean  -- immersion routes and composition
-tests/MatroidTests/JordanCurve.lean -- Jordan curve tag regressions
+tests/MatroidTests/JordanCurve.lean -- circuit region consumers and proof-integrity check
+tests/MatroidTests/JordanPrerequisites.lean -- independent foundations and their proof integrity
+tests/MatroidTests/PrimitivePath.lean -- primitive-path chart consumers
+tests/MatroidTests/OrderInterval.lean -- interval parametrization and path splitting
+tests/MatroidTests/OrderCompletion.lean -- dense-order extension and completion
+tests/MatroidTests/JCTGenerality.lean -- generalized JCT prerequisite consumers
+tests/MatroidTests/OnePointTransport.lean -- explicit one-point set transport
 tests/MatroidTests/PolygonalPath.lean -- polygonal path regressions
 ```
 
@@ -29,29 +38,26 @@ Add a module here, `public import` it from `tests/MatroidTests.lean`, and `lake 
 `MatroidTests/TopologicalMinor.lean` retains older standalone regression tests; it is not
 currently imported by the test root or covered by `lake test`.
 
-`MatroidTests/GraphLikeReplacement.lean` checks the graphlike polygonalization interface and its
-axioms. Its dependency `Graph.Topology.Draft` uses Lean's legacy module format and cannot be
-imported by the module-format test root. Run `lake build MatroidTests.GraphLikeReplacement`
-separately when changing that interface.
+`MatroidTests/GraphLikeReplacement.lean` and `GraphLikeDrawingOperations.lean` retain historical
+imports from the earlier graph-topology layout. They are outside the registered test root and
+need migration before their checks can run against the current drawing API.
 
 `ConnectedComponentSets` is included in `lake test` and checks connected component sets on
 connected and disconnected spaces and a nonclosed subspace.
 
 `GraphLikeSubset` is included in `lake test` and covers geometric subset operations.
-Run `lake build MatroidTests.GraphLikeDrawingOperations MatroidTests.StraightLineDrawing`
-for the legacy-format drawing adapters and their guarded axiom checks.
-
-Editor-completion experiments and the obsolete `PresentationRevised` checks are preserved in
-the Git-ignored [resources/TestArchive](../resources/TestArchive/). They are not part of the
-regression suite.
+`StraightLineDrawing` remains a separate drawing consumer outside the registered test root.
 
 The split exists so that a silent `lake build` means the mathematical library is clean while
 caller-facing tactic and tag behavior remains covered by `lake test`.
 
-**A test library outside the default build is a test library that stops running without anyone
-noticing.** That risk is real and it is not handled by convention here: it is handled by
-`.github/workflows/build.yml`, which runs `lake test` as a separate step after `lake build`. If you
-move or rename this library, move that step with it, or the suite goes quiet.
+Run `lake test` explicitly after changing production modules or their consumers: the regression
+library is not a default build target. The [CI workflow](../.github/workflows/build.yml)
+runs `lake build` followed by `lake test` on pushes and pull requests.
+
+The JCT sources live under `Matroid/MiniTauCeti/JCT`, corresponding to the module prefix
+`Matroid.MiniTauCeti.JCT`. Build commands, regression coverage, and verification limits are
+described in [the verification guide](../Matroid/MiniTauCeti/JCT/Verification.md).
 
 ## Writing a test
 

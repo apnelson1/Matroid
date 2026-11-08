@@ -3,7 +3,15 @@ module
 public import Mathlib.Data.Sym.Sym2
 public import Mathlib.Data.Set.Card
 
+/-!
+Walk lists: definitions and elementary properties.
+-/
+
 @[expose] public section
+
+/-! ## Definitions -/
+
+section
 
 open Set Function List Nat
 
@@ -947,16 +955,18 @@ lemma dinc_iff_get {w : WList α β} {e : β} {x y : α} : w.DInc e x y ↔ ∃ 
       · exact ⟨0, by simp⟩
       exact ⟨i + 1, by simpa⟩
     rintro ⟨rfl | i, rfl, rfl, h, rfl⟩
-    · simp
+    · simp only [get_zero, first_cons, getElem_cons_zero, and_self, true_or]
     exact .inr ⟨i, by simpa using h⟩
 
 lemma isLink_iff_get : w.IsLink e x y ↔ ∃ (i : ℕ) (hi : i < w.length),
     w.edge[i]'(by simpa) = e ∧ s(w.get i, w.get (i + 1)) = s(x, y) := by
-  grind [isLink_iff_dInc, dinc_iff_get]
+  simp_rw [isLink_iff_dInc, dinc_iff_get]
+  grind
 
 lemma isLink_iff_vertex_get : w.IsLink e x y ↔ ∃ (i : ℕ) (hi : i < w.length),
     w.edge[i]'(by simpa) = e ∧ s(w.vertex[i]'(by grind), w.vertex[i + 1]'(by grind)) = s(x, y) := by
-  grind [isLink_iff_get, get_eq_getD_vertex]
+  simp_rw [isLink_iff_get, get_eq_getD_vertex, getD_eq_getElem?_getD]
+  grind
 
 variable [DecidableEq α]
 
@@ -1351,3 +1361,5 @@ end WList
 
 
 -- end IsWListFrom
+
+end

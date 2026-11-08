@@ -1,15 +1,5 @@
 module
 
-public import MatroidTests.ConnectedComponentSets
-public import MatroidTests.GraphLikeSubset
-public import MatroidTests.GrindTags
 public import MatroidTests.Hom
 public import MatroidTests.IRw
 public import MatroidTests.Immersion
-public import MatroidTests.JordanCurve
-public import MatroidTests.PathDecomposition
-public import MatroidTests.PolygonalPath
-public import MatroidTests.PolygonalReplacement
-public import MatroidTests.PrimitiveLinkLocalStar
-public import MatroidTests.SegmentFigure
-public import MatroidTests.SegmentFigureSubset

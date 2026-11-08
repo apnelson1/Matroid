@@ -6,7 +6,6 @@ public import Matroid.ForMathlib.ENat
 @[expose] public section
 
 open Set Function Nat
-
 variable {α β : Type*} {G H : Graph α β} {u v x x₁ x₂ y y₁ y₂ z : α} {e e' f g : β}
   {U V S T : Set α} {F F' R R': Set β} {C W P Q : WList α β}
 
@@ -27,15 +26,15 @@ lemma ConnBetween.eDist_lt_top (h : G.ConnBetween x y) : G.eDist x y < ⊤ := by
 
 lemma IsWalk.eDist_le_length (hW : G.IsWalk W) : G.eDist W.first W.last ≤ W.length := by
   let W' : {W' // G.IsWalk W' ∧ W'.first = W.first ∧ W'.last = W.last} := ⟨W, hW, rfl, rfl⟩
-  apply iInf_le (i := W')
+  exact iInf_le (i := W') ..
 
+open Classical in
 lemma IsWalk.isPath_of_length_eq_eDist (hP : G.IsWalk P)
     (hlen : P.length = G.eDist P.first P.last) : G.IsPath P := by
-  classical
   rw [isPath_iff, and_iff_right hP, ← dedup_eq_self_iff]
   refine P.dedup_isSublist.eq_of_length_ge <| (ENat.natCast_le_natCast).1 ?_
   rw [hlen, ← dedup_first, ← dedup_last]
-  apply (hP.sublist P.dedup_isSublist).eDist_le_length
+  exact (hP.sublist P.dedup_isSublist).eDist_le_length
 
 /-- The eDistance from `x` to `y` is realized by a *path* from `x` to `y`. -/
 lemma ConnBetween.exists_isPath_length_eq_eDist (h : G.ConnBetween x y) :

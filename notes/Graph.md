@@ -1,6 +1,11 @@
 # Graph Theory Formalization
 
-This folder (`Matroid/Graph/`) contains a substantial formalization of graph theory in Lean,
+> This is a historical concept inventory. The current shared incidence API lives under
+> `Matroid/GraphTheory/HypergraphLike`; some declaration descriptions below predate that API.
+> See the [graph-topology overview](../Matroid/GraphTheory/Graph/Topology/README.md) and
+> [graphlike-space overview](../Matroid/GraphTheory/GraphTopology/README.md) for current interfaces.
+
+This folder (`Matroid/GraphTheory/Graph/`) contains a substantial formalization of graph theory in Lean,
 developed as part of the Matroid project. It builds on `Mathlib.Combinatorics.Graph` with
 definitions and results tailored for matroid-theoretic applications, though many are
 self-contained graph theory contributions.
@@ -28,41 +33,41 @@ the proofs in this project.
 ### `WList` (underlying walk-with-edges list)
 
 **Definition:** `WList` — inductive type of vertex/edge lists
-(`Matroid/Graph/WList/Defs.lean:20`).
+(`Matroid/GraphTheory/Graph/WList/Defs.lean:20`).
 
 **Core accessors:** `first`, `second`, `last`, `vertex`, `edge`, `length`
 (`WList/Defs.lean`).
 
 **Predicates:** `Nil` (inductive), `Nonempty`, `Nontrivial`, `Inc`, `WellFormed`
 (`WList/Defs.lean`); `IsClosed` (`WList/Cycle.lean:11`), `NoLoop`
-(`WList/TakeDrop.lean:1806`).
+(`WList/Operations.lean`).
 
 **Operations on lists:**
 - `append`, `concat`, `reverse`, `map`, `edgeMap`
-  (`WList/Ops.lean`).
+  (`WList/Basic.lean`).
 - `prefixUntil` / `prefixUntilVertex` / `prefixUntilLast`
-  (`WList/TakeDrop.lean`).
+  (`WList/Operations.lean`).
 - `suffixFrom` / `suffixFromVertex` / `suffixFromLast`
-  (`WList/TakeDrop.lean`).
+  (`WList/Operations.lean`).
 - `tail`, `dropLast`, `take`, `drop`
-  (`WList/TakeDrop.lean`).
+  (`WList/Operations.lean`).
 - `dedup`, `deloop`
-  (`WList/TakeDrop.lean`).
+  (`WList/Operations.lean`).
 - `breakAt`, `breakAt_aux`, `betweenSets`
-  (`WList/Decompose.lean`).
+  (`WList/Operations.lean`).
 - `edgeRemove`
-  (`WList/TakeDrop.lean:1895`).
+  (`WList/Operations.lean`).
 - `intRotate`
   (`WList/Cycle.lean:460`).
 
 **Sublist/prefix/suffix relations:** `IsSublist`, `IsPrefix`, `IsSuffix`, `IsInfix`,
-`appendList`, `DecomposeTo` (`WList/Sublist.lean`).
+`appendList`, `DecomposeTo` (`WList/Basic.lean`).
 
 **Alternative representation:** `TsiLw` with `TsiLw_equiv : TsiLw α β ≃ WList α β`
-(`WList/Ops.lean:50`).
+(`WList/Basic.lean`).
 
 **Dart-related accessors:** `dIncFirst`, `dIncLast`, `endsOf` (`WList/Defs.lean`,
-`WList/Ops.lean`).
+`WList/Basic.lean`).
 
 ### Walk predicates (on `Graph`)
 
@@ -515,8 +520,8 @@ generalizing the concrete `Graph`.
 - `dartSym2`, `dartSymm` (`GraphLike/Symm.lean`).
 - `Walk` (inductive: `nil`/`cons`), `Walk.length`, `Walk.support`, `Walk.darts`,
   `Walk.Nil` (`GraphLike/Walk.lean`).
-- `ArbRel` (a total order extending equality), `source`, `target`
-  (`GraphLike/ArbRel.lean`).
+- `source`, `target`, `edgeSource`, `edgeTarget` choose endpoints directly
+  (`Endpoint.lean`).
 - `IsLink.source`, `IsLink.target`.
 
 **Key lemmas:**
@@ -694,12 +699,12 @@ The bridge from graphs to matroids.
 
 ---
 
-## Directory map (one-line summaries)
+## Historical directory map (one-line summaries)
 
 For orientation, here is what each file is *primarily* about.
 
 ```
-Matroid/Graph/
+Matroid/GraphTheory/Graph/
 ├── Basic.lean                     – Multigraph extensions: endSet, neighborhoods, parallel, isolated, leaves.
 ├── AcyclicSet.lean                – IsAcyclicSet, IsCycleSet, IsMaximalAcyclicSet.
 ├── Bipartite.lean                 – Bipartition, Bipartite, bipartite iff cycles even.
@@ -742,12 +747,12 @@ Matroid/Graph/
 │   ├── Constructions.lean         – Degree under operations.
 │   ├── Leaf.lean                  – isolated iff eDegree 0; leaf iff eDegree 1.
 │   └── Max.lean                   – Path-or-cycle classification.
+├── Endpoint.lean                 – Chosen endpoints, preserved by subgraphs.
 ├── GraphLike/                     – Typeclass abstraction (DartLike, GraphLike, SymmGraphLike, Walk)
 │   ├── Basic.lean                 – DartLike, GraphLike, GraphLike.Adj, GraphLike.step.
 │   ├── Graph.lean                 – Graph α β as instance; Dart inductive.
 │   ├── Symm.lean                  – SymmDartLike, SymmGraphLike, dartSym2.
 │   ├── Walk.lean                  – Walk (generalized).
-│   ├── ArbRel.lean                – Arbitrary total order for orienting edges.
 │   └── Contract.lean              – Abstract contract operation.
 ├── Matching/
 │   ├── Defs.lean                  – IsMatching, IsMaxMatching, ν, IsCover, τ, IsMatchable, oddComponents.

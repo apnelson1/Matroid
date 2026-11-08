@@ -1,164 +1,37 @@
-# Scripts
+# Repository tools
 
-This folder contains utility scripts for the Matroid project:
+Run commands below from the repository root. Each tool lives with its tests and supporting
+files.
 
-1. **update_matroid_imports.py** - Synchronizes `Matroid.lean` with module files
-2. **detect_inefficient_imports.py** - Identifies inefficient Mathlib imports
-3. **analyze_compile_times.py** - Per-module compile times and import critical paths
+| Folder | Purpose | Main tools |
+| --- | --- | --- |
+| [imports](imports/README.md) | Import lists, import minimization, and Lean module headers | `update_matroid_imports.py`, `detect_inefficient_imports.py`, `Modulize.lean` |
+| [benchmarks](benchmarks/README.md) | Definition benchmarks and compile-time analysis | `benchmark_lean.py`, `analyze_compile_times.py` |
+| [cache](cache) | Public Lake-cache registration | `register_lake_cache.sh` |
 
----
+Common commands:
 
-## 1. Matroid Import Updater (`update_matroid_imports.py`)
-
-Keeps `Matroid.lean` synchronized with the `.lean` modules under the `Matroid/` directory.
-
-What it does:
-
-- Scans `Matroid/` recursively for all `.lean` files and computes their module names `Matroid.<path.with.dots>`.
-- Parses `Matroid.lean` for existing lines of the form `import Matroid.xxx` and `-- import Matroid.xxx`.
-- Adds missing modules as active `import Matroid.xxx` lines.
-- Rewrites `Matroid.lean` as a sorted list by module name, preserving any pre-existing comment markers (i.e. lines starting with `-- import`).
-
-### Usage
-
-From the repo root:
-
-```bash
-uv run scripts/update_matroid_imports.py --dry-run
-uv run scripts/update_matroid_imports.py
-uv run scripts/update_matroid_imports.py --comment
-uv run scripts/update_matroid_imports.py --all --dry-run
+```sh
+uv run --no-project python scripts/imports/update_matroid_imports.py --dry-run
+uv run --no-project python scripts/benchmarks/analyze_compile_times.py build.log
+bash scripts/cache/register_lake_cache.sh --help
 ```
 
-Options:
+The import minimizer and module-header converter edit source files when run normally.
 
-- `--root <path>`: explicitly set the repo root (defaults to the parent of `scripts/`).
-- `--matroid-dir <path>`: path to the `Matroid/` directory (defaults to `<root>/Matroid`).
-- `--matroid-file <path>`: path to `Matroid.lean` (defaults to `<root>/Matroid.lean`).
-- `--dry-run`: show what would change without modifying files.
-- `--comment`: when adding missing modules, write them as commented imports (`-- import ...`).
-- `--all`: include all discovered modules (opt-out of ignore rules).
+For challenge/solution verification, Lean/Lake provides `lake comparator`. Consult
+`lake comparator --help` for its configuration and guarantees.
 
-Notes:
+## Tests
 
-- Existing commented imports such as `-- import Matroid.Graph.Bipartite` are kept commented.
-- New entries are added as active `import ...` lines by default; you can use `--comment` to add them commented out instead.
-- By default, modules matching any regex in `.matroidignore` (in the `scripts/` directory) are ignored; use `--all` to include them.
+Run all script regression tests, including their Lean and native-execution checks:
 
-### Ignore rules (`.matroidignore`)
-
-Place a `.matroidignore` file next to this script (`scripts/.matroidignore`). Each non-empty, non-comment line is a Python regular expression tested against full module names like `Matroid.Graph.Basic`.
-
-Example patterns:
-
-```
-# Ignore experimental or WIP modules
-^Matroid\.Experiments\.
-^Matroid\.Exercises\.
-^Matroid\.WIP\.
-
-# Ignore any module with 'scratch' in the path
-scratch
+```sh
+uv run --no-project --with tomlkit python -m unittest \
+  scripts.benchmarks.test_benchmark_lean \
+  scripts.imports.test_detect_inefficient_imports \
+  scripts.cache.test_register_lake_cache -v
 ```
 
----
-
-## 2. Inefficient Import Detector (`detect_inefficient_imports.py`)
-
-Detects and marks inefficient Mathlib imports that could be replaced with more direct imports.
-
-What it does:
-
-- Scans all `.lean` files in the project (excluding `.lake` and hidden directories).
-- For each Mathlib import, checks if the file still compiles when the import is replaced with its transitive imports.
-- If compilation succeeds, the import is inefficient (more direct imports are available).
-- Marks inefficient imports with a `-- inefficient import` comment.
-
-### Usage
-
-From the repo root:
-
-```bash
-uv run scripts/detect_inefficient_imports.py
-```
-
-Configuration:
-
-- `MATHLIB_PATH`: Path to mathlib (defaults to `.lake/packages/mathlib`).
-- `TARGET_DIR`: Directory to scan for `.lean` files (defaults to `.`).
-
-Notes:
-
-- The script modifies files in place, adding `-- inefficient import` comments to imports that can be improved.
-- Already marked imports (containing `-- inefficient`) are skipped.
-- The script compiles each test case using `lake env lean` to verify changes.
-- Headers may contain `module`, `prelude`, nested comments, and `public`, `meta`,
-  or `all` import modifiers. Replacement imports respect visibility through both
-  import steps. The scanner supports complete single-line imports with ASCII
-  module names; other layouts end the scan. Imports with trailing multiline
-  block comments are left untouched.
-- Compilation checks the current file, not compatibility with downstream users
-  of its exported API. Interrupted compilation restores the source file.
-
-Run the regression tests, including Lean checks of import visibility and `meta`
-evaluation, from the repository root:
-
-```bash
-uv run python -m unittest discover -s scripts -p 'test_detect_inefficient_imports.py' -v
-```
-
----
-
-## 3. Compile Time Analyzer (`analyze_compile_times.py`)
-
-Parses a Lake build log and reports per-module **self times** plus **critical import paths** (the longest chain of dependencies that bounds wall-clock compile time with unlimited parallelism).
-
-What it does:
-
-- Extracts `Built Matroid.* (Xs)` lines from a build log.
-- Scans `Matroid.lean` and `Matroid/**/*.lean` for direct `import Matroid.*` edges.
-- Computes `crit(M) = self(M) + max(crit(dep))` over direct imports.
-- Prints a self-time ranking, the longest critical paths, and slowest branches among `Matroid.lean` imports.
-
-### Usage
-
-For meaningful self times, rebuild Matroid modules first (Mathlib can stay cached):
-
-```bash
-lake clean Matroid   # or: lc Matroid
-lake build Matroid 2>&1 | tee /tmp/build.log
-uv run scripts/analyze_compile_times.py /tmp/build.log
-```
-
-Or run the build from the script (clean first with `lake clean Matroid`):
-
-```bash
-lc Matroid && uv run scripts/analyze_compile_times.py --build Matroid
-```
-
-Graph-only view:
-
-```bash
-uv run scripts/analyze_compile_times.py --filter Matroid.Graph --top 40 /tmp/build.log
-```
-
-Detail one module (shows each direct import branch and the winning critical path):
-
-```bash
-uv run scripts/analyze_compile_times.py -m Matroid.Graph.Walk.Basic /tmp/build.log
-```
-
-Options:
-
-- `--prefix`: module prefix for the import graph (default `Matroid.`).
-- `--filter`: restrict tables/chains to modules matching this prefix.
-- `--top N`: rows in the self-time table (default 30; `0` = all).
-- `--chains N`: number of distinct critical paths to print (default 10).
-- `--root-module`: entry module for ranking direct imports (default `Matroid`).
-- `--build TARGET`: run `lake build TARGET` and analyze stdout/stderr.
-
-Notes:
-
-- Self times come from Lake; critical paths use only **direct** `Matroid.*` imports (not Mathlib).
-- If a module is not in the log, it was not rebuilt (cached) — run `lake clean Matroid` (or `lc Matroid`) before rebuilding for fresh numbers.
-- Pipe or `tee` the build log; the script also reads stdin when no file path is given.
+For one tool, supply only its test module, for example `scripts.benchmarks.test_benchmark_lean`.
+Cache tests use temporary configuration files and leave the user's Lake configuration alone.
