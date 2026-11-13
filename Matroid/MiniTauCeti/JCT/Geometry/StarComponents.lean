@@ -1,0 +1,181 @@
+module
+
+public import Matroid.MiniTauCeti.JCT.Geometry.DiskMinusRadii
+public import Matroid.MiniTauCeti.JCT.Topology.OnePoint
+
+@[expose] public section
+
+/-!
+# Sectors of a star and components of the complement
+
+If a set `S` meets a small closed ball at `p` in a star of straight radii, then the sectors of the
+punctured disk are the local picture of the complement of `S`. This file relates them to the
+*global* components of that complement on the sphere `OnePoint V`.
+
+The main theorem takes a frontier point of a global component, places it in the punctured disk, and
+uses the corresponding local sector component to obtain a subset of the global component.
+
+## Main statements
+
+* `exists_sector_subset_connectedComponentIn_compl` : Euclidean component form.
+* `exists_sector_subset_connectedComponentIn` : a component whose frontier reaches inside the ball
+  contains the image of a whole sector in the one-point compactification.
+-/
+
+open Set Metric Topology Filter
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+  {S : Set V} {p q : V} {ρ : ℝ} {Y : Finset V}
+
+/-- Every point of the figure in the open ball of a two-radius star lies in the closure of
+any sector. This includes the centre and the relative interiors of both radii. -/
+theorem ball_inter_subset_closure_sector_of_card_eq_two [Fact (Module.finrank ℝ V = 2)] (hρ : 0 < ρ)
+    (hY : ↑Y ⊆ sphere p ρ) (hcard : Y.card = 2) {C : Set V}
+    (hstar : closedBall p ρ ∩ S = {p} ∪ ⋃ y ∈ Y, segment ℝ p y) (hC : C ∈ sectors p ρ Y) :
+    ball p ρ ∩ S ⊆ closure C := by
+  rintro q ⟨hqball, hqS⟩
+  obtain rfl | hqp := eq_or_ne q p
+  · exact mem_closure_of_mem_sectors hρ (Finset.card_pos.mp (by omega)) hY hC
+  obtain ⟨y, hy, hqseg⟩ :=
+    mem_iUnion₂.mp <| (show q ∈ ({p} ∪ ⋃ y ∈ Y,
+      segment ℝ p y : Set V) from hstar ▸ ⟨ball_subset_closedBall hqball, hqS⟩).resolve_left hqp
+  exact ((sectors_mem_closure_eq_of_card_eq_two hρ hY hcard hy (⟨hqseg, by
+    simp [hqp, (show q ≠ y from ((mem_ball.mp hqball).ne <| · ▸ mem_sphere.mp (hY hy)))]⟩)).symm ▸
+    hC).right
+
+/-- **Euclidean sector extraction.** If the closed ball at `p` meets `S` in a nonempty star, then
+any component of `Sᶜ` whose frontier reaches a point `q` of the open ball contains a whole sector
+of the punctured disk. -/
+theorem exists_sector_subset_connectedComponentIn_compl (hYne : Y.Nonempty)
+    (hstar : closedBall p ρ ∩ S = {p} ∪ ⋃ y ∈ Y, segment ℝ p y)
+    (hqball : q ∈ ball p ρ) {w : V}
+    (hq : q ∈ frontier (connectedComponentIn Sᶜ w)) :
+    ∃ C ∈ sectors p ρ Y, C ⊆ connectedComponentIn Sᶜ w := by
+  obtain ⟨z, hzball, hzK⟩ :=
+    mem_closure_iff.mp (frontier_subset_closure hq) (ball p ρ) isOpen_ball hqball
+  have hzS : z ∉ S := connectedComponentIn_subset Sᶜ w hzK
+  have hzD : z ∈ diskMinusRadii p ρ Y := by
+    refine ⟨hzball, fun hzrad ↦ hzS ?_⟩
+    have hzstar : z ∈ closedBall p ρ ∩ S := by
+      rw [hstar]
+      exact Or.inr (by simpa [mem_iUnion] using hzrad)
+    exact hzstar.2
+  refine ⟨connectedComponentIn (diskMinusRadii p ρ Y) z, ⟨z, hzD, rfl⟩, ?_⟩
+  have hCsub := connectedComponentIn_subset (diskMinusRadii p ρ Y) z
+  have hCS : connectedComponentIn (diskMinusRadii p ρ Y) z ⊆ Sᶜ := by
+    intro z hzC hzS
+    have hzDisk := hCsub hzC
+    have hzstar : z ∈ closedBall p ρ ∩ S := ⟨ball_subset_closedBall hzDisk.1, hzS⟩
+    rw [hstar] at hzstar
+    obtain rfl | hzY := hzstar
+    · exact hzDisk.2 (by
+        obtain ⟨y, hy⟩ := hYne
+        exact mem_iUnion.mpr ⟨y, mem_iUnion.mpr ⟨hy, left_mem_segment _ _ _⟩⟩)
+    exact hzDisk.2 (by simpa [mem_iUnion] using hzY)
+  rw [connectedComponentIn_eq hzK]
+  exact (isConnected_connectedComponentIn_iff.mpr hzD).isPreconnected.subset_connectedComponentIn
+    (mem_connectedComponentIn hzD) hCS
+
+/-- A family with at least as many distinct components as the local star has sectors contains
+every complementary component whose frontier reaches the ball. -/
+theorem exists_eq_connectedComponentIn_of_local_star [Fact (Module.finrank ℝ V = 2)]
+    {ι : Type*} [Fintype ι]
+    {S : Set V} {p : V} {r : ℝ} {Y : Finset V}
+    (hr : 0 < r) (hYne : Y.Nonempty) (hY : (Y : Set V) ⊆ sphere p r)
+    (hstar : closedBall p r ∩ S = {p} ∪ ⋃ y ∈ Y, segment ℝ p y)
+    (hcard : Y.card ≤ Fintype.card ι) (W : ι → Set V)
+    (hcomp : ∀ i, ∃ w ∈ Sᶜ, W i = connectedComponentIn Sᶜ w)
+    (hdisj : Pairwise fun i j ↦ Disjoint (W i) (W j))
+    (hfront : ∀ i, (frontier (W i) ∩ ball p r).Nonempty)
+    {z : V} (hp : (frontier (connectedComponentIn Sᶜ z) ∩ ball p r).Nonempty) :
+    ∃ i, connectedComponentIn Sᶜ z = W i := by
+  classical
+  have hsec (i) : ∃ C ∈ sectors p r Y, C ⊆ W i := by
+    obtain ⟨w, -, hw⟩ := hcomp i
+    obtain ⟨q, hq, hqball⟩ := hfront i
+    rw [hw] at hq ⊢
+    exact exists_sector_subset_connectedComponentIn_compl hYne hstar hqball hq
+  choose C hC hsub using hsec
+  have hinj : Function.Injective C := by
+    intro i j heq
+    by_contra hij
+    obtain ⟨x, hx⟩ := (isConnected_of_mem_sectors (hC i)).nonempty
+    exact (hdisj hij).notMem_of_mem_left (hsub i hx) (hsub j (heq ▸ hx))
+  have hCS : range C ⊆ sectors p r Y := by
+    rintro D ⟨i, rfl⟩
+    exact hC i
+  have hnC : (range C).ncard = Fintype.card ι := by
+    rw [ncard_range_of_injective hinj, Nat.card_eq_fintype_card]
+  have hnS : (sectors p r Y).ncard ≤ Fintype.card ι := by
+    rw [ncard_sectors hr hYne hY]
+    exact hcard
+  have hfin : (sectors p r Y).Finite := finite_of_ncard_ne_zero (by
+    rw [ncard_sectors hr hYne hY]
+    exact Finset.card_ne_zero.mpr hYne)
+  have heq : range C = sectors p r Y :=
+    eq_of_subset_of_ncard_le hCS (hnS.trans_eq hnC.symm) hfin
+  obtain ⟨q, hq, hqball⟩ := hp
+  obtain ⟨D, hD, hDK⟩ :=
+    exists_sector_subset_connectedComponentIn_compl hYne hstar hqball hq
+  obtain ⟨i, hi⟩ := heq.symm ▸ hD
+  obtain ⟨x, hx⟩ := (isConnected_of_mem_sectors hD).nonempty
+  obtain ⟨w, -, hw⟩ := hcomp i
+  refine ⟨i, ?_⟩
+  rw [hw]
+  have hxW : x ∈ connectedComponentIn Sᶜ w := hw ▸ hsub i (hi.symm ▸ hx)
+  exact (connectedComponentIn_eq (hDK hx)).trans (connectedComponentIn_eq hxW).symm
+
+/-- **Sector extraction.** If the closed ball at `p` meets `S` in a star, then any connected
+component of the complement of `S` on the sphere whose frontier reaches a point `q` of the open ball
+contains the image of a whole sector of the punctured disk.
+
+The point `q` may be any point of `ball p ρ`; the argument uses only this membership.
+
+`hYne` is needed: with `Y = ∅` the "star" is the single point `p`, while
+`diskMinusRadii p ρ ∅` is the full open ball and still contains `p`; hence it need not lie in the
+complement of `S`. -/
+theorem exists_sector_subset_connectedComponentIn (hYne : Y.Nonempty)
+    (hstar : closedBall p ρ ∩ S = {p} ∪ ⋃ y ∈ Y, segment ℝ p y)
+    (hqball : q ∈ ball p ρ) {w : OnePoint V}
+    (hq : (q : OnePoint V) ∈ frontier (connectedComponentIn ((↑) '' S)ᶜ w)) :
+    ∃ C ∈ sectors p ρ Y, (↑) '' C ⊆ connectedComponentIn ((↑) '' S)ᶜ w := by
+  set K : Set (OnePoint V) := connectedComponentIn ((↑) '' S)ᶜ w with hK
+  have hKsub : K ⊆ ((↑) '' S)ᶜ := connectedComponentIn_subset _ _
+  have hnhds : (↑) '' (ball p ρ) ∈ 𝓝 (q : OnePoint V) := by
+    rw [OnePoint.nhds_coe_eq]
+    exact Filter.image_mem_map (isOpen_ball.mem_nhds hqball)
+  obtain ⟨z', ⟨hzU, hzF⟩⟩ :=
+    mem_closure_iff_nhds.mp (frontier_subset_closure hq) ((↑) '' ball p ρ) hnhds
+  obtain ⟨z, hzball, rfl⟩ := hzU
+  have hzS : z ∉ S := fun hz ↦ hKsub hzF ⟨z, hz, rfl⟩
+  have hzD : z ∈ diskMinusRadii p ρ Y := by
+    refine ⟨hzball, fun hzrad ↦ hzS ?_⟩
+    have hzsup : z ∈ closedBall p ρ ∩ S := by
+      rw [hstar]
+      exact Or.inr (by simpa [mem_iUnion] using hzrad)
+    exact hzsup.2
+  refine ⟨connectedComponentIn (diskMinusRadii p ρ Y) z, ⟨z, hzD, rfl⟩, ?_⟩
+  have hCsub := connectedComponentIn_subset (diskMinusRadii p ρ Y) z
+  have hconn : IsConnected
+      ((↑) '' connectedComponentIn (diskMinusRadii p ρ Y) z : Set (OnePoint V)) :=
+    (isConnected_connectedComponentIn_iff.mpr hzD).image _ OnePoint.continuous_coe.continuousOn
+  have himg : ((↑) '' connectedComponentIn (diskMinusRadii p ρ Y) z : Set (OnePoint V)) ⊆
+      ((↑) '' S : Set (OnePoint V))ᶜ := by
+    rintro _ ⟨w0, hw0, rfl⟩
+    have hw0D := hCsub hw0
+    have hw0S : w0 ∉ S := by
+      intro hwS
+      have hw0mem : w0 ∈ closedBall p ρ ∩ S := ⟨ball_subset_closedBall hw0D.1, hwS⟩
+      rw [hstar] at hw0mem
+      obtain rfl | hwY := hw0mem
+      · exact hw0D.2 (by
+          obtain ⟨y, hy⟩ := hYne
+          exact mem_iUnion.mpr ⟨y, mem_iUnion.mpr ⟨hy, left_mem_segment _ _ _⟩⟩)
+      exact hw0D.2 (by simpa [mem_iUnion] using hwY)
+    exact fun ⟨w1, hw1, heq⟩ ↦ hw0S (OnePoint.coe_injective heq ▸ hw1)
+  have hz_mem : (z : OnePoint V) ∈ (↑) '' connectedComponentIn (diskMinusRadii p ρ Y) z :=
+    ⟨z, mem_connectedComponentIn hzD, rfl⟩
+  rw [hK, connectedComponentIn_eq hzF]
+  exact hconn.isPreconnected.subset_connectedComponentIn hz_mem himg
+
+end

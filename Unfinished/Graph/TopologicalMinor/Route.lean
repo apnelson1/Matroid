@@ -15,8 +15,7 @@ open Function Set WList
 
 namespace Graph.TopologicalMinor
 
-variable {α β γ δ : Type*} {G : Graph α β} {H : Graph γ δ}
-  (M : H.TopologicalMinor G)
+variable {α β γ δ : Type*} {G : Graph α β} {H : Graph γ δ} (M : H.TopologicalMinor G)
 
 open Classical
 

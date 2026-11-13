@@ -10,6 +10,13 @@ variable {α ι : Type*}
 open Function symmDiff
 namespace Set
 
+/-- On a set covered by two disjoint traces, membership in either side is the
+complement of membership in the other. -/
+lemma mem_right_iff_notMem_left {S U W : Set α} {x : α} (hd : Disjoint (S ∩ U) (S ∩ W))
+    (hc : S ⊆ U ∪ W) (hx : x ∈ S) : x ∈ W ↔ x ∉ U :=
+  ⟨fun hw hu ↦ hd.notMem_of_mem_left ⟨hx, hu⟩ ⟨hx, hw⟩,
+    fun hu ↦ (hc hx).resolve_left hu⟩
+
 lemma iUnion_eq_single_of_forall_subset {ι : Sort*} {s : ι → Set α} {a : ι}
     (hi : ∀ i ≠ a, s i ⊆ s a) : ⋃ i, s i = s a := by
   refine (subset_iUnion ..).antisymm' <| iUnion_subset fun i ↦ ?_

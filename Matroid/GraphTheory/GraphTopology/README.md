@@ -7,38 +7,40 @@ independently of an abstract graph representation.
 statements use `e : Set X` with `he : e ∈ E(G)`; the edge is the point set itself.
 `G.edgeInterior e = e \ V(G)` and `G.edgeBoundary e = e ∩ V(G)` are graph-relative,
 not ambient interior and frontier. Use `↥E(G)` only when a map or equivalence needs a type
-of actual edges. Construction proofs use `ConnectedComponents ↥(S \ Z)` directly, including
-before a graph-like space has been constructed. The general-topology operation
-`ConnectedComponents.toSet` extracts a component's point set in its own space. Its image under
-subtype inclusion is a set in the ambient space; intersecting its closure with the carrier
-produces an edge. There is no separate graph-specific component type or component geometry API.
+of actual edges. Both the graph-like axioms and edge construction use ambient component
+sets `connectedComponentIn (S \ Z) x` for points `x ∈ S \ Z`. Their closures relative to
+`S` are the edges; no component quotient or separately stored edge family is needed.
+Construction proofs identify these component sets with supplied link interiors or retained
+edge interiors using connectedness and maximality.
 
 | File | API |
 | --- | --- |
 | [Defs](Defs.lean) | `GraphLike`, vertex and geometric edge sets, graph-relative interiors/boundaries, incidence, finiteness, refinement, and faces |
 | [Basic](Basic.lean) | Edge and carrier laws, relatively closed edge remainders, compactness, and containment of connected sets in edges |
-| [Assembly](Assembly.lean) | Assembly from primitive links, its edge equivalence and equations, and finite sufficient conditions |
+| [Assembly](Assembly.lean) | Primitive-link decomposition, edge recognition, finite sufficient conditions, and label correspondence |
 | [Polygonal](Polygonal.lean) | Polygonality of edges |
 | [StraightLine](StraightLine.lean) | Straightness, geometric incidence, finiteness, and refinement preservation |
-| [Presentation](Presentation.lean) | Finite straight-line presentations of segment figures, prescribed vertices, and common presentations |
-| [Restriction](Restriction.lean) | Whole-edge restriction, support calculus, edge correspondences, and relative closure of finite-support differences |
+| [SegmentFigure](SegmentFigure.lean) | Finite straight-line presentations of segment figures, prescribed vertices, and common presentations |
+| [Restriction](Restriction.lean) | Maximal-contained whole-edge restriction, intersection laws, finiteness, and relative closure of differences |
 | [Map](Map.lean) | Transport by a carrier-local embedding, edge image laws, identity and composition |
-| [MapRestriction](MapRestriction.lean) | Transport commutes with support and restriction |
+| [MapRestriction](MapRestriction.lean) | Transport commutes with restriction |
 | [RestrictionGeometry](RestrictionGeometry.lean) | Geometry of restrictions and actual restrictions of common presentations |
 | [MapGeometry](MapGeometry.lean) | Affine preservation of straightness and polygonality |
-| [Subset](Subset.lean) | Relatively closed connected subsets and finite-support differences |
+| [Subset](Subset.lean) | Relatively closed connected subsets and differences with a finite left restriction |
 
-`GraphLike.ofLinks` constructs a graph-like space from indexed primitive links. It requires
-relatively open link interiors and a relatively closed, totally separated vertex set, with
-Hausdorffness only on the assembled carrier. Neither the vertex set nor the index type must
-be finite. Its edge set is exactly the range of the supplied family. Membership, interior,
-and boundary laws apply directly to each supplied point set. `ofLinksEdgeEquiv` is available
-when an indexed correspondence is needed; its value at an index is that index's supplied set.
+`GraphLike.IsLinkDecomposition S Z D` certifies a primitive-link cover of a supplied carrier
+`S` with vertices `Z` and pieces `D`. It requires total separation of the vertices and
+relative openness of the punctured pieces. Closedness of the vertices and disjointness
+of distinct interiors follow. Only `S` must be Hausdorff; infinite families, loops,
+parallel edges and isolated vertices are allowed.
 
-`ofFiniteLinks` derives those topological hypotheses from finite vertices and a finite link
-family, and supplies a `GraphLike.Finite` instance. Both constructors retain vertices outside
-all links. `ofLinks_finite_iff` characterizes finiteness by the vertex set and index type.
-Assembly returns the object directly, not an existential package.
+`h.toGraphLike` stores `S` and `Z` directly, and `h.toGraphLike_edgeSet` proves its edge set
+is `D`. `GraphLike.edgeSet_eq` recognizes the same pieces in a graph that already exists.
+`IsLinkDecomposition.ofFinite` discharges the topology from finite vertices, finite pieces,
+and disjoint interiors. `ofFiniteIndexed` applies this to a finite family's range.
+An injective family `L` gives a separate label correspondence through `G.edgeEquivOfRange`;
+its value at an index has underlying set `L i`. No parametrizations or labels are stored
+in the graph-like space.
 
 `GraphLike.IsStraightLine` says that an edge equals the segment between its boundary
 vertices. It retains no orientation or parametrization. Its edges have distinct endpoints,
@@ -49,17 +51,21 @@ figure with a Hausdorff carrier in a real topological vector space has a finite 
 including any prescribed finite subset among its vertices. The common-presentation theorem
 preserves each input figure as vertices and whole edges. Its vertex term retains isolated points.
 
-The construction is owned by [Presentation](Presentation.lean), using the algebraic
+`GraphLike.ofSegments` takes a supplied segment witness and prescribed marks. Its vertices
+and edges are the partition vertices and pieces, and every input subfamily is preserved as
+vertices and whole edges. The construction is owned by [SegmentFigure](SegmentFigure.lean), using the algebraic
 [segment-cutting lemmas](../../MiniTauCeti/JCT/Analysis/Convex/SegmentCutting.lean).
 [Subset](Subset.lean) owns the connected-subset argument using edge remainders. The
 [segment-figure wrapper](../../MiniTauCeti/JCT/Geometry/SegmentFigure/Subset.lean) supplies a finite
 straight-line presentation. [Closure of differences](../../MiniTauCeti/JCT/Geometry/SegmentFigure/Clipping.lean)
-uses common restrictions and the general support-difference law. Neither consumer reconstructs
+uses common restrictions and the general closure-of-differences law. Neither consumer reconstructs
 a second segment-family representation.
 
-Restriction retains selected edges and their endpoints without finiteness assumptions.
-Transport requires an embedding only on the carrier. Restriction retains the selected point
-sets, and transport takes their images, preserving loops and parallel edges.
+`G.restrict A` is the greatest whole-edge restriction contained in `A`: its vertices are
+`A ∩ V(G)` and its edges are `{e ∈ E(G) | e ⊆ A}`. No finiteness assumption is needed.
+Graph-like spaces coerce to their carriers as sets, so carrier laws use `(G.restrict A : Set X)`.
+Transport requires an embedding only on the carrier and commutes with restriction to
+`f '' (A ∩ G)`. Retaining whole edges and taking their images preserves loops and parallel edges.
 
 The association with an abstract graph stays in
 [`Graph/Topology/Drawing/Defs.lean`](../Graph/Topology/Drawing/Defs.lean).

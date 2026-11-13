@@ -1,0 +1,915 @@
+module
+
+public import Matroid.MiniTauCeti.JCT.Topology.Order
+public import Mathlib.Analysis.InnerProductSpace.PiL2 -- inefficient import
+public import Mathlib.Topology.Subpath
+
+@[expose] public section
+
+variable {α β : Type*} {a b c x y z w : α} {C L : List α} {S T X Y : Set α} {N : ℕ}
+
+open Set Function TopologicalSpace Topology Metric Nat unitInterval Set.Notation
+open scoped Sym2
+
+lemma pathConnectedSpace_Ioo {E} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
+    [ContinuousAdd E] [PartialOrder E] [ContinuousSMul ℝ E] [IsOrderedCancelAddMonoid E]
+    [PosSMulStrictMono ℝ E] [DenselyOrdered E] {a b : E} (hab : a < b) :
+    PathConnectedSpace <| Ioo a b :=
+  isPathConnected_iff_pathConnectedSpace.mp <| (convex_Ioo a b).isPathConnected
+  <| Set.nonempty_Ioo.mpr hab
+
+namespace unitInterval
+variable {t t₁ t₂ : I}
+
+@[simp] lemma one_le : 1 ≤ t ↔ t = 1 := top_le_iff
+@[simp] lemma le_zero : t ≤ 0 ↔ t = 0 := le_bot_iff
+
+@[simp]
+lemma val_le_zero_iff : t.val ≤ 0 ↔ t = 0 := by
+  simp only [t.prop.left.ge_iff_eq, eq_comm, Icc.coe_eq_zero]
+
+@[simp]
+lemma one_le_val_iff : 1 ≤ t.val ↔ t = 1 := by
+  simp only [t.prop.right.ge_iff_eq, Icc.coe_eq_one]
+
+lemma Icc_eq_univ : Icc (0 : I) 1 = univ :=
+  eq_univ_of_forall fun _ ↦ ⟨nonneg', le_one'⟩
+
+/-- Every parameter of `I` is an endpoint or lies in its open interior. -/
+lemma eq_zero_or_eq_one_or_mem_Ioo (t : I) : t = 0 ∨ t = 1 ∨ t ∈ Ioo (0 : I) 1 :=
+  eq_endpoints_or_mem_Ioo_of_mem_Icc (Icc_eq_univ ▸ mem_univ t)
+
+instance : ContinuousMul I := submonoid.continuousMul
+instance : PathConnectedSpace I :=
+  isPathConnected_iff_pathConnectedSpace.mp <| (convex_Icc 0 1).isPathConnected ⟨0, by simp⟩
+instance : LocallyPathConnectedSpace I := (convex_Icc 0 1).locallyPathConnectedSpace
+
+/-- A parameter is interior exactly when it is neither endpoint. -/
+lemma mem_Ioo_iff : t ∈ Ioo (0 : I) 1 ↔ t ≠ 0 ∧ t ≠ 1 := by
+  rw [mem_Ioo, unitInterval.pos_iff_ne_zero, unitInterval.lt_one_iff_ne_one]
+
+@[simp]
+lemma symm_mem_Ioo_iff : σ t ∈ Ioo (0 : I) 1 ↔ t ∈ Ioo (0 : I) 1 := by
+  rw [mem_Ioo_iff, mem_Ioo_iff, ne_eq, ne_eq, ne_eq, ne_eq, symm_eq_zero, symm_eq_one, and_comm]
+
+@[simp]
+lemma preimage_symm_Ioo : σ ⁻¹' Ioo (0 : I) 1 = Ioo 0 1 :=
+  ext fun _ ↦ symm_mem_Ioo_iff
+
+lemma closure_Ioo_zero_one : (closure <| Ioo (0 : I) 1) = univ := by
+  simp [eq_univ_iff_forall, le_one']
+
+/-- Every nonempty open subinterval of the unit interval is path-connected, by transferring
+path-connectedness of the corresponding real interval to the subtype. -/
+lemma isPathConnected_Ioo {a b : I} (hab : a < b) : IsPathConnected <| Ioo a b :=
+  ((convex_Ioo (a : ℝ) (b : ℝ)).isPathConnected
+    (nonempty_Ioo.mpr (Subtype.coe_lt_coe.mpr hab))).preimage_coe
+    (fun _ ht ↦ ⟨a.prop.left.trans ht.left.le, ht.right.le.trans b.prop.right⟩)
+
+noncomputable def squishLeft : I → I :=
+  fun t ↦ ⟨(t : ℝ) / 2, by constructor <;> nlinarith [t.prop.left, t.prop.right]⟩
+
+lemma continuous_squishLeft : Continuous squishLeft :=
+  Continuous.subtype_mk (continuous_subtype_val.div_const 2) _
+
+lemma strictMono_squishLeft : StrictMono squishLeft :=
+  fun _ _ h ↦ div_lt_div_of_pos_right h zero_lt_two
+
+@[simp]
+lemma squishLeft_zero : squishLeft 0 = 0 := by
+  simp [squishLeft]
+
+lemma squishLeft_injective : Injective squishLeft :=
+  strictMono_squishLeft.injective
+
+@[simp]
+lemma squishLeft_eq_zero_iff : squishLeft t = 0 ↔ t = 0 :=
+  squishLeft_injective.eq_iff' squishLeft_zero
+
+noncomputable def squishRight : I → I :=
+  fun t ↦ ⟨((t : ℝ) + 1) / 2, by constructor <;> nlinarith [t.prop.left, t.prop.right]⟩
+
+lemma continuous_squishRight : Continuous squishRight :=
+  Continuous.subtype_mk ((continuous_subtype_val.add continuous_const).div_const 2) _
+
+lemma strictMono_squishRight : StrictMono squishRight :=
+  fun _ _ h ↦ div_lt_div_of_pos_right (add_lt_add_left (Subtype.coe_lt_coe.mpr h) 1) zero_lt_two
+
+@[simp]
+lemma squishRight_one : squishRight 1 = 1 := by
+  simp [squishRight]
+
+lemma squishRight_injective : Injective squishRight :=
+  strictMono_squishRight.injective
+
+lemma squishRight_eq_one_iff : squishRight t = 1 ↔ t = 1 :=
+  squishRight_injective.eq_iff' squishRight_one
+
+noncomputable def half : I := ⟨2⁻¹, by constructor <;> linarith⟩
+
+@[simp]
+lemma squishLeft_le_half (t) : squishLeft t ≤ half := by
+  simp only [half, squishLeft, ← Subtype.coe_le_coe]
+  linarith [t.prop.right]
+
+@[simp]
+lemma half_le_squishRight (t) : half ≤ squishRight t := by
+  simp only [half, squishRight, ← Subtype.coe_le_coe]
+  linarith [t.prop.left]
+
+@[simp]
+lemma squishLeft_one : squishLeft 1 = half := by
+  simp [half, squishLeft]
+
+@[simp]
+lemma squishRight_zero : squishRight 0 = half := by
+  simp [half, squishRight]
+
+@[simp]
+lemma zero_lt_half : 0 < half := by
+  simp only [half, ← Subtype.coe_lt_coe, Icc.coe_zero]
+  positivity
+
+@[simp] lemma half_ne_zero : half ≠ 0 := zero_lt_half.ne'
+
+@[simp]
+lemma half_lt_one : half < 1 := by
+  simp only [half, ← Subtype.coe_lt_coe, Icc.coe_one]
+  exact two_inv_lt_one
+
+@[simp] lemma half_ne_one : half ≠ 1 := half_lt_one.ne
+
+/-- The two halves of the parameter interval meet only at the midpoint. -/
+lemma squishLeft_eq_squishRight_iff {s t : I} : squishLeft s = squishRight t ↔ s = 1 ∧ t = 0 := by
+  refine ⟨fun h ↦ ?_, fun ⟨hs, ht⟩ ↦ by rw [hs, ht, squishLeft_one, squishRight_zero]⟩
+  have hs : squishLeft s = half := (squishLeft_le_half s).antisymm (h ▸ half_le_squishRight t)
+  exact ⟨squishLeft_injective (hs.trans squishLeft_one.symm),
+    squishRight_injective ((h.symm.trans hs).trans squishRight_zero.symm)⟩
+
+lemma squishRight_lt_one (ht : t < 1) : squishRight t < 1 := by
+  change t.val < 1 at ht
+  simp only [squishRight, ← Subtype.coe_lt_coe, Icc.coe_one]
+  exact (div_lt_one₀ (by positivity)).mpr <| by linarith
+
+/-- `squishLeft` lands in the interior exactly when it is not squishing the left endpoint;
+the upper bound is automatic, since `squishLeft` never exceeds `half`. -/
+lemma squishLeft_mem_Ioo_iff : squishLeft t ∈ Ioo (0 : I) 1 ↔ t ≠ 0 := by
+  rw [mem_Ioo, and_iff_left <| (squishLeft_le_half t).trans_lt half_lt_one,
+    unitInterval.pos_iff_ne_zero, ne_eq, ne_eq, squishLeft_eq_zero_iff]
+
+/-- `squishRight` lands in the interior exactly when it is not squishing the right endpoint. -/
+lemma squishRight_mem_Ioo_iff : squishRight t ∈ Ioo (0 : I) 1 ↔ t ≠ 1 := by
+  rw [mem_Ioo, and_iff_right <| zero_lt_half.trans_le <| half_le_squishRight t,
+    unitInterval.lt_one_iff_ne_one, ne_eq, ne_eq, squishRight_eq_one_iff]
+
+/-- Every interior parameter is `squishLeft` of an interior parameter, the midpoint, or
+`squishRight` of an interior parameter.  This is the trichotomy that `Path.trans` induces on its
+parameter.  Like `eq_zero_or_eq_one_or_mem_Ioo` it is a splitter, so it carries no attribute and
+is passed to `grind` explicitly where it is wanted. -/
+lemma mem_Ioo_iff_exists_squishLeft_or_eq_half_or_exists_squishRight :
+    t ∈ Ioo (0 : I) 1 ↔ (∃ s ∈ Ioo (0 : I) 1, squishLeft s = t) ∨ t = half ∨
+      (∃ s ∈ Ioo (0 : I) 1, squishRight s = t) := by
+  refine ⟨fun ht ↦ ?_, ?_⟩
+  · unfold squishLeft squishRight half
+    simp_rw [mem_Ioo_iff]
+    obtain h | h | h := lt_trichotomy (t : ℝ) (1 / 2)
+    · refine Or.inl ⟨⟨2 * t.val, (mul_pos_mem_iff zero_lt_two).mpr ⟨t.prop.left, h.le⟩⟩, ?_, ?_⟩
+      · constructor <;> simp only [ne_eq, Subtype.ext_iff, Icc.coe_zero, Icc.coe_one]
+        <;> linarith [coe_pos.mpr ht.left]
+      exact Subtype.ext (by ring)
+    · exact Or.inr <| Or.inl <| Subtype.ext (by linarith)
+    refine Or.inr <|
+      Or.inr ⟨⟨2 * t.val - 1, two_mul_sub_one_mem_iff.mpr ⟨h.le, t.prop.right⟩⟩, ?_, ?_⟩
+    · constructor <;> simp only [ne_eq, Subtype.ext_iff, Icc.coe_zero, Icc.coe_one]
+      <;> linarith [coe_lt_one.mpr ht.right]
+    exact Subtype.ext (by ring)
+  rintro (⟨s, hs, rfl⟩ | rfl | ⟨s, hs, rfl⟩)
+  · exact squishLeft_mem_Ioo_iff.2 (mem_Ioo_iff.1 hs).left
+  · exact ⟨zero_lt_half, half_lt_one⟩
+  exact squishRight_mem_Ioo_iff.2 (mem_Ioo_iff.1 hs).right
+
+variable (i j : I)
+
+lemma squishLeft_Icc : squishLeft '' Icc i j = (Icc (squishLeft i) <| squishLeft j) :=
+  continuous_squishLeft.image_Icc_of_strictMono strictMono_squishLeft
+
+lemma squishRight_Icc : squishRight '' Icc i j = (Icc (squishRight i) <| squishRight j) :=
+  continuous_squishRight.image_Icc_of_strictMono strictMono_squishRight
+
+lemma squishLeft_Ioo : squishLeft '' Ioo i j = Ioo (squishLeft i) (squishLeft j) :=
+  continuous_squishLeft.image_Ioo_of_strictMono strictMono_squishLeft
+
+lemma squishRight_Ioo : squishRight '' Ioo i j = Ioo (squishRight i) (squishRight j) :=
+  continuous_squishRight.image_Ioo_of_strictMono strictMono_squishRight
+
+/-- Any subset of the unit interval containing its relative interior is open. -/
+lemma isOpen_of_Ioo_subset {U : Set I} (h : Ioo (0 : I) 1 ⊆ U) : IsOpen U := by
+  rw [← isClosed_compl_iff]
+  refine finite_singleton 1 |>.insert 0 |>.subset ?_ |>.isClosed
+  refine fun t ht ↦ by_contra fun hne ↦ ht <| h ?_
+  simpa [← unitInterval.mem_Ioo_iff] using hne
+
+end unitInterval
+
+namespace Path
+
+variable [TopologicalSpace α] {P : Path x y} {Q : Path y z} {γ : Path x y} {η : Path a b}
+
+/-- Regard a path as a path in a subspace containing its range, preserving its parametrization. -/
+def codRestrict (P : Path x y) {U : Set α} (hU : range P ⊆ U) :
+    Path (⟨x, hU P.source_mem_range⟩ : U) ⟨y, hU P.target_mem_range⟩ where
+  toFun t := ⟨P t, hU (mem_range_self t)⟩
+  continuous_toFun := P.continuous.subtype_mk _
+  source' := Subtype.ext P.source
+  target' := Subtype.ext P.target
+
+@[simp]
+lemma coe_codRestrict_apply (P : Path x y) {U : Set α} (hU : range P ⊆ U) (t : I) :
+    ((P.codRestrict hU) t : α) = P t := rfl
+
+@[simp]
+lemma map_subtype_val_codRestrict (P : Path x y) {U : Set α} (hU : range P ⊆ U) :
+    (P.codRestrict hU).map continuous_subtype_val = P := by
+  ext t
+  rfl
+
+@[simp]
+lemma range_codRestrict (P : Path x y) {U : Set α} (hU : range P ⊆ U) :
+    range (P.codRestrict hU) = (Subtype.val ⁻¹' range P : Set U) :=
+  Set.range_codRestrict (fun t ↦ hU (mem_range_self t))
+
+lemma range_isPathConnected (P : Path x y) : IsPathConnected <| range P :=
+  image_univ ▸ isPathConnected_univ.image P.continuous
+
+@[simp]
+lemma refl_not_injective (x : α) : ¬ Injective (refl x) := by
+  intro h
+  simpa using h (a₁ := 0) (a₂ := 1) (by simp)
+
+@[simp]
+lemma segment_injective [AddCommGroup α] [Module ℝ α] [ContinuousAdd α]
+    [ContinuousSMul ℝ α] (x y : α) : Injective (Path.segment x y) ↔ x ≠ y := by
+  refine ⟨fun h => ?_, fun h s t hst => ?_⟩
+  · rintro rfl
+    simp at h
+  simpa [h, Subtype.val_inj] using hst
+
+@[simp]
+lemma eq_zero_iff_of_injective (h : Injective P) (t : I) : P t = x ↔ t = 0 := by
+  nth_rw 3 [← P.source]
+  rw [h.eq_iff]
+
+@[simp]
+lemma eq_one_iff_of_injective (h : Injective P) (t : I) : P t = y ↔ t = 1 := by
+  nth_rw 3 [← P.target]
+  rw [h.eq_iff]
+
+lemma trans_apply_ite_lt (i : I) : (P.trans Q) i = if h : i.val < 1/2 then
+    P ⟨2 * i.val, (mul_pos_mem_iff zero_lt_two).2 ⟨i.prop.left, h.le⟩⟩ else
+    Q ⟨2 * i.val - 1, two_mul_sub_one_mem_iff.2 ⟨(not_lt.1 h), i.prop.right⟩⟩ := by
+  obtain hi | hi | hi := lt_trichotomy i.val 2⁻¹
+  · simp [hi.le, hi, trans_apply]
+  · simp [trans_apply, hi]
+  simp [hi.not_ge, hi.not_gt, trans_apply]
+
+lemma injOn_ico_iff_injOn_ioc (P : Path x x) : InjOn P (Ico 0 1) ↔ InjOn P (Ioc 0 1) := by
+  rw [← insert_left_Ioo (show (0 : I) < 1 from zero_lt_one),
+    ← insert_right_Ioo (show (0 : I) < 1 from zero_lt_one),
+    injOn_insert (by simp), injOn_insert (by simp), P.source, P.target]
+
+lemma sSup_notMem (P : Path x y) (hS : IsOpen S) (hy : y ∉ S) : P (sSup <| P ⁻¹' S) ∉ S := by
+  by_cases h : sSup (P ⁻¹' S) = 1
+  · simpa [h]
+  replace h : sSup (P ⁻¹' S) < 1 := by
+    contrapose! h
+    exact unitInterval.one_le.mp h
+  exact (P.continuous.isOpen_preimage _ hS).sSup_notMem ⟨1, h⟩
+
+lemma sInf_notMem (P : Path x y) (hS : IsOpen S) (hx : x ∉ S) : P (sInf <| P ⁻¹' S) ∉ S := by
+  by_cases h : sInf (P ⁻¹' S) = 0
+  · simpa [h]
+  replace h : 0 < sInf (P ⁻¹' S) := by
+    contrapose! h
+    exact unitInterval.le_zero.mp h
+  exact (P.continuous.isOpen_preimage _ hS).sInf_notMem ⟨0, h⟩
+
+@[simp]
+lemma trans_squishLeft (i : I) : P.trans Q (squishLeft i) = P i := by
+  simp [trans, squishLeft, comp_apply, (show i / 2 ≤ (2 : ℝ)⁻¹ by linarith [i.prop.right])]
+  rw [mul_div_cancel₀ _ (by simp)]
+  exact extend_extends' P i
+
+@[simp]
+lemma trans_squishRight (i : I) : P.trans Q (squishRight i) = Q i := by
+  obtain rfl | ht0 := eq_or_ne i 0
+  · simp [trans, squishRight]
+  replace ht0 : i.val ≠ 0 := coe_ne_zero.mpr ht0
+  simp only [trans, one_div, coe_mk', ContinuousMap.coe_mk, comp_apply, squishRight,
+    (show ¬ ((↑i + 1) / 2 ≤ (2 : ℝ)⁻¹) by linarith [i.prop.left.lt_of_ne' ht0]), ↓reduceIte]
+  rw [mul_div_cancel₀ _ (by simp), add_sub_cancel_right]
+  exact extend_extends' Q i
+
+@[simp]
+lemma trans_apply_half : (P.trans Q) half = y := by
+  rw [← squishLeft_one, trans_squishLeft, P.target]
+
+lemma trans_injective_iff : Injective (P.trans Q) ↔
+    Injective P ∧ Injective Q ∧ (Disjoint (range P \ {y}) <| range Q) := by
+  refine ⟨fun h => ⟨fun s t hst ↦ ?_, fun s t hst ↦ ?_, ?_⟩, fun ⟨hP, hQ, hdj⟩ t₁ t₂ ht => ?_⟩
+  · have h1 : P.trans Q (squishLeft s) = P.trans Q (squishLeft t) := by
+      simpa [trans_squishLeft] using hst
+    exact squishLeft_injective <| h h1
+  · refine squishRight_injective <| h ?_
+    simpa [trans_squishRight] using hst
+  · by_contra hdj
+    rw [not_disjoint_iff] at hdj
+    obtain ⟨-, ⟨⟨t1, hPQ⟩, hay⟩, t2, rfl⟩ := hdj
+    rw [← trans_squishRight t2, ← trans_squishLeft t1] at hPQ
+    obtain ⟨-, rfl⟩ := squishLeft_eq_squishRight_iff.1 (h hPQ)
+    simp at hay
+  by_cases ht₁ : (t₁ : ℝ) ≤ 2⁻¹ <;> by_cases ht₂ : (t₂ : ℝ) ≤ 2⁻¹ <;> simp only [trans_apply,
+    one_div, ht₁, ↓reduceDIte, ht₂] at ht
+  · simpa [Subtype.val_inj] using hP ht
+  on_goal 3 => simpa [Subtype.val_inj] using hQ ht
+  all_goals
+  have := ht ▸ (hdj.notMem_of_mem_right (a := Q _) (by simp))
+  simp only [mem_sdiff, mem_range, exists_apply_eq_apply, mem_singleton_iff,
+    eq_one_iff_of_injective hP, Subtype.ext_iff, Icc.coe_one, true_and, Decidable.not_not] at this
+  simp only [this, Icc.mk_one, Path.target, eq_comm (a := y), Q.eq_zero_iff_of_injective hQ,
+    Subtype.ext_iff, Icc.coe_zero] at ht
+  linarith
+
+/-- A concatenation is injective on the first half of its parameters exactly when its first path
+is injective. -/
+lemma trans_injOn_Icc_zero_half_iff (P : Path x y) (Q : Path y z) :
+    InjOn (P.trans Q) (Icc 0 half) ↔ Injective P := by
+  rw [← squishLeft_zero, ← squishLeft_one, ← squishLeft_Icc, ← squishLeft_injective.injOn.comp_iff]
+  simp only [comp_def, trans_squishLeft, unitInterval.Icc_eq_univ, injOn_univ]
+
+/-- A concatenation is injective on the second half of its parameters exactly when its second
+path is injective. -/
+lemma trans_injOn_Icc_half_one_iff (P : Path x y) (Q : Path y z) :
+    InjOn (P.trans Q) (Icc half 1) ↔ Injective Q := by
+  rw [← squishRight_zero, ← squishRight_one, ← squishRight_Icc,
+    ← squishRight_injective.injOn.comp_iff]
+  simp only [comp_def, trans_squishRight, unitInterval.Icc_eq_univ, injOn_univ]
+
+lemma trans_injOn_ico_iff {Q : Path y x} : InjOn (P.trans Q) (Ico 0 1) ↔
+    Injective P ∧ Injective Q ∧ Disjoint (range P \ {y}) (range Q \ {x}) := by
+  refine
+    ⟨fun h => ⟨fun s t hst ↦ ?_, fun s t hst ↦ ?_, ?_⟩, fun ⟨hP, hQ, hdj⟩ t₁ ht₁ t₂ ht₂ ht => ?_⟩
+  · exact (P.trans_injOn_Icc_zero_half_iff Q).mp (h.mono <| Icc_subset_Ico_right half_lt_one)
+    |>.eq_iff.mp hst
+  · rw [injOn_ico_iff_injOn_ioc] at h
+    replace h : InjOn (⇑(P.trans Q)) <| Icc half 1 :=
+      h.mono <| (Icc_subset_Ioc_iff le_one').mpr ⟨zero_lt_half, le_rfl⟩
+    exact ((P.trans_injOn_Icc_half_one_iff Q).mp h).eq_iff.mp hst
+  · by_contra hdj
+    rw [not_disjoint_iff] at hdj
+    obtain ⟨-, ⟨⟨t1, hPQ⟩, hay⟩, ⟨t2, rfl⟩, hax⟩ := hdj
+    rw [← trans_squishRight t2, ← trans_squishLeft t1] at hPQ
+    have ht2 : t2 < 1 := by
+      by_contra! ht2
+      obtain rfl := ht2.antisymm t2.prop.right
+      simp at hax
+    obtain ⟨-, rfl⟩ := squishLeft_eq_squishRight_iff.1 <|
+      h (show squishLeft t1 ∈ Ico 0 1 by simpa using squishLeft_le_half t1 |>.trans_lt half_lt_one)
+      (show squishRight t2 ∈ Ico 0 1 by simpa using squishRight_lt_one ht2) hPQ
+    simp at hay
+  obtain ht₁1 : (t₁ : ℝ) < 1 := ht₁.right
+  obtain ht₂1 : (t₂ : ℝ) < 1 := ht₂.right
+  by_cases ht₁ : (t₁ : ℝ) < 2⁻¹ <;> by_cases ht₂ : (t₂ : ℝ) < 2⁻¹ <;>
+    simp only [trans_apply_ite_lt, one_div, ht₁, ↓reduceDIte, ht₂] at ht
+  · simpa [Subtype.val_inj] using hP.eq_iff.mp ht
+  on_goal 3 => simpa [hQ.eq_iff, Subtype.ext_iff] using ht
+  on_goal 2 => rw [eq_comm] at ht
+  all_goals
+    refine (hdj.ne_of_mem ?_ ?_ ht).elim <;>
+    · simp only [← P.target, ← Q.target, mem_sdiff, mem_range, hP.eq_iff, hQ.eq_iff,
+      exists_apply_eq_apply, mem_singleton_iff, true_and]
+      rw [Subtype.ext_iff, Icc.coe_one]
+      linarith
+
+section
+
+/-- A loop is a *simple loop* if it does not visit any point twice, except that it ends where it
+started. -/
+def IsSimpleLoop (P : Path x x) : Prop := InjOn P <| Ico 0 1
+
+variable {P : Path x x}
+
+lemma isSimpleLoop_iff_injOn_ioc : P.IsSimpleLoop ↔ InjOn P (Ioc 0 1) :=
+  P.injOn_ico_iff_injOn_ioc
+
+lemma IsSimpleLoop.injOn_ioo (h : P.IsSimpleLoop) : InjOn P <| Ioo 0 1 := h.mono Ioo_subset_Ico_self
+
+@[simp] lemma not_isSimpleLoop_refl : ¬ (Path.refl x).IsSimpleLoop := by
+  intro h
+  replace h : 0 = half := h (x₁ := 0) (x₂ := half) (by simp) (by simp) (by rfl)
+  exact half_ne_zero h.symm
+
+end
+
+/-! ### Connected subsets of an injective path -/
+
+/-- An injective path is an embedding if its range is Hausdorff. -/
+lemma isEmbedding_of_injective [T2Space ↥(range γ)] (hinj : Injective γ) : IsEmbedding γ :=
+  IsEmbedding.subtypeVal.comp <| (γ.continuous.subtype_mk mem_range_self).isClosedEmbedding
+    (fun _ _ h ↦ hinj (congrArg Subtype.val h)) |>.isEmbedding
+
+/-- On an injectively parametrised path, a connected piece of the image containing `γ t₁` and
+`γ t₂` contains the whole parameter interval between them. -/
+@[grind →]
+lemma image_Icc_subset_of_isConnected [T2Space ↥(range γ)] (hinj : Injective γ) (hS : IsConnected S)
+    (hSsub : S ⊆ range γ) {t₁ t₂ : I} (h₁ : γ t₁ ∈ S) (h₂ : γ t₂ ∈ S) : γ '' Icc t₁ t₂ ⊆ S :=
+  (isEmbedding_of_injective hinj).image_Icc_subset_of_isPreconnected hSsub hS.isPreconnected h₁ h₂
+
+/-- A path in the range of an injective path fills the interval between the infimum and
+supremum of the parameters it visits. The contained path may have arbitrary endpoints
+and need not be injective. -/
+theorem range_eq_image_Icc_of_subset_injective [T2Space ↥(range γ)] (hinj : Injective γ)
+    (hsub : range η ⊆ range γ) : range η = γ '' Icc (sInf (γ ⁻¹' range η)) (sSup (γ ⁻¹' range η)) :=
+  (isEmbedding_of_injective hinj).eq_image_Icc_of_isConnected_isCompact hsub
+    η.range_isPathConnected.isConnected (isCompact_range η.continuous)
+
+theorem range_eq_of_subset_injective {W : Type*} [TopologicalSpace W]
+    {x y : W} {γ η : Path x y} (hinj : Injective γ) (hsub : range η ⊆ range γ)
+    [T2Space ↥(range γ)] : range η = range γ := by
+  have hfull := (isEmbedding_of_injective hinj).image_Icc_subset_of_isPreconnected
+    hsub η.range_isPathConnected.isConnected.isPreconnected (a := 0) (b := 1)
+    (γ.source.symm ▸ η.source_mem_range) (γ.target.symm ▸ η.target_mem_range)
+  rw [unitInterval.Icc_eq_univ, image_univ] at hfull
+  exact hsub.antisymm hfull
+
+/-- An injective path in a linearly ordered space fills the unordered interval between
+its endpoints. -/
+theorem range_eq_uIcc_of_injective {L : Type*} [LinearOrder L] [TopologicalSpace L]
+    [OrderTopology L] {a b : L} {γ : Path a b} (hinj : Injective γ) : range γ = uIcc a b := by
+  have h : γ '' uIcc (0 : I) 1 = uIcc (γ 0) (γ 1) := by
+    obtain hmono | hanti := γ.continuous.strictMono_of_inj hinj
+    · exact γ.continuous.continuousOn.image_uIcc_of_monotoneOn (hmono.monotone.monotoneOn _)
+    · exact γ.continuous.continuousOn.image_uIcc_of_antitoneOn (hanti.antitone.antitoneOn _)
+  simpa only [uIcc_of_le (show (0 : I) ≤ 1 from zero_le_one), unitInterval.Icc_eq_univ,
+    image_univ, Path.source, Path.target] using h
+
+/-- An injective path in an embedded linear order fills the image of the unordered interval
+between its endpoint coordinates. -/
+theorem range_eq_image_uIcc_of_isEmbedding {L : Type*} [LinearOrder L] [TopologicalSpace L]
+    [OrderTopology L] {f : L → α} {a b : L} {γ : Path (f a) (f b)}
+    (hf : IsEmbedding f) (hinj : Injective γ) (hsub : range γ ⊆ range f) :
+    range γ = f '' uIcc a b := by
+  let δ : Path a b := {
+    toFun := fun t ↦ hf.toHomeomorph.symm ⟨γ t, hsub (mem_range_self t)⟩
+    continuous_toFun := hf.toHomeomorph.symm.continuous.comp (γ.continuous.subtype_mk _)
+    source' := by simp only [γ.source, hf.toHomeomorph_symm_apply]
+    target' := by simp only [γ.target, hf.toHomeomorph_symm_apply] }
+  have hδ (t : I) : f (δ t) = γ t :=
+    congrArg Subtype.val (hf.toHomeomorph.apply_symm_apply ⟨γ t, hsub (mem_range_self t)⟩)
+  rw [← δ.range_eq_uIcc_of_injective (fun s t ↦ by grind), ← range_comp]
+  exact congrArg range (funext hδ).symm
+
+/-- An injective path contained in another injective path fills the subarc between its
+endpoint parameters, in either orientation. -/
+theorem range_eq_image_uIcc_of_subset_injective {s t : I} {η : Path (γ s) (γ t)}
+    [T2Space ↥(range γ)] (hγ : Injective γ) (hη : Injective η) (hsub : range η ⊆ range γ) :
+    range η = γ '' uIcc s t :=
+  range_eq_image_uIcc_of_isEmbedding (isEmbedding_of_injective hγ) hη hsub
+
+theorem range_eq_segment_of_subset {W : Type*} [TopologicalSpace W] [AddCommGroup W] [Module ℝ W]
+    [ContinuousSMul ℝ W] [ContinuousAdd W] {x y a b : W} {γ : Path x y} (hinj : Injective γ)
+    (hsub : range γ ⊆ segment ℝ a b) [T2Space ↥(segment ℝ a b)] : range γ = segment ℝ x y := by
+  have hab : a ≠ b := by
+    rintro rfl
+    obtain rfl := segment_same ℝ a ▸ hsub (mem_range_self (1 : unitInterval))
+    exact zero_ne_one <| hinj (segment_same ℝ (γ 1) ▸ hsub (mem_range_self 0) : γ 0 ∈ {γ 1})
+  rw [← Path.range_segment a b] at hsub
+  have : T2Space ↥(range (Path.segment a b)) := by rwa [Path.range_segment]
+  obtain ⟨s, rfl⟩ := hsub γ.source_mem_range
+  obtain ⟨t, rfl⟩ := hsub γ.target_mem_range
+  simp_rw [range_eq_image_uIcc_of_subset_injective (Path.segment_injective_of_ne hab) hinj hsub,
+    Path.segment_apply]
+  rw [← image_image, image_subtype_val_uIcc, ← segment_eq_uIcc, image_segment]
+
+/-! ### Cutting a path at closed sets -/
+
+/-- Before its first contact with a closed set, a path stays in the component of its source.
+The conclusion refers to parameters and therefore does not require an injective path. -/
+theorem exists_first_contact {X : Type*} [TopologicalSpace X] {p r : X}
+    (P : Path p r) {C : Set X} (hC : IsClosed (P ⁻¹' C)) (hp : p ∉ C)
+    (hmeet : (range P ∩ C).Nonempty) :
+    ∃ t : unitInterval, 0 < t ∧ P t ∈ C ∧
+      P '' Ico 0 t ⊆ connectedComponentIn Cᶜ p := by
+  obtain ⟨t, ht, hmin⟩ := hC.isCompact.exists_isLeast (by
+    obtain ⟨z, ⟨u, rfl⟩, hz⟩ := hmeet
+    exact ⟨u, hz⟩)
+  have htpos : 0 < t := lt_of_le_of_ne t.property.1 (by
+    rintro rfl
+    exact hp (by simpa using ht))
+  refine ⟨t, htpos, ht, ?_⟩
+  apply (isPreconnected_Ico.image P P.continuous.continuousOn).subset_connectedComponentIn
+  · exact ⟨0, ⟨le_rfl, htpos⟩, P.source⟩
+  rintro z ⟨u, hu, rfl⟩ huc
+  exact hu.2.not_ge (hmin huc)
+
+/-- The supremum of the visit parameters, with value `0` when there are no visits. -/
+noncomputable def lastVisit (γ : Path x y) (S : Set α) : I := sSup (γ ⁻¹' S)
+
+/-- The infimum of visit parameters at or after `t`, with value `1` when there are none. -/
+noncomputable def firstVisitAfter (γ : Path x y) (T : Set α) (t : I) : I :=
+  sInf (Ici t ∩ γ ⁻¹' T)
+
+lemma lastVisit_eq_zero_of_preimage_eq_empty (h : γ ⁻¹' S = ∅) : γ.lastVisit S = 0 := by
+  change sSup (γ ⁻¹' S) = (⊥ : I)
+  rw [h]
+  exact _root_.sSup_empty (α := I)
+
+lemma firstVisitAfter_eq_one_of_inter_eq_empty {t : I} (h : Ici t ∩ γ ⁻¹' T = ∅) :
+    γ.firstVisitAfter T t = 1 := by
+  change sInf (Ici t ∩ γ ⁻¹' T) = (⊤ : I)
+  rw [h]
+  exact _root_.sInf_empty (α := I)
+
+@[simp]
+lemma lastVisit_empty (γ : Path x y) : γ.lastVisit ∅ = 0 :=
+  γ.lastVisit_eq_zero_of_preimage_eq_empty preimage_empty
+
+@[simp]
+lemma firstVisitAfter_empty (γ : Path x y) (t : I) : γ.firstVisitAfter ∅ t = 1 :=
+  γ.firstVisitAfter_eq_one_of_inter_eq_empty (by simp)
+
+lemma le_lastVisit {t : I} (ht : γ t ∈ S) : t ≤ γ.lastVisit S := le_sSup ht
+
+lemma lastVisit_le_iff {t : I} : γ.lastVisit S ≤ t ↔ ∀ u, γ u ∈ S → u ≤ t := sSup_le_iff
+
+lemma firstVisitAfter_le {t u : I} (htu : t ≤ u) (hu : γ u ∈ T) :
+    γ.firstVisitAfter T t ≤ u := sInf_le ⟨htu, hu⟩
+
+lemma le_firstVisitAfter_iff {t u : I} : u ≤ γ.firstVisitAfter T t ↔
+    ∀ v, t ≤ v → γ v ∈ T → u ≤ v := by
+  simp only [firstVisitAfter, le_sInf_iff, mem_inter_iff, mem_Ici, mem_preimage, and_imp]
+
+lemma le_firstVisitAfter (γ : Path x y) (T : Set α) (t : I) : t ≤ γ.firstVisitAfter T t :=
+  le_sInf fun _ hv ↦ hv.1
+
+lemma lastVisit_mono (hST : γ ⁻¹' S ⊆ γ ⁻¹' T) : γ.lastVisit S ≤ γ.lastVisit T :=
+  sSup_le_sSup hST
+
+lemma firstVisitAfter_mono (γ : Path x y) (T : Set α) : Monotone (γ.firstVisitAfter T) :=
+  fun _ _ h ↦ sInf_le_sInf fun _ hv ↦ ⟨h.trans hv.1, hv.2⟩
+
+lemma lastVisit_eq_of_isGreatest {t : I} (ht : IsGreatest (γ ⁻¹' S) t) :
+    γ.lastVisit S = t := ht.isLUB.sSup_eq
+
+lemma firstVisitAfter_eq_of_isLeast {t u : I} (hu : IsLeast (Ici t ∩ γ ⁻¹' T) u) :
+    γ.firstVisitAfter T t = u := hu.isGLB.sInf_eq
+
+lemma isGreatest_lastVisit (hS : IsClosed (γ ⁻¹' S)) (hne : (γ ⁻¹' S).Nonempty) :
+    IsGreatest (γ ⁻¹' S) (γ.lastVisit S) :=
+  ⟨hS.sSup_mem hne, fun _ ht ↦ γ.le_lastVisit ht⟩
+
+lemma isLeast_firstVisitAfter {t : I} (hT : IsClosed (Ici t ∩ γ ⁻¹' T))
+    (hne : (Ici t ∩ γ ⁻¹' T).Nonempty) :
+    IsLeast (Ici t ∩ γ ⁻¹' T) (γ.firstVisitAfter T t) :=
+  ⟨hT.sInf_mem hne, fun _ hu ↦ γ.firstVisitAfter_le hu.1 hu.2⟩
+
+lemma lastVisit_mem (hS : IsClosed (γ ⁻¹' S)) (hne : (γ ⁻¹' S).Nonempty) :
+    γ (γ.lastVisit S) ∈ S := (γ.isGreatest_lastVisit hS hne).1
+
+lemma firstVisitAfter_mem {t : I} (hT : IsClosed (Ici t ∩ γ ⁻¹' T))
+    (hne : (Ici t ∩ γ ⁻¹' T).Nonempty) : γ (γ.firstVisitAfter T t) ∈ T :=
+  (γ.isLeast_firstVisitAfter hT hne).1.2
+
+/-- Every visit to the first set precedes every subsequent visit to the second set. -/
+lemma lastVisit_lt_firstVisitAfter (hS : IsClosed (γ ⁻¹' S))
+    (hT : IsClosed (Ici (γ.lastVisit S) ∩ γ ⁻¹' T))
+    (hdisj : Disjoint (γ ⁻¹' S) (γ ⁻¹' T)) (hSne : (γ ⁻¹' S).Nonempty)
+    (hTne : (Ici (γ.lastVisit S) ∩ γ ⁻¹' T).Nonempty) :
+    γ.lastVisit S < γ.firstVisitAfter T (γ.lastVisit S) := by
+  refine lt_of_le_of_ne (γ.le_firstVisitAfter T _) ?_
+  intro heq
+  exact hdisj.notMem_of_mem_left (γ.lastVisit_mem hS hSne)
+    (heq ▸ γ.firstVisitAfter_mem hT hTne)
+
+lemma lastVisit_mem_frontier (hne : (γ ⁻¹' S).Nonempty)
+    (ht : γ.lastVisit S < 1) : γ (γ.lastVisit S) ∈ frontier S := by
+  refine ⟨?_, ?_⟩
+  · exact (closure_mono (image_preimage_subset γ S))
+      (image_closure_subset_closure_image γ.continuous ⟨_, sSup_mem_closure hne, rfl⟩)
+  intro hint
+  obtain ⟨u, hu, htu⟩ := nonempty_nhds_inter_Ioi
+    ((isOpen_interior.preimage γ.continuous).mem_nhds hint) ht.not_isMax
+  exact htu.not_ge (γ.le_lastVisit (interior_subset hu))
+
+lemma firstVisitAfter_mem_frontier {t : I}
+    (hne : (Ici t ∩ γ ⁻¹' T).Nonempty) (ht : t < γ.firstVisitAfter T t) :
+    γ (γ.firstVisitAfter T t) ∈ frontier T := by
+  refine ⟨?_, ?_⟩
+  · exact (closure_mono ((image_mono inter_subset_right).trans (image_preimage_subset γ T)))
+      (image_closure_subset_closure_image γ.continuous ⟨_, sInf_mem_closure hne, rfl⟩)
+  intro hint
+  have hnhds : (γ ⁻¹' interior T) ∩ Ioi t ∈ 𝓝 (γ.firstVisitAfter T t) :=
+    ((isOpen_interior.preimage γ.continuous).inter isOpen_Ioi).mem_nhds ⟨hint, ht⟩
+  obtain ⟨u, ⟨huT, htu⟩, hus⟩ := nonempty_nhds_inter_Iio hnhds ht.not_isMin
+  exact hus.not_ge (γ.firstVisitAfter_le htu.le (interior_subset huT))
+
+/-- The whole preimage of the set has no parameter after its last visit. -/
+lemma Ici_lastVisit_inter_preimage (hmem : γ (γ.lastVisit S) ∈ S) :
+    Ici (γ.lastVisit S) ∩ γ ⁻¹' S = {γ.lastVisit S} := by
+  ext u
+  exact ⟨fun hu ↦ (γ.le_lastVisit hu.2).antisymm hu.1,
+    fun hu ↦ by rcases hu with rfl; exact ⟨le_rfl, hmem⟩⟩
+
+lemma Icc_lastVisit_inter_preimage (hmem : γ (γ.lastVisit S) ∈ S)
+    {s : I} (hs : γ.lastVisit S ≤ s) :
+    Icc (γ.lastVisit S) s ∩ γ ⁻¹' S = {γ.lastVisit S} := by
+  ext u
+  exact ⟨fun hu ↦ (γ.le_lastVisit hu.2).antisymm hu.1.1,
+    fun hu ↦ by rcases hu with rfl; exact ⟨⟨le_rfl, hs⟩, hmem⟩⟩
+
+lemma Icc_firstVisitAfter_inter_preimage {t : I} (hmem : γ (γ.firstVisitAfter T t) ∈ T) :
+    Icc t (γ.firstVisitAfter T t) ∩ γ ⁻¹' T = {γ.firstVisitAfter T t} := by
+  ext u
+  exact ⟨fun hu ↦ hu.1.2.antisymm (γ.firstVisitAfter_le hu.1.1 hu.2),
+    fun hu ↦ by
+      rcases hu with rfl
+      exact ⟨⟨γ.le_firstVisitAfter T t, le_rfl⟩, hmem⟩⟩
+
+/-- The canonical cut from the last visit to `S` to the first subsequent visit to `T` meets
+both sets only at the corresponding endpoint, even for a noninjective path. Closedness is
+required only of the parameter sets. -/
+lemma lastVisit_firstVisitAfter_spec (γ : Path a b) (hS : IsClosed (γ ⁻¹' S))
+    (hT : IsClosed (Ici (γ.lastVisit S) ∩ γ ⁻¹' T))
+    (hdisj : Disjoint (γ ⁻¹' S) (γ ⁻¹' T)) (ha : a ∈ S) (hb : b ∈ T) :
+    let t := γ.lastVisit S
+    let s := γ.firstVisitAfter T t
+    t < s ∧ γ t ∈ frontier S ∧ γ s ∈ frontier T ∧
+      Icc t s ∩ γ ⁻¹' S = {t} ∧ Icc t s ∩ γ ⁻¹' T = {s} := by
+  have hSne : (γ ⁻¹' S).Nonempty := ⟨0, by simpa using ha⟩
+  have hTne : (Ici (γ.lastVisit S) ∩ γ ⁻¹' T).Nonempty :=
+    ⟨1, le_one', by simpa using hb⟩
+  have hts := γ.lastVisit_lt_firstVisitAfter hS hT hdisj hSne hTne
+  exact ⟨hts, γ.lastVisit_mem_frontier hSne (hts.trans_le le_one'),
+    γ.firstVisitAfter_mem_frontier hTne hts,
+    γ.Icc_lastVisit_inter_preimage (γ.lastVisit_mem hS hSne) hts.le,
+    γ.Icc_firstVisitAfter_inter_preimage (γ.firstVisitAfter_mem hT hTne)⟩
+
+/-! ### The interior of a path
+
+`Path.Interior` is the image of the open parameter interval. -/
+
+/-- The image of the open parameter interval. -/
+def Interior (P : Path x y) : Set α :=
+  P '' Ioo (0 : unitInterval) 1
+
+lemma interior_nonempty (P : Path x y) : P.Interior.Nonempty :=
+  (nonempty_Ioo.2 (zero_lt_one : (0 : I) < 1)).image P
+
+lemma isPathConnected_interior (P : Path x y) : IsPathConnected P.Interior :=
+  (unitInterval.isPathConnected_Ioo zero_lt_one).image P.continuous
+
+lemma interior_segment [AddCommGroup α] [Module ℝ α] [ContinuousAdd α] [ContinuousSMul ℝ α]
+    (a b : α) : (Path.segment a b).Interior = openSegment ℝ a b := by
+  change (fun t : I ↦ AffineMap.lineMap a b (t : ℝ)) '' Ioo 0 1 = _
+  rw [← image_image, image_subtype_val_Ioo, openSegment_eq_image_lineMap]
+  rfl
+
+lemma range_subset_closure_interior (P : Path x y) : range P ⊆ closure P.Interior := by
+  rintro z ⟨i, rfl⟩
+  refine ((image_closure_subset_closure_image P.continuous ⟨i, ?_, rfl⟩))
+  grind [unitInterval.closure_Ioo_zero_one]
+
+lemma interior_subset_range (P : Path x y) : P.Interior ⊆ range P := by
+  rintro _ ⟨t, ht, rfl⟩
+  exact ⟨t, rfl⟩
+
+lemma mem_range_iff_mem_interior_or_source_or_target (P : Path x y) (z : α) :
+    z ∈ range P ↔ z = x ∨ z = y ∨ z ∈ P.Interior := by
+  constructor
+  · rintro ⟨t, rfl⟩
+    obtain rfl | rfl | ht := eq_zero_or_eq_one_or_mem_Ioo t
+    · simp
+    · simp
+    · exact Or.inr (Or.inr ⟨t, ht, rfl⟩)
+  rintro (rfl | rfl | h)
+  · exact ⟨0, P.source⟩
+  · exact ⟨1, P.target⟩
+  · exact P.interior_subset_range h
+
+/-- If neither endpoint is visited in the open parameter interval, deleting the endpoints from
+the range leaves exactly the interior. -/
+lemma range_diff_endpoints (hx : x ∉ P.Interior) (hy : y ∉ P.Interior) :
+    range P \ {x, y} = P.Interior := by
+  ext z
+  simp only [mem_sdiff, mem_range_iff_mem_interior_or_source_or_target, mem_insert_iff,
+    mem_singleton_iff]
+  grind
+
+/-- Recasting the endpoints of a path does not move its interior. -/
+lemma cast_interior {x' y' : α} (P : Path x y) (h1 : x' = x) (h2 : y' = y) :
+    (P.cast h1 h2).Interior = P.Interior := by
+  simp [Interior, Path.cast_coe]
+
+/-- Reversing a path does not move its interior. -/
+@[simp]
+lemma symm_interior (P : Path x y) : P.symm.Interior = P.Interior := by
+  ext z
+  simp only [Interior, mem_image, Path.symm_apply]
+  refine ⟨fun ⟨t, ht, h⟩ ↦ ⟨σ t, symm_mem_Ioo_iff.2 ht, h⟩, fun ⟨t, ht, h⟩ ↦ ⟨σ t, ?_, ?_⟩⟩
+  · exact symm_mem_Ioo_iff.2 ht
+  · simpa only [Function.comp_apply, unitInterval.symm_symm] using h
+
+/-- Reversing a path reflects the parameters on which it is injective. -/
+lemma symm_injOn_iff {U : Set I} : InjOn γ.symm U ↔ InjOn γ (σ ⁻¹' U) := by
+  rw [← symm_involutive.image_eq_preimage_symm, ← symm_involutive.injective.injOn.comp_iff]
+  exact Iff.rfl
+
+@[simp]
+lemma symm_injOn_Ioo_iff : InjOn γ.symm (Ioo 0 1) ↔ InjOn γ (Ioo 0 1) := by
+  rw [symm_injOn_iff, preimage_symm_Ioo]
+
+/-- The interior of a concatenation is the two interiors together with the junction point. -/
+lemma trans_interior : (P.trans Q).Interior = P.Interior ∪ {y} ∪ Q.Interior := by
+  have hparam : Ioo (0 : I) 1 =
+      squishLeft '' Ioo 0 1 ∪ {half} ∪ squishRight '' Ioo 0 1 := by
+    ext t
+    simpa only [mem_union, mem_image, mem_singleton_iff, or_assoc] using
+      (mem_Ioo_iff_exists_squishLeft_or_eq_half_or_exists_squishRight (t := t))
+  change (P.trans Q) '' _ = _
+  rw [hparam, image_union, image_union, image_singleton, trans_apply_half]
+  simp only [image_image, trans_squishLeft, trans_squishRight, Interior]
+
+/-- A concatenation is injective on the open parameter interval exactly when both halves are, the
+two interiors are disjoint, and neither contains the junction point.  Equivalently, the union
+displayed by `Path.trans_interior` is a disjoint one. -/
+lemma trans_injOn_ioo_iff : InjOn (P.trans Q) (Ioo 0 1) ↔ InjOn P (Ioo 0 1) ∧ InjOn Q (Ioo 0 1) ∧
+      y ∉ P.Interior ∧ y ∉ Q.Interior ∧ Disjoint P.Interior Q.Interior := by
+  have hparam : Ioo (0 : I) 1 = insert half (squishLeft '' Ioo 0 1 ∪ squishRight '' Ioo 0 1) := by
+    ext t
+    simpa only [mem_insert_iff, mem_union, mem_image, or_left_comm] using
+      (mem_Ioo_iff_exists_squishLeft_or_eq_half_or_exists_squishRight (t := t))
+  have hhalf : half ∉ squishLeft '' Ioo (0 : I) 1 ∪ squishRight '' Ioo (0 : I) 1 := by
+    simp [squishLeft_Ioo, squishRight_Ioo]
+  have hdisj : Disjoint (squishLeft '' Ioo (0 : I) 1) (squishRight '' Ioo (0 : I) 1) := by
+    simp only [squishLeft_Ioo, squishRight_Ioo, squishLeft_zero, squishLeft_one,
+      squishRight_zero, squishRight_one]
+    exact disjoint_left.mpr fun _ ht hs ↦ ht.2.not_gt hs.1
+  conv_lhs => rw [hparam, injOn_insert hhalf, injOn_union hdisj]
+  simp only [← squishLeft_injective.injOn.comp_iff, comp_def, trans_squishLeft,
+    ← strictMono_squishRight.injective.injOn.comp_iff, trans_squishRight, forall_mem_image,
+    image_union, image_image, trans_apply_half, mem_union, not_or, Interior, disjoint_iff_forall_ne]
+  tauto
+
+open Classical in
+/-- Reorient a path to a prescribed ordering of the same unordered pair of endpoints. -/
+noncomputable def reorient (γ : Path a b) (h : s(x, y) = s(a, b)) : Path x y :=
+  if hx : x = a ∧ y = b then γ.cast hx.1 hx.2
+  else
+    have h' : x = b ∧ y = a := (Sym2.eq_iff.mp h).resolve_left hx
+    γ.symm.cast h'.1 h'.2
+
+@[simp]
+lemma range_reorient (γ : Path a b) (h : s(x, y) = s(a, b)) : range (γ.reorient h) = range γ := by
+  rw [reorient]
+  split_ifs <;> simp
+
+@[simp]
+lemma reorient_interior (γ : Path a b) (h : s(x, y) = s(a, b)) :
+    (γ.reorient h).Interior = γ.Interior := by
+  rw [reorient]
+  split_ifs <;> simp only [cast_interior, symm_interior]
+
+/-- Reorienting does not affect injectivity on the open parameter interval. -/
+@[simp]
+lemma injOn_reorient_iff {γ : Path a b} (h : s(x, y) = s(a, b)) :
+    InjOn (γ.reorient h) (Ioo (0 : I) 1) ↔ InjOn γ (Ioo (0 : I) 1) := by
+  rw [reorient]
+  split_ifs <;> simp [cast_coe]
+
+/-! ### Subpaths and halves -/
+
+variable {s t : I}
+
+/-- A subpath is injective exactly when its parameters are distinct and the original path is
+injective on the interval between them. -/
+lemma injective_subpath_iff : Injective (γ.subpath s t) ↔ s ≠ t ∧ InjOn γ (uIcc s t) := by
+  refine ⟨fun h ↦ ⟨?_, range_subpathAux .. ▸ Injective.injOn_range h⟩, fun ⟨hst, hγ⟩ u v huv ↦ ?_⟩
+  · rintro rfl
+    exact refl_not_injective _ (subpath_self γ s ▸ h)
+  have hmem (r : I) : Icc.convexComb s t r ∈ uIcc s t :=
+    range_subpathAux s t ▸ mem_range_self r
+  refine segment_injective_of_ne (Subtype.coe_injective.ne hst) ?_
+  simpa only [segment_apply, AffineMap.lineMap_apply_module, smul_eq_mul,
+    Icc.coe_convexComb] using congrArg Subtype.val (hγ (hmem u) (hmem v) huv)
+
+/-- An injective path has injective subpaths between distinct parameters. -/
+lemma injective_subpath (hγ : Injective γ) (hst : s ≠ t) : Injective (γ.subpath s t) :=
+  injective_subpath_iff.mpr ⟨hst, hγ.injOn⟩
+
+/-- The subpath from the source to the midpoint. -/
+noncomputable def firstHalf (γ : Path x y) : Path x (γ half) :=
+  (γ.subpath 0 half).cast γ.source.symm rfl
+
+lemma range_firstHalf (γ : Path x y) : range γ.firstHalf = γ '' Icc 0 half :=
+  γ.range_subpath_of_le _ _ zero_lt_half.le
+
+/-- The subpath from the midpoint to the target. -/
+noncomputable def secondHalf (γ : Path x y) : Path (γ half) y :=
+  (γ.subpath half 1).cast rfl γ.target.symm
+
+lemma range_secondHalf (γ : Path x y) : range γ.secondHalf = γ '' Icc half 1 :=
+  γ.range_subpath_of_le _ _ half_lt_one.le
+
+lemma firstHalf_range_union_secondHalf_range (γ : Path x y) :
+    range γ.firstHalf ∪ range γ.secondHalf = range γ := by
+  rw [range_firstHalf, range_secondHalf, ← image_union,
+    Icc_union_Icc_eq_Icc zero_lt_half.le half_lt_one.le, unitInterval.Icc_eq_univ, image_univ]
+
+/-! ### Excursions away from a set
+
+An excursion interval has both endpoint values in the set and no interior value in the set.
+When the path visits the set at a closed set of parameters, including both ends, these intervals
+partition the parameter values outside the set. Their images need not be disjoint unless the path
+is injective.
+-/
+
+/-- The parameter intervals on which a path leaves `S` and returns to `S` without meeting it
+in between. The associated closed subpath is `γ.subpath uv.1 uv.2`. -/
+def excursions (γ : Path x y) (S : Set α) : Set (I × I) :=
+  {uv | uv.1 < uv.2 ∧ γ uv.1 ∈ S ∧ γ uv.2 ∈ S ∧ ∀ t ∈ Ioo uv.1 uv.2, γ t ∉ S}
+
+/-- An excursion is determined by any parameter inside it: it runs from the last visit to `S`
+before that parameter to the first visit after it. This needs neither injectivity of the path nor
+closedness of the set; closedness only guarantees that the last and first visits exist. -/
+lemma mem_excursions_and_mem_Ioo_iff {uv : I × I} {t : I} :
+    uv ∈ γ.excursions S ∧ t ∈ Ioo uv.1 uv.2 ↔
+      γ t ∉ S ∧ IsGreatest (γ ⁻¹' S ∩ Iic t) uv.1 ∧ IsLeast (γ ⁻¹' S ∩ Ici t) uv.2 := by
+  refine ⟨fun ⟨⟨_, hu, hv, hout⟩, ht⟩ ↦ ⟨hout t ht, ⟨⟨hu, ht.1.le⟩, fun r ⟨hrS, hrt⟩ ↦ ?_⟩,
+    ⟨⟨hv, ht.2.le⟩, fun r ⟨hrS, htr⟩ ↦ ?_⟩⟩, fun ⟨ht, hu, hv⟩ ↦ ?_⟩
+  · exact le_of_not_gt fun h ↦ hout r ⟨h, hrt.trans_lt ht.2⟩ hrS
+  · exact le_of_not_gt fun h ↦ hout r ⟨ht.1.trans_le htr, h⟩ hrS
+  have hut : uv.1 < t := lt_of_le_of_ne hu.1.2 (ne_of_mem_of_not_mem (s := γ ⁻¹' S) hu.1.1 ht)
+  have htv : t < uv.2 :=
+    lt_of_le_of_ne hv.1.2 (ne_of_mem_of_not_mem (s := γ ⁻¹' S) hv.1.1 ht).symm
+  refine ⟨⟨hut.trans htv, hu.1.1, hv.1.1, fun r hr hrS ↦ ?_⟩, hut, htv⟩
+  obtain hrt | htr := le_total r t
+  · exact hr.1.not_ge (hu.2 ⟨hrS, hrt⟩)
+  exact hr.2.not_ge (hv.2 ⟨hrS, htr⟩)
+
+/-- Distinct excursion intervals have disjoint parameter interiors. This does not require
+injectivity of the path or closedness of the set. -/
+lemma excursions_pairwiseDisjoint (γ : Path x y) (S : Set α) :
+    (γ.excursions S).PairwiseDisjoint (fun uv ↦ Ioo uv.1 uv.2) := by
+  refine fun u hu v hv hne ↦ disjoint_left.mpr fun t htu htv ↦ hne ?_
+  obtain ⟨-, hu₁, hu₂⟩ := mem_excursions_and_mem_Ioo_iff.1 ⟨hu, htu⟩
+  obtain ⟨-, hv₁, hv₂⟩ := mem_excursions_and_mem_Ioo_iff.1 ⟨hv, htv⟩
+  exact Prod.ext (hu₁.unique hv₁) (hu₂.unique hv₂)
+
+/-- A path has at most countably many excursion intervals. There is no finiteness assumption
+on its intersections with `S`. -/
+lemma countable_excursions (γ : Path x y) (S : Set α) : (γ.excursions S).Countable :=
+  (γ.excursions_pairwiseDisjoint S).countable_of_isOpen (fun _ _ ↦ isOpen_Ioo)
+    (fun _ h ↦ nonempty_Ioo.mpr h.1)
+
+/-- A parameter mapped outside `S` lies in an excursion when the path visits `S` at a closed set
+of parameters including both ends. The endpoints are the last visit before that parameter and the
+first visit after it. -/
+lemma exists_mem_excursions (hS : IsClosed (γ ⁻¹' S)) (hx : x ∈ S) (hy : y ∈ S) {t : I}
+    (ht : γ t ∉ S) : ∃ uv ∈ γ.excursions S, t ∈ Ioo uv.1 uv.2 := by
+  obtain ⟨u, hu⟩ := (hS.inter isClosed_Iic).isCompact.exists_isGreatest
+    (show (γ ⁻¹' S ∩ Iic t).Nonempty from ⟨0, by simpa using hx, t.prop.1⟩)
+  obtain ⟨v, hv⟩ := (hS.inter isClosed_Ici).isCompact.exists_isLeast
+    (show (γ ⁻¹' S ∩ Ici t).Nonempty from ⟨1, by simpa using hy, t.prop.2⟩)
+  exact ⟨(u, v), mem_excursions_and_mem_Ioo_iff.2 ⟨ht, hu, hv⟩⟩
+
+/-- Excursion intervals partition the part of the parameter interval mapping outside `S`.
+Disjointness is supplied by `excursions_pairwiseDisjoint`. -/
+lemma preimage_compl_eq_biUnion_excursions (hS : IsClosed (γ ⁻¹' S)) (hx : x ∈ S) (hy : y ∈ S) :
+    γ ⁻¹' Sᶜ = ⋃ uv ∈ γ.excursions S, Ioo uv.1 uv.2 := by
+  ext t
+  simp only [mem_iUnion₂, exists_prop]
+  exact ⟨γ.exists_mem_excursions hS hx hy, fun ⟨uv, huv, ht⟩ ↦ huv.2.2.2 t ht⟩
+
+/-- The part of a path image outside `S` is precisely the union of its open excursion images. -/
+lemma range_diff_eq_biUnion_excursions (hS : IsClosed (γ ⁻¹' S)) (hx : x ∈ S) (hy : y ∈ S) :
+    range γ \ S = ⋃ uv ∈ γ.excursions S, γ '' Ioo uv.1 uv.2 := by
+  rw [← image_iUnion₂, ← γ.preimage_compl_eq_biUnion_excursions hS hx hy,
+    image_preimage_eq_range_inter, sdiff_eq]
+
+/-- A closed excursion subpath meets `S` exactly at its endpoint values. The two values
+can coincide when the original path is not injective. -/
+lemma range_subpath_inter_of_mem_excursions {uv : I × I} (huv : uv ∈ γ.excursions S) :
+    range (γ.subpath uv.1 uv.2) ∩ S = {γ uv.1, γ uv.2} := by
+  rw [γ.range_subpath_of_le _ _ huv.1.le]
+  ext z
+  constructor
+  · rintro ⟨⟨t, ht, rfl⟩, htS⟩
+    obtain rfl | htu := eq_or_ne t uv.1
+    · simp
+    obtain rfl | htv := eq_or_ne t uv.2
+    · simp
+    exact (huv.2.2.2 t ⟨lt_of_le_of_ne ht.1 htu.symm, lt_of_le_of_ne ht.2 htv⟩ htS).elim
+  rintro (rfl | rfl)
+  · exact ⟨⟨uv.1, ⟨le_rfl, huv.1.le⟩, rfl⟩, huv.2.1⟩
+  exact ⟨⟨uv.2, ⟨huv.1.le, le_rfl⟩, rfl⟩, huv.2.2.1⟩
+
+end Path

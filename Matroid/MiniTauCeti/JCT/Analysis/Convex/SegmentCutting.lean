@@ -438,6 +438,36 @@ theorem segmentPartition_cover_of_finite {E : Set (V × V)} {e : V × V}
     ((hF.union (hA.inter_of_left _)).union ((hE.image Prod.fst).inter_of_left _)).union
       ((hE.image Prod.snd).inter_of_left _)
 
+/-- Every union of input segments is a union of partition vertices and whole pieces. -/
+theorem segmentPartition_cover_biUnion {E E' : Set (V × V)} (hE : E.Finite)
+    (hF : F.Finite) (hE' : E' ⊆ E) :
+    (⋃ e ∈ E', segment ℝ e.1 e.2) =
+      ((⋃ e ∈ E', segment ℝ e.1 e.2) ∩ segmentPartitionVertices E F) ∪
+        ⋃ d ∈ {d ∈ segmentPartitionPieces E F | d ⊆ ⋃ e ∈ E', segment ℝ e.1 e.2}, d := by
+  refine subset_antisymm ?_ (union_subset inter_subset_left (iUnion₂_subset fun d hd ↦ hd.2))
+  intro x hx
+  obtain ⟨e, he, hxe⟩ := mem_iUnion₂.mp hx
+  obtain hv | hd := (segmentPartition_cover_of_finite hE
+    (hF.subset inter_subset_left) (hE' he)).subset hxe
+  · exact Or.inl ⟨hx, hv.2⟩
+  obtain ⟨d, ⟨hd, hde⟩, hxd⟩ := mem_iUnion₂.mp hd
+  exact Or.inr (mem_biUnion ⟨hd, fun y hy ↦ mem_biUnion he (hde hy)⟩ hxd)
+
+/-- The partition covers the input segments together with the prescribed marks. -/
+theorem segmentPartition_union {E : Set (V × V)} (hE : E.Finite) (hF : F.Finite) :
+    segmentPartitionVertices E F ∪ ⋃₀ segmentPartitionPieces E F =
+      F ∪ ⋃ e ∈ E, segment ℝ e.1 e.2 := by
+  refine subset_antisymm (union_subset (segmentPartitionVertices_subset E F) ?_)
+    (union_subset (fun x hx ↦ Or.inl (subset_segmentPartitionVertices E F hx)) ?_)
+  · rintro x ⟨d, hd, hxd⟩
+    obtain ⟨e, he, hde⟩ := segmentPartitionPieces_subset hd
+    exact Or.inr (mem_biUnion he (hde hxd))
+  intro x hx
+  obtain hv | hd := (segmentPartition_cover_biUnion hE hF (Subset.rfl)).subset hx
+  · exact Or.inl hv.2
+  obtain ⟨d, hd, hxd⟩ := mem_iUnion₂.mp hd
+  exact Or.inr ⟨d, hd.1, hxd⟩
+
 /-- Distinct partition pieces meet only at partition vertices, without finiteness assumptions. -/
 theorem segmentPartitionPieces_pairwise (E : Set (V × V)) (F : Set V) :
     (segmentPartitionPieces E F).Pairwise (fun d d' ↦ d ∩ d' ⊆ segmentPartitionVertices E F) := by

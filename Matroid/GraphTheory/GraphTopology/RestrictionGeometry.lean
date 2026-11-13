@@ -2,12 +2,12 @@ module
 
 public import Matroid.GraphTheory.GraphTopology.StraightLine
 public import Matroid.GraphTheory.GraphTopology.Restriction
-public import Matroid.GraphTheory.GraphTopology.Presentation
+public import Matroid.GraphTheory.GraphTopology.SegmentFigure
 
 /-! # Geometry of whole-edge restrictions
 
-Restrictions preserve edge geometry without finiteness assumptions. Finite selections
-in a straight-line space are segment figures, even when the original space is infinite.
+Restrictions preserve edge geometry without finiteness assumptions. Finite restrictions
+of a straight-line space are segment figures, even when the original space is infinite.
 Common finite presentations realize their figures as actual restrictions.
 -/
 
@@ -16,63 +16,43 @@ Common finite presentations realize their figures as actual restrictions.
 open Set Function
 open scoped GraphLike
 
+variable {X : Type*} [TopologicalSpace X] [AddCommGroup X] [Module ℝ X] {G : GraphLike X}
+  {A : Set X}
+
 namespace GraphLike
 
-variable {X : Type*} [TopologicalSpace X] [AddCommGroup X] [Module ℝ X]
-variable {G : GraphLike X}
-
 /-- Whole-edge restriction preserves straightness. -/
-theorem restrict_isStraightLine (hG : G.IsStraightLine)
-    (A : Set X) (B : Set (Set X)) : (G.restrict A B).IsStraightLine := by
+theorem restrict_isStraightLine (hG : G.IsStraightLine) (A : Set X) :
+    (G.restrict A).IsStraightLine := by
   intro e he x y h
-  have hm : e ∈ B ∩ E(G) := (G.restrict_edgeSet A B) ▸ he
-  rw [G.restrict_edgeBoundary A B hm.2 hm.1] at h
-  exact hG hm.2 h
+  rw [G.restrict_edgeSet A] at he
+  rw [G.restrict_edgeBoundary he.2] at h
+  exact hG he.1 h
 
-/-- A finite support in a possibly infinite straight-line space is a segment figure. -/
-theorem IsStraightLine.isSegmentFigure_support (hG : G.IsStraightLine)
-    (A : Set X) (B : Set (Set X)) (hA : A.Finite) (hB : B.Finite) :
-    IsSegmentFigure (G.support A B) := by
-  let : (G.restrict A B).Finite :=
-    (G.restrict_finite_iff A B).mpr ⟨hA.inter_of_left _, hB.inter_of_left _⟩
-  exact (restrict_isStraightLine hG A B).isSegmentFigure_carrier
-
-variable [ContinuousAdd X] [ContinuousSMul ℝ X]
+/-- A finite restriction of a possibly infinite straight-line space is a segment figure. -/
+theorem IsStraightLine.isSegmentFigure_restrict (hG : G.IsStraightLine)
+    (hV : (A ∩ V(G)).Finite) (hE : {e ∈ E(G) | e ⊆ A}.Finite) :
+    IsSegmentFigure (G.restrict A : Set X) := by
+  let : (G.restrict A).Finite := (G.restrict_finite_iff A).mpr ⟨hV, hE⟩
+  exact (restrict_isStraightLine hG A).isSegmentFigure_carrier
 
 /-- Whole-edge restriction preserves polygonality, including loop edges. -/
-theorem restrict_isPolygonal (hG : G.IsPolygonal)
-    (A : Set X) (B : Set (Set X)) : (G.restrict A B).IsPolygonal := by
-  intro e he x y h
-  have hm : e ∈ B ∩ E(G) := (G.restrict_edgeSet A B) ▸ he
-  rw [G.restrict_edgeBoundary A B hm.2 hm.1] at h
-  exact hG hm.2 h
+theorem restrict_isPolygonal (hG : G.IsPolygonal) (A : Set X) : (G.restrict A).IsPolygonal := by
+  intro e he
+  rw [G.restrict_edgeSet A] at he
+  exact hG he.1
 
 end GraphLike
 
-variable {X : Type*} [TopologicalSpace X] [AddCommGroup X] [Module ℝ X]
-  [ContinuousAdd X] [ContinuousSMul ℝ X]
+variable [ContinuousAdd X] [ContinuousSMul ℝ X]
 
 /-- Every figure in a finite family is an actual restriction of a common straight-line
 presentation. Any prescribed finite set of points in the union remains a set of vertices. -/
-theorem IsSegmentFigure.exists_common_straightLineGraphLike_restrictions
-    {ι : Type*} [Finite ι] {S : ι → Set X} [T2Space ↥(⋃ i, S i)]
-    (hS : ∀ i, IsSegmentFigure (S i)) {F : Set X}
-    (hF : F.Finite) (hFS : F ⊆ ⋃ i, S i) :
-    ∃ G : GraphLike X, G.Finite ∧ G.IsStraightLine ∧ G.carrier = ⋃ i, S i ∧
-      F ⊆ G.vertexSet ∧
-      ∀ i, (G.restrict (S i) {e | e ⊆ S i}).carrier = S i := by
+theorem IsSegmentFigure.exists_common_straightLineGraphLike_restrictions {ι : Type*} [Finite ι]
+    {S : ι → Set X} [T2Space ↥(⋃ i, S i)] (hS : ∀ i, IsSegmentFigure (S i)) (hA : A.Finite)
+    (hAS : A ⊆ ⋃ i, S i) : ∃ G : GraphLike X, G.Finite ∧ G.IsStraightLine ∧ G.carrier = ⋃ i, S i ∧
+      A ⊆ G.vertexSet ∧ ∀ i, (G.restrict (S i) : Set X) = S i := by
   obtain ⟨G, hfin, hstraight, hcarrier, hvertices, hcover⟩ :=
-    IsSegmentFigure.exists_common_straightLineGraphLike hS hF hFS
+    IsSegmentFigure.exists_common_straightLineGraphLike hS hA hAS
   refine ⟨G, hfin, hstraight, hcarrier, hvertices, fun i ↦ ?_⟩
-  refine Eq.trans ?_ (hcover i).symm
-  change G.support (S i) {e | e ⊆ S i} = _
-  ext x
-  simp only [GraphLike.support, mem_union, mem_inter_iff, mem_sUnion, mem_iUnion,
-    mem_ofPred_eq]
-  constructor
-  · rintro (hx | ⟨e, ⟨hs, he⟩, hx⟩)
-    · exact Or.inl hx
-    · exact Or.inr ⟨e, ⟨he, hs⟩, hx⟩
-  · rintro (hx | ⟨e, ⟨he, hs⟩, hx⟩)
-    · exact Or.inl hx
-    · exact Or.inr ⟨e, ⟨hs, he⟩, hx⟩
+  simpa only [GraphLike.coe_restrict, sUnion_eq_biUnion] using (hcover i).symm

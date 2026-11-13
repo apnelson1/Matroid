@@ -19,6 +19,14 @@ open Set Function
 
 variable {α X : Type*} [TopologicalSpace α] {f : α → X} {A : Set α} {S : Set X} {a b : α}
 
+/-- Order-convex subspaces inherit compact closed intervals. -/
+instance Set.OrdConnected.compactIccSpace {D : Type*} [Preorder D] [TopologicalSpace D]
+    [CompactIccSpace D] {s : Set D} [OrdConnected s] : CompactIccSpace s where
+  isCompact_Icc {a b} := by
+    apply Topology.IsEmbedding.subtypeVal.isInducing.isCompact_iff.mpr
+    rw [image_subtype_val_Icc]
+    exact isCompact_Icc
+
 lemma IsOpen.sSup_notMem [CompleteLinearOrder α] [OrderTopology α] [DenselyOrdered α]
     (hs : ∃ x, sSup A < x) (h : IsOpen A) : sSup A ∉ A := by
   intro m
@@ -146,6 +154,100 @@ theorem denselyOrdered_of_isOpen_rays {D : Type*} [LinearOrder D] [TopologicalSp
     exact ⟨z, hxz, hzy⟩
 
 /-! ## Compact ordered topologies -/
+
+/-- Clamping to a closed interval is continuous for any linear order with closed rays.
+The domain and codomain retain the given topology. -/
+theorem continuous_clamp_of_closed_rays {D : Type*} [LinearOrder D] [TopologicalSpace D]
+    [ClosedIicTopology D] [ClosedIciTopology D] (a b : D) :
+    Continuous (fun x : D ↦ max a (min b x)) := by
+  have hmin : Continuous (fun x : D ↦ min b x) := by
+    have hl : ContinuousOn (fun x : D ↦ min b x) (Iic b) :=
+      continuousOn_id.congr fun x hx ↦ min_eq_right hx
+    have hr : ContinuousOn (fun x : D ↦ min b x) (Ici b) :=
+      continuousOn_const.congr fun x hx ↦ min_eq_left hx
+    simpa only [Iic_union_Ici, continuousOn_univ] using
+      hl.union_of_isClosed hr isClosed_Iic isClosed_Ici
+  have hmax : Continuous (fun x : D ↦ max a x) := by
+    have hl : ContinuousOn (fun x : D ↦ max a x) (Iic a) :=
+      continuousOn_const.congr fun x hx ↦ max_eq_left hx
+    have hr : ContinuousOn (fun x : D ↦ max a x) (Ici a) :=
+      continuousOn_id.congr fun x hx ↦ max_eq_right hx
+    simpa only [Iic_union_Ici, continuousOn_univ] using
+      hl.union_of_isClosed hr isClosed_Iic isClosed_Ici
+  exact hmax.comp hmin
+
+/-- Closed intervals remain preconnected when the given topology is finer than the order
+topology, provided the whole space is preconnected and the order rays are closed. -/
+theorem isPreconnected_Icc_of_closed_rays {D : Type*} [LinearOrder D] [TopologicalSpace D]
+    [ClosedIicTopology D] [ClosedIciTopology D] [PreconnectedSpace D] (a b : D) :
+    IsPreconnected (Icc a b) := by
+  by_cases hab : a ≤ b
+  · have heq : range (fun x : D ↦ max a (min b x)) = Icc a b := by
+      ext x
+      constructor
+      · rintro ⟨y, rfl⟩
+        exact ⟨le_max_left _ _, max_le hab (min_le_left _ _)⟩
+      · intro hx
+        exact ⟨x, by simp [min_eq_right hx.2, max_eq_right hx.1]⟩
+    rw [← heq]
+    exact isPreconnected_range (continuous_clamp_of_closed_rays a b)
+  rw [Icc_eq_empty hab]
+  exact isPreconnected_empty
+
+/-- Connectedness and open order rays imply the least-upper-bound property. The topology
+may be strictly finer than the order topology. -/
+theorem exists_isLUB_of_isOpen_rays {D : Type*} [LinearOrder D] [TopologicalSpace D]
+    [PreconnectedSpace D] (ho : ∀ x : D, IsOpen (Ioi x) ∧ IsOpen (Iio x))
+    {s : Set D} (hs : s.Nonempty) (hb : BddAbove s) : ∃ x, IsLUB s x := by
+  classical
+  by_contra hn
+  have hclosed : IsClosed (upperBounds s) := by
+    have heq : upperBounds s = ⋂ a ∈ s, (Iio a)ᶜ := by
+      ext x
+      simp [upperBounds]
+    rw [heq]
+    exact isClosed_biInter fun a _ ↦ (ho a).2.isClosed_compl
+  have hopen : IsOpen (upperBounds s) := by
+    have heq : upperBounds s = ⋃ a ∈ upperBounds s, Ioi a := by
+      ext x
+      simp only [mem_iUnion, mem_Ioi]
+      constructor
+      · intro hx
+        by_contra hn'
+        apply hn
+        refine ⟨x, hx, fun y hy ↦ ?_⟩
+        exact le_of_not_gt fun hyx ↦ hn' ⟨y, hy, hyx⟩
+      · rintro ⟨a, ha, hax⟩ y hy
+        exact (ha hy).trans hax.le
+    rw [heq]
+    exact isOpen_biUnion fun a _ ↦ (ho a).1
+  have hall := (IsClopen.eq_univ ⟨hclosed, hopen⟩ hb)
+  obtain ⟨a, ha⟩ := hs
+  exact hn ⟨a, hall.symm ▸ mem_univ a, fun b hb ↦ hb ha⟩
+
+/-- A connected bounded linear order with open rays is complete, even when its given
+topology is finer than the order topology. -/
+@[instance_reducible]
+noncomputable def LinearOrder.completeLinearOrderOfConnected (D : Type*) [LinearOrder D]
+    [BoundedOrder D] [TopologicalSpace D] [PreconnectedSpace D]
+    (ho : ∀ x : D, IsOpen (Ioi x) ∧ IsOpen (Iio x)) : CompleteLinearOrder D := by
+  have h (s : Set D) : ∃ x, IsLUB s x := by
+    rcases s.eq_empty_or_nonempty with rfl | hs
+    · exact ⟨⊥, isLUB_empty⟩
+    exact exists_isLUB_of_isOpen_rays ho hs ⟨⊤, fun _ _ ↦ le_top⟩
+  let : SupSet D := ⟨fun s ↦ (h s).choose⟩
+  let c : CompleteLattice D :=
+    { completeLatticeOfSup D (fun s ↦ (h s).choose_spec) with
+      sup := max
+      le_sup_left := le_max_left
+      le_sup_right := le_max_right
+      sup_le := fun _ _ _ ↦ max_le
+      inf := min
+      inf_le_left := min_le_left
+      inf_le_right := min_le_right
+      le_inf := fun _ _ _ ↦ le_min }
+  exact { c, @LinearOrder.toBiheytingAlgebra D ‹LinearOrder D› c.toBoundedOrder,
+    ‹LinearOrder D› with }
 
 open Topology in
 theorem orderTopology_of_compact_of_isOpen_rays {K : Type*}

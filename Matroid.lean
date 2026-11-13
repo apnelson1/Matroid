@@ -99,11 +99,9 @@ public import Matroid.GraphTheory.Graph.CycleDichotomy
 public import Matroid.GraphTheory.Graph.Degree.Basic
 public import Matroid.GraphTheory.Graph.Degree.Constructions
 public import Matroid.GraphTheory.Graph.Degree.Defs
--- public import Matroid.GraphTheory.Graph.Degree.Ends
 public import Matroid.GraphTheory.Graph.Degree.Max
 public import Matroid.GraphTheory.Graph.Distance
 -- public import Matroid.GraphTheory.Graph.EdgeColoring
--- public import Matroid.GraphTheory.Graph.Endpoint
 public import Matroid.GraphTheory.Graph.Finite
 public import Matroid.GraphTheory.Graph.Forest
 public import Matroid.GraphTheory.Graph.Hom.Basic
@@ -141,7 +139,7 @@ public import Matroid.GraphTheory.Graph.Subgraph.Union
 public import Matroid.GraphTheory.Graph.TopologicalMinor
 public import Matroid.GraphTheory.Graph.TopologicalMinor.CycleDichotomy
 public import Matroid.GraphTheory.Graph.TopologicalMinor.Obstructions
--- public import Matroid.GraphTheory.Graph.TopologicalMinor.Route
+-- public import Matroid.GraphTheory.Graph.Topology.StraightLine
 public import Matroid.GraphTheory.Graph.Transport
 public import Matroid.GraphTheory.Graph.Tree
 public import Matroid.GraphTheory.Graph.WList.Basic
@@ -155,17 +153,25 @@ public import Matroid.GraphTheory.Graph.Walk.Iso
 -- public import Matroid.GraphTheory.Graph.Walk.OrientationWalk
 public import Matroid.GraphTheory.Graph.Walk.Path
 -- public import Matroid.GraphTheory.GraphTopology.Assembly
--- public import Matroid.GraphTheory.GraphTopology.Basic
--- public import Matroid.GraphTheory.GraphTopology.Defs
--- public import Matroid.GraphTheory.GraphTopology.Map
--- public import Matroid.GraphTheory.GraphTopology.MapGeometry
--- public import Matroid.GraphTheory.GraphTopology.MapRestriction
--- public import Matroid.GraphTheory.GraphTopology.Polygonal
--- public import Matroid.GraphTheory.GraphTopology.Presentation
--- public import Matroid.GraphTheory.GraphTopology.Restriction
--- public import Matroid.GraphTheory.GraphTopology.RestrictionGeometry
--- public import Matroid.GraphTheory.GraphTopology.StraightLine
+public import Matroid.GraphTheory.GraphTopology.Basic
+public import Matroid.GraphTheory.GraphTopology.Circuit
+public import Matroid.GraphTheory.GraphTopology.Cut
+public import Matroid.GraphTheory.GraphTopology.Defs
+public import Matroid.GraphTheory.GraphTopology.Dual
+public import Matroid.GraphTheory.GraphTopology.Map
+public import Matroid.GraphTheory.GraphTopology.MapGeometry
+public import Matroid.GraphTheory.GraphTopology.MapRestriction
+public import Matroid.GraphTheory.GraphTopology.Matroid
+public import Matroid.GraphTheory.GraphTopology.OnePoint
+public import Matroid.GraphTheory.GraphTopology.Polygonal
+public import Matroid.GraphTheory.GraphTopology.PolygonalFace
+public import Matroid.GraphTheory.GraphTopology.PolygonalStar
+public import Matroid.GraphTheory.GraphTopology.Restriction
+public import Matroid.GraphTheory.GraphTopology.RestrictionGeometry
+public import Matroid.GraphTheory.GraphTopology.SegmentFigure
+public import Matroid.GraphTheory.GraphTopology.StraightLine
 -- public import Matroid.GraphTheory.GraphTopology.Subset
+public import Matroid.GraphTheory.GraphTopology.ToGraph
 public import Matroid.GraphTheory.HypergraphLike.Basic
 public import Matroid.GraphTheory.HypergraphLike.Compatibility
 public import Matroid.GraphTheory.HypergraphLike.Degree
@@ -181,6 +187,10 @@ public import Matroid.GraphTheory.HypergraphLike.Parallel
 public import Matroid.GraphTheory.HypergraphLike.Subgraph
 public import Matroid.GraphTheory.IncidenceHypergraph.Basic
 public import Matroid.GraphTheory.Pseudograph.Basic
+public import Matroid.GraphTheory.Pseudograph.Hom
+public import Matroid.GraphTheory.Pseudograph.Incidence
+public import Matroid.GraphTheory.Pseudograph.OfGraph
+public import Matroid.GraphTheory.Pseudograph.Quotient
 -- public import Matroid.GraphTheory.Pseudograph.toGraph
 public import Matroid.GraphTheory.Walk.Defs
 public import Matroid.GraphTheory.Walk.Map
