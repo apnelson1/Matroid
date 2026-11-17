@@ -196,7 +196,7 @@ lemma exists_smaller_of_odd_isCircuit_isCocircuit (hfin : C.Finite) (hCc : M.IsC
   -- We may assume that both are even, which contradicts oddness of `C`.
   contrapose! h_odd
   specialize h_odd (M ＼ {f}) (delete_isMinor ..) (by simpa [hf.2])
-  simp_rw [Nat.not_odd_iff_even, ssubset_iff_subset_ne, and_imp, ne_comm (b := C)] at h_odd
+  simp_rw [ssubset_iff_subset_ne, and_imp, ne_comm (b := C)] at h_odd
   rw [hN, contract_delete_comm _ disjoint_sdiff_left] at hC₁ hC₂
   obtain rfl : C₁ ∪ C₂ = C := by rw [hu, hNE]
   obtain ⟨C₁, rfl⟩ := (hfin.subset subset_union_left).exists_finset_coe

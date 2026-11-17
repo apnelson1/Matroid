@@ -27,7 +27,7 @@ namespace StraddlesAt
 
 lemma mem_inter (h : StraddlesAt T S p) : p ∈ T ∩ S := by
   obtain ⟨U, hU, hp⟩ := h
-  exact ⟨hp.1.1, hU.eq_of_nhds ▸ hp.1.2⟩
+  exact ⟨hp.1.1, hU.self_of_nhds.mp hp.1.2⟩
 
 lemma mem_left (h : StraddlesAt T S p) : p ∈ T := h.mem_inter.1
 
@@ -42,7 +42,7 @@ lemma congr (h : StraddlesAt T S p) {T' S' : Set X}
     (hT : T =ᶠ[𝓝 p] T') (hS : S =ᶠ[𝓝 p] S') : StraddlesAt T' S' p := by
   obtain ⟨U, hU, hp⟩ := h
   exact of_mem_boundaryCrossings (hU.trans hS)
-    ((mem_boundaryCrossings_congr_germs hT Filter.EventuallyEq.rfl).mp hp)
+    ((mem_boundaryCrossings_congr_germs hT Filter.EventuallyEqSet.rfl).mp hp)
 
 /-- A region with the same frontier germ and preconnected local sides detects the straddling. -/
 lemma mem_boundaryCrossings (h : StraddlesAt T S p) {V : Set X}
@@ -101,7 +101,7 @@ lemma congr_right (h : CrossesOnce T S) (hinter : T ∩ C = T ∩ S)
   apply crossesOnce_iff_forall.mpr
   refine ⟨⟨p, hinter.trans hp⟩, fun q hq ↦ ?_⟩
   have hq' : q ∈ T ∩ S := hinter ▸ hq
-  exact (hstr q hq').congr Filter.EventuallyEq.rfl (hgerm q hq')
+  exact (hstr q hq').congr Filter.EventuallyEqSet.rfl (hgerm q hq')
 
 /-- A global region with locally preconnected sides detects exactly the unique intersection
 as a crossing. This replaces the arbitrary local region in `CrossesOnce`. -/

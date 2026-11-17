@@ -69,5 +69,5 @@ theorem IsPrimitiveLink.local_agreement [T2Space M] (hL : IsPrimitiveLink L x y)
     exact ⟨s, (hcf s).symm⟩
   obtain ⟨U, hU, hUsub⟩ := (mem_nhds_subtype _ pQ _).mp hnhds
   filter_upwards [hLM, hU] with z hz hzU
-  exact propext ⟨hz, fun hzQ ↦ hUsub (show (⟨z, hzQ⟩ : range Q) ∈
+  exact ⟨hz, fun hzQ ↦ hUsub (show (⟨z, hzQ⟩ : range Q) ∈
     Subtype.val ⁻¹' U from hzU)⟩

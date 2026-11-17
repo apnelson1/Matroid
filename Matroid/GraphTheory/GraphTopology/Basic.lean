@@ -108,7 +108,7 @@ lemma carrier_eventuallyEq_edge (he : e ∈ E(G)) (hx : x ∈ G.edgeInterior e) 
     rw [hpre]
   have hxU := (hmem ⟨x, G.edge_subset he hx.1⟩).mpr hx
   filter_upwards [hU.mem_nhds hxU] with y hy
-  exact propext ⟨fun hyG ↦ ((hmem ⟨y, hyG⟩).mp hy).1, fun hy ↦ G.edge_subset he hy⟩
+  exact ⟨fun hyG ↦ ((hmem ⟨y, hyG⟩).mp hy).1, fun hy ↦ G.edge_subset he hy⟩
 
 lemma boundary_isPair (he : e ∈ E(G)) :
     ∃ x ∈ V(G), ∃ y ∈ V(G), G.edgeBoundary e = {x, y} ∧ IsPrimitiveLink e x y := by

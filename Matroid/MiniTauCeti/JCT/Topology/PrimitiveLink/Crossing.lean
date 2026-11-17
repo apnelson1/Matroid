@@ -128,7 +128,7 @@ theorem crossesOnce_frontier_of_not_iff_mem [T2Space ↥L]
     (hL : IsPrimitiveLink L x y) (hinter : L ∩ frontier U = {p})
     (hx : x ∉ frontier U) (hy : y ∉ frontier U) (hxy : ¬ (x ∈ U ↔ y ∈ U)) :
     CrossesOnce L (frontier U) :=
-  crossesOnce_iff.mpr ⟨p, hinter, .of_mem_boundaryCrossings Filter.EventuallyEq.rfl
+  crossesOnce_iff.mpr ⟨p, hinter, .of_mem_boundaryCrossings Filter.EventuallyEqSet.rfl
     ((hL.mem_boundaryCrossings_iff_of_inter_eq_singleton hinter hx hy).mpr hxy)⟩
 
 end IsPrimitiveLink

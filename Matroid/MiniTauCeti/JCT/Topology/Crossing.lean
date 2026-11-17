@@ -86,11 +86,11 @@ lemma mem_boundaryCrossings_congr_germs {T V : Set X}
   have hinterior {A B : Set X} (h : A =ᶠ[𝓝 p] B) :
       interior A =ᶠ[𝓝 p] interior B := by
     filter_upwards [eventually_eventually_nhds.mpr h] with q hq
-    exact propext (Filter.EventuallyEqSet.mem_interior_iff hq)
+    exact Filter.EventuallyEqSet.mem_interior_iff hq
   have hside {A B : Set X} (h : A =ᶠ[𝓝 p] B) :
       p ∈ closure (S ∩ interior A) ↔ p ∈ closure (T ∩ interior B) :=
     germ_closure (hST.inter (hinterior h))
-  simp only [mem_boundaryCrossings_iff, hside hUV, hside hUV.compl, hST.eq_of_nhds]
+  simp only [mem_boundaryCrossings_iff, hside hUV, hside hUV.compl, hST.self_of_nhds]
 
 @[simp]
 lemma boundaryCrossings_empty (S : Set X) : boundaryCrossings S ∅ = ∅ := by
@@ -137,7 +137,7 @@ theorem boundaryCrossings_congr_germs (hST : S =ᶠ[𝓝 p] T) (hUV : U =ᶠ[�
     boundaryCrossings S U =ᶠ[𝓝 p] boundaryCrossings T V := by
   filter_upwards [eventually_eventually_nhds.mpr hST,
     eventually_eventually_nhds.mpr hUV] with q hqST hqUV
-  exact propext (mem_boundaryCrossings_congr_germs hqST hqUV)
+  exact mem_boundaryCrossings_congr_germs hqST hqUV
 
 private theorem interior_region_iff_of_isolated_contact
     (hiso : ∀ᶠ q in 𝓝 p, q ∈ S ∩ frontier U → q = p) :
@@ -150,7 +150,6 @@ private theorem interior_region_iff_of_isolated_contact
     have hpcl : p ∈ closure (interior U) := closure_mono inter_subset_right hpin
     have hgerm : S ∩ interior (interior U)ᶜ =ᶠ[𝓝 p] S ∩ interior Uᶜ := by
       filter_upwards [hiso] with q hq
-      apply propext
       constructor
       · intro h
         refine ⟨h.1, ?_⟩
@@ -313,9 +312,9 @@ theorem boundaryCrossings_eq_empty_of_isDiscrete {X : Type*} [TopologicalSpace X
 lemma mem_boundaryCrossings_inter_of_mem_interior {V : Set X}
     (hp : p ∈ interior V) :
     p ∈ boundaryCrossings S (U ∩ V) ↔ p ∈ boundaryCrossings S U := by
-  apply mem_boundaryCrossings_congr_germs Filter.EventuallyEq.rfl
+  apply mem_boundaryCrossings_congr_germs Filter.EventuallyEqSet.rfl
   filter_upwards [mem_interior_iff_mem_nhds.mp hp] with q hq
-  exact propext (and_iff_left hq)
+  exact and_iff_left hq
 
 private lemma notMem_boundaryCrossings_of_mem_interior_compl
     (hp : p ∈ interior Uᶜ) : p ∉ boundaryCrossings S U :=
@@ -390,9 +389,9 @@ theorem boundaryCrossings_union_of_disjoint_frontier_closure
     boundaryCrossings (S ∪ T) U = boundaryCrossings S U ∪ boundaryCrossings T U := by
   have hlocal {A B : Set X} {p : X} (hpB : p ∉ closure B) :
       p ∈ boundaryCrossings (A ∪ B) U ↔ p ∈ boundaryCrossings A U := by
-    apply mem_boundaryCrossings_congr_germs _ Filter.EventuallyEq.rfl
+    apply mem_boundaryCrossings_congr_germs _ Filter.EventuallyEqSet.rfl
     filter_upwards [isClosed_closure.isOpen_compl.mem_nhds hpB] with q hq
-    exact propext (or_iff_left (fun h ↦ hq (subset_closure h)))
+    exact or_iff_left (fun h ↦ hq (subset_closure h))
   apply Subset.antisymm
   · intro p hp
     rcases hp.1.1 with hpS | hpT
@@ -469,7 +468,7 @@ private theorem closure_side_of_crossing
   intro N hNo hpN
   obtain ⟨W, hW, hWN, hconn⟩ := hlocal
     (N ∩ {q | q ∈ frontier U ↔ q ∈ frontier V})
-    (Filter.inter_mem (hNo.mem_nhds hpN) (hfront.mono fun q hq ↦ Iff.of_eq hq))
+    (Filter.inter_mem (hNo.mem_nhds hpN) hfront)
   have hdis : Disjoint (W ∩ interior Vᶜ) (frontier U) := by
     refine disjoint_left.mpr fun q hq hqU ↦ ?_
     have hqV : q ∈ frontier V := (hWN hq.1).2.mp hqU

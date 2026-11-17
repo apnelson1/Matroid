@@ -30,7 +30,7 @@ theorem exists_radius_edgeInterior (G : GraphLike X) {e : Set X} (he : e ∈ E(G
     · have hxδ : x ∈ ball p δ :=
         mem_ball.mpr ((mem_closedBall.mp hx).trans_lt (hρδ.trans_lt (half_lt_self hδ)))
       simp only [mem_inter_iff, hx, true_and]
-      exact Iff.of_eq (hlocal hxδ)
+      exact hlocal hxδ
     · simp [hx]
   refine ⟨ρ, hρ, Y, hY, hcard, ?_, heq.trans hstar⟩
   intro y hy

@@ -75,7 +75,7 @@ lemma crossesOnce_of_subset (heC : e.1 ⊆ C) (hCS : C ⊆ S.carrier) :
       (inter_subset_inter_left _ heC)
   have hpI := (D.inter_subset_inter_edgeInterior e (D.edgeEquiv e) ⟨hp.2, hp.1⟩).1
   filter_upwards [S.carrier_eventuallyEq_edge e.2 hpI] with q hq
-  exact propext ⟨fun hqe ↦ heC hqe, fun hqC ↦ hq.mp (hCS hqC)⟩
+  exact ⟨fun hqe ↦ heC hqe, fun hqC ↦ hq.mp (hCS hqC)⟩
 
 lemma crossesOnce_carrier (e : E(S)) : CrossesOnce (D.edgeEquiv e).1 S.carrier :=
   D.crossesOnce_of_subset (S.edge_subset e.2) Subset.rfl

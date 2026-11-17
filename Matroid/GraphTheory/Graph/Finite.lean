@@ -21,11 +21,6 @@ lemma finite_list_nodup (α : Type*) [Finite α] : {L : List α | L.Nodup}.Finit
   refine (List.finite_length_le α (Fintype.card α)).subset fun L hL ↦ ?_
   simp [List.Nodup.length_le_card hL]
 
-@[simp]
-theorem List.nodup_attachWith {α : Type*} {l : List α} (P : α → Prop) (hP : ∀ x ∈ l, P x) :
-    (l.attachWith P hP).Nodup ↔ l.Nodup := by
-  induction l with simp_all
-
 namespace Graph
 
 /-! ### Finiteness -/

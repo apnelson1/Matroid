@@ -612,10 +612,7 @@ lemma IsEdgeCut.disjoint_union_isBond {F} (hfin : F.Finite) (hF : G.IsEdgeCut F)
   obtain ⟨S, hSdj, hUS, hSB⟩ := hF'.disjoint_union_isBond hfin.sdiff
   have hdj : Disjoint B (⋃₀ S) := hUS ▸ disjoint_sdiff_right
   use insert B S, ?_, by simp [hUS, hBF.subset], by simpa [hB]
-  refine hSdj.insert_of_notMem ?_ fun B' hB'S ↦ hdj.mono_right <| subset_sUnion_of_mem hB'S
-  rintro hBS
-  obtain rfl : B = ∅ := by simpa using hdj.mono_right <| subset_sUnion_of_mem hBS
-  simpa using hB.prop.2
+  exact hSdj.insert fun B' hB'S _ ↦ hdj.mono_right <| subset_sUnion_of_mem hB'S
 termination_by F.encard
 
 lemma edgeConnGE_iff_isEdgeCut {n : ℕ} (hn : 1 ≤ n) :
