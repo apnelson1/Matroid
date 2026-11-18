@@ -13,7 +13,7 @@ namespace Matroid
 variable {α β : Type*} {M : Matroid α} {X : Set α}
 
 lemma map_restrict (M : Matroid α) (f : α → β) (hf : M.E.InjOn f) (R : Set α)
-    (hR : R ⊆ M.E := by aesop_mat) : (M ↾ R).map f (hf.mono hR) = (M.map f hf) ↾ f '' R := by
+    (hR : R ⊆ M.E := by grind_mat) : (M ↾ R).map f (hf.mono hR) = (M.map f hf) ↾ f '' R := by
   refine ext_indep rfl fun I (hI : I ⊆ f '' R) ↦ ?_
   simp only [map_indep_iff, restrict_indep_iff, hI, and_true]
   constructor
@@ -168,7 +168,7 @@ lemma comap_dual {f : α → β} {N : Matroid β} (h_bij : BijOn f (f ⁻¹' N.E
   rw [← (N✶.comap f).restrict_ground_eq_self, comapOn, comap_ground_eq, dual_ground]
 
 lemma restrictSubtype_closure (M : Matroid α) (X : Set α) (Y : Set X)
-    (hX : X ⊆ M.E := by aesop_mat) :
+    (hX : X ⊆ M.E := by grind_mat) :
     (M.restrictSubtype X).closure Y = M.closure ((↑) '' Y) ∩ X := by
   rw [restrictSubtype, comap_closure_eq, restrict_closure_eq _ _ hX, image_preimage_eq_inter_range,
     Subtype.range_coe, inter_assoc, inter_self]

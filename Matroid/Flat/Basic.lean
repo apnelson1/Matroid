@@ -25,7 +25,7 @@ lemma IsFlat.inter (hF₁ : M.IsFlat F₁) (hF₂ : M.IsFlat F₂) : M.IsFlat (F
 
 end Spanning
 
-lemma isFlat_iff_closure_subset (hF : F ⊆ M.E := by aesop_mat) : M.IsFlat F ↔ M.closure F ⊆ F := by
+lemma isFlat_iff_closure_subset (hF : F ⊆ M.E := by grind_mat) : M.IsFlat F ↔ M.closure F ⊆ F := by
   rw [isFlat_iff_closure_eq, subset_antisymm_iff, and_iff_left (M.subset_closure F)]
 
 /-- The intersection of an arbitrary collection of flats with the ground set is a flat.
@@ -65,7 +65,7 @@ lemma isFlat_iff_closure_self : M.IsFlat F ↔ M.closure F = F :=
   ⟨fun h ↦ subset_antisymm (sInter_subset_of_mem ⟨h, inter_subset_left⟩)
     (M.subset_closure F (IsFlat.subset_ground h)), fun h ↦ by rw [← h]; exact closure_isFlat _ _⟩
 
-lemma isFlat_iff_subset_closure_self (hF : F ⊆ M.E := by aesop_mat) :
+lemma isFlat_iff_subset_closure_self (hF : F ⊆ M.E := by grind_mat) :
     M.IsFlat F ↔ M.closure F ⊆ F := by
   rw [isFlat_iff_closure_eq, subset_antisymm_iff, and_iff_left_iff_imp]
   exact fun _ ↦ M.subset_closure F
@@ -73,21 +73,21 @@ lemma isFlat_iff_subset_closure_self (hF : F ⊆ M.E := by aesop_mat) :
 lemma IsFlat.closure_subset_of_subset (hF : M.IsFlat F) (h : X ⊆ F) : M.closure X ⊆ F := by
   have h' := M.closure_mono h; rwa [hF.closure] at h'
 
-@[simp] lemma IsFlat.closure_subset_iff_subset (hF : M.IsFlat F) (hX : X ⊆ M.E := by aesop_mat) :
+@[simp] lemma IsFlat.closure_subset_iff_subset (hF : M.IsFlat F) (hX : X ⊆ M.E := by grind_mat) :
     M.closure X ⊆ F ↔ X ⊆ F :=
   ⟨(M.subset_closure X).trans, hF.closure_subset_of_subset⟩
 
-lemma exists_mem_closure_notMem_of_not_isFlat (h : ¬ M.IsFlat F) (hF : F ⊆ M.E := by aesop_mat) :
+lemma exists_mem_closure_notMem_of_not_isFlat (h : ¬ M.IsFlat F) (hF : F ⊆ M.E := by grind_mat) :
     ∃ e, e ∈ M.closure F \ F := by
   rw [isFlat_iff_closure_eq, subset_antisymm_iff, and_iff_left (M.subset_closure F)] at h
   exact not_subset.1 h
 
-lemma IsFlat.ssubset_closure_insert (hF : M.IsFlat F) (heF : e ∉ F) (he : e ∈ M.E := by aesop_mat) :
+lemma IsFlat.ssubset_closure_insert (hF : M.IsFlat F) (heF : e ∉ F) (he : e ∈ M.E := by grind_mat) :
     F ⊂ M.closure (insert e F) :=
   (M.subset_closure_of_subset (subset_insert _ _)).ssubset_of_mem_notMem
     (M.mem_closure_of_mem' (mem_insert _ _) he) heF
 
-lemma isFlat_iff_ssubset_closure_insert_forall (hF : F ⊆ M.E := by aesop_mat) :
+lemma isFlat_iff_ssubset_closure_insert_forall (hF : F ⊆ M.E := by grind_mat) :
     M.IsFlat F ↔ ∀ e ∈ M.E \ F, M.closure F ⊂ M.closure (insert e F) := by
   refine ⟨fun h e he ↦ ?_, fun h ↦ by_contra fun hcon ↦ ?_⟩
   · rw [h.closure]
@@ -106,7 +106,7 @@ lemma isFlat_iff_forall_isCircuit' :
   obtain ⟨C, hCss, hC, heC⟩ := exists_isCircuit_of_mem_closure heF heF'
   exact h C e hC heC hCss
 
-lemma isFlat_iff_forall_isCircuit (hF : F ⊆ M.E := by aesop_mat) :
+lemma isFlat_iff_forall_isCircuit (hF : F ⊆ M.E := by grind_mat) :
     M.IsFlat F ↔ ∀ C e, M.IsCircuit C → e ∈ C → C ⊆ insert e F → e ∈ F := by
   rw [isFlat_iff_forall_isCircuit', and_iff_left hF]
 
@@ -141,17 +141,17 @@ lemma IsFlat.rk_insert_eq_add_one (hF : M.IsFlat F) (hfin : M.IsRkFinite F) (he 
     Nat.cast_add, hfin.cast_rk_eq, Nat.cast_one]
 
 lemma IsFlat.rk_lt_of_superset (hF : M.IsFlat F) (hFX : F ⊂ X) (hfin : M.IsRkFinite X)
-    (hX : X ⊆ M.E := by aesop_mat) : M.rk F < M.rk X := by
+    (hX : X ⊆ M.E := by grind_mat) : M.rk F < M.rk X := by
   obtain ⟨e, heX, heF⟩ := exists_of_ssubset hFX
   rw [Nat.lt_iff_add_one_le, ← hF.rk_insert_eq_add_one (hfin.subset hFX.subset) ⟨hX heX, heF⟩]
   exact hfin.rk_le_of_subset (insert_subset heX hFX.subset)
 
 lemma IsFlat.subset_of_eRelRk_eq_zero (hF : M.IsFlat F) (hr : M.eRelRk F X = 0)
-    (hX : X ⊆ M.E := by aesop_mat) : X ⊆ F := by
+    (hX : X ⊆ M.E := by grind_mat) : X ⊆ F := by
   rwa [eRelRk_eq_zero_iff, hF.closure] at hr
 
 lemma IsFlat.one_le_eRelRk_of_ssubset (hF : M.IsFlat F) (hss : F ⊂ X)
-    (hX : X ⊆ M.E := by aesop_mat) : 1 ≤ M.eRelRk F X :=
+    (hX : X ⊆ M.E := by grind_mat) : 1 ≤ M.eRelRk F X :=
   Order.one_le_iff_ne_zero.2 (fun h_eq ↦ hss.not_subset <| hF.subset_of_eRelRk_eq_zero h_eq)
 
 lemma exists_insert_rk_eq_of_not_isFlat (hFE : F ⊆ M.E) (hnF : ¬ M.IsFlat F) :
@@ -167,9 +167,9 @@ lemma IsFlat.insert_rk_eq [M.RankFinite] (hF : M.IsFlat F) (he : e ∈ M.E \ F) 
     ENat.toNat_one]
 
 lemma IsFlat.eq_of_subset_of_rk_ge [RankFinite M] (hF : M.IsFlat F) (hFF' : F ⊆ F')
-    (hle : M.rk F' ≤ M.rk F) (hF' : F' ⊆ M.E := by aesop_mat) : F = F' := by
+    (hle : M.rk F' ≤ M.rk F) (hF' : F' ⊆ M.E := by grind_mat) : F = F' := by
   refine hFF'.antisymm fun e heF' ↦ by_contra fun heF ↦ ?_
-  linarith [(hF.insert_rk_eq ⟨by aesop_mat, heF⟩).symm.trans_le
+  linarith [(hF.insert_rk_eq ⟨by grind_mat, heF⟩).symm.trans_le
     (M.rk_mono (insert_subset heF' hFF'))]
 
 lemma finite_setOf_isFlat (M : Matroid α) [M.Finite] : {F | M.IsFlat F}.Finite :=
@@ -254,7 +254,7 @@ lemma isFlat_contract (X C : Set α) : (M ／ C).IsFlat (M.closure (X ∪ C) \ C
     ← M.closure_union_closure_right_eq, union_eq_self_of_subset_right
     (M.closure_subset_closure subset_union_right), closure_closure]
 
-@[simp] lemma isFlat_contract_iff (hC : C ⊆ M.E := by aesop_mat) :
+@[simp] lemma isFlat_contract_iff (hC : C ⊆ M.E := by grind_mat) :
     (M ／ C).IsFlat F ↔ M.IsFlat (F ∪ C) ∧ Disjoint F C := by
   rw [isFlat_iff_closure_eq, contract_closure_eq, subset_antisymm_iff, subset_sdiff,
     sdiff_subset_iff, union_comm C, ← and_assoc, and_congr_left_iff, isFlat_iff_closure_self,
@@ -263,7 +263,7 @@ lemma isFlat_contract (X C : Set α) : (M ／ C).IsFlat (M.closure (X ∪ C) \ C
     ⟨fun h ↦ M.subset_closure _ (union_subset (h.trans (M.closure_subset_ground _)) hC),
     fun h ↦ subset_union_left.trans h⟩
 
-lemma IsFlat.union_isFlat_of_contract (hF : (M ／ C).IsFlat F) (hC : C ⊆ M.E := by aesop_mat) :
+lemma IsFlat.union_isFlat_of_contract (hF : (M ／ C).IsFlat F) (hC : C ⊆ M.E := by grind_mat) :
     M.IsFlat (F ∪ C) :=
   ((isFlat_contract_iff hC).1 hF).1
 
@@ -283,7 +283,7 @@ lemma IsNonloop.contractElem_isFlat_iff (he : M.IsNonloop e) :
   rw [isFlat_contract_iff, union_singleton, disjoint_singleton_right]
 
 /-- Flats of `M ／ C` are equivalent to flats of `M` containing `C`-/
-@[simps] def isFlatContractEquiv (M : Matroid α) (C : Set α) (hC : C ⊆ M.E := by aesop_mat) :
+@[simps] def isFlatContractEquiv (M : Matroid α) (C : Set α) (hC : C ⊆ M.E := by grind_mat) :
     {F // (M ／ C).IsFlat F} ≃ {F // M.IsFlat F ∧ C ⊆ F} where
   toFun F := ⟨F ∪ C, by simp [F.prop.union_isFlat_of_contract]⟩
   invFun F := ⟨F \ C, by simp
@@ -291,7 +291,7 @@ lemma IsNonloop.contractElem_isFlat_iff (he : M.IsNonloop e) :
   left_inv := by rintro ⟨-, hF⟩; simp [(subset_sdiff.1 hF.subset_ground).2]
   right_inv := by rintro ⟨F, hF⟩; simp [hF.2]
 
-lemma isFlat_restrict_iff {R : Set α} (hR : R ⊆ M.E := by aesop_mat) :
+lemma isFlat_restrict_iff {R : Set α} (hR : R ⊆ M.E := by grind_mat) :
     (M ↾ R).IsFlat F ↔ ∃ F', M.IsFlat F' ∧ F = F' ∩ R := by
   refine ⟨fun h ↦ ⟨M.closure F, M.closure_isFlat F, ?_⟩, ?_⟩
   · nth_rw 1 [← h.closure]
@@ -338,7 +338,7 @@ lemma IsFlat.isFlat_restrict' (hF : M.IsFlat F) (R : Set α) :
   exact ⟨inter_subset_left.trans (M.closure_subset_closure (inter_subset_left)),
     M.subset_closure _ (inter_subset_left.trans hF.subset_ground)⟩
 
-lemma IsFlat.isFlat_restrict (hF : M.IsFlat F) (R : Set α) (hR : R ⊆ M.E := by aesop_mat) :
+lemma IsFlat.isFlat_restrict (hF : M.IsFlat F) (R : Set α) (hR : R ⊆ M.E := by grind_mat) :
     (M ↾ R).IsFlat (F ∩ R) := by
   simpa [sdiff_eq_empty.2 hR] using hF.isFlat_restrict' R
 

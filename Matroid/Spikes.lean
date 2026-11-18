@@ -30,7 +30,7 @@ lemma freeLift_def (M : Matroid α ) : M✶.truncate✶ = M.freeLift := rfl
 -- @[simp]
 -- lemma freeLift_ground (M : Matroid α ) : M.freeLift.E = M.E := rfl
 
-lemma basis_freeLift_iff (M : Matroid α) [M✶.RankPos] (hB' : B ⊆ M.E := by aesop_mat) :
+lemma basis_freeLift_iff (M : Matroid α) [M✶.RankPos] (hB' : B ⊆ M.E := by grind_mat) :
     M.freeLift.IsBase B ↔ ∃ e ∈ B, M.IsBase (B \ {e}) := by
   constructor
   · intro hB

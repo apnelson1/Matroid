@@ -231,12 +231,12 @@ def principal (M : Matroid α) (X : Set α) : M.ModularCut where
 
 lemma mem_principal_iff' : F ∈ principal M X ↔ M.IsFlat F ∧ X ∩ M.E ⊆ F := Iff.rfl
 
-lemma mem_principal_iff (hX : X ⊆ M.E := by aesop_mat) :
+lemma mem_principal_iff (hX : X ⊆ M.E := by grind_mat) :
     F ∈ principal M X ↔ M.IsFlat F ∧ X ⊆ F := by
   rw [mem_principal_iff', inter_eq_self_of_subset_left hX]
 
 @[simp]
-lemma closure_mem_principal_iff (hX : X ⊆ M.E := by aesop_mat) :
+lemma closure_mem_principal_iff (hX : X ⊆ M.E := by grind_mat) :
     M.closure Y ∈ principal M X ↔ X ⊆ M.closure Y := by
   rw [mem_principal_iff, and_iff_right (isFlat_closure ..)]
 
@@ -361,7 +361,7 @@ lemma principal_eq_top_iff' : ModularCut.principal M F = ⊤ ↔ F ∩ M.E ⊆ M
   rw [ModularCut.eq_top_iff, mem_principal_iff', ← closure_empty,
     and_iff_right (M.isFlat_closure ∅)]
 
-lemma principal_eq_top_iff (hXE : X ⊆ M.E := by aesop_mat) :
+lemma principal_eq_top_iff (hXE : X ⊆ M.E := by grind_mat) :
     ModularCut.principal M X = ⊤ ↔ X ⊆ M.loops := by
   rw [principal_eq_top_iff', inter_eq_self_of_subset_left hXE]
 
@@ -498,20 +498,20 @@ lemma mem_delete_elem_iff :
     closure_closure] at hFU
   exact ⟨⟨heF, .inr hfl⟩, hFU.1⟩
 
-lemma principal_restrict_eq_bot_iff (hX : X ⊆ M.E := by aesop_mat) :
+lemma principal_restrict_eq_bot_iff (hX : X ⊆ M.E := by grind_mat) :
     (ModularCut.principal M X).restrict Y = ⊥ ↔ ¬ (X ⊆ M.closure Y) := by
   rw [ModularCut.eq_bot_iff, mem_restrict_iff, and_iff_right (ground_isFlat ..),
     restrict_ground_eq, mem_principal_iff, and_iff_right (closure_isFlat ..)]
 
-lemma principal_delete_eq_bot_iff (hX : X ⊆ M.E := by aesop_mat) :
+lemma principal_delete_eq_bot_iff (hX : X ⊆ M.E := by grind_mat) :
     (ModularCut.principal M X).delete Y = ⊥ ↔ ¬ (X ⊆ M.closure (M.E \ Y)) :=
   principal_restrict_eq_bot_iff
 
-lemma principal_delete_self_eq_bot_iff (hX : X ⊆ M.E := by aesop_mat) :
+lemma principal_delete_self_eq_bot_iff (hX : X ⊆ M.E := by grind_mat) :
     (ModularCut.principal M X).delete X = ⊥ ↔ M.Codep X := by
   rw [principal_delete_eq_bot_iff, ← not_coindep_iff, coindep_iff_subset_closure_compl]
 
-lemma principal_restrict_eq_top_iff (hX : X ⊆ M.E := by aesop_mat) :
+lemma principal_restrict_eq_top_iff (hX : X ⊆ M.E := by grind_mat) :
     (ModularCut.principal M X).restrict Y = ⊤ ↔ X ⊆ M.loops := by
   rw [ModularCut.eq_top_iff, mem_restrict_iff, and_iff_right (isFlat_loops ..),
     closure_mem_principal_iff, restrict_loops_eq', ← M.closure_union_inter_ground,

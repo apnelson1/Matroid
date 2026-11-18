@@ -356,7 +356,7 @@ lemma tutteConnected_iff_forall_exists_encard_le (hk : k ≠ ⊤) : M.TutteConne
   exact (hP i).not_ge hi
 
 lemma TutteConnected.encard_eq_or_encard_compl_eq (h : M.TutteConnected (k + 1))
-    (hX : M.eConn X + 1 ≤ k) (hXE : X ⊆ M.E := by aesop_mat) :
+    (hX : M.eConn X + 1 ≤ k) (hXE : X ⊆ M.E := by grind_mat) :
     X.encard = M.eConn X ∨ (M.E \ X).encard = M.eConn X := by
   have h' := h.exists_encard_eq (P := M.ofSetSep X true) (by simpa)
   simpa [or_comm, eq_comm] using h'

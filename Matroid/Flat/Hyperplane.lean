@@ -17,7 +17,7 @@ section IsHyperplane
 def IsHyperplane (M : Matroid α) (H : Set α) : Prop :=
   H ⋖[M] M.E
 
-@[aesop unsafe 10% (rule_sets := [Matroid]), grind →]
+@[aesop unsafe 10% (rule_sets := [Matroid]), grind →, matroid_ground →]
 lemma IsHyperplane.subset_ground (hH : M.IsHyperplane H) : H ⊆ M.E :=
   hH.isFlat_left.subset_ground
 
@@ -41,17 +41,17 @@ lemma IsFlat.isHyperplane_iff_eRelRk_ground_eq_one (hH : M.IsFlat H) :
     and_iff_right hH.subset_ground]
 
 lemma IsHyperplane.closure_insert_eq (hH : M.IsHyperplane H) (heH : e ∉ H)
-    (he : e ∈ M.E := by aesop_mat) : M.closure (insert e H) = M.E :=
+    (he : e ∈ M.E := by grind_mat) : M.closure (insert e H) = M.E :=
   hH.covBy.closure_insert_eq ⟨he, heH⟩
 
 lemma IsHyperplane.closure_eq_ground_of_ssuperset (hH : M.IsHyperplane H) (hX : H ⊂ X)
-    (hX' : X ⊆ M.E := by aesop_mat) : M.closure X = M.E := by
+    (hX' : X ⊆ M.E := by grind_mat) : M.closure X = M.E := by
   obtain ⟨e, heX, heH⟩ := exists_of_ssubset hX
   exact (M.closure_subset_ground _).antisymm ((hH.closure_insert_eq heH (hX' heX)).symm.trans_subset
     (M.closure_subset_closure (insert_subset heX hX.subset)))
 
 lemma IsHyperplane.spanning_of_ssuperset (hH : M.IsHyperplane H) (hX : H ⊂ X)
-    (hXE : X ⊆ M.E := by aesop_mat) :
+    (hXE : X ⊆ M.E := by grind_mat) :
     M.Spanning X := by rw [spanning_iff_closure_eq, hH.closure_eq_ground_of_ssuperset hX]
 
 lemma IsHyperplane.not_spanning (hH : M.IsHyperplane H) : ¬M.Spanning H := by
@@ -91,7 +91,7 @@ lemma IsHyperplane.eq_of_subset_nonspanning (hH : M.IsHyperplane H) (hX : M.Nons
   exact hH.eq_of_subset hX hHX
 
 @[simp]
-lemma isCocircuit_compl_iff_isHyperplane (hH : H ⊆ M.E := by aesop_mat) :
+lemma isCocircuit_compl_iff_isHyperplane (hH : H ⊆ M.E := by grind_mat) :
     M.IsCocircuit (M.E \ H) ↔ M.IsHyperplane H := by
   rw [isCocircuit_iff_minimal_compl_nonspanning', isHyperplane_iff_maximal_nonspanning, iff_comm]
   have h_image := image_antitone_setOfPred_maximal_mem (f := fun X ↦ M.E \ X)
@@ -109,7 +109,7 @@ lemma isCocircuit_compl_iff_isHyperplane (hH : H ⊆ M.E := by aesop_mat) :
   simpa [inter_eq_self_of_subset_right hYE]
 
 @[simp]
-lemma isHyperplane_compl_iff_isCocircuit (h : K ⊆ M.E := by aesop_mat) :
+lemma isHyperplane_compl_iff_isCocircuit (h : K ⊆ M.E := by grind_mat) :
     M.IsHyperplane (M.E \ K) ↔ M.IsCocircuit K := by
   rw [← isCocircuit_compl_iff_isHyperplane, sdiff_sdiff_right, sdiff_self, empty_union, inter_comm,
     inter_eq_left.mpr h]
@@ -117,7 +117,7 @@ lemma isHyperplane_compl_iff_isCocircuit (h : K ⊆ M.E := by aesop_mat) :
 lemma IsHyperplane.compl_isCocircuit (hH : M.IsHyperplane H) : M.IsCocircuit (M.E \ H) :=
   (isCocircuit_compl_iff_isHyperplane hH.subset_ground).mpr hH
 
-lemma isHyperplane_dual_iff (hH : H ⊆ M.E := by aesop_mat) :
+lemma isHyperplane_dual_iff (hH : H ⊆ M.E := by grind_mat) :
     M✶.IsHyperplane H ↔ M.IsCircuit (M.E \ H) := by
   rw [← isCocircuit_compl_iff_isHyperplane]
   simp
@@ -136,7 +136,7 @@ lemma freeOn_isHyperplane_iff (E H : Set α) : (freeOn E).IsHyperplane H ↔ ∃
   simp only [loopyOn_ground, loopyOn_isCircuit_iff]
   grind
 
-lemma isHyperplane_compl_dual_iff (hH : H ⊆ M.E := by aesop_mat) :
+lemma isHyperplane_compl_dual_iff (hH : H ⊆ M.E := by grind_mat) :
     M✶.IsHyperplane (M.E \ H) ↔ M.IsCircuit H := by
   rw [← M.dual_ground, isHyperplane_compl_iff_isCocircuit, dual_isCocircuit_iff]
 
@@ -198,7 +198,7 @@ lemma IsHyperplane.closure_insert_eq_univ (hH : M.IsHyperplane H) (he : e ∈ M.
   exact ⟨he.1, hH.subset_ground⟩
 
 lemma exists_isHyperplane_sep_of_notMem_closure (h : e ∈ M.E \ M.closure X)
-    (hX : X ⊆ M.E := by aesop_mat) : ∃ H, M.IsHyperplane H ∧ X ⊆ H ∧ e ∉ H := by
+    (hX : X ⊆ M.E := by grind_mat) : ∃ H, M.IsHyperplane H ∧ X ⊆ H ∧ e ∉ H := by
   obtain ⟨I, hI⟩ := M.exists_isBasis X
   rw [← hI.closure_eq_closure, mem_sdiff, hI.indep.notMem_closure_iff] at h
   obtain ⟨B, hB, heIB⟩ := h.2.1.exists_isBase_superset
@@ -207,7 +207,7 @@ lemma exists_isHyperplane_sep_of_notMem_closure (h : e ∈ M.E \ M.closure X)
   · exact hI.subset_closure.trans (M.closure_subset_closure (subset_sdiff_singleton heIB.2 h.2.2))
   exact hB.indep.notMem_closure_sdiff_of_mem heIB.1
 
-lemma closure_eq_sInter_isHyperplane (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
+lemma closure_eq_sInter_isHyperplane (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by grind_mat) :
     M.closure X = ⋂₀ {H | M.IsHyperplane H ∧ X ⊆ H} ∩ M.E := by
   refine subset_antisymm (subset_inter ?_ (M.closure_subset_ground _)) ?_
   · rw [subset_sInter_iff]
@@ -233,15 +233,15 @@ lemma IsFlat.eq_sInter_isHyperplanes_of_ne_ground (hF : M.IsFlat F) (hFE : F ≠
   refine ⟨Hs, hne, hHs, inter_eq_left.2 ?_⟩
   exact (sInter_subset_of_mem hne.some_mem).trans (hHs _ hne.some_mem).subset_ground
 
-lemma mem_closure_iff_forall_isHyperplane (hX : X ⊆ M.E := by aesop_mat)
-    (he : e ∈ M.E := by aesop_mat) : e ∈ M.closure X ↔ ∀ H, M.IsHyperplane H → X ⊆ H → e ∈ H := by
+lemma mem_closure_iff_forall_isHyperplane (hX : X ⊆ M.E := by grind_mat)
+    (he : e ∈ M.E := by grind_mat) : e ∈ M.closure X ↔ ∀ H, M.IsHyperplane H → X ⊆ H → e ∈ H := by
   simp_rw [← M.closure_inter_ground X,
     M.closure_eq_sInter_isHyperplane _ (inter_subset_left.trans hX), mem_inter_iff,
     and_iff_left he, mem_sInter, mem_ofPred_eq, and_imp]
   exact ⟨fun h H hH hXH ↦ h _ hH (inter_subset_left.trans hXH),
     fun h H hH hXH ↦ h H hH (by rwa [inter_eq_self_of_subset_left hX] at hXH )⟩
 
-lemma mem_dual_closure_iff_forall_isCircuit (he : e ∈ M.E := by aesop_mat) :
+lemma mem_dual_closure_iff_forall_isCircuit (he : e ∈ M.E := by grind_mat) :
     e ∈ M✶.closure X ↔ ∀ C, M.IsCircuit C → e ∈ C → (X ∩ C).Nonempty := by
   wlog hXE : X ⊆ M.E generalizing X with aux
   · rw [← closure_inter_ground, dual_ground, aux inter_subset_right]
@@ -256,7 +256,7 @@ lemma mem_dual_closure_iff_forall_isCircuit (he : e ∈ M.E := by aesop_mat) :
   obtain ⟨f, hf⟩ := h _ hH.compl_isCocircuit ⟨he, he'⟩
   exact hf.2.2 (hXE hf.1)
 
-lemma mem_dual_closure_iff_notMem_closure_compl (heX : e ∉ X) (heE : e ∈ M.E := by aesop_mat) :
+lemma mem_dual_closure_iff_notMem_closure_compl (heX : e ∉ X) (heE : e ∈ M.E := by grind_mat) :
     e ∈ M✶.closure X ↔ e ∉ M.closure ((M.E \ X) \ {e}) := by
   rw [mem_dual_closure_iff_forall_isCircuit]
   refine ⟨fun h hecl ↦ ?_, fun h C hC heC ↦ by_contra fun he ↦ ?_⟩
@@ -275,7 +275,7 @@ lemma IsFlat.subset_isHyperplane_of_ne_ground (hF : M.IsFlat F) (h : F ≠ M.E) 
   obtain ⟨H, hH, hFH, -⟩ := exists_isHyperplane_sep_of_notMem_closure ⟨heE, heF⟩
   exact ⟨H, hH, hFH⟩
 
-lemma subset_isHyperplane_iff_closure_ne_ground (hY : Y ⊆ M.E := by aesop_mat) :
+lemma subset_isHyperplane_iff_closure_ne_ground (hY : Y ⊆ M.E := by grind_mat) :
     M.closure Y ≠ M.E ↔ ∃ H, M.IsHyperplane H ∧ Y ⊆ H := by
   refine ⟨fun h ↦ ?_, ?_⟩
   · obtain ⟨H, hH, hYH⟩ := (M.closure_isFlat Y).subset_isHyperplane_of_ne_ground h
@@ -342,8 +342,8 @@ lemma IsHyperplane.inter_isHyperplane_spanning_restrict {S : Set α} (hH : M.IsH
   have hIHb : M.IsBasis I H :=
     hI.indep.isBasis_of_subset_of_subset_closure hIH <| by rwa [hI.closure_eq_closure]
 
-  obtain ⟨e, he⟩ : (S \ H).Nonempty
-  · rw [nonempty_iff_ne_empty, Ne, sdiff_eq_empty]
+  obtain ⟨e, he⟩ : (S \ H).Nonempty := by
+    rw [nonempty_iff_ne_empty, Ne, sdiff_eq_empty]
     exact fun hSH ↦ hH.not_spanning <| hS.superset hSH
 
   have heI : e ∉ I := notMem_subset hIH he.2
@@ -399,7 +399,7 @@ lemma IsCircuitHyperplane.compl_dual (hC : M.IsCircuitHyperplane C) :
     M✶.IsCircuitHyperplane (M.E \ C) := by
   refine ⟨hC.isHyperplane.compl_isCocircuit, hC.isCircuit.compl_isHyperplane_dual⟩
 
-lemma isCircuitHyperplane_dual_iff (hC : C ⊆ M.E := by aesop_mat) :
+lemma isCircuitHyperplane_dual_iff (hC : C ⊆ M.E := by grind_mat) :
     M✶.IsCircuitHyperplane C ↔ M.IsCircuitHyperplane (M.E \ C) :=
   ⟨fun h ↦ by simpa using h.compl_dual, fun h ↦ sdiff_sdiff_cancel_left hC ▸ h.compl_dual⟩
 

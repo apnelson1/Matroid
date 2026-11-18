@@ -57,6 +57,11 @@ lemma IsMutualBasis.closure_inter_eq (h : M.IsMutualBasis B Xs) (i : ι) :
 lemma IsMutualBasis.subset_ground (h : M.IsMutualBasis B Xs) (i : ι) : Xs i ⊆ M.E :=
   (h.isBasis_inter i).subset_ground
 
+@[matroid_ground →]
+lemma IsMutualBasis.iUnion_subset_ground (h : M.IsMutualBasis B Xs) :
+    ⋃ i, Xs i ⊆ M.E :=
+  iUnion_subset h.subset_ground
+
 lemma IsMutualBasis.subtype {Xs : η → Set α} (h : M.IsMutualBasis B Xs) (A : Set η) :
     M.IsMutualBasis B (fun i : A ↦ Xs i) :=
   ⟨h.1, fun ⟨i,_⟩ ↦ h.2 i⟩
@@ -90,7 +95,7 @@ lemma IsMutualBasis.isBasis_biInter {Xs : η → Set α} (h : M.IsMutualBasis B 
     M.IsBasis ((⋂ i ∈ A, Xs i) ∩ B) (⋂ i ∈ A, Xs i) :=
   h.1.inter_isBasis_biInter hA (fun _ _ ↦ h.2 _)
 
-@[aesop unsafe 5% (rule_sets := [Matroid])]
+@[aesop unsafe 5% (rule_sets := [Matroid]), matroid_ground →]
 lemma IsMutualBasis.iInter_subset_ground [Nonempty ι] (h : M.IsMutualBasis B Xs) :
     ⋂ i, Xs i ⊆ M.E :=
   h.isBasis_iInter.subset_ground
@@ -512,11 +517,11 @@ lemma IsModularPair.symm (h : M.IsModularPair X Y) : M.IsModularPair Y X := by
 lemma isModularPair_comm : M.IsModularPair X Y ↔ M.IsModularPair Y X :=
   ⟨IsModularPair.symm, IsModularPair.symm⟩
 
-@[aesop unsafe 20% (rule_sets := [Matroid])]
+@[aesop unsafe 20% (rule_sets := [Matroid]), matroid_ground →]
 lemma IsModularPair.subset_ground_left (h : M.IsModularPair X Y) : X ⊆ M.E :=
   h.subset_ground_of_mem true
 
-@[aesop unsafe 20% (rule_sets := [Matroid])]
+@[aesop unsafe 20% (rule_sets := [Matroid]), matroid_ground →]
 lemma IsModularPair.subset_ground_right (h : M.IsModularPair X Y) : Y ⊆ M.E :=
   h.subset_ground_of_mem false
 
@@ -671,7 +676,7 @@ lemma IsModularPair.eRk_add_eRk (h : M.IsModularPair X Y) :
     ← inter_assoc, inter_eq_self_of_subset_left hIu.subset, add_comm]
 
 lemma IsRkFinite.isModularPair_iff_eRk (hXfin : M.IsRkFinite X) (hYfin : M.IsRkFinite Y)
-    (hXE : X ⊆ M.E := by aesop_mat) (hYE : Y ⊆ M.E := by aesop_mat) :
+    (hXE : X ⊆ M.E := by grind_mat) (hYE : Y ⊆ M.E := by grind_mat) :
     M.IsModularPair X Y ↔ M.eRk X + M.eRk Y = M.eRk (X ∩ Y) + M.eRk (X ∪ Y) := by
   refine ⟨fun h ↦ h.eRk_add_eRk, fun hr ↦ isModularPair_iff_exists_isBasis_isBasis.2 ?_ ⟩
   obtain ⟨Ii, hIi⟩ := M.exists_isBasis (X ∩ Y)
@@ -694,14 +699,14 @@ lemma IsRkFinite.isModularPair_iff_eRk (hXfin : M.IsRkFinite X) (hYfin : M.IsRkF
 
 -- TODO : this might be true without one of the `IsRkFinite` assumptions due to junk values.
 lemma IsRkFinite.isModularPair_iff_rk (hXfin : M.IsRkFinite X) (hYfin : M.IsRkFinite Y)
-    (hXE : X ⊆ M.E := by aesop_mat) (hYE : Y ⊆ M.E := by aesop_mat) :
+    (hXE : X ⊆ M.E := by grind_mat) (hYE : Y ⊆ M.E := by grind_mat) :
     M.IsModularPair X Y ↔ M.rk X + M.rk Y = M.rk (X ∩ Y) + M.rk (X ∪ Y) := by
   rw [hXfin.isModularPair_iff_eRk hYfin, ← ENat.natCast_inj, ← hXfin.cast_rk_eq,
     ← hYfin.cast_rk_eq, ← hXfin.inter_right.cast_rk_eq, ← (hXfin.union hYfin).cast_rk_eq,
     Nat.cast_add, Nat.cast_add]
 
-lemma isModularPair_iff_rk [RankFinite M] (hXE : X ⊆ M.E := by aesop_mat)
-    (hYE : Y ⊆ M.E := by aesop_mat) :
+lemma isModularPair_iff_rk [RankFinite M] (hXE : X ⊆ M.E := by grind_mat)
+    (hYE : Y ⊆ M.E := by grind_mat) :
     M.IsModularPair X Y ↔ M.rk X + M.rk Y = M.rk (X ∩ Y) + M.rk (X ∪ Y) := by
   rw [(M.isRkFinite_set X).isModularPair_iff_rk (M.isRkFinite_set Y)]
 
@@ -776,7 +781,7 @@ lemma IsModularPair.contract_subset_closure {C : Set α} (hXY : M.IsModularPair 
   simpa [hCX, hCY] using IsModularFamily.contract (C := C) hXY
 
 lemma Coindep.subset_closure_iff_isModularPair (hX : M.Coindep (X \ Y))
-    (hY : Y ⊆ M.E := by aesop_mat) : X ⊆ M.closure Y ↔ M.IsModularPair (X ∪ Y) (M.E \ (X \ Y)) := by
+    (hY : Y ⊆ M.E := by grind_mat) : X ⊆ M.closure Y ↔ M.IsModularPair (X ∪ Y) (M.E \ (X \ Y)) := by
   rw [isModularPair_comm, hX.compl_spanning.isModularPair_iff,
     show M.E \ (X \ Y) ∩ (X ∪ Y) = Y by grind, union_subset_iff, and_iff_left (M.subset_closure Y)]
 

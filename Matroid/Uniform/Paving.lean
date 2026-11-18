@@ -52,7 +52,7 @@ lemma IsPaving.eRank_contract_le_one_of_dep (hM : M.IsPaving) (hD : M.Dep D) :
 
 /-- In a paving matroid, any nonbase with finite exchange distance from a base is a circuit. -/
 lemma IsPaving.isCircuit_of_isBase_of_finDiff_of_not_isBase (hM : M.IsPaving) (hB : M.IsBase B)
-    (hBC : B.FinDiff C) (hC : ¬ M.IsBase C) (hCE : C ⊆ M.E := by aesop_mat) : M.IsCircuit C := by
+    (hBC : B.FinDiff C) (hC : ¬ M.IsBase C) (hCE : C ⊆ M.E := by grind_mat) : M.IsCircuit C := by
   obtain ⟨E, rfl⟩ | hpos := M.exists_eq_loopyOn_or_rankPos
   · simp only [loopyOn_isBase_iff] at hC hB
     simpa [hB] using hBC.sdiff_nonempty_of_ne (by grind)

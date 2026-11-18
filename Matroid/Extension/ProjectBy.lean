@@ -170,7 +170,7 @@ lemma mem_closure_projectBy_iff (U : M.ModularCut) :
   · simp [show f ∈ N.closure (insert e X) from N.closure_subset_closure (subset_insert ..) hfX, hfX]
   simpa [hfX, heX'] using N.closure_exchange_iff (X := X) (e := f) (f := e)
 
-lemma projectBy_spanning_iff (hU : U ≠ ⊥) (hX : X ⊆ M.E := by aesop_mat) :
+lemma projectBy_spanning_iff (hU : U ≠ ⊥) (hX : X ⊆ M.E := by grind_mat) :
     (M.projectBy U).Spanning X ↔ M.Spanning X ∨ (M.eRelRk X M.E = 1) ∧ M.closure X ∉ U := by
   rw [spanning_iff_ground_subset_closure (by simpa), or_iff_not_imp_left, not_spanning_iff]
   simp only [projectBy_ground, subset_def, mem_closure_projectBy_iff, or_iff_not_imp_left]

@@ -243,7 +243,7 @@ lemma Projector.deleteContract_pivot' (M : Matroid α) (X : Set α) :
     sdiff_inter_self_eq_sdiff, map_ground, comapOn_ground_eq]
   aesop
 
-lemma Projector.deleteContract_pivot (M : Matroid α) (X : Set α) (hXE : X ⊆ M.E := by aesop_mat) :
+lemma Projector.deleteContract_pivot (M : Matroid α) (X : Set α) (hXE : X ⊆ M.E := by grind_mat) :
     (Projector.deleteContract M X).pivot = univ := by
   refine Subtype.val_injective.image_injective ?_
   rw [deleteContract_pivot', inter_eq_self_of_subset_left hXE]

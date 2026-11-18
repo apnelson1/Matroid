@@ -72,9 +72,9 @@ lemma modularSet_iff_closure :
     rw [← closure_inter_ground, singleton_inter_eq_empty.2 he] at h
     exact (h hF.loops_subset).elim
 
-lemma isModularFlat_singleton (M : Matroid α) [Simple M] (e : α) (he : e ∈ M.E := by aesop_mat) :
+lemma isModularFlat_singleton (M : Matroid α) [Simple M] (e : α) (he : e ∈ M.E := by grind_mat) :
     M.IsModularFlat {e} := by
-  rw [← closure_singleton_eq he]
+  rw [← M.closure_singleton_eq he]
   apply isModularFlat_closure_singleton
 
 lemma isModularFlat_closure_subsingleton (M : Matroid α) (hX : X.Subsingleton) :
@@ -626,7 +626,7 @@ lemma IsModularFlat.sInter [Finitary M] {Xs : Set (Set α)} (hne : Xs.Nonempty)
 end Lattice
 
 lemma IsModularFlat.restrict (hF : M.IsModularFlat F) (hFX : F ⊆ X)
-    (hXE : X ⊆ M.E := by aesop_mat) : (M ↾ X).IsModularFlat F := by
+    (hXE : X ⊆ M.E := by grind_mat) : (M ↾ X).IsModularFlat F := by
   have hF' := hF.isFlat.isFlat_restrict X
   rw [inter_eq_self_of_subset_left hFX] at hF'
   rw [hF'.isModularFlat_iff_forall_contract_exists_parallel]

@@ -321,12 +321,12 @@ lemma closure_covBy_closure_iff : (M.closure X) ⋖[M] (M.closure Y) ↔
     rw [hYX]
     apply closure_insert_congr ⟨?_, hfX⟩
     rw [← hYX, ← closure_inter_ground]
-    exact M.subset_closure _ (by aesop_mat) hf
+    exact M.subset_closure _ (by grind_mat) hf
   replace hY := M.closure_subset_closure_of_subset_closure hY
   rw [closure_inter_ground, hYX] at hY
   exact he.2 <| hY (M.mem_closure_of_mem' (mem_insert _ _) he.1)
 
-lemma IsFlat.covBy_closure_insert (hF : M.IsFlat F) (he : e ∉ F) (heE : e ∈ M.E := by aesop_mat) :
+lemma IsFlat.covBy_closure_insert (hF : M.IsFlat F) (he : e ∉ F) (heE : e ∈ M.E := by grind_mat) :
     F ⋖[M] M.closure (insert e F) :=
   hF.covBy_iff_eq_closure_insert.2 ⟨e, ⟨heE, he⟩, rfl⟩
 
@@ -593,8 +593,8 @@ lemma IsFlat.inter_iUnion_closure_of_directed [Finitary M] {ι : Type*} {Xs : ι
   · exact M.closure_subset_closure (iUnion_mono fun _ ↦ inter_subset_right)
 
 
-  obtain ⟨i, hei⟩ : ∃ i, e ∈ M.closure (Xs i)
-  · obtain ⟨I, hIss, hIfin, hI, heI⟩ := exists_mem_finite_closure_of_mem_closure hecl
+  obtain ⟨i, hei⟩ : ∃ i, e ∈ M.closure (Xs i) := by
+    obtain ⟨I, hIss, hIfin, hI, heI⟩ := exists_mem_finite_closure_of_mem_closure hecl
     obtain ⟨A, hA, hIA⟩ := finite_subset_iUnion hIfin hIss
     obtain ⟨i, hi⟩ := aux A hA
     exact ⟨i, M.closure_subset_closure (hIA.trans hi) heI⟩

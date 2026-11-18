@@ -21,7 +21,7 @@ class Simple (M : Matroid α) : Prop where
 lemma Parallel.eq [Simple M] (h : M.Parallel e f) : e = f := by
   rwa [Simple.parallel_iff_eq h.mem_ground_left] at h
 
-lemma parallel_iff_eq [Simple M] (he : e ∈ M.E := by aesop_mat) : M.Parallel e f ↔ e = f :=
+lemma parallel_iff_eq [Simple M] (he : e ∈ M.E := by grind_mat) : M.Parallel e f ↔ e = f :=
   Simple.parallel_iff_eq he
 
 lemma not_parallel_of_ne (M : Matroid α) [Simple M] (hef : e ≠ f) : ¬ M.Parallel e f :=
@@ -53,11 +53,10 @@ lemma simple_iff_loopless_eq_of_parallel_forall:
   ⟨fun h ↦ ⟨by infer_instance, fun _ _ ↦ Parallel.eq⟩,
     fun ⟨_,h⟩ ↦ ⟨fun heE ↦ ⟨h _ _,by rintro rfl; exact (isNonloop_of_loopless heE).parallel_self⟩⟩⟩
 
-lemma parallel_class_eq [Simple M] (he : e ∈ M.E := by aesop_mat) :
-    {f | M.Parallel e f} = {e} := by
+lemma parallel_class_eq [Simple M] (he : e ∈ M.E := by grind_mat) : {f | M.Parallel e f} = {e} := by
   simp_rw [parallel_iff_eq he, ofPred_eq_eq_singleton']
 
-@[simp] lemma closure_singleton_eq [Simple M] (he : e ∈ M.E := by aesop_mat) :
+@[simp] lemma closure_singleton_eq (M : Matroid α) [Simple M] (he : e ∈ M.E := by grind_mat) :
     M.closure {e} = {e} := by
   rw [closure_eq_parallel_class_union_loops, parallel_class_eq he, loops_eq_empty, union_empty]
 
@@ -65,7 +64,7 @@ lemma parallel_class_eq [Simple M] (he : e ∈ M.E := by aesop_mat) :
   a loop is a counterexample. -/
 lemma simple_iff_closure_subset_self_forall [RankPos M] :
     M.Simple ↔ ∀ e, M.IsNonloop e → M.closure {e} ⊆ {e} := by
-  refine ⟨fun h e he ↦ by rw [closure_singleton_eq], fun h ↦ ?_⟩
+  refine ⟨fun h e he ↦ by rw [M.closure_singleton_eq], fun h ↦ ?_⟩
   have hl : M.Loopless := by
     rw [loopless_iff_forall_not_isLoop]
     intro e _ hel
@@ -79,35 +78,35 @@ lemma closure_eq_self_of_subset_singleton [Simple M] (he : e ∈ M.E) (hX : X �
     M.closure X = X := by
   obtain (rfl | rfl) := subset_singleton_iff_eq.1 hX
   · exact M.loops_eq_empty
-  exact closure_singleton_eq he
+  exact M.closure_singleton_eq he
 
-lemma singleton_isFlat [Simple M] (he : e ∈ M.E := by aesop_mat) : M.IsFlat {e} := by
-  rw [← closure_singleton_eq]; apply closure_isFlat
+lemma singleton_isFlat [Simple M] (he : e ∈ M.E := by grind_mat) : M.IsFlat {e} := by
+  rw [← M.closure_singleton_eq]; apply closure_isFlat
 
-lemma pair_indep [Simple M] (he : e ∈ M.E := by aesop_mat) (hf : f ∈ M.E := by aesop_mat) :
+lemma pair_indep [Simple M] (he : e ∈ M.E := by grind_mat) (hf : f ∈ M.E := by grind_mat) :
     M.Indep {e,f} := by
   obtain (rfl | hne) := eq_or_ne e f
   · rw [pair_eq_singleton, indep_singleton]; exact isNonloop_of_loopless he
   rwa [← not_dep_iff, ← (isNonloop_of_loopless he).parallel_iff_dep (isNonloop_of_loopless hf) hne,
     parallel_iff_eq he]
 
-lemma pair_closure_isLine [Simple M] (hne : e ≠ f) (he : e ∈ M.E := by aesop_mat)
-    (hf : f ∈ M.E := by aesop_mat) : M.IsLine (M.closure {e,f}) := by
+lemma pair_closure_isLine [Simple M] (hne : e ≠ f) (he : e ∈ M.E := by grind_mat)
+    (hf : f ∈ M.E := by grind_mat) : M.IsLine (M.closure {e,f}) := by
   rwa [IsLine, and_iff_right (M.closure_isFlat _), eRk_closure_eq, (pair_indep he hf).eRk_eq_encard,
     encard_pair]
 
-lemma indep_of_encard_le_two [Simple M] (h : I.encard ≤ 2) (hI : I ⊆ M.E := by aesop_mat) :
+lemma indep_of_encard_le_two [Simple M] (h : I.encard ≤ 2) (hI : I ⊆ M.E := by grind_mat) :
     M.Indep I := by
   have hne : I.encard ≠ ⊤ := (h.trans_lt (by exact (cmp_eq_lt_iff 2 ⊤).mp rfl : (2 : ℕ∞) < ⊤ )).ne
   rw [le_iff_lt_or_eq, encard_eq_two, ← ENat.add_one_le_iff hne, ← one_add_one_eq_two,
     ENat.add_one_le_add_one_iff, encard_le_one_iff_eq] at h
   obtain (rfl | ⟨x, rfl⟩) | ⟨x, y, -, rfl⟩ := h
   · exact M.empty_indep
-  · refine indep_singleton.2 (isNonloop_of_loopless (by aesop_mat))
+  · refine indep_singleton.2 (isNonloop_of_loopless (by grind_mat))
   exact pair_indep
 
-lemma eRk_pair_eq [Simple M] (hef : e ≠ f) (he : e ∈ M.E := by aesop_mat)
-    (hf : f ∈ M.E := by aesop_mat) : M.eRk {e,f} = 2 := by
+lemma eRk_pair_eq [Simple M] (hef : e ≠ f) (he : e ∈ M.E := by grind_mat)
+    (hf : f ∈ M.E := by grind_mat) : M.eRk {e,f} = 2 := by
   rw [(pair_indep he).eRk_eq_encard, encard_pair hef]
 
 lemma Dep.two_lt_encard [Simple M] (hD : M.Dep D) : 2 < D.encard :=

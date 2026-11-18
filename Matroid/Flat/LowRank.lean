@@ -21,7 +21,7 @@ lemma IsPoint.isFlat (hP : M.IsPoint P) : M.IsFlat P :=
 lemma IsPoint.eRk (hP : M.IsPoint P) : M.eRk P = 1 :=
   hP.2
 
-@[aesop unsafe 10% (rule_sets := [Matroid])]
+@[aesop unsafe 10% (rule_sets := [Matroid]), matroid_ground →]
 lemma IsPoint.subset_ground (hP : M.IsPoint P) : P ⊆ M.E :=
   hP.1.subset_ground
 
@@ -58,7 +58,7 @@ lemma isPoint_iff_exists_eq_closure_isNonloop :
 lemma IsPoint.isNonloop (hP : M.IsPoint {e}) : M.IsNonloop e := by
   simpa using hP.eRk
 
-lemma IsPoint.insert_indep (h : M.IsPoint {e}) (f : α) (hf : f ∈ M.E := by aesop_mat) :
+lemma IsPoint.insert_indep (h : M.IsPoint {e}) (f : α) (hf : f ∈ M.E := by grind_mat) :
     M.Indep {e, f} := by
   obtain rfl | hne := eq_or_ne e f
   · simp [h.isNonloop]
@@ -84,7 +84,7 @@ lemma IsPoint.loopless_of_singleton (h : M.IsPoint {e}) : M.Loopless := by
   rw [subset_sdiff_singleton_iff]
   exact ⟨M.closure_subset_closure (empty_subset _), h.isNonloop.not_isLoop⟩
 
-lemma isPoint_contract_iff (hC : C ⊆ M.E := by aesop_mat) :
+lemma isPoint_contract_iff (hC : C ⊆ M.E := by grind_mat) :
     (M ／ C).IsPoint P ↔ (M.closure C ⋖[M] (C ∪ P)) ∧ Disjoint P C := by
   rw [IsPoint, isFlat_contract_iff, covBy_iff_eRelRk_eq_one, eRelRk_closure_left,
     union_comm C, ← eRelRk_eq_eRelRk_union, and_iff_right (closure_isFlat _ _),
@@ -165,7 +165,7 @@ lemma IsLine.isFlat (hL : M.IsLine L) : M.IsFlat L :=
 lemma IsLine.eRk (hL : M.IsLine L) : M.eRk L = 2 :=
   hL.2
 
-@[aesop unsafe 10% (rule_sets := [Matroid])]
+@[aesop unsafe 10% (rule_sets := [Matroid]), matroid_ground →]
 lemma IsLine.subset_ground (hL : M.IsLine L) : L ⊆ M.E :=
   hL.1.subset_ground
 

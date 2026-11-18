@@ -341,7 +341,7 @@ variable {a b a' b' : ℕ}
 whose independent sets are those of cardinality at most `a`. -/
 def unif (a b : ℕ) : Matroid (Fin b) := unifOn univ a
 
-@[simp] theorem unif_ground_eq (a b : ℕ) : (unif a b).E = univ := rfl
+@[simp, matroid_ground =] theorem unif_ground_eq (a b : ℕ) : (unif a b).E = univ := rfl
 
 @[simp] theorem unif_indep_iff (I) : (unif a b).Indep I ↔ I.encard ≤ a := by
   rw [unif, unifOn_indep_iff, and_iff_left (subset_univ _)]
@@ -431,7 +431,7 @@ is independent or spanning.
 This is mainly useful for infinite matroids, where uniformity is structurally nontrivial. -/
 def IsUniform (M : Matroid α) := ∀ ⦃X⦄, X ⊆ M.E → M.Indep X ∨ M.Spanning X
 
-lemma IsUniform.indep_or_spanning (hM : M.IsUniform) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
+lemma IsUniform.indep_or_spanning (hM : M.IsUniform) (X : Set α) (hX : X ⊆ M.E := by grind_mat) :
     M.Indep X ∨ M.Spanning X :=
   hM hX
 
@@ -575,7 +575,7 @@ lemma IsUniform.closure_not_spanning (hM : M.IsUniform) (hIE : I ⊆ M.E) (hIs :
     closure_insert_closure_eq_closure_insert, ← spanning_iff_closure_eq] at hIs
 
   have hIe : M.Indep (insert e I) :=
-    (hM.indep_or_spanning _ (by aesop_mat)).elim id fun h ↦ (hIs h).elim
+    (hM.indep_or_spanning _ (by grind_mat)).elim id fun h ↦ (hIs h).elim
   rw [(hIe.subset (subset_insert _ _)).mem_closure_iff_of_notMem heI] at he
   exact he.not_indep hIe
 

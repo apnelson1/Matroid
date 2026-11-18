@@ -52,7 +52,7 @@ protected lemma triangle (Δ : M.TriangleDeletePair) {b} : M.IsTriangle {Δ.g, �
   · exact pair_comm _ _ ▸ Δ.true_false_triangle
   exact Δ.true_false_triangle
 
-@[simp]
+@[simp, matroid_ground ←]
 protected lemma mem_ground (Δ : M.TriangleDeletePair) {b} : Δ.x b ∈ M.E :=
   Δ.triangle.mem_ground₂
 

@@ -60,11 +60,11 @@ lemma Parallel.isNonloop_left (h : M.Parallel e f) : M.IsNonloop e :=
 lemma Parallel.isNonloop_right (h : M.Parallel e f) : M.IsNonloop f :=
   h.symm.isNonloop_left
 
-@[aesop unsafe 20% (rule_sets := [Matroid])]
+@[aesop unsafe 20% (rule_sets := [Matroid]), matroid_ground →]
 lemma Parallel.mem_ground_left (h : M.Parallel e f) : e ∈ M.E :=
   h.isNonloop_left.mem_ground
 
-@[aesop unsafe 20% (rule_sets := [Matroid])]
+@[aesop unsafe 20% (rule_sets := [Matroid]), matroid_ground →]
 lemma Parallel.mem_ground_right (h : M.Parallel e f) : f ∈ M.E :=
   h.isNonloop_right.mem_ground
 
@@ -295,10 +295,10 @@ section Parallel'
 (Sometimes allowing loops is more convenient.) -/
 def Parallel' (M : Matroid α) (e f : α) : Prop := e ∈ M.E ∧ f ∈ M.E ∧ M.closure {e} = M.closure {f}
 
-@[aesop unsafe 20% (rule_sets := [Matroid])]
+@[aesop unsafe 20% (rule_sets := [Matroid]), matroid_ground →]
 lemma Parallel'.mem_ground_left (h : M.Parallel' e f) : e ∈ M.E := h.1
 
-@[aesop unsafe 20% (rule_sets := [Matroid])]
+@[aesop unsafe 20% (rule_sets := [Matroid]), matroid_ground →]
 lemma Parallel'.mem_ground_right (h : M.Parallel' e f) : f ∈ M.E := h.2.1
 
 lemma Parallel'.closure_eq_closure (h : M.Parallel' e f) : M.closure {e} = M.closure {f} := h.2.2
@@ -341,8 +341,8 @@ lemma parallel'_iff_loops_or_parallel :
     simp [he.mem_ground, hf.mem_ground]
   exact hef.parallel'
 
-lemma parallel'_iff_closure_eq_closure (e f : α) (he : e ∈ M.E := by aesop_mat)
-    (hf : f ∈ M.E := by aesop_mat) : M.Parallel' e f ↔ M.closure {e} = M.closure {f} := by
+lemma parallel'_iff_closure_eq_closure (e f : α) (he : e ∈ M.E := by grind_mat)
+    (hf : f ∈ M.E := by grind_mat) : M.Parallel' e f ↔ M.closure {e} = M.closure {f} := by
   rw [Matroid.Parallel', and_iff_right he, and_iff_right hf]
 
 lemma Parallel'.mem_closure (h : M.Parallel' e f) : e ∈ M.closure {f} := by

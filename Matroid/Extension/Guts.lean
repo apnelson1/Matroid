@@ -205,11 +205,11 @@ lemma mem_gutsModularCutSet_iff' :
   convert Iff.rfl with b
   simp
 
-lemma mem_gutsModularCutSet_iff (hX : X ⊆ M.E := by aesop_mat) :
+lemma mem_gutsModularCutSet_iff (hX : X ⊆ M.E := by grind_mat) :
     F ∈ M.gutsModularCutSet X ↔ M.IsFlat F ∧ (M.project F).Skew X (M.E \ X) := by
   rw [mem_gutsModularCutSet_iff', inter_eq_self_of_subset_left hX]
 
-lemma closure_mem_gutsModularCutSet_iff (hX : X ⊆ M.E := by aesop_mat) :
+lemma closure_mem_gutsModularCutSet_iff (hX : X ⊆ M.E := by grind_mat) :
     M.closure Y ∈ M.gutsModularCutSet X ↔ (M.project Y).Skew X (M.E \ X) := by
   rw [mem_gutsModularCutSet_iff, and_iff_right (by simp), project_closure_eq]
 
@@ -245,7 +245,7 @@ lemma gutsModularCutSet_eq_principal (hX : M.Coindep X) :
   rw [← gutsModularCutSet_compl, gutsModularCutSet_eq_principal_compl hX.compl_spanning,
     sdiff_sdiff_cancel_left hX.subset_ground]
 
-lemma gutsModularCutSet_eq_top_iff (hXE : X ⊆ M.E := by aesop_mat) :
+lemma gutsModularCutSet_eq_top_iff (hXE : X ⊆ M.E := by grind_mat) :
     M.gutsModularCutSet X = ⊤ ↔ M.Skew X (M.E \ X) := by
   simp only [gutsModularCutSet, gutsModularCut_eq_top_iff, Skew]
   convert Iff.rfl with b

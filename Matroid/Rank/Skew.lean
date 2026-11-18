@@ -102,7 +102,7 @@ lemma tsum_nullity_eq_nullity_iUnion_iff_isSkewFamily {X : ι → Set α}
   exact iUnion_mono fun i ↦ (hIs i).1.subset
 
 lemma nullity_union_eq_iff (hdj : Disjoint X Y) (hfin : M.nullity (X ∪ Y) ≠ ⊤)
-    (hXE : X ⊆ M.E := by aesop_mat) (hYE : Y ⊆ M.E := by aesop_mat) :
+    (hXE : X ⊆ M.E := by grind_mat) (hYE : Y ⊆ M.E := by grind_mat) :
     M.nullity (X ∪ Y) = M.nullity X + M.nullity Y ↔ M.Skew X Y := by
   rw [Skew, ← tsum_nullity_eq_nullity_iUnion_iff_isSkewFamily]
   · simp [iUnion_bool]
@@ -111,7 +111,7 @@ lemma nullity_union_eq_iff (hdj : Disjoint X Y) (hfin : M.nullity (X ∪ Y) ≠ 
   simpa [lt_top_iff_ne_top, iUnion_bool]
 
 lemma not_skew_iff_nullity_lt_nullity_project (hfin : M.nullity Y ≠ ⊤) (hdj : Disjoint X Y)
-    (hX : X ⊆ M.E := by aesop_mat) (hY : Y ⊆ M.E := by aesop_mat) :
+    (hX : X ⊆ M.E := by grind_mat) (hY : Y ⊆ M.E := by grind_mat) :
     ¬ M.Skew X Y ↔ M.nullity Y < (M.project X).nullity Y := by
   refine Iff.symm ⟨fun h hi ↦ h.ne ?_, fun h ↦ ?_⟩
   · rw [nullity_project_eq_nullity_contract, ← (M ／ X).nullity_restrict_self,
@@ -137,7 +137,7 @@ lemma not_skew_iff_nullity_lt_nullity_project (hfin : M.nullity Y ≠ ⊤) (hdj 
   exact h hJ'.2
 
 lemma not_skew_iff_nullity_union_gt (hfin : M.nullity (X ∪ Y) ≠ ⊤) (hdj : Disjoint X Y)
-    (hX : X ⊆ M.E := by aesop_mat) (hY : Y ⊆ M.E := by aesop_mat) :
+    (hX : X ⊆ M.E := by grind_mat) (hY : Y ⊆ M.E := by grind_mat) :
     ¬ M.Skew X Y ↔ M.nullity X + M.nullity Y < M.nullity (X ∪ Y) := by
   rw [← nullity_union_eq_iff hdj hfin, lt_iff_le_and_ne, eq_comm, and_iff_right]
   apply M.nullity_add_nullity_le_nullity_union hdj

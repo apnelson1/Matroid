@@ -27,7 +27,7 @@ lemma Rep.span_spanning_eq (v : M.Rep 𝔽 W) {S : Set α} (hS : M.Spanning S) :
   apply span_closure_congr
   simp [hS.closure_eq]
 
-lemma Rep.spanning_iff (v : M.Rep 𝔽 W) {S : Set α} (hSE : S ⊆ M.E := by aesop_mat) :
+lemma Rep.spanning_iff (v : M.Rep 𝔽 W) {S : Set α} (hSE : S ⊆ M.E := by grind_mat) :
     M.Spanning S ↔ span 𝔽 (v '' S) = span 𝔽 (range v) := by
   rw [← image_univ, ← v.span_closure_congr_iff, closure_univ, M.spanning_iff_closure_eq]
 
@@ -59,7 +59,7 @@ lemma Rep.FullRank.span_spanning {v : M.Rep 𝔽 W} (h : v.FullRank) {S : Set α
   rw [← h.span_range, v.span_spanning_eq hS]
 
 lemma Rep.FullRank.spanning_iff (v : M.Rep 𝔽 W) (h : v.FullRank) {S : Set α}
-    (hSE : S ⊆ M.E := by aesop_mat) : M.Spanning S ↔ span 𝔽 (v '' S) = ⊤ := by
+    (hSE : S ⊆ M.E := by grind_mat) : M.Spanning S ↔ span 𝔽 (v '' S) = ⊤ := by
   rw [v.spanning_iff, h.span_range]
 
 lemma Rep.fullRank_iff {v : M.Rep 𝔽 W} : v.FullRank ↔ span 𝔽 (range v) = ⊤ := by

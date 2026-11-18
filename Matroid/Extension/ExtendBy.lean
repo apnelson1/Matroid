@@ -274,7 +274,7 @@ def _root_.Matroid.extendBy (M : Matroid α) (e : α) (U : M.ModularCut) : Matro
     (indep_maximal := fun _ ↦ U.existsMaximalSubsetProperty)
     (subset_ground := fun _ ↦ ModularCut.ExtIndep.subset_insert_ground)
 
-@[simp]
+@[simp, matroid_ground =]
 lemma _root_.Matroid.extendBy_ground (M : Matroid α) (e : α) (U : M.ModularCut) :
     (M.extendBy e U).E = insert e M.E := rfl
 
@@ -363,7 +363,7 @@ lemma mem_closure_extendBy_iff (U : M.ModularCut) (he : e ∉ M.E) :
   simp [heI, hI'.indep]
 
 lemma mem_closure_extendBy_dual_iff (U : M.ModularCut) (he : e ∉ M.E)
-    (hXE : X ⊆ M.E := by aesop_mat) :
+    (hXE : X ⊆ M.E := by grind_mat) :
     e ∈ (M.extendBy e U)✶.closure X ↔ M.closure (M.E \ X) ∉ U := by
   rw [mem_dual_closure_iff_notMem_closure_compl (notMem_subset hXE he), extendBy_ground,
     sdiff_sdiff_comm, insert_sdiff_self_of_notMem he, U.mem_closure_extendBy_iff he,

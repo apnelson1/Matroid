@@ -48,11 +48,11 @@ lemma spanning_empty_iff : M.Spanning ∅ ↔ M = loopyOn M.E := by
   rintro ⟨E, rfl⟩
   rfl
 
-lemma spanning_dual_iff  (hXE : X ⊆ M.E := by aesop_mat) :
+lemma spanning_dual_iff  (hXE : X ⊆ M.E := by grind_mat) :
     M✶.Spanning X ↔ M.Indep (M.E \ X) := by
   rw [spanning_iff_compl_coindep, dual_coindep_iff, dual_ground]
 
-lemma spanning_compl_dual_iff (hXE : X ⊆ M.E := by aesop_mat) :
+lemma spanning_compl_dual_iff (hXE : X ⊆ M.E := by grind_mat) :
     M✶.Spanning (M.E \ X) ↔ M.Indep X := by
   rw [spanning_iff_compl_coindep, dual_coindep_iff, dual_ground, sdiff_sdiff_cancel_left hXE]
 
@@ -104,7 +104,7 @@ lemma IsSpanningRestriction.exists_eq_restrict (h : N ≤sr M) : ∃ R, M.Spanni
 lemma restrict_isSpanningRestriction_iff : (M ↾ X) ≤sr M ↔ M.Spanning X :=
   ⟨fun h ↦ by simpa using h.spanning, fun h ↦ ⟨restrict_isRestriction .., h⟩⟩
 
-lemma IsSpanningRestriction.isBase_iff (h : N ≤sr M) {B : Set α} (hBE : B ⊆ N.E := by aesop_mat) :
+lemma IsSpanningRestriction.isBase_iff (h : N ≤sr M) {B : Set α} (hBE : B ⊆ N.E := by grind_mat) :
     M.IsBase B ↔ N.IsBase B := by
   rw [isBase_iff_indep_spanning, isBase_iff_indep_spanning, h.isRestriction.indep_iff,
     h.spanning_iff]

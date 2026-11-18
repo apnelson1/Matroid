@@ -1,6 +1,7 @@
 module
 
 public import Mathlib.Combinatorics.Matroid.Closure
+public import Matroid.ForMathlib.Tactic.GrindMatAttr
 
 @[expose] public section
 
@@ -114,6 +115,8 @@ variable {M : ClosureMatroid α}
   (indep_aug := fun I B hI hInotmax hBmax ↦ PreClosureMatroid.Indep.aug hI hInotmax hBmax )
   (indep_maximal := fun _ h ↦ M.indep_maximal h)
   (subset_ground := fun _ ↦ PreClosureMatroid.Indep.subset_ground)
+
+attribute [matroid_ground =] matroid_E
 
 @[simp] lemma matroid_indep_eq (M : ClosureMatroid α) : M.matroid.Indep = M.Indep := rfl
 

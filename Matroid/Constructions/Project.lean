@@ -1,6 +1,7 @@
 module
 
 public import Mathlib.Combinatorics.Matroid.Minor.Contract
+public import Matroid.ForMathlib.Matroid.Grind
 
 @[expose] public section
 
@@ -85,7 +86,7 @@ lemma project_loops (M : Matroid α) (C : Set α) : (M.project C).loops = M.clos
   simp [loops]
 
 @[simp]
-lemma project_spanning_iff {C : Set α} (hC : C ⊆ M.E := by aesop_mat) :
+lemma project_spanning_iff {C : Set α} (hC : C ⊆ M.E := by grind_mat) :
     (M.project C).Spanning X ↔ M.Spanning (X ∪ C) := by
   rw [spanning_iff, project_closure, spanning_iff, project_ground, union_subset_iff,
     and_iff_left hC]
@@ -207,7 +208,7 @@ lemma project_isBasis'_iff_contract_isBasis' :
      inter_assoc, inter_eq_self_of_subset_right sdiff_subset, inter_sdiff_assoc, iff_self_and]
   exact fun h ↦ h.indep.subset_ground.trans sdiff_subset
 
-lemma project_isFlat_iff {F : Set α} (hC : C ⊆ M.E := by aesop_mat) :
+lemma project_isFlat_iff {F : Set α} (hC : C ⊆ M.E := by grind_mat) :
     (M.project C).IsFlat F ↔ M.IsFlat F ∧ C ⊆ F := by
   by_cases! hFE : ¬ F ⊆ M.E
   · exact iff_of_false (fun h ↦ hFE h.subset_ground) fun h ↦ hFE h.1.subset_ground
@@ -272,12 +273,12 @@ lemma loopify_loopify (M : Matroid α) (X Y : Set α) :
     (M.loopify X).loopify Y = M.loopify (X ∪ Y) :=
   ext_indep rfl fun I (hI : I ⊆ M.E) ↦ by simp [loopify_indep_iff, and_assoc]
 
-lemma loopify_loops_subset (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
+lemma loopify_loops_subset (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by grind_mat) :
     X ⊆ (M.loopify X).loops := by
   grind [loops, loopify_closure]
 
 @[simp]
-lemma loopify_eq_self_iff (hX : X ⊆ M.E := by aesop_mat) : M.loopify X = M ↔ X ⊆ M.loops := by
+lemma loopify_eq_self_iff (hX : X ⊆ M.E := by grind_mat) : M.loopify X = M ↔ X ⊆ M.loops := by
   refine ⟨fun h ↦ ?_, fun h ↦ ext_indep rfl fun I hI ↦ ?_⟩
   · grw [← h, ← M.loopify_loops_subset X hX]
   simp only [loopify_indep_iff, and_iff_left_iff_imp]

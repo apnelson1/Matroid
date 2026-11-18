@@ -297,7 +297,7 @@ lemma eRank_truncate_eq_eRank_sub_one (M : Matroid α) : M.truncate.eRank = M.eR
   · simp
   rw [← M.truncate_eRank_add_one, ENat.add_tsub_cancel_right (by simp)]
 
-@[simp] lemma truncate_spanning_iff_eRank_contract_le {S : Set α} (hSE : S ⊆ M.E := by aesop_mat) :
+@[simp] lemma truncate_spanning_iff_eRank_contract_le {S : Set α} (hSE : S ⊆ M.E := by grind_mat) :
     M.truncate.Spanning S ↔ (M ／ S).eRank ≤ 1 := by
   rw [← eRelRk_ground_eq_zero_iff, ← eRank_contract_eq_eRelRk_ground, ← truncate_contract,
     eRank_truncate_eq_eRank_sub_one, tsub_eq_zero_iff_le]
@@ -535,7 +535,7 @@ lemma eq_circuitOn_of_ground_isCircuit (h : M.IsCircuit M.E) :
   have h' : M.Nonempty := ⟨_, h.subset_ground h.nonempty.some_mem⟩
   exact ⟨M.E, h'.ground_nonempty, ground_isCircuit_iff.1 h⟩
 
-lemma isCircuit_iff_restr_eq_circuitOn (hCne : C.Nonempty) (hC : C ⊆ M.E := by aesop_mat) :
+lemma isCircuit_iff_restr_eq_circuitOn (hCne : C.Nonempty) (hC : C ⊆ M.E := by grind_mat) :
     M.IsCircuit C ↔ M ↾ C = circuitOn C := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · refine ext_isCircuit rfl fun C' hC' ↦ ?_
@@ -799,6 +799,8 @@ lemma maximal_indep_eq : Maximal (T.Indep) = T.IsBase := by
 
   (subset_ground  := fun _ hI ↦ hI.1.subset_ground)
 
+attribute [matroid_ground =] matroid_E
+
 @[simp] lemma matroid_indep_eq : T.matroid.Indep = T.Indep := rfl
 
 @[simp] lemma matroid_isBase_eq : T.matroid.IsBase = T.IsBase := by
@@ -890,7 +892,7 @@ lemma eq_top_or_bot_of_rankFinite_dual [RankFinite M✶] (T : M.TruncateFamily) 
 
 end TruncateFamily
 
-lemma truncate_closure_eq_of_not_spanning {X : Set α} (hXE : X ⊆ M.E := by aesop_mat)
+lemma truncate_closure_eq_of_not_spanning {X : Set α} (hXE : X ⊆ M.E := by grind_mat)
     (hs : ¬ M.truncate.Spanning X) : M.truncate.closure X = M.closure X := by
   rw [← TruncateFamily.matroid_top] at hs ⊢
   rwa [TruncateFamily.matroid_closure_eq_closure _ hXE]

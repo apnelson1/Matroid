@@ -43,13 +43,13 @@ lemma connectedTo_comm : M.ConnectedTo e f ↔ M.ConnectedTo f e :=
 instance : Std.Symm M.ConnectedTo where
   symm _ _ := ConnectedTo.symm
 
-@[aesop unsafe 10% (rule_sets := [Matroid])]
+@[aesop unsafe 10% (rule_sets := [Matroid]), matroid_ground →]
 lemma ConnectedTo.mem_ground_left (h : M.ConnectedTo e f) : e ∈ M.E := by
   obtain (⟨rfl, hef⟩ | ⟨C, hC, heC, -⟩) := h
   · exact hef
   exact hC.subset_ground heC
 
-@[aesop unsafe 10% (rule_sets := [Matroid])]
+@[aesop unsafe 10% (rule_sets := [Matroid]), matroid_ground →]
 lemma ConnectedTo.mem_ground_right (h : M.ConnectedTo e f) : f ∈ M.E :=
   h.symm.mem_ground_left
 
@@ -100,12 +100,12 @@ lemma ConnectedTo.of_restrict {R : Set α} (hR : R ⊆ M.E) (hef : (M ↾ R).Con
   rw [restrict_isCircuit_iff] at hC
   exact hC.1.mem_connectedTo_mem heC hfC
 
-lemma connectedTo_restrict_iff {R : Set α} (hR : R ⊆ M.E := by aesop_mat) :
+lemma connectedTo_restrict_iff {R : Set α} (hR : R ⊆ M.E := by grind_mat) :
     (M ↾ R).ConnectedTo e f ↔ (e = f ∧ e ∈ R) ∨ ∃ C ⊆ R, M.IsCircuit C ∧ e ∈ C ∧ f ∈ C := by
   simp_rw [ConnectedTo, restrict_ground_eq, restrict_isCircuit_iff hR]
   grind
 
-lemma connectedTo_restrict_iff_of_ne {R : Set α} (hef : e ≠ f) (hR : R ⊆ M.E := by aesop_mat) :
+lemma connectedTo_restrict_iff_of_ne {R : Set α} (hef : e ≠ f) (hR : R ⊆ M.E := by grind_mat) :
     (M ↾ R).ConnectedTo e f ↔ ∃ C ⊆ R, M.IsCircuit C ∧ e ∈ C ∧ f ∈ C := by
   rw [connectedTo_restrict_iff, iff_false_intro hef, false_and, false_or]
 
@@ -215,8 +215,8 @@ lemma connected_iff_exists : M.Connected ↔ ∃ e ∈ M.E, ∀ f ∈ M.E, M.Con
   obtain ⟨e, he⟩ := h.nonempty
   exact ⟨e, he, fun f hf ↦ h.forall_connectedTo he hf⟩
 
-lemma Connected.connectedTo (hM : M.Connected) (x y : α) (hx : x ∈ M.E := by aesop_mat)
-    (hy : y ∈ M.E := by aesop_mat) : M.ConnectedTo x y :=
+lemma Connected.connectedTo (hM : M.Connected) (x y : α) (hx : x ∈ M.E := by grind_mat)
+    (hy : y ∈ M.E := by grind_mat) : M.ConnectedTo x y :=
   hM.forall_connectedTo hx hy
 
 lemma Connected.to_dual (hM : M.Connected) : M✶.Connected :=
@@ -268,7 +268,7 @@ lemma not_connected_iff_exists [hne : M.Nonempty] :
     ¬ M.Connected ↔ ∃ e ∈ M.E, ∃ f ∈ M.E, e ≠ f ∧ ¬ M.ConnectedTo e f := by
   simp only [connected_iff, hne, true_and, not_forall, exists_prop, ne_eq,
     ConnectedTo]
-  aesop
+  grind
 
 set_option backward.isDefEq.respectTransparency false in
 lemma eq_disjointSum_of_not_connected [hne : M.Nonempty] (h : ¬ M.Connected) :

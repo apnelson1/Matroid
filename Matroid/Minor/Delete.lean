@@ -14,6 +14,8 @@ variable {α : Type*} {M M' N : Matroid α} {e f : α} {I J R B X Y Z K S : Set 
 
 namespace Matroid
 
+attribute [matroid_ground =] delete_ground
+
 section Delete
 
 variable {D D₁ D₂ R : Set α}
@@ -220,7 +222,7 @@ lemma Nonspanning.of_isRestriction (h : N.Nonspanning X) (hNM : N ≤r M) :
 lemma Coindep.delete_isSpanningRestriction (hX : M.Coindep X) : M ＼ X ≤sr M :=
   restrict_compl _ _ ▸ hX.compl_spanning.restrict_isSpanningRestriction
 
-lemma delete_isSpanningRestriction_iff (hX : X ⊆ M.E := by aesop_mat) :
+lemma delete_isSpanningRestriction_iff (hX : X ⊆ M.E := by grind_mat) :
     M ＼ X ≤sr M ↔ M.Coindep X := by
   refine ⟨fun h ↦ ?_, Coindep.delete_isSpanningRestriction⟩
   rw [← sdiff_sdiff_cancel_left hX]

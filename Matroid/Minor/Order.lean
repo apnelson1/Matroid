@@ -133,7 +133,7 @@ lemma IsMinor.delete_isMinor_delete_of_subset (h : N ≤m M) {D D' : Set α} (hs
 lemma delete_isMinor_delete_of_subset {D'} (M : Matroid α) (hDD' : D ⊆ D') : M ＼ D' ≤m M ＼ D :=
   (delete_isRestriction_of_subset _ hDD').isMinor
 
-lemma restrict_isMinor (M : Matroid α) (hR : R ⊆ M.E := by aesop_mat) : (M ↾ R) ≤m M := by
+lemma restrict_isMinor (M : Matroid α) (hR : R ⊆ M.E := by grind_mat) : (M ↾ R) ≤m M := by
   rw [← delete_compl]
   apply delete_isMinor
 

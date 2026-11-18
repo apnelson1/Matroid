@@ -90,7 +90,7 @@ protected def project (U : M.ModularCut) (C : Set α) : (M.project C).ModularCut
     exact hmod.of_project (fun F ↦ (hFs F.2).2)
 
 @[simp]
-lemma mem_project_iff (U : M.ModularCut) (C : Set α) (hC : C ⊆ M.E := by aesop_mat) :
+lemma mem_project_iff (U : M.ModularCut) (C : Set α) (hC : C ⊆ M.E := by grind_mat) :
     F ∈ U.project C ↔ F ∈ U ∧ C ⊆ F := by
   simp [ModularCut.project, inter_eq_self_of_subset_left hC]
 

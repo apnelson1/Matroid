@@ -20,7 +20,7 @@ class OnUniv (M : Matroid α) : Prop where
 instance : (M ↾ univ).OnUniv := ⟨rfl⟩
 instance [h : M.OnUniv] : M✶.OnUniv := ⟨h.1⟩
 
-@[simp]
+@[simp, matroid_ground =]
 lemma ground_eq_univ (M : Matroid α) [OnUniv M] : M.E = univ :=
   OnUniv.ground_eq
 

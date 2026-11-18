@@ -253,7 +253,7 @@ lemma eRelRk_add_cancel (M : Matroid α) (hXY : X ⊆ Y) (hYZ : Y ⊆ Z) :
     union_comm, ← sdiff_self_inter, sdiff_union_sdiff_cancel' (by tauto_set) (by tauto_set)]
   rwa [inter_assoc, inter_eq_self_of_subset_right hXY] at hI
 
-lemma eRelRk_eq_zero_iff (hY : Y ⊆ M.E := by aesop_mat) :
+lemma eRelRk_eq_zero_iff (hY : Y ⊆ M.E := by grind_mat) :
     M.eRelRk X Y = 0 ↔ Y ⊆ M.closure X := by
   rw [← eRelRk_closure_left, eRelRk, eRk_eq_zero_iff', contract_loops_eq, closure_closure,
     sdiff_self, subset_empty_iff, contract_ground, ← inter_sdiff_assoc,
@@ -270,7 +270,7 @@ lemma IsBasis'.eRelRk_eq_zero (hI : M.IsBasis' I X) : M.eRelRk I X = 0 := by
 lemma IsBasis.eRelRk_eq_zero (hI : M.IsBasis I X) : M.eRelRk I X = 0 :=
   hI.isBasis'.eRelRk_eq_zero
 
-lemma eRelRk_insert_eq_zero_iff (he : e ∈ M.E := by aesop_mat) :
+lemma eRelRk_insert_eq_zero_iff (he : e ∈ M.E := by grind_mat) :
     M.eRelRk X (insert e X) = 0 ↔ e ∈ M.closure X := by
   rw [eRelRk_eq_zero_iff', insert_inter_of_mem he, insert_subset_iff]
   simp only [and_iff_left_iff_imp]
@@ -282,11 +282,11 @@ lemma eRelRk_insert_eq_zero_iff' : M.eRelRk X (insert e X) = 0 ↔ (e ∈ M.E �
   rw [← M.eRelRk_inter_ground_right, insert_inter_of_notMem he, eRelRk_inter_ground_right]
   simp [he]
 
-lemma eRelRk_ground_eq_zero_iff (hX : X ⊆ M.E := by aesop_mat) :
+lemma eRelRk_ground_eq_zero_iff (hX : X ⊆ M.E := by grind_mat) :
     M.eRelRk X M.E = 0 ↔ M.Spanning X := by
   rw [eRelRk_eq_zero_iff, ground_subset_closure_iff, spanning_iff_closure_eq]
 
-lemma eRelRk_eq_one_iff (hY : Y ⊆ M.E := by aesop_mat) :
+lemma eRelRk_eq_one_iff (hY : Y ⊆ M.E := by grind_mat) :
     M.eRelRk X Y = 1 ↔ ∃ e ∈ Y \ M.closure X, Y ⊆ M.closure (insert e X) := by
   rw [← eRelRk_closure_left, eRelRk_eq_eRk_diff_contract, eRk_eq_one_iff
     (show Y \ (M.closure X) ⊆ (M ／ (M.closure X)).E from sdiff_subset_sdiff_left hY)]
@@ -295,7 +295,7 @@ lemma eRelRk_eq_one_iff (hY : Y ⊆ M.E := by aesop_mat) :
     closure_closure, union_eq_self_of_subset_left (M.closure_subset_closure (subset_insert _ X))]
   exact ⟨fun ⟨e,he,_,hY'⟩ ↦ ⟨e,he,hY'⟩, fun ⟨e, he, hY'⟩ ↦ ⟨e, he, ⟨hY he.1, he.2⟩, hY'⟩⟩
 
-lemma eRelRk_le_one_iff (hYne : Y.Nonempty) (hY : Y ⊆ M.E := by aesop_mat) :
+lemma eRelRk_le_one_iff (hYne : Y.Nonempty) (hY : Y ⊆ M.E := by grind_mat) :
     M.eRelRk X Y ≤ 1 ↔ ∃ e ∈ Y, Y ⊆ M.closure (insert e X) := by
   rw [le_iff_eq_or_lt, lt_iff_not_ge, Order.one_le_iff_ne_zero, not_not, eRelRk_eq_one_iff,
     eRelRk_eq_zero_iff]
@@ -308,12 +308,12 @@ lemma eRelRk_le_one_iff (hYne : Y.Nonempty) (hY : Y ⊆ M.E := by aesop_mat) :
     exact Or.inr hY'.2
   exact Or.inl ⟨_, ⟨hY'.1, he⟩, hY'.2⟩
 
-lemma eRelRk_insert_eq_one (he : e ∈ M.E \ M.closure X) (hX : X ⊆ M.E := by aesop_mat) :
+lemma eRelRk_insert_eq_one (he : e ∈ M.E \ M.closure X) (hX : X ⊆ M.E := by grind_mat) :
     M.eRelRk X (insert e X) = 1 := by
   rw [eRelRk_eq_one_iff]
   exact ⟨e, by simp [he.2], M.subset_closure _ <| insert_subset he.1 hX⟩
 
-lemma eRelRk_diff_singleton_eq_one_iff (hX : X ⊆ M.E := by aesop_mat) :
+lemma eRelRk_diff_singleton_eq_one_iff (hX : X ⊆ M.E := by grind_mat) :
     M.eRelRk (X \ {e}) X = 1 ↔ e ∈ X \ M.closure (X \ {e}) := by
   rw [eRelRk_eq_one_iff]
   refine ⟨fun ⟨f, hf, hfX⟩ ↦ ?_, fun h ↦ ⟨e, h, ?_⟩⟩
@@ -526,7 +526,7 @@ lemma eRank_contract_eq_eRelRk_ground (M : Matroid α) (C : Set α) :
   rw [eRelRk_eq_eRk_contract, eRank_def, contract_ground, ← (M ／ C).eRk_inter_ground M.E,
     contract_ground, inter_eq_self_of_subset_right sdiff_subset]
 
-lemma eRank_contract_eq_zero_iff (hX : X ⊆ M.E := by aesop_mat) :
+lemma eRank_contract_eq_zero_iff (hX : X ⊆ M.E := by grind_mat) :
     (M ／ X).eRank = 0 ↔ M.Spanning X := by
   rw [eRank_contract_eq_eRelRk_ground, eRelRk_ground_eq_zero_iff]
 
@@ -643,12 +643,12 @@ lemma Indep.nullity_contract_of_superset (hI : M.Indep I) (hIX : I ⊆ X) :
   rw [(hJX.contract_isBasis'_sdiff_sdiff_of_subset hIJ).nullity_eq, hJX.nullity_eq]
   simp [sdiff_sdiff_right, sdiff_sdiff, union_eq_self_of_subset_left hIJ]
 
-lemma nullity_eq_eRelRk (M : Matroid α) (X : Set α) (hXE : X ⊆ M.E := by aesop_mat) :
+lemma nullity_eq_eRelRk (M : Matroid α) (X : Set α) (hXE : X ⊆ M.E := by grind_mat) :
     M.nullity X = M✶.eRelRk (M.E \ X) M.E := by
   rw [nullity, eRelRk_eq_eRk_diff_contract, ← delete_compl, dual_delete, eRank_def]
   simp
 
-lemma nullity_dual_eq (M : Matroid α) (X : Set α) (hXE : X ⊆ M.E := by aesop_mat) :
+lemma nullity_dual_eq (M : Matroid α) (X : Set α) (hXE : X ⊆ M.E := by grind_mat) :
     M✶.nullity X = M.eRelRk (M.E \ X) M.E := by
   rw [M✶.nullity_eq_eRelRk _ hXE, dual_dual, dual_ground]
 

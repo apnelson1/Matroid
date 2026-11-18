@@ -1,6 +1,7 @@
 module
 
 public import Mathlib.Combinatorics.Matroid.Closure
+public import Matroid.ForMathlib.Matroid.Grind
 public import Mathlib.Tactic.Have
 
 @[expose] public section
@@ -45,7 +46,7 @@ lemma exists_isBase_finset (M : Matroid α) [RankFinite M] : ∃ B : Finset α, 
   exact ⟨hB.finite.toFinset, by simpa⟩
 
 lemma exists_isBasis_finset (M : Matroid α) [RankFinite M] (X : Set α)
-    (hXE : X ⊆ M.E := by aesop_mat) : ∃ I : Finset α, M.IsBasis I X := by
+    (hXE : X ⊆ M.E := by grind_mat) : ∃ I : Finset α, M.IsBasis I X := by
   obtain ⟨I, hI⟩ := M.exists_isBasis X
   refine ⟨hI.indep.finite.toFinset, by simpa⟩
 

@@ -80,7 +80,7 @@ lemma IsVerticalSeparation.eRk_ge (h : P.IsVerticalSeparation) (b : Bool) :
 lemma IsVerticalSeparation.isVerticalSeparation_toggle_of_subset_guts (h : P.IsVerticalSeparation)
     (hX : X ⊆ P.guts) : (P.toggle X).IsVerticalSeparation := by
   refine isVerticalSeparation_iff_forall_nonspanning.2 fun i ↦ ?_
-  grw [toggle_apply, symmDiff_subset_union, hX, ← nonspanning_closure_iff,
+  grw [P.toggle_apply X, symmDiff_subset_union, hX, ← nonspanning_closure_iff,
     ← closure_union_closure_left_eq, union_eq_self_of_subset_right (guts_subset_closure ..),
     closure_closure, nonspanning_closure_iff]
   exact h.nonspanning i

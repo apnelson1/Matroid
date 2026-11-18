@@ -44,7 +44,7 @@ lemma closureBy_subset (M : Matroid α) (hXY : X ⊆ Y) :
     M.closureBy P cl X ⊆ M.closureBy P cl Y := by
   refine le_sInf fun S hS ↦ sInf_le ⟨hS.1, by grw [hXY, hS.2]⟩
 
-lemma subset_closureBy (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
+lemma subset_closureBy (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by grind_mat) :
     X ⊆ M.closureBy P cl X :=
   le_sInf fun F hF ↦ by grw [← inter_eq_self_of_subset_left hX, hF.2]
 
@@ -78,7 +78,7 @@ def parallelClosure (M : Matroid α) := M.closureBy Set.Subsingleton M.closure
 lemma parallelClosure_subset_ground (M : Matroid α) (X : Set α) : M.parallelClosure X ⊆ M.E :=
   closureBy_subset_ground _ (by simp [closure_subset_ground])
 
-lemma subset_parallelClosure (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
+lemma subset_parallelClosure (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by grind_mat) :
     X ⊆ M.parallelClosure X :=
   le_sInf fun Y ⟨_, hXY⟩ ↦ by grw [← hXY, inter_eq_self_of_subset_left hX]
 
@@ -86,7 +86,7 @@ lemma parallelClosure_eq_biUnion (M : Matroid α) (X : Set α) :
     M.parallelClosure X = M.loops ∪ ⋃ e ∈ X, M.closure {e} := by
   rw [parallelClosure]
   refine subset_antisymm ?_ <| union_subset (le_sInf ?_) <| iUnion₂_subset ?_
-  · refine sInf_le ⟨⟨by aesop_mat, fun P hP hPss ↦ ?_⟩, fun e ⟨heX, heE⟩ ↦ ?_⟩
+  · refine sInf_le ⟨⟨by grind_mat, fun P hP hPss ↦ ?_⟩, fun e ⟨heX, heE⟩ ↦ ?_⟩
     · rw [← closure_inter_ground]
       obtain hempt | ⟨e, he⟩ := (hPss.anti (show P ∩ M.E ⊆ P by simp)).eq_empty_or_singleton
       · simp [hempt, loops]
@@ -169,7 +169,7 @@ lemma isSeriesParallelClosed_seriesParallelClosure (M : Matroid α) (X : Set α)
     M.IsSeriesParallelClosed (M.seriesParallelClosure X) :=
   isClosedBy_closureBy _ (by simp [M.closure_dual_subset_ground, M.closure_subset_ground]) _
 
-lemma subset_seriesParallelClosure (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
+lemma subset_seriesParallelClosure (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by grind_mat) :
     X ⊆ M.seriesParallelClosure X :=
   subset_closureBy _ _ hX
 

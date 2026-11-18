@@ -22,7 +22,7 @@ lemma principalTruncate_ground (M : Matroid α) (X : Set α) : (M.principalTrunc
 lemma principalTruncate_eq_truncate (hX : M.Spanning X) : M.principalTruncate X = M.truncate := by
   rw [principalTruncate, ← principal_closure_eq, hX.closure_eq, ← truncate_def]
 
-lemma principalTruncate_dep_self {X : Set α} (hXne : X.Nonempty) (hXE : X ⊆ M.E := by aesop_mat) :
+lemma principalTruncate_dep_self {X : Set α} (hXne : X.Nonempty) (hXE : X ⊆ M.E := by grind_mat) :
     (M.principalTruncate X).Dep X := by
   rw [dep_iff, and_iff_left (by simpa), principalTruncate, projectBy_indep_iff]
   suffices M.Indep X → ¬ (X ∩ M.E) ⊆ M.loops by
@@ -32,7 +32,7 @@ lemma principalTruncate_dep_self {X : Set α} (hXne : X.Nonempty) (hXE : X ⊆ M
   simp [inter_eq_self_of_subset_left hXE, hXne.ne_empty] at hdj
 
 lemma principalTruncate_eRk_eq_eRk (M : Matroid α) (hY : ¬ (X ⊆ M.closure Y))
-    (hX : X ⊆ M.E := by aesop_mat) : (M.principalTruncate X).eRk Y = M.eRk Y := by
+    (hX : X ⊆ M.E := by grind_mat) : (M.principalTruncate X).eRk Y = M.eRk Y := by
   rw [← eRank_restrict, principalTruncate, ← projectBy_restrict,
     (ModularCut.principal_restrict_eq_bot_iff hX).2 hY, projectBy_bot, eRank_restrict]
 
@@ -60,7 +60,7 @@ lemma principalTruncate_dual (M : Matroid α) (X : Set α) :
     (M.principalTruncate X)✶ = M✶.principalLift X := by
   rw [eq_comm, eq_dual_comm, principalLift_dual, dual_dual]
 
-lemma principalLift_codep (M : Matroid α) (hXne : X.Nonempty) (hX : X ⊆ M.E := by aesop_mat) :
+lemma principalLift_codep (M : Matroid α) (hXne : X.Nonempty) (hX : X ⊆ M.E := by grind_mat) :
     (M.liftBy (ModularCut.principal M✶ X)).Codep X := by
   rw [Codep, liftBy_dual]
   exact principalTruncate_dep_self hXne hX
@@ -92,7 +92,7 @@ lemma spanning_of_gutsProject_spanning_of_superset (hci : (M.gutsProject X).Span
 The restriction to `X` or its complement remains unchanged, but `X` becomes codependent.  -/
 def localLift (M : Matroid α) (X : Set α) : Matroid α := M.liftBy (M✶.gutsModularCutSet X)
 
-@[simp]
+@[simp, matroid_ground =]
 lemma localLift_ground (M : Matroid α) (X : Set α) : (M.localLift X).E = M.E := rfl
 
 @[simp]

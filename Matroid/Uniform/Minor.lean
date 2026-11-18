@@ -61,8 +61,8 @@ lemma NoUniformMinor.minor {N a b} (hM : M.NoUniformMinor a b) (hNM : N ≤m M) 
 set_option backward.isDefEq.respectTransparency false in
 lemma nonempty_unif_isoRestr_unifOn (a : ℕ) {b : ℕ} {E : Set α} (h : b ≤ E.encard) :
     Nonempty (unif a b ≤ir unifOn E a) := by
-  obtain ⟨f, hf⟩ : ∃ f : ↑(unif a b).E → ↑(unifOn E ↑a).E, f.Injective
-  · obtain rfl | b := b
+  obtain ⟨f, hf⟩ : ∃ f : ↑(unif a b).E → ↑(unifOn E ↑a).E, f.Injective := by
+    obtain rfl | b := b
     · exact ⟨finZeroElim ∘ Subtype.val, Function.injective_of_subsingleton _⟩
     have : Nonempty E
     · rw [nonempty_coe_sort, nonempty_iff_ne_empty]
