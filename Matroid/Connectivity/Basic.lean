@@ -589,7 +589,7 @@ lemma IsRestriction.eLocalConn_eq {N : Matroid α} (hNM : N ≤r M) (X Y : Set �
   simp_rw [Bool.apply_cond (f := fun X ↦ X ∩ N.E)]
 
 lemma IsRestriction.eLocalConn_eq_of_subset {N : Matroid α} (hNM : N ≤r M)
-    (hXE : X ⊆ N.E := by grind_mat) (hYE : Y ⊆ N.E := by grind_mat) :
+    (hXE : X ⊆ N.E := by grind) (hYE : Y ⊆ N.E := by grind) :
     N.eLocalConn X Y = M.eLocalConn X Y := by
   rw [eLocalConn, hNM.multiConn_of_subset (by simp [hXE, hYE]), eLocalConn]
 
@@ -639,7 +639,7 @@ lemma eLocalConn_subset (M : Matroid α) (hXY : X ⊆ Y) : M.eLocalConn X Y = M.
   grw [hI.isBasis_closure_right.subset, project_loops]
   exact M.closure_mono hXY
 
-lemma eLocalConn_eq_zero (hX : X ⊆ M.E := by grind_mat) (hY : Y ⊆ M.E := by grind_mat) :
+lemma eLocalConn_eq_zero (hX : X ⊆ M.E := by grind) (hY : Y ⊆ M.E := by grind) :
     M.eLocalConn X Y = 0 ↔ M.Skew X Y := by
   obtain ⟨I, hI⟩ := M.exists_isBasis X
   obtain ⟨J, hJ⟩ := M.exists_isBasis Y
@@ -894,7 +894,7 @@ lemma IsCircuit.union_isCircuit_of_inter_nonempty {C₁ C₂ : Set α} (hC₁ : 
     hC₂.eq_of_superset_isCircuit hC₁ hss
 
 lemma IsRkFinite.isModularPair_iff_eLocalConn_eq_eRk_inter (hX : M.IsRkFinite X) (Y : Set α)
-    (hXE : X ⊆ M.E := by grind_mat) (hYE : Y ⊆ M.E := by grind_mat) :
+    (hXE : X ⊆ M.E := by grind) (hYE : Y ⊆ M.E := by grind) :
     M.IsModularPair X Y ↔ M.eLocalConn X Y = M.eRk (X ∩ Y) := by
   refine ⟨fun h ↦ h.eLocalConn_eq_eRk_inter, fun h ↦ ?_⟩
   obtain ⟨Ii, hIi⟩ := M.exists_isBasis (X ∩ Y)
@@ -933,7 +933,7 @@ lemma eRk_contract_add_eLocalConn_eq (M : Matroid α) (X Y : Set α) :
   rw [← eRk_project_eq_eRk_contract, eRk_project_add_eLocalConn_eq]
 
 lemma IsHyperplane.eLocalConn_add_one_eq {H X : Set α} (hH : M.IsHyperplane H) (hXH : ¬ (X ⊆ H))
-    (hXE : X ⊆ M.E := by grind_mat) : M.eLocalConn X H + 1 = M.eRk X := by
+    (hXE : X ⊆ M.E := by grind) : M.eLocalConn X H + 1 = M.eRk X := by
   rw [← M.eLocalConn_add_eRelRk_union_eq_eRk X H, ← eRelRk_closure_right,
     (hH.spanning_of_ssuperset (show H ⊂ X ∪ H by simpa)).closure_eq, hH.eRelRk_eq_one]
 

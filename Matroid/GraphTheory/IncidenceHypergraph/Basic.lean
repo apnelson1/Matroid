@@ -93,6 +93,15 @@ def dual (G : IncidenceHypergraph V I E) : IncidenceHypergraph E I V where
   attach' := G.edgeMap'
   attach'_mem := G.edgeMap'_mem
 
+@[grind =]
+lemma verts_dual (G : IncidenceHypergraph V I E) : V(G.dual) = E(G) := rfl
+
+@[grind =]
+lemma incs_dual (G : IncidenceHypergraph V I E) : I(G.dual) = I(G) := rfl
+
+@[grind =]
+lemma edges_dual (G : IncidenceHypergraph V I E) : E(G.dual) = V(G) := rfl
+
 @[simp]
 lemma edgeMap_dual [Nonempty V] (G : IncidenceHypergraph V I E) (i : I) :
     edgeMap G.dual i = attach G i := rfl

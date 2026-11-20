@@ -67,7 +67,7 @@ lemma Rep.isBasis'_iff (v : M.Rep 𝔽 W) :
   exact mem_of_mem_of_subset heI <| (subset_preimage_image v I).trans <| preimage_mono subset_span
 
 
-lemma Rep.mem_closure_iff (v : M.Rep 𝔽 W) (heE : e ∈ M.E := by grind_mat) :
+lemma Rep.mem_closure_iff (v : M.Rep 𝔽 W) (heE : e ∈ M.E := by grind) :
     e ∈ M.closure X ↔ v e ∈ span 𝔽 (v '' X) := by
   obtain ⟨I, hIX⟩ := M.exists_isBasis' X
   have aux : span 𝔽 (v '' I) = span 𝔽 (v '' X) :=
@@ -94,7 +94,7 @@ lemma Rep.eq_zero_iff_not_indep {v : M.Rep 𝔽 W} :
     v e = 0 ↔ ¬ M.Indep {e} := by
   simp [v.indep_iff]
 
-lemma Rep.eq_zero_iff (v : M.Rep 𝔽 W) (e : α) (he : e ∈ M.E := by grind_mat) :
+lemma Rep.eq_zero_iff (v : M.Rep 𝔽 W) (e : α) (he : e ∈ M.E := by grind) :
     v e = 0 ↔ M.IsLoop e := by
   rw [v.eq_zero_iff_not_indep, singleton_not_indep]
 
@@ -273,7 +273,7 @@ lemma Rep.simple_iff [RankPos M] (v : M.Rep 𝔽 W) :
     obtain rfl := h he hf.mem_ground 0 (by simp [h0])
     exact v.ne_zero_of_isNonloop hf h0
   obtain ⟨c,-,h_eq⟩ := (v.parallel_iff hef.symm.isNonloop_right).1 hef
-  exact h (by grind_mat) (by grind_mat) c h_eq
+  exact h (by grind) (by grind) c h_eq
 
 lemma Rep.injOn_of_simple (v : M.Rep 𝔽 W) [h : M.Simple] : InjOn v M.E := by
   obtain (hl | hpos) := M.eq_loopyOn_or_rankPos

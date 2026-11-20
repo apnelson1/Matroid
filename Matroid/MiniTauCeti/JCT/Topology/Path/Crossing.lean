@@ -436,7 +436,7 @@ theorem Path.ncard_boundaryCrossings_mod_two {X : Type*} [TopologicalSpace X]
   have hfront : frontier V = Subtype.val ⁻¹' boundaryCrossings S U :=
     regularized_frontier hf
   have hcross : boundaryCrossings univ V = Subtype.val ⁻¹' boundaryCrossings S U :=
-    (crossings_univ_closure (isOpen_interior.preimage continuous_subtype_val)).trans hfront
+    (crossings_univ_closure (isOpen_interior.preimage continuous_subtypeVal)).trans hfront
   have hQrange : range Q = univ := by
     apply eq_univ_of_forall
     intro q

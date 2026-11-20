@@ -107,7 +107,7 @@ lemma IsModularPair.localConn_eq_rk_inter (h : M.IsModularPair X Y) :
   rw [localConn, h.eLocalConn_eq_eRk_inter, rk]
 
 lemma IsRkFinite.isModularPair_iff_localConn_eq_rk_inter (hX : M.IsRkFinite X) (Y : Set α)
-    (hXE : X ⊆ M.E := by grind_mat) (hYE : Y ⊆ M.E := by grind_mat) :
+    (hXE : X ⊆ M.E := by grind) (hYE : Y ⊆ M.E := by grind) :
     M.IsModularPair X Y ↔ M.localConn X Y = M.rk (X ∩ Y) := by
   rw [hX.isModularPair_iff_eLocalConn_eq_eRk_inter Y hXE hYE, localConn, rk,
     ← ENat.natCast_inj, ENat.natCast_toNat, ENat.natCast_toNat]
@@ -116,8 +116,8 @@ lemma IsRkFinite.isModularPair_iff_localConn_eq_rk_inter (hX : M.IsRkFinite X) (
   rw [← lt_top_iff_ne_top]
   exact (M.eLocalConn_le_eRk_left _ _).trans_lt hX.eRk_lt_top
 
-lemma isModularPair_iff_localConn_eq_rk_inter [RankFinite M] (hXE : X ⊆ M.E := by grind_mat)
-    (hYE : Y ⊆ M.E := by grind_mat) : M.IsModularPair X Y ↔ M.localConn X Y = M.rk (X ∩ Y) :=
+lemma isModularPair_iff_localConn_eq_rk_inter [RankFinite M] (hXE : X ⊆ M.E := by grind)
+    (hYE : Y ⊆ M.E := by grind) : M.IsModularPair X Y ↔ M.localConn X Y = M.rk (X ∩ Y) :=
   (M.isRkFinite_set X).isModularPair_iff_localConn_eq_rk_inter _ hXE hYE
 
 

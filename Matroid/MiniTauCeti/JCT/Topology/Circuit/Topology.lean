@@ -297,7 +297,7 @@ private lemma IsCircuit.source_mem_of_interior_subset {X : Type*}
   have ht : t ∈ Ioo (0 : unitInterval) 1 := ⟨hq.1.trans hqt, ht1⟩
   have ho : IsOpen (P '' Ioo 0 q) := by
     convert hf.isOpenMap (Subtype.val ⁻¹' Ioo 0 q)
-      (isOpen_Ioo.preimage continuous_subtype_val) using 1
+      (isOpen_Ioo.preimage continuous_subtypeVal) using 1
     ext z
     constructor
     · rintro ⟨u, hu, rfl⟩

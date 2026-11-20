@@ -116,7 +116,7 @@ lemma IsPrimitive.isOpenEmbedding_interior {Q : Path x y} [T2Space ↥(range Q)]
     · exact (t.property.2.ne ht).elim
     · exact (t.property.1.ne' ht).elim
   refine .of_continuous_injective_isOpenMap
-    (hf.comp continuous_subtype_val)
+    (hf.comp continuous_subtypeVal)
     (fun s t h ↦ Subtype.ext (hpre (congrArg Subtype.val h))) ?_
   intro U hU
   apply hquot.isOpen_preimage.mp

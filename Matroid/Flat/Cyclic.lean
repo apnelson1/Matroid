@@ -34,7 +34,7 @@ lemma cycleClosure_def (M : Matroid α) (X : Set α) :
 lemma cycleClosure_cyclic (M : Matroid α) (X : Set α) : M.Cyclic <| M.cycleClosure X :=
   Cyclic.sUnion _ <| by grind [IsCircuit.cyclic]
 
-grind_pattern [matroid_ground] cycleClosure_cyclic => M.cycleClosure X
+grind_pattern cycleClosure_cyclic => M.cycleClosure X
 
 lemma IsFlat.isCyclicFlat_cycleClosure (hF : M.IsFlat F) : M.IsCyclicFlat (M.cycleClosure F) where
   isFlat := by

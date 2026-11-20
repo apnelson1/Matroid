@@ -319,7 +319,7 @@ lemma extendedUnifOn_indep_iff (P : Set (Set α)) (L : Set α) (hP : P.PairwiseD
   · grw [← inter_eq_self_of_subset_left h2, inter_iUnion₂, ENat.encard_biUnion_le_tsum_encard,
       tsum_subtype_eq_tsum_support (s := P) (f := fun x ↦ (I ∩ x).encard),
       tsum_le_tsum (g := fun _ ↦ 1), ENat.tsum_one]
-    · simpa [← nonempty_iff_ne_empty]
+    · simpa
     rintro ⟨S, hS, hSp⟩
     simpa [encard_le_one_iff_subsingleton, inter_comm I] using h3 _ hS
   choose φ hφ using fun f : {f | f ∈ P ∧ (I ∩ f).Nonempty} ↦ f.2.2

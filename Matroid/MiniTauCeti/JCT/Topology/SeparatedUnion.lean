@@ -31,10 +31,10 @@ lemma isTotallySeparated_preimage_union_of_finite_inter
   let U' : Set X := (Subtype.val '' Uᶜ)ᶜ ∩ (K \ O)ᶜ
   let V' : Set X := (Subtype.val '' Vᶜ)ᶜ ∩ (K \ P)ᶜ
   have hU' : IsOpen U' :=
-    (hS.isClosedMap_subtype_val _ hU.isClosed_compl).isOpen_compl.inter
+    (hS.isClosedMap_subtypeVal _ hU.isClosed_compl).isOpen_compl.inter
       (hK.sdiff hO).isOpen_compl
   have hV' : IsOpen V' :=
-    (hS.isClosedMap_subtype_val _ hV.isClosed_compl).isOpen_compl.inter
+    (hS.isClosedMap_subtypeVal _ hV.isClosed_compl).isOpen_compl.inter
       (hK.sdiff hP).isOpen_compl
   have memU {z : S} (hz : z ∈ U) : z.1 ∈ U' := by
     constructor
@@ -48,8 +48,8 @@ lemma isTotallySeparated_preimage_union_of_finite_inter
       exact hw (Subtype.ext hwz ▸ hz)
     · rintro ⟨hzK, hzP⟩
       exact hzP (hBP ⟨⟨z, hz, rfl⟩, hzK⟩)
-  refine ⟨Subtype.val ⁻¹' U', Subtype.val ⁻¹' V', hU'.preimage continuous_subtype_val,
-    hV'.preimage continuous_subtype_val, memU hxU, memV hyV, ?_, ?_⟩
+  refine ⟨Subtype.val ⁻¹' U', Subtype.val ⁻¹' V', hU'.preimage continuous_subtypeVal,
+    hV'.preimage continuous_subtypeVal, memU hxU, memV hyV, ?_, ?_⟩
   · intro z hz
     obtain hzU | hzV := hcover (show (⟨z.1, hZ hz⟩ : S) ∈ S ↓∩ Z from hz)
     · exact Or.inl (memU hzU)

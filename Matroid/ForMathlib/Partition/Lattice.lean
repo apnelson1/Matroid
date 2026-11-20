@@ -591,7 +591,7 @@ lemma inf_rel (P Q : Partition (Set α)) : ⇑(P ⊓ Q) = ⇑P ⊓ ⇑Q := by
   use p ⊓ q, ?_, ?_, ?_ <;> simp_all only [inf_eq_inter, mem_inf_iff, bot_eq_empty, and_self,
     mem_inter_iff]
   use ⟨p, hpP, q, hqQ, rfl⟩
-  rw [← nonempty_iff_ne_empty, inter_nonempty_iff_exists_left]
+  rw [ne_empty_iff_nonempty, inter_nonempty_iff_exists_left]
   use x
 
 @[simp]

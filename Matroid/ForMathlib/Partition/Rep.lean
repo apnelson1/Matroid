@@ -251,7 +251,7 @@ lemma mem_fiber_iff (f : α → α) : S ∈ fiber f ↔ (∃ a, f ⁻¹' {a} = S
 @[simp]
 lemma preimage_apply_mem_fiber (f : α → α) (a : α) : f ⁻¹' {f a} ∈ fiber f := by
   simp only [fiber, image_univ, mem_ofIndependent'_iff, mem_range, exists_apply_eq_apply,
-    bot_eq_empty, true_and, ← nonempty_iff_ne_empty]
+    bot_eq_empty, true_and, ne_empty_iff_nonempty]
   use a
   simp
 

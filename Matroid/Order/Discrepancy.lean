@@ -86,10 +86,10 @@ lemma WeakLE.nonempty_basisPair (h : N ≤w M) (X : Set α) :
   obtain ⟨I, J, hI, hJ, hss⟩ := h.exists_isBasis'_subset_isBasis' X
   exact ⟨⟨I, J, hss, hI, hJ⟩⟩
 
-lemma BasisPair.left_isBasis (B : BasisPair N M X) (hX : X ⊆ N.E := by grind_mat) :
+lemma BasisPair.left_isBasis (B : BasisPair N M X) (hX : X ⊆ N.E := by grind) :
   N.IsBasis B.left X := B.left_isBasis'.isBasis
 
-lemma BasisPair.right_isBasis (B : BasisPair N M X) (hX : X ⊆ M.E := by grind_mat) :
+lemma BasisPair.right_isBasis (B : BasisPair N M X) (hX : X ⊆ M.E := by grind) :
   M.IsBasis B.right X := B.right_isBasis'.isBasis
 
 lemma BasisPair.left_isBase (B : BasisPair N M M.E) (h_eq : N.E = M.E) : N.IsBase B.left := by

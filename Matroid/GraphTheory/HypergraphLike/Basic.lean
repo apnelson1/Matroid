@@ -65,6 +65,8 @@ primed maps on `I(G)` and return arbitrary values on inputs outside `I(G)`. -/
 
 open Set Function
 
+attribute [grind =] Set.mem_iUnion
+
 /-- `HypergraphLike` abstracts types of graph-like structures using separate types for vertex,
 incidence, and edge labels.
 
@@ -111,8 +113,10 @@ scoped notation "E(" G ")" => edges G
 
 variable {V I E Gr : Type*} {G : Gr} [HypergraphLike V I E G] {u u' v v' w : V} {i j : I} {e f : E}
 
+@[grind →]
 lemma IsSource.mem_incs (h : IsSource G i) : i ∈ I(G) := mem_incs_iff.mpr (Or.inl h)
 
+@[grind →]
 lemma IsTarget.mem_incs (h : IsTarget G i) : i ∈ I(G) := mem_incs_iff.mpr (Or.inr h)
 
 /-- A link from `u` to `v` through `e`, retaining its ordered pair of distinct incidences. -/
@@ -190,8 +194,12 @@ lemma val_edgeMap' [Nonempty E] (i : I(G)) : (edgeMap' i : E) = edgeMap G (i : I
 lemma attach_mem_verts [Nonempty V] (hi : i ∈ I(G)) : attach G i ∈ V(G) := by
   simpa only [val_attach'] using (attach' ⟨i, hi⟩).property
 
+grind_pattern attach_mem_verts => attach G i, i ∈ I(G)
+
 lemma edgeMap_mem_edges [Nonempty E] (hi : i ∈ I(G)) : edgeMap G i ∈ E(G) := by
   simpa only [val_edgeMap'] using (edgeMap' ⟨i, hi⟩).property
+
+grind_pattern edgeMap_mem_edges => edgeMap G i, i ∈ I(G)
 
 /-! ### Incidence fibers -/
 
@@ -224,13 +232,19 @@ lemma vertexFiber_eq_inter_preimage [Nonempty V] (G : Gr) [HypergraphLike V I E 
 lemma edgeFiber_subset_incs : edgeFiber G e ⊆ I(G) :=
   image_subset_iff.mpr fun i _ ↦ i.property
 
+grind_pattern edgeFiber_subset_incs => edgeFiber G e
+
 lemma vertexFiber_subset_incs : vertexFiber G v ⊆ I(G) :=
   image_subset_iff.mpr fun i _ ↦ i.property
 
+grind_pattern vertexFiber_subset_incs => vertexFiber G v
+
+@[grind →]
 lemma mem_edges_of_mem_edgeFiber (hi : i ∈ edgeFiber G e) : e ∈ E(G) := by
   obtain ⟨j, rfl, _⟩ := hi
   exact (edgeMap' j).property
 
+@[grind →]
 lemma mem_verts_of_mem_vertexFiber (hi : i ∈ vertexFiber G v) : v ∈ V(G) := by
   obtain ⟨j, rfl, _⟩ := hi
   exact (attach' j).property

@@ -47,7 +47,7 @@ lemma Indep.exists_indep_contract_inter_of_eConn_le_one {I} (hI : M.Indep I) (hP
   obtain ⟨i, hi⟩ := hB.exists_isBase_contract_inter_of_eConn_le_one hP
   exact ⟨i, hi.indep.subset <| by grind⟩
 
-lemma Separation.indep_iff_of_eConn_le_one {I} (hP : P.eConn ≤ 1) (hIE : I ⊆ M.E := by grind_mat) :
+lemma Separation.indep_iff_of_eConn_le_one {I} (hP : P.eConn ≤ 1) (hIE : I ⊆ M.E := by grind) :
     M.Indep I ↔ ((∀ i, M.Indep (I ∩ P i)) ∧ (∃ i, (M ／ P i).Indep (I ∩ P (!i)))) :=
   ⟨fun h ↦ ⟨fun _ ↦ h.inter_right _, h.exists_indep_contract_inter_of_eConn_le_one hP⟩,
     fun ⟨h, i, h'⟩ ↦ P.indep_of_contract hIE (h i) h'⟩
@@ -57,7 +57,7 @@ lemma Separation.indep_iff_of_eConn_le_one' {I} (hP : P.eConn ≤ 1) :
   by_cases! hIE : ¬ I ⊆ M.E; grind
   rw [Separation.indep_iff_of_eConn_le_one hP, and_iff_left hIE]
 
-lemma Separation.dep_iff_of_eConn_le_one {D} (hP : P.eConn ≤ 1) (hDE : D ⊆ M.E := by grind_mat) :
+lemma Separation.dep_iff_of_eConn_le_one {D} (hP : P.eConn ≤ 1) (hDE : D ⊆ M.E := by grind) :
     M.Dep D ↔ ((∀ i, M.Indep (D ∩ P i)) → (∀ i, (M ／ P i).Dep (D ∩ P (!i)))) := by
   rw [← not_indep_iff, Separation.indep_iff_of_eConn_le_one hP]
   simp
@@ -432,7 +432,7 @@ lemma exists_twoSummand_isMinor_contract (hP : P.eConn = 1) (hC : C ⊆ P !i) (h
     grind [subset_sdiff]
   obtain ⟨f, hfP, hfcl⟩ : ∃ f ∈ P !i, f ∉ M.closure (I ∪ C) := by
     by_contra! hcon
-    grw [← eLocalConn_eq_zero, ← le_zero_iff, ← eLocalConn_closure_right,
+    grw [← eLocalConn_eq_zero, ← nonpos_iff_eq_zero, ← eLocalConn_closure_right,
       ← show P (!i) ⊆ M.closure (I ∪ C) by grind, ← P.eConn_eq_eLocalConn, hP] at hsk
     simp at hsk
   have hsp : (M ／ P i).Spanning (I ∪ C) := by

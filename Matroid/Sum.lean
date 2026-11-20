@@ -8,7 +8,7 @@ public import Matroid.ForMathlib.Set
 
 namespace Matroid
 
-attribute [matroid_ground =] sigma_ground_eq sum'_ground_eq disjointSigma_ground_eq
+attribute [grind =] sigma_ground_eq sum'_ground_eq disjointSigma_ground_eq
   sum_ground disjointSum_ground_eq
 
 open Set Sum

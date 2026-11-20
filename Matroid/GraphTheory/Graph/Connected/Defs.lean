@@ -19,7 +19,7 @@ lemma isLeast_empty {α : Type*} [LE α] {m : α} : ¬ IsLeast ∅ m := by
 
 theorem diff_nonempty_of_encard_lt_encard {s t : Set α} (h : s.encard < t.encard) :
     (t \ s).Nonempty := by
-  rw [Set.nonempty_iff_ne_empty, Ne, sdiff_eq_empty]
+  rw [← Set.ne_empty_iff_nonempty, Ne, sdiff_eq_empty]
   exact fun h' ↦ h.not_ge (encard_le_encard h')
 
 namespace Graph
@@ -448,7 +448,7 @@ lemma empty_isMinSep_iff : G.IsMinSep ∅ ↔ ¬ G.Connected :=
   ⟨fun h ↦ h.toIsSep.not_connected_of_empty, fun h ↦ ⟨empty_isSep h, by simp⟩⟩
 
 lemma IsMinSep.connected_iff (hS : G.IsMinSep S) : G.Connected ↔ S.Nonempty := by
-  simpa [nonempty_iff_ne_empty] using hS.eq_empty_iff.not.symm
+  simpa using hS.eq_empty_iff.not.symm
 
 lemma IsMinSep.encard_eq_encard_of_isMinSep (hS : G.IsMinSep S) (hT : G.IsMinSep T) :
     S.encard = T.encard := by

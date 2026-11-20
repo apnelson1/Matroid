@@ -40,7 +40,7 @@ theorem isCompact_of_isCircuit_subset (G : GraphLike X) (hG : IsCompact G.carrie
   have hc := hK'.isCompact_of_closure_diff_subset isClosed_closure.isCompact G.isClosed
     G.isTotallySeparated.isTotallyDisconnected (G.closure_diff_subset_vertexSet_of_isCircuit hK hKG)
   simpa only [Subtype.image_preimage_coe, inter_eq_right.mpr hKG] using
-    hc.image continuous_subtype_val
+    hc.image continuous_subtypeVal
 
 variable {e : Set X}
 

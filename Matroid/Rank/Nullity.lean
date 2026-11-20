@@ -27,7 +27,7 @@ noncomputable def nullity (M : Matroid α) (X : Set α) : ℕ∞ := (M ↾ X)✶
 lemma nullity_eq_eRank_restrict_dual (M : Matroid α) (X : Set α) :
     M.nullity X = (M ↾ X)✶.eRank := rfl
 
-lemma nullity_eq_eRank_dual_contract (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by grind_mat) :
+lemma nullity_eq_eRank_dual_contract (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by grind) :
     M.nullity X = (M✶ ／ (M.E \ X)).eRank := by
   rw [← dual_delete, delete_compl]
   rfl
@@ -85,7 +85,7 @@ lemma Dep.one_le_nullity (hX : M.Dep X) : 1 ≤ M.nullity X := by
   rw [← not_lt, ENat.lt_one_iff, nullity_eq_zero]
   exact hX.not_indep
 
-lemma one_le_nullity_iff (hX : X ⊆ M.E := by grind_mat) :
+lemma one_le_nullity_iff (hX : X ⊆ M.E := by grind) :
     1 ≤ M.nullity X ↔ M.Dep X := by
   rw [← not_lt, ENat.lt_one_iff, nullity_eq_zero, not_indep_iff]
 
@@ -104,13 +104,13 @@ lemma IsLoop.nullity_eq (h : M.IsLoop e) : M.nullity {e} = 1 :=
   h.isCircuit.nullity_eq
 
 @[simp]
-lemma nullity_singleton_eq_one (he : e ∈ M.E := by grind_mat) :
+lemma nullity_singleton_eq_one (he : e ∈ M.E := by grind) :
     M.nullity {e} = 1 ↔ M.IsLoop e := by
   obtain he' | he' := M.isLoop_or_isNonloop e
   · simpa [he'.nullity_eq]
   simp [he'.nullity_eq, he'.not_isLoop]
 
-lemma nullity_singleton_eq_ite [Decidable (M.IsLoop e)] (he : e ∈ M.E := by grind_mat) :
+lemma nullity_singleton_eq_ite [Decidable (M.IsLoop e)] (he : e ∈ M.E := by grind) :
     M.nullity {e} = if M.IsLoop e then 1 else 0 := by
   obtain h | h := M.isLoop_or_isNonloop e
   · rw [ite_eq_left h, h.nullity_eq]
@@ -162,7 +162,7 @@ lemma Indep.nullity_le_encard_diff_of_subset (hI : M.Indep I) (hIX : I ⊆ X) :
   rw [hJ.nullity_eq]
   exact encard_le_encard <| by tauto_set
 
-lemma nullity_corestrict_univ_eq (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by grind_mat) :
+lemma nullity_corestrict_univ_eq (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by grind) :
     (M✶ ↾ univ)✶.nullity X = M.nullity X := by
   nth_rw 2 [← M.corestrict_univ_restrict_ground]
   rw [nullity_restrict_of_subset _ hX]
@@ -173,7 +173,7 @@ lemma nullity_corestrict_univ_eq_nullity_inter (M : Matroid α) (X : Set α) :
   rw [hB.corestrict_univ_isBasis.nullity_eq, union_comm, ← sdiff_sdiff, sdiff_sdiff_right_self,
     hB.isBasis_inter_ground.nullity_eq]
 
-lemma nullity_insert (heX : e ∉ M.closure X) (heE : e ∈ M.E := by grind_mat) :
+lemma nullity_insert (heX : e ∉ M.closure X) (heE : e ∈ M.E := by grind) :
     M.nullity (insert e X) = M.nullity X := by
   wlog hXE : X ⊆ M.E generalizing X with aux
   · rw [nullity_eq_nullity_inter_ground_add_encard_diff,

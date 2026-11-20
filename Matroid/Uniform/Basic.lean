@@ -106,8 +106,7 @@ theorem unifOn_rank_eq (hk : (k : ℕ∞) ≤ E.encard) : (unifOn E k).rank = k 
 
 @[simp]
 theorem unifOn_rankPos_iff : (unifOn E k).RankPos ↔ 1 ≤ k ∧ E.Nonempty := by
-  simp [← eRank_ne_zero_iff, unifOn_eRank_eq, ← Order.one_le_iff_ne_zero, and_comm,
-    Set.nonempty_iff_ne_empty]
+  simp [← eRank_ne_zero_iff, unifOn_eRank_eq, ← Order.one_le_iff_ne_zero, and_comm]
 
 instance {k : ℕ} {E : Set α} : RankFinite (unifOn E k) := by
   rw [← isRkFinite_ground_iff_rankFinite, ← eRk_lt_top_iff,
@@ -303,8 +302,8 @@ lemma unifOn_coloopless_iff {n : ℕ} : (unifOn E n).Coloopless ↔ (E.Nonempty 
     rwa [unifOn_coindep_iff'' hlt.le, ← ENat.add_one_le_add_one_iff,
       encard_sdiff_singleton_add_one heE, and_iff_right (Order.add_one_le_of_lt hlt),
       singleton_subset_iff]
-  simp [unifOn_eq_of_le hle, ← eq_empty_iff_forall_notMem, nonempty_iff_ne_empty,
-    hle.not_gt]
+  simp [unifOn_eq_of_le hle, ← eq_empty_iff_forall_notMem,
+    hle.not_gt, not_nonempty_iff_eq_empty]
 
 lemma unifOn_simple_iff {n : ℕ} :
     (unifOn E n).Simple ↔ (n = 0 ∧ E = ∅) ∨ (n = 1 ∧ E.Subsingleton) ∨ 2 ≤ n := by
@@ -341,7 +340,7 @@ variable {a b a' b' : ℕ}
 whose independent sets are those of cardinality at most `a`. -/
 def unif (a b : ℕ) : Matroid (Fin b) := unifOn univ a
 
-@[simp, matroid_ground =] theorem unif_ground_eq (a b : ℕ) : (unif a b).E = univ := rfl
+@[simp, grind =] theorem unif_ground_eq (a b : ℕ) : (unif a b).E = univ := rfl
 
 @[simp] theorem unif_indep_iff (I) : (unif a b).Indep I ↔ I.encard ≤ a := by
   rw [unif, unifOn_indep_iff, and_iff_left (subset_univ _)]
@@ -431,7 +430,7 @@ is independent or spanning.
 This is mainly useful for infinite matroids, where uniformity is structurally nontrivial. -/
 def IsUniform (M : Matroid α) := ∀ ⦃X⦄, X ⊆ M.E → M.Indep X ∨ M.Spanning X
 
-lemma IsUniform.indep_or_spanning (hM : M.IsUniform) (X : Set α) (hX : X ⊆ M.E := by grind_mat) :
+lemma IsUniform.indep_or_spanning (hM : M.IsUniform) (X : Set α) (hX : X ⊆ M.E := by grind) :
     M.Indep X ∨ M.Spanning X :=
   hM hX
 
@@ -575,7 +574,7 @@ lemma IsUniform.closure_not_spanning (hM : M.IsUniform) (hIE : I ⊆ M.E) (hIs :
     closure_insert_closure_eq_closure_insert, ← spanning_iff_closure_eq] at hIs
 
   have hIe : M.Indep (insert e I) :=
-    (hM.indep_or_spanning _ (by grind_mat)).elim id fun h ↦ (hIs h).elim
+    (hM.indep_or_spanning _ (by grind)).elim id fun h ↦ (hIs h).elim
   rw [(hIe.subset (subset_insert _ _)).mem_closure_iff_of_notMem heI] at he
   exact he.not_indep hIe
 

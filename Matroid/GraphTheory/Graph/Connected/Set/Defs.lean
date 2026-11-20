@@ -414,7 +414,7 @@ def vertexPartition (A : G.SetEnsemble) : Partition (Set α) :=
     rintro _ ⟨P, hP, rfl⟩ _ ⟨Q, hQ, rfl⟩ hPQ
     refine A.disjoint hP hQ (hPQ <| · ▸ rfl)) (by
     rintro _ ⟨P, hP, rfl⟩
-    rw [bot_eq_empty, ← Set.nonempty_iff_ne_empty]
+    rw [bot_eq_empty, Set.ne_empty_iff_nonempty]
     exact ⟨P.first, P.first_mem⟩)
 
 @[simp]

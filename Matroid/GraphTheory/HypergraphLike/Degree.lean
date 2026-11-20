@@ -176,7 +176,7 @@ lemma IsLink.incVerts_eq_of_eorder_eq_two (h : u ~[G; e] v) (ho : eorder G e = 2
   refine subset_antisymm (fun w hw ↦ ?_) (by grind)
   obtain ⟨i, j, hij, hi, hj, rfl, hje, rfl, rfl⟩ := isLink_iff_exists_incidence.mp h
   obtain ⟨k, hk, hki, rfl⟩ := mem_incVerts_iff_exists_incidence.mp hw
-  obtain rfl | rfl : k = i ∨ k = j := (by grind [IsSource.mem_incs, IsTarget.mem_incs]) <;> simp
+  obtain rfl | rfl : k = i ∨ k = j := (by grind) <;> simp
 
 lemma IsLink.eq_or_eq_of_isLink_of_eorder_eq_two (h : u ~[G; e] v) (h' : u' ~[G; e] v')
     (ho : eorder G e = 2) : u = u' ∧ v = v' ∨ u = v' ∧ v = u' :=

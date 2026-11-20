@@ -59,11 +59,11 @@ lemma dep_dual_iff : M✶.Dep D ↔ M.Codep D := Iff.rfl
 lemma codep_def : M.Codep D ↔ M✶.Dep D :=
   dep_dual_iff.symm
 
-lemma not_coindep_iff (hDE : D ⊆ M.E := by grind_mat) :
+lemma not_coindep_iff (hDE : D ⊆ M.E := by grind) :
     ¬ M.Coindep D ↔ M.Codep D := by
   rw [codep_iff, and_iff_left hDE]
 
-lemma not_codep_iff (hDE : D ⊆ M.E := by grind_mat) :
+lemma not_codep_iff (hDE : D ⊆ M.E := by grind) :
     ¬ M.Codep D ↔ M.Coindep D := by
   rw [← not_coindep_iff, not_not]
 
@@ -82,11 +82,11 @@ lemma codep_dual_iff : M✶.Codep D ↔ M.Dep D := by
 lemma Codep.not_indep (h : M.Codep D) : ¬ M✶.Indep D :=
   h.not_coindep
 
-lemma coindep_or_codep (M : Matroid α) (X : Set α) (hXE : X ⊆ M.E := by grind_mat) :
+lemma coindep_or_codep (M : Matroid α) (X : Set α) (hXE : X ⊆ M.E := by grind) :
     M.Coindep X ∨ M.Codep X := by
   rw [codep_def, coindep_def]
   exact M✶.indep_or_dep
 
-lemma Codep.superset (h : M.Codep D) (hDX : D ⊆ X) (hXE : X ⊆ M.E := by grind_mat) :
+lemma Codep.superset (h : M.Codep D) (hDX : D ⊆ X) (hXE : X ⊆ M.E := by grind) :
     M.Codep X :=
   ⟨fun hX ↦ h.not_coindep (hX.subset hDX), hXE⟩

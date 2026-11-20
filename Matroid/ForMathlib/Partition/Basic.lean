@@ -113,7 +113,7 @@ lemma le_supp_of_mem (hx : x ∈ P) : x ≤ P.supp :=
   (le_sSup hx).trans_eq P.sSup_eq
 
 lemma parts_nonempty (hs : P.supp ≠ ⊥) : (P : Set α).Nonempty :=
-  nonempty_iff_ne_empty.2 fun hP ↦ by simp [← P.sSup_eq, hP, sSup_empty] at hs
+  ne_empty_iff_nonempty.1 fun hP ↦ by simp [← P.sSup_eq, hP, sSup_empty] at hs
 
 lemma supp_le_of_subset (h : P.subset Q) : P.supp ≤ Q.supp := by
   simp only [supp, sSup_le_iff, mem_parts]
@@ -253,7 +253,7 @@ lemma exists_mem_iff_ne_bot (P : Partition α) : (∃ x, x ∈ P) ↔ P ≠ ⊥ 
   · rintro ⟨x, hx⟩ rfl
     exact notMem_bot hx
   change P.parts.Nonempty
-  rw [nonempty_iff_ne_empty]
+  rw [← ne_empty_iff_nonempty]
   rwa [ne_eq, ← parts_eq_empty_iff] at hP
 
 instance {α : Type*} [CompleteLattice α] [Subsingleton α] : Unique (Partition α) where

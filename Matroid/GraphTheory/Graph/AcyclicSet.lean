@@ -74,7 +74,7 @@ lemma IsLoopAt.isCycleSet (h : G.IsLoopAt e x) : G.IsCycleSet {e} := by
 lemma isCycleSet_singleton_iff : G.IsCycleSet {e} ↔ ∃ x, G.IsLoopAt e x := by
   refine ⟨fun ⟨C, hC, hCe⟩ ↦ ?_, fun ⟨x, hx⟩ ↦ hx.isCycleSet⟩
   match C with
-  | .nil u => simp at hCe
+  | .nil u => exact (not_isCyclicWalk_nil u hC).elim
   | .cons u f (nil v) =>
     obtain rfl : f = e := by simpa using hCe
     obtain ⟨⟨hu, hv⟩, rfl⟩ : (v ∈ V(G) ∧ G.IsLink f u v) ∧ u = v := by

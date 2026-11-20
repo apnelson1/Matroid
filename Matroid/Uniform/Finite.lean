@@ -191,7 +191,7 @@ lemma isFiniteRankUniformOn_zero_iff : M.IsFiniteRankUniformOn 0 X ↔ X ⊆ M.l
   grw [← loops_subset_ground, h]
 
 lemma IsFiniteRankUniform.isFiniteRankUniformOn_of_restrict (h : (M ↾ X).IsFiniteRankUniform a)
-    (hXE : X ⊆ M.E := by grind_mat) : M.IsFiniteRankUniformOn a X := by
+    (hXE : X ⊆ M.E := by grind) : M.IsFiniteRankUniformOn a X := by
   obtain rfl | hne := eq_or_ne a 0
   · simp only [isFiniteRankUniform_zero_iff, eRank_restrict] at h
     rwa [isFiniteRankUniformOn_zero_iff, ← eRk_eq_zero_iff]

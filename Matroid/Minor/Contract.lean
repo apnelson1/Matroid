@@ -12,7 +12,7 @@ open Set
 
 namespace Matroid
 
-attribute [matroid_ground =] contract_ground
+attribute [grind =] contract_ground
 
 @[simp] lemma freeOn_contract (E X : Set α) : (freeOn E) ／ X = freeOn (E \ X) := by
   rw [← loopyOn_dual_eq, ← dual_delete, loopyOn_delete, loopyOn_dual_eq]
@@ -53,7 +53,7 @@ lemma contract_codep_iff {C X : Set α} : (M ／ C).Codep X ↔ M.Codep X ∧ Di
 lemma contractElem_of_notMem_ground (he : e ∉ M.E) : M ／ {e} = M := by
   rw [← dual_delete_dual, deleteElem_of_notMem_ground (by simpa), dual_dual]
 
-lemma contract_nonspanning_iff (hC : C ⊆ M.E := by grind_mat) :
+lemma contract_nonspanning_iff (hC : C ⊆ M.E := by grind) :
     (M ／ C).Nonspanning X ↔ M.Nonspanning (X ∪ C) ∧ Disjoint X C := by
   wlog hXC : X ⊆ (M ／ C).E generalizing X with aux
   · refine iff_of_false (fun h ↦ hXC h.subset_ground) fun ⟨h1, h2⟩ ↦ hXC <| subset_sdiff.2 ⟨?_, h2⟩
@@ -62,7 +62,7 @@ lemma contract_nonspanning_iff (hC : C ⊆ M.E := by grind_mat) :
   rw [and_iff_left hdj, nonspanning_iff, contract_spanning_iff, and_iff_left hdj, and_iff_left hXC,
     ← not_spanning_iff]
 
-lemma contract_rankPos_iff (hC : C ⊆ M.E := by grind_mat) :
+lemma contract_rankPos_iff (hC : C ⊆ M.E := by grind) :
     (M ／ C).RankPos ↔ M.Nonspanning C := by
   rw [rankPos_iff_empty_not_spanning, contract_spanning_iff, empty_union, and_iff_left (by simp),
     not_spanning_iff]
@@ -116,7 +116,7 @@ lemma Codep.of_contract (h : (M ／ C).Codep X) : M.Codep X :=
 lemma Coindep.of_contract (h : (M ／ C).Coindep I) : M.Coindep I :=
   (dual_contract _ _ ▸ h.indep).of_delete
 
-lemma Codep.of_delete {D : Set α} (h : (M ＼ D).Codep X) (hD : D ⊆ M.E := by grind_mat) :
+lemma Codep.of_delete {D : Set α} (h : (M ＼ D).Codep X) (hD : D ⊆ M.E := by grind) :
     M.Codep (X ∪ D) := by
   rw [← dep_dual_iff, dual_delete] at h
   exact union_comm _ _ ▸ h.of_contract
@@ -188,7 +188,7 @@ lemma IsCircuit.isCircuit_contract_of_union {X C} (h : M.IsCircuit (X ∪ C)) (h
   have hwin := h.contract_isCircuit (C := X) (subset_union_left.ssubset_of_ne ?_)
   · rwa [union_sdiff_cancel_left hdj.inter_eq.subset] at hwin
   rwa [Ne, eq_comm, union_eq_left, ← sdiff_eq_empty, hdj.sdiff_eq_right, ← Ne,
-    ← nonempty_iff_ne_empty]
+    ne_empty_iff_nonempty]
 
 lemma IsCircuit.isCircuit_contractElem_of_insert {C} (h : M.IsCircuit (insert e C)) (he : e ∉ C)
     (hC : C.Nonempty) : (M ／ {e}).IsCircuit C :=

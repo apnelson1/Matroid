@@ -127,7 +127,7 @@ lemma IsCompact.exists_eq_segment_of_isConnected_of_subset_segment {V : Type*}
     (by rwa [range_segment]) hconn hc
   refine ⟨Path.segment a b s, Path.segment a b t, Eq.symm ?_⟩
   simp only [segment_apply] -- this also probably should be an API about segment and Path.segment
-  rw [← image_image, image_subtype_val_Icc,
+  rw [← image_image, image_subtypeVal_Icc,
     ← segment_eq_Icc (show (s : ℝ) ≤ t from hst), image_segment]
 
 /-! ### Approaching a strict halfspace along an open segment -/
@@ -205,7 +205,7 @@ lemma isCompact_setOf_lineMap_mem_segment (a b c d : E) :
     have hlin (z : ℝ × ℝ) : Φ.linear (z - z₀) = Φ z := by
       rw [show z - z₀ = z -ᵥ z₀ from rfl, Φ.linear_apply_vsub, hz₀, vsub_eq_sub, sub_zero]
     refine (show Φ ⁻¹' {0} = (· - z₀) ⁻¹' (LinearMap.ker Φ.linear : Set (ℝ × ℝ)) from ?_) ▸
-      Φ.linear.ker.closed_of_finiteDimensional.preimage (continuous_sub_right z₀)
+      Φ.linear.ker.isClosed_of_finiteDimensional.preimage (continuous_sub_right z₀)
     ext z
     simp [← hlin z]
   refine (show {t : ℝ | t ∈ Icc 0 1 ∧ AffineMap.lineMap a b t ∈ segment ℝ c d} =

@@ -225,7 +225,7 @@ lemma isTutteSeparation_iff_isStrictSeparation_of_zero (hP : P.eConn = 0) : P.Is
   · grind
   rw [iff_false_intro hne, false_iff, false_and, or_false, Classical.not_and_iff_not_or_not,
     not_forall_not, not_forall_not]
-  simp_rw [nonempty_iff_ne_empty, not_forall_not] at hne
+  simp_rw [← ne_empty_iff_nonempty, not_forall_not] at hne
   obtain ⟨b, hb⟩ := hne
   exact .inl ⟨b, by simp [hb]⟩
 

@@ -321,12 +321,12 @@ lemma closure_covBy_closure_iff : (M.closure X) ⋖[M] (M.closure Y) ↔
     rw [hYX]
     apply closure_insert_congr ⟨?_, hfX⟩
     rw [← hYX, ← closure_inter_ground]
-    exact M.subset_closure _ (by grind_mat) hf
+    exact M.subset_closure _ (by grind) hf
   replace hY := M.closure_subset_closure_of_subset_closure hY
   rw [closure_inter_ground, hYX] at hY
   exact he.2 <| hY (M.mem_closure_of_mem' (mem_insert _ _) he.1)
 
-lemma IsFlat.covBy_closure_insert (hF : M.IsFlat F) (he : e ∉ F) (heE : e ∈ M.E := by grind_mat) :
+lemma IsFlat.covBy_closure_insert (hF : M.IsFlat F) (he : e ∉ F) (heE : e ∈ M.E := by grind) :
     F ⋖[M] M.closure (insert e F) :=
   hF.covBy_iff_eq_closure_insert.2 ⟨e, ⟨heE, he⟩, rfl⟩
 
@@ -507,7 +507,7 @@ lemma CovBy.insert_isBasis (hFF' : F ⋖[M] F') (hI : M.IsBasis I F) (he : e ∈
       rw [← hF₁.closure_insert_eq he₁, ← hF₂.closure_insert_eq he₂] at hne
       exact hne rfl )
     (forall_nonempty := by
-      rintro _ ⟨_, hF₁, rfl⟩; exact nonempty_iff_ne_empty.mp <| exists_of_ssubset hF₁.ssubset)
+      rintro _ ⟨_, hF₁, rfl⟩; exact ne_empty_iff_nonempty.mpr <| exists_of_ssubset hF₁.ssubset)
 
 set_option backward.isDefEq.respectTransparency false in
 @[simp]

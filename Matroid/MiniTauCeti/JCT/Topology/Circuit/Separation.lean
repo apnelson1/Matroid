@@ -192,8 +192,8 @@ theorem IsCircuit.separates_endpoints_in_closure_component
         · exact ((h ▸ hz.1).elim hsC hs).elim
       · exact Or.inl
     rw [← heq]
-    exact isClosed_closure.preimage continuous_subtype_val
-  · exact hK.isOpen_connectedComponentIn_pair.preimage continuous_subtype_val
+    exact isClosed_closure.preimage continuous_subtypeVal
+  · exact hK.isOpen_connectedComponentIn_pair.preimage continuous_subtypeVal
 
 
 end CompletedComponents

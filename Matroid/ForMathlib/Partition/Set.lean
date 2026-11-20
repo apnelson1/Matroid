@@ -157,7 +157,7 @@ lemma rel_eq_exists : ⇑P = fun x y => ∃ t ∈ P, x ∈ t ∧ y ∈ t := rfl
 
 lemma mem_iff_forall_rel {t : Set α} : t ∈ P ↔ ∃ h : t.Nonempty, ∀ x, P h.some x ↔ x ∈ t := by
   refine ⟨fun ht => ?_, fun ⟨h, hrel⟩ => ?_⟩
-  · have h := Set.nonempty_iff_ne_empty.mpr <| P.ne_bot_of_mem ht
+  · have h := Set.ne_empty_iff_nonempty.mp <| P.ne_bot_of_mem ht
     refine ⟨h, fun x => ⟨fun ⟨s, hs, hhs, hxs⟩ => ?_, (⟨t, ht, h.some_mem, ·⟩)⟩⟩
     obtain rfl := P.eq_of_mem_of_mem hs ht hhs h.some_mem
     exact hxs
@@ -297,7 +297,7 @@ lemma partOf_eq_empty (P : Partition (Set α)) (hx : x ∉ P.supp) : P.partOf x 
 @[simp]
 lemma partOf_ne_bot_iff : P.partOf x ≠ ⊥ ↔ x ∈ P.supp := by
   refine ⟨fun h => ?_, fun h => P.ne_bot_of_mem (partOf_mem h)⟩
-  obtain ⟨y, hy⟩ := Set.nonempty_iff_ne_empty.mpr h
+  obtain ⟨y, hy⟩ := Set.ne_empty_iff_nonempty.mp h
   exact Rel.right_mem hy
 
 @[simp]
@@ -327,7 +327,7 @@ lemma rel_iff_of_partOf_mem {Q : Partition (Set α)} (h : P.partOf x ∈ Q) : P 
   · obtain rfl := P.eq_partOf_of_mem htP hxt
     exact h
   have hxP : x ∈ P.supp := by
-    obtain ⟨y, hy⟩ := Set.nonempty_iff_ne_empty.mpr <| Q.ne_bot_of_mem h
+    obtain ⟨y, hy⟩ := Set.ne_empty_iff_nonempty.mp <| Q.ne_bot_of_mem h
     exact Rel.right_mem hy
   obtain rfl := Q.eq_partOf_of_mem htQ hxt
   obtain heq := Q.eq_of_mem_of_mem h htQ (mem_partOf hxP) hxt
@@ -351,7 +351,7 @@ lemma indiscrete_rel (hS : S ≠ ∅) : ⇑(Partition.indiscrete S hS) = fun x y
 @[simp]
 lemma indiscrete'_rel : ⇑(Partition.indiscrete' S) = fun x y ↦ x ∈ S ∧ y ∈ S := by
   ext x y
-  simp only [rel_iff_exists, mem_indiscrete'_iff, bot_eq_empty, ne_eq, ← nonempty_iff_ne_empty,
+  simp only [rel_iff_exists, mem_indiscrete'_iff, bot_eq_empty, ne_eq, ne_empty_iff_nonempty,
     existsAndEq, and_true, and_iff_right_iff_imp, and_imp]
   rintro hx hy
   use x
@@ -365,7 +365,7 @@ lemma induce_rel (P : Partition (Set α)) {S : Set α} :
     fun ⟨hxS, hyS, t, htP, hxt, hyt⟩ ↦ ⟨S ∩ t, ⟨?_, t, htP, rfl⟩, ⟨hxS, hxt⟩, ⟨hyS, hyt⟩⟩⟩
   · subst t
     exact ⟨hxt.1, hyt.1, t', ht'P, hxt.2, hyt.2⟩
-  rw [bot_eq_empty, ← nonempty_iff_ne_empty, inter_nonempty]
+  rw [bot_eq_empty, ne_empty_iff_nonempty, inter_nonempty]
   use x
 
 @[simp]

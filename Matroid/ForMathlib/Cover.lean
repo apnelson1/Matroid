@@ -118,7 +118,7 @@ lemma IsCover.nontrivial (hT : T.IsCover x P) (hx : ¬ P x) (hne : x.Nonempty) :
 
 lemma IsCover.nontrivial_of_prop_empty (hT : T.IsCover x P) (hx : ¬ P x) (he : P ∅) :
     T.Nontrivial :=
-  hT.nontrivial hx <| nonempty_iff_ne_empty.2 fun h ↦ hx <| h ▸ he
+  hT.nontrivial hx <| ne_empty_iff_nonempty.1 fun h ↦ hx <| h ▸ he
 
 lemma IsCover.exists_mem (hT : T.IsCover x P) {a : α} (hax : a ∈ x) : ∃ s ∈ T, a ∈ s := by
   simpa [← hT.sUnion_eq] using hax

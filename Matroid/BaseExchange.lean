@@ -42,7 +42,7 @@ lemma isFreeBase_dual_iff (hB : B ⊆ M.E) : M✶.IsFreeBase B ↔ M.IsFreeBase 
   exact h.compl_dual
 
 lemma IsFreeBase.indep_of_ssubset_insert (hB : M.IsFreeBase B) (hI : I ⊂ insert e B)
-    (he : e ∈ M.E := by grind_mat) : M.Indep I := by
+    (he : e ∈ M.E := by grind) : M.Indep I := by
   by_cases! he : e ∉ (I \ B)
   · exact hB.isBase.indep.subset <| by grind
   obtain ⟨f, hf⟩ := exists_of_ssubset hI
@@ -172,7 +172,7 @@ lemma IsNonbase.compl_isNonbase_dual (h : M.IsNonbase K) : M✶.IsNonbase (M.E \
   obtain ⟨B, hB, hBK⟩ := h.exists_findiff
   exact ⟨M.E \ B, hB.compl_isBase_dual, hBK.sdiff_right hB.subset_ground h.subset_ground⟩
 
-lemma isNonbase_dual_iff (hK : K ⊆ M.E := by grind_mat) :
+lemma isNonbase_dual_iff (hK : K ⊆ M.E := by grind) :
     M✶.IsNonbase K ↔ M.IsNonbase (M.E \ K) :=
   ⟨fun h ↦ by simpa using h.compl_isNonbase_dual, fun h ↦ by
     simpa [sdiff_sdiff_cancel_left hK] using h.compl_isNonbase_dual⟩

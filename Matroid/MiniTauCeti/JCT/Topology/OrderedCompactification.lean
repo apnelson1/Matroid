@@ -96,12 +96,12 @@ theorem Topology.IsEmbedding.isCompact_range_of_ordered_equiv {E D X : Type*}
     IsEmbedding.subtypeVal.isTotallyDisconnected
       (fun s hs ↦ hdisc s (hs.trans (image_preimage_subset _ _)))
   have hc' := isCompact_range_of_ordered_equiv_of_compactSpace he' g hg hc
-    (hV.preimage continuous_subtype_val) hdisc' (by
+    (hV.preimage continuous_subtypeVal) hdisc' (by
       rintro z ⟨-, hz⟩
       apply hrem ⟨z.property, ?_⟩
       rintro ⟨w, hw⟩
       exact hz ⟨w, Subtype.ext hw⟩)
-  simpa only [← range_comp, e', Function.comp_def] using hc'.image continuous_subtype_val
+  simpa only [← range_comp, e', Function.comp_def] using hc'.image continuous_subtypeVal
 
 /-- A bounded connected linear order embedded with compact closure in a Hausdorff space
 is compact if its rays are open and its missing closure points lie in a closed totally

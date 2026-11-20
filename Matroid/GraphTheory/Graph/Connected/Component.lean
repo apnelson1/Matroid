@@ -226,7 +226,7 @@ def connPartition (G : Graph α β) : Partition (Set α) where
     rfl
   bot_not_mem := by
     simp only [bot_eq_empty, mem_image, mem_components_iff_isCompOf, not_exists, not_and]
-    grind [IsCompOf.nonempty, nonempty_iff_ne_empty]
+    grind [IsCompOf.nonempty, ne_empty_iff_nonempty]
 
 lemma mem_connPartition_iff_isCompOf :
     S ∈ G.connPartition ↔ ∃ H : Graph α β, H.IsCompOf G ∧ V(H) = S := by
@@ -292,7 +292,7 @@ lemma components_eq_empty_iff : G.Components = ∅ ↔ G = ⊥ := by
 
 lemma components_nonempty_iff : G.Components.Nonempty ↔ V(G).Nonempty := by
   have := G.components_eq_empty_iff.not
-  rwa [← ne_eq, ← ne_eq, ← nonempty_iff_ne_empty, ne_bot_iff] at this
+  rwa [← ne_eq, ← ne_eq, ne_empty_iff_nonempty, ne_bot_iff] at this
 alias ⟨_, components_nonempty⟩ := components_nonempty_iff
 
 lemma exists_isCompOf_iff : (∃ H : Graph α β, H.IsCompOf G) ↔ V(G).Nonempty := by

@@ -511,7 +511,7 @@ lemma Coindep.tutteWeight_eq (h : M.Coindep X) : M.tutteWeight X = M.nullity X :
 -- lemma tutteWeight_eq_zero : M.tutteWeight X = 0 ↔ M.TutteDegen X := by
 --   simp [tutteWeight_def, tutteDegen_iff]
 
-lemma eConn_add_tutteWeight_eq (M : Matroid α) (hXE : X ⊆ M.E := by grind_mat) :
+lemma eConn_add_tutteWeight_eq (M : Matroid α) (hXE : X ⊆ M.E := by grind) :
     M.eConn X + M.tutteWeight X = X.encard := by
   rw [← M.eConn_add_nullity_add_nullity_dual X, add_assoc, tutteWeight_def]
 

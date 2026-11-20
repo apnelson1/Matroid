@@ -52,12 +52,12 @@ lemma loopyOn_not_nonspanning {E X : Set α} : ¬ (loopyOn E).Nonspanning X := b
 lemma freeOn_nonspanning_iff {E X : Set α} : (freeOn E).Nonspanning X ↔ X ⊂ E := by
   simp [nonspanning_iff, ssubset_iff_subset_ne, and_comm]
 
-lemma nonspanning_dual_iff (hXE : X ⊆ M.E := by grind_mat) :
+lemma nonspanning_dual_iff (hXE : X ⊆ M.E := by grind) :
     M✶.Nonspanning X ↔ M.Dep (M.E \ X) := by
   rw [nonspanning_iff, spanning_iff_compl_coindep, dual_coindep_iff, not_indep_iff, dual_ground,
     and_iff_left hXE]
 
-lemma nonspanning_compl_dual_iff (hXE : X ⊆ M.E := by grind_mat) :
+lemma nonspanning_compl_dual_iff (hXE : X ⊆ M.E := by grind) :
     M✶.Nonspanning (M.E \ X) ↔ M.Dep X := by
   rw [nonspanning_dual_iff, sdiff_sdiff_cancel_left hXE]
 
@@ -68,14 +68,14 @@ lemma Nonspanning.closure_nonspanning (h : M.Nonspanning X) : M.Nonspanning (M.c
   rw [nonspanning_iff, closure_spanning_iff, and_iff_left <| M.closure_subset_ground ..]
   exact h.not_spanning
 
-lemma codep_compl_iff (hXE : X ⊆ M.E := by grind_mat) :
+lemma codep_compl_iff (hXE : X ⊆ M.E := by grind) :
     M.Codep (M.E \ X) ↔ M.Nonspanning X := by
   rw [← M.dual_dual, nonspanning_dual_iff, dual_dual, dep_dual_iff, dual_ground]
 
 lemma Nonspanning.codep_compl (h : M.Nonspanning X) : M.Codep (M.E \ X) := by
   rwa [codep_compl_iff]
 
-lemma nonspanning_compl_iff (hXE : X ⊆ M.E := by grind_mat) :
+lemma nonspanning_compl_iff (hXE : X ⊆ M.E := by grind) :
     M.Nonspanning (M.E \ X) ↔ M.Codep X := by
   rw [← M.dual_dual, nonspanning_dual_iff, dual_ground, dual_ground, dual_dual, dep_dual_iff,
     dual_ground, sdiff_sdiff_cancel_left hXE]
@@ -87,7 +87,7 @@ lemma Codep.nonspanning_compl (h : M.Codep X) : M.Nonspanning (M.E \ X) := by
 lemma Nonspanning.subset (h : M.Nonspanning X) (hYX : Y ⊆ X) : M.Nonspanning Y :=
   ⟨fun hY ↦ h.not_spanning (hY.superset hYX), hYX.trans h.subset_ground⟩
 
-lemma not_nonspanning_iff (hXE : X ⊆ M.E := by grind_mat) :
+lemma not_nonspanning_iff (hXE : X ⊆ M.E := by grind) :
     ¬ M.Nonspanning X ↔ M.Spanning X := by
   rw [nonspanning_iff, and_iff_left hXE, not_not]
 
@@ -105,16 +105,16 @@ lemma Spanning.nontrivial_of_dep [M.RankPos] (hX : M.Spanning X) (hXd : M.Dep X)
   · exact False.elim <| hXd.not_indep hB.indep
   exact hB.nonempty.nontrivial_of_ssubset hBX
 
-lemma not_spanning_iff (hXE : X ⊆ M.E := by grind_mat) :
+lemma not_spanning_iff (hXE : X ⊆ M.E := by grind) :
     ¬ M.Spanning X ↔ M.Nonspanning X := by
   rw [nonspanning_iff, and_iff_left hXE]
 
-lemma nonspanning_closure_iff (hXE : X ⊆ M.E := by grind_mat) :
+lemma nonspanning_closure_iff (hXE : X ⊆ M.E := by grind) :
     M.Nonspanning (M.closure X) ↔ M.Nonspanning X := by
   rw [nonspanning_iff, closure_spanning_iff, and_iff_left (M.closure_subset_ground ..),
     not_spanning_iff]
 
-lemma spanning_or_nonspanning (M : Matroid α) (X : Set α) (hXE : X ⊆ M.E := by grind_mat) :
+lemma spanning_or_nonspanning (M : Matroid α) (X : Set α) (hXE : X ⊆ M.E := by grind) :
     M.Spanning X ∨ M.Nonspanning X := by
   rw [← not_spanning_iff]
   apply em
@@ -132,7 +132,7 @@ lemma Spanning.insert_dep (h : M.Spanning X) (heX : e ∉ X) (heE : e ∈ M.E) :
   obtain ⟨B, hB, hBX⟩ := h.exists_isBase_subset
   exact (hB.insert_dep ⟨heE, notMem_subset hBX heX⟩).superset <| insert_subset_insert hBX
 
-lemma Spanning.dep_of_ssuperset (h : M.Spanning X) (hssu : X ⊂ Y) (hY : Y ⊆ M.E := by grind_mat) :
+lemma Spanning.dep_of_ssuperset (h : M.Spanning X) (hssu : X ⊂ Y) (hY : Y ⊆ M.E := by grind) :
     M.Dep Y := by
   obtain ⟨B, hB, hBX⟩ := h.exists_isBase_subset
   exact hB.dep_of_ssubset (hBX.trans_ssubset hssu)
@@ -143,7 +143,7 @@ lemma IsRestriction.closure_eq' {N : Matroid α} (hNM : N ≤r M) (X : Set α) :
   simp [sdiff_eq_empty.2 hR]
 
 lemma IsRestriction.closure_eq {N : Matroid α} (hNM : N ≤r M)
-    (hX : X ⊆ N.E := by grind_mat) : N.closure X = M.closure X ∩ N.E := by
+    (hX : X ⊆ N.E := by grind) : N.closure X = M.closure X ∩ N.E := by
   rw [hNM.closure_eq', inter_eq_self_of_subset_left hX]
 -- lemma closure_iUnion_closure_eq_closure_iUnion'
 

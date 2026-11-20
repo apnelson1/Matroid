@@ -78,7 +78,7 @@ def Cyclic (M : Matroid α) (A : Set α) : Prop :=
 
 lemma Cyclic.exists (hA : M.Cyclic A) : ∃ Cs, A = ⋃₀ Cs ∧ ∀ C ∈ Cs, M.IsCircuit C := hA
 
-@[aesop unsafe 10% (rule_sets := [Matroid]), matroid_ground →]
+@[aesop unsafe 10% (rule_sets := [Matroid]), grind →]
 lemma Cyclic.subset_ground (hA : M.Cyclic A) : A ⊆ M.E := by
   obtain ⟨Cs, rfl, h⟩ := hA.exists
   simpa using fun C hC ↦ (h C hC).subset_ground
@@ -112,7 +112,7 @@ lemma cyclic_iff_forall_exists : M.Cyclic A ↔ ∀ e ∈ A, ∃ C ⊆ A, M.IsCi
     iUnion_subset_iff, and_iff_left hCs.1]
   exact fun e he ↦ ⟨e, he, hCs.2.2 _ he⟩
 
-lemma dual_cyclic_iff (hA : A ⊆ M.E := by grind_mat) : M✶.Cyclic A ↔ M.IsFlat (M.E \ A) := by
+lemma dual_cyclic_iff (hA : A ⊆ M.E := by grind) : M✶.Cyclic A ↔ M.IsFlat (M.E \ A) := by
   simp_rw [cyclic_iff_forall_exists, ← isCocircuit_def, isFlat_iff_closure_eq,
     subset_antisymm_iff, and_iff_left (M.subset_closure (M.E \ A)), subset_sdiff,
     and_iff_right (M.closure_subset_ground (M.E \ A)), disjoint_iff_forall_ne]
@@ -142,7 +142,7 @@ lemma dual_cyclic_iff' : M✶.Cyclic A ↔ M.IsFlat (M.E \ A) ∧ A ⊆ M.E := b
   · simp [dual_cyclic_iff, hAE]
   exact iff_of_false (mt Cyclic.subset_ground hAE) <| fun h ↦ hAE h.2
 
-lemma cyclic_iff_compl_isFlat_dual (hA : A ⊆ M.E := by grind_mat) :
+lemma cyclic_iff_compl_isFlat_dual (hA : A ⊆ M.E := by grind) :
     M.Cyclic A ↔ M✶.IsFlat (M.E \ A) := by
   rw [← dual_ground, ← dual_cyclic_iff, dual_dual]
 
@@ -154,10 +154,10 @@ lemma cyclic_iff_compl_isFlat_dual' : M.Cyclic A ↔ M✶.IsFlat (M.E \ A) ∧ A
 lemma Cyclic.compl_isFlat_dual (hA : M.Cyclic A) : M✶.IsFlat (M.E \ A) := by
   rwa [← dual_dual M, dual_cyclic_iff, dual_ground] at hA
 
-lemma compl_cyclic_iff (hAE : A ⊆ M.E := by grind_mat) : M.Cyclic (M.E \ A) ↔ M✶.IsFlat A := by
+lemma compl_cyclic_iff (hAE : A ⊆ M.E := by grind) : M.Cyclic (M.E \ A) ↔ M✶.IsFlat A := by
   rw [← dual_dual M, dual_cyclic_iff, dual_dual, dual_ground, sdiff_sdiff_cancel_left hAE]
 
-lemma compl_cyclic_dual_iff {F : Set α} (hF : F ⊆ M.E := by grind_mat) :
+lemma compl_cyclic_dual_iff {F : Set α} (hF : F ⊆ M.E := by grind) :
     M✶.Cyclic (M.E \ F) ↔ M.IsFlat F := by
   rw [dual_cyclic_iff, sdiff_sdiff_cancel_left hF]
 
@@ -165,7 +165,7 @@ lemma IsFlat.compl_cyclic_dual {F : Set α} (hF : M.IsFlat F) : M✶.Cyclic (M.E
   rwa [cyclic_iff_compl_isFlat_dual, dual_dual, dual_ground, sdiff_sdiff_cancel_left
     hF.subset_ground]
 
-lemma isFlat_dual_iff_compl_cyclic {F : Set α} (hF : F ⊆ M.E := by grind_mat) :
+lemma isFlat_dual_iff_compl_cyclic {F : Set α} (hF : F ⊆ M.E := by grind) :
     M✶.IsFlat F ↔ M.Cyclic (M.E \ F) := by
   rw [cyclic_iff_compl_isFlat_dual, sdiff_sdiff_cancel_left hF]
 
@@ -203,7 +203,7 @@ lemma cyclic_tfae : List.TFAE [
     exact N.closure_subset_closure <| sdiff_subset_sdiff_left hC.subset_ground
   tfae_finish
 
-lemma cyclic_iff_forall_inter_isCocircuit_encard_ne (hAE : A ⊆ M.E := by grind_mat) :
+lemma cyclic_iff_forall_inter_isCocircuit_encard_ne (hAE : A ⊆ M.E := by grind) :
     M.Cyclic A ↔ ∀ K, M.IsCocircuit K → (A ∩ K).encard ≠ 1 := by
   rw [cyclic_tfae.out 1 5 rfl rfl, and_iff_left hAE]
 
@@ -239,12 +239,12 @@ lemma Cyclic.restrict (hA : M.Cyclic A) (hAR : A ⊆ R) : (M ↾ R).Cyclic A := 
   exact ⟨Cs, rfl, fun C hC ↦ (hCs C hC).isCircuit_restrict_of_subset <|
     (subset_sUnion_of_mem hC).trans hAR⟩
 
-lemma Cyclic.of_restrict {R : Set α} (hA : (M ↾ R).Cyclic A) (hR : R ⊆ M.E := by grind_mat) :
+lemma Cyclic.of_restrict {R : Set α} (hA : (M ↾ R).Cyclic A) (hR : R ⊆ M.E := by grind) :
     M.Cyclic A := by
   obtain ⟨Cs, rfl, hCs⟩ := hA
   exact ⟨Cs, rfl, fun C hC ↦ ((restrict_isCircuit_iff hR).1 (hCs C hC)).1⟩
 
-lemma restrict_cyclic_iff (R : Set α) (hR : R ⊆ M.E := by grind_mat) :
+lemma restrict_cyclic_iff (R : Set α) (hR : R ⊆ M.E := by grind) :
     (M ↾ R).Cyclic A ↔ M.Cyclic A ∧ A ⊆ R :=
   ⟨fun h ↦ ⟨h.of_restrict, h.subset_ground⟩, fun h ↦ h.1.restrict h.2⟩
 
@@ -318,7 +318,7 @@ lemma minimal_nonempty_cyclic_iff_isCircuit :
 
 end Cyclic
 
-lemma mem_closure_iff_mem_or_exists_isCircuit (hX : X ⊆ M.E := by grind_mat) :
+lemma mem_closure_iff_mem_or_exists_isCircuit (hX : X ⊆ M.E := by grind) :
     e ∈ M.closure X ↔ e ∈ X ∨ ∃ C ⊆ insert e X, M.IsCircuit C ∧ e ∈ C :=
   (em (e ∈ X)).elim (fun heX ↦ by simp [heX, M.mem_closure_of_mem heX])
     fun heX ↦ by rw [mem_closure_iff_exists_isCircuit heX, or_iff_right heX]
@@ -357,12 +357,12 @@ lemma restrictSubtype_ground_isCircuit_iff {C : Set M.E} :
 
 @[simp] lemma uniqueBaseOn_dep_iff : (uniqueBaseOn I E).Dep D ↔ D.Nonempty ∧ ¬ (D ⊆ I) ∧ D ⊆ E := by
   by_cases hD : D ⊆ E
-  · simp +contextual [← not_indep_iff (M := uniqueBaseOn I E) hD, hD, nonempty_iff_ne_empty,
-      not_imp_not]
+  · simp +contextual [← not_indep_iff (M := uniqueBaseOn I E) hD, hD]
+    exact fun h ↦ (nonempty_of_not_subset h).mono sdiff_subset
   exact iff_of_false (fun h ↦ hD h.subset_ground) (by simp [hD])
 
 @[simp] lemma loopyOn_dep_iff : (loopyOn E).Dep D ↔ D.Nonempty ∧ D ⊆ E := by
-  simp [Dep, nonempty_iff_ne_empty]
+  simp [Dep]
 
 @[simp] lemma uniqueBaseOn_isCircuit_iff :
     (uniqueBaseOn I E).IsCircuit C ↔ ∃ e ∈ E \ I, C = {e} := by
@@ -464,12 +464,12 @@ lemma lt_girth_iff' {k : ℕ} : k < M.girth ↔ ∀ C : Finset α, M.IsCircuit C
   rw [lt_iff_not_ge, girth_le_iff']
   simp
 
-lemma indep_of_card_lt_girth (hI : I.encard < M.girth) (hIE : I ⊆ M.E := by grind_mat) :
+lemma indep_of_card_lt_girth (hI : I.encard < M.girth) (hIE : I ⊆ M.E := by grind) :
     M.Indep I := by
   rw [indep_iff_forall_subset_not_isCircuit]
   exact fun C hCI hC ↦ ((hC.girth_le_card.trans (encard_mono hCI)).trans_lt hI).ne rfl
 
-lemma indep_of_eRk_add_one_lt_girth (hI : M.eRk I + 1 < M.girth) (hIE : I ⊆ M.E := by grind_mat) :
+lemma indep_of_eRk_add_one_lt_girth (hI : M.eRk I + 1 < M.girth) (hIE : I ⊆ M.E := by grind) :
     M.Indep I := by
   rw [indep_iff_forall_subset_not_isCircuit]
   refine fun C hCI hC ↦ ?_

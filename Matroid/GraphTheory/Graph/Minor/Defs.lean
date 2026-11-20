@@ -452,7 +452,7 @@ lemma sContract_isPartitionGraph [G.IsPartitionGraph] : G/[C].IsPartitionGraph :
     Partition.mem_parts]
   refine ⟨fun ⟨x, hx, hv⟩ => ?_, fun ⟨x, hx, hv⟩ => ?_⟩ <;> subst v
   · use (G ↾ C).connPartition.partOf x, (G ↾ C).connPartition.partOf_mem (hsupp ▸ hx)
-  · obtain ⟨v, hv⟩ := nonempty_iff_ne_empty.mpr <| (G ↾ C).connPartition.ne_bot_of_mem hx
+  · obtain ⟨v, hv⟩ := ne_empty_iff_nonempty.mp <| (G ↾ C).connPartition.ne_bot_of_mem hx
     use v, hsupp ▸ mem_sUnion_of_mem hv hx, by rw [(G ↾ C).connPartition.eq_partOf_of_mem hx hv]
 
 end IsPartitionGraph

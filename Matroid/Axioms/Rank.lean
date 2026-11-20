@@ -197,7 +197,7 @@ lemma Indep.eRelRk_subset (hJ : M.Indep J) (hIJ : I ⊆ J) : M.eRelRk I J = (J \
   (indep_maximal := fun X hX ↦ M.indep_maximal hX)
   (subset_ground := fun I hI ↦ hI.subset_ground)
 
-attribute [matroid_ground =] matroid_E
+attribute [grind =] matroid_E
 
 @[simp] lemma matroid_eRelRk_eq (M : RankMatroid α) (X Y : Set α) :
     M.matroid.eRelRk X Y = M.eRelRk X Y := by

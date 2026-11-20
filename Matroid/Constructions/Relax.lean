@@ -48,7 +48,8 @@ instance GroundedPred.IsLawfulRelaxation : GroundedPred IsLawfulRelaxation where
   supported := fun _ _ _ h _ hXT ↦ (h hXT).subset_ground
 
 instance InvariantFun.IsLawfulRelaxation : InvariantFun IsLawfulRelaxation IsLawfulRelaxation where
-  of_empty := by simp +contextual [Matroid.IsLawfulRelaxation, isCircuitHyperplane_iff]
+  of_empty α β hβ := by
+    simp +contextual [Matroid.IsLawfulRelaxation, isCircuitHyperplane_iff, eq_empty_of_isEmpty]
   map_eq α β M f hf S := by
     simp only [SupportClass.toSet_supported, SupportClass.set_supported, Matroid.IsLawfulRelaxation,
       TransferClass.pure_transfer, TransferClass.toSet_transfer, TransferClass.set_transfer,
@@ -273,7 +274,7 @@ then the relaxation of `T₀` in `M ＼ D` is obtained from that of `T` in `M` b
 Unfortunately, there is one technical exception; if `C ∈ T`, and `D = M.E \ C`,
 then `C` is a circuit but not circuit-hyperplane of `M ＼ D`, so there are no relaxations at all
 in `M ＼ D`. However, relaxing `C` first then deleting `D` gives a free matroid.   -/
-lemma relax_delete (h : M.IsLawfulRelaxation T) {D} (hD : D ⊆ M.E := by grind_mat)
+lemma relax_delete (h : M.IsLawfulRelaxation T) {D} (hD : D ⊆ M.E := by grind)
     (hDT : M.E \ D ∉ T) :
     (M.relax T h) ＼ D = (M ＼ D).relax {H | H ∈ T ∧ D ⊂ M.E \ H} (h.delete D) := by
   refine ext_indep rfl fun I (hI : I ⊆ M.E \ D) ↦ ?_
@@ -284,7 +285,7 @@ lemma relax_delete (h : M.IsLawfulRelaxation T) {D} (hD : D ⊆ M.E := by grind_
 
 /- Relaxation commutes with contraction, except in the special case where the contract-set
 is equal to one of the relaxed sets. -/
-lemma relax_contract (h : M.IsLawfulRelaxation T) {C} (hC : C ∉ T) (hCE : C ⊆ M.E := by grind_mat) :
+lemma relax_contract (h : M.IsLawfulRelaxation T) {C} (hC : C ∉ T) (hCE : C ⊆ M.E := by grind) :
     (M.relax T h) ／ C = (M ／ C).relax ((· \ C) '' {H | H ∈ T ∧ C ⊂ H}) (h.contract C) := by
   rw! [← dual_inj, dual_contract, relax_dual, relax_delete, ← dual_contract, relax_dual]
   · convert rfl using 2
@@ -329,7 +330,7 @@ lemma IsLawfulTightening.ssubset_ground (hT : M.IsLawfulTightening T) (hBT : B �
     fun hBE ↦ hT.ground_notMem <| hBE ▸ hBT
 
 lemma IsLawfulTightening.nonempty (hT : M.IsLawfulTightening T) (hBT : B ∈ T) : B.Nonempty :=
-  nonempty_iff_ne_empty.2 fun he ↦ hT.empty_notMem <| he ▸ hBT
+  ne_empty_iff_nonempty.1 fun he ↦ hT.empty_notMem <| he ▸ hBT
 
 lemma IsLawfulTightening.notMem_of_exchange {B'} (hT : M.IsLawfulTightening T) (hBT : B ∈ T)
     (hB' : B'.IsExchange B) : B' ∉ T :=

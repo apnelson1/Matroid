@@ -150,7 +150,7 @@ lemma Indep.rk_eq_ncard (hI : M.Indep I) : M.rk I = I.ncard := by
 lemma Indep.rk_eq_card {I : Finset α} (hI : M.Indep I) : M.rk I = I.card := by
   rw [hI.rk_eq_ncard, ncard_coe_finset]
 
-lemma rk_le_card (M : Matroid α) [Matroid.Finite M] (X : Set α) (hX : X ⊆ M.E := by grind_mat) :
+lemma rk_le_card (M : Matroid α) [Matroid.Finite M] (X : Set α) (hX : X ⊆ M.E := by grind) :
     M.rk X ≤ X.ncard :=
   rk_le_iff.2 <| fun {I} hI _ ↦ (ncard_le_ncard hI (M.set_finite X))
 

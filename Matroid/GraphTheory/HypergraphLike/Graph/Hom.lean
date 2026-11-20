@@ -32,7 +32,8 @@ lemma IncEmb.isLocallySurjective (f : IncEmb G H) : f.toIncHom.IsLocallySurjecti
   · exact ⟨i, hi', rfl⟩
   exact ⟨GraphLike.other' i, (GraphLike.edgeMap'_other' i).trans hi', f.map_other' i⟩
 
-/-- A graph homomorphism preserves the paired incidence because it reaches each two-element fibre. -/
+/-- A graph homomorphism preserves the paired incidence because it reaches each two-element fibre.
+-/
 lemma Hom.map_other' (f : Hom G H) (i : I(G)) :
     f.incMap' (GraphLike.other' i) = GraphLike.other' (f.incMap' i) := by
   have he : edgeMap' (f.incMap' i) = edgeMap' (f.incMap' (GraphLike.other' i)) := by

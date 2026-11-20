@@ -64,7 +64,7 @@ theorem IsOpen.connectedComponentIn_of_finite (hU : IsOpen U) [Finite (Connected
     (r : X) : IsOpen (connectedComponentIn U r) := by
   by_cases hr : r ∈ U
   · rw [connectedComponentIn_eq_image hr]
-    exact hU.isOpenMap_subtype_val _ <| ConnectedComponents.discreteTopology_iff.mp
+    exact hU.isOpenMap_subtypeVal _ <| ConnectedComponents.discreteTopology_iff.mp
         (inferInstance : DiscreteTopology (ConnectedComponents ↥U)) ⟨r, hr⟩
   simp [connectedComponentIn_eq_empty hr]
 
@@ -253,7 +253,7 @@ theorem card_eq_two {s u v : Set X} (hu : IsOpen u) (hv : IsOpen v) (hcu : IsCon
     Nat.card (ConnectedComponents ↥s) = 2 := by
   have hpre {w : Set X} (hw : IsOpen w) (hcw : IsConnected w) (hws : w ⊆ s) :
       IsOpen ((↑) ⁻¹' w : Set ↥s) ∧ IsConnected ((↑) ⁻¹' w : Set ↥s) := by
-    refine ⟨hw.preimage continuous_subtype_val, ⟨?_, ?_⟩⟩
+    refine ⟨hw.preimage continuous_subtypeVal, ⟨?_, ?_⟩⟩
     · obtain ⟨x, hx⟩ := hcw.nonempty
       exact ⟨⟨x, hws hx⟩, hx⟩
     · refine IsInducing.subtypeVal.isPreconnected_image.1 ?_

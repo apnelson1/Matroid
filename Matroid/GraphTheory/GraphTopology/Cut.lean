@@ -145,7 +145,7 @@ lemma IsEdgeCut.finite (hB : G.IsEdgeCut B) (hG : IsCompact G.carrier) : B.Finit
   let : CompactSpace G := isCompact_iff_compactSpace.mp hG
   obtain ⟨U, W, hU, hW, hd, hc, rfl⟩ := hB
   let K : Set G := Subtype.val ⁻¹' (U ∪ W)ᶜ
-  have hK : IsCompact K := ((hU.union hW).isClosed_compl.preimage continuous_subtype_val).isCompact
+  have hK : IsCompact K := ((hU.union hW).isClosed_compl.preimage continuous_subtypeVal).isCompact
   refine (G.finite_edges_meeting hK (fun x hx hv ↦ hx (hc hv))).subset ?_
   rintro e ⟨x, y, hxy, hx, hy⟩
   have hyW := (hc hxy.right_mem).resolve_left hy
@@ -219,7 +219,7 @@ lemma IsBond.elimination (hB : G.IsBond B) (hD : G.IsBond D) (hBfin : B.Finite) 
     (hne : B ≠ D) (heB : e ∈ B) (heD : e ∈ D) : ∃ C ⊆ (B ∪ D) \ {e}, G.IsBond C ∧ C.Finite := by
   have hsym := hB.isEdgeCut.symmDiff hD.isEdgeCut
   obtain ⟨f, hf⟩ : (symmDiff B D).Nonempty := by
-    rw [nonempty_iff_ne_empty]
+    rw [← ne_empty_iff_nonempty]
     exact fun h ↦ hne (Set.symmDiff_eq_empty.mp h)
   obtain ⟨C, hC, hbond, _⟩ := hsym.exists_bond_subset_mem (hBfin.symmDiff hDfin) hf
   exact ⟨C, by grind, hbond, (hBfin.symmDiff hDfin).subset hC⟩

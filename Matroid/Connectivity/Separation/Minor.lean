@@ -12,7 +12,7 @@ variable {α : Type*} {M N : Matroid α} {k : ℕ∞} {e f : α} {A B C D C' D' 
 
 namespace Matroid.Separation
 
-@[simp, aesop unsafe 10% (rule_sets := [Matroid]), matroid_ground ←]
+@[simp, aesop unsafe 10% (rule_sets := [Matroid]), grind ←]
 lemma subset_ground_of_delete (P : (M ＼ D).Separation) (i : Bool) : P i ⊆ M.E :=
   P.subset_ground.trans sdiff_subset
 
@@ -30,25 +30,25 @@ lemma disjoint_delete (P : (M ＼ D).Separation) (i : Bool) : Disjoint (P i) D :
   grw [P.subset_ground]
   exact disjoint_sdiff_left
 
-lemma compl_remove {b} (P : (M.remove b X).Separation) (hX : X ⊆ M.E := by grind_mat) (i : Bool) :
+lemma compl_remove {b} (P : (M.remove b X).Separation) (hX : X ⊆ M.E := by grind) (i : Bool) :
     M.E \ P i = P (!i) ∪ X := by
   grw [← P.compl_eq, remove_ground, sdiff_sdiff_comm, sdiff_union_self, eq_comm, union_eq_left,
     subset_sdiff, and_iff_right hX, P.subset_ground]
   exact disjoint_sdiff_right.mono_right <| (remove_ground ..).subset
 
-lemma compl_delete (P : (M ＼ D).Separation) (hD : D ⊆ M.E := by grind_mat) (i : Bool) :
+lemma compl_delete (P : (M ＼ D).Separation) (hD : D ⊆ M.E := by grind) (i : Bool) :
     M.E \ P i = P (!i) ∪ D :=
   P.compl_remove (b := false) hD i
 
-lemma compl_delete_not (P : (M ＼ D).Separation) (hD : D ⊆ M.E := by grind_mat) (i : Bool) :
+lemma compl_delete_not (P : (M ＼ D).Separation) (hD : D ⊆ M.E := by grind) (i : Bool) :
     M.E \ (P !i) = P i ∪ D := by
   simpa using P.compl_delete hD !i
 
-lemma compl_contract (P : (M ／ C).Separation) (hC : C ⊆ M.E := by grind_mat) (i : Bool) :
+lemma compl_contract (P : (M ／ C).Separation) (hC : C ⊆ M.E := by grind) (i : Bool) :
     M.E \ (P i) = P (!i) ∪ C :=
   P.compl_remove (b := true) hC i
 
-lemma compl_contract_not (P : (M ／ C).Separation) (hC : C ⊆ M.E := by grind_mat) (i : Bool) :
+lemma compl_contract_not (P : (M ／ C).Separation) (hC : C ⊆ M.E := by grind) (i : Bool) :
     M.E \ (P !i) = P i ∪ C := by
   simpa using P.compl_contract hC !i
 
@@ -72,11 +72,11 @@ lemma compl_union_contract (P : (M ／ C).Separation) (i : Bool) : M.E \ (P i �
 lemma compl_union_delete (P : (M ＼ D).Separation) (i : Bool) : M.E \ (P i ∪ D) = P !i := by
   rw [← P.compl_eq, Set.union_comm, delete_ground, sdiff_sdiff]
 
-lemma compl_delete_singleton (P : (M ＼ {e}).Separation) (he : e ∈ M.E := by grind_mat) (i : Bool) :
+lemma compl_delete_singleton (P : (M ＼ {e}).Separation) (he : e ∈ M.E := by grind) (i : Bool) :
     M.E \ (P i) = insert e (P (!i)) := by
   rw [compl_delete, union_singleton]
 
-lemma compl_contract_singleton (P : (M ／ {e}).Separation) (he : e ∈ M.E := by grind_mat)
+lemma compl_contract_singleton (P : (M ／ {e}).Separation) (he : e ∈ M.E := by grind)
     (i : Bool) : M.E \ (P i) = insert e (P !i) := by
   rw [compl_contract, union_singleton]
 
@@ -138,34 +138,34 @@ lemma induce_apply_contract_delete (P : M.Separation) (C D : Set α) (i j : Bool
     ← inter_sdiff_assoc, P.inter_ground_left, sdiff_sdiff]
 
 lemma induce_apply_of_remove_eq_cond {b} (P : (M.remove b X).Separation) (i j : Bool)
-    (hX : X ⊆ M.E := by grind_mat) :
+    (hX : X ⊆ M.E := by grind) :
     P.induce M i j = bif j == i then P j ∪ X else P j := by
   rw [induce_apply_eq_cond, remove_ground, sdiff_sdiff_cancel_left hX, inter_eq_self_of_subset_left]
   grw [P.subset, remove_ground, sdiff_subset]
 
 @[simp]
 lemma induce_apply_of_remove_self {b} (P : (M.remove b X).Separation) (i : Bool)
-    (hX : X ⊆ M.E := by grind_mat) : P.induce M i i = P i ∪ X := by
+    (hX : X ⊆ M.E := by grind) : P.induce M i i = P i ∪ X := by
   simp [induce_apply_of_remove_eq_cond P _ _ hX]
 
 lemma induce_apply_of_delete_eq_cond {D} (P : (M ＼ D).Separation) (i : Bool)
-    (hD : D ⊆ M.E := by grind_mat) :
+    (hD : D ⊆ M.E := by grind) :
     P.induce M i j = bif j == i then P j ∪ D else P j :=
   P.induce_apply_of_remove_eq_cond (b := false) i j hD
 
 @[simp]
 lemma induce_apply_of_delete_self (P : (M ＼ X).Separation) (i : Bool)
-    (hX : X ⊆ M.E := by grind_mat) : P.induce M i i = P i ∪ X :=
+    (hX : X ⊆ M.E := by grind) : P.induce M i i = P i ∪ X :=
   P.induce_apply_of_remove_self (b := false) i hX
 
 lemma induce_apply_of_contract_eq_cond (P : (M ／ X).Separation) (i : Bool)
-    (hX : X ⊆ M.E := by grind_mat) :
+    (hX : X ⊆ M.E := by grind) :
     P.induce M i j = bif j == i then P j ∪ X else P j :=
   P.induce_apply_of_remove_eq_cond (b := true) i j hX
 
 @[simp]
 lemma induce_apply_of_contract_self (P : (M ／ X).Separation) (i : Bool)
-    (hX : X ⊆ M.E := by grind_mat) : P.induce M i i = P i ∪ X :=
+    (hX : X ⊆ M.E := by grind) : P.induce M i i = P i ∪ X :=
   P.induce_apply_of_remove_self (b := true) i hX
 
 lemma induce_remove_congr (P : M.Separation) {b : Bool} (hXY : X ∩ M.E = Y ∩ M.E) :

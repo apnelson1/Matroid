@@ -65,7 +65,7 @@ lemma nonempty_unif_isoRestr_unifOn (a : ℕ) {b : ℕ} {E : Set α} (h : b ≤ 
     obtain rfl | b := b
     · exact ⟨finZeroElim ∘ Subtype.val, Function.injective_of_subsingleton _⟩
     have : Nonempty E
-    · rw [nonempty_coe_sort, nonempty_iff_ne_empty]
+    · rw [nonempty_coe_sort, ← ne_empty_iff_nonempty]
       rintro rfl
       simp at h
     obtain ⟨f, hf, hfi⟩ :=

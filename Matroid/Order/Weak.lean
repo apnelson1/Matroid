@@ -21,19 +21,19 @@ structure WeakLE (N M : Matroid α) : Prop where
 
 infixl:50 " ≤w " => Matroid.WeakLE
 
-attribute [matroid_ground →] WeakLE.ground_eq
+attribute [grind →] WeakLE.ground_eq
 
 @[grind →]
 lemma WeakLE.ground_eq_of_dual (h : N✶ ≤w M✶) : N.E = M.E :=
   h.ground_eq
 
 @[aesop unsafe 10% (rule_sets := [Matroid])]
-lemma WeakLE.subset_ground_of_subset_ground_left (h : N ≤w M) (hX : X ⊆ N.E := by grind_mat) :
+lemma WeakLE.subset_ground_of_subset_ground_left (h : N ≤w M) (hX : X ⊆ N.E := by grind) :
     X ⊆ M.E :=
   hX.trans h.ground_eq.subset
 
 @[aesop unsafe 10% (rule_sets := [Matroid])]
-lemma WeakLE.subset_ground_of_subset_ground_right (h : N ≤w M) (hX : X ⊆ M.E := by grind_mat) :
+lemma WeakLE.subset_ground_of_subset_ground_right (h : N ≤w M) (hX : X ⊆ M.E := by grind) :
     X ⊆ N.E :=
   hX.trans h.ground_eq.symm.subset
 

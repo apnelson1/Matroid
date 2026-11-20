@@ -100,7 +100,7 @@ lemma seriesParallelDuo_indep_iff (hdj : Disjoint S P) (hS : S.Nonempty) (hP : P
 
 lemma seriesParallelDuo_indep_insert_ssubset (hdj : Disjoint S P) (hI1 : I ⊂ S) (he : e ∈ P) :
     (seriesParallelDuo S P hdj).Indep (insert e I) := by
-  grw [seriesParallelDuo_indep_iff hdj (nonempty_iff_ne_empty.2 (by grind)) ⟨e, he⟩,
+  grw [seriesParallelDuo_indep_iff hdj (ne_empty_iff_nonempty.1 (by grind)) ⟨e, he⟩,
     and_iff_right (by grind), insert_inter_of_mem he, (hdj.mono_left hI1.subset).inter_eq,
     and_iff_right (by simp), subset_insert_iff_of_notMem (by grind)]
   simp [hI1.not_subset]

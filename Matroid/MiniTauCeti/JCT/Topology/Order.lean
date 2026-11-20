@@ -24,7 +24,7 @@ instance Set.OrdConnected.compactIccSpace {D : Type*} [Preorder D] [TopologicalS
     [CompactIccSpace D] {s : Set D} [OrdConnected s] : CompactIccSpace s where
   isCompact_Icc {a b} := by
     apply Topology.IsEmbedding.subtypeVal.isInducing.isCompact_iff.mpr
-    rw [image_subtype_val_Icc]
+    rw [image_subtypeVal_Icc]
     exact isCompact_Icc
 
 lemma IsOpen.sSup_notMem [CompleteLinearOrder α] [OrderTopology α] [DenselyOrdered α]

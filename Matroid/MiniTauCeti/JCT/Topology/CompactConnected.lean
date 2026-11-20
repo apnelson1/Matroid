@@ -25,13 +25,13 @@ theorem totallySeparatedSpace_of_isTotallyDisconnected_compl_singleton
     let x' : S := ⟨x, hx⟩
     obtain ⟨K, hK, hxK, hKy⟩ := exists_compact_subset
       ((isClosed_singleton (x := y)).isOpen_compl.preimage
-        (continuous_subtype_val : Continuous (Subtype.val : S → X)))
+        (continuous_subtypeVal : Continuous (Subtype.val : S → X)))
       (show x' ∈ Subtype.val ⁻¹' ({y}ᶜ : Set X) from hxy)
     obtain ⟨V, hV, hxV, hVK⟩ := exists_isClopen_mem_of_isOpen isOpen_interior hxK
     have hVc : IsCompact V := hK.of_isClosed_subset hV.isClosed
       (hVK.trans interior_subset)
-    refine ⟨Subtype.val '' V, ⟨(hVc.image continuous_subtype_val).isClosed,
-      hS.isOpenMap_subtype_val _ hV.isOpen⟩, ⟨x', hxV, rfl⟩, ?_⟩
+    refine ⟨Subtype.val '' V, ⟨(hVc.image continuous_subtypeVal).isClosed,
+      hS.isOpenMap_subtypeVal _ hV.isOpen⟩, ⟨x', hxV, rfl⟩, ?_⟩
     rintro ⟨z, hz, rfl⟩
     exact hKy (interior_subset (hVK hz)) rfl
   exact totallySeparatedSpace_iff_exists_isClopen.mpr (by
@@ -113,10 +113,10 @@ theorem IsTotallyDisconnected.interior_eq_empty_of_isCompact {X : Type*}
   apply eq_empty_iff_forall_notMem.mpr
   intro p hp
   obtain ⟨W, hW, hpW, hWV⟩ := exists_isClopen_mem_of_isOpen
-    (isOpen_interior.preimage (continuous_subtype_val : Continuous (Subtype.val : V → X)))
+    (isOpen_interior.preimage (continuous_subtypeVal : Continuous (Subtype.val : V → X)))
     (show (⟨p, interior_subset hp⟩ : V) ∈ Subtype.val ⁻¹' interior V from hp)
   have hclosed : IsClosed (Subtype.val '' W : Set X) :=
-    (hW.isClosed.isCompact.image continuous_subtype_val).isClosed
+    (hW.isClosed.isCompact.image continuous_subtypeVal).isClosed
   obtain ⟨U, hU, hUW⟩ := IsInducing.subtypeVal.image_eq_isOpen_inter_range hW.isOpen
   have heq : Subtype.val '' W = U ∩ interior V := by
     apply subset_antisymm
@@ -164,9 +164,9 @@ theorem IsCompact.component_meets_frontier {X : Type*} [TopologicalSpace X]
       Set.mem_sdiff] using
       (show y.val ∈ A ∧ y.val ∉ interior A from ⟨y.property, hyint⟩)⟩
   obtain ⟨W, hW, hxW, hWsub⟩ := exists_isClopen_between_component x
-    (isOpen_interior.preimage continuous_subtype_val) hsub
+    (isOpen_interior.preimage continuous_subtypeVal) hsub
   have hc : IsClosed ((Subtype.val : A → X) '' W) :=
-    hA.isClosed.isClosedMap_subtype_val _ hW.isClosed
+    hA.isClosed.isClosedMap_subtypeVal _ hW.isClosed
   obtain ⟨O, hO, hOW⟩ := IsInducing.subtypeVal.image_eq_isOpen_inter_range hW.isOpen
   have heq : (Subtype.val : A → X) '' W = O ∩ interior A := by
     apply subset_antisymm
@@ -225,7 +225,7 @@ theorem locallyConnectedSpace_of_compact_finite_frontier_basis {X : Type*}
     (ho.mem_nhds (mem_connectedComponent (x := x')))
   rw [Subtype.range_coe, nhdsWithin_eq_nhds.mpr hn] at hn'
   exact ⟨Subtype.val '' connectedComponent x', hn',
-    isPreconnected_connectedComponent.image _ continuous_subtype_val.continuousOn,
+    isPreconnected_connectedComponent.image _ continuous_subtypeVal.continuousOn,
     (Subtype.coe_image_subset A _).trans hWU⟩
 
 /-- The finite-frontier neighborhood criterion in a compact Hausdorff space. -/
@@ -253,11 +253,11 @@ theorem IsCompact.locallyConnectedSpace_of_finite_frontier_basis {X : Type*}
   intro x U hU
   obtain ⟨V, hV, hVU⟩ := (mem_nhds_subtype K x U).mp hU
   obtain ⟨W, hW, hxW, hWV, hf⟩ := hb x V hV
-  refine ⟨Subtype.val ⁻¹' W, hW.preimage continuous_subtype_val, hxW, ?_, ?_⟩
-  · exact (continuous_subtype_val.closure_preimage_subset W).trans
+  refine ⟨Subtype.val ⁻¹' W, hW.preimage continuous_subtypeVal, hxW, ?_, ?_⟩
+  · exact (continuous_subtypeVal.closure_preimage_subset W).trans
       ((preimage_mono hWV).trans hVU)
   · exact (hf.preimage Subtype.val_injective.injOn).subset
-      (continuous_subtype_val.frontier_preimage_subset W)
+      (continuous_subtypeVal.frontier_preimage_subset W)
 
 /-- Locally compact locally connected regular spaces have arbitrarily small compact
 connected neighborhoods. -/
@@ -339,8 +339,8 @@ theorem IsCompact.exists_minimal_isPreconnected_pair {X : Type*} [TopologicalSpa
   let : PreconnectedSpace K := isPreconnected_iff_preconnectedSpace.mp hk
   obtain ⟨L, hL⟩ := exists_minimal_compact_connector_univ (⟨a, ha⟩ : K) ⟨b, hb⟩
   refine ⟨Subtype.val '' L, Subtype.coe_image_subset K L, ⟨?_, ?_⟩⟩
-  · exact ⟨hL.prop.1.image continuous_subtype_val,
-      hL.prop.2.1.image _ continuous_subtype_val.continuousOn,
+  · exact ⟨hL.prop.1.image continuous_subtypeVal,
+      hL.prop.2.1.image _ continuous_subtypeVal.continuousOn,
       ⟨⟨a, ha⟩, hL.prop.2.2.1, rfl⟩, ⟨⟨b, hb⟩, hL.prop.2.2.2, rfl⟩⟩
   · intro M hM hML
     have hMK := hML.trans (Subtype.coe_image_subset K L)

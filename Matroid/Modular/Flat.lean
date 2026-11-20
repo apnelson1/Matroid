@@ -72,7 +72,7 @@ lemma modularSet_iff_closure :
     rw [← closure_inter_ground, singleton_inter_eq_empty.2 he] at h
     exact (h hF.loops_subset).elim
 
-lemma isModularFlat_singleton (M : Matroid α) [Simple M] (e : α) (he : e ∈ M.E := by grind_mat) :
+lemma isModularFlat_singleton (M : Matroid α) [Simple M] (e : α) (he : e ∈ M.E := by grind) :
     M.IsModularFlat {e} := by
   rw [← M.closure_singleton_eq he]
   apply isModularFlat_closure_singleton
@@ -626,7 +626,7 @@ lemma IsModularFlat.sInter [Finitary M] {Xs : Set (Set α)} (hne : Xs.Nonempty)
 end Lattice
 
 lemma IsModularFlat.restrict (hF : M.IsModularFlat F) (hFX : F ⊆ X)
-    (hXE : X ⊆ M.E := by grind_mat) : (M ↾ X).IsModularFlat F := by
+    (hXE : X ⊆ M.E := by grind) : (M ↾ X).IsModularFlat F := by
   have hF' := hF.isFlat.isFlat_restrict X
   rw [inter_eq_self_of_subset_left hFX] at hF'
   rw [hF'.isModularFlat_iff_forall_contract_exists_parallel]
@@ -990,7 +990,7 @@ lemma modular_iff_forall_isLine_isHyperplane :
 lemma modular_iff_forall_isLine_isHyperplane_nonempty_inter [Loopless M] :
     M.Modular ↔ ∀ ⦃L H⦄, M.IsLine L → M.IsHyperplane H → (L ∩ H).Nonempty := by
   rw [modular_iff_forall_isLine_isHyperplane]
-  exact ⟨fun h L H hL hH ↦ nonempty_iff_ne_empty.2 fun h_eq ↦ by simpa [h_eq] using h hL hH,
+  exact ⟨fun h L H hL hH ↦ ne_empty_iff_nonempty.1 fun h_eq ↦ by simpa [h_eq] using h hL hH,
     fun h L H hL hH hss ↦ (h hL hH).ne_empty <| by simpa using hss⟩
 
 lemma Modular.finitary (hM : M.Modular) : M.Finitary :=

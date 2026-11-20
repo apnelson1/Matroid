@@ -93,15 +93,15 @@ protected lemma iUnion_eq (P : M.Separation) : ⋃ i, P i = M.E :=
 @[simp] lemma compl_dual_not_eq (P : M✶.Separation) (i : Bool) : M.E \ P (!i) = P i :=
   IndexedPartition.compl_not_eq P i
 
-lemma disjoint_iff_subset_not {P : M.Separation} (hX : X ⊆ M.E := by grind_mat) :
+lemma disjoint_iff_subset_not {P : M.Separation} (hX : X ⊆ M.E := by grind) :
     Disjoint X (P i) ↔ X ⊆ P !i := by
   rw [← P.compl_eq, subset_sdiff, and_iff_right hX]
 
-lemma disjoint_not_iff_subset {P : M.Separation} (hX : X ⊆ M.E := by grind_mat) :
+lemma disjoint_not_iff_subset {P : M.Separation} (hX : X ⊆ M.E := by grind) :
     Disjoint X (P !i) ↔ X ⊆ P i := by
   rw [disjoint_iff_subset_not, i.not_not]
 
-lemma not_mem_iff_mem_not {P : M.Separation} {x} (hx : x ∈ M.E := by grind_mat) :
+lemma not_mem_iff_mem_not {P : M.Separation} {x} (hx : x ∈ M.E := by grind) :
     x ∉ P i ↔ x ∈ P !i := by
   rw [← P.compl_eq, mem_sdiff, and_iff_right hx]
 
@@ -166,7 +166,16 @@ lemma bSymm_bSymm (P : M.Separation) (b c : Bool) : (P.bSymm b).bSymm c = P.bSym
 @[simp, aesop unsafe 10% (rule_sets := [Matroid])]
 protected lemma subset_ground (P : M.Separation) : P i ⊆ M.E := P.subset
 
-grind_pattern [matroid_ground] Separation.subset_ground => P i
+protected lemma mem_ground_of_mem (P : M.Separation) {x : α} (h : x ∈ P i) :
+    x ∈ M.E := P.subset_ground h
+
+grind_pattern Separation.mem_ground_of_mem => x ∈ P i, x ∈ M.E where
+  guard x ∉ M.E
+
+protected lemma subset_ground_of_subset (P : M.Separation) (h : X ⊆ P i) : X ⊆ M.E :=
+  h.trans P.subset_ground
+
+grind_pattern Separation.subset_ground_of_subset => X ⊆ P i, X ⊆ M.E
 
 lemma apply_eq_iff : P i = M.E ↔ P (!i) = ∅ := by
   rw [← P.compl_eq, sdiff_eq_empty, subset_antisymm_iff, and_iff_right P.subset]
@@ -636,7 +645,7 @@ end Separation
 /-- The separation of `M` given by a subset of `M.E` and its complement. The elements of the set
 go on side `b`.   -/
 @[simps!]
-def ofSetSep (M : Matroid α) (A : Set α) (i : Bool) (hA : A ⊆ M.E := by grind_mat) :
+def ofSetSep (M : Matroid α) (A : Set α) (i : Bool) (hA : A ⊆ M.E := by grind) :
     M.Separation :=
   IndexedPartition.ofSubset hA i
 
@@ -1007,16 +1016,16 @@ lemma union_inter_left' (P : M.Separation) (X : Set α) (i : Bool) :
   rw [← inter_union_distrib_left, P.union_bool_eq, Set.inter_comm]
 
 @[simp]
-lemma union_inter_right (P : M.Separation) (X : Set α) (hX : X ⊆ M.E := by grind_mat) (i : Bool) :
+lemma union_inter_right (P : M.Separation) (X : Set α) (hX : X ⊆ M.E := by grind) (i : Bool) :
     (P i ∩ X) ∪ ((P !i) ∩ X) = X := by
   rw [union_inter_right', inter_eq_self_of_subset_left hX]
 
 @[simp]
-lemma union_inter_left (P : M.Separation) (X : Set α) (hX : X ⊆ M.E := by grind_mat) (i : Bool) :
+lemma union_inter_left (P : M.Separation) (X : Set α) (hX : X ⊆ M.E := by grind) (i : Bool) :
     (X ∩ (P i)) ∪ (X ∩ (P !i)) = X := by
   rw [union_inter_left', inter_eq_self_of_subset_left hX]
 
-lemma diff_eq_inter_bool (P : M.Separation) (i : Bool) (hX : X ⊆ M.E := by grind_mat) :
+lemma diff_eq_inter_bool (P : M.Separation) (i : Bool) (hX : X ⊆ M.E := by grind) :
     X \ P i = X ∩ P !i := by
   rw [← P.compl_eq]
   grind
@@ -1036,7 +1045,7 @@ def toggle (P : M.Separation) (X : Set α) : M.Separation where
 lemma toggle_apply' (P : M.Separation) (X : Set α) (i : Bool) :
     P.toggle X i = P i ∆ (X ∩ M.E) := rfl
 
-lemma toggle_apply (P : M.Separation) (X : Set α) (hX : X ⊆ M.E := by grind_mat) (i : Bool) :
+lemma toggle_apply (P : M.Separation) (X : Set α) (hX : X ⊆ M.E := by grind) (i : Bool) :
     P.toggle X i = P i ∆ X := by
   rw [toggle_apply', inter_eq_self_of_subset_left hX]
 
@@ -1079,7 +1088,7 @@ lemma toggle_induce_of_ground_subset (P : M.Separation) (hN : N.E ⊆ M.E) :
     (P.toggle X).induce N = (P.induce N).toggle X :=
   P.toggle_induce_of_inter_subset <| by grw [inter_subset_right, hN]
 
-lemma toggle_induce (P : M.Separation) (hX : X ⊆ M.E := by grind_mat) :
+lemma toggle_induce (P : M.Separation) (hX : X ⊆ M.E := by grind) :
     (P.toggle X).induce N i = (P.induce N i).toggle X :=
   P.toggle_induce_of_inter_subset <| by grw [inter_subset_left, hX]
 
@@ -1134,7 +1143,7 @@ lemma _root_.Matroid.Connected.trivial_of_eConn_eq_zero (h : M.Connected) (hP : 
   exact connected_iff_forall_separation.1 h P hP
 
 lemma _root_.Matroid.Connected.eq_ground_of_eConn_eq_zero (hM : M.Connected) (hX : M.eConn X = 0)
-    (hne : X.Nonempty) (hXE : X ⊆ M.E := by grind_mat) : X = M.E := by
+    (hne : X.Nonempty) (hXE : X ⊆ M.E := by grind) : X = M.E := by
   obtain ⟨b | b, hb⟩ :=
     (hM.trivial_of_eConn_eq_zero (P := M.ofSetSep X true) (by simpa)).exists_eq_ground
   · rw [← hb] at hXE

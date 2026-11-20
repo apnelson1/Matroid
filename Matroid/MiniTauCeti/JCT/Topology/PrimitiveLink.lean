@@ -439,7 +439,7 @@ theorem IsPrimitiveLink.exists_isCircuit_of_mem_diff {a b c : X} [T2Space ↥(L 
     (show (⟨y, Or.inl hL.right_mem⟩ : U) ∈ Subtype.val ⁻¹' M from hy)
     (show (⟨c, Or.inl hc.1⟩ : U) ∈ (Subtype.val ⁻¹' L) \ (Subtype.val ⁻¹' M) from hc)
   refine ⟨Subtype.val '' range P, ?_, ?_,
-    (isCompact_range P.continuous).image continuous_subtype_val, ⟨_, hcP, rfl⟩⟩
+    (isCompact_range P.continuous).image continuous_subtypeVal, ⟨_, hcP, rfl⟩⟩
   · rintro w ⟨v, _, rfl⟩
     exact v.property
   · exact hP.isCircuit.image (Topology.IsEmbedding.subtypeVal.comp Topology.IsEmbedding.subtypeVal)

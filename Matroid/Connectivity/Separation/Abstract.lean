@@ -81,7 +81,7 @@ lemma IsPredSeparation.mono (h_imp : ∀ ⦃M X i⦄, X ⊆ M.E → dg' i M X �
 
 lemma IsPredSeparation.nonempty (h : P.IsPredSeparation dg) (hdg : ∀ i, dg i M ∅) (i : Bool) :
     (P i).Nonempty := by
-  rw [nonempty_iff_ne_empty]
+  rw [← ne_empty_iff_nonempty]
   refine fun he ↦ h i ?_
   rw [he]
   apply hdg

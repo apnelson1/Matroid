@@ -170,7 +170,7 @@ lemma exists_smaller_of_odd_isCircuit_isCocircuit (hfin : C.Finite) (hCc : M.IsC
     simpa using (M.crossingBinary_of_eRank_le_one <| Order.le_of_lt_add_one hlt)
       (hCc.isCrossing_of_isCocircuit hCk)
   -- `M.E \ C` cannot be empty, since this would make `M` a rank-one matroid. Let `f ∈ M.E \ C`.
-  obtain ⟨f, hf⟩ : (M.E \ C).Nonempty := nonempty_iff_ne_empty.2 fun hss ↦ by
+  obtain ⟨f, hf⟩ : (M.E \ C).Nonempty := ne_empty_iff_nonempty.1 fun hss ↦ by
     simpa [hss] using hr.trans_eq hCh.eRk_add_one_eq.symm
   -- Now contract all but one element of `M.E \ C`.
   set N := M ／ ((M.E \ C) \ {f}) with hN

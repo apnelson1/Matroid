@@ -20,7 +20,7 @@ lemma exists_eq_freeOn_or_rankPos_dual (M : Matroid α) : (∃ E, M = freeOn E) 
 
 @[simp]
 lemma freeOn_rankPos_iff {E : Set α} : (freeOn E).RankPos ↔ E.Nonempty := by
-  simp [rankPos_iff, Set.nonempty_iff_ne_empty, eq_comm]
+  simp [rankPos_iff, eq_comm]
 
 @[simps! E IsBase] protected def ofExistsMatroidBase (E : Set α) (Base : Set α → Prop)
     (hM : ∃ (M : Matroid α), E = M.E ∧ ∀ I, M.IsBase I ↔ Base I) : Matroid α :=

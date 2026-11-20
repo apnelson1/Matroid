@@ -439,7 +439,7 @@ theorem Konig'sTheorem [H.Simple] [H.Finite] (hB : H.Bipartite) : τ(H) = ν(H) 
   obtain (hempty|hnonempty) := em' (V(G).Nonempty)
   · replace hempty : V(G).encard = 0 := by simpa only [encard_eq_zero, ← not_nonempty_iff_eq_empty]
     have hτ : τ(G) = 0 := by have := G.coverNumber_le_vertexSet_encard; enat_to_nat! <;> omega
-    have hν : ν(G) = 0 := le_zero_iff.mp (hτ ▸ G.matchingNumber_le_coverNumber)
+    have hν : ν(G) = 0 := nonpos_iff_eq_zero.mp (hτ ▸ G.matchingNumber_le_coverNumber)
     grind only [hMin.1]
   simp only [ne_eq, minimal_iff_forall_lt, Decidable.not_not] at hMin
   have hcon : G.Connected := by

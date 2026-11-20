@@ -228,7 +228,7 @@ theorem frontier_closure_preimage_interior_eq_boundaryCrossings {X : Type*} [Top
       Subtype.val ⁻¹' boundaryCrossings S U := by
   let A : Set S := Subtype.val ⁻¹' interior U
   let B : Set S := Subtype.val ⁻¹' interior Uᶜ
-  have hB : IsOpen B := isOpen_interior.preimage continuous_subtype_val
+  have hB : IsOpen B := isOpen_interior.preimage continuous_subtypeVal
   have hLA : closure A = Subtype.val ⁻¹' closure (S ∩ interior U) := by
     dsimp only [A]
     rw [IsInducing.subtypeVal.closure_eq_preimage_closure_image,
@@ -248,10 +248,10 @@ theorem frontier_closure_preimage_interior_eq_boundaryCrossings {X : Type*} [Top
       ext q
       exact and_iff_right q.property
     rw [← heq]
-    exact hcontact.preimage continuous_subtype_val.continuousOn Subtype.val_injective
+    exact hcontact.preimage continuous_subtypeVal.continuousOn Subtype.val_injective
   have hclosed : IsClosed (closure A ∪ closure B)ᶜ := by
     apply isClosed_of_subset_discrete_closed ?_ hdis
-      (isClosed_frontier.preimage continuous_subtype_val)
+      (isClosed_frontier.preimage continuous_subtypeVal)
     intro q hq
     by_contra hfr
     have hside : q.val ∈ interior U ∪ interior Uᶜ := by

@@ -21,7 +21,7 @@ lemma IsCocircuit.codep (h : M.IsCocircuit C) : M.Codep C :=
 
 lemma isCocircuit_iff_minimal_codep : M.IsCocircuit C ↔ Minimal M.Codep C := Iff.rfl
 
-lemma codep_iff_exists_isCocircuit_subset (hDE : D ⊆ M.E := by grind_mat) :
+lemma codep_iff_exists_isCocircuit_subset (hDE : D ⊆ M.E := by grind) :
     M.Codep D ↔ ∃ C ⊆ D, M.IsCocircuit C :=
   dep_iff_superset_isCircuit
 

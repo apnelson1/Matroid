@@ -344,7 +344,7 @@ private lemma isOpen_openSector {θ₁ θ₂ : ℝ} (hρ : 0 < ρ) : IsOpen (ope
 
 private lemma arg_polar {s θ : ℝ} (hs : 0 < s) :
     arg (toComplex x (polar x s θ)) = toIocMod two_pi_pos (-π) θ := by
-  rw [toComplex_polar, arg_real_mul _ hs, arg_exp_mul_I]
+  rw [toComplex_polar, arg_ofReal_mul hs _, arg_exp_mul_I]
 
 private lemma toIocMod_eq_of_mem_Ioc {θ : ℝ} (h : θ ∈ Ioc (-π) π) :
     toIocMod two_pi_pos (-π) θ = θ :=

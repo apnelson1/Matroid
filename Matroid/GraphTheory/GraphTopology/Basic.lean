@@ -290,7 +290,7 @@ lemma isCompact_iff_vertexSet_isCompact (hE : E(G).Finite) :
   refine ⟨fun hG ↦ ?_, fun hV ↦ ?_⟩
   · have := isCompact_iff_compactSpace.mp hG
     simpa only [image_preimage_eq_inter_range, Subtype.range_coe,
-      inter_eq_left.mpr G.subset] using G.isClosed.isCompact.image continuous_subtype_val
+      inter_eq_left.mpr G.subset] using G.isClosed.isCompact.image continuous_subtypeVal
   rw [G.carrier_eq_vertexSet_union_sUnion_edges]
   exact hV.union (hE.isCompact_sUnion fun _ he ↦ G.edge_isCompact he)
 

@@ -570,7 +570,7 @@ protected lemma nontrivial_iff_and : P.Nontrivial ↔ (P false).Nonempty ∧ (P 
 
 @[simp]
 protected lemma not_trivial_iff : ¬ P.Trivial ↔ P.Nontrivial := by
-  simp [trivial_def_bool false, nontrivial_iff, nonempty_iff_ne_empty]
+  simp [trivial_def_bool false, nontrivial_iff]
 
 @[simp]
 protected lemma not_nontrivial_iff : ¬ P.Nontrivial ↔ P.Trivial := by

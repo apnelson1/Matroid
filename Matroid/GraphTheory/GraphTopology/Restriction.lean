@@ -424,7 +424,7 @@ lemma isCompact_induce (hG : IsCompact G.carrier) (hU : IsOpen U) (hW : IsOpen W
   let L := {e ∈ E(G) | G.edgeBoundary e ⊆ U}
   let F := {e | e ∈ E(G) ∧ ∃ x ∈ (show Set G from val ⁻¹' (U ∪ W)ᶜ), x.val ∈ e}
   suffices hKclosed : IsClosed (val ⁻¹' G.induce U : Set G) by
-    have := hKclosed.isCompact.image continuous_subtype_val
+    have := hKclosed.isCompact.image continuous_subtypeVal
     rwa [image_preimage_eq_inter_range, range_coe, inter_eq_left.mpr <| G.induce_subset U] at this
   rw [← isOpen_compl_iff, isOpen_iff_forall_mem_open]
   intro z hz
@@ -445,11 +445,11 @@ lemma isCompact_induce (hG : IsCompact G.carrier) (hU : IsOpen U) (hW : IsOpen W
         (hd.mono (inter_subset_inter_left _ <| G.edge_subset he.left) <| inter_subset_inter_left _
         <| G.edge_subset he.left) ⟨a, hl.left_mem, he.right (by simp [hab])⟩ ⟨y.val, hye, hyW⟩
     exact hyF <| mem_sUnion.mpr ⟨e, ⟨⟨he.left, ⟨x, G.edge_subset he.left hxe⟩, hx, hxe⟩, he⟩, hye⟩
-  refine (hW.preimage continuous_subtype_val).sdiff ?_
+  refine (hW.preimage continuous_subtypeVal).sdiff ?_
   refine (IsInducing.subtypeVal.isCompact_preimage' ?_ (by simpa only [range_coe] using
     (sUnion_subset fun e (he : e ∈ F ∩ L) ↦ G.edge_subset he.right.left))).isClosed
   exact ((G.finite_edges_meeting
-    ((hU.union hW).isClosed_compl.preimage continuous_subtype_val).isCompact
+    ((hU.union hW).isClosed_compl.preimage continuous_subtypeVal).isCompact
     fun x hx hv ↦ hx <| hc hv).inter_of_left _).isCompact_sUnion fun e he ↦ G.edge_isCompact
     he.right.left
 

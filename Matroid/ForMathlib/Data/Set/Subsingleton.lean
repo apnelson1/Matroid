@@ -9,7 +9,7 @@ variable {α : Type*} {x y z : α} {s t : Set α}
 namespace Set
 
 lemma Nontrivial.diff_singleton_nonempty (hs : s.Nontrivial) (x : α) : (s \ {x}).Nonempty := by
-  rw [nonempty_iff_ne_empty]
+  rw [← ne_empty_iff_nonempty]
   intro hs'
   obtain ⟨y, hys⟩ := hs.exists_ne x
   rw [Ne, ← mem_singleton_iff, ← mem_sdiff, hs'] at hys

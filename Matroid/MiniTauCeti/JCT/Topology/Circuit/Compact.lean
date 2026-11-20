@@ -39,7 +39,7 @@ private lemma isCompact_completed_component (hK : IsCircuit K)
     have hs0 : CutPoint.Separates E {z.val} lo.val hi.val :=
       hK'.separates_endpoints_in_closure_component hpq hz
     have hs := hs0.preimage (f := (Subtype.val : E → K)) (a := lo) (b := hi)
-      continuous_subtype_val.continuousOn
+      continuous_subtypeVal.continuousOn
     have hE : (Subtype.val : E → K) ⁻¹' E = univ := by ext z; simp
     have hw : (Subtype.val : E → K) ⁻¹' {z.val} = {z} := by
       ext w

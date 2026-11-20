@@ -40,7 +40,7 @@ lemma spanning_iff_eRk' [RankFinite M] : M.Spanning X ↔ M.eRank ≤ M.eRk X �
   exact (hI.indep.isBase_of_eRk_ge
     hI.indep.finite (h.trans hI.eRk_eq_eRk.symm.le)).spanning_of_superset hI.subset
 
-lemma spanning_iff_eRk [RankFinite M] (hX : X ⊆ M.E := by grind_mat) :
+lemma spanning_iff_eRk [RankFinite M] (hX : X ⊆ M.E := by grind) :
     M.Spanning X ↔ M.eRank ≤ M.eRk X := by
   rw [spanning_iff_eRk', and_iff_left hX]
 
@@ -73,11 +73,11 @@ lemma Nonspanning.eRk_lt [M.RankFinite] (h : M.Nonspanning X) : M.eRk X < M.eRan
   · exact h.eRk_add_one_le
   exact ((M.eRk_le_eRank X).trans_lt M.eRank_lt_top).ne
 
-lemma nonspanning_iff_eRk_lt [M.RankFinite] (hXE : X ⊆ M.E := by grind_mat) :
+lemma nonspanning_iff_eRk_lt [M.RankFinite] (hXE : X ⊆ M.E := by grind) :
     M.Nonspanning X ↔ M.eRk X < M.eRank :=
   ⟨Nonspanning.eRk_lt, fun h ↦ by rwa [← not_spanning_iff, spanning_iff_eRk, not_le]⟩
 
-lemma nonspanning_of_eRk_ne (hX : M.eRk X ≠ M.eRank) (hXE : X ⊆ M.E := by grind_mat) :
+lemma nonspanning_of_eRk_ne (hX : M.eRk X ≠ M.eRank) (hXE : X ⊆ M.E := by grind) :
     M.Nonspanning X := by
   rw [← not_spanning_iff]
   exact fun h ↦ hX h.eRk_eq
@@ -109,7 +109,7 @@ lemma Dep.eRk_add_one_le_encard (h : M.Dep X) : M.eRk X + 1 ≤ X.encard := by
   exact hi.not_dep h
 
 lemma IsNonloop.subset_closure_of_eRk_le_one (he : M.IsNonloop e) (hX : M.eRk X ≤ 1) (heX : e ∈ X)
-    (hXE : X ⊆ M.E := by grind_mat) : X ⊆ M.closure {e} :=
+    (hXE : X ⊆ M.E := by grind) : X ⊆ M.closure {e} :=
   (he.indep.isBasis_of_eRk_ge (by simp) (by simpa) <| by grw [hX, he.eRk_eq]).subset_closure
 
 end Basic
@@ -250,7 +250,7 @@ lemma rkLE_closure_iff : M.RkLE k (M.closure X) ↔ M.RkLE k X :=
 lemma eRk_insert_of_mem_closure (he : e ∈ M.closure X) : M.eRk (insert e X) = M.eRk X := by
   rw [← eRk_insert_closure_eq, insert_eq_of_mem he, eRk_closure_eq]
 
-lemma IsRkFinite.mem_closure_iff (h : M.IsRkFinite X) (he : e ∈ M.E := by grind_mat) :
+lemma IsRkFinite.mem_closure_iff (h : M.IsRkFinite X) (he : e ∈ M.E := by grind) :
     e ∈ M.closure X ↔ M.eRk (Insert.insert e X) = M.eRk X := by
   obtain ⟨I, hI⟩ := M.exists_isBasis' X
   rw [← eRk_insert_closure_eq, ← hI.closure_eq_closure, eRk_insert_closure_eq, hI.eRk_eq_encard]
@@ -263,6 +263,6 @@ lemma IsRkFinite.mem_closure_iff (h : M.IsRkFinite X) (he : e ∈ M.E := by grin
   rw [eRk_insert_eq_add_one ⟨he, heI'⟩, hI.indep.eRk_eq_encard]
   simp [heI', hI.finite_of_isRkFinite h]
 
-lemma IsRkFinite.mem_closure_iff_le (h : M.IsRkFinite X) (he : e ∈ M.E := by grind_mat) :
+lemma IsRkFinite.mem_closure_iff_le (h : M.IsRkFinite X) (he : e ∈ M.E := by grind) :
     e ∈ M.closure X ↔ M.eRk (Insert.insert e X) ≤ M.eRk X := by
   rw [h.mem_closure_iff, le_antisymm_iff, and_iff_left (M.eRk_subset_le (subset_insert ..))]

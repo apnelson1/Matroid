@@ -307,7 +307,7 @@ lemma freeOn_eConn (E X : Set α) : (freeOn E).eConn X = 0 := by
   rw [← eConn_dual, freeOn_dual_eq, loopyOn_eConn]
 
 /-- The slack term in the inequality `λ(X) ≤ r(X)` is co-nullity -/
-lemma eConn_add_nullity_dual_eq_eRk (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by grind_mat) :
+lemma eConn_add_nullity_dual_eq_eRk (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by grind) :
     M.eConn X + M✶.nullity X = M.eRk X := by
   obtain ⟨I, hI⟩ := M.exists_isBasis X
   rw [eConn_eq_eLocalConn, hI.eLocalConn_eq_nullity_project_right, ← hI.encard_eq_eRk,
@@ -322,7 +322,7 @@ lemma eConn_add_nullity_dual_eq_eRk' (M : Matroid α) (X : Set α) :
     nullity_eq_nullity_inter_ground_add_encard_diff, dual_ground, add_assoc]
 
 /-- The slack term in the inequality `λ(X) ≤ r✶(X)` is nullity -/
-lemma eConn_add_nullity_eq_eRk_dual (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by grind_mat) :
+lemma eConn_add_nullity_eq_eRk_dual (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by grind) :
     M.eConn X + M.nullity X = M✶.eRk X := by
   simp [← M✶.eConn_add_nullity_dual_eq_eRk X hX]
 
@@ -355,7 +355,7 @@ lemma eConn_union_eq_of_subset_coloops {Y : Set α} (X : Set α) (hY : Y ⊆ M.c
 /-- The slack term in the inequality `λ(X) ≤ |X|` is the sum of the nullity and conullity of `X`.
 This needs `X ⊆ M.E`, for instance in the case where `X` is a single non-element. -/
 lemma eConn_add_nullity_add_nullity_dual (M : Matroid α) (X : Set α)
-  (hX : X ⊆ M.E := by grind_mat) :
+  (hX : X ⊆ M.E := by grind) :
     M.eConn X + M.nullity X + M✶.nullity X = X.encard := by
   rw [eConn_add_nullity_eq_eRk_dual _ _ hX, eRk_add_nullity_eq_encard]
 
@@ -363,12 +363,12 @@ lemma eConn_add_nullity_add_nullity_dual' (M : Matroid α) (X : Set α) :
     M.eConn X + M.nullity X + M✶.nullity X = X.encard + (X \ M.E).encard := by
   rw [add_right_comm, eConn_add_nullity_dual_eq_eRk', add_right_comm, eRk_add_nullity_eq_encard]
 
-lemma eConn_eq_eRk_iff (hX : M.eConn X ≠ ⊤) (hXE : X ⊆ M.E := by grind_mat) :
+lemma eConn_eq_eRk_iff (hX : M.eConn X ≠ ⊤) (hXE : X ⊆ M.E := by grind) :
     M.eConn X = M.eRk X ↔ M✶.Indep X := by
   rw [← eConn_add_nullity_dual_eq_eRk _ _ hXE, eq_comm, ENat.add_eq_left_iff, or_iff_right hX,
     nullity_eq_zero]
 
-lemma IsRkFinite.eConn_eq_eRk_iff (h : M.IsRkFinite X) (hXE : X ⊆ M.E := by grind_mat) :
+lemma IsRkFinite.eConn_eq_eRk_iff (h : M.IsRkFinite X) (hXE : X ⊆ M.E := by grind) :
     M.eConn X = M.eRk X ↔ M✶.Indep X :=
   Matroid.eConn_eq_eRk_iff (fun h' ↦ (h.eRk_lt_top.trans_eq h'.symm).not_ge (M.eConn_le_eRk X)) hXE
 
@@ -388,7 +388,7 @@ lemma eConn_eq_encard_iff (hX : X.Finite) : M.eConn X = X.encard ↔ M.Indep X �
   grw [← lt_top_iff_ne_top, eConn_le_encard]
   exact hX.encard_lt_top
 
-lemma eRk_add_eRk_dual_eq (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by grind_mat) :
+lemma eRk_add_eRk_dual_eq (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by grind) :
     M.eRk X + M✶.eRk X = M.eConn X + X.encard := by
   rw [← M.eRk_add_nullity_eq_encard X, add_comm _ (nullity ..), ← add_assoc,
     M.eConn_add_nullity_eq_eRk_dual X, add_comm]
@@ -423,7 +423,7 @@ lemma IsCircuit.eConn_add_one_eq {C : Set α} (hC : M.IsCircuit C) :
     M.eConn C + 1 = M✶.eRk C := by
   rw [← hC.isCocircuit.eConn_add_one_eq, eConn_dual]
 
-lemma eConn_eq_eRk_compl_iff (hX : M.eConn X ≠ ⊤) (hXE : X ⊆ M.E := by grind_mat) :
+lemma eConn_eq_eRk_compl_iff (hX : M.eConn X ≠ ⊤) (hXE : X ⊆ M.E := by grind) :
     M.eConn X = M.eRk (M.E \ X) ↔ M.Spanning X := by
   rw [← eConn_compl, eConn_eq_eRk_iff (by simpa), ← coindep_def, ← spanning_iff_compl_coindep]
 
@@ -436,21 +436,21 @@ lemma eConn_lt_encard_iff' (hX : M.eConn X ≠ ⊤) :
   rw [lt_iff_le_and_ne, and_iff_right (eConn_le_encard ..), Ne, eConn_eq_encard_iff' hX,
     Classical.not_and_iff_not_or_not]
 
-lemma eConn_lt_encard_iff (hX : M.eConn X ≠ ⊤) (hXE : X ⊆ M.E := by grind_mat) :
+lemma eConn_lt_encard_iff (hX : M.eConn X ≠ ⊤) (hXE : X ⊆ M.E := by grind) :
     M.eConn X < X.encard ↔ M.Dep X ∨ M✶.Dep X := by
   rw [eConn_lt_encard_iff' hX, coindep_def, not_indep_iff, not_indep_iff]
 
-lemma eConn_lt_encard_compl_iff (hX : M.eConn X ≠ ⊤) (hXE : X ⊆ M.E := by grind_mat) :
+lemma eConn_lt_encard_compl_iff (hX : M.eConn X ≠ ⊤) (hXE : X ⊆ M.E := by grind) :
     M.eConn X < (M.E \ X).encard ↔ ¬ M✶.Spanning X ∨ ¬ M.Spanning X := by
   rw [← eConn_compl, eConn_lt_encard_iff' (by simpa), coindep_iff_compl_spanning,
     sdiff_sdiff_cancel_left hXE, ← dual_coindep_iff, ← dual_ground, ← spanning_iff_compl_coindep]
 
-lemma eConn_lt_eRk_iff (hX : M.eConn X ≠ ⊤) (hXE : X ⊆ M.E := by grind_mat) :
+lemma eConn_lt_eRk_iff (hX : M.eConn X ≠ ⊤) (hXE : X ⊆ M.E := by grind) :
     M.eConn X < M.eRk X ↔ ¬ M.Spanning (M.E \ X) := by
   rw [lt_iff_le_and_ne, and_iff_right (eConn_le_eRk ..), Ne, eConn_eq_eRk_iff hX, ← coindep_def,
     coindep_iff_compl_spanning]
 
-lemma eConn_lt_eRk_compl_iff (hX : M.eConn X ≠ ⊤) (hXE : X ⊆ M.E := by grind_mat) :
+lemma eConn_lt_eRk_compl_iff (hX : M.eConn X ≠ ⊤) (hXE : X ⊆ M.E := by grind) :
     M.eConn X < M.eRk (M.E \ X) ↔ ¬ M.Spanning X := by
   rw [← eConn_compl, eConn_lt_eRk_iff (by simpa), sdiff_sdiff_cancel_left hXE]
 
@@ -494,7 +494,7 @@ lemma eConn_disjointSum_right_eq {M₁ M₂ : Matroid α} (hdj : Disjoint M₁.E
   rw [disjointSum_comm]
   simp
 
-lemma eConn_eq_zero_iff_skew_compl (hX : X ⊆ M.E := by grind_mat) :
+lemma eConn_eq_zero_iff_skew_compl (hX : X ⊆ M.E := by grind) :
     M.eConn X = 0 ↔ M.Skew X (M.E \ X) := by
   rw [eConn_eq_eLocalConn, eLocalConn_eq_zero]
 

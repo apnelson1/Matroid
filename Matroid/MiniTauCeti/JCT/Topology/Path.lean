@@ -70,7 +70,7 @@ noncomputable def squishLeft : I → I :=
   fun t ↦ ⟨(t : ℝ) / 2, by constructor <;> nlinarith [t.prop.left, t.prop.right]⟩
 
 lemma continuous_squishLeft : Continuous squishLeft :=
-  Continuous.subtype_mk (continuous_subtype_val.div_const 2) _
+  Continuous.subtype_mk (continuous_subtypeVal.div_const 2) _
 
 lemma strictMono_squishLeft : StrictMono squishLeft :=
   fun _ _ h ↦ div_lt_div_of_pos_right h zero_lt_two
@@ -90,7 +90,7 @@ noncomputable def squishRight : I → I :=
   fun t ↦ ⟨((t : ℝ) + 1) / 2, by constructor <;> nlinarith [t.prop.left, t.prop.right]⟩
 
 lemma continuous_squishRight : Continuous squishRight :=
-  Continuous.subtype_mk ((continuous_subtype_val.add continuous_const).div_const 2) _
+  Continuous.subtype_mk ((continuous_subtypeVal.add continuous_const).div_const 2) _
 
 lemma strictMono_squishRight : StrictMono squishRight :=
   fun _ _ h ↦ div_lt_div_of_pos_right (add_lt_add_left (Subtype.coe_lt_coe.mpr h) 1) zero_lt_two
@@ -229,7 +229,7 @@ lemma coe_codRestrict_apply (P : Path x y) {U : Set α} (hU : range P ⊆ U) (t 
 
 @[simp]
 lemma map_subtype_val_codRestrict (P : Path x y) {U : Set α} (hU : range P ⊆ U) :
-    (P.codRestrict hU).map continuous_subtype_val = P := by
+    (P.codRestrict hU).map continuous_subtypeVal = P := by
   ext t
   rfl
 
@@ -488,7 +488,7 @@ theorem range_eq_segment_of_subset {W : Type*} [TopologicalSpace W] [AddCommGrou
   obtain ⟨t, rfl⟩ := hsub γ.target_mem_range
   simp_rw [range_eq_image_uIcc_of_subset_injective (Path.segment_injective_of_ne hab) hinj hsub,
     Path.segment_apply]
-  rw [← image_image, image_subtype_val_uIcc, ← segment_eq_uIcc, image_segment]
+  rw [← image_image, image_subtypeVal_uIcc, ← segment_eq_uIcc, image_segment]
 
 /-! ### Cutting a path at closed sets -/
 
@@ -670,7 +670,7 @@ lemma isPathConnected_interior (P : Path x y) : IsPathConnected P.Interior :=
 lemma interior_segment [AddCommGroup α] [Module ℝ α] [ContinuousAdd α] [ContinuousSMul ℝ α]
     (a b : α) : (Path.segment a b).Interior = openSegment ℝ a b := by
   change (fun t : I ↦ AffineMap.lineMap a b (t : ℝ)) '' Ioo 0 1 = _
-  rw [← image_image, image_subtype_val_Ioo, openSegment_eq_image_lineMap]
+  rw [← image_image, image_subtypeVal_Ioo, openSegment_eq_image_lineMap]
   rfl
 
 lemma range_subset_closure_interior (P : Path x y) : range P ⊆ closure P.Interior := by

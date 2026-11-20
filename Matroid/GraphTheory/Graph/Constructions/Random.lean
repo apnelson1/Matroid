@@ -1,6 +1,6 @@
 module
 
-public import Mathlib.Data.Sym.Sym2.Order
+public import Mathlib.Order.Sym2
 public import Matroid.GraphTheory.Graph.Simple
 
 @[expose] public section
@@ -55,11 +55,12 @@ instance : Simple randomGraph where
   eq_of_isLink e f x y he hf := by aesop
 
 -- lemma randomGraph_extension' {A B : Set ℕ} (h : Disjoint A B) (hA : A.Finite) (hB : B.Finite) :
---     ∃ x, x ∉ A ∧ x ∉ B ∧ (∀ a ∈ A, randomGraph.Adj a x) ∧ (∀ b ∈ B, randomGraph.Adj b x) := by
+--     ∃ x, x ∉ A ∧ x ∉ B ∧
+--       (∀ a ∈ A, randomGraph.Adj a x) ∧ (∀ b ∈ B, randomGraph.Adj b x) := by
 --   classical
 --   simp_rw [randomGraph_adj]
---   use (if h : B.Nonempty then 2^((hB.exists_maximal h).choose +1) else 0) + hA.toFinset.sum (2^·),
---     ?_, fun h' ↦ ?_, ?_, ?_
+--   use (if h : B.Nonempty then 2^((hB.exists_maximal h).choose +1) else 0) +
+--     hA.toFinset.sum (2^·), ?_, fun h' ↦ ?_, ?_, ?_
 --   · sorry
 --   · split_ifs at h' with hBne
 --     · have := hB.exists_maximal hBne |>.choose_spec.2 h'

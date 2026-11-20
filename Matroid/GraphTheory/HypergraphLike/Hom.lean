@@ -116,6 +116,8 @@ lemma vertMap'_eq_vertMap [Nonempty V₁] (F : IncHom G H) (x : V(G)) :
 lemma vertMap_mem [Nonempty V₁] (F : IncHom G H) {x : V₀} (h : x ∈ V(G)) : F.vertMap x ∈ V(H) := by
   simpa using (F.vertMap' ⟨x, h⟩).property
 
+grind_pattern vertMap_mem => F.vertMap x, x ∈ V(G)
+
 open Classical in
 /-- The map on all incidence labels, taking an arbitrary value on unused labels. -/
 noncomputable def incMap [Nonempty I₁] (F : IncHom G H) (i : I₀) : I₁ :=
@@ -128,6 +130,8 @@ lemma incMap'_eq_incMap [Nonempty I₁] (F : IncHom G H) (i : I(G)) :
 lemma incMap_mem [Nonempty I₁] (F : IncHom G H) {i : I₀} (h : i ∈ I(G)) : F.incMap i ∈ I(H) := by
   simpa using (F.incMap' ⟨i, h⟩).property
 
+grind_pattern incMap_mem => F.incMap i, i ∈ I(G)
+
 open Classical in
 /-- The map on all edge labels, taking an arbitrary value on unused labels. -/
 noncomputable def edgeMap [Nonempty E₁] (F : IncHom G H) (e : E₀) : E₁ :=
@@ -139,6 +143,8 @@ lemma edgeMap'_eq_edgeMap [Nonempty E₁] (F : IncHom G H) (e : E(G)) :
 
 lemma edgeMap_mem [Nonempty E₁] (F : IncHom G H) {e : E₀} (h : e ∈ E(G)) : F.edgeMap e ∈ E(H) := by
   simpa using (F.edgeMap' ⟨e, h⟩).property
+
+grind_pattern edgeMap_mem => F.edgeMap e, e ∈ E(G)
 
 @[ext]
 lemma ext [Nonempty V₁] [Nonempty I₁] [Nonempty E₁] {F F' : IncHom G H}

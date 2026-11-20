@@ -61,7 +61,7 @@ theorem edge_subset_frontier_of_mem (he : e ∈ E(G)) (hpoly : IsSegmentFigure e
   obtain ⟨w, hw⟩ := nonempty_of_mem_faceSet hF
   have hFeq := eq_connectedComponentIn_of_mem_faceSet hF hw
   let U : Set (G.edgeInterior e) := Subtype.val ⁻¹' frontier F
-  have hUclosed : IsClosed U := isClosed_frontier.preimage continuous_subtype_val
+  have hUclosed : IsClosed U := isClosed_frontier.preimage continuous_subtypeVal
   have hUopen : IsOpen U := by
     rw [isOpen_iff_forall_mem_open]
     intro z hz
@@ -72,7 +72,7 @@ theorem edge_subset_frontier_of_mem (he : e ∈ E(G)) (hpoly : IsSegmentFigure e
       hYne hstar (mem_ball_self hr) (hFeq ▸ hz)
     have hCF' : C ⊆ F := hFeq ▸ hCF
     refine ⟨Subtype.val ⁻¹' ball z.1 r, ?_,
-      isOpen_ball.preimage continuous_subtype_val, mem_ball_self hr⟩
+      isOpen_ball.preimage continuous_subtypeVal, mem_ball_self hr⟩
     intro q hq
     have hqG : q.1 ∈ G.carrier := G.edge_subset he q.2.1
     refine ⟨closure_mono hCF'

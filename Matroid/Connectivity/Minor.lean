@@ -644,7 +644,7 @@ lemma Skew.eConn_contract_diff_eq_self_of_skew (h : M.Skew X (C \ X))
     using 1 <;> grind
 
 lemma eConn_contract_diff_eq_self_iff_skew_skew (hconn : (M ／ C).eConn (X \ C) ≠ ⊤)
-    (hX : X ⊆ M.E := by grind_mat) (hC : C ⊆ M.E := by grind_mat) :
+    (hX : X ⊆ M.E := by grind) (hC : C ⊆ M.E := by grind) :
     (M ／ C).eConn (X \ C) = M.eConn X ↔ M.Skew X (C \ X) ∧ M.Skew (M.E \ X) (C ∩ X) := by
   refine ⟨fun h ↦ ⟨?_, ?_⟩, fun h ↦ h.1.eConn_contract_diff_eq_self_of_skew h.2⟩
   · rw [M.eConn_eq_eConn_contract_disjoint_add (C := C \ X) disjoint_sdiff_right] at h
@@ -661,7 +661,7 @@ lemma eConn_contract_diff_eq_self_iff_skew_skew (hconn : (M ／ C).eConn (X \ C)
 /-- A version of `eConn_contract_diff_eq_self_iff_skew_skew` with the simpler but weaker assumption
 that `M.eConn X ≠ ⊤`. -/
 lemma eConn_contract_diff_eq_self_iff_skew_skew' (hconn : M.eConn X ≠ ⊤)
-    (hX : X ⊆ M.E := by grind_mat) (hC : C ⊆ M.E := by grind_mat) :
+    (hX : X ⊆ M.E := by grind) (hC : C ⊆ M.E := by grind) :
     (M ／ C).eConn (X \ C) = M.eConn X ↔ M.Skew X (C \ X) ∧ M.Skew (M.E \ X) (C ∩ X) := by
   rw [eConn_contract_diff_eq_self_iff_skew_skew]
   grw [← lt_top_iff_ne_top, eConn_contract_diff_le, lt_top_iff_ne_top]
@@ -985,7 +985,7 @@ lemma IsRkFinite.eConn_eq_zero_of_eRk_delete_le_eRk_contract (h : M.IsRkFinite (
   exact M.eConn_eq_zero_of_contract_eq_delete <| (M.contract_quotient_delete X).eq_of_eRank_ge' hr
 
 lemma IsRankFinite.eConn_eq_zero_of_eRk_dual_le_dual_restrict_eRank (hX : M✶.IsRkFinite X)
-    (h : M✶.eRk X ≤ (M ↾ X)✶.eRank) (hXE : X ⊆ M.E := by grind_mat) : M.eConn X = 0 := by
+    (h : M✶.eRk X ≤ (M ↾ X)✶.eRank) (hXE : X ⊆ M.E := by grind) : M.eConn X = 0 := by
   rw [← eRank_restrict, ← delete_compl, ← delete_compl, dual_delete, dual_ground] at h
   have hc := IsRkFinite.eConn_eq_zero_of_eRk_delete_le_eRk_contract ?_ h
   · simpa using hc

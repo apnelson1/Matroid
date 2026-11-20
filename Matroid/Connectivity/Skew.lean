@@ -30,9 +30,10 @@ structure IsSkewFamily (M : Matroid α) (Xs : ι → Set α) : Prop where
 lemma IsSkewFamily.subset_ground_of_mem (h : M.IsSkewFamily Xs) (i : ι) : Xs i ⊆ M.E :=
   h.isModularFamily.subset_ground_of_mem i
 
-@[matroid_ground →]
 lemma IsSkewFamily.iUnion_subset_ground (h : M.IsSkewFamily Xs) : ⋃ i, Xs i ⊆ M.E :=
   iUnion_subset h.subset_ground_of_mem
+
+grind_pattern IsSkewFamily.iUnion_subset_ground => M.IsSkewFamily Xs, (⋃ i, Xs i)
 
 lemma IsSkewFamily.isLoop_of_mem_inter (h : M.IsSkewFamily Xs) (hij : i ≠ j)
     (he : e ∈ Xs i ∩ Xs j) : M.IsLoop e :=
@@ -430,7 +431,7 @@ lemma contract_isSkewFamily_iff_project_isSkewFamily {C : Set α} {Xs : η → S
     (hXC : ∀ i, Disjoint (Xs i) C) : (M ／ C).IsSkewFamily Xs ↔ (M.project C).IsSkewFamily Xs := by
   rwa [← project_delete_self, isSkewFamily_delete_iff_of_disjoint]
 
-lemma project_isSkewFamily_iff {C : Set α} {Xs : ι → Set α} (hC : C ⊆ M.E := by grind_mat) :
+lemma project_isSkewFamily_iff {C : Set α} {Xs : ι → Set α} (hC : C ⊆ M.E := by grind) :
     (M.project C).IsSkewFamily Xs ↔ M.IsModularFamily (fun i ↦ Xs i ∪ C) ∧
     ∀ ⦃i j⦄, i ≠ j → Xs i ∩ Xs j ⊆ M.closure C := by
   obtain ⟨I, hI⟩ := M.exists_isBasis C
@@ -464,7 +465,7 @@ lemma project_isSkewFamily_iff {C : Set α} {Xs : ι → Set α} (hC : C ⊆ M.E
   grw [inter_subset_right, union_comm C, ← M.subset_closure _ (hB.subset_ground i)]
 
 lemma contract_isSkewFamily_iff {C : Set α} {Xs : η → Set α} (hXC : ∀ i, Disjoint (Xs i) C)
-    (hC : C ⊆ M.E := by grind_mat) :
+    (hC : C ⊆ M.E := by grind) :
     (M ／ C).IsSkewFamily Xs ↔ M.IsModularFamily (fun i ↦ Xs i ∪ C) ∧
       ∀ ⦃i j⦄, i ≠ j → Xs i ∩ Xs j ⊆ M.closure C := by
   rw [contract_isSkewFamily_iff_project_isSkewFamily hXC, project_isSkewFamily_iff]
@@ -472,13 +473,24 @@ lemma contract_isSkewFamily_iff {C : Set α} {Xs : η → Set α} (hXC : ∀ i, 
 /-- Two sets are skew if they have disjoint bases with independent union. -/
 def Skew (M : Matroid α) (X Y : Set α) := M.IsSkewFamily (fun i ↦ bif i then X else Y)
 
-@[aesop unsafe 5% (rule_sets := [Matroid]), matroid_ground →]
+@[aesop unsafe 5% (rule_sets := [Matroid])]
 lemma Skew.subset_ground_left (h : M.Skew X Y) : X ⊆ M.E :=
   h.subset_ground_of_mem true
 
-@[aesop unsafe 5% (rule_sets := [Matroid]), matroid_ground →]
+@[aesop unsafe 5% (rule_sets := [Matroid])]
 lemma Skew.subset_ground_right (h : M.Skew X Y) : Y ⊆ M.E :=
   h.subset_ground_of_mem false
+
+lemma Skew.mem_ground_left (h : M.Skew X Y) (he : e ∈ X) : e ∈ M.E :=
+  h.subset_ground_left he
+
+lemma Skew.mem_ground_right (h : M.Skew X Y) (he : e ∈ Y) : e ∈ M.E :=
+  h.subset_ground_right he
+
+grind_pattern Skew.mem_ground_left => M.Skew X Y, e ∈ X, e ∈ M.E
+grind_pattern Skew.mem_ground_right => M.Skew X Y, e ∈ Y, e ∈ M.E
+grind_pattern Skew.subset_ground_left => M.Skew X Y, X ⊆ M.E
+grind_pattern Skew.subset_ground_right => M.Skew X Y, Y ⊆ M.E
 
 lemma Skew.isModularPair (h : M.Skew X Y) : M.IsModularPair X Y :=
   h.isModularFamily
@@ -591,17 +603,17 @@ lemma Skew.closure_skew (h : M.Skew X Y) : M.Skew (M.closure X) (M.closure Y) :=
   simp_rw [Bool.cond_eq_ite, apply_ite, ← Bool.cond_eq_ite] at h'
   exact h'
 
-lemma skew_iff_closure_skew (hX : X ⊆ M.E := by grind_mat) (hY : Y ⊆ M.E := by grind_mat) :
+lemma skew_iff_closure_skew (hX : X ⊆ M.E := by grind) (hY : Y ⊆ M.E := by grind) :
     M.Skew X Y ↔ M.Skew (M.closure X) (M.closure Y) :=
   ⟨Skew.closure_skew, fun h ↦ h.mono (M.subset_closure X) (M.subset_closure Y)⟩
 
-lemma skew_iff_closure_skew_left (hX : X ⊆ M.E := by grind_mat) :
+lemma skew_iff_closure_skew_left (hX : X ⊆ M.E := by grind) :
     M.Skew X Y ↔ M.Skew (M.closure X) Y := by
   by_cases hY : Y ⊆ M.E
   · rw [skew_iff_closure_skew, iff_comm, skew_iff_closure_skew, closure_closure]
   exact iff_of_false (fun h ↦ hY <| h.subset_ground_right) (fun h ↦ hY <| h.subset_ground_right)
 
-lemma skew_iff_closure_skew_right (hY : Y ⊆ M.E := by grind_mat) :
+lemma skew_iff_closure_skew_right (hY : Y ⊆ M.E := by grind) :
     M.Skew X Y ↔ M.Skew X (M.closure Y) := by
   rw [skew_comm, skew_iff_closure_skew_left, skew_comm]
 
@@ -645,8 +657,8 @@ lemma skew_iff_isBases_skew (hI : M.IsBasis I X) (hJ : M.IsBasis J Y) : M.Skew I
   ⟨fun h ↦ h.closure_skew.mono hI.subset_closure hJ.subset_closure,
     fun h ↦ h.mono hI.subset hJ.subset⟩
 
-lemma skew_dual_iff (hXY : Disjoint X Y) (hX : X ⊆ M.E := by grind_mat)
-    (hY : Y ⊆ M.E := by grind_mat) : M✶.Skew X Y ↔ M.IsModularPair (M.E \ X) (M.E \ Y) := by
+lemma skew_dual_iff (hXY : Disjoint X Y) (hX : X ⊆ M.E := by grind)
+    (hY : Y ⊆ M.E := by grind) : M✶.Skew X Y ↔ M.IsModularPair (M.E \ X) (M.E \ Y) := by
   rw [Skew, isSkewFamily_dual_iff_isModularFamily_compl (by grind)
     (by grind [Pairwise]), IsModularPair]
   convert Iff.rfl
@@ -660,7 +672,7 @@ lemma isModularPair_dual_iff (hXY : X ∪ Y = M.E) :
   rw [dual_ground, disjoint_iff_inter_eq_empty, sdiff_inter_sdiff, hXY, sdiff_self]
 
 lemma Coindep.skew_dual_iff (hX : M.Coindep X) (hXY : Disjoint X Y)
-    (hYE : Y ⊆ M.E := by grind_mat) : M✶.Skew X Y ↔ X ⊆ M.closure (M.E \ (X ∪ Y)) := by
+    (hYE : Y ⊆ M.E := by grind) : M✶.Skew X Y ↔ X ⊆ M.closure (M.E \ (X ∪ Y)) := by
   rw [Matroid.skew_dual_iff hXY, hX.compl_spanning.isModularPair_iff, sdiff_inter_sdiff,
     ← sdiff_union_of_subset (subset_sdiff.2 ⟨hX.subset_ground, hXY⟩), union_subset_iff,
     sdiff_sdiff, union_comm, and_iff_right (M.subset_closure ..)]
@@ -698,8 +710,8 @@ lemma Indep.subset_skew_diff (h : M.Indep I) (hJI : J ⊆ I) : M.Skew J (I \ J) 
   · exact disjoint_sdiff_right
   exact h.subset (union_subset hJI sdiff_subset)
 
-lemma skew_iff_contract_restrict_eq_restrict (hX : X ⊆ M.E := by grind_mat)
-    (hY : Y ⊆ M.E := by grind_mat) : M.Skew X Y ↔ (M ／ X) ↾ Y = M ↾ Y := by
+lemma skew_iff_contract_restrict_eq_restrict (hX : X ⊆ M.E := by grind)
+    (hY : Y ⊆ M.E := by grind) : M.Skew X Y ↔ (M ／ X) ↾ Y = M ↾ Y := by
   obtain ⟨I, hI⟩ := M.exists_isBasis X
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · refine ext_indep rfl fun J (hJ : J ⊆ Y) ↦ ?_
@@ -881,7 +893,7 @@ lemma dual_isSkewFamily_iff {X : η → Set α} (hdj : Pairwise (Disjoint on X))
   rwa [hrw] at this
 
 lemma skew_iff_forall_isCircuit (M : Matroid α) (hdj : Disjoint X Y)
-    (hX : X ⊆ M.E := by grind_mat) (hY : Y ⊆ M.E := by grind_mat) :
+    (hX : X ⊆ M.E := by grind) (hY : Y ⊆ M.E := by grind) :
     M.Skew X Y ↔ ∀ C, M.IsCircuit C → C ⊆ X ∪ Y → C ⊆ X ∨ C ⊆ Y := by
   rw [Skew, isSkewFamily_iff_forall_isCircuit]
   · simp [or_comm, iUnion_bool]
@@ -971,7 +983,7 @@ lemma skew_of_subset_loops {L : Set α} (hL : L ⊆ M.loops) (hX : X ⊆ M.E) : 
   rw [skew_iff_diff_loops_skew_left, sdiff_eq_empty.2 hL]
   apply empty_skew hX
 
-lemma skew_project_self (hX : X ⊆ M.E := by grind_mat) (hY : Y ⊆ M.E := by grind_mat) :
+lemma skew_project_self (hX : X ⊆ M.E := by grind) (hY : Y ⊆ M.E := by grind) :
     (M.project X).Skew X Y :=
   skew_of_subset_loops (by simp [M.subset_closure X hX]) hY
 
@@ -987,14 +999,14 @@ lemma skew_of_subset_coloops {K : Set α} (hK : K ⊆ M.coloops) (hX : X ⊆ M.E
 lemma IsColoop.skew (he : M.IsColoop e) (hX : X ⊆ M.E) (heX : e ∉ X) : M.Skew {e} X :=
   skew_of_subset_coloops (by simpa) hX (by simpa)
 
-lemma IsNonloop.skew_right_iff (he : M.IsNonloop e) (hX : X ⊆ M.E := by grind_mat) :
+lemma IsNonloop.skew_right_iff (he : M.IsNonloop e) (hX : X ⊆ M.E := by grind) :
     M.Skew X {e} ↔ e ∉ M.closure X := by
   obtain ⟨I, hI⟩ := M.exists_isBasis X
   rw [← skew_iff_isBases_skew hI he.indep.isBasis_self, ← hI.closure_eq_closure,
     Indep.skew_iff_disjoint_union_indep hI.indep he.indep, disjoint_singleton_right,
     hI.indep.notMem_closure_iff, union_singleton, and_comm]
 
-lemma IsNonloop.skew_left_iff (he : M.IsNonloop e) (hX : X ⊆ M.E := by grind_mat) :
+lemma IsNonloop.skew_left_iff (he : M.IsNonloop e) (hX : X ⊆ M.E := by grind) :
     M.Skew {e} X ↔ e ∉ M.closure X := by
   rw [← he.skew_right_iff, skew_comm]
 
@@ -1031,14 +1043,14 @@ lemma Skew.restrict_of_subset {R : Set α} (hXY : M.Skew X Y) (hXR : X ⊆ R) (h
     (M ↾ R).Skew X Y := by
   convert hXY.restrict R <;> simpa
 
-lemma Skew.of_restrict {R : Set α} (h : (M ↾ R).Skew X Y) (hR : R ⊆ M.E := by grind_mat) :
+lemma Skew.of_restrict {R : Set α} (h : (M ↾ R).Skew X Y) (hR : R ⊆ M.E := by grind) :
     M.Skew X Y := by
   rw [skew_iff_isModularPair_inter_subset_loops, loops] at h ⊢
   simp only [restrict_closure_eq', empty_inter, sdiff_eq_empty.2 hR, union_empty,
     subset_inter_iff] at h
   exact ⟨h.1.ofRestrict hR, h.2.1⟩
 
-lemma skew_restrict_iff {R : Set α} (hRE : R ⊆ M.E := by grind_mat) :
+lemma skew_restrict_iff {R : Set α} (hRE : R ⊆ M.E := by grind) :
     (M ↾ R).Skew X Y ↔ M.Skew X Y ∧ X ⊆ R ∧ Y ⊆ R :=
   ⟨fun h ↦ ⟨h.of_restrict, h.subset_ground_left, h.subset_ground_right⟩,
     fun h ↦ h.1.restrict_of_subset h.2.1 h.2.2⟩
@@ -1074,7 +1086,7 @@ lemma contract_skew_iff_project_skew {C : Set α} (hXC : Disjoint X C) (hYC : Di
   rw [← project_delete_self, skew_delete_iff, and_iff_left hYC, and_iff_left hXC]
 
 lemma contract_skew_iff {C : Set α} (hXC : Disjoint X C) (hYC : Disjoint Y C)
-    (hC : C ⊆ M.E := by grind_mat) :
+    (hC : C ⊆ M.E := by grind) :
     (M ／ C).Skew X Y ↔ M.IsModularPair (X ∪ C) (Y ∪ C) ∧ X ∩ Y ⊆ M.closure C := by
   rw [Skew, contract_isSkewFamily_iff (by grind), IsModularPair]
   convert Iff.rfl using 4 with i
@@ -1144,12 +1156,12 @@ lemma skew_disjointSum {M₁ M₂ : Matroid α} (hdj : Disjoint M₁.E M₂.E) :
   · exact .inl h.subset_ground
   exact .inr h.subset_ground
 
-lemma contract_eq_delete_iff_skew_compl (hX : X ⊆ M.E := by grind_mat) :
+lemma contract_eq_delete_iff_skew_compl (hX : X ⊆ M.E := by grind) :
     M ／ X = M ＼ X ↔ M.Skew X (M.E \ X) := by
   rw [skew_iff_contract_restrict_eq_restrict, restrict_compl, ← contract_ground,
     restrict_ground_eq_self]
 
-lemma skew_iff_of_subset_left (hXY : X ⊆ Y) (hY : Y ⊆ M.E := by grind_mat) :
+lemma skew_iff_of_subset_left (hXY : X ⊆ Y) (hY : Y ⊆ M.E := by grind) :
     M.Skew X Y ↔ X ⊆ M.loops := by
   refine ⟨?_, fun h ↦ skew_of_subset_loops h (by grind)⟩
   obtain ⟨I, J, hI, hJ, hIJ⟩ := M.exists_isBasis_subset_isBasis hXY
@@ -1159,7 +1171,7 @@ lemma skew_iff_of_subset_left (hXY : X ⊆ Y) (hY : Y ⊆ M.E := by grind_mat) :
   rintro rfl
   simpa [loops] using hI.subset_closure
 
-lemma skew_iff_of_subset_right (hXY : X ⊆ Y) (hY : Y ⊆ M.E := by grind_mat) :
+lemma skew_iff_of_subset_right (hXY : X ⊆ Y) (hY : Y ⊆ M.E := by grind) :
     M.Skew Y X ↔ X ⊆ M.loops := by
   rw [skew_comm, skew_iff_of_subset_left hXY]
 
@@ -1172,16 +1184,16 @@ lemma Indep.skew_compl_iff_subset_coloops (hI : M.Indep I) :
   rw [← dual_loops, ← hI.coindep.skew_compl_iff_subset_loops, ← contract_eq_delete_iff_skew_compl,
     ← contract_eq_delete_iff_skew_compl, ← dual_inj, dual_contract, dual_delete, eq_comm]
 
-lemma Spanning.skew_iff_left (hX : M.Spanning X) (hY : Y ⊆ M.E := by grind_mat) :
+lemma Spanning.skew_iff_left (hX : M.Spanning X) (hY : Y ⊆ M.E := by grind) :
     M.Skew X Y ↔ Y ⊆ M.loops := by
   rwa [skew_iff_closure_skew_left, hX.closure_eq, skew_iff_of_subset_right]
 
-lemma Spanning.skew_iff_right (hX : M.Spanning X) (hY : Y ⊆ M.E := by grind_mat) :
+lemma Spanning.skew_iff_right (hX : M.Spanning X) (hY : Y ⊆ M.E := by grind) :
     M.Skew Y X ↔ Y ⊆ M.loops := by
   rwa [skew_iff_closure_skew_right, hX.closure_eq, skew_iff_of_subset_left]
 
-lemma skew_iff_forall_isCircuit_of_inter_subset_loops (hX : X ⊆ M.E := by grind_mat)
-    (hY : Y ⊆ M.E := by grind_mat) :
+lemma skew_iff_forall_isCircuit_of_inter_subset_loops (hX : X ⊆ M.E := by grind)
+    (hY : Y ⊆ M.E := by grind) :
     M.Skew X Y ↔ X ∩ Y ⊆ M.loops ∧ ∀ C, M.IsCircuit C → C ⊆ X ∪ Y → C ⊆ X ∨ C ⊆ Y := by
   refine ⟨fun h ↦ ⟨h.inter_subset_loops, fun _ ↦ h.subset_or_subset_of_isCircuit⟩, ?_⟩
   rintro ⟨hinter, h⟩
@@ -1212,17 +1224,17 @@ lemma Skew.isCircuit_contract_of_nontrivial {C} (hXC : M.Skew X C) (hC : M.IsCir
   simp [← heC] at hCnt
 
 lemma IsCircuit.isCircuit_contract_iff_skew {C} (hC : M.IsCircuit C) (hXC : Disjoint X C)
-    (hX : X ⊆ M.E := by grind_mat) : (M ／ X).IsCircuit C ↔ M.Skew X C := by
+    (hX : X ⊆ M.E := by grind) : (M ／ X).IsCircuit C ↔ M.Skew X C := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.isCircuit_contract hC hXC⟩
   rw [skew_iff_contract_restrict_eq_restrict, hC.restrict_eq_circuitOn, h.restrict_eq_circuitOn]
 
 lemma IsCircuit.isCircuit_contract_iff_skew_of_nontrivial {C} (hC : M.IsCircuit C)
-    (hnt : C.Nontrivial) (hX : X ⊆ M.E := by grind_mat) : (M ／ X).IsCircuit C ↔ M.Skew X C := by
+    (hnt : C.Nontrivial) (hX : X ⊆ M.E := by grind) : (M ／ X).IsCircuit C ↔ M.Skew X C := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.isCircuit_contract_of_nontrivial hC hnt⟩
   rw [skew_iff_contract_restrict_eq_restrict, hC.restrict_eq_circuitOn, h.restrict_eq_circuitOn]
 
 lemma IsTriangle.isTriangle_contract_iff_skew {T} (hT : M.IsTriangle T)
-    (hX : X ⊆ M.E := by grind_mat) : (M ／ X).IsTriangle T ↔ M.Skew X T := by
+    (hX : X ⊆ M.E := by grind) : (M ／ X).IsTriangle T ↔ M.Skew X T := by
   simp only [isTriangle_iff, hT.three_elements, and_true]
   rw [hT.isCircuit.isCircuit_contract_iff_skew_of_nontrivial hT.nontrivial]
 
@@ -1256,29 +1268,29 @@ lemma isCircuit_contractElem_iff_of_notMem {C} (heC : e ∉ C) (he : M.IsNonloop
   have hwin := hC.contract_sdiff_isCircuit (K := C) hne (by simp)
   rwa [insert_sdiff_of_notMem _ heC, sdiff_self, insert_empty_eq] at hwin
 
-lemma Indep.contract_indep_iff_skew {C} (hI : M.Indep I) (hCE : C ⊆ M.E := by grind_mat) :
+lemma Indep.contract_indep_iff_skew {C} (hI : M.Indep I) (hCE : C ⊆ M.E := by grind) :
     (M ／ C).Indep I ↔ M.Skew I C := by
   obtain ⟨J, hJ⟩ := M.exists_isBasis C
   rw [← project_indep_eq, hJ.project_eq_project, hJ.indep.project_indep_iff,
     skew_iff_closure_skew_right, ← hJ.closure_eq_closure, ← skew_iff_closure_skew_right,
     hI.skew_iff_disjoint_union_indep hJ.indep]
 
-lemma contract_indep_iff_indep_skew (hXE : X ⊆ M.E := by grind_mat) :
+lemma contract_indep_iff_indep_skew (hXE : X ⊆ M.E := by grind) :
     (M ／ X).Indep I ↔ M.Indep I ∧ M.Skew I X := by
   by_cases hI : M.Indep I
   · rw [hI.contract_indep_iff_skew, and_iff_right hI]
   exact iff_of_false (fun h ↦ hI h.of_contract) (by simp [hI])
 
-lemma project_indep_iff_indep_skew (hXE : X ⊆ M.E := by grind_mat) :
+lemma project_indep_iff_indep_skew (hXE : X ⊆ M.E := by grind) :
     (M.project X).Indep I ↔ M.Indep I ∧ M.Skew I X := by
   rw [project_indep_eq, contract_indep_iff_indep_skew]
 
-lemma Indep.skew_of_contract {C} (hI : (M ／ C).Indep I) (hC : C ⊆ M.E := by grind_mat) :
+lemma Indep.skew_of_contract {C} (hI : (M ／ C).Indep I) (hC : C ⊆ M.E := by grind) :
     M.Skew I C := by
   rw [contract_indep_iff_indep_skew] at hI
   exact hI.2
 
-lemma Indep.skew_of_project {C} (hI : (M.project C).Indep I) (hC : C ⊆ M.E := by grind_mat) :
+lemma Indep.skew_of_project {C} (hI : (M.project C).Indep I) (hC : C ⊆ M.E := by grind) :
     M.Skew I C := by
   rw [project_indep_iff_indep_skew] at hI
   exact hI.2
@@ -1287,7 +1299,7 @@ lemma Indep.skew_of_project {C} (hI : (M.project C).Indep I) (hC : C ⊆ M.E := 
  can find a circuit contained in `C ∪ X`
 that intersects `X`, and also contains an arbitrary element of `C`. -/
 lemma IsCircuit.exists_isCircuit_mem_subset_union_of_not_skew {C} (hC : M.IsCircuit C)
-    (hdj : Disjoint C X) (hXC : ¬ M.Skew C X) (he : e ∈ C) (hX : X ⊆ M.E := by grind_mat) :
+    (hdj : Disjoint C X) (hXC : ¬ M.Skew C X) (he : e ∈ C) (hX : X ⊆ M.E := by grind) :
     ∃ C', M.IsCircuit C' ∧ C' ⊆ C ∪ X ∧ e ∈ C' ∧ (C' ∩ X).Nonempty := by
   simp only [M.skew_iff_forall_isCircuit hdj, not_forall, not_or, exists_prop] at hXC
   obtain ⟨C', hC', hC'ss, hnss, hcss'⟩ := hXC
@@ -1325,18 +1337,18 @@ lemma modularCompl_comm :
     M.ModularCompl F₀ F₁ F F' ↔ M.ModularCompl F₀ F₁ F' F :=
   ⟨ModularCompl.symm, ModularCompl.symm⟩
 
-@[aesop unsafe 24% (rule_sets := [Matroid]), matroid_ground →]
+@[aesop unsafe 24% (rule_sets := [Matroid]), grind →]
 lemma ModularCompl.left_subset_ground (h : M.ModularCompl F₀ F₁ F F') : F ⊆ M.E :=
   h.isFlat_left.subset_ground
 
-@[aesop unsafe 25% (rule_sets := [Matroid]), matroid_ground →]
+@[aesop unsafe 25% (rule_sets := [Matroid]), grind →]
 lemma ModularCompl.right_subset_ground (h : M.ModularCompl F₀ F₁ F F') : F' ⊆ M.E :=
   h.isFlat_right.subset_ground
 
 lemma ModularCompl.isFlat_top (h : M.ModularCompl F₀ F₁ F F') : M.IsFlat F₁ := by
   simp [← h.closure_union_eq]
 
-@[aesop unsafe 25% (rule_sets := [Matroid]), matroid_ground →]
+@[aesop unsafe 25% (rule_sets := [Matroid]), grind →]
 lemma ModularCompl.top_subset_ground (h : M.ModularCompl F₀ F₁ F F') : F₁ ⊆ M.E :=
   h.isFlat_top.subset_ground
 
@@ -1344,7 +1356,7 @@ lemma ModularCompl.isFlat_bot (h : M.ModularCompl F₀ F₁ F F') : M.IsFlat F�
   rw [← h.inter_eq]
   exact h.isFlat_left.inter h.isFlat_right
 
-@[aesop unsafe 25% (rule_sets := [Matroid]), matroid_ground →]
+@[aesop unsafe 25% (rule_sets := [Matroid]), grind →]
 lemma ModularCompl.bot_subset_ground (h : M.ModularCompl F₀ F₁ F F') : F₀ ⊆ M.E :=
   h.isFlat_bot.subset_ground
 

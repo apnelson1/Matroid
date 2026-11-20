@@ -91,10 +91,10 @@ lemma isNonloop_dual : M✶.IsNonloop e ↔ M.IsNonColoop e := by
 
 alias ⟨_, IsNonColoop.isNonloop_dual⟩ := isNonloop_dual
 
-lemma not_isColoop_iff (he : e ∈ M.E := by grind_mat) : ¬ M.IsColoop e ↔ M.IsNonColoop e := by
+lemma not_isColoop_iff (he : e ∈ M.E := by grind) : ¬ M.IsColoop e ↔ M.IsNonColoop e := by
   rw [IsNonColoop, IsColoop, not_isLoop_iff]
 
-lemma not_isNonColoop_iff (he : e ∈ M.E := by grind_mat) : ¬ M.IsNonColoop e ↔ M.IsColoop e := by
+lemma not_isNonColoop_iff (he : e ∈ M.E := by grind) : ¬ M.IsNonColoop e ↔ M.IsColoop e := by
   rw [IsNonColoop, IsColoop, not_isNonloop_iff]
 
 lemma isNonColoop_iff : M.IsNonColoop e ↔ ¬ M.IsColoop e ∧ e ∈ M.E := by
@@ -115,7 +115,7 @@ lemma IsLoop.isNonColoop (h : M.IsLoop e) : M.IsNonColoop e := by
 lemma coindep_singleton : M.Coindep {e} ↔ M.IsNonColoop e :=
   indep_singleton
 
-lemma isColoop_or_isNonColoop (M : Matroid α) (e : α) (he : e ∈ M.E := by grind_mat) :
+lemma isColoop_or_isNonColoop (M : Matroid α) (e : α) (he : e ∈ M.E := by grind) :
     M.IsColoop e ∨ M.IsNonColoop e :=
   M✶.isLoop_or_isNonloop e
 
@@ -159,11 +159,11 @@ lemma isNonColoop_of_mem [M.Coloopless] (he : e ∈ M.E) : M.IsNonColoop e := by
   exact isNonloop_of_loopless he
 
 lemma Loopless.subsingleton_indep (hM : M.Loopless) (hX : X.Subsingleton)
-    (hXE : X ⊆ M.E := by grind_mat) : M.Indep X :=
+    (hXE : X ⊆ M.E := by grind) : M.Indep X :=
   M.subsingleton_indep hX
 
 lemma Coloopless.subsingleton_coindep (hM : M.Coloopless) (hX : X.Subsingleton)
-    (hXE : X ⊆ M.E := by grind_mat) : M.Coindep X :=
+    (hXE : X ⊆ M.E := by grind) : M.Coindep X :=
   hM.dual_loopless.subsingleton_indep hX
 
 @[simp]
@@ -314,7 +314,7 @@ lemma loops_indep_iff : M.Indep M.loops ↔ M.Loopless := by
 
 @[simp]
 lemma loops_dep_iff : M.Dep M.loops ↔ M.loops.Nonempty := by
-  rw [← not_indep_iff, loops_indep_iff, loopless_iff, nonempty_iff_ne_empty]
+  rw [← not_indep_iff, loops_indep_iff, loopless_iff, ← ne_empty_iff_nonempty]
 
 @[simp]
 lemma coloops_coindep_iff : M.Coindep M.coloops ↔ M✶.Loopless :=
@@ -401,7 +401,7 @@ lemma IsLoopEquiv.closure_eq_closure (h : M.IsLoopEquiv X Y) : M.closure X = M.c
   rw [← closure_union_loops_eq, h.union_eq_union, closure_union_loops_eq]
 
 @[aesop unsafe 5% (rule_sets := [Matroid])]
-lemma IsLoopEquiv.subset_ground (h : M.IsLoopEquiv X Y) (hX : X ⊆ M.E := by grind_mat) : Y ⊆ M.E :=
+lemma IsLoopEquiv.subset_ground (h : M.IsLoopEquiv X Y) (hX : X ⊆ M.E := by grind) : Y ⊆ M.E :=
   h.subset_union_loops.trans (union_subset hX (M.closure_subset_ground ∅))
 
 lemma IsLoopEquiv.inter_eq_of_indep (h : M.IsLoopEquiv X Y) (hI : M.Indep I) : X ∩ I = Y ∩ I := by
@@ -592,7 +592,7 @@ lemma exists_eq_uniqueBaseOn_of_loops_union_coloops (hE : M.E = M.loops ∪ M.co
 lemma exists_eq_uniqueBaseOn_or_removeColoops_rankPos (M : Matroid α) :
     (∃ B E, B ⊆ E ∧ M = uniqueBaseOn B E) ∨ M.removeColoops.RankPos := by
   obtain h1 | ⟨L, hL⟩ := M.removeColoops.eq_loopyOn_or_rankPos'.symm; exact .inr h1
-  refine .inl <| exists_eq_uniqueBaseOn_of_loops_union_coloops <| subset_antisymm ?_ (by grind_mat)
+  refine .inl <| exists_eq_uniqueBaseOn_of_loops_union_coloops <| subset_antisymm ?_ (by grind)
   rw [union_comm, ← sdiff_subset_iff, ← dual_ground, ← dual_loops, ← removeLoops_ground_eq_diff,
     ← dual_ground, ← removeColoops, hL, loopyOn_ground, ← removeColoops_loops_eq, hL, loopyOn_loops]
 

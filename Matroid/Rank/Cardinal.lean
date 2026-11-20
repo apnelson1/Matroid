@@ -104,7 +104,7 @@ theorem cRk_eq_zero_iff' : M.cRk X = 0 ↔ X ∩ M.E ⊆ M.loops := by
   rw [union_comm, ← sdiff_subset_iff, sdiff_sdiff_right_self, subset_inter_iff,
     and_iff_left inter_subset_left]
 
-theorem cRk_le_one_iff [Nonempty α] (hX : X ⊆ M.E := by grind_mat) :
+theorem cRk_le_one_iff [Nonempty α] (hX : X ⊆ M.E := by grind) :
     M.cRk X ≤ 1 ↔ ∃ e, X ⊆ M.closure {e} := by
   simp_rw [cRk_le_iff, mk_le_one_iff_set_subsingleton]
   refine ⟨fun h ↦ ?_, fun ⟨e, he⟩ I hIX ↦ ?_⟩

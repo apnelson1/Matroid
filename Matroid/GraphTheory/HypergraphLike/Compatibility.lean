@@ -118,7 +118,7 @@ lemma Compatible.vertexFiber_subset_of_vertexFiber_subset (h : Compatible G H)
 
 lemma Compatible.edgeFiber_subset (h : Compatible G H) (hI : I(G) ⊆ I(H)) :
     edgeFiber G e ⊆ edgeFiber H e :=
-  h.edgeFiber_subset_of_edgeFiber_subset (edgeFiber_subset_incs.trans hI)
+  h.edgeFiber_subset_of_edgeFiber_subset (by grind)
 
 lemma Compatible.vertexFiber_subset (h : Compatible G H) (hI : I(G) ⊆ I(H)) :
     vertexFiber G v ⊆ vertexFiber H v :=

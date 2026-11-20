@@ -163,12 +163,12 @@ lemma Separates.trans_of_ne (hxy : Separates univ {x} a y)
     let f : ↥A → ↥({y}ᶜ : Set K) := fun t ↦
       ⟨t.val.val, fun he ↦ hyU (he ▸ t.property)⟩
     have hf : Continuous f :=
-      (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
+      (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _
     have hW := hV.preimage hf
     have himage : IsClopen ((Subtype.val : ↥A → ↥({x}ᶜ : Set K)) ''
         (f ⁻¹' (Subtype.val ⁻¹' V))) :=
-      ⟨hU.isClosed.isClosedMap_subtype_val _ hW.isClosed,
-        hU.isOpen.isOpenMap_subtype_val _ hW.isOpen⟩
+      ⟨hU.isClosed.isClosedMap_subtypeVal _ hW.isClosed,
+        hU.isOpen.isOpenMap_subtypeVal _ hW.isOpen⟩
     have he : ((Subtype.val : ↥A → ↥({x}ᶜ : Set K)) ''
         (f ⁻¹' (Subtype.val ⁻¹' V))) = Subtype.val ⁻¹' (U ∩ V) := by
       ext t
@@ -348,7 +348,7 @@ private lemma side_eq_Iio [PreconnectedSpace K] (a b : K)
 private lemma isOpen_of_puncture [T1Space K] (hxU : x ∉ U)
     (hU : IsOpen ((Subtype.val : ↥({x}ᶜ : Set K) → K) ⁻¹' U)) : IsOpen U := by
   have hsub : U ⊆ {x}ᶜ := fun t ht he ↦ hxU (he ▸ ht)
-  have hopen := isOpen_compl_singleton.isOpenMap_subtype_val _ hU
+  have hopen := isOpen_compl_singleton.isOpenMap_subtypeVal _ hU
   simpa only [Subtype.image_preimage_coe, inter_eq_right.mpr hsub] using hopen
 
 /-- The order rays are open already under T₁, without compactness.
